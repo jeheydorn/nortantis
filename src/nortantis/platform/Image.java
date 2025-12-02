@@ -53,6 +53,11 @@ public abstract class Image
 	public abstract void setAlpha(int x, int y, int alpha);
 
 	public abstract Color getPixelColor(int x, int y);
+	
+	public Color getPixelColor(int[] data, int x, int y)
+	{
+		return Color.create(getRGB(data, x, y), hasAlpha());
+	}
 
 	public float getNormalizedPixelLevel(int x, int y)
 	{

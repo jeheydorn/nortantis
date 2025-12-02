@@ -24,7 +24,7 @@ public class NamedIconSelector
 	private Map<String, List<Tuple2<String, UnscaledImageToggleButton>>> buttons;
 	private JPanel container;
 	public final IconType type;
-	public String artPack; // TODO remove
+	public String artPack;
 
 	public NamedIconSelector(IconType type)
 	{

@@ -1,6 +1,7 @@
 package nortantis.util;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * A 2-tuple of objects which don't have to be comparable. For a comparable version of this, see Pair.
@@ -44,14 +45,30 @@ public class Tuple3<F, S, T> implements Serializable
 	}
 
 	@Override
-	public boolean equals(Object other)
+	public int hashCode()
 	{
-		if (!(other instanceof Tuple3))
-			return false;
-
-		@SuppressWarnings("unchecked")
-		Tuple3<F, S, T> otherTuple = (Tuple3<F, S, T>) other;
-		return f.equals(otherTuple.f) && s.equals(otherTuple.s) && t.equals(otherTuple.t);
+		return Objects.hash(f, s, t);
 	}
+
+	@SuppressWarnings("rawtypes")
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj)
+		{
+			return true;
+		}
+		if (obj == null)
+		{
+			return false;
+		}
+		if (getClass() != obj.getClass())
+		{
+			return false;
+		}
+		Tuple3 other = (Tuple3) obj;
+		return Objects.equals(f, other.f) && Objects.equals(s, other.s) && Objects.equals(t, other.t);
+	}
+
 
 }

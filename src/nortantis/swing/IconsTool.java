@@ -71,14 +71,12 @@ import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
 import nortantis.platform.awt.AwtFactory;
 import nortantis.util.Assets;
-import nortantis.util.ConcurrentHashMapF;
 import nortantis.util.Counter;
 import nortantis.util.HashCounter;
 import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
 import nortantis.util.Range;
 import nortantis.util.Tuple2;
-import nortantis.util.Tuple3;
 import nortantis.util.Tuple4;
 
 public class IconsTool extends EditorTool
@@ -143,8 +141,6 @@ public class IconsTool extends EditorTool
 	{
 		super(parent, toolsPanel, mapUpdater);
 		rand = new Random();
-		namedIconPreviewCache = new ConcurrentHashMapF<>();
-		groupPreviewCache = new ConcurrentHashMapF<>();
 		iconColorsByType = new TreeMap<>();
 		iconFilterColorsByType = new TreeMap<>();
 		maximizeOpacityByType = new TreeMap<>();
@@ -627,7 +623,7 @@ public class IconsTool extends EditorTool
 				@Override
 				public void actionPerformed(ActionEvent e)
 				{
-					refreshImagesWithoutClearingCache(mainWindow.getSettingsFromGUI(false));
+					handleImagesRefresh(mainWindow.getSettingsFromGUI(false));
 				}
 			});
 			artPackComboBoxHider = organizer.addLabelAndComponent("Art pack:", "For filtering the icons shown in this tool. '"
@@ -995,6 +991,7 @@ public class IconsTool extends EditorTool
 	private void handleModeChanged()
 	{
 		unselectAnyIconsBeingEdited();
+		innerHandleMouseMovedOnMap(mapEditingPanel.getMousePosition(), false);
 		mapEditingPanel.repaint();
 		updateTypePanels();
 	}
@@ -1102,14 +1099,6 @@ public class IconsTool extends EditorTool
 	@Override
 	public void handleImagesRefresh(MapSettings settings)
 	{
-		groupPreviewCache.clear();
-		namedIconPreviewCache.clear();
-
-		refreshImagesWithoutClearingCache(settings);
-	}
-
-	private void refreshImagesWithoutClearingCache(MapSettings settings)
-	{
 		if (disableImageRefreshes)
 		{
 			return;
@@ -1194,8 +1183,6 @@ public class IconsTool extends EditorTool
 		}
 	}
 
-	private ConcurrentHashMapF<Tuple3<String, IconType, String>, Image> namedIconPreviewCache;
-
 	private void updateNamedIconButtonPreviewImages(MapSettings settings, NamedIconSelector selector)
 	{
 		if (settings == null)
@@ -1237,12 +1224,8 @@ public class IconsTool extends EditorTool
 										"No '" + selector.type + "' icon exists for the button '" + iconNameWithoutWidthOrExtension + "'");
 							}
 							ImageAndMasks imageAndMasks = iconsInGroup.get(iconNameWithoutWidthOrExtension);
-							Image preview = namedIconPreviewCache.getOrCreateWithLock(
-									new Tuple3<>(settings.artPack, selector.type, iconNameWithoutWidthOrExtension), () ->
-									{
-										return createIconPreview(settings, Collections.singletonList(imageAndMasks), 45, 0, selector.type,
-												iconColor, filterColor, maximizeOpacity);
-									});
+							Image preview = createIconPreview(settings, Collections.singletonList(imageAndMasks), 45, 0, selector.type,
+									iconColor, filterColor, maximizeOpacity);
 
 							previewImages.add(preview);
 						}
@@ -1324,16 +1307,11 @@ public class IconsTool extends EditorTool
 		decorationButtons.updateButtonList(artPack, customImagesPath);
 	}
 
-	private ConcurrentHashMapF<Tuple3<String, IconType, String>, Image> groupPreviewCache;
-
 	private Image createIconPreviewForGroup(MapSettings settings, IconType iconType, String groupName, String customImagesPath,
 			Color iconColor, HSBColor filterColor, boolean maximizeOpacity)
 	{
-		return groupPreviewCache.getOrCreateWithLock(new Tuple3<>(settings.artPack, iconType, groupName), () ->
-		{
-			List<ImageAndMasks> images = ImageCache.getInstance(settings.artPack, customImagesPath).getIconsInGroup(iconType, groupName);
-			return createIconPreview(settings, images, 35, 9, iconType, iconColor, filterColor, maximizeOpacity);
-		});
+		List<ImageAndMasks> images = ImageCache.getInstance(settings.artPack, customImagesPath).getIconsInGroup(iconType, groupName);
+		return createIconPreview(settings, images, 35, 9, iconType, iconColor, filterColor, maximizeOpacity);
 	}
 
 	private static Image createIconPreview(MapSettings settings, List<ImageAndMasks> imagesAndMasks, int scaledHeight, int padding,
@@ -2087,6 +2065,7 @@ public class IconsTool extends EditorTool
 
 		if (modeWidget.isDrawMode() && !decorationsButton.isSelected())
 		{
+			mapEditingPanel.hideBrush();
 			highlightHoverCenters(mouseLocation);
 		}
 		else

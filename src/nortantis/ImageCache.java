@@ -48,7 +48,7 @@ public class ImageCache
 	/**
 	 * Maps original images, to maps from (color, filterColor, maximizeContrast) to colored images.
 	 */
-	private ConcurrentHashMapF<Image, ConcurrentHashMapF<Tuple3<Color, HSBColor, Boolean>, Image>> coloredCache;
+	private ConcurrentHashMapF<String, ConcurrentHashMapF<Tuple3<Color, HSBColor, Boolean>, Image>> coloredCache;
 
 	private ConcurrentHashMapF<Image, ConcurrentHashMapF<Integer, Image>> alphaCache;
 
@@ -68,10 +68,12 @@ public class ImageCache
 
 	private String imagesPath;
 
+	private final String artPack;
+
 	/**
 	 * Singleton
 	 */
-	private ImageCache(String imagesPath)
+	private ImageCache(String imagesPath, String artPack)
 	{
 		this.imagesPath = imagesPath;
 		scaledCache = new ConcurrentHashMapF<>();
@@ -81,6 +83,7 @@ public class ImageCache
 		iconGroupFilesNamesCache = new ConcurrentHashMapF<>();
 		iconGroupNames = new ConcurrentHashMapF<>();
 		alphaCache = new ConcurrentHashMapF<>();
+		this.artPack = artPack;
 	}
 
 	/**
@@ -90,29 +93,25 @@ public class ImageCache
 	 * @param imagesPath
 	 * @return
 	 */
-	private synchronized static ImageCache getInstance(String imagesPath)
+	public synchronized static ImageCache getInstance(String artPack, String customImagesFolder)
 	{
+		Path artPackPath;
 		String pathWithHomeReplaced;
-		if (StringUtils.isEmpty(imagesPath))
+		if (StringUtils.isEmpty(artPack.toString()))
 		{
-			imagesPath = Assets.getArtPackPath(Assets.installedArtPack, null).toString();
-			pathWithHomeReplaced = imagesPath;
+			artPackPath = Assets.getArtPackPath(Assets.installedArtPack, null);
+			pathWithHomeReplaced = artPackPath.toString();
 		}
 		else
 		{
-			pathWithHomeReplaced = FileHelper.replaceHomeFolderPlaceholder(imagesPath);
+			artPackPath = Assets.getArtPackPath(artPack, customImagesFolder);
+			pathWithHomeReplaced = FileHelper.replaceHomeFolderPlaceholder(artPackPath.toString());
 		}
 
 		// Probably not necessary, but I don't want to take a chance of accidentally creating multiple ImageCache instances.
 		String normalizedPath = FilenameUtils.normalize(pathWithHomeReplaced);
 
-		return instances.getOrCreate(normalizedPath, () -> new ImageCache(normalizedPath));
-	}
-
-	public synchronized static ImageCache getInstance(String artPack, String customImagesFolder)
-	{
-		Path artPackPath = Assets.getArtPackPath(artPack, customImagesFolder);
-		return getInstance(artPackPath.toString());
+		return instances.getOrCreate(normalizedPath, () -> new ImageCache(normalizedPath, artPack));
 	}
 
 	/**
@@ -143,25 +142,40 @@ public class ImageCache
 		assert imageAndMasks != null;
 		assert color != null;
 		assert filterColor != null;
-		
+
 		// There is a small chance the 2 different threads might both add the
 		// same image at the same time,
 		// but if that did happen it would only results in a little bit of
 		// duplicated work, not a functional
 		// problem.
-		return coloredCache.getOrCreate(imageAndMasks.image, () -> new ConcurrentHashMapF<>())
-				.getOrCreate(new Tuple3<>(color, filterColor, maximizeOpacity), () ->
+		return coloredCache.getOrCreate(imageAndMasks.createFileIdentifier(), () -> new ConcurrentHashMapF<>())
+				.getOrCreateWithLock(new Tuple3<>(color, filterColor, maximizeOpacity), () ->
 				{
 					float alphaScale = 0;
 					{
 						if (maximizeOpacity)
 						{
+							int[] imageData = null;
+							if (imageAndMasks.image.isIntBased())
+							{
+								imageData = imageAndMasks.image.getDataIntBased();
+							}
+
 							int highestAlpha = 0;
 							for (int y = 0; y < imageAndMasks.image.getHeight(); y++)
 							{
 								for (int x = 0; x < imageAndMasks.image.getWidth(); x++)
 								{
-									Color imageColor = imageAndMasks.image.getPixelColor(x, y);
+									Color imageColor;
+									if (imageData == null)
+									{
+										imageColor = imageAndMasks.image.getPixelColor(x, y);
+									}
+									else
+									{
+										imageColor = imageAndMasks.image.getPixelColor(imageData, x, y);
+									}
+
 									if (imageColor.getAlpha() > highestAlpha)
 									{
 										highestAlpha = imageColor.getAlpha();
@@ -178,10 +192,14 @@ public class ImageCache
 					if (color.getAlpha() > 0 || !filterColor.equals(MapSettings.defaultIconFilterColor) || maximizeOpacity)
 					{
 						Image result = Image.create(imageAndMasks.image.getWidth(), imageAndMasks.image.getHeight(), ImageType.ARGB);
+						int[] resultData = result.getDataIntBased();
+
+						Image colorMask = imageAndMasks.getOrCreateColorMask();
 						for (int y = 0; y < result.getHeight(); y++)
 						{
 							for (int x = 0; x < result.getWidth(); x++)
 							{
+
 								Color originalColor = imageAndMasks.image.getPixelColor(x, y);
 
 								int alpha;
@@ -201,10 +219,8 @@ public class ImageCache
 								{
 									// Use filter color
 									float[] hsb = originalColor.getHSB();
-									Color filtered = Color.createFromHSB(
-											hsb[0] + filterHSB[0] - (float) Math.floor(hsb[0] + filterHSB[0]),
-											Helper.clamp(hsb[1] + filterHSB[1], 0f, 1f),
-											Helper.clamp(hsb[2] + filterHSB[2], 0f, 1f));
+									Color filtered = Color.createFromHSB(hsb[0] + filterHSB[0] - (float) Math.floor(hsb[0] + filterHSB[0]),
+											Helper.clamp(hsb[1] + filterHSB[1], 0f, 1f), Helper.clamp(hsb[2] + filterHSB[2], 0f, 1f));
 									imageColor = Color.create(filtered.getRed(), filtered.getGreen(), filtered.getBlue(), alpha);
 									filteredAlpha = Math.min(255, (int) (alpha * filterAlphaScale));
 								}
@@ -218,10 +234,9 @@ public class ImageCache
 								int r = Helper.linearComboBase255(filteredAlpha, imageColor.getRed(), color.getRed());
 								int g = Helper.linearComboBase255(filteredAlpha, imageColor.getGreen(), color.getGreen());
 								int b = Helper.linearComboBase255(filteredAlpha, imageColor.getBlue(), color.getBlue());
-								int a = Math.max(filteredAlpha,
-										Math.min(color.getAlpha(), imageAndMasks.getOrCreateColorMask().getGrayLevel(x, y)));
+								int a = Math.max(filteredAlpha, Math.min(color.getAlpha(), colorMask.getGrayLevel(x, y)));
 
-								result.setRGB(x, y, r, g, b, a);
+								result.setRGB(resultData, x, y, r, g, b, a);
 							}
 						}
 						return result;
@@ -335,6 +350,10 @@ public class ImageCache
 				.getOrCreate((groupName == null ? "" : groupName).intern(), () -> loadIconsWithSizesAndAlphas(iconType, groupName));
 	}
 
+	private record FilenameParams(String originalFileName, String fileNameBase, Double width, Integer alpha)
+	{
+	}
+
 	private Map<String, ImageAndMasks> loadIconsWithSizesAndAlphas(IconType iconType, String groupName)
 	{
 		Map<String, ImageAndMasks> imagesAndMasks = new HashMap<>();
@@ -349,15 +368,12 @@ public class ImageCache
 			return imagesAndMasks;
 		}
 
-		// Maps from image base name without width to (image base name without width, width, file name).
-		Map<String, Tuple3<String, Double, String>> namesAndWidths = new TreeMap<>();
-		// Maps from image base name without width to alpha (possibly null).
-		Map<String, Integer> alphas = new TreeMap<>();
+		// Maps from image base without encoded parameters to (image base name without width, width, file name, alpha).
+		Map<String, FilenameParams> baseNamesToParams = new TreeMap<>();
 		for (String fileName : fileNames)
 		{
 			Tuple2<String, Double> nameAndWidth = parseBaseNameAndSize(fileName, WhichDimension.Width);
-			Tuple2<String, Double> nameAndHeight = parseBaseNameAndSize(fileName, WhichDimension.Height);
-			Integer alpha = parseAlpha(fileName);
+			Tuple2<String, Double> nameAndHeight = parseBaseNameAndSize(nameAndWidth.getFirst(), WhichDimension.Height);
 			if (nameAndWidth.getSecond() == null)
 			{
 				// Check if height is stored in the file name.
@@ -377,28 +393,33 @@ public class ImageCache
 				}
 			}
 
-			String fileNameBaseWithoutWidth = nameAndWidth.getFirst();
-			if (namesAndWidths.containsKey(fileNameBaseWithoutWidth))
+			Tuple2<String, Integer> nameAndAlpha = parseAlpha(nameAndWidth.getFirst());
+			String fileNameBaseWithoutEncodedParameters = nameAndAlpha.getFirst();
+			if (baseNamesToParams.containsKey(fileNameBaseWithoutEncodedParameters))
 			{
-				throw new RuntimeException("There are multiple images for " + iconType + " named '" + fileNameBaseWithoutWidth
+				throw new RuntimeException("There are multiple images for " + iconType + " named '" + fileNameBaseWithoutEncodedParameters
 						+ "' whose file names only differ by their encoded width or height or extension." + " Rename one of them.");
 			}
 
-			namesAndWidths.put(fileNameBaseWithoutWidth, new Tuple3<>(nameAndWidth.getFirst(), nameAndWidth.getSecond(), fileName));
-			if (alpha != null)
+			Integer alpha = null;
+			if (nameAndAlpha.getSecond() != null)
 			{
-				alphas.put(fileNameBaseWithoutWidth, alpha);
+				alpha = nameAndAlpha.getSecond();
 			}
+
+			baseNamesToParams.put(fileNameBaseWithoutEncodedParameters,
+					new FilenameParams(fileName, fileNameBaseWithoutEncodedParameters, nameAndWidth.getSecond(), alpha));
+
 		}
 
-		Tuple2<Image, Double> tuple = findIconToUseForReferenceWhenSizingOtherIcons(iconType, groupName, namesAndWidths);
-		int defaultAlpha = findDefaultAlphaForGroup(alphas);
+		Tuple2<Image, Double> tuple = findIconToUseForReferenceWhenSizingOtherIcons(iconType, groupName, baseNamesToParams);
+		int defaultAlpha = findDefaultAlphaForGroup(baseNamesToParams);
 		Image widest = tuple.getFirst();
 		double widthOfWidest = tuple.getSecond();
 
-		for (Tuple3<String, Double, String> nameAndWidth : namesAndWidths.values())
+		for (FilenameParams filenameParams : baseNamesToParams.values())
 		{
-			Image icon = loadIconFromDiskOrCache(iconType, groupName, nameAndWidth.getThird());
+			Image icon = loadIconFromDiskOrCache(iconType, groupName, filenameParams.originalFileName);
 
 			if (icon == null)
 			{
@@ -407,10 +428,10 @@ public class ImageCache
 				continue;
 			}
 
-			Integer alpha;
-			if (alphas.containsKey(nameAndWidth.getFirst()))
+			int alpha;
+			if (filenameParams.alpha != null)
 			{
-				alpha = alphas.get(nameAndWidth.getFirst());
+				alpha = filenameParams.alpha;
 			}
 			else
 			{
@@ -420,17 +441,18 @@ public class ImageCache
 
 			double width;
 			// If any don't have an encoded width, then calculate the width relative to the largest image that does have an encoded width.
-			if (nameAndWidth.getSecond() == null)
+			if (filenameParams.width == null)
 			{
 				width = icon.getWidth() * (widthOfWidest / widest.getWidth());
 			}
 			else
 			{
-				width = nameAndWidth.getSecond();
+				width = filenameParams.width;
 			}
 
 
-			imagesAndMasks.put(nameAndWidth.getFirst(), new ImageAndMasks(icon, iconType, width));
+			imagesAndMasks.put(filenameParams.fileNameBase,
+					new ImageAndMasks(icon, iconType, width, artPack, groupName, filenameParams.fileNameBase));
 		}
 
 
@@ -438,12 +460,12 @@ public class ImageCache
 	}
 
 	private Tuple2<Image, Double> findIconToUseForReferenceWhenSizingOtherIcons(IconType iconType, String groupName,
-			Map<String, Tuple3<String, Double, String>> namesAndWidths)
+			Map<String, FilenameParams> baseNamesToParams)
 	{
-		Tuple3<String, Double, String> widest = Helper.maxElement(namesAndWidths, (tuple1, tuple2) ->
+		FilenameParams widest = Helper.maxElement(baseNamesToParams, (params1, params2) ->
 		{
-			Double w1 = tuple1.getSecond();
-			Double w2 = tuple2.getSecond();
+			Double w1 = params1.width;
+			Double w2 = params2.width;
 			if (w1 == null && w2 == null)
 			{
 				return 0;
@@ -459,18 +481,18 @@ public class ImageCache
 			return w1.compareTo(w2);
 		});
 
-		if (widest.getSecond() != null)
+		if (widest.width != null)
 		{
-			Image widestIcon = loadIconFromDiskOrCache(iconType, groupName, widest.getThird());
-			return new Tuple2<>(widestIcon, widest.getSecond());
+			Image widestIcon = loadIconFromDiskOrCache(iconType, groupName, widest.originalFileName);
+			return new Tuple2<>(widestIcon, widest.width);
 		}
 		else
 		{
 			Map<String, Image> iconsByName = new TreeMap<>();
-			for (Tuple3<String, Double, String> nameAndWidth : namesAndWidths.values())
+			for (FilenameParams params : baseNamesToParams.values())
 			{
-				Image icon = loadIconFromDiskOrCache(iconType, groupName, nameAndWidth.getThird());
-				iconsByName.put(nameAndWidth.getFirst(), icon);
+				Image icon = loadIconFromDiskOrCache(iconType, groupName, params.originalFileName);
+				iconsByName.put(params.fileNameBase, icon);
 			}
 			String nameOfWidestOrTallest = Helper.argmax(iconsByName, (icon1, icon2) ->
 			{
@@ -487,9 +509,9 @@ public class ImageCache
 		}
 	}
 
-	private Integer findDefaultAlphaForGroup(Map<String, Integer> alphas)
+	private Integer findDefaultAlphaForGroup(Map<String, FilenameParams> alphas)
 	{
-		Integer max = Helper.maxElement(alphas);
+		Integer max = Helper.maxElement(alphas, (p1, p2) -> compareNullsFirst(p1.alpha, p2.alpha)).alpha;
 		if (max == null)
 		{
 			return 255;
@@ -497,6 +519,28 @@ public class ImageCache
 		return max;
 	}
 
+	public static int compareNullsFirst(Integer o1, Integer o2)
+	{
+		if (o1 == null)
+		{
+			if (o2 == null)
+			{
+				return 0; // Both are null, considered equal
+			}
+			else
+			{
+				return -1; // o1 is null, o2 is not, o1 comes first (lowest)
+			}
+		}
+		else if (o2 == null)
+		{
+			return 1; // o1 is not null, o2 is null, o2 comes first (lowest)
+		}
+		else
+		{
+			return Integer.compare(o1, o2); // Both are non-null, use natural Integer comparison
+		}
+	}
 
 	private boolean isDefaultSizeByWidth(IconType type)
 	{
@@ -604,8 +648,10 @@ public class ImageCache
 
 	/**
 	 * Given a file name (without the path), this parses out the encoded alpha value, if present.
+	 * 
+	 * @return A 2-tuple in which the first parameter is the filename without the encoded alpha, and the second is the encoded alpha value.
 	 */
-	public static Integer parseAlpha(String fileName)
+	public static Tuple2<String, Integer> parseAlpha(String fileName)
 	{
 		if (fileName == null || fileName.isEmpty())
 		{
@@ -622,6 +668,7 @@ public class ImageCache
 
 		if (matcher.find())
 		{
+			String nameWithoutAlpha = matcher.group(1).trim();
 			int alpha = Integer.parseInt(matcher.group(2));
 			if (alpha > 255)
 			{
@@ -634,9 +681,9 @@ public class ImageCache
 				throw new RuntimeException("The image '" + fileName + "' has an encoded alpha less than 0.");
 			}
 
-			return alpha;
+			return new Tuple2<>(nameWithoutAlpha, alpha);
 		}
-		return null;
+		return new Tuple2<>(baseName, null);
 	}
 
 	public enum WhichDimension

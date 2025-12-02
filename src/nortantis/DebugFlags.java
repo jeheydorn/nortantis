@@ -18,7 +18,7 @@ public class DebugFlags
 	 * Causes the indexes of edges to be be printed to standard out when adding rivers in the Land and Water tool. This is useful when
 	 * you're debugging a need to find the index of an edge for setting a conditional breakpoint.
 	 */
-	private static boolean printRiverEdgeIndexes = true;
+	private static boolean printRiverEdgeIndexes = false;
 
 	/**
 	 * Causes the indexes of centers to be printed when hovering over them in the Land and Water tool. This is useful when you're debugging

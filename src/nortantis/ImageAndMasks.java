@@ -1,5 +1,6 @@
 package nortantis;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
@@ -37,19 +38,29 @@ public class ImageAndMasks
 	 */
 	public final double widthFromFileName;
 	private Image colorMask;
+	
+	public final String artPack;
+	public final String fileNameWithoutParametersOrExtension;
+	public final String groupId;
 
-	public ImageAndMasks(Image image, IconType iconType, double widthFromFileName)
+	public ImageAndMasks(Image image, IconType iconType, double widthFromFileName, String artPack, String groupId, String fileNameWithoutParametersOrExtension)
 	{
 		assert image != null;
 		this.image = image;
 		this.iconType = iconType;
 		this.widthFromFileName = widthFromFileName;
+		assert fileNameWithoutParametersOrExtension != null;
+		this.fileNameWithoutParametersOrExtension = fileNameWithoutParametersOrExtension;
+		assert groupId != null;
+		this.groupId = groupId;
+		assert artPack != null;
+		this.artPack = artPack;
 	}
 
 	public ImageAndMasks(Image image, Image contentMask, IntRectangle contentBounds, Image shadingMask, IconType iconType,
-			double widthFromFileName)
+			double widthFromFileName, String artPack, String groupId, String fileNameWithoutParametersOrExtension)
 	{
-		this(image, iconType, widthFromFileName);
+		this(image, iconType, widthFromFileName, artPack, groupId, fileNameWithoutParametersOrExtension);
 		this.contentMask = contentMask;
 		this.shadingMask = shadingMask;
 		this.contentBounds = contentBounds;
@@ -772,5 +783,10 @@ public class ImageAndMasks
 		IntRectangle scaledContentBounds = new Rectangle(originalContentBounds.x * (xScale), originalContentBounds.y * yScale,
 				originalContentBounds.width * xScale, originalContentBounds.height * yScale).toIntRectangle();
 		return scaledContentBounds;
+	}
+	
+	public String createFileIdentifier()
+	{
+		return artPack + File.separator + iconType + File.separator + groupId + File.separator + fileNameWithoutParametersOrExtension;
 	}
 }

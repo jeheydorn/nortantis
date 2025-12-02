@@ -26,25 +26,26 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 	 * A flag to tell which icons could not be drawn because they don't fit in the space they are supposed to be drawn.
 	 */
 	boolean failedToDraw;
-	IconType type;
-	String fileName;
+	final IconType type;
+	final String groupId;
+	final String fileName;
 	final Color color;
 	final HSBColor filterColor;
 	boolean maximizeOpacity;
 
-	public IconDrawTask(ImageAndMasks unScaledImageAndMasks, IconType type, Point centerLoc, IntDimension scaledSize, Color color, HSBColor filterColor, boolean maximizeOpacity)
+	public IconDrawTask(ImageAndMasks unScaledImageAndMasks, IconType type, Point centerLoc, IntDimension scaledSize, Color color, HSBColor filterColor, boolean maximizeOpacity, String groupId)
 	{
-		this(unScaledImageAndMasks, null, type, centerLoc, scaledSize, null, color, filterColor, maximizeOpacity);
+		this(unScaledImageAndMasks, null, type, centerLoc, scaledSize, null, color, filterColor, maximizeOpacity, groupId);
 	}
 
 	public IconDrawTask(ImageAndMasks unScaledImageAndMasks, IconType type, Point centerLoc, IntDimension scaledSize, String fileName,
-			Color color, HSBColor filterColor, boolean maximizeOpacity)
+			Color color, HSBColor filterColor, boolean maximizeOpacity, String groupId)
 	{
-		this(unScaledImageAndMasks, null, type, centerLoc, scaledSize, fileName, color, filterColor, maximizeOpacity);
+		this(unScaledImageAndMasks, null, type, centerLoc, scaledSize, fileName, color, filterColor, maximizeOpacity, groupId);
 	}
 
 	private IconDrawTask(ImageAndMasks unScaledImageAndMasks, ImageAndMasks scaledImageAndMasks, IconType type, Point centerLoc,
-			IntDimension scaledSize, String fileName, Color color, HSBColor filterColor, boolean maximizeOpacity)
+			IntDimension scaledSize, String fileName, Color color, HSBColor filterColor, boolean maximizeOpacity, String groupId)
 	{
 		this.unScaledImageAndMasks = unScaledImageAndMasks;
 		this.scaledImageAndMasks = scaledImageAndMasks;
@@ -58,6 +59,7 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 		this.color = color;
 		this.filterColor = filterColor;
 		this.maximizeOpacity = maximizeOpacity;
+		this.groupId = groupId;
 	}
 
 	public void colorAndScaleIcon()
@@ -90,7 +92,7 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 					unScaledImageAndMasks.getOrCreateContentBounds(), scaledSize.width, scaledSize.height);
 
 			scaledImageAndMasks = new ImageAndMasks(scaledImage, scaledContentMask, scaledContentBounds, scaledShadingMask, type,
-					unScaledImageAndMasks.widthFromFileName);
+					unScaledImageAndMasks.widthFromFileName, unScaledImageAndMasks.artPack, unScaledImageAndMasks.groupId, unScaledImageAndMasks.fileNameWithoutParametersOrExtension);
 		}
 	}
 

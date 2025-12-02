@@ -1976,11 +1976,12 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		}
 
 		toolsPanel.resetZoomToDefault();
-		updater.createAndShowMapFull();
-		updateFrameTitle(false, true);
 
 		defaultMapExportAction = settings.defaultMapExportAction;
 		defaultHeightmapExportAction = settings.defaultHeightmapExportAction;
+		
+		updater.createAndShowMapFull();
+		updateFrameTitle(false, true);
 	}
 
 	void loadSettingsAndEditsIntoThemeAndToolsPanels(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean willDoImagesRefresh)
@@ -1989,8 +1990,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		undoer.setEnabled(false);
 		customImagesPath = settings.customImagesPath;
 		edits = settings.edits;
-		boolean changeEffectsBackgroundImages = themePanel.loadSettingsIntoGUI(settings);
-		toolsPanel.loadSettingsIntoGUI(settings, isUndoRedoOrAutomaticChange, changeEffectsBackgroundImages, willDoImagesRefresh);
+		themePanel.loadSettingsIntoGUI(settings);
+		toolsPanel.loadSettingsIntoGUI(settings, isUndoRedoOrAutomaticChange, true, willDoImagesRefresh);
 		undoer.setEnabled(true);
 		updater.setEnabled(true);
 	}
