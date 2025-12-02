@@ -1193,6 +1193,7 @@ public class IconsTool extends EditorTool
 		if (!Objects.equals(settings.artPack, selector.artPack))
 		{
 			throw new IllegalArgumentException(
+
 					"Cannot updated NamedIconsSelector because selector has buttons for different art pack than settings. Settings art pack: '"
 							+ settings.artPack + "', selector art pack: '" + selector.artPack + "'");
 		}
@@ -2394,11 +2395,13 @@ public class IconsTool extends EditorTool
 	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean changeEffectsBackgroundImages,
 			boolean willDoImagesRefresh)
 	{
-		String customImagesPath = settings == null ? null : settings.customImagesPath;
-		String artPack = settings == null ? Assets.installedArtPack : settings.artPack;
+		String customImagesPath = settings.customImagesPath;
+		String artPack = settings.artPack;
+		// The art pack field has special handling for undo/redo to avoid undo/redo changing the selected value, while still storing the
+		// value in MapSettings.
 		String artPackToSelect = isUndoRedoOrAutomaticChange && !StringUtils.isEmpty((String) artPackComboBox.getSelectedItem())
 				? (String) artPackComboBox.getSelectedItem()
-				: (settings != null ? settings.artPack : Assets.installedArtPack);
+				: settings.artPack;
 		try
 		{
 			disableImageRefreshes = willDoImagesRefresh;
@@ -2409,19 +2412,29 @@ public class IconsTool extends EditorTool
 			disableImageRefreshes = false;
 		}
 
-		if (!Objects.equals(artPackComboBox.getSelectedItem(), artPack) && !isUndoRedoOrAutomaticChange)
+		if (!Objects.equals(artPackComboBox.getSelectedItem(), artPack))
 		{
-			if (Assets.artPackExists(artPack, customImagesPath))
+			if (isUndoRedoOrAutomaticChange)
 			{
-				artPackComboBox.setSelectedItem(artPack);
+				// Set this so that the call to updateIconTypeButtonPreviewImages doesn't crash when settings.artPack doesn't match the art
+				// pack of the selectors.
+				settings.artPack = artPackToSelect;
 			}
 			else
 			{
-				artPackComboBox.setSelectedItem(Assets.installedArtPack);
-				// Setting this fixes a bug where icon previews for shuffled icons don't show up right after an images refresh when the
-				// selected art pack no longer exists. It seems to be because the call to updateIconTypeButtonPreviewImages below was given
-				// the wrong art pack when it changed here and wasn't updated.
-				settings.artPack = Assets.installedArtPack;
+				if (Assets.artPackExists(artPack, customImagesPath))
+				{
+					artPackComboBox.setSelectedItem(artPack);
+				}
+				else
+				{
+					artPackComboBox.setSelectedItem(Assets.installedArtPack);
+					// Setting this fixes a bug where icon previews for shuffled icons don't show up right after an images refresh when the
+					// selected art pack no longer exists. It seems to be because the call to updateIconTypeButtonPreviewImages below was
+					// given
+					// the wrong art pack when it changed here and wasn't updated.
+					settings.artPack = Assets.installedArtPack;
+				}
 			}
 		}
 

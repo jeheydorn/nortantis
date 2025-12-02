@@ -67,7 +67,7 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 		if (scaledImageAndMasks == null)
 		{
 			Image coloredIcon;
-			if (color.getAlpha() == 0 && filterColor.equals(MapSettings.defaultIconFilterColor) && !maximizeOpacity)
+			if (MapSettings.defaultIconColor.equals(color) && filterColor.equals(MapSettings.defaultIconFilterColor) && !maximizeOpacity)
 			{
 				// Do nothing since the color is transparent.
 				coloredIcon = unScaledImageAndMasks.image;

@@ -137,10 +137,10 @@ public class ImageCache
 	/**
 	 * Either looks up in the cache, or creates, a version of the given icon colored the given color.
 	 */
-	public Image getColoredIcon(ImageAndMasks imageAndMasks, Color color, HSBColor filterColor, boolean maximizeOpacity)
+	public Image getColoredIcon(ImageAndMasks imageAndMasks, Color fillColor, HSBColor filterColor, boolean maximizeOpacity)
 	{
 		assert imageAndMasks != null;
-		assert color != null;
+		assert fillColor != null;
 		assert filterColor != null;
 
 		// There is a small chance the 2 different threads might both add the
@@ -149,7 +149,7 @@ public class ImageCache
 		// duplicated work, not a functional
 		// problem.
 		return coloredCache.getOrCreate(imageAndMasks.createFileIdentifier(), () -> new ConcurrentHashMapF<>())
-				.getOrCreateWithLock(new Tuple3<>(color, filterColor, maximizeOpacity), () ->
+				.getOrCreateWithLock(new Tuple3<>(fillColor, filterColor, maximizeOpacity), () ->
 				{
 					float alphaScale = 0;
 					{
@@ -189,7 +189,7 @@ public class ImageCache
 					float[] filterHSB = filterColor.toArray();
 					float filterAlphaScale = filterColor.getAlpha() / 255f;
 
-					if (color.getAlpha() > 0 || !filterColor.equals(MapSettings.defaultIconFilterColor) || maximizeOpacity)
+					if (!fillColor.equals(MapSettings.defaultIconColor) || !filterColor.equals(MapSettings.defaultIconFilterColor) || maximizeOpacity)
 					{
 						Image result = Image.create(imageAndMasks.image.getWidth(), imageAndMasks.image.getHeight(), ImageType.ARGB);
 						int[] resultData = result.getDataIntBased();
@@ -212,29 +212,34 @@ public class ImageCache
 								{
 									alpha = originalColor.getAlpha();
 								}
-
-								Color imageColor;
-								int filteredAlpha;
-								if (!filterColor.equals(MapSettings.defaultIconFilterColor))
+								
+								double fillColorAlpha = fillColor.getAlpha() / 255.0;
+								double fillColorScale;
+								if (fillColorAlpha == 1.0)
 								{
-									// Use filter color
-									float[] hsb = originalColor.getHSB();
-									Color filtered = Color.createFromHSB(hsb[0] + filterHSB[0] - (float) Math.floor(hsb[0] + filterHSB[0]),
-											Helper.clamp(hsb[1] + filterHSB[1], 0f, 1f), Helper.clamp(hsb[2] + filterHSB[2], 0f, 1f));
-									imageColor = Color.create(filtered.getRed(), filtered.getGreen(), filtered.getBlue(), alpha);
-									filteredAlpha = Math.min(255, (int) (alpha * filterAlphaScale));
+									// Save some time since this is a simple and common case.
+									fillColorScale = 1.0;
 								}
 								else
 								{
-									// Don't use filter color
-									imageColor = originalColor;
-									filteredAlpha = alpha;
+									// Use a curve that is 0 when fillColorAlpha is 0, 1 when fillColorAlpha is 1, and is mostly equal to 1 but dies off
+									// quickly as fillColorAlpha reaches 0. That way when the fill color is transparent, it doesn't mix with icon pixels
+									// that are partially transparent.
+									fillColorScale = 1.0 - Math.pow(1.0 - fillColorAlpha, 50);
 								}
-
-								int r = Helper.linearComboBase255(filteredAlpha, imageColor.getRed(), color.getRed());
-								int g = Helper.linearComboBase255(filteredAlpha, imageColor.getGreen(), color.getGreen());
-								int b = Helper.linearComboBase255(filteredAlpha, imageColor.getBlue(), color.getBlue());
-								int a = Math.max(filteredAlpha, Math.min(color.getAlpha(), colorMask.getGrayLevel(x, y)));
+								
+								Color filteredImageColor;
+								int filteredAlpha;
+								// Use filter color
+								float[] hsb = originalColor.getHSB();
+								filteredImageColor = Color.createFromHSB(hsb[0] + filterHSB[0] - (float) Math.floor(hsb[0] + filterHSB[0]),
+										Helper.clamp(hsb[1] + filterHSB[1], 0f, 1f), Helper.clamp(hsb[2] + filterHSB[2], 0f, 1f));
+								filteredAlpha = Math.min(255, (int) (alpha * filterAlphaScale));
+								
+								int r = Helper.linearComboBase255(filteredAlpha, filteredImageColor.getRed(), (int) (fillColor.getRed() * fillColorScale));
+								int g = Helper.linearComboBase255(filteredAlpha, filteredImageColor.getGreen(), (int)(fillColor.getGreen() * fillColorScale));
+								int b = Helper.linearComboBase255(filteredAlpha, filteredImageColor.getBlue(), (int)(fillColor.getBlue() * fillColorScale));
+								int a = Math.max(filteredAlpha, Math.min(fillColor.getAlpha(), colorMask.getGrayLevel(x, y)));
 
 								result.setRGB(resultData, x, y, r, g, b, a);
 							}
