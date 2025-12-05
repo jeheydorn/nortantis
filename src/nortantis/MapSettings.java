@@ -660,6 +660,10 @@ public class MapSettings implements Serializable
 			{
 				iconObj.put("filterColor", icon.filterColor.toJson());
 			}
+			if (icon.maximizeOpacity)
+			{
+				iconObj.put("maximizeOpacity", icon.maximizeOpacity);
+			}
 			if (icon.originalScale != 1.0)
 			{
 				iconObj.put("originalScale", icon.originalScale);
@@ -2041,7 +2045,7 @@ public class MapSettings implements Serializable
 	}
 	
 	
-	public boolean getMaximizeContrastForType(IconType iconType)
+	public boolean getMaximizeOpacityForType(IconType iconType)
 	{
 		if (maximizeOpacityByType.containsKey(iconType))
 		{
@@ -2055,7 +2059,7 @@ public class MapSettings implements Serializable
 		return Collections.unmodifiableMap(maximizeOpacityByType);
 	}
 
-	public void setMaximizeContrastForType(IconType iconType, boolean value)
+	public void setMaximizeOpacityForType(IconType iconType, boolean value)
 	{
 		maximizeOpacityByType.put(iconType, value);
 	}

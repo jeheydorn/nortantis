@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 
+import org.apache.commons.math3.distribution.NormalDistribution;
+
 import nortantis.geom.IntPoint;
 import nortantis.geom.IntRectangle;
 import nortantis.geom.Rectangle;
@@ -38,12 +40,13 @@ public class ImageAndMasks
 	 */
 	public final double widthFromFileName;
 	private Image colorMask;
-	
+
 	public final String artPack;
 	public final String fileNameWithoutParametersOrExtension;
 	public final String groupId;
 
-	public ImageAndMasks(Image image, IconType iconType, double widthFromFileName, String artPack, String groupId, String fileNameWithoutParametersOrExtension)
+	public ImageAndMasks(Image image, IconType iconType, double widthFromFileName, String artPack, String groupId,
+			String fileNameWithoutParametersOrExtension)
 	{
 		assert image != null;
 		this.image = image;
@@ -608,7 +611,7 @@ public class ImageAndMasks
 			return;
 		}
 
-		// Draw a line along the bottom of the content of the image.
+		// Create a line along the bottom of the content of the image.
 		List<IntPoint> points = new ArrayList<>();
 		for (int x = 0; x < contentMask.getWidth(); x++)
 		{
@@ -625,16 +628,16 @@ public class ImageAndMasks
 
 		int contentHeight = contentBounds.height;
 		float lineWidth = contentHeight * 0.01f;
+		int blurSize = contentHeight / 3;
+		int padding = blurSize;
 
 		// Make the line extend to the edges of the image so that the edges of the shading mask aren't darker.
 		if (points.size() > 0)
 		{
-			points.add(0, new IntPoint((int) (-Math.ceil(lineWidth)), points.get(0).y));
-			points.add(new IntPoint(contentMask.getWidth() - 1 + (int) (Math.ceil(lineWidth)), points.get(points.size() - 1).y));
+			points.add(0, new IntPoint((int) (-Math.ceil(padding + lineWidth)), points.get(0).y));
+			points.add(new IntPoint(contentMask.getWidth() - 1 + (int) (Math.ceil(padding + lineWidth)), points.get(points.size() - 1).y));
 		}
 
-		int blurSize = contentHeight / 3;
-		int padding = blurSize;
 		Image bottomSilhouette = Image.create(contentMask.getWidth() + padding * 2, contentMask.getHeight() + padding, ImageType.Binary);
 		{
 			Painter p = bottomSilhouette.createPainter();
@@ -648,12 +651,84 @@ public class ImageAndMasks
 
 		// Blur the line up to a fraction of the height of the content
 		float[][] kernel = ImageHelper.createGaussianKernel(blurSize);
-		Image blurredLine = ImageHelper.convolveGrayscale(bottomSilhouette, kernel, true, true);
 
+		// Image blurredLine = ImageHelper.convolveGrayscaleThenOptionallySetContrast(bottomSilhouette, kernel, true, 0f, 1.0f, true);
+		Image blurredLine = ImageHelper.convolveGrayscale(bottomSilhouette, kernel, true, true);
 		Image withoutPadding = blurredLine.copySubImage(new IntRectangle(padding, 0, contentMask.getWidth(), contentMask.getHeight()));
+		
+		{
+			// TODO - This technique works, but it's way too slow. I need to re-write it to only do the convolution once.
+			sw.startOrContinue();
+			int minMax = getLowestHighestGrayLevelInContentColumns(withoutPadding, points);
+			
+			// THis is approximately the gray level pixel will have at the bottom of the color mask.
+			final float targetMaxMinMaxPixelValue = 230f;
+			
+			blurredLine = ImageHelper.convolveGrayscaleThenOptionallySetContrast(bottomSilhouette, kernel, true, 0f, targetMaxMinMaxPixelValue / minMax, true);
+			withoutPadding = blurredLine.copySubImage(new IntRectangle(padding, 0, contentMask.getWidth(), contentMask.getHeight()));
+			sw.printElapsedTime();
+		}
+
 		// Use the content mask to set non-content pixels to zero.
 		shadingMask = ImageHelper.maskWithColor(withoutPadding, Color.black, contentMask, false);
+
+
+		//shadingMask.write("temp\\" + createFileIdentifier().replace("\\", " - ") + ".png"); // TODO remove
 	}
+	Stopwatch sw = new Stopwatch("second pass"); // TODO remove
+
+	private int getLowestHighestGrayLevelInContentColumns(Image image, List<IntPoint> columnsToSearch)
+	{
+		int minMax = 255;
+		for (IntPoint point : columnsToSearch)
+		{
+			if (point.x < 0 || point.x >= image.getWidth())
+			{
+				continue;
+			}
+			int colMax = getHighestGrayLevelInColumn(image, point.x);
+			if (colMax < minMax)
+			{
+				minMax = colMax;
+			}
+		}
+		return minMax;
+	}
+
+	/**
+	 * Gets the highest grayscale pixel value in the given column in the given image.
+	 * 
+	 * @param image
+	 *            The image to search
+	 * @param column
+	 *            The x-coordinate of the column to scan.
+	 * @return The maximum gray level found in that column.
+	 * @throws IllegalArgumentException
+	 *             if the column index is out of bounds or the image is not grayscale/binary.
+	 */
+	private int getHighestGrayLevelInColumn(Image image, int column)
+	{
+		if (!image.isGrayscaleOrBinary())
+		{
+			throw new IllegalArgumentException("Image must be grayscale or binary to use this method.");
+		}
+		if (column < 0 || column >= image.getWidth())
+		{
+			throw new IllegalArgumentException("Column index out of bounds: " + column);
+		}
+
+		int max = Integer.MIN_VALUE;
+		for (int y = 0; y < image.getHeight(); y++)
+		{
+			int value = image.getGrayLevel(column, y);
+			if (value > max)
+			{
+				max = value;
+			}
+		}
+		return max;
+	}
+
 
 	public synchronized Image getOrCreateColorMask()
 	{
@@ -784,7 +859,7 @@ public class ImageAndMasks
 				originalContentBounds.width * xScale, originalContentBounds.height * yScale).toIntRectangle();
 		return scaledContentBounds;
 	}
-	
+
 	public String createFileIdentifier()
 	{
 		return artPack + File.separator + iconType + File.separator + groupId + File.separator + fileNameWithoutParametersOrExtension;

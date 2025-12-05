@@ -250,7 +250,7 @@ public class FreeIcon
 	public int hashCode()
 	{
 		return Objects.hash(artPack, centerIndex, color, density, filterColor, groupId, iconIndex, iconName, locationResolutionInvariant,
-				originalScale, scale, type);
+				maximizeOpacity, originalScale, scale, type);
 	}
 
 	@Override
@@ -274,6 +274,7 @@ public class FreeIcon
 				&& Objects.equals(filterColor, other.filterColor) && Objects.equals(groupId, other.groupId) && iconIndex == other.iconIndex
 				&& Objects.equals(iconName, other.iconName)
 				&& Objects.equals(locationResolutionInvariant, other.locationResolutionInvariant)
+				&& maximizeOpacity == other.maximizeOpacity
 				&& Double.doubleToLongBits(originalScale) == Double.doubleToLongBits(other.originalScale)
 				&& Double.doubleToLongBits(scale) == Double.doubleToLongBits(other.scale) && type == other.type;
 	}
@@ -283,7 +284,8 @@ public class FreeIcon
 	{
 		return "FreeIcon [type=" + type + ", artPack=" + artPack + ", groupId=" + groupId + ", iconIndex=" + iconIndex + ", iconName="
 				+ iconName + ", locationResolutionInvariant=" + locationResolutionInvariant + ", scale=" + scale + ", centerIndex="
-				+ centerIndex + ", color=" + color + ", filterColor=" + filterColor + ", density=" + density + ", originalScale="
-				+ originalScale + "]";
+				+ centerIndex + ", color=" + color + ", filterColor=" + filterColor + ", maximizeOpacity=" + maximizeOpacity + ", density="
+				+ density + ", originalScale=" + originalScale + "]";
 	}
+
 }

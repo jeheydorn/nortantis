@@ -812,8 +812,7 @@ public class IconsTool extends EditorTool
 					String iconName = fileNames.get(iconToEdit.iconIndex % fileNames.size());
 					nameLabel.setText(iconName);
 				}
-				colorDisplay.setBackground(AwtFactory.unwrap(iconToEdit.color));
-				setColorFilterValuesWithoutRunningListeners(iconToEdit.filterColor);
+				setColorFieldsWithoutRunningListeners(iconToEdit.color, iconToEdit.filterColor, iconToEdit.maximizeOpacity);
 			}
 			else
 			{
@@ -829,17 +828,29 @@ public class IconsTool extends EditorTool
 				groupLabel.setText(null);
 				nameLabel.setText(null);
 
+				Color iconColorMode;
 				{
 					Counter<Color> counter = new HashCounter<Color>();
 					iconsToEdit.stream().forEach(iconToEdit -> counter.incrementCount(iconToEdit.color));
-					colorDisplay.setBackground(AwtFactory.unwrap(counter.argmax()));
+					iconColorMode = counter.argmax();
 				}
 
+				HSBColor filterColorMode;
 				{
 					Counter<HSBColor> counter = new HashCounter<>();
 					iconsToEdit.stream().forEach(iconToEdit -> counter.incrementCount(iconToEdit.filterColor));
-					setColorFilterValuesWithoutRunningListeners(counter.argmax());
+					filterColorMode = counter.argmax();
 				}
+				
+				boolean maximizeOpacityMode;
+				{
+					Counter<Boolean> counter = new HashCounter<>();
+					iconsToEdit.stream().forEach(iconToEdit -> counter.incrementCount(iconToEdit.maximizeOpacity));
+					maximizeOpacityMode = counter.argmax();
+				}
+				
+				setColorFieldsWithoutRunningListeners(iconColorMode, filterColorMode, maximizeOpacityMode);
+
 			}
 
 			if (DebugFlags.printIconsBeingEdited())
@@ -871,35 +882,11 @@ public class IconsTool extends EditorTool
 			mapEditingPanel.hideIconEditTools();
 			isMoving = false;
 			isScaling = false;
-			colorDisplay.setBackground(AwtFactory.unwrap(MapSettings.defaultIconColor));
-			colorDisplay.repaint();
-			setColorFilterValuesWithoutRunningListeners(MapSettings.defaultIconFilterColor);
+			setColorFieldsWithoutRunningListeners(null, null, false);
 			mapEditingPanel.repaint();
 		}
 
 		showOrHideEditComponents();
-	}
-
-	private void setColorFilterValuesWithoutRunningListeners(HSBColor color)
-	{
-		if (color == null)
-		{
-			color = MapSettings.defaultIconFilterColor;
-		}
-
-		try
-		{
-			disableColorChangeHandlers = true;
-			hueSlider.setValue(color.hue);
-			saturationSlider.setValue(color.saturation);
-			brightnessSlider.setValue(color.brightness);
-			transparencySlider.setValue(color.transparency);
-		}
-		finally
-		{
-			disableColorChangeHandlers = false;
-		}
-
 	}
 
 	private HSBColor getFilterColor()
@@ -966,10 +953,39 @@ public class IconsTool extends EditorTool
 		if (modeWidget.isDrawMode() || modeWidget.isReplaceMode())
 		{
 			IconType selectedType = getSelectedIconType();
-			colorDisplay.setBackground(AwtFactory.unwrap(iconColorsByType.get(selectedType)));
+			setColorFieldsWithoutRunningListeners(iconColorsByType.get(selectedType), iconFilterColorsByType.get(selectedType), maximizeOpacityByType.get(selectedType));
+		}
+	}
+	
+	private void setColorFieldsWithoutRunningListeners(Color iconColor, HSBColor filterColor, boolean maximizeOpacity)
+	{
+		if (filterColor == null)
+		{
+			filterColor = MapSettings.defaultIconFilterColor;
+		}
+		
+		if (iconColor == null)
+		{
+			iconColor = MapSettings.defaultIconColor;
+		}
+		
+		try
+		{
+			disableColorChangeHandlers = true;
+			
+			colorDisplay.setBackground(AwtFactory.unwrap(iconColor));
 			colorDisplay.repaint();
-			setColorFilterValuesWithoutRunningListeners(iconFilterColorsByType.get(selectedType));
-			maximizeOpacityCheckbox.setSelected(maximizeOpacityByType.get(selectedType));
+			
+			hueSlider.setValue(filterColor.hue);
+			saturationSlider.setValue(filterColor.saturation);
+			brightnessSlider.setValue(filterColor.brightness);
+			transparencySlider.setValue(filterColor.transparency);
+			
+			maximizeOpacityCheckbox.setSelected(maximizeOpacity);
+		}
+		finally
+		{
+			disableColorChangeHandlers = false;
 		}
 	}
 
@@ -2453,7 +2469,7 @@ public class IconsTool extends EditorTool
 		maximizeOpacityByType.clear();
 		for (IconType iconType : IconType.values())
 		{
-			maximizeOpacityByType.put(iconType, settings.getMaximizeContrastForType(iconType));
+			maximizeOpacityByType.put(iconType, settings.getMaximizeOpacityForType(iconType));
 		}
 
 		updateTypePanels();
@@ -2483,7 +2499,7 @@ public class IconsTool extends EditorTool
 		}
 		for (Map.Entry<IconType, Boolean> entry : maximizeOpacityByType.entrySet())
 		{
-			settings.setMaximizeContrastForType(entry.getKey(), entry.getValue());
+			settings.setMaximizeOpacityForType(entry.getKey(), entry.getValue());
 		}
 	}
 

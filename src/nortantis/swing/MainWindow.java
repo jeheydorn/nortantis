@@ -20,6 +20,7 @@ import java.awt.event.MouseWheelListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
@@ -32,6 +33,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -1251,6 +1253,50 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				return;
 			}
 
+			try
+			{
+				String settingsPath = subfolderNames.get(0) + "/" + "settings.txt";
+				Properties settingsProps = FileHelper.readPropertiesFromZipFile(selectedFile.toPath(), settingsPath);
+				final String requiredVersionKey = "requiredVersion";
+				if (settingsProps.containsKey(requiredVersionKey))
+				{
+					String requiredVersion = settingsProps.getProperty(requiredVersionKey);
+					if (!StringUtils.isBlank(requiredVersion))
+					{
+						try
+						{
+							if (MapSettings.isVersionGreatherThanCurrent(requiredVersion))
+							{
+								JOptionPane.showMessageDialog(this,
+										"The selected art pack requires Nortantis version " + requiredVersion
+												+ ", but this your Nortantis version is " + MapSettings.currentVersion
+												+ ". Update Nortantis and try again.",
+										"Error", JOptionPane.ERROR_MESSAGE);
+								return;
+							}
+						}
+						catch (NumberFormatException e)
+						{
+							String message = "Number format error while reading " + requiredVersionKey + " from '" + settingsPath + "' in '"
+									+ selectedFile.toPath() + "': " + e.getMessage();
+							Logger.printError(message, e);
+							JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
+							return;
+						}
+					}
+				}
+			}
+			catch (FileNotFoundException e)
+			{
+				// Do nothing. This means the art pack doesn't have a settings file. It's optional.
+			}
+			catch (IOException e)
+			{
+				final String message = "Error while trying to read art pack version file: " + e.getMessage();
+				Logger.printError(message, e);
+				JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
+			}
+
 			String artPackName = subfolderNames.get(0);
 
 			if (Assets.reservedArtPacks.contains(artPackName.toLowerCase()))
@@ -1979,7 +2025,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		defaultMapExportAction = settings.defaultMapExportAction;
 		defaultHeightmapExportAction = settings.defaultHeightmapExportAction;
-		
+
 		updater.createAndShowMapFull();
 		updateFrameTitle(false, true);
 	}

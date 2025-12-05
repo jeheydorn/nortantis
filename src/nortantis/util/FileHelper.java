@@ -1,9 +1,12 @@
 package nortantis.util;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.file.DirectoryStream;
@@ -14,6 +17,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -143,6 +147,34 @@ public class FileHelper
 		}
 	}
 
+	/**
+	 * Get the contents of a Java properties file in a zip file.
+	 * @param zipFilePath Path to the zip file on disk.
+	 * @param pathInZipFile Path to the file in the zip file. Use '/' as the path separator.
+	 * @return The file contents, loaded into a Properties object.
+	 * @throws IOException
+	 */
+	public static Properties readPropertiesFromZipFile(Path zipFilePath, String pathInZipFile) throws IOException
+	{
+		try (ZipInputStream zis = new ZipInputStream(Files.newInputStream(zipFilePath)))
+		{
+			ZipEntry entry;
+			while ((entry = zis.getNextEntry()) != null)
+			{
+				// Normalize entry name for cross-platform consistency
+				if (!entry.isDirectory() && entry.getName().equals(pathInZipFile))
+				{
+					Properties props = new Properties();
+					props.load(zis); // Load directly from the zip entry stream
+					return props;
+				}
+				zis.closeEntry();
+			}
+		}
+		throw new FileNotFoundException("Properties file " + pathInZipFile + " not found in zip archive " + zipFilePath);
+	}
+
+
 	public static List<String> getTopLevelSubFolders(Path zipFilePath) throws IOException
 	{
 		List<String> subFolders = new ArrayList<>();
@@ -167,7 +199,7 @@ public class FileHelper
 
 		return subFolders;
 	}
-	
+
 
 	public static void writeToFile(String fileName, String contents)
 	{
@@ -192,7 +224,7 @@ public class FileHelper
 			throw new RuntimeException("Helper.writeToFile caught error: " + ex.getMessage(), ex);
 		}
 	}
-	
+
 	public static void createFolder(String folderName)
 	{
 		File folder = new File(folderName);

@@ -257,7 +257,7 @@ public class ImageHelper
 		return kernel;
 	}
 
-	private static NormalDistribution createDistributionForSize(int size)
+	public static NormalDistribution createDistributionForSize(int size)
 	{
 		return new NormalDistribution(0, getStandardDeviationSizeForGaussianKernel(size));
 	}
@@ -1136,12 +1136,17 @@ public class ImageHelper
 	 */
 	public static Image convolveGrayscale(Image img, float[][] kernel, boolean maximizeContrast, boolean paddImageToAvoidWrapping)
 	{
+		return convolveGrayscaleThenOptionallySetContrast(img, kernel, true, 0f, 1f, paddImageToAvoidWrapping);
+	}
+	
+	public static Image convolveGrayscaleThenOptionallySetContrast(Image img, float[][] kernel, boolean setContrast, float contrastMin, float contrastMax, boolean paddImageToAvoidWrapping)
+	{
 		ComplexArray data = convolveGrayscale(img, kernel, paddImageToAvoidWrapping);
 
 		// Only use 16 bit pixels if the input image used them, to save memory.
 		ImageType resultType = img.getType() == ImageType.Grayscale16Bit ? ImageType.Grayscale16Bit : ImageType.Grayscale8Bit;
 
-		return realToImage(data, resultType, img.getWidth(), img.getHeight(), maximizeContrast, 0f, 1f, false, 0f);
+		return realToImage(data, resultType, img.getWidth(), img.getHeight(), setContrast, contrastMin, contrastMax, false, 0f);
 	}
 
 	/**
@@ -1164,6 +1169,56 @@ public class ImageHelper
 		ImageType resultType = img.getType() == ImageType.Grayscale16Bit ? ImageType.Grayscale16Bit : ImageType.Grayscale8Bit;
 		return convolveGrayscaleThenScale(img, kernel, scale, paddImageToAvoidWrapping, resultType);
 	}
+
+	// TODO remove
+//	public static Image convolveGrayscaleThenScaleToMakeLowestContentColumnLevelWhite(Image img, float[][] kernel, List<IntPoint> contentBottomPoints)
+//	{
+//		ComplexArray data = convolveGrayscale(img, kernel, false);
+//		// Only use 16 bit pixels if the input image used them, to save memory.
+//		ImageType resultType = img.getType() == ImageType.Grayscale16Bit ? ImageType.Grayscale16Bit : ImageType.Grayscale8Bit;
+//		
+//		float lowestMaxInContentColumns = Float.MAX_VALUE;
+//		for (IntPoint p : contentBottomPoints)
+//		{
+//			float highest = getHighestLevelInColumn(data, p.x);
+//			if (highest < lowestMaxInContentColumns)
+//			{
+//				lowestMaxInContentColumns = highest;
+//			}
+//		}
+//	
+//		if (lowestMaxInContentColumns == Float.MIN_VALUE)
+//		{
+//			return realToImage(data, resultType, img.getWidth(), img.getHeight(), true, 0f, 1f, false, 0f);
+//		}
+//		
+//		Tuple2<Float, Float> contrastTuple = data.getContrast();
+//		float min = contrastTuple.getFirst();
+//		float max = contrastTuple.getSecond();
+//		float range = max - min;
+//		float scale = 1f / ((lowestMaxInContentColumns - min) / (range));
+//		
+//		return realToImage(data, resultType, img.getWidth(), img.getHeight(), true, 0f, scale, false, 0f);
+//	}
+//	
+//	private static float getHighestLevelInColumn(ComplexArray data, int column)
+//	{
+//		if (column < 0 || column >= data.getWidth())
+//		{
+//			return 0;
+//		}
+//
+//		float max = Float.MIN_VALUE;
+//		for (int y = 0; y < data.getHeight(); y++)
+//		{
+//			float value = data.getReal(column, y);
+//			if (value > max)
+//			{
+//				max = value;
+//			}
+//		}
+//		return max;
+//	}
 
 	/**
 	 * Convolves a gray-scale image with a kernel. The input image is unchanged. The convolved image will be scaled while it is still in

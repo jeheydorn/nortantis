@@ -46,7 +46,7 @@ public class ImageCache
 	private ConcurrentHashMapF<Image, ConcurrentHashMapF<IntDimension, Image>> scaledCache;
 
 	/**
-	 * Maps original images, to maps from (color, filterColor, maximizeContrast) to colored images.
+	 * Maps original images, to maps from (color, filterColor, maximizeOpacity) to colored images.
 	 */
 	private ConcurrentHashMapF<String, ConcurrentHashMapF<Tuple3<Color, HSBColor, Boolean>, Image>> coloredCache;
 
