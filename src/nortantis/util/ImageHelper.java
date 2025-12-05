@@ -1136,17 +1136,20 @@ public class ImageHelper
 	 */
 	public static Image convolveGrayscale(Image img, float[][] kernel, boolean maximizeContrast, boolean paddImageToAvoidWrapping)
 	{
-		return convolveGrayscaleThenOptionallySetContrast(img, kernel, true, 0f, 1f, paddImageToAvoidWrapping);
+		return convolveGrayscaleThenSetContrast(img, kernel, true, 0f, 1f, paddImageToAvoidWrapping).getSecond();
 	}
 	
-	public static Image convolveGrayscaleThenOptionallySetContrast(Image img, float[][] kernel, boolean setContrast, float contrastMin, float contrastMax, boolean paddImageToAvoidWrapping)
+	public static Tuple2<ComplexArray, Image> convolveGrayscaleThenSetContrast(Image img, float[][] kernel, boolean setContrast, float contrastMin, float contrastMax, boolean paddImageToAvoidWrapping)
 	{
 		ComplexArray data = convolveGrayscale(img, kernel, paddImageToAvoidWrapping);
 
 		// Only use 16 bit pixels if the input image used them, to save memory.
 		ImageType resultType = img.getType() == ImageType.Grayscale16Bit ? ImageType.Grayscale16Bit : ImageType.Grayscale8Bit;
 
-		return realToImage(data, resultType, img.getWidth(), img.getHeight(), setContrast, contrastMin, contrastMax, false, 0f);
+		data.moveRealToLeftSide();
+		data.swapQuadrantsOfLeftSideInPlace();
+
+		return new Tuple2<>(data, realToImage(data, resultType, img.getWidth(), img.getHeight(), setContrast, contrastMin, contrastMax, false, 0f));
 	}
 
 	/**
@@ -1170,56 +1173,6 @@ public class ImageHelper
 		return convolveGrayscaleThenScale(img, kernel, scale, paddImageToAvoidWrapping, resultType);
 	}
 
-	// TODO remove
-//	public static Image convolveGrayscaleThenScaleToMakeLowestContentColumnLevelWhite(Image img, float[][] kernel, List<IntPoint> contentBottomPoints)
-//	{
-//		ComplexArray data = convolveGrayscale(img, kernel, false);
-//		// Only use 16 bit pixels if the input image used them, to save memory.
-//		ImageType resultType = img.getType() == ImageType.Grayscale16Bit ? ImageType.Grayscale16Bit : ImageType.Grayscale8Bit;
-//		
-//		float lowestMaxInContentColumns = Float.MAX_VALUE;
-//		for (IntPoint p : contentBottomPoints)
-//		{
-//			float highest = getHighestLevelInColumn(data, p.x);
-//			if (highest < lowestMaxInContentColumns)
-//			{
-//				lowestMaxInContentColumns = highest;
-//			}
-//		}
-//	
-//		if (lowestMaxInContentColumns == Float.MIN_VALUE)
-//		{
-//			return realToImage(data, resultType, img.getWidth(), img.getHeight(), true, 0f, 1f, false, 0f);
-//		}
-//		
-//		Tuple2<Float, Float> contrastTuple = data.getContrast();
-//		float min = contrastTuple.getFirst();
-//		float max = contrastTuple.getSecond();
-//		float range = max - min;
-//		float scale = 1f / ((lowestMaxInContentColumns - min) / (range));
-//		
-//		return realToImage(data, resultType, img.getWidth(), img.getHeight(), true, 0f, scale, false, 0f);
-//	}
-//	
-//	private static float getHighestLevelInColumn(ComplexArray data, int column)
-//	{
-//		if (column < 0 || column >= data.getWidth())
-//		{
-//			return 0;
-//		}
-//
-//		float max = Float.MIN_VALUE;
-//		for (int y = 0; y < data.getHeight(); y++)
-//		{
-//			float value = data.getReal(column, y);
-//			if (value > max)
-//			{
-//				max = value;
-//			}
-//		}
-//		return max;
-//	}
-
 	/**
 	 * Convolves a gray-scale image with a kernel. The input image is unchanged. The convolved image will be scaled while it is still in
 	 * floating point representation. Values below 0 will be made 0. Values above 1 will be made 1.
@@ -1238,6 +1191,10 @@ public class ImageHelper
 			ImageType resultType)
 	{
 		ComplexArray data = convolveGrayscale(img, kernel, paddImageToAvoidWrapping);
+		
+		data.moveRealToLeftSide();
+		data.swapQuadrantsOfLeftSideInPlace();
+
 		return realToImage(data, resultType, img.getWidth(), img.getHeight(), false, 0f, 0f, true, scale);
 	}
 
@@ -1266,12 +1223,9 @@ public class ImageHelper
 		return data;
 	}
 
-	private static Image realToImage(ComplexArray data, ImageType type, int imageWidth, int imageHeight, boolean setContrast,
+	public static Image realToImage(ComplexArray data, ImageType type, int imageWidth, int imageHeight, boolean setContrast,
 			float contrastMin, float contrastMax, boolean scaleLevels, float scale)
 	{
-		data.moveRealToLeftSide();
-		data.swapQuadrantsOfLeftSideInPlace();
-
 		int imgRowPaddingOver2 = (data.getHeight() - imageHeight) / 2;
 		int imgColPaddingOver2 = (data.getWidth() - imageWidth) / 2;
 

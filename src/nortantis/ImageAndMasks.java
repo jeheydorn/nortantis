@@ -16,6 +16,7 @@ import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
 import nortantis.util.ImageHelper;
 import nortantis.util.Range;
+import nortantis.util.Tuple2;
 
 public class ImageAndMasks
 {
@@ -627,8 +628,8 @@ public class ImageAndMasks
 		}
 
 		int contentHeight = contentBounds.height;
-		float lineWidth = contentHeight * 0.01f;
-		int blurSize = contentHeight / 3;
+		float lineWidth = Math.max(1f, contentHeight * 0.01f);
+		int blurSize = contentHeight / 4;
 		int padding = blurSize;
 
 		// Make the line extend to the edges of the image so that the edges of the shading mask aren't darker.
@@ -643,7 +644,7 @@ public class ImageAndMasks
 			Painter p = bottomSilhouette.createPainter();
 			p.setColor(Color.white);
 			assert contentHeight >= 0;
-			p.setBasicStroke(Math.max(1f, lineWidth));
+			p.setBasicStroke(lineWidth);
 			p.translate(padding, 0);
 			p.drawPolyline(points);
 			p.dispose();
@@ -652,30 +653,30 @@ public class ImageAndMasks
 		// Blur the line up to a fraction of the height of the content
 		float[][] kernel = ImageHelper.createGaussianKernel(blurSize);
 
-		// Image blurredLine = ImageHelper.convolveGrayscaleThenOptionallySetContrast(bottomSilhouette, kernel, true, 0f, 1.0f, true);
-		Image blurredLine = ImageHelper.convolveGrayscale(bottomSilhouette, kernel, true, true);
+		// Here I used to just do convolution to blur bottomSilhouette and then maximize the contrast on that result, but the problems is
+		// this often leads to the bottom of the shading mask being not quit white because some parts of the blurred line are brighter than
+		// others, depending on the shape of the line. The result was that the bottom of the shading mask had a visible drop-off when
+		// coloring icons,
+		// which didn't look good.
+		// My solution is to run the convolution with the contrast maximized, then find the pixel values where the blurred line is at its
+		// darkest, then raise the contrast to make that value equal to targetMaxMinMaxPixelValue.
+		Tuple2<ComplexArray, Image> tuple = ImageHelper.convolveGrayscaleThenSetContrast(bottomSilhouette, kernel, true, 0f, 1f, true);
+		Image blurredLine = tuple.getSecond();
 		Image withoutPadding = blurredLine.copySubImage(new IntRectangle(padding, 0, contentMask.getWidth(), contentMask.getHeight()));
-		
-		{
-			// TODO - This technique works, but it's way too slow. I need to re-write it to only do the convolution once.
-			sw.startOrContinue();
-			int minMax = getLowestHighestGrayLevelInContentColumns(withoutPadding, points);
-			
-			// THis is approximately the gray level pixel will have at the bottom of the color mask.
-			final float targetMaxMinMaxPixelValue = 230f;
-			
-			blurredLine = ImageHelper.convolveGrayscaleThenOptionallySetContrast(bottomSilhouette, kernel, true, 0f, targetMaxMinMaxPixelValue / minMax, true);
-			withoutPadding = blurredLine.copySubImage(new IntRectangle(padding, 0, contentMask.getWidth(), contentMask.getHeight()));
-			sw.printElapsedTime();
-		}
+
+		int minMax = getLowestHighestGrayLevelInContentColumns(withoutPadding, points);
+
+		// THis is approximately the gray level pixel will have at the bottom of the color mask.
+		final float targetMaxMinMaxPixelValue = 230f;
+
+		// Re-use the complex array from the last run to avoid having to re-do the convolution.
+		blurredLine = ImageHelper.realToImage(tuple.getFirst(), blurredLine.getType(), blurredLine.getWidth(), blurredLine.getHeight(),
+				true, 0f, targetMaxMinMaxPixelValue / minMax, false, 0f);
+		withoutPadding = blurredLine.copySubImage(new IntRectangle(padding, 0, contentMask.getWidth(), contentMask.getHeight()));
 
 		// Use the content mask to set non-content pixels to zero.
 		shadingMask = ImageHelper.maskWithColor(withoutPadding, Color.black, contentMask, false);
-
-
-		//shadingMask.write("temp\\" + createFileIdentifier().replace("\\", " - ") + ".png"); // TODO remove
 	}
-	Stopwatch sw = new Stopwatch("second pass"); // TODO remove
 
 	private int getLowestHighestGrayLevelInContentColumns(Image image, List<IntPoint> columnsToSearch)
 	{
