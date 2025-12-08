@@ -841,14 +841,14 @@ public class IconsTool extends EditorTool
 					iconsToEdit.stream().forEach(iconToEdit -> counter.incrementCount(iconToEdit.filterColor));
 					filterColorMode = counter.argmax();
 				}
-				
+
 				boolean maximizeOpacityMode;
 				{
 					Counter<Boolean> counter = new HashCounter<>();
 					iconsToEdit.stream().forEach(iconToEdit -> counter.incrementCount(iconToEdit.maximizeOpacity));
 					maximizeOpacityMode = counter.argmax();
 				}
-				
+
 				setColorFieldsWithoutRunningListeners(iconColorMode, filterColorMode, maximizeOpacityMode);
 
 			}
@@ -953,34 +953,35 @@ public class IconsTool extends EditorTool
 		if (modeWidget.isDrawMode() || modeWidget.isReplaceMode())
 		{
 			IconType selectedType = getSelectedIconType();
-			setColorFieldsWithoutRunningListeners(iconColorsByType.get(selectedType), iconFilterColorsByType.get(selectedType), maximizeOpacityByType.get(selectedType));
+			setColorFieldsWithoutRunningListeners(iconColorsByType.get(selectedType), iconFilterColorsByType.get(selectedType),
+					maximizeOpacityByType.get(selectedType));
 		}
 	}
-	
+
 	private void setColorFieldsWithoutRunningListeners(Color iconColor, HSBColor filterColor, boolean maximizeOpacity)
 	{
 		if (filterColor == null)
 		{
 			filterColor = MapSettings.defaultIconFilterColor;
 		}
-		
+
 		if (iconColor == null)
 		{
 			iconColor = MapSettings.defaultIconColor;
 		}
-		
+
 		try
 		{
 			disableColorChangeHandlers = true;
-			
+
 			colorDisplay.setBackground(AwtFactory.unwrap(iconColor));
 			colorDisplay.repaint();
-			
+
 			hueSlider.setValue(filterColor.hue);
 			saturationSlider.setValue(filterColor.saturation);
 			brightnessSlider.setValue(filterColor.brightness);
 			transparencySlider.setValue(filterColor.transparency);
-			
+
 			maximizeOpacityCheckbox.setSelected(maximizeOpacity);
 		}
 		finally
@@ -1774,9 +1775,8 @@ public class IconsTool extends EditorTool
 
 		if (icons != null && !icons.isEmpty())
 		{
-			Set<RotatedRectangle> processingAreas = icons.stream()
-					.map(icon -> new RotatedRectangle(updater.mapParts.iconDrawer.toIconDrawTask(icon).createBounds()))
-					.collect(Collectors.toSet());
+			Set<RotatedRectangle> processingAreas = icons.stream().map(icon -> updater.mapParts.iconDrawer.toIconDrawTask(icon))
+					.filter(task -> task != null).map(task -> new RotatedRectangle(task.createBounds())).collect(Collectors.toSet());
 			mapEditingPanel.addProcessingAreas(processingAreas);
 			mapEditingPanel.repaint();
 			updater.createAndShowMapIncrementalUsingIcons(icons, () ->
@@ -2295,7 +2295,12 @@ public class IconsTool extends EditorTool
 			{
 				return false;
 			}
-			RotatedRectangle rect = new RotatedRectangle(updater.mapParts.iconDrawer.toIconDrawTask(icon).createBounds());
+			IconDrawTask task = updater.mapParts.iconDrawer.toIconDrawTask(icon);
+			if (task == null)
+			{
+				return false;
+			}
+			RotatedRectangle rect = new RotatedRectangle(task.createBounds());
 			return rect.overlapsCircle(graphPoint, brushRadius);
 		}
 	}

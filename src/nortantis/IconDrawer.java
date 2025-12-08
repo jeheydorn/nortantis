@@ -521,77 +521,27 @@ public class IconDrawer
 
 			if (icon.type == IconType.mountains)
 			{
-				updateGroupIdAndAddShuffledFreeIcon(icon, mountainScale, warningLogger, toRemove);
+				checkAndAddIcon(icon, true, warningLogger, toRemove);
 			}
 			else if (icon.type == IconType.hills)
 			{
-				updateGroupIdAndAddShuffledFreeIcon(icon, hillScale, warningLogger, toRemove);
+				checkAndAddIcon(icon, true, warningLogger, toRemove);
 			}
 			else if (icon.type == IconType.sand)
 			{
-				updateGroupIdAndAddShuffledFreeIcon(icon, duneScale, warningLogger, toRemove);
+				checkAndAddIcon(icon, true, warningLogger, toRemove);
 			}
 			else if (icon.type == IconType.cities)
 			{
-				Tuple3<String, String, String> artPackAndGroupAndName = adjustNamedIconGroupAndNameIfNeeded(icon.type, icon.artPack,
-						icon.groupId, icon.iconName, warningLogger);
-				if (artPackAndGroupAndName != null)
-				{
-					FreeIcon updated = icon.copyWith(artPackAndGroupAndName.getFirst(), artPackAndGroupAndName.getSecond(),
-							artPackAndGroupAndName.getThird(), icon.color, icon.filterColor, icon.maximizeOpacity);
-
-					IconDrawTask task = toIconDrawTask(updated);
-					if (!isContentBottomTouchingWater(task))
-					{
-						if (!icon.equals(updated))
-						{
-							freeIcons.replace(icon, updated);
-						}
-						iconsToDraw.add(toIconDrawTask(updated));
-					}
-					else
-					{
-						toRemove.add(icon);
-					}
-				}
-				else
-				{
-					toRemove.add(icon);
-				}
+				checkAndAddIcon(icon, true, warningLogger, toRemove);
 			}
 			else if (icon.type == IconType.decorations)
 			{
-				Tuple3<String, String, String> artPackAndGroupAndName = adjustNamedIconGroupAndNameIfNeeded(icon.type, icon.artPack,
-						icon.groupId, icon.iconName, warningLogger);
-				if (artPackAndGroupAndName != null)
-				{
-					FreeIcon updated = icon.copyWith(artPackAndGroupAndName.getFirst(), artPackAndGroupAndName.getSecond(),
-							artPackAndGroupAndName.getThird(), icon.color, icon.filterColor, icon.maximizeOpacity);
-
-					IconDrawTask task = toIconDrawTask(updated);
-
-					// Remove the icon if it is entirely off the map.
-					if (task != null && graph.bounds.overlaps(task.createBounds()))
-					{
-						if (!icon.equals(updated))
-						{
-							freeIcons.replace(icon, updated);
-						}
-						iconsToDraw.add(toIconDrawTask(updated));
-					}
-					else
-					{
-						toRemove.add(icon);
-					}
-				}
-				else
-				{
-					toRemove.add(icon);
-				}
+				checkAndAddIcon(icon, false, warningLogger, toRemove);
 			}
 			else if (icon.type == IconType.trees)
 			{
-				updateGroupIdAndAddShuffledFreeIcon(icon, treeHeightScale, warningLogger, toRemove);
+				checkAndAddIcon(icon, true, warningLogger, toRemove);
 			}
 		}
 
@@ -607,6 +557,115 @@ public class IconDrawer
 		freeIcons.removeAll(toRemove);
 
 		return removeBounds;
+	}
+
+	private void checkAndAddIcon(FreeIcon icon, boolean checkContentBottomTouchingWater, WarningLogger warningLogger,
+			List<FreeIcon> toRemove)
+	{
+		FreeIcon updated = adjustForMissingAssetsIfNeeded(icon, warningLogger);
+		if (updated == null)
+		{
+			toRemove.add(icon);
+			return;
+		}
+
+		IconDrawTask task = toIconDrawTask(updated);
+
+		if (task == null)
+		{
+			// This shouldn't happen because adjustForMissingAssetsIfNeeded should have caught any issue that caused the draw task to fail
+			// to be created.
+			assert false;
+			toRemove.add(icon);
+			return;
+		}
+
+		// Remove the icon if it is entirely off the map.
+		if (!graph.bounds.overlaps(task.createBounds()))
+		{
+			toRemove.add(icon);
+			return;
+		}
+
+		if (checkContentBottomTouchingWater && isContentBottomTouchingWater(task))
+		{
+			toRemove.add(icon);
+			return;
+		}
+
+		if (!icon.equals(updated))
+		{
+			freeIcons.replace(icon, updated);
+		}
+		iconsToDraw.add(toIconDrawTask(updated));
+	}
+
+	/**
+	 * Replacing missing assets used by a FreeIcon.
+	 * 
+	 * @param icon
+	 *            The original icon.
+	 * @param warningLogger
+	 *            Logs warnings for the user to see about which assets were replaced.
+	 * @return If nothing changed, the original icon. If something changed, a new icon. If the missing assets could not be replaced, then
+	 *         null.
+	 */
+	public FreeIcon adjustForMissingAssetsIfNeeded(FreeIcon icon, WarningLogger warningLogger)
+	{
+		if (icon.type == IconType.mountains || icon.type == IconType.hills || icon.type == IconType.sand || icon.type == IconType.trees)
+		{
+			String artPackToUse = chooseNewArtPackIfNeeded(icon.type, icon.artPack, icon.groupId, icon.iconName, warningLogger, false);
+			if (!icon.artPack.equals(artPackToUse))
+			{
+				FreeIcon updated = icon.copyWithArtPack(artPackToUse);
+				icon = updated;
+			}
+
+			ListMap<String, ImageAndMasks> iconsByGroup = ImageCache.getInstance(icon.artPack, customImagesPath)
+					.getIconGroupsAsListsForType(icon.type);
+			String newGroupId = getNewGroupIdIfNeeded(icon.groupId, icon.type, artPackToUse, iconsByGroup, warningLogger, false);
+			if (!icon.groupId.equals(newGroupId) && newGroupId != null)
+			{
+				FreeIcon updated = icon.copyWithGroupId(newGroupId);
+				icon = updated;
+			}
+
+			if (icon.groupId != null && !icon.groupId.isEmpty() && iconsByGroup.get(icon.groupId) != null
+					&& iconsByGroup.get(icon.groupId).size() > 0)
+			{
+				return icon;
+			}
+			else
+			{
+				return null;
+			}
+		}
+		else if (icon.type == IconType.cities || icon.type == IconType.decorations)
+		{
+			Tuple3<String, String, String> artPackAndGroupAndName = adjustNamedIconGroupAndNameIfNeeded(icon.type, icon.artPack,
+					icon.groupId, icon.iconName, warningLogger);
+			if (artPackAndGroupAndName != null)
+			{
+				if (icon.artPack.equals(artPackAndGroupAndName.getFirst()) && icon.groupId.equals(artPackAndGroupAndName.getSecond())
+						&& icon.iconName.equals(artPackAndGroupAndName.getThird()))
+				{
+					// Nothing changed.
+					return icon;
+				}
+
+				FreeIcon updated = icon.copyWith(artPackAndGroupAndName.getFirst(), artPackAndGroupAndName.getSecond(),
+						artPackAndGroupAndName.getThird(), icon.color, icon.filterColor, icon.maximizeOpacity);
+				return updated;
+			}
+			else
+			{
+				return null;
+			}
+		}
+		else
+		{
+			throw new UnsupportedOperationException("Replacing missing assets in icon type '" + icon.type + "' has not been implemented.");
+		}
 	}
 
 	private Tuple3<String, String, String> adjustNamedIconGroupAndNameIfNeeded(IconType type, String artPack, String groupId, String name,
@@ -660,46 +719,6 @@ public class IconDrawer
 		}
 
 		return new Tuple3<>(artPackToUse, groupId, name);
-	}
-
-	private void updateGroupIdAndAddShuffledFreeIcon(FreeIcon icon, double typeLevelScale, WarningLogger warningLogger,
-			List<FreeIcon> toRemove)
-	{
-		String artPackToUse = chooseNewArtPackIfNeeded(icon.type, icon.artPack, icon.groupId, icon.iconName, warningLogger, false);
-		if (!icon.artPack.equals(artPackToUse))
-		{
-			FreeIcon updated = icon.copyWithArtPack(artPackToUse);
-			freeIcons.replace(icon, updated);
-			icon = updated;
-		}
-
-		ListMap<String, ImageAndMasks> iconsByGroup = ImageCache.getInstance(icon.artPack, customImagesPath)
-				.getIconGroupsAsListsForType(icon.type);
-		String newGroupId = getNewGroupIdIfNeeded(icon.groupId, icon.type, artPackToUse, iconsByGroup, warningLogger, false);
-		if (!icon.groupId.equals(newGroupId) && newGroupId != null)
-		{
-			FreeIcon updated = icon.copyWithGroupId(newGroupId);
-			freeIcons.replace(icon, updated);
-			icon = updated;
-		}
-
-		if (icon.groupId != null && !icon.groupId.isEmpty() && iconsByGroup.get(icon.groupId) != null
-				&& iconsByGroup.get(icon.groupId).size() > 0)
-		{
-			IconDrawTask task = toIconDrawTask(icon);
-			if (!isContentBottomTouchingWater(task))
-			{
-				iconsToDraw.add(task);
-			}
-			else
-			{
-				toRemove.add(icon);
-			}
-		}
-		else
-		{
-			toRemove.add(icon);
-		}
 	}
 
 	private double getBaseWidth(IconType type, ImageAndMasks imageAndMasks)
@@ -994,8 +1013,8 @@ public class IconDrawer
 		return groups;
 	}
 
-	private void drawIconWithBackgroundAndMasks(Image mapOrSnippet, ImageAndMasks imageAndMasks, Image landBackground,
-			Image landTexture, Image oceanTexture, IconType type, int xCenter, int yCenter, int graphXCenter, int graphYCenter)
+	private void drawIconWithBackgroundAndMasks(Image mapOrSnippet, ImageAndMasks imageAndMasks, Image landBackground, Image landTexture,
+			Image oceanTexture, IconType type, int xCenter, int yCenter, int graphXCenter, int graphYCenter)
 	{
 		Image icon = imageAndMasks.image;
 		Image contentMask = imageAndMasks.getOrCreateContentMask();
@@ -1066,20 +1085,16 @@ public class IconDrawer
 				{
 					bgColorNoIcons = closest.isWater
 							? Color.create(oceanTexture.getRGB(oceanTextureData, xLoc, yLoc), oceanTexture.hasAlpha())
-							: Color.create(landBackground.getRGB(landBackgroundData, xLoc, yLoc),
-									landBackground.hasAlpha());
+							: Color.create(landBackground.getRGB(landBackgroundData, xLoc, yLoc), landBackground.hasAlpha());
 
 					landTextureColor = closest.isWater
 							? Color.create(oceanTexture.getRGB(oceanTextureData, xLoc, yLoc), oceanTexture.hasAlpha())
-							: Color.create(landBackground.getRGB(landBackgroundData, xLoc, yLoc),
-									landBackground.hasAlpha());
+							: Color.create(landBackground.getRGB(landBackgroundData, xLoc, yLoc), landBackground.hasAlpha());
 				}
 				else
 				{
-					bgColorNoIcons = Color.create(
-							landBackground.getRGB(landBackgroundData, xLoc, yLoc),
-							landBackground.hasAlpha());
-					
+					bgColorNoIcons = Color.create(landBackground.getRGB(landBackgroundData, xLoc, yLoc), landBackground.hasAlpha());
+
 					landTextureColor = Color.create(landTexture.getRGB(landTextureData, xLoc, yLoc), landTexture.hasAlpha());
 				}
 
@@ -1097,7 +1112,8 @@ public class IconDrawer
 				int blue = (int) (Helper.linearCombo(contentMaskLevel,
 						Helper.linearCombo(shadingMaskLevel, bgColorNoIcons.getBlue(), landTextureColor.getBlue()), mapColor.getBlue()));
 				int alpha = (int) (Helper.linearCombo(contentMaskLevel,
-						(Helper.linearCombo(shadingMaskLevel, bgColorNoIcons.getAlpha(), landTextureColor.getAlpha())), mapColor.getAlpha()));
+						(Helper.linearCombo(shadingMaskLevel, bgColorNoIcons.getAlpha(), landTextureColor.getAlpha())),
+						mapColor.getAlpha()));
 				mapOrSnippet.setRGB(mapOrSnippetData, xLoc, yLoc, red, green, blue, alpha);
 			}
 		}
@@ -1158,17 +1174,17 @@ public class IconDrawer
 	 * lower on the map are drawn in front of those that are higher.
 	 * 
 	 */
-	public void drawIcons(List<IconDrawTask> tasksToDrawSorted, Image mapOrSnippet, Image landBackground,
-			Image landTexture, Image oceanWithWavesAndShading, Rectangle drawBounds)
+	public void drawIcons(List<IconDrawTask> tasksToDrawSorted, Image mapOrSnippet, Image landBackground, Image landTexture,
+			Image oceanWithWavesAndShading, Rectangle drawBounds)
 	{
 		int xToSubtract = drawBounds == null ? 0 : (int) drawBounds.x;
 		int yToSubtract = drawBounds == null ? 0 : (int) drawBounds.y;
 
 		for (final IconDrawTask task : tasksToDrawSorted)
 		{
-			drawIconWithBackgroundAndMasks(mapOrSnippet, task.scaledImageAndMasks, landBackground, landTexture,
-					oceanWithWavesAndShading, task.type, ((int) task.centerLoc.x) - xToSubtract, ((int) task.centerLoc.y) - yToSubtract,
-					(int) task.centerLoc.x, (int) task.centerLoc.y);
+			drawIconWithBackgroundAndMasks(mapOrSnippet, task.scaledImageAndMasks, landBackground, landTexture, oceanWithWavesAndShading,
+					task.type, ((int) task.centerLoc.x) - xToSubtract, ((int) task.centerLoc.y) - yToSubtract, (int) task.centerLoc.x,
+					(int) task.centerLoc.y);
 		}
 	}
 

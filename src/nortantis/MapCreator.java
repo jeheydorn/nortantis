@@ -96,7 +96,12 @@ public class MapCreator implements WarningLogger
 		Rectangle changeBounds = null;
 		for (FreeIcon icon : iconsChanged)
 		{
-			IconDrawTask task = mapParts.iconDrawer.toIconDrawTask(icon);
+			FreeIcon updated = mapParts.iconDrawer.adjustForMissingAssetsIfNeeded(icon, new LoggerWarningLogger());
+			if (updated == null)
+			{
+				continue;
+			}
+			IconDrawTask task = mapParts.iconDrawer.toIconDrawTask(updated);
 			if (task == null)
 			{
 				continue;
