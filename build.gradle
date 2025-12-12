@@ -11,7 +11,8 @@ repositories {
 
 dependencies {
     implementation fileTree(dir: 'libraries', include: ['*.jar'])
-    testImplementation 'junit:junit:4.12'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.0'
     implementation 'com.formdev:flatlaf:3.6.2' 
 }
 

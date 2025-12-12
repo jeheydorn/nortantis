@@ -37,6 +37,7 @@ import nortantis.MapSettings;
 import nortantis.SettingsGenerator;
 import nortantis.editor.MapUpdater;
 import nortantis.editor.UserPreferences;
+import nortantis.geom.IntRectangle;
 import nortantis.geom.Rectangle;
 import nortantis.platform.Image;
 import nortantis.platform.awt.AwtFactory;
@@ -637,7 +638,7 @@ public class NewSettingsDialog extends JDialog
 
 			@Override
 			protected void onFinishedDrawing(Image map, boolean anotherDrawIsQueued, int borderWidthAsDrawn,
-					Rectangle incrementalChangeArea, List<String> warningMessages)
+					IntRectangle incrementalChangeArea, List<String> warningMessages)
 			{
 				mapEditingPanel.setImage(AwtFactory.unwrap(map));
 

@@ -81,6 +81,7 @@ import nortantis.editor.EdgeEdit;
 import nortantis.editor.ExportAction;
 import nortantis.editor.MapUpdater;
 import nortantis.editor.UserPreferences;
+import nortantis.geom.IntRectangle;
 import nortantis.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
@@ -565,7 +566,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 			@Override
 			protected void onFinishedDrawing(Image map, boolean anotherDrawIsQueued, int borderPaddingAsDrawn,
-					Rectangle incrementalChangeArea, List<String> warningMessages)
+					IntRectangle incrementalChangeArea, List<String> warningMessages)
 			{
 				mapEditingPanel.mapFromMapCreator = AwtFactory.unwrap(map);
 				mapEditingPanel.setBorderPadding(borderPaddingAsDrawn);
@@ -1482,7 +1483,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		}
 	}
 
-	public void updateDisplayedMapFromGeneratedMap(boolean updateScrollLocationIfZoomChanged, Rectangle incrementalChangeArea,
+	public void updateDisplayedMapFromGeneratedMap(boolean updateScrollLocationIfZoomChanged, IntRectangle incrementalChangeArea,
 			boolean isOnlyZoomChange)
 	{
 		double oldZoom = zoom;

@@ -581,8 +581,13 @@ public class MapCreator implements WarningLogger
 				p.drawRect(rect.x, rect.y, rect.width, rect.height);
 			}
 		}
-
-		return replaceBounds.toIntRectangle();
+		
+		int scaledBorderWidth = settings.drawBorder && settings.borderPosition == BorderPosition.Outside_map
+				? (int) (settings.borderWidth * settings.resolution)
+				: 0;
+		IntRectangle bounds = replaceBounds.toIntRectangle();
+		return new IntRectangle(bounds.x + scaledBorderWidth, bounds.y + scaledBorderWidth,
+				bounds.width, bounds.height);
 	}
 
 	private double calcEffectsPadding(final MapSettings settings)

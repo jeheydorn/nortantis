@@ -162,7 +162,7 @@ public class ImageHelper
 	 * @param boundsInSource
 	 *            The area in the source image that will be scaled and placed into the target image.
 	 */
-	public static void scaleInto(Image source, Image target, nortantis.geom.Rectangle boundsInSource)
+	public static void scaleInto(Image source, Image target, IntRectangle boundsInSource)
 	{
 		boolean sourceHasAlpha = source.hasAlpha();
 		boolean targetHasAlpha = target.hasAlpha();

@@ -82,4 +82,9 @@ public abstract class Color
 		float[] hsb = getHSB();
 		return new HSBColor((int)(hsb[0] * 360f), (int)(hsb[1] * 100f), (int)(hsb[2] * 100f), (int)((getAlpha() / 255f) * 100f));
 	}
+	
+	public int manhattanDistanceTo(Color other)
+	{
+		return Math.abs(getRed() - other.getRed()) + Math.abs(getGreen() - other.getGreen()) + Math.abs(getBlue() - other.getBlue()); 
+	}
 }

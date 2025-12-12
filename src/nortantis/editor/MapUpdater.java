@@ -653,9 +653,7 @@ public abstract class MapUpdater
 									? (int) (settings.borderWidth * settings.resolution)
 									: 0;
 							onFinishedDrawing(map, anotherDrawIsQueued, scaledBorderWidth,
-									replaceBounds == null ? null
-											: new Rectangle(replaceBounds.x + scaledBorderWidth, replaceBounds.y + scaledBorderWidth,
-													replaceBounds.width, replaceBounds.height),
+									replaceBounds,
 									warningMessages);
 						}
 
@@ -784,7 +782,7 @@ public abstract class MapUpdater
 	public abstract MapSettings getSettingsFromGUI();
 
 	protected abstract void onFinishedDrawing(Image map, boolean anotherDrawIsQueued, int borderPaddingAsDrawn,
-			Rectangle incrementalChangeArea, List<String> warningMessages);
+			IntRectangle incrementalChangeArea, List<String> warningMessages);
 
 	protected abstract void onFailedToDraw();
 

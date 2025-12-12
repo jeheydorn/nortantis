@@ -5,7 +5,9 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.function.Consumer;
@@ -14,12 +16,17 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import nortantis.MapCreator;
 import nortantis.MapSettings;
+import nortantis.MapText;
 import nortantis.SettingsGenerator;
 import nortantis.WarningLogger;
+import nortantis.editor.FreeIcon;
+import nortantis.editor.MapParts;
 import nortantis.editor.MapUpdater;
+import nortantis.geom.IntRectangle;
 import nortantis.geom.Rectangle;
 import nortantis.platform.Color;
 import nortantis.platform.Image;
@@ -70,6 +77,77 @@ public class MapCreatorTest
 		}
 	}
 
+	@Test
+	public void incrementalUpdate_allTypesOfEdits()
+	{
+		// Load settings from the .nort file
+		String settingsFileName = "allTypesOfEdits.nort";
+		String settingsPath = Paths.get("unit test files", "map settings", settingsFileName).toString();
+		MapSettings settings = new MapSettings(settingsPath);
+
+		// Create the full map first (baseline)
+		MapCreator mapCreator = new MapCreator();
+		MapParts mapParts = new MapParts();
+		Image fullMap = mapCreator.createMap(settings, null, mapParts);
+
+		final int numberToTest = 450; // TODO lower this.
+		final int diffThreshold = 25; // TODO lower this to about 10 hopefully.
+		Image fullMapForUpdate = fullMap.deepCopy();
+		int failCount = 0;
+		int iconNumber = 0;
+		for (FreeIcon icon : settings.edits.freeIcons)
+		{
+			iconNumber++;
+			IntRectangle changedBounds = mapCreator.incrementalUpdateIcons(settings, mapParts, fullMapForUpdate,
+					Arrays.asList(icon));
+
+			assertTrue("Incremental update should produce bounds", changedBounds != null);
+			assertTrue(changedBounds.width > 0);
+			assertTrue(changedBounds.height > 0);
+
+			Image expectedSnippet = fullMap.getSubImage(changedBounds);
+			Image actualSnippet = fullMapForUpdate.getSubImage(changedBounds);
+
+			// Compare incremental result against expected
+			String comparisonErrorMessage = checkIfImagesEqual(expectedSnippet, actualSnippet, diffThreshold);
+			if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
+			{
+				FileHelper.createFolder(Paths.get("unit test files", "failed maps").toString());
+				
+				String expectedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + iconNumber + " expected.png";
+				Path expectedPath = Paths.get("unit test files", "failed maps", expectedSnippetName);
+				ImageHelper.write(expectedSnippet, expectedPath.toString());
+				
+				String failedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + iconNumber + " failed.png";
+				Path failedPath = Paths.get("unit test files", "failed maps", failedSnippetName);
+				ImageHelper.write(actualSnippet, failedPath.toString());
+				
+				createImageDiffIfImagesAreSameSize(expectedSnippet, actualSnippet, failedSnippetName, diffThreshold);
+				failCount++;
+			}
+			
+			if (iconNumber > numberToTest)
+			{
+				break;
+			}
+		}
+		String comparisonErrorMessage = checkIfImagesEqual(fullMap, fullMapForUpdate, diffThreshold);
+		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
+		{
+			FileHelper.createFolder(Paths.get("unit test files", "failed maps").toString());
+			String failedMapName = settingsFileName + " full map for incremental draw test";
+			ImageHelper.write(fullMapForUpdate, getFailedMapFilePath(failedMapName));
+			createImageDiffIfImagesAreSameSize(fullMap, fullMapForUpdate, failedMapName, diffThreshold);
+			fail("Incremental update did not match expected image: " + comparisonErrorMessage);
+		}
+		
+		if (failCount > 0)
+		{
+			fail(failCount + " incremental update tests failed.");
+		}
+	}
+
+
 	/**
 	 * Tests that a map which is drawn with no edits matches the same map drawn the second time with newly created edits. This simulates the
 	 * case where you create a new map in the editor and it draws for the first time, then you do something to trigger it to do a full
@@ -87,7 +165,7 @@ public class MapCreatorTest
 
 			@Override
 			protected void onFinishedDrawing(Image map, boolean anotherDrawIsQueued, int borderWidthAsDrawn,
-					Rectangle incrementalChangeArea, List<String> warningMessages)
+					IntRectangle incrementalChangeArea, List<String> warningMessages)
 			{
 				mapTuple.set(map);
 				doneTuple.set(true);
@@ -513,6 +591,11 @@ public class MapCreatorTest
 
 	private String checkIfImagesEqual(Image image1, Image image2)
 	{
+		return checkIfImagesEqual(image1, image2, 0);
+	}
+
+	private String checkIfImagesEqual(Image image1, Image image2, int threshold)
+	{
 		if (image1 == null)
 		{
 			return "Image 1 is null.";
@@ -529,9 +612,20 @@ public class MapCreatorTest
 			{
 				for (int y = 0; y < image1.getHeight(); y++)
 				{
-					if (image1.getRGB(x, y) != image2.getRGB(x, y))
+					if (threshold == 0)
 					{
-						return "Images differ at pixel (" + x + ", " + y + ").";
+						if (image1.getRGB(x, y) != image2.getRGB(x, y))
+								{
+						return "Images differ at pixel (" + x + ", " + y + ")";
+								}
+					}
+					else
+					{
+						int diff = image1.getPixelColor(x, y).manhattanDistanceTo(image2.getPixelColor(x, y));
+						if (diff > threshold)
+						{
+							return "Images differ at pixel (" + x + ", " + y + ") by " + diff;
+						}
 					}
 				}
 			}
@@ -545,6 +639,11 @@ public class MapCreatorTest
 
 	private void createImageDiffIfImagesAreSameSize(Image image1, Image image2, String settingsFileName)
 	{
+		createImageDiffIfImagesAreSameSize(image1, image2, settingsFileName, 0);
+	}
+	
+	private void createImageDiffIfImagesAreSameSize(Image image1, Image image2, String settingsFileName, int threshold)
+	{
 		if (image1.getWidth() == image2.getWidth() && image1.getHeight() == image2.getHeight())
 		{
 			Image diff = Image.create(image1.getWidth(), image1.getHeight(), ImageType.RGB);
@@ -552,13 +651,28 @@ public class MapCreatorTest
 			{
 				for (int y = 0; y < image1.getHeight(); y++)
 				{
-					if (image1.getRGB(x, y) != image2.getRGB(x, y))
-					{
-						diff.setRGB(x, y, Color.white.getRGB());
+					if (threshold == 0)
+					{	
+						if (image1.getRGB(x, y) != image2.getRGB(x, y))
+						{
+							diff.setRGB(x, y, Color.white.getRGB());
+						}
+						else
+						{
+							diff.setRGB(x, y, Color.black.getRGB());
+						}
 					}
 					else
 					{
-						diff.setRGB(x, y, Color.black.getRGB());
+						int difference = image1.getPixelColor(x, y).manhattanDistanceTo(image2.getPixelColor(x, y));
+						if (difference > threshold)
+						{
+							diff.setRGB(x, y, Color.white.getRGB());
+						}
+						else
+						{
+							diff.setRGB(x, y, Color.black.getRGB());
+						}
 					}
 				}
 			}
