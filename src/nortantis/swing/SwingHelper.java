@@ -182,7 +182,6 @@ public class SwingHelper
 		});
 	}
 
-
 	public static JColorChooser createColorChooserWithOnlyGoodPanels(Color initialColor)
 	{
 		JColorChooser colorChooser = new JColorChooser(initialColor);
@@ -205,7 +204,6 @@ public class SwingHelper
 
 		return colorChooser;
 	}
-
 
 	@SuppressWarnings("serial")
 	private static class AlphaChooserPanel extends AbstractColorChooserPanel
@@ -248,7 +246,6 @@ public class SwingHelper
 
 			add(centerPanel, BorderLayout.CENTER);
 		}
-
 
 		@Override
 		public void updateChooser()
@@ -448,10 +445,14 @@ public class SwingHelper
 	 * 
 	 * @return True if the message should be hidden in the future. False if not.
 	 */
-	public static boolean showDismissibleMessage(String title, String message, Dimension popupSize, int JOptionPaneMessageType, Component parentComponent)
+	public static boolean showDismissibleMessage(String title, String message, Dimension popupSize, int JOptionPaneMessageType,
+			Component parentComponent)
 	{
 		JCheckBox checkBox = new JCheckBox("Don't show this message again.");
-		Object[] options = { "OK" };
+		Object[] options =
+		{
+				"OK"
+		};
 		JPanel panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 		JLabel label = new JLabel("<html>" + message + "</html>");

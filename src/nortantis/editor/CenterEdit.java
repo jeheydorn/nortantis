@@ -39,7 +39,7 @@ public class CenterEdit implements Serializable
 	{
 		return new CenterEdit(index, isWater, isLake, regionId, icon, trees);
 	}
-	
+
 	public CenterEdit copyWithRegionId(Integer regionId)
 	{
 		return new CenterEdit(index, isWater, isLake, regionId, icon, trees);

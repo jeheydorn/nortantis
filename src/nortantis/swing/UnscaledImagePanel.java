@@ -80,4 +80,3 @@ public class UnscaledImagePanel extends JPanel
 		return getPreferredSize();
 	}
 }
-

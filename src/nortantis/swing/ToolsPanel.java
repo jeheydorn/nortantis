@@ -152,7 +152,10 @@ public class ToolsPanel extends JPanel
 		lblZoom.setToolTipText(
 				"Zoom the map in or out (mouse wheel). To view more details at higher zoom levels," + " adjust the 'Display quality'.");
 
-		zoomLevels = Arrays.asList(new String[] { fitToWindowZoomLevel, "50%", "75%", "100%", "150%", "200%", "275%" });
+		zoomLevels = Arrays.asList(new String[]
+		{
+				fitToWindowZoomLevel, "50%", "75%", "100%", "150%", "200%", "275%"
+		});
 		zoomComboBox = new JComboBoxFixed<>();
 		for (String level : zoomLevels)
 		{
@@ -217,12 +220,12 @@ public class ToolsPanel extends JPanel
 		progressBarTimer = new Timer(50, listener);
 		progressBarTimer.setInitialDelay(500);
 	}
-	
+
 	private void updateBordersThatHaveColors()
 	{
 		toolSelectPanel
-		.setBorder(BorderFactory.createTitledBorder(new LineBorder(UIManager.getColor("controlShadow"), 1), "Editing Tools"));
-		
+				.setBorder(BorderFactory.createTitledBorder(new LineBorder(UIManager.getColor("controlShadow"), 1), "Editing Tools"));
+
 		toolOptionsPanelBorder = BorderFactory.createTitledBorder(new LineBorder(UIManager.getColor("controlShadow"), 1),
 				currentTool.getToolbarName() + " Options");
 		toolOptionsPanelContainer.setBorder(toolOptionsPanelBorder);
@@ -367,7 +370,7 @@ public class ToolsPanel extends JPanel
 			tool.updateBorder();
 		}
 	}
-	
+
 	public static Color getColorForToggledButtons()
 	{
 		int shade;
@@ -381,7 +384,8 @@ public class ToolsPanel extends JPanel
 		}
 		else
 		{
-			throw new IllegalArgumentException("Unrecognized look and feel for getting color for toggle buttons: " + UserPreferences.getInstance().lookAndFeel);
+			throw new IllegalArgumentException(
+					"Unrecognized look and feel for getting color for toggle buttons: " + UserPreferences.getInstance().lookAndFeel);
 		}
 		return new Color(shade, shade, shade);
 	}

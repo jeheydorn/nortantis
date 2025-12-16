@@ -443,7 +443,8 @@ public class Background
 				int xLoc = (int) task.centerLoc.x - task.scaledSize.width / 2;
 				int yLoc = (int) task.centerLoc.y - task.scaledSize.height / 2;
 
-				Point drawLocation = drawBounds == null ? new Point(xLoc, yLoc)
+				Point drawLocation = drawBounds == null
+						? new Point(xLoc, yLoc)
 						: new Point(xLoc, yLoc).subtract(drawBounds.upperLeftCorner());
 
 				ImageHelper.drawMaskOntoImage(regionIndexes, task.scaledImageAndMasks.getOrCreateContentMask(), regionIdColor,
@@ -680,7 +681,6 @@ public class Background
 		drawUpperRightCorner(result, new IntPoint(0, 0));
 		drawLowerLeftCorner(result, new IntPoint(0, 0));
 		drawLowerRightCorner(result, new IntPoint(0, 0));
-
 
 		// Draw the edges
 		drawEdgesIfBoundsTouchesThem(result, null);

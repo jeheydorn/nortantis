@@ -73,11 +73,11 @@ public class NamedIconSelector
 
 			// If at least one button was added for this group
 			if (getTypes().contains(groupId))
-			{	
+			{
 				CollapsiblePanel collapsiblePanel = new CollapsiblePanel(type.toString() + "Type", groupId, buttonsPanel);
 				container.add(collapsiblePanel);
 			}
-			
+
 		}
 
 		if (hasAtLeastOneImage)

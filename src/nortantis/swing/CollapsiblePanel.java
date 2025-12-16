@@ -77,7 +77,7 @@ public class CollapsiblePanel extends JPanel
 
 		add(contentPanel, BorderLayout.CENTER);
 	}
-	
+
 	public void toggleCollapsed()
 	{
 		isCollapsed = !isCollapsed;

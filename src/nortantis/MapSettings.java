@@ -485,7 +485,7 @@ public class MapSettings implements Serializable
 			{
 				IconType key = entry.getKey();
 				Color value = entry.getValue();
-				
+
 				iconColorsObj.put(key, colorToString(value));
 			}
 			root.put("iconColorsByType", iconColorsObj);
@@ -502,7 +502,7 @@ public class MapSettings implements Serializable
 			}
 			root.put("iconFilterColorsByType", iconFilterColorsObj);
 		}
-		
+
 		{
 			JSONObject maximizeOpacityByTypeObj = new JSONObject();
 			for (Map.Entry<IconType, Boolean> entry : maximizeOpacityByType.entrySet())
@@ -1048,8 +1048,7 @@ public class MapSettings implements Serializable
 
 		if (root.containsKey("borderPosition"))
 		{
-			borderPosition = Enum.valueOf(BorderPosition.class, ((String) root.get("borderPosition")).replace(" ", "_"));
-			;
+			borderPosition = Enum.valueOf(BorderPosition.class, ((String) root.get("borderPosition")).replace(" ", "_"));;
 		}
 		else
 		{
@@ -1234,7 +1233,7 @@ public class MapSettings implements Serializable
 				iconFilterColorsByType.put(iconType, defaultIconFilterColor);
 			}
 		}
-		
+
 		maximizeOpacityByType.clear();
 		if (root.containsKey("maximizeOpacityByType"))
 		{
@@ -1291,14 +1290,14 @@ public class MapSettings implements Serializable
 		runConversionToRemoveRegionIdsOfEditsThatAreWater();
 		runConversionForNewRangesForRandomRegionColorGeneratorSettings();
 	}
-	
+
 	private void runConversionForNewRangesForRandomRegionColorGeneratorSettings()
 	{
 		if (isVersionGreaterThanOrEqualTo(version, "3.16"))
 		{
 			return;
 		}
-		
+
 		saturationRange = (int) Math.round(saturationRange * 100.0 / 255.0);
 		brightnessRange = (int) Math.round(brightnessRange * 100.0 / 255.0);
 	}
@@ -1542,7 +1541,8 @@ public class MapSettings implements Serializable
 			double curvature = jsonObj.containsKey("curvature") ? (Double) jsonObj.get("curvature") : 0.0;
 			int spacing = jsonObj.containsKey("spacing") ? (int) (long) jsonObj.get("spacing") : 0;
 			Font fontOverride = jsonObj.containsKey("fontOverride") ? parseFont((String) jsonObj.get("fontOverride")) : null;
-			double backgroundFade = jsonObj.containsKey("backgroundFade") ? (Double) jsonObj.get("backgroundFade")
+			double backgroundFade = jsonObj.containsKey("backgroundFade")
+					? (Double) jsonObj.get("backgroundFade")
 					: MapText.defaultBackgroundFade;
 			MapText mp = new MapText(text, location, angle, type, lineBreak, colorOverride, boldBackgroundColorOverride, curvature, spacing,
 					fontOverride, backgroundFade);
@@ -1674,7 +1674,8 @@ public class MapSettings implements Serializable
 			}
 			double density = iconObj.containsKey("density") ? (double) iconObj.get("density") : 0.0;
 			Color color = iconObj.containsKey("color") ? parseColor((String) iconObj.get("color")) : defaultIconColor;
-			HSBColor filterColor = iconObj.containsKey("filterColor") ? HSBColor.fromJson((JSONObject) iconObj.get("filterColor"))
+			HSBColor filterColor = iconObj.containsKey("filterColor")
+					? HSBColor.fromJson((JSONObject) iconObj.get("filterColor"))
 					: defaultIconFilterColor;
 			boolean maximizeOpacity = iconObj.containsKey("maximizeOpacity") ? (Boolean) iconObj.get("maximizeOpacity") : false;
 			double originalScale;
@@ -2014,7 +2015,7 @@ public class MapSettings implements Serializable
 		}
 		return defaultIconColor;
 	}
-	
+
 	public void setIconColorForType(IconType iconType, Color color)
 	{
 		iconColorsByType.put(iconType, color);
@@ -2024,7 +2025,7 @@ public class MapSettings implements Serializable
 	{
 		return Collections.unmodifiableMap(iconColorsByType);
 	}
-	
+
 	public HSBColor getIconFilterColorForType(IconType iconType)
 	{
 		if (iconFilterColorsByType.containsKey(iconType))
@@ -2043,8 +2044,7 @@ public class MapSettings implements Serializable
 	{
 		iconFilterColorsByType.put(iconType, filterColor);
 	}
-	
-	
+
 	public boolean getMaximizeOpacityForType(IconType iconType)
 	{
 		if (maximizeOpacityByType.containsKey(iconType))
@@ -2063,7 +2063,6 @@ public class MapSettings implements Serializable
 	{
 		maximizeOpacityByType.put(iconType, value);
 	}
-	
 
 	/**
 	 * Creates a deep copy of this. Note - This is not thread safe because it temporarily changes the edits pointer in this.

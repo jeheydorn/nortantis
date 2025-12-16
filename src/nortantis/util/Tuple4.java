@@ -77,5 +77,4 @@ public class Tuple4<F, S, T, U> implements Serializable
 		return Objects.equals(f, other.f) && Objects.equals(s, other.s) && Objects.equals(t, other.t) && Objects.equals(u, other.u);
 	}
 
-
 }

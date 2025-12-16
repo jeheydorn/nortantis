@@ -32,8 +32,6 @@ public class GraphCreator
 		graph.scaleFlipAndRotate(width, height, rightRotationCount, flipHorizontally, flipVertically);
 		graph.buildNoisyEdges(lineStyle, false);
 
-		
-
 		return graph;
 	}
 

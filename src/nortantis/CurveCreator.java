@@ -11,7 +11,7 @@ import nortantis.geom.Point;
 public class CurveCreator
 {
 	public static final double defaultDistanceBetweenPoints = 4.0;
-	
+
 	/**
 	 * Creates a curve from p1 to p2 inclusive by creating a centripetal Catmull-Rom spline.
 	 * 
@@ -64,7 +64,7 @@ public class CurveCreator
 
 		return curve;
 	}
-	
+
 	/**
 	 * Creates a curve that passes through the given points.
 	 * 
@@ -83,7 +83,7 @@ public class CurveCreator
 	 * @param path
 	 *            List of points that defines where the curve should go.
 	 * @param distanceBetweenPoints
-	 * 			  Determines the number of points to add to the curve.
+	 *            Determines the number of points to add to the curve.
 	 * @return the curve
 	 */
 	public static List<Point> createCurve(List<Point> path, double distanceBetweenPoints)
@@ -105,7 +105,8 @@ public class CurveCreator
 			// and two control points. So in that case, this code is functionally required.
 			final double fakeControlPointWeight = 1.0;
 			Point p0 = path.get(0).add(path.get(0).subtract(path.get(1)).mult(fakeControlPointWeight));
-			Point p3 = path.get(path.size() - 1).add(path.get(path.size() - 1).subtract(path.get(path.size() - 2)).mult(fakeControlPointWeight));
+			Point p3 = path.get(path.size() - 1)
+					.add(path.get(path.size() - 1).subtract(path.get(path.size() - 2)).mult(fakeControlPointWeight));
 
 			pathToUse = new ArrayList<>();
 			pathToUse.add(p0);

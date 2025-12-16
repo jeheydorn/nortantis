@@ -53,7 +53,7 @@ public abstract class Image
 	public abstract void setAlpha(int x, int y, int alpha);
 
 	public abstract Color getPixelColor(int x, int y);
-	
+
 	public Color getPixelColor(int[] data, int x, int y)
 	{
 		return Color.create(getRGB(data, x, y), hasAlpha());
@@ -159,7 +159,7 @@ public abstract class Image
 	{
 		return copySubImage(bounds, false);
 	}
-	
+
 	public abstract Image copySubImage(IntRectangle bounds, boolean addAlphaChanel);
 
 	public abstract int[] getDataIntBased();
@@ -167,7 +167,7 @@ public abstract class Image
 	public abstract boolean isIntBased();
 
 	public abstract Image copyAndAddAlphaChanel();
-	
+
 	public Image copyAndRemoveAlphaChanel()
 	{
 		Image result = Image.create(getWidth(), getHeight(), ImageType.RGB);

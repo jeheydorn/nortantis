@@ -16,21 +16,21 @@ public class MapParts
 {
 	public MapParts()
 	{
-		
+
 	}
-	
+
 	public MapParts(MapParts other)
 	{
-	    this.graph = other.graph; 
-	    this.textBackground = other.textBackground;
-	    this.nameCreator = other.nameCreator;
-	    this.background = other.background;
-	    this.iconDrawer = other.iconDrawer;
-	    this.frayedBorderBlur = other.frayedBorderBlur;
-	    this.frayedBorderMask = other.frayedBorderMask;
-	    this.frayedBorderColor = other.frayedBorderColor;
-	    this.grunge = other.grunge; 
-	    this.mapBeforeAddingText = other.mapBeforeAddingText;
+		this.graph = other.graph;
+		this.textBackground = other.textBackground;
+		this.nameCreator = other.nameCreator;
+		this.background = other.background;
+		this.iconDrawer = other.iconDrawer;
+		this.frayedBorderBlur = other.frayedBorderBlur;
+		this.frayedBorderMask = other.frayedBorderMask;
+		this.frayedBorderColor = other.frayedBorderColor;
+		this.grunge = other.grunge;
+		this.mapBeforeAddingText = other.mapBeforeAddingText;
 	}
 
 	/**
@@ -79,11 +79,9 @@ public class MapParts
 	public Image grunge;
 
 	/**
-	 * This field caches the map just before adding text and other values need for text drawing so that enabling/disabling text in the editor
-	 * is fast.
+	 * This field caches the map just before adding text and other values need for text drawing so that enabling/disabling text in the
+	 * editor is fast.
 	 */
 	public Image mapBeforeAddingText;
-	
-	
 
 }

@@ -10,7 +10,7 @@ public abstract class Color
 	public abstract int getGreen();
 	public abstract int getBlue();
 	public abstract int getAlpha();
-	
+
 	public boolean hasTransparency()
 	{
 		return getAlpha() < Image.getMaxPixelLevelForType(ImageType.ARGB);
@@ -76,15 +76,15 @@ public abstract class Color
 	{
 		return PlatformFactory.getInstance().createColorFromHSB(hue, saturation, brightness);
 	}
-	
+
 	public HSBColor toHSB()
 	{
 		float[] hsb = getHSB();
-		return new HSBColor((int)(hsb[0] * 360f), (int)(hsb[1] * 100f), (int)(hsb[2] * 100f), (int)((getAlpha() / 255f) * 100f));
+		return new HSBColor((int) (hsb[0] * 360f), (int) (hsb[1] * 100f), (int) (hsb[2] * 100f), (int) ((getAlpha() / 255f) * 100f));
 	}
-	
+
 	public int manhattanDistanceTo(Color other)
 	{
-		return Math.abs(getRed() - other.getRed()) + Math.abs(getGreen() - other.getGreen()) + Math.abs(getBlue() - other.getBlue()); 
+		return Math.abs(getRed() - other.getRed()) + Math.abs(getGreen() - other.getGreen()) + Math.abs(getBlue() - other.getBlue());
 	}
 }

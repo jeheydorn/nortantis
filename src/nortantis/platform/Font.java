@@ -38,6 +38,5 @@ public abstract class Font
 	{
 		return "Font [getName()=" + getName() + ", getSize()=" + getSize() + "]";
 	}
-	
-	
+
 }

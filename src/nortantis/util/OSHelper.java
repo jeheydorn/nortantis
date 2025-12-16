@@ -36,7 +36,7 @@ public class OSHelper
 		}
 		return isWindowsCache;
 	}
-	
+
 	private static Boolean isMacCache;
 	public static boolean isMac()
 	{

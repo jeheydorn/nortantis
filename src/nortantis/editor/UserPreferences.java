@@ -86,7 +86,7 @@ public class UserPreferences
 				{
 					defaultCustomImagesPath = FileHelper.replaceHomeFolderWithPlaceholder(props.getProperty("defaultCustomImagesPath"));
 				}
-				
+
 				// I used the wrong name when creating this property, but changing it now would make the popup show up for existing users,
 				// and there is no functional problem with just leaving it.
 				if (props.containsKey("showNewMapWithSameThemeRegionColorsMessage"))

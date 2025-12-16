@@ -70,5 +70,4 @@ public class Tuple3<F, S, T> implements Serializable
 		return Objects.equals(f, other.f) && Objects.equals(s, other.s) && Objects.equals(t, other.t);
 	}
 
-
 }

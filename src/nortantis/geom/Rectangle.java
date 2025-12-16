@@ -224,7 +224,7 @@ public class Rectangle
 	{
 		return y;
 	}
-	
+
 	public Dimension size()
 	{
 		return new Dimension(width, height);

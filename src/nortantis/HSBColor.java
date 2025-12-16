@@ -73,11 +73,15 @@ public class HSBColor implements Serializable
 
 	/**
 	 * Returns an array in the same format as Color.getHSB() except saturation and brightness can be negative.
+	 * 
 	 * @return
 	 */
 	public float[] toArray()
 	{
-		return new float[] { hue / 360f, saturation / 100f, brightness / 100f };
+		return new float[]
+		{
+				hue / 360f, saturation / 100f, brightness / 100f
+		};
 	}
 
 	@Override
@@ -111,6 +115,5 @@ public class HSBColor implements Serializable
 		return "HSBColor [hue=" + hue + ", saturation=" + saturation + ", brightness=" + brightness + ", transparency=" + transparency
 				+ "]";
 	}
-
 
 }

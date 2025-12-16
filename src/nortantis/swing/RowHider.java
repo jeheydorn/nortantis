@@ -23,7 +23,7 @@ public class RowHider
 		this.components.addAll(other2.components);
 		isVisible = true;
 	}
-	
+
 	public void add(RowHider other)
 	{
 		components.addAll(other.components);

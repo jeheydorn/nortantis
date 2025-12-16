@@ -430,35 +430,6 @@ public abstract class VoronoiGraph
 		g.drawLine((int) e.d0.loc.x, (int) e.d0.loc.y, (int) e.d1.loc.x, (int) e.d1.loc.y);
 	}
 
-	/**
-	 * For debugging
-	 */
-	public void drawVoronoi(Painter g, Collection<Center> centersToDraw, Rectangle drawBounds)
-	{
-		Transform orig = null;
-		if (drawBounds != null)
-		{
-			orig = g.getTransform();
-			g.translate(-drawBounds.x, -drawBounds.y);
-		}
-
-		g.setColor(Color.white);
-
-		Collection<Corner> cornersToDraw = centersToDraw == null ? corners : getCornersFromCenters(centersToDraw);
-		for (Corner c : cornersToDraw)
-		{
-			for (Corner adjacent : c.adjacent)
-			{
-				g.drawLine((int) c.loc.x, (int) c.loc.y, (int) adjacent.loc.x, (int) adjacent.loc.y);
-			}
-		}
-
-		if (drawBounds != null)
-		{
-			g.setTransform(orig);
-		}
-	}
-
 	protected Set<Corner> getCornersFromCenters(Collection<Center> centers)
 	{
 		Set<Corner> result = new HashSet<>();

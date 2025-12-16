@@ -55,7 +55,7 @@ public class UnscaledImageToggleButton extends JToggleButton
 		}
 
 		double osScale = SwingHelper.getOSScale();
-		// Set the icon to a fake one that is the size we want. 
+		// Set the icon to a fake one that is the size we want.
 		super.setIcon(new ImageIcon(new BufferedImage((int) (icon.getIconWidth() / osScale), (int) (icon.getIconHeight() / osScale),
 				BufferedImage.TYPE_INT_ARGB)));
 		toDraw = convertIconToBufferedImage(icon);

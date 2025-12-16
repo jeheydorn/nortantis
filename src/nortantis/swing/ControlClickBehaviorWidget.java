@@ -61,12 +61,12 @@ public class ControlClickBehaviorWidget
 		return organizer.addLabelAndComponent("Ctrl-click behavior:",
 				"Whether to add or remove icons from the selection when Ctrl is held while clicking or dragging the mosue.", container);
 	}
-	
+
 	public boolean isSelectMode()
 	{
 		return selectModeButton.isSelected();
 	}
-	
+
 	public boolean isUnselectMode()
 	{
 		return unselectModeButton.isSelected();

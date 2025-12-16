@@ -115,13 +115,13 @@ public class CharacterNGram
 		Character next;
 		do
 		{
-			
+
 			StringBuilder lc = new StringBuilder(lastChars.size());
 			for (Character c : lastChars)
 			{
 				lc.append(c);
 			}
-			
+
 			next = scMap.sampleConditional(r, lc.toString());
 			if (next == null)
 			{

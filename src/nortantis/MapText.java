@@ -56,7 +56,8 @@ public class MapText implements Serializable
 	public Font fontOverride;
 
 	private MapText(String text, Point location, double angle, TextType type, RotatedRectangle line1Bounds, RotatedRectangle line2Bounds,
-			LineBreak lineBreak, Color colorOverride, Color boldBackgroundColorOverride, double curvature, int spacing, Font fontOverride, double backgroundFade)
+			LineBreak lineBreak, Color colorOverride, Color boldBackgroundColorOverride, double curvature, int spacing, Font fontOverride,
+			double backgroundFade)
 	{
 		this.value = text;
 		this.line1Bounds = line1Bounds;
@@ -79,7 +80,6 @@ public class MapText implements Serializable
 		this(text, location, angle, type, null, null, lineBreak, colorOverride, boldBackgroundColorOverride, curvature, spacing,
 				fontOverride, backgroundFade);
 	}
-
 
 	public MapText deepCopy()
 	{

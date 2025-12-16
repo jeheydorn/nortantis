@@ -285,7 +285,6 @@ public class TextTool extends EditorTool
 			fontHider = fontChooser.addToOrganizer(organizer);
 		}
 
-
 		editToolsSeparatorHider.add(organizer.addSeperator());
 
 		useDefaultColorCheckbox = new JCheckBox("Use default color");
@@ -389,8 +388,8 @@ public class TextTool extends EditorTool
 				curvatureSlider.setValue(0);
 			});
 
-			editSlidersHider = sliderWithDisplay.addToOrganizer(organizer, "Curvature:", "How much to curve the text",
-					clearCurvatureButton, 0, 0);
+			editSlidersHider = sliderWithDisplay.addToOrganizer(organizer, "Curvature:", "How much to curve the text", clearCurvatureButton,
+					0, 0);
 		}
 
 		{
@@ -445,8 +444,8 @@ public class TextTool extends EditorTool
 				backgroundFadeSlider.setValue(0);
 			});
 
-			editSlidersHider.add(sliderWithDisplay.addToOrganizer(organizer, "Background fade:", "How much to fade out icons, rivers, roads, and coastlines around this text.",
-					clearBackgroundFadeButton, 0, 0));
+			editSlidersHider.add(sliderWithDisplay.addToOrganizer(organizer, "Background fade:",
+					"How much to fade out icons, rivers, roads, and coastlines around this text.", clearBackgroundFadeButton, 0, 0));
 		}
 
 		Tuple2<JComboBox<ImageIcon>, RowHider> brushSizeTuple = organizer.addBrushSizeComboBox(brushSizes);
@@ -702,7 +701,8 @@ public class TextTool extends EditorTool
 				int deltaY = (int) (graphPointMouseLocation.y - graphPointMousePressedLocation.y);
 
 				RotatedRectangle line1 = lastSelected.line1Bounds.translate(new nortantis.geom.Point(deltaX, deltaY));
-				RotatedRectangle line2 = lastSelected.line2Bounds == null ? null
+				RotatedRectangle line2 = lastSelected.line2Bounds == null
+						? null
 						: lastSelected.line2Bounds.translate(new nortantis.geom.Point(deltaX, deltaY));
 				mapEditingPanel.setTextBoxToDraw(line1, line2);
 				mapEditingPanel.repaint();
@@ -894,7 +894,7 @@ public class TextTool extends EditorTool
 			}
 			curvatureSlider.setValue((int) (selectedText.curvature * curvatureSliderDivider));
 			spacingSlider.setValue(selectedText.spacing);
-			backgroundFadeSlider.setValue((int)(selectedText.backgroundFade * backgroundFadeDivider));
+			backgroundFadeSlider.setValue((int) (selectedText.backgroundFade * backgroundFadeDivider));
 		}
 		actionsSeperatorHider
 				.setVisible((editButton.isSelected() && selectedText != null) || addButton.isSelected() || eraseButton.isSelected());

@@ -32,7 +32,7 @@ class AwtPainter extends Painter
 	{
 		g.drawImage(((AwtImage) image).image, x, y, null);
 	}
-	
+
 	@Override
 	public void drawImage(Image image, int x, int y, int width, int height)
 	{
@@ -74,7 +74,7 @@ class AwtPainter extends Painter
 	{
 		g.setFont(((AwtFont) font).font);
 	}
-	
+
 	@Override
 	public void drawString(String string, double x, double y)
 	{
@@ -128,13 +128,12 @@ class AwtPainter extends Painter
 	{
 		g.drawLine(x1, y1, x2, y2);
 	}
-	
+
 	@Override
 	public void drawLine(float x1, float y1, float x2, float y2)
 	{
 		g.draw(new Line2D.Float(x1, y1, x2, y2));
 	}
-
 
 	@Override
 	public void fillOval(int x, int y, int width, int height)
@@ -147,7 +146,7 @@ class AwtPainter extends Painter
 	{
 		g.drawPolyline(xPoints, yPoints, xPoints.length);
 	}
-	
+
 	@Override
 	public void drawPolygonFloat(List<FloatPoint> points)
 	{
@@ -180,7 +179,7 @@ class AwtPainter extends Painter
 		// Use CAP_ROUND to avoid corners sticking out of the sides of thick lines (like rivers) when drawn piecewise.
 		g.setStroke(new BasicStroke(width, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1f, null, 0f));
 	}
-	
+
 	@Override
 	public void setStrokeToSolidLineWithNoEndDecorations(float width)
 	{
@@ -244,7 +243,7 @@ class AwtPainter extends Painter
 	{
 		return g.getFontMetrics().stringWidth(string);
 	}
-	
+
 	@Override
 	public int charWidth(char c)
 	{
@@ -333,14 +332,15 @@ class AwtPainter extends Painter
 		}
 		else
 		{
-			throw new UnsupportedOperationException("Unimplemented alpha composite method with alpha parameter. Composite method: " + composite);
+			throw new UnsupportedOperationException(
+					"Unimplemented alpha composite method with alpha parameter. Composite method: " + composite);
 		}
 	}
-	
+
 	@Override
 	public void setClip(int x, int y, int width, int height)
 	{
 		g.setClip(x, y, width, height);
-		
+
 	}
 }

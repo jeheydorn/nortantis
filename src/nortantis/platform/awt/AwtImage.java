@@ -276,7 +276,7 @@ class AwtImage extends Image
 	{
 		return new AwtImage(image.getSubimage(bounds.x, bounds.y, bounds.width, bounds.height));
 	}
-	
+
 	@Override
 	public Image copySubImage(IntRectangle bounds, boolean addAlphaChanel)
 	{
@@ -312,18 +312,14 @@ class AwtImage extends Image
 		{
 			return deepCopy();
 		}
-		
-        BufferedImage copy = new BufferedImage(
-        		image.getWidth(),
-        		image.getHeight(),
-                BufferedImage.TYPE_INT_ARGB
-            );
 
-            // Draw the original image onto the new image
-            Graphics2D g2d = copy.createGraphics();
-            g2d.drawImage(image, 0, 0, null);
-            g2d.dispose();
-            
+		BufferedImage copy = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_ARGB);
+
+		// Draw the original image onto the new image
+		Graphics2D g2d = copy.createGraphics();
+		g2d.drawImage(image, 0, 0, null);
+		g2d.dispose();
+
 		return new AwtImage(copy);
 	}
 }

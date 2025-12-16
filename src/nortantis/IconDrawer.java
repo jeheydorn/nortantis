@@ -1163,7 +1163,6 @@ public class IconDrawer
 			ThreadHelper.getInstance().processInParallel(jobs, true);
 		}
 
-
 		return tasks;
 	}
 

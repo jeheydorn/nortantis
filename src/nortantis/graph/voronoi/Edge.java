@@ -83,6 +83,25 @@ public class Edge implements Comparable<Edge>
 
 		return !d1.isLake;
 	}
+	
+	public boolean isWater()
+	{
+		if (d0 == null )
+		{
+			if (d1 == null)
+			{
+				return false;
+			}
+			return d1.isWater;
+		}
+		
+		if (d1 == null)
+		{
+			return d0.isWater;
+		}
+
+		return d0.isWater && d1.isWater;
+	}
 
 	public boolean isCoastOrLakeShore()
 	{

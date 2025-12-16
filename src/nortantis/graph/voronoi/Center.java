@@ -203,7 +203,7 @@ public class Center implements Comparable<Center>
 				return true;
 			}
 		}
-		
+
 		// Noisy edges can extend in theory as far as the center of neighboring centers.
 		for (Center neighbor : neighbors)
 		{
@@ -212,7 +212,7 @@ public class Center implements Comparable<Center>
 				return true;
 			}
 		}
-		
+
 		return false;
 	}
 

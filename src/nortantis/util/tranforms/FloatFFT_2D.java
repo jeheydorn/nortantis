@@ -54,7 +54,7 @@ public class FloatFFT_2D
 	private FloatFFT_1D fftColumns, fftRows;
 
 	private static long THREADS_BEGIN_N_2D = 65536;
-	
+
 	private boolean useThreads = false;
 
 	/**
@@ -88,16 +88,16 @@ public class FloatFFT_2D
 			fftColumns = new FloatFFT_1D(columns);
 		}
 	}
-	
-    /**
-     * Returns the minimal size of 2D data for which threads are used.
-     *
-     * @return the minimal size of 2D data for which threads are used
-     */
-    private long getThreadsBeginN_2D()
-    {
-        return THREADS_BEGIN_N_2D;
-    }
+
+	/**
+	 * Returns the minimal size of 2D data for which threads are used.
+	 *
+	 * @return the minimal size of 2D data for which threads are used
+	 */
+	private long getThreadsBeginN_2D()
+	{
+		return THREADS_BEGIN_N_2D;
+	}
 
 	/**
 	 * Computes 2D inverse DFT of complex data leaving the result in <code>a</code>. The data is stored in 1D array in row-major order.

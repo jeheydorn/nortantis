@@ -119,19 +119,17 @@ public class GridBagOrganizer
 		return addLabelAndComponentsHorizontal(label, components, componentLeftPadding);
 	}
 
-	public <T extends Component> RowHider addLabelAndComponentsHorizontal(JLabel label, List<T> components,
-			int componentLeftPadding)
+	public <T extends Component> RowHider addLabelAndComponentsHorizontal(JLabel label, List<T> components, int componentLeftPadding)
 	{
 		return addLabelAndComponents(label, BoxLayout.X_AXIS, components, componentLeftPadding,
 				defaultHorizontalSpaceBetweenComponentsAddAsList, null);
 	}
-	
+
 	public <T extends Component> RowHider addLabelAndComponentsHorizontal(String labelText, String tooltip, List<T> components,
 			int componentLeftPadding, int horizontalSpaceBetweenComponents)
 	{
 		JLabel label = createWrappingLabel(labelText, tooltip);
-		return addLabelAndComponents(label, BoxLayout.X_AXIS, components, componentLeftPadding,
-				horizontalSpaceBetweenComponents, null);
+		return addLabelAndComponents(label, BoxLayout.X_AXIS, components, componentLeftPadding, horizontalSpaceBetweenComponents, null);
 	}
 
 	public static <T extends Component> void updateComponentsPanelVertical(List<T> components, JPanel compPanel)
@@ -156,8 +154,8 @@ public class GridBagOrganizer
 		compPanel.add(Box.createHorizontalGlue());
 	}
 
-	private <T extends Component> RowHider addLabelAndComponents(JLabel label, int boxLayoutDirection,
-			List<T> components, int componentLeftPadding, int horizontalSpaceBetweenComponents, JPanel compPanel)
+	private <T extends Component> RowHider addLabelAndComponents(JLabel label, int boxLayoutDirection, List<T> components,
+			int componentLeftPadding, int horizontalSpaceBetweenComponents, JPanel compPanel)
 	{
 		if (compPanel == null)
 		{

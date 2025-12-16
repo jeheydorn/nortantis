@@ -33,7 +33,7 @@ public class ComplexArray
 	{
 		assert height == other.height;
 		assert width == other.width;
-		
+
 		float[][] otherArray = other.array;
 
 		for (int r = 0; r < height; r++)
@@ -51,7 +51,7 @@ public class ComplexArray
 				array[r][colR + 1] = imaginary;
 			}
 	}
-	
+
 	public void moveRealToLeftSide()
 	{
 		for (int r = 0; r < height; r++)
@@ -89,7 +89,7 @@ public class ComplexArray
 			}
 		}
 	}
-	
+
 	/*
 	 * Scales values in the given array such that the minimum is targetMin, and the maximum is targetMax.
 	 */
@@ -97,9 +97,9 @@ public class ComplexArray
 	{
 		setContrast(targetMin, targetMax, 0, height, 0, width);
 	}
-	
+
 	public void setContrast(float targetMin, float targetMax, int rowStart, int rows, int colStart, int cols)
-	{	
+	{
 		Tuple2<Float, Float> contrastTuple = getContrast(rowStart, rows, colStart, cols);
 		float min = contrastTuple.getFirst();
 		float max = contrastTuple.getSecond();
@@ -116,12 +116,12 @@ public class ComplexArray
 			}
 		}
 	}
-	
+
 	public Tuple2<Float, Float> getContrast()
 	{
 		return getContrast(0, height, 0, width);
 	}
-	
+
 	private Tuple2<Float, Float> getContrast(int rowStart, int rows, int colStart, int cols)
 	{
 		float min = Float.POSITIVE_INFINITY;
@@ -139,7 +139,7 @@ public class ComplexArray
 		}
 		return new Tuple2<>(min, max);
 	}
-	
+
 	public void scale(float scale, int rowStart, int rows, int colStart, int cols)
 	{
 		for (int r = rowStart; r < rowStart + rows; r++)
@@ -210,7 +210,7 @@ public class ComplexArray
 
 	public float[][] getArrayJTransformsFormat()
 	{
-		return array; 
+		return array;
 	}
 
 	public int getWidth()

@@ -362,7 +362,8 @@ public class MapCreator implements WarningLogger
 			Image landTextureSnippet;
 			if (settings.landColor.hasTransparency())
 			{
-				landTextureSnippet = ImageHelper.copySnippetPreservingAlphaOfTransparentPixels(mapParts.background.land, drawBounds.toIntRectangle());
+				landTextureSnippet = ImageHelper.copySnippetPreservingAlphaOfTransparentPixels(mapParts.background.land,
+						drawBounds.toIntRectangle());
 			}
 			else
 			{
@@ -386,7 +387,7 @@ public class MapCreator implements WarningLogger
 							drawBounds.toIntRectangle());
 					landBackground = darkenLandNearCoastlinesAndRegionBorders(settings, mapParts.graph, settings.resolution,
 							landColoredBeforeAddingIconColors, mapParts.background, coastShading, centersToDraw, drawBounds, false)
-									.getFirst();
+							.getFirst();
 				}
 				else
 				{
@@ -464,7 +465,7 @@ public class MapCreator implements WarningLogger
 
 			if (settings.drawGridOverlay && settings.gridOverlayLayer == GridOverlayLayer.Under_icons)
 			{
-				GridDrawer.drawGrid(mapSnippet, settings, drawBounds, mapParts.background.mapBounds.toIntDimension());
+				GridDrawer.drawGrid(mapSnippet, settings, drawBounds, mapParts.background.mapBounds.toIntDimension(), mapParts.graph, centersToDraw);
 			}
 
 			checkForCancel();
@@ -477,7 +478,7 @@ public class MapCreator implements WarningLogger
 
 			if (settings.drawGridOverlay && settings.gridOverlayLayer == GridOverlayLayer.Over_icons)
 			{
-				GridDrawer.drawGrid(mapSnippet, settings, drawBounds, mapParts.background.mapBounds.toIntDimension());
+				GridDrawer.drawGrid(mapSnippet, settings, drawBounds, mapParts.background.mapBounds.toIntDimension(), mapParts.graph, centersToDraw);
 			}
 
 			checkForCancel();
@@ -531,7 +532,9 @@ public class MapCreator implements WarningLogger
 		}
 		if (DebugFlags.drawVoronoi())
 		{
-			mapParts.graph.drawVoronoi(mapSnippet.createPainter(), centersToDraw, drawBounds);
+			Painter p = mapSnippet.createPainter();
+			p.setColor(Color.white);
+			mapParts.graph.drawVoronoi(p, centersToDraw, drawBounds, false);
 		}
 
 		IntPoint replaceBoundsUpperLeftCornerAdjustedForBorder = new IntPoint(
@@ -581,13 +584,12 @@ public class MapCreator implements WarningLogger
 				p.drawRect(rect.x, rect.y, rect.width, rect.height);
 			}
 		}
-		
+
 		int scaledBorderWidth = settings.drawBorder && settings.borderPosition == BorderPosition.Outside_map
 				? (int) (settings.borderWidth * settings.resolution)
 				: 0;
 		IntRectangle bounds = replaceBounds.toIntRectangle();
-		return new IntRectangle(bounds.x + scaledBorderWidth, bounds.y + scaledBorderWidth,
-				bounds.width, bounds.height);
+		return new IntRectangle(bounds.x + scaledBorderWidth, bounds.y + scaledBorderWidth, bounds.width, bounds.height);
 	}
 
 	private double calcEffectsPadding(final MapSettings settings)
@@ -807,7 +809,9 @@ public class MapCreator implements WarningLogger
 		}
 		if (DebugFlags.drawVoronoi())
 		{
-			graph.drawVoronoi(map.createPainter(), null, null);
+			Painter p = map.createPainter();
+			p.setColor(Color.white);
+			graph.drawVoronoi(p, null, null, false);
 		}
 
 		if (DebugFlags.getIndexesOfCentersToHighlight().length > 0)
@@ -938,7 +942,6 @@ public class MapCreator implements WarningLogger
 			}
 			map = ImageHelper.setAlphaFromMask(map, frayedBorderMask, true);
 		}
-
 
 		if (nameCreatorTask != null)
 		{
@@ -1113,16 +1116,15 @@ public class MapCreator implements WarningLogger
 			graph.drawLandAndOceanBlackAndWhite(g, graph.centers, null);
 		}
 
-
 		Image coastShading;
 		Image landBackground = null;
 		Image map;
 		{
-				Tuple2<Image, Image> tuple = darkenLandNearCoastlinesAndRegionBorders(settings, graph, settings.resolution, background.land, background,
-						null, null, null, true);
-				Image landBackgroundWithLandInOcean = tuple.getFirst();
-				coastShading = tuple.getSecond();
-				map = ImageHelper.maskWithColor(landBackgroundWithLandInOcean, Color.black, landMask, false);
+			Tuple2<Image, Image> tuple = darkenLandNearCoastlinesAndRegionBorders(settings, graph, settings.resolution, background.land,
+					background, null, null, null, true);
+			Image landBackgroundWithLandInOcean = tuple.getFirst();
+			coastShading = tuple.getSecond();
+			map = ImageHelper.maskWithColor(landBackgroundWithLandInOcean, Color.black, landMask, false);
 
 			if (settings.drawRegionColors)
 			{
@@ -1221,7 +1223,7 @@ public class MapCreator implements WarningLogger
 
 		if (settings.drawGridOverlay && settings.gridOverlayLayer == GridOverlayLayer.Under_icons)
 		{
-			GridDrawer.drawGrid(map, settings, null, map.size());
+			GridDrawer.drawGrid(map, settings, null, map.size(), graph, null);
 		}
 
 		checkForCancel();
@@ -1234,7 +1236,7 @@ public class MapCreator implements WarningLogger
 
 		if (settings.drawGridOverlay && settings.gridOverlayLayer == GridOverlayLayer.Over_icons)
 		{
-			GridDrawer.drawGrid(map, settings, null, map.size());
+			GridDrawer.drawGrid(map, settings, null, map.size(), graph, graph.centers);
 		}
 
 		checkForCancel();
@@ -1281,7 +1283,7 @@ public class MapCreator implements WarningLogger
 		}
 		if (settings.drawGridOverlay)
 		{
-			GridDrawer.drawGrid(textBackground, settings, drawBounds, background.mapBounds.toIntDimension());
+			GridDrawer.drawGrid(textBackground, settings, drawBounds, background.mapBounds.toIntDimension(), graph, centersToDraw);
 		}
 
 		return textBackground;
@@ -1457,7 +1459,6 @@ public class MapCreator implements WarningLogger
 		Painter g = coastlineMask.createPainter();
 		g.setColor(Color.white);
 
-
 		if (settings.drawOceanEffectsInLakes)
 		{
 			graph.drawCoastlineWithLakeShores(g, targetStrokeWidth, centersToDraw, drawBounds);
@@ -1542,10 +1543,10 @@ public class MapCreator implements WarningLogger
 				final double minNotDrawLength = 2 * scaleForAll;
 				final double maxDrawLength = 24 * scaleForAll;
 				final double minDrawLength = 19 * scaleForAll;
-				return isDrawing ? rand.nextDouble(minDrawLength, maxDrawLength + 1)
+				return isDrawing
+						? rand.nextDouble(minDrawLength, maxDrawLength + 1)
 						: rand.nextDouble(minNotDrawLength, maxNotDrawLength + 1);
 			};
-
 
 			int level = (int) (oceanEffects.getMaxPixelLevel() * waveOpacity);
 			p.setColor(Color.create(level, level, level));
@@ -2160,8 +2161,7 @@ public class MapCreator implements WarningLogger
 			p.setAlphaComposite(AlphaComposite.SrcAtop, alpha);
 
 			p.drawImage(overlayImage, x, y, overlayPosition.width, overlayPosition.height);
-		}
-		finally
+		} finally
 		{
 			p.dispose();
 		}

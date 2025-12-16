@@ -136,7 +136,6 @@ public class IconsTool extends EditorTool
 	private JSlider transparencySlider;
 	private boolean disableColorChangeHandlers;
 
-
 	public IconsTool(MainWindow parent, ToolsPanel toolsPanel, MapUpdater mapUpdater)
 	{
 		super(parent, toolsPanel, mapUpdater);
@@ -329,17 +328,14 @@ public class IconsTool extends EditorTool
 			iconTypeCheckboxesHider.setVisible(false);
 		}
 
-
 		Tuple2<JComboBox<ImageIcon>, RowHider> brushSizeTuple = organizer.addBrushSizeComboBox(brushSizes);
 		brushSizeComboBox = brushSizeTuple.getFirst();
 		brushSizeHider = brushSizeTuple.getSecond();
-
 
 		{
 			controlClickBehavior = new ControlClickBehaviorWidget();
 			controlClickBehaviorHider = controlClickBehavior.addToOrganizer(organizer);
 		}
-
 
 		modeOptionsAndBrushSeperatorHider = organizer.addSeperator();
 
@@ -724,7 +720,6 @@ public class IconsTool extends EditorTool
 			}
 			Point center = bounds.getCenter().mult(1.0 / resolutionScale);
 
-
 			for (FreeIcon icon : copied)
 			{
 				Point newLocation = new Point(icon.locationResolutionInvariant.x - center.x + graphPointMouseLocation.x,
@@ -983,8 +978,7 @@ public class IconsTool extends EditorTool
 			transparencySlider.setValue(filterColor.transparency);
 
 			maximizeOpacityCheckbox.setSelected(maximizeOpacity);
-		}
-		finally
+		} finally
 		{
 			disableColorChangeHandlers = false;
 		}
@@ -1077,7 +1071,8 @@ public class IconsTool extends EditorTool
 			radioButtons.add(button);
 		}
 
-		List<? extends Component> listToUse = radioButtons.size() > 0 ? radioButtons
+		List<? extends Component> listToUse = radioButtons.size() > 0
+				? radioButtons
 				: Arrays.asList(
 						new JLabel("<html>The art pack '" + artPack + "' has no " + iconType.toString().toLowerCase() + ".</html>"));
 		IconTypeButtons result;
@@ -1769,7 +1764,6 @@ public class IconsTool extends EditorTool
 			return iconsInner;
 		});
 
-
 		mapEditingPanel.clearHighlightedAreas();
 		mapEditingPanel.repaint();
 
@@ -1811,7 +1805,6 @@ public class IconsTool extends EditorTool
 				editStart = null;
 			}
 		}
-
 
 		if (isMoving || isScaling)
 		{
@@ -1868,7 +1861,6 @@ public class IconsTool extends EditorTool
 				iconsToEdit.clear();
 				mapEditingPanel.hideIconEditTools();
 			}
-
 
 			if (e.isControlDown())
 			{
@@ -2427,8 +2419,7 @@ public class IconsTool extends EditorTool
 		{
 			disableImageRefreshes = willDoImagesRefresh;
 			updateArtPackOptions(artPackToSelect, customImagesPath);
-		}
-		finally
+		} finally
 		{
 			disableImageRefreshes = false;
 		}

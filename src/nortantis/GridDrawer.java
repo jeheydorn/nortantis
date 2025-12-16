@@ -1,11 +1,13 @@
 package nortantis;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import nortantis.geom.FloatPoint;
 import nortantis.geom.IntDimension;
 import nortantis.geom.Rectangle;
+import nortantis.graph.voronoi.Center;
 import nortantis.platform.Color;
 import nortantis.platform.DrawQuality;
 import nortantis.platform.Image;
@@ -13,10 +15,9 @@ import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
 import nortantis.util.ImageHelper;
 
-
 public class GridDrawer
 {
-	public static void drawGrid(Image image, MapSettings settings, Rectangle drawBounds, IntDimension mapDimensions)
+	public static void drawGrid(Image image, MapSettings settings, Rectangle drawBounds, IntDimension mapDimensions, WorldGraph graph, Collection<Center> centersToDraw)
 	{
 		int alpha = settings.gridOverlayColor.getAlpha();
 
@@ -29,7 +30,7 @@ public class GridDrawer
 					settings.gridOverlayColor.getBlue()));
 			float lineWidth = settings.gridOverlayLineWidth * (float) settings.resolution;
 			p.setBasicStroke(lineWidth);
-			if (drawBounds != null)
+			if (drawBounds != null && settings.gridOverlayShape != GridOverlayShape.Voronoi_polygons_on_land)
 			{
 				p.translate(-drawBounds.x, -drawBounds.y);
 			}
@@ -45,6 +46,8 @@ public class GridDrawer
 					settings.gridOverlayYOffset, drawBounds, lineWidth);
 			case Horizontal_hexes -> drawHorizontalHexGrid(p, width, height, settings.gridOverlayRowOrColCount, settings.gridOverlayXOffset,
 					settings.gridOverlayYOffset, drawBounds, lineWidth);
+			case Voronoi_polygons_on_land -> drawVoronoiOnLand(p, graph, centersToDraw, drawBounds);
+			default -> throw new IllegalArgumentException("Unexpected value: " + settings.gridOverlayShape);
 			}
 
 			p.dispose();
@@ -55,6 +58,11 @@ public class GridDrawer
 			p.drawImage(ImageHelper.applyAlpha(hexImage, alpha), 0, 0);
 			p.dispose();
 		}
+	}
+
+	private static void drawVoronoiOnLand(Painter p, WorldGraph graph, Collection<Center> centersToDraw, Rectangle drawBounds)
+	{
+		graph.drawVoronoi(p, centersToDraw, drawBounds, true);
 	}
 
 	private static void drawSquareGrid(Painter p, float width, float height, int colCount, GridOverlayOffset xOffset,
@@ -94,7 +102,8 @@ public class GridDrawer
 				{
 					continue;
 				}
-				if (drawBounds != null && !drawBounds.overlaps(new Rectangle(x - hexWidth / 2.0, y - hexWidth / 2.0, hexWidth, hexHeight).pad(lineWidth, lineWidth)))
+				if (drawBounds != null && !drawBounds
+						.overlaps(new Rectangle(x - hexWidth / 2.0, y - hexWidth / 2.0, hexWidth, hexHeight).pad(lineWidth, lineWidth)))
 				{
 					continue;
 				}
@@ -123,7 +132,8 @@ public class GridDrawer
 				{
 					continue;
 				}
-				if (drawBounds != null && !drawBounds.overlaps(new Rectangle(x - hexWidth / 2.0, y - hexWidth / 2.0, hexWidth, hexHeight).pad(lineWidth, lineWidth)))
+				if (drawBounds != null && !drawBounds
+						.overlaps(new Rectangle(x - hexWidth / 2.0, y - hexWidth / 2.0, hexWidth, hexHeight).pad(lineWidth, lineWidth)))
 				{
 					continue;
 				}
@@ -131,7 +141,6 @@ public class GridDrawer
 			}
 		}
 	}
-
 
 	private static void drawHex(Painter p, float cx, float cy, float size, boolean vertical)
 	{
@@ -147,4 +156,3 @@ public class GridDrawer
 	}
 
 }
-

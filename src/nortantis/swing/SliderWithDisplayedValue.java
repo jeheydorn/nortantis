@@ -28,14 +28,15 @@ public class SliderWithDisplayedValue
 		this(slider, valueFormatter, changeListener, 24);
 	}
 
-	public SliderWithDisplayedValue(JSlider slider, Function<Integer, String> valueFormatter, Runnable changeListener, Integer preferredWidth)
+	public SliderWithDisplayedValue(JSlider slider, Function<Integer, String> valueFormatter, Runnable changeListener,
+			Integer preferredWidth)
 	{
 		this.slider = slider;
 
 		valueDisplay = new JLabel(getDisplayValue(valueFormatter));
 		if (preferredWidth != null)
 		{
-		valueDisplay.setPreferredSize(new Dimension(preferredWidth, valueDisplay.getPreferredSize().height));
+			valueDisplay.setPreferredSize(new Dimension(preferredWidth, valueDisplay.getPreferredSize().height));
 		}
 		slider.addChangeListener(new ChangeListener()
 		{
@@ -50,9 +51,9 @@ public class SliderWithDisplayedValue
 				}
 			}
 		});
-		
-		// I can't seem to shut off the default displayed value in Ubuntu with the System look and feel, so 
-		// hide my displayed value to avoid redundancy. 
+
+		// I can't seem to shut off the default displayed value in Ubuntu with the System look and feel, so
+		// hide my displayed value to avoid redundancy.
 		if (OSHelper.isLinux() && UserPreferences.getInstance().lookAndFeel == LookAndFeel.System)
 		{
 			valueDisplay.setVisible(false);

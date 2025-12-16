@@ -15,7 +15,7 @@ public abstract class Painter
 	public abstract void drawImage(Image image, int x, int y, int width, int height);
 
 	public abstract void setAlphaComposite(nortantis.platform.AlphaComposite composite, float alpha);
-	
+
 	public abstract void setAlphaComposite(nortantis.platform.AlphaComposite composite);
 
 	public abstract void setColor(Color color);
@@ -28,13 +28,13 @@ public abstract class Painter
 	{
 		rotate(angle, pivot.x, pivot.y);
 	}
-	
+
 	public abstract void rotate(double angle, double pivotX, double pivotY);
 
 	public abstract void translate(double x, double y);
 
 	public abstract void setFont(Font font);
-	
+
 	public abstract void drawString(String string, double x, double y);
 
 	public abstract void setTransform(Transform transform);
@@ -72,7 +72,7 @@ public abstract class Painter
 	}
 
 	public abstract void drawPolygon(int[] xPoints, int[] yPoints);
-	
+
 	public void drawPolygon(List<Point> points)
 	{
 		int[] xPoints = new int[points.size()];
@@ -86,7 +86,7 @@ public abstract class Painter
 	}
 
 	public abstract void drawPolyline(int[] xPoints, int[] yPoints);
-	
+
 	public void drawPolyline(List<IntPoint> points)
 	{
 		int[] xPoints = new int[points.size()];
@@ -98,19 +98,19 @@ public abstract class Painter
 		}
 		drawPolyline(xPoints, yPoints);
 	}
-	
+
 	public abstract void drawPolygonFloat(List<FloatPoint> points);
 
 	public abstract void setGradient(float x1, float y1, Color color1, float x2, float y2, Color color2);
 
 	public abstract void setBasicStroke(float width);
-	
+
 	public abstract void setStrokeToSolidLineWithNoEndDecorations(float width);
 
 	public abstract void setStroke(Stroke stroke, double resolutionScale);
 
 	public abstract void drawLine(int x1, int y1, int x2, int y2);
-	
+
 	public abstract void drawLine(float x1, float y1, float x2, float y2);
 
 	public abstract void drawOval(int x, int y, int width, int height);
@@ -120,7 +120,7 @@ public abstract class Painter
 	public abstract void fillRect(int x, int y, int width, int height);
 
 	public abstract int stringWidth(String string);
-	
+
 	public abstract int charWidth(char c);
 
 	public abstract int getFontAscent();

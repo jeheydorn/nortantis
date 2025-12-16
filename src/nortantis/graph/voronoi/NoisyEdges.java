@@ -189,7 +189,7 @@ public class NoisyEdges
 				Point p1 = edge.v0.loc;
 				Point p2 = edge.v1.loc;
 				Point p3 = findPrevOrNextPointOnCurve(edge, edge.v1);
-				
+
 				List<Point> curve = new LinkedList<>();
 				curve.addAll(CurveCreator.createCurve(p0, p1, p2, p3, CurveCreator.defaultDistanceBetweenPoints));
 				if (curve.isEmpty() || !curve.get(0).equals(edge.v0.loc))
@@ -316,13 +316,12 @@ public class NoisyEdges
 		assert false;
 		return null;
 	}
-	
-	
+
 	public boolean hasLargerProtrodudingRiverEdge(Corner corner, Edge source, Edge follow)
 	{
 		assert source.isRiver();
 		assert follow.isRiver();
-		
+
 		// The river continues to nextRiverEdge, but the curve should only follow that edge if the river doesn't have a larger
 		// branch another direction. That way small branches off a river don't widen or cause the main river to curve that
 		// direction.

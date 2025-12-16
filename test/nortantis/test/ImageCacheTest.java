@@ -32,7 +32,7 @@ public class ImageCacheTest
 		assertEquals("large castle", result.getFirst());
 		assertEquals(2, (double) result.getSecond(), 0);
 	}
-	
+
 	@Test
 	public void testParseBaseNameAndWidth_withHeight()
 	{
@@ -41,7 +41,7 @@ public class ImageCacheTest
 		assertEquals("large castle", result.getFirst());
 		assertEquals(2, (double) result.getSecond(), 0);
 	}
-	
+
 	@Test
 	public void testParseBaseNameAndWidth_withHeightSearchingByWidth()
 	{
@@ -59,7 +59,7 @@ public class ImageCacheTest
 		assertEquals("large_castle", result.getFirst());
 		assertEquals(10, (double) result.getSecond(), 0);
 	}
-	
+
 	@Test
 	public void testParseBaseNameAndWidth_withHeightAndUnderscore()
 	{
@@ -104,7 +104,7 @@ public class ImageCacheTest
 		assertEquals("large castle", result.getFirst());
 		assertEquals(100, (double) result.getSecond(), 0);
 	}
-	
+
 	@Test
 	public void testParseBaseNameAndWidth_withTrailingSpace()
 	{

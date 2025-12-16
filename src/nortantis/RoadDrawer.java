@@ -293,7 +293,8 @@ public class RoadDrawer
 				continue;
 			}
 
-			OrderlessPair<Point> pair = new OrderlessPair<Point>(edge.d0.loc.mult(1.0 / resolutionScale), edge.d1.loc.mult(1.0 / resolutionScale));
+			OrderlessPair<Point> pair = new OrderlessPair<Point>(edge.d0.loc.mult(1.0 / resolutionScale),
+					edge.d1.loc.mult(1.0 / resolutionScale));
 
 			if (existingRoadConnections.contains(pair))
 			{
@@ -422,7 +423,7 @@ public class RoadDrawer
 		roads.add(newRoad);
 		return newRoad;
 	}
-	
+
 	private static Road tryConnectingRoadToExistingRoad(Road roadToAdd, List<Road> roads)
 	{
 		for (Road road : roads)
@@ -437,7 +438,7 @@ public class RoadDrawer
 				// Ignore same object.
 				continue;
 			}
-			
+
 			if (road.path.get(0).isCloseEnough(roadToAdd.path.get(0)))
 			{
 				roadToAdd.path.remove(0);
@@ -465,7 +466,7 @@ public class RoadDrawer
 				return road;
 			}
 		}
-		
+
 		return null;
 	}
 
@@ -497,7 +498,8 @@ public class RoadDrawer
 			p.translate(-drawBounds.x, -drawBounds.y);
 		}
 
-		Rectangle drawBoundsResolutionInvariant = drawBounds == null ? null
+		Rectangle drawBoundsResolutionInvariant = drawBounds == null
+				? null
 				: new Rectangle(drawBounds.x * (1.0 / resolutionScale), drawBounds.y * (1.0 / resolutionScale),
 						drawBounds.width * (1.0 / resolutionScale), drawBounds.height * (1.0 / resolutionScale));
 		for (Road road : roads)
@@ -508,7 +510,8 @@ public class RoadDrawer
 				p.setStroke(roadStyle, resolutionScale);
 				// Copy the road's path as an extra precaution to be thread safe because CurveCreator.createCurve accesses the path using
 				// list indexes, so if the list changed size in that method, it could cause an error.
-				List<Point> roadPathCopy = Arrays.asList(road.path.toArray(new Point[] {}));
+				List<Point> roadPathCopy = Arrays.asList(road.path.toArray(new Point[]
+				{}));
 				List<Point> path = CurveCreator.createCurve(roadPathCopy);
 				List<IntPoint> pathScaled = path.stream().map(point -> point.mult(resolutionScale).toIntPoint()).toList();
 				p.drawPolyline(pathScaled);
@@ -521,7 +524,7 @@ public class RoadDrawer
 	{
 		return road.path.stream().anyMatch(p -> drawBoundsResolutionInvariant.contains(p));
 	}
-	
+
 	public void drawRoadDebugInfo(Image map)
 	{
 		Painter p = map.createPainter();
@@ -536,13 +539,13 @@ public class RoadDrawer
 			{
 				throw new IllegalArgumentException();
 			}
-			
+
 			for (int i = 0; i < road.path.size(); i++)
 			{
 				Point point = road.path.get(i).mult(resolutionScale);
 				int diameter = (int) Math.max(1, 3 * resolutionScale);
 				p.drawOval((int) point.x, (int) point.y, diameter, diameter);
-				
+
 				double yOffset = -9 * resolutionScale;
 				p.drawString(i + "", point.x, point.y + yOffset);
 			}

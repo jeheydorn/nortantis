@@ -208,7 +208,6 @@ public class ThemePanel extends JTabbedPane
 	private JComboBox<GridOverlayLayer> gridOverlayLayerComboBox;
 	private RowHider gridOverlayLayerComboBoxHider;
 
-
 	public ThemePanel(MainWindow mainWindow)
 	{
 		this.mainWindow = mainWindow;
@@ -559,14 +558,14 @@ public class ThemePanel extends JTabbedPane
 					@Override
 					public void actionPerformed(ActionEvent e)
 					{
-						updateGridOverlayFieldVisibility();
+						updateGridOverlayFieldVisibilityAndLabelText();
 						handleGridOverlayChange();
 
 						if (drawGridOverlayCheckbox.isSelected() && !UserPreferences.getInstance().hideGridOverlaySeizureWarning)
 						{
 							UserPreferences.getInstance().hideGridOverlaySeizureWarning = SwingHelper.showDismissibleMessage("Seizure Risk",
 									"The grid feature can create patterns which for some people can trigger headaches or seizures if used with"
-									+ " a high number of rows or columns and a low color transparency, especially with a thick line width.",
+											+ " a high number of rows or columns and a low color transparency, especially with a thick line width.",
 									new Dimension(340, 115), JOptionPane.WARNING_MESSAGE, ThemePanel.this.mainWindow);
 						}
 					}
@@ -586,10 +585,7 @@ public class ThemePanel extends JTabbedPane
 					@Override
 					public void actionPerformed(ActionEvent e)
 					{
-						gridOverlayRowOrColLabel.setText(
-								((GridOverlayShape) gridOverlayShapeComboBox.getSelectedItem()) == GridOverlayShape.Horizontal_hexes
-										? "Rows:"
-										: "Columns:");
+						updateGridOverlayFieldVisibilityAndLabelText();
 						handleGridOverlayChange();
 					}
 				});
@@ -663,7 +659,7 @@ public class ThemePanel extends JTabbedPane
 				createMapChangeListenerForGridOverlayChange(gridOverlayLayerComboBox);
 			}
 
-			updateGridOverlayFieldVisibility();
+			updateGridOverlayFieldVisibilityAndLabelText();
 		}
 
 		organizer.addVerticalFillerRow();
@@ -1229,7 +1225,6 @@ public class ThemePanel extends JTabbedPane
 		return organizer.createScrollPane();
 	}
 
-
 	private void unselectAnyIconBeingEdited()
 	{
 		if (mainWindow.toolsPanel != null && mainWindow.toolsPanel.currentTool != null
@@ -1443,7 +1438,7 @@ public class ThemePanel extends JTabbedPane
 		enableTextCheckBox.setToolTipText("Enable/disable drawing text. When unselected, text will still exist, but will not be shown.");
 		organizer.addLeftAlignedComponent(enableTextCheckBox);
 		organizer.addSeperator();
-		
+
 		titleFontChooser = new FontChooser("Title font:", 70, 50, () -> handleFontsChange());
 		titleFontChooser.addToOrganizer(organizer);
 		regionFontChooser = new FontChooser("Region font:", 40, 50, () -> handleFontsChange());
@@ -1517,7 +1512,7 @@ public class ThemePanel extends JTabbedPane
 		organizer.addLeftAlignedComponent(Box.createHorizontalStrut(100));
 		return organizer.createScrollPane();
 	}
-	
+
 	private void showOrHideBoldBackgroundColorChooser()
 	{
 		boldBackgroundColorHider.setVisible(enableTextCheckBox.isSelected() && drawBoldBackgroundCheckbox.isSelected());
@@ -1535,7 +1530,7 @@ public class ThemePanel extends JTabbedPane
 				|| solidColorButton.isSelected();
 	}
 
-	private void updateGridOverlayFieldVisibility()
+	private void updateGridOverlayFieldVisibilityAndLabelText()
 	{
 		gridOverlayShapeComboBoxHider.setVisible(drawGridOverlayCheckbox.isSelected());
 		gridOverlayRowOrColCountSliderHider.setVisible(drawGridOverlayCheckbox.isSelected());
@@ -1544,6 +1539,15 @@ public class ThemePanel extends JTabbedPane
 		gridOverlayYOffsetComboBoxHider.setVisible(drawGridOverlayCheckbox.isSelected());
 		gridOverlayLineWidthSliderHider.setVisible(drawGridOverlayCheckbox.isSelected());
 		gridOverlayLayerComboBoxHider.setVisible(drawGridOverlayCheckbox.isSelected());
+		
+		boolean isVoronoi = Objects.equals(gridOverlayShapeComboBox.getSelectedItem(), GridOverlayShape.Voronoi_polygons_on_land);
+		gridOverlayRowOrColCountSliderHider.setVisible(!isVoronoi);
+		gridOverlayXOffsetComboBoxHider.setVisible(!isVoronoi);
+		gridOverlayYOffsetComboBoxHider.setVisible(!isVoronoi);
+		gridOverlayRowOrColLabel.setText(
+				((GridOverlayShape) gridOverlayShapeComboBox.getSelectedItem()) == GridOverlayShape.Horizontal_hexes
+						? "Rows:"
+						: "Columns:");
 	}
 
 	private void updateBackgroundAndRegionFieldVisibility()
@@ -1918,7 +1922,7 @@ public class ThemePanel extends JTabbedPane
 		gridOverlayYOffsetComboBox.setSelectedItem(settings.gridOverlayYOffset);
 		gridOverlayLineWidthSlider.setValue(settings.gridOverlayLineWidth);
 		gridOverlayLayerComboBox.setSelectedItem(settings.gridOverlayLayer);
-		updateGridOverlayFieldVisibility();
+		updateGridOverlayFieldVisibilityAndLabelText();
 
 		if (changeEffectsBackgroundImages)
 		{
@@ -2069,7 +2073,8 @@ public class ThemePanel extends JTabbedPane
 		settings.oceanWavesLevel = rippleWavesLevelSlider.getValue();
 		settings.oceanShadingLevel = oceanShadingSlider.getValue();
 		settings.concentricWaveCount = concentricWavesLevelSlider.getValue();
-		settings.oceanWavesType = ripplesRadioButton.isSelected() ? OceanWaves.Ripples
+		settings.oceanWavesType = ripplesRadioButton.isSelected()
+				? OceanWaves.Ripples
 				: noneRadioButton.isSelected() ? OceanWaves.None : OceanWaves.ConcentricWaves;
 		settings.fadeConcentricWaves = fadeWavesCheckbox.isSelected();
 		settings.jitterToConcentricWaves = jitterWavesCheckbox.isSelected();
@@ -2093,7 +2098,8 @@ public class ThemePanel extends JTabbedPane
 
 		settings.drawGrunge = drawGrungeCheckbox.isSelected();
 		settings.grungeWidth = grungeSlider.getValue();
-		settings.lineStyle = jaggedLinesButton.isSelected() ? LineStyle.Jagged
+		settings.lineStyle = jaggedLinesButton.isSelected()
+				? LineStyle.Jagged
 				: splinesLinesButton.isSelected() ? LineStyle.Splines : LineStyle.SplinesWithSmoothedCoastlines;
 
 		// Background image settings
@@ -2150,18 +2156,17 @@ public class ThemePanel extends JTabbedPane
 		settings.gridOverlayLineWidth = gridOverlayLineWidthSlider.getValue();
 		settings.gridOverlayLayer = (GridOverlayLayer) gridOverlayLayerComboBox.getSelectedItem();
 	}
-	
+
 	public Font getTitleFont()
 	{
 		return AwtFactory.wrap(titleFontChooser.getFont());
 	}
-	
+
 	public Font getRegionFont()
 	{
 		return AwtFactory.wrap(regionFontChooser.getFont());
 	}
 
-	
 	public Font getMountainRangeFont()
 	{
 		return AwtFactory.wrap(mountainRangeFontChooser.getFont());
@@ -2181,7 +2186,6 @@ public class ThemePanel extends JTabbedPane
 	{
 		return AwtFactory.wrap(riverFontChooser.getFont());
 	}
-
 
 	private boolean areRegionColorsVisible()
 	{

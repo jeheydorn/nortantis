@@ -155,7 +155,7 @@ public class Assets
 		textureFiles = listFileNames(Paths.get(artPackPath.toString(), "background textures").toString(), allowedImageExtensions);
 		return textureFiles.stream().map(fileName -> new NamedResource(artPack, fileName)).toList();
 	}
-	
+
 	/**
 	 * Gets the path to the assets of an art pack.
 	 * 
@@ -173,12 +173,12 @@ public class Assets
 		{
 			return inMap;
 		}
-		
+
 		Path result = getArtPackPathNoCache(artPack, customImagesFolder);
 		artPackPathCache.put(key, result);
 		return result;
 	}
-	
+
 	private static Path getArtPackPathNoCache(String artPack, String customImagesFolder)
 	{
 		if (artPack.equals(customArtPack))
@@ -259,10 +259,10 @@ public class Assets
 			return listFilesFromJar(folderPath, containsText, endingText);
 		}
 
-		File[] files = new File(folderPath.toString())
-				.listFiles(file -> !file.isDirectory() && (StringUtils.isEmpty(containsText) || file.getName().contains(containsText))
-						&& (StringUtils.isEmpty(endingText) || file.getName().endsWith(endingText))
-						&& (allowedExtensions == null || allowedExtensions.contains(FilenameUtils.getExtension(file.getName()).toLowerCase())));
+		File[] files = new File(folderPath.toString()).listFiles(file -> !file.isDirectory()
+				&& (StringUtils.isEmpty(containsText) || file.getName().contains(containsText))
+				&& (StringUtils.isEmpty(endingText) || file.getName().endsWith(endingText))
+				&& (allowedExtensions == null || allowedExtensions.contains(FilenameUtils.getExtension(file.getName()).toLowerCase())));
 		if (files == null)
 		{
 			return new ArrayList<>();

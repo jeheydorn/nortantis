@@ -144,7 +144,7 @@ public class TextSearchDialog extends JDialog
 			}
 		});
 	}
-	
+
 	private Color getColorForNotFoundMessage()
 	{
 		if (UserPreferences.getInstance().lookAndFeel == LookAndFeel.Dark)
@@ -283,7 +283,7 @@ public class TextSearchDialog extends JDialog
 		searchField.requestFocus();
 		searchField.selectAll();
 	}
-	
+
 	public void handleLookAndFeelChange()
 	{
 		notFoundLabel.setForeground(getColorForNotFoundMessage());

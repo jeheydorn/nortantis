@@ -234,7 +234,12 @@ public class ImageHelper
 	{
 		if (size == 0)
 		{
-			return new float[][] { { 1f } };
+			return new float[][]
+			{
+					{
+							1f
+					}
+			};
 		}
 
 		NormalDistribution dist = createDistributionForSize(size);
@@ -290,7 +295,12 @@ public class ImageHelper
 	{
 		if (size == 0)
 		{
-			return new float[][] { { 1f } };
+			return new float[][]
+			{
+					{
+							1f
+					}
+			};
 		}
 
 		float[][] kernel = new float[size][size];
@@ -314,7 +324,12 @@ public class ImageHelper
 	{
 		if (size == 0)
 		{
-			return new float[][] { { 1f } };
+			return new float[][]
+			{
+					{
+							1f
+					}
+			};
 		}
 
 		Sinc dist = new Sinc();
@@ -949,7 +964,6 @@ public class ImageHelper
 
 			Image region = copySnippetRotated(image2, xLoc, yLoc, mask.getWidth(), mask.getHeight(), angle, pivot);
 
-
 			for (int y = 0; y < region.getHeight(); y++)
 				for (int x = 0; x < region.getWidth(); x++)
 				{
@@ -1011,9 +1025,9 @@ public class ImageHelper
 
 	/**
 	 * 
-	 * Creates a copy of a piece of an image, preserving the color of transparent pixels. This is the same as copySnippet if
-	 * the snippet is only for being displayed, but when combining with layers with alpha later, it can make a difference. Also,
-	 * this version is much slower.
+	 * Creates a copy of a piece of an image, preserving the color of transparent pixels. This is the same as copySnippet if the snippet is
+	 * only for being displayed, but when combining with layers with alpha later, it can make a difference. Also, this version is much
+	 * slower.
 	 * 
 	 * It is important the the result is a copy even if the desired region is exactly the input.
 	 */
@@ -1138,8 +1152,9 @@ public class ImageHelper
 	{
 		return convolveGrayscaleThenSetContrast(img, kernel, true, 0f, 1f, paddImageToAvoidWrapping).getSecond();
 	}
-	
-	public static Tuple2<ComplexArray, Image> convolveGrayscaleThenSetContrast(Image img, float[][] kernel, boolean setContrast, float contrastMin, float contrastMax, boolean paddImageToAvoidWrapping)
+
+	public static Tuple2<ComplexArray, Image> convolveGrayscaleThenSetContrast(Image img, float[][] kernel, boolean setContrast,
+			float contrastMin, float contrastMax, boolean paddImageToAvoidWrapping)
 	{
 		ComplexArray data = convolveGrayscale(img, kernel, paddImageToAvoidWrapping);
 
@@ -1149,7 +1164,8 @@ public class ImageHelper
 		data.moveRealToLeftSide();
 		data.swapQuadrantsOfLeftSideInPlace();
 
-		return new Tuple2<>(data, realToImage(data, resultType, img.getWidth(), img.getHeight(), setContrast, contrastMin, contrastMax, false, 0f));
+		return new Tuple2<>(data,
+				realToImage(data, resultType, img.getWidth(), img.getHeight(), setContrast, contrastMin, contrastMax, false, 0f));
 	}
 
 	/**
@@ -1191,7 +1207,7 @@ public class ImageHelper
 			ImageType resultType)
 	{
 		ComplexArray data = convolveGrayscale(img, kernel, paddImageToAvoidWrapping);
-		
+
 		data.moveRealToLeftSide();
 		data.swapQuadrantsOfLeftSideInPlace();
 
@@ -1373,8 +1389,7 @@ public class ImageHelper
 		for (int r = 0; r < result.length; r++)
 			for (int c = 0; c < result[0].length; c++)
 			{
-				int arrayRow = (r + rowOffset) % array.length;
-				;
+				int arrayRow = (r + rowOffset) % array.length;;
 				if (((r + rowOffset) / array.length) % 2 == 1)
 					arrayRow = array.length - 1 - arrayRow;
 

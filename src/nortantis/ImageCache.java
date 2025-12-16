@@ -189,7 +189,8 @@ public class ImageCache
 					float[] filterHSB = filterColor.toArray();
 					float filterAlphaScale = filterColor.getAlpha() / 255f;
 
-					if (!fillColor.equals(MapSettings.defaultIconColor) || !filterColor.equals(MapSettings.defaultIconFilterColor) || maximizeOpacity)
+					if (!fillColor.equals(MapSettings.defaultIconColor) || !filterColor.equals(MapSettings.defaultIconFilterColor)
+							|| maximizeOpacity)
 					{
 						Image result = Image.create(imageAndMasks.image.getWidth(), imageAndMasks.image.getHeight(), ImageType.ARGB);
 						int[] resultData = result.getDataIntBased();
@@ -212,7 +213,7 @@ public class ImageCache
 								{
 									alpha = originalColor.getAlpha();
 								}
-								
+
 								double fillColorAlpha = fillColor.getAlpha() / 255.0;
 								double fillColorScale;
 								if (fillColorAlpha == 1.0)
@@ -222,12 +223,14 @@ public class ImageCache
 								}
 								else
 								{
-									// Use a curve that is 0 when fillColorAlpha is 0, 1 when fillColorAlpha is 1, and is mostly equal to 1 but dies off
-									// quickly as fillColorAlpha reaches 0. That way when the fill color is transparent, it doesn't mix with icon pixels
+									// Use a curve that is 0 when fillColorAlpha is 0, 1 when fillColorAlpha is 1, and is mostly equal to 1
+									// but dies off
+									// quickly as fillColorAlpha reaches 0. That way when the fill color is transparent, it doesn't mix with
+									// icon pixels
 									// that are partially transparent.
 									fillColorScale = 1.0 - Math.pow(1.0 - fillColorAlpha, 50);
 								}
-								
+
 								Color filteredImageColor;
 								int filteredAlpha;
 								// Use filter color
@@ -235,10 +238,13 @@ public class ImageCache
 								filteredImageColor = Color.createFromHSB(hsb[0] + filterHSB[0] - (float) Math.floor(hsb[0] + filterHSB[0]),
 										Helper.clamp(hsb[1] + filterHSB[1], 0f, 1f), Helper.clamp(hsb[2] + filterHSB[2], 0f, 1f));
 								filteredAlpha = Math.min(255, (int) (alpha * filterAlphaScale));
-								
-								int r = Helper.linearComboBase255(filteredAlpha, filteredImageColor.getRed(), (int) (fillColor.getRed() * fillColorScale));
-								int g = Helper.linearComboBase255(filteredAlpha, filteredImageColor.getGreen(), (int)(fillColor.getGreen() * fillColorScale));
-								int b = Helper.linearComboBase255(filteredAlpha, filteredImageColor.getBlue(), (int)(fillColor.getBlue() * fillColorScale));
+
+								int r = Helper.linearComboBase255(filteredAlpha, filteredImageColor.getRed(),
+										(int) (fillColor.getRed() * fillColorScale));
+								int g = Helper.linearComboBase255(filteredAlpha, filteredImageColor.getGreen(),
+										(int) (fillColor.getGreen() * fillColorScale));
+								int b = Helper.linearComboBase255(filteredAlpha, filteredImageColor.getBlue(),
+										(int) (fillColor.getBlue() * fillColorScale));
 								int a = Math.max(filteredAlpha, Math.min(fillColor.getAlpha(), colorMask.getGrayLevel(x, y)));
 
 								result.setRGB(resultData, x, y, r, g, b, a);
@@ -355,8 +361,7 @@ public class ImageCache
 				.getOrCreate((groupName == null ? "" : groupName).intern(), () -> loadIconsWithSizesAndAlphas(iconType, groupName));
 	}
 
-	private record FilenameParams(String originalFileName, String fileNameBase, Double width, Integer alpha)
-	{
+	private record FilenameParams(String originalFileName, String fileNameBase, Double width, Integer alpha) {
 	}
 
 	private Map<String, ImageAndMasks> loadIconsWithSizesAndAlphas(IconType iconType, String groupName)
@@ -455,11 +460,9 @@ public class ImageCache
 				width = filenameParams.width;
 			}
 
-
 			imagesAndMasks.put(filenameParams.fileNameBase,
 					new ImageAndMasks(icon, iconType, width, artPack, groupName, filenameParams.fileNameBase));
 		}
-
 
 		return imagesAndMasks;
 	}
@@ -508,7 +511,8 @@ public class ImageCache
 
 			Image icon = iconsByName.get(nameOfWidestOrTallest);
 			double widthOrHeight = getDefaultWidthOrHeight(iconType);
-			double width = isDefaultSizeByWidth(iconType) ? widthOrHeight
+			double width = isDefaultSizeByWidth(iconType)
+					? widthOrHeight
 					: IconDrawer.getDimensionsWhenScaledByHeight(icon.size(), widthOrHeight).width;
 			return new Tuple2<>(icon, width);
 		}

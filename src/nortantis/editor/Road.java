@@ -18,7 +18,7 @@ public class Road
 	{
 		this.path = new CopyOnWriteArrayList<Point>(path);
 	}
-	
+
 	public Road(Road other)
 	{
 		this(other.path);

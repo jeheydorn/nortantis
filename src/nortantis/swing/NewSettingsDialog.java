@@ -256,7 +256,6 @@ public class NewSettingsDialog extends JDialog
 			bottomPanel.add(Box.createHorizontalStrut(5));
 		}
 
-
 		progressBar = new JProgressBar();
 		progressBar.setStringPainted(true);
 		progressBar.setString("Drawing...");
@@ -605,8 +604,10 @@ public class NewSettingsDialog extends JDialog
 
 	private void createMapEditingPanel()
 	{
-		BufferedImage placeHolder = AwtFactory.unwrap(ImageHelper.createPlaceholderImage(new String[] { "Drawing..." },
-				AwtFactory.wrap(SwingHelper.getTextColorForPlaceholderImages())));
+		BufferedImage placeHolder = AwtFactory.unwrap(ImageHelper.createPlaceholderImage(new String[]
+		{
+				"Drawing..."
+		}, AwtFactory.wrap(SwingHelper.getTextColorForPlaceholderImages())));
 		mapEditingPanel = new MapEditingPanel(placeHolder);
 
 		mapEditingPanelContainer = new JPanel();

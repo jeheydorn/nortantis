@@ -24,7 +24,7 @@ public class FontChooser
 	private final int height;
 	private final Runnable okAction;
 	private final String labelText;
-	
+
 	public FontChooser(String labelText, int height, int maxFontSize, Runnable okAction)
 	{
 		this.height = height;
@@ -33,7 +33,7 @@ public class FontChooser
 		this.labelText = labelText;
 		chooseButton = new JButton("Choose");
 	}
-	
+
 	public RowHider addToOrganizer(GridBagOrganizer organizer)
 	{
 		final int spaceUnderFontDisplays = 4;
@@ -56,7 +56,7 @@ public class FontChooser
 				Arrays.asList(displayHolder, Box.createVerticalStrut(spaceUnderFontDisplays), chooseButtonHolder));
 		return hider;
 	}
-	
+
 	private void runFontChooser(JComponent parent, JLabel fontDisplay, Runnable okAction)
 	{
 		JFontChooser fontChooser = new JFontChooser();
@@ -71,12 +71,12 @@ public class FontChooser
 			okAction.run();
 		}
 	}
-	
+
 	public Font getFont()
 	{
 		return font;
 	}
-	
+
 	public void setFont(Font font)
 	{
 		this.font = font;

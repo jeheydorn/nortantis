@@ -33,7 +33,8 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 	final HSBColor filterColor;
 	boolean maximizeOpacity;
 
-	public IconDrawTask(ImageAndMasks unScaledImageAndMasks, IconType type, Point centerLoc, IntDimension scaledSize, Color color, HSBColor filterColor, boolean maximizeOpacity, String groupId)
+	public IconDrawTask(ImageAndMasks unScaledImageAndMasks, IconType type, Point centerLoc, IntDimension scaledSize, Color color,
+			HSBColor filterColor, boolean maximizeOpacity, String groupId)
 	{
 		this(unScaledImageAndMasks, null, type, centerLoc, scaledSize, null, color, filterColor, maximizeOpacity, groupId);
 	}
@@ -74,7 +75,8 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 			}
 			else
 			{
-				coloredIcon = ImageCache.getInstance(Assets.installedArtPack, null).getColoredIcon(unScaledImageAndMasks, color, filterColor, maximizeOpacity);
+				coloredIcon = ImageCache.getInstance(Assets.installedArtPack, null).getColoredIcon(unScaledImageAndMasks, color,
+						filterColor, maximizeOpacity);
 			}
 
 			// The path passed to ImageCache.getInstance isn't important so long as other calls to getScaledImageByWidth
@@ -92,7 +94,8 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 					unScaledImageAndMasks.getOrCreateContentBounds(), scaledSize.width, scaledSize.height);
 
 			scaledImageAndMasks = new ImageAndMasks(scaledImage, scaledContentMask, scaledContentBounds, scaledShadingMask, type,
-					unScaledImageAndMasks.widthFromFileName, unScaledImageAndMasks.artPack, unScaledImageAndMasks.groupId, unScaledImageAndMasks.fileNameWithoutParametersOrExtension);
+					unScaledImageAndMasks.widthFromFileName, unScaledImageAndMasks.artPack, unScaledImageAndMasks.groupId,
+					unScaledImageAndMasks.fileNameWithoutParametersOrExtension);
 		}
 	}
 

@@ -94,7 +94,6 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private final double mediumIconScale = 0.4;
 	private final double largeIconScale = 0.6;
 
-
 	public MapEditingPanel(BufferedImage image)
 	{
 		super(image);

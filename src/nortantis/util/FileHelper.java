@@ -149,8 +149,11 @@ public class FileHelper
 
 	/**
 	 * Get the contents of a Java properties file in a zip file.
-	 * @param zipFilePath Path to the zip file on disk.
-	 * @param pathInZipFile Path to the file in the zip file. Use '/' as the path separator.
+	 * 
+	 * @param zipFilePath
+	 *            Path to the zip file on disk.
+	 * @param pathInZipFile
+	 *            Path to the file in the zip file. Use '/' as the path separator.
 	 * @return The file contents, loaded into a Properties object.
 	 * @throws IOException
 	 */
@@ -173,7 +176,6 @@ public class FileHelper
 		}
 		throw new FileNotFoundException("Properties file " + pathInZipFile + " not found in zip archive " + zipFilePath);
 	}
-
 
 	public static List<String> getTopLevelSubFolders(Path zipFilePath) throws IOException
 	{
@@ -199,7 +201,6 @@ public class FileHelper
 
 		return subFolders;
 	}
-
 
 	public static void writeToFile(String fileName, String contents)
 	{

@@ -126,8 +126,7 @@ public class ImageAndMasks
 			{
 				createContentMaskUsing3WaySilhouetteIntersection();
 			}
-		}
-		finally
+		} finally
 		{
 			if (contentBounds == null)
 			{
@@ -188,7 +187,6 @@ public class ImageAndMasks
 		p.fillRect(0, 0, contentMask.getWidth(), contentMask.getHeight());
 		p.dispose();
 
-
 		boolean[][] visited = new boolean[image.getWidth()][image.getHeight()];
 		while (!q.isEmpty())
 		{
@@ -196,7 +194,6 @@ public class ImageAndMasks
 
 			int x = next.x;
 			int y = next.y;
-
 
 			if (x < 0 || x >= image.getWidth() || y < 0 || y >= image.getHeight() || visited[x][y])
 			{
@@ -214,7 +211,6 @@ public class ImageAndMasks
 			{
 				// This is part of the "background" that should be black in the mask
 				contentMask.setGrayLevel(x, y, 0);
-
 
 				if (!isNarrowPassage(image, x, y, narrowPassageThreshold))
 				{
@@ -496,7 +492,6 @@ public class ImageAndMasks
 		}
 	}
 
-
 	public synchronized Image cropToContent()
 	{
 		getOrCreateContentBounds();
@@ -729,7 +724,6 @@ public class ImageAndMasks
 		}
 		return max;
 	}
-
 
 	public synchronized Image getOrCreateColorMask()
 	{

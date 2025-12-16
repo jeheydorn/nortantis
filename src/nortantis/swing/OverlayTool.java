@@ -116,7 +116,8 @@ public class OverlayTool extends EditorTool
 							// Reduce width by 1 pixel so that right side draws inside the map when the overlay is the size of the map.
 							IntRectangle adjusted = new IntRectangle(overlayPosition.x, overlayPosition.y, overlayPosition.width - 1,
 									overlayPosition.height);
-							mapEditingPanel.showIconEditToolsAt(adjusted.toRectangle(), true, IconEditToolsLocation.InsideBox, IconEditToolsSize.Large, true, false);
+							mapEditingPanel.showIconEditToolsAt(adjusted.toRectangle(), true, IconEditToolsLocation.InsideBox,
+									IconEditToolsSize.Large, true, false);
 						}
 						else
 						{
@@ -162,7 +163,6 @@ public class OverlayTool extends EditorTool
 
 		JPanel toolOptionsPanel = organizer.panel;
 		toolOptionsPanel.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
-
 
 		{
 			drawOverlayImageCheckbox = new JCheckBox("Enable overlay image");
@@ -256,7 +256,6 @@ public class OverlayTool extends EditorTool
 					handleOverlayImageChange();
 				}
 			});
-
 
 			fitInsideBorderButton = new JButton("Fit Inside Border");
 			fitInsideBorderButton.setToolTipText(
@@ -481,8 +480,7 @@ public class OverlayTool extends EditorTool
 			overlayImageTransparencySlider.setValue(settings.overlayImageTransparency);
 			overlayOffsetResolutionInvariant = settings.overlayOffsetResolutionInvariant;
 			overlayScale = settings.overlayScale;
-		}
-		finally
+		} finally
 		{
 			enableRedraws = true;
 		}
@@ -496,7 +494,8 @@ public class OverlayTool extends EditorTool
 		settings.drawOverlayImage = drawOverlayImageCheckbox.isSelected();
 		settings.overlayImagePath = FileHelper.replaceHomeFolderWithPlaceholder(overlayImagePath.getText());
 		settings.overlayImageTransparency = overlayImageTransparencySlider.getValue();
-		settings.overlayOffsetResolutionInvariant = overlayOffsetResolutionInvariant == null ? new Point(0, 0)
+		settings.overlayOffsetResolutionInvariant = overlayOffsetResolutionInvariant == null
+				? new Point(0, 0)
 				: overlayOffsetResolutionInvariant;
 		settings.overlayScale = overlayScale;
 	}
