@@ -373,6 +373,7 @@ public class MapCreator implements WarningLogger
 			checkForCancel();
 
 			Image coastShading;
+			Image landColoredBeforeAddingIconColors = null;
 			Image landBackground = null;
 			{
 				Tuple2<Image, Image> tuple = darkenLandNearCoastlinesAndRegionBorders(settings, mapParts.graph, settings.resolution,
@@ -383,11 +384,11 @@ public class MapCreator implements WarningLogger
 
 				if (settings.drawRegionColors)
 				{
-					Image landColoredBeforeAddingIconColors = ImageHelper.copySnippet(mapParts.background.landColoredBeforeAddingIconColors,
+					landColoredBeforeAddingIconColors = ImageHelper.copySnippet(mapParts.background.landColoredBeforeAddingIconColors,
 							drawBounds.toIntRectangle());
 					landBackground = darkenLandNearCoastlinesAndRegionBorders(settings, mapParts.graph, settings.resolution,
 							landColoredBeforeAddingIconColors, mapParts.background, coastShading, centersToDraw, drawBounds, false)
-							.getFirst();
+									.getFirst();
 				}
 				else
 				{
@@ -465,7 +466,8 @@ public class MapCreator implements WarningLogger
 
 			if (settings.drawGridOverlay && settings.gridOverlayLayer == GridOverlayLayer.Under_icons)
 			{
-				GridDrawer.drawGrid(mapSnippet, settings, drawBounds, mapParts.background.mapBounds.toIntDimension(), mapParts.graph, centersToDraw);
+				GridDrawer.drawGrid(mapSnippet, settings, drawBounds, mapParts.background.mapBounds.toIntDimension(), mapParts.graph,
+						centersToDraw);
 			}
 
 			checkForCancel();
@@ -478,18 +480,19 @@ public class MapCreator implements WarningLogger
 
 			if (settings.drawGridOverlay && settings.gridOverlayLayer == GridOverlayLayer.Over_icons)
 			{
-				GridDrawer.drawGrid(mapSnippet, settings, drawBounds, mapParts.background.mapBounds.toIntDimension(), mapParts.graph, centersToDraw);
+				GridDrawer.drawGrid(mapSnippet, settings, drawBounds, mapParts.background.mapBounds.toIntDimension(), mapParts.graph,
+						centersToDraw);
 			}
 
 			checkForCancel();
 
-			textBackground = updateLandMaskAndCreateTextBackground(settings, mapParts.graph, landMask, iconsToDraw, landTextureSnippet,
-					oceanTextureSnippet, mapParts.background, oceanWaves, oceanShading, coastShading, mapParts.iconDrawer, centersToDraw,
-					drawBounds);
+			textBackground = updateLandMaskAndCreateTextBackground(settings, mapParts.graph, landMask, iconsToDraw,
+					settings.drawRegionColors ? landColoredBeforeAddingIconColors : landTextureSnippet, oceanTextureSnippet,
+					mapParts.background, oceanWaves, oceanShading, coastShading, mapParts.iconDrawer, centersToDraw, drawBounds);
 
 			checkForCancel();
 
-			// Update the snippet in textBackground because the Fonts tab uses that as part of speeding up text re-drawing.
+			// Update the snippet in mapParts.textBackground because the Fonts tab uses that as part of speeding up text re-drawing.
 			ImageHelper.copySnippetFromSourceAndPasteIntoTarget(mapParts.textBackground, textBackground,
 					replaceBounds.upperLeftCorner().toIntPoint(), boundsInSourceToCopyFrom, 0);
 
@@ -1543,8 +1546,7 @@ public class MapCreator implements WarningLogger
 				final double minNotDrawLength = 2 * scaleForAll;
 				final double maxDrawLength = 24 * scaleForAll;
 				final double minDrawLength = 19 * scaleForAll;
-				return isDrawing
-						? rand.nextDouble(minDrawLength, maxDrawLength + 1)
+				return isDrawing ? rand.nextDouble(minDrawLength, maxDrawLength + 1)
 						: rand.nextDouble(minNotDrawLength, maxNotDrawLength + 1);
 			};
 
@@ -2161,7 +2163,8 @@ public class MapCreator implements WarningLogger
 			p.setAlphaComposite(AlphaComposite.SrcAtop, alpha);
 
 			p.drawImage(overlayImage, x, y, overlayPosition.width, overlayPosition.height);
-		} finally
+		}
+		finally
 		{
 			p.dispose();
 		}

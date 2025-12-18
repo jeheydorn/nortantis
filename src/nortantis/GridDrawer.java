@@ -46,7 +46,7 @@ public class GridDrawer
 					settings.gridOverlayYOffset, drawBounds, lineWidth);
 			case Horizontal_hexes -> drawHorizontalHexGrid(p, width, height, settings.gridOverlayRowOrColCount, settings.gridOverlayXOffset,
 					settings.gridOverlayYOffset, drawBounds, lineWidth);
-			case Voronoi_polygons_on_land -> drawVoronoiOnLand(p, graph, centersToDraw, drawBounds);
+			case Voronoi_polygons_on_land -> drawVoronoiOnLand(p, graph, centersToDraw, drawBounds, settings.drawVoronoiGridOverlayOnlyOnLand);
 			default -> throw new IllegalArgumentException("Unexpected value: " + settings.gridOverlayShape);
 			}
 
@@ -60,9 +60,9 @@ public class GridDrawer
 		}
 	}
 
-	private static void drawVoronoiOnLand(Painter p, WorldGraph graph, Collection<Center> centersToDraw, Rectangle drawBounds)
+	private static void drawVoronoiOnLand(Painter p, WorldGraph graph, Collection<Center> centersToDraw, Rectangle drawBounds, boolean drawOnlyOnLand)
 	{
-		graph.drawVoronoi(p, centersToDraw, drawBounds, true);
+		graph.drawVoronoi(p, centersToDraw, drawBounds, drawOnlyOnLand);
 	}
 
 	private static void drawSquareGrid(Painter p, float width, float height, int colCount, GridOverlayOffset xOffset,

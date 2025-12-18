@@ -26,6 +26,7 @@ import nortantis.WarningLogger;
 import nortantis.editor.FreeIcon;
 import nortantis.editor.MapParts;
 import nortantis.editor.MapUpdater;
+import nortantis.geom.IntPoint;
 import nortantis.geom.IntRectangle;
 import nortantis.geom.Rectangle;
 import nortantis.platform.Color;
@@ -89,63 +90,117 @@ public class MapCreatorTest
 		MapCreator mapCreator = new MapCreator();
 		MapParts mapParts = new MapParts();
 		Image fullMap = mapCreator.createMap(settings, null, mapParts);
-
-		final int numberToTest = 500; // TODO lower this.
-		final int diffThreshold = 10; // TODO lower this to about 10 hopefully.
-		Image fullMapForUpdate = fullMap.deepCopy();
+		final int diffThreshold = 10; 
 		int failCount = 0;
-		int iconNumber = 0;
-		for (FreeIcon icon : settings.edits.freeIcons)
+
+		// TODO put back
 		{
-			iconNumber++;
-
-			// TODO remove
-			if (iconNumber != 418)
+			final int numberToTest = 100; 
+			Image fullMapForUpdates = fullMap.deepCopy();
+			int iconNumber = 0;
+			for (FreeIcon icon : settings.edits.freeIcons)
 			{
-				continue; 
+				iconNumber++;
+				if (iconNumber > numberToTest)
+				{
+					break;
+				}
+
+				System.out.println("Running incremental icon drawing test number " + iconNumber);
+
+				IntRectangle changedBounds = mapCreator.incrementalUpdateIcons(settings, mapParts, fullMapForUpdates, Arrays.asList(icon));
+
+				assertTrue("Incremental update should produce bounds", changedBounds != null);
+				assertTrue(changedBounds.width > 0);
+				assertTrue(changedBounds.height > 0);
+
+				Image expectedSnippet = fullMap.getSubImage(changedBounds);
+				Image actualSnippet = fullMapForUpdates.getSubImage(changedBounds);
+
+				// Compare incremental result against expected
+				String comparisonErrorMessage = checkIfImagesEqual(expectedSnippet, actualSnippet, diffThreshold);
+				if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
+				{
+					FileHelper.createFolder(Paths.get("unit test files", "failed maps").toString());
+
+					String expectedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + iconNumber + " expected.png";
+					Path expectedPath = Paths.get("unit test files", "failed maps", expectedSnippetName);
+					ImageHelper.write(expectedSnippet, expectedPath.toString());
+
+					String failedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + iconNumber + " failed.png";
+					Path failedPath = Paths.get("unit test files", "failed maps", failedSnippetName);
+					ImageHelper.write(actualSnippet, failedPath.toString());
+
+					createImageDiffIfImagesAreSameSize(expectedSnippet, actualSnippet, failedSnippetName, diffThreshold);
+					failCount++;
+				}
 			}
-			
-			IntRectangle changedBounds = mapCreator.incrementalUpdateIcons(settings, mapParts, fullMapForUpdate, Arrays.asList(icon));
 
-			assertTrue("Incremental update should produce bounds", changedBounds != null);
-			assertTrue(changedBounds.width > 0);
-			assertTrue(changedBounds.height > 0);
-
-			Image expectedSnippet = fullMap.getSubImage(changedBounds);
-			Image actualSnippet = fullMapForUpdate.getSubImage(changedBounds);
-
-			// Compare incremental result against expected
-			String comparisonErrorMessage = checkIfImagesEqual(expectedSnippet, actualSnippet, diffThreshold);
+			String comparisonErrorMessage = checkIfImagesEqual(fullMap, fullMapForUpdates, diffThreshold);
 			if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
 			{
 				FileHelper.createFolder(Paths.get("unit test files", "failed maps").toString());
-
-				String expectedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + iconNumber + " expected.png";
-				Path expectedPath = Paths.get("unit test files", "failed maps", expectedSnippetName);
-				ImageHelper.write(expectedSnippet, expectedPath.toString());
-
-				String failedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + iconNumber + " failed.png";
-				Path failedPath = Paths.get("unit test files", "failed maps", failedSnippetName);
-				ImageHelper.write(actualSnippet, failedPath.toString());
-
-				createImageDiffIfImagesAreSameSize(expectedSnippet, actualSnippet, failedSnippetName, diffThreshold);
-				failCount++;
-			}
-
-			if (iconNumber > numberToTest)
-			{
-				break;
+				String failedMapName = settingsFileName + " full map for incremental draw test";
+				ImageHelper.write(fullMapForUpdates, getFailedMapFilePath(failedMapName));
+				createImageDiffIfImagesAreSameSize(fullMap, fullMapForUpdates, failedMapName, diffThreshold);
+				fail("Incremental update did not match expected image: " + comparisonErrorMessage);
 			}
 		}
-		String comparisonErrorMessage = checkIfImagesEqual(fullMap, fullMapForUpdate, diffThreshold);
-		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
+		
 		{
-			FileHelper.createFolder(Paths.get("unit test files", "failed maps").toString());
-			String failedMapName = settingsFileName + " full map for incremental draw test";
-			ImageHelper.write(fullMapForUpdate, getFailedMapFilePath(failedMapName));
-			createImageDiffIfImagesAreSameSize(fullMap, fullMapForUpdate, failedMapName, diffThreshold);
-			fail("Incremental update did not match expected image: " + comparisonErrorMessage);
+			final int numberToTest = 100; 
+			Image fullMapForUpdates = fullMap.deepCopy();
+			int textNumber = 0;
+			for (MapText text : settings.edits.text)
+			{
+				textNumber++;
+				if (textNumber > numberToTest)
+				{
+					break;
+				}
+
+				System.out.println("Running incremental text drawing test number " + textNumber);
+
+				IntRectangle changedBounds = mapCreator.incrementalUpdateText(settings, mapParts, fullMapForUpdates, Arrays.asList(text));
+				changedBounds = changedBounds.findIntersection(new IntRectangle(new IntPoint(0, 0), mapParts.background.getMapBoundsIncludingBorder().toIntDimension()));
+
+				assertTrue("Incremental update should produce bounds", changedBounds != null);
+				assertTrue(changedBounds.width > 0);
+				assertTrue(changedBounds.height > 0);
+
+				Image expectedSnippet = fullMap.getSubImage(changedBounds);
+				Image actualSnippet = fullMapForUpdates.getSubImage(changedBounds);
+
+				// Compare incremental result against expected
+				String comparisonErrorMessage = checkIfImagesEqual(expectedSnippet, actualSnippet, diffThreshold);
+				if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
+				{
+					FileHelper.createFolder(Paths.get("unit test files", "failed maps").toString());
+
+					String expectedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + textNumber + " expected.png";
+					Path expectedPath = Paths.get("unit test files", "failed maps", expectedSnippetName);
+					ImageHelper.write(expectedSnippet, expectedPath.toString());
+
+					String failedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + textNumber + " failed.png";
+					Path failedPath = Paths.get("unit test files", "failed maps", failedSnippetName);
+					ImageHelper.write(actualSnippet, failedPath.toString());
+
+					createImageDiffIfImagesAreSameSize(expectedSnippet, actualSnippet, failedSnippetName, diffThreshold);
+					failCount++;
+				}
+			}
+			
+			String comparisonErrorMessage = checkIfImagesEqual(fullMap, fullMapForUpdates, diffThreshold);
+			if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
+			{
+				FileHelper.createFolder(Paths.get("unit test files", "failed maps").toString());
+				String failedMapName = settingsFileName + " full map for incremental draw test";
+				ImageHelper.write(fullMapForUpdates, getFailedMapFilePath(failedMapName));
+				createImageDiffIfImagesAreSameSize(fullMap, fullMapForUpdates, failedMapName, diffThreshold);
+				fail("Incremental update did not match expected image: " + comparisonErrorMessage);
+			}
 		}
+
 
 		if (failCount > 0)
 		{

@@ -224,6 +224,7 @@ public class MapSettings implements Serializable
 	public GridOverlayOffset gridOverlayYOffset = GridOverlayOffset.zero;
 	public int gridOverlayLineWidth = 3;
 	public GridOverlayLayer gridOverlayLayer = GridOverlayLayer.Under_icons;
+	public boolean drawVoronoiGridOverlayOnlyOnLand = true;
 
 	public MapSettings()
 	{
@@ -523,6 +524,7 @@ public class MapSettings implements Serializable
 		root.put("gridOverlayYOffset", gridOverlayYOffset.toString());
 		root.put("gridOverlayLineWidth", gridOverlayLineWidth);
 		root.put("gridOverlayLayer", gridOverlayLayer.toString());
+		root.put("drawVoronoiGridOverlayOnlyOnLand", drawVoronoiGridOverlayOnlyOnLand);
 
 		// User edits.
 		if (edits != null && !skipEdits)
@@ -1265,6 +1267,10 @@ public class MapSettings implements Serializable
 			gridOverlayYOffset = GridOverlayOffset.parse((String) root.get("gridOverlayYOffset"));
 			gridOverlayLineWidth = (int) (long) root.get("gridOverlayLineWidth");
 			gridOverlayLayer = Enum.valueOf(GridOverlayLayer.class, ((String) root.get("gridOverlayLayer")).replace(" ", "_"));
+			if (root.containsKey("drawVoronoiGridOverlayOnlyOnLand"))
+			{
+				drawVoronoiGridOverlayOnlyOnLand = (boolean) root.get("drawVoronoiGridOverlayOnlyOnLand");
+			}
 		}
 
 		edits = new MapEdits();
@@ -2127,18 +2133,18 @@ public class MapSettings implements Serializable
 				concentricWaveCount, customImagesPath, defaultDefaultExportAction, defaultHeightmapExportAction, defaultMapExportAction,
 				defaultRoadColor, defaultRoadStyle, defaultRoadWidth, defaultTreeHeightScaleForOldMaps, drawBoldBackground, drawBorder,
 				drawGridOverlay, drawGrunge, drawOceanEffectsInLakes, drawOverlayImage, drawRegionBoundaries, drawRegionColors, drawRoads,
-				drawText, duneScale, edgeLandToWaterProbability, edits, fadeConcentricWaves, flipHorizontally, flipVertically, frayedBorder,
-				frayedBorderBlurLevel, frayedBorderColor, frayedBorderSeed, frayedBorderSize, generateBackground,
-				generateBackgroundFromTexture, generatedHeight, generatedWidth, gridOverlayColor, gridOverlayLayer, gridOverlayLineWidth,
-				gridOverlayRowOrColCount, gridOverlayShape, gridOverlayXOffset, gridOverlayYOffset, grungeWidth, heightmapExportPath,
-				heightmapResolution, hillScale, hueRange, iconColorsByType, iconFilterColorsByType, imageExportPath,
-				jitterToConcentricWaves, landColor, lineStyle, lloydRelaxationsScale, maximizeOpacityByType, mountainRangeFont,
-				mountainScale, oceanColor, oceanEffectsColor, oceanEffectsLevel, oceanShadingColor, oceanShadingLevel, oceanWavesColor,
-				oceanWavesLevel, oceanWavesType, otherMountainsFont, overlayImageDefaultScale, overlayImageDefaultTransparency,
-				overlayImagePath, overlayImageTransparency, overlayOffsetResolutionInvariant, overlayScale, pointPrecision, randomSeed,
-				regionBaseColor, regionBoundaryColor, regionBoundaryStyle, regionFont, regionsRandomSeed, resolution, rightRotationCount,
-				riverColor, riverFont, roadColor, roadStyle, saturationRange, solidColorBackground, textColor, textRandomSeed, titleFont,
-				treeHeightScale, version, worldSize);
+				drawText, drawVoronoiGridOverlayOnlyOnLand, duneScale, edgeLandToWaterProbability, edits, fadeConcentricWaves,
+				flipHorizontally, flipVertically, frayedBorder, frayedBorderBlurLevel, frayedBorderColor, frayedBorderSeed,
+				frayedBorderSize, generateBackground, generateBackgroundFromTexture, generatedHeight, generatedWidth, gridOverlayColor,
+				gridOverlayLayer, gridOverlayLineWidth, gridOverlayRowOrColCount, gridOverlayShape, gridOverlayXOffset, gridOverlayYOffset,
+				grungeWidth, heightmapExportPath, heightmapResolution, hillScale, hueRange, iconColorsByType, iconFilterColorsByType,
+				imageExportPath, jitterToConcentricWaves, landColor, lineStyle, lloydRelaxationsScale, maximizeOpacityByType,
+				mountainRangeFont, mountainScale, oceanColor, oceanEffectsColor, oceanEffectsLevel, oceanShadingColor, oceanShadingLevel,
+				oceanWavesColor, oceanWavesLevel, oceanWavesType, otherMountainsFont, overlayImageDefaultScale,
+				overlayImageDefaultTransparency, overlayImagePath, overlayImageTransparency, overlayOffsetResolutionInvariant, overlayScale,
+				pointPrecision, randomSeed, regionBaseColor, regionBoundaryColor, regionBoundaryStyle, regionFont, regionsRandomSeed,
+				resolution, rightRotationCount, riverColor, riverFont, roadColor, roadStyle, saturationRange, solidColorBackground,
+				textColor, textRandomSeed, titleFont, treeHeightScale, version, worldSize);
 	}
 
 	@Override
@@ -2187,6 +2193,7 @@ public class MapSettings implements Serializable
 				&& drawOceanEffectsInLakes == other.drawOceanEffectsInLakes && drawOverlayImage == other.drawOverlayImage
 				&& drawRegionBoundaries == other.drawRegionBoundaries && drawRegionColors == other.drawRegionColors
 				&& drawRoads == other.drawRoads && drawText == other.drawText
+				&& drawVoronoiGridOverlayOnlyOnLand == other.drawVoronoiGridOverlayOnlyOnLand
 				&& Double.doubleToLongBits(duneScale) == Double.doubleToLongBits(other.duneScale)
 				&& Double.doubleToLongBits(edgeLandToWaterProbability) == Double.doubleToLongBits(other.edgeLandToWaterProbability)
 				&& Objects.equals(edits, other.edits) && fadeConcentricWaves == other.fadeConcentricWaves
@@ -2235,4 +2242,5 @@ public class MapSettings implements Serializable
 				&& Objects.equals(version, other.version) && worldSize == other.worldSize;
 	}
 
+	
 }

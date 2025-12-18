@@ -207,6 +207,8 @@ public class ThemePanel extends JTabbedPane
 	private JLabel gridOverlayRowOrColLabel;
 	private JComboBox<GridOverlayLayer> gridOverlayLayerComboBox;
 	private RowHider gridOverlayLayerComboBoxHider;
+	private JCheckBox drawGridOverlayOnlyOnLandCheckbox;
+	private RowHider drawGridOverlayOnlyOnLandCheckboxHider;
 
 	public ThemePanel(MainWindow mainWindow)
 	{
@@ -613,7 +615,7 @@ public class ThemePanel extends JTabbedPane
 				});
 				gridOverlayLineWidthSliderHider = sliderWithDisplay.addToOrganizer(organizer, "Line width:", "Width of grid lines");
 			}
-
+			
 			{
 
 				gridOverlayColorDisplay = SwingHelper.createColorPickerPreviewPanel();
@@ -627,6 +629,19 @@ public class ThemePanel extends JTabbedPane
 				});
 				gridOverlayColorHider = organizer.addLabelAndComponentsHorizontal("Color:", "The color and transparency of the grid.",
 						Arrays.asList(gridOverlayColorDisplay, chooseButton), SwingHelper.colorPickerLeftPadding);
+			}
+
+			{
+				drawGridOverlayOnlyOnLandCheckbox = new JCheckBox("Only on land");
+				drawGridOverlayOnlyOnLandCheckbox.addActionListener(new ActionListener()
+				{
+					@Override
+					public void actionPerformed(ActionEvent e)
+					{
+						handleGridOverlayChange();
+					}
+				});
+				drawGridOverlayOnlyOnLandCheckboxHider = organizer.addLeftAlignedComponent(drawGridOverlayOnlyOnLandCheckbox);
 			}
 
 			{
@@ -1533,21 +1548,19 @@ public class ThemePanel extends JTabbedPane
 	private void updateGridOverlayFieldVisibilityAndLabelText()
 	{
 		gridOverlayShapeComboBoxHider.setVisible(drawGridOverlayCheckbox.isSelected());
-		gridOverlayRowOrColCountSliderHider.setVisible(drawGridOverlayCheckbox.isSelected());
 		gridOverlayColorHider.setVisible(drawGridOverlayCheckbox.isSelected());
-		gridOverlayXOffsetComboBoxHider.setVisible(drawGridOverlayCheckbox.isSelected());
-		gridOverlayYOffsetComboBoxHider.setVisible(drawGridOverlayCheckbox.isSelected());
 		gridOverlayLineWidthSliderHider.setVisible(drawGridOverlayCheckbox.isSelected());
 		gridOverlayLayerComboBoxHider.setVisible(drawGridOverlayCheckbox.isSelected());
 		
 		boolean isVoronoi = Objects.equals(gridOverlayShapeComboBox.getSelectedItem(), GridOverlayShape.Voronoi_polygons_on_land);
-		gridOverlayRowOrColCountSliderHider.setVisible(!isVoronoi);
-		gridOverlayXOffsetComboBoxHider.setVisible(!isVoronoi);
-		gridOverlayYOffsetComboBoxHider.setVisible(!isVoronoi);
+		gridOverlayRowOrColCountSliderHider.setVisible(!isVoronoi && drawGridOverlayCheckbox.isSelected());
+		gridOverlayXOffsetComboBoxHider.setVisible(!isVoronoi && drawGridOverlayCheckbox.isSelected());
+		gridOverlayYOffsetComboBoxHider.setVisible(!isVoronoi && drawGridOverlayCheckbox.isSelected());
 		gridOverlayRowOrColLabel.setText(
 				((GridOverlayShape) gridOverlayShapeComboBox.getSelectedItem()) == GridOverlayShape.Horizontal_hexes
 						? "Rows:"
 						: "Columns:");
+		drawGridOverlayOnlyOnLandCheckboxHider.setVisible(isVoronoi && drawGridOverlayCheckbox.isSelected());
 	}
 
 	private void updateBackgroundAndRegionFieldVisibility()
@@ -1922,6 +1935,7 @@ public class ThemePanel extends JTabbedPane
 		gridOverlayYOffsetComboBox.setSelectedItem(settings.gridOverlayYOffset);
 		gridOverlayLineWidthSlider.setValue(settings.gridOverlayLineWidth);
 		gridOverlayLayerComboBox.setSelectedItem(settings.gridOverlayLayer);
+		drawGridOverlayOnlyOnLandCheckbox.setSelected(settings.drawVoronoiGridOverlayOnlyOnLand);
 		updateGridOverlayFieldVisibilityAndLabelText();
 
 		if (changeEffectsBackgroundImages)
@@ -2155,6 +2169,7 @@ public class ThemePanel extends JTabbedPane
 		settings.gridOverlayYOffset = (GridOverlayOffset) gridOverlayYOffsetComboBox.getSelectedItem();
 		settings.gridOverlayLineWidth = gridOverlayLineWidthSlider.getValue();
 		settings.gridOverlayLayer = (GridOverlayLayer) gridOverlayLayerComboBox.getSelectedItem();
+		settings.drawVoronoiGridOverlayOnlyOnLand = drawGridOverlayOnlyOnLandCheckbox.isSelected();
 	}
 
 	public Font getTitleFont()
