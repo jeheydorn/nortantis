@@ -207,7 +207,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		int n = 0;
 		for (FreeIcon icon : icons)
 		{
-			nortantis.geom.Rectangle iconBounds = iconDrawer.toIconDrawTask(icon).createBounds();
+			nortantis.geom.Rectangle iconBounds = iconDrawer.toIconDrawTask(icon).getOrCreateContentBoundsPadded();
 			if (bounds == null)
 			{
 				bounds = iconBounds;
@@ -240,7 +240,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 			return;
 		}
 
-		showIconEditToolsAt(iconDrawer.toIconDrawTask(icon).createBounds(), isValidPosition, toolsLocation, editToolsSize, showEditBox,
+		showIconEditToolsAt(iconDrawer.toIconDrawTask(icon).getOrCreateContentBoundsPadded(), isValidPosition, toolsLocation, editToolsSize, showEditBox,
 				true);
 	}
 
@@ -346,7 +346,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 				IconDrawTask task = iconDrawer.toIconDrawTask(icon);
 				if (task != null)
 				{
-					nortantis.geom.Rectangle bounds = task.createBounds();
+					nortantis.geom.Rectangle bounds = task.getOrCreateContentBoundsPadded();
 					highlightedAreas.add(AwtFactory.toAwtArea(bounds));
 				}
 			}
@@ -360,7 +360,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 				IconDrawTask task = iconDrawer.toIconDrawTask(icon);
 				if (task != null)
 				{
-					nortantis.geom.Rectangle bounds = task.createBounds();
+					nortantis.geom.Rectangle bounds = task.getOrCreateContentBoundsPadded();
 					redHighlightedAreas.add(AwtFactory.toAwtArea(bounds));
 				}
 			}
@@ -557,7 +557,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 					IconDrawTask task = iconDrawer.toIconDrawTask(icon);
 					if (task != null)
 					{
-						nortantis.geom.Rectangle bounds = task.createBounds();
+						nortantis.geom.Rectangle bounds = task.getOrCreateContentBoundsPadded();
 						((Graphics2D) g).draw(AwtFactory.toAwtArea(bounds));
 					}
 				}
@@ -589,7 +589,8 @@ public class MapEditingPanel extends UnscaledImagePanel
 		if (!isIconToEditInAValidPosition)
 		{
 			final int inset = (int) (10 * resolution);
-			if (inset > 0 && editBounds.width > inset * 2 && editBounds.height > inset * 2)
+			final int minXSize = 8;
+			if (inset > 0 && editBounds.width > inset * 2 + minXSize && editBounds.height > inset * 2 + minXSize)
 			{
 				Stroke prevStroke = g.getStroke();
 				RenderingHints hints = g.getRenderingHints();

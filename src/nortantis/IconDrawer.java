@@ -259,21 +259,21 @@ public class IconDrawer
 					ListMap<String, ImageAndMasks> mountainImagesById = ImageCache.getInstance(cEdit.icon.artPack, customImagesPath)
 							.getIconGroupsAsListsForType(IconType.mountains);
 					changeBounds = Rectangle.add(changeBounds,
-							convertWidthBasedShuffledAnchoredIcon(edits, center, cEdit, mountainImagesById, warningLogger));
+							convertNonTreeShuffledAnchoredIcon(edits, center, cEdit, mountainImagesById, warningLogger));
 				}
 				else if (cEdit.icon.iconType == CenterIconType.Hill)
 				{
 					ListMap<String, ImageAndMasks> hillImagesById = ImageCache.getInstance(cEdit.icon.artPack, customImagesPath)
 							.getIconGroupsAsListsForType(IconType.hills);
 					changeBounds = Rectangle.add(changeBounds,
-							convertWidthBasedShuffledAnchoredIcon(edits, center, cEdit, hillImagesById, warningLogger));
+							convertNonTreeShuffledAnchoredIcon(edits, center, cEdit, hillImagesById, warningLogger));
 				}
 				else if (cEdit.icon.iconType == CenterIconType.Dune)
 				{
 					ListMap<String, ImageAndMasks> duneImages = ImageCache.getInstance(cEdit.icon.artPack, customImagesPath)
 							.getIconGroupsAsListsForType(IconType.sand);
 					changeBounds = Rectangle.add(changeBounds,
-							convertWidthBasedShuffledAnchoredIcon(edits, center, cEdit, duneImages, warningLogger));
+							convertNonTreeShuffledAnchoredIcon(edits, center, cEdit, duneImages, warningLogger));
 				}
 				else if (cEdit.icon.iconType == CenterIconType.City)
 				{
@@ -295,7 +295,7 @@ public class IconDrawer
 						{
 							changeBounds = Rectangle.add(changeBounds, getAnchoredNonTreeIconBoundsAt(center.index));
 							freeIcons.addOrReplace(icon);
-							changeBounds = Rectangle.add(changeBounds, drawTask.createBounds());
+							changeBounds = Rectangle.add(changeBounds, drawTask.getOrCreateContentBoundsPadded());
 						}
 
 						edits.centerEdits.put(cEdit.index, cEdit.copyWithIcon(null));
@@ -347,7 +347,7 @@ public class IconDrawer
 		return new Dimension(xSize, scaledHeight);
 	}
 
-	private Rectangle convertWidthBasedShuffledAnchoredIcon(MapEdits edits, Center center, CenterEdit cEdit,
+	private Rectangle convertNonTreeShuffledAnchoredIcon(MapEdits edits, Center center, CenterEdit cEdit,
 			ListMap<String, ImageAndMasks> iconsByGroup, WarningLogger warningLogger)
 	{
 		if (cEdit.icon == null)
@@ -383,7 +383,7 @@ public class IconDrawer
 		{
 			changeBounds = Rectangle.add(changeBounds, getAnchoredNonTreeIconBoundsAt(center.index));
 			freeIcons.addOrReplace(icon);
-			changeBounds = Rectangle.add(changeBounds, drawTask.createBounds());
+			changeBounds = Rectangle.add(changeBounds, drawTask.getOrCreateContentBoundsPadded());
 		}
 		else if (freeIcons.getNonTree(center.index) != null)
 		{
@@ -405,7 +405,7 @@ public class IconDrawer
 			IconDrawTask task = toIconDrawTask(icon);
 			if (task != null)
 			{
-				changeBounds = Rectangle.add(changeBounds, task.createBounds());
+				changeBounds = Rectangle.add(changeBounds, task.getOrCreateContentBoundsPadded());
 			}
 		}
 		return changeBounds;
@@ -420,7 +420,7 @@ public class IconDrawer
 			IconDrawTask task = toIconDrawTask(tree);
 			if (task != null)
 			{
-				changeBounds = Rectangle.add(changeBounds, task.createBounds());
+				changeBounds = Rectangle.add(changeBounds, task.getOrCreateContentBoundsPadded());
 			}
 		}
 		return changeBounds;
@@ -551,7 +551,7 @@ public class IconDrawer
 			IconDrawTask task = toIconDrawTask(icon);
 			if (task != null)
 			{
-				removeBounds = Rectangle.add(removeBounds, toIconDrawTask(icon).createBounds());
+				removeBounds = Rectangle.add(removeBounds, toIconDrawTask(icon).getOrCreateContentBoundsPadded());
 			}
 		}
 		freeIcons.removeAll(toRemove);
@@ -581,7 +581,7 @@ public class IconDrawer
 		}
 
 		// Remove the icon if it is entirely off the map.
-		if (!graph.bounds.overlaps(task.createBounds()))
+		if (!graph.bounds.overlaps(task.getOrCreateContentBoundsPadded()))
 		{
 			toRemove.add(icon);
 			return;
@@ -1122,7 +1122,7 @@ public class IconDrawer
 
 	}
 
-	List<IconDrawTask> getTasksInDrawBoundsSortedAndScaled(Rectangle drawBounds)
+	public List<IconDrawTask> getTasksInDrawBoundsSortedAndScaled(Rectangle drawBounds)
 	{
 		List<IconDrawTask> tasks = new ArrayList<IconDrawTask>(iconsToDraw.size());
 		for (IconDrawTask task : iconsToDraw)
@@ -1898,7 +1898,7 @@ public class IconDrawer
 	{
 		return toIconDrawTask(icon, getTypeLevelScale(icon.type));
 	}
-
+	
 	private IconDrawTask toIconDrawTask(FreeIcon icon, double typeLevelScale)
 	{
 		if (!Assets.artPackExists(icon.artPack, customImagesPath))

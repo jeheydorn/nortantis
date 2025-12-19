@@ -190,6 +190,22 @@ public class Rectangle
 		}
 	}
 
+	/**
+	 * Creates the minimum IntRectangle that encloses this Rectangle.
+	 * @return
+	 */
+	public IntRectangle toEnclosingIntRectangle()
+	{
+		double xRemainder = x - (int)x;
+		double yRemainder = y - (int)y;
+		
+		return new IntRectangle((int) x, (int) y, (int) Math.ceil(width + xRemainder), (int) Math.ceil(height + yRemainder));
+	}
+	
+	/**
+	 * Creates an IntRectangle by simply truncating the values in this rectangle.
+	 * @return
+	 */
 	public IntRectangle toIntRectangle()
 	{
 		return new IntRectangle((int) x, (int) y, (int) width, (int) height);

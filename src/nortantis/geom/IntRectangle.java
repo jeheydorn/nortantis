@@ -1,5 +1,7 @@
 package nortantis.geom;
 
+import java.util.Objects;
+
 public class IntRectangle
 {
 
@@ -120,5 +122,36 @@ public class IntRectangle
 	public Rectangle toRectangle()
 	{
 		return new Rectangle(x, y, width, height);
+	}
+
+	@Override
+	public int hashCode()
+	{
+		return Objects.hash(height, width, x, y);
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj)
+		{
+			return true;
+		}
+		if (obj == null)
+		{
+			return false;
+		}
+		if (getClass() != obj.getClass())
+		{
+			return false;
+		}
+		IntRectangle other = (IntRectangle) obj;
+		return height == other.height && width == other.width && x == other.x && y == other.y;
+	}
+
+	@Override
+	public String toString()
+	{
+		return "IntRectangle [x=" + x + ", y=" + y + ", width=" + width + ", height=" + height + "]";
 	}
 }

@@ -38,7 +38,6 @@ import nortantis.SettingsGenerator;
 import nortantis.editor.MapUpdater;
 import nortantis.editor.UserPreferences;
 import nortantis.geom.IntRectangle;
-import nortantis.geom.Rectangle;
 import nortantis.platform.Image;
 import nortantis.platform.awt.AwtFactory;
 import nortantis.swing.ThemePanel.LandColoringMethod;

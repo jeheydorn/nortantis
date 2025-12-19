@@ -28,7 +28,6 @@ import nortantis.Stopwatch;
 import nortantis.geom.Dimension;
 import nortantis.geom.IntRectangle;
 import nortantis.geom.Point;
-import nortantis.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
 import nortantis.platform.BackgroundTask;
@@ -1105,6 +1104,11 @@ public abstract class MapUpdater
 		return isMapBeingDrawn;
 	}
 
+	public boolean isMapReadyForInteractions()
+	{
+		return isMapReadyForInteractions;
+	}
+	
 	public void cancel()
 	{
 		MapCreator current = currentMapCreator;

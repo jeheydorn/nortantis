@@ -32,21 +32,22 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 	final Color color;
 	final HSBColor filterColor;
 	boolean maximizeOpacity;
+	final double resolutionScale;
 
 	public IconDrawTask(ImageAndMasks unScaledImageAndMasks, IconType type, Point centerLoc, IntDimension scaledSize, Color color,
-			HSBColor filterColor, boolean maximizeOpacity, String groupId)
+			HSBColor filterColor, boolean maximizeOpacity, String groupId, double resolutionScale)
 	{
-		this(unScaledImageAndMasks, null, type, centerLoc, scaledSize, null, color, filterColor, maximizeOpacity, groupId);
+		this(unScaledImageAndMasks, null, type, centerLoc, scaledSize, null, color, filterColor, maximizeOpacity, groupId, resolutionScale);
 	}
 
 	public IconDrawTask(ImageAndMasks unScaledImageAndMasks, IconType type, Point centerLoc, IntDimension scaledSize, String fileName,
-			Color color, HSBColor filterColor, boolean maximizeOpacity, String groupId)
+			Color color, HSBColor filterColor, boolean maximizeOpacity, String groupId, double resolutionScale)
 	{
-		this(unScaledImageAndMasks, null, type, centerLoc, scaledSize, fileName, color, filterColor, maximizeOpacity, groupId);
+		this(unScaledImageAndMasks, null, type, centerLoc, scaledSize, fileName, color, filterColor, maximizeOpacity, groupId, resolutionScale);
 	}
 
 	private IconDrawTask(ImageAndMasks unScaledImageAndMasks, ImageAndMasks scaledImageAndMasks, IconType type, Point centerLoc,
-			IntDimension scaledSize, String fileName, Color color, HSBColor filterColor, boolean maximizeOpacity, String groupId)
+			IntDimension scaledSize, String fileName, Color color, HSBColor filterColor, boolean maximizeOpacity, String groupId, double resolutionScale)
 	{
 		this.unScaledImageAndMasks = unScaledImageAndMasks;
 		this.scaledImageAndMasks = scaledImageAndMasks;
@@ -61,6 +62,7 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 		this.filterColor = filterColor;
 		this.maximizeOpacity = maximizeOpacity;
 		this.groupId = groupId;
+		this.resolutionScale = resolutionScale;
 	}
 
 	public void colorAndScaleIcon()
@@ -105,20 +107,51 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 				scaledSize.width, scaledSize.height));
 	}
 
-	public nortantis.geom.Rectangle createBounds()
+	/**
+	 * @return The bounds of the image on the map (I think without respect to the map border).
+	 */
+	private Rectangle createBounds()
 	{
 		return new nortantis.geom.Rectangle(centerLoc.x - scaledSize.width / 2.0, centerLoc.y - scaledSize.height / 2.0, scaledSize.width,
 				scaledSize.height);
 	}
 
+	private Rectangle contentBoundsPadded;
+
+	public Rectangle getOrCreateContentBoundsPadded()
+	{
+		if (contentBoundsPadded == null)
+		{
+			Rectangle bounds = createBounds();
+			final double padding = 2 * resolutionScale; // TODO change back to 2
+			Rectangle scaledContentBounds = calcScaledContentBounds();
+			contentBoundsPadded = new nortantis.geom.Rectangle(bounds.x + scaledContentBounds.x,
+					bounds.y + scaledContentBounds.y, scaledContentBounds.width, scaledContentBounds.height).pad(padding, padding);
+		}
+		return contentBoundsPadded;
+	}
+	
+	private Rectangle calcScaledContentBounds()
+	{
+		Image originalContentMask = unScaledImageAndMasks.getOrCreateContentMask();
+		IntRectangle originalContentBounds = unScaledImageAndMasks.getOrCreateContentBounds();
+		final double xScale = (((double) scaledSize.width / originalContentMask.getWidth()));
+		final double yScale = (((double) scaledSize.height / originalContentMask.getHeight()));
+
+		Rectangle scaledContentBounds = new Rectangle(originalContentBounds.x * xScale, originalContentBounds.y * yScale,
+				originalContentBounds.width * xScale, originalContentBounds.height * yScale);
+		return scaledContentBounds;
+	}
+
+
 	public boolean overlaps(nortantis.geom.Rectangle bounds)
 	{
-		return createBounds().overlaps(bounds);
+		return getOrCreateContentBoundsPadded().overlaps(bounds);
 	}
 
 	@Override
 	public int compareTo(IconDrawTask other)
 	{
-		return Integer.compare(yBottom, other.yBottom);
+		return Double.compare(getOrCreateContentBoundsPadded().getBottom(), other.getOrCreateContentBoundsPadded().getBottom());
 	}
 }

@@ -106,7 +106,7 @@ public class MapCreator implements WarningLogger
 			{
 				continue;
 			}
-			Rectangle change = task.createBounds();
+			Rectangle change = task.getOrCreateContentBoundsPadded();
 			if (change == null)
 			{
 				continue;

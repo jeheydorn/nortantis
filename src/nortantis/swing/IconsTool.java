@@ -978,7 +978,8 @@ public class IconsTool extends EditorTool
 			transparencySlider.setValue(filterColor.transparency);
 
 			maximizeOpacityCheckbox.setSelected(maximizeOpacity);
-		} finally
+		}
+		finally
 		{
 			disableColorChangeHandlers = false;
 		}
@@ -1071,8 +1072,7 @@ public class IconsTool extends EditorTool
 			radioButtons.add(button);
 		}
 
-		List<? extends Component> listToUse = radioButtons.size() > 0
-				? radioButtons
+		List<? extends Component> listToUse = radioButtons.size() > 0 ? radioButtons
 				: Arrays.asList(
 						new JLabel("<html>The art pack '" + artPack + "' has no " + iconType.toString().toLowerCase() + ".</html>"));
 		IconTypeButtons result;
@@ -1324,14 +1324,21 @@ public class IconsTool extends EditorTool
 			Color iconColor, HSBColor filterColor, boolean maximizeOpacity)
 	{
 		List<ImageAndMasks> images = ImageCache.getInstance(settings.artPack, customImagesPath).getIconsInGroup(iconType, groupName);
-		return createIconPreview(settings, images, 35, 9, iconType, iconColor, filterColor, maximizeOpacity);
+		int scaledHeight;
+		switch (iconType)
+		{
+			case IconType.mountains -> scaledHeight = 35;
+			case IconType.hills, IconType.sand -> scaledHeight = 25;
+			default -> scaledHeight = 35;
+		}
+		return createIconPreview(settings, images, scaledHeight, 9, iconType, iconColor, filterColor, maximizeOpacity);
 	}
 
 	private static Image createIconPreview(MapSettings settings, List<ImageAndMasks> imagesAndMasks, int scaledHeight, int padding,
 			IconType iconType, Color iconColor, HSBColor filterColor, boolean maximizeOpacity)
 	{
 		final double osScaling = SwingHelper.getOSScale();
-		final int maxRowWidth = (int) (168 * osScaling);
+		final int maxRowWidth = (int) (159 * osScaling);
 		final int horizontalPaddingBetweenImages = (int) (2 * osScaling);
 
 		padding = (int) (padding * osScaling);
@@ -1377,6 +1384,10 @@ public class IconsTool extends EditorTool
 		// Multiply the width padding by 2.2 instead of 2 to compensate for the
 		// image library I'm using not always scaling to the size I
 		// give.
+		
+		// TODO remove
+		//IntDimension size = new IntDimension(maxRowWidth + ((int) (padding * 2.2)),
+			//	(rowCount * scaledHeight) + (padding * 2));
 		IntDimension size = new IntDimension(Math.min(maxRowWidth, largestRowWidth) + ((int) (padding * 2.2)),
 				(rowCount * scaledHeight) + (padding * 2));
 
@@ -1770,7 +1781,7 @@ public class IconsTool extends EditorTool
 		if (icons != null && !icons.isEmpty())
 		{
 			Set<RotatedRectangle> processingAreas = icons.stream().map(icon -> updater.mapParts.iconDrawer.toIconDrawTask(icon))
-					.filter(task -> task != null).map(task -> new RotatedRectangle(task.createBounds())).collect(Collectors.toSet());
+					.filter(task -> task != null).map(task -> new RotatedRectangle(task.getOrCreateContentBoundsPadded())).collect(Collectors.toSet());
 			mapEditingPanel.addProcessingAreas(processingAreas);
 			mapEditingPanel.repaint();
 			updater.createAndShowMapIncrementalUsingIcons(icons, () ->
@@ -1835,7 +1846,7 @@ public class IconsTool extends EditorTool
 
 					for (FreeIcon iconToEdit : iconsToEdit)
 					{
-						Rectangle imageBounds = updater.mapParts.iconDrawer.toIconDrawTask(iconToEdit).createBounds();
+						Rectangle imageBounds = updater.mapParts.iconDrawer.toIconDrawTask(iconToEdit).getOrCreateContentBoundsPadded();
 						updated.add(iconToEdit.copyWithScale(iconToEdit.scale * floorWithMinScale(scale, imageBounds)));
 					}
 				}
@@ -1943,7 +1954,7 @@ public class IconsTool extends EditorTool
 					else if (isScaling)
 					{
 						double scale = calcScale(graphPointMouseLocation, graphPointMousePressedLocation, iconEditBounds);
-						Rectangle imageBounds = updater.mapParts.iconDrawer.toIconDrawTask(iconToEdit).createBounds();
+						Rectangle imageBounds = updater.mapParts.iconDrawer.toIconDrawTask(iconToEdit).getOrCreateContentBoundsPadded();
 						FreeIcon updatedIcon = iconToEdit.copyWithScale(iconToEdit.scale * floorWithMinScale(scale, imageBounds));
 						updated.add(updatedIcon);
 						mainWindow.edits.freeIcons.doWithLock(() ->
@@ -2068,6 +2079,11 @@ public class IconsTool extends EditorTool
 	private void innerHandleMouseMovedOnMap(java.awt.Point mouseLocation, boolean isControlDown)
 	{
 		if (mouseLocation == null)
+		{
+			return;
+		}
+		
+		if (!updater.isMapReadyForInteractions())
 		{
 			return;
 		}
@@ -2277,7 +2293,7 @@ public class IconsTool extends EditorTool
 				return false;
 			}
 
-			Rectangle rect = task.createBounds();
+			Rectangle rect = task.getOrCreateContentBoundsPadded();
 			return rect.contains(graphPoint);
 		}
 		else
@@ -2292,7 +2308,7 @@ public class IconsTool extends EditorTool
 			{
 				return false;
 			}
-			RotatedRectangle rect = new RotatedRectangle(task.createBounds());
+			RotatedRectangle rect = new RotatedRectangle(task.getOrCreateContentBoundsPadded());
 			return rect.overlapsCircle(graphPoint, brushRadius);
 		}
 	}
@@ -2313,7 +2329,7 @@ public class IconsTool extends EditorTool
 			IconDrawTask task = updater.mapParts.iconDrawer.toIconDrawTask(icon);
 			if (task != null)
 			{
-				double top = task.createBounds().getTop();
+				double top = task.getOrCreateContentBoundsPadded().getTop();
 				if (lowest == null || top > lowestTop)
 				{
 					lowest = icon;
@@ -2419,7 +2435,8 @@ public class IconsTool extends EditorTool
 		{
 			disableImageRefreshes = willDoImagesRefresh;
 			updateArtPackOptions(artPackToSelect, customImagesPath);
-		} finally
+		}
+		finally
 		{
 			disableImageRefreshes = false;
 		}

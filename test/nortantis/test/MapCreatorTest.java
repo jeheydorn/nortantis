@@ -16,7 +16,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.jupiter.api.Assertions;
 
 import nortantis.MapCreator;
 import nortantis.MapSettings;
@@ -28,7 +27,6 @@ import nortantis.editor.MapParts;
 import nortantis.editor.MapUpdater;
 import nortantis.geom.IntPoint;
 import nortantis.geom.IntRectangle;
-import nortantis.geom.Rectangle;
 import nortantis.platform.Color;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;

@@ -426,9 +426,10 @@ public class Background
 			if (task.type != IconType.decorations && (drawBounds == null || task.overlaps(drawBounds)))
 			{
 				IntRectangle contentBounds = task.scaledImageAndMasks.getOrCreateContentBounds();
-				Point nearBottom = new Point((task.centerLoc.x - task.scaledSize.width / 2) + (contentBounds.x + contentBounds.width / 2),
-						(task.centerLoc.y - task.scaledSize.height / 2) + (contentBounds.y + contentBounds.height));
-				Center center = graph.findClosestCenter(nearBottom, true);
+				Point middleOfBottomOfContentBounds = new Point(task.centerLoc.x - (task.scaledSize.width / 2) + (contentBounds.x + contentBounds.width / 2),
+						task.centerLoc.y - (task.scaledSize.height / 2) + (contentBounds.y + contentBounds.height));
+				Point justAboveBottomMiddle =  middleOfBottomOfContentBounds.add(0, - contentBounds.height / 8);
+				Center center = graph.findClosestCenter(justAboveBottomMiddle, true);
 				if (center == null)
 				{
 					continue;

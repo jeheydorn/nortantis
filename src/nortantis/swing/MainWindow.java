@@ -82,7 +82,6 @@ import nortantis.editor.ExportAction;
 import nortantis.editor.MapUpdater;
 import nortantis.editor.UserPreferences;
 import nortantis.geom.IntRectangle;
-import nortantis.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
 import nortantis.platform.BackgroundTask;

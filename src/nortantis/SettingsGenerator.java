@@ -76,19 +76,7 @@ public class SettingsGenerator
 		settings.oceanWavesType = ProbabilityHelper.sampleCategorical(rand, oceanWaveOptions);
 
 		Color landColor = rand.nextInt(2) == 1 ? settings.landColor : settings.oceanColor;
-		Color oceanColor;
-		if (settings.oceanWavesType == OceanWaves.Ripples)
-		{
-			oceanColor = settings.oceanColor;
-		}
-		else if (landColor == settings.landColor)
-		{
-			oceanColor = settings.oceanColor;
-		}
-		else
-		{
-			oceanColor = rand.nextInt(2) == 1 ? settings.landColor : settings.oceanColor;
-		}
+		Color oceanColor = settings.oceanColor;
 
 		settings.drawOceanEffectsInLakes = true;
 		settings.oceanWavesLevel = 15 + Math.abs(rand.nextInt(35));

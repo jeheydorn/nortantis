@@ -258,6 +258,11 @@ public class RotatedRectangle
 		// and the difference between the maximum and minimum x and y values as the width and height, respectively.
 		return new Rectangle(minX, minY, maxX - minX, maxY - minY);
 	}
+	
+	public Rectangle toUnrotatedRectangle()
+	{
+		return new Rectangle(x, y, width, height);
+	}
 
 	public Point getPivot()
 	{

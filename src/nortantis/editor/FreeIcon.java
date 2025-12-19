@@ -236,7 +236,7 @@ public class FreeIcon
 					.getDimensionsWhenScaledByWidth(imageAndMasks.image.size(), Math.round(typeLevelScale * scale * baseWidth))
 					.toIntDimension();
 			return new IconDrawTask(imageAndMasks, type, getScaledLocation(resolutionScale), drawSize, iconName, color, filterColor,
-					maximizeOpacity, groupId);
+					maximizeOpacity, groupId, resolutionScale);
 		}
 		else
 		{
@@ -249,7 +249,7 @@ public class FreeIcon
 			IntDimension drawSize = IconDrawer
 					.getDimensionsWhenScaledByWidth(imageAndMasks.image.size(), typeLevelScale * scale * baseWidth).roundToIntDimension();
 			return new IconDrawTask(imageAndMasks, type, getScaledLocation(resolutionScale), drawSize, color, filterColor, maximizeOpacity,
-					groupId);
+					groupId, resolutionScale);
 		}
 	}
 

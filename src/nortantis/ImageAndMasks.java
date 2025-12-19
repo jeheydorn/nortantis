@@ -5,8 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 
-import org.apache.commons.math3.distribution.NormalDistribution;
-
 import nortantis.geom.IntPoint;
 import nortantis.geom.IntRectangle;
 import nortantis.geom.Rectangle;
@@ -851,7 +849,7 @@ public class ImageAndMasks
 		final double yScale = (((double) scaledHeight / originalContentMask.getHeight()));
 
 		IntRectangle scaledContentBounds = new Rectangle(originalContentBounds.x * (xScale), originalContentBounds.y * yScale,
-				originalContentBounds.width * xScale, originalContentBounds.height * yScale).toIntRectangle();
+				originalContentBounds.width * xScale, originalContentBounds.height * yScale).toEnclosingIntRectangle();
 		return scaledContentBounds;
 	}
 

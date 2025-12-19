@@ -271,7 +271,8 @@ public class AwtFactory extends PlatformFactory
 
 	public static java.awt.Rectangle toAwtRectangle(Rectangle rect)
 	{
-		return new java.awt.Rectangle((int) rect.x, (int) rect.y, (int) rect.width, (int) rect.height);
+		IntRectangle rectInt = rect.toEnclosingIntRectangle();
+		return new java.awt.Rectangle(rectInt.x, rectInt.y, rectInt.width, rectInt.height);
 	}
 
 	public static java.awt.Rectangle toAwtRectangle(IntRectangle rect)
@@ -283,14 +284,16 @@ public class AwtFactory extends PlatformFactory
 	{
 		AffineTransform transform = new AffineTransform();
 		transform.rotate(rect.angle, rect.pivotX, rect.pivotY);
+		IntRectangle rectInt = rect.toUnrotatedRectangle().toEnclosingIntRectangle();
 		java.awt.Shape rotatedRect = transform
-				.createTransformedShape(new java.awt.Rectangle((int) rect.x, (int) rect.y, (int) rect.width, (int) rect.height));
+				.createTransformedShape(new java.awt.Rectangle(rectInt.x, rectInt.y, rectInt.width, rectInt.height));
 		return new java.awt.geom.Area(rotatedRect);
 	}
 
 	public static java.awt.geom.Area toAwtArea(Rectangle rect)
 	{
-		return new java.awt.geom.Area(new java.awt.Rectangle((int) rect.x, (int) rect.y, (int) rect.width, (int) rect.height));
+		IntRectangle rectInt = rect.toEnclosingIntRectangle();
+		return new java.awt.geom.Area(new java.awt.Rectangle(rectInt.x, rectInt.y, rectInt.width, rectInt.height));
 	}
 
 	public static Painter wrap(java.awt.Graphics2D g)
