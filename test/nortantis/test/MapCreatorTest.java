@@ -312,7 +312,19 @@ public class MapCreatorTest
 	@Test
 	public void newRandomMapTest2()
 	{
-		generateRandomAndCompare(3);
+		generateRandomAndCompare(4);
+	}
+		
+	@Test
+	public void newRandomHeightMapTest1()
+	{
+		generateRandomHeightmapAndCompare(1);
+	}
+	
+	@Test
+	public void newRandomHeightMapTest2()
+	{
+		generateRandomHeightmapAndCompare(4);
 	}
 
 	@Test
@@ -537,6 +549,48 @@ public class MapCreatorTest
 	{
 		generateAndCompare("clearedMapRegionEdit0Removed.nort");
 	}
+	
+	private void generateRandomHeightmapAndCompare(long seed)
+	{
+		String expectedFileName = "random heightmap for seed " + seed;
+		String expectedMapFilePath = getExpectedMapFilePath(expectedFileName);
+		Image expected;
+		if (new File(expectedMapFilePath).exists())
+		{
+			expected = Assets.readImage(expectedMapFilePath);
+		}
+		else
+		{
+			expected = null;
+		}
+
+		MapSettings settings = SettingsGenerator.generate(new Random(seed), Assets.installedArtPack, null);
+		settings.resolution = 0.5;
+		MapCreator mapCreator = new MapCreator();
+		Logger.println("Creating random heightmap to match '" + expectedFileName + "'");
+		Image actual;
+		actual = mapCreator.createHeightMap(settings);
+
+		if (expected == null)
+		{
+			// Create the expected map from the actual one.
+			expected = actual;
+			ImageHelper.write(actual, getExpectedMapFilePath(expectedFileName));
+		}
+
+		// Test deep copy after creating the map because MapCreator sets some fields during map creation, so it's a
+		// more complete test that way.
+		testDeepCopy(settings);
+
+		String comparisonErrorMessage = checkIfImagesEqual(expected, actual);
+		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
+		{
+			FileHelper.createFolder(Paths.get("unit test files", "failed maps").toString());
+			ImageHelper.write(actual, getFailedMapFilePath(expectedFileName));
+			createImageDiffIfImagesAreSameSize(expected, actual, expectedFileName);
+			fail(comparisonErrorMessage);
+		}
+	}
 
 	private static String getExpectedMapFilePath(String settingsFileName)
 	{
@@ -593,7 +647,6 @@ public class MapCreatorTest
 			createImageDiffIfImagesAreSameSize(expected, actual, expectedFileName);
 			fail(comparisonErrorMessage);
 		}
-
 	}
 
 	private void generateAndCompare(String settingsFileName)

@@ -1355,26 +1355,18 @@ public class IconsTool extends EditorTool
 				IntDimension croppedSize = imageAndMasks.getOrCreateContentBounds().size();
 				int scaledWidth = Math.min(maxRowWidth, (int) IconDrawer.getDimensionsWhenScaledByHeight(croppedSize, scaledHeight).width);
 
-				int xPaddingBetweenImages = 0;
-				if (i < imagesAndMasks.size() - 1)
+				if (rowWidth + scaledWidth > maxRowWidth)
 				{
-					xPaddingBetweenImages = horizontalPaddingBetweenImages;
-				}
-
-				if (rowWidth + scaledWidth + xPaddingBetweenImages > maxRowWidth)
-				{
+					// Add a new row
 					rowCount++;
+					largestRowWidth = Math.max(largestRowWidth, rowWidth);
 					rowWidth = scaledWidth;
 				}
 				else
 				{
-					rowWidth += scaledWidth;
-					if (i < imagesAndMasks.size() - 1)
-					{
-						rowWidth += horizontalPaddingBetweenImages;
-					}
+					// Since no preview image can be larger than a maxRowWidth, we must be adding an icon to a row that already has at least 1.
+					rowWidth += horizontalPaddingBetweenImages + scaledWidth;
 				}
-
 				largestRowWidth = Math.max(largestRowWidth, rowWidth);
 			}
 		}
@@ -1384,11 +1376,11 @@ public class IconsTool extends EditorTool
 		// Multiply the width padding by 2.2 instead of 2 to compensate for the
 		// image library I'm using not always scaling to the size I
 		// give.
-		
+
 		// TODO remove
-		//IntDimension size = new IntDimension(maxRowWidth + ((int) (padding * 2.2)),
-			//	(rowCount * scaledHeight) + (padding * 2));
-		IntDimension size = new IntDimension(Math.min(maxRowWidth, largestRowWidth) + ((int) (padding * 2.2)),
+		// IntDimension size = new IntDimension(maxRowWidth + ((int) (padding * 2.2)),
+		// (rowCount * scaledHeight) + (padding * 2));
+		IntDimension size = new IntDimension(Math.min(maxRowWidth, largestRowWidth) + (padding * 2),
 				(rowCount * scaledHeight) + (padding * 2));
 
 		Image previewImage;
@@ -1429,6 +1421,7 @@ public class IconsTool extends EditorTool
 				yExtraForCentering = (scaledHeight - ImageHelper.getHeightWhenScaledByWidth(image, scaledWidth)) / 2;
 			}
 			Image scaled = ImageHelper.scaleByWidth(image, scaledWidth, Method.ULTRA_QUALITY);
+
 			if (x - padding + scaled.getWidth() > maxRowWidth)
 			{
 				x = padding;
@@ -1437,11 +1430,7 @@ public class IconsTool extends EditorTool
 
 			p.drawImage(scaled, x, y + yExtraForCentering);
 
-			x += scaled.getWidth();
-			if (i < imagesAndMasks.size() - 1)
-			{
-				x += horizontalPaddingBetweenImages;
-			}
+			x += scaled.getWidth() + horizontalPaddingBetweenImages;
 		}
 
 		return previewImage;
@@ -1781,7 +1770,8 @@ public class IconsTool extends EditorTool
 		if (icons != null && !icons.isEmpty())
 		{
 			Set<RotatedRectangle> processingAreas = icons.stream().map(icon -> updater.mapParts.iconDrawer.toIconDrawTask(icon))
-					.filter(task -> task != null).map(task -> new RotatedRectangle(task.getOrCreateContentBoundsPadded())).collect(Collectors.toSet());
+					.filter(task -> task != null).map(task -> new RotatedRectangle(task.getOrCreateContentBoundsPadded()))
+					.collect(Collectors.toSet());
 			mapEditingPanel.addProcessingAreas(processingAreas);
 			mapEditingPanel.repaint();
 			updater.createAndShowMapIncrementalUsingIcons(icons, () ->
@@ -2082,7 +2072,7 @@ public class IconsTool extends EditorTool
 		{
 			return;
 		}
-		
+
 		if (!updater.isMapReadyForInteractions())
 		{
 			return;
