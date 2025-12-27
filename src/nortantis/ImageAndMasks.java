@@ -94,28 +94,7 @@ public class ImageAndMasks
 	{
 		try
 		{
-			if (iconType == IconType.decorations)
-			{
-				// Decorations are special because they don't tend to have an interior in which the mask should be filled in.
-				contentMask = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
-				for (int x = 0; x < contentMask.getWidth(); x++)
-				{
-					for (int y = 0; y < contentMask.getHeight(); y++)
-					{
-						int alpha = image.getAlpha(x, y);
-						if (alpha >= opaqueThreshold)
-						{
-							contentMask.setGrayLevel(x, y, 255);
-							addToContentBounds(new IntPoint(x, y));
-						}
-						else
-						{
-							contentMask.setGrayLevel(x, y, 0);
-						}
-					}
-				}
-			}
-			else if (iconType == IconType.cities)
+			if (iconType == IconType.cities || iconType == IconType.decorations)
 			{
 				// Do a flood fill since buildings in cities should have lines delimiting them on all sides.
 				createContentMaskUsingfloodFillOrSilhouettes();
@@ -124,7 +103,8 @@ public class ImageAndMasks
 			{
 				createContentMaskUsing3WaySilhouetteIntersection();
 			}
-		} finally
+		}
+		finally
 		{
 			if (contentBounds == null)
 			{

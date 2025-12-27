@@ -135,6 +135,7 @@ public class IconsTool extends EditorTool
 	private JSlider brightnessSlider;
 	private JSlider transparencySlider;
 	private boolean disableColorChangeHandlers;
+	private RowHider brushAndEditOptionsSeperatorHider;
 
 	public IconsTool(MainWindow parent, ToolsPanel toolsPanel, MapUpdater mapUpdater)
 	{
@@ -492,7 +493,7 @@ public class IconsTool extends EditorTool
 		CollapsiblePanel colorPanel = new CollapsiblePanel("color_options", "Color", colorOrganizer.panel);
 		colorPickerHider = organizer.addLeftAlignedComponent(colorPanel);
 
-		modeOptionsAndBrushSeperatorHider.add(organizer.addSeperator());
+		brushAndEditOptionsSeperatorHider = organizer.addSeperator();
 
 		{
 			JButton deleteButton;
@@ -1012,7 +1013,8 @@ public class IconsTool extends EditorTool
 	{
 		modeOptionsAndBrushSeperatorHider.setVisible((modeWidget.isEditMode() && iconsToEdit != null && !iconsToEdit.isEmpty())
 				|| modeWidget.isDrawMode() || modeWidget.isReplaceMode());
-		iconMetadataHider.setVisible(modeWidget.isEditMode() && iconsToEdit != null && iconsToEdit.size() == 1);
+		brushAndEditOptionsSeperatorHider.setVisible(modeWidget.isEditMode() || modeWidget.isDrawMode() || modeWidget.isReplaceMode());
+     	iconMetadataHider.setVisible(modeWidget.isEditMode() && iconsToEdit != null && iconsToEdit.size() == 1);
 		colorPickerHider
 				.setVisible(modeWidget.isDrawMode() || modeWidget.isReplaceMode() || modeWidget.isEditMode() && !iconsToEdit.isEmpty());
 		deleteCopyPasteIconButtonsHider.setVisible(modeWidget.isEditMode());
@@ -1364,7 +1366,8 @@ public class IconsTool extends EditorTool
 				}
 				else
 				{
-					// Since no preview image can be larger than a maxRowWidth, we must be adding an icon to a row that already has at least 1.
+					// Since no preview image can be larger than a maxRowWidth, we must be adding an icon to a row that already has at least
+					// 1.
 					rowWidth += horizontalPaddingBetweenImages + scaledWidth;
 				}
 				largestRowWidth = Math.max(largestRowWidth, rowWidth);

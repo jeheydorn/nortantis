@@ -675,9 +675,10 @@ public class IconDrawer
 
 		Map<String, ImageAndMasks> imagesInGroup = ImageCache.getInstance(artPackToUse, customImagesPath).getIconsByNameForGroup(type,
 				groupId);
+		String newGroupId = groupId;
 		if (imagesInGroup == null || imagesInGroup.isEmpty())
 		{
-			String newGroupId = chooseNewGroupId(ImageCache.getInstance(artPackToUse, customImagesPath).getIconGroupNames(type), groupId);
+			newGroupId = chooseNewGroupId(ImageCache.getInstance(artPackToUse, customImagesPath).getIconGroupNames(type), groupId);
 			if (newGroupId == null)
 			{
 				warningLogger.addWarningMessage("Unable to find the " + type.getSingularName() + " image group '" + groupId
@@ -694,7 +695,6 @@ public class IconDrawer
 			}
 			warningLogger.addWarningMessage("Unable to find the " + type.getSingularName() + " image group '" + groupId + "' in art pack '"
 					+ artPack + "'. The group '" + newGroupId + "' in art pack '" + artPackToUse + "' will be used instead.");
-			groupId = newGroupId;
 		}
 
 		String oldName = name;
@@ -714,11 +714,11 @@ public class IconDrawer
 			if (name != null)
 			{
 				warningLogger.addWarningMessage("Unable to find the " + type.getSingularName() + " icon '" + oldName + "' in art pack '"
-						+ artPack + "'. The icon '" + name + "' in art pack '" + artPackToUse + "' will be used instead.");
+						+ artPack + "', group '" + groupId + "'. The icon '" + name + "' in art pack '" + artPackToUse + "', group '" + newGroupId + "', will be used instead.");
 			}
 		}
 
-		return new Tuple3<>(artPackToUse, groupId, name);
+		return new Tuple3<>(artPackToUse, newGroupId, name);
 	}
 
 	private double getBaseWidth(IconType type, ImageAndMasks imageAndMasks)
@@ -873,9 +873,8 @@ public class IconDrawer
 				}
 			}
 
-			int index = Math.abs(oldArtPack.hashCode() % allArtPacks.size());
-			String artPackToUse = allArtPacks.get(index);
-
+			// Use the built-in art pack.
+			String artPackToUse = Assets.installedArtPack;
 			if (StringUtils.isEmpty(oldIconName))
 			{
 				warningLogger.addWarningMessage(
@@ -889,7 +888,7 @@ public class IconDrawer
 						+ "' will be used instead.");
 			}
 
-			return allArtPacks.get(index);
+			return artPackToUse;
 		}
 		else if (ImageCache.getInstance(oldArtPack, customImagesPath).getIconGroupNames(type).isEmpty())
 		{
