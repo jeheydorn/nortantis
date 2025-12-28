@@ -295,7 +295,7 @@ public class IconDrawer
 						{
 							changeBounds = Rectangle.add(changeBounds, getAnchoredNonTreeIconBoundsAt(center.index));
 							freeIcons.addOrReplace(icon);
-							changeBounds = Rectangle.add(changeBounds, drawTask.getOrCreateContentBoundsPadded());
+							changeBounds = Rectangle.add(changeBounds, drawTask.createBounds());
 						}
 
 						edits.centerEdits.put(cEdit.index, cEdit.copyWithIcon(null));
@@ -383,7 +383,7 @@ public class IconDrawer
 		{
 			changeBounds = Rectangle.add(changeBounds, getAnchoredNonTreeIconBoundsAt(center.index));
 			freeIcons.addOrReplace(icon);
-			changeBounds = Rectangle.add(changeBounds, drawTask.getOrCreateContentBoundsPadded());
+			changeBounds = Rectangle.add(changeBounds, drawTask.createBounds());
 		}
 		else if (freeIcons.getNonTree(center.index) != null)
 		{
@@ -405,7 +405,7 @@ public class IconDrawer
 			IconDrawTask task = toIconDrawTask(icon);
 			if (task != null)
 			{
-				changeBounds = Rectangle.add(changeBounds, task.getOrCreateContentBoundsPadded());
+				changeBounds = Rectangle.add(changeBounds, task.createBounds());
 			}
 		}
 		return changeBounds;
@@ -420,7 +420,7 @@ public class IconDrawer
 			IconDrawTask task = toIconDrawTask(tree);
 			if (task != null)
 			{
-				changeBounds = Rectangle.add(changeBounds, task.getOrCreateContentBoundsPadded());
+				changeBounds = Rectangle.add(changeBounds, task.createBounds());
 			}
 		}
 		return changeBounds;
@@ -551,7 +551,7 @@ public class IconDrawer
 			IconDrawTask task = toIconDrawTask(icon);
 			if (task != null)
 			{
-				removeBounds = Rectangle.add(removeBounds, toIconDrawTask(icon).getOrCreateContentBoundsPadded());
+				removeBounds = Rectangle.add(removeBounds, toIconDrawTask(icon).createBounds());
 			}
 		}
 		freeIcons.removeAll(toRemove);
@@ -580,7 +580,9 @@ public class IconDrawer
 			return;
 		}
 
-		// Remove the icon if it is entirely off the map.
+		// Remove the icon if it is entirely off the map. I'm using the content bounds instead of the image bounds here because you can only
+		// select an icon if you can mouse over its content bounds, so if its content bounds are off the map, then you cannot select the
+		// icon, so it should be removed.
 		if (!graph.bounds.overlaps(task.getOrCreateContentBoundsPadded()))
 		{
 			toRemove.add(icon);
@@ -714,7 +716,8 @@ public class IconDrawer
 			if (name != null)
 			{
 				warningLogger.addWarningMessage("Unable to find the " + type.getSingularName() + " icon '" + oldName + "' in art pack '"
-						+ artPack + "', group '" + groupId + "'. The icon '" + name + "' in art pack '" + artPackToUse + "', group '" + newGroupId + "', will be used instead.");
+						+ artPack + "', group '" + groupId + "'. The icon '" + name + "' in art pack '" + artPackToUse + "', group '"
+						+ newGroupId + "', will be used instead.");
 			}
 		}
 
@@ -1897,7 +1900,7 @@ public class IconDrawer
 	{
 		return toIconDrawTask(icon, getTypeLevelScale(icon.type));
 	}
-	
+
 	private IconDrawTask toIconDrawTask(FreeIcon icon, double typeLevelScale)
 	{
 		if (!Assets.artPackExists(icon.artPack, customImagesPath))

@@ -110,7 +110,7 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 	/**
 	 * @return The bounds of the image on the map (I think without respect to the map border).
 	 */
-	private Rectangle createBounds()
+	public Rectangle createBounds()
 	{
 		return new nortantis.geom.Rectangle(centerLoc.x - scaledSize.width / 2.0, centerLoc.y - scaledSize.height / 2.0, scaledSize.width,
 				scaledSize.height);
@@ -123,7 +123,7 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 		if (contentBoundsPadded == null)
 		{
 			Rectangle bounds = createBounds();
-			final double padding = 2 * resolutionScale; // TODO change back to 2
+			final double padding = 2 * resolutionScale;
 			Rectangle scaledContentBounds = calcScaledContentBounds();
 			contentBoundsPadded = new nortantis.geom.Rectangle(bounds.x + scaledContentBounds.x,
 					bounds.y + scaledContentBounds.y, scaledContentBounds.width, scaledContentBounds.height).pad(padding, padding);
@@ -146,7 +146,7 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 
 	public boolean overlaps(nortantis.geom.Rectangle bounds)
 	{
-		return getOrCreateContentBoundsPadded().overlaps(bounds);
+		return createBounds().overlaps(bounds);
 	}
 
 	@Override
