@@ -489,7 +489,13 @@ public class IconDrawer
 		{
 			Rectangle conversionBoundsOfIconsChanged = convertToFreeIconsIfNeeded(centersToUpdateIconsFor, edits, warningLogger);
 			Rectangle removedOrReplacedChangeBounds = createDrawTasksForFreeIconsAndRemovedFailedIcons(warningLogger);
-			return Rectangle.add(conversionBoundsOfIconsChanged, removedOrReplacedChangeBounds);
+			Rectangle combined = Rectangle.add(conversionBoundsOfIconsChanged, removedOrReplacedChangeBounds);
+			if (combined == null)
+			{
+				return combined;
+			}
+			double paddingForIntegerTruncation = 4.0;
+			return combined.pad(paddingForIntegerTruncation, paddingForIntegerTruncation);
 		});
 	}
 
