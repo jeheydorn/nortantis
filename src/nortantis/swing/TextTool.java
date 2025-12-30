@@ -470,14 +470,14 @@ public class TextTool extends EditorTool
 	{
 		return switch (type)
 		{
-		case Title -> mainWindow.themePanel.getTitleFont();
-		case Region -> mainWindow.themePanel.getRegionFont();
-		case Mountain_range -> mainWindow.themePanel.getMountainRangeFont();
-		case Other_mountains -> mainWindow.themePanel.getOtherMountainsFont();
-		case City -> mainWindow.themePanel.getCitiesFont();
-		// Lakes don't have their own font.
-		case Lake -> mainWindow.themePanel.getRiverFont();
-		case River -> mainWindow.themePanel.getRiverFont();
+			case Title -> mainWindow.themePanel.getTitleFont();
+			case Region -> mainWindow.themePanel.getRegionFont();
+			case Mountain_range -> mainWindow.themePanel.getMountainRangeFont();
+			case Other_mountains -> mainWindow.themePanel.getOtherMountainsFont();
+			case City -> mainWindow.themePanel.getCitiesFont();
+			// Lakes don't have their own font.
+			case Lake -> mainWindow.themePanel.getRiverFont();
+			case River -> mainWindow.themePanel.getRiverFont();
 		};
 	}
 
@@ -701,8 +701,7 @@ public class TextTool extends EditorTool
 				int deltaY = (int) (graphPointMouseLocation.y - graphPointMousePressedLocation.y);
 
 				RotatedRectangle line1 = lastSelected.line1Bounds.translate(new nortantis.geom.Point(deltaX, deltaY));
-				RotatedRectangle line2 = lastSelected.line2Bounds == null
-						? null
+				RotatedRectangle line2 = lastSelected.line2Bounds == null ? null
 						: lastSelected.line2Bounds.translate(new nortantis.geom.Point(deltaX, deltaY));
 				mapEditingPanel.setTextBoxToDraw(line1, line2);
 				mapEditingPanel.repaint();

@@ -5,7 +5,7 @@ import java.util.Objects;
 public class IntRectangle
 {
 
-	final public int x, y, width, height;
+	public final int x, y, width, height;
 
 	public IntRectangle(int x, int y, int width, int height)
 	{

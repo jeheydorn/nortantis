@@ -51,7 +51,7 @@ public class ProbabilityHelper
 	 */
 	public static <T> T sampleUniform(Random rand, Collection<T> items)
 	{
-		if (items.size() == 0)
+		if (items.isEmpty())
 		{
 			throw new IllegalArgumentException("The distribution must have at least one value");
 		}

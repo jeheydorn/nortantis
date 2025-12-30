@@ -79,15 +79,9 @@ public class JFontChooser extends JComponent
 	public static final int ERROR_OPTION = -1;
 	private static final Font DEFAULT_SELECTED_FONT = new Font("Serif", Font.PLAIN, 12);
 	private static final Font DEFAULT_FONT = new Font("Dialog", Font.PLAIN, 10);
-	private static final int[] FONT_STYLE_CODES =
-	{
-			Font.PLAIN, Font.BOLD, Font.ITALIC, Font.BOLD | Font.ITALIC
-	};
-	private static final String[] DEFAULT_FONT_SIZE_STRINGS =
-	{
-			"8", "9", "10", "11", "12", "14", "16", "18", "20", "22", "24", "26", "28", "36", "48", "72", "96", "120", "144", "168", "192",
-			"216", "240",
-	};
+	private static final int[] FONT_STYLE_CODES = { Font.PLAIN, Font.BOLD, Font.ITALIC, Font.BOLD | Font.ITALIC };
+	private static final String[] DEFAULT_FONT_SIZE_STRINGS = { "8", "9", "10", "11", "12", "14", "16", "18", "20", "22", "24", "26", "28",
+			"36", "48", "72", "96", "120", "144", "168", "192", "216", "240", };
 
 	// instance variables
 	protected int dialogResultValue = ERROR_OPTION;
@@ -485,25 +479,25 @@ public class JFontChooser extends JComponent
 			int i = targetList.getSelectedIndex();
 			switch (e.getKeyCode())
 			{
-			case KeyEvent.VK_UP:
-				i = targetList.getSelectedIndex() - 1;
-				if (i < 0)
-				{
-					i = 0;
-				}
-				targetList.setSelectedIndex(i);
-				break;
-			case KeyEvent.VK_DOWN:
-				int listSize = targetList.getModel().getSize();
-				i = targetList.getSelectedIndex() + 1;
-				if (i >= listSize)
-				{
-					i = listSize - 1;
-				}
-				targetList.setSelectedIndex(i);
-				break;
-			default:
-				break;
+				case KeyEvent.VK_UP:
+					i = targetList.getSelectedIndex() - 1;
+					if (i < 0)
+					{
+						i = 0;
+					}
+					targetList.setSelectedIndex(i);
+					break;
+				case KeyEvent.VK_DOWN:
+					int listSize = targetList.getModel().getSize();
+					i = targetList.getSelectedIndex() + 1;
+					if (i >= listSize)
+					{
+						i = listSize - 1;
+					}
+					targetList.setSelectedIndex(i);
+					break;
+				default:
+					break;
 			}
 		}
 	}

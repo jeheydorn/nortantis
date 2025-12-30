@@ -1050,7 +1050,8 @@ public class MapSettings implements Serializable
 
 		if (root.containsKey("borderPosition"))
 		{
-			borderPosition = Enum.valueOf(BorderPosition.class, ((String) root.get("borderPosition")).replace(" ", "_"));;
+			borderPosition = Enum.valueOf(BorderPosition.class, ((String) root.get("borderPosition")).replace(" ", "_"));
+			;
 		}
 		else
 		{
@@ -1547,8 +1548,7 @@ public class MapSettings implements Serializable
 			double curvature = jsonObj.containsKey("curvature") ? (Double) jsonObj.get("curvature") : 0.0;
 			int spacing = jsonObj.containsKey("spacing") ? (int) (long) jsonObj.get("spacing") : 0;
 			Font fontOverride = jsonObj.containsKey("fontOverride") ? parseFont((String) jsonObj.get("fontOverride")) : null;
-			double backgroundFade = jsonObj.containsKey("backgroundFade")
-					? (Double) jsonObj.get("backgroundFade")
+			double backgroundFade = jsonObj.containsKey("backgroundFade") ? (Double) jsonObj.get("backgroundFade")
 					: MapText.defaultBackgroundFade;
 			MapText mp = new MapText(text, location, angle, type, lineBreak, colorOverride, boldBackgroundColorOverride, curvature, spacing,
 					fontOverride, backgroundFade);
@@ -1680,8 +1680,7 @@ public class MapSettings implements Serializable
 			}
 			double density = iconObj.containsKey("density") ? (double) iconObj.get("density") : 0.0;
 			Color color = iconObj.containsKey("color") ? parseColor((String) iconObj.get("color")) : defaultIconColor;
-			HSBColor filterColor = iconObj.containsKey("filterColor")
-					? HSBColor.fromJson((JSONObject) iconObj.get("filterColor"))
+			HSBColor filterColor = iconObj.containsKey("filterColor") ? HSBColor.fromJson((JSONObject) iconObj.get("filterColor"))
 					: defaultIconFilterColor;
 			boolean maximizeOpacity = iconObj.containsKey("maximizeOpacity") ? (Boolean) iconObj.get("maximizeOpacity") : false;
 			double originalScale;
@@ -1946,11 +1945,11 @@ public class MapSettings implements Serializable
 
 	public static boolean isVersionGreaterThan(String version1, String version2)
 	{
-		if (version1 == null || version1.equals(""))
+		if (version1 == null || version1.isEmpty())
 		{
 			return false;
 		}
-		if (version2 == null || version2.equals(""))
+		if (version2 == null || version2.isEmpty())
 		{
 			return true;
 		}
@@ -2242,5 +2241,4 @@ public class MapSettings implements Serializable
 				&& Objects.equals(version, other.version) && worldSize == other.worldSize;
 	}
 
-	
 }

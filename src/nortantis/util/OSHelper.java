@@ -11,6 +11,7 @@ import javax.swing.JOptionPane;
 public class OSHelper
 {
 	private static Boolean isLinuxCache;
+
 	public static boolean isLinux()
 	{
 		if (isLinuxCache == null)
@@ -24,6 +25,7 @@ public class OSHelper
 	}
 
 	private static Boolean isWindowsCache;
+
 	public static boolean isWindows()
 	{
 		if (isWindowsCache == null)
@@ -38,6 +40,7 @@ public class OSHelper
 	}
 
 	private static Boolean isMacCache;
+
 	public static boolean isMac()
 	{
 		if (isMacCache == null)

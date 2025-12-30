@@ -93,11 +93,11 @@ public class ImageCache
 	 * @param imagesPath
 	 * @return
 	 */
-	public synchronized static ImageCache getInstance(String artPack, String customImagesFolder)
+	public static synchronized ImageCache getInstance(String artPack, String customImagesFolder)
 	{
 		Path artPackPath;
 		String pathWithHomeReplaced;
-		if (StringUtils.isEmpty(artPack.toString()))
+		if (StringUtils.isEmpty(artPack))
 		{
 			artPackPath = Assets.getArtPackPath(Assets.installedArtPack, null);
 			pathWithHomeReplaced = artPackPath.toString();
@@ -361,7 +361,8 @@ public class ImageCache
 				.getOrCreate((groupName == null ? "" : groupName).intern(), () -> loadIconsWithSizesAndAlphas(iconType, groupName));
 	}
 
-	private record FilenameParams(String originalFileName, String fileNameBase, Double width, Integer alpha) {
+	private record FilenameParams(String originalFileName, String fileNameBase, Double width, Integer alpha)
+	{
 	}
 
 	private Map<String, ImageAndMasks> loadIconsWithSizesAndAlphas(IconType iconType, String groupName)
@@ -373,7 +374,7 @@ public class ImageCache
 		}
 
 		List<String> fileNames = getIconGroupFileNames(iconType, groupName);
-		if (fileNames.size() == 0)
+		if (fileNames.isEmpty())
 		{
 			return imagesAndMasks;
 		}
@@ -511,8 +512,7 @@ public class ImageCache
 
 			Image icon = iconsByName.get(nameOfWidestOrTallest);
 			double widthOrHeight = getDefaultWidthOrHeight(iconType);
-			double width = isDefaultSizeByWidth(iconType)
-					? widthOrHeight
+			double width = isDefaultSizeByWidth(iconType) ? widthOrHeight
 					: IconDrawer.getDimensionsWhenScaledByHeight(icon.size(), widthOrHeight).width;
 			return new Tuple2<>(icon, width);
 		}

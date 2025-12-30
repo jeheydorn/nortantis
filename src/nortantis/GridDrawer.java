@@ -17,7 +17,8 @@ import nortantis.util.ImageHelper;
 
 public class GridDrawer
 {
-	public static void drawGrid(Image image, MapSettings settings, Rectangle drawBounds, IntDimension mapDimensions, WorldGraph graph, Collection<Center> centersToDraw)
+	public static void drawGrid(Image image, MapSettings settings, Rectangle drawBounds, IntDimension mapDimensions, WorldGraph graph,
+			Collection<Center> centersToDraw)
 	{
 		int alpha = settings.gridOverlayColor.getAlpha();
 
@@ -40,14 +41,15 @@ public class GridDrawer
 
 			switch (settings.gridOverlayShape)
 			{
-			case Squares -> drawSquareGrid(p, width, height, settings.gridOverlayRowOrColCount, settings.gridOverlayXOffset,
-					settings.gridOverlayYOffset);
-			case Vertical_hexes -> drawVerticalHexGrid(p, width, height, settings.gridOverlayRowOrColCount, settings.gridOverlayXOffset,
-					settings.gridOverlayYOffset, drawBounds, lineWidth);
-			case Horizontal_hexes -> drawHorizontalHexGrid(p, width, height, settings.gridOverlayRowOrColCount, settings.gridOverlayXOffset,
-					settings.gridOverlayYOffset, drawBounds, lineWidth);
-			case Voronoi_polygons_on_land -> drawVoronoiOnLand(p, graph, centersToDraw, drawBounds, settings.drawVoronoiGridOverlayOnlyOnLand);
-			default -> throw new IllegalArgumentException("Unexpected value: " + settings.gridOverlayShape);
+				case Squares -> drawSquareGrid(p, width, height, settings.gridOverlayRowOrColCount, settings.gridOverlayXOffset,
+						settings.gridOverlayYOffset);
+				case Vertical_hexes -> drawVerticalHexGrid(p, width, height, settings.gridOverlayRowOrColCount, settings.gridOverlayXOffset,
+						settings.gridOverlayYOffset, drawBounds, lineWidth);
+				case Horizontal_hexes -> drawHorizontalHexGrid(p, width, height, settings.gridOverlayRowOrColCount,
+						settings.gridOverlayXOffset, settings.gridOverlayYOffset, drawBounds, lineWidth);
+				case Voronoi_polygons_on_land -> drawVoronoiOnLand(p, graph, centersToDraw, drawBounds,
+						settings.drawVoronoiGridOverlayOnlyOnLand);
+				default -> throw new IllegalArgumentException("Unexpected value: " + settings.gridOverlayShape);
 			}
 
 			p.dispose();
@@ -60,7 +62,8 @@ public class GridDrawer
 		}
 	}
 
-	private static void drawVoronoiOnLand(Painter p, WorldGraph graph, Collection<Center> centersToDraw, Rectangle drawBounds, boolean drawOnlyOnLand)
+	private static void drawVoronoiOnLand(Painter p, WorldGraph graph, Collection<Center> centersToDraw, Rectangle drawBounds,
+			boolean drawOnlyOnLand)
 	{
 		graph.drawVoronoi(p, centersToDraw, drawBounds, drawOnlyOnLand);
 	}

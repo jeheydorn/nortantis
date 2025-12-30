@@ -1,7 +1,5 @@
 package nortantis.graph.voronoi;
 
-import static org.junit.Assert.assertEquals;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -26,11 +24,10 @@ import nortantis.geom.Rectangle;
 import nortantis.graph.voronoi.nodename.as3delaunay.LineSegment;
 import nortantis.graph.voronoi.nodename.as3delaunay.Voronoi;
 import nortantis.platform.Color;
-import nortantis.platform.Image;
-import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
 import nortantis.platform.Transform;
 import nortantis.util.Range;
+import nortantis.util.VisibleForTesting;
 
 /**
  * VoronoiGraph.java
@@ -40,11 +37,11 @@ import nortantis.util.Range;
 public abstract class VoronoiGraph
 {
 
-	final public ArrayList<Edge> edges = new ArrayList<>();
-	final public ArrayList<Corner> corners = new ArrayList<>();
-	final public ArrayList<Center> centers = new ArrayList<>();
+	public final ArrayList<Edge> edges = new ArrayList<>();
+	public final ArrayList<Corner> corners = new ArrayList<>();
+	public final ArrayList<Center> centers = new ArrayList<>();
 	public Rectangle bounds;
-	final protected Random rand;
+	protected final Random rand;
 	protected Color OCEAN, RIVER, LAKE, BEACH;
 	public NoisyEdges noisyEdges;
 	/**
@@ -54,7 +51,7 @@ public abstract class VoronoiGraph
 	protected double resolutionScale;
 	public static final int riversThisSizeOrSmallerWillNotBeDrawn = 2;
 
-	final static double verySmall = 0.0000001;
+	static final double verySmall = 0.0000001;
 	double pointPrecision;
 
 	/**
@@ -161,9 +158,9 @@ public abstract class VoronoiGraph
 
 	}
 
-	abstract protected Biome getBiome(Center p);
+	protected abstract Biome getBiome(Center p);
 
-	abstract protected Color getColor(Biome biome);
+	protected abstract Color getColor(Biome biome);
 
 	/* an additional smoothing method across corners */
 	private void improveCorners()
@@ -238,7 +235,8 @@ public abstract class VoronoiGraph
 		p.fillPolygon(x, y);
 	}
 
-	private static void drawTriangleElevation(Painter p, Corner c1, Corner c2, Center center)
+	@VisibleForTesting
+	public static void drawTriangleElevation(Painter p, Corner c1, Corner c2, Center center)
 	{
 		Vector3D v1 = new Vector3D(c1.loc.x, c1.loc.y, c1.elevation);
 		Vector3D v2 = new Vector3D(c2.loc.x, c2.loc.y, c2.elevation);
@@ -289,7 +287,8 @@ public abstract class VoronoiGraph
 		return new Vector3D(point.getX() + xChange, point.getY() + yChange, 0.0);
 	}
 
-	private static Vector3D findHighestZ(Vector3D v1, Vector3D v2, Vector3D v3)
+	@VisibleForTesting
+	public static Vector3D findHighestZ(Vector3D v1, Vector3D v2, Vector3D v3)
 	{
 		if (v1.getZ() > v2.getZ())
 		{
@@ -307,84 +306,6 @@ public abstract class VoronoiGraph
 			}
 			return v3;
 		}
-	}
-
-	public static void runPrivateUnitTests()
-	{
-		findHighestZTest();
-		drawTriangleElevationZeroXGradientTest();
-		drawTriangleElevationZeroYGradientTest();
-		drawTriangleElevationWithXAndYGradientTest();
-	}
-
-	private static void drawTriangleElevationWithXAndYGradientTest()
-	{
-		Image image = Image.create(101, 101, ImageType.RGB);
-		Corner corner1 = new Corner();
-		corner1.loc = new Point(0, 0);
-		corner1.elevation = 0.0;
-		Corner corner2 = new Corner();
-		corner2.elevation = 0.5;
-		corner2.loc = new Point(100, 0);
-		Center center = new Center(new Point(100, 100));
-		center.elevation = 1.0;
-		Painter p = image.createPainter();
-		drawTriangleElevation(p, corner1, corner2, center);
-		assertEquals(0, Color.create(image.getRGB((int) corner1.loc.x, (int) corner1.loc.y)).getBlue());
-		assertEquals(125, Color.create(image.getRGB((int) corner2.loc.x - 1, (int) corner2.loc.y)).getBlue());
-		assertEquals(251, Color.create(image.getRGB((int) center.loc.x - 1, (int) center.loc.y - 2)).getBlue());
-	}
-
-	private static void drawTriangleElevationZeroXGradientTest()
-	{
-		Image image = Image.create(101, 101, ImageType.RGB);
-		Corner corner1 = new Corner();
-		corner1.loc = new Point(0, 0);
-		corner1.elevation = 0.5;
-		Corner corner2 = new Corner();
-		corner2.elevation = 0.5;
-		corner2.loc = new Point(50, 0);
-		Center center = new Center(new Point(50, 100));
-		center.elevation = 1.0;
-		Painter p = image.createPainter();
-		drawTriangleElevation(p, corner1, corner2, center);
-		assertEquals((int) (corner1.elevation * 255), Color.create(image.getRGB((int) corner1.loc.x, (int) corner1.loc.y)).getBlue());
-		assertEquals((int) (corner2.elevation * 255), Color.create(image.getRGB((int) corner2.loc.x - 1, (int) corner2.loc.y)).getBlue());
-		assertEquals((int) (center.elevation * 253), Color.create(image.getRGB((int) center.loc.x - 1, (int) center.loc.y - 2)).getBlue());
-	}
-
-	private static void drawTriangleElevationZeroYGradientTest()
-	{
-		Image image = Image.create(101, 101, ImageType.RGB);
-		Corner corner1 = new Corner();
-		corner1.loc = new Point(0, 0);
-		corner1.elevation = 0.0;
-		Corner corner2 = new Corner();
-		corner2.elevation = 0.0;
-		corner2.loc = new Point(0, 100);
-		Center center = new Center(new Point(50, 100));
-		center.elevation = 1.0;
-		Painter p = image.createPainter();
-		drawTriangleElevation(p, corner1, corner2, center);
-		assertEquals((int) (corner1.elevation * 255), Color.create(image.getRGB((int) corner1.loc.x, (int) corner1.loc.y)).getBlue());
-		assertEquals((int) (corner2.elevation * 255), Color.create(image.getRGB((int) corner2.loc.x, (int) corner2.loc.y)).getBlue());
-		assertEquals((int) (center.elevation * 249), Color.create(image.getRGB((int) center.loc.x - 1, (int) center.loc.y - 1)).getBlue());
-	}
-
-	/**
-	 * Unit test for findHighestZ.
-	 */
-	private static void findHighestZTest()
-	{
-		Vector3D v1 = new Vector3D(0, 0, -3);
-		Vector3D v2 = new Vector3D(0, 0, 1);
-		Vector3D v3 = new Vector3D(0, 0, 2);
-
-		List<Vector3D> list = Arrays.asList(v1, v2, v3);
-
-		Collections.shuffle(list);
-
-		assertEquals(v3, findHighestZ(list.get(0), list.get(1), list.get(2)));
 	}
 
 	private boolean closeEnough(double d1, double d2, double diff)

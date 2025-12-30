@@ -325,7 +325,7 @@ public class SettingsGenerator
 
 	public static IntDimension parseGeneratedBackgroundDimensionsFromDropdown(String selected)
 	{
-		selected = selected.substring(0, selected.indexOf("("));
+		selected = selected.substring(0, selected.indexOf('('));
 		String[] parts = selected.split("x");
 		return new IntDimension(Integer.parseInt(parts[0].trim()), Integer.parseInt(parts[1].trim()));
 	}

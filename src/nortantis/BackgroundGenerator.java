@@ -72,10 +72,7 @@ public class BackgroundGenerator
 		{
 			numberOfColorChannels = 1;
 			allChannels = null;
-			means = new float[]
-			{
-					ImageHelper.calcMeanOfGrayscaleImage(texture) / maxPixelValue
-			};
+			means = new float[] { ImageHelper.calcMeanOfGrayscaleImage(texture) / maxPixelValue };
 		}
 		else
 		{

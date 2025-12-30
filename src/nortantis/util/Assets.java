@@ -40,11 +40,11 @@ import nortantis.platform.PlatformFactory;
 
 public class Assets
 {
-	private final static String assetsPath = "assets";
-	public final static String customArtPack = "custom";
-	private final static String artPacksFolder = "art packs";
-	public final static String installedArtPack = "nortantis";
-	public final static List<String> reservedArtPacks = Collections.unmodifiableList(Arrays.asList(installedArtPack, customArtPack, "all"));
+	private static final String assetsPath = "assets";
+	public static final String customArtPack = "custom";
+	private static final String artPacksFolder = "art packs";
+	public static final String installedArtPack = "nortantis";
+	public static final List<String> reservedArtPacks = Collections.unmodifiableList(Arrays.asList(installedArtPack, customArtPack, "all"));
 	private static boolean disableAddedArtPacksForUnitTests;
 	private static List<CachedEntry> cachedEntries;
 	/**
@@ -259,7 +259,7 @@ public class Assets
 			return listFilesFromJar(folderPath, containsText, endingText);
 		}
 
-		File[] files = new File(folderPath.toString()).listFiles(file -> !file.isDirectory()
+		File[] files = new File(folderPath).listFiles(file -> !file.isDirectory()
 				&& (StringUtils.isEmpty(containsText) || file.getName().contains(containsText))
 				&& (StringUtils.isEmpty(endingText) || file.getName().endsWith(endingText))
 				&& (allowedExtensions == null || allowedExtensions.contains(FilenameUtils.getExtension(file.getName()).toLowerCase())));

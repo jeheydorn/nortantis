@@ -240,8 +240,8 @@ public class MapEditingPanel extends UnscaledImagePanel
 			return;
 		}
 
-		showIconEditToolsAt(iconDrawer.toIconDrawTask(icon).getOrCreateContentBoundsPadded(), isValidPosition, toolsLocation, editToolsSize, showEditBox,
-				true);
+		showIconEditToolsAt(iconDrawer.toIconDrawTask(icon).getOrCreateContentBoundsPadded(), isValidPosition, toolsLocation, editToolsSize,
+				showEditBox, true);
 	}
 
 	public void showIconEditToolsAt(nortantis.geom.Rectangle rectangle, boolean isValidPosition, IconEditToolsLocation toolsLocation,

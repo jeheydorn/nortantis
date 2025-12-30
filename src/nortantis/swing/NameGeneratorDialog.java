@@ -142,7 +142,7 @@ public class NameGeneratorDialog extends JDialog
 					{
 						name = nameCreator.generatePlaceName("%s", true, requiredPrefix);
 					}
-					if (requiredSuffix == null || requiredSuffix.equals("") || name.toLowerCase().endsWith(requiredSuffix.toLowerCase()))
+					if (requiredSuffix == null || requiredSuffix.isEmpty() || name.toLowerCase().endsWith(requiredSuffix.toLowerCase()))
 					{
 						if (!name.contains(" "))
 						{

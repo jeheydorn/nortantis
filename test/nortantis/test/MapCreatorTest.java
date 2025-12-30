@@ -1,11 +1,11 @@
 package nortantis.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -17,9 +17,9 @@ import java.util.function.Consumer;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import nortantis.MapCreator;
 import nortantis.MapSettings;
@@ -46,22 +46,15 @@ import nortantis.util.Tuple1;
 public class MapCreatorTest
 {
 
-	@BeforeClass
+	@BeforeAll
 	public static void setUpBeforeClass() throws Exception
 	{
-		// Tell drawing code to use AWT.
 		PlatformFactory.setInstance(new AwtFactory());
-
 		Assets.disableAddedArtPacksForUnitTests();
-
-		// Create the expected images if they don't already exist.
-		// Note that this means that if you haven't already created the images, you run these tests before making changes that will need to
-		// be tested.
 
 		FileHelper.createFolder(Paths.get("unit test files", "expected maps").toString());
 		FileUtils.deleteDirectory(new File(Paths.get("unit test files", "failed maps").toString()));
 
-		// For each map in the 'unit test files/map settings' folder, create the associated map in 'unit test files/expected maps'.
 		String[] mapSettingsFileNames = new File(Paths.get("unit test files", "map settings").toString()).list();
 
 		for (String settingsFileName : mapSettingsFileNames)
@@ -76,7 +69,6 @@ public class MapCreatorTest
 				Image map = mapCreator.createMap(settings, null, null);
 				ImageHelper.write(map, expectedMapFilePath);
 			}
-
 		}
 	}
 
@@ -95,7 +87,6 @@ public class MapCreatorTest
 		final int diffThreshold = 10;
 		int failCount = 0;
 
-		// TODO put back
 		{
 			final int numberToTest = 100;
 			Image fullMapForUpdates = fullMap.deepCopy();
@@ -112,7 +103,7 @@ public class MapCreatorTest
 
 				IntRectangle changedBounds = mapCreator.incrementalUpdateIcons(settings, mapParts, fullMapForUpdates, Arrays.asList(icon));
 
-				assertTrue("Incremental update should produce bounds", changedBounds != null);
+				assertTrue(changedBounds != null, "Incremental update should produce bounds");
 				assertTrue(changedBounds.width > 0);
 				assertTrue(changedBounds.height > 0);
 
@@ -167,7 +158,7 @@ public class MapCreatorTest
 				changedBounds = changedBounds.findIntersection(
 						new IntRectangle(new IntPoint(0, 0), mapParts.background.getMapBoundsIncludingBorder().toIntDimension()));
 
-				assertTrue("Incremental update should produce bounds", changedBounds != null);
+				assertTrue(changedBounds != null, "Incremental update should produce bounds");
 				assertTrue(changedBounds.width > 0);
 				assertTrue(changedBounds.height > 0);
 
@@ -203,7 +194,6 @@ public class MapCreatorTest
 				fail("Incremental update did not match expected image: " + comparisonErrorMessage);
 			}
 		}
-
 
 		if (failCount > 0)
 		{
@@ -357,6 +347,19 @@ public class MapCreatorTest
 	}
 
 	@Test
+	public void jsonSaveTest(@TempDir Path tempDir) throws IOException
+	{
+		String settingsFileName = "allTypesOfEdits.nort";
+		String settingsPath = Paths.get("unit test files", "map settings", settingsFileName).toString();
+		MapSettings settings = new MapSettings(settingsPath);
+
+		Path tempFile = tempDir.resolve(FilenameUtils.getBaseName(settingsFileName) + " copy.nort");
+		settings.writeToFile(tempFile.toString());
+		MapSettings actual = new MapSettings(tempFile.toString());
+		assertEquals(settings, actual);
+	}
+
+	@Test
 	public void iconReplacements()
 	{
 		// Clear the custom images path to force icons to be replaced with images from the installed art pack.
@@ -407,7 +410,7 @@ public class MapCreatorTest
 		{
 			if (!expectedWarnings.contains(warning))
 			{
-				Assert.fail("Unexpected warning hit: '" + warning + "'");
+				fail("Unexpected warning hit: '" + warning + "'");
 			}
 		}
 
@@ -415,7 +418,7 @@ public class MapCreatorTest
 		extra.removeAll(warnings);
 		if (extra.size() > 0)
 		{
-			Assert.fail("Extra warnings found: " + extra);
+			fail("Extra warnings found: " + extra);
 		}
 
 		assertEquals(19, warnings.size());
@@ -473,12 +476,11 @@ public class MapCreatorTest
 		expectedWarnings.add(
 				"The art pack 'custom' no longer has decoration images, so it does not have the icon 'compass 6' from decoration image group 'compasses'. The art pack 'nortantis' will be used instead because it has the same image group folder and image name.");
 
-
 		for (String warning : warnings)
 		{
 			if (!expectedWarnings.contains(warning))
 			{
-				Assert.fail("Unexpected warning hit: '" + warning + "'");
+				fail("Unexpected warning hit: '" + warning + "'");
 			}
 		}
 
@@ -486,7 +488,7 @@ public class MapCreatorTest
 		extra.removeAll(warnings);
 		if (extra.size() > 0)
 		{
-			Assert.fail("Extra warnings found: " + extra);
+			fail("Extra warnings found: " + extra);
 		}
 
 		assertEquals(21, warnings.size());

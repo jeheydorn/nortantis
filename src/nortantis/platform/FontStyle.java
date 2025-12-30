@@ -5,6 +5,7 @@ public enum FontStyle
 	Plain(0), Bold(1), Italic(2), BoldItalic(3);
 
 	public final int value;
+
 	private FontStyle(int value)
 	{
 		this.value = value;

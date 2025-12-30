@@ -199,30 +199,23 @@ class AwtPainter extends Painter
 			if (stroke.type == StrokeType.Dashes)
 			{
 				Stroke dashed = new BasicStroke(stroke.width * (float) resolutionScale, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 1f,
-						new float[]
-						{
-								6f * (float) scale, 3f * (float) scale
-						}, 0f);
+						new float[] { 6f * (float) scale, 3f * (float) scale }, 0f);
 				g.setStroke(dashed);
 			}
 			else if (stroke.type == StrokeType.Rounded_Dashes)
 			{
 				Stroke dashed = new BasicStroke(stroke.width * (float) resolutionScale, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1f,
-						new float[]
-						{
-								6f * (float) scale, 4f * (float) scale
-						}, 0f);
+						new float[] { 6f * (float) scale, 4f * (float) scale }, 0f);
 				g.setStroke(dashed);
 			}
 			else if (stroke.type == StrokeType.Dots)
 			{
 				final float scaleBecauseDotsLookSmallerThanDashes = (3.9f / 2.7f);
 				Stroke dashed = new BasicStroke(stroke.width * (float) resolutionScale * scaleBecauseDotsLookSmallerThanDashes,
-						BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1f, new float[]
-						{
-								0f * (float) scale * scaleBecauseDotsLookSmallerThanDashes,
-								2.0f * (float) scale * scaleBecauseDotsLookSmallerThanDashes
-						}, 0f);
+						BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1f,
+						new float[] { 0f * (float) scale * scaleBecauseDotsLookSmallerThanDashes,
+								2.0f * (float) scale * scaleBecauseDotsLookSmallerThanDashes },
+						0f);
 				g.setStroke(dashed);
 			}
 			else

@@ -6,7 +6,7 @@ import java.util.Objects;
 
 public class RotatedRectangle
 {
-	final public double x, y, width, height, angle, pivotX, pivotY;
+	public final double x, y, width, height, angle, pivotX, pivotY;
 
 	/**
 	 * 
@@ -163,10 +163,7 @@ public class RotatedRectangle
 	// https://stackoverflow.com/questions/10962379/how-to-check-intersection-between-2-rotated-rectangles#:~:text=For%20each%20edge%20in%20both,found%2C%20you%20have%20an%20intersection.
 	private boolean isPolygonsIntersecting(Polygon a, Polygon b)
 	{
-		for (Polygon polygon : new Polygon[]
-		{
-				a, b
-		})
+		for (Polygon polygon : new Polygon[] { a, b })
 		{
 			for (int i1 = 0; i1 < polygon.points.size(); i1++)
 			{
@@ -258,7 +255,7 @@ public class RotatedRectangle
 		// and the difference between the maximum and minimum x and y values as the width and height, respectively.
 		return new Rectangle(minX, minY, maxX - minX, maxY - minY);
 	}
-	
+
 	public Rectangle toUnrotatedRectangle()
 	{
 		return new Rectangle(x, y, width, height);

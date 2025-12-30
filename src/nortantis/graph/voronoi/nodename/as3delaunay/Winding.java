@@ -3,9 +3,9 @@ package nortantis.graph.voronoi.nodename.as3delaunay;
 public final class Winding
 {
 
-	final public static Winding CLOCKWISE = new Winding("clockwise");
-	final public static Winding COUNTERCLOCKWISE = new Winding("counterclockwise");
-	final public static Winding NONE = new Winding("none");
+	public static final Winding CLOCKWISE = new Winding("clockwise");
+	public static final Winding COUNTERCLOCKWISE = new Winding("counterclockwise");
+	public static final Winding NONE = new Winding("none");
 	private String _name;
 
 	private Winding(String name)

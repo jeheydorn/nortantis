@@ -615,7 +615,7 @@ public class ThemePanel extends JTabbedPane
 				});
 				gridOverlayLineWidthSliderHider = sliderWithDisplay.addToOrganizer(organizer, "Line width:", "Width of grid lines");
 			}
-			
+
 			{
 
 				gridOverlayColorDisplay = SwingHelper.createColorPickerPreviewPanel();
@@ -1428,6 +1428,7 @@ public class ThemePanel extends JTabbedPane
 
 	private boolean disableCoastShadingColorDisplayHandler = false;
 	private RowHider boldBackgroundColorHider;
+
 	private void updateCoastShadingColorDisplayFromCoastShadingTransparencySlider()
 	{
 		if (!disableCoastShadingColorDisplayHandler)
@@ -1551,14 +1552,13 @@ public class ThemePanel extends JTabbedPane
 		gridOverlayColorHider.setVisible(drawGridOverlayCheckbox.isSelected());
 		gridOverlayLineWidthSliderHider.setVisible(drawGridOverlayCheckbox.isSelected());
 		gridOverlayLayerComboBoxHider.setVisible(drawGridOverlayCheckbox.isSelected());
-		
+
 		boolean isVoronoi = Objects.equals(gridOverlayShapeComboBox.getSelectedItem(), GridOverlayShape.Voronoi_polygons_on_land);
 		gridOverlayRowOrColCountSliderHider.setVisible(!isVoronoi && drawGridOverlayCheckbox.isSelected());
 		gridOverlayXOffsetComboBoxHider.setVisible(!isVoronoi && drawGridOverlayCheckbox.isSelected());
 		gridOverlayYOffsetComboBoxHider.setVisible(!isVoronoi && drawGridOverlayCheckbox.isSelected());
-		gridOverlayRowOrColLabel.setText(
-				((GridOverlayShape) gridOverlayShapeComboBox.getSelectedItem()) == GridOverlayShape.Horizontal_hexes
-						? "Rows:"
+		gridOverlayRowOrColLabel
+				.setText(((GridOverlayShape) gridOverlayShapeComboBox.getSelectedItem()) == GridOverlayShape.Horizontal_hexes ? "Rows:"
 						: "Columns:");
 		drawGridOverlayOnlyOnLandCheckboxHider.setVisible(isVoronoi && drawGridOverlayCheckbox.isSelected());
 	}
@@ -2087,8 +2087,7 @@ public class ThemePanel extends JTabbedPane
 		settings.oceanWavesLevel = rippleWavesLevelSlider.getValue();
 		settings.oceanShadingLevel = oceanShadingSlider.getValue();
 		settings.concentricWaveCount = concentricWavesLevelSlider.getValue();
-		settings.oceanWavesType = ripplesRadioButton.isSelected()
-				? OceanWaves.Ripples
+		settings.oceanWavesType = ripplesRadioButton.isSelected() ? OceanWaves.Ripples
 				: noneRadioButton.isSelected() ? OceanWaves.None : OceanWaves.ConcentricWaves;
 		settings.fadeConcentricWaves = fadeWavesCheckbox.isSelected();
 		settings.jitterToConcentricWaves = jitterWavesCheckbox.isSelected();
@@ -2112,8 +2111,7 @@ public class ThemePanel extends JTabbedPane
 
 		settings.drawGrunge = drawGrungeCheckbox.isSelected();
 		settings.grungeWidth = grungeSlider.getValue();
-		settings.lineStyle = jaggedLinesButton.isSelected()
-				? LineStyle.Jagged
+		settings.lineStyle = jaggedLinesButton.isSelected() ? LineStyle.Jagged
 				: splinesLinesButton.isSelected() ? LineStyle.Splines : LineStyle.SplinesWithSmoothedCoastlines;
 
 		// Background image settings

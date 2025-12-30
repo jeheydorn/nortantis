@@ -293,7 +293,7 @@ public class OldPropertyBasedMapSettings implements Serializable
 		lineStyle = getProperty("lineStyle", () ->
 		{
 			String str = props.getProperty("lineStyle");
-			if (str == null || str.equals(""))
+			if (str == null || str.isEmpty())
 			{
 				return LineStyle.Jagged;
 			}

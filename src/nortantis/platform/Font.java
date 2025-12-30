@@ -17,15 +17,19 @@ public abstract class Font
 	public abstract Font deriveFont(FontStyle style, float size);
 
 	public abstract String getFontName();
+
 	public abstract String getName();
+
 	public abstract String getFamily();
 
 	public abstract FontStyle getStyle();
+
 	public boolean isItalic()
 	{
 		FontStyle style = getStyle();
 		return style == FontStyle.Italic || style == FontStyle.BoldItalic;
 	}
+
 	public abstract float getSize();
 
 	public static boolean isInstalled(String fontFamily)

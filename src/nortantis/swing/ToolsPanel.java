@@ -152,10 +152,7 @@ public class ToolsPanel extends JPanel
 		lblZoom.setToolTipText(
 				"Zoom the map in or out (mouse wheel). To view more details at higher zoom levels," + " adjust the 'Display quality'.");
 
-		zoomLevels = Arrays.asList(new String[]
-		{
-				fitToWindowZoomLevel, "50%", "75%", "100%", "150%", "200%", "275%"
-		});
+		zoomLevels = Arrays.asList(new String[] { fitToWindowZoomLevel, "50%", "75%", "100%", "150%", "200%", "275%" });
 		zoomComboBox = new JComboBoxFixed<>();
 		for (String level : zoomLevels)
 		{

@@ -5,7 +5,7 @@ import nortantis.geom.Point;
 final class Vertex extends Object implements ICoord
 {
 
-	final public static Vertex VERTEX_AT_INFINITY = new Vertex(Double.NaN, Double.NaN);
+	public static final Vertex VERTEX_AT_INFINITY = new Vertex(Double.NaN, Double.NaN);
 
 	private static Vertex create(double x, double y)
 	{

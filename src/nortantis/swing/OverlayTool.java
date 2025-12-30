@@ -480,7 +480,8 @@ public class OverlayTool extends EditorTool
 			overlayImageTransparencySlider.setValue(settings.overlayImageTransparency);
 			overlayOffsetResolutionInvariant = settings.overlayOffsetResolutionInvariant;
 			overlayScale = settings.overlayScale;
-		} finally
+		}
+		finally
 		{
 			enableRedraws = true;
 		}
@@ -494,8 +495,7 @@ public class OverlayTool extends EditorTool
 		settings.drawOverlayImage = drawOverlayImageCheckbox.isSelected();
 		settings.overlayImagePath = FileHelper.replaceHomeFolderWithPlaceholder(overlayImagePath.getText());
 		settings.overlayImageTransparency = overlayImageTransparencySlider.getValue();
-		settings.overlayOffsetResolutionInvariant = overlayOffsetResolutionInvariant == null
-				? new Point(0, 0)
+		settings.overlayOffsetResolutionInvariant = overlayOffsetResolutionInvariant == null ? new Point(0, 0)
 				: overlayOffsetResolutionInvariant;
 		settings.overlayScale = overlayScale;
 	}

@@ -7,8 +7,11 @@ public abstract class Color
 	public abstract int getRGB();
 
 	public abstract int getRed();
+
 	public abstract int getGreen();
+
 	public abstract int getBlue();
+
 	public abstract int getAlpha();
 
 	public boolean hasTransparency()
@@ -44,19 +47,19 @@ public abstract class Color
 		return PlatformFactory.getInstance().createColor(red, green, blue);
 	}
 
-	public final static Color black = create(0, 0, 0);
-	public final static Color white = create(255, 255, 255);
-	public final static Color green = create(0, 255, 0);
-	public final static Color yellow = create(255, 255, 0);
-	public final static Color lightGray = create(192, 192, 192);
-	public final static Color gray = create(128, 128, 128);
-	public final static Color darkGray = create(64, 64, 64);
-	public final static Color red = create(255, 0, 0);
-	public final static Color pink = create(255, 175, 175);
-	public final static Color orange = create(255, 200, 0);
-	public final static Color magenta = create(255, 0, 255);
-	public final static Color cyan = create(0, 255, 255);
-	public final static Color blue = create(0, 0, 255);
+	public static final Color black = create(0, 0, 0);
+	public static final Color white = create(255, 255, 255);
+	public static final Color green = create(0, 255, 0);
+	public static final Color yellow = create(255, 255, 0);
+	public static final Color lightGray = create(192, 192, 192);
+	public static final Color gray = create(128, 128, 128);
+	public static final Color darkGray = create(64, 64, 64);
+	public static final Color red = create(255, 0, 0);
+	public static final Color pink = create(255, 175, 175);
+	public static final Color orange = create(255, 200, 0);
+	public static final Color magenta = create(255, 0, 255);
+	public static final Color cyan = create(0, 255, 255);
+	public static final Color blue = create(0, 0, 255);
 
 	/**
 	 * Converts this color to HSB

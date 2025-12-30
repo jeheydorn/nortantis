@@ -449,10 +449,7 @@ public class SwingHelper
 			Component parentComponent)
 	{
 		JCheckBox checkBox = new JCheckBox("Don't show this message again.");
-		Object[] options =
-		{
-				"OK"
-		};
+		Object[] options = { "OK" };
 		JPanel panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 		JLabel label = new JLabel("<html>" + message + "</html>");

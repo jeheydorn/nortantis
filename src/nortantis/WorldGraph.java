@@ -1148,7 +1148,8 @@ public class WorldGraph extends VoronoiGraph
 						}
 					}
 				}
-			} while (cornerFound);
+			}
+			while (cornerFound);
 
 		}
 	}
@@ -1654,8 +1655,7 @@ public class WorldGraph extends VoronoiGraph
 				{
 					double scoreFromStartToNeighbor = current.scoreSoFar
 							+ calculateWeight.apply(edge, neighbor, Center.distanceBetween(current.center, end));
-					double neighborCurrentScore = centerNodeMap.containsKey(neighbor)
-							? centerNodeMap.get(neighbor).scoreSoFar
+					double neighborCurrentScore = centerNodeMap.containsKey(neighbor) ? centerNodeMap.get(neighbor).scoreSoFar
 							: Float.POSITIVE_INFINITY;
 					if (scoreFromStartToNeighbor < neighborCurrentScore)
 					{
@@ -1685,15 +1685,15 @@ public class WorldGraph extends VoronoiGraph
 		Collection<Corner> cornersToDraw = centersToDraw == null ? corners : getCornersFromCenters(centersToDraw);
 		for (Corner c : cornersToDraw)
 		{
-				for (Corner adjacent : c.adjacent)
+			for (Corner adjacent : c.adjacent)
+			{
+				Edge e = findConnectingEdge(c, adjacent);
+				if (onlyLand && (e.isWater() || e.isCoastOrLakeShore()))
 				{
-					Edge e = findConnectingEdge(c, adjacent);
-					if (onlyLand && (e.isWater() || e.isCoastOrLakeShore()))
-					{
-						continue;
-					}
-					p.drawLine((int) c.loc.x, (int) c.loc.y, (int) adjacent.loc.x, (int) adjacent.loc.y);
+					continue;
 				}
+				p.drawLine((int) c.loc.x, (int) c.loc.y, (int) adjacent.loc.x, (int) adjacent.loc.y);
+			}
 		}
 
 		if (drawBounds != null)
@@ -1701,7 +1701,7 @@ public class WorldGraph extends VoronoiGraph
 			p.setTransform(orig);
 		}
 	}
-	
+
 	public Edge findConnectingEdge(Center c1, Center c2)
 	{
 		for (Edge edge : c1.borders)

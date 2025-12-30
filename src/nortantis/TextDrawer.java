@@ -278,7 +278,8 @@ public class TextDrawer
 			}
 
 			p.dispose();
-		} finally
+		}
+		finally
 		{
 			settings.drawText = drawTextPrev;
 		}
@@ -955,7 +956,8 @@ public class TextDrawer
 
 					widthSoFar += p.charWidth(c) + adjustedSpacing;
 				}
-			} finally
+			}
+			finally
 			{
 				p.setTransform(orig);
 				p.setFont(original); // Ensure font and color are reset
@@ -1234,10 +1236,7 @@ public class TextDrawer
 		SimpleRegression regression = new SimpleRegression();
 		for (Point point : locations)
 		{
-			regression.addObservation(new double[]
-			{
-					point.x
-			}, point.y);
+			regression.addObservation(new double[] { point.x }, point.y);
 		}
 		double angle;
 		try
@@ -1315,8 +1314,7 @@ public class TextDrawer
 		Rectangle bounds1WithoutCurvature = getLine1BoundsWithoutCurvatureOrSpacing(line1, pivot, p, line2 != null);
 		Rectangle bounds1 = expandBoundsToIncludeCurvatureAndSpacing(bounds1WithoutCurvature, text, line1, p);
 		Rectangle bounds2WithoutCurvature = getLine2BoundsWithoutCurvatureOrSpacing(line2, pivot, p);
-		Rectangle bounds2 = bounds2WithoutCurvature == null
-				? null
+		Rectangle bounds2 = bounds2WithoutCurvature == null ? null
 				: expandBoundsToIncludeCurvatureAndSpacing(bounds2WithoutCurvature, text, line2, p);
 
 		Dimension line1Size = bounds1.size();
@@ -1434,7 +1432,8 @@ public class TextDrawer
 			}
 
 			return true;
-		} finally
+		}
+		finally
 		{
 			p.setTransform(orig);
 		}
@@ -1530,7 +1529,8 @@ public class TextDrawer
 			settings.drawText = false;
 			Image fakeMapThatNothingShouldDrawOn = Image.create(1, 1, ImageType.ARGB);
 			drawText(fakeMapThatNothingShouldDrawOn, graph, settings.edits.text, null);
-		} finally
+		}
+		finally
 		{
 			settings.drawText = originalDrawText;
 		}

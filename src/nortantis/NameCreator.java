@@ -170,19 +170,19 @@ public class NameCreator
 			double probabilityOfPersonName = 0.3;
 			switch (titleType)
 			{
-			case Decorated:
-				if (r.nextDouble() < probabilityOfPersonName)
-				{
-					return generatePersonName("The Land of %s", requireUnique);
-				}
-				else
-				{
-					return generatePlaceName("The Land of %s", requireUnique);
-				}
-			case NameOnly:
-				return generatePlaceName("%s", requireUnique);
-			default:
-				throw new IllegalArgumentException("Unknown title type: " + titleType);
+				case Decorated:
+					if (r.nextDouble() < probabilityOfPersonName)
+					{
+						return generatePersonName("The Land of %s", requireUnique);
+					}
+					else
+					{
+						return generatePlaceName("The Land of %s", requireUnique);
+					}
+				case NameOnly:
+					return generatePlaceName("%s", requireUnique);
+				default:
+					throw new IllegalArgumentException("Unknown title type: " + titleType);
 			}
 		}
 		if (type.equals(TextType.Region))
@@ -356,14 +356,14 @@ public class NameCreator
 	{
 		switch (mountainType)
 		{
-		case Mountains:
-			return "%s Mountains";
-		case Peak:
-			return "%s Peak";
-		case Peaks:
-			return "%s Peaks";
-		default:
-			throw new RuntimeException("Unknown mountain group type: " + mountainType);
+			case Mountains:
+				return "%s Mountains";
+			case Peak:
+				return "%s Peak";
+			case Peaks:
+				return "%s Peaks";
+			default:
+				throw new RuntimeException("Unknown mountain group type: " + mountainType);
 		}
 
 	}
@@ -384,15 +384,15 @@ public class NameCreator
 		String format;
 		switch (riverType)
 		{
-		case Large:
-			format = ProbabilityHelper.sampleCategorical(r, Arrays.asList(new Tuple2<>(0.1, "%s Wash"), new Tuple2<>(0.8, "%s River")));
-			break;
-		case Small:
-			format = ProbabilityHelper.sampleCategorical(r, Arrays.asList(new Tuple2<>(0.1, "%s Bayou"), new Tuple2<>(0.2, "%s Creek"),
-					new Tuple2<>(0.2, "%s Brook"), new Tuple2<>(0.5, "%s Stream")));
-			break;
-		default:
-			throw new RuntimeException("Unknown river type: " + riverType);
+			case Large:
+				format = ProbabilityHelper.sampleCategorical(r, Arrays.asList(new Tuple2<>(0.1, "%s Wash"), new Tuple2<>(0.8, "%s River")));
+				break;
+			case Small:
+				format = ProbabilityHelper.sampleCategorical(r, Arrays.asList(new Tuple2<>(0.1, "%s Bayou"), new Tuple2<>(0.2, "%s Creek"),
+						new Tuple2<>(0.2, "%s Brook"), new Tuple2<>(0.5, "%s Stream")));
+				break;
+			default:
+				throw new RuntimeException("Unknown river type: " + riverType);
 		}
 
 		return format;

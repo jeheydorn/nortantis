@@ -1,23 +1,23 @@
 package nortantis.util;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import nortantis.geom.Point;
 
 public class GeometryHelperTest
 {
 
-	@BeforeClass
+	@BeforeAll
 	public static void setUpBeforeClass() throws Exception
 	{
 	}
 
-	@AfterClass
+	@AfterAll
 	public static void tearDownAfterClass() throws Exception
 	{
 	}
@@ -31,7 +31,7 @@ public class GeometryHelperTest
 		double radius = 2.828;
 
 		boolean result = GeometryHelper.doesLineOverlapCircle(p1, p2, circleCenter, radius);
-		assertFalse("The line is tangent to the circle and should overlap.", result);
+		assertFalse(result, "The line is tangent to the circle and should overlap.");
 	}
 
 	@Test
@@ -43,7 +43,7 @@ public class GeometryHelperTest
 		double radius = 0.5;
 
 		boolean result = GeometryHelper.doesLineOverlapCircle(p1, p2, circleCenter, radius);
-		assertTrue("The line intersects the circle and should overlap.", result);
+		assertTrue(result, "The line intersects the circle and should overlap.");
 	}
 
 	@Test
@@ -55,7 +55,7 @@ public class GeometryHelperTest
 		double radius = 1.0;
 
 		boolean result = GeometryHelper.doesLineOverlapCircle(p1, p2, circleCenter, radius);
-		assertFalse("The line is outside the circle and should not overlap.", result);
+		assertFalse(result, "The line is outside the circle and should not overlap.");
 	}
 
 	@Test
@@ -67,7 +67,7 @@ public class GeometryHelperTest
 		double radius = 1.0;
 
 		boolean result = GeometryHelper.doesLineOverlapCircle(p1, p2, circleCenter, radius);
-		assertFalse("The line passes through the center of the circle and should overlap.", result);
+		assertFalse(result, "The line passes through the center of the circle and should overlap.");
 	}
 
 	@Test
@@ -79,7 +79,7 @@ public class GeometryHelperTest
 		double radius = 3.0;
 
 		boolean result = GeometryHelper.doesLineOverlapCircle(p1, p2, circleCenter, radius);
-		assertTrue("The line touches the circle at the edge and should overlap.", result);
+		assertTrue(result, "The line touches the circle at the edge and should overlap.");
 	}
 
 	@Test
@@ -91,7 +91,7 @@ public class GeometryHelperTest
 		double radius = 1.0;
 
 		boolean result = GeometryHelper.doesLineOverlapCircle(p1, p2, circleCenter, radius);
-		assertTrue("The line touches the circle at the edge and should overlap.", result);
+		assertTrue(result, "The line touches the circle at the edge and should overlap.");
 	}
 
 	@Test
@@ -103,7 +103,7 @@ public class GeometryHelperTest
 		double radius = 1.0;
 
 		boolean result = GeometryHelper.doesLineOverlapCircle(p1, p2, circleCenter, radius);
-		assertTrue("The line touches the circle at the edge and should overlap.", result);
+		assertTrue(result, "The line touches the circle at the edge and should overlap.");
 	}
 
 	@Test
@@ -115,6 +115,6 @@ public class GeometryHelperTest
 		double radius = 1.0;
 
 		boolean result = GeometryHelper.doesLineOverlapCircle(p1, p2, circleCenter, radius);
-		assertTrue("The line touches the circle at the edge and should overlap.", result);
+		assertTrue(result, "The line touches the circle at the edge and should overlap.");
 	}
 }

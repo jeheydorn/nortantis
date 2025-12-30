@@ -78,10 +78,7 @@ public class HSBColor implements Serializable
 	 */
 	public float[] toArray()
 	{
-		return new float[]
-		{
-				hue / 360f, saturation / 100f, brightness / 100f
-		};
+		return new float[] { hue / 360f, saturation / 100f, brightness / 100f };
 	}
 
 	@Override

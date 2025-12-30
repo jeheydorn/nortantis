@@ -55,7 +55,7 @@ public class CharacterNGram
 						lastChars += phrase.charAt(j);
 				}
 
-				scMap.incrementCount(lastChars.toString(), phrase.charAt(i));
+				scMap.incrementCount(lastChars, phrase.charAt(i));
 			}
 			// Add the end token.
 			String lastChars = "";
@@ -66,7 +66,7 @@ public class CharacterNGram
 				else
 					lastChars += phrase.charAt(j);
 			}
-			scMap.incrementCount(lastChars.toString(), endToken);
+			scMap.incrementCount(lastChars, endToken);
 		}
 
 		namesFromCorpora = new HashSet<>(phrases);
@@ -133,7 +133,8 @@ public class CharacterNGram
 			{
 				result += next;
 			}
-		} while (next != endToken);
+		}
+		while (next != endToken);
 
 		return result;
 	}

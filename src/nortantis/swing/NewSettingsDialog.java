@@ -603,10 +603,8 @@ public class NewSettingsDialog extends JDialog
 
 	private void createMapEditingPanel()
 	{
-		BufferedImage placeHolder = AwtFactory.unwrap(ImageHelper.createPlaceholderImage(new String[]
-		{
-				"Drawing..."
-		}, AwtFactory.wrap(SwingHelper.getTextColorForPlaceholderImages())));
+		BufferedImage placeHolder = AwtFactory.unwrap(ImageHelper.createPlaceholderImage(new String[] { "Drawing..." },
+				AwtFactory.wrap(SwingHelper.getTextColorForPlaceholderImages())));
 		mapEditingPanel = new MapEditingPanel(placeHolder);
 
 		mapEditingPanelContainer = new JPanel();
@@ -737,7 +735,7 @@ public class NewSettingsDialog extends JDialog
 
 	public static Dimension parseGenerateBackgroundDimensionsFromDropdown(String selected)
 	{
-		selected = selected.substring(0, selected.indexOf("("));
+		selected = selected.substring(0, selected.indexOf('('));
 		String[] parts = selected.split("x");
 		return new Dimension(Integer.parseInt(parts[0].trim()), Integer.parseInt(parts[1].trim()));
 	}

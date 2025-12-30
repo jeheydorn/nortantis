@@ -252,7 +252,8 @@ public class Center implements Comparable<Center>
 			{
 				currentEdge = next;
 			}
-		} while (!remaining.isEmpty() && currentEdge != null);
+		}
+		while (!remaining.isEmpty() && currentEdge != null);
 
 		return result;
 	}

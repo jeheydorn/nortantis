@@ -1014,7 +1014,7 @@ public class IconsTool extends EditorTool
 		modeOptionsAndBrushSeperatorHider.setVisible((modeWidget.isEditMode() && iconsToEdit != null && !iconsToEdit.isEmpty())
 				|| modeWidget.isDrawMode() || modeWidget.isReplaceMode());
 		brushAndEditOptionsSeperatorHider.setVisible(modeWidget.isEditMode() || modeWidget.isDrawMode() || modeWidget.isReplaceMode());
-     	iconMetadataHider.setVisible(modeWidget.isEditMode() && iconsToEdit != null && iconsToEdit.size() == 1);
+		iconMetadataHider.setVisible(modeWidget.isEditMode() && iconsToEdit != null && iconsToEdit.size() == 1);
 		colorPickerHider
 				.setVisible(modeWidget.isDrawMode() || modeWidget.isReplaceMode() || modeWidget.isEditMode() && !iconsToEdit.isEmpty());
 		deleteCopyPasteIconButtonsHider.setVisible(modeWidget.isEditMode());

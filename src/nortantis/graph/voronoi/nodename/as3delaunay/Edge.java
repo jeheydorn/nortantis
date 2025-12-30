@@ -78,7 +78,7 @@ public final class Edge
 		return new LineSegment(_clippedVertices.get(LR.LEFT), _clippedVertices.get(LR.RIGHT));
 	}
 
-	final public static Edge DELETED = new Edge(-1);
+	public static final Edge DELETED = new Edge(-1);
 	// the equation of the edge: ax + by = c
 	public double a, b, c;
 	// the two Voronoi vertices that the edge connects

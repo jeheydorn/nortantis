@@ -63,7 +63,7 @@ public final class Site implements ICoord
 		return returnValue;
 	}
 
-	final private static double EPSILON = .005;
+	private static final double EPSILON = .005;
 
 	private static boolean closeEnough(Point p0, Point p1)
 	{
@@ -411,10 +411,10 @@ public final class Site implements ICoord
 final class BoundsCheck
 {
 
-	final public static int TOP = 1;
-	final public static int BOTTOM = 2;
-	final public static int LEFT = 4;
-	final public static int RIGHT = 8;
+	public static final int TOP = 1;
+	public static final int BOTTOM = 2;
+	public static final int LEFT = 4;
+	public static final int RIGHT = 8;
 
 	/**
 	 *

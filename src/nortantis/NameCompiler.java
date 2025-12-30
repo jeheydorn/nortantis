@@ -1,7 +1,5 @@
 package nortantis;
 
-import static org.junit.Assert.assertEquals;
-
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -14,10 +12,9 @@ import java.util.TreeSet;
 import nortantis.util.Assets;
 import nortantis.util.ComparableCounter;
 import nortantis.util.Counter;
-import nortantis.util.Function;
-import nortantis.util.Helper;
 import nortantis.util.Pair;
 import nortantis.util.Range;
+import nortantis.util.VisibleForTesting;
 
 /**
  * Creates names for rivers and mountains by putting nouns, verbs, and adjectives together.
@@ -176,7 +173,8 @@ public class NameCompiler
 	 * @param verb
 	 * @return
 	 */
-	private String convertVerbToPresentTense(String verb)
+	@VisibleForTesting
+	public String convertVerbToPresentTense(String verb)
 	{
 		List<Character> vowels = Arrays.asList('a', 'e', 'i', 'o', 'u');
 
@@ -268,49 +266,4 @@ public class NameCompiler
 	{
 		return counter.isEmpty();
 	}
-
-	public static void test()
-	{
-		final NameCompiler compiler = new NameCompiler(new Random(), new ArrayList<Pair<String>>(), new ArrayList<Pair<String>>());
-		// My examples.
-		{
-			List<String> before = Arrays.asList("travel", "distil", "equal", "bake", "free", "dye", "tiptoe", "running", "wheel", "picnic",
-					"stood", "forgave", "seen", "set");
-			List<String> after = Helper.map(before, new Function<String, String>()
-			{
-				public String apply(String item)
-				{
-					return compiler.convertVerbToPresentTense(item);
-				}
-			});
-			List<String> expected = Arrays.asList("travelling", // I'm using a British dictionary apparently.
-					"distilling", "equaling", "baking", "freeing", "dyeing", "tiptoeing", "running", "wheeling", "picnicking", "standing",
-					"forgiving", "seeing", "setting");
-			for (int i : new Range(expected.size()))
-			{
-				assertEquals(expected.get(i), after.get(i));
-			}
-		}
-
-		// Examples from text.
-		{
-			List<String> before = Arrays.asList("redeem", "stretched", "set", "wept", "appeared", "rid", "plucked", "put", "laid", "stand",
-					"send", "speak", "afflict", "looked", "rest");
-			List<String> after = Helper.map(before, new Function<String, String>()
-			{
-				public String apply(String item)
-				{
-					return compiler.convertVerbToPresentTense(item);
-				}
-			});
-			List<String> expected = Arrays.asList("redeeming", "stretching", "setting", "weeping", "appearing", "riding", "plucking",
-					"putting", "laying", "standing", "sending", "speaking", "afflicting", "looking", "resting");
-			for (int i : new Range(expected.size()))
-			{
-				assertEquals(expected.get(i), after.get(i));
-			}
-
-		}
-	}
-
 }

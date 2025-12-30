@@ -426,9 +426,10 @@ public class Background
 			if (task.type != IconType.decorations && (drawBounds == null || task.overlaps(drawBounds)))
 			{
 				IntRectangle contentBounds = task.scaledImageAndMasks.getOrCreateContentBounds();
-				Point middleOfBottomOfContentBounds = new Point(task.centerLoc.x - (task.scaledSize.width / 2) + (contentBounds.x + contentBounds.width / 2),
+				Point middleOfBottomOfContentBounds = new Point(
+						task.centerLoc.x - (task.scaledSize.width / 2) + (contentBounds.x + contentBounds.width / 2),
 						task.centerLoc.y - (task.scaledSize.height / 2) + (contentBounds.y + contentBounds.height));
-				Point justAboveBottomMiddle =  middleOfBottomOfContentBounds.add(0, - contentBounds.height / 8);
+				Point justAboveBottomMiddle = middleOfBottomOfContentBounds.add(0, -contentBounds.height / 8);
 				Center center = graph.findClosestCenter(justAboveBottomMiddle, true);
 				if (center == null)
 				{
@@ -444,8 +445,7 @@ public class Background
 				int xLoc = (int) task.centerLoc.x - task.scaledSize.width / 2;
 				int yLoc = (int) task.centerLoc.y - task.scaledSize.height / 2;
 
-				Point drawLocation = drawBounds == null
-						? new Point(xLoc, yLoc)
+				Point drawLocation = drawBounds == null ? new Point(xLoc, yLoc)
 						: new Point(xLoc, yLoc).subtract(drawBounds.upperLeftCorner());
 
 				ImageHelper.drawMaskOntoImage(regionIndexes, task.scaledImageAndMasks.getOrCreateContentMask(), regionIdColor,
@@ -924,54 +924,54 @@ public class Background
 	{
 		switch (edgeTypeIn)
 		{
-		case Bottom:
-			switch (outputType)
-			{
 			case Bottom:
-				return edgeIn;
+				switch (outputType)
+				{
+					case Bottom:
+						return edgeIn;
+					case Left:
+						return ImageHelper.rotate90Degrees(edgeIn, true);
+					case Right:
+						return ImageHelper.rotate90Degrees(edgeIn, false);
+					case Top:
+						return ImageHelper.flipOnYAxis(edgeIn);
+				}
 			case Left:
-				return ImageHelper.rotate90Degrees(edgeIn, true);
+				switch (outputType)
+				{
+					case Bottom:
+						return ImageHelper.rotate90Degrees(edgeIn, false);
+					case Left:
+						return edgeIn;
+					case Right:
+						return ImageHelper.flipOnXAxis(edgeIn);
+					case Top:
+						return ImageHelper.rotate90Degrees(edgeIn, true);
+				}
 			case Right:
-				return ImageHelper.rotate90Degrees(edgeIn, false);
+				switch (outputType)
+				{
+					case Bottom:
+						return ImageHelper.rotate90Degrees(edgeIn, true);
+					case Left:
+						return ImageHelper.flipOnXAxis(edgeIn);
+					case Right:
+						return edgeIn;
+					case Top:
+						return ImageHelper.rotate90Degrees(edgeIn, false);
+				}
 			case Top:
-				return ImageHelper.flipOnYAxis(edgeIn);
-			}
-		case Left:
-			switch (outputType)
-			{
-			case Bottom:
-				return ImageHelper.rotate90Degrees(edgeIn, false);
-			case Left:
-				return edgeIn;
-			case Right:
-				return ImageHelper.flipOnXAxis(edgeIn);
-			case Top:
-				return ImageHelper.rotate90Degrees(edgeIn, true);
-			}
-		case Right:
-			switch (outputType)
-			{
-			case Bottom:
-				return ImageHelper.rotate90Degrees(edgeIn, true);
-			case Left:
-				return ImageHelper.flipOnXAxis(edgeIn);
-			case Right:
-				return edgeIn;
-			case Top:
-				return ImageHelper.rotate90Degrees(edgeIn, false);
-			}
-		case Top:
-			switch (outputType)
-			{
-			case Bottom:
-				return ImageHelper.flipOnYAxis(edgeIn);
-			case Left:
-				return ImageHelper.rotate90Degrees(edgeIn, false);
-			case Right:
-				return ImageHelper.rotate90Degrees(edgeIn, true);
-			case Top:
-				return edgeIn;
-			}
+				switch (outputType)
+				{
+					case Bottom:
+						return ImageHelper.flipOnYAxis(edgeIn);
+					case Left:
+						return ImageHelper.rotate90Degrees(edgeIn, false);
+					case Right:
+						return ImageHelper.rotate90Degrees(edgeIn, true);
+					case Top:
+						return edgeIn;
+				}
 		}
 
 		throw new IllegalStateException("Unable to create a border edge from the edges given");
@@ -986,55 +986,55 @@ public class Background
 	{
 		switch (inputCornerType)
 		{
-		case lowerLeft:
-			switch (outputType)
-			{
 			case lowerLeft:
-				return cornerIn;
+				switch (outputType)
+				{
+					case lowerLeft:
+						return cornerIn;
+					case lowerRight:
+						return ImageHelper.flipOnXAxis(cornerIn);
+					case upperLeft:
+						return ImageHelper.flipOnYAxis(cornerIn);
+					case upperRight:
+						return ImageHelper.flipOnXAxis(ImageHelper.flipOnYAxis(cornerIn));
+				}
+				break;
 			case lowerRight:
-				return ImageHelper.flipOnXAxis(cornerIn);
+				switch (outputType)
+				{
+					case lowerLeft:
+						return ImageHelper.flipOnXAxis(cornerIn);
+					case lowerRight:
+						return cornerIn;
+					case upperLeft:
+						return ImageHelper.flipOnXAxis(ImageHelper.flipOnYAxis(cornerIn));
+					case upperRight:
+						return ImageHelper.flipOnYAxis(cornerIn);
+				}
 			case upperLeft:
-				return ImageHelper.flipOnYAxis(cornerIn);
+				switch (outputType)
+				{
+					case lowerLeft:
+						return ImageHelper.flipOnYAxis(cornerIn);
+					case lowerRight:
+						return ImageHelper.flipOnXAxis(ImageHelper.flipOnYAxis(cornerIn));
+					case upperLeft:
+						return cornerIn;
+					case upperRight:
+						return ImageHelper.flipOnXAxis(cornerIn);
+				}
 			case upperRight:
-				return ImageHelper.flipOnXAxis(ImageHelper.flipOnYAxis(cornerIn));
-			}
-			break;
-		case lowerRight:
-			switch (outputType)
-			{
-			case lowerLeft:
-				return ImageHelper.flipOnXAxis(cornerIn);
-			case lowerRight:
-				return cornerIn;
-			case upperLeft:
-				return ImageHelper.flipOnXAxis(ImageHelper.flipOnYAxis(cornerIn));
-			case upperRight:
-				return ImageHelper.flipOnYAxis(cornerIn);
-			}
-		case upperLeft:
-			switch (outputType)
-			{
-			case lowerLeft:
-				return ImageHelper.flipOnYAxis(cornerIn);
-			case lowerRight:
-				return ImageHelper.flipOnXAxis(ImageHelper.flipOnYAxis(cornerIn));
-			case upperLeft:
-				return cornerIn;
-			case upperRight:
-				return ImageHelper.flipOnXAxis(cornerIn);
-			}
-		case upperRight:
-			switch (outputType)
-			{
-			case lowerLeft:
-				return ImageHelper.flipOnXAxis(ImageHelper.flipOnYAxis(cornerIn));
-			case lowerRight:
-				return ImageHelper.flipOnYAxis(cornerIn);
-			case upperLeft:
-				return ImageHelper.flipOnXAxis(cornerIn);
-			case upperRight:
-				return cornerIn;
-			}
+				switch (outputType)
+				{
+					case lowerLeft:
+						return ImageHelper.flipOnXAxis(ImageHelper.flipOnYAxis(cornerIn));
+					case lowerRight:
+						return ImageHelper.flipOnYAxis(cornerIn);
+					case upperLeft:
+						return ImageHelper.flipOnXAxis(cornerIn);
+					case upperRight:
+						return cornerIn;
+				}
 		}
 
 		throw new IllegalStateException("Unable to flip corner image.");

@@ -107,7 +107,6 @@ public class Corner
 		loc = originalLoc;
 	}
 
-
 	@Override
 	public String toString()
 	{

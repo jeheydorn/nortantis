@@ -43,11 +43,13 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 	public IconDrawTask(ImageAndMasks unScaledImageAndMasks, IconType type, Point centerLoc, IntDimension scaledSize, String fileName,
 			Color color, HSBColor filterColor, boolean maximizeOpacity, String groupId, double resolutionScale)
 	{
-		this(unScaledImageAndMasks, null, type, centerLoc, scaledSize, fileName, color, filterColor, maximizeOpacity, groupId, resolutionScale);
+		this(unScaledImageAndMasks, null, type, centerLoc, scaledSize, fileName, color, filterColor, maximizeOpacity, groupId,
+				resolutionScale);
 	}
 
 	private IconDrawTask(ImageAndMasks unScaledImageAndMasks, ImageAndMasks scaledImageAndMasks, IconType type, Point centerLoc,
-			IntDimension scaledSize, String fileName, Color color, HSBColor filterColor, boolean maximizeOpacity, String groupId, double resolutionScale)
+			IntDimension scaledSize, String fileName, Color color, HSBColor filterColor, boolean maximizeOpacity, String groupId,
+			double resolutionScale)
 	{
 		this.unScaledImageAndMasks = unScaledImageAndMasks;
 		this.scaledImageAndMasks = scaledImageAndMasks;
@@ -125,12 +127,12 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 			Rectangle bounds = createBounds();
 			final double padding = 2 * resolutionScale;
 			Rectangle scaledContentBounds = calcScaledContentBounds();
-			contentBoundsPadded = new nortantis.geom.Rectangle(bounds.x + scaledContentBounds.x,
-					bounds.y + scaledContentBounds.y, scaledContentBounds.width, scaledContentBounds.height).pad(padding, padding);
+			contentBoundsPadded = new nortantis.geom.Rectangle(bounds.x + scaledContentBounds.x, bounds.y + scaledContentBounds.y,
+					scaledContentBounds.width, scaledContentBounds.height).pad(padding, padding);
 		}
 		return contentBoundsPadded;
 	}
-	
+
 	private Rectangle calcScaledContentBounds()
 	{
 		Image originalContentMask = unScaledImageAndMasks.getOrCreateContentMask();
@@ -142,7 +144,6 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 				originalContentBounds.width * xScale, originalContentBounds.height * yScale);
 		return scaledContentBounds;
 	}
-
 
 	public boolean overlaps(nortantis.geom.Rectangle bounds)
 	{

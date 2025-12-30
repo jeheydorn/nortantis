@@ -36,8 +36,8 @@ import pl.edu.icm.jlargearrays.ConcurrencyUtils;
 
 public class ImageHelper
 {
-	public final static int minParallelRowCount = 128;
-	public final static int minParallelSize = minParallelRowCount * minParallelRowCount;
+	public static final int minParallelRowCount = 128;
+	public static final int minParallelSize = minParallelRowCount * minParallelRowCount;
 
 	/**
 	 * This should be called before closing the program if methods have been called which use jTransforms or other thread pools.
@@ -234,12 +234,7 @@ public class ImageHelper
 	{
 		if (size == 0)
 		{
-			return new float[][]
-			{
-					{
-							1f
-					}
-			};
+			return new float[][] { { 1f } };
 		}
 
 		NormalDistribution dist = createDistributionForSize(size);
@@ -295,12 +290,7 @@ public class ImageHelper
 	{
 		if (size == 0)
 		{
-			return new float[][]
-			{
-					{
-							1f
-					}
-			};
+			return new float[][] { { 1f } };
 		}
 
 		float[][] kernel = new float[size][size];
@@ -324,12 +314,7 @@ public class ImageHelper
 	{
 		if (size == 0)
 		{
-			return new float[][]
-			{
-					{
-							1f
-					}
-			};
+			return new float[][] { { 1f } };
 		}
 
 		Sinc dist = new Sinc();
@@ -1389,7 +1374,8 @@ public class ImageHelper
 		for (int r = 0; r < result.length; r++)
 			for (int c = 0; c < result[0].length; c++)
 			{
-				int arrayRow = (r + rowOffset) % array.length;;
+				int arrayRow = (r + rowOffset) % array.length;
+				;
 				if (((r + rowOffset) / array.length) % 2 == 1)
 					arrayRow = array.length - 1 - arrayRow;
 
