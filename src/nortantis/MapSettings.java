@@ -1927,6 +1927,14 @@ public class MapSettings implements Serializable
 
 		// Convert the settings to json and back to an object to pick up any conversions added in the json parse.
 		String json = toJson();
+
+		// Clear out deprecated properties to make sure I don't accidently use them, and to make my unit test for this code succeed.
+		// Note that I could instead create the "json" object above by assigning the OldPropertyBasedMapSettings to a new object to avoid
+		// this, but that would then require me to create new loading code for any deprecated properties in OldPropertyBasedMapSettings if a
+		// conversion uses the old value in parseFromJson.
+		oceanEffectsColor = null;
+		oceanEffectsLevel = 0;
+
 		try
 		{
 			parseFromJson(json);
@@ -2239,6 +2247,12 @@ public class MapSettings implements Serializable
 				&& textRandomSeed == other.textRandomSeed && Objects.equals(titleFont, other.titleFont)
 				&& Double.doubleToLongBits(treeHeightScale) == Double.doubleToLongBits(other.treeHeightScale)
 				&& Objects.equals(version, other.version) && worldSize == other.worldSize;
+	}
+
+	@Override
+	public String toString()
+	{
+		return "MapSettings [" + toJson() + "]";
 	}
 
 }

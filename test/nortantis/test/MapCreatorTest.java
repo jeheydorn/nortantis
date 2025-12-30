@@ -347,9 +347,19 @@ public class MapCreatorTest
 	}
 
 	@Test
-	public void jsonSaveTest(@TempDir Path tempDir) throws IOException
+	public void jsonSaveTestNortFile(@TempDir Path tempDir) throws IOException
 	{
-		String settingsFileName = "allTypesOfEdits.nort";
+		runJSonSaveTest("allTypesOfEdits.nort", tempDir);
+	}
+
+	@Test
+	public void jsonSaveTestPropertiesConversion(@TempDir Path tempDir) throws IOException
+	{
+		runJSonSaveTest("propertiesConversion_allTypesOfEdits.properties", tempDir);
+	}
+
+	private void runJSonSaveTest(String settingsFileName, Path tempDir) throws IOException
+	{
 		String settingsPath = Paths.get("unit test files", "map settings", settingsFileName).toString();
 		MapSettings settings = new MapSettings(settingsPath);
 

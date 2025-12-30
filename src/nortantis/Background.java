@@ -44,7 +44,7 @@ public class Background
 	// index of the region it is in.
 	Image regionIndexes;
 	private int borderWidthScaled;
-	private NamedResource borderResouce;
+	private NamedResource borderResource;
 	private Image upperLeftCorner;
 	private Image upperRightCorner;
 	private Image lowerLeftCorner;
@@ -69,7 +69,7 @@ public class Background
 		this.mapBounds = mapBounds;
 
 		borderWidthScaled = calcBorderWidthScaledByResolution(settings);
-		borderResouce = settings.borderResource;
+		borderResource = settings.borderResource;
 
 		isBorderOutsideMap = settings.borderPosition == BorderPosition.Outside_map;
 
@@ -511,18 +511,18 @@ public class Background
 
 		}
 
-		Path artPackPath = Assets.getArtPackPath(borderResouce.artPack, customImagesPath);
+		Path artPackPath = Assets.getArtPackPath(borderResource.artPack, customImagesPath);
 		if (artPackPath == null)
 		{
-			throw new RuntimeException("Unable to draw the border because the selected border type, '" + borderResouce.name
-					+ "', is from the art pack '" + borderResouce.artPack + "', which does not exist.");
+			throw new RuntimeException("Unable to draw the border because the selected border type, '" + borderResource.name
+					+ "', is from the art pack '" + borderResource.artPack + "', which does not exist.");
 		}
 		Path allBordersPath = Paths.get(artPackPath.toString(), "borders");
-		Path borderPath = Paths.get(allBordersPath.toString(), borderResouce.name);
+		Path borderPath = Paths.get(allBordersPath.toString(), borderResource.name);
 		if (!Assets.exists(borderPath.toString()))
 		{
 			throw new RuntimeException(
-					"The selected border type '" + borderResouce + "' does not have a folder for images in " + allBordersPath + ".");
+					"The selected border type '" + borderResource + "' does not have a folder for images in " + allBordersPath + ".");
 		}
 
 		int edgeOriginalWidth = 0;
