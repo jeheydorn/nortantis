@@ -358,6 +358,9 @@ public class MapCreatorTest
 		runJSonSaveTest("propertiesConversion_allTypesOfEdits.properties", tempDir);
 	}
 
+	/**
+	 * Tests that a map can be saved and reloaded and produce the same json.
+	 */
 	private void runJSonSaveTest(String settingsFileName, Path tempDir) throws IOException
 	{
 		String settingsPath = Paths.get("unit test files", "map settings", settingsFileName).toString();
