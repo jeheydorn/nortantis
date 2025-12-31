@@ -31,7 +31,7 @@ public class GridDrawer
 					settings.gridOverlayColor.getBlue()));
 			float lineWidth = settings.gridOverlayLineWidth * (float) settings.resolution;
 			p.setBasicStroke(lineWidth);
-			if (drawBounds != null && settings.gridOverlayShape != GridOverlayShape.Voronoi_polygons_on_land)
+			if (drawBounds != null && settings.gridOverlayShape != GridOverlayShape.Voronoi_polygons)
 			{
 				p.translate(-drawBounds.x, -drawBounds.y);
 			}
@@ -47,7 +47,7 @@ public class GridDrawer
 						settings.gridOverlayYOffset, drawBounds, lineWidth);
 				case Horizontal_hexes -> drawHorizontalHexGrid(p, width, height, settings.gridOverlayRowOrColCount,
 						settings.gridOverlayXOffset, settings.gridOverlayYOffset, drawBounds, lineWidth);
-				case Voronoi_polygons_on_land -> drawVoronoiOnLand(p, graph, centersToDraw, drawBounds,
+				case Voronoi_polygons -> drawVoronoiOnLand(p, graph, centersToDraw, drawBounds,
 						settings.drawVoronoiGridOverlayOnlyOnLand);
 				default -> throw new IllegalArgumentException("Unexpected value: " + settings.gridOverlayShape);
 			}

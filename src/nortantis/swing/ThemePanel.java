@@ -1553,7 +1553,7 @@ public class ThemePanel extends JTabbedPane
 		gridOverlayLineWidthSliderHider.setVisible(drawGridOverlayCheckbox.isSelected());
 		gridOverlayLayerComboBoxHider.setVisible(drawGridOverlayCheckbox.isSelected());
 
-		boolean isVoronoi = Objects.equals(gridOverlayShapeComboBox.getSelectedItem(), GridOverlayShape.Voronoi_polygons_on_land);
+		boolean isVoronoi = Objects.equals(gridOverlayShapeComboBox.getSelectedItem(), GridOverlayShape.Voronoi_polygons);
 		gridOverlayRowOrColCountSliderHider.setVisible(!isVoronoi && drawGridOverlayCheckbox.isSelected());
 		gridOverlayXOffsetComboBoxHider.setVisible(!isVoronoi && drawGridOverlayCheckbox.isSelected());
 		gridOverlayYOffsetComboBoxHider.setVisible(!isVoronoi && drawGridOverlayCheckbox.isSelected());

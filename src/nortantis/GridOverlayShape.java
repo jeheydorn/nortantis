@@ -2,7 +2,7 @@ package nortantis;
 
 public enum GridOverlayShape
 {
-	Horizontal_hexes, Vertical_hexes, Squares, Voronoi_polygons_on_land;
+	Horizontal_hexes, Vertical_hexes, Squares, Voronoi_polygons;
 
 	public String toString()
 	{
