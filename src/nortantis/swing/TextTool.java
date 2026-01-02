@@ -772,7 +772,7 @@ public class TextTool extends EditorTool
 						(int) ((graphPointMouseLocation.x - graphPointMousePressedLocation.x) / mainWindow.displayQualityScale),
 						(int) ((graphPointMouseLocation.y - graphPointMousePressedLocation.y) / mainWindow.displayQualityScale));
 				lastSelected.location = new nortantis.geom.Point(lastSelected.location.x + translation.x,
-						+lastSelected.location.y + translation.y);
+						lastSelected.location.y + translation.y);
 				undoer.setUndoPoint(UpdateType.Incremental, this);
 				updater.createAndShowMapIncrementalUsingText(Arrays.asList(before, lastSelected));
 				isMoving = false;

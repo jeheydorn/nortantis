@@ -44,7 +44,7 @@ public class GraphCreator
 		Painter p = heightMap.createPainter();
 		p.setColor(Color.black);
 		p.fillRect(0, 0, graph.getWidth(), graph.getHeight());
-		graph.paintElevationUsingTrianges(p);
+		graph.paintElevationUsingTriangles(p);
 
 		heightMap = ImageHelper.blur(heightMap, (int) graph.getMeanCenterWidth() / 2, false);
 

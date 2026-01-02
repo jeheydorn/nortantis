@@ -13,17 +13,6 @@ import nortantis.util.Tuple2;
 
 public class ImageCacheTest
 {
-
-	@BeforeAll
-	public static void setUpBeforeClass() throws Exception
-	{
-	}
-
-	@AfterAll
-	public static void tearDownAfterClass() throws Exception
-	{
-	}
-
 	@Test
 	public void testParseBaseNameAndWidth_withWidth()
 	{

@@ -768,7 +768,7 @@ public class WorldGraph extends VoronoiGraph
 		return null;
 	}
 
-	public void paintElevationUsingTrianges(Painter p)
+	public void paintElevationUsingTriangles(Painter p)
 	{
 		super.drawElevation(p);
 
@@ -801,25 +801,6 @@ public class WorldGraph extends VoronoiGraph
 				return c.isWater ? Color.black : Color.white;
 			}
 		});
-
-		// Code useful for debugging
-		// g.setColor(Color.WHITE);
-		// for (Corner c : corners)
-		// {
-		// for (Corner adjacent : c.adjacent)
-		// {
-		// g.drawLine((int)c.loc.x, (int)c.loc.y, (int) adjacent.loc.x,
-		// (int)adjacent.loc.y);
-		// }
-		// }
-		//
-		// for (Edge e : edges)
-		// {
-		// g.setStroke(new BasicStroke(1));
-		// g.setColor(Color.YELLOW);
-		// g.drawLine((int) e.d0.loc.x, (int) e.d0.loc.y, (int) e.d1.loc.x,
-		// (int) e.d1.loc.y);
-		// }
 	}
 
 	public void drawLandAndLakesBlackAndOceanWhite(Painter p, Collection<Center> centersToRender, Rectangle drawBounds)
@@ -1239,7 +1220,6 @@ public class WorldGraph extends VoronoiGraph
 
 	private void createTectonicPlates()
 	{
-		// long startTime = System.currentTimeMillis();
 		// First, assign a unique plate id and a random growth probability to
 		// each center.
 		RandomGenerator randomData = new JDKRandomGenerator();
@@ -1355,26 +1335,23 @@ public class WorldGraph extends VoronoiGraph
 		{
 			c.tectonicPlate.centers.add(c);
 		}
-
-		// Logger.println("Plate time: " + (System.currentTimeMillis() -
-		// startTime)/1000.0);
 	}
 
 	/**
-	 * Returns the amount c1 and c2 are converging. This is between -1 and 1.
+	 * Returns the amount the centers p1 and p2 are from are converging. This is between -1 and 1.
 	 * 
-	 * @param c1
-	 *            A center along a tectonic plate border.
-	 * @param c1Velocity
-	 *            The velocity of the plate c1 is on.
-	 * @param c2
-	 *            A center along a tectonic plate border: not the same tectonic plate as c1
-	 * @param c2Velocity
-	 *            The velocity of the plate c2 is on.
+	 * @param p1
+	 *            Location of a center along a tectonic plate border.
+	 * @param p1Velocity
+	 *            The velocity of the plate p1 is on.
+	 * @param p2
+	 *            Location of a center along a tectonic plate border: not the same tectonic plate as p1
+	 * @param p2Velocity
+	 *            The velocity of the plate p2 is on.
 	 */
-	private double calcLevelOfConvergence(Point p1, PolarCoordinate p1Velocity, Point p2, PolarCoordinate c2Velocity)
+	private double calcLevelOfConvergence(Point p1, PolarCoordinate p1Velocity, Point p2, PolarCoordinate p2Velocity)
 	{
-		return 0.5 * calcUnilateralLevelOfConvergence(p1, p1Velocity, p2) + 0.5 * calcUnilateralLevelOfConvergence(p2, c2Velocity, p1);
+		return 0.5 * calcUnilateralLevelOfConvergence(p1, p1Velocity, p2) + 0.5 * calcUnilateralLevelOfConvergence(p2, p2Velocity, p1);
 	}
 
 	/**

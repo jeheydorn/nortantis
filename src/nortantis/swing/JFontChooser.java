@@ -299,8 +299,6 @@ public class JFontChooser extends JComponent
 	 * 
 	 * @param name
 	 *            the family name of the selected font.
-	 *
-	 * @see getSelectedFontFamily
 	 **/
 	public void setSelectedFontFamily(String name)
 	{

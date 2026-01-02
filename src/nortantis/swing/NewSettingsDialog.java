@@ -62,7 +62,7 @@ public class NewSettingsDialog extends JDialog
 	private Dimension defaultSize = new Dimension(900, 750);
 	private int amountToSubtractFromLeftAndRightPanels = 40;
 	private Timer progressBarTimer;
-	public final double cityFrequencySliderScale = 100.0 * 1.0 / SettingsGenerator.maxCityProbabillity;
+	public final double cityFrequencySliderScale = 100.0 / SettingsGenerator.maxCityProbabillity;
 	private JSlider cityFrequencySlider;
 	private JComboBox<String> cityIconsTypeComboBox;
 	private JPanel mapEditingPanelContainer;

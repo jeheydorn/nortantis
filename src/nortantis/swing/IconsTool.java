@@ -355,15 +355,16 @@ public class IconsTool extends EditorTool
 			groupLabel = new JLabel();
 			iconMetadataHider.add(organizer.addLabelAndComponent("Group: ", "The icon group folder this icon is from.", groupLabel, 0));
 			nameLabel = new JLabel();
-			iconMetadataHider.add(organizer.addLabelAndComponent("Name: ",
-					"The icon's file name, not including modifiers or the extension.", nameLabel, 0));
+			iconMetadataHider.add(
+					organizer.addLabelAndComponent("Name: ", "The icon's file name, not including modifiers or the extension.", nameLabel,
+							0));
 		}
 
 		GridBagOrganizer colorOrganizer = new GridBagOrganizer();
 		{
 			maximizeOpacityCheckbox = new JCheckBox("Maximize opacity");
-			maximizeOpacityCheckbox
-					.setToolTipText("Scale the alpha of all pixels to use the full range, thus removing any 'padded' transparency.");
+			maximizeOpacityCheckbox.setToolTipText(
+					"Scale the alpha of all pixels to use the full range, thus removing any 'padded' transparency.");
 			maximizeOpacityCheckbox.addActionListener(new ActionListener()
 			{
 
@@ -595,8 +596,8 @@ public class IconsTool extends EditorTool
 			JButton clearScaleButton;
 			{
 				clearScaleButton = new JButton("Reset Scale");
-				clearScaleButton
-						.setToolTipText("Set the icon-specific scaling for the selected icons back to the scale they were created at");
+				clearScaleButton.setToolTipText(
+						"Set the icon-specific scaling for the selected icons back to the scale they were created at");
 				clearScaleButton.addActionListener(new ActionListener()
 				{
 
@@ -608,8 +609,8 @@ public class IconsTool extends EditorTool
 				});
 			}
 
-			deleteCopyPasteIconButtonsHider = organizer
-					.addLeftAlignedComponents(Arrays.asList(copyButton, pasteButton, deleteButton, clearScaleButton));
+			deleteCopyPasteIconButtonsHider = organizer.addLeftAlignedComponents(
+					Arrays.asList(copyButton, pasteButton, deleteButton, clearScaleButton));
 		}
 
 		{
@@ -623,9 +624,10 @@ public class IconsTool extends EditorTool
 					handleImagesRefresh(mainWindow.getSettingsFromGUI(false));
 				}
 			});
-			artPackComboBoxHider = organizer.addLabelAndComponent("Art pack:", "For filtering the icons shown in this tool. '"
-					+ Assets.installedArtPack + "' selects art that comes with Nortantis. '" + Assets.customArtPack
-					+ "' selects images from this map's custom images folder, if it has one. Other options are art packs installed on this machine.",
+			artPackComboBoxHider = organizer.addLabelAndComponent("Art pack:",
+					"For filtering the icons shown in this tool. '" + Assets.installedArtPack + "' selects art that comes with Nortantis. '"
+							+ Assets.customArtPack
+							+ "' selects images from this map's custom images folder, if it has one. Other options are art packs installed on this machine.",
 					artPackComboBox);
 		}
 
@@ -666,8 +668,9 @@ public class IconsTool extends EditorTool
 					else if (e.getID() == KeyEvent.KEY_RELEASED)
 					{
 						addOrRemoveIconHoverHighlightSelection(false);
-						boolean isValidPosition = iconsToEdit.stream().anyMatch(icon -> icon.type == IconType.decorations
-								|| !updater.mapParts.iconDrawer.isContentBottomTouchingWater(icon));
+						boolean isValidPosition = iconsToEdit.stream().anyMatch(
+								icon -> icon.type == IconType.decorations || !updater.mapParts.iconDrawer.isContentBottomTouchingWater(
+										icon));
 						mapEditingPanel.showIconEditToolsAt(iconsToEdit, isValidPosition);
 						mapEditingPanel.repaint();
 					}
@@ -1011,20 +1014,21 @@ public class IconsTool extends EditorTool
 
 	private void showOrHideEditComponents()
 	{
-		modeOptionsAndBrushSeperatorHider.setVisible((modeWidget.isEditMode() && iconsToEdit != null && !iconsToEdit.isEmpty())
-				|| modeWidget.isDrawMode() || modeWidget.isReplaceMode());
+		modeOptionsAndBrushSeperatorHider.setVisible(
+				(modeWidget.isEditMode() && iconsToEdit != null && !iconsToEdit.isEmpty()) || modeWidget.isDrawMode()
+						|| modeWidget.isReplaceMode());
 		brushAndEditOptionsSeperatorHider.setVisible(modeWidget.isEditMode() || modeWidget.isDrawMode() || modeWidget.isReplaceMode());
 		iconMetadataHider.setVisible(modeWidget.isEditMode() && iconsToEdit != null && iconsToEdit.size() == 1);
-		colorPickerHider
-				.setVisible(modeWidget.isDrawMode() || modeWidget.isReplaceMode() || modeWidget.isEditMode() && !iconsToEdit.isEmpty());
+		colorPickerHider.setVisible(
+				modeWidget.isDrawMode() || modeWidget.isReplaceMode() || modeWidget.isEditMode() && !iconsToEdit.isEmpty());
 		deleteCopyPasteIconButtonsHider.setVisible(modeWidget.isEditMode());
 	}
 
 	private void showOrHideBrush(java.awt.Point mouseLocation)
 	{
 		int brushDiameter = getBrushDiameter();
-		if (modeWidget.isDrawMode() || brushDiameter <= 1 || (modeWidget.isEditMode()
-				&& (mapEditingPanel.isInMoveTool(mouseLocation) || mapEditingPanel.isInScaleTool(mouseLocation))))
+		if (modeWidget.isDrawMode() || brushDiameter <= 1 || (modeWidget.isEditMode() && (mapEditingPanel.isInMoveTool(mouseLocation)
+				|| mapEditingPanel.isInScaleTool(mouseLocation))))
 		{
 			mapEditingPanel.hideBrush();
 		}
@@ -1045,8 +1049,9 @@ public class IconsTool extends EditorTool
 		cityButtons.hider.setVisible(citiesButton.isSelected() && (modeWidget.isDrawMode() || modeWidget.isReplaceMode()));
 		decorationButtons.hider.setVisible(decorationsButton.isSelected() && (modeWidget.isDrawMode() || modeWidget.isReplaceMode()));
 		densityHider.setVisible(treesButton.isSelected() && (modeWidget.isDrawMode()));
-		brushSizeHider.setVisible((modeWidget.isDrawMode() && !citiesButton.isSelected() && !decorationsButton.isSelected())
-				|| modeWidget.isReplaceMode() || modeWidget.isEraseMode() || modeWidget.isEditMode());
+		brushSizeHider.setVisible(
+				(modeWidget.isDrawMode() && !citiesButton.isSelected() && !decorationsButton.isSelected()) || modeWidget.isReplaceMode()
+						|| modeWidget.isEraseMode() || modeWidget.isEditMode());
 		// Disable color change handlers so they don't set undo points because of automatic changes.
 		setColorForSelectedType();
 		artPackComboBoxHider.setVisible(modeWidget.isDrawMode() || modeWidget.isReplaceMode());
@@ -1074,7 +1079,8 @@ public class IconsTool extends EditorTool
 			radioButtons.add(button);
 		}
 
-		List<? extends Component> listToUse = radioButtons.size() > 0 ? radioButtons
+		List<? extends Component> listToUse = radioButtons.size() > 0
+				? radioButtons
 				: Arrays.asList(
 						new JLabel("<html>The art pack '" + artPack + "' has no " + iconType.toString().toLowerCase() + ".</html>"));
 		IconTypeButtons result;
@@ -1274,8 +1280,9 @@ public class IconsTool extends EditorTool
 							}
 							catch (NullPointerException ex)
 							{
-								Logger.println("While updating icon preview images, the image selectors did not contain group ID: "
-										+ groupId + ". If icon previews don't update correctly, try refreshing the map (ctrl+R).");
+								Logger.println(
+										"While updating icon preview images, the image selectors did not contain group ID: " + groupId
+												+ ". If icon previews don't update correctly, try refreshing the map (ctrl+R).");
 							}
 							catch (IndexOutOfBoundsException ex)
 							{
@@ -1380,19 +1387,16 @@ public class IconsTool extends EditorTool
 		// image library I'm using not always scaling to the size I
 		// give.
 
-		// TODO remove
-		// IntDimension size = new IntDimension(maxRowWidth + ((int) (padding * 2.2)),
-		// (rowCount * scaledHeight) + (padding * 2));
 		IntDimension size = new IntDimension(Math.min(maxRowWidth, largestRowWidth) + (padding * 2),
 				(rowCount * scaledHeight) + (padding * 2));
 
 		Image previewImage;
 
 		Path backgroundImagePath = settings.getBackgroundImagePath().getFirst();
-		Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm> tuple = ThemePanel
-				.createBackgroundImageDisplaysImages(size, settings.backgroundRandomSeed, settings.colorizeOcean, settings.colorizeLand,
-						settings.generateBackground, settings.generateBackgroundFromTexture, settings.solidColorBackground,
-						backgroundImagePath == null ? null : backgroundImagePath.toString());
+		Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm> tuple = ThemePanel.createBackgroundImageDisplaysImages(
+				size, settings.backgroundRandomSeed, settings.colorizeOcean, settings.colorizeLand, settings.generateBackground,
+				settings.generateBackgroundFromTexture, settings.solidColorBackground,
+				backgroundImagePath == null ? null : backgroundImagePath.toString());
 		if (iconType == IconType.decorations)
 		{
 			previewImage = tuple.getFirst();
@@ -1413,8 +1417,8 @@ public class IconsTool extends EditorTool
 		for (int i : new Range(imagesAndMasks.size()))
 		{
 			ImageAndMasks imageAndMasks = imagesAndMasks.get(i);
-			Image image = ImageCache.getInstance(settings.artPack, settings.customImagesPath).getColoredIcon(imageAndMasks, iconColor,
-					filterColor, maximizeOpacity);
+			Image image = ImageCache.getInstance(settings.artPack, settings.customImagesPath)
+					.getColoredIcon(imageAndMasks, iconColor, filterColor, maximizeOpacity);
 			image = imageAndMasks.cropToContent(image);
 			int widthForHeight = ImageHelper.getWidthWhenScaledByHeight(image, scaledHeight);
 			int scaledWidth = Math.min(widthForHeight, maxRowWidth);
@@ -1893,8 +1897,8 @@ public class IconsTool extends EditorTool
 
 	private double calcScale(Point graphPointMouseLocation, Point graphPointMousePressedLocation, Rectangle iconEditBounds)
 	{
-		double scale = graphPointMouseLocation.distanceTo(iconEditBounds.getCenter())
-				/ graphPointMousePressedLocation.distanceTo(iconEditBounds.getCenter());
+		double scale = graphPointMouseLocation.distanceTo(iconEditBounds.getCenter()) / graphPointMousePressedLocation.distanceTo(
+				iconEditBounds.getCenter());
 
 		return floorWithMinScale(scale, iconEditBounds);
 	}

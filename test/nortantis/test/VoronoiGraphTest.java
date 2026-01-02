@@ -31,7 +31,7 @@ public class VoronoiGraphTest
 	}
 
 	@Test
-	public static void drawTriangleElevationWithXAndYGradientTest()
+	public void drawTriangleElevationWithXAndYGradientTest()
 	{
 		Image image = Image.create(101, 101, ImageType.RGB);
 		Corner corner1 = new Corner();
@@ -50,7 +50,7 @@ public class VoronoiGraphTest
 	}
 
 	@Test
-	public static void drawTriangleElevationZeroXGradientTest()
+	public void drawTriangleElevationZeroXGradientTest()
 	{
 		Image image = Image.create(101, 101, ImageType.RGB);
 		Corner corner1 = new Corner();
@@ -69,7 +69,7 @@ public class VoronoiGraphTest
 	}
 
 	@Test
-	public static void drawTriangleElevationZeroYGradientTest()
+	public void drawTriangleElevationZeroYGradientTest()
 	{
 		Image image = Image.create(101, 101, ImageType.RGB);
 		Corner corner1 = new Corner();
@@ -91,7 +91,7 @@ public class VoronoiGraphTest
 	 * Unit test for findHighestZ.
 	 */
 	@Test
-	public static void findHighestZTest()
+	public void findHighestZTest()
 	{
 		Vector3D v1 = new Vector3D(0, 0, -3);
 		Vector3D v2 = new Vector3D(0, 0, 1);

@@ -2,7 +2,7 @@ package nortantis.graph.voronoi.nodename.as3delaunay;
 
 import nortantis.geom.Point;
 
-public final class Circle extends Object
+public final class Circle
 {
 
 	public Point center;

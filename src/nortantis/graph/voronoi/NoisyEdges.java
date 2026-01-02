@@ -211,7 +211,6 @@ public class NoisyEdges
 	 * needed to maintain C1 continuity at corners in the voronoi graph.
 	 * 
 	 * @param edge
-	 * @param firstPointOnCurve
 	 * @param corner
 	 *            This must be either edge.v0 or edge.v1. Whichever is the first point in the curve.
 	 * @return

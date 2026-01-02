@@ -454,7 +454,7 @@ public class Background
 		}
 	}
 
-	private Image drawRegionColors(WorldGraph graph, Image fractalBG, Image pixelColors, ImageHelper.ColorifyAlgorithm colorfiyAlgorithm,
+	private Image drawRegionColors(WorldGraph graph, Image fractalBG, Image pixelColors, ImageHelper.ColorifyAlgorithm colorifyAlgorithm,
 			IntPoint where)
 	{
 		if (graph.regions.isEmpty())
@@ -468,7 +468,7 @@ public class Background
 			regionBackgroundColors.put(regionEntry.getKey(), regionEntry.getValue().backgroundColor);
 		}
 
-		return ImageHelper.colorifyMulti(fractalBG, regionBackgroundColors, pixelColors, colorfiyAlgorithm, where);
+		return ImageHelper.colorifyMulti(fractalBG, regionBackgroundColors, pixelColors, colorifyAlgorithm, where);
 	}
 
 	public Image createOceanSnippet(Rectangle boundsToCopyFrom)

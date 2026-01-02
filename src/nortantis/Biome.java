@@ -25,7 +25,7 @@ public enum Biome
 			0x99ffff
 	), MARSH(0x2f6666), TROPICAL_RAIN_FOREST(0x337755), TROPICAL_SEASONAL_FOREST(0x559944), COAST(0x33335a), LAKESHORE(0x225588);
 
-	Color color;
+	final Color color;
 
 	Biome(int color)
 	{

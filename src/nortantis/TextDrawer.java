@@ -79,8 +79,6 @@ public class TextDrawer
 	 * 
 	 * @param settings
 	 *            The map settings to use. Some of these settings are for text drawing.
-	 * @param sizeMultiplyer
-	 *            The font size of text drawn will be multiplied by this value. This allows the map to be scaled larger or smaller.
 	 */
 	public TextDrawer(MapSettings settings)
 	{
@@ -817,16 +815,12 @@ public class TextDrawer
 	/**
 	 * Draws a curved string.
 	 * 
-	 * @param g
+	 * @param p
 	 *            Context for drawing.
 	 * @param name
 	 *            Text to draw
 	 * @param textStart
 	 *            location to start drawing the text at (before applying curvature)
-	 * @param curvature
-	 *            A value between -1 (for curved 90 degrees down at the edges) and 1 (for curved 90 degrees up at the edges).
-	 * @param spacing
-	 *            Integer values of space to add between letters
 	 */
 	private void drawStringCurved(Painter p, MapText text, String name, Point textStart, boolean drawBoldBackground)
 	{

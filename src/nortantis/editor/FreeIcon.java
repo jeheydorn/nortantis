@@ -207,8 +207,8 @@ public class FreeIcon
 	/**
 	 * Converts a free icon to an icon draw task.
 	 * 
-	 * @param imagesPath
-	 *            Either no or empty, or a custom images folder
+	 * @param customImagesFolder
+	 *            Either empty or the custom images folder
 	 * @param resolutionScale
 	 *            MapSettings.resolution that we're currently drawing at.
 	 * @param typeLevelScale

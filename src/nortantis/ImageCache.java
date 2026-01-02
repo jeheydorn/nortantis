@@ -89,9 +89,6 @@ public class ImageCache
 	/**
 	 * Gets the image cache instance associated with the given imagesPath. When imagesPath is null or empty, then the imageCache for the
 	 * installed images is given.
-	 * 
-	 * @param imagesPath
-	 * @return
 	 */
 	public static synchronized ImageCache getInstance(String artPack, String customImagesFolder)
 	{
@@ -119,8 +116,8 @@ public class ImageCache
 	 * 
 	 * @param icon
 	 *            Original image (not scaled)
-	 * @param width
-	 *            The desired width
+	 * @param size
+	 *            The desired size
 	 * @return A scaled image
 	 */
 	public Image getScaledImage(Image icon, IntDimension size)

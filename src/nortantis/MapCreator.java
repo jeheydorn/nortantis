@@ -62,7 +62,7 @@ public class MapCreator implements WarningLogger
 	private static final double concentricWaveWidthBetweenWaves = 11;
 	private static final double concentricWaveLineWidth = 1.8;
 	private boolean isCanceled;
-	private List<String> warningMessages;
+	private final List<String> warningMessages;
 	public ConcurrentHashMap<Integer, Center> centersToRedrawLowPriority;
 
 	public MapCreator()
@@ -175,12 +175,12 @@ public class MapCreator implements WarningLogger
 	 *            Map settings for drawing
 	 * @param mapParts
 	 *            Assumed to be populated by createMap the last time the map was generated at full size
-	 * @param map
+	 * @param fullSizedMap
 	 *            The full sized map to update
-	 * @param centerChanges
-	 *            Edits for centers that need to be re-drawn
-	 * @param edgeChanges
-	 *            If edges changed, this is the list of edge edits that changed
+	 * @param centersChangedIds
+	 *            Ids of the edits for centers that need to be re-drawn
+	 * @param edgesChangedIds
+	 *            If edges changed, this is the list of ids for edge edits that changed
 	 * @param isLowPriorityChange
 	 *            Tells whether this update was submitted as a low priority change. In theory the drawing code doesn't need to know this
 	 *            because low priority changes should never change something that then requires submitting more low priority changes, but
@@ -218,10 +218,7 @@ public class MapCreator implements WarningLogger
 			{
 				edgeEdits = new HashSet<EdgeEdit>();
 			}
-			if (centersChanged != null)
-			{
-				edgeEdits.addAll(getEdgeEditsForCenters(settings.edits, centersChanged));
-			}
+			edgeEdits.addAll(getEdgeEditsForCenters(settings.edits, centersChanged));
 			applyEdgeEdits(mapParts.graph, settings.edits, edgeEdits);
 		}
 		Set<Center> centersChangedThatAffectedLandOrRegionBoundaries = applyCenterEdits(mapParts.graph, settings.edits,
@@ -633,7 +630,7 @@ public class MapCreator implements WarningLogger
 	/**
 	 * Draws a map.
 	 * 
-	 * @param settings
+	 * @param settings Setting for the map to create
 	 * @param maxDimensions
 	 *            The maximum width and height (in pixels) at which to draw the map. This is needed for creating previews. null means draw
 	 *            at normal resolution. Warning: If maxDimensions is specified, then settings.resolution will be modified to fit that size.
@@ -836,7 +833,7 @@ public class MapCreator implements WarningLogger
 				Edge e = graph.edges.get(index);
 
 				p.setColor(Color.blue);
-				p.setBasicStroke(1f * (float) settings.resolution);
+				p.setBasicStroke((float) settings.resolution);
 				final int diameter = (int) (6.0 * settings.resolution);
 
 				if (e.v0 != null)
@@ -1842,11 +1839,7 @@ public class MapCreator implements WarningLogger
 		for (EdgeEdit eEdit : edgeChanges)
 		{
 			Edge edge = graph.edges.get(eEdit.index);
-			boolean needsRebuild = false;
-			if (eEdit.riverLevel != edge.river && edge.d0 != null)
-			{
-				needsRebuild = true;
-			}
+			boolean needsRebuild = eEdit.riverLevel != edge.river && edge.d0 != null;
 			graph.edges.get(eEdit.index).river = eEdit.riverLevel;
 			if (needsRebuild)
 			{

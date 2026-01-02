@@ -2,7 +2,7 @@ package nortantis.graph.voronoi.nodename.as3delaunay;
 
 import nortantis.geom.Point;
 
-public final class LineSegment extends Object
+public final class LineSegment
 {
 
 	public static double compareLengths_MAX(LineSegment segment0, LineSegment segment1)

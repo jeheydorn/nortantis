@@ -63,8 +63,7 @@ public abstract class Color
 
 	/**
 	 * Converts this color to HSB
-	 * 
-	 * @param color
+	 *
 	 * @return An array with 3 elements: result[0] = hue result[1] = saturation result[3] = brightness
 	 * 
 	 */

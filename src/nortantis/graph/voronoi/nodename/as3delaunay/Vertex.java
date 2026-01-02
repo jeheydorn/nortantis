@@ -2,7 +2,7 @@ package nortantis.graph.voronoi.nodename.as3delaunay;
 
 import nortantis.geom.Point;
 
-final class Vertex extends Object implements ICoord
+final class Vertex implements ICoord
 {
 
 	public static final Vertex VERTEX_AT_INFINITY = new Vertex(Double.NaN, Double.NaN);

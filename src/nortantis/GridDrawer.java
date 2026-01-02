@@ -47,8 +47,7 @@ public class GridDrawer
 						settings.gridOverlayYOffset, drawBounds, lineWidth);
 				case Horizontal_hexes -> drawHorizontalHexGrid(p, width, height, settings.gridOverlayRowOrColCount,
 						settings.gridOverlayXOffset, settings.gridOverlayYOffset, drawBounds, lineWidth);
-				case Voronoi_polygons -> drawVoronoiOnLand(p, graph, centersToDraw, drawBounds,
-						settings.drawVoronoiGridOverlayOnlyOnLand);
+				case Voronoi_polygons -> drawVoronoiOnLand(p, graph, centersToDraw, drawBounds, settings.drawVoronoiGridOverlayOnlyOnLand);
 				default -> throw new IllegalArgumentException("Unexpected value: " + settings.gridOverlayShape);
 			}
 

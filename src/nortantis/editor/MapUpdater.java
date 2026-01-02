@@ -213,8 +213,6 @@ public abstract class MapUpdater
 	 * 
 	 * @param change
 	 *            The 'before' state. Used to determine what needs to be redrawn.
-	 * @param preRun
-	 *            Code to run in the foreground thread before drawing this change.
 	 */
 	public void createAndShowMapFromChange(MapChange change)
 	{

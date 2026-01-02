@@ -10,17 +10,6 @@ import org.junit.jupiter.api.Test;
 
 public class HelperTest
 {
-
-	@BeforeAll
-	public static void setUpBeforeClass() throws Exception
-	{
-	}
-
-	@AfterAll
-	public static void tearDownAfterClass() throws Exception
-	{
-	}
-
 	@Test
 	public void testNullInput()
 	{

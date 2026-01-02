@@ -89,10 +89,6 @@ class AwtImage extends Image
 		{
 			return ImageType.RGB;
 		}
-		if (bufferedImageType == BufferedImage.TYPE_3BYTE_BGR)
-		{
-			return ImageType.RGB;
-		}
 		if (bufferedImageType == BufferedImage.TYPE_BYTE_GRAY)
 		{
 			return ImageType.Grayscale8Bit;

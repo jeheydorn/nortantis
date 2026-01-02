@@ -1822,7 +1822,7 @@ public class IconDrawer
 		double biomeFrequency;
 
 		/**
-		 * @param biomeProb
+		 * @param biomeFrequency
 		 *            If this is not 1.0, groups of centers of biome type "biome" will be found and each groups will have this type of
 		 *            forest with probability biomeProb.
 		 */
@@ -1863,6 +1863,7 @@ public class IconDrawer
 		return chooseNewGroupId(ImageCache.getInstance(artPack, customImagesPath).getIconGroupNames(IconType.trees), keyWord);
 	}
 
+	@SuppressWarnings("lossy-conversions")
 	private void addTreeNearLocation(WorldGraph graph, List<ImageAndMasks> unscaledImages, Point loc, double forestDensity, Center center,
 			Random rand, String artPack, String groupId)
 	{

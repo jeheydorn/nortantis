@@ -9,9 +9,8 @@ import javax.swing.JToggleButton;
 
 public class ControlClickBehaviorWidget
 {
-	private JToggleButton selectModeButton;
-	private JToggleButton unselectModeButton;
-	private JPanel container;
+	private final JToggleButton selectModeButton;
+	private final JToggleButton unselectModeButton;
 
 	public ControlClickBehaviorWidget()
 	{
@@ -51,7 +50,7 @@ public class ControlClickBehaviorWidget
 
 	public RowHider addToOrganizer(GridBagOrganizer organizer)
 	{
-		container = new JPanel();
+		JPanel container = new JPanel();
 		container.setLayout(new WrapLayout(WrapLayout.LEFT));
 		// Remove the horizontal and vertical gaps from the border around the elements.
 		container.setBorder(BorderFactory.createEmptyBorder(-5, -5, -5, -5));

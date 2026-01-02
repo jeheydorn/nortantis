@@ -9,8 +9,8 @@ import nortantis.geom.IntRectangle;
 
 public abstract class Image
 {
-	private ImageType type;
-	private float maxPixelLevelAsFloat;
+	private final ImageType type;
+	private final float maxPixelLevelAsFloat;
 
 	protected Image(ImageType type)
 	{

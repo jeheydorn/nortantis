@@ -91,17 +91,3 @@ spotless {
         cleanthat()
     }
 }
-
-
-// Define a task to format a specific file
-task formatSpecificFile {
-    doLast {
-        def filePath = project.hasProperty('filePath') ? project.filePath : 'src/nortantis/Background.java'
-        println "Formatting file: $filePath"
-        javaexec {
-            main = 'com.diffplug.spotless.Main'
-            classpath = configurations.spotless
-            args 'apply', '--java', filePath
-        }
-    }
-}
