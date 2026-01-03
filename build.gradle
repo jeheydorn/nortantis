@@ -1,3 +1,5 @@
+import org.gradle.plugins.ide.eclipse.model.internal.FileReferenceFactory
+
 plugins {
     id 'java'
     id 'application'
@@ -23,7 +25,7 @@ eclipse {
         file {
             whenMerged { cp ->
                 // Add sources to a classpath entry
-                def fileReferenceFactory = new org.gradle.plugins.ide.eclipse.model.internal.FileReferenceFactory()
+                def fileReferenceFactory = new FileReferenceFactory()
 
                 def entry = cp.entries.find{ entry -> entry.path.endsWith('JTransforms-3.1-with-dependencies.jar') }
                 // add javadoc jar

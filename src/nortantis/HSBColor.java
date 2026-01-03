@@ -8,7 +8,7 @@ import org.json.simple.JSONObject;
 import nortantis.platform.Color;
 
 @SuppressWarnings("serial")
-public class HSBColor implements Serializable
+public class HSBColor implements Serializable, Comparable<HSBColor>
 {
 	public final int hue;
 	public final int saturation;
@@ -81,29 +81,45 @@ public class HSBColor implements Serializable
 		return new float[] { hue / 360f, saturation / 100f, brightness / 100f };
 	}
 
-	@Override
-	public int hashCode()
+	public HSBColor copyWithHue(int hue)
 	{
-		return Objects.hash(brightness, hue, saturation, transparency);
+		return new HSBColor(hue, this.saturation, this.brightness, this.transparency);
+	}
+
+	public HSBColor copyWithSaturation(int saturation)
+	{
+		return new HSBColor(this.hue, saturation, this.brightness, this.transparency);
+	}
+
+	public HSBColor copyWithBrightness(int brightness)
+	{
+		return new HSBColor(this.hue, this.saturation, brightness, this.transparency);
+	}
+
+	public HSBColor copyWithTransparency(int transparency)
+	{
+		return new HSBColor(this.hue, this.saturation, this.brightness, transparency);
 	}
 
 	@Override
-	public boolean equals(Object obj)
+	public final boolean equals(Object o)
 	{
-		if (this == obj)
-		{
-			return true;
-		}
-		if (obj == null)
-		{
+		if (!(o instanceof HSBColor))
 			return false;
-		}
-		if (getClass() != obj.getClass())
-		{
-			return false;
-		}
-		HSBColor other = (HSBColor) obj;
-		return brightness == other.brightness && hue == other.hue && saturation == other.saturation && transparency == other.transparency;
+
+		HSBColor hsbColor = (HSBColor) o;
+		return hue == hsbColor.hue && saturation == hsbColor.saturation && brightness == hsbColor.brightness
+				&& transparency == hsbColor.transparency;
+	}
+
+	@Override
+	public int hashCode()
+	{
+		int result = hue;
+		result = 31 * result + saturation;
+		result = 31 * result + brightness;
+		result = 31 * result + transparency;
+		return result;
 	}
 
 	@Override
@@ -111,6 +127,25 @@ public class HSBColor implements Serializable
 	{
 		return "HSBColor [hue=" + hue + ", saturation=" + saturation + ", brightness=" + brightness + ", transparency=" + transparency
 				+ "]";
+	}
+
+	@Override
+	public int compareTo(HSBColor o)
+	{
+		int result = Integer.compare(this.hue, o.hue);
+		if (result == 0)
+		{
+			result = Integer.compare(this.saturation, o.saturation);
+		}
+		if (result == 0)
+		{
+			result = Integer.compare(this.brightness, o.brightness);
+		}
+		if (result == 0)
+		{
+			result = Integer.compare(this.transparency, o.transparency);
+		}
+		return result;
 	}
 
 }

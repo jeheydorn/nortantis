@@ -43,6 +43,7 @@ import javax.swing.JSlider;
 import javax.swing.KeyStroke;
 import javax.swing.SwingWorker;
 
+import nortantis.util.*;
 import org.apache.commons.lang3.StringUtils;
 import org.imgscalr.Scalr.Method;
 
@@ -70,14 +71,6 @@ import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
 import nortantis.platform.awt.AwtFactory;
-import nortantis.util.Assets;
-import nortantis.util.Counter;
-import nortantis.util.HashCounter;
-import nortantis.util.ImageHelper;
-import nortantis.util.Logger;
-import nortantis.util.Range;
-import nortantis.util.Tuple2;
-import nortantis.util.Tuple4;
 
 public class IconsTool extends EditorTool
 {
@@ -113,7 +106,7 @@ public class IconsTool extends EditorTool
 	private JCheckBox decorationsCheckbox;
 	private RowHider iconTypeCheckboxesHider;
 	private RowHider colorPickerHider;
-	private JPanel colorDisplay;
+	private JPanel fillColorDisplay;
 	private Map<IconType, Color> iconColorsByType;
 	private Map<IconType, HSBColor> iconFilterColorsByType;
 	private Map<IconType, Boolean> maximizeOpacityByType;
@@ -135,7 +128,7 @@ public class IconsTool extends EditorTool
 	private JSlider brightnessSlider;
 	private JSlider transparencySlider;
 	private boolean disableColorChangeHandlers;
-	private RowHider brushAndEditOptionsSeperatorHider;
+	private RowHider brushAndEditOptionsSeparatorHider;
 
 	public IconsTool(MainWindow parent, ToolsPanel toolsPanel, MapUpdater mapUpdater)
 	{
@@ -364,14 +357,14 @@ public class IconsTool extends EditorTool
 		{
 			maximizeOpacityCheckbox = new JCheckBox("Maximize opacity");
 			maximizeOpacityCheckbox.setToolTipText(
-					"Scale the alpha of all pixels to use the full range, thus removing any 'padded' transparency.");
+					"Scale the alpha of all pixels to use the full range, thus removing any 'extra' transparency.");
 			maximizeOpacityCheckbox.addActionListener(new ActionListener()
 			{
 
 				@Override
 				public void actionPerformed(ActionEvent e)
 				{
-					handleColorChange();
+					handleColorChange(WhatHSBColorFieldChanged.maximizeOpacity);
 				}
 			});
 			colorOrganizer.addLeftAlignedComponent(maximizeOpacityCheckbox);
@@ -387,7 +380,7 @@ public class IconsTool extends EditorTool
 				hueSlider.setMaximum(360);
 				SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(hueSlider, null, () ->
 				{
-					handleColorChange();
+					handleColorChange(WhatHSBColorFieldChanged.Hue);
 				}, labelWidth);
 
 				JButton clearButton = new JButton("x");
@@ -408,7 +401,7 @@ public class IconsTool extends EditorTool
 				saturationSlider.setMaximum(100);
 				SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(saturationSlider, null, () ->
 				{
-					handleColorChange();
+					handleColorChange(WhatHSBColorFieldChanged.Saturation);
 				}, labelWidth);
 
 				JButton clearButton = new JButton("x");
@@ -429,7 +422,7 @@ public class IconsTool extends EditorTool
 				brightnessSlider.setMaximum(100);
 				SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(brightnessSlider, null, () ->
 				{
-					handleColorChange();
+					handleColorChange(WhatHSBColorFieldChanged.Brightness);
 				}, labelWidth);
 
 				JButton clearButton = new JButton("x");
@@ -450,7 +443,7 @@ public class IconsTool extends EditorTool
 				transparencySlider.setMaximum(100);
 				SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(transparencySlider, null, () ->
 				{
-					handleColorChange();
+					handleColorChange(WhatHSBColorFieldChanged.Transparency);
 				}, labelWidth);
 
 				JButton clearButton = new JButton("x");
@@ -466,15 +459,15 @@ public class IconsTool extends EditorTool
 		}
 
 		{
-			colorDisplay = SwingHelper.createColorPickerPreviewPanel();
+			fillColorDisplay = SwingHelper.createColorPickerPreviewPanel();
 			JButton chooseColorButton = new JButton("Choose");
 			chooseColorButton.addActionListener(new ActionListener()
 			{
 				public void actionPerformed(ActionEvent e)
 				{
-					SwingHelper.showColorPicker(organizer.panel, colorDisplay, "Fill Color", () ->
+					SwingHelper.showColorPicker(organizer.panel, fillColorDisplay, "Fill Color", () ->
 					{
-						handleColorChange();
+						handleColorChange(WhatHSBColorFieldChanged.FillColor);
 					});
 				}
 			});
@@ -482,19 +475,19 @@ public class IconsTool extends EditorTool
 			clearColorButton.setToolTipText("Clear fill color");
 			SwingHelper.addListener(clearColorButton, () ->
 			{
-				colorDisplay.setBackground(AwtFactory.unwrap(MapSettings.defaultIconColor));
-				colorDisplay.repaint();
+				fillColorDisplay.setBackground(AwtFactory.unwrap(MapSettings.defaultIconColor));
+				fillColorDisplay.repaint();
 				organizer.panel.repaint();
-				handleColorChange();
+				handleColorChange(WhatHSBColorFieldChanged.FillColor);
 			});
 			colorOrganizer.addLabelAndComponentsHorizontal("Fill color:", "Color to fill transparent pixels in the icon with",
-					Arrays.asList(colorDisplay, chooseColorButton, clearColorButton));
+					Arrays.asList(fillColorDisplay, chooseColorButton, clearColorButton));
 		}
 
 		CollapsiblePanel colorPanel = new CollapsiblePanel("color_options", "Color", colorOrganizer.panel);
 		colorPickerHider = organizer.addLeftAlignedComponent(colorPanel);
 
-		brushAndEditOptionsSeperatorHider = organizer.addSeperator();
+		brushAndEditOptionsSeparatorHider = organizer.addSeperator();
 
 		{
 			JButton deleteButton;
@@ -637,7 +630,7 @@ public class IconsTool extends EditorTool
 		hillTypes = createOrUpdateRadioButtonsForIconType(organizer, IconType.hills, hillTypes, Assets.installedArtPack, null);
 		duneTypes = createOrUpdateRadioButtonsForIconType(organizer, IconType.sand, duneTypes, Assets.installedArtPack, null);
 		treeTypes = createOrUpdateRadioButtonsForIconType(organizer, IconType.trees, treeTypes, Assets.installedArtPack, null);
-		selectDefaultTreesButtion(treeTypes);
+		selectDefaultTreesButton(treeTypes);
 
 		createOrUpdateButtonsForCities(organizer, Assets.installedArtPack, null);
 
@@ -682,6 +675,11 @@ public class IconsTool extends EditorTool
 		});
 
 		return toolOptionsPanel;
+	}
+
+	private enum WhatHSBColorFieldChanged
+	{
+		maximizeOpacity, Hue, Saturation, Brightness, Transparency, FillColor
 	}
 
 	private void deleteSelectedIcons()
@@ -827,28 +825,28 @@ public class IconsTool extends EditorTool
 				groupLabel.setText(null);
 				nameLabel.setText(null);
 
-				Color iconColorMode;
+				Color fillColorMode;
 				{
-					Counter<Color> counter = new HashCounter<Color>();
+					Counter<Color> counter = new HashCounter<>();
 					iconsToEdit.stream().forEach(iconToEdit -> counter.incrementCount(iconToEdit.color));
-					iconColorMode = counter.argmax();
+					fillColorMode = counter.argmax();
 				}
 
 				HSBColor filterColorMode;
 				{
-					Counter<HSBColor> counter = new HashCounter<>();
+					Counter<HSBColor> counter = new ComparableCounter<>();
 					iconsToEdit.stream().forEach(iconToEdit -> counter.incrementCount(iconToEdit.filterColor));
 					filterColorMode = counter.argmax();
 				}
 
 				boolean maximizeOpacityMode;
 				{
-					Counter<Boolean> counter = new HashCounter<>();
+					Counter<Boolean> counter = new ComparableCounter<>();
 					iconsToEdit.stream().forEach(iconToEdit -> counter.incrementCount(iconToEdit.maximizeOpacity));
 					maximizeOpacityMode = counter.argmax();
 				}
 
-				setColorFieldsWithoutRunningListeners(iconColorMode, filterColorMode, maximizeOpacityMode);
+				setColorFieldsWithoutRunningListeners(fillColorMode, filterColorMode, maximizeOpacityMode);
 
 			}
 
@@ -859,7 +857,7 @@ public class IconsTool extends EditorTool
 					System.out.println("Icon being edited: " + iconToEdit);
 				}
 			}
-			colorDisplay.repaint();
+			fillColorDisplay.repaint();
 			getToolOptionsPane().repaint();
 
 			if (!showEditTools)
@@ -893,7 +891,7 @@ public class IconsTool extends EditorTool
 		return new HSBColor(hueSlider.getValue(), saturationSlider.getValue(), brightnessSlider.getValue(), transparencySlider.getValue());
 	}
 
-	private void handleColorChange()
+	private void handleColorChange(WhatHSBColorFieldChanged whatChanged)
 	{
 		if (disableColorChangeHandlers)
 		{
@@ -903,7 +901,7 @@ public class IconsTool extends EditorTool
 		if (modeWidget.isDrawMode() || modeWidget.isReplaceMode())
 		{
 			IconType selectedType = getSelectedIconType();
-			iconColorsByType.put(selectedType, AwtFactory.wrap(colorDisplay.getBackground()));
+			iconColorsByType.put(selectedType, AwtFactory.wrap(fillColorDisplay.getBackground()));
 			iconFilterColorsByType.put(selectedType, getFilterColor());
 			maximizeOpacityByType.put(selectedType, maximizeOpacityCheckbox.isSelected());
 			ImageCache.clearColoredAndScaledImageCaches();
@@ -927,11 +925,48 @@ public class IconsTool extends EditorTool
 			List<FreeIcon> updated = new ArrayList<>();
 			for (FreeIcon iconToEdit : iconsToEdit)
 			{
-				FreeIcon updatedIcon = iconToEdit.copyWithColors(AwtFactory.wrap(colorDisplay.getBackground()), getFilterColor(),
-						maximizeOpacityCheckbox.isSelected());
+				HSBColor filterColorToUse;
+				HSBColor filterColorFromUI = getFilterColor();
+				switch (whatChanged)
+				{
+					case maximizeOpacity ->
+					{
+						filterColorToUse = iconToEdit.filterColor;
+					}
+					case Hue ->
+					{
+						filterColorToUse = iconToEdit.filterColor.copyWithHue(filterColorFromUI.hue);
+					}
+					case Saturation ->
+					{
+						filterColorToUse = iconToEdit.filterColor.copyWithSaturation(filterColorFromUI.saturation);
+					}
+					case Brightness ->
+					{
+						filterColorToUse = iconToEdit.filterColor.copyWithBrightness(filterColorFromUI.brightness);
+					}
+					case Transparency ->
+					{
+						filterColorToUse = iconToEdit.filterColor.copyWithTransparency(filterColorFromUI.transparency);
+					}
+					case FillColor ->
+					{
+						filterColorToUse = iconToEdit.filterColor;
+					}
+					default ->
+					{
+						throw new UnsupportedOperationException("Unimplemented filter value change case " + whatChanged);
+					}
+				}
+				boolean maximizeOpacityToUse = whatChanged == WhatHSBColorFieldChanged.maximizeOpacity
+						? maximizeOpacityCheckbox.isSelected()
+						: iconToEdit.maximizeOpacity;
+				Color fillColorToUse = whatChanged == WhatHSBColorFieldChanged.FillColor
+						? AwtFactory.wrap(fillColorDisplay.getBackground())
+						: iconToEdit.color;
+				FreeIcon updatedIcon = iconToEdit.copyWithColors(fillColorToUse, filterColorToUse, maximizeOpacityToUse);
 				mainWindow.edits.freeIcons.replace(iconToEdit, updatedIcon);
 				updated.add(updatedIcon);
-
 			}
 			iconsToEdit.clear();
 			iconsToEdit.addAll(updated);
@@ -973,8 +1008,8 @@ public class IconsTool extends EditorTool
 		{
 			disableColorChangeHandlers = true;
 
-			colorDisplay.setBackground(AwtFactory.unwrap(iconColor));
-			colorDisplay.repaint();
+			fillColorDisplay.setBackground(AwtFactory.unwrap(iconColor));
+			fillColorDisplay.repaint();
 
 			hueSlider.setValue(filterColor.hue);
 			saturationSlider.setValue(filterColor.saturation);
@@ -992,7 +1027,7 @@ public class IconsTool extends EditorTool
 	/**
 	 * Prevents cacti from being the default tree brush
 	 */
-	private void selectDefaultTreesButtion(IconTypeButtons typeButtons)
+	private void selectDefaultTreesButton(IconTypeButtons typeButtons)
 	{
 		if (typeButtons.buttons.size() > 1 && typeButtons.buttons.get(0).getText().equals("cacti"))
 		{
@@ -1017,7 +1052,7 @@ public class IconsTool extends EditorTool
 		modeOptionsAndBrushSeperatorHider.setVisible(
 				(modeWidget.isEditMode() && iconsToEdit != null && !iconsToEdit.isEmpty()) || modeWidget.isDrawMode()
 						|| modeWidget.isReplaceMode());
-		brushAndEditOptionsSeperatorHider.setVisible(modeWidget.isEditMode() || modeWidget.isDrawMode() || modeWidget.isReplaceMode());
+		brushAndEditOptionsSeparatorHider.setVisible(modeWidget.isEditMode() || modeWidget.isDrawMode() || modeWidget.isReplaceMode());
 		iconMetadataHider.setVisible(modeWidget.isEditMode() && iconsToEdit != null && iconsToEdit.size() == 1);
 		colorPickerHider.setVisible(
 				modeWidget.isDrawMode() || modeWidget.isReplaceMode() || modeWidget.isEditMode() && !iconsToEdit.isEmpty());
@@ -1104,7 +1139,7 @@ public class IconsTool extends EditorTool
 			{
 				if (iconType == IconType.trees)
 				{
-					selectDefaultTreesButtion(result);
+					selectDefaultTreesButton(result);
 				}
 				else
 				{

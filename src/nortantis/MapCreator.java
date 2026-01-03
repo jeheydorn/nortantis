@@ -630,7 +630,8 @@ public class MapCreator implements WarningLogger
 	/**
 	 * Draws a map.
 	 * 
-	 * @param settings Setting for the map to create
+	 * @param settings
+	 *            Setting for the map to create
 	 * @param maxDimensions
 	 *            The maximum width and height (in pixels) at which to draw the map. This is needed for creating previews. null means draw
 	 *            at normal resolution. Warning: If maxDimensions is specified, then settings.resolution will be modified to fit that size.

@@ -68,7 +68,7 @@ public class ImageHelper
 	}
 
 	/**
-	 * Converts a Image to type ImageType.Grayscale.
+	 * Converts an Image to type ImageType.Grayscale.
 	 * 
 	 * @param img
 	 * @return
@@ -719,7 +719,8 @@ public class ImageHelper
 	/**
 	 * Creates a new Image in which the values of the given alphaMask to be the alpha channel in image.
 	 * 
-	 * @param image Image to get color data from
+	 * @param image
+	 *            Image to get color data from
 	 * @param alphaMask
 	 *            Must be type ImageType.Grayscale. It must also be the same dimension as image.
 	 * @param invertMask
