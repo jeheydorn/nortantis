@@ -124,7 +124,7 @@ public class ImageCache
 	{
 		// There is a small chance the 2 different threads might both add the
 		// same image at the same time,
-		// but if that did happen it would only results in a little bit of
+		// but if that did happen it would only result in a little bit of
 		// duplicated work, not a functional
 		// problem.
 		return scaledCache.getOrCreate(icon, () -> new ConcurrentHashMapF<>()).getOrCreate(size,
@@ -134,7 +134,7 @@ public class ImageCache
 	/**
 	 * Either looks up in the cache, or creates, a version of the given icon colored the given color.
 	 */
-	public Image getColoredIcon(ImageAndMasks imageAndMasks, Color fillColor, HSBColor filterColor, boolean maximizeOpacity)
+	public Image getColoredIcon(ImageAndMasks imageAndMasks, Color fillColor, HSBColor filterColor, boolean maximizeOpacity, boolean fillWithColor)
 	{
 		assert imageAndMasks != null;
 		assert fillColor != null;
@@ -142,7 +142,7 @@ public class ImageCache
 
 		// There is a small chance the 2 different threads might both add the
 		// same image at the same time,
-		// but if that did happen it would only results in a little bit of
+		// but if that did happen it would only result in a little bit of
 		// duplicated work, not a functional
 		// problem.
 		return coloredCache.getOrCreate(imageAndMasks.createFileIdentifier(), () -> new ConcurrentHashMapF<>())
@@ -186,7 +186,7 @@ public class ImageCache
 					float[] filterHSB = filterColor.toArray();
 					float filterAlphaScale = filterColor.getAlpha() / 255f;
 
-					if (!fillColor.equals(MapSettings.defaultIconColor) || !filterColor.equals(MapSettings.defaultIconFilterColor)
+					if ((fillWithColor && !fillColor.equals(Color.transparentBlack)) || !filterColor.equals(MapSettings.defaultIconFilterColor)
 							|| maximizeOpacity)
 					{
 						Image result = Image.create(imageAndMasks.image.getWidth(), imageAndMasks.image.getHeight(), ImageType.ARGB);

@@ -110,9 +110,10 @@ public class IconsTool extends EditorTool
 	private Map<IconType, Color> iconColorsByType;
 	private Map<IconType, HSBColor> iconFilterColorsByType;
 	private Map<IconType, Boolean> maximizeOpacityByType;
+	private Map<IconType, Boolean> fillWithColorByType;
 	private RowHider artPackComboBoxHider;
 	private boolean disableImageRefreshes;
-	private RowHider modeOptionsAndBrushSeperatorHider;
+	private RowHider modeOptionsAndBrushSeparatorHider;
 	private RowHider deleteCopyPasteIconButtonsHider;
 	private JLabel groupLabel;
 	private JLabel nameLabel;
@@ -129,6 +130,8 @@ public class IconsTool extends EditorTool
 	private JSlider transparencySlider;
 	private boolean disableColorChangeHandlers;
 	private RowHider brushAndEditOptionsSeparatorHider;
+	private JCheckBox fillWithColorCheckbox;
+	private RowHider fillColorHider;
 
 	public IconsTool(MainWindow parent, ToolsPanel toolsPanel, MapUpdater mapUpdater)
 	{
@@ -137,6 +140,7 @@ public class IconsTool extends EditorTool
 		iconColorsByType = new TreeMap<>();
 		iconFilterColorsByType = new TreeMap<>();
 		maximizeOpacityByType = new TreeMap<>();
+		fillWithColorByType = new TreeMap<>();
 		iconsToEdit = new HashSet<>();
 		copied = new HashSet<>();
 	}
@@ -331,7 +335,7 @@ public class IconsTool extends EditorTool
 			controlClickBehaviorHider = controlClickBehavior.addToOrganizer(organizer);
 		}
 
-		modeOptionsAndBrushSeperatorHider = organizer.addSeperator();
+		modeOptionsAndBrushSeparatorHider = organizer.addSeperator();
 
 		{
 			densitySlider = new JSlider(1, 50);
@@ -459,6 +463,15 @@ public class IconsTool extends EditorTool
 		}
 
 		{
+			fillWithColorCheckbox = new JCheckBox("Fill with color");
+			fillWithColorCheckbox.addActionListener(e ->
+			{
+				fillColorHider.setVisible(fillWithColorCheckbox.isSelected());
+				handleColorChange(WhatHSBColorFieldChanged.FillColor);
+			});
+			colorOrganizer.addLeftAlignedComponent(fillWithColorCheckbox);
+			colorOrganizer.addHorizontalSpacerRowToHelpComponentAlignment(0.66);
+
 			fillColorDisplay = SwingHelper.createColorPickerPreviewPanel();
 			JButton chooseColorButton = new JButton("Choose");
 			chooseColorButton.addActionListener(new ActionListener()
@@ -471,17 +484,9 @@ public class IconsTool extends EditorTool
 					});
 				}
 			});
-			JButton clearColorButton = new JButton("x");
-			clearColorButton.setToolTipText("Clear fill color");
-			SwingHelper.addListener(clearColorButton, () ->
-			{
-				fillColorDisplay.setBackground(AwtFactory.unwrap(MapSettings.defaultIconColor));
-				fillColorDisplay.repaint();
-				organizer.panel.repaint();
-				handleColorChange(WhatHSBColorFieldChanged.FillColor);
-			});
-			colorOrganizer.addLabelAndComponentsHorizontal("Fill color:", "Color to fill transparent pixels in the icon with",
-					Arrays.asList(fillColorDisplay, chooseColorButton, clearColorButton));
+			fillColorHider = colorOrganizer.addLabelAndComponentsHorizontal("Fill color:",
+					"Color to fill transparent pixels in the icon with",
+					Arrays.asList(fillColorDisplay, chooseColorButton));
 		}
 
 		CollapsiblePanel colorPanel = new CollapsiblePanel("color_options", "Color", colorOrganizer.panel);
@@ -809,7 +814,8 @@ public class IconsTool extends EditorTool
 					String iconName = fileNames.get(iconToEdit.iconIndex % fileNames.size());
 					nameLabel.setText(iconName);
 				}
-				setColorFieldsWithoutRunningListeners(iconToEdit.color, iconToEdit.filterColor, iconToEdit.maximizeOpacity);
+				setColorFieldsWithoutRunningListeners(iconToEdit.color, iconToEdit.filterColor, iconToEdit.maximizeOpacity,
+						iconToEdit.fillWithColor);
 			}
 			else
 			{
@@ -825,11 +831,11 @@ public class IconsTool extends EditorTool
 				groupLabel.setText(null);
 				nameLabel.setText(null);
 
-				Color fillColorMode;
+				Color iconColorMode;
 				{
-					Counter<Color> counter = new HashCounter<>();
+					Counter<Color> counter = new HashCounter<Color>();
 					iconsToEdit.stream().forEach(iconToEdit -> counter.incrementCount(iconToEdit.color));
-					fillColorMode = counter.argmax();
+					iconColorMode = counter.argmax();
 				}
 
 				HSBColor filterColorMode;
@@ -846,7 +852,15 @@ public class IconsTool extends EditorTool
 					maximizeOpacityMode = counter.argmax();
 				}
 
-				setColorFieldsWithoutRunningListeners(fillColorMode, filterColorMode, maximizeOpacityMode);
+				boolean fillWithColorMode;
+				{
+					Counter<Boolean> counter = new ComparableCounter<>();
+					iconsToEdit.stream().forEach(iconToEdit -> counter.incrementCount(iconToEdit.fillWithColor));
+					fillWithColorMode = counter.argmax();
+				}
+
+
+				setColorFieldsWithoutRunningListeners(iconColorMode, filterColorMode, maximizeOpacityMode, fillWithColorMode);
 
 			}
 
@@ -879,7 +893,7 @@ public class IconsTool extends EditorTool
 			mapEditingPanel.hideIconEditTools();
 			isMoving = false;
 			isScaling = false;
-			setColorFieldsWithoutRunningListeners(null, null, false);
+			setColorFieldsWithoutRunningListeners(null, null, false, false);
 			mapEditingPanel.repaint();
 		}
 
@@ -904,6 +918,7 @@ public class IconsTool extends EditorTool
 			iconColorsByType.put(selectedType, AwtFactory.wrap(fillColorDisplay.getBackground()));
 			iconFilterColorsByType.put(selectedType, getFilterColor());
 			maximizeOpacityByType.put(selectedType, maximizeOpacityCheckbox.isSelected());
+			fillWithColorByType.put(selectedType, fillWithColorCheckbox.isSelected());
 			ImageCache.clearColoredAndScaledImageCaches();
 
 			MapSettings settings = mainWindow.getSettingsFromGUI(false);
@@ -929,42 +944,37 @@ public class IconsTool extends EditorTool
 				HSBColor filterColorFromUI = getFilterColor();
 				switch (whatChanged)
 				{
-					case maximizeOpacity ->
-					{
+					case maximizeOpacity:
 						filterColorToUse = iconToEdit.filterColor;
-					}
-					case Hue ->
-					{
+						break;
+					case Hue:
 						filterColorToUse = iconToEdit.filterColor.copyWithHue(filterColorFromUI.hue);
-					}
-					case Saturation ->
-					{
+						break;
+					case Saturation:
 						filterColorToUse = iconToEdit.filterColor.copyWithSaturation(filterColorFromUI.saturation);
-					}
-					case Brightness ->
-					{
+						break;
+					case Brightness:
 						filterColorToUse = iconToEdit.filterColor.copyWithBrightness(filterColorFromUI.brightness);
-					}
-					case Transparency ->
-					{
+						break;
+					case Transparency:
 						filterColorToUse = iconToEdit.filterColor.copyWithTransparency(filterColorFromUI.transparency);
-					}
-					case FillColor ->
-					{
+						break;
+					case FillColor:
 						filterColorToUse = iconToEdit.filterColor;
-					}
-					default ->
-					{
+						break;
+					default:
 						throw new UnsupportedOperationException("Unimplemented filter value change case " + whatChanged);
-					}
 				}
 				boolean maximizeOpacityToUse = whatChanged == WhatHSBColorFieldChanged.maximizeOpacity
 						? maximizeOpacityCheckbox.isSelected()
 						: iconToEdit.maximizeOpacity;
+				boolean fillWithColorToUse =
+						whatChanged == WhatHSBColorFieldChanged.FillColor ? fillWithColorCheckbox.isSelected() : iconToEdit.fillWithColor;
 				Color fillColorToUse = whatChanged == WhatHSBColorFieldChanged.FillColor
 						? AwtFactory.wrap(fillColorDisplay.getBackground())
 						: iconToEdit.color;
-				FreeIcon updatedIcon = iconToEdit.copyWithColors(fillColorToUse, filterColorToUse, maximizeOpacityToUse);
+				FreeIcon updatedIcon = iconToEdit.copyWithColors(fillColorToUse, filterColorToUse, maximizeOpacityToUse,
+						fillWithColorToUse);
 				mainWindow.edits.freeIcons.replace(iconToEdit, updatedIcon);
 				updated.add(updatedIcon);
 			}
@@ -988,11 +998,12 @@ public class IconsTool extends EditorTool
 		{
 			IconType selectedType = getSelectedIconType();
 			setColorFieldsWithoutRunningListeners(iconColorsByType.get(selectedType), iconFilterColorsByType.get(selectedType),
-					maximizeOpacityByType.get(selectedType));
+					maximizeOpacityByType.get(selectedType), fillWithColorByType.get(selectedType));
 		}
 	}
 
-	private void setColorFieldsWithoutRunningListeners(Color iconColor, HSBColor filterColor, boolean maximizeOpacity)
+	private void setColorFieldsWithoutRunningListeners(Color iconColor, HSBColor filterColor, boolean maximizeOpacity,
+			boolean fillWithColor)
 	{
 		if (filterColor == null)
 		{
@@ -1001,7 +1012,7 @@ public class IconsTool extends EditorTool
 
 		if (iconColor == null)
 		{
-			iconColor = MapSettings.defaultIconColor;
+			iconColor = MapSettings.defaultIconFillColor;
 		}
 
 		try
@@ -1017,6 +1028,8 @@ public class IconsTool extends EditorTool
 			transparencySlider.setValue(filterColor.transparency);
 
 			maximizeOpacityCheckbox.setSelected(maximizeOpacity);
+			fillWithColorCheckbox.setSelected(fillWithColor);
+			fillColorHider.setVisible(fillWithColor);
 		}
 		finally
 		{
@@ -1049,7 +1062,7 @@ public class IconsTool extends EditorTool
 
 	private void showOrHideEditComponents()
 	{
-		modeOptionsAndBrushSeperatorHider.setVisible(
+		modeOptionsAndBrushSeparatorHider.setVisible(
 				(modeWidget.isEditMode() && iconsToEdit != null && !iconsToEdit.isEmpty()) || modeWidget.isDrawMode()
 						|| modeWidget.isReplaceMode());
 		brushAndEditOptionsSeparatorHider.setVisible(modeWidget.isEditMode() || modeWidget.isDrawMode() || modeWidget.isReplaceMode());
@@ -1202,6 +1215,7 @@ public class IconsTool extends EditorTool
 			Color iconColor = iconColorsByType.get(iconType);
 			HSBColor filterColor = iconFilterColorsByType.get(iconType);
 			boolean maximizeOpacity = maximizeOpacityByType.get(iconType);
+			boolean fillWithColor = fillWithColorByType.get(iconType);
 
 			final String buttonText = button.getText();
 			SwingWorker<Image, Void> worker = new SwingWorker<>()
@@ -1210,7 +1224,7 @@ public class IconsTool extends EditorTool
 				protected Image doInBackground() throws Exception
 				{
 					return createIconPreviewForGroup(settings, iconType, buttonText, customImagesPath, iconColor, filterColor,
-							maximizeOpacity);
+							maximizeOpacity, fillWithColor);
 				}
 
 				@Override
@@ -1259,6 +1273,7 @@ public class IconsTool extends EditorTool
 			Color iconColor = iconColorsByType.get(selector.type);
 			HSBColor filterColor = iconFilterColorsByType.get(selector.type);
 			boolean maximizeOpacity = maximizeOpacityByType.get(selector.type);
+			boolean fillWithColor = fillWithColorByType.get(selector.type);
 
 			if (namesAndButtons != null)
 			{
@@ -1281,7 +1296,7 @@ public class IconsTool extends EditorTool
 							}
 							ImageAndMasks imageAndMasks = iconsInGroup.get(iconNameWithoutWidthOrExtension);
 							Image preview = createIconPreview(settings, Collections.singletonList(imageAndMasks), 45, 0, selector.type,
-									iconColor, filterColor, maximizeOpacity);
+									iconColor, filterColor, maximizeOpacity, fillWithColor);
 
 							previewImages.add(preview);
 						}
@@ -1365,7 +1380,7 @@ public class IconsTool extends EditorTool
 	}
 
 	private Image createIconPreviewForGroup(MapSettings settings, IconType iconType, String groupName, String customImagesPath,
-			Color iconColor, HSBColor filterColor, boolean maximizeOpacity)
+			Color iconColor, HSBColor filterColor, boolean maximizeOpacity, boolean fillWithColor)
 	{
 		List<ImageAndMasks> images = ImageCache.getInstance(settings.artPack, customImagesPath).getIconsInGroup(iconType, groupName);
 		int scaledHeight;
@@ -1375,11 +1390,11 @@ public class IconsTool extends EditorTool
 			case IconType.hills, IconType.sand -> scaledHeight = 25;
 			default -> scaledHeight = 35;
 		}
-		return createIconPreview(settings, images, scaledHeight, 9, iconType, iconColor, filterColor, maximizeOpacity);
+		return createIconPreview(settings, images, scaledHeight, 9, iconType, iconColor, filterColor, maximizeOpacity, fillWithColor);
 	}
 
 	private static Image createIconPreview(MapSettings settings, List<ImageAndMasks> imagesAndMasks, int scaledHeight, int padding,
-			IconType iconType, Color iconColor, HSBColor filterColor, boolean maximizeOpacity)
+			IconType iconType, Color iconColor, HSBColor filterColor, boolean maximizeOpacity, boolean fillWithColor)
 	{
 		final double osScaling = SwingHelper.getOSScale();
 		final int maxRowWidth = (int) (159 * osScaling);
@@ -1453,7 +1468,7 @@ public class IconsTool extends EditorTool
 		{
 			ImageAndMasks imageAndMasks = imagesAndMasks.get(i);
 			Image image = ImageCache.getInstance(settings.artPack, settings.customImagesPath)
-					.getColoredIcon(imageAndMasks, iconColor, filterColor, maximizeOpacity);
+					.getColoredIcon(imageAndMasks, iconColor, filterColor, maximizeOpacity, fillWithColor);
 			image = imageAndMasks.cropToContent(image);
 			int widthForHeight = ImageHelper.getWidthWhenScaledByHeight(image, scaledHeight);
 			int scaledWidth = Math.min(widthForHeight, maxRowWidth);
@@ -1623,7 +1638,7 @@ public class IconsTool extends EditorTool
 				nortantis.geom.Point point = getPointOnGraph(e.getPoint());
 				FreeIcon icon = new FreeIcon(mainWindow.displayQualityScale, point, 1.0, IconType.decorations,
 						(String) artPackComboBox.getSelectedItem(), groupId, iconName, null, getSelectedIconTypeColor(),
-						getSelectedIconTypeFilterColor(), maximizeOpacityCheckbox.isSelected());
+						getSelectedIconTypeFilterColor(), maximizeOpacityCheckbox.isSelected(), fillWithColorCheckbox.isSelected());
 				mainWindow.edits.freeIcons.addOrReplace(icon);
 				updater.createAndShowMapIncrementalUsingIcons(Arrays.asList(icon));
 			}
@@ -1703,7 +1718,8 @@ public class IconsTool extends EditorTool
 					if (!StringUtils.isEmpty(groupId))
 					{
 						after = before.copyWith((String) artPackComboBox.getSelectedItem(), groupId, Math.abs(rand.nextInt()),
-								getSelectedIconTypeColor(), getSelectedIconTypeFilterColor(), maximizeOpacityCheckbox.isSelected());
+								getSelectedIconTypeColor(), getSelectedIconTypeFilterColor(), maximizeOpacityCheckbox.isSelected(),
+								fillWithColorCheckbox.isSelected());
 					}
 				}
 				else if (hillsButton.isSelected())
@@ -1712,7 +1728,8 @@ public class IconsTool extends EditorTool
 					if (!StringUtils.isEmpty(groupId))
 					{
 						after = before.copyWith((String) artPackComboBox.getSelectedItem(), groupId, Math.abs(rand.nextInt()),
-								getSelectedIconTypeColor(), getSelectedIconTypeFilterColor(), maximizeOpacityCheckbox.isSelected());
+								getSelectedIconTypeColor(), getSelectedIconTypeFilterColor(), maximizeOpacityCheckbox.isSelected(),
+								fillWithColorCheckbox.isSelected());
 					}
 				}
 				else if (dunesButton.isSelected())
@@ -1721,7 +1738,8 @@ public class IconsTool extends EditorTool
 					if (!StringUtils.isEmpty(groupId))
 					{
 						after = before.copyWith((String) artPackComboBox.getSelectedItem(), groupId, Math.abs(rand.nextInt()),
-								getSelectedIconTypeColor(), getSelectedIconTypeFilterColor(), maximizeOpacityCheckbox.isSelected());
+								getSelectedIconTypeColor(), getSelectedIconTypeFilterColor(), maximizeOpacityCheckbox.isSelected(),
+								fillWithColorCheckbox.isSelected());
 					}
 				}
 				else if (treesButton.isSelected())
@@ -1730,7 +1748,8 @@ public class IconsTool extends EditorTool
 					if (!StringUtils.isEmpty(treeType))
 					{
 						after = before.copyWith((String) artPackComboBox.getSelectedItem(), treeType, Math.abs(rand.nextInt()),
-								getSelectedIconTypeColor(), getSelectedIconTypeFilterColor(), maximizeOpacityCheckbox.isSelected());
+								getSelectedIconTypeColor(), getSelectedIconTypeFilterColor(), maximizeOpacityCheckbox.isSelected(),
+								fillWithColorCheckbox.isSelected());
 					}
 				}
 				else if (citiesButton.isSelected())
@@ -1744,7 +1763,7 @@ public class IconsTool extends EditorTool
 					String cityType = selectedCity.getFirst();
 					String cityName = selectedCity.getSecond();
 					after = before.copyWith((String) artPackComboBox.getSelectedItem(), cityType, cityName, getSelectedIconTypeColor(),
-							getSelectedIconTypeFilterColor(), maximizeOpacityCheckbox.isSelected());
+							getSelectedIconTypeFilterColor(), maximizeOpacityCheckbox.isSelected(), fillWithColorCheckbox.isSelected());
 				}
 				else if (decorationsButton.isSelected())
 				{
@@ -1757,7 +1776,7 @@ public class IconsTool extends EditorTool
 					String type = selectedDecoration.getFirst();
 					String iconName = selectedDecoration.getSecond();
 					after = before.copyWith((String) artPackComboBox.getSelectedItem(), type, iconName, getSelectedIconTypeColor(),
-							getSelectedIconTypeFilterColor(), maximizeOpacityCheckbox.isSelected());
+							getSelectedIconTypeFilterColor(), maximizeOpacityCheckbox.isSelected(), fillWithColorCheckbox.isSelected());
 				}
 				else
 				{
@@ -2517,6 +2536,13 @@ public class IconsTool extends EditorTool
 			maximizeOpacityByType.put(iconType, settings.getMaximizeOpacityForType(iconType));
 		}
 
+		fillWithColorByType.clear();
+		for (IconType iconType : IconType.values())
+		{
+			fillWithColorByType.put(iconType, settings.getFillWithColorForType(iconType));
+		}
+
+
 		updateTypePanels();
 		// Skip updating icon previews now if there will be an images refresh in
 		// a moment, because that will handle it, and because the
@@ -2545,6 +2571,10 @@ public class IconsTool extends EditorTool
 		for (Map.Entry<IconType, Boolean> entry : maximizeOpacityByType.entrySet())
 		{
 			settings.setMaximizeOpacityForType(entry.getKey(), entry.getValue());
+		}
+		for (Map.Entry<IconType, Boolean> entry : fillWithColorByType.entrySet())
+		{
+			settings.setFillWithColorForType(entry.getKey(), entry.getValue());
 		}
 	}
 

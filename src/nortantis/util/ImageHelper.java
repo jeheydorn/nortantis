@@ -853,32 +853,32 @@ public class ImageHelper
 	public static Image createColoredImageFromGrayScaleImages(Image redChanel, Image greenChanel, Image blueChanel, Image alphaChanel)
 	{
 		if (redChanel.getType() != ImageType.Grayscale8Bit)
-			throw new IllegalArgumentException("Red chanel image type must be type ImageType.Grayscale.");
+			throw new IllegalArgumentException("Red channel image type must be type ImageType.Grayscale.");
 
 		if (greenChanel.getType() != ImageType.Grayscale8Bit)
-			throw new IllegalArgumentException("Green chanel image type must be type ImageType.Grayscale");
+			throw new IllegalArgumentException("Green channel image type must be type ImageType.Grayscale");
 
 		if (blueChanel.getType() != ImageType.Grayscale8Bit)
-			throw new IllegalArgumentException("Blue chanel image type must be type ImageType.Grayscale");
+			throw new IllegalArgumentException("Blue channel image type must be type ImageType.Grayscale");
 
 		if (alphaChanel.getType() != ImageType.Grayscale8Bit)
-			throw new IllegalArgumentException("Alpha chanel image type must be type ImageType.Grayscale.");
+			throw new IllegalArgumentException("Alpha channel image type must be type ImageType.Grayscale.");
 
 		if (redChanel.getWidth() != alphaChanel.getWidth())
 			throw new IllegalArgumentException(
-					"Alpha chanel width is " + alphaChanel.getWidth() + " but red chanel image has width " + redChanel.getWidth() + ".");
+					"Alpha channel width is " + alphaChanel.getWidth() + " but red channel image has width " + redChanel.getWidth() + ".");
 		if (redChanel.getHeight() != alphaChanel.getHeight())
 			throw new IllegalArgumentException();
 
 		if (greenChanel.getWidth() != alphaChanel.getWidth())
-			throw new IllegalArgumentException("Alpha chanel width is " + alphaChanel.getWidth() + " but green chanel image has width "
+			throw new IllegalArgumentException("Alpha channel width is " + alphaChanel.getWidth() + " but green channel image has width "
 					+ greenChanel.getWidth() + ".");
 		if (greenChanel.getHeight() != alphaChanel.getHeight())
 			throw new IllegalArgumentException();
 
 		if (blueChanel.getWidth() != alphaChanel.getWidth())
 			throw new IllegalArgumentException(
-					"Alpha chanel width is " + alphaChanel.getWidth() + " but blue chanel image has width " + blueChanel.getWidth() + ".");
+					"Alpha channel width is " + alphaChanel.getWidth() + " but blue channel image has width " + blueChanel.getWidth() + ".");
 		if (blueChanel.getHeight() != alphaChanel.getHeight())
 			throw new IllegalArgumentException();
 

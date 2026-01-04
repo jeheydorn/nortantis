@@ -48,6 +48,7 @@ public abstract class Color
 	}
 
 	public static final Color black = create(0, 0, 0);
+	public static final Color transparentBlack = create(0, 0, 0, 0);
 	public static final Color white = create(255, 255, 255);
 	public static final Color green = create(0, 255, 0);
 	public static final Color yellow = create(255, 255, 0);

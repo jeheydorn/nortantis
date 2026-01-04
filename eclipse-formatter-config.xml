@@ -398,7 +398,7 @@
         <setting id="org.eclipse.jdt.core.formatter.insert_new_line_before_finally_in_try_statement" value="insert"/>
         <setting id="org.eclipse.jdt.core.formatter.tabulation.char" value="tab"/>
         <setting id="org.eclipse.jdt.core.formatter.wrap_before_string_concatenation" value="true"/>
-        <setting id="org.eclipse.jdt.core.formatter.lineSplit" value="140"/>
+        <setting id="org.eclipse.jdt.core.formatter.lineSplit" value="200"/>
         <setting id="org.eclipse.jdt.core.formatter.insert_space_after_opening_paren_in_annotation" value="do not insert"/>
         <setting id="org.eclipse.jdt.core.formatter.insert_space_before_opening_paren_in_switch" value="insert"/>
     </profile>

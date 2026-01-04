@@ -29,26 +29,27 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 	final IconType type;
 	final String groupId;
 	final String fileName;
-	final Color color;
+	final Color fillColor;
 	final HSBColor filterColor;
 	boolean maximizeOpacity;
+	final boolean fillWithColor;
 	final double resolutionScale;
 
-	public IconDrawTask(ImageAndMasks unScaledImageAndMasks, IconType type, Point centerLoc, IntDimension scaledSize, Color color,
-			HSBColor filterColor, boolean maximizeOpacity, String groupId, double resolutionScale)
+	public IconDrawTask(ImageAndMasks unScaledImageAndMasks, IconType type, Point centerLoc, IntDimension scaledSize, Color fillColor,
+			HSBColor filterColor, boolean maximizeOpacity, boolean fillWithColor, String groupId, double resolutionScale)
 	{
-		this(unScaledImageAndMasks, null, type, centerLoc, scaledSize, null, color, filterColor, maximizeOpacity, groupId, resolutionScale);
+		this(unScaledImageAndMasks, null, type, centerLoc, scaledSize, null, fillColor, filterColor, maximizeOpacity, fillWithColor, groupId, resolutionScale);
 	}
 
 	public IconDrawTask(ImageAndMasks unScaledImageAndMasks, IconType type, Point centerLoc, IntDimension scaledSize, String fileName,
-			Color color, HSBColor filterColor, boolean maximizeOpacity, String groupId, double resolutionScale)
+			Color fillColor, HSBColor filterColor, boolean maximizeOpacity, boolean fillWithColor, String groupId, double resolutionScale)
 	{
-		this(unScaledImageAndMasks, null, type, centerLoc, scaledSize, fileName, color, filterColor, maximizeOpacity, groupId,
+		this(unScaledImageAndMasks, null, type, centerLoc, scaledSize, fileName, fillColor, filterColor, maximizeOpacity, fillWithColor, groupId,
 				resolutionScale);
 	}
 
 	private IconDrawTask(ImageAndMasks unScaledImageAndMasks, ImageAndMasks scaledImageAndMasks, IconType type, Point centerLoc,
-			IntDimension scaledSize, String fileName, Color color, HSBColor filterColor, boolean maximizeOpacity, String groupId,
+			IntDimension scaledSize, String fileName, Color fillColor, HSBColor filterColor, boolean maximizeOpacity, boolean fillWithColor, String groupId,
 			double resolutionScale)
 	{
 		this.unScaledImageAndMasks = unScaledImageAndMasks;
@@ -60,9 +61,10 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 		yBottom = (int) (centerLoc.y + (scaledSize.height / 2.0));
 
 		this.fileName = fileName;
-		this.color = color;
+		this.fillColor = fillColor;
 		this.filterColor = filterColor;
 		this.maximizeOpacity = maximizeOpacity;
+		this.fillWithColor = fillWithColor;
 		this.groupId = groupId;
 		this.resolutionScale = resolutionScale;
 	}
@@ -72,15 +74,15 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 		if (scaledImageAndMasks == null)
 		{
 			Image coloredIcon;
-			if (MapSettings.defaultIconColor.equals(color) && filterColor.equals(MapSettings.defaultIconFilterColor) && !maximizeOpacity)
+			if ((!fillWithColor || Color.transparentBlack.equals(fillColor)) && filterColor.equals(MapSettings.defaultIconFilterColor) && !maximizeOpacity)
 			{
 				// Do nothing since the color is transparent.
 				coloredIcon = unScaledImageAndMasks.image;
 			}
 			else
 			{
-				coloredIcon = ImageCache.getInstance(Assets.installedArtPack, null).getColoredIcon(unScaledImageAndMasks, color,
-						filterColor, maximizeOpacity);
+				coloredIcon = ImageCache.getInstance(Assets.installedArtPack, null).getColoredIcon(unScaledImageAndMasks, fillColor,
+						filterColor, maximizeOpacity, fillWithColor);
 			}
 
 			// The path passed to ImageCache.getInstance isn't important so long as other calls to getScaledImageByWidth
