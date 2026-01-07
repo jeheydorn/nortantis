@@ -1328,10 +1328,10 @@ public class MapSettings implements Serializable
 		runConversionOnFadingConcentricWaves();
 		runConversionToRemoveRegionIdsOfEditsThatAreWater();
 		runConversionForNewRangesForRandomRegionColorGeneratorSettings();
-		runConversionOnFillColorsByType();
+		runConversionOnFillWithColorByType();
 	}
 
-	private void runConversionOnFillColorsByType()
+	private void runConversionOnFillWithColorByType()
 	{
 		boolean convertFillColor = shouldConvertFillColor();
 		if (convertFillColor)
@@ -1340,7 +1340,8 @@ public class MapSettings implements Serializable
 			{
 				if (iconColorsByType.containsKey(iconType))
 				{
-					fillWithColorByType.put(iconType, !iconColorsByType.get(iconType).equals(Color.transparentBlack));
+					Color color = iconColorsByType.get(iconType);
+					fillWithColorByType.put(iconType, !color.equals(Color.transparentBlack) && !color.equals(defaultIconFillColor));
 				}
 			}
 		}
@@ -1726,7 +1727,7 @@ public class MapSettings implements Serializable
 			}
 			else
 			{
-				fillColor = fillColorFromJSon;
+				fillColor = fillColorFromJSon == null ? defaultIconFillColor : fillColorFromJSon;
 			}
 
 			HSBColor filterColor = iconObj.containsKey("filterColor") ? HSBColor.fromJson((JSONObject) iconObj.get("filterColor")) : defaultIconFilterColor;

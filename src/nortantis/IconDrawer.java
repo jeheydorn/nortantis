@@ -84,7 +84,7 @@ public class IconDrawer
 	private String customImagesPath;
 	private String artPackForNewMap;
 	public static final Biome sandDunesBiome = Biome.TEMPERATE_DESERT;
-	private Map<IconType, Color> iconColorsByType;
+	private Map<IconType, Color> fillColorsByType;
 	private Map<IconType, HSBColor> iconFilterColorsByType;
 	// Implemented as a map instead of a set for concurrency.
 	private Map<IconType, Boolean> maximizeOpacityByType;
@@ -126,7 +126,7 @@ public class IconDrawer
 		averageCenterWidthBetweenNeighbors = graph.getMeanCenterWidthBetweenNeighbors();
 		maxSizeToDrawGeneratedMountainOrHill = averageCenterWidthBetweenNeighbors
 				* maxAverageCenterWidthsBetweenNeighborsToDrawGeneratedMountainOrHill;
-		iconColorsByType = settings.copyIconColorsByType();
+		fillColorsByType = settings.copyIconColorsByType();
 		iconFilterColorsByType = settings.copyIconFilterColorsByType();
 		maximizeOpacityByType = settings.copymaximizeOpacityByType();
 		fillWithColorByType = settings.copyFillWithColorByType();
@@ -290,7 +290,7 @@ public class IconDrawer
 
 						IconType type = centerIconTypeToIconType(cEdit.icon.iconType);
 						FreeIcon icon = new FreeIcon(resolutionScale, center.loc, 1.0, type, artPack, groupId, name, cEdit.index,
-								iconColorsByType.get(type), iconFilterColorsByType.get(type), maximizeOpacityByType.get(type), fillWithColorByType.get(type));
+								fillColorsByType.get(type), iconFilterColorsByType.get(type), maximizeOpacityByType.get(type), fillWithColorByType.get(type));
 						IconDrawTask drawTask = toIconDrawTask(icon);
 
 						if (!isContentBottomTouchingWater(drawTask))
@@ -378,7 +378,7 @@ public class IconDrawer
 		}
 		double scale = getWidthScaleForNewShuffledIcon(center, type);
 		FreeIcon icon = new FreeIcon(resolutionScale, loc, scale, type, cEdit.icon.artPack, groupId, cEdit.icon.iconIndex, cEdit.index,
-				iconColorsByType.get(type), iconFilterColorsByType.get(type), maximizeOpacityByType.get(type), fillWithColorByType.get(type));
+				fillColorsByType.get(type), iconFilterColorsByType.get(type), maximizeOpacityByType.get(type), fillWithColorByType.get(type));
 		Rectangle changeBounds = null;
 		IconDrawTask drawTask = toIconDrawTask(icon);
 		if (!isContentBottomTouchingWater(drawTask))
@@ -1144,7 +1144,7 @@ public class IconDrawer
 		}
 		Collections.sort(tasks);
 
-		// Force mask creation now if it hasn't already happened so that so that multiple threads don't try to create the same masks at the
+		// Force mask creation now if it hasn't already happened so that multiple threads don't try to create the same masks at the
 		// same time and end up repeating work or create a race condition that corrupts the masks.
 		for (final IconDrawTask task : tasks)
 		{
@@ -1312,7 +1312,7 @@ public class IconDrawer
 			{
 				String cityName = cityNames.get(rand.nextInt(cityNames.size()));
 				FreeIcon icon = new FreeIcon(resolutionScale, c.loc, 1.0, IconType.cities, artPackForCities, cityTypeToUse, cityName,
-						c.index, iconColorsByType.get(IconType.cities), iconFilterColorsByType.get(IconType.cities),
+						c.index, fillColorsByType.get(IconType.cities), iconFilterColorsByType.get(IconType.cities),
 						maximizeOpacityByType.get(IconType.cities), fillWithColorByType.get(IconType.cities));
 				IconDrawTask task = toIconDrawTask(icon);
 				if (!isContentBottomTouchingWater(icon) && !isNeighborACity(c))
@@ -1434,7 +1434,7 @@ public class IconDrawer
 						Point loc = getAnchoredMountainDrawPoint(c, fileNameRangeId, i, mountainScale, mountainImagesById);
 
 						FreeIcon icon = new FreeIcon(resolutionScale, loc, scale, IconType.mountains, artPackForMountains, fileNameRangeId,
-								i, c.index, iconColorsByType.get(IconType.mountains), iconFilterColorsByType.get(IconType.mountains),
+								i, c.index, fillColorsByType.get(IconType.mountains), iconFilterColorsByType.get(IconType.mountains),
 								maximizeOpacityByType.get(IconType.mountains), fillWithColorByType.get(IconType.mountains));
 
 						IconDrawTask task = toIconDrawTask(icon);
@@ -1470,7 +1470,7 @@ public class IconDrawer
 
 							double scale = getWidthScaleForNewShuffledIcon(c, IconType.hills);
 							FreeIcon icon = new FreeIcon(resolutionScale, c.loc, scale, IconType.hills, artPackForHills, fileNameRangeId, i,
-									c.index, iconColorsByType.get(IconType.hills), iconFilterColorsByType.get(IconType.hills),
+									c.index, fillColorsByType.get(IconType.hills), iconFilterColorsByType.get(IconType.hills),
 									maximizeOpacityByType.get(IconType.hills), fillWithColorByType.get(IconType.hills));
 
 							IconDrawTask task = toIconDrawTask(icon);
@@ -1547,7 +1547,7 @@ public class IconDrawer
 
 						int i = Math.abs(rand.nextInt());
 						FreeIcon icon = new FreeIcon(resolutionScale, c.loc, 1.0, IconType.sand, artPackForDunes, groupId, i, c.index,
-								iconColorsByType.get(IconType.sand), iconFilterColorsByType.get(IconType.sand),
+								fillColorsByType.get(IconType.sand), iconFilterColorsByType.get(IconType.sand),
 								maximizeOpacityByType.get(IconType.sand), fillWithColorByType.get(IconType.sand));
 						if (!isContentBottomTouchingWater(icon))
 						{
@@ -1890,7 +1890,7 @@ public class IconDrawer
 			y += rand.nextGaussian() * scale;
 
 			FreeIcon icon = new FreeIcon(resolutionScale, new Point(x, y), 1.0, IconType.trees, artPack, groupId, index, center.index,
-					forestDensity, iconColorsByType.get(IconType.trees), iconFilterColorsByType.get(IconType.trees),
+					forestDensity, fillColorsByType.get(IconType.trees), iconFilterColorsByType.get(IconType.trees),
 					maximizeOpacityByType.get(IconType.trees), fillWithColorByType.get(IconType.trees));
 
 			if (!isContentBottomTouchingWater(icon))
