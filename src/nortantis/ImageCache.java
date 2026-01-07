@@ -31,7 +31,7 @@ import nortantis.util.ListMap;
 import nortantis.util.Logger;
 import nortantis.util.Range;
 import nortantis.util.Tuple2;
-import nortantis.util.Tuple3;
+import nortantis.util.Tuple4;
 
 /**
  * Caches icons in memory to avoid recreating or reloading them.
@@ -46,9 +46,9 @@ public class ImageCache
 	private ConcurrentHashMapF<Image, ConcurrentHashMapF<IntDimension, Image>> scaledCache;
 
 	/**
-	 * Maps original images, to maps from (color, filterColor, maximizeOpacity) to colored images.
+	 * Maps original images, to maps from (color, filterColor, maximizeOpacity, fillWithColor) to colored images.
 	 */
-	private ConcurrentHashMapF<String, ConcurrentHashMapF<Tuple3<Color, HSBColor, Boolean>, Image>> coloredCache;
+	private ConcurrentHashMapF<String, ConcurrentHashMapF<Tuple4<Color, HSBColor, Boolean, Boolean>, Image>> coloredCache;
 
 	private ConcurrentHashMapF<Image, ConcurrentHashMapF<Integer, Image>> alphaCache;
 
@@ -146,7 +146,7 @@ public class ImageCache
 		// duplicated work, not a functional
 		// problem.
 		return coloredCache.getOrCreate(imageAndMasks.createFileIdentifier(), () -> new ConcurrentHashMapF<>())
-				.getOrCreateWithLock(new Tuple3<>(fillColor, filterColor, maximizeOpacity), () ->
+				.getOrCreateWithLock(new Tuple4<>(fillColor, filterColor, maximizeOpacity, fillWithColor), () ->
 				{
 					float alphaScale = 0;
 					{
@@ -211,7 +211,7 @@ public class ImageCache
 									alpha = originalColor.getAlpha();
 								}
 
-								double fillColorAlpha = fillColor.getAlpha() / 255.0;
+								double fillColorAlpha = (fillWithColor ? fillColor.getAlpha() : 0) / 255.0;
 								double fillColorScale;
 								if (fillColorAlpha == 1.0)
 								{

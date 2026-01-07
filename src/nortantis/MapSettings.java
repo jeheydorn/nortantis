@@ -1333,7 +1333,7 @@ public class MapSettings implements Serializable
 
 	private void runConversionOnFillColorsByType()
 	{
-		boolean convertFillColor = !isVersionGreaterThan(version, "3.14");
+		boolean convertFillColor = shouldConvertFillColor();
 		if (convertFillColor)
 		{
 			for (IconType iconType : IconType.values())
@@ -1689,7 +1689,7 @@ public class MapSettings implements Serializable
 			return result;
 		}
 
-		boolean convertFillColor = !isVersionGreaterThan(version, "3.14");
+		boolean convertFillColor = shouldConvertFillColor();
 
 		for (Object obj : array)
 		{
@@ -1717,10 +1717,10 @@ public class MapSettings implements Serializable
 				centerIndex = (int) (long) iconObj.get("centerIndex");
 			}
 			double density = iconObj.containsKey("density") ? (double) iconObj.get("density") : 0.0;
-			Color fillColorFromJSon = iconObj.containsKey("color") ? parseColor((String) iconObj.get("color")) : defaultIconFillColor;
+			Color fillColorFromJSon = iconObj.containsKey("color") ? parseColor((String) iconObj.get("color")) : null;
 			Color fillColor;
 			// The old default fill color was transparent black, which causes the icon to not be filled with color. So if that was selected, set the fill color to the default fill color. The fillWithColor setting will be used to prevent drawing the fill color.
-			if (convertFillColor && fillColorFromJSon.equals(Color.transparentBlack))
+			if (convertFillColor && fillColorFromJSon == null)
 			{
 				fillColor = defaultIconFillColor;
 			}
@@ -1773,6 +1773,11 @@ public class MapSettings implements Serializable
 		}
 
 		return result;
+	}
+
+	private boolean shouldConvertFillColor()
+	{
+		return !isVersionGreaterThan(version, "3.14");
 	}
 
 	private CopyOnWriteArrayList<Road> parseRoads(JSONObject editsJson)

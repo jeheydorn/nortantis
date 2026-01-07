@@ -30,8 +30,7 @@ public class FreeIcon
 	 */
 	public final String iconName;
 	/**
-	 * Where the center of the icon will be drawn on the map. This is resolution invariant, meaning it is the location at 100% resolution,
-	 * before integer truncation.
+	 * Where the center of the icon will be drawn on the map. This is resolution invariant, meaning it is the location at 100% resolution, before integer truncation.
 	 */
 	public final Point locationResolutionInvariant;
 	/**
@@ -61,63 +60,55 @@ public class FreeIcon
 	/**
 	 * For creating a new FreeIcon.
 	 * <p>
-	 * Note - this constructor must never be used to re-create a FreeIcon with a new scale (to essentially change the scale) because that
-	 * would throw off originalScale.
+	 * Note - this constructor must never be used to re-create a FreeIcon with a new scale (to essentially change the scale) because that would throw off originalScale.
 	 * </p>
 	 */
-	public FreeIcon(double resolutionScale, Point loc, double scale, IconType type, String artPack, String groupId, int iconIndex,
-			Integer centerIndex, Color color, HSBColor filterColor, boolean maximizeOpacity, boolean fillWithColor)
+	public FreeIcon(double resolutionScale, Point loc, double scale, IconType type, String artPack, String groupId, int iconIndex, Integer centerIndex, Color color, HSBColor filterColor,
+			boolean maximizeOpacity, boolean fillWithColor)
 	{
-		this(loc.mult((1.0 / resolutionScale)), scale, type, artPack, groupId, iconIndex, null, centerIndex, 0.0, color, filterColor,
-				maximizeOpacity, fillWithColor, scale);
+		this(loc.mult((1.0 / resolutionScale)), scale, type, artPack, groupId, iconIndex, null, centerIndex, 0.0, color, filterColor, maximizeOpacity, fillWithColor, scale);
 	}
 
 	/**
 	 * For creating a new FreeIcon.
 	 * <p>
-	 * Note - this constructor must never be used to re-create a FreeIcon with a new scale (to essentially change the scale) because that
-	 * would throw off originalScale.
+	 * Note - this constructor must never be used to re-create a FreeIcon with a new scale (to essentially change the scale) because that would throw off originalScale.
 	 * </p>
-	 * 
+	 *
 	 * @param scale
-	 *            Scale before applying resolutionScale or icon-type level scaling.
+	 * 		Scale before applying resolutionScale or icon-type level scaling.
 	 * @param artPack
-	 *            The art pack the image is from.
+	 * 		The art pack the image is from.
 	 */
-	public FreeIcon(double resolutionScale, Point loc, double scale, IconType type, String artPack, String groupId, int iconIndex,
-			Integer centerIndex, double density, Color color, HSBColor filterColor, boolean maximizeOpacity, boolean fillWithColor)
+	public FreeIcon(double resolutionScale, Point loc, double scale, IconType type, String artPack, String groupId, int iconIndex, Integer centerIndex, double density, Color color,
+			HSBColor filterColor, boolean maximizeOpacity, boolean fillWithColor)
 	{
-		this(loc.mult((1.0 / resolutionScale)), scale, type, artPack, groupId, iconIndex, null, centerIndex, density, color, filterColor,
-				maximizeOpacity, fillWithColor, scale);
+		this(loc.mult((1.0 / resolutionScale)), scale, type, artPack, groupId, iconIndex, null, centerIndex, density, color, filterColor, maximizeOpacity, fillWithColor, scale);
 	}
 
 	/**
 	 * For creating a new FreeIcon.
 	 * <p>
-	 * Note - this constructor must never be used to re-create a FreeIcon with a new scale (to essentially change the scale) because that
-	 * would throw off originalScale.
+	 * Note - this constructor must never be used to re-create a FreeIcon with a new scale (to essentially change the scale) because that would throw off originalScale.
 	 * </p>
-	 * 
+	 *
 	 * @param scale
-	 *            Scale before applying resolutionScale or icon-type level scaling.
+	 * 		Scale before applying resolutionScale or icon-type level scaling.
 	 */
-	public FreeIcon(double resolutionScale, Point loc, double scale, IconType type, String artPack, String groupId, String iconName,
-			Integer centerIndex, Color color, HSBColor filterColor, boolean maximizeOpacity, boolean fillWithColor)
+	public FreeIcon(double resolutionScale, Point loc, double scale, IconType type, String artPack, String groupId, String iconName, Integer centerIndex, Color color, HSBColor filterColor,
+			boolean maximizeOpacity, boolean fillWithColor)
 	{
-		this(loc.mult((1.0 / resolutionScale)), scale, type, artPack, groupId, -1, iconName, centerIndex, 0.0, color, filterColor,
-				maximizeOpacity, fillWithColor, scale);
+		this(loc.mult((1.0 / resolutionScale)), scale, type, artPack, groupId, -1, iconName, centerIndex, 0.0, color, filterColor, maximizeOpacity, fillWithColor, scale);
 	}
 
 	/**
 	 * For creating a new FreeIcon.
 	 * <p>
-	 * Note - this constructor must never be used to re-create a FreeIcon with a new scale (to essentially change the scale) because that
-	 * would throw off originalScale.
+	 * Note - this constructor must never be used to re-create a FreeIcon with a new scale (to essentially change the scale) because that would throw off originalScale.
 	 * </p>
 	 */
-	public FreeIcon(Point locationResolutionInvariant, double scale, IconType type, String artPack, String groupId, int iconIndex,
-			String iconName, Integer centerIndex, double density, Color color, HSBColor filterColor, boolean maximizeOpacity,
-			boolean fillWithColor, double originalScale)
+	public FreeIcon(Point locationResolutionInvariant, double scale, IconType type, String artPack, String groupId, int iconIndex, String iconName, Integer centerIndex, double density, Color color,
+			HSBColor filterColor, boolean maximizeOpacity, boolean fillWithColor, double originalScale)
 	{
 		this.type = type;
 		this.locationResolutionInvariant = locationResolutionInvariant;
@@ -138,67 +129,58 @@ public class FreeIcon
 
 	public FreeIcon copyWithGroupId(String groupId)
 	{
-		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color,
-				filterColor, maximizeOpacity, fillWithColor, originalScale);
+		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color, filterColor, maximizeOpacity, fillWithColor, originalScale);
 	}
 
 	public FreeIcon copyWithName(String iconName)
 	{
-		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color,
-				filterColor, maximizeOpacity, fillWithColor, originalScale);
+		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color, filterColor, maximizeOpacity, fillWithColor, originalScale);
 	}
 
 	public FreeIcon copyWith(String artPack, String groupId, String iconName, Color color, HSBColor filterColor, boolean maximizeOpacity, boolean fillWithColor)
 	{
-		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color,
-				filterColor, maximizeOpacity, fillWithColor, originalScale);
+		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color, filterColor, maximizeOpacity, fillWithColor, originalScale);
 	}
 
 	public FreeIcon copyWith(String artPack, String groupId, int iconIndex, Color color, HSBColor filterColor, boolean maximizeOpacity, boolean fillWithColor)
 	{
-		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color,
-				filterColor, maximizeOpacity, fillWithColor, originalScale);
+		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color, filterColor, maximizeOpacity, fillWithColor, originalScale);
 	}
 
 	public FreeIcon copyWithArtPack(String artPack)
 	{
-		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color,
-				filterColor, maximizeOpacity, fillWithColor, originalScale);
+		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color, filterColor, maximizeOpacity, fillWithColor, originalScale);
 	}
 
 	public FreeIcon copyWithScale(double scale)
 	{
-		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color,
-				filterColor, maximizeOpacity, fillWithColor, originalScale);
+		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color, filterColor, maximizeOpacity, fillWithColor, originalScale);
 	}
 
 	public FreeIcon copyWithLocation(double resolutionScale, Point loc)
 	{
-		return new FreeIcon(loc.mult((1.0 / resolutionScale)), scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density,
-				color, filterColor, maximizeOpacity, fillWithColor, originalScale);
+		return new FreeIcon(loc.mult((1.0 / resolutionScale)), scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color, filterColor, maximizeOpacity, fillWithColor,
+				originalScale);
 	}
 
 	public FreeIcon copyWithLocationResolutionInvariant(Point locationResolutionInvariant)
 	{
-		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color,
-				filterColor, maximizeOpacity, fillWithColor, originalScale);
+		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color, filterColor, maximizeOpacity, fillWithColor, originalScale);
 	}
 
 	public FreeIcon copyWithColors(Color color, HSBColor filterColor, boolean maximizeOpacity, boolean fillWithColor)
 	{
-		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color,
-				filterColor, maximizeOpacity, fillWithColor, originalScale);
+		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color, filterColor, maximizeOpacity, fillWithColor, originalScale);
 	}
 
 	public FreeIcon copyUnanchored()
 	{
-		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, null, density, color,
-				filterColor, maximizeOpacity, fillWithColor, originalScale);
+		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, null, density, color, filterColor, maximizeOpacity, fillWithColor, originalScale);
 	}
 
 	/**
 	 * Gets the point in the center of the icon, scaled to the resolution of the map.
-	 * 
+	 *
 	 * @return
 	 */
 	public Point getScaledLocation(double resolutionScale)
@@ -208,23 +190,22 @@ public class FreeIcon
 
 	/**
 	 * Converts a free icon to an icon draw task.
-	 * 
+	 *
 	 * @param customImagesFolder
-	 *            Either empty or the custom images folder
+	 * 		Either empty or the custom images folder
 	 * @param resolutionScale
-	 *            MapSettings.resolution that we're currently drawing at.
+	 * 		MapSettings.resolution that we're currently drawing at.
 	 * @param typeLevelScale
-	 *            The scaling from the sliders that scale all icons of a type.
+	 * 		The scaling from the sliders that scale all icons of a type.
 	 * @param baseWidth
-	 *            The width of the icon before type-level scaling. Should already be adjusted for resolution.
+	 * 		The width of the icon before type-level scaling. Should already be adjusted for resolution.
 	 * @return a new IconDrawTask.
 	 */
 	public IconDrawTask toIconDrawTask(String customImagesFolder, double resolutionScale, double typeLevelScale, double baseWidth)
 	{
 		if (iconName != null && !iconName.isEmpty())
 		{
-			Map<String, ImageAndMasks> iconsWithWidths = ImageCache.getInstance(artPack, customImagesFolder).getIconsByNameForGroup(type,
-					groupId);
+			Map<String, ImageAndMasks> iconsWithWidths = ImageCache.getInstance(artPack, customImagesFolder).getIconsByNameForGroup(type, groupId);
 			if (iconsWithWidths == null || iconsWithWidths.isEmpty())
 			{
 				return null;
@@ -234,11 +215,8 @@ public class FreeIcon
 				return null;
 			}
 			ImageAndMasks imageAndMasks = iconsWithWidths.get(iconName);
-			IntDimension drawSize = IconDrawer
-					.getDimensionsWhenScaledByWidth(imageAndMasks.image.size(), Math.round(typeLevelScale * scale * baseWidth))
-					.toIntDimension();
-			return new IconDrawTask(imageAndMasks, type, getScaledLocation(resolutionScale), drawSize, iconName, color, filterColor,
-					maximizeOpacity, fillWithColor, groupId, resolutionScale);
+			IntDimension drawSize = IconDrawer.getDimensionsWhenScaledByWidth(imageAndMasks.image.size(), Math.round(typeLevelScale * scale * baseWidth)).toIntDimension();
+			return new IconDrawTask(imageAndMasks, type, getScaledLocation(resolutionScale), drawSize, iconName, color, filterColor, maximizeOpacity, fillWithColor, groupId, resolutionScale);
 		}
 		else
 		{
@@ -248,20 +226,34 @@ public class FreeIcon
 				return null;
 			}
 			ImageAndMasks imageAndMasks = groupImages.get(iconIndex % groupImages.size());
-			IntDimension drawSize = IconDrawer
-					.getDimensionsWhenScaledByWidth(imageAndMasks.image.size(), typeLevelScale * scale * baseWidth).roundToIntDimension();
-			return new IconDrawTask(imageAndMasks, type, getScaledLocation(resolutionScale), drawSize, color, filterColor, maximizeOpacity,
-					fillWithColor, groupId, resolutionScale);
+			IntDimension drawSize = IconDrawer.getDimensionsWhenScaledByWidth(imageAndMasks.image.size(), typeLevelScale * scale * baseWidth).roundToIntDimension();
+			return new IconDrawTask(imageAndMasks, type, getScaledLocation(resolutionScale), drawSize, color, filterColor, maximizeOpacity, fillWithColor, groupId, resolutionScale);
 		}
 	}
 
 	@Override
 	public String toString()
 	{
-		return "FreeIcon [type=" + type + ", artPack=" + artPack + ", groupId=" + groupId + ", iconIndex=" + iconIndex + ", iconName="
-				+ iconName + ", locationResolutionInvariant=" + locationResolutionInvariant + ", scale=" + scale + ", centerIndex="
-				+ centerIndex + ", color=" + color + ", filterColor=" + filterColor + ", maximizeOpacity=" + maximizeOpacity
+		return "FreeIcon [type=" + type + ", artPack=" + artPack + ", groupId=" + groupId + ", iconIndex=" + iconIndex + ", iconName=" + iconName + ", locationResolutionInvariant="
+				+ locationResolutionInvariant + ", scale=" + scale + ", centerIndex=" + centerIndex + ", color=" + color + ", filterColor=" + filterColor + ", maximizeOpacity=" + maximizeOpacity
 				+ ", fillWithColor=" + fillWithColor + ", density=" + density + ", originalScale=" + originalScale + "]";
 	}
 
+	@Override
+	public boolean equals(Object o)
+	{
+		if (!(o instanceof FreeIcon))
+			return false;
+		FreeIcon freeIcon = (FreeIcon) o;
+		return iconIndex == freeIcon.iconIndex && Double.compare(scale, freeIcon.scale) == 0 && maximizeOpacity == freeIcon.maximizeOpacity && fillWithColor == freeIcon.fillWithColor
+				&& Double.compare(density, freeIcon.density) == 0 && Double.compare(originalScale, freeIcon.originalScale) == 0 && type == freeIcon.type && Objects.equals(artPack, freeIcon.artPack)
+				&& Objects.equals(groupId, freeIcon.groupId) && Objects.equals(iconName, freeIcon.iconName) && Objects.equals(locationResolutionInvariant, freeIcon.locationResolutionInvariant)
+				&& Objects.equals(centerIndex, freeIcon.centerIndex) && Objects.equals(color, freeIcon.color) && Objects.equals(filterColor, freeIcon.filterColor);
+	}
+
+	@Override
+	public int hashCode()
+	{
+		return Objects.hash(type, artPack, groupId, iconIndex, iconName, locationResolutionInvariant, scale, centerIndex, color, filterColor, maximizeOpacity, fillWithColor, density, originalScale);
+	}
 }
