@@ -467,7 +467,7 @@ public class IconsTool extends EditorTool
 			fillWithColorCheckbox.addActionListener(e ->
 			{
 				fillColorHider.setVisible(fillWithColorCheckbox.isSelected());
-				handleColorChange(WhatHSBColorFieldChanged.FillColor);
+				handleColorChange(WhatHSBColorFieldChanged.FillWithColorCheckbox);
 			});
 			colorOrganizer.addLeftAlignedComponent(fillWithColorCheckbox);
 			colorOrganizer.addHorizontalSpacerRowToHelpComponentAlignment(0.66);
@@ -684,7 +684,7 @@ public class IconsTool extends EditorTool
 
 	private enum WhatHSBColorFieldChanged
 	{
-		maximizeOpacity, Hue, Saturation, Brightness, Transparency, FillColor
+		maximizeOpacity, Hue, Saturation, Brightness, Transparency, FillColor, FillWithColorCheckbox
 	}
 
 	private void deleteSelectedIcons()
@@ -960,6 +960,7 @@ public class IconsTool extends EditorTool
 						filterColorToUse = iconToEdit.filterColor.copyWithTransparency(filterColorFromUI.transparency);
 						break;
 					case FillColor:
+					case FillWithColorCheckbox:
 						filterColorToUse = iconToEdit.filterColor;
 						break;
 					default:
@@ -969,7 +970,8 @@ public class IconsTool extends EditorTool
 						? maximizeOpacityCheckbox.isSelected()
 						: iconToEdit.maximizeOpacity;
 				boolean fillWithColorToUse =
-						whatChanged == WhatHSBColorFieldChanged.FillColor ? fillWithColorCheckbox.isSelected() : iconToEdit.fillWithColor;
+						(whatChanged == WhatHSBColorFieldChanged.FillColor || whatChanged == WhatHSBColorFieldChanged.FillWithColorCheckbox)
+						? fillWithColorCheckbox.isSelected() : iconToEdit.fillWithColor;
 				Color fillColorToUse = whatChanged == WhatHSBColorFieldChanged.FillColor
 						? AwtFactory.wrap(fillColorDisplay.getBackground())
 						: iconToEdit.color;

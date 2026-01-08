@@ -66,7 +66,7 @@ public class MapSettings implements Serializable
 	private final double defaultRoadWidth = 1.0;
 	private final Stroke defaultRoadStyle = new Stroke(StrokeType.Dots, (float) (MapCreator.calcSizeMultipilerFromResolutionScaleRounded(1.0) * defaultRoadWidth));
 	private final Color defaultRoadColor = Color.black;
-	public static final Color defaultIconFillColor = Color.create(0, 0, 0, (int) (255 * 0.7));
+	public static final Color defaultIconFillColor = Color.create(155, 105, 49, (int) (255 * 0.7));
 	public static final HSBColor defaultIconFilterColor = new HSBColor(0, 0, 0, 0);
 
 	public String version;
@@ -1342,6 +1342,11 @@ public class MapSettings implements Serializable
 				{
 					Color color = iconColorsByType.get(iconType);
 					fillWithColorByType.put(iconType, !color.equals(Color.transparentBlack) && !color.equals(defaultIconFillColor));
+
+					if (iconColorsByType.get(iconType).equals(Color.transparentBlack))
+					{
+						iconColorsByType.put(iconType, defaultIconFillColor);
+					}
 				}
 			}
 		}
