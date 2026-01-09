@@ -9,14 +9,42 @@ plugins {
 
 repositories {
     mavenCentral()
+    maven { url "https://maven.pkg.jetbrains.space/public/p/compose/dev" }
 }
+
+def osName = System.getProperty("os.name")
+def targetOs = ""
+if (osName == "Mac OS X") {
+    targetOs = "macos"
+} else if (osName.startsWith("Win")) {
+    targetOs = "windows"
+} else if (osName.startsWith("Linux")) {
+    targetOs = "linux"
+} else {
+    throw new GradleException("Unsupported OS: $osName")
+}
+
+def osArch = System.getProperty("os.arch")
+def targetArch = ""
+if (osArch == "x86_64" || osArch == "amd64") {
+    targetArch = "x64"
+} else if (osArch == "aarch64") {
+    targetArch = "arm64"
+} else {
+    throw new GradleException("Unsupported arch: $osArch")
+}
+
+def skikoVersion = "0.8.9"
+def skikoTarget = "${targetOs}-${targetArch}"
 
 dependencies {
     implementation fileTree(dir: 'libraries', include: ['*.jar'])
-	testImplementation platform('org.junit:junit-bom:5.10.2') 
-	testImplementation 'org.junit.jupiter:junit-jupiter' 
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    implementation 'com.formdev:flatlaf:3.6.2' 
+    testImplementation platform('org.junit:junit-bom:5.10.2')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    implementation 'com.formdev:flatlaf:3.6.2'
+    implementation "org.jetbrains.skiko:skiko:$skikoVersion"
+    implementation "org.jetbrains.skiko:skiko-awt-runtime-$skikoTarget:$skikoVersion"
 }
 
 // Attaches javadocs to libraries in Eclipse.
@@ -59,17 +87,17 @@ jar {
     } {
         exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA'
     }
-	from(sourceSets.main.output) {
-	    from('assets') {
-	        into 'assets'
-	    }
-	}
-	archiveFileName = 'Nortantis.jar' 
+    from(sourceSets.main.output) {
+        from('assets') {
+            into 'assets'
+        }
+    }
+    archiveFileName = 'Nortantis.jar'
 }
 
 test {
-	jvmArgs = ['-Dfile.encoding=UTF-8', '-Xmx3g']
-	useJUnitPlatform()
+    jvmArgs = ['-Dfile.encoding=UTF-8', '-Xmx3g']
+    useJUnitPlatform()
 }
 
 sourceSets {
