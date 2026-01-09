@@ -38,7 +38,7 @@ public class SkiaPainter extends Painter
 	public void drawImage(Image image, int x, int y)
 	{
 		SkiaImage skImage = (SkiaImage) image;
-		org.jetbrains.skia.Image skiaImage = skImage.getBitmap().makeImageSnapshot();
+		org.jetbrains.skia.Image skiaImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(skImage.getBitmap());
 		canvas.drawImage(skiaImage, (float) x, (float) y, paint);
 		skiaImage.close();
 	}
@@ -47,7 +47,7 @@ public class SkiaPainter extends Painter
 	public void drawImage(Image image, int x, int y, int width, int height)
 	{
 		SkiaImage skImage = (SkiaImage) image;
-		org.jetbrains.skia.Image skiaImage = skImage.getBitmap().makeImageSnapshot();
+		org.jetbrains.skia.Image skiaImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(skImage.getBitmap());
 		canvas.drawImageRect(skiaImage, Rect.makeXYWH(x, y, width, height), paint);
 		skiaImage.close();
 	}

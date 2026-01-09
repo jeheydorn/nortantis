@@ -2,6 +2,7 @@ package nortantis.platform.skia;
 
 import java.util.Objects;
 import org.jetbrains.skia.Font;
+import org.jetbrains.skia.FontMgr;
 import org.jetbrains.skia.Typeface;
 import nortantis.platform.FontStyle;
 
@@ -32,7 +33,7 @@ public class SkiaFont extends nortantis.platform.Font
 			skiaStyle = org.jetbrains.skia.FontStyle.Companion.getBOLD_ITALIC();
 		}
 
-		Typeface typeface = Typeface.Companion.makeFromName(name, skiaStyle);
+		Typeface typeface = FontMgr.Companion.getDefault().matchFamilyStyle(name, skiaStyle);
 		this.skiaFont = new Font(typeface, size);
 	}
 

@@ -47,8 +47,8 @@ public class SkiaFactory extends PlatformFactory
 		try
 		{
 			byte[] bytes = stream.readAllBytes();
-			org.jetbrains.skia.Image image = org.jetbrains.skia.Image.makeFromEncoded(bytes);
-			Bitmap bitmap = Bitmap.makeFromImage(image);
+			org.jetbrains.skia.Image image = org.jetbrains.skia.Image.Companion.makeFromEncoded(bytes);
+			Bitmap bitmap = Bitmap.Companion.makeFromImage(image);
 			image.close();
 			return new SkiaImage(bitmap, ImageType.ARGB); // Assuming ARGB for now
 		}
@@ -64,7 +64,7 @@ public class SkiaFactory extends PlatformFactory
 		try
 		{
 			SkiaImage skiaImage = (SkiaImage) image;
-			org.jetbrains.skia.Image skImage = skiaImage.getBitmap().makeImageSnapshot();
+			org.jetbrains.skia.Image skImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(skiaImage.getBitmap());
 			byte[] bytes = skImage.encodeToData(EncodedImageFormat.PNG, 100).getBytes();
 			Files.write(Paths.get(filePath), bytes);
 			skImage.close();
