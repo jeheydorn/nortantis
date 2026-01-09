@@ -34,7 +34,7 @@ if (osArch == "x86_64" || osArch == "amd64") {
     throw new GradleException("Unsupported arch: $osArch")
 }
 
-def skikoVersion = "0.8.9"
+def skikoVersion = "0.9.37"
 def skikoTarget = "${targetOs}-${targetArch}"
 
 dependencies {
