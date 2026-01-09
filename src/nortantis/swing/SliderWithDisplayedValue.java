@@ -28,8 +28,7 @@ public class SliderWithDisplayedValue
 		this(slider, valueFormatter, changeListener, 24);
 	}
 
-	public SliderWithDisplayedValue(JSlider slider, Function<Integer, String> valueFormatter, Runnable changeListener,
-			Integer preferredWidth)
+	public SliderWithDisplayedValue(JSlider slider, Function<Integer, String> valueFormatter, Runnable changeListener, Integer preferredWidth)
 	{
 		this.slider = slider;
 
@@ -77,11 +76,9 @@ public class SliderWithDisplayedValue
 		return organizer.addLabelAndComponentsHorizontal(label, toolTip, Arrays.asList(slider, valueDisplay));
 	}
 
-	public RowHider addToOrganizer(GridBagOrganizer organizer, String label, String toolTip, Component additionalComponent,
-			int componentLeftPadding, int horizontalSpaceBetweenComponents)
+	public RowHider addToOrganizer(GridBagOrganizer organizer, String label, String toolTip, Component additionalComponent, int componentLeftPadding, int horizontalSpaceBetweenComponents)
 	{
-		return organizer.addLabelAndComponentsHorizontal(label, toolTip, Arrays.asList(slider, valueDisplay, additionalComponent),
-				componentLeftPadding, horizontalSpaceBetweenComponents);
+		return organizer.addLabelAndComponentsHorizontal(label, toolTip, Arrays.asList(slider, valueDisplay, additionalComponent), componentLeftPadding, horizontalSpaceBetweenComponents);
 	}
 
 	public RowHider addToOrganizer(GridBagOrganizer organizer, JLabel label)

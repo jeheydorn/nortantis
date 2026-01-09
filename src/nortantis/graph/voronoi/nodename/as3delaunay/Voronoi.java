@@ -109,8 +109,7 @@ public final class Voronoi
 
 		for (Edge e : edgesToTest)
 		{
-			if (((e.get_leftSite() != null && e.get_leftSite().get_coord() == coord)
-					|| (e.get_rightSite() != null && e.get_rightSite().get_coord() == coord)))
+			if (((e.get_leftSite() != null && e.get_leftSite().get_coord() == coord) || (e.get_rightSite() != null && e.get_rightSite().get_coord() == coord)))
 			{
 				filtered.add(e);
 			}

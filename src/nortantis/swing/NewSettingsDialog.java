@@ -90,8 +90,7 @@ public class NewSettingsDialog extends JDialog
 			settings.heightmapExportPath = null;
 			randomizeLand();
 			settings.textRandomSeed = Math.abs(new Random().nextInt());
-			List<String> cityIconTypes = ImageCache.getInstance(settings.artPack, settings.customImagesPath)
-					.getIconGroupNames(IconType.cities);
+			List<String> cityIconTypes = ImageCache.getInstance(settings.artPack, settings.customImagesPath).getIconGroupNames(IconType.cities);
 			if (cityIconTypes.size() > 0)
 			{
 				settings.cityIconTypeName = ProbabilityHelper.sampleUniform(new Random(), new ArrayList<>(cityIconTypes));
@@ -325,8 +324,7 @@ public class NewSettingsDialog extends JDialog
 		}
 		createMapChangeListener(dimensionsComboBox);
 		organizer.addLabelAndComponent("Dimensions: <br>(cannot be changed in editor)",
-				"Dimensions of the map when exported at 100% resolution, although the resolution can be scaled up or down while"
-						+ " exporting. This doesn't include the border, if you add one.",
+				"Dimensions of the map when exported at 100% resolution, although the resolution can be scaled up or down while" + " exporting. This doesn't include the border, if you add one.",
 				dimensionsComboBox);
 
 		worldSizeSlider = new JSlider();
@@ -338,8 +336,7 @@ public class NewSettingsDialog extends JDialog
 		worldSizeSlider.setMinimum(SettingsGenerator.minWorldSize);
 		worldSizeSlider.setMaximum(SettingsGenerator.maxWorldSize);
 		createMapChangeListener(worldSizeSlider);
-		organizer.addLabelAndComponent("World size: <br>(cannot be changed in editor)",
-				"The number of polygons in the randomly generated world.", worldSizeSlider);
+		organizer.addLabelAndComponent("World size: <br>(cannot be changed in editor)", "The number of polygons in the randomly generated world.", worldSizeSlider);
 
 		edgeLandToWaterProbSlider = new JSlider();
 		edgeLandToWaterProbSlider.setValue(70);
@@ -349,17 +346,14 @@ public class NewSettingsDialog extends JDialog
 		edgeLandToWaterProbSlider.setMajorTickSpacing(25);
 		{
 			Hashtable<Integer, JLabel> labelTable = new Hashtable<Integer, JLabel>();
-			for (int i = edgeLandToWaterProbSlider.getMinimum(); i < edgeLandToWaterProbSlider.getMaximum()
-					+ 1; i += edgeLandToWaterProbSlider.getMajorTickSpacing())
+			for (int i = edgeLandToWaterProbSlider.getMinimum(); i < edgeLandToWaterProbSlider.getMaximum() + 1; i += edgeLandToWaterProbSlider.getMajorTickSpacing())
 			{
 				labelTable.put(i, new JLabel(Double.toString(i / 100.0)));
 			}
 			edgeLandToWaterProbSlider.setLabelTable(labelTable);
 		}
 		createMapChangeListener(edgeLandToWaterProbSlider);
-		organizer.addLabelAndComponent("Edge land probability:",
-				"The probability that a tectonic plate touching the edge of the map will be land rather than ocean.",
-				edgeLandToWaterProbSlider);
+		organizer.addLabelAndComponent("Edge land probability:", "The probability that a tectonic plate touching the edge of the map will be land rather than ocean.", edgeLandToWaterProbSlider);
 
 		centerLandToWaterProbSlider = new JSlider();
 		centerLandToWaterProbSlider.setValue(70);
@@ -369,16 +363,14 @@ public class NewSettingsDialog extends JDialog
 		centerLandToWaterProbSlider.setMajorTickSpacing(25);
 		{
 			Hashtable<Integer, JLabel> labelTable = new Hashtable<Integer, JLabel>();
-			for (int i = centerLandToWaterProbSlider.getMinimum(); i < centerLandToWaterProbSlider.getMaximum()
-					+ 1; i += centerLandToWaterProbSlider.getMajorTickSpacing())
+			for (int i = centerLandToWaterProbSlider.getMinimum(); i < centerLandToWaterProbSlider.getMaximum() + 1; i += centerLandToWaterProbSlider.getMajorTickSpacing())
 			{
 				labelTable.put(i, new JLabel(Double.toString(i / 100.0)));
 			}
 			centerLandToWaterProbSlider.setLabelTable(labelTable);
 		}
 		createMapChangeListener(centerLandToWaterProbSlider);
-		organizer.addLabelAndComponent("Center land probability:",
-				"The probability that a tectonic plate not touching the edge of the map will be land rather than ocean.",
+		organizer.addLabelAndComponent("Center land probability:", "The probability that a tectonic plate not touching the edge of the map will be land rather than ocean.",
 				centerLandToWaterProbSlider);
 
 		landColoringMethodComboBox = new JComboBox<LandColoringMethod>();
@@ -394,8 +386,7 @@ public class NewSettingsDialog extends JDialog
 		pathDisplay = new JTextField();
 		pathDisplay.setText(FileHelper.replaceHomeFolderPlaceholder(UserPreferences.getInstance().defaultCustomImagesPath));
 		pathDisplay.setEditable(false);
-		organizer.addLabelAndComponentsHorizontal("Custom Images Folder:", "Configure custom images to use when generating this map.",
-				Arrays.asList(pathDisplay, changeButton));
+		organizer.addLabelAndComponentsHorizontal("Custom Images Folder:", "Configure custom images to use when generating this map.", Arrays.asList(pathDisplay, changeButton));
 
 		changeButton.addActionListener(new ActionListener()
 		{
@@ -420,8 +411,7 @@ public class NewSettingsDialog extends JDialog
 			}
 		});
 
-		organizer.addLeftAlignedComponent(
-				Box.createRigidArea(new Dimension((defaultSize.width / 2) - amountToSubtractFromLeftAndRightPanels, 0)));
+		organizer.addLeftAlignedComponent(Box.createRigidArea(new Dimension((defaultSize.width / 2) - amountToSubtractFromLeftAndRightPanels, 0)));
 
 		organizer.addVerticalFillerRow();
 	}
@@ -429,15 +419,13 @@ public class NewSettingsDialog extends JDialog
 	private void initializeCityTypeOptions()
 	{
 		SwingHelper.initializeComboBoxItems(cityIconsTypeComboBox,
-				ImageCache.getInstance((String) artPackComboBox.getSelectedItem(), (String) settings.customImagesPath)
-						.getIconGroupNames(IconType.cities),
+				ImageCache.getInstance((String) artPackComboBox.getSelectedItem(), (String) settings.customImagesPath).getIconGroupNames(IconType.cities),
 				(String) cityIconsTypeComboBox.getSelectedItem(), false);
 	}
 
 	private void initializeArtPackOptionsAndCityTypeOptions()
 	{
-		SwingHelper.initializeComboBoxItems(artPackComboBox, Assets.listArtPacks(!StringUtils.isEmpty(settings.customImagesPath)),
-				settings.artPack, false);
+		SwingHelper.initializeComboBoxItems(artPackComboBox, Assets.listArtPacks(!StringUtils.isEmpty(settings.customImagesPath)), settings.artPack, false);
 		initializeCityTypeOptions();
 	}
 
@@ -462,9 +450,8 @@ public class NewSettingsDialog extends JDialog
 
 		artPackComboBox = new JComboBox<String>();
 		JLabel artPackLabel = new JLabel("Art pack:");
-		artPackLabel.setToolTipText(
-				"The set of images and icons to use. '" + Assets.installedArtPack + "' is the images that come installed with Nortantis. '"
-						+ Assets.customArtPack + "' means use the custom images folder, if one is selected.");
+		artPackLabel.setToolTipText("The set of images and icons to use. '" + Assets.installedArtPack + "' is the images that come installed with Nortantis. '" + Assets.customArtPack
+				+ "' means use the custom images folder, if one is selected.");
 		artPackComboBox.addActionListener(new ActionListener()
 		{
 			@Override
@@ -501,16 +488,13 @@ public class NewSettingsDialog extends JDialog
 		cityFrequencySlider.setMaximum(100);
 		cityFrequencySlider.setMajorTickSpacing(25);
 		createMapChangeListener(cityFrequencySlider);
-		organizer.addLabelAndComponent("City frequency:",
-				"Higher values create more cities. Lower values create less cities. Zero means no cities.", cityFrequencySlider);
+		organizer.addLabelAndComponent("City frequency:", "Higher values create more cities. Lower values create less cities. Zero means no cities.", cityFrequencySlider);
 
 		booksWidget = new BooksWidget(true, () -> handleMapChange());
 		booksWidget.getContentPanel().setPreferredSize(new Dimension(360, 180));
-		organizer.addLeftAlignedComponentWithStackedLabel("Books for generating text:",
-				"Selected books will be used to generate new names.", booksWidget.getContentPanel());
+		organizer.addLeftAlignedComponentWithStackedLabel("Books for generating text:", "Selected books will be used to generate new names.", booksWidget.getContentPanel());
 
-		organizer.addLeftAlignedComponent(
-				Box.createRigidArea(new Dimension((defaultSize.width / 2) - amountToSubtractFromLeftAndRightPanels, 0)));
+		organizer.addLeftAlignedComponent(Box.createRigidArea(new Dimension((defaultSize.width / 2) - amountToSubtractFromLeftAndRightPanels, 0)));
 
 		organizer.addVerticalFillerRow();
 	}
@@ -518,8 +502,7 @@ public class NewSettingsDialog extends JDialog
 	private void updateBackgroundTextureAndBorderToUseArtPackIfNeeded()
 	{
 		String artPack = (String) artPackComboBox.getSelectedItem();
-		boolean backgroundTextureNeedsUpdate = settings.backgroundTextureResource != null
-				&& !settings.backgroundTextureResource.artPack.equals(artPack);
+		boolean backgroundTextureNeedsUpdate = settings.backgroundTextureResource != null && !settings.backgroundTextureResource.artPack.equals(artPack);
 		boolean borderNeedsUpdate = settings.borderResource != null && !settings.borderResource.artPack.equals(artPack);
 
 		if (backgroundTextureNeedsUpdate || borderNeedsUpdate)
@@ -540,8 +523,7 @@ public class NewSettingsDialog extends JDialog
 
 	private void randomizeTheme()
 	{
-		MapSettings randomSettings = SettingsGenerator.generate(new Random(), (String) artPackComboBox.getSelectedItem(),
-				settings.customImagesPath);
+		MapSettings randomSettings = SettingsGenerator.generate(new Random(), (String) artPackComboBox.getSelectedItem(), settings.customImagesPath);
 		settings.oceanShadingLevel = randomSettings.oceanShadingLevel;
 		settings.oceanWavesLevel = randomSettings.oceanWavesLevel;
 		settings.concentricWaveCount = randomSettings.concentricWaveCount;
@@ -603,8 +585,7 @@ public class NewSettingsDialog extends JDialog
 
 	private void createMapEditingPanel()
 	{
-		BufferedImage placeHolder = AwtFactory.unwrap(ImageHelper.createPlaceholderImage(new String[] { "Drawing..." },
-				AwtFactory.wrap(SwingHelper.getTextColorForPlaceholderImages())));
+		BufferedImage placeHolder = AwtFactory.unwrap(ImageHelper.createPlaceholderImage(new String[] { "Drawing..." }, AwtFactory.wrap(SwingHelper.getTextColorForPlaceholderImages())));
 		mapEditingPanel = new MapEditingPanel(placeHolder);
 
 		mapEditingPanelContainer = new JPanel();
@@ -635,8 +616,7 @@ public class NewSettingsDialog extends JDialog
 			}
 
 			@Override
-			protected void onFinishedDrawing(Image map, boolean anotherDrawIsQueued, int borderWidthAsDrawn,
-					IntRectangle incrementalChangeArea, List<String> warningMessages)
+			protected void onFinishedDrawing(Image map, boolean anotherDrawIsQueued, int borderWidthAsDrawn, IntRectangle incrementalChangeArea, List<String> warningMessages)
 			{
 				mapEditingPanel.setImage(AwtFactory.unwrap(map));
 
@@ -674,10 +654,8 @@ public class NewSettingsDialog extends JDialog
 	private nortantis.geom.Dimension getMapDrawingAreaSize()
 	{
 		final int additionalWidthToRemoveIDontKnowWhereItsCommingFrom = 4;
-		return new nortantis.geom.Dimension(
-				(mapEditingPanelContainer.getSize().width - additionalWidthToRemoveIDontKnowWhereItsCommingFrom) * mapEditingPanel.osScale,
-				(mapEditingPanelContainer.getSize().height - additionalWidthToRemoveIDontKnowWhereItsCommingFrom)
-						* mapEditingPanel.osScale);
+		return new nortantis.geom.Dimension((mapEditingPanelContainer.getSize().width - additionalWidthToRemoveIDontKnowWhereItsCommingFrom) * mapEditingPanel.osScale,
+				(mapEditingPanelContainer.getSize().height - additionalWidthToRemoveIDontKnowWhereItsCommingFrom) * mapEditingPanel.osScale);
 
 	}
 

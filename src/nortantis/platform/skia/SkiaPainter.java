@@ -38,18 +38,14 @@ public class SkiaPainter extends Painter
 	public void drawImage(Image image, int x, int y)
 	{
 		SkiaImage skImage = (SkiaImage) image;
-		org.jetbrains.skia.Image skiaImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(skImage.getBitmap());
-		canvas.drawImage(skiaImage, (float) x, (float) y, paint);
-		skiaImage.close();
+		canvas.drawImage(skImage.getSkiaImage(), (float) x, (float) y, paint);
 	}
 
 	@Override
 	public void drawImage(Image image, int x, int y, int width, int height)
 	{
 		SkiaImage skImage = (SkiaImage) image;
-		org.jetbrains.skia.Image skiaImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(skImage.getBitmap());
-		canvas.drawImageRect(skiaImage, Rect.makeXYWH(x, y, width, height), paint);
-		skiaImage.close();
+		canvas.drawImageRect(skImage.getSkiaImage(), Rect.makeXYWH(x, y, width, height), paint);
 	}
 
 	@Override
@@ -69,19 +65,32 @@ public class SkiaPainter extends Painter
 	{
 		switch (composite)
 		{
-			case SrcOver: return BlendMode.SRC_OVER;
-			case Src: return BlendMode.SRC;
-			case SrcAtop: return BlendMode.SRC_ATOP;
-			case DstIn: return BlendMode.DST_IN;
-			case Dst: return BlendMode.DST;
-			case DstOver: return BlendMode.DST_OVER;
-			case SrcIn: return BlendMode.SRC_IN;
-			case SrcOut: return BlendMode.SRC_OUT;
-			case DstOut: return BlendMode.DST_OUT;
-			case DstAtop: return BlendMode.DST_ATOP;
-			case Xor: return BlendMode.XOR;
-			case Clear: return BlendMode.CLEAR;
-			default: return BlendMode.SRC_OVER;
+			case SrcOver:
+				return BlendMode.SRC_OVER;
+			case Src:
+				return BlendMode.SRC;
+			case SrcAtop:
+				return BlendMode.SRC_ATOP;
+			case DstIn:
+				return BlendMode.DST_IN;
+			case Dst:
+				return BlendMode.DST;
+			case DstOver:
+				return BlendMode.DST_OVER;
+			case SrcIn:
+				return BlendMode.SRC_IN;
+			case SrcOut:
+				return BlendMode.SRC_OUT;
+			case DstOut:
+				return BlendMode.DST_OUT;
+			case DstAtop:
+				return BlendMode.DST_ATOP;
+			case Xor:
+				return BlendMode.XOR;
+			case Clear:
+				return BlendMode.CLEAR;
+			default:
+				return BlendMode.SRC_OVER;
 		}
 	}
 
@@ -161,7 +170,8 @@ public class SkiaPainter extends Painter
 	@Override
 	public void fillPolygon(int[] xPoints, int[] yPoints)
 	{
-		if (xPoints.length == 0) return;
+		if (xPoints.length == 0)
+			return;
 		Path path = new Path();
 		path.moveTo(xPoints[0], yPoints[0]);
 		for (int i = 1; i < xPoints.length; i++)
@@ -177,7 +187,8 @@ public class SkiaPainter extends Painter
 	@Override
 	public void drawPolygon(int[] xPoints, int[] yPoints)
 	{
-		if (xPoints.length == 0) return;
+		if (xPoints.length == 0)
+			return;
 		Path path = new Path();
 		path.moveTo(xPoints[0], yPoints[0]);
 		for (int i = 1; i < xPoints.length; i++)
@@ -193,7 +204,8 @@ public class SkiaPainter extends Painter
 	@Override
 	public void drawPolyline(int[] xPoints, int[] yPoints)
 	{
-		if (xPoints.length == 0) return;
+		if (xPoints.length == 0)
+			return;
 		Path path = new Path();
 		path.moveTo(xPoints[0], yPoints[0]);
 		for (int i = 1; i < xPoints.length; i++)
@@ -208,7 +220,8 @@ public class SkiaPainter extends Painter
 	@Override
 	public void drawPolygonFloat(List<FloatPoint> points)
 	{
-		if (points.isEmpty()) return;
+		if (points.isEmpty())
+			return;
 		Path path = new Path();
 		path.moveTo(points.get(0).x, points.get(0).y);
 		for (int i = 1; i < points.size(); i++)
@@ -224,8 +237,8 @@ public class SkiaPainter extends Painter
 	@Override
 	public void setGradient(float x1, float y1, Color color1, float x2, float y2, Color color2)
 	{
-		paint.setShader(org.jetbrains.skia.Shader.Companion.makeLinearGradient(x1, y1, x2, y2, 
-				new int[] { color1.getRGB(), color2.getRGB() }, null, org.jetbrains.skia.GradientStyle.Companion.getDEFAULT()));
+		paint.setShader(
+				org.jetbrains.skia.Shader.Companion.makeLinearGradient(x1, y1, x2, y2, new int[] { color1.getRGB(), color2.getRGB() }, null, org.jetbrains.skia.GradientStyle.Companion.getDEFAULT()));
 	}
 
 	@Override
@@ -280,7 +293,7 @@ public class SkiaPainter extends Painter
 			{
 				throw new UnsupportedOperationException("Unrecognized stroke type: " + stroke.type);
 			}
-			
+
 			paint.setMode(PaintMode.STROKE);
 			paint.setStrokeWidth(width);
 			paint.setPathEffect(org.jetbrains.skia.PathEffect.Companion.makeDash(intervals, 0f));
@@ -326,28 +339,32 @@ public class SkiaPainter extends Painter
 	@Override
 	public int stringWidth(String string)
 	{
-		if (font == null) return 0;
+		if (font == null)
+			return 0;
 		return (int) font.skiaFont.measureTextWidth(string, paint);
 	}
 
 	@Override
 	public int charWidth(char c)
 	{
-		if (font == null) return 0;
+		if (font == null)
+			return 0;
 		return (int) font.skiaFont.measureTextWidth(String.valueOf(c), paint);
 	}
 
 	@Override
 	public int getFontAscent()
 	{
-		if (font == null) return 0;
+		if (font == null)
+			return 0;
 		return (int) -font.skiaFont.getMetrics().getAscent();
 	}
 
 	@Override
 	public int getFontDescent()
 	{
-		if (font == null) return 0;
+		if (font == null)
+			return 0;
 		return (int) font.skiaFont.getMetrics().getDescent();
 	}
 

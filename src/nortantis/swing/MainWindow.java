@@ -164,10 +164,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		{
 			try
 			{
-				JOptionPane.showMessageDialog(null,
-						"Unnable to create GUI because of error: " + ex.getMessage() + "\nVersion: " + MapSettings.currentVersion
-								+ "\nOS Name: " + System.getProperty("os.name") + "\nStack trace: " + ExceptionUtils.getStackTrace(ex),
-						"Error", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(null, "Unnable to create GUI because of error: " + ex.getMessage() + "\nVersion: " + MapSettings.currentVersion + "\nOS Name: "
+						+ System.getProperty("os.name") + "\nStack trace: " + ExceptionUtils.getStackTrace(ex), "Error", JOptionPane.ERROR_MESSAGE);
 			}
 			catch (Exception inner)
 			{
@@ -179,8 +177,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		boolean isMapOpen = false;
 		try
 		{
-			if (fileToOpen != null && !fileToOpen.isEmpty() && fileToOpen.endsWith(MapSettings.fileExtensionWithDot)
-					&& new File(fileToOpen).exists())
+			if (fileToOpen != null && !fileToOpen.isEmpty() && fileToOpen.endsWith(MapSettings.fileExtensionWithDot) && new File(fileToOpen).exists())
 			{
 				openMap(new File(fileToOpen).getAbsolutePath());
 				isMapOpen = true;
@@ -228,8 +225,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 						String lastCheckedVersion = UserPreferences.getInstance().lastVersionFromCheck;
 
-						if (MapSettings.isVersionGreatherThanCurrent(latestVersion) && (StringUtils.isEmpty(lastCheckedVersion)
-								|| MapSettings.isVersionGreaterThan(latestVersion, lastCheckedVersion)))
+						if (MapSettings.isVersionGreatherThanCurrent(latestVersion) && (StringUtils.isEmpty(lastCheckedVersion) || MapSettings.isVersionGreaterThan(latestVersion, lastCheckedVersion)))
 						{
 							UserPreferences.getInstance().lastVersionFromCheck = latestVersion;
 							UserPreferences.getInstance().lastVersionCheckTime = currentTime;
@@ -246,8 +242,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 							JLabel hyperlink = SwingHelper.createHyperlink(url, url);
 							messagePanel.add(hyperlink);
 
-							JOptionPane.showMessageDialog(MainWindow.this, messagePanel, "Update Available",
-									JOptionPane.INFORMATION_MESSAGE);
+							JOptionPane.showMessageDialog(MainWindow.this, messagePanel, "Update Available", JOptionPane.INFORMATION_MESSAGE);
 						}
 					}
 					catch (Exception e)
@@ -373,9 +368,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		createMapEditingPanel();
 		createMapUpdater();
 		toolsPanel = new ToolsPanel(this, mapEditingPanel, updater);
-		int toolsPanelWidth = UserPreferences.getInstance().toolsPanelWidth > SwingHelper.sidePanelMinimumWidth
-				? UserPreferences.getInstance().toolsPanelWidth
-				: SwingHelper.sidePanelPreferredWidth;
+		int toolsPanelWidth = UserPreferences.getInstance().toolsPanelWidth > SwingHelper.sidePanelMinimumWidth ? UserPreferences.getInstance().toolsPanelWidth : SwingHelper.sidePanelPreferredWidth;
 		toolsPanel.setPreferredSize(new Dimension(toolsPanelWidth, toolsPanel.getPreferredSize().height));
 		toolsPanel.setMinimumSize(new Dimension(SwingHelper.sidePanelMinimumWidth, toolsPanel.getMinimumSize().height));
 
@@ -473,10 +466,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					{
 						int deltaX = mouseLocationForMiddleButtonDrag.x - e.getX();
 						int deltaY = mouseLocationForMiddleButtonDrag.y - e.getY();
-						mapEditingScrollPane.getVerticalScrollBar()
-								.setValue(mapEditingScrollPane.getVerticalScrollBar().getValue() + deltaY);
-						mapEditingScrollPane.getHorizontalScrollBar()
-								.setValue(mapEditingScrollPane.getHorizontalScrollBar().getValue() + deltaX);
+						mapEditingScrollPane.getVerticalScrollBar().setValue(mapEditingScrollPane.getVerticalScrollBar().getValue() + deltaY);
+						mapEditingScrollPane.getHorizontalScrollBar().setValue(mapEditingScrollPane.getHorizontalScrollBar().getValue() + deltaX);
 					}
 				}
 				else if (SwingUtilities.isLeftMouseButton(e))
@@ -564,8 +555,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 
 			@Override
-			protected void onFinishedDrawing(Image map, boolean anotherDrawIsQueued, int borderPaddingAsDrawn,
-					IntRectangle incrementalChangeArea, List<String> warningMessages)
+			protected void onFinishedDrawing(Image map, boolean anotherDrawIsQueued, int borderPaddingAsDrawn, IntRectangle incrementalChangeArea, List<String> warningMessages)
 			{
 				mapEditingPanel.mapFromMapCreator = AwtFactory.unwrap(map);
 				mapEditingPanel.setBorderPadding(borderPaddingAsDrawn);
@@ -632,8 +622,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				showAsDrawing(false);
 				mapEditingPanel.clearAllSelectionsAndHighlights();
-				setPlaceholderImage(new String[] { "Map failed to draw due to an error.",
-						"To retry, use " + fileMenu.getText() + " -> " + refreshMenuItem.getText() + "." });
+				setPlaceholderImage(new String[] { "Map failed to draw due to an error.", "To retry, use " + fileMenu.getText() + " -> " + refreshMenuItem.getText() + "." });
 
 				// In theory, enabling fields now could lead to the undoer not
 				// working quite right since edits might not have been created.
@@ -708,16 +697,12 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					MapSettings settingsToKeepThemeFrom = getSettingsFromGUI(false);
 					settingsToKeepThemeFrom.edits = new MapEdits();
 
-					if (settingsToKeepThemeFrom.drawRegionColors
-							&& !UserPreferences.getInstance().hideNewMapWithSameThemeRegionColorsMessage)
+					if (settingsToKeepThemeFrom.drawRegionColors && !UserPreferences.getInstance().hideNewMapWithSameThemeRegionColorsMessage)
 					{
-						UserPreferences.getInstance().hideNewMapWithSameThemeRegionColorsMessage = SwingHelper.showDismissibleMessage(
-								"Region Colors",
-								"New region colors will be generated based on the " + LandWaterTool.colorGeneratorSettingsName + " in the "
-										+ LandWaterTool.toolbarName + " tool"
+						UserPreferences.getInstance().hideNewMapWithSameThemeRegionColorsMessage = SwingHelper.showDismissibleMessage("Region Colors",
+								"New region colors will be generated based on the " + LandWaterTool.colorGeneratorSettingsName + " in the " + LandWaterTool.toolbarName + " tool"
 										+ ", not the actual colors used in your current map. This means that if you chose your region colors"
-										+ " by hand rather than generating them, the region colors in your new map may look substantially different"
-										+ " than those in your current map.",
+										+ " by hand rather than generating them, the region colors in your new map may look substantially different" + " than those in your current map.",
 								new Dimension(400, 133), JOptionPane.PLAIN_MESSAGE, MainWindow.this);
 					}
 
@@ -738,8 +723,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				if (cancelPressed)
 					return;
 
-				Path curPath = openSettingsFilePath == null ? FileSystemView.getFileSystemView().getDefaultDirectory().toPath()
-						: openSettingsFilePath;
+				Path curPath = openSettingsFilePath == null ? FileSystemView.getFileSystemView().getDefaultDirectory().toPath() : openSettingsFilePath;
 				File currentFolder = new File(curPath.toString());
 				JFileChooser fileChooser = new JFileChooser();
 				fileChooser.setCurrentDirectory(currentFolder);
@@ -754,8 +738,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					@Override
 					public boolean accept(File f)
 					{
-						return f.isDirectory() || f.getName().toLowerCase().endsWith(".properties")
-								|| f.getName().toLowerCase().endsWith(MapSettings.fileExtensionWithDot);
+						return f.isDirectory() || f.getName().toLowerCase().endsWith(".properties") || f.getName().toLowerCase().endsWith(MapSettings.fileExtensionWithDot);
 					}
 				});
 				int status = fileChooser.showOpenDialog(MainWindow.this);
@@ -765,9 +748,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 					if (openSettingsFilePath != null && MapSettings.isOldPropertiesFile(openSettingsFilePath.toString()))
 					{
-						JOptionPane.showMessageDialog(MainWindow.this, FilenameUtils.getName(openSettingsFilePath.toString())
-								+ " is an older format '.properties' file. When you save, it will be converted to the newer format, a '"
-								+ MapSettings.fileExtensionWithDot + "' file.", "File Converted", JOptionPane.INFORMATION_MESSAGE);
+						JOptionPane.showMessageDialog(
+								MainWindow.this, FilenameUtils.getName(openSettingsFilePath.toString())
+										+ " is an older format '.properties' file. When you save, it will be converted to the newer format, a '" + MapSettings.fileExtensionWithDot + "' file.",
+								"File Converted", JOptionPane.INFORMATION_MESSAGE);
 						openSettingsFilePath = Paths.get(FilenameUtils.getFullPath(openSettingsFilePath.toString()),
 								FilenameUtils.getBaseName(openSettingsFilePath.toString()) + MapSettings.fileExtensionWithDot);
 						forceSaveAs = true;
@@ -1064,11 +1048,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				JOptionPane.showMessageDialog(MainWindow.this, "<html>Keyboard shortcuts for navigating the map:" + "<ul>"
-						+ "<li>Zoom: Mouse wheel</li>" + "<li>Pan: Hold mouse middle button, or Shift and mouse left click, then drag</li>"
-						+ "</ul>"
-						+ "<br>Each editor tool has a keyboard shortcut for switching to it. Hover over the tool's icon to see the shortcut."
-						+ "</html>", "Keyboard Shortcuts", JOptionPane.INFORMATION_MESSAGE);
+				JOptionPane.showMessageDialog(MainWindow.this,
+						"<html>Keyboard shortcuts for navigating the map:" + "<ul>" + "<li>Zoom: Mouse wheel</li>" + "<li>Pan: Hold mouse middle button, or Shift and mouse left click, then drag</li>"
+								+ "</ul>" + "<br>Each editor tool has a keyboard shortcut for switching to it. Hover over the tool's icon to see the shortcut." + "</html>",
+						"Keyboard Shortcuts", JOptionPane.INFORMATION_MESSAGE);
 			}
 		});
 
@@ -1238,17 +1221,15 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 			if (subfolderNames.isEmpty())
 			{
-				JOptionPane.showMessageDialog(this,
-						"Invalid art pack. It's empty. It should have exactly one top-level folder, the name of which is the name of the art pack.",
-						"Error", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(this, "Invalid art pack. It's empty. It should have exactly one top-level folder, the name of which is the name of the art pack.", "Error",
+						JOptionPane.ERROR_MESSAGE);
 				return;
 			}
 
 			if (subfolderNames.size() > 1)
 			{
 				JOptionPane.showMessageDialog(this,
-						"Invalid art pack. It should have exactly one top-level folder, the name of which will be the name of the art pack. It has "
-								+ subfolderNames.size() + " top-level folders.",
+						"Invalid art pack. It should have exactly one top-level folder, the name of which will be the name of the art pack. It has " + subfolderNames.size() + " top-level folders.",
 						"Error", JOptionPane.ERROR_MESSAGE);
 				return;
 			}
@@ -1267,18 +1248,14 @@ public class MainWindow extends JFrame implements ILoggerTarget
 						{
 							if (MapSettings.isVersionGreatherThanCurrent(requiredVersion))
 							{
-								JOptionPane.showMessageDialog(this,
-										"The selected art pack requires Nortantis version " + requiredVersion
-												+ ", but this your Nortantis version is " + MapSettings.currentVersion
-												+ ". Update Nortantis and try again.",
-										"Error", JOptionPane.ERROR_MESSAGE);
+								JOptionPane.showMessageDialog(this, "The selected art pack requires Nortantis version " + requiredVersion + ", but this your Nortantis version is "
+										+ MapSettings.currentVersion + ". Update Nortantis and try again.", "Error", JOptionPane.ERROR_MESSAGE);
 								return;
 							}
 						}
 						catch (NumberFormatException e)
 						{
-							String message = "Number format error while reading " + requiredVersionKey + " from '" + settingsPath + "' in '"
-									+ selectedFile.toPath() + "': " + e.getMessage();
+							String message = "Number format error while reading " + requiredVersionKey + " from '" + settingsPath + "' in '" + selectedFile.toPath() + "': " + e.getMessage();
 							Logger.printError(message, e);
 							JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
 							return;
@@ -1301,8 +1278,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 			if (Assets.reservedArtPacks.contains(artPackName.toLowerCase()))
 			{
-				JOptionPane.showMessageDialog(this, "The art pack name '" + artPackName + "' is not allowed.", "Invalid Art Pack Name",
-						JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(this, "The art pack name '" + artPackName + "' is not allowed.", "Invalid Art Pack Name", JOptionPane.ERROR_MESSAGE);
 				return;
 			}
 
@@ -1310,9 +1286,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			if (artPackFolderAsFile.exists() && artPackFolderAsFile.isDirectory())
 			{
 				// Show the dialog
-				int response = JOptionPane.showOptionDialog(this,
-						"The art pack '" + artPackName + "' already exists. Do you wish to overwrite it?", "Overwrite Art Pack",
-						JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE, null, new Object[] { "Overwrite", "Cancel" }, "Cancel");
+				int response = JOptionPane.showOptionDialog(this, "The art pack '" + artPackName + "' already exists. Do you wish to overwrite it?", "Overwrite Art Pack", JOptionPane.DEFAULT_OPTION,
+						JOptionPane.WARNING_MESSAGE, null, new Object[] { "Overwrite", "Cancel" }, "Cancel");
 
 				if (response == 0)
 				{
@@ -1343,8 +1318,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 			catch (IOException ex)
 			{
-				JOptionPane.showMessageDialog(MainWindow.this, "Error uncompressing the zip file: " + ex.getMessage(), "Error",
-						JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(MainWindow.this, "Error uncompressing the zip file: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 			}
 			handleImagesRefresh();
 		}
@@ -1406,8 +1380,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	{
 		if (!(new File(absolutePath).exists()))
 		{
-			JOptionPane.showMessageDialog(null, "The map '" + absolutePath + "' cannot be opened because it does not exist.",
-					"Unable to Open Map", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(null, "The map '" + absolutePath + "' cannot be opened because it does not exist.", "Unable to Open Map", JOptionPane.ERROR_MESSAGE);
 			return;
 		}
 
@@ -1433,8 +1406,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		catch (Exception e)
 		{
 			e.printStackTrace();
-			JOptionPane.showMessageDialog(null, "Error while opening '" + absolutePath + "': " + e.getMessage(), "Error While Opening Map",
-					JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(null, "Error while opening '" + absolutePath + "': " + e.getMessage(), "Error While Opening Map", JOptionPane.ERROR_MESSAGE);
 			Logger.printError("Unable to open '" + absolutePath + "' due to an error:", e);
 		}
 	}
@@ -1447,13 +1419,12 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				MapSettings.convertOldCustomImagesFolder(settings.customImagesPath);
 
-				JOptionPane.showMessageDialog(null, "Your custom images folder has been automatically converted to the new structure.",
-						"Custom Images Folder Converted", JOptionPane.INFORMATION_MESSAGE);
+				JOptionPane.showMessageDialog(null, "Your custom images folder has been automatically converted to the new structure.", "Custom Images Folder Converted",
+						JOptionPane.INFORMATION_MESSAGE);
 			}
 			catch (IOException ex)
 			{
-				String errorMessage = "Error while restructuring custom images folder for " + settings.customImagesPath + ": "
-						+ ex.getMessage();
+				String errorMessage = "Error while restructuring custom images folder for " + settings.customImagesPath + ": " + ex.getMessage();
 				Logger.printError(errorMessage, ex);
 				JOptionPane.showMessageDialog(null, errorMessage, "Error", JOptionPane.ERROR_MESSAGE);
 			}
@@ -1482,8 +1453,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		}
 	}
 
-	public void updateDisplayedMapFromGeneratedMap(boolean updateScrollLocationIfZoomChanged, IntRectangle incrementalChangeArea,
-			boolean isOnlyZoomChange)
+	public void updateDisplayedMapFromGeneratedMap(boolean updateScrollLocationIfZoomChanged, IntRectangle incrementalChangeArea, boolean isOnlyZoomChange)
 	{
 		double oldZoom = zoom;
 		zoom = translateZoomLevel((String) toolsPanel.zoomComboBox.getSelectedItem());
@@ -1501,18 +1471,16 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				{
 					// Zoom toward the mouse's position, keeping the point
 					// currently under the mouse the same if possible.
-					scrollTo = new java.awt.Rectangle((int) (mousePosition.x * scale) - mousePosition.x + visible.x,
-							(int) (mousePosition.y * scale) - mousePosition.y + visible.y, visible.width, visible.height);
+					scrollTo = new java.awt.Rectangle((int) (mousePosition.x * scale) - mousePosition.x + visible.x, (int) (mousePosition.y * scale) - mousePosition.y + visible.y, visible.width,
+							visible.height);
 				}
 				else
 				{
 					// Zoom toward or away from the current center of the
 					// screen.
 					java.awt.Point currentCentroid = new java.awt.Point(visible.x + (visible.width / 2), visible.y + (visible.height / 2));
-					java.awt.Point targetCentroid = new java.awt.Point((int) (currentCentroid.x * scale),
-							(int) (currentCentroid.y * scale));
-					scrollTo = new java.awt.Rectangle(targetCentroid.x - visible.width / 2, targetCentroid.y - visible.height / 2,
-							visible.width, visible.height);
+					java.awt.Point targetCentroid = new java.awt.Point((int) (currentCentroid.x * scale), (int) (currentCentroid.y * scale));
+					scrollTo = new java.awt.Rectangle(targetCentroid.x - visible.width / 2, targetCentroid.y - visible.height / 2, visible.width, visible.height);
 				}
 			}
 
@@ -1534,8 +1502,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			if (method == Method.QUALITY)
 			{
 				// Can't incrementally zoom. Zoom the whole thing.
-				mapEditingPanel.setImage(AwtFactory
-						.unwrap(ImageHelper.scaleByWidth(AwtFactory.wrap(mapEditingPanel.mapFromMapCreator), zoomedWidth, method)));
+				mapEditingPanel.setImage(AwtFactory.unwrap(ImageHelper.scaleByWidth(AwtFactory.wrap(mapEditingPanel.mapFromMapCreator), zoomedWidth, method)));
 			}
 			else
 			{
@@ -1551,8 +1518,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					// I don't use ImageHelper.scaleInto for the full image case
 					// because it's 5x slower than the below
 					// method, which uses ImgScalr.
-					mapEditingPanel.setImage(AwtFactory
-							.unwrap(ImageHelper.scaleByWidth(AwtFactory.wrap(mapEditingPanel.mapFromMapCreator), zoomedWidth, method)));
+					mapEditingPanel.setImage(AwtFactory.unwrap(ImageHelper.scaleByWidth(AwtFactory.wrap(mapEditingPanel.mapFromMapCreator), zoomedWidth, method)));
 				}
 				else
 				{
@@ -1562,8 +1528,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					// image.
 					if (mapEditingPanel.mapFromMapCreator != mapEditingPanel.getImage())
 					{
-						ImageHelper.scaleInto(AwtFactory.wrap(mapEditingPanel.mapFromMapCreator),
-								AwtFactory.wrap(mapEditingPanel.getImage()), incrementalChangeArea);
+						ImageHelper.scaleInto(AwtFactory.wrap(mapEditingPanel.mapFromMapCreator), AwtFactory.wrap(mapEditingPanel.getImage()), incrementalChangeArea);
 					}
 				}
 			}
@@ -1618,12 +1583,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			if (mapEditingPanel.mapFromMapCreator != null)
 			{
 				final int additionalWidthToRemoveIDontKnowWhereItsCommingFrom = 2;
-				nortantis.geom.Dimension size = new nortantis.geom.Dimension(
-						mapEditingScrollPane.getSize().width - additionalWidthToRemoveIDontKnowWhereItsCommingFrom,
+				nortantis.geom.Dimension size = new nortantis.geom.Dimension(mapEditingScrollPane.getSize().width - additionalWidthToRemoveIDontKnowWhereItsCommingFrom,
 						mapEditingScrollPane.getSize().height - additionalWidthToRemoveIDontKnowWhereItsCommingFrom);
 
-				nortantis.geom.Dimension fitted = ImageHelper.fitDimensionsWithinBoundingBox(size,
-						mapEditingPanel.mapFromMapCreator.getWidth(), mapEditingPanel.mapFromMapCreator.getHeight());
+				nortantis.geom.Dimension fitted = ImageHelper.fitDimensionsWithinBoundingBox(size, mapEditingPanel.mapFromMapCreator.getWidth(), mapEditingPanel.mapFromMapCreator.getHeight());
 				return (fitted.width / mapEditingPanel.mapFromMapCreator.getWidth()) * mapEditingPanel.osScale;
 			}
 			else
@@ -1788,8 +1751,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			Dimension parentSize = getSize();
 			Dimension dialogSize = textSearchDialog.getSize();
 
-			textSearchDialog.setLocation(parentLocation.x + parentSize.width / 2 - dialogSize.width / 2,
-					parentLocation.y + parentSize.height - dialogSize.height - 18);
+			textSearchDialog.setLocation(parentLocation.x + parentSize.width / 2 - dialogSize.width / 2, parentLocation.y + parentSize.height - dialogSize.height - 18);
 
 			textSearchDialog.setVisible(true);
 		}
@@ -1886,8 +1848,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	public void saveSettingsAs(Component parent)
 	{
-		Path curPath = openSettingsFilePath == null ? FileSystemView.getFileSystemView().getDefaultDirectory().toPath()
-				: openSettingsFilePath;
+		Path curPath = openSettingsFilePath == null ? FileSystemView.getFileSystemView().getDefaultDirectory().toPath() : openSettingsFilePath;
 		File currentFolder = openSettingsFilePath == null ? curPath.toFile() : new File(FilenameUtils.getFullPath(curPath.toString()));
 		JFileChooser fileChooser = new JFileChooser();
 		fileChooser.setCurrentDirectory(currentFolder);
@@ -1971,8 +1932,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		String title;
 		if (openSettingsFilePath != null)
 		{
-			title = (showUnsavedChangesSymbol ? "✎ " : "") + FilenameUtils.getName(openSettingsFilePath.toString()) + " - "
-					+ frameTitleBase;
+			title = (showUnsavedChangesSymbol ? "✎ " : "") + FilenameUtils.getName(openSettingsFilePath.toString()) + " - " + frameTitleBase;
 		}
 		else
 		{
@@ -2104,8 +2064,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	private void setPlaceholderImage(String[] message)
 	{
-		mapEditingPanel.setImage(AwtFactory
-				.unwrap(ImageHelper.createPlaceholderImage(message, AwtFactory.wrap(SwingHelper.getTextColorForPlaceholderImages()))));
+		mapEditingPanel.setImage(AwtFactory.unwrap(ImageHelper.createPlaceholderImage(message, AwtFactory.wrap(SwingHelper.getTextColorForPlaceholderImages()))));
 
 		// Clear out the map from map creator so that causing the window to
 		// re-zoom while the placeholder image

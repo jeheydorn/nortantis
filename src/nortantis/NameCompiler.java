@@ -227,8 +227,7 @@ public class NameCompiler
 			return verb;
 		}
 
-		if (verb.length() >= 3 && !vowels.contains(verb.charAt(verb.length() - 1)) && vowels.contains(verb.charAt(verb.length() - 2))
-				&& vowels.contains(verb.charAt(verb.length() - 3)))
+		if (verb.length() >= 3 && !vowels.contains(verb.charAt(verb.length() - 1)) && vowels.contains(verb.charAt(verb.length() - 2)) && vowels.contains(verb.charAt(verb.length() - 3)))
 		{
 			// 2 vowels vowels by a consonant.
 			return verb + "ing";

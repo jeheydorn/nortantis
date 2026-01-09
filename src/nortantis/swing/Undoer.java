@@ -189,8 +189,7 @@ public class Undoer
 			mainWindow.toolsPanel.currentTool.onAfterUndoRedo();
 		}
 
-		MapChange changeWithPrevSettings = new MapChange(currentSettings, changeToRedo.updateType, changeToRedo.toolThatMadeChange,
-				changeToRedo.preRun);
+		MapChange changeWithPrevSettings = new MapChange(currentSettings, changeToRedo.updateType, changeToRedo.toolThatMadeChange, changeToRedo.preRun);
 		if (changeToRedo.preRun != null)
 		{
 			changeToRedo.preRun.run();

@@ -52,8 +52,7 @@ public class FontChooser
 		chooseButtonHolder.setLayout(new BoxLayout(chooseButtonHolder, BoxLayout.X_AXIS));
 		chooseButtonHolder.add(chooseButton);
 		chooseButtonHolder.add(Box.createHorizontalGlue());
-		RowHider hider = organizer.addLabelAndComponentsVertical(labelText, "",
-				Arrays.asList(displayHolder, Box.createVerticalStrut(spaceUnderFontDisplays), chooseButtonHolder));
+		RowHider hider = organizer.addLabelAndComponentsVertical(labelText, "", Arrays.asList(displayHolder, Box.createVerticalStrut(spaceUnderFontDisplays), chooseButtonHolder));
 		return hider;
 	}
 

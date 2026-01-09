@@ -262,8 +262,7 @@ public class Center implements Comparable<Center>
 	{
 		for (Edge edge : remaining)
 		{
-			if (current.v1 != null && (edge.v0 == current.v1 || edge.v1 == current.v1)
-					|| current.v0 != null && (edge.v1 == current.v0 || edge.v0 == current.v0))
+			if (current.v1 != null && (edge.v0 == current.v1 || edge.v1 == current.v1) || current.v0 != null && (edge.v1 == current.v0 || edge.v0 == current.v0))
 			{
 				return edge;
 			}

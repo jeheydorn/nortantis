@@ -127,8 +127,7 @@ public class ImageCache
 		// but if that did happen it would only result in a little bit of
 		// duplicated work, not a functional
 		// problem.
-		return scaledCache.getOrCreate(icon, () -> new ConcurrentHashMapF<>()).getOrCreate(size,
-				() -> ImageHelper.scale(icon, size.width, size.height, Method.QUALITY));
+		return scaledCache.getOrCreate(icon, () -> new ConcurrentHashMapF<>()).getOrCreate(size, () -> ImageHelper.scale(icon, size.width, size.height, Method.QUALITY));
 	}
 
 	/**
@@ -186,8 +185,7 @@ public class ImageCache
 					float[] filterHSB = filterColor.toArray();
 					float filterAlphaScale = filterColor.getAlpha() / 255f;
 
-					if ((fillWithColor && !fillColor.equals(Color.transparentBlack)) || !filterColor.equals(MapSettings.defaultIconFilterColor)
-							|| maximizeOpacity)
+					if ((fillWithColor && !fillColor.equals(Color.transparentBlack)) || !filterColor.equals(MapSettings.defaultIconFilterColor) || maximizeOpacity)
 					{
 						Image result = Image.create(imageAndMasks.image.getWidth(), imageAndMasks.image.getHeight(), ImageType.ARGB);
 						int[] resultData = result.getDataIntBased();
@@ -232,16 +230,13 @@ public class ImageCache
 								int filteredAlpha;
 								// Use filter color
 								float[] hsb = originalColor.getHSB();
-								filteredImageColor = Color.createFromHSB(hsb[0] + filterHSB[0] - (float) Math.floor(hsb[0] + filterHSB[0]),
-										Helper.clamp(hsb[1] + filterHSB[1], 0f, 1f), Helper.clamp(hsb[2] + filterHSB[2], 0f, 1f));
+								filteredImageColor = Color.createFromHSB(hsb[0] + filterHSB[0] - (float) Math.floor(hsb[0] + filterHSB[0]), Helper.clamp(hsb[1] + filterHSB[1], 0f, 1f),
+										Helper.clamp(hsb[2] + filterHSB[2], 0f, 1f));
 								filteredAlpha = Math.min(255, (int) (alpha * filterAlphaScale));
 
-								int r = Helper.linearComboBase255(filteredAlpha, filteredImageColor.getRed(),
-										(int) (fillColor.getRed() * fillColorScale));
-								int g = Helper.linearComboBase255(filteredAlpha, filteredImageColor.getGreen(),
-										(int) (fillColor.getGreen() * fillColorScale));
-								int b = Helper.linearComboBase255(filteredAlpha, filteredImageColor.getBlue(),
-										(int) (fillColor.getBlue() * fillColorScale));
+								int r = Helper.linearComboBase255(filteredAlpha, filteredImageColor.getRed(), (int) (fillColor.getRed() * fillColorScale));
+								int g = Helper.linearComboBase255(filteredAlpha, filteredImageColor.getGreen(), (int) (fillColor.getGreen() * fillColorScale));
+								int b = Helper.linearComboBase255(filteredAlpha, filteredImageColor.getBlue(), (int) (fillColor.getBlue() * fillColorScale));
 								int a = Math.max(filteredAlpha, Math.min(fillColor.getAlpha(), colorMask.getGrayLevel(x, y)));
 
 								result.setRGB(resultData, x, y, r, g, b, a);
@@ -354,8 +349,8 @@ public class ImageCache
 	 */
 	public Map<String, ImageAndMasks> getIconsByNameForGroup(IconType iconType, String groupName)
 	{
-		return iconsWithSizesCache.getOrCreate(iconType, () -> new ConcurrentHashMapF<>())
-				.getOrCreate((groupName == null ? "" : groupName).intern(), () -> loadIconsWithSizesAndAlphas(iconType, groupName));
+		return iconsWithSizesCache.getOrCreate(iconType, () -> new ConcurrentHashMapF<>()).getOrCreate((groupName == null ? "" : groupName).intern(),
+				() -> loadIconsWithSizesAndAlphas(iconType, groupName));
 	}
 
 	private record FilenameParams(String originalFileName, String fileNameBase, Double width, Integer alpha)
@@ -415,8 +410,7 @@ public class ImageCache
 				alpha = nameAndAlpha.getSecond();
 			}
 
-			baseNamesToParams.put(fileNameBaseWithoutEncodedParameters,
-					new FilenameParams(fileName, fileNameBaseWithoutEncodedParameters, nameAndWidth.getSecond(), alpha));
+			baseNamesToParams.put(fileNameBaseWithoutEncodedParameters, new FilenameParams(fileName, fileNameBaseWithoutEncodedParameters, nameAndWidth.getSecond(), alpha));
 
 		}
 
@@ -458,15 +452,13 @@ public class ImageCache
 				width = filenameParams.width;
 			}
 
-			imagesAndMasks.put(filenameParams.fileNameBase,
-					new ImageAndMasks(icon, iconType, width, artPack, groupName, filenameParams.fileNameBase));
+			imagesAndMasks.put(filenameParams.fileNameBase, new ImageAndMasks(icon, iconType, width, artPack, groupName, filenameParams.fileNameBase));
 		}
 
 		return imagesAndMasks;
 	}
 
-	private Tuple2<Image, Double> findIconToUseForReferenceWhenSizingOtherIcons(IconType iconType, String groupName,
-			Map<String, FilenameParams> baseNamesToParams)
+	private Tuple2<Image, Double> findIconToUseForReferenceWhenSizingOtherIcons(IconType iconType, String groupName, Map<String, FilenameParams> baseNamesToParams)
 	{
 		FilenameParams widest = Helper.maxElement(baseNamesToParams, (params1, params2) ->
 		{
@@ -509,8 +501,7 @@ public class ImageCache
 
 			Image icon = iconsByName.get(nameOfWidestOrTallest);
 			double widthOrHeight = getDefaultWidthOrHeight(iconType);
-			double width = isDefaultSizeByWidth(iconType) ? widthOrHeight
-					: IconDrawer.getDimensionsWhenScaledByHeight(icon.size(), widthOrHeight).width;
+			double width = isDefaultSizeByWidth(iconType) ? widthOrHeight : IconDrawer.getDimensionsWhenScaledByHeight(icon.size(), widthOrHeight).width;
 			return new Tuple2<>(icon, width);
 		}
 	}
@@ -770,8 +761,7 @@ public class ImageCache
 	private List<String> getIconGroupFileNames(IconType iconType, String groupName)
 	{
 		String groupNameToUse = groupName == null ? "" : groupName;
-		return iconGroupFilesNamesCache.getOrCreate(iconType, () -> new ConcurrentHashMapF<>()).getOrCreate(groupNameToUse,
-				() -> loadIconGroupFileNames(iconType, groupNameToUse));
+		return iconGroupFilesNamesCache.getOrCreate(iconType, () -> new ConcurrentHashMapF<>()).getOrCreate(groupNameToUse, () -> loadIconGroupFileNames(iconType, groupNameToUse));
 	}
 
 	public boolean hasNamedIcon(IconType iconType, String groupName, String iconName)

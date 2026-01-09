@@ -114,10 +114,8 @@ public class OverlayTool extends EditorTool
 						if (overlayPosition != null)
 						{
 							// Reduce width by 1 pixel so that right side draws inside the map when the overlay is the size of the map.
-							IntRectangle adjusted = new IntRectangle(overlayPosition.x, overlayPosition.y, overlayPosition.width - 1,
-									overlayPosition.height);
-							mapEditingPanel.showIconEditToolsAt(adjusted.toRectangle(), true, IconEditToolsLocation.InsideBox,
-									IconEditToolsSize.Large, true, false);
+							IntRectangle adjusted = new IntRectangle(overlayPosition.x, overlayPosition.y, overlayPosition.width - 1, overlayPosition.height);
+							mapEditingPanel.showIconEditToolsAt(adjusted.toRectangle(), true, IconEditToolsLocation.InsideBox, IconEditToolsSize.Large, true, false);
 						}
 						else
 						{
@@ -225,8 +223,7 @@ public class OverlayTool extends EditorTool
 			overlayImageChooseButtonPanel.add(btnsBrowseOverlayImage);
 			overlayImageChooseButtonPanel.add(Box.createHorizontalGlue());
 
-			organizer.addLabelAndComponentsVertical("Image:",
-					"Image to draw over the map (not including borders). This is useful when drawing a map from a reference image.",
+			organizer.addLabelAndComponentsVertical("Image:", "Image to draw over the map (not including borders). This is useful when drawing a map from a reference image.",
 					Arrays.asList(overlayImagePath, Box.createVerticalStrut(5), overlayImageChooseButtonPanel));
 		}
 
@@ -237,10 +234,8 @@ public class OverlayTool extends EditorTool
 			overlayImageTransparencySlider.setMaximum(100);
 			overlayImageTransparencySlider.setMinimum(0);
 			SwingHelper.addListener(overlayImageTransparencySlider, () -> handleOverlayImageChange());
-			SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(overlayImageTransparencySlider,
-					(value) -> String.format("%s%%", value), null, 30);
-			sliderWithDisplay.addToOrganizer(organizer, "Transparency:",
-					"Transparency to add to the overlay image to help with seeing the map underneath it.");
+			SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(overlayImageTransparencySlider, (value) -> String.format("%s%%", value), null, 30);
+			sliderWithDisplay.addToOrganizer(organizer, "Transparency:", "Transparency to add to the overlay image to help with seeing the map underneath it.");
 		}
 
 		{
@@ -258,8 +253,7 @@ public class OverlayTool extends EditorTool
 			});
 
 			fitInsideBorderButton = new JButton("Fit Inside Border");
-			fitInsideBorderButton.setToolTipText(
-					"Resize and position the overlay image to fit the drawable space on the map (the ocean/land), not including the border.");
+			fitInsideBorderButton.setToolTipText("Resize and position the overlay image to fit the drawable space on the map (the ocean/land), not including the border.");
 			fitInsideBorderButton.addActionListener(new ActionListener()
 			{
 				@Override
@@ -368,8 +362,7 @@ public class OverlayTool extends EditorTool
 		{
 			double deltaX = (int) (graphPointMouseLocation.x - graphPointMousePressedLocation.x);
 			double deltaY = (int) (graphPointMouseLocation.y - graphPointMousePressedLocation.y);
-			overlayOffsetResolutionInvariant = overlayOffsetBeforeEdit.add(deltaX / mainWindow.displayQualityScale,
-					deltaY / mainWindow.displayQualityScale);
+			overlayOffsetResolutionInvariant = overlayOffsetBeforeEdit.add(deltaX / mainWindow.displayQualityScale, deltaY / mainWindow.displayQualityScale);
 		}
 		else if (isScaling)
 		{
@@ -421,8 +414,7 @@ public class OverlayTool extends EditorTool
 		IntRectangle overlayPosition = calcOverlayPositionForScale(overlayScale);
 		if (overlayPosition != null)
 		{
-			double scale = graphPointMouseLocation.distanceTo(overlayPosition.toRectangle().getCenter())
-					/ graphPointMousePressedLocation.distanceTo(overlayPosition.toRectangle().getCenter());
+			double scale = graphPointMouseLocation.distanceTo(overlayPosition.toRectangle().getCenter()) / graphPointMousePressedLocation.distanceTo(overlayPosition.toRectangle().getCenter());
 
 			return scale;
 		}
@@ -436,8 +428,7 @@ public class OverlayTool extends EditorTool
 		if (updater != null && updater.mapParts != null && updater.mapParts.background != null)
 		{
 			IntDimension mapSize = updater.mapParts.background.getMapBoundsIncludingBorder().toIntDimension();
-			Tuple2<IntRectangle, Image> tuple = MapCreator.getOverlayPositionAndImage(overlayImagePath.getText(), scale,
-					overlayOffsetResolutionInvariant, mainWindow.displayQualityScale, mapSize);
+			Tuple2<IntRectangle, Image> tuple = MapCreator.getOverlayPositionAndImage(overlayImagePath.getText(), scale, overlayOffsetResolutionInvariant, mainWindow.displayQualityScale, mapSize);
 			if (tuple != null)
 			{
 				return tuple.getFirst();
@@ -469,8 +460,7 @@ public class OverlayTool extends EditorTool
 	}
 
 	@Override
-	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean changeEffectsBackgroundImages,
-			boolean willDoImagesRefresh)
+	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean changeEffectsBackgroundImages, boolean willDoImagesRefresh)
 	{
 		try
 		{
@@ -495,8 +485,7 @@ public class OverlayTool extends EditorTool
 		settings.drawOverlayImage = drawOverlayImageCheckbox.isSelected();
 		settings.overlayImagePath = FileHelper.replaceHomeFolderWithPlaceholder(overlayImagePath.getText());
 		settings.overlayImageTransparency = overlayImageTransparencySlider.getValue();
-		settings.overlayOffsetResolutionInvariant = overlayOffsetResolutionInvariant == null ? new Point(0, 0)
-				: overlayOffsetResolutionInvariant;
+		settings.overlayOffsetResolutionInvariant = overlayOffsetResolutionInvariant == null ? new Point(0, 0) : overlayOffsetResolutionInvariant;
 		settings.overlayScale = overlayScale;
 	}
 

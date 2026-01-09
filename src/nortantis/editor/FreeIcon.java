@@ -30,7 +30,8 @@ public class FreeIcon
 	 */
 	public final String iconName;
 	/**
-	 * Where the center of the icon will be drawn on the map. This is resolution invariant, meaning it is the location at 100% resolution, before integer truncation.
+	 * Where the center of the icon will be drawn on the map. This is resolution invariant, meaning it is the location at 100% resolution,
+	 * before integer truncation.
 	 */
 	public final Point locationResolutionInvariant;
 	/**
@@ -60,7 +61,8 @@ public class FreeIcon
 	/**
 	 * For creating a new FreeIcon.
 	 * <p>
-	 * Note - this constructor must never be used to re-create a FreeIcon with a new scale (to essentially change the scale) because that would throw off originalScale.
+	 * Note - this constructor must never be used to re-create a FreeIcon with a new scale (to essentially change the scale) because that
+	 * would throw off originalScale.
 	 * </p>
 	 */
 	public FreeIcon(double resolutionScale, Point loc, double scale, IconType type, String artPack, String groupId, int iconIndex, Integer centerIndex, Color color, HSBColor filterColor,
@@ -72,13 +74,14 @@ public class FreeIcon
 	/**
 	 * For creating a new FreeIcon.
 	 * <p>
-	 * Note - this constructor must never be used to re-create a FreeIcon with a new scale (to essentially change the scale) because that would throw off originalScale.
+	 * Note - this constructor must never be used to re-create a FreeIcon with a new scale (to essentially change the scale) because that
+	 * would throw off originalScale.
 	 * </p>
 	 *
 	 * @param scale
-	 * 		Scale before applying resolutionScale or icon-type level scaling.
+	 *            Scale before applying resolutionScale or icon-type level scaling.
 	 * @param artPack
-	 * 		The art pack the image is from.
+	 *            The art pack the image is from.
 	 */
 	public FreeIcon(double resolutionScale, Point loc, double scale, IconType type, String artPack, String groupId, int iconIndex, Integer centerIndex, double density, Color color,
 			HSBColor filterColor, boolean maximizeOpacity, boolean fillWithColor)
@@ -89,11 +92,12 @@ public class FreeIcon
 	/**
 	 * For creating a new FreeIcon.
 	 * <p>
-	 * Note - this constructor must never be used to re-create a FreeIcon with a new scale (to essentially change the scale) because that would throw off originalScale.
+	 * Note - this constructor must never be used to re-create a FreeIcon with a new scale (to essentially change the scale) because that
+	 * would throw off originalScale.
 	 * </p>
 	 *
 	 * @param scale
-	 * 		Scale before applying resolutionScale or icon-type level scaling.
+	 *            Scale before applying resolutionScale or icon-type level scaling.
 	 */
 	public FreeIcon(double resolutionScale, Point loc, double scale, IconType type, String artPack, String groupId, String iconName, Integer centerIndex, Color color, HSBColor filterColor,
 			boolean maximizeOpacity, boolean fillWithColor)
@@ -104,7 +108,8 @@ public class FreeIcon
 	/**
 	 * For creating a new FreeIcon.
 	 * <p>
-	 * Note - this constructor must never be used to re-create a FreeIcon with a new scale (to essentially change the scale) because that would throw off originalScale.
+	 * Note - this constructor must never be used to re-create a FreeIcon with a new scale (to essentially change the scale) because that
+	 * would throw off originalScale.
 	 * </p>
 	 */
 	public FreeIcon(Point locationResolutionInvariant, double scale, IconType type, String artPack, String groupId, int iconIndex, String iconName, Integer centerIndex, double density, Color color,
@@ -192,13 +197,13 @@ public class FreeIcon
 	 * Converts a free icon to an icon draw task.
 	 *
 	 * @param customImagesFolder
-	 * 		Either empty or the custom images folder
+	 *            Either empty or the custom images folder
 	 * @param resolutionScale
-	 * 		MapSettings.resolution that we're currently drawing at.
+	 *            MapSettings.resolution that we're currently drawing at.
 	 * @param typeLevelScale
-	 * 		The scaling from the sliders that scale all icons of a type.
+	 *            The scaling from the sliders that scale all icons of a type.
 	 * @param baseWidth
-	 * 		The width of the icon before type-level scaling. Should already be adjusted for resolution.
+	 *            The width of the icon before type-level scaling. Should already be adjusted for resolution.
 	 * @return a new IconDrawTask.
 	 */
 	public IconDrawTask toIconDrawTask(String customImagesFolder, double resolutionScale, double typeLevelScale, double baseWidth)

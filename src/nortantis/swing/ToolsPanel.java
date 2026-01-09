@@ -63,8 +63,8 @@ public class ToolsPanel extends JPanel
 		this.updater = updater;
 
 		// Setup tools
-		tools = Arrays.asList(new LandWaterTool(mainWindow, this, updater), new IconsTool(mainWindow, this, updater),
-				new TextTool(mainWindow, this, updater), new OverlayTool(mainWindow, null, updater));
+		tools = Arrays.asList(new LandWaterTool(mainWindow, this, updater), new IconsTool(mainWindow, this, updater), new TextTool(mainWindow, this, updater),
+				new OverlayTool(mainWindow, null, updater));
 		currentTool = tools.get(0);
 
 		setPreferredSize(new Dimension(SwingHelper.sidePanelPreferredWidth, mainWindow.getContentPane().getHeight()));
@@ -131,8 +131,7 @@ public class ToolsPanel extends JPanel
 		// Progress bar
 		JPanel progressBarPanel = new JPanel();
 		progressBarPanel.setLayout(new BoxLayout(progressBarPanel, BoxLayout.X_AXIS));
-		progressBarPanel.setBorder(BorderFactory.createEmptyBorder(0, SwingHelper.borderWidthBetweenComponents - 2, 0,
-				SwingHelper.borderWidthBetweenComponents));
+		progressBarPanel.setBorder(BorderFactory.createEmptyBorder(0, SwingHelper.borderWidthBetweenComponents - 2, 0, SwingHelper.borderWidthBetweenComponents));
 		progressBar = new JProgressBar();
 		progressBar.setStringPainted(true);
 		progressBar.setString("Drawing...");
@@ -144,13 +143,11 @@ public class ToolsPanel extends JPanel
 		// Setup bottom panel
 		bottomPanel = new JPanel();
 		bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.X_AXIS));
-		bottomPanel.setBorder(
-				BorderFactory.createEmptyBorder(SwingHelper.borderWidthBetweenComponents, SwingHelper.borderWidthBetweenComponents,
-						SwingHelper.borderWidthBetweenComponents, SwingHelper.borderWidthBetweenComponents));
+		bottomPanel.setBorder(BorderFactory.createEmptyBorder(SwingHelper.borderWidthBetweenComponents, SwingHelper.borderWidthBetweenComponents, SwingHelper.borderWidthBetweenComponents,
+				SwingHelper.borderWidthBetweenComponents));
 
 		JLabel lblZoom = new JLabel("Zoom");
-		lblZoom.setToolTipText(
-				"Zoom the map in or out (mouse wheel). To view more details at higher zoom levels," + " adjust the 'Display quality'.");
+		lblZoom.setToolTipText("Zoom the map in or out (mouse wheel). To view more details at higher zoom levels," + " adjust the 'Display quality'.");
 
 		zoomLevels = Arrays.asList(new String[] { fitToWindowZoomLevel, "50%", "75%", "100%", "150%", "200%", "275%" });
 		zoomComboBox = new JComboBoxFixed<>();
@@ -174,8 +171,7 @@ public class ToolsPanel extends JPanel
 		bottomPanel.add(Box.createRigidArea(new Dimension(12, 4)));
 
 		JLabel lblDisplayQuality = new JLabel("Display Quality");
-		lblDisplayQuality.setToolTipText(
-				"Change the quality of the map displayed in the editor. Does not apply when exporting the map to an image. Higher values make the editor slower.");
+		lblDisplayQuality.setToolTipText("Change the quality of the map displayed in the editor. Does not apply when exporting the map to an image. Higher values make the editor slower.");
 
 		displayQualityComboBox = new JComboBoxFixed<>();
 		for (DisplayQuality quality : DisplayQuality.values())
@@ -220,16 +216,13 @@ public class ToolsPanel extends JPanel
 
 	private void updateBordersThatHaveColors()
 	{
-		toolSelectPanel
-				.setBorder(BorderFactory.createTitledBorder(new LineBorder(UIManager.getColor("controlShadow"), 1), "Editing Tools"));
+		toolSelectPanel.setBorder(BorderFactory.createTitledBorder(new LineBorder(UIManager.getColor("controlShadow"), 1), "Editing Tools"));
 
-		toolOptionsPanelBorder = BorderFactory.createTitledBorder(new LineBorder(UIManager.getColor("controlShadow"), 1),
-				currentTool.getToolbarName() + " Options");
+		toolOptionsPanelBorder = BorderFactory.createTitledBorder(new LineBorder(UIManager.getColor("controlShadow"), 1), currentTool.getToolbarName() + " Options");
 		toolOptionsPanelContainer.setBorder(toolOptionsPanelBorder);
 	}
 
-	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean changeEffectsBackgroundImages,
-			boolean willDoImageRefresh)
+	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean changeEffectsBackgroundImages, boolean willDoImageRefresh)
 	{
 		for (EditorTool tool : tools)
 		{
@@ -381,8 +374,7 @@ public class ToolsPanel extends JPanel
 		}
 		else
 		{
-			throw new IllegalArgumentException(
-					"Unrecognized look and feel for getting color for toggle buttons: " + UserPreferences.getInstance().lookAndFeel);
+			throw new IllegalArgumentException("Unrecognized look and feel for getting color for toggle buttons: " + UserPreferences.getInstance().lookAndFeel);
 		}
 		return new Color(shade, shade, shade);
 	}

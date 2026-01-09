@@ -86,9 +86,7 @@ public class OSHelper
 		}
 		else
 		{
-			JOptionPane.showMessageDialog(null,
-					"Unable to open the folder '" + folder + "'. Opening folders is not supported on your system.", "Error",
-					JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(null, "Unable to open the folder '" + folder + "'. Opening folders is not supported on your system.", "Error", JOptionPane.ERROR_MESSAGE);
 		}
 	}
 }

@@ -14,8 +14,7 @@ public class ExtractedBook
 	public Set<Tuple2Comp<String, String>> nounAdjectivePairs;
 	public Set<Tuple2Comp<String, String>> nounVerbPairs;
 
-	public ExtractedBook(Set<String> placeNames, Set<String> personNames, Set<Tuple2Comp<String, String>> nounAdjectivePairs,
-			Set<Tuple2Comp<String, String>> nounVerbPairs)
+	public ExtractedBook(Set<String> placeNames, Set<String> personNames, Set<Tuple2Comp<String, String>> nounAdjectivePairs, Set<Tuple2Comp<String, String>> nounVerbPairs)
 	{
 		this.placeNames = placeNames;
 		this.personNames = personNames;

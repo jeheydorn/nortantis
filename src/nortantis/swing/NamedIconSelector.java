@@ -45,8 +45,7 @@ public class NamedIconSelector
 		{
 			JPanel buttonsPanel = new JPanel();
 			buttonsPanel.setLayout(new WrapLayout());
-			for (String fileNameWithoutWidthOrExtension : ImageCache.getInstance(artPack, customImagesPath)
-					.getIconGroupFileNamesWithoutWidthOrExtensionAsSet(type, groupId))
+			for (String fileNameWithoutWidthOrExtension : ImageCache.getInstance(artPack, customImagesPath).getIconGroupFileNamesWithoutWidthOrExtensionAsSet(type, groupId))
 			{
 				UnscaledImageToggleButton toggleButton = new UnscaledImageToggleButton();
 				toggleButton.setToolTipText(fileNameWithoutWidthOrExtension);

@@ -203,8 +203,7 @@ public final class Edge
 
 	public String toString()
 	{
-		return "Edge " + _edgeIndex + "; sites " + _sites.get(LR.LEFT) + ", " + _sites.get(LR.RIGHT) + "; endVertices "
-				+ (_leftVertex != null ? _leftVertex.get_vertexIndex() : "null") + ", "
+		return "Edge " + _edgeIndex + "; sites " + _sites.get(LR.LEFT) + ", " + _sites.get(LR.RIGHT) + "; endVertices " + (_leftVertex != null ? _leftVertex.get_vertexIndex() : "null") + ", "
 				+ (_rightVertex != null ? _rightVertex.get_vertexIndex() : "null") + "::";
 	}
 

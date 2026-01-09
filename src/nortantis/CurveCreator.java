@@ -105,8 +105,7 @@ public class CurveCreator
 			// and two control points. So in that case, this code is functionally required.
 			final double fakeControlPointWeight = 1.0;
 			Point p0 = path.get(0).add(path.get(0).subtract(path.get(1)).mult(fakeControlPointWeight));
-			Point p3 = path.get(path.size() - 1)
-					.add(path.get(path.size() - 1).subtract(path.get(path.size() - 2)).mult(fakeControlPointWeight));
+			Point p3 = path.get(path.size() - 1).add(path.get(path.size() - 1).subtract(path.get(path.size() - 2)).mult(fakeControlPointWeight));
 
 			pathToUse = new ArrayList<>();
 			pathToUse.add(p0);

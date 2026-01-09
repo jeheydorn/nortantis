@@ -180,8 +180,7 @@ public class ImageHelper
 			int upperLeftY = Math.max(0, (int) (boundsInSource.y * scale));
 			// The +1's below are because I'm padding the width and height by 1
 			// pixel to account for integer truncation.
-			pixelsToUpdate = new IntRectangle(upperLeftX, upperLeftY,
-					Math.min((int) (boundsInSource.width * scale) + 1, target.getWidth() - 1 - upperLeftX),
+			pixelsToUpdate = new IntRectangle(upperLeftX, upperLeftY, Math.min((int) (boundsInSource.width * scale) + 1, target.getWidth() - 1 - upperLeftX),
 					Math.min((int) (boundsInSource.height * scale) + 1, target.getHeight() - 1 - upperLeftY));
 		}
 
@@ -248,8 +247,7 @@ public class ImageHelper
 			{
 				double yDistanceFromCenter = Math.abs(size - y - 0.5);
 				// Find the distance from the center (0,0).
-				double distanceFromCenter = Math
-						.sqrt(xDistanceFromCenter * xDistanceFromCenter + yDistanceFromCenter * yDistanceFromCenter);
+				double distanceFromCenter = Math.sqrt(xDistanceFromCenter * xDistanceFromCenter + yDistanceFromCenter * yDistanceFromCenter);
 				kernel[y][x] = (float) dist.density(distanceFromCenter);
 			}
 		}
@@ -301,8 +299,7 @@ public class ImageHelper
 			{
 				double yDistanceFromCenter = Math.abs(size / 2.0 - y);
 				// Find the distance from the center (0,0).
-				double distanceFromCenter = Math
-						.sqrt(xDistanceFromCenter * xDistanceFromCenter + yDistanceFromCenter * yDistanceFromCenter);
+				double distanceFromCenter = Math.sqrt(xDistanceFromCenter * xDistanceFromCenter + yDistanceFromCenter * yDistanceFromCenter);
 				kernel[y][x] = (float) (1.0 / (Math.pow(distanceFromCenter, p)));
 			}
 		}
@@ -327,8 +324,7 @@ public class ImageHelper
 			{
 				double yDistanceFromCenter = Math.abs(size / 2.0 - y - 0.5);
 				// Find the distance from the center (0,0).
-				double distanceFromCenter = Math
-						.sqrt(xDistanceFromCenter * xDistanceFromCenter + yDistanceFromCenter * yDistanceFromCenter);
+				double distanceFromCenter = Math.sqrt(xDistanceFromCenter * xDistanceFromCenter + yDistanceFromCenter * yDistanceFromCenter);
 				kernel[y][x] = Math.max(0, (float) dist.value(distanceFromCenter * scale));
 			}
 		}
@@ -429,13 +425,11 @@ public class ImageHelper
 
 		if (image1.getType() != ImageType.RGB && image1.getType() != ImageType.ARGB)
 		{
-			throw new IllegalArgumentException(
-					"Image 1 must be type " + ImageType.RGB + " or " + ImageType.ARGB + ", but was type " + image1.getType() + ".");
+			throw new IllegalArgumentException("Image 1 must be type " + ImageType.RGB + " or " + ImageType.ARGB + ", but was type " + image1.getType() + ".");
 		}
 		if (image2.getType() != ImageType.RGB && image2.getType() != ImageType.ARGB)
 		{
-			throw new IllegalArgumentException(
-					"Image 2 must be type " + ImageType.RGB + " or " + ImageType.ARGB + ", but was type " + image2.getType() + ".");
+			throw new IllegalArgumentException("Image 2 must be type " + ImageType.RGB + " or " + ImageType.ARGB + ", but was type " + image2.getType() + ".");
 		}
 
 		ImageType resultType;
@@ -523,13 +517,11 @@ public class ImageHelper
 
 		if (image1.getType() != ImageType.RGB && image1.getType() != ImageType.ARGB)
 		{
-			throw new IllegalArgumentException(
-					"Image 1 must be type " + ImageType.RGB + " or " + ImageType.ARGB + ", but was type " + image1.getType() + ".");
+			throw new IllegalArgumentException("Image 1 must be type " + ImageType.RGB + " or " + ImageType.ARGB + ", but was type " + image1.getType() + ".");
 		}
 		if (image2.getType() != ImageType.RGB && image2.getType() != ImageType.ARGB)
 		{
-			throw new IllegalArgumentException(
-					"Image 2 must be type " + ImageType.RGB + " or " + ImageType.ARGB + ", but was type " + image2.getType() + ".");
+			throw new IllegalArgumentException("Image 2 must be type " + ImageType.RGB + " or " + ImageType.ARGB + ", but was type " + image2.getType() + ".");
 		}
 
 		IntRectangle image1Bounds = new IntRectangle(0, 0, image1.getWidth(), image1.getHeight());
@@ -578,8 +570,7 @@ public class ImageHelper
 		if (image.getWidth() != mask.getWidth())
 			throw new IllegalArgumentException("Mask width is " + mask.getWidth() + " but image has width " + image.getWidth() + ".");
 		if (image.getHeight() != mask.getHeight())
-			throw new IllegalArgumentException(
-					"In maskWithColor, image height was " + image.getHeight() + " but mask height was " + mask.getHeight());
+			throw new IllegalArgumentException("In maskWithColor, image height was " + image.getHeight() + " but mask height was " + mask.getHeight());
 
 		return maskWithColorInRegion(image, color, mask, invertMask, new IntPoint(0, 0));
 	}
@@ -819,8 +810,7 @@ public class ImageHelper
 				}
 
 				Color originalColor = image.getPixelColor(x, y);
-				result.setPixelColor(x, y, Color.create(originalColor.getRed(), originalColor.getGreen(), originalColor.getBlue(),
-						Math.min(maskLevel, originalColor.getAlpha())));
+				result.setPixelColor(x, y, Color.create(originalColor.getRed(), originalColor.getGreen(), originalColor.getBlue(), Math.min(maskLevel, originalColor.getAlpha())));
 			}
 		return result;
 	}
@@ -844,8 +834,7 @@ public class ImageHelper
 
 				int alphaLevel = alphaSource.getAlpha(x, y);
 				Color originalColor = target.getPixelColor(x, y);
-				result.setPixelColor(x, y,
-						Color.create(originalColor.getRed(), originalColor.getGreen(), originalColor.getBlue(), alphaLevel));
+				result.setPixelColor(x, y, Color.create(originalColor.getRed(), originalColor.getGreen(), originalColor.getBlue(), alphaLevel));
 			}
 		return result;
 	}
@@ -865,20 +854,17 @@ public class ImageHelper
 			throw new IllegalArgumentException("Alpha channel image type must be type ImageType.Grayscale.");
 
 		if (redChanel.getWidth() != alphaChanel.getWidth())
-			throw new IllegalArgumentException(
-					"Alpha channel width is " + alphaChanel.getWidth() + " but red channel image has width " + redChanel.getWidth() + ".");
+			throw new IllegalArgumentException("Alpha channel width is " + alphaChanel.getWidth() + " but red channel image has width " + redChanel.getWidth() + ".");
 		if (redChanel.getHeight() != alphaChanel.getHeight())
 			throw new IllegalArgumentException();
 
 		if (greenChanel.getWidth() != alphaChanel.getWidth())
-			throw new IllegalArgumentException("Alpha channel width is " + alphaChanel.getWidth() + " but green channel image has width "
-					+ greenChanel.getWidth() + ".");
+			throw new IllegalArgumentException("Alpha channel width is " + alphaChanel.getWidth() + " but green channel image has width " + greenChanel.getWidth() + ".");
 		if (greenChanel.getHeight() != alphaChanel.getHeight())
 			throw new IllegalArgumentException();
 
 		if (blueChanel.getWidth() != alphaChanel.getWidth())
-			throw new IllegalArgumentException(
-					"Alpha channel width is " + alphaChanel.getWidth() + " but blue channel image has width " + blueChanel.getWidth() + ".");
+			throw new IllegalArgumentException("Alpha channel width is " + alphaChanel.getWidth() + " but blue channel image has width " + blueChanel.getWidth() + ".");
 		if (blueChanel.getHeight() != alphaChanel.getHeight())
 			throw new IllegalArgumentException();
 
@@ -921,15 +907,13 @@ public class ImageHelper
 			throw new IllegalArgumentException("Expected mask to be type ImageType.Grayscale.");
 
 		if (image1.getWidth() != image2.getWidth())
-			throw new IllegalArgumentException(
-					"Image widths do not match. image1 width: " + image1.getWidth() + ", image 2 width: " + image2.getWidth());
+			throw new IllegalArgumentException("Image widths do not match. image1 width: " + image1.getWidth() + ", image 2 width: " + image2.getWidth());
 		if (image1.getHeight() != image2.getHeight())
 			throw new IllegalArgumentException();
 
 		if (image1.hasAlpha() || image2.hasAlpha())
 		{
-			Rectangle rotatedMaskBounds = new RotatedRectangle(new Point(0, 0), mask.getWidth(), mask.getHeight(), angle,
-					pivot.subtract(new Point(xLoc, yLoc))).getBounds();
+			Rectangle rotatedMaskBounds = new RotatedRectangle(new Point(0, 0), mask.getWidth(), mask.getHeight(), angle, pivot.subtract(new Point(xLoc, yLoc))).getBounds();
 			Image maskRotated = Image.create((int) rotatedMaskBounds.width, (int) rotatedMaskBounds.height, mask.getType());
 			{
 				Painter p = maskRotated.createPainter(DrawQuality.High);
@@ -938,8 +922,7 @@ public class ImageHelper
 				p.drawImage(mask, 0, 0);
 			}
 
-			Rectangle rotatedBounds = new RotatedRectangle(new Point(xLoc, yLoc), mask.getWidth(), mask.getHeight(), angle, pivot)
-					.getBounds();
+			Rectangle rotatedBounds = new RotatedRectangle(new Point(xLoc, yLoc), mask.getWidth(), mask.getHeight(), angle, pivot).getBounds();
 			IntPoint maskOffset = rotatedBounds.upperLeftCorner().toIntPointRounded();
 			maskWithImageInPlace(image1, image2, maskRotated, maskOffset, true);
 		}
@@ -1004,8 +987,7 @@ public class ImageHelper
 
 	public static Image copySnippet(Image source, IntRectangle boundsInSourceToCopyFrom)
 	{
-		return copySnippet(source, boundsInSourceToCopyFrom.x, boundsInSourceToCopyFrom.y, boundsInSourceToCopyFrom.width,
-				boundsInSourceToCopyFrom.height);
+		return copySnippet(source, boundsInSourceToCopyFrom.x, boundsInSourceToCopyFrom.y, boundsInSourceToCopyFrom.width, boundsInSourceToCopyFrom.height);
 	}
 
 	/**
@@ -1039,8 +1021,7 @@ public class ImageHelper
 
 	public static Image copySnippetPreservingAlphaOfTransparentPixels(Image source, IntRectangle boundsInSourceToCopyFrom)
 	{
-		return copySnippetPreservingAlphaOfTransparentPixels(source, boundsInSourceToCopyFrom.x, boundsInSourceToCopyFrom.y,
-				boundsInSourceToCopyFrom.width, boundsInSourceToCopyFrom.height);
+		return copySnippetPreservingAlphaOfTransparentPixels(source, boundsInSourceToCopyFrom.x, boundsInSourceToCopyFrom.y, boundsInSourceToCopyFrom.width, boundsInSourceToCopyFrom.height);
 	}
 
 	/**
@@ -1138,8 +1119,7 @@ public class ImageHelper
 		return convolveGrayscaleThenSetContrast(img, kernel, true, 0f, 1f, paddImageToAvoidWrapping).getSecond();
 	}
 
-	public static Tuple2<ComplexArray, Image> convolveGrayscaleThenSetContrast(Image img, float[][] kernel, boolean setContrast,
-			float contrastMin, float contrastMax, boolean paddImageToAvoidWrapping)
+	public static Tuple2<ComplexArray, Image> convolveGrayscaleThenSetContrast(Image img, float[][] kernel, boolean setContrast, float contrastMin, float contrastMax, boolean paddImageToAvoidWrapping)
 	{
 		ComplexArray data = convolveGrayscale(img, kernel, paddImageToAvoidWrapping);
 
@@ -1149,8 +1129,7 @@ public class ImageHelper
 		data.moveRealToLeftSide();
 		data.swapQuadrantsOfLeftSideInPlace();
 
-		return new Tuple2<>(data,
-				realToImage(data, resultType, img.getWidth(), img.getHeight(), setContrast, contrastMin, contrastMax, false, 0f));
+		return new Tuple2<>(data, realToImage(data, resultType, img.getWidth(), img.getHeight(), setContrast, contrastMin, contrastMax, false, 0f));
 	}
 
 	/**
@@ -1188,8 +1167,7 @@ public class ImageHelper
 	 *            edges. Set this flag to add black padding pixels to the edge of the image to avoid this.
 	 * @return The convolved image.
 	 */
-	public static Image convolveGrayscaleThenScale(Image img, float[][] kernel, float scale, boolean paddImageToAvoidWrapping,
-			ImageType resultType)
+	public static Image convolveGrayscaleThenScale(Image img, float[][] kernel, float scale, boolean paddImageToAvoidWrapping, ImageType resultType)
 	{
 		ComplexArray data = convolveGrayscale(img, kernel, paddImageToAvoidWrapping);
 
@@ -1224,8 +1202,7 @@ public class ImageHelper
 		return data;
 	}
 
-	public static Image realToImage(ComplexArray data, ImageType type, int imageWidth, int imageHeight, boolean setContrast,
-			float contrastMin, float contrastMax, boolean scaleLevels, float scale)
+	public static Image realToImage(ComplexArray data, ImageType type, int imageWidth, int imageHeight, boolean setContrast, float contrastMin, float contrastMax, boolean scaleLevels, float scale)
 	{
 		int imgRowPaddingOver2 = (data.getHeight() - imageHeight) / 2;
 		int imgColPaddingOver2 = (data.getWidth() - imageWidth) / 2;
@@ -1745,8 +1722,7 @@ public class ImageHelper
 	{
 		if (!target.size().equals(source.size()))
 		{
-			throw new IllegalArgumentException(
-					"Source and target must be the same size. Source size: " + source.size() + ", target size: " + target.size());
+			throw new IllegalArgumentException("Source and target must be the same size. Source size: " + source.size() + ", target size: " + target.size());
 		}
 
 		for (int y = 0; y < source.getHeight(); y++)
@@ -1777,8 +1753,7 @@ public class ImageHelper
 
 		if (!toThreshold.size().equals(toSubtractFrom.size()))
 		{
-			throw new IllegalArgumentException("Images for thresholding and subtracting must be the same size. First size: "
-					+ toThreshold.size() + ", second size: " + toSubtractFrom.size());
+			throw new IllegalArgumentException("Images for thresholding and subtracting must be the same size. First size: " + toThreshold.size() + ", second size: " + toSubtractFrom.size());
 		}
 
 		ThreadHelper.getInstance().processRowsInParallel(0, toThreshold.getHeight(), (y) ->
@@ -1808,8 +1783,7 @@ public class ImageHelper
 
 		if (!toThreshold.size().equals(toAddTo.size()))
 		{
-			throw new IllegalArgumentException("Images for thresholding and adding must be the same size. First size: " + toThreshold.size()
-					+ ", second size: " + toAddTo.size());
+			throw new IllegalArgumentException("Images for thresholding and adding must be the same size. First size: " + toThreshold.size() + ", second size: " + toAddTo.size());
 		}
 
 		ThreadHelper.getInstance().processRowsInParallel(0, toThreshold.getHeight(), (y) ->
@@ -1914,17 +1888,15 @@ public class ImageHelper
 	 * Extracts the snippet in source defined by boundsInSourceToCopyFrom and pastes that snippet into target at the location defined by
 	 * upperLeftCornerToPasteIntoInTarget.
 	 */
-	public static void copySnippetFromSourceAndPasteIntoTarget(Image target, Image source, IntPoint upperLeftCornerToPasteIntoInTarget,
-			IntRectangle boundsInSourceToCopyFrom, int widthOfBorderToNotDrawOn)
+	public static void copySnippetFromSourceAndPasteIntoTarget(Image target, Image source, IntPoint upperLeftCornerToPasteIntoInTarget, IntRectangle boundsInSourceToCopyFrom,
+			int widthOfBorderToNotDrawOn)
 	{
 		// Extract the snippet from the source image
-		Image snippet = source.getSubImage(new IntRectangle(boundsInSourceToCopyFrom.x, boundsInSourceToCopyFrom.y,
-				boundsInSourceToCopyFrom.width, boundsInSourceToCopyFrom.height));
+		Image snippet = source.getSubImage(new IntRectangle(boundsInSourceToCopyFrom.x, boundsInSourceToCopyFrom.y, boundsInSourceToCopyFrom.width, boundsInSourceToCopyFrom.height));
 
 		// Paste the snippet into the target image
 		Painter p = target.createPainter();
-		p.setClip(widthOfBorderToNotDrawOn, widthOfBorderToNotDrawOn, target.getWidth() - widthOfBorderToNotDrawOn * 2,
-				target.getHeight() - widthOfBorderToNotDrawOn * 2);
+		p.setClip(widthOfBorderToNotDrawOn, widthOfBorderToNotDrawOn, target.getWidth() - widthOfBorderToNotDrawOn * 2, target.getHeight() - widthOfBorderToNotDrawOn * 2);
 		p.setAlphaComposite(AlphaComposite.Src);
 		p.drawImage(snippet, upperLeftCornerToPasteIntoInTarget.x, upperLeftCornerToPasteIntoInTarget.y);
 		p.dispose();

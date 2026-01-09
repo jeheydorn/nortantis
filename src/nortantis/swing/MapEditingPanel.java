@@ -224,15 +224,13 @@ public class MapEditingPanel extends UnscaledImagePanel
 			}
 			else
 			{
-				averageSize = new nortantis.geom.Dimension((iconBounds.size().width + averageSize.width * (n - 1)) / n,
-						(iconBounds.size().height + averageSize.height * (n - 1)) / n);
+				averageSize = new nortantis.geom.Dimension((iconBounds.size().width + averageSize.width * (n - 1)) / n, (iconBounds.size().height + averageSize.height * (n - 1)) / n);
 			}
 		}
 		return bounds;
 	}
 
-	private void showIconEditToolsAt(FreeIcon icon, boolean isValidPosition, IconEditToolsLocation toolsLocation,
-			IconEditToolsSize editToolsSize, boolean showEditBox)
+	private void showIconEditToolsAt(FreeIcon icon, boolean isValidPosition, IconEditToolsLocation toolsLocation, IconEditToolsSize editToolsSize, boolean showEditBox)
 	{
 		assert iconDrawer != null;
 		if (iconDrawer == null)
@@ -240,12 +238,11 @@ public class MapEditingPanel extends UnscaledImagePanel
 			return;
 		}
 
-		showIconEditToolsAt(iconDrawer.toIconDrawTask(icon).getOrCreateContentBoundsPadded(), isValidPosition, toolsLocation, editToolsSize,
-				showEditBox, true);
+		showIconEditToolsAt(iconDrawer.toIconDrawTask(icon).getOrCreateContentBoundsPadded(), isValidPosition, toolsLocation, editToolsSize, showEditBox, true);
 	}
 
-	public void showIconEditToolsAt(nortantis.geom.Rectangle rectangle, boolean isValidPosition, IconEditToolsLocation toolsLocation,
-			IconEditToolsSize editToolsSize, boolean showEditBox, boolean editBoxIsInMapSpace)
+	public void showIconEditToolsAt(nortantis.geom.Rectangle rectangle, boolean isValidPosition, IconEditToolsLocation toolsLocation, IconEditToolsSize editToolsSize, boolean showEditBox,
+			boolean editBoxIsInMapSpace)
 	{
 		iconToEditBounds = rectangle == null ? null : rectangle.scaleAboutOrigin(1.0 / resolution);
 		this.isIconToEditInAValidPosition = isValidPosition;
@@ -297,8 +294,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		{
 			if (text.line1Bounds != null)
 			{
-				highlightedAreas
-						.add(AwtFactory.toAwtArea(text.line1Bounds.addRotatedRectangleThatHasTheSameAngleAndPivot(text.line2Bounds)));
+				highlightedAreas.add(AwtFactory.toAwtArea(text.line1Bounds.addRotatedRectangleThatHasTheSameAngleAndPivot(text.line2Bounds)));
 			}
 		}
 	}
@@ -600,18 +596,18 @@ public class MapEditingPanel extends UnscaledImagePanel
 				if (editBounds.width > editBounds.height)
 				{
 					int additionalWidthInset = (editBounds.width - editBounds.height) / 2;
-					g.drawLine(editBounds.x + inset + additionalWidthInset, editBounds.y + inset,
-							editBounds.x + editBounds.width - (inset + additionalWidthInset), editBounds.y + editBounds.height - inset);
-					g.drawLine(editBounds.x + inset + additionalWidthInset, editBounds.y + editBounds.height - inset,
-							editBounds.x + editBounds.width - (inset + additionalWidthInset), editBounds.y + inset);
+					g.drawLine(editBounds.x + inset + additionalWidthInset, editBounds.y + inset, editBounds.x + editBounds.width - (inset + additionalWidthInset),
+							editBounds.y + editBounds.height - inset);
+					g.drawLine(editBounds.x + inset + additionalWidthInset, editBounds.y + editBounds.height - inset, editBounds.x + editBounds.width - (inset + additionalWidthInset),
+							editBounds.y + inset);
 				}
 				else
 				{
 					int additionalHeightInset = (editBounds.height - editBounds.width) / 2;
 					g.drawLine(editBounds.x + inset, editBounds.y + inset + additionalHeightInset, editBounds.x + editBounds.width - inset,
 							editBounds.y + editBounds.height - (inset + additionalHeightInset));
-					g.drawLine(editBounds.x + inset, editBounds.y + editBounds.height - (inset + additionalHeightInset),
-							editBounds.x + editBounds.width - inset, editBounds.y + inset + additionalHeightInset);
+					g.drawLine(editBounds.x + inset, editBounds.y + editBounds.height - (inset + additionalHeightInset), editBounds.x + editBounds.width - inset,
+							editBounds.y + inset + additionalHeightInset);
 				}
 
 				g.setStroke(prevStroke);
@@ -711,8 +707,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 		// Place the image for the move tool.
 		{
-			int x = (int) (textBoxBounds.x) + (int) (Math.round(textBoxBounds.width / 2.0))
-					- (int) (Math.round(moveIconScaledSmall.getWidth() / 2.0));
+			int x = (int) (textBoxBounds.x) + (int) (Math.round(textBoxBounds.width / 2.0)) - (int) (Math.round(moveIconScaledSmall.getWidth() / 2.0));
 			int y = (int) (textBoxBounds.y) - (moveIconScaledSmall.getHeight()) - padding;
 			g2.drawImage(moveIconScaledSmall, x, y, null);
 			moveToolArea = new Area(new Ellipse2D.Double(x, y, moveIconScaledSmall.getWidth(), moveIconScaledSmall.getHeight()));
@@ -901,65 +896,52 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 			// Determines the size at which the rotation and move tool icons appear.
 
-			BufferedImage rotateIcon = AwtFactory
-					.unwrap(Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "rotate text.png").toString()));
-			rotateIconScaled = AwtFactory.unwrap(ImageHelper.scaleByWidth(AwtFactory.wrap(rotateIcon),
-					(int) (rotateIcon.getWidth() * resolution * smallIconScale), Method.ULTRA_QUALITY));
+			BufferedImage rotateIcon = AwtFactory.unwrap(Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "rotate text.png").toString()));
+			rotateIconScaled = AwtFactory.unwrap(ImageHelper.scaleByWidth(AwtFactory.wrap(rotateIcon), (int) (rotateIcon.getWidth() * resolution * smallIconScale), Method.ULTRA_QUALITY));
 
 			{
 				Image moveIcon = Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "move text.png").toString());
-				Image moveIconScaledWrapped = ImageHelper.scaleByWidth(moveIcon, (int) (moveIcon.getWidth() * resolution * smallIconScale),
-						Method.ULTRA_QUALITY);
+				Image moveIconScaledWrapped = ImageHelper.scaleByWidth(moveIcon, (int) (moveIcon.getWidth() * resolution * smallIconScale), Method.ULTRA_QUALITY);
 				moveIconScaledSmall = AwtFactory.unwrap(moveIconScaledWrapped);
-				redMoveIconScaledSmall = AwtFactory
-						.unwrap(ImageHelper.copyAlphaTo(ImageHelper.colorify(ImageHelper.convertToGrayscale(moveIconScaledWrapped),
-								AwtFactory.wrap(getInvalidPositionColor()), ColorifyAlgorithm.algorithm2), moveIconScaledWrapped));
+				redMoveIconScaledSmall = AwtFactory.unwrap(ImageHelper.copyAlphaTo(
+						ImageHelper.colorify(ImageHelper.convertToGrayscale(moveIconScaledWrapped), AwtFactory.wrap(getInvalidPositionColor()), ColorifyAlgorithm.algorithm2), moveIconScaledWrapped));
 			}
 
 			{
-				BufferedImage scaleIcon = AwtFactory
-						.unwrap(Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "scale.png").toString()));
-				Image scaleIconScaledWrapped = ImageHelper.scaleByWidth(AwtFactory.wrap(scaleIcon),
-						(int) (scaleIcon.getWidth() * resolution * smallIconScale), Method.ULTRA_QUALITY);
+				BufferedImage scaleIcon = AwtFactory.unwrap(Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "scale.png").toString()));
+				Image scaleIconScaledWrapped = ImageHelper.scaleByWidth(AwtFactory.wrap(scaleIcon), (int) (scaleIcon.getWidth() * resolution * smallIconScale), Method.ULTRA_QUALITY);
 				scaleIconScaledSmall = AwtFactory.unwrap(scaleIconScaledWrapped);
-				redScaleIconScaledSmall = AwtFactory
-						.unwrap(ImageHelper.copyAlphaTo(ImageHelper.colorify(ImageHelper.convertToGrayscale(scaleIconScaledWrapped),
-								AwtFactory.wrap(getInvalidPositionColor()), ColorifyAlgorithm.algorithm2), scaleIconScaledWrapped));
+				redScaleIconScaledSmall = AwtFactory.unwrap(
+						ImageHelper.copyAlphaTo(ImageHelper.colorify(ImageHelper.convertToGrayscale(scaleIconScaledWrapped), AwtFactory.wrap(getInvalidPositionColor()), ColorifyAlgorithm.algorithm2),
+								scaleIconScaledWrapped));
 			}
 
 			{
 				Image moveIcon = Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "move text.png").toString());
-				Image moveIconScaledWrapped = ImageHelper.scaleByWidth(moveIcon, (int) (moveIcon.getWidth() * resolution * mediumIconScale),
-						Method.ULTRA_QUALITY);
+				Image moveIconScaledWrapped = ImageHelper.scaleByWidth(moveIcon, (int) (moveIcon.getWidth() * resolution * mediumIconScale), Method.ULTRA_QUALITY);
 				moveIconScaledMedium = AwtFactory.unwrap(moveIconScaledWrapped);
-				redMoveIconScaledMedium = AwtFactory
-						.unwrap(ImageHelper.copyAlphaTo(ImageHelper.colorify(ImageHelper.convertToGrayscale(moveIconScaledWrapped),
-								AwtFactory.wrap(getInvalidPositionColor()), ColorifyAlgorithm.algorithm2), moveIconScaledWrapped));
+				redMoveIconScaledMedium = AwtFactory.unwrap(ImageHelper.copyAlphaTo(
+						ImageHelper.colorify(ImageHelper.convertToGrayscale(moveIconScaledWrapped), AwtFactory.wrap(getInvalidPositionColor()), ColorifyAlgorithm.algorithm2), moveIconScaledWrapped));
 			}
 
 			{
-				BufferedImage scaleIcon = AwtFactory
-						.unwrap(Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "scale.png").toString()));
-				Image scaleIconScaledWrapped = ImageHelper.scaleByWidth(AwtFactory.wrap(scaleIcon),
-						(int) (scaleIcon.getWidth() * resolution * mediumIconScale), Method.ULTRA_QUALITY);
+				BufferedImage scaleIcon = AwtFactory.unwrap(Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "scale.png").toString()));
+				Image scaleIconScaledWrapped = ImageHelper.scaleByWidth(AwtFactory.wrap(scaleIcon), (int) (scaleIcon.getWidth() * resolution * mediumIconScale), Method.ULTRA_QUALITY);
 				scaleIconScaledMedium = AwtFactory.unwrap(scaleIconScaledWrapped);
-				redScaleIconScaledMedium = AwtFactory
-						.unwrap(ImageHelper.copyAlphaTo(ImageHelper.colorify(ImageHelper.convertToGrayscale(scaleIconScaledWrapped),
-								AwtFactory.wrap(getInvalidPositionColor()), ColorifyAlgorithm.algorithm2), scaleIconScaledWrapped));
+				redScaleIconScaledMedium = AwtFactory.unwrap(
+						ImageHelper.copyAlphaTo(ImageHelper.colorify(ImageHelper.convertToGrayscale(scaleIconScaledWrapped), AwtFactory.wrap(getInvalidPositionColor()), ColorifyAlgorithm.algorithm2),
+								scaleIconScaledWrapped));
 			}
 
 			{
 				Image moveIcon = Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "move text.png").toString());
-				Image moveIconScaledWrapped = ImageHelper.scaleByWidth(moveIcon, (int) (moveIcon.getWidth() * resolution * largeIconScale),
-						Method.ULTRA_QUALITY);
+				Image moveIconScaledWrapped = ImageHelper.scaleByWidth(moveIcon, (int) (moveIcon.getWidth() * resolution * largeIconScale), Method.ULTRA_QUALITY);
 				moveIconScaledLarge = AwtFactory.unwrap(moveIconScaledWrapped);
 			}
 
 			{
-				BufferedImage scaleIcon = AwtFactory
-						.unwrap(Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "scale.png").toString()));
-				Image scaleIconScaledWrapped = ImageHelper.scaleByWidth(AwtFactory.wrap(scaleIcon),
-						(int) (scaleIcon.getWidth() * resolution * largeIconScale), Method.ULTRA_QUALITY);
+				BufferedImage scaleIcon = AwtFactory.unwrap(Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "scale.png").toString()));
+				Image scaleIconScaledWrapped = ImageHelper.scaleByWidth(AwtFactory.wrap(scaleIcon), (int) (scaleIcon.getWidth() * resolution * largeIconScale), Method.ULTRA_QUALITY);
 				scaleIconScaledLarge = AwtFactory.unwrap(scaleIconScaledWrapped);
 			}
 		}

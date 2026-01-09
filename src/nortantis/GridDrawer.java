@@ -17,8 +17,7 @@ import nortantis.util.ImageHelper;
 
 public class GridDrawer
 {
-	public static void drawGrid(Image image, MapSettings settings, Rectangle drawBounds, IntDimension mapDimensions, WorldGraph graph,
-			Collection<Center> centersToDraw)
+	public static void drawGrid(Image image, MapSettings settings, Rectangle drawBounds, IntDimension mapDimensions, WorldGraph graph, Collection<Center> centersToDraw)
 	{
 		int alpha = settings.gridOverlayColor.getAlpha();
 
@@ -27,8 +26,7 @@ public class GridDrawer
 
 		{
 			Painter p = hexImage.createPainter(DrawQuality.High);
-			p.setColor(Color.create(settings.gridOverlayColor.getRed(), settings.gridOverlayColor.getGreen(),
-					settings.gridOverlayColor.getBlue()));
+			p.setColor(Color.create(settings.gridOverlayColor.getRed(), settings.gridOverlayColor.getGreen(), settings.gridOverlayColor.getBlue()));
 			float lineWidth = settings.gridOverlayLineWidth * (float) settings.resolution;
 			p.setBasicStroke(lineWidth);
 			if (drawBounds != null && settings.gridOverlayShape != GridOverlayShape.Voronoi_polygons)
@@ -41,12 +39,9 @@ public class GridDrawer
 
 			switch (settings.gridOverlayShape)
 			{
-				case Squares -> drawSquareGrid(p, width, height, settings.gridOverlayRowOrColCount, settings.gridOverlayXOffset,
-						settings.gridOverlayYOffset);
-				case Vertical_hexes -> drawVerticalHexGrid(p, width, height, settings.gridOverlayRowOrColCount, settings.gridOverlayXOffset,
-						settings.gridOverlayYOffset, drawBounds, lineWidth);
-				case Horizontal_hexes -> drawHorizontalHexGrid(p, width, height, settings.gridOverlayRowOrColCount,
-						settings.gridOverlayXOffset, settings.gridOverlayYOffset, drawBounds, lineWidth);
+				case Squares -> drawSquareGrid(p, width, height, settings.gridOverlayRowOrColCount, settings.gridOverlayXOffset, settings.gridOverlayYOffset);
+				case Vertical_hexes -> drawVerticalHexGrid(p, width, height, settings.gridOverlayRowOrColCount, settings.gridOverlayXOffset, settings.gridOverlayYOffset, drawBounds, lineWidth);
+				case Horizontal_hexes -> drawHorizontalHexGrid(p, width, height, settings.gridOverlayRowOrColCount, settings.gridOverlayXOffset, settings.gridOverlayYOffset, drawBounds, lineWidth);
 				case Voronoi_polygons -> drawVoronoiOnLand(p, graph, centersToDraw, drawBounds, settings.drawVoronoiGridOverlayOnlyOnLand);
 				default -> throw new IllegalArgumentException("Unexpected value: " + settings.gridOverlayShape);
 			}
@@ -61,14 +56,12 @@ public class GridDrawer
 		}
 	}
 
-	private static void drawVoronoiOnLand(Painter p, WorldGraph graph, Collection<Center> centersToDraw, Rectangle drawBounds,
-			boolean drawOnlyOnLand)
+	private static void drawVoronoiOnLand(Painter p, WorldGraph graph, Collection<Center> centersToDraw, Rectangle drawBounds, boolean drawOnlyOnLand)
 	{
 		graph.drawVoronoi(p, centersToDraw, drawBounds, drawOnlyOnLand);
 	}
 
-	private static void drawSquareGrid(Painter p, float width, float height, int colCount, GridOverlayOffset xOffset,
-			GridOverlayOffset yOffset)
+	private static void drawSquareGrid(Painter p, float width, float height, int colCount, GridOverlayOffset xOffset, GridOverlayOffset yOffset)
 	{
 		float cellWidth = width / colCount;
 		float xOffsetFloat = xOffset.getScale() * cellWidth - cellWidth;
@@ -84,8 +77,7 @@ public class GridDrawer
 		}
 	}
 
-	private static void drawVerticalHexGrid(Painter p, float width, float height, int colCount, GridOverlayOffset xOffset,
-			GridOverlayOffset yOffset, Rectangle drawBounds, float lineWidth)
+	private static void drawVerticalHexGrid(Painter p, float width, float height, int colCount, GridOverlayOffset xOffset, GridOverlayOffset yOffset, Rectangle drawBounds, float lineWidth)
 	{
 		float hexWidth = width / colCount;
 		float hexHeight = (hexWidth / (float) Math.sqrt(3)) * 2;
@@ -104,8 +96,7 @@ public class GridDrawer
 				{
 					continue;
 				}
-				if (drawBounds != null && !drawBounds
-						.overlaps(new Rectangle(x - hexWidth / 2.0, y - hexWidth / 2.0, hexWidth, hexHeight).pad(lineWidth, lineWidth)))
+				if (drawBounds != null && !drawBounds.overlaps(new Rectangle(x - hexWidth / 2.0, y - hexWidth / 2.0, hexWidth, hexHeight).pad(lineWidth, lineWidth)))
 				{
 					continue;
 				}
@@ -114,8 +105,7 @@ public class GridDrawer
 		}
 	}
 
-	private static void drawHorizontalHexGrid(Painter p, float width, float height, int rowCount, GridOverlayOffset xOffset,
-			GridOverlayOffset yOffset, Rectangle drawBounds, float lineWidth)
+	private static void drawHorizontalHexGrid(Painter p, float width, float height, int rowCount, GridOverlayOffset xOffset, GridOverlayOffset yOffset, Rectangle drawBounds, float lineWidth)
 	{
 		float hexHeight = height / rowCount;
 		float hexWidth = (hexHeight / (float) Math.sqrt(3)) * 2;
@@ -134,8 +124,7 @@ public class GridDrawer
 				{
 					continue;
 				}
-				if (drawBounds != null && !drawBounds
-						.overlaps(new Rectangle(x - hexWidth / 2.0, y - hexWidth / 2.0, hexWidth, hexHeight).pad(lineWidth, lineWidth)))
+				if (drawBounds != null && !drawBounds.overlaps(new Rectangle(x - hexWidth / 2.0, y - hexWidth / 2.0, hexWidth, hexHeight).pad(lineWidth, lineWidth)))
 				{
 					continue;
 				}

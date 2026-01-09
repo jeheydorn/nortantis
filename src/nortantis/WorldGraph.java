@@ -90,9 +90,8 @@ public class WorldGraph extends VoronoiGraph
 	Set<TectonicPlate> plates;
 	public Map<Integer, Region> regions;
 
-	public WorldGraph(Voronoi v, double lloydRelaxationsScale, Random r, double nonBorderPlateContinentalProbability,
-			double borderPlateContinentalProbability, double sizeMultiplyer, LineStyle lineStyle, double pointPrecision,
-			boolean createElevationBiomesLakesAndRegions, boolean areRegionBoundariesVisible)
+	public WorldGraph(Voronoi v, double lloydRelaxationsScale, Random r, double nonBorderPlateContinentalProbability, double borderPlateContinentalProbability, double sizeMultiplyer,
+			LineStyle lineStyle, double pointPrecision, boolean createElevationBiomesLakesAndRegions, boolean areRegionBoundariesVisible)
 	{
 		super(r, sizeMultiplyer, pointPrecision);
 		this.nonBorderPlateContinentalProbability = nonBorderPlateContinentalProbability;
@@ -118,8 +117,7 @@ public class WorldGraph extends VoronoiGraph
 	/**
 	 * This constructor doens't create tectonic plates or elevation.
 	 */
-	public WorldGraph(Voronoi v, double lloydRelaxationsScale, Random r, double resolutionScale, double pointPrecision,
-			boolean isForFrayedBorder)
+	public WorldGraph(Voronoi v, double lloydRelaxationsScale, Random r, double resolutionScale, double pointPrecision, boolean isForFrayedBorder)
 	{
 		super(r, resolutionScale, pointPrecision);
 		initVoronoiGraph(v, numLloydRelaxations, lloydRelaxationsScale, false);
@@ -134,8 +132,7 @@ public class WorldGraph extends VoronoiGraph
 		}
 	}
 
-	public Set<Center> smoothCoastlinesAndRegionBoundariesIfNeeded(Collection<Center> centersToUpdate, LineStyle lineStyle,
-			boolean areRegionBoundariesVisible)
+	public Set<Center> smoothCoastlinesAndRegionBoundariesIfNeeded(Collection<Center> centersToUpdate, LineStyle lineStyle, boolean areRegionBoundariesVisible)
 	{
 		if (centersToUpdate != centers)
 		{
@@ -256,8 +253,7 @@ public class WorldGraph extends VoronoiGraph
 			// Smooth the edge
 			Corner otherCorner0 = edgesToSmooth.get(0).v0 == corner ? edgesToSmooth.get(0).v1 : edgesToSmooth.get(0).v0;
 			Corner otherCorner1 = edgesToSmooth.get(1).v0 == corner ? edgesToSmooth.get(1).v1 : edgesToSmooth.get(1).v0;
-			Point smoothedLoc = new Point((otherCorner0.originalLoc.x + otherCorner1.originalLoc.x) / 2,
-					(otherCorner0.originalLoc.y + otherCorner1.originalLoc.y) / 2);
+			Point smoothedLoc = new Point((otherCorner0.originalLoc.x + otherCorner1.originalLoc.x) / 2, (otherCorner0.originalLoc.y + otherCorner1.originalLoc.y) / 2);
 
 			corner.loc = smoothedLoc;
 
@@ -365,8 +361,7 @@ public class WorldGraph extends VoronoiGraph
 				assert regions.values().stream().filter(reg -> reg.contains(c)).count() == 1;
 			}
 		}
-		assert regions.values().stream().mapToInt(reg -> reg.size()).sum()
-				+ centers.stream().filter(c -> c.region == null).count() == centers.size();
+		assert regions.values().stream().mapToInt(reg -> reg.size()).sum() + centers.stream().filter(c -> c.region == null).count() == centers.size();
 	}
 
 	public void drawRegionIndexes(Painter p, Set<Center> centersToDraw, Rectangle drawBounds)
@@ -543,8 +538,7 @@ public class WorldGraph extends VoronoiGraph
 	 */
 	private Region findClosestRegion(Point point)
 	{
-		Optional<Center> opt = centers.stream().filter(c -> c.region != null)
-				.min((c1, c2) -> Double.compare(c1.loc.distanceTo(point), c2.loc.distanceTo(point)));
+		Optional<Center> opt = centers.stream().filter(c -> c.region != null).min((c1, c2) -> Double.compare(c1.loc.distanceTo(point), c2.loc.distanceTo(point)));
 
 		if (opt.isPresent())
 		{
@@ -559,8 +553,7 @@ public class WorldGraph extends VoronoiGraph
 	public Corner findClosestCorner(Point point)
 	{
 		Center closestCenter = findClosestCenter(point);
-		Optional<Corner> optional = closestCenter.corners.stream()
-				.min((c1, c2) -> Double.compare(c1.loc.distanceTo(point), c2.loc.distanceTo(point)));
+		Optional<Corner> optional = closestCenter.corners.stream().min((c1, c2) -> Double.compare(c1.loc.distanceTo(point), c2.loc.distanceTo(point)));
 		return optional.get();
 	}
 
@@ -588,8 +581,7 @@ public class WorldGraph extends VoronoiGraph
 		}
 		else if (!returnNullIfNotOnMap)
 		{
-			Optional<Center> opt = centers.stream().filter(c -> c.isBorder)
-					.min((c1, c2) -> Double.compare(c1.loc.distanceTo(point), c2.loc.distanceTo(point)));
+			Optional<Center> opt = centers.stream().filter(c -> c.isBorder).min((c1, c2) -> Double.compare(c1.loc.distanceTo(point), c2.loc.distanceTo(point)));
 			return opt.get();
 
 		}
@@ -728,8 +720,7 @@ public class WorldGraph extends VoronoiGraph
 		return explored;
 	}
 
-	public Center breadthFirstSearchForGoal(TriFunction<Center, Center, Integer, Boolean> accept, Function<Center, Boolean> isGoal,
-			Center start)
+	public Center breadthFirstSearchForGoal(TriFunction<Center, Center, Integer, Boolean> accept, Function<Center, Boolean> isGoal, Center start)
 	{
 		if (isGoal.apply(start))
 		{
@@ -1047,16 +1038,14 @@ public class WorldGraph extends VoronoiGraph
 			{
 				if (e.d0.tectonicPlate == plate && e.d0.tectonicPlate != e.d1.tectonicPlate && e.v0 != null && e.v1 != null)
 				{
-					double d0ConvergeLevel = calcLevelOfConvergence(e.d0.tectonicPlate.findCentroid(), e.d0.tectonicPlate.velocity,
-							e.d1.tectonicPlate.findCentroid(), e.d1.tectonicPlate.velocity);
+					double d0ConvergeLevel = calcLevelOfConvergence(e.d0.tectonicPlate.findCentroid(), e.d0.tectonicPlate.velocity, e.d1.tectonicPlate.findCentroid(), e.d1.tectonicPlate.velocity);
 
 					// If the plates are converging, rough them up a bit by
 					// calculating divergence per
 					// polygon. This brakes up long snake like islands.
 					if (d0ConvergeLevel > 0)
 					{
-						d0ConvergeLevel = calcLevelOfConvergence(e.d0.loc, e.d0.tectonicPlate.velocity, e.d1.loc,
-								e.d1.tectonicPlate.velocity);
+						d0ConvergeLevel = calcLevelOfConvergence(e.d0.loc, e.d0.tectonicPlate.velocity, e.d1.loc, e.d1.tectonicPlate.velocity);
 					}
 
 					e.v0.elevation += d0ConvergeLevel * collisionScale;
@@ -1072,8 +1061,7 @@ public class WorldGraph extends VoronoiGraph
 
 					// Handle subduction of an ocean plate under a continental
 					// one.
-					if (d0ConvergeLevel > 0 && e.d0.tectonicPlate.type == PlateType.Oceanic
-							&& e.d1.tectonicPlate.type == PlateType.Continental)
+					if (d0ConvergeLevel > 0 && e.d0.tectonicPlate.type == PlateType.Oceanic && e.d1.tectonicPlate.type == PlateType.Continental)
 					{
 						for (Corner corner : e.d0.corners)
 						{
@@ -1630,14 +1618,11 @@ public class WorldGraph extends VoronoiGraph
 				Center neighbor = current.center.equals(edge.d0) ? edge.d1 : edge.d0;
 				if (neighbor != null)
 				{
-					double scoreFromStartToNeighbor = current.scoreSoFar
-							+ calculateWeight.apply(edge, neighbor, Center.distanceBetween(current.center, end));
-					double neighborCurrentScore = centerNodeMap.containsKey(neighbor) ? centerNodeMap.get(neighbor).scoreSoFar
-							: Float.POSITIVE_INFINITY;
+					double scoreFromStartToNeighbor = current.scoreSoFar + calculateWeight.apply(edge, neighbor, Center.distanceBetween(current.center, end));
+					double neighborCurrentScore = centerNodeMap.containsKey(neighbor) ? centerNodeMap.get(neighbor).scoreSoFar : Float.POSITIVE_INFINITY;
 					if (scoreFromStartToNeighbor < neighborCurrentScore)
 					{
-						CenterSearchNode neighborNode = new CenterSearchNode(neighbor, current, scoreFromStartToNeighbor,
-								scoreFromStartToNeighbor);
+						CenterSearchNode neighborNode = new CenterSearchNode(neighbor, current, scoreFromStartToNeighbor, scoreFromStartToNeighbor);
 
 						centerNodeMap.put(neighbor, neighborNode);
 						explored.add(neighborNode);
@@ -1759,8 +1744,7 @@ public class WorldGraph extends VoronoiGraph
 	/**
 	 * Scales, rotates, and flips the graph and everything in it.
 	 */
-	public void scaleFlipAndRotate(double targetWidth, double targetHeight, int rightRotationCount, boolean flipHorizontally,
-			boolean flipVertically)
+	public void scaleFlipAndRotate(double targetWidth, double targetHeight, int rightRotationCount, boolean flipHorizontally, boolean flipVertically)
 	{
 		double widthScale = targetWidth / bounds.width;
 		double heightScale = targetHeight / bounds.height;
@@ -1792,25 +1776,21 @@ public class WorldGraph extends VoronoiGraph
 
 		for (Center center : centers)
 		{
-			center.loc = scaleFlipAndRotatePoint(center.loc, widthScale, heightScale, angle, mapCenter, newOriginOffset, flipHorizontally,
-					flipVertically);
+			center.loc = scaleFlipAndRotatePoint(center.loc, widthScale, heightScale, angle, mapCenter, newOriginOffset, flipHorizontally, flipVertically);
 		}
 		for (Edge edge : edges)
 		{
 			if (edge.midpoint != null)
 			{
-				edge.midpoint = scaleFlipAndRotatePoint(edge.midpoint, widthScale, heightScale, angle, mapCenter, newOriginOffset,
-						flipHorizontally, flipVertically);
+				edge.midpoint = scaleFlipAndRotatePoint(edge.midpoint, widthScale, heightScale, angle, mapCenter, newOriginOffset, flipHorizontally, flipVertically);
 			}
 		}
 		for (Corner corner : corners)
 		{
-			corner.loc = scaleFlipAndRotatePoint(corner.loc, widthScale, heightScale, angle, mapCenter, newOriginOffset, flipHorizontally,
-					flipVertically);
+			corner.loc = scaleFlipAndRotatePoint(corner.loc, widthScale, heightScale, angle, mapCenter, newOriginOffset, flipHorizontally, flipVertically);
 			if (corner.originalLoc != null)
 			{
-				corner.originalLoc = scaleFlipAndRotatePoint(corner.originalLoc, widthScale, heightScale, angle, mapCenter, newOriginOffset,
-						flipHorizontally, flipVertically);
+				corner.originalLoc = scaleFlipAndRotatePoint(corner.originalLoc, widthScale, heightScale, angle, mapCenter, newOriginOffset, flipHorizontally, flipVertically);
 			}
 		}
 
@@ -1828,8 +1808,7 @@ public class WorldGraph extends VoronoiGraph
 		getMeanCenterWidthBetweenNeighbors();
 	}
 
-	private Point scaleFlipAndRotatePoint(Point point, double widthScale, double heightScale, double angle, Point mapCenter,
-			Point newOriginOffset, boolean flipHorizontally, boolean flipVertically)
+	private Point scaleFlipAndRotatePoint(Point point, double widthScale, double heightScale, double angle, Point mapCenter, Point newOriginOffset, boolean flipHorizontally, boolean flipVertically)
 	{
 		Point result = point.mult(widthScale, heightScale);
 
@@ -1923,8 +1902,7 @@ public class WorldGraph extends VoronoiGraph
 		return cSize;
 	}
 
-	public void drawCoastlineWithVariation(Painter p, long randomSeed, double variationRange, double widthBetweenWaves,
-			boolean addRandomBreaks, Collection<Center> centersToDraw, Rectangle drawBounds,
+	public void drawCoastlineWithVariation(Painter p, long randomSeed, double variationRange, double widthBetweenWaves, boolean addRandomBreaks, Collection<Center> centersToDraw, Rectangle drawBounds,
 			BiFunction<Boolean, Random, Double> getNewSkipDistance, List<List<Edge>> shoreEdges)
 	{
 		Transform orig = null;
@@ -1982,8 +1960,7 @@ public class WorldGraph extends VoronoiGraph
 			// When drawing concentric waves with random variation, we need more
 			// points in the curve at lower resolutions to make it look
 			// good.
-			double distanceBetweenPoints = Math.max(1.0,
-					Math.min(CurveCreator.defaultDistanceBetweenPoints, CurveCreator.defaultDistanceBetweenPoints * resolutionScale));
+			double distanceBetweenPoints = Math.max(1.0, Math.min(CurveCreator.defaultDistanceBetweenPoints, CurveCreator.defaultDistanceBetweenPoints * resolutionScale));
 			drawPoints = CurveCreator.createCurve(drawPoints, distanceBetweenPoints);
 
 			if (drawPoints == null || drawPoints.size() <= 1)
@@ -2168,8 +2145,7 @@ public class WorldGraph extends VoronoiGraph
 		drawSpecifiedEdges(p, strokeWidth, centersToDraw, drawBounds, edge -> edge.isCoastOrLakeShore());
 	}
 
-	public void drawRegionBoundariesSolid(Painter g, double strokeWidth, boolean ignoreRiverEdges, Collection<Center> centersToDraw,
-			Rectangle drawBounds)
+	public void drawRegionBoundariesSolid(Painter g, double strokeWidth, boolean ignoreRiverEdges, Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
 		drawSpecifiedEdges(g, strokeWidth, centersToDraw, drawBounds, edge ->
 		{
@@ -2224,8 +2200,7 @@ public class WorldGraph extends VoronoiGraph
 
 				diameter = (int) (10.0 * resolutionScale);
 				p.setColor(Color.blue);
-				p.drawOval((int) (drawPoints.get(drawPoints.size() - 1).x) - diameter / 2,
-						(int) (drawPoints.get(drawPoints.size() - 1).y) - diameter / 2, diameter, diameter);
+				p.drawOval((int) (drawPoints.get(drawPoints.size() - 1).x) - diameter / 2, (int) (drawPoints.get(drawPoints.size() - 1).y) - diameter / 2, diameter, diameter);
 
 				p.setColor(color);
 				p.setStroke(stroke, resolutionScale);
@@ -2290,8 +2265,7 @@ public class WorldGraph extends VoronoiGraph
 				{
 					if (searchEntireGraph && centersToDraw != null)
 					{
-						if (edgePath.stream().anyMatch(
-								e -> e.d0 != null && centersToDraw.contains(e.d0) || e.d1 != null && centersToDraw.contains(e.d1)))
+						if (edgePath.stream().anyMatch(e -> e.d0 != null && centersToDraw.contains(e.d0) || e.d1 != null && centersToDraw.contains(e.d1)))
 						{
 							result.add(edgePath);
 						}

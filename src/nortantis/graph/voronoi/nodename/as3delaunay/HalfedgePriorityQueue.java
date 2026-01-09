@@ -53,8 +53,7 @@ public final class HalfedgePriorityQueue // also known as heap
 			_minBucket = insertionBucket;
 		}
 		previous = _hash.get(insertionBucket);
-		while ((next = previous.nextInPriorityQueue) != null
-				&& (halfEdge.ystar > next.ystar || (halfEdge.ystar == next.ystar && halfEdge.vertex.get_x() > next.vertex.get_x())))
+		while ((next = previous.nextInPriorityQueue) != null && (halfEdge.ystar > next.ystar || (halfEdge.ystar == next.ystar && halfEdge.vertex.get_x() > next.vertex.get_x())))
 		{
 			previous = next;
 		}

@@ -51,9 +51,8 @@ public class AwtFactory extends PlatformFactory
 			BufferedImage image = ImageIO.read(new File(filePath));
 			if (image == null)
 			{
-				throw new RuntimeException(
-						"Can't read the file " + filePath + ". This can happen if the file is an unsupported format or is corrupted, "
-								+ "such as if you saved it with a file extension that doesn't match its actual format.");
+				throw new RuntimeException("Can't read the file " + filePath + ". This can happen if the file is an unsupported format or is corrupted, "
+						+ "such as if you saved it with a file extension that doesn't match its actual format.");
 			}
 
 			return new AwtImage(image);
@@ -286,8 +285,7 @@ public class AwtFactory extends PlatformFactory
 		AffineTransform transform = new AffineTransform();
 		transform.rotate(rect.angle, rect.pivotX, rect.pivotY);
 		IntRectangle rectInt = rect.toUnrotatedRectangle().toEnclosingIntRectangle();
-		java.awt.Shape rotatedRect = transform
-				.createTransformedShape(new java.awt.Rectangle(rectInt.x, rectInt.y, rectInt.width, rectInt.height));
+		java.awt.Shape rotatedRect = transform.createTransformedShape(new java.awt.Rectangle(rectInt.x, rectInt.y, rectInt.width, rectInt.height));
 		return new java.awt.geom.Area(rotatedRect);
 	}
 

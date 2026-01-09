@@ -72,7 +72,7 @@ public class CenterIcon
 			return false;
 		}
 		CenterIcon other = (CenterIcon) obj;
-		return Objects.equals(artPack, other.artPack) && Objects.equals(iconGroupId, other.iconGroupId) && iconIndex == other.iconIndex
-				&& Objects.equals(iconName, other.iconName) && iconType == other.iconType;
+		return Objects.equals(artPack, other.artPack) && Objects.equals(iconGroupId, other.iconGroupId) && iconIndex == other.iconIndex && Objects.equals(iconName, other.iconName)
+				&& iconType == other.iconType;
 	}
 }

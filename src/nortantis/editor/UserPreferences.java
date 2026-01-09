@@ -109,8 +109,7 @@ public class UserPreferences
 				if (props.containsKey("lastVersionCheckTime"))
 				{
 					// Convert the string back to LocalDateTime
-					lastVersionCheckTime = LocalDateTime.parse(props.getProperty("lastVersionCheckTime"),
-							DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+					lastVersionCheckTime = LocalDateTime.parse(props.getProperty("lastVersionCheckTime"), DateTimeFormatter.ISO_LOCAL_DATE_TIME);
 				}
 
 				if (props.containsKey("lookAndFeel") && !StringUtils.isEmpty(props.getProperty("lookAndFeel")))
@@ -168,8 +167,7 @@ public class UserPreferences
 		props.setProperty("hideGridOverlaySeizureWarning", hideGridOverlaySeizureWarning + "");
 		props.setProperty("collapsedPanels", String.join("\t", collapsedPanels));
 		props.setProperty("lastVersionFromCheck", lastVersionFromCheck == null ? "" : lastVersionFromCheck);
-		props.setProperty("lastVersionCheckTime",
-				(lastVersionCheckTime == null ? LocalDateTime.MIN : lastVersionCheckTime).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+		props.setProperty("lastVersionCheckTime", (lastVersionCheckTime == null ? LocalDateTime.MIN : lastVersionCheckTime).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
 		props.setProperty("lookAndFeel", lookAndFeel.name());
 		props.setProperty("toolsPanelWidth", toolsPanelWidth + "");
 		props.setProperty("themePanelWidth", themePanelWidth + "");

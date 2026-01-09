@@ -106,8 +106,7 @@ public class ProbabilityHelper
 		for (@SuppressWarnings("unused")
 		int i : new Range(10000))
 		{
-			String value = sampleCategorical(new Random(),
-					Arrays.asList(new Tuple2<>(0.1, "first"), new Tuple2<>(0.5, "second"), new Tuple2<>(0.4, "third")));
+			String value = sampleCategorical(new Random(), Arrays.asList(new Tuple2<>(0.1, "first"), new Tuple2<>(0.5, "second"), new Tuple2<>(0.4, "third")));
 			if (!counts.containsKey(value))
 			{
 				counts.put(value, 0);

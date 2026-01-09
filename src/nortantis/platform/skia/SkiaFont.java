@@ -18,7 +18,7 @@ public class SkiaFont extends nortantis.platform.Font
 		this.name = name;
 		this.style = style;
 		this.size = size;
-		
+
 		org.jetbrains.skia.FontStyle skiaStyle = org.jetbrains.skia.FontStyle.Companion.getNORMAL();
 		if (style == FontStyle.Bold)
 		{
@@ -84,8 +84,10 @@ public class SkiaFont extends nortantis.platform.Font
 	@Override
 	public boolean equals(Object o)
 	{
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
 		SkiaFont skiaFont1 = (SkiaFont) o;
 		return Float.compare(skiaFont1.size, size) == 0 && Objects.equals(name, skiaFont1.name) && style == skiaFont1.style;
 	}

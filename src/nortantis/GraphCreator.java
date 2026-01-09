@@ -16,9 +16,8 @@ import nortantis.util.Logger;
 
 public class GraphCreator
 {
-	public static WorldGraph createGraph(double width, double height, int numSites, double borderPlateContinentalProbability,
-			double nonBorderPlateContinentalProbability, Random r, double resolutionScale, LineStyle lineStyle, double pointPrecision,
-			boolean createElevationBiomesLakesAndRegions, double lloydRelaxationsScale, boolean areRegionBoundariesVisible,
+	public static WorldGraph createGraph(double width, double height, int numSites, double borderPlateContinentalProbability, double nonBorderPlateContinentalProbability, Random r,
+			double resolutionScale, LineStyle lineStyle, double pointPrecision, boolean createElevationBiomesLakesAndRegions, double lloydRelaxationsScale, boolean areRegionBoundariesVisible,
 			int rightRotationCount, boolean flipHorizontally, boolean flipVertically)
 	{
 		Dimension graphSize = getGraphDimensionsWithStandardWidth(new Dimension(width, height));
@@ -26,9 +25,8 @@ public class GraphCreator
 		final Voronoi v = new Voronoi(numSites, graphSize.width, graphSize.height, r);
 
 		// assemble the voronoi structure into a usable graph object representing a map
-		final WorldGraph graph = new WorldGraph(v, lloydRelaxationsScale, r, nonBorderPlateContinentalProbability,
-				borderPlateContinentalProbability, resolutionScale, lineStyle, pointPrecision, createElevationBiomesLakesAndRegions,
-				areRegionBoundariesVisible);
+		final WorldGraph graph = new WorldGraph(v, lloydRelaxationsScale, r, nonBorderPlateContinentalProbability, borderPlateContinentalProbability, resolutionScale, lineStyle, pointPrecision,
+				createElevationBiomesLakesAndRegions, areRegionBoundariesVisible);
 		graph.scaleFlipAndRotate(width, height, rightRotationCount, flipHorizontally, flipVertically);
 		graph.buildNoisyEdges(lineStyle, false);
 
@@ -56,8 +54,7 @@ public class GraphCreator
 		}
 		double mountainTextureScale = 2.0 / 3.0;
 		mountains = ImageHelper.scaleByWidth(mountains, (int) (mountains.getWidth() * mountainTextureScale));
-		Image mountainTexture = BackgroundGenerator.generateUsingWhiteNoiseConvolution(rand, mountains, graph.getHeight(), graph.getWidth(),
-				false);
+		Image mountainTexture = BackgroundGenerator.generateUsingWhiteNoiseConvolution(rand, mountains, graph.getHeight(), graph.getWidth(), false);
 		// ImageHelper.write(mountainTexture, "mountainTexture.png");
 		subtractTextureFromHeightMapUsingSeaLevel(heightMap, mountainTexture);
 		mountainTexture = null;
@@ -98,8 +95,8 @@ public class GraphCreator
 
 	}
 
-	public static WorldGraph createSimpleGraph(double width, double height, int numSites, Random r, double resolutionScale,
-			boolean isForFrayedBorder, int rightRotationCount, boolean flipHorizontally, boolean flipVertically)
+	public static WorldGraph createSimpleGraph(double width, double height, int numSites, Random r, double resolutionScale, boolean isForFrayedBorder, int rightRotationCount, boolean flipHorizontally,
+			boolean flipVertically)
 	{
 		// Zero is most random. Higher values make the polygons more uniform shaped. Value should be between 0 and 1.
 		final double lloydRelaxationsScale = 0.0;
@@ -109,8 +106,7 @@ public class GraphCreator
 		final Voronoi v = new Voronoi(numSites, graphSize.width, graphSize.height, r);
 
 		// assemble the voronoi structure into a usable graph object representing a map
-		final WorldGraph graph = new WorldGraph(v, lloydRelaxationsScale, r, resolutionScale, MapSettings.defaultPointPrecision,
-				isForFrayedBorder);
+		final WorldGraph graph = new WorldGraph(v, lloydRelaxationsScale, r, resolutionScale, MapSettings.defaultPointPrecision, isForFrayedBorder);
 		graph.scaleFlipAndRotate(width, height, rightRotationCount, flipHorizontally, flipVertically);
 		graph.buildNoisyEdges(LineStyle.Jagged, isForFrayedBorder);
 

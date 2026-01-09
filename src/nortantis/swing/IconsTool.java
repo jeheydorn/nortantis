@@ -191,9 +191,8 @@ public class IconsTool extends EditorTool
 		JPanel toolOptionsPanel = organizer.panel;
 		toolOptionsPanel.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
 
-		modeWidget = new DrawModeWidget("Draw using the selected brush", "Erase using the selected brush", true,
-				"Use the selected brush to replace existing icons of the same type", true, "Move or scale individual icons",
-				() -> handleModeChanged());
+		modeWidget = new DrawModeWidget("Draw using the selected brush", "Erase using the selected brush", true, "Use the selected brush to replace existing icons of the same type", true,
+				"Move or scale individual icons", () -> handleModeChanged());
 		modeWidget.addToOrganizer(organizer, "");
 
 		// Icon type radio buttons
@@ -352,16 +351,13 @@ public class IconsTool extends EditorTool
 			groupLabel = new JLabel();
 			iconMetadataHider.add(organizer.addLabelAndComponent("Group: ", "The icon group folder this icon is from.", groupLabel, 0));
 			nameLabel = new JLabel();
-			iconMetadataHider.add(
-					organizer.addLabelAndComponent("Name: ", "The icon's file name, not including modifiers or the extension.", nameLabel,
-							0));
+			iconMetadataHider.add(organizer.addLabelAndComponent("Name: ", "The icon's file name, not including modifiers or the extension.", nameLabel, 0));
 		}
 
 		GridBagOrganizer colorOrganizer = new GridBagOrganizer();
 		{
 			maximizeOpacityCheckbox = new JCheckBox("Maximize opacity");
-			maximizeOpacityCheckbox.setToolTipText(
-					"Scale the alpha of all pixels to use the full range, thus removing any 'extra' transparency.");
+			maximizeOpacityCheckbox.setToolTipText("Scale the alpha of all pixels to use the full range, thus removing any 'extra' transparency.");
 			maximizeOpacityCheckbox.addActionListener(new ActionListener()
 			{
 
@@ -394,8 +390,7 @@ public class IconsTool extends EditorTool
 					hueSlider.setValue(0);
 				});
 
-				sliderWithDisplay.addToOrganizer(colorOrganizer, "Hue:",
-						"Amount to add to the hue of colors in icons before applying fill color", clearButton, 0, 0);
+				sliderWithDisplay.addToOrganizer(colorOrganizer, "Hue:", "Amount to add to the hue of colors in icons before applying fill color", clearButton, 0, 0);
 			}
 
 			{
@@ -415,8 +410,7 @@ public class IconsTool extends EditorTool
 					saturationSlider.setValue(0);
 				});
 
-				sliderWithDisplay.addToOrganizer(colorOrganizer, "Saturation:",
-						"Amount to add to the saturation of colors in icons before applying fill color", clearButton, 0, 0);
+				sliderWithDisplay.addToOrganizer(colorOrganizer, "Saturation:", "Amount to add to the saturation of colors in icons before applying fill color", clearButton, 0, 0);
 			}
 
 			{
@@ -436,8 +430,7 @@ public class IconsTool extends EditorTool
 					brightnessSlider.setValue(0);
 				});
 
-				sliderWithDisplay.addToOrganizer(colorOrganizer, "Brightness:",
-						"Amount to add to the brightness of colors in icons before applying fill color", clearButton, 0, 0);
+				sliderWithDisplay.addToOrganizer(colorOrganizer, "Brightness:", "Amount to add to the brightness of colors in icons before applying fill color", clearButton, 0, 0);
 			}
 
 			{
@@ -457,8 +450,7 @@ public class IconsTool extends EditorTool
 					transparencySlider.setValue(0);
 				});
 
-				sliderWithDisplay.addToOrganizer(colorOrganizer, "Transparency:", "Transparency to add to icons before applying fill color",
-						clearButton, 0, 0);
+				sliderWithDisplay.addToOrganizer(colorOrganizer, "Transparency:", "Transparency to add to icons before applying fill color", clearButton, 0, 0);
 			}
 		}
 
@@ -484,9 +476,7 @@ public class IconsTool extends EditorTool
 					});
 				}
 			});
-			fillColorHider = colorOrganizer.addLabelAndComponentsHorizontal("Fill color:",
-					"Color to fill transparent pixels in the icon with",
-					Arrays.asList(fillColorDisplay, chooseColorButton));
+			fillColorHider = colorOrganizer.addLabelAndComponentsHorizontal("Fill color:", "Color to fill transparent pixels in the icon with", Arrays.asList(fillColorDisplay, chooseColorButton));
 		}
 
 		CollapsiblePanel colorPanel = new CollapsiblePanel("color_options", "Color", colorOrganizer.panel);
@@ -594,8 +584,7 @@ public class IconsTool extends EditorTool
 			JButton clearScaleButton;
 			{
 				clearScaleButton = new JButton("Reset Scale");
-				clearScaleButton.setToolTipText(
-						"Set the icon-specific scaling for the selected icons back to the scale they were created at");
+				clearScaleButton.setToolTipText("Set the icon-specific scaling for the selected icons back to the scale they were created at");
 				clearScaleButton.addActionListener(new ActionListener()
 				{
 
@@ -607,8 +596,7 @@ public class IconsTool extends EditorTool
 				});
 			}
 
-			deleteCopyPasteIconButtonsHider = organizer.addLeftAlignedComponents(
-					Arrays.asList(copyButton, pasteButton, deleteButton, clearScaleButton));
+			deleteCopyPasteIconButtonsHider = organizer.addLeftAlignedComponents(Arrays.asList(copyButton, pasteButton, deleteButton, clearScaleButton));
 		}
 
 		{
@@ -622,11 +610,8 @@ public class IconsTool extends EditorTool
 					handleImagesRefresh(mainWindow.getSettingsFromGUI(false));
 				}
 			});
-			artPackComboBoxHider = organizer.addLabelAndComponent("Art pack:",
-					"For filtering the icons shown in this tool. '" + Assets.installedArtPack + "' selects art that comes with Nortantis. '"
-							+ Assets.customArtPack
-							+ "' selects images from this map's custom images folder, if it has one. Other options are art packs installed on this machine.",
-					artPackComboBox);
+			artPackComboBoxHider = organizer.addLabelAndComponent("Art pack:", "For filtering the icons shown in this tool. '" + Assets.installedArtPack + "' selects art that comes with Nortantis. '"
+					+ Assets.customArtPack + "' selects images from this map's custom images folder, if it has one. Other options are art packs installed on this machine.", artPackComboBox);
 		}
 
 		mountainTypes =
@@ -666,9 +651,7 @@ public class IconsTool extends EditorTool
 					else if (e.getID() == KeyEvent.KEY_RELEASED)
 					{
 						addOrRemoveIconHoverHighlightSelection(false);
-						boolean isValidPosition = iconsToEdit.stream().anyMatch(
-								icon -> icon.type == IconType.decorations || !updater.mapParts.iconDrawer.isContentBottomTouchingWater(
-										icon));
+						boolean isValidPosition = iconsToEdit.stream().anyMatch(icon -> icon.type == IconType.decorations || !updater.mapParts.iconDrawer.isContentBottomTouchingWater(icon));
 						mapEditingPanel.showIconEditToolsAt(iconsToEdit, isValidPosition);
 						mapEditingPanel.repaint();
 					}
@@ -729,8 +712,7 @@ public class IconsTool extends EditorTool
 
 			for (FreeIcon icon : copied)
 			{
-				Point newLocation = new Point(icon.locationResolutionInvariant.x - center.x + graphPointMouseLocation.x,
-						icon.locationResolutionInvariant.y - center.y + graphPointMouseLocation.y);
+				Point newLocation = new Point(icon.locationResolutionInvariant.x - center.x + graphPointMouseLocation.x, icon.locationResolutionInvariant.y - center.y + graphPointMouseLocation.y);
 				FreeIcon copied = icon.copyUnanchored().copyWithLocationResolutionInvariant(newLocation);
 				mainWindow.edits.freeIcons.addOrReplace(copied);
 				pasted.add(copied);
@@ -795,8 +777,7 @@ public class IconsTool extends EditorTool
 				if (showEditTools)
 				{
 					boolean isValidPosition;
-					isValidPosition = iconsToEdit.stream().anyMatch(
-							icon -> icon.type == IconType.decorations || !updater.mapParts.iconDrawer.isContentBottomTouchingWater(icon));
+					isValidPosition = iconsToEdit.stream().anyMatch(icon -> icon.type == IconType.decorations || !updater.mapParts.iconDrawer.isContentBottomTouchingWater(icon));
 					mapEditingPanel.showIconEditToolsAt(iconsToEdit, isValidPosition);
 				}
 
@@ -809,21 +790,19 @@ public class IconsTool extends EditorTool
 				}
 				else
 				{
-					List<String> fileNames = ImageCache.getInstance(iconToEdit.artPack, mainWindow.customImagesPath)
-							.getIconGroupFileNamesWithoutWidthOrExtensionAsList(iconToEdit.type, iconToEdit.groupId);
+					List<String> fileNames = ImageCache.getInstance(iconToEdit.artPack, mainWindow.customImagesPath).getIconGroupFileNamesWithoutWidthOrExtensionAsList(iconToEdit.type,
+							iconToEdit.groupId);
 					String iconName = fileNames.get(iconToEdit.iconIndex % fileNames.size());
 					nameLabel.setText(iconName);
 				}
-				setColorFieldsWithoutRunningListeners(iconToEdit.color, iconToEdit.filterColor, iconToEdit.maximizeOpacity,
-						iconToEdit.fillWithColor);
+				setColorFieldsWithoutRunningListeners(iconToEdit.color, iconToEdit.filterColor, iconToEdit.maximizeOpacity, iconToEdit.fillWithColor);
 			}
 			else
 			{
 				if (showEditTools)
 				{
 					boolean isValidPosition;
-					isValidPosition = iconsToEdit.stream().anyMatch(
-							icon -> icon.type == IconType.decorations || !updater.mapParts.iconDrawer.isContentBottomTouchingWater(icon));
+					isValidPosition = iconsToEdit.stream().anyMatch(icon -> icon.type == IconType.decorations || !updater.mapParts.iconDrawer.isContentBottomTouchingWater(icon));
 					mapEditingPanel.showIconEditToolsAt(iconsToEdit, isValidPosition);
 				}
 				typeLabel.setText(null);
@@ -966,25 +945,18 @@ public class IconsTool extends EditorTool
 					default:
 						throw new UnsupportedOperationException("Unimplemented filter value change case " + whatChanged);
 				}
-				boolean maximizeOpacityToUse = whatChanged == WhatHSBColorFieldChanged.maximizeOpacity
-						? maximizeOpacityCheckbox.isSelected()
-						: iconToEdit.maximizeOpacity;
-				boolean fillWithColorToUse =
-						(whatChanged == WhatHSBColorFieldChanged.FillColor || whatChanged == WhatHSBColorFieldChanged.FillWithColorCheckbox)
-						? fillWithColorCheckbox.isSelected() : iconToEdit.fillWithColor;
-				Color fillColorToUse = whatChanged == WhatHSBColorFieldChanged.FillColor
-						? AwtFactory.wrap(fillColorDisplay.getBackground())
-						: iconToEdit.color;
-				FreeIcon updatedIcon = iconToEdit.copyWithColors(fillColorToUse, filterColorToUse, maximizeOpacityToUse,
-						fillWithColorToUse);
+				boolean maximizeOpacityToUse = whatChanged == WhatHSBColorFieldChanged.maximizeOpacity ? maximizeOpacityCheckbox.isSelected() : iconToEdit.maximizeOpacity;
+				boolean fillWithColorToUse = (whatChanged == WhatHSBColorFieldChanged.FillColor || whatChanged == WhatHSBColorFieldChanged.FillWithColorCheckbox) ? fillWithColorCheckbox.isSelected()
+						: iconToEdit.fillWithColor;
+				Color fillColorToUse = whatChanged == WhatHSBColorFieldChanged.FillColor ? AwtFactory.wrap(fillColorDisplay.getBackground()) : iconToEdit.color;
+				FreeIcon updatedIcon = iconToEdit.copyWithColors(fillColorToUse, filterColorToUse, maximizeOpacityToUse, fillWithColorToUse);
 				mainWindow.edits.freeIcons.replace(iconToEdit, updatedIcon);
 				updated.add(updatedIcon);
 			}
 			iconsToEdit.clear();
 			iconsToEdit.addAll(updated);
 			undoer.setUndoPoint(UpdateType.Incremental, this);
-			updater.createAndShowMapIncrementalUsingIcons(new ArrayList<>(iconsToEdit),
-					() -> ImageCache.clearColoredAndScaledImageCaches());
+			updater.createAndShowMapIncrementalUsingIcons(new ArrayList<>(iconsToEdit), () -> ImageCache.clearColoredAndScaledImageCaches());
 		}
 
 	}
@@ -999,13 +971,12 @@ public class IconsTool extends EditorTool
 		if (modeWidget.isDrawMode() || modeWidget.isReplaceMode())
 		{
 			IconType selectedType = getSelectedIconType();
-			setColorFieldsWithoutRunningListeners(iconColorsByType.get(selectedType), iconFilterColorsByType.get(selectedType),
-					maximizeOpacityByType.get(selectedType), fillWithColorByType.get(selectedType));
+			setColorFieldsWithoutRunningListeners(iconColorsByType.get(selectedType), iconFilterColorsByType.get(selectedType), maximizeOpacityByType.get(selectedType),
+					fillWithColorByType.get(selectedType));
 		}
 	}
 
-	private void setColorFieldsWithoutRunningListeners(Color iconColor, HSBColor filterColor, boolean maximizeOpacity,
-			boolean fillWithColor)
+	private void setColorFieldsWithoutRunningListeners(Color iconColor, HSBColor filterColor, boolean maximizeOpacity, boolean fillWithColor)
 	{
 		if (filterColor == null)
 		{
@@ -1064,21 +1035,17 @@ public class IconsTool extends EditorTool
 
 	private void showOrHideEditComponents()
 	{
-		modeOptionsAndBrushSeparatorHider.setVisible(
-				(modeWidget.isEditMode() && iconsToEdit != null && !iconsToEdit.isEmpty()) || modeWidget.isDrawMode()
-						|| modeWidget.isReplaceMode());
+		modeOptionsAndBrushSeparatorHider.setVisible((modeWidget.isEditMode() && iconsToEdit != null && !iconsToEdit.isEmpty()) || modeWidget.isDrawMode() || modeWidget.isReplaceMode());
 		brushAndEditOptionsSeparatorHider.setVisible(modeWidget.isEditMode() || modeWidget.isDrawMode() || modeWidget.isReplaceMode());
 		iconMetadataHider.setVisible(modeWidget.isEditMode() && iconsToEdit != null && iconsToEdit.size() == 1);
-		colorPickerHider.setVisible(
-				modeWidget.isDrawMode() || modeWidget.isReplaceMode() || modeWidget.isEditMode() && !iconsToEdit.isEmpty());
+		colorPickerHider.setVisible(modeWidget.isDrawMode() || modeWidget.isReplaceMode() || modeWidget.isEditMode() && !iconsToEdit.isEmpty());
 		deleteCopyPasteIconButtonsHider.setVisible(modeWidget.isEditMode());
 	}
 
 	private void showOrHideBrush(java.awt.Point mouseLocation)
 	{
 		int brushDiameter = getBrushDiameter();
-		if (modeWidget.isDrawMode() || brushDiameter <= 1 || (modeWidget.isEditMode() && (mapEditingPanel.isInMoveTool(mouseLocation)
-				|| mapEditingPanel.isInScaleTool(mouseLocation))))
+		if (modeWidget.isDrawMode() || brushDiameter <= 1 || (modeWidget.isEditMode() && (mapEditingPanel.isInMoveTool(mouseLocation) || mapEditingPanel.isInScaleTool(mouseLocation))))
 		{
 			mapEditingPanel.hideBrush();
 		}
@@ -1100,8 +1067,7 @@ public class IconsTool extends EditorTool
 		decorationButtons.hider.setVisible(decorationsButton.isSelected() && (modeWidget.isDrawMode() || modeWidget.isReplaceMode()));
 		densityHider.setVisible(treesButton.isSelected() && (modeWidget.isDrawMode()));
 		brushSizeHider.setVisible(
-				(modeWidget.isDrawMode() && !citiesButton.isSelected() && !decorationsButton.isSelected()) || modeWidget.isReplaceMode()
-						|| modeWidget.isEraseMode() || modeWidget.isEditMode());
+				(modeWidget.isDrawMode() && !citiesButton.isSelected() && !decorationsButton.isSelected()) || modeWidget.isReplaceMode() || modeWidget.isEraseMode() || modeWidget.isEditMode());
 		// Disable color change handlers so they don't set undo points because of automatic changes.
 		setColorForSelectedType();
 		artPackComboBoxHider.setVisible(modeWidget.isDrawMode() || modeWidget.isReplaceMode());
@@ -1114,8 +1080,7 @@ public class IconsTool extends EditorTool
 		toolsPanel.repaint();
 	}
 
-	private IconTypeButtons createOrUpdateRadioButtonsForIconType(GridBagOrganizer organizer, IconType iconType, IconTypeButtons existing,
-			String artPack, String customImagesPath)
+	private IconTypeButtons createOrUpdateRadioButtonsForIconType(GridBagOrganizer organizer, IconType iconType, IconTypeButtons existing, String artPack, String customImagesPath)
 	{
 		String prevSelection = existing != null ? existing.getSelectedOption() : null;
 
@@ -1129,17 +1094,13 @@ public class IconsTool extends EditorTool
 			radioButtons.add(button);
 		}
 
-		List<? extends Component> listToUse = radioButtons.size() > 0
-				? radioButtons
-				: Arrays.asList(
-						new JLabel("<html>The art pack '" + artPack + "' has no " + iconType.toString().toLowerCase() + ".</html>"));
+		List<? extends Component> listToUse = radioButtons.size() > 0 ? radioButtons
+				: Arrays.asList(new JLabel("<html>The art pack '" + artPack + "' has no " + iconType.toString().toLowerCase() + ".</html>"));
 		IconTypeButtons result;
 		if (existing == null)
 		{
 			JPanel buttonsPanel = new JPanel();
-			result = new IconTypeButtons(
-					organizer.addLabelAndComponentsVerticalWithComponentPanel(iconType.getNameForGUI() + ":", "", listToUse, buttonsPanel),
-					radioButtons, buttonsPanel);
+			result = new IconTypeButtons(organizer.addLabelAndComponentsVerticalWithComponentPanel(iconType.getNameForGUI() + ":", "", listToUse, buttonsPanel), radioButtons, buttonsPanel);
 		}
 		else
 		{
@@ -1209,8 +1170,7 @@ public class IconsTool extends EditorTool
 		updateNamedIconButtonPreviewImages(settings, decorationButtons);
 	}
 
-	private void updateOneIconTypeButtonPreviewImages(MapSettings settings, IconType iconType, IconTypeButtons buttons,
-			String customImagesPath)
+	private void updateOneIconTypeButtonPreviewImages(MapSettings settings, IconType iconType, IconTypeButtons buttons, String customImagesPath)
 	{
 		for (RadioButtonWithImage button : buttons.buttons)
 		{
@@ -1225,8 +1185,7 @@ public class IconsTool extends EditorTool
 				@Override
 				protected Image doInBackground() throws Exception
 				{
-					return createIconPreviewForGroup(settings, iconType, buttonText, customImagesPath, iconColor, filterColor,
-							maximizeOpacity, fillWithColor);
+					return createIconPreviewForGroup(settings, iconType, buttonText, customImagesPath, iconColor, filterColor, maximizeOpacity, fillWithColor);
 				}
 
 				@Override
@@ -1265,8 +1224,8 @@ public class IconsTool extends EditorTool
 		{
 			throw new IllegalArgumentException(
 
-					"Cannot updated NamedIconsSelector because selector has buttons for different art pack than settings. Settings art pack: '"
-							+ settings.artPack + "', selector art pack: '" + selector.artPack + "'");
+					"Cannot updated NamedIconsSelector because selector has buttons for different art pack than settings. Settings art pack: '" + settings.artPack + "', selector art pack: '"
+							+ selector.artPack + "'");
 		}
 
 		for (String groupId : ImageCache.getInstance(settings.artPack, settings.customImagesPath).getIconGroupNames(selector.type))
@@ -1285,20 +1244,17 @@ public class IconsTool extends EditorTool
 					protected List<Image> doInBackground() throws Exception
 					{
 						List<Image> previewImages = new ArrayList<>();
-						Map<String, ImageAndMasks> iconsInGroup = ImageCache.getInstance(settings.artPack, settings.customImagesPath)
-								.getIconsByNameForGroup(selector.type, groupId);
+						Map<String, ImageAndMasks> iconsInGroup = ImageCache.getInstance(settings.artPack, settings.customImagesPath).getIconsByNameForGroup(selector.type, groupId);
 
 						for (Tuple2<String, UnscaledImageToggleButton> nameAndButton : namesAndButtons)
 						{
 							String iconNameWithoutWidthOrExtension = nameAndButton.getFirst();
 							if (!iconsInGroup.containsKey(iconNameWithoutWidthOrExtension))
 							{
-								throw new IllegalArgumentException(
-										"No '" + selector.type + "' icon exists for the button '" + iconNameWithoutWidthOrExtension + "'");
+								throw new IllegalArgumentException("No '" + selector.type + "' icon exists for the button '" + iconNameWithoutWidthOrExtension + "'");
 							}
 							ImageAndMasks imageAndMasks = iconsInGroup.get(iconNameWithoutWidthOrExtension);
-							Image preview = createIconPreview(settings, Collections.singletonList(imageAndMasks), 45, 0, selector.type,
-									iconColor, filterColor, maximizeOpacity, fillWithColor);
+							Image preview = createIconPreview(settings, Collections.singletonList(imageAndMasks), 45, 0, selector.type, iconColor, filterColor, maximizeOpacity, fillWithColor);
 
 							previewImages.add(preview);
 						}
@@ -1327,20 +1283,17 @@ public class IconsTool extends EditorTool
 						{
 							try
 							{
-								selector.getIconNamesAndButtons(groupId).get(i).getSecond()
-										.setIcon(new ImageIcon(AwtFactory.unwrap(previewImages.get(i))));
+								selector.getIconNamesAndButtons(groupId).get(i).getSecond().setIcon(new ImageIcon(AwtFactory.unwrap(previewImages.get(i))));
 							}
 							catch (NullPointerException ex)
 							{
-								Logger.println(
-										"While updating icon preview images, the image selectors did not contain group ID: " + groupId
-												+ ". If icon previews don't update correctly, try refreshing the map (ctrl+R).");
+								Logger.println("While updating icon preview images, the image selectors did not contain group ID: " + groupId
+										+ ". If icon previews don't update correctly, try refreshing the map (ctrl+R).");
 							}
 							catch (IndexOutOfBoundsException ex)
 							{
-								Logger.println(
-										"While updating icon preview images, the image selectors did not have the correct expected of buttons for: "
-												+ groupId + ". If icon previews don't update correctly, try refreshing the map (ctrl+R).");
+								Logger.println("While updating icon preview images, the image selectors did not have the correct expected of buttons for: " + groupId
+										+ ". If icon previews don't update correctly, try refreshing the map (ctrl+R).");
 							}
 						}
 					}
@@ -1353,8 +1306,7 @@ public class IconsTool extends EditorTool
 
 	private void updateArtPackOptions(String selectedArtPack, String customImagesPath)
 	{
-		SwingHelper.initializeComboBoxItems(artPackComboBox, Assets.listArtPacks(!StringUtils.isEmpty(customImagesPath)), selectedArtPack,
-				false);
+		SwingHelper.initializeComboBoxItems(artPackComboBox, Assets.listArtPacks(!StringUtils.isEmpty(customImagesPath)), selectedArtPack, false);
 	}
 
 	private void createOrUpdateButtonsForCities(GridBagOrganizer organizer, String artPack, String customImagesPath)
@@ -1381,8 +1333,8 @@ public class IconsTool extends EditorTool
 		decorationButtons.updateButtonList(artPack, customImagesPath);
 	}
 
-	private Image createIconPreviewForGroup(MapSettings settings, IconType iconType, String groupName, String customImagesPath,
-			Color iconColor, HSBColor filterColor, boolean maximizeOpacity, boolean fillWithColor)
+	private Image createIconPreviewForGroup(MapSettings settings, IconType iconType, String groupName, String customImagesPath, Color iconColor, HSBColor filterColor, boolean maximizeOpacity,
+			boolean fillWithColor)
 	{
 		List<ImageAndMasks> images = ImageCache.getInstance(settings.artPack, customImagesPath).getIconsInGroup(iconType, groupName);
 		int scaledHeight;
@@ -1395,8 +1347,8 @@ public class IconsTool extends EditorTool
 		return createIconPreview(settings, images, scaledHeight, 9, iconType, iconColor, filterColor, maximizeOpacity, fillWithColor);
 	}
 
-	private static Image createIconPreview(MapSettings settings, List<ImageAndMasks> imagesAndMasks, int scaledHeight, int padding,
-			IconType iconType, Color iconColor, HSBColor filterColor, boolean maximizeOpacity, boolean fillWithColor)
+	private static Image createIconPreview(MapSettings settings, List<ImageAndMasks> imagesAndMasks, int scaledHeight, int padding, IconType iconType, Color iconColor, HSBColor filterColor,
+			boolean maximizeOpacity, boolean fillWithColor)
 	{
 		final double osScaling = SwingHelper.getOSScale();
 		final int maxRowWidth = (int) (159 * osScaling);
@@ -1439,15 +1391,13 @@ public class IconsTool extends EditorTool
 		// image library I'm using not always scaling to the size I
 		// give.
 
-		IntDimension size = new IntDimension(Math.min(maxRowWidth, largestRowWidth) + (padding * 2),
-				(rowCount * scaledHeight) + (padding * 2));
+		IntDimension size = new IntDimension(Math.min(maxRowWidth, largestRowWidth) + (padding * 2), (rowCount * scaledHeight) + (padding * 2));
 
 		Image previewImage;
 
 		Path backgroundImagePath = settings.getBackgroundImagePath().getFirst();
-		Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm> tuple = ThemePanel.createBackgroundImageDisplaysImages(
-				size, settings.backgroundRandomSeed, settings.colorizeOcean, settings.colorizeLand, settings.generateBackground,
-				settings.generateBackgroundFromTexture, settings.solidColorBackground,
+		Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm> tuple = ThemePanel.createBackgroundImageDisplaysImages(size, settings.backgroundRandomSeed,
+				settings.colorizeOcean, settings.colorizeLand, settings.generateBackground, settings.generateBackgroundFromTexture, settings.solidColorBackground,
 				backgroundImagePath == null ? null : backgroundImagePath.toString());
 		if (iconType == IconType.decorations)
 		{
@@ -1469,8 +1419,7 @@ public class IconsTool extends EditorTool
 		for (int i : new Range(imagesAndMasks.size()))
 		{
 			ImageAndMasks imageAndMasks = imagesAndMasks.get(i);
-			Image image = ImageCache.getInstance(settings.artPack, settings.customImagesPath)
-					.getColoredIcon(imageAndMasks, iconColor, filterColor, maximizeOpacity, fillWithColor);
+			Image image = ImageCache.getInstance(settings.artPack, settings.customImagesPath).getColoredIcon(imageAndMasks, iconColor, filterColor, maximizeOpacity, fillWithColor);
 			image = imageAndMasks.cropToContent(image);
 			int widthForHeight = ImageHelper.getWidthWhenScaledByHeight(image, scaledHeight);
 			int scaledWidth = Math.min(widthForHeight, maxRowWidth);
@@ -1551,8 +1500,7 @@ public class IconsTool extends EditorTool
 				for (Center center : selected)
 				{
 					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
-					CenterIcon newIcon = new CenterIcon(CenterIconType.Mountain, (String) artPackComboBox.getSelectedItem(), groupId,
-							Math.abs(rand.nextInt()));
+					CenterIcon newIcon = new CenterIcon(CenterIconType.Mountain, (String) artPackComboBox.getSelectedItem(), groupId, Math.abs(rand.nextInt()));
 					mainWindow.edits.centerEdits.put(center.index, cEdit.copyWithIcon(newIcon));
 				}
 				updater.createAndShowMapIncrementalUsingCenters(selected);
@@ -1567,8 +1515,7 @@ public class IconsTool extends EditorTool
 				for (Center center : groupId)
 				{
 					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
-					CenterIcon newIcon = new CenterIcon(CenterIconType.Hill, (String) artPackComboBox.getSelectedItem(), rangeId,
-							Math.abs(rand.nextInt()));
+					CenterIcon newIcon = new CenterIcon(CenterIconType.Hill, (String) artPackComboBox.getSelectedItem(), rangeId, Math.abs(rand.nextInt()));
 					mainWindow.edits.centerEdits.put(center.index, cEdit.copyWithIcon(newIcon));
 				}
 				updater.createAndShowMapIncrementalUsingCenters(groupId);
@@ -1583,8 +1530,7 @@ public class IconsTool extends EditorTool
 				for (Center center : selected)
 				{
 					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
-					CenterIcon newIcon = new CenterIcon(CenterIconType.Dune, (String) artPackComboBox.getSelectedItem(), groupId,
-							Math.abs(rand.nextInt()));
+					CenterIcon newIcon = new CenterIcon(CenterIconType.Dune, (String) artPackComboBox.getSelectedItem(), groupId, Math.abs(rand.nextInt()));
 					mainWindow.edits.centerEdits.put(center.index, cEdit.copyWithIcon(newIcon));
 				}
 				updater.createAndShowMapIncrementalUsingCenters(selected);
@@ -1599,8 +1545,7 @@ public class IconsTool extends EditorTool
 				for (Center center : selected)
 				{
 					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
-					CenterTrees newTrees = new CenterTrees((String) artPackComboBox.getSelectedItem(), treeType,
-							densitySlider.getValue() / 10.0, Math.abs(rand.nextLong()));
+					CenterTrees newTrees = new CenterTrees((String) artPackComboBox.getSelectedItem(), treeType, densitySlider.getValue() / 10.0, Math.abs(rand.nextLong()));
 					mainWindow.edits.centerEdits.put(center.index, cEdit.copyWithTrees(newTrees));
 				}
 				updater.createAndShowMapIncrementalUsingCenters(selected);
@@ -1638,9 +1583,8 @@ public class IconsTool extends EditorTool
 				String groupId = selectedButton.getFirst();
 				String iconName = selectedButton.getSecond();
 				nortantis.geom.Point point = getPointOnGraph(e.getPoint());
-				FreeIcon icon = new FreeIcon(mainWindow.displayQualityScale, point, 1.0, IconType.decorations,
-						(String) artPackComboBox.getSelectedItem(), groupId, iconName, null, getSelectedIconTypeColor(),
-						getSelectedIconTypeFilterColor(), maximizeOpacityCheckbox.isSelected(), fillWithColorCheckbox.isSelected());
+				FreeIcon icon = new FreeIcon(mainWindow.displayQualityScale, point, 1.0, IconType.decorations, (String) artPackComboBox.getSelectedItem(), groupId, iconName, null,
+						getSelectedIconTypeColor(), getSelectedIconTypeFilterColor(), maximizeOpacityCheckbox.isSelected(), fillWithColorCheckbox.isSelected());
 				mainWindow.edits.freeIcons.addOrReplace(icon);
 				updater.createAndShowMapIncrementalUsingIcons(Arrays.asList(icon));
 			}
@@ -1719,9 +1663,8 @@ public class IconsTool extends EditorTool
 					String groupId = mountainTypes.getSelectedOption();
 					if (!StringUtils.isEmpty(groupId))
 					{
-						after = before.copyWith((String) artPackComboBox.getSelectedItem(), groupId, Math.abs(rand.nextInt()),
-								getSelectedIconTypeColor(), getSelectedIconTypeFilterColor(), maximizeOpacityCheckbox.isSelected(),
-								fillWithColorCheckbox.isSelected());
+						after = before.copyWith((String) artPackComboBox.getSelectedItem(), groupId, Math.abs(rand.nextInt()), getSelectedIconTypeColor(), getSelectedIconTypeFilterColor(),
+								maximizeOpacityCheckbox.isSelected(), fillWithColorCheckbox.isSelected());
 					}
 				}
 				else if (hillsButton.isSelected())
@@ -1729,9 +1672,8 @@ public class IconsTool extends EditorTool
 					String groupId = hillTypes.getSelectedOption();
 					if (!StringUtils.isEmpty(groupId))
 					{
-						after = before.copyWith((String) artPackComboBox.getSelectedItem(), groupId, Math.abs(rand.nextInt()),
-								getSelectedIconTypeColor(), getSelectedIconTypeFilterColor(), maximizeOpacityCheckbox.isSelected(),
-								fillWithColorCheckbox.isSelected());
+						after = before.copyWith((String) artPackComboBox.getSelectedItem(), groupId, Math.abs(rand.nextInt()), getSelectedIconTypeColor(), getSelectedIconTypeFilterColor(),
+								maximizeOpacityCheckbox.isSelected(), fillWithColorCheckbox.isSelected());
 					}
 				}
 				else if (dunesButton.isSelected())
@@ -1739,9 +1681,8 @@ public class IconsTool extends EditorTool
 					String groupId = duneTypes.getSelectedOption();
 					if (!StringUtils.isEmpty(groupId))
 					{
-						after = before.copyWith((String) artPackComboBox.getSelectedItem(), groupId, Math.abs(rand.nextInt()),
-								getSelectedIconTypeColor(), getSelectedIconTypeFilterColor(), maximizeOpacityCheckbox.isSelected(),
-								fillWithColorCheckbox.isSelected());
+						after = before.copyWith((String) artPackComboBox.getSelectedItem(), groupId, Math.abs(rand.nextInt()), getSelectedIconTypeColor(), getSelectedIconTypeFilterColor(),
+								maximizeOpacityCheckbox.isSelected(), fillWithColorCheckbox.isSelected());
 					}
 				}
 				else if (treesButton.isSelected())
@@ -1749,9 +1690,8 @@ public class IconsTool extends EditorTool
 					String treeType = treeTypes.getSelectedOption();
 					if (!StringUtils.isEmpty(treeType))
 					{
-						after = before.copyWith((String) artPackComboBox.getSelectedItem(), treeType, Math.abs(rand.nextInt()),
-								getSelectedIconTypeColor(), getSelectedIconTypeFilterColor(), maximizeOpacityCheckbox.isSelected(),
-								fillWithColorCheckbox.isSelected());
+						after = before.copyWith((String) artPackComboBox.getSelectedItem(), treeType, Math.abs(rand.nextInt()), getSelectedIconTypeColor(), getSelectedIconTypeFilterColor(),
+								maximizeOpacityCheckbox.isSelected(), fillWithColorCheckbox.isSelected());
 					}
 				}
 				else if (citiesButton.isSelected())
@@ -1764,8 +1704,8 @@ public class IconsTool extends EditorTool
 
 					String cityType = selectedCity.getFirst();
 					String cityName = selectedCity.getSecond();
-					after = before.copyWith((String) artPackComboBox.getSelectedItem(), cityType, cityName, getSelectedIconTypeColor(),
-							getSelectedIconTypeFilterColor(), maximizeOpacityCheckbox.isSelected(), fillWithColorCheckbox.isSelected());
+					after = before.copyWith((String) artPackComboBox.getSelectedItem(), cityType, cityName, getSelectedIconTypeColor(), getSelectedIconTypeFilterColor(),
+							maximizeOpacityCheckbox.isSelected(), fillWithColorCheckbox.isSelected());
 				}
 				else if (decorationsButton.isSelected())
 				{
@@ -1777,8 +1717,8 @@ public class IconsTool extends EditorTool
 
 					String type = selectedDecoration.getFirst();
 					String iconName = selectedDecoration.getSecond();
-					after = before.copyWith((String) artPackComboBox.getSelectedItem(), type, iconName, getSelectedIconTypeColor(),
-							getSelectedIconTypeFilterColor(), maximizeOpacityCheckbox.isSelected(), fillWithColorCheckbox.isSelected());
+					after = before.copyWith((String) artPackComboBox.getSelectedItem(), type, iconName, getSelectedIconTypeColor(), getSelectedIconTypeFilterColor(),
+							maximizeOpacityCheckbox.isSelected(), fillWithColorCheckbox.isSelected());
 				}
 				else
 				{
@@ -1832,9 +1772,8 @@ public class IconsTool extends EditorTool
 
 		if (icons != null && !icons.isEmpty())
 		{
-			Set<RotatedRectangle> processingAreas = icons.stream().map(icon -> updater.mapParts.iconDrawer.toIconDrawTask(icon))
-					.filter(task -> task != null).map(task -> new RotatedRectangle(task.getOrCreateContentBoundsPadded()))
-					.collect(Collectors.toSet());
+			Set<RotatedRectangle> processingAreas = icons.stream().map(icon -> updater.mapParts.iconDrawer.toIconDrawTask(icon)).filter(task -> task != null)
+					.map(task -> new RotatedRectangle(task.getOrCreateContentBoundsPadded())).collect(Collectors.toSet());
 			mapEditingPanel.addProcessingAreas(processingAreas);
 			mapEditingPanel.repaint();
 			updater.createAndShowMapIncrementalUsingIcons(icons, () ->
@@ -1887,8 +1826,7 @@ public class IconsTool extends EditorTool
 					for (FreeIcon iconToEdit : iconsToEdit)
 					{
 						Point scaledOldLocation = iconToEdit.getScaledLocation(mainWindow.displayQualityScale);
-						updated.add(iconToEdit.copyWithLocation(mainWindow.displayQualityScale,
-								new Point(scaledOldLocation.x + deltaX, scaledOldLocation.y + deltaY)));
+						updated.add(iconToEdit.copyWithLocation(mainWindow.displayQualityScale, new Point(scaledOldLocation.x + deltaX, scaledOldLocation.y + deltaY)));
 					}
 
 				}
@@ -1907,8 +1845,7 @@ public class IconsTool extends EditorTool
 				if (!updated.isEmpty())
 				{
 					mapEditingPanel.setHighlightedAreasFromIcons(updated, updater.mapParts.iconDrawer, false);
-					boolean isValidPosition = updated.stream().anyMatch(
-							icon -> icon.type == IconType.decorations || !updater.mapParts.iconDrawer.isContentBottomTouchingWater(icon));
+					boolean isValidPosition = updated.stream().anyMatch(icon -> icon.type == IconType.decorations || !updater.mapParts.iconDrawer.isContentBottomTouchingWater(icon));
 					mapEditingPanel.showIconEditToolsAt(updated, isValidPosition);
 				}
 			}
@@ -1953,8 +1890,7 @@ public class IconsTool extends EditorTool
 
 	private double calcScale(Point graphPointMouseLocation, Point graphPointMousePressedLocation, Rectangle iconEditBounds)
 	{
-		double scale = graphPointMouseLocation.distanceTo(iconEditBounds.getCenter()) / graphPointMousePressedLocation.distanceTo(
-				iconEditBounds.getCenter());
+		double scale = graphPointMouseLocation.distanceTo(iconEditBounds.getCenter()) / graphPointMousePressedLocation.distanceTo(iconEditBounds.getCenter());
 
 		return floorWithMinScale(scale, iconEditBounds);
 	}
@@ -1987,8 +1923,7 @@ public class IconsTool extends EditorTool
 						double deltaX = (int) (graphPointMouseLocation.x - graphPointMousePressedLocation.x);
 						double deltaY = (int) (graphPointMouseLocation.y - graphPointMousePressedLocation.y);
 						Point scaledOldLocation = iconToEdit.getScaledLocation(mainWindow.displayQualityScale);
-						FreeIcon updatedIcon = iconToEdit.copyWithLocation(mainWindow.displayQualityScale,
-								new Point(scaledOldLocation.x + deltaX, scaledOldLocation.y + deltaY)).copyUnanchored();
+						FreeIcon updatedIcon = iconToEdit.copyWithLocation(mainWindow.displayQualityScale, new Point(scaledOldLocation.x + deltaX, scaledOldLocation.y + deltaY)).copyUnanchored();
 						updated.add(updatedIcon);
 						mainWindow.edits.freeIcons.doWithLock(() ->
 						{
@@ -2000,8 +1935,7 @@ public class IconsTool extends EditorTool
 							// The user moved the last tree out of the polygon it was anchored to. Remove the invisible CenterTree so that
 							// if
 							// someone resizes all trees later, trees don't appear out of nowhere on this Center.
-							mainWindow.edits.centerEdits.put(iconToEdit.centerIndex,
-									mainWindow.edits.centerEdits.get(iconToEdit.centerIndex).copyWithTrees(null));
+							mainWindow.edits.centerEdits.put(iconToEdit.centerIndex, mainWindow.edits.centerEdits.get(iconToEdit.centerIndex).copyWithTrees(null));
 						}
 					}
 					else if (isScaling)
@@ -2028,8 +1962,7 @@ public class IconsTool extends EditorTool
 					iconsToEdit.clear();
 					iconsToEdit.addAll(updated);
 
-					boolean isValidPosition = updated.stream().anyMatch(
-							icon -> icon.type == IconType.decorations || !updater.mapParts.iconDrawer.isContentBottomTouchingWater(icon));
+					boolean isValidPosition = updated.stream().anyMatch(icon -> icon.type == IconType.decorations || !updater.mapParts.iconDrawer.isContentBottomTouchingWater(icon));
 					mapEditingPanel.showIconEditToolsAt(updated, isValidPosition);
 					if (e.isControlDown())
 					{
@@ -2048,8 +1981,7 @@ public class IconsTool extends EditorTool
 			{
 				if (!e.isControlDown())
 				{
-					boolean isValidPosition = iconsToEdit.stream().anyMatch(
-							icon -> icon.type == IconType.decorations || !updater.mapParts.iconDrawer.isContentBottomTouchingWater(icon));
+					boolean isValidPosition = iconsToEdit.stream().anyMatch(icon -> icon.type == IconType.decorations || !updater.mapParts.iconDrawer.isContentBottomTouchingWater(icon));
 					mapEditingPanel.showIconEditToolsAt(iconsToEdit, isValidPosition);
 					mapEditingPanel.clearHighlightedAreas();
 					mapEditingPanel.repaint();
@@ -2474,16 +2406,13 @@ public class IconsTool extends EditorTool
 	}
 
 	@Override
-	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean changeEffectsBackgroundImages,
-			boolean willDoImagesRefresh)
+	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean changeEffectsBackgroundImages, boolean willDoImagesRefresh)
 	{
 		String customImagesPath = settings.customImagesPath;
 		String artPack = settings.artPack;
 		// The art pack field has special handling for undo/redo to avoid undo/redo changing the selected value, while still storing the
 		// value in MapSettings.
-		String artPackToSelect = isUndoRedoOrAutomaticChange && !StringUtils.isEmpty((String) artPackComboBox.getSelectedItem())
-				? (String) artPackComboBox.getSelectedItem()
-				: settings.artPack;
+		String artPackToSelect = isUndoRedoOrAutomaticChange && !StringUtils.isEmpty((String) artPackComboBox.getSelectedItem()) ? (String) artPackComboBox.getSelectedItem() : settings.artPack;
 		try
 		{
 			disableImageRefreshes = willDoImagesRefresh;

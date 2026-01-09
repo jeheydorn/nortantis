@@ -118,8 +118,7 @@ public class Assets
 	{
 		List<String> result = new ArrayList<>();
 		// Add installed art packs.
-		result.addAll(Assets.listNonEmptySubFolders(getArtPacksFolder().toString()).stream()
-				.filter(name -> !reservedArtPacks.contains(name.toLowerCase())).toList());
+		result.addAll(Assets.listNonEmptySubFolders(getArtPacksFolder().toString()).stream().filter(name -> !reservedArtPacks.contains(name.toLowerCase())).toList());
 
 		result.sort(String::compareTo);
 		return result;
@@ -137,8 +136,7 @@ public class Assets
 		List<NamedResource> result = new ArrayList<>();
 		for (String artPack : listArtPacks(StringUtils.isNotEmpty(customImagesFolder)))
 		{
-			for (NamedResource textureResource : listBackgroundTexturesForArtPack(artPack,
-					FileHelper.replaceHomeFolderPlaceholder(customImagesFolder)))
+			for (NamedResource textureResource : listBackgroundTexturesForArtPack(artPack, FileHelper.replaceHomeFolderPlaceholder(customImagesFolder)))
 			{
 				result.add(textureResource);
 			}
@@ -248,8 +246,7 @@ public class Assets
 
 	public static List<String> listFileNames(String path, String containsText, String endingText, Set<String> allowedExtensions)
 	{
-		return listFiles(path, containsText, endingText, allowedExtensions).stream()
-				.map(filePath -> FilenameUtils.getName(filePath.toString())).collect(Collectors.toList());
+		return listFiles(path, containsText, endingText, allowedExtensions).stream().map(filePath -> FilenameUtils.getName(filePath.toString())).collect(Collectors.toList());
 	}
 
 	public static List<Path> listFiles(String folderPath, String containsText, String endingText, Set<String> allowedExtensions)
@@ -259,10 +256,9 @@ public class Assets
 			return listFilesFromJar(folderPath, containsText, endingText);
 		}
 
-		File[] files = new File(folderPath).listFiles(file -> !file.isDirectory()
-				&& (StringUtils.isEmpty(containsText) || file.getName().contains(containsText))
-				&& (StringUtils.isEmpty(endingText) || file.getName().endsWith(endingText))
-				&& (allowedExtensions == null || allowedExtensions.contains(FilenameUtils.getExtension(file.getName()).toLowerCase())));
+		File[] files = new File(folderPath).listFiles(
+				file -> !file.isDirectory() && (StringUtils.isEmpty(containsText) || file.getName().contains(containsText)) && (StringUtils.isEmpty(endingText) || file.getName().endsWith(endingText))
+						&& (allowedExtensions == null || allowedExtensions.contains(FilenameUtils.getExtension(file.getName()).toLowerCase())));
 		if (files == null)
 		{
 			return new ArrayList<>();
@@ -290,8 +286,7 @@ public class Assets
 		cachedEntries.stream().forEach(entry ->
 		{
 			String entryName = entry.name;
-			if (!entry.isDirectory && entryName.startsWith(assetPathInEntryFormat)
-					&& ((StringUtils.isEmpty(containsText) || entryName.contains(containsText)))
+			if (!entry.isDirectory && entryName.startsWith(assetPathInEntryFormat) && ((StringUtils.isEmpty(containsText) || entryName.contains(containsText)))
 					&& (StringUtils.isEmpty(endingText) || entryName.endsWith(endingText)))
 			{
 				fileNames.add(Paths.get(folderPath, FilenameUtils.getName(entryName)));
@@ -310,8 +305,7 @@ public class Assets
 		List<String> result = new ArrayList<>();
 		for (CachedEntry entry : cachedEntries)
 		{
-			if (entry.isDirectory && entry.name.startsWith(assetPathInEntryFormat)
-					&& !addTrailingSlash(entry.name).equals(assetPathInEntryFormat))
+			if (entry.isDirectory && entry.name.startsWith(assetPathInEntryFormat) && !addTrailingSlash(entry.name).equals(assetPathInEntryFormat))
 			{
 				result.add(FilenameUtils.getName(removeTrailingSlash(entry.name)));
 			}
@@ -333,8 +327,7 @@ public class Assets
 		URL jarUrl = Assets.class.getResource("/" + assetsPath);
 		if (jarUrl == null)
 		{
-			throw new RuntimeException(
-					"Unable to check installed assets" + " because the URL for the jar file was null. assetsPath: " + assetsPath);
+			throw new RuntimeException("Unable to check installed assets" + " because the URL for the jar file was null. assetsPath: " + assetsPath);
 		}
 
 		try
@@ -342,9 +335,7 @@ public class Assets
 			JarURLConnection jarConnection = (JarURLConnection) jarUrl.openConnection();
 			try (JarFile jarFile = jarConnection.getJarFile())
 			{
-				jarFile.stream()
-						.filter(entry -> entry.getName().startsWith(assetPathInEntryFormat)
-								&& !addTrailingSlash(entry.getName()).equals(assetPathInEntryFormat))
+				jarFile.stream().filter(entry -> entry.getName().startsWith(assetPathInEntryFormat) && !addTrailingSlash(entry.getName()).equals(assetPathInEntryFormat))
 						.forEach(entry -> cachedEntries.add(new CachedEntry(entry.getName(), entry.isDirectory())));
 			}
 		}
@@ -377,11 +368,9 @@ public class Assets
 				while (entries.hasMoreElements())
 				{
 					JarEntry entry = entries.nextElement();
-					if (entry.getName().startsWith(sourceDirInEntryFormat)
-							&& !addTrailingSlash(entry.getName()).equals(sourceDirInEntryFormat))
+					if (entry.getName().startsWith(sourceDirInEntryFormat) && !addTrailingSlash(entry.getName()).equals(sourceDirInEntryFormat))
 					{
-						String entryPathInParentFolder = entry.getName()
-								.substring((addTrailingSlash(sourceDirParentInEntryFormat)).length());
+						String entryPathInParentFolder = entry.getName().substring((addTrailingSlash(sourceDirParentInEntryFormat)).length());
 
 						Path destPath = Paths.get(destDir.toString(), entryPathInParentFolder);
 						if (entry.isDirectory())
@@ -628,15 +617,13 @@ public class Assets
 		{
 			if (inputStream == null)
 			{
-				throw new RuntimeException("Can't read the image resource '" + filePath
-						+ "' because either it doesn't or it's an unsupported format or corrupted.");
+				throw new RuntimeException("Can't read the image resource '" + filePath + "' because either it doesn't or it's an unsupported format or corrupted.");
 			}
 
 			Image image = PlatformFactory.getInstance().readImage(inputStream);
 			if (image == null)
 			{
-				throw new RuntimeException(
-						"Can't read the image resource " + filePath + ". It might be in an unsupported format or corrupted.");
+				throw new RuntimeException("Can't read the image resource " + filePath + ". It might be in an unsupported format or corrupted.");
 			}
 
 			return image;

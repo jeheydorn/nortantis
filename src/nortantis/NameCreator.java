@@ -48,10 +48,8 @@ public class NameCreator
 			nounVerbPairs.addAll(Assets.readStringPairs(Assets.getAssetsPath() + "/books/" + book + "_noun_verb_pairs.txt"));
 		}
 
-		placeNameGenerator = new NameGenerator(r, placeNames, maxWordLengthComparedToAverage, probabilityOfKeepingNameLength1,
-				probabilityOfKeepingNameLength2, probabilityOfKeepingNameLength3);
-		personNameGenerator = new NameGenerator(r, personNames, maxWordLengthComparedToAverage, probabilityOfKeepingNameLength1,
-				probabilityOfKeepingNameLength2, probabilityOfKeepingNameLength3);
+		placeNameGenerator = new NameGenerator(r, placeNames, maxWordLengthComparedToAverage, probabilityOfKeepingNameLength1, probabilityOfKeepingNameLength2, probabilityOfKeepingNameLength3);
+		personNameGenerator = new NameGenerator(r, personNames, maxWordLengthComparedToAverage, probabilityOfKeepingNameLength1, probabilityOfKeepingNameLength2, probabilityOfKeepingNameLength3);
 
 		nameCompiler = new NameCompiler(r, nounAdjectivePairs, nounVerbPairs);
 	}
@@ -121,8 +119,7 @@ public class NameCreator
 	{
 		List<CityType> result = new ArrayList<>();
 		Set<String> words = new HashSet<String>(Arrays.asList(cityFileNameNoExtension.toLowerCase().split(" |_")));
-		if (words.contains("fort") || words.contains("castle") || words.contains("keep") || words.contains("citadel")
-				|| words.contains("walled"))
+		if (words.contains("fort") || words.contains("castle") || words.contains("keep") || words.contains("citadel") || words.contains("walled"))
 		{
 			result.add(CityType.Fortification);
 		}
@@ -140,8 +137,7 @@ public class NameCreator
 			{
 				result.add(CityType.Homestead);
 			}
-			if (words.contains("farm") || words.contains("plantation") || words.contains("farmstead") || words.contains("ranch")
-					|| words.contains("windmill"))
+			if (words.contains("farm") || words.contains("plantation") || words.contains("farmstead") || words.contains("ranch") || words.contains("windmill"))
 			{
 				result.add(CityType.Farm);
 			}
@@ -190,14 +186,12 @@ public class NameCreator
 			double probabilityOfPersonName = 0.2;
 			if (r.nextDouble() < probabilityOfPersonName)
 			{
-				String format = ProbabilityHelper.sampleCategorical(r,
-						Arrays.asList(new Tuple2<>(0.2, "Kingdom of %s"), new Tuple2<>(0.04, "Empire of %s")));
+				String format = ProbabilityHelper.sampleCategorical(r, Arrays.asList(new Tuple2<>(0.2, "Kingdom of %s"), new Tuple2<>(0.04, "Empire of %s")));
 				return generatePersonName(format, requireUnique);
 			}
 			else
 			{
-				String format = ProbabilityHelper.sampleCategorical(r,
-						Arrays.asList(new Tuple2<>(0.1, "Kingdom of %s"), new Tuple2<>(0.02, "Empire of %s"), new Tuple2<>(0.85, "%s")));
+				String format = ProbabilityHelper.sampleCategorical(r, Arrays.asList(new Tuple2<>(0.1, "Kingdom of %s"), new Tuple2<>(0.02, "Empire of %s"), new Tuple2<>(0.85, "%s")));
 				return generatePlaceName(format, requireUnique);
 			}
 		}
@@ -244,18 +238,16 @@ public class NameCreator
 			String structureName;
 			if (cityType.equals(CityType.Fortification))
 			{
-				structureName = ProbabilityHelper.sampleCategorical(r, Arrays.asList(new Tuple2<>(0.2, "Castle"), new Tuple2<>(0.2, "Fort"),
-						new Tuple2<>(0.2, "Fortress"), new Tuple2<>(0.2, "Keep"), new Tuple2<>(0.2, "Citadel")));
+				structureName = ProbabilityHelper.sampleCategorical(r,
+						Arrays.asList(new Tuple2<>(0.2, "Castle"), new Tuple2<>(0.2, "Fort"), new Tuple2<>(0.2, "Fortress"), new Tuple2<>(0.2, "Keep"), new Tuple2<>(0.2, "Citadel")));
 			}
 			else if (cityType.equals(CityType.City))
 			{
-				structureName = ProbabilityHelper.sampleCategorical(r,
-						Arrays.asList(new Tuple2<>(0.75, "City"), new Tuple2<>(0.25, "Town")));
+				structureName = ProbabilityHelper.sampleCategorical(r, Arrays.asList(new Tuple2<>(0.75, "City"), new Tuple2<>(0.25, "Town")));
 			}
 			else if (cityType.equals(CityType.Town))
 			{
-				structureName = ProbabilityHelper.sampleCategorical(r,
-						Arrays.asList(new Tuple2<>(0.2, "City"), new Tuple2<>(0.4, "Village"), new Tuple2<>(0.4, "Town")));
+				structureName = ProbabilityHelper.sampleCategorical(r, Arrays.asList(new Tuple2<>(0.2, "City"), new Tuple2<>(0.4, "Village"), new Tuple2<>(0.4, "Town")));
 			}
 			else if (cityType.equals(CityType.Homestead))
 			{
@@ -263,8 +255,7 @@ public class NameCreator
 			}
 			else if (cityType.equals(CityType.Farm))
 			{
-				structureName = ProbabilityHelper.sampleCategorical(r,
-						Arrays.asList(new Tuple2<>(0.7, "Farm"), new Tuple2<>(0.3, "Ranch")));
+				structureName = ProbabilityHelper.sampleCategorical(r, Arrays.asList(new Tuple2<>(0.7, "Farm"), new Tuple2<>(0.3, "Ranch")));
 			}
 			else
 			{
@@ -275,15 +266,14 @@ public class NameCreator
 			if (r.nextDouble() < probabilityOfPersonName)
 			{
 				String format = ProbabilityHelper.sampleCategorical(r,
-						Arrays.asList(new Tuple2<>(0.1, structureName + " of %s"), new Tuple2<>(0.04, "%s's " + structureName),
-								new Tuple2<>(0.04, structureName + " of %s"), new Tuple2<>(0.04, structureName + " of %s"),
-								new Tuple2<>(0.04, "%s's " + structureName), new Tuple2<>(0.04, "%s's " + structureName)));
+						Arrays.asList(new Tuple2<>(0.1, structureName + " of %s"), new Tuple2<>(0.04, "%s's " + structureName), new Tuple2<>(0.04, structureName + " of %s"),
+								new Tuple2<>(0.04, structureName + " of %s"), new Tuple2<>(0.04, "%s's " + structureName), new Tuple2<>(0.04, "%s's " + structureName)));
 				return generatePersonName(format, requireUnique);
 			}
 			else
 			{
-				String format = ProbabilityHelper.sampleCategorical(r, Arrays.asList(new Tuple2<>(0.2, structureName + " of %s"),
-						new Tuple2<>(0.2, "%s " + structureName), new Tuple2<>(0.02, "%s " + structureName), new Tuple2<>(0.3, "%s")));
+				String format = ProbabilityHelper.sampleCategorical(r,
+						Arrays.asList(new Tuple2<>(0.2, structureName + " of %s"), new Tuple2<>(0.2, "%s " + structureName), new Tuple2<>(0.02, "%s " + structureName), new Tuple2<>(0.3, "%s")));
 				return generatePlaceName(format, requireUnique);
 			}
 		}
@@ -315,8 +305,7 @@ public class NameCreator
 		else if (type.equals(TextType.Lake))
 		{
 			final String nameBeforeLakeFormat = "%s Lake";
-			String format = ProbabilityHelper.sampleCategorical(r,
-					Arrays.asList(new Tuple2<>(0.6, nameBeforeLakeFormat), new Tuple2<>(0.4, "Lake %s")));
+			String format = ProbabilityHelper.sampleCategorical(r, Arrays.asList(new Tuple2<>(0.6, nameBeforeLakeFormat), new Tuple2<>(0.4, "Lake %s")));
 
 			if (format.equals(nameBeforeLakeFormat))
 			{
@@ -388,8 +377,8 @@ public class NameCreator
 				format = ProbabilityHelper.sampleCategorical(r, Arrays.asList(new Tuple2<>(0.1, "%s Wash"), new Tuple2<>(0.8, "%s River")));
 				break;
 			case Small:
-				format = ProbabilityHelper.sampleCategorical(r, Arrays.asList(new Tuple2<>(0.1, "%s Bayou"), new Tuple2<>(0.2, "%s Creek"),
-						new Tuple2<>(0.2, "%s Brook"), new Tuple2<>(0.5, "%s Stream")));
+				format = ProbabilityHelper.sampleCategorical(r,
+						Arrays.asList(new Tuple2<>(0.1, "%s Bayou"), new Tuple2<>(0.2, "%s Creek"), new Tuple2<>(0.2, "%s Brook"), new Tuple2<>(0.5, "%s Stream")));
 				break;
 			default:
 				throw new RuntimeException("Unknown river type: " + riverType);
@@ -416,8 +405,7 @@ public class NameCreator
 		}
 		else if (type.equals(TextType.Other_mountains))
 		{
-			subType = ProbabilityHelper.sampleCategorical(r,
-					ProbabilityHelper.createUniformDistributionOverEnumValues(OtherMountainsType.values()));
+			subType = ProbabilityHelper.sampleCategorical(r, ProbabilityHelper.createUniformDistributionOverEnumValues(OtherMountainsType.values()));
 		}
 		else if (type.equals(TextType.River))
 		{

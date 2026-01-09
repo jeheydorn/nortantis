@@ -94,8 +94,7 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 
 	public synchronized void replace(FreeIcon before, FreeIcon after)
 	{
-		if ((before.type != IconType.trees && after.type != IconType.trees)
-				&& (before.centerIndex != null && before.centerIndex == after.centerIndex))
+		if ((before.type != IconType.trees && after.type != IconType.trees) && (before.centerIndex != null && before.centerIndex == after.centerIndex))
 		{
 			anchoredNonTreeIcons.put(after.centerIndex, after);
 		}

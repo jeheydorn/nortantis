@@ -45,8 +45,7 @@ public class BackgroundGenerator
 	 *            If true, then if the texture is less than 1/4th the target height or width, then it will be scaled so that it is not.
 	 * @return A randomly generated texture.
 	 */
-	public static Image generateUsingWhiteNoiseConvolution(Random rand, Image texture, int targetRows, int targetCols,
-			boolean allowScalingTextureLarger)
+	public static Image generateUsingWhiteNoiseConvolution(Random rand, Image texture, int targetRows, int targetCols, boolean allowScalingTextureLarger)
 	{
 		// The conditions under which the two calls below change the texture are mutually exclusive.
 		texture = cropTextureSmallerIfNeeded(texture, targetRows, targetCols);
@@ -146,8 +145,7 @@ public class BackgroundGenerator
 		Image colorsForHistogramMatching;
 		if (texture.getWidth() < targetCols || texture.getHeight() < targetRows)
 		{
-			colorsForHistogramMatching = ImageHelper.scale(texture, Math.max(texture.getWidth(), targetCols),
-					Math.max(texture.getHeight(), targetRows), Method.BALANCED);
+			colorsForHistogramMatching = ImageHelper.scale(texture, Math.max(texture.getWidth(), targetCols), Math.max(texture.getHeight(), targetRows), Method.BALANCED);
 		}
 		else
 		{

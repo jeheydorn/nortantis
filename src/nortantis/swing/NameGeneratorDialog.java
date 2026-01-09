@@ -61,8 +61,8 @@ public class NameGeneratorDialog extends JDialog
 
 		BooksWidget booksWidget = new BooksWidget(true, null);
 		booksWidget.checkSelectedBooks(settings.books);
-		organizer.addLeftAlignedComponentWithStackedLabel("Books for generating names:", "Selected books will be used to generate names.",
-				booksWidget.getContentPanel(), GridBagOrganizer.rowVerticalInset, 2, true, 0.2);
+		organizer.addLeftAlignedComponentWithStackedLabel("Books for generating names:", "Selected books will be used to generate names.", booksWidget.getContentPanel(),
+				GridBagOrganizer.rowVerticalInset, 2, true, 0.2);
 
 		JPanel generatePanel = new JPanel();
 		generatePanel.setLayout(new FlowLayout(FlowLayout.LEFT));
@@ -75,11 +75,9 @@ public class NameGeneratorDialog extends JDialog
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				if (!beginsWith.getText().chars().allMatch(Character::isLetter)
-						|| !endsWith.getText().chars().allMatch(Character::isLetter))
+				if (!beginsWith.getText().chars().allMatch(Character::isLetter) || !endsWith.getText().chars().allMatch(Character::isLetter))
 				{
-					String message = beginsWithLabel.replace(":", "") + " and " + endsWithLabel.replace(":", "")
-							+ " must contain only letters.";
+					String message = beginsWithLabel.replace(":", "") + " and " + endsWithLabel.replace(":", "") + " must contain only letters.";
 					JOptionPane.showMessageDialog(NameGeneratorDialog.this, message, "Error", JOptionPane.ERROR_MESSAGE);
 					return;
 				}
@@ -119,8 +117,7 @@ public class NameGeneratorDialog extends JDialog
 		bottomButtonsPanel.add(doneButton);
 	}
 
-	private String generateNamesForType(int numberToGenerate, NameType type, String requiredPrefix, String requiredSuffix,
-			NameCreator nameCreator)
+	private String generateNamesForType(int numberToGenerate, NameType type, String requiredPrefix, String requiredSuffix, NameCreator nameCreator)
 	{
 		final int maxAttempts = 100000;
 		String names = "";
@@ -154,14 +151,12 @@ public class NameGeneratorDialog extends JDialog
 				{
 					if (requiredSuffix.length() > 0)
 					{
-						return names + (names.isEmpty() ? "" : "\n")
-								+ "Error: Unable to generate enough names with the given books and requested suffix. "
+						return names + (names.isEmpty() ? "" : "\n") + "Error: Unable to generate enough names with the given books and requested suffix. "
 								+ "Try either adding more books or removing or reducing the suffix.";
 					}
 					else if (requiredPrefix.length() > 0)
 					{
-						return names + (names.isEmpty() ? "" : "\n")
-								+ "Error: Unable to generate enough names with the given books and required prefix. "
+						return names + (names.isEmpty() ? "" : "\n") + "Error: Unable to generate enough names with the given books and required prefix. "
 								+ "Try including more books or removing or reducing the prefix.";
 					}
 					return names + (names.isEmpty() ? "" : "\n") + "Error: Unable to generate enough names. Try including more books.";
@@ -174,8 +169,7 @@ public class NameGeneratorDialog extends JDialog
 				attemptCount++;
 				if (attemptCount >= maxAttempts)
 				{
-					return names + (names.isEmpty() ? "" : "\n") + "Unable to generate enough names with the given contraints. "
-							+ "Try using more books or reducing the suffix.";
+					return names + (names.isEmpty() ? "" : "\n") + "Unable to generate enough names with the given contraints. " + "Try using more books or reducing the suffix.";
 				}
 			}
 			names = names + (names.isEmpty() ? "" : "\n") + name;

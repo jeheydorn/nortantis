@@ -252,8 +252,7 @@ public abstract class VoronoiGraph
 		// Gradient of x and y with respect to z.
 		Vector3D G = new Vector3D(-N.getX() / N.getZ(), -N.getY() / N.getZ(), 0);
 
-		if ((Math.abs(G.getX()) < verySmall || Double.isInfinite(G.getX()) || Double.isNaN(G.getX())) && Math.abs(G.getY()) < verySmall
-				|| Double.isInfinite(G.getY()) || Double.isNaN(G.getY()))
+		if ((Math.abs(G.getX()) < verySmall || Double.isInfinite(G.getX()) || Double.isNaN(G.getX())) && Math.abs(G.getY()) < verySmall || Double.isInfinite(G.getY()) || Double.isNaN(G.getY()))
 		{
 			// The triangle is either flat or vertical.
 			int grayLevel = (int) (255 * center.elevation);
@@ -264,8 +263,7 @@ public abstract class VoronoiGraph
 
 		Vector3D zIntercept = findZIntersectionWithXYPlain(highestPoint, G);
 
-		p.setGradient((float) highestPoint.getX(), (float) highestPoint.getY(), highestPointColor, (float) zIntercept.getX(),
-				(float) zIntercept.getY(), Color.black);
+		p.setGradient((float) highestPoint.getX(), (float) highestPoint.getY(), highestPointColor, (float) zIntercept.getX(), (float) zIntercept.getY(), Color.black);
 		drawTriangle(p, c1, c2, center);
 	}
 
@@ -375,8 +373,7 @@ public abstract class VoronoiGraph
 		{
 			g.setColor(Color.pink);
 
-			g.fillOval((int) (c.loc.x - 5 * resolutionScale), (int) (c.loc.y - 5 * resolutionScale), (int) (10 * resolutionScale),
-					(int) (10 * resolutionScale));
+			g.fillOval((int) (c.loc.x - 5 * resolutionScale), (int) (c.loc.y - 5 * resolutionScale), (int) (10 * resolutionScale), (int) (10 * resolutionScale));
 		}
 
 		if (drawBounds != null)
@@ -403,8 +400,7 @@ public abstract class VoronoiGraph
 		});
 	}
 
-	public void drawRivers(Painter p, Collection<Edge> edgesToDraw, Rectangle drawBounds, Color riverColor,
-			boolean areRegionBoundariesVisible, Color regionBoundaryColor)
+	public void drawRivers(Painter p, Collection<Edge> edgesToDraw, Rectangle drawBounds, Color riverColor, boolean areRegionBoundariesVisible, Color regionBoundaryColor)
 	{
 		if (edgesToDraw == null)
 		{
@@ -431,18 +427,14 @@ public abstract class VoronoiGraph
 				{
 					fromEdge = noisyEdges.findEdgeToFollow(e.v0, e);
 				}
-				float fromWidth = (fromEdge == null || !fromEdge.isRiver() || noisyEdges.hasLargerProtrodudingRiverEdge(e.v0, e, fromEdge))
-						? currentWidth
-						: calcRiverStrokeWidth(fromEdge);
+				float fromWidth = (fromEdge == null || !fromEdge.isRiver() || noisyEdges.hasLargerProtrodudingRiverEdge(e.v0, e, fromEdge)) ? currentWidth : calcRiverStrokeWidth(fromEdge);
 
 				Edge toEdge = null;
 				if (e.v1 != null)
 				{
 					toEdge = noisyEdges.findEdgeToFollow(e.v1, e);
 				}
-				float toWidth = (toEdge == null || !toEdge.isRiver() || noisyEdges.hasLargerProtrodudingRiverEdge(e.v1, e, toEdge))
-						? currentWidth
-						: calcRiverStrokeWidth(toEdge);
+				float toWidth = (toEdge == null || !toEdge.isRiver() || noisyEdges.hasLargerProtrodudingRiverEdge(e.v1, e, toEdge)) ? currentWidth : calcRiverStrokeWidth(toEdge);
 
 				drawPathWithSmoothLineTransitions(p, noisyEdges.getNoisyEdge(e.index), fromWidth, currentWidth, toWidth);
 
@@ -522,8 +514,7 @@ public abstract class VoronoiGraph
 				drawTriangle(g, e.v0, e.v1, c);
 			}
 
-			c.area += Math.abs(
-					c.loc.x * (e.v0.loc.y - e.v1.loc.y) + e.v0.loc.x * (e.v1.loc.y - c.loc.y) + e.v1.loc.x * (c.loc.y - e.v0.loc.y)) / 2;
+			c.area += Math.abs(c.loc.x * (e.v0.loc.y - e.v1.loc.y) + e.v0.loc.x * (e.v1.loc.y - c.loc.y) + e.v1.loc.x * (c.loc.y - e.v0.loc.y)) / 2;
 		}
 
 		// Handle the missing triangles along borders.
@@ -593,8 +584,7 @@ public abstract class VoronoiGraph
 
 						// One of the corners of the graph is the next point. Determine which corner that is.
 						x[2] = (int) (Math.abs(c.loc.x - bounds.x) < Math.abs(bounds.getRight() - c.loc.x) ? bounds.x : bounds.getRight());
-						y[2] = (int) (Math.abs(c.loc.y - bounds.y) < Math.abs(bounds.getBottom() - c.loc.y) ? bounds.y
-								: bounds.getBottom());
+						y[2] = (int) (Math.abs(c.loc.y - bounds.y) < Math.abs(bounds.getBottom() - c.loc.y) ? bounds.y : bounds.getBottom());
 
 						x[3] = (int) edgeCorner2.loc.x;
 						y[3] = (int) edgeCorner2.loc.y;
@@ -616,8 +606,7 @@ public abstract class VoronoiGraph
 
 	}
 
-	private void drawPathWithSmoothLineTransitions(Painter p, List<Point> path, float previousEdgeWidth, float currentEdgeWidth,
-			float nextEdgeWidth)
+	private void drawPathWithSmoothLineTransitions(Painter p, List<Point> path, float previousEdgeWidth, float currentEdgeWidth, float nextEdgeWidth)
 	{
 		if (path == null)
 		{
@@ -736,8 +725,7 @@ public abstract class VoronoiGraph
 		return edges;
 	}
 
-	protected void drawSpecifiedEdges(Painter g, double strokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds,
-			Function<Edge, Boolean> shouldDraw)
+	protected void drawSpecifiedEdges(Painter g, double strokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds, Function<Edge, Boolean> shouldDraw)
 	{
 		if (centersToDraw == null)
 		{
@@ -993,12 +981,10 @@ public abstract class VoronoiGraph
 		return result;
 	}
 
-	private void addEdgePoints(List<Point> points, Edge edge, boolean reverse, boolean ignoreNoisyEdges,
-			double maxDistanceToIgnoreNoisyEdgesForJaggedLines)
+	private void addEdgePoints(List<Point> points, Edge edge, boolean reverse, boolean ignoreNoisyEdges, double maxDistanceToIgnoreNoisyEdgesForJaggedLines)
 	{
 		List<Point> noisyEdge = noisyEdges.getNoisyEdge(edge.index);
-		if (noisyEdge == null || (ignoreNoisyEdges && (noisyEdges.getLineStyle() != LineStyle.Jagged
-				|| edge.v1.loc.distanceTo(edge.v0.loc) <= maxDistanceToIgnoreNoisyEdgesForJaggedLines)))
+		if (noisyEdge == null || (ignoreNoisyEdges && (noisyEdges.getLineStyle() != LineStyle.Jagged || edge.v1.loc.distanceTo(edge.v0.loc) <= maxDistanceToIgnoreNoisyEdgesForJaggedLines)))
 		{
 			if (reverse)
 			{
@@ -1260,8 +1246,7 @@ public abstract class VoronoiGraph
 		// but is still necessary for backwards compatibility with older maps.
 		final double scaleForBackwardsCompatibility = (8.0 / 3.0);
 
-		Point key = new Point((int) (p.x / scaleForBackwardsCompatibility) * pointPrecision,
-				(int) (p.y / scaleForBackwardsCompatibility) * pointPrecision);
+		Point key = new Point((int) (p.x / scaleForBackwardsCompatibility) * pointPrecision, (int) (p.y / scaleForBackwardsCompatibility) * pointPrecision);
 		Corner c = pointCornerMap.get(key);
 		if (c == null)
 		{

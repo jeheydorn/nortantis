@@ -176,8 +176,7 @@ public class NoisyEdges
 	{
 		for (Edge edge : center.borders)
 		{
-			if (edge.d0 != null && edge.d1 != null && edge.v0 != null && edge.v1 != null
-					&& (forceRebuild || curves.get(edge.index) == null))
+			if (edge.d0 != null && edge.d1 != null && edge.v0 != null && edge.v1 != null && (forceRebuild || curves.get(edge.index) == null))
 			{
 				if (!shouldDrawEdge(edge))
 				{
@@ -290,8 +289,7 @@ public class NoisyEdges
 			// Follow the largest river other than the one we came from. That
 			// way small rivers branch off of large ones, instead of the other
 			// way round.
-			Optional<Edge> optional = corner.protrudes.stream().filter((other) -> other != edge && other != prev
-					&& !other.sharesCornerWith(prev) && getEdgeDrawType(other) == EdgeDrawType.River)
+			Optional<Edge> optional = corner.protrudes.stream().filter((other) -> other != edge && other != prev && !other.sharesCornerWith(prev) && getEdgeDrawType(other) == EdgeDrawType.River)
 					.max((e1, e2) -> Integer.compare(e1.river, e2.river));
 			if (optional.isPresent())
 			{
@@ -324,8 +322,8 @@ public class NoisyEdges
 		// The river continues to nextRiverEdge, but the curve should only follow that edge if the river doesn't have a larger
 		// branch another direction. That way small branches off a river don't widen or cause the main river to curve that
 		// direction.
-		Optional<Edge> optionalLargerRiver = corner.protrudes.stream().filter((other) -> other != source && other != follow
-				&& getEdgeDrawType(other) == EdgeDrawType.River && other.river > source.river && other.river >= follow.river).findFirst();
+		Optional<Edge> optionalLargerRiver = corner.protrudes.stream()
+				.filter((other) -> other != source && other != follow && getEdgeDrawType(other) == EdgeDrawType.River && other.river > source.river && other.river >= follow.river).findFirst();
 		if (optionalLargerRiver.isPresent())
 		{
 			return true;

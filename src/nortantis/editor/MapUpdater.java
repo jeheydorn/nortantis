@@ -272,16 +272,13 @@ public abstract class MapUpdater
 
 	private Set<Integer> getIdsOfCentersWithChangesInEdits(MapEdits changeEdits)
 	{
-		Set<Integer> changedCentersIds = getEdits().centerEdits.values().stream()
-				.filter(cEdit -> !cEdit.equals(changeEdits.centerEdits.get(cEdit.index))).map(cEdit -> cEdit.index)
+		Set<Integer> changedCentersIds = getEdits().centerEdits.values().stream().filter(cEdit -> !cEdit.equals(changeEdits.centerEdits.get(cEdit.index))).map(cEdit -> cEdit.index)
 				.collect(Collectors.toSet());
 
-		Set<RegionEdit> regionChanges = getEdits().regionEdits.values().stream()
-				.filter(rEdit -> !rEdit.equals(changeEdits.regionEdits.get(rEdit.regionId))).collect(Collectors.toSet());
+		Set<RegionEdit> regionChanges = getEdits().regionEdits.values().stream().filter(rEdit -> !rEdit.equals(changeEdits.regionEdits.get(rEdit.regionId))).collect(Collectors.toSet());
 		for (RegionEdit rEdit : regionChanges)
 		{
-			Set<Integer> regionCenterEdits = changeEdits.centerEdits.values().stream()
-					.filter(cEdit -> cEdit.regionId != null && cEdit.regionId == rEdit.regionId).map(cEdit -> cEdit.index)
+			Set<Integer> regionCenterEdits = changeEdits.centerEdits.values().stream().filter(cEdit -> cEdit.regionId != null && cEdit.regionId == rEdit.regionId).map(cEdit -> cEdit.index)
 					.collect(Collectors.toSet());
 			changedCentersIds.addAll(regionCenterEdits);
 		}
@@ -383,22 +380,19 @@ public abstract class MapUpdater
 
 	private boolean isUpdateTypeThatAllowsInteractions(UpdateType updateType)
 	{
-		return updateType == UpdateType.Incremental || updateType == UpdateType.Text || updateType == UpdateType.ReprocessBooks
-				|| updateType == UpdateType.NoDraw;
+		return updateType == UpdateType.Incremental || updateType == UpdateType.Text || updateType == UpdateType.ReprocessBooks || updateType == UpdateType.NoDraw;
 	}
 
-	private void createAndShowMap(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged, List<MapText> textChanged,
-			List<FreeIcon> iconsChanged, Runnable preRun, Runnable postRun)
+	private void createAndShowMap(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged, List<MapText> textChanged, List<FreeIcon> iconsChanged, Runnable preRun, Runnable postRun)
 	{
-		Set<Integer> centersChangedIds = centersChanged == null ? null
-				: centersChanged.stream().map(c -> c.index).collect(Collectors.toSet());
+		Set<Integer> centersChangedIds = centersChanged == null ? null : centersChanged.stream().map(c -> c.index).collect(Collectors.toSet());
 		Set<Integer> edgesChangedIds = edgesChanged == null ? null : edgesChanged.stream().map(e -> e.index).collect(Collectors.toSet());
 
 		createAndShowMapUsingIds(updateType, centersChangedIds, edgesChangedIds, textChanged, iconsChanged, preRun, postRun);
 	}
 
-	private void createAndShowMapUsingIds(UpdateType updateType, Set<Integer> centersChangedIds, Set<Integer> edgesChangedIds,
-			Collection<MapText> textChanged, List<FreeIcon> iconsChanged, Runnable preRun, Runnable postRun)
+	private void createAndShowMapUsingIds(UpdateType updateType, Set<Integer> centersChangedIds, Set<Integer> edgesChangedIds, Collection<MapText> textChanged, List<FreeIcon> iconsChanged,
+			Runnable preRun, Runnable postRun)
 	{
 		List<Runnable> preRuns = new ArrayList<>();
 		if (preRun != null)
@@ -412,17 +406,15 @@ public abstract class MapUpdater
 			postRuns.add(postRun);
 		}
 
-		List<MapText> copiedText = textChanged == null ? null
-				: textChanged.stream().map(text -> text.deepCopy()).collect(Collectors.toList());
+		List<MapText> copiedText = textChanged == null ? null : textChanged.stream().map(text -> text.deepCopy()).collect(Collectors.toList());
 		innerCreateAndShowMap(updateType, centersChangedIds, edgesChangedIds, copiedText, iconsChanged, preRuns, postRuns, false);
 	}
 
 	/**
 	 * Redraws the map, then displays it
 	 */
-	private void innerCreateAndShowMap(UpdateType updateType, Set<Integer> centersChangedIds, Set<Integer> edgesChangedIds,
-			List<MapText> textChanged, List<FreeIcon> iconsChanged, List<Runnable> preRuns, List<Runnable> postRuns,
-			boolean isLowPriorityChange)
+	private void innerCreateAndShowMap(UpdateType updateType, Set<Integer> centersChangedIds, Set<Integer> edgesChangedIds, List<MapText> textChanged, List<FreeIcon> iconsChanged,
+			List<Runnable> preRuns, List<Runnable> postRuns, boolean isLowPriorityChange)
 	{
 		if (!enabled)
 		{
@@ -447,13 +439,11 @@ public abstract class MapUpdater
 				currentMapCreator.cancel();
 				if (updateType == UpdateType.Incremental)
 				{
-					incrementalUpdatesToDraw.add(new MapUpdate(updateType, centersChangedIds, edgesChangedIds, textChanged, iconsChanged,
-							preRuns, postRuns, isLowPriorityChange));
+					incrementalUpdatesToDraw.add(new MapUpdate(updateType, centersChangedIds, edgesChangedIds, textChanged, iconsChanged, preRuns, postRuns, isLowPriorityChange));
 				}
 				else
 				{
-					nonIncrementalUpdatesToDraw.add(new MapUpdate(updateType, centersChangedIds, edgesChangedIds, textChanged, iconsChanged,
-							preRuns, postRuns, isLowPriorityChange));
+					nonIncrementalUpdatesToDraw.add(new MapUpdate(updateType, centersChangedIds, edgesChangedIds, textChanged, iconsChanged, preRuns, postRuns, isLowPriorityChange));
 				}
 
 				lowPriorityUpdatesToDraw.add(currentUpdate);
@@ -463,20 +453,17 @@ public abstract class MapUpdater
 			{
 				if (isLowPriorityChange)
 				{
-					lowPriorityUpdatesToDraw.add(new MapUpdate(updateType, centersChangedIds, edgesChangedIds, textChanged, iconsChanged,
-							preRuns, postRuns, isLowPriorityChange));
+					lowPriorityUpdatesToDraw.add(new MapUpdate(updateType, centersChangedIds, edgesChangedIds, textChanged, iconsChanged, preRuns, postRuns, isLowPriorityChange));
 				}
 				else
 				{
 					if (updateType == UpdateType.Incremental)
 					{
-						incrementalUpdatesToDraw.add(new MapUpdate(updateType, centersChangedIds, edgesChangedIds, textChanged,
-								iconsChanged, preRuns, postRuns, isLowPriorityChange));
+						incrementalUpdatesToDraw.add(new MapUpdate(updateType, centersChangedIds, edgesChangedIds, textChanged, iconsChanged, preRuns, postRuns, isLowPriorityChange));
 					}
 					else
 					{
-						nonIncrementalUpdatesToDraw.add(new MapUpdate(updateType, centersChangedIds, edgesChangedIds, textChanged,
-								iconsChanged, preRuns, postRuns, isLowPriorityChange));
+						nonIncrementalUpdatesToDraw.add(new MapUpdate(updateType, centersChangedIds, edgesChangedIds, textChanged, iconsChanged, preRuns, postRuns, isLowPriorityChange));
 					}
 				}
 				return;
@@ -525,8 +512,7 @@ public abstract class MapUpdater
 				{
 					try
 					{
-						currentUpdate = new MapUpdate(updateType, centersChangedIds, edgesChangedIds, textChanged, iconsChanged, preRuns,
-								postRuns, isLowPriorityChange);
+						currentUpdate = new MapUpdate(updateType, centersChangedIds, edgesChangedIds, textChanged, iconsChanged, preRuns, postRuns, isLowPriorityChange);
 
 						clearMapPartsAsNeeded(updateType);
 
@@ -535,15 +521,12 @@ public abstract class MapUpdater
 							Image map = getCurrentMapForIncrementalUpdate();
 							IntRectangle combinedReplaceBounds = null;
 							// Incremental update
-							if (centersChangedIds != null && centersChangedIds.size() > 0
-									|| edgesChangedIds != null && edgesChangedIds.size() > 0)
+							if (centersChangedIds != null && centersChangedIds.size() > 0 || edgesChangedIds != null && edgesChangedIds.size() > 0)
 							{
 								Stopwatch incrementalUpdateTimer = new Stopwatch("do incremental update for centers and edges");
 								currentMapCreator = new MapCreator();
-								IntRectangle replaceBounds = currentMapCreator.incrementalUpdateForCentersAndEdges(settings, mapParts, map,
-										centersChangedIds, edgesChangedIds, isLowPriorityChange);
-								combinedReplaceBounds = combinedReplaceBounds == null ? replaceBounds
-										: combinedReplaceBounds.add(replaceBounds);
+								IntRectangle replaceBounds = currentMapCreator.incrementalUpdateForCentersAndEdges(settings, mapParts, map, centersChangedIds, edgesChangedIds, isLowPriorityChange);
+								combinedReplaceBounds = combinedReplaceBounds == null ? replaceBounds : combinedReplaceBounds.add(replaceBounds);
 								if (DebugFlags.printIncrementalUpdateTimes())
 								{
 									incrementalUpdateTimer.printElapsedTime();
@@ -555,8 +538,7 @@ public abstract class MapUpdater
 								Stopwatch incrementalUpdateTimer = new Stopwatch("do incremental update for text");
 								currentMapCreator = new MapCreator();
 								IntRectangle replaceBounds = currentMapCreator.incrementalUpdateText(settings, mapParts, map, textChanged);
-								combinedReplaceBounds = combinedReplaceBounds == null ? replaceBounds
-										: combinedReplaceBounds.add(replaceBounds);
+								combinedReplaceBounds = combinedReplaceBounds == null ? replaceBounds : combinedReplaceBounds.add(replaceBounds);
 								if (DebugFlags.printIncrementalUpdateTimes())
 								{
 									incrementalUpdateTimer.printElapsedTime();
@@ -567,10 +549,8 @@ public abstract class MapUpdater
 							{
 								Stopwatch incrementalUpdateTimer = new Stopwatch("do incremental update for icons");
 								currentMapCreator = new MapCreator();
-								IntRectangle replaceBounds = currentMapCreator.incrementalUpdateIcons(settings, mapParts, map,
-										iconsChanged);
-								combinedReplaceBounds = combinedReplaceBounds == null ? replaceBounds
-										: combinedReplaceBounds.add(replaceBounds);
+								IntRectangle replaceBounds = currentMapCreator.incrementalUpdateIcons(settings, mapParts, map, iconsChanged);
+								combinedReplaceBounds = combinedReplaceBounds == null ? replaceBounds : combinedReplaceBounds.add(replaceBounds);
 								if (DebugFlags.printIncrementalUpdateTimes())
 								{
 									incrementalUpdateTimer.printElapsedTime();
@@ -644,9 +624,7 @@ public abstract class MapUpdater
 						if (updateType != UpdateType.ReprocessBooks)
 						{
 							boolean anotherDrawIsQueued = next != null;
-							int scaledBorderWidth = settings.drawBorder && settings.borderPosition == BorderPosition.Outside_map
-									? (int) (settings.borderWidth * settings.resolution)
-									: 0;
+							int scaledBorderWidth = settings.drawBorder && settings.borderPosition == BorderPosition.Outside_map ? (int) (settings.borderWidth * settings.resolution) : 0;
 							onFinishedDrawing(map, anotherDrawIsQueued, scaledBorderWidth, replaceBounds, warningMessages);
 						}
 
@@ -662,8 +640,7 @@ public abstract class MapUpdater
 
 						if (next != null)
 						{
-							innerCreateAndShowMap(next.updateType, next.centersChangedIds, next.edgesChangedIds, next.textChanged,
-									next.iconsChanged, next.preRuns, next.postRuns, next.isLowPriority);
+							innerCreateAndShowMap(next.updateType, next.centersChangedIds, next.edgesChangedIds, next.textChanged, next.iconsChanged, next.preRuns, next.postRuns, next.isLowPriority);
 						}
 						else
 						{
@@ -692,8 +669,8 @@ public abstract class MapUpdater
 							MapUpdate next = combineAndGetNextUpdateToDraw();
 							if (next != null)
 							{
-								innerCreateAndShowMap(next.updateType, next.centersChangedIds, next.edgesChangedIds, next.textChanged,
-										next.iconsChanged, next.preRuns, next.postRuns, next.isLowPriority);
+								innerCreateAndShowMap(next.updateType, next.centersChangedIds, next.edgesChangedIds, next.textChanged, next.iconsChanged, next.preRuns, next.postRuns,
+										next.isLowPriority);
 							}
 							else
 							{
@@ -774,8 +751,7 @@ public abstract class MapUpdater
 
 	public abstract MapSettings getSettingsFromGUI();
 
-	protected abstract void onFinishedDrawing(Image map, boolean anotherDrawIsQueued, int borderPaddingAsDrawn,
-			IntRectangle incrementalChangeArea, List<String> warningMessages);
+	protected abstract void onFinishedDrawing(Image map, boolean anotherDrawIsQueued, int borderPaddingAsDrawn, IntRectangle incrementalChangeArea, List<String> warningMessages);
 
 	protected abstract void onFailedToDraw();
 
@@ -887,8 +863,8 @@ public abstract class MapUpdater
 		List<Runnable> preRuns;
 		boolean isLowPriority;
 
-		public MapUpdate(UpdateType updateType, Set<Integer> centersChangedIds, Set<Integer> edgesChangedIds, List<MapText> textChanged,
-				List<FreeIcon> iconsChanged, List<Runnable> preRuns, List<Runnable> postRuns, boolean isLowPriority)
+		public MapUpdate(UpdateType updateType, Set<Integer> centersChangedIds, Set<Integer> edgesChangedIds, List<MapText> textChanged, List<FreeIcon> iconsChanged, List<Runnable> preRuns,
+				List<Runnable> postRuns, boolean isLowPriority)
 		{
 			this.updateType = updateType;
 			if (centersChangedIds != null)

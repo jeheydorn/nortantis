@@ -44,8 +44,7 @@ public class ImageAndMasks
 	public final String fileNameWithoutParametersOrExtension;
 	public final String groupId;
 
-	public ImageAndMasks(Image image, IconType iconType, double widthFromFileName, String artPack, String groupId,
-			String fileNameWithoutParametersOrExtension)
+	public ImageAndMasks(Image image, IconType iconType, double widthFromFileName, String artPack, String groupId, String fileNameWithoutParametersOrExtension)
 	{
 		assert image != null;
 		this.image = image;
@@ -59,8 +58,8 @@ public class ImageAndMasks
 		this.artPack = artPack;
 	}
 
-	public ImageAndMasks(Image image, Image contentMask, IntRectangle contentBounds, Image shadingMask, IconType iconType,
-			double widthFromFileName, String artPack, String groupId, String fileNameWithoutParametersOrExtension)
+	public ImageAndMasks(Image image, Image contentMask, IntRectangle contentBounds, Image shadingMask, IconType iconType, double widthFromFileName, String artPack, String groupId,
+			String fileNameWithoutParametersOrExtension)
 	{
 		this(image, iconType, widthFromFileName, artPack, groupId, fileNameWithoutParametersOrExtension);
 		this.contentMask = contentMask;
@@ -643,8 +642,7 @@ public class ImageAndMasks
 		final float targetMaxMinMaxPixelValue = 230f;
 
 		// Re-use the complex array from the last run to avoid having to re-do the convolution.
-		blurredLine = ImageHelper.realToImage(tuple.getFirst(), blurredLine.getType(), blurredLine.getWidth(), blurredLine.getHeight(),
-				true, 0f, targetMaxMinMaxPixelValue / minMax, false, 0f);
+		blurredLine = ImageHelper.realToImage(tuple.getFirst(), blurredLine.getType(), blurredLine.getWidth(), blurredLine.getHeight(), true, 0f, targetMaxMinMaxPixelValue / minMax, false, 0f);
 		withoutPadding = blurredLine.copySubImage(new IntRectangle(padding, 0, contentMask.getWidth(), contentMask.getHeight()));
 
 		// Use the content mask to set non-content pixels to zero.
@@ -822,14 +820,13 @@ public class ImageAndMasks
 		return null;
 	}
 
-	public static IntRectangle calcScaledContentBounds(Image originalContentMask, IntRectangle originalContentBounds, int scaledWidth,
-			int scaledHeight)
+	public static IntRectangle calcScaledContentBounds(Image originalContentMask, IntRectangle originalContentBounds, int scaledWidth, int scaledHeight)
 	{
 		final double xScale = (((double) scaledWidth / originalContentMask.getWidth()));
 		final double yScale = (((double) scaledHeight / originalContentMask.getHeight()));
 
-		IntRectangle scaledContentBounds = new Rectangle(originalContentBounds.x * (xScale), originalContentBounds.y * yScale,
-				originalContentBounds.width * xScale, originalContentBounds.height * yScale).toEnclosingIntRectangle();
+		IntRectangle scaledContentBounds = new Rectangle(originalContentBounds.x * (xScale), originalContentBounds.y * yScale, originalContentBounds.width * xScale,
+				originalContentBounds.height * yScale).toEnclosingIntRectangle();
 		return scaledContentBounds;
 	}
 

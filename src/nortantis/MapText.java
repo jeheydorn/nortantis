@@ -55,9 +55,8 @@ public class MapText implements Serializable
 
 	public Font fontOverride;
 
-	private MapText(String text, Point location, double angle, TextType type, RotatedRectangle line1Bounds, RotatedRectangle line2Bounds,
-			LineBreak lineBreak, Color colorOverride, Color boldBackgroundColorOverride, double curvature, int spacing, Font fontOverride,
-			double backgroundFade)
+	private MapText(String text, Point location, double angle, TextType type, RotatedRectangle line1Bounds, RotatedRectangle line2Bounds, LineBreak lineBreak, Color colorOverride,
+			Color boldBackgroundColorOverride, double curvature, int spacing, Font fontOverride, double backgroundFade)
 	{
 		this.value = text;
 		this.line1Bounds = line1Bounds;
@@ -74,11 +73,10 @@ public class MapText implements Serializable
 		this.backgroundFade = backgroundFade;
 	}
 
-	public MapText(String text, Point location, double angle, TextType type, LineBreak lineBreak, Color colorOverride,
-			Color boldBackgroundColorOverride, double curvature, int spacing, Font fontOverride, double backgroundFade)
+	public MapText(String text, Point location, double angle, TextType type, LineBreak lineBreak, Color colorOverride, Color boldBackgroundColorOverride, double curvature, int spacing,
+			Font fontOverride, double backgroundFade)
 	{
-		this(text, location, angle, type, null, null, lineBreak, colorOverride, boldBackgroundColorOverride, curvature, spacing,
-				fontOverride, backgroundFade);
+		this(text, location, angle, type, null, null, lineBreak, colorOverride, boldBackgroundColorOverride, curvature, spacing, fontOverride, backgroundFade);
 	}
 
 	public MapText deepCopy()
@@ -94,8 +92,7 @@ public class MapText implements Serializable
 		Color boldBackgroundColorOverride = this.boldBackgroundColorOverride;
 		Font fontOverride = this.fontOverride;
 
-		return new MapText(value, location, angle, type, line1Bounds, line2Bounds, lineBreak, colorOverride, boldBackgroundColorOverride,
-				curvature, spacing, fontOverride, backgroundFade);
+		return new MapText(value, location, angle, type, line1Bounds, line2Bounds, lineBreak, colorOverride, boldBackgroundColorOverride, curvature, spacing, fontOverride, backgroundFade);
 	}
 
 	/**
@@ -105,8 +102,7 @@ public class MapText implements Serializable
 	@Override
 	public int hashCode()
 	{
-		return Objects.hash(angle, backgroundFade, boldBackgroundColorOverride, colorOverride, curvature, fontOverride, lineBreak, location,
-				spacing, type, value);
+		return Objects.hash(angle, backgroundFade, boldBackgroundColorOverride, colorOverride, curvature, fontOverride, lineBreak, location, spacing, type, value);
 	}
 
 	/**
@@ -128,22 +124,17 @@ public class MapText implements Serializable
 			return false;
 		}
 		MapText other = (MapText) obj;
-		return Double.doubleToLongBits(angle) == Double.doubleToLongBits(other.angle)
-				&& Double.doubleToLongBits(backgroundFade) == Double.doubleToLongBits(other.backgroundFade)
-				&& Objects.equals(boldBackgroundColorOverride, other.boldBackgroundColorOverride)
-				&& Objects.equals(colorOverride, other.colorOverride)
-				&& Double.doubleToLongBits(curvature) == Double.doubleToLongBits(other.curvature)
-				&& Objects.equals(fontOverride, other.fontOverride) && lineBreak == other.lineBreak
-				&& Objects.equals(location, other.location) && spacing == other.spacing && type == other.type
-				&& Objects.equals(value, other.value);
+		return Double.doubleToLongBits(angle) == Double.doubleToLongBits(other.angle) && Double.doubleToLongBits(backgroundFade) == Double.doubleToLongBits(other.backgroundFade)
+				&& Objects.equals(boldBackgroundColorOverride, other.boldBackgroundColorOverride) && Objects.equals(colorOverride, other.colorOverride)
+				&& Double.doubleToLongBits(curvature) == Double.doubleToLongBits(other.curvature) && Objects.equals(fontOverride, other.fontOverride) && lineBreak == other.lineBreak
+				&& Objects.equals(location, other.location) && spacing == other.spacing && type == other.type && Objects.equals(value, other.value);
 	}
 
 	@Override
 	public String toString()
 	{
-		return "MapText [value=" + value + ", line1Bounds=" + line1Bounds + ", line2Bounds=" + line2Bounds + ", type=" + type + ", angle="
-				+ angle + ", location=" + location + ", lineBreak=" + lineBreak + ", colorOverride=" + colorOverride
-				+ ", boldBackgroundColorOverride=" + boldBackgroundColorOverride + ", curvature=" + curvature + ", spacing=" + spacing
+		return "MapText [value=" + value + ", line1Bounds=" + line1Bounds + ", line2Bounds=" + line2Bounds + ", type=" + type + ", angle=" + angle + ", location=" + location + ", lineBreak="
+				+ lineBreak + ", colorOverride=" + colorOverride + ", boldBackgroundColorOverride=" + boldBackgroundColorOverride + ", curvature=" + curvature + ", spacing=" + spacing
 				+ ", fontOverride=" + fontOverride + "]";
 	}
 

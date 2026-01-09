@@ -24,9 +24,8 @@ public class DrawModeWidget
 	private boolean includeEditModeButton;
 	private JPanel container;
 
-	public DrawModeWidget(String drawTooltipWithoutKeyboardShortcut, String eraseTooltipWithoutKeyboardShortcut,
-			boolean includeReplaceButton, String replaceTooltipWithoutKeyboardShortcut, boolean includeEditModeButton,
-			String editTooltipWithoutKeyboardShortcut, Runnable changeListener)
+	public DrawModeWidget(String drawTooltipWithoutKeyboardShortcut, String eraseTooltipWithoutKeyboardShortcut, boolean includeReplaceButton, String replaceTooltipWithoutKeyboardShortcut,
+			boolean includeEditModeButton, String editTooltipWithoutKeyboardShortcut, Runnable changeListener)
 	{
 		this.includeReplaceButton = includeReplaceButton;
 		this.includeEditModeButton = includeEditModeButton;

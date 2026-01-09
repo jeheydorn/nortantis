@@ -62,8 +62,7 @@ public class SwingHelper
 	public static final int colorPickerLeftPadding = 2;
 	public static final int sidePanelScrollSpeed = 30;
 
-	public static void initializeComboBoxItems(JComboBox<String> comboBox, Collection<String> items, String selectedItem,
-			boolean forceAddSelectedItem)
+	public static void initializeComboBoxItems(JComboBox<String> comboBox, Collection<String> items, String selectedItem, boolean forceAddSelectedItem)
 	{
 		String selectedBefore = (String) comboBox.getSelectedItem();
 
@@ -387,8 +386,7 @@ public class SwingHelper
 				ex.getCause().printStackTrace();
 				if (isCausedByOutOfMemoryError(ex))
 				{
-					String message = isExport
-							? "Out of memory. Try exporting at a lower resolution, or decreasing the Display Quality before exporting."
+					String message = isExport ? "Out of memory. Try exporting at a lower resolution, or decreasing the Display Quality before exporting."
 							: "Out of memory. Try decreasing the Display Quality.";
 					Logger.printError(message, ex);
 					JOptionPane.showMessageDialog(parent, message, "Error", JOptionPane.ERROR_MESSAGE);
@@ -445,8 +443,7 @@ public class SwingHelper
 	 * 
 	 * @return True if the message should be hidden in the future. False if not.
 	 */
-	public static boolean showDismissibleMessage(String title, String message, Dimension popupSize, int JOptionPaneMessageType,
-			Component parentComponent)
+	public static boolean showDismissibleMessage(String title, String message, Dimension popupSize, int JOptionPaneMessageType, Component parentComponent)
 	{
 		JCheckBox checkBox = new JCheckBox("Don't show this message again.");
 		Object[] options = { "OK" };
@@ -458,8 +455,7 @@ public class SwingHelper
 		panel.add(Box.createVerticalGlue());
 		panel.add(checkBox);
 		panel.setPreferredSize(popupSize);
-		int result = JOptionPane.showOptionDialog(parentComponent, panel, title, JOptionPane.YES_NO_OPTION, JOptionPaneMessageType, null,
-				options, options[0]);
+		int result = JOptionPane.showOptionDialog(parentComponent, panel, title, JOptionPane.YES_NO_OPTION, JOptionPaneMessageType, null, options, options[0]);
 		if (result == JOptionPane.YES_OPTION)
 		{
 			if (checkBox.isSelected())

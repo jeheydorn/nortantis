@@ -80,7 +80,7 @@ public class SkiaFactory extends PlatformFactory
 	{
 		// Simple implementation: try to create it and see if it works.
 		// A better one would use FontMgr.
-		return true; 
+		return true;
 	}
 
 	@Override

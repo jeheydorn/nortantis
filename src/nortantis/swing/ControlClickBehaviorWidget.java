@@ -57,8 +57,7 @@ public class ControlClickBehaviorWidget
 		container.add(selectModeButton);
 		container.add(unselectModeButton);
 
-		return organizer.addLabelAndComponent("Ctrl-click behavior:",
-				"Whether to add or remove icons from the selection when Ctrl is held while clicking or dragging the mosue.", container);
+		return organizer.addLabelAndComponent("Ctrl-click behavior:", "Whether to add or remove icons from the selection when Ctrl is held while clicking or dragging the mosue.", container);
 	}
 
 	public boolean isSelectMode()

@@ -108,8 +108,7 @@ public class HSBColor implements Serializable, Comparable<HSBColor>
 			return false;
 
 		HSBColor hsbColor = (HSBColor) o;
-		return hue == hsbColor.hue && saturation == hsbColor.saturation && brightness == hsbColor.brightness
-				&& transparency == hsbColor.transparency;
+		return hue == hsbColor.hue && saturation == hsbColor.saturation && brightness == hsbColor.brightness && transparency == hsbColor.transparency;
 	}
 
 	@Override
@@ -125,8 +124,7 @@ public class HSBColor implements Serializable, Comparable<HSBColor>
 	@Override
 	public String toString()
 	{
-		return "HSBColor [hue=" + hue + ", saturation=" + saturation + ", brightness=" + brightness + ", transparency=" + transparency
-				+ "]";
+		return "HSBColor [hue=" + hue + ", saturation=" + saturation + ", brightness=" + brightness + ", transparency=" + transparency + "]";
 	}
 
 	@Override

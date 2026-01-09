@@ -209,8 +209,7 @@ public class TextSearchDialog extends JDialog
 
 	private MapText findNext(MapText start, String query, boolean isForward)
 	{
-		List<MapText> sorted = new ArrayList<>(
-				mainWindow.edits.text.stream().filter(t -> t.value != null && !t.value.isEmpty()).collect(Collectors.toList()));
+		List<MapText> sorted = new ArrayList<>(mainWindow.edits.text.stream().filter(t -> t.value != null && !t.value.isEmpty()).collect(Collectors.toList()));
 		sorted.sort((text1, text2) ->
 		{
 			if (text1.location == null && text2.location == null)

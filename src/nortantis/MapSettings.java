@@ -106,7 +106,8 @@ public class MapSettings implements Serializable
 	public int grungeWidth;
 	public boolean drawGrunge;
 	/**
-	 * This setting actually means fractal generated as opposed to generated from texture. It is mutually exclusive with generateBackgroundFromTexture
+	 * This setting actually means fractal generated as opposed to generated from texture. It is mutually exclusive with
+	 * generateBackgroundFromTexture
 	 */
 	public boolean generateBackground;
 	public boolean generateBackgroundFromTexture;
@@ -164,8 +165,8 @@ public class MapSettings implements Serializable
 	public double cityProbability;
 	public LineStyle lineStyle;
 	/**
-	 * No longer an editable field. Maintained for backwards compatibility when loading older maps, and for telling new maps which city images to use. But the editor now allows selecting city images
-	 * of any type.
+	 * No longer an editable field. Maintained for backwards compatibility when loading older maps, and for telling new maps which city
+	 * images to use. But the editor now allows selecting city images of any type.
 	 */
 	public String cityIconTypeName;
 	// Not exposed for editing. Only for backwards compatibility so I can change it without braking older settings
@@ -235,10 +236,11 @@ public class MapSettings implements Serializable
 	}
 
 	/**
-	 * Loads map settings file. The file can either be the newer JSON format, or the older *.properties format, which is supported only for converting old files to the new format.
+	 * Loads map settings file. The file can either be the newer JSON format, or the older *.properties format, which is supported only for
+	 * converting old files to the new format.
 	 *
 	 * @param filePath
-	 * 		file path and file name
+	 *            file path and file name
 	 */
 	public MapSettings(String filePath)
 	{
@@ -789,9 +791,8 @@ public class MapSettings implements Serializable
 		version = (String) root.get("version");
 		if (isVersionGreatherThanCurrent(version))
 		{
-			throw new RuntimeException(
-					"The map cannot be loaded because it was made in a new version of Nortantis. That map's version is " + version + ", but you're Nortantis version is " + currentVersion
-							+ ". Try again with a newer version of Nortantis.");
+			throw new RuntimeException("The map cannot be loaded because it was made in a new version of Nortantis. That map's version is " + version + ", but you're Nortantis version is "
+					+ currentVersion + ". Try again with a newer version of Nortantis.");
 		}
 		randomSeed = (long) root.get("randomSeed");
 		resolution = (double) root.get("resolution");
@@ -1499,8 +1500,9 @@ public class MapSettings implements Serializable
 	}
 
 	/**
-	 * Previous versions incorrectly used the group id "sand" for the "dunes" group, which didn't matter because previously I didn't allow multiple groups of sand dune images and the value was
-	 * ignored. But now I do allow multiple sand dune image groups, so this fixes that.
+	 * Previous versions incorrectly used the group id "sand" for the "dunes" group, which didn't matter because previously I didn't allow
+	 * multiple groups of sand dune images and the value was ignored. But now I do allow multiple sand dune image groups, so this fixes
+	 * that.
 	 */
 	private void runConversionToFixDunesGroupId()
 	{
@@ -1725,7 +1727,8 @@ public class MapSettings implements Serializable
 			double density = iconObj.containsKey("density") ? (double) iconObj.get("density") : 0.0;
 			Color fillColorFromJSon = iconObj.containsKey("color") ? parseColor((String) iconObj.get("color")) : null;
 			Color fillColor;
-			// The old default fill color was transparent black, which causes the icon to not be filled with color. So if that was selected, set the fill color to the default fill color. The fillWithColor setting will be used to prevent drawing the fill color.
+			// The old default fill color was transparent black, which causes the icon to not be filled with color. So if that was selected,
+			// set the fill color to the default fill color. The fillWithColor setting will be used to prevent drawing the fill color.
 			if (convertFillColor && fillColorFromJSon == null)
 			{
 				fillColor = defaultIconFillColor;
@@ -1773,9 +1776,8 @@ public class MapSettings implements Serializable
 				}
 			}
 
-			result.addOrReplace(
-					new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, fillColor, filterColor, maximizeOpacity, fillWithColor,
-							originalScale));
+			result.addOrReplace(new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, fillColor, filterColor, maximizeOpacity,
+					fillWithColor, originalScale));
 		}
 
 		return result;
@@ -2182,7 +2184,8 @@ public class MapSettings implements Serializable
 	}
 
 	/**
-	 * Creates a deep copy of this, except for the edits object, which will be the same pointer in the copy. Note - This is not thread safe because it temporarily changes the edits pointer in this.
+	 * Creates a deep copy of this, except for the edits object, which will be the same pointer in the copy. Note - This is not thread safe
+	 * because it temporarily changes the edits pointer in this.
 	 */
 	public MapSettings deepCopyExceptEdits()
 	{
@@ -2200,7 +2203,9 @@ public class MapSettings implements Serializable
 
 	public enum OceanWaves
 	{
-		@Deprecated Blur, Ripples, ConcentricWaves, @Deprecated FadingConcentricWaves, None
+		@Deprecated
+		Blur, Ripples, ConcentricWaves, @Deprecated
+		FadingConcentricWaves, None
 	}
 
 	public enum GridOverlayLayer
@@ -2257,49 +2262,53 @@ public class MapSettings implements Serializable
 			return false;
 		}
 		MapSettings other = (MapSettings) obj;
-		return Objects.equals(artPack, other.artPack) && backgroundRandomSeed == other.backgroundRandomSeed && Objects.equals(backgroundTextureImage, other.backgroundTextureImage) && Objects.equals(
-				backgroundTextureResource, other.backgroundTextureResource) && backgroundTextureSource == other.backgroundTextureSource && Objects.equals(boldBackgroundColor,
-				other.boldBackgroundColor) && Objects.equals(books, other.books) && Objects.equals(borderColor, other.borderColor) && borderColorOption == other.borderColorOption
-				&& borderPosition == other.borderPosition && Objects.equals(borderResource, other.borderResource) && Objects.equals(borderType, other.borderType) && borderWidth == other.borderWidth
-				&& brightnessRange == other.brightnessRange && brokenLinesForConcentricWaves == other.brokenLinesForConcentricWaves
+		return Objects.equals(artPack, other.artPack) && backgroundRandomSeed == other.backgroundRandomSeed && Objects.equals(backgroundTextureImage, other.backgroundTextureImage)
+				&& Objects.equals(backgroundTextureResource, other.backgroundTextureResource) && backgroundTextureSource == other.backgroundTextureSource
+				&& Objects.equals(boldBackgroundColor, other.boldBackgroundColor) && Objects.equals(books, other.books) && Objects.equals(borderColor, other.borderColor)
+				&& borderColorOption == other.borderColorOption && borderPosition == other.borderPosition && Objects.equals(borderResource, other.borderResource)
+				&& Objects.equals(borderType, other.borderType) && borderWidth == other.borderWidth && brightnessRange == other.brightnessRange
+				&& brokenLinesForConcentricWaves == other.brokenLinesForConcentricWaves
 				&& Double.doubleToLongBits(centerLandToWaterProbability) == Double.doubleToLongBits(other.centerLandToWaterProbability) && Objects.equals(citiesFont, other.citiesFont)
 				&& Objects.equals(cityIconTypeName, other.cityIconTypeName) && Double.doubleToLongBits(cityProbability) == Double.doubleToLongBits(other.cityProbability)
 				&& Double.doubleToLongBits(cityScale) == Double.doubleToLongBits(other.cityScale) && Objects.equals(coastShadingColor, other.coastShadingColor)
-				&& coastShadingLevel == other.coastShadingLevel && Objects.equals(coastlineColor, other.coastlineColor) && Double.doubleToLongBits(coastlineWidth) == Double.doubleToLongBits(
-				other.coastlineWidth) && colorizeLand == other.colorizeLand && colorizeOcean == other.colorizeOcean && concentricWaveCount == other.concentricWaveCount && Objects.equals(
-				customImagesPath, other.customImagesPath) && defaultDefaultExportAction == other.defaultDefaultExportAction && defaultHeightmapExportAction == other.defaultHeightmapExportAction
-				&& defaultMapExportAction == other.defaultMapExportAction && Objects.equals(defaultRoadColor, other.defaultRoadColor) && Objects.equals(defaultRoadStyle, other.defaultRoadStyle)
-				&& Double.doubleToLongBits(defaultRoadWidth) == Double.doubleToLongBits(other.defaultRoadWidth) && Double.doubleToLongBits(defaultTreeHeightScaleForOldMaps) == Double.doubleToLongBits(
-				other.defaultTreeHeightScaleForOldMaps) && drawBoldBackground == other.drawBoldBackground && drawBorder == other.drawBorder && drawGridOverlay == other.drawGridOverlay
-				&& drawGrunge == other.drawGrunge && drawOceanEffectsInLakes == other.drawOceanEffectsInLakes && drawOverlayImage == other.drawOverlayImage
-				&& drawRegionBoundaries == other.drawRegionBoundaries && drawRegionColors == other.drawRegionColors && drawRoads == other.drawRoads && drawText == other.drawText
-				&& drawVoronoiGridOverlayOnlyOnLand == other.drawVoronoiGridOverlayOnlyOnLand && Double.doubleToLongBits(duneScale) == Double.doubleToLongBits(other.duneScale)
+				&& coastShadingLevel == other.coastShadingLevel && Objects.equals(coastlineColor, other.coastlineColor)
+				&& Double.doubleToLongBits(coastlineWidth) == Double.doubleToLongBits(other.coastlineWidth) && colorizeLand == other.colorizeLand && colorizeOcean == other.colorizeOcean
+				&& concentricWaveCount == other.concentricWaveCount && Objects.equals(customImagesPath, other.customImagesPath) && defaultDefaultExportAction == other.defaultDefaultExportAction
+				&& defaultHeightmapExportAction == other.defaultHeightmapExportAction && defaultMapExportAction == other.defaultMapExportAction
+				&& Objects.equals(defaultRoadColor, other.defaultRoadColor) && Objects.equals(defaultRoadStyle, other.defaultRoadStyle)
+				&& Double.doubleToLongBits(defaultRoadWidth) == Double.doubleToLongBits(other.defaultRoadWidth)
+				&& Double.doubleToLongBits(defaultTreeHeightScaleForOldMaps) == Double.doubleToLongBits(other.defaultTreeHeightScaleForOldMaps) && drawBoldBackground == other.drawBoldBackground
+				&& drawBorder == other.drawBorder && drawGridOverlay == other.drawGridOverlay && drawGrunge == other.drawGrunge && drawOceanEffectsInLakes == other.drawOceanEffectsInLakes
+				&& drawOverlayImage == other.drawOverlayImage && drawRegionBoundaries == other.drawRegionBoundaries && drawRegionColors == other.drawRegionColors && drawRoads == other.drawRoads
+				&& drawText == other.drawText && drawVoronoiGridOverlayOnlyOnLand == other.drawVoronoiGridOverlayOnlyOnLand
+				&& Double.doubleToLongBits(duneScale) == Double.doubleToLongBits(other.duneScale)
 				&& Double.doubleToLongBits(edgeLandToWaterProbability) == Double.doubleToLongBits(other.edgeLandToWaterProbability) && Objects.equals(edits, other.edits)
 				&& fadeConcentricWaves == other.fadeConcentricWaves && Objects.equals(fillWithColorByType, other.fillWithColorByType) && flipHorizontally == other.flipHorizontally
-				&& flipVertically == other.flipVertically && frayedBorder == other.frayedBorder && frayedBorderBlurLevel == other.frayedBorderBlurLevel && Objects.equals(frayedBorderColor,
-				other.frayedBorderColor) && frayedBorderSeed == other.frayedBorderSeed && frayedBorderSize == other.frayedBorderSize && generateBackground == other.generateBackground
-				&& generateBackgroundFromTexture == other.generateBackgroundFromTexture && generatedHeight == other.generatedHeight && generatedWidth == other.generatedWidth && Objects.equals(
-				gridOverlayColor, other.gridOverlayColor) && gridOverlayLayer == other.gridOverlayLayer && gridOverlayLineWidth == other.gridOverlayLineWidth
-				&& gridOverlayRowOrColCount == other.gridOverlayRowOrColCount && gridOverlayShape == other.gridOverlayShape && gridOverlayXOffset == other.gridOverlayXOffset
-				&& gridOverlayYOffset == other.gridOverlayYOffset && grungeWidth == other.grungeWidth && Objects.equals(heightmapExportPath, other.heightmapExportPath)
-				&& Double.doubleToLongBits(heightmapResolution) == Double.doubleToLongBits(other.heightmapResolution) && Double.doubleToLongBits(hillScale) == Double.doubleToLongBits(other.hillScale)
-				&& hueRange == other.hueRange && Objects.equals(iconColorsByType, other.iconColorsByType) && Objects.equals(iconFilterColorsByType, other.iconFilterColorsByType) && Objects.equals(
-				imageExportPath, other.imageExportPath) && jitterToConcentricWaves == other.jitterToConcentricWaves && Objects.equals(landColor, other.landColor) && lineStyle == other.lineStyle
+				&& flipVertically == other.flipVertically && frayedBorder == other.frayedBorder && frayedBorderBlurLevel == other.frayedBorderBlurLevel
+				&& Objects.equals(frayedBorderColor, other.frayedBorderColor) && frayedBorderSeed == other.frayedBorderSeed && frayedBorderSize == other.frayedBorderSize
+				&& generateBackground == other.generateBackground && generateBackgroundFromTexture == other.generateBackgroundFromTexture && generatedHeight == other.generatedHeight
+				&& generatedWidth == other.generatedWidth && Objects.equals(gridOverlayColor, other.gridOverlayColor) && gridOverlayLayer == other.gridOverlayLayer
+				&& gridOverlayLineWidth == other.gridOverlayLineWidth && gridOverlayRowOrColCount == other.gridOverlayRowOrColCount && gridOverlayShape == other.gridOverlayShape
+				&& gridOverlayXOffset == other.gridOverlayXOffset && gridOverlayYOffset == other.gridOverlayYOffset && grungeWidth == other.grungeWidth
+				&& Objects.equals(heightmapExportPath, other.heightmapExportPath) && Double.doubleToLongBits(heightmapResolution) == Double.doubleToLongBits(other.heightmapResolution)
+				&& Double.doubleToLongBits(hillScale) == Double.doubleToLongBits(other.hillScale) && hueRange == other.hueRange && Objects.equals(iconColorsByType, other.iconColorsByType)
+				&& Objects.equals(iconFilterColorsByType, other.iconFilterColorsByType) && Objects.equals(imageExportPath, other.imageExportPath)
+				&& jitterToConcentricWaves == other.jitterToConcentricWaves && Objects.equals(landColor, other.landColor) && lineStyle == other.lineStyle
 				&& Double.doubleToLongBits(lloydRelaxationsScale) == Double.doubleToLongBits(other.lloydRelaxationsScale) && Objects.equals(maximizeOpacityByType, other.maximizeOpacityByType)
-				&& Objects.equals(mountainRangeFont, other.mountainRangeFont) && Double.doubleToLongBits(mountainScale) == Double.doubleToLongBits(other.mountainScale) && Objects.equals(oceanColor,
-				other.oceanColor) && Objects.equals(oceanEffectsColor, other.oceanEffectsColor) && oceanEffectsLevel == other.oceanEffectsLevel && Objects.equals(oceanShadingColor,
-				other.oceanShadingColor) && oceanShadingLevel == other.oceanShadingLevel && Objects.equals(oceanWavesColor, other.oceanWavesColor) && oceanWavesLevel == other.oceanWavesLevel
-				&& oceanWavesType == other.oceanWavesType && Objects.equals(otherMountainsFont, other.otherMountainsFont)
+				&& Objects.equals(mountainRangeFont, other.mountainRangeFont) && Double.doubleToLongBits(mountainScale) == Double.doubleToLongBits(other.mountainScale)
+				&& Objects.equals(oceanColor, other.oceanColor) && Objects.equals(oceanEffectsColor, other.oceanEffectsColor) && oceanEffectsLevel == other.oceanEffectsLevel
+				&& Objects.equals(oceanShadingColor, other.oceanShadingColor) && oceanShadingLevel == other.oceanShadingLevel && Objects.equals(oceanWavesColor, other.oceanWavesColor)
+				&& oceanWavesLevel == other.oceanWavesLevel && oceanWavesType == other.oceanWavesType && Objects.equals(otherMountainsFont, other.otherMountainsFont)
 				&& Double.doubleToLongBits(overlayImageDefaultScale) == Double.doubleToLongBits(other.overlayImageDefaultScale)
 				&& overlayImageDefaultTransparency == other.overlayImageDefaultTransparency && Objects.equals(overlayImagePath, other.overlayImagePath)
 				&& overlayImageTransparency == other.overlayImageTransparency && Objects.equals(overlayOffsetResolutionInvariant, other.overlayOffsetResolutionInvariant)
 				&& Double.doubleToLongBits(overlayScale) == Double.doubleToLongBits(other.overlayScale) && Double.doubleToLongBits(pointPrecision) == Double.doubleToLongBits(other.pointPrecision)
-				&& randomSeed == other.randomSeed && Objects.equals(regionBaseColor, other.regionBaseColor) && Objects.equals(regionBoundaryColor, other.regionBoundaryColor) && Objects.equals(
-				regionBoundaryStyle, other.regionBoundaryStyle) && Objects.equals(regionFont, other.regionFont) && regionsRandomSeed == other.regionsRandomSeed
+				&& randomSeed == other.randomSeed && Objects.equals(regionBaseColor, other.regionBaseColor) && Objects.equals(regionBoundaryColor, other.regionBoundaryColor)
+				&& Objects.equals(regionBoundaryStyle, other.regionBoundaryStyle) && Objects.equals(regionFont, other.regionFont) && regionsRandomSeed == other.regionsRandomSeed
 				&& Double.doubleToLongBits(resolution) == Double.doubleToLongBits(other.resolution) && rightRotationCount == other.rightRotationCount && Objects.equals(riverColor, other.riverColor)
 				&& Objects.equals(riverFont, other.riverFont) && Objects.equals(roadColor, other.roadColor) && Objects.equals(roadStyle, other.roadStyle) && saturationRange == other.saturationRange
-				&& solidColorBackground == other.solidColorBackground && Objects.equals(textColor, other.textColor) && textRandomSeed == other.textRandomSeed && Objects.equals(titleFont,
-				other.titleFont) && Double.doubleToLongBits(treeHeightScale) == Double.doubleToLongBits(other.treeHeightScale) && Objects.equals(version, other.version)
+				&& solidColorBackground == other.solidColorBackground && Objects.equals(textColor, other.textColor) && textRandomSeed == other.textRandomSeed
+				&& Objects.equals(titleFont, other.titleFont) && Double.doubleToLongBits(treeHeightScale) == Double.doubleToLongBits(other.treeHeightScale) && Objects.equals(version, other.version)
 				&& worldSize == other.worldSize;
 	}
 

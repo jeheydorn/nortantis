@@ -166,8 +166,7 @@ public abstract class EditorTool
 			return selected;
 		}
 
-		return updater.mapParts.graph.breadthFirstSearch((c) -> isCenterOverlappingCircle(c, getPointOnGraph(pointFromMouse), brushRadius),
-				center);
+		return updater.mapParts.graph.breadthFirstSearch((c) -> isCenterOverlappingCircle(c, getPointOnGraph(pointFromMouse), brushRadius), center);
 	}
 
 	protected Set<Edge> getSelectedEdges(java.awt.Point pointFromMouse, int brushDiameter, EdgeType edgeType)
@@ -180,8 +179,7 @@ public abstract class EditorTool
 		{
 			nortantis.geom.Point graphPoint = getPointOnGraph(pointFromMouse);
 			Center closestCenter = updater.mapParts.graph.findClosestCenter(graphPoint);
-			Set<Center> overlapping = updater.mapParts.graph
-					.breadthFirstSearch((c) -> isCenterOverlappingCircle(c, graphPoint, brushDiameter / mainWindow.zoom), closestCenter);
+			Set<Center> overlapping = updater.mapParts.graph.breadthFirstSearch((c) -> isCenterOverlappingCircle(c, graphPoint, brushDiameter / mainWindow.zoom), closestCenter);
 			Set<Edge> selected = new HashSet<>();
 			int brushRadius = (int) ((double) ((brushDiameter / mainWindow.zoom) * mapEditingPanel.osScale)) / 2;
 			for (Center center : overlapping)
@@ -190,16 +188,14 @@ public abstract class EditorTool
 				{
 					if (edgeType == EdgeType.Delaunay)
 					{
-						if ((edge.d0 != null && edge.d0.loc.distanceTo(graphPoint) <= brushRadius)
-								|| edge.d1 != null && edge.d1.loc.distanceTo(graphPoint) <= brushRadius)
+						if ((edge.d0 != null && edge.d0.loc.distanceTo(graphPoint) <= brushRadius) || edge.d1 != null && edge.d1.loc.distanceTo(graphPoint) <= brushRadius)
 						{
 							selected.add(edge);
 						}
 					}
 					else
 					{
-						if ((edge.v0 != null && edge.v0.loc.distanceTo(graphPoint) <= brushRadius)
-								|| edge.v1 != null && edge.v1.loc.distanceTo(graphPoint) <= brushRadius)
+						if ((edge.v0 != null && edge.v0.loc.distanceTo(graphPoint) <= brushRadius) || edge.v1 != null && edge.v1.loc.distanceTo(graphPoint) <= brushRadius)
 						{
 							selected.add(edge);
 						}
@@ -291,8 +287,7 @@ public abstract class EditorTool
 		return Math.sqrt((deltaX * deltaX) + (deltaY * deltaY)) <= radius;
 	}
 
-	public abstract void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange,
-			boolean changeEffectsBackgroundImages, boolean willDoImagesRefresh);
+	public abstract void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean changeEffectsBackgroundImages, boolean willDoImagesRefresh);
 
 	public abstract void getSettingsFromGUI(MapSettings settings);
 

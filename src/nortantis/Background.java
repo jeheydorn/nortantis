@@ -79,8 +79,7 @@ public class Background
 
 			final float fractalPower = 1.3f;
 			Image oceanGeneratedBackground = FractalBGGenerator.generate(new Random(settings.backgroundRandomSeed), fractalPower,
-					((int) mapBounds.width) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0),
-					((int) mapBounds.height) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0), 0.75f);
+					((int) mapBounds.width) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0), ((int) mapBounds.height) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0), 0.75f);
 			landGeneratedBackground = oceanGeneratedBackground;
 			landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm2;
 			oceanColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm2;
@@ -94,8 +93,7 @@ public class Background
 			{
 				if (settings.drawBorder)
 				{
-					borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.borderColor, oceanColorifyAlgorithm,
-							settings.oceanColor.hasTransparency());
+					borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.borderColor, oceanColorifyAlgorithm, settings.oceanColor.hasTransparency());
 				}
 				ocean = ImageHelper.colorify(oceanGeneratedBackground, settings.oceanColor, oceanColorifyAlgorithm);
 			}
@@ -135,8 +133,7 @@ public class Background
 			}
 			try
 			{
-				texture = ImageCache.getInstance(settings.backgroundTextureResource.artPack, settings.customImagesPath)
-						.getImageFromFile(texturePath);
+				texture = ImageCache.getInstance(settings.backgroundTextureResource.artPack, settings.customImagesPath).getImageFromFile(texturePath);
 			}
 			catch (RuntimeException e)
 			{
@@ -148,10 +145,8 @@ public class Background
 			Image oceanGeneratedBackground;
 			if (settings.colorizeOcean)
 			{
-				oceanGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(settings.backgroundRandomSeed),
-						ImageHelper.convertToGrayscale(texture),
-						((int) mapBounds.height) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0),
-						((int) mapBounds.width) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0));
+				oceanGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(settings.backgroundRandomSeed), ImageHelper.convertToGrayscale(texture),
+						((int) mapBounds.height) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0), ((int) mapBounds.width) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0));
 
 				if (settings.borderColorOption == BorderColorOption.Ocean_color)
 				{
@@ -162,8 +157,7 @@ public class Background
 				{
 					if (settings.drawBorder)
 					{
-						borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.borderColor, oceanColorifyAlgorithm,
-								settings.oceanColor.hasTransparency());
+						borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.borderColor, oceanColorifyAlgorithm, settings.oceanColor.hasTransparency());
 					}
 					ocean = ImageHelper.colorify(oceanGeneratedBackground, settings.oceanColor, oceanColorifyAlgorithm);
 				}
@@ -179,9 +173,8 @@ public class Background
 			}
 			else
 			{
-				oceanGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(settings.backgroundRandomSeed),
-						texture, ((int) mapBounds.height) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0),
-						((int) mapBounds.width) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0));
+				oceanGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(settings.backgroundRandomSeed), texture,
+						((int) mapBounds.height) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0), ((int) mapBounds.width) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0));
 				if (settings.drawBorder)
 				{
 					ocean = removeBorderPadding(oceanGeneratedBackground);
@@ -192,8 +185,7 @@ public class Background
 					}
 					else
 					{
-						borderBackground = ImageHelper.colorify(ImageHelper.convertToGrayscale(oceanGeneratedBackground),
-								settings.borderColor, oceanColorifyAlgorithm);
+						borderBackground = ImageHelper.colorify(ImageHelper.convertToGrayscale(oceanGeneratedBackground), settings.borderColor, oceanColorifyAlgorithm);
 					}
 				}
 				else
@@ -218,8 +210,7 @@ public class Background
 					}
 					else
 					{
-						land = ImageHelper.colorify(removeBorderPadding(landGeneratedBackground), settings.landColor,
-								ImageHelper.ColorifyAlgorithm.algorithm3);
+						land = ImageHelper.colorify(removeBorderPadding(landGeneratedBackground), settings.landColor, ImageHelper.ColorifyAlgorithm.algorithm3);
 					}
 				}
 				else
@@ -238,10 +229,8 @@ public class Background
 					// otherwise the random texture of the land won't match the
 					// texture of the ocean.
 
-					landGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
-							new Random(settings.backgroundRandomSeed), ImageHelper.convertToGrayscale(texture),
-							((int) mapBounds.height) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0),
-							((int) mapBounds.width) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0));
+					landGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(settings.backgroundRandomSeed), ImageHelper.convertToGrayscale(texture),
+							((int) mapBounds.height) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0), ((int) mapBounds.width) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0));
 					if (shouldDrawRegionColors)
 					{
 						// Drawing region colors must be done later because it
@@ -250,17 +239,14 @@ public class Background
 					}
 					else
 					{
-						land = ImageHelper.colorify(removeBorderPadding(landGeneratedBackground), settings.landColor,
-								ImageHelper.ColorifyAlgorithm.algorithm3);
+						land = ImageHelper.colorify(removeBorderPadding(landGeneratedBackground), settings.landColor, ImageHelper.ColorifyAlgorithm.algorithm3);
 					}
 					landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm3;
 				}
 				else
 				{
-					landGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
-							new Random(settings.backgroundRandomSeed), texture,
-							((int) mapBounds.height) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0),
-							((int) mapBounds.width) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0));
+					landGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(settings.backgroundRandomSeed), texture,
+							((int) mapBounds.height) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0), ((int) mapBounds.width) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0));
 					land = removeBorderPadding(landGeneratedBackground);
 					landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
 				}
@@ -268,8 +254,8 @@ public class Background
 		}
 		else if (settings.solidColorBackground)
 		{
-			Image background = Image.create(((int) mapBounds.width) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0),
-					((int) mapBounds.height) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0), ImageType.Grayscale8Bit);
+			Image background = Image.create(((int) mapBounds.width) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0), ((int) mapBounds.height) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0),
+					ImageType.Grayscale8Bit);
 			landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.solidColor;
 			oceanColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.solidColor;
 
@@ -282,8 +268,7 @@ public class Background
 			{
 				if (settings.drawBorder)
 				{
-					borderBackground = ImageHelper.colorify(background, settings.borderColor, oceanColorifyAlgorithm,
-							settings.oceanColor.hasTransparency());
+					borderBackground = ImageHelper.colorify(background, settings.borderColor, oceanColorifyAlgorithm, settings.oceanColor.hasTransparency());
 				}
 				ocean = ImageHelper.colorify(background, settings.oceanColor, oceanColorifyAlgorithm);
 			}
@@ -350,8 +335,7 @@ public class Background
 			}
 			Dimension mapBoundsPlusBorder = new Dimension(mapBounds.width + borderPadding * 2, mapBounds.height + borderPadding * 2);
 
-			Dimension newBounds = ImageHelper.fitDimensionsWithinBoundingBox(maxDimensions, mapBoundsPlusBorder.width,
-					mapBoundsPlusBorder.height);
+			Dimension newBounds = ImageHelper.fitDimensionsWithinBoundingBox(maxDimensions, mapBoundsPlusBorder.width, mapBoundsPlusBorder.height);
 			// Change the resolution to match the new bounds.
 			settings.resolution *= ((double) newBounds.width) / mapBoundsPlusBorder.width;
 
@@ -368,12 +352,10 @@ public class Background
 			// The border is drawn over the map, so there is no padding to remove.
 			return image;
 		}
-		return ImageHelper.copySnippet(image, borderWidthScaled, borderWidthScaled, (int) (image.getWidth() - borderWidthScaled * 2),
-				(int) (image.getHeight() - borderWidthScaled * 2));
+		return ImageHelper.copySnippet(image, borderWidthScaled, borderWidthScaled, (int) (image.getWidth() - borderWidthScaled * 2), (int) (image.getHeight() - borderWidthScaled * 2));
 	}
 
-	public void doSetupThatNeedsGraphAndIcons(MapSettings settings, WorldGraph graph, List<IconDrawTask> tasks, Set<Center> centersToDraw,
-			Rectangle drawBounds, Rectangle replaceBounds)
+	public void doSetupThatNeedsGraphAndIcons(MapSettings settings, WorldGraph graph, List<IconDrawTask> tasks, Set<Center> centersToDraw, Rectangle drawBounds, Rectangle replaceBounds)
 	{
 		if (shouldDrawRegionColors)
 		{
@@ -384,8 +366,7 @@ public class Background
 				regionIndexes = Image.create(land.getWidth(), land.getHeight(), ImageType.RGB);
 				graph.drawRegionIndexes(regionIndexes.createPainter(), null, null);
 
-				landColoredBeforeAddingIconColors = drawRegionColors(graph, landBeforeRegionColoring, regionIndexes, landColorifyAlgorithm,
-						null);
+				landColoredBeforeAddingIconColors = drawRegionColors(graph, landBeforeRegionColoring, regionIndexes, landColorifyAlgorithm, null);
 				updateRegionIndexesAndLandWithIconShapes(settings, graph, tasks, drawBounds);
 				land = drawRegionColors(graph, landBeforeRegionColoring, regionIndexes, landColorifyAlgorithm, null);
 			}
@@ -395,19 +376,16 @@ public class Background
 				regionIndexes = Image.create((int) drawBounds.width, (int) drawBounds.height, ImageType.RGB);
 				graph.drawRegionIndexes(regionIndexes.createPainter(), centersToDraw, drawBounds);
 
-				Image landSnippetColoredBeforeAddingIconColors = drawRegionColors(graph, landBeforeRegionColoring, regionIndexes,
-						landColorifyAlgorithm, new IntPoint((int) drawBounds.x, (int) drawBounds.y));
-				IntRectangle boundsInSourceToCopyFrom = new IntRectangle((int) replaceBounds.x - (int) drawBounds.x,
-						(int) replaceBounds.y - (int) drawBounds.y, (int) replaceBounds.width, (int) replaceBounds.height);
-				ImageHelper.copySnippetFromSourceAndPasteIntoTarget(landColoredBeforeAddingIconColors,
-						landSnippetColoredBeforeAddingIconColors, replaceBounds.upperLeftCorner().toIntPoint(), boundsInSourceToCopyFrom,
-						0);
+				Image landSnippetColoredBeforeAddingIconColors = drawRegionColors(graph, landBeforeRegionColoring, regionIndexes, landColorifyAlgorithm,
+						new IntPoint((int) drawBounds.x, (int) drawBounds.y));
+				IntRectangle boundsInSourceToCopyFrom = new IntRectangle((int) replaceBounds.x - (int) drawBounds.x, (int) replaceBounds.y - (int) drawBounds.y, (int) replaceBounds.width,
+						(int) replaceBounds.height);
+				ImageHelper.copySnippetFromSourceAndPasteIntoTarget(landColoredBeforeAddingIconColors, landSnippetColoredBeforeAddingIconColors, replaceBounds.upperLeftCorner().toIntPoint(),
+						boundsInSourceToCopyFrom, 0);
 
 				updateRegionIndexesAndLandWithIconShapes(settings, graph, tasks, drawBounds);
-				Image landSnippet = drawRegionColors(graph, landBeforeRegionColoring, regionIndexes, landColorifyAlgorithm,
-						new IntPoint((int) drawBounds.x, (int) drawBounds.y));
-				ImageHelper.copySnippetFromSourceAndPasteIntoTarget(land, landSnippet, replaceBounds.upperLeftCorner().toIntPoint(),
-						boundsInSourceToCopyFrom, 0);
+				Image landSnippet = drawRegionColors(graph, landBeforeRegionColoring, regionIndexes, landColorifyAlgorithm, new IntPoint((int) drawBounds.x, (int) drawBounds.y));
+				ImageHelper.copySnippetFromSourceAndPasteIntoTarget(land, landSnippet, replaceBounds.upperLeftCorner().toIntPoint(), boundsInSourceToCopyFrom, 0);
 			}
 		}
 	}
@@ -416,8 +394,7 @@ public class Background
 	 * Draws icons onto regionIndexes and the land background so that the color of icons is determined by the place they draw at at their
 	 * base, rather than letting them be multicolored when they cross region boundaries.
 	 */
-	private void updateRegionIndexesAndLandWithIconShapes(MapSettings settings, WorldGraph graph, List<IconDrawTask> tasks,
-			Rectangle drawBounds)
+	private void updateRegionIndexesAndLandWithIconShapes(MapSettings settings, WorldGraph graph, List<IconDrawTask> tasks, Rectangle drawBounds)
 	{
 		// The image "land" is generated but doesn't yet have colors.
 		for (final IconDrawTask task : tasks)
@@ -426,8 +403,7 @@ public class Background
 			if (task.type != IconType.decorations && (drawBounds == null || task.overlaps(drawBounds)))
 			{
 				IntRectangle contentBounds = task.scaledImageAndMasks.getOrCreateContentBounds();
-				Point middleOfBottomOfContentBounds = new Point(
-						task.centerLoc.x - (task.scaledSize.width / 2) + (contentBounds.x + contentBounds.width / 2),
+				Point middleOfBottomOfContentBounds = new Point(task.centerLoc.x - (task.scaledSize.width / 2) + (contentBounds.x + contentBounds.width / 2),
 						task.centerLoc.y - (task.scaledSize.height / 2) + (contentBounds.y + contentBounds.height));
 				Point justAboveBottomMiddle = middleOfBottomOfContentBounds.add(0, -contentBounds.height / 8);
 				Center center = graph.findClosestCenter(justAboveBottomMiddle, true);
@@ -445,17 +421,14 @@ public class Background
 				int xLoc = (int) task.centerLoc.x - task.scaledSize.width / 2;
 				int yLoc = (int) task.centerLoc.y - task.scaledSize.height / 2;
 
-				Point drawLocation = drawBounds == null ? new Point(xLoc, yLoc)
-						: new Point(xLoc, yLoc).subtract(drawBounds.upperLeftCorner());
+				Point drawLocation = drawBounds == null ? new Point(xLoc, yLoc) : new Point(xLoc, yLoc).subtract(drawBounds.upperLeftCorner());
 
-				ImageHelper.drawMaskOntoImage(regionIndexes, task.scaledImageAndMasks.getOrCreateContentMask(), regionIdColor,
-						drawLocation.toIntPoint());
+				ImageHelper.drawMaskOntoImage(regionIndexes, task.scaledImageAndMasks.getOrCreateContentMask(), regionIdColor, drawLocation.toIntPoint());
 			}
 		}
 	}
 
-	private Image drawRegionColors(WorldGraph graph, Image fractalBG, Image pixelColors, ImageHelper.ColorifyAlgorithm colorifyAlgorithm,
-			IntPoint where)
+	private Image drawRegionColors(WorldGraph graph, Image fractalBG, Image pixelColors, ImageHelper.ColorifyAlgorithm colorifyAlgorithm, IntPoint where)
 	{
 		if (graph.regions.isEmpty())
 		{
@@ -514,15 +487,14 @@ public class Background
 		Path artPackPath = Assets.getArtPackPath(borderResource.artPack, customImagesPath);
 		if (artPackPath == null)
 		{
-			throw new RuntimeException("Unable to draw the border because the selected border type, '" + borderResource.name
-					+ "', is from the art pack '" + borderResource.artPack + "', which does not exist.");
+			throw new RuntimeException(
+					"Unable to draw the border because the selected border type, '" + borderResource.name + "', is from the art pack '" + borderResource.artPack + "', which does not exist.");
 		}
 		Path allBordersPath = Paths.get(artPackPath.toString(), "borders");
 		Path borderPath = Paths.get(allBordersPath.toString(), borderResource.name);
 		if (!Assets.exists(borderPath.toString()))
 		{
-			throw new RuntimeException(
-					"The selected border type '" + borderResource + "' does not have a folder for images in " + allBordersPath + ".");
+			throw new RuntimeException("The selected border type '" + borderResource + "' does not have a folder for images in " + allBordersPath + ".");
 		}
 
 		int edgeOriginalWidth = 0;
@@ -723,8 +695,7 @@ public class Background
 					if (!isBorderOutsideMap)
 					{
 						// Clear out the part of the map that is there.
-						ImageHelper.copySnippetFromSourceAndPasteIntoTarget(result, borderBackground,
-								new IntPoint(x - xOffset, y - yOffset), new IntRectangle(x, y, increment, borderWidthScaled), 0);
+						ImageHelper.copySnippetFromSourceAndPasteIntoTarget(result, borderBackground, new IntPoint(x - xOffset, y - yOffset), new IntRectangle(x, y, increment, borderWidthScaled), 0);
 					}
 
 					Painter p = result.createPainter();
@@ -740,8 +711,8 @@ public class Background
 					if (!isBorderOutsideMap)
 					{
 						// Clear out the part of the map that is there.
-						ImageHelper.copySnippetFromSourceAndPasteIntoTarget(result, borderBackground,
-								new IntPoint(x - xOffset, y - yOffset), new IntRectangle(x, y, distanceRemaining, borderWidthScaled), 0);
+						ImageHelper.copySnippetFromSourceAndPasteIntoTarget(result, borderBackground, new IntPoint(x - xOffset, y - yOffset),
+								new IntRectangle(x, y, distanceRemaining, borderWidthScaled), 0);
 					}
 
 					// The image is too long/tall to draw in the remaining
@@ -782,8 +753,7 @@ public class Background
 					if (!isBorderOutsideMap)
 					{
 						// Clear out the part of the map that is there.
-						ImageHelper.copySnippetFromSourceAndPasteIntoTarget(result, borderBackground,
-								new IntPoint(x - xOffset, y - yOffset), new IntRectangle(x, y, borderWidthScaled, increment), 0);
+						ImageHelper.copySnippetFromSourceAndPasteIntoTarget(result, borderBackground, new IntPoint(x - xOffset, y - yOffset), new IntRectangle(x, y, borderWidthScaled, increment), 0);
 					}
 
 					Painter p = result.createPainter();
@@ -799,8 +769,8 @@ public class Background
 					if (!isBorderOutsideMap)
 					{
 						// Clear out the part of the map that is there.
-						ImageHelper.copySnippetFromSourceAndPasteIntoTarget(result, borderBackground,
-								new IntPoint(x - xOffset, y - yOffset), new IntRectangle(x, y, borderWidthScaled, distanceRemaining), 0);
+						ImageHelper.copySnippetFromSourceAndPasteIntoTarget(result, borderBackground, new IntPoint(x - xOffset, y - yOffset),
+								new IntRectangle(x, y, borderWidthScaled, distanceRemaining), 0);
 					}
 
 					// The image is too long/tall to draw in the remaining
@@ -837,10 +807,8 @@ public class Background
 		// If the corner protrudes into the map, then erase the map in the area the corner will be drawn on.
 		if (hasInsetCorners || !isBorderOutsideMap)
 		{
-			ImageHelper.copySnippetFromSourceAndPasteIntoTarget(target, borderBackground,
-					new IntPoint(((int) borderBounds.width) - cornerWidth, 0).subtract(drawOffset), new IntRectangle(
-							((int) borderBounds.width) - cornerWidth, 0, upperRightCorner.getWidth(), upperRightCorner.getHeight()),
-					0);
+			ImageHelper.copySnippetFromSourceAndPasteIntoTarget(target, borderBackground, new IntPoint(((int) borderBounds.width) - cornerWidth, 0).subtract(drawOffset),
+					new IntRectangle(((int) borderBounds.width) - cornerWidth, 0, upperRightCorner.getWidth(), upperRightCorner.getHeight()), 0);
 		}
 		Painter p = target.createPainter();
 		p.setAlphaComposite(alphaCompositeForDrawingCornersAndEdges);
@@ -853,10 +821,8 @@ public class Background
 		// If the corner protrudes into the map, then erase the map in the area the corner will be drawn on.
 		if (hasInsetCorners || !isBorderOutsideMap)
 		{
-			ImageHelper.copySnippetFromSourceAndPasteIntoTarget(target, borderBackground,
-					new IntPoint(0, ((int) borderBounds.height) - cornerWidth).subtract(drawOffset),
-					new IntRectangle(0, ((int) borderBounds.height) - cornerWidth, lowerLeftCorner.getWidth(), lowerLeftCorner.getHeight()),
-					0);
+			ImageHelper.copySnippetFromSourceAndPasteIntoTarget(target, borderBackground, new IntPoint(0, ((int) borderBounds.height) - cornerWidth).subtract(drawOffset),
+					new IntRectangle(0, ((int) borderBounds.height) - cornerWidth, lowerLeftCorner.getWidth(), lowerLeftCorner.getHeight()), 0);
 
 		}
 		Painter p = target.createPainter();
@@ -872,9 +838,7 @@ public class Background
 		{
 			ImageHelper.copySnippetFromSourceAndPasteIntoTarget(target, borderBackground,
 					new IntPoint(((int) borderBounds.width) - cornerWidth, ((int) borderBounds.height) - cornerWidth).subtract(drawOffset),
-					new IntRectangle(((int) borderBounds.width) - cornerWidth, ((int) borderBounds.height) - cornerWidth,
-							lowerRightCorner.getWidth(), lowerRightCorner.getHeight()),
-					0);
+					new IntRectangle(((int) borderBounds.width) - cornerWidth, ((int) borderBounds.height) - cornerWidth, lowerRightCorner.getWidth(), lowerRightCorner.getHeight()), 0);
 
 		}
 		Painter p = target.createPainter();
@@ -892,28 +856,25 @@ public class Background
 
 		int borderPaddingScaled = isBorderOutsideMap ? borderWidthScaled : 0;
 
-		IntPoint drawOffset = new IntPoint(drawBoundsBeforeBorder.toIntRectangle().x + borderPaddingScaled,
-				drawBoundsBeforeBorder.toIntRectangle().y + borderPaddingScaled);
+		IntPoint drawOffset = new IntPoint(drawBoundsBeforeBorder.toIntRectangle().x + borderPaddingScaled, drawBoundsBeforeBorder.toIntRectangle().y + borderPaddingScaled);
 		Rectangle bounds = drawBoundsBeforeBorder.translate(borderPaddingScaled, borderPaddingScaled);
 		Rectangle upperLeftCornerBounds = new IntRectangle(0, 0, upperLeftCorner.getWidth(), upperLeftCorner.getHeight()).toRectangle();
 		if (upperLeftCornerBounds.overlaps(bounds))
 		{
 			drawUpperLeftCorner(target, drawOffset);
 		}
-		Rectangle upperRightCornerBounds = new IntRectangle(((int) borderBounds.width) - cornerWidth, 0, upperRightCorner.getWidth(),
-				upperRightCorner.getHeight()).toRectangle();
+		Rectangle upperRightCornerBounds = new IntRectangle(((int) borderBounds.width) - cornerWidth, 0, upperRightCorner.getWidth(), upperRightCorner.getHeight()).toRectangle();
 		if (upperRightCornerBounds.overlaps(bounds))
 		{
 			drawUpperRightCorner(target, drawOffset);
 		}
-		Rectangle lowerLeftCornerBounds = new IntRectangle(0, ((int) borderBounds.height) - cornerWidth, lowerLeftCorner.getWidth(),
-				lowerLeftCorner.getHeight()).toRectangle();
+		Rectangle lowerLeftCornerBounds = new IntRectangle(0, ((int) borderBounds.height) - cornerWidth, lowerLeftCorner.getWidth(), lowerLeftCorner.getHeight()).toRectangle();
 		if (lowerLeftCornerBounds.overlaps(bounds))
 		{
 			drawLowerLeftCorner(target, drawOffset);
 		}
-		Rectangle lowerRightCornerBounds = new IntRectangle(((int) borderBounds.width) - cornerWidth,
-				((int) borderBounds.height) - cornerWidth, lowerRightCorner.getWidth(), lowerRightCorner.getHeight()).toRectangle();
+		Rectangle lowerRightCornerBounds = new IntRectangle(((int) borderBounds.width) - cornerWidth, ((int) borderBounds.height) - cornerWidth, lowerRightCorner.getWidth(),
+				lowerRightCorner.getHeight()).toRectangle();
 		if (lowerRightCornerBounds.overlaps(bounds))
 		{
 			drawLowerRightCorner(target, drawOffset);
@@ -1052,8 +1013,7 @@ public class Background
 		{
 			if (throwExceptionIfMissing)
 			{
-				throw new RuntimeException(
-						"Unable to find a file containing \"" + inFileName + "\" in the directory " + path.toAbsolutePath());
+				throw new RuntimeException("Unable to find a file containing \"" + inFileName + "\" in the directory " + path.toAbsolutePath());
 			}
 			else
 			{

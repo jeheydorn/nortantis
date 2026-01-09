@@ -649,8 +649,7 @@ public class OldPropertyBasedMapSettings implements Serializable
 					Point location = new Point((Double) jsonObj.get("locationX"), (Double) jsonObj.get("locationY"));
 					double angle = (Double) jsonObj.get("angle");
 					TextType type = Enum.valueOf(TextType.class, ((String) jsonObj.get("type")).replace(" ", "_"));
-					MapText mp = new MapText(text, location, angle, type, LineBreak.Auto, null, null, 0.0, 0, null,
-							MapText.defaultBackgroundFade);
+					MapText mp = new MapText(text, location, angle, type, LineBreak.Auto, null, null, 0.0, 0, null, MapText.defaultBackgroundFade);
 					result.add(mp);
 				}
 
@@ -795,8 +794,7 @@ public class OldPropertyBasedMapSettings implements Serializable
 		}
 		if (parts.length == 4)
 		{
-			return Color.create(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]),
-					Integer.parseInt(parts[3]));
+			return Color.create(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]), Integer.parseInt(parts[3]));
 		}
 		throw new IllegalArgumentException("Unable to parse color from string: " + str);
 	}

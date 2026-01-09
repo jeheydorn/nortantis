@@ -44,16 +44,16 @@ public class SkiaMapCreatorTest
 	{
 		String settingsPath = Paths.get("unit test files", "map settings", settingsFileName).toString();
 		MapSettings settings = new MapSettings(settingsPath);
-		
+
 		MapCreator mapCreator = new MapCreator();
 		Logger.println("Creating map from '" + settingsPath + "' using Skia");
 		Image actual = mapCreator.createMap(settings, null, null);
-		
+
 		// For now, we just want to make sure it doesn't crash and produces an image of the right size.
 		// Comparing with AWT output might be tricky due to rendering differences.
 		assertTrue(actual.getWidth() > 0);
 		assertTrue(actual.getHeight() > 0);
-		
+
 		// Optionally save it to see what it looks like
 		FileHelper.createFolder(Paths.get("unit test files", "failed maps").toString());
 		actual.write(Paths.get("unit test files", "failed maps", "skia_" + settingsFileName + ".png").toString());

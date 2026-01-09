@@ -73,8 +73,7 @@ public class Dimension implements Comparable<Dimension>
 			return false;
 		}
 		Dimension other = (Dimension) obj;
-		return Double.doubleToLongBits(height) == Double.doubleToLongBits(other.height)
-				&& Double.doubleToLongBits(width) == Double.doubleToLongBits(other.width);
+		return Double.doubleToLongBits(height) == Double.doubleToLongBits(other.height) && Double.doubleToLongBits(width) == Double.doubleToLongBits(other.width);
 	}
 
 }

@@ -115,8 +115,8 @@ public class MapEdits implements Serializable
 			return null;
 		}
 
-		return textAtPoint.stream().max((t1, t2) -> Double.compare(t1.line1Bounds == null ? Double.POSITIVE_INFINITY : t1.line1Bounds.y,
-				t2.line1Bounds == null ? Double.POSITIVE_INFINITY : t2.line1Bounds.y)).get();
+		return textAtPoint.stream()
+				.max((t1, t2) -> Double.compare(t1.line1Bounds == null ? Double.POSITIVE_INFINITY : t1.line1Bounds.y, t2.line1Bounds == null ? Double.POSITIVE_INFINITY : t2.line1Bounds.y)).get();
 	}
 
 	public List<MapText> findAllTextAtPoint(Point point)
@@ -144,8 +144,7 @@ public class MapEdits implements Serializable
 		{
 			if (mp.value.length() > 0)
 			{
-				if (mp.line1Bounds != null && mp.line1Bounds.overlapsCircle(point, brushDiameter / 2.0)
-						|| mp.line2Bounds != null && mp.line2Bounds.overlapsCircle(point, brushDiameter / 2.0))
+				if (mp.line1Bounds != null && mp.line1Bounds.overlapsCircle(point, brushDiameter / 2.0) || mp.line2Bounds != null && mp.line2Bounds.overlapsCircle(point, brushDiameter / 2.0))
 				{
 					result.add(mp);
 				}
@@ -218,9 +217,8 @@ public class MapEdits implements Serializable
 			return false;
 		}
 		MapEdits other = (MapEdits) obj;
-		return bakeGeneratedTextAsEdits == other.bakeGeneratedTextAsEdits && Objects.equals(centerEdits, other.centerEdits)
-				&& Objects.equals(edgeEdits, other.edgeEdits) && Objects.equals(freeIcons, other.freeIcons)
-				&& hasIconEdits == other.hasIconEdits && Objects.equals(regionEdits, other.regionEdits) && Objects.equals(text, other.text)
+		return bakeGeneratedTextAsEdits == other.bakeGeneratedTextAsEdits && Objects.equals(centerEdits, other.centerEdits) && Objects.equals(edgeEdits, other.edgeEdits)
+				&& Objects.equals(freeIcons, other.freeIcons) && hasIconEdits == other.hasIconEdits && Objects.equals(regionEdits, other.regionEdits) && Objects.equals(text, other.text)
 				&& Objects.equals(roads, other.roads);
 	}
 

@@ -98,8 +98,7 @@ public class IntRectangle
 		{
 			return this;
 		}
-		return add(other.x, other.y).add(other.x, other.y + other.height).add(other.x + other.width, other.y).add(other.x + other.width,
-				other.y + other.height);
+		return add(other.x, other.y).add(other.x, other.y + other.height).add(other.x + other.width, other.y).add(other.x + other.width, other.y + other.height);
 	}
 
 	public IntRectangle findIntersection(IntRectangle r2)

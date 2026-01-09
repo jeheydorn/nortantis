@@ -75,8 +75,7 @@ public class IntPoint implements Comparable<IntPoint>
 			return false;
 		}
 		IntPoint other = (IntPoint) obj;
-		return Double.doubleToLongBits(x) == Double.doubleToLongBits(other.x)
-				&& Double.doubleToLongBits(y) == Double.doubleToLongBits(other.y);
+		return Double.doubleToLongBits(x) == Double.doubleToLongBits(other.x) && Double.doubleToLongBits(y) == Double.doubleToLongBits(other.y);
 	}
 
 	@Override

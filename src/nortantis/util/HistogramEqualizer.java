@@ -82,8 +82,7 @@ public class HistogramEqualizer
 				else
 				{
 					// Do a running average of all levels that map to the save value in the inverse.
-					inverse[lookupTable[i]] = (inverse[lookupTable[i]] * inverseCounts[lookupTable[i]] + i)
-							/ (inverseCounts[lookupTable[i]] + 1);
+					inverse[lookupTable[i]] = (inverse[lookupTable[i]] * inverseCounts[lookupTable[i]] + i) / (inverseCounts[lookupTable[i]] + 1);
 				}
 				inverseCounts[lookupTable[i]]++;
 			}

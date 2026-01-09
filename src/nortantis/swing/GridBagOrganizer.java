@@ -95,8 +95,7 @@ public class GridBagOrganizer
 		return addLabelAndComponents(label, BoxLayout.Y_AXIS, components, 0, 0, null);
 	}
 
-	public <T extends Component> RowHider addLabelAndComponentsVerticalWithComponentPanel(String labelText, String tooltip,
-			List<T> components, JPanel compPanel)
+	public <T extends Component> RowHider addLabelAndComponentsVerticalWithComponentPanel(String labelText, String tooltip, List<T> components, JPanel compPanel)
 	{
 		JLabel label = createWrappingLabel(labelText, tooltip);
 		return addLabelAndComponents(label, BoxLayout.Y_AXIS, components, 0, 0, compPanel);
@@ -112,8 +111,7 @@ public class GridBagOrganizer
 		return addLabelAndComponentsHorizontal(label, components, 0);
 	}
 
-	public <T extends Component> RowHider addLabelAndComponentsHorizontal(String labelText, String tooltip, List<T> components,
-			int componentLeftPadding)
+	public <T extends Component> RowHider addLabelAndComponentsHorizontal(String labelText, String tooltip, List<T> components, int componentLeftPadding)
 	{
 		JLabel label = createWrappingLabel(labelText, tooltip);
 		return addLabelAndComponentsHorizontal(label, components, componentLeftPadding);
@@ -121,12 +119,10 @@ public class GridBagOrganizer
 
 	public <T extends Component> RowHider addLabelAndComponentsHorizontal(JLabel label, List<T> components, int componentLeftPadding)
 	{
-		return addLabelAndComponents(label, BoxLayout.X_AXIS, components, componentLeftPadding,
-				defaultHorizontalSpaceBetweenComponentsAddAsList, null);
+		return addLabelAndComponents(label, BoxLayout.X_AXIS, components, componentLeftPadding, defaultHorizontalSpaceBetweenComponentsAddAsList, null);
 	}
 
-	public <T extends Component> RowHider addLabelAndComponentsHorizontal(String labelText, String tooltip, List<T> components,
-			int componentLeftPadding, int horizontalSpaceBetweenComponents)
+	public <T extends Component> RowHider addLabelAndComponentsHorizontal(String labelText, String tooltip, List<T> components, int componentLeftPadding, int horizontalSpaceBetweenComponents)
 	{
 		JLabel label = createWrappingLabel(labelText, tooltip);
 		return addLabelAndComponents(label, BoxLayout.X_AXIS, components, componentLeftPadding, horizontalSpaceBetweenComponents, null);
@@ -137,8 +133,7 @@ public class GridBagOrganizer
 		updateComponentsPanel(BoxLayout.Y_AXIS, components, 0, 0, compPanel);
 	}
 
-	private static <T extends Component> void updateComponentsPanel(int boxLayoutDirection, List<T> components, int componentLeftPadding,
-			int horizontalSpaceBetweenComponents, JPanel compPanel)
+	private static <T extends Component> void updateComponentsPanel(int boxLayoutDirection, List<T> components, int componentLeftPadding, int horizontalSpaceBetweenComponents, JPanel compPanel)
 	{
 		compPanel.removeAll();
 		compPanel.setLayout(new BoxLayout(compPanel, boxLayoutDirection));
@@ -154,8 +149,8 @@ public class GridBagOrganizer
 		compPanel.add(Box.createHorizontalGlue());
 	}
 
-	private <T extends Component> RowHider addLabelAndComponents(JLabel label, int boxLayoutDirection, List<T> components,
-			int componentLeftPadding, int horizontalSpaceBetweenComponents, JPanel compPanel)
+	private <T extends Component> RowHider addLabelAndComponents(JLabel label, int boxLayoutDirection, List<T> components, int componentLeftPadding, int horizontalSpaceBetweenComponents,
+			JPanel compPanel)
 	{
 		if (compPanel == null)
 		{
@@ -267,8 +262,7 @@ public class GridBagOrganizer
 		return addLeftAlignedComponent(component, topInset, bottomInset, allowToExpandVertically, 1.0);
 	}
 
-	public RowHider addLeftAlignedComponent(Component component, int topInset, int bottomInset, boolean allowToExpandVertically,
-			double verticalWeight)
+	public RowHider addLeftAlignedComponent(Component component, int topInset, int bottomInset, boolean allowToExpandVertically, double verticalWeight)
 	{
 		GridBagConstraints cc = new GridBagConstraints();
 		if (allowToExpandVertically)
@@ -324,21 +318,18 @@ public class GridBagOrganizer
 		return addLeftAlignedComponentWithStackedLabel(labelText, toolTip, component, true, 1.0);
 	}
 
-	public RowHider addLeftAlignedComponentWithStackedLabel(String labelText, String toolTip, JComponent component,
-			boolean allowToExpandVertically)
+	public RowHider addLeftAlignedComponentWithStackedLabel(String labelText, String toolTip, JComponent component, boolean allowToExpandVertically)
 	{
 		return addLeftAlignedComponentWithStackedLabel(labelText, toolTip, component, allowToExpandVertically, 1.0);
 	}
 
-	public RowHider addLeftAlignedComponentWithStackedLabel(String labelText, String toolTip, JComponent component,
-			boolean allowToExpandVertically, double verticalWeight)
+	public RowHider addLeftAlignedComponentWithStackedLabel(String labelText, String toolTip, JComponent component, boolean allowToExpandVertically, double verticalWeight)
 	{
-		return addLeftAlignedComponentWithStackedLabel(labelText, toolTip, component, rowVerticalInset, rowVerticalInset,
-				allowToExpandVertically, verticalWeight);
+		return addLeftAlignedComponentWithStackedLabel(labelText, toolTip, component, rowVerticalInset, rowVerticalInset, allowToExpandVertically, verticalWeight);
 	}
 
-	public RowHider addLeftAlignedComponentWithStackedLabel(String labelText, String toolTip, JComponent component, int topInset,
-			int bottomInset, boolean allowToExpandVertically, double verticalWeight)
+	public RowHider addLeftAlignedComponentWithStackedLabel(String labelText, String toolTip, JComponent component, int topInset, int bottomInset, boolean allowToExpandVertically,
+			double verticalWeight)
 	{
 		JLabel label = new JLabel(labelText);
 		label.setToolTipText(toolTip);

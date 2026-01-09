@@ -113,8 +113,7 @@ public class RoadDrawer
 		}
 	}
 
-	private void addRandomRoadsToNearbyNeighbors(Set<Center> connectedCities, Set<OrderlessPair<Center>> roadsAdded,
-			Set<Edge> edgesAddedRoadsFor)
+	private void addRandomRoadsToNearbyNeighbors(Set<Center> connectedCities, Set<OrderlessPair<Center>> roadsAdded, Set<Edge> edgesAddedRoadsFor)
 	{
 		// Determine which cities will have roads between them
 		for (Center city : connectedCities)
@@ -127,8 +126,7 @@ public class RoadDrawer
 			for (@SuppressWarnings("unused")
 			int number : new Range(roadsToAddCount))
 			{
-				Optional<Center> promise = potentialNeighbors.stream()
-						.min((c1, c2) -> Double.compare(city.loc.distanceTo(c1.loc), city.loc.distanceTo(c2.loc)));
+				Optional<Center> promise = potentialNeighbors.stream().min((c1, c2) -> Double.compare(city.loc.distanceTo(c1.loc), city.loc.distanceTo(c2.loc)));
 				if (promise.isPresent())
 				{
 					Center closestCity = promise.get();
@@ -293,8 +291,7 @@ public class RoadDrawer
 				continue;
 			}
 
-			OrderlessPair<Point> pair = new OrderlessPair<Point>(edge.d0.loc.mult(1.0 / resolutionScale),
-					edge.d1.loc.mult(1.0 / resolutionScale));
+			OrderlessPair<Point> pair = new OrderlessPair<Point>(edge.d0.loc.mult(1.0 / resolutionScale), edge.d1.loc.mult(1.0 / resolutionScale));
 
 			if (existingRoadConnections.contains(pair))
 			{
@@ -499,8 +496,8 @@ public class RoadDrawer
 		}
 
 		Rectangle drawBoundsResolutionInvariant = drawBounds == null ? null
-				: new Rectangle(drawBounds.x * (1.0 / resolutionScale), drawBounds.y * (1.0 / resolutionScale),
-						drawBounds.width * (1.0 / resolutionScale), drawBounds.height * (1.0 / resolutionScale));
+				: new Rectangle(drawBounds.x * (1.0 / resolutionScale), drawBounds.y * (1.0 / resolutionScale), drawBounds.width * (1.0 / resolutionScale),
+						drawBounds.height * (1.0 / resolutionScale));
 		for (Road road : roads)
 		{
 			if (drawBounds == null || roadOverlapsRectangle(road, drawBoundsResolutionInvariant))

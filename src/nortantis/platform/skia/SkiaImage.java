@@ -24,6 +24,7 @@ public class SkiaImage extends Image
 	private Bitmap bitmap;
 	private final int width;
 	private final int height;
+	private org.jetbrains.skia.Image cachedSkiaImage;
 
 	public SkiaImage(int width, int height, ImageType type)
 	{
@@ -47,13 +48,25 @@ public class SkiaImage extends Image
 		return bitmap;
 	}
 
+	public org.jetbrains.skia.Image getSkiaImage()
+	{
+		if (cachedSkiaImage == null)
+		{
+			cachedSkiaImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(bitmap);
+		}
+		return cachedSkiaImage;
+	}
+
 	@Override
 	public int getBandLevel(int x, int y, int band)
 	{
 		int rgb = getRGB(x, y);
-		if (band == 0) return (rgb >> 16) & 0xFF;
-		if (band == 1) return (rgb >> 8) & 0xFF;
-		if (band == 2) return rgb & 0xFF;
+		if (band == 0)
+			return (rgb >> 16) & 0xFF;
+		if (band == 1)
+			return (rgb >> 8) & 0xFF;
+		if (band == 2)
+			return rgb & 0xFF;
 		return (rgb >> 24) & 0xFF;
 	}
 
@@ -66,10 +79,14 @@ public class SkiaImage extends Image
 		int b = rgb & 0xFF;
 		int a = (rgb >> 24) & 0xFF;
 
-		if (band == 0) r = level;
-		else if (band == 1) g = level;
-		else if (band == 2) b = level;
-		else if (band == 3) a = level;
+		if (band == 0)
+			r = level;
+		else if (band == 1)
+			g = level;
+		else if (band == 2)
+			b = level;
+		else if (band == 3)
+			a = level;
 
 		setRGB(x, y, (a << 24) | (r << 16) | (g << 8) | b);
 	}
@@ -219,8 +236,7 @@ public class SkiaImage extends Image
 		SkiaImage sub = new SkiaImage(bounds.width, bounds.height, addAlphaChanel ? ImageType.ARGB : getType());
 		Canvas canvas = ((SkiaPainter) sub.createPainter()).canvas;
 		org.jetbrains.skia.Image skImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(bitmap);
-		canvas.drawImageRect(skImage, org.jetbrains.skia.Rect.makeXYWH(bounds.x, bounds.y, bounds.width, bounds.height),
-				org.jetbrains.skia.Rect.makeXYWH(0, 0, bounds.width, bounds.height));
+		canvas.drawImageRect(skImage, org.jetbrains.skia.Rect.makeXYWH(bounds.x, bounds.y, bounds.width, bounds.height), org.jetbrains.skia.Rect.makeXYWH(0, 0, bounds.width, bounds.height));
 		skImage.close();
 		return sub;
 	}
@@ -240,7 +256,8 @@ public class SkiaImage extends Image
 	@Override
 	public Image copyAndAddAlphaChanel()
 	{
-		if (hasAlpha()) return deepCopy();
+		if (hasAlpha())
+			return deepCopy();
 		return new SkiaImage(bitmap, ImageType.ARGB);
 	}
 
@@ -259,14 +276,11 @@ public class SkiaImage extends Image
 	}
 
 	/**
-	 * Reads all pixels from the Skia bitmap into an int[] array.
-	 * Format: ARGB, one int per pixel, row-major order.
+	 * Reads all pixels from the Skia bitmap into an int[] array. Format: ARGB, one int per pixel, row-major order.
 	 */
 	public int[] readPixelsToIntArray()
 	{
-		byte[] bytes = bitmap.readPixels(
-				new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null),
-				width * 4, 0, 0);
+		byte[] bytes = bitmap.readPixels(new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null), width * 4, 0, 0);
 
 		if (bytes == null)
 		{
@@ -283,9 +297,7 @@ public class SkiaImage extends Image
 	 */
 	public int[] readPixelsToIntArray(int srcX, int srcY, int regionWidth, int regionHeight)
 	{
-		byte[] bytes = bitmap.readPixels(
-				new ImageInfo(regionWidth, regionHeight, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null),
-				regionWidth * 4, srcX, srcY);
+		byte[] bytes = bitmap.readPixels(new ImageInfo(regionWidth, regionHeight, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null), regionWidth * 4, srcX, srcY);
 
 		if (bytes == null)
 		{
@@ -298,22 +310,18 @@ public class SkiaImage extends Image
 	}
 
 	/**
-	 * Writes an int[] array back to the Skia bitmap.
-	 * Format: ARGB, one int per pixel, row-major order.
+	 * Writes an int[] array back to the Skia bitmap. Format: ARGB, one int per pixel, row-major order.
 	 */
 	public void writePixelsFromIntArray(int[] pixels)
 	{
 		ByteBuffer buffer = ByteBuffer.allocate(pixels.length * 4).order(ByteOrder.nativeOrder());
 		buffer.asIntBuffer().put(pixels);
-		bitmap.installPixels(
-				new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null),
-				buffer.array(),
-				width * 4);
+		bitmap.installPixels(new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null), buffer.array(), width * 4);
 	}
 
 	/**
-	 * Writes an int[] array to a rectangular region of the Skia bitmap.
-	 * Uses a temporary bitmap and canvas drawing for efficiency with large images.
+	 * Writes an int[] array to a rectangular region of the Skia bitmap. Uses a temporary bitmap and canvas drawing for efficiency with
+	 * large images.
 	 */
 	public void writePixelsToRegion(int[] regionPixels, int destX, int destY, int regionWidth, int regionHeight)
 	{
@@ -322,10 +330,7 @@ public class SkiaImage extends Image
 
 		ByteBuffer buffer = ByteBuffer.allocate(regionPixels.length * 4).order(ByteOrder.nativeOrder());
 		buffer.asIntBuffer().put(regionPixels);
-		tempBitmap.installPixels(
-				new ImageInfo(regionWidth, regionHeight, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null),
-				buffer.array(),
-				regionWidth * 4);
+		tempBitmap.installPixels(new ImageInfo(regionWidth, regionHeight, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null), buffer.array(), regionWidth * 4);
 
 		Canvas canvas = new Canvas(bitmap, new SurfaceProps());
 		org.jetbrains.skia.Image tempImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(tempBitmap);
