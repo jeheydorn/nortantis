@@ -99,6 +99,10 @@ jar {
 test {
     jvmArgs = ['-Dfile.encoding=UTF-8', '-Xmx3g']
     useJUnitPlatform()
+    // Fork a new JVM for each test class to ensure complete isolation.
+    // This is needed because MapCreatorTest and SkiaMapCreatorTest use different
+    // PlatformFactory implementations that share global state.
+    forkEvery = 1
 }
 
 sourceSets {
