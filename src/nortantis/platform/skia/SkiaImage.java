@@ -10,6 +10,7 @@ import org.jetbrains.skia.Canvas;
 import org.jetbrains.skia.ColorAlphaType;
 import org.jetbrains.skia.ImageInfo;
 import org.jetbrains.skia.ColorType;
+import org.jetbrains.skia.Surface;
 import org.jetbrains.skia.SurfaceProps;
 import org.imgscalr.Scalr.Method;
 import nortantis.geom.IntRectangle;
@@ -55,6 +56,15 @@ public class SkiaImage extends Image
 			cachedSkiaImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(bitmap);
 		}
 		return cachedSkiaImage;
+	}
+
+	private void invalidateCachedImage()
+	{
+		if (cachedSkiaImage != null)
+		{
+			cachedSkiaImage.close();
+			cachedSkiaImage = null;
+		}
 	}
 
 	@Override
@@ -131,6 +141,7 @@ public class SkiaImage extends Image
 		canvas.drawPoint(x + 0.5f, y + 0.5f, paint);
 		canvas.close();
 		paint.close();
+		invalidateCachedImage();
 	}
 
 	@Override
@@ -205,13 +216,30 @@ public class SkiaImage extends Image
 	@Override
 	public Image scale(Method method, int width, int height)
 	{
+		// Handle degenerate cases - Skia requires positive dimensions
+		if (width <= 0 || height <= 0)
+		{
+			width = Math.max(1, width);
+			height = Math.max(1, height);
+		}
+
+		// Use Surface-based rendering which is more reliable in Skia
+		Surface surface = Surface.Companion.makeRasterN32Premul(width, height);
+		Canvas canvas = surface.getCanvas();
+
+		// Create image from source bitmap and draw scaled
+		org.jetbrains.skia.Image srcImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(bitmap);
+		canvas.drawImageRect(srcImage, org.jetbrains.skia.Rect.makeXYWH(0, 0, width, height));
+		srcImage.close();
+
+		// Get the result as an image snapshot and extract pixels to a new bitmap
+		org.jetbrains.skia.Image resultImage = surface.makeImageSnapshot();
 		Bitmap scaledBitmap = new Bitmap();
 		scaledBitmap.allocPixels(new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null));
-		Canvas canvas = new Canvas(scaledBitmap, new SurfaceProps());
-		org.jetbrains.skia.Image skImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(bitmap);
-		canvas.drawImageRect(skImage, org.jetbrains.skia.Rect.makeXYWH(0, 0, width, height));
-		canvas.close();
-		skImage.close();
+		resultImage.readPixels(scaledBitmap, 0, 0);
+		resultImage.close();
+		surface.close();
+
 		return new SkiaImage(scaledBitmap, getType());
 	}
 
@@ -233,12 +261,29 @@ public class SkiaImage extends Image
 	@Override
 	public Image copySubImage(IntRectangle bounds, boolean addAlphaChanel)
 	{
-		SkiaImage sub = new SkiaImage(bounds.width, bounds.height, addAlphaChanel ? ImageType.ARGB : getType());
-		Canvas canvas = ((SkiaPainter) sub.createPainter()).canvas;
-		org.jetbrains.skia.Image skImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(bitmap);
-		canvas.drawImageRect(skImage, org.jetbrains.skia.Rect.makeXYWH(bounds.x, bounds.y, bounds.width, bounds.height), org.jetbrains.skia.Rect.makeXYWH(0, 0, bounds.width, bounds.height));
-		skImage.close();
-		return sub;
+		// Handle degenerate cases - Skia requires positive dimensions
+		int w = Math.max(1, bounds.width);
+		int h = Math.max(1, bounds.height);
+
+		// Use Surface-based rendering which is more reliable
+		Surface surface = Surface.Companion.makeRasterN32Premul(w, h);
+		Canvas canvas = surface.getCanvas();
+
+		org.jetbrains.skia.Image srcImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(bitmap);
+		canvas.drawImageRect(srcImage,
+				org.jetbrains.skia.Rect.makeXYWH(bounds.x, bounds.y, bounds.width, bounds.height),
+				org.jetbrains.skia.Rect.makeXYWH(0, 0, w, h));
+		srcImage.close();
+
+		// Get the result as an image snapshot and extract pixels to a new bitmap
+		org.jetbrains.skia.Image resultImage = surface.makeImageSnapshot();
+		Bitmap subBitmap = new Bitmap();
+		subBitmap.allocPixels(new ImageInfo(w, h, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null));
+		resultImage.readPixels(subBitmap, 0, 0);
+		resultImage.close();
+		surface.close();
+
+		return new SkiaImage(subBitmap, addAlphaChanel ? ImageType.ARGB : getType());
 	}
 
 	@Override
@@ -317,6 +362,7 @@ public class SkiaImage extends Image
 		ByteBuffer buffer = ByteBuffer.allocate(pixels.length * 4).order(ByteOrder.nativeOrder());
 		buffer.asIntBuffer().put(pixels);
 		bitmap.installPixels(new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null), buffer.array(), width * 4);
+		invalidateCachedImage();
 	}
 
 	/**
@@ -325,6 +371,7 @@ public class SkiaImage extends Image
 	 */
 	public void writePixelsToRegion(int[] regionPixels, int destX, int destY, int regionWidth, int regionHeight)
 	{
+		// Create a temporary bitmap with the region pixels
 		Bitmap tempBitmap = new Bitmap();
 		tempBitmap.allocPixels(new ImageInfo(regionWidth, regionHeight, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null));
 
@@ -332,11 +379,13 @@ public class SkiaImage extends Image
 		buffer.asIntBuffer().put(regionPixels);
 		tempBitmap.installPixels(new ImageInfo(regionWidth, regionHeight, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null), buffer.array(), regionWidth * 4);
 
+		// Draw the temp image onto the main bitmap using Canvas
 		Canvas canvas = new Canvas(bitmap, new SurfaceProps());
 		org.jetbrains.skia.Image tempImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(tempBitmap);
 		canvas.drawImage(tempImage, destX, destY);
 		tempImage.close();
 		canvas.close();
 		tempBitmap.close();
+		invalidateCachedImage();
 	}
 }

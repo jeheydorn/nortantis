@@ -48,9 +48,19 @@ public class SkiaFactory extends PlatformFactory
 		{
 			byte[] bytes = stream.readAllBytes();
 			org.jetbrains.skia.Image image = org.jetbrains.skia.Image.Companion.makeFromEncoded(bytes);
-			Bitmap bitmap = Bitmap.Companion.makeFromImage(image);
+
+			// Create a mutable bitmap with allocated pixels using Image.readPixels.
+			// This is more reliable than drawing through a Canvas, which can leave
+			// the bitmap in a state where Image.makeFromBitmap fails later.
+			Bitmap bitmap = new Bitmap();
+			bitmap.allocPixels(new org.jetbrains.skia.ImageInfo(image.getWidth(), image.getHeight(),
+					org.jetbrains.skia.ColorType.Companion.getN32(), org.jetbrains.skia.ColorAlphaType.PREMUL, null));
+
+			// Use readPixels to directly copy pixel data from image to bitmap
+			image.readPixels(bitmap, 0, 0);
 			image.close();
-			return new SkiaImage(bitmap, ImageType.ARGB); // Assuming ARGB for now
+
+			return new SkiaImage(bitmap, ImageType.ARGB);
 		}
 		catch (Exception e)
 		{

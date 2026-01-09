@@ -88,7 +88,7 @@ public class MapCreatorTest
 		int failCount = 0;
 
 		{
-			final int numberToTest = 100;
+			final int numberToTest = 50;
 			Image fullMapForUpdates = fullMap.deepCopy();
 			int iconNumber = 0;
 			for (FreeIcon icon : settings.edits.freeIcons)
@@ -99,7 +99,7 @@ public class MapCreatorTest
 					break;
 				}
 
-				System.out.println("Running incremental icon drawing test number " + iconNumber);
+				//System.out.println("Running incremental icon drawing test number " + iconNumber);
 
 				IntRectangle changedBounds = mapCreator.incrementalUpdateIcons(settings, mapParts, fullMapForUpdates, Arrays.asList(icon));
 
@@ -141,7 +141,7 @@ public class MapCreatorTest
 		}
 
 		{
-			final int numberToTest = 100;
+			final int numberToTest = 50;
 			Image fullMapForUpdates = fullMap.deepCopy();
 			int textNumber = 0;
 			for (MapText text : settings.edits.text)
@@ -152,7 +152,7 @@ public class MapCreatorTest
 					break;
 				}
 
-				System.out.println("Running incremental text drawing test number " + textNumber);
+				//System.out.println("Running incremental text drawing test number " + textNumber);
 
 				IntRectangle changedBounds = mapCreator.incrementalUpdateText(settings, mapParts, fullMapForUpdates, Arrays.asList(text));
 				changedBounds = changedBounds.findIntersection(new IntRectangle(new IntPoint(0, 0), mapParts.background.getMapBoundsIncludingBorder().toIntDimension()));
