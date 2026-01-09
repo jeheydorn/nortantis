@@ -55,6 +55,7 @@ public class SkiaMapCreatorTest
 		assertTrue(actual.getHeight() > 0);
 		
 		// Optionally save it to see what it looks like
+		FileHelper.createFolder(Paths.get("unit test files", "failed maps").toString());
 		actual.write(Paths.get("unit test files", "failed maps", "skia_" + settingsFileName + ".png").toString());
 	}
 }

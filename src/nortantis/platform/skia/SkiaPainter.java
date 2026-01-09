@@ -8,6 +8,7 @@ import org.jetbrains.skia.Path;
 import org.jetbrains.skia.Rect;
 import org.jetbrains.skia.Matrix33;
 import org.jetbrains.skia.BlendMode;
+import org.jetbrains.skia.SurfaceProps;
 import nortantis.Stroke;
 import nortantis.StrokeType;
 import nortantis.geom.FloatPoint;
@@ -37,7 +38,7 @@ public class SkiaPainter extends Painter
 	public void drawImage(Image image, int x, int y)
 	{
 		SkiaImage skImage = (SkiaImage) image;
-		org.jetbrains.skia.Image skiaImage = org.jetbrains.skia.Image.makeFromBitmap(skImage.getBitmap());
+		org.jetbrains.skia.Image skiaImage = skImage.getBitmap().makeImageSnapshot();
 		canvas.drawImage(skiaImage, (float) x, (float) y, paint);
 		skiaImage.close();
 	}
@@ -46,7 +47,7 @@ public class SkiaPainter extends Painter
 	public void drawImage(Image image, int x, int y, int width, int height)
 	{
 		SkiaImage skImage = (SkiaImage) image;
-		org.jetbrains.skia.Image skiaImage = org.jetbrains.skia.Image.makeFromBitmap(skImage.getBitmap());
+		org.jetbrains.skia.Image skiaImage = skImage.getBitmap().makeImageSnapshot();
 		canvas.drawImageRect(skiaImage, Rect.makeXYWH(x, y, width, height), paint);
 		skiaImage.close();
 	}
@@ -142,7 +143,7 @@ public class SkiaPainter extends Painter
 	@Override
 	public Transform getTransform()
 	{
-		return new SkiaTransform(canvas.getLocalMatrix());
+		return new SkiaTransform(canvas.getLocalToDeviceAsMatrix33());
 	}
 
 	@Override
@@ -160,6 +161,7 @@ public class SkiaPainter extends Painter
 	@Override
 	public void fillPolygon(int[] xPoints, int[] yPoints)
 	{
+		if (xPoints.length == 0) return;
 		Path path = new Path();
 		path.moveTo(xPoints[0], yPoints[0]);
 		for (int i = 1; i < xPoints.length; i++)
@@ -175,6 +177,7 @@ public class SkiaPainter extends Painter
 	@Override
 	public void drawPolygon(int[] xPoints, int[] yPoints)
 	{
+		if (xPoints.length == 0) return;
 		Path path = new Path();
 		path.moveTo(xPoints[0], yPoints[0]);
 		for (int i = 1; i < xPoints.length; i++)
@@ -190,6 +193,7 @@ public class SkiaPainter extends Painter
 	@Override
 	public void drawPolyline(int[] xPoints, int[] yPoints)
 	{
+		if (xPoints.length == 0) return;
 		Path path = new Path();
 		path.moveTo(xPoints[0], yPoints[0]);
 		for (int i = 1; i < xPoints.length; i++)
@@ -204,6 +208,7 @@ public class SkiaPainter extends Painter
 	@Override
 	public void drawPolygonFloat(List<FloatPoint> points)
 	{
+		if (points.isEmpty()) return;
 		Path path = new Path();
 		path.moveTo(points.get(0).x, points.get(0).y);
 		for (int i = 1; i < points.size(); i++)
@@ -219,8 +224,8 @@ public class SkiaPainter extends Painter
 	@Override
 	public void setGradient(float x1, float y1, Color color1, float x2, float y2, Color color2)
 	{
-		paint.setShader(org.jetbrains.skia.Shader.makeLinearGradient(x1, y1, x2, y2, 
-				new int[] { color1.getRGB(), color2.getRGB() }));
+		paint.setShader(org.jetbrains.skia.Shader.Companion.makeLinearGradient(x1, y1, x2, y2, 
+				new int[] { color1.getRGB(), color2.getRGB() }, null, org.jetbrains.skia.GradientStyle.Companion.getDEFAULT()));
 	}
 
 	@Override
@@ -278,7 +283,7 @@ public class SkiaPainter extends Painter
 			
 			paint.setMode(PaintMode.STROKE);
 			paint.setStrokeWidth(width);
-			paint.setPathEffect(org.jetbrains.skia.PathEffect.makeDash(intervals, 0f));
+			paint.setPathEffect(org.jetbrains.skia.PathEffect.Companion.makeDash(intervals, 0f));
 			paint.setStrokeJoin(org.jetbrains.skia.PaintStrokeJoin.ROUND);
 		}
 	}

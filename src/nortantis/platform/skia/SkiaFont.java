@@ -18,18 +18,21 @@ public class SkiaFont extends nortantis.platform.Font
 		this.style = style;
 		this.size = size;
 		
-		int weight = 400; // Normal
-		boolean italic = false;
-		if (style == FontStyle.Bold || style == FontStyle.BoldItalic)
+		org.jetbrains.skia.FontStyle skiaStyle = org.jetbrains.skia.FontStyle.Companion.getNORMAL();
+		if (style == FontStyle.Bold)
 		{
-			weight = 700; // Bold
+			skiaStyle = org.jetbrains.skia.FontStyle.Companion.getBOLD();
 		}
-		if (style == FontStyle.Italic || style == FontStyle.BoldItalic)
+		else if (style == FontStyle.Italic)
 		{
-			italic = true;
+			skiaStyle = org.jetbrains.skia.FontStyle.Companion.getITALIC();
+		}
+		else if (style == FontStyle.BoldItalic)
+		{
+			skiaStyle = org.jetbrains.skia.FontStyle.Companion.getBOLD_ITALIC();
 		}
 
-		Typeface typeface = Typeface.makeFromName(name, new org.jetbrains.skia.FontStyle(weight, 5, italic ? org.jetbrains.skia.FontSlant.ITALIC : org.jetbrains.skia.FontSlant.UPRIGHT));
+		Typeface typeface = Typeface.Companion.makeFromName(name, skiaStyle);
 		this.skiaFont = new Font(typeface, size);
 	}
 

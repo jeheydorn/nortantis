@@ -10,6 +10,7 @@ import org.jetbrains.skia.Canvas;
 import org.jetbrains.skia.ColorAlphaType;
 import org.jetbrains.skia.ImageInfo;
 import org.jetbrains.skia.ColorType;
+import org.jetbrains.skia.SurfaceProps;
 import org.imgscalr.Scalr.Method;
 import nortantis.geom.IntRectangle;
 import nortantis.platform.Color;
@@ -30,7 +31,7 @@ public class SkiaImage extends Image
 		this.width = width;
 		this.height = height;
 		this.bitmap = new Bitmap();
-		this.bitmap.allocPixels(new ImageInfo(width, height, ColorType.getN32(), ColorAlphaType.PREMUL, null));
+		this.bitmap.allocPixels(new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null));
 	}
 
 	public SkiaImage(Bitmap bitmap, ImageType type)
@@ -94,6 +95,10 @@ public class SkiaImage extends Image
 	@Override
 	public int getRGB(int[] data, int x, int y)
 	{
+		if (data == null)
+		{
+			return getRGB(x, y);
+		}
 		return data[y * width + x];
 	}
 
@@ -103,10 +108,12 @@ public class SkiaImage extends Image
 		// This is slow, but we'll use shaders later.
 		// Note: bitmap.getPixels() / bitmap.setPixels() could be used for bulk.
 		// For single pixel, we might need a canvas or use the buffer directly.
-		Canvas canvas = new Canvas(bitmap);
+		Canvas canvas = new Canvas(bitmap, new SurfaceProps());
 		org.jetbrains.skia.Paint paint = new org.jetbrains.skia.Paint();
 		paint.setColor(rgb);
 		canvas.drawPoint(x + 0.5f, y + 0.5f, paint);
+		canvas.close();
+		paint.close();
 	}
 
 	@Override
@@ -124,13 +131,27 @@ public class SkiaImage extends Image
 	@Override
 	public void setRGB(int[] data, int x, int y, int red, int green, int blue)
 	{
-		data[y * width + x] = (255 << 24) | (red << 16) | (green << 8) | blue;
+		if (data == null)
+		{
+			setRGB(x, y, red, green, blue);
+		}
+		else
+		{
+			data[y * width + x] = (255 << 24) | (red << 16) | (green << 8) | blue;
+		}
 	}
 
 	@Override
 	public void setRGB(int[] data, int x, int y, int red, int green, int blue, int alpha)
 	{
-		data[y * width + x] = (alpha << 24) | (red << 16) | (green << 8) | blue;
+		if (data == null)
+		{
+			setRGB(x, y, red, green, blue, alpha);
+		}
+		else
+		{
+			data[y * width + x] = (alpha << 24) | (red << 16) | (green << 8) | blue;
+		}
 	}
 
 	@Override
@@ -161,16 +182,16 @@ public class SkiaImage extends Image
 	@Override
 	public Painter createPainter(DrawQuality quality)
 	{
-		return new SkiaPainter(new Canvas(bitmap));
+		return new SkiaPainter(new Canvas(bitmap, new SurfaceProps()));
 	}
 
 	@Override
 	public Image scale(Method method, int width, int height)
 	{
 		Bitmap scaledBitmap = new Bitmap();
-		scaledBitmap.allocPixels(new ImageInfo(width, height, ColorType.getN32(), ColorAlphaType.PREMUL, null));
-		Canvas canvas = new Canvas(scaledBitmap);
-		org.jetbrains.skia.Image skImage = org.jetbrains.skia.Image.makeFromBitmap(bitmap);
+		scaledBitmap.allocPixels(new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null));
+		Canvas canvas = new Canvas(scaledBitmap, new SurfaceProps());
+		org.jetbrains.skia.Image skImage = bitmap.makeImageSnapshot();
 		canvas.drawImageRect(skImage, org.jetbrains.skia.Rect.makeXYWH(0, 0, width, height));
 		canvas.close();
 		skImage.close();
@@ -180,10 +201,7 @@ public class SkiaImage extends Image
 	@Override
 	public Image deepCopy()
 	{
-		Bitmap copy = new Bitmap();
-		copy.allocPixels(bitmap.getInfo());
-		bitmap.readPixels(copy);
-		return new SkiaImage(copy, getType());
+		return new SkiaImage(bitmap.makeClone(), getType());
 	}
 
 	@Override
@@ -199,10 +217,11 @@ public class SkiaImage extends Image
 	public Image copySubImage(IntRectangle bounds, boolean addAlphaChanel)
 	{
 		SkiaImage sub = new SkiaImage(bounds.width, bounds.height, addAlphaChanel ? ImageType.ARGB : getType());
-		Canvas canvas = sub.createPainter().canvas;
-		org.jetbrains.skia.Image skImage = org.jetbrains.skia.Image.makeFromBitmap(bitmap);
+		Canvas canvas = ((SkiaPainter) sub.createPainter()).canvas;
+		org.jetbrains.skia.Image skImage = bitmap.makeImageSnapshot();
 		canvas.drawImageRect(skImage, org.jetbrains.skia.Rect.makeXYWH(bounds.x, bounds.y, bounds.width, bounds.height), 
 				org.jetbrains.skia.Rect.makeXYWH(0, 0, bounds.width, bounds.height));
+		skImage.close();
 		return sub;
 	}
 
@@ -230,9 +249,9 @@ public class SkiaImage extends Image
 		BufferedImage bi = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 		int[] pixels = ((DataBufferInt) bi.getRaster().getDataBuffer()).getData();
 		
-		ByteBuffer buffer = ByteBuffer.allocateDirect(width * height * 4).order(ByteOrder.nativeOrder());
-		bitmap.readPixels(ImageInfo.make(width, height, ColorType.BGRA_8888, ColorAlphaType.PREMUL), buffer.array(), width * 4, 0, 0);
+		byte[] bytes = bitmap.readPixels(new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null), width * 4, 0, 0);
 		
+		ByteBuffer buffer = ByteBuffer.wrap(bytes).order(ByteOrder.nativeOrder());
 		IntBuffer intBuffer = buffer.asIntBuffer();
 		intBuffer.get(pixels);
 		

@@ -64,7 +64,7 @@ public class SkiaFactory extends PlatformFactory
 		try
 		{
 			SkiaImage skiaImage = (SkiaImage) image;
-			org.jetbrains.skia.Image skImage = org.jetbrains.skia.Image.makeFromBitmap(skiaImage.getBitmap());
+			org.jetbrains.skia.Image skImage = skiaImage.getBitmap().makeImageSnapshot();
 			byte[] bytes = skImage.encodeToData(EncodedImageFormat.PNG, 100).getBytes();
 			Files.write(Paths.get(filePath), bytes);
 			skImage.close();

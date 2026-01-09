@@ -45,6 +45,7 @@ dependencies {
     implementation 'com.formdev:flatlaf:3.6.2'
     implementation "org.jetbrains.skiko:skiko:$skikoVersion"
     implementation "org.jetbrains.skiko:skiko-awt-runtime-$skikoTarget:$skikoVersion"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.9.23"
 }
 
 // Attaches javadocs to libraries in Eclipse.
