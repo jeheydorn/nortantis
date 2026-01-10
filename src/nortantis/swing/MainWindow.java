@@ -60,6 +60,7 @@ import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileSystemView;
 
+import nortantis.platform.skia.SkiaFactory;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -87,7 +88,7 @@ import nortantis.graph.voronoi.Edge;
 import nortantis.platform.BackgroundTask;
 import nortantis.platform.Image;
 import nortantis.platform.PlatformFactory;
-import nortantis.platform.awt.AwtFactory;
+import nortantis.platform.awt.AwtBridge;
 import nortantis.util.Assets;
 import nortantis.util.FileHelper;
 import nortantis.util.ILoggerTarget;
@@ -326,7 +327,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		getContentPane().setPreferredSize(new Dimension(1400, 780));
 		getContentPane().setLayout(new BorderLayout());
 
-		setIconImage(AwtFactory.unwrap(Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal/taskbar icon.png").toString())));
+		setIconImage(AwtBridge.toBufferedImage(Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal/taskbar icon.png").toString())));
 		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 
 		addWindowListener(new WindowAdapter()
@@ -557,7 +558,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			protected void onFinishedDrawing(Image map, boolean anotherDrawIsQueued, int borderPaddingAsDrawn, IntRectangle incrementalChangeArea, List<String> warningMessages)
 			{
-				mapEditingPanel.mapFromMapCreator = AwtFactory.unwrap(map);
+				mapEditingPanel.mapFromMapCreator = AwtBridge.toBufferedImage(map);
 				mapEditingPanel.setBorderPadding(borderPaddingAsDrawn);
 				mapEditingPanel.setGraph(mapParts.graph);
 				mapEditingPanel.setFreeIcons(edits == null ? null : edits.freeIcons);
@@ -640,7 +641,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			protected Image getCurrentMapForIncrementalUpdate()
 			{
-				return AwtFactory.wrap(mapEditingPanel.mapFromMapCreator);
+				return AwtBridge.fromBufferedImage(mapEditingPanel.mapFromMapCreator);
 			}
 
 			@Override
@@ -1502,7 +1503,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			if (method == Method.QUALITY)
 			{
 				// Can't incrementally zoom. Zoom the whole thing.
-				mapEditingPanel.setImage(AwtFactory.unwrap(ImageHelper.scaleByWidth(AwtFactory.wrap(mapEditingPanel.mapFromMapCreator), zoomedWidth, method)));
+				mapEditingPanel.setImage(AwtBridge.toBufferedImage(ImageHelper.scaleByWidth(AwtBridge.fromBufferedImage(mapEditingPanel.mapFromMapCreator), zoomedWidth, method)));
 			}
 			else
 			{
@@ -1518,7 +1519,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					// I don't use ImageHelper.scaleInto for the full image case
 					// because it's 5x slower than the below
 					// method, which uses ImgScalr.
-					mapEditingPanel.setImage(AwtFactory.unwrap(ImageHelper.scaleByWidth(AwtFactory.wrap(mapEditingPanel.mapFromMapCreator), zoomedWidth, method)));
+					mapEditingPanel.setImage(AwtBridge.toBufferedImage(ImageHelper.scaleByWidth(AwtBridge.fromBufferedImage(mapEditingPanel.mapFromMapCreator), zoomedWidth, method)));
 				}
 				else
 				{
@@ -1528,7 +1529,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					// image.
 					if (mapEditingPanel.mapFromMapCreator != mapEditingPanel.getImage())
 					{
-						ImageHelper.scaleInto(AwtFactory.wrap(mapEditingPanel.mapFromMapCreator), AwtFactory.wrap(mapEditingPanel.getImage()), incrementalChangeArea);
+						ImageHelper.scaleInto(AwtBridge.fromBufferedImage(mapEditingPanel.mapFromMapCreator), AwtBridge.fromBufferedImage(mapEditingPanel.getImage()), incrementalChangeArea);
 					}
 				}
 			}
@@ -2064,7 +2065,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	private void setPlaceholderImage(String[] message)
 	{
-		mapEditingPanel.setImage(AwtFactory.unwrap(ImageHelper.createPlaceholderImage(message, AwtFactory.wrap(SwingHelper.getTextColorForPlaceholderImages()))));
+		mapEditingPanel.setImage(AwtBridge.toBufferedImage(ImageHelper.createPlaceholderImage(message, AwtBridge.fromAwtColor(SwingHelper.getTextColorForPlaceholderImages()))));
 
 		// Clear out the map from map creator so that causing the window to
 		// re-zoom while the placeholder image
@@ -2138,7 +2139,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	public static void main(String[] args)
 	{
 		// Tell drawing code to use AWT.
-		PlatformFactory.setInstance(new AwtFactory());
+		PlatformFactory.setInstance(new SkiaFactory());
 
 		setLookAndFeel(UserPreferences.getInstance().lookAndFeel);
 

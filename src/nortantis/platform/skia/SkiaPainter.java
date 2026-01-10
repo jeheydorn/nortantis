@@ -37,6 +37,10 @@ public class SkiaPainter extends Painter
 	@Override
 	public void drawImage(Image image, int x, int y)
 	{
+		if (!(image instanceof SkiaImage))
+		{
+			throw new IllegalArgumentException("SkiaPainter.drawImage requires SkiaImage, got " + image.getClass().getName());
+		}
 		SkiaImage skImage = (SkiaImage) image;
 		canvas.drawImage(skImage.getSkiaImage(), (float) x, (float) y, paint);
 	}
@@ -44,6 +48,10 @@ public class SkiaPainter extends Painter
 	@Override
 	public void drawImage(Image image, int x, int y, int width, int height)
 	{
+		if (!(image instanceof SkiaImage))
+		{
+			throw new IllegalArgumentException("SkiaPainter.drawImage requires SkiaImage, got " + image.getClass().getName());
+		}
 		SkiaImage skImage = (SkiaImage) image;
 		canvas.drawImageRect(skImage.getSkiaImage(), Rect.makeXYWH(x, y, width, height), paint);
 	}
@@ -97,6 +105,10 @@ public class SkiaPainter extends Painter
 	@Override
 	public void setColor(Color color)
 	{
+		if (!(color instanceof SkiaColor))
+		{
+			throw new IllegalArgumentException("SkiaPainter.setColor requires SkiaColor, got " + color.getClass().getName());
+		}
 		this.color = (SkiaColor) color;
 		paint.setColor(this.color.getRGB());
 	}
@@ -130,6 +142,10 @@ public class SkiaPainter extends Painter
 	@Override
 	public void setFont(Font font)
 	{
+		if (!(font instanceof SkiaFont))
+		{
+			throw new IllegalArgumentException("SkiaPainter.setFont requires SkiaFont, got " + font.getClass().getName());
+		}
 		this.font = (SkiaFont) font;
 	}
 
@@ -146,6 +162,10 @@ public class SkiaPainter extends Painter
 	@Override
 	public void setTransform(Transform transform)
 	{
+		if (!(transform instanceof SkiaTransform))
+		{
+			throw new IllegalArgumentException("SkiaPainter.setTransform requires SkiaTransform, got " + transform.getClass().getName());
+		}
 		canvas.setMatrix(((SkiaTransform) transform).matrix);
 	}
 
@@ -237,6 +257,14 @@ public class SkiaPainter extends Painter
 	@Override
 	public void setGradient(float x1, float y1, Color color1, float x2, float y2, Color color2)
 	{
+		if (!(color1 instanceof SkiaColor))
+		{
+			throw new IllegalArgumentException("SkiaPainter.setGradient requires SkiaColor, got " + color1.getClass().getName());
+		}
+		if (!(color2 instanceof SkiaColor))
+		{
+			throw new IllegalArgumentException("SkiaPainter.setGradient requires SkiaColor, got " + color2.getClass().getName());
+		}
 		paint.setShader(
 				org.jetbrains.skia.Shader.Companion.makeLinearGradient(x1, y1, x2, y2, new int[] { color1.getRGB(), color2.getRGB() }, null, org.jetbrains.skia.GradientStyle.Companion.getDEFAULT()));
 	}

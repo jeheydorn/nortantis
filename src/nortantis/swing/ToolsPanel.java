@@ -32,7 +32,7 @@ import nortantis.MapSettings;
 import nortantis.editor.DisplayQuality;
 import nortantis.editor.MapUpdater;
 import nortantis.editor.UserPreferences;
-import nortantis.platform.awt.AwtFactory;
+import nortantis.platform.awt.AwtBridge;
 import nortantis.util.Assets;
 import nortantis.util.Logger;
 
@@ -89,7 +89,7 @@ public class ToolsPanel extends JPanel
 			};
 			try
 			{
-				BufferedImage icon = AwtFactory.unwrap(Assets.readImage(tool.getImageIconFilePath()));
+				BufferedImage icon = AwtBridge.toBufferedImage(Assets.readImage(tool.getImageIconFilePath()));
 				toolButton.setIcon(new ImageIcon(icon));
 			}
 			catch (Exception e)

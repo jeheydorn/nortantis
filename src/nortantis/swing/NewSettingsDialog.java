@@ -39,7 +39,7 @@ import nortantis.editor.MapUpdater;
 import nortantis.editor.UserPreferences;
 import nortantis.geom.IntRectangle;
 import nortantis.platform.Image;
-import nortantis.platform.awt.AwtFactory;
+import nortantis.platform.awt.AwtBridge;
 import nortantis.swing.ThemePanel.LandColoringMethod;
 import nortantis.util.Assets;
 import nortantis.util.FileHelper;
@@ -585,7 +585,7 @@ public class NewSettingsDialog extends JDialog
 
 	private void createMapEditingPanel()
 	{
-		BufferedImage placeHolder = AwtFactory.unwrap(ImageHelper.createPlaceholderImage(new String[] { "Drawing..." }, AwtFactory.wrap(SwingHelper.getTextColorForPlaceholderImages())));
+		BufferedImage placeHolder = AwtBridge.toBufferedImage(ImageHelper.createPlaceholderImage(new String[] { "Drawing..." }, AwtBridge.fromAwtColor(SwingHelper.getTextColorForPlaceholderImages())));
 		mapEditingPanel = new MapEditingPanel(placeHolder);
 
 		mapEditingPanelContainer = new JPanel();
@@ -618,7 +618,7 @@ public class NewSettingsDialog extends JDialog
 			@Override
 			protected void onFinishedDrawing(Image map, boolean anotherDrawIsQueued, int borderWidthAsDrawn, IntRectangle incrementalChangeArea, List<String> warningMessages)
 			{
-				mapEditingPanel.setImage(AwtFactory.unwrap(map));
+				mapEditingPanel.setImage(AwtBridge.toBufferedImage(map));
 
 				if (!anotherDrawIsQueued)
 				{
@@ -644,7 +644,7 @@ public class NewSettingsDialog extends JDialog
 			@Override
 			protected Image getCurrentMapForIncrementalUpdate()
 			{
-				return AwtFactory.wrap(mapEditingPanel.mapFromMapCreator);
+				return AwtBridge.fromBufferedImage(mapEditingPanel.mapFromMapCreator);
 			}
 
 		};

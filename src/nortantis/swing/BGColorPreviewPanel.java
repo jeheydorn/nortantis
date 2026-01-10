@@ -7,7 +7,7 @@ import javax.swing.JColorChooser;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import nortantis.platform.awt.AwtFactory;
+import nortantis.platform.awt.AwtBridge;
 import nortantis.util.ImageHelper;
 
 /**
@@ -92,7 +92,7 @@ public class BGColorPreviewPanel extends ImagePanel implements ChangeListener
 	{
 		if (colorifyAlgorithm != ImageHelper.ColorifyAlgorithm.none)
 		{
-			super.setImage(AwtFactory.unwrap(ImageHelper.colorify(AwtFactory.wrap(originalBackground), AwtFactory.wrap(color), colorifyAlgorithm)));
+			super.setImage(AwtBridge.toBufferedImage(ImageHelper.colorify(AwtBridge.fromBufferedImage(originalBackground), AwtBridge.fromAwtColor(color), colorifyAlgorithm)));
 		}
 	}
 

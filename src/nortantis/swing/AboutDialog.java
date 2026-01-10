@@ -22,7 +22,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import nortantis.MapSettings;
-import nortantis.platform.awt.AwtFactory;
+import nortantis.platform.awt.AwtBridge;
 import nortantis.util.Assets;
 
 @SuppressWarnings("serial")
@@ -37,7 +37,7 @@ public class AboutDialog extends JDialog
 		add(content, BorderLayout.CENTER);
 		content.setLayout(new BorderLayout());
 		content.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
-		BufferedImage nortantisImage = AwtFactory.unwrap(Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "taskbar icon medium size.png").toString()));
+		BufferedImage nortantisImage = AwtBridge.toBufferedImage(Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "taskbar icon medium size.png").toString()));
 		ImagePanel nortantisImagePanel = new ImagePanel(nortantisImage)
 		{
 			@Override

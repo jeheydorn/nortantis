@@ -37,7 +37,7 @@ import nortantis.editor.MapUpdater;
 import nortantis.geom.RotatedRectangle;
 import nortantis.platform.Color;
 import nortantis.platform.Font;
-import nortantis.platform.awt.AwtFactory;
+import nortantis.platform.awt.AwtBridge;
 import nortantis.util.Assets;
 import nortantis.util.Tuple2;
 
@@ -264,7 +264,7 @@ public class TextTool extends EditorTool
 
 						MapText old = lastSelected.deepCopy();
 						lastSelected.fontOverride = getFontForType(lastSelected.type);
-						fontChooser.setFont(AwtFactory.unwrap(lastSelected.fontOverride));
+						fontChooser.setFont(AwtBridge.toAwtFont(lastSelected.fontOverride));
 						updater.createAndShowMapIncrementalUsingText(Arrays.asList(old, lastSelected));
 					}
 
@@ -277,7 +277,7 @@ public class TextTool extends EditorTool
 				if (lastSelected != null)
 				{
 					MapText old = lastSelected.deepCopy();
-					lastSelected.fontOverride = AwtFactory.wrap(fontChooser.getFont());
+					lastSelected.fontOverride = AwtBridge.fromAwtFont(fontChooser.getFont());
 					undoer.setUndoPoint(UpdateType.Incremental, TextTool.this);
 					updater.createAndShowMapIncrementalUsingText(Arrays.asList(old, lastSelected));
 				}
@@ -310,9 +310,9 @@ public class TextTool extends EditorTool
 					// unless you know which text to look at to see this checkbox flip.
 
 					lastSelected.colorOverride = defaultTextColor;
-					colorOverrideDisplay.setBackground(AwtFactory.unwrap(defaultTextColor));
+					colorOverrideDisplay.setBackground(AwtBridge.toAwtColor(defaultTextColor));
 					lastSelected.boldBackgroundColorOverride = defaultBoldBackgroundColor;
-					boldBackgroundColorOverrideDisplay.setBackground(AwtFactory.unwrap(defaultBoldBackgroundColor));
+					boldBackgroundColorOverrideDisplay.setBackground(AwtBridge.toAwtColor(defaultBoldBackgroundColor));
 				}
 
 			}
@@ -329,7 +329,7 @@ public class TextTool extends EditorTool
 				{
 					if (lastSelected != null)
 					{
-						lastSelected.colorOverride = AwtFactory.wrap(colorOverrideDisplay.getBackground());
+						lastSelected.colorOverride = AwtBridge.fromAwtColor(colorOverrideDisplay.getBackground());
 						undoer.setUndoPoint(UpdateType.Incremental, TextTool.this);
 						updater.createAndShowMapIncrementalUsingText(Arrays.asList(lastSelected));
 					}
@@ -349,7 +349,7 @@ public class TextTool extends EditorTool
 				{
 					if (lastSelected != null)
 					{
-						lastSelected.boldBackgroundColorOverride = AwtFactory.wrap(boldBackgroundColorOverrideDisplay.getBackground());
+						lastSelected.boldBackgroundColorOverride = AwtBridge.fromAwtColor(boldBackgroundColorOverrideDisplay.getBackground());
 						undoer.setUndoPoint(UpdateType.Incremental, TextTool.this);
 						updater.createAndShowMapIncrementalUsingText(Arrays.asList(lastSelected));
 					}
@@ -802,17 +802,17 @@ public class TextTool extends EditorTool
 		mapEditingPanel.clearHighlightedAreas();
 
 		if (lastSelected != null && !(editTextField.getText().trim().equals(lastSelected.value) && textTypeComboBox.getSelectedItem().equals(lastSelected.type)
-				&& lastSelected.lineBreak.equals(lineBreakComboBox.getSelectedItem()) && Objects.equals(lastSelected.colorOverride, AwtFactory.wrap(colorOverrideDisplay.getBackground()))
-				&& Objects.equals(lastSelected.boldBackgroundColorOverride, AwtFactory.wrap(boldBackgroundColorOverrideDisplay.getBackground()))))
+				&& lastSelected.lineBreak.equals(lineBreakComboBox.getSelectedItem()) && Objects.equals(lastSelected.colorOverride, AwtBridge.fromAwtColor(colorOverrideDisplay.getBackground()))
+				&& Objects.equals(lastSelected.boldBackgroundColorOverride, AwtBridge.fromAwtColor(boldBackgroundColorOverrideDisplay.getBackground()))))
 		{
 			MapText before = lastSelected.deepCopy();
 			// The user changed the last selected text. Need to save the change.
 			lastSelected.value = editTextField.getText().trim();
 			lastSelected.type = (TextType) textTypeComboBox.getSelectedItem();
 			lastSelected.lineBreak = (LineBreak) lineBreakComboBox.getSelectedItem();
-			lastSelected.colorOverride = colorOverrideHider.isVisible() ? AwtFactory.wrap(colorOverrideDisplay.getBackground()) : null;
-			lastSelected.boldBackgroundColorOverride = boldBackgroundColorOverrideHider.isVisible() ? AwtFactory.wrap(boldBackgroundColorOverrideDisplay.getBackground()) : null;
-			lastSelected.fontOverride = fontHider.isVisible() ? AwtFactory.wrap(fontChooser.getFont()) : null;
+			lastSelected.colorOverride = colorOverrideHider.isVisible() ? AwtBridge.fromAwtColor(colorOverrideDisplay.getBackground()) : null;
+			lastSelected.boldBackgroundColorOverride = boldBackgroundColorOverrideHider.isVisible() ? AwtBridge.fromAwtColor(boldBackgroundColorOverrideDisplay.getBackground()) : null;
+			lastSelected.fontOverride = fontHider.isVisible() ? AwtBridge.fromAwtFont(fontChooser.getFont()) : null;
 			lastSelected.curvature = curvatureSlider.getValue() / ((double) curvatureSliderDivider);
 			lastSelected.spacing = spacingSlider.getValue();
 			lastSelected.backgroundFade = backgroundFadeSlider.getValue() / (double) backgroundFadeDivider;
@@ -860,17 +860,17 @@ public class TextTool extends EditorTool
 			showOrHideBoldBackgroundFields(selectedText);
 			if (selectedText.colorOverride != null)
 			{
-				colorOverrideDisplay.setBackground(AwtFactory.unwrap(selectedText.colorOverride));
+				colorOverrideDisplay.setBackground(AwtBridge.toAwtColor(selectedText.colorOverride));
 			}
 			if (selectedText.boldBackgroundColorOverride != null)
 			{
-				boldBackgroundColorOverrideDisplay.setBackground(AwtFactory.unwrap(selectedText.boldBackgroundColorOverride));
+				boldBackgroundColorOverrideDisplay.setBackground(AwtBridge.toAwtColor(selectedText.boldBackgroundColorOverride));
 			}
 			fontHider.setVisible(selectedText.fontOverride != null);
 			useDefaultFontCheckbox.setSelected(selectedText.fontOverride == null);
 			if (selectedText.fontOverride != null)
 			{
-				fontChooser.setFont(AwtFactory.unwrap(selectedText.fontOverride));
+				fontChooser.setFont(AwtBridge.toAwtFont(selectedText.fontOverride));
 			}
 			curvatureSlider.setValue((int) (selectedText.curvature * curvatureSliderDivider));
 			spacingSlider.setValue(selectedText.spacing);

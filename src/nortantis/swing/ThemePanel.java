@@ -69,7 +69,7 @@ import nortantis.graph.voronoi.Center;
 import nortantis.platform.Font;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
-import nortantis.platform.awt.AwtFactory;
+import nortantis.platform.awt.AwtBridge;
 import nortantis.util.Assets;
 import nortantis.util.ComparableCounter;
 import nortantis.util.Counter;
@@ -1600,11 +1600,11 @@ public class ThemePanel extends JTabbedPane
 				ImageHelper.ColorifyAlgorithm landColorifyAlgorithm = tuple.getFourth();
 
 				oceanDisplayPanel.setColorifyAlgorithm(oceanColorifyAlgorithm);
-				oceanDisplayPanel.setImage(AwtFactory.unwrap(oceanBackground));
+				oceanDisplayPanel.setImage(AwtBridge.toBufferedImage(oceanBackground));
 				oceanDisplayPanel.repaint();
 
 				landDisplayPanel.setColorifyAlgorithm(landColorifyAlgorithm);
-				landDisplayPanel.setImage(AwtFactory.unwrap(landBackground));
+				landDisplayPanel.setImage(AwtBridge.toBufferedImage(landBackground));
 				landDisplayPanel.repaint();
 			}
 		};
@@ -1731,7 +1731,7 @@ public class ThemePanel extends JTabbedPane
 		brokenLinesCheckbox.setSelected(settings.brokenLinesForConcentricWaves);
 		drawOceanEffectsInLakesCheckbox.setSelected(settings.drawOceanEffectsInLakes);
 		oceanEffectsListener.actionPerformed(null);
-		coastShadingColorDisplay.setBackground(AwtFactory.unwrap(settings.coastShadingColor));
+		coastShadingColorDisplay.setBackground(AwtBridge.toAwtColor(settings.coastShadingColor));
 
 		// Temporarily disable events on coastShadingColorDisplay while initially setting the value for coastShadingTransparencySlider so
 		// that
@@ -1741,18 +1741,18 @@ public class ThemePanel extends JTabbedPane
 		updateCoastShadingTransparencySliderFromCoastShadingColorDisplay();
 		disableCoastShadingColorDisplayHandler = false;
 
-		coastlineColorDisplay.setBackground(AwtFactory.unwrap(settings.coastlineColor));
+		coastlineColorDisplay.setBackground(AwtBridge.toAwtColor(settings.coastlineColor));
 		coastlineWidthSlider.setValue((int) (settings.coastlineWidth * 10.0));
-		oceanWavesColorDisplay.setBackground(AwtFactory.unwrap(settings.oceanWavesColor));
-		oceanShadingColorDisplay.setBackground(AwtFactory.unwrap(settings.oceanShadingColor));
-		riverColorDisplay.setBackground(AwtFactory.unwrap(settings.riverColor));
+		oceanWavesColorDisplay.setBackground(AwtBridge.toAwtColor(settings.oceanWavesColor));
+		oceanShadingColorDisplay.setBackground(AwtBridge.toAwtColor(settings.oceanShadingColor));
+		riverColorDisplay.setBackground(AwtBridge.toAwtColor(settings.riverColor));
 		frayedEdgeCheckbox.setSelected(settings.frayedBorder);
 		// Do a click here to update other components on the panel as enabled or
 		// disabled.
 		frayedEdgeCheckboxActionListener.actionPerformed(null);
 		drawGrungeCheckbox.setSelected(settings.drawGrunge);
 		drawGrungeCheckboxActionListener.actionPerformed(null);
-		grungeColorDisplay.setBackground(AwtFactory.unwrap(settings.frayedBorderColor));
+		grungeColorDisplay.setBackground(AwtBridge.toAwtColor(settings.frayedBorderColor));
 		frayedEdgeShadingSlider.setValue(settings.frayedBorderBlurLevel);
 		frayedEdgeSizeSlider.setValue(frayedEdgeSizeSlider.getMaximum() - settings.frayedBorderSize);
 		// Only do this if there is a change so we don't trigger the document listeners unnecessarily.
@@ -1817,8 +1817,8 @@ public class ThemePanel extends JTabbedPane
 
 		updateBackgroundAndRegionFieldStates();
 
-		oceanDisplayPanel.setColor(AwtFactory.unwrap(settings.oceanColor));
-		landDisplayPanel.setColor(AwtFactory.unwrap(settings.landColor));
+		oceanDisplayPanel.setColor(AwtBridge.toAwtColor(settings.oceanColor));
+		landDisplayPanel.setColor(AwtBridge.toAwtColor(settings.landColor));
 
 		if (settings.drawRegionColors)
 		{
@@ -1833,12 +1833,12 @@ public class ThemePanel extends JTabbedPane
 		drawRegionBoundariesCheckbox.setSelected(settings.drawRegionBoundaries);
 		regionBoundaryTypeComboBox.setSelectedItem(settings.regionBoundaryStyle.type);
 		regionBoundaryWidthSlider.setValue((int) (settings.regionBoundaryStyle.width * 10f));
-		regionBoundaryColorDisplay.setBackground(AwtFactory.unwrap(settings.regionBoundaryColor));
+		regionBoundaryColorDisplay.setBackground(AwtBridge.toAwtColor(settings.regionBoundaryColor));
 
 		drawRoadsCheckbox.setSelected(settings.drawRoads);
 		roadStyleComboBox.setSelectedItem(settings.roadStyle.type);
 		roadWidthSlider.setValue((int) (settings.roadStyle.width * 10f));
-		roadColorDisplay.setBackground(AwtFactory.unwrap(settings.roadColor));
+		roadColorDisplay.setBackground(AwtBridge.toAwtColor(settings.roadColor));
 		updateRoadFieldVisibility();
 
 		// Do a click to update other components on the panel as enabled or
@@ -1846,14 +1846,14 @@ public class ThemePanel extends JTabbedPane
 		enableTextCheckBox.setSelected(settings.drawText);
 		enableTextCheckboxActionListener.actionPerformed(null);
 
-		titleFontChooser.setFont(AwtFactory.unwrap(settings.titleFont));
-		regionFontChooser.setFont(AwtFactory.unwrap(settings.regionFont));
-		mountainRangeFontChooser.setFont(AwtFactory.unwrap(settings.mountainRangeFont));
-		otherMountainsFontChooser.setFont(AwtFactory.unwrap(settings.otherMountainsFont));
-		citiesFontChooser.setFont(AwtFactory.unwrap(settings.citiesFont));
-		riverFontChooser.setFont(AwtFactory.unwrap(settings.riverFont));
-		textColorDisplay.setBackground(AwtFactory.unwrap(settings.textColor));
-		boldBackgroundColorDisplay.setBackground(AwtFactory.unwrap(settings.boldBackgroundColor));
+		titleFontChooser.setFont(AwtBridge.toAwtFont(settings.titleFont));
+		regionFontChooser.setFont(AwtBridge.toAwtFont(settings.regionFont));
+		mountainRangeFontChooser.setFont(AwtBridge.toAwtFont(settings.mountainRangeFont));
+		otherMountainsFontChooser.setFont(AwtBridge.toAwtFont(settings.otherMountainsFont));
+		citiesFontChooser.setFont(AwtBridge.toAwtFont(settings.citiesFont));
+		riverFontChooser.setFont(AwtBridge.toAwtFont(settings.riverFont));
+		textColorDisplay.setBackground(AwtBridge.toAwtColor(settings.textColor));
+		boldBackgroundColorDisplay.setBackground(AwtBridge.toAwtColor(settings.boldBackgroundColor));
 		drawBoldBackgroundCheckbox.setSelected(settings.drawBoldBackground);
 		drawBoldBackgroundCheckbox.getActionListeners()[0].actionPerformed(null);
 		showOrHideBoldBackgroundColorChooser();
@@ -1865,7 +1865,7 @@ public class ThemePanel extends JTabbedPane
 		drawBorderCheckbox.getActionListeners()[0].actionPerformed(null);
 		borderPositionComboBox.setSelectedItem(settings.borderPosition);
 		borderColorOptionComboBox.setSelectedItem(settings.borderColorOption);
-		borderColorDisplay.setBackground(AwtFactory.unwrap(settings.borderColor));
+		borderColorDisplay.setBackground(AwtBridge.toAwtColor(settings.borderColor));
 
 		enableSizeSliderListeners = false;
 		treeHeightSlider.setValue((int) (Math.round((settings.treeHeightScale - 0.1) * 20.0)));
@@ -1878,7 +1878,7 @@ public class ThemePanel extends JTabbedPane
 		drawGridOverlayCheckbox.setSelected(settings.drawGridOverlay);
 		gridOverlayShapeComboBox.setSelectedItem(settings.gridOverlayShape);
 		gridOverlayRowOrColCountSlider.setValue(settings.gridOverlayRowOrColCount);
-		gridOverlayColorDisplay.setBackground(AwtFactory.unwrap(settings.gridOverlayColor));
+		gridOverlayColorDisplay.setBackground(AwtBridge.toAwtColor(settings.gridOverlayColor));
 		gridOverlayXOffsetComboBox.setSelectedItem(settings.gridOverlayXOffset);
 		gridOverlayYOffsetComboBox.setSelectedItem(settings.gridOverlayYOffset);
 		gridOverlayLineWidthSlider.setValue(settings.gridOverlayLineWidth);
@@ -1989,12 +1989,12 @@ public class ThemePanel extends JTabbedPane
 			return true;
 		}
 
-		if (!landDisplayPanel.getColor().equals(AwtFactory.unwrap(settings.landColor)))
+		if (!landDisplayPanel.getColor().equals(AwtBridge.toAwtColor(settings.landColor)))
 		{
 			return true;
 		}
 
-		if (!oceanDisplayPanel.getColor().equals(AwtFactory.unwrap(settings.oceanColor)))
+		if (!oceanDisplayPanel.getColor().equals(AwtBridge.toAwtColor(settings.oceanColor)))
 		{
 			return true;
 		}
@@ -2037,15 +2037,15 @@ public class ThemePanel extends JTabbedPane
 		settings.jitterToConcentricWaves = jitterWavesCheckbox.isSelected();
 		settings.brokenLinesForConcentricWaves = brokenLinesCheckbox.isSelected();
 		settings.drawOceanEffectsInLakes = drawOceanEffectsInLakesCheckbox.isSelected();
-		settings.coastShadingColor = AwtFactory.wrap(coastShadingColorDisplay.getBackground());
-		settings.coastlineColor = AwtFactory.wrap(coastlineColorDisplay.getBackground());
+		settings.coastShadingColor = AwtBridge.fromAwtColor(coastShadingColorDisplay.getBackground());
+		settings.coastlineColor = AwtBridge.fromAwtColor(coastlineColorDisplay.getBackground());
 		settings.coastlineWidth = coastlineWidthSlider.getValue() / 10.0;
-		settings.oceanWavesColor = AwtFactory.wrap(oceanWavesColorDisplay.getBackground());
-		settings.oceanShadingColor = AwtFactory.wrap(oceanShadingColorDisplay.getBackground());
-		settings.riverColor = AwtFactory.wrap(riverColorDisplay.getBackground());
+		settings.oceanWavesColor = AwtBridge.fromAwtColor(oceanWavesColorDisplay.getBackground());
+		settings.oceanShadingColor = AwtBridge.fromAwtColor(oceanShadingColorDisplay.getBackground());
+		settings.riverColor = AwtBridge.fromAwtColor(riverColorDisplay.getBackground());
 		settings.drawText = enableTextCheckBox.isSelected();
 		settings.frayedBorder = frayedEdgeCheckbox.isSelected();
-		settings.frayedBorderColor = AwtFactory.wrap(grungeColorDisplay.getBackground());
+		settings.frayedBorderColor = AwtBridge.fromAwtColor(grungeColorDisplay.getBackground());
 		settings.frayedBorderBlurLevel = frayedEdgeShadingSlider.getValue();
 		// Make increasing frayed edge values cause the number of polygons to
 		// decrease so that the fray gets large with
@@ -2067,12 +2067,12 @@ public class ThemePanel extends JTabbedPane
 		settings.backgroundTextureImage = FileHelper.replaceHomeFolderWithPlaceholder(textureImageFilename.getText());
 		settings.backgroundTextureResource = (NamedResource) textureImageComboBox.getSelectedItem();
 		settings.backgroundRandomSeed = parseBackgroundSeed();
-		settings.oceanColor = AwtFactory.wrap(oceanDisplayPanel.getColor());
+		settings.oceanColor = AwtBridge.fromAwtColor(oceanDisplayPanel.getColor());
 		settings.drawRegionColors = areRegionColorsVisible();
 		settings.drawRegionBoundaries = drawRegionBoundariesCheckbox.isSelected();
 		settings.regionBoundaryStyle = new Stroke((StrokeType) regionBoundaryTypeComboBox.getSelectedItem(), regionBoundaryWidthSlider.getValue() / 10f);
-		settings.regionBoundaryColor = AwtFactory.wrap(regionBoundaryColorDisplay.getBackground());
-		settings.landColor = AwtFactory.wrap(landDisplayPanel.getColor());
+		settings.regionBoundaryColor = AwtBridge.fromAwtColor(regionBoundaryColorDisplay.getBackground());
+		settings.landColor = AwtBridge.fromAwtColor(landDisplayPanel.getColor());
 
 		settings.titleFont = getTitleFont();
 		settings.regionFont = getRegionFont();
@@ -2080,8 +2080,8 @@ public class ThemePanel extends JTabbedPane
 		settings.otherMountainsFont = getOtherMountainsFont();
 		settings.citiesFont = getCitiesFont();
 		settings.riverFont = getRiverFont();
-		settings.textColor = AwtFactory.wrap(textColorDisplay.getBackground());
-		settings.boldBackgroundColor = AwtFactory.wrap(boldBackgroundColorDisplay.getBackground());
+		settings.textColor = AwtBridge.fromAwtColor(textColorDisplay.getBackground());
+		settings.boldBackgroundColor = AwtBridge.fromAwtColor(boldBackgroundColorDisplay.getBackground());
 		settings.drawBoldBackground = drawBoldBackgroundCheckbox.isSelected();
 
 		settings.drawBorder = drawBorderCheckbox.isSelected();
@@ -2089,7 +2089,7 @@ public class ThemePanel extends JTabbedPane
 		settings.borderWidth = borderWidthSlider.getValue();
 		settings.borderPosition = (BorderPosition) borderPositionComboBox.getSelectedItem();
 		settings.borderColorOption = (BorderColorOption) borderColorOptionComboBox.getSelectedItem();
-		settings.borderColor = AwtFactory.wrap(borderColorDisplay.getBackground());
+		settings.borderColor = AwtBridge.fromAwtColor(borderColorDisplay.getBackground());
 
 		settings.treeHeightScale = 0.1 + (treeHeightSlider.getValue() * 0.05);
 		settings.mountainScale = getScaleForSliderValue(mountainScaleSlider.getValue());
@@ -2099,12 +2099,12 @@ public class ThemePanel extends JTabbedPane
 
 		settings.drawRoads = drawRoadsCheckbox.isSelected();
 		settings.roadStyle = new Stroke((StrokeType) roadStyleComboBox.getSelectedItem(), roadWidthSlider.getValue() / 10f);
-		settings.roadColor = AwtFactory.wrap(roadColorDisplay.getBackground());
+		settings.roadColor = AwtBridge.fromAwtColor(roadColorDisplay.getBackground());
 
 		settings.drawGridOverlay = drawGridOverlayCheckbox.isSelected();
 		settings.gridOverlayShape = (GridOverlayShape) gridOverlayShapeComboBox.getSelectedItem();
 		settings.gridOverlayRowOrColCount = gridOverlayRowOrColCountSlider.getValue();
-		settings.gridOverlayColor = AwtFactory.wrap(gridOverlayColorDisplay.getBackground());
+		settings.gridOverlayColor = AwtBridge.fromAwtColor(gridOverlayColorDisplay.getBackground());
 		settings.gridOverlayXOffset = (GridOverlayOffset) gridOverlayXOffsetComboBox.getSelectedItem();
 		settings.gridOverlayYOffset = (GridOverlayOffset) gridOverlayYOffsetComboBox.getSelectedItem();
 		settings.gridOverlayLineWidth = gridOverlayLineWidthSlider.getValue();
@@ -2114,32 +2114,32 @@ public class ThemePanel extends JTabbedPane
 
 	public Font getTitleFont()
 	{
-		return AwtFactory.wrap(titleFontChooser.getFont());
+		return AwtBridge.fromAwtFont(titleFontChooser.getFont());
 	}
 
 	public Font getRegionFont()
 	{
-		return AwtFactory.wrap(regionFontChooser.getFont());
+		return AwtBridge.fromAwtFont(regionFontChooser.getFont());
 	}
 
 	public Font getMountainRangeFont()
 	{
-		return AwtFactory.wrap(mountainRangeFontChooser.getFont());
+		return AwtBridge.fromAwtFont(mountainRangeFontChooser.getFont());
 	}
 
 	public Font getOtherMountainsFont()
 	{
-		return AwtFactory.wrap(otherMountainsFontChooser.getFont());
+		return AwtBridge.fromAwtFont(otherMountainsFontChooser.getFont());
 	}
 
 	public Font getCitiesFont()
 	{
-		return AwtFactory.wrap(citiesFontChooser.getFont());
+		return AwtBridge.fromAwtFont(citiesFontChooser.getFont());
 	}
 
 	public Font getRiverFont()
 	{
-		return AwtFactory.wrap(riverFontChooser.getFont());
+		return AwtBridge.fromAwtFont(riverFontChooser.getFont());
 	}
 
 	private boolean areRegionColorsVisible()

@@ -70,7 +70,7 @@ import nortantis.platform.Color;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
-import nortantis.platform.awt.AwtFactory;
+import nortantis.platform.awt.AwtBridge;
 
 public class IconsTool extends EditorTool
 {
@@ -894,7 +894,7 @@ public class IconsTool extends EditorTool
 		if (modeWidget.isDrawMode() || modeWidget.isReplaceMode())
 		{
 			IconType selectedType = getSelectedIconType();
-			iconColorsByType.put(selectedType, AwtFactory.wrap(fillColorDisplay.getBackground()));
+			iconColorsByType.put(selectedType, AwtBridge.fromAwtColor(fillColorDisplay.getBackground()));
 			iconFilterColorsByType.put(selectedType, getFilterColor());
 			maximizeOpacityByType.put(selectedType, maximizeOpacityCheckbox.isSelected());
 			fillWithColorByType.put(selectedType, fillWithColorCheckbox.isSelected());
@@ -948,7 +948,7 @@ public class IconsTool extends EditorTool
 				boolean maximizeOpacityToUse = whatChanged == WhatHSBColorFieldChanged.maximizeOpacity ? maximizeOpacityCheckbox.isSelected() : iconToEdit.maximizeOpacity;
 				boolean fillWithColorToUse = (whatChanged == WhatHSBColorFieldChanged.FillColor || whatChanged == WhatHSBColorFieldChanged.FillWithColorCheckbox) ? fillWithColorCheckbox.isSelected()
 						: iconToEdit.fillWithColor;
-				Color fillColorToUse = whatChanged == WhatHSBColorFieldChanged.FillColor ? AwtFactory.wrap(fillColorDisplay.getBackground()) : iconToEdit.color;
+				Color fillColorToUse = whatChanged == WhatHSBColorFieldChanged.FillColor ? AwtBridge.fromAwtColor(fillColorDisplay.getBackground()) : iconToEdit.color;
 				FreeIcon updatedIcon = iconToEdit.copyWithColors(fillColorToUse, filterColorToUse, maximizeOpacityToUse, fillWithColorToUse);
 				mainWindow.edits.freeIcons.replace(iconToEdit, updatedIcon);
 				updated.add(updatedIcon);
@@ -992,7 +992,7 @@ public class IconsTool extends EditorTool
 		{
 			disableColorChangeHandlers = true;
 
-			fillColorDisplay.setBackground(AwtFactory.unwrap(iconColor));
+			fillColorDisplay.setBackground(AwtBridge.toAwtColor(iconColor));
 			fillColorDisplay.repaint();
 
 			hueSlider.setValue(filterColor.hue);
@@ -1205,7 +1205,7 @@ public class IconsTool extends EditorTool
 						return;
 					}
 
-					button.setImage(AwtFactory.unwrap(previewImage));
+					button.setImage(AwtBridge.toBufferedImage(previewImage));
 				}
 			};
 
@@ -1283,7 +1283,7 @@ public class IconsTool extends EditorTool
 						{
 							try
 							{
-								selector.getIconNamesAndButtons(groupId).get(i).getSecond().setIcon(new ImageIcon(AwtFactory.unwrap(previewImages.get(i))));
+								selector.getIconNamesAndButtons(groupId).get(i).getSecond().setIcon(new ImageIcon(AwtBridge.toBufferedImage(previewImages.get(i))));
 							}
 							catch (NullPointerException ex)
 							{
