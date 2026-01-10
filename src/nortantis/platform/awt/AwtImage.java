@@ -16,13 +16,21 @@ import nortantis.platform.DrawQuality;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
+import nortantis.platform.PixelReadSession;
+import nortantis.platform.PixelWriteSession;
 import nortantis.util.ImageHelper;
+import nortantis.util.Logger;
 
 class AwtImage extends Image
 {
 	public BufferedImage image;
 	WritableRaster raster;
 	Raster alphaRaster;
+
+	// Session state for pixel read/write optimization
+	private int[] cachedPixelArray;
+	private boolean inReadSession;
+	private boolean inWriteSession;
 
 	public AwtImage(int width, int height, ImageType type)
 	{
@@ -46,6 +54,95 @@ class AwtImage extends Image
 		{
 			alphaRaster = image.getAlphaRaster();
 		}
+	}
+
+	/**
+	 * Returns true if the BufferedImage uses an int-based format that is compatible with our expected ARGB/RGB pixel interpretation.
+	 * TYPE_INT_BGR is excluded because it has reversed byte order.
+	 */
+	private boolean isCompatibleIntFormat()
+	{
+		int type = image.getType();
+		return type == BufferedImage.TYPE_INT_RGB || type == BufferedImage.TYPE_INT_ARGB;
+	}
+
+	@Override
+	public PixelReadSession beginPixelReads()
+	{
+		if (!isCompatibleIntFormat())
+		{
+			return new PixelReadSession(this);
+		}
+
+		if (inWriteSession)
+		{
+			Logger.println("Warning: beginPixelReads called while in write session, auto-flushing writes");
+			endPixelWrites();
+		}
+
+		if (!inReadSession)
+		{
+			cachedPixelArray = getDataIntBased();
+			inReadSession = true;
+		}
+
+		return new PixelReadSession(this);
+	}
+
+	@Override
+	public void endPixelReads()
+	{
+		if (inReadSession)
+		{
+			cachedPixelArray = null;
+			inReadSession = false;
+		}
+	}
+
+	@Override
+	public PixelWriteSession beginPixelWrites()
+	{
+		if (!isCompatibleIntFormat())
+		{
+			return new PixelWriteSession(this);
+		}
+
+		if (inReadSession)
+		{
+			Logger.println("Warning: beginPixelWrites called while in read session, discarding read array");
+			endPixelReads();
+		}
+
+		if (!inWriteSession)
+		{
+			cachedPixelArray = getDataIntBased();
+			inWriteSession = true;
+		}
+
+		return new PixelWriteSession(this);
+	}
+
+	@Override
+	public void endPixelWrites()
+	{
+		if (inWriteSession)
+		{
+			// For AWT, writes go directly to the underlying array, so no flush needed
+			cachedPixelArray = null;
+			inWriteSession = false;
+		}
+	}
+
+	@Override
+	public boolean isInPixelRead()
+	{
+		return inReadSession;
+	}
+
+	@Override
+	public boolean isInPixelWrite()
+	{
+		return inWriteSession;
 	}
 
 	private int toBufferedImageType(ImageType type)
@@ -115,18 +212,21 @@ class AwtImage extends Image
 	@Override
 	public int getRGB(int x, int y)
 	{
+		if (cachedPixelArray != null)
+		{
+			return cachedPixelArray[(y * image.getWidth()) + x];
+		}
 		return image.getRGB(x, y);
-	}
-
-	@Override
-	public int getRGB(int[] data, int x, int y)
-	{
-		return data[(y * image.getWidth()) + x];
 	}
 
 	@Override
 	public void setRGB(int x, int y, int rgb)
 	{
+		if (cachedPixelArray != null && inWriteSession)
+		{
+			cachedPixelArray[(y * image.getWidth()) + x] = rgb;
+			return;
+		}
 		image.setRGB(x, y, rgb);
 	}
 
@@ -134,20 +234,6 @@ class AwtImage extends Image
 	public void setRGB(int x, int y, int red, int green, int blue)
 	{
 		setRGB(x, y, (red << 16) | (green << 8) | blue);
-	}
-
-	@Override
-	public void setRGB(int[] data, int x, int y, int red, int green, int blue)
-	{
-		// setRGB(x, y, red, green, blue);
-		data[(y * image.getWidth()) + x] = (red << 16) | (green << 8) | blue;
-	}
-
-	@Override
-	public void setRGB(int[] data, int x, int y, int red, int green, int blue, int alpha)
-	{
-		// setRGB(x, y, red, green, blue, alpha);
-		data[(y * image.getWidth()) + x] = (alpha << 24) | (red << 16) | (green << 8) | blue;
 	}
 
 	@Override
@@ -292,12 +378,6 @@ class AwtImage extends Image
 	public int[] getDataIntBased()
 	{
 		return ((DataBufferInt) raster.getDataBuffer()).getData();
-	}
-
-	@Override
-	public boolean isIntBased()
-	{
-		return raster.getDataBuffer() instanceof DataBufferInt;
 	}
 
 	@Override

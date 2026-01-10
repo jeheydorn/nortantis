@@ -19,6 +19,9 @@ import nortantis.platform.DrawQuality;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
+import nortantis.platform.PixelReadSession;
+import nortantis.platform.PixelWriteSession;
+import nortantis.util.Logger;
 
 public class SkiaImage extends Image
 {
@@ -26,6 +29,11 @@ public class SkiaImage extends Image
 	private final int width;
 	private final int height;
 	private org.jetbrains.skia.Image cachedSkiaImage;
+
+	// Session state for pixel read/write optimization
+	private int[] cachedPixelArray;
+	private boolean inReadSession;
+	private boolean inWriteSession;
 
 	public SkiaImage(int width, int height, ImageType type)
 	{
@@ -64,6 +72,98 @@ public class SkiaImage extends Image
 		{
 			cachedSkiaImage.close();
 			cachedSkiaImage = null;
+		}
+	}
+
+	@Override
+	public PixelReadSession beginPixelReads()
+	{
+		if (inWriteSession)
+		{
+			Logger.println("Warning: beginPixelReads called while in write session, auto-flushing writes");
+			endPixelWrites();
+		}
+
+		if (!inReadSession)
+		{
+			cachedPixelArray = readPixelsToIntArray();
+			inReadSession = true;
+		}
+
+		return new PixelReadSession(this);
+	}
+
+	@Override
+	public void endPixelReads()
+	{
+		if (inReadSession)
+		{
+			cachedPixelArray = null;
+			inReadSession = false;
+		}
+	}
+
+	@Override
+	public PixelWriteSession beginPixelWrites()
+	{
+		if (inReadSession)
+		{
+			Logger.println("Warning: beginPixelWrites called while in read session, discarding read array");
+			endPixelReads();
+		}
+
+		if (!inWriteSession)
+		{
+			cachedPixelArray = readPixelsToIntArray();
+			inWriteSession = true;
+		}
+
+		return new PixelWriteSession(this);
+	}
+
+	@Override
+	public void endPixelWrites()
+	{
+		if (inWriteSession)
+		{
+			writePixelsFromIntArray(cachedPixelArray);
+			cachedPixelArray = null;
+			inWriteSession = false;
+		}
+	}
+
+	@Override
+	public boolean isInPixelRead()
+	{
+		return inReadSession;
+	}
+
+	@Override
+	public boolean isInPixelWrite()
+	{
+		return inWriteSession;
+	}
+
+	/**
+	 * Called when something directly modifies the bitmap (not through the cached pixel array). This handles any active sessions by flushing
+	 * writes or discarding reads as needed.
+	 */
+	private void handleDirectBitmapModification()
+	{
+		if (inReadSession)
+		{
+			Logger.println("Warning: Direct bitmap modification during read session, discarding cached read array");
+			cachedPixelArray = null;
+			inReadSession = false;
+		}
+		if (inWriteSession)
+		{
+			Logger.println("Warning: Direct bitmap modification during write session, flushing cached write array first");
+			// Set flags before calling writePixelsFromIntArray to prevent recursion
+			int[] arrayToFlush = cachedPixelArray;
+			cachedPixelArray = null;
+			inWriteSession = false;
+			writePixelsFromIntArray(arrayToFlush);
 		}
 	}
 
@@ -116,25 +216,27 @@ public class SkiaImage extends Image
 	@Override
 	public int getRGB(int x, int y)
 	{
-		return bitmap.getColor(x, y);
-	}
-
-	@Override
-	public int getRGB(int[] data, int x, int y)
-	{
-		if (data == null)
+		if (cachedPixelArray != null)
 		{
-			return getRGB(x, y);
+			return cachedPixelArray[y * width + x];
 		}
-		return data[y * width + x];
+		return bitmap.getColor(x, y);
 	}
 
 	@Override
 	public void setRGB(int x, int y, int rgb)
 	{
-		// This is slow, but we'll use shaders later.
-		// Note: bitmap.getPixels() / bitmap.setPixels() could be used for bulk.
-		// For single pixel, we might need a canvas or use the buffer directly.
+		if (inWriteSession && cachedPixelArray != null)
+		{
+			cachedPixelArray[y * width + x] = rgb;
+			invalidateCachedImage();
+			return;
+		}
+
+		// Handle any active session before direct bitmap modification
+		handleDirectBitmapModification();
+
+		// Direct bitmap modification (slow path)
 		Canvas canvas = new Canvas(bitmap, new SurfaceProps());
 		org.jetbrains.skia.Paint paint = new org.jetbrains.skia.Paint();
 		paint.setColor(rgb);
@@ -154,32 +256,6 @@ public class SkiaImage extends Image
 	public void setRGB(int x, int y, int red, int green, int blue, int alpha)
 	{
 		setRGB(x, y, (alpha << 24) | (red << 16) | (green << 8) | blue);
-	}
-
-	@Override
-	public void setRGB(int[] data, int x, int y, int red, int green, int blue)
-	{
-		if (data == null)
-		{
-			setRGB(x, y, red, green, blue);
-		}
-		else
-		{
-			data[y * width + x] = (255 << 24) | (red << 16) | (green << 8) | blue;
-		}
-	}
-
-	@Override
-	public void setRGB(int[] data, int x, int y, int red, int green, int blue, int alpha)
-	{
-		if (data == null)
-		{
-			setRGB(x, y, red, green, blue, alpha);
-		}
-		else
-		{
-			data[y * width + x] = (alpha << 24) | (red << 16) | (green << 8) | blue;
-		}
 	}
 
 	@Override
@@ -210,6 +286,7 @@ public class SkiaImage extends Image
 	@Override
 	public Painter createPainter(DrawQuality quality)
 	{
+		handleDirectBitmapModification();
 		return new SkiaPainter(new Canvas(bitmap, new SurfaceProps()));
 	}
 
@@ -223,7 +300,7 @@ public class SkiaImage extends Image
 			height = Math.max(1, height);
 		}
 
-		// Use Surface-based rendering which is more reliable in Skia
+		// Use Surface-based rendering, which is more reliable in Skia
 		Surface surface = Surface.Companion.makeRasterN32Premul(width, height);
 		Canvas canvas = surface.getCanvas();
 
@@ -252,7 +329,7 @@ public class SkiaImage extends Image
 	@Override
 	public Image getSubImage(IntRectangle bounds)
 	{
-		// Skia doesn't have a direct "sub-bitmap" that shares data easily like BufferedImage.getSubimage
+		// Skia doesn't have a direct "sub-bitmap" that shares data easily like BufferedImage.getSubimage,
 		// but we can create one that points to the same pixels.
 		// For simplicity now, let's copy.
 		return copySubImage(bounds, false);
@@ -265,7 +342,7 @@ public class SkiaImage extends Image
 		int w = Math.max(1, bounds.width);
 		int h = Math.max(1, bounds.height);
 
-		// Use Surface-based rendering which is more reliable
+		// Use Surface-based rendering, which is more reliable
 		Surface surface = Surface.Companion.makeRasterN32Premul(w, h);
 		Canvas canvas = surface.getCanvas();
 
@@ -290,12 +367,6 @@ public class SkiaImage extends Image
 	public int[] getDataIntBased()
 	{
 		return null; // As requested, not supported for Skia implementation yet.
-	}
-
-	@Override
-	public boolean isIntBased()
-	{
-		return false;
 	}
 
 	@Override
@@ -359,6 +430,7 @@ public class SkiaImage extends Image
 	 */
 	public void writePixelsFromIntArray(int[] pixels)
 	{
+		handleDirectBitmapModification();
 		ByteBuffer buffer = ByteBuffer.allocate(pixels.length * 4).order(ByteOrder.nativeOrder());
 		buffer.asIntBuffer().put(pixels);
 		bitmap.installPixels(new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null), buffer.array(), width * 4);
@@ -371,6 +443,8 @@ public class SkiaImage extends Image
 	 */
 	public void writePixelsToRegion(int[] regionPixels, int destX, int destY, int regionWidth, int regionHeight)
 	{
+		handleDirectBitmapModification();
+
 		// Create a temporary bitmap with the region pixels
 		Bitmap tempBitmap = new Bitmap();
 		tempBitmap.allocPixels(new ImageInfo(regionWidth, regionHeight, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null));

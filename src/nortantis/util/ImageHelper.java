@@ -32,6 +32,8 @@ import nortantis.platform.Font;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
+import nortantis.platform.PixelReadSession;
+import nortantis.platform.PixelWriteSession;
 import pl.edu.icm.jlargearrays.ConcurrencyUtils;
 
 public class ImageHelper
@@ -184,33 +186,35 @@ public class ImageHelper
 					Math.min((int) (boundsInSource.height * scale) + 1, target.getHeight() - 1 - upperLeftY));
 		}
 
-		int[] targetData = target.getDataIntBased();
-
-		for (int y = pixelsToUpdate.y; y < pixelsToUpdate.y + pixelsToUpdate.height; y++)
+		try (PixelReadSession _ = source.beginPixelReads();
+				PixelWriteSession _ = target.beginPixelWrites())
 		{
-			for (int x = pixelsToUpdate.x; x < pixelsToUpdate.x + pixelsToUpdate.width; x++)
+			for (int y = pixelsToUpdate.y; y < pixelsToUpdate.y + pixelsToUpdate.height; y++)
 			{
-				int x1 = (int) (x / scale);
-				int y1 = (int) (y / scale);
-				int x2 = Math.min(x1 + 1, source.getWidth() - 1);
-				int y2 = Math.min(y1 + 1, source.getHeight() - 1);
-				double dx = x / scale - x1;
-				double dy = y / scale - y1;
-				Color c00 = Color.create(source.getRGB(x1, y1), sourceHasAlpha);
-				Color c01 = Color.create(source.getRGB(x2, y1), sourceHasAlpha);
-				Color c10 = Color.create(source.getRGB(x1, y2), sourceHasAlpha);
-				Color c11 = Color.create(source.getRGB(x2, y2), sourceHasAlpha);
-				int r0 = interpolate(c00.getRed(), c01.getRed(), c10.getRed(), c11.getRed(), dx, dy);
-				int g0 = interpolate(c00.getGreen(), c01.getGreen(), c10.getGreen(), c11.getGreen(), dx, dy);
-				int b0 = interpolate(c00.getBlue(), c01.getBlue(), c10.getBlue(), c11.getBlue(), dx, dy);
-				if (targetHasAlpha)
+				for (int x = pixelsToUpdate.x; x < pixelsToUpdate.x + pixelsToUpdate.width; x++)
 				{
-					int a0 = interpolate(c00.getAlpha(), c01.getAlpha(), c10.getAlpha(), c11.getAlpha(), dx, dy);
-					target.setRGB(targetData, x, y, r0, g0, b0, a0);
-				}
-				else
-				{
-					target.setRGB(targetData, x, y, r0, g0, b0);
+					int x1 = (int) (x / scale);
+					int y1 = (int) (y / scale);
+					int x2 = Math.min(x1 + 1, source.getWidth() - 1);
+					int y2 = Math.min(y1 + 1, source.getHeight() - 1);
+					double dx = x / scale - x1;
+					double dy = y / scale - y1;
+					Color c00 = Color.create(source.getRGB(x1, y1), sourceHasAlpha);
+					Color c01 = Color.create(source.getRGB(x2, y1), sourceHasAlpha);
+					Color c10 = Color.create(source.getRGB(x1, y2), sourceHasAlpha);
+					Color c11 = Color.create(source.getRGB(x2, y2), sourceHasAlpha);
+					int r0 = interpolate(c00.getRed(), c01.getRed(), c10.getRed(), c11.getRed(), dx, dy);
+					int g0 = interpolate(c00.getGreen(), c01.getGreen(), c10.getGreen(), c11.getGreen(), dx, dy);
+					int b0 = interpolate(c00.getBlue(), c01.getBlue(), c10.getBlue(), c11.getBlue(), dx, dy);
+					if (targetHasAlpha)
+					{
+						int a0 = interpolate(c00.getAlpha(), c01.getAlpha(), c10.getAlpha(), c11.getAlpha(), dx, dy);
+						target.setRGB(x, y, r0, g0, b0, a0);
+					}
+					else
+					{
+						target.setRGB(x, y, r0, g0, b0);
+					}
 				}
 			}
 		}
@@ -449,43 +453,44 @@ public class ImageHelper
 		List<Runnable> tasks = new ArrayList<>(numTasks);
 		int rowsPerJob = mask.getHeight() / numTasks;
 
-		int[] image1Data = image1.getDataIntBased();
-		int[] image2Data = image2.getDataIntBased();
-		int[] resultData = result.getDataIntBased();
-
-		for (int taskNumber : new Range(numTasks))
+		try (PixelReadSession _ = image1.beginPixelReads();
+				PixelReadSession _ = image2.beginPixelReads();
+				PixelWriteSession _ = result.beginPixelWrites())
 		{
-			tasks.add(() ->
+			for (int taskNumber : new Range(numTasks))
 			{
-				int endY = taskNumber == numTasks - 1 ? mask.getHeight() : ((taskNumber + 1) * rowsPerJob);
-				for (int y = (taskNumber * rowsPerJob); y < endY; y++)
-					for (int x = 0; x < mask.getWidth(); x++)
-					{
-						if (!image1Bounds.contains(x, y))
+				tasks.add(() ->
+				{
+					int endY = taskNumber == numTasks - 1 ? mask.getHeight() : ((taskNumber + 1) * rowsPerJob);
+					for (int y = (taskNumber * rowsPerJob); y < endY; y++)
+						for (int x = 0; x < mask.getWidth(); x++)
 						{
-							continue;
+							if (!image1Bounds.contains(x, y))
+							{
+								continue;
+							}
+
+							Color color1 = Color.create(image1.getRGB(x, y), image1.hasAlpha());
+							Color color2 = Color.create(image2.getRGB(x, y), image2.hasAlpha());
+							double maskLevel = mask.getNormalizedPixelLevel(x, y);
+
+							int r = (int) (maskLevel * color1.getRed() + (1.0 - maskLevel) * color2.getRed());
+							int g = (int) (maskLevel * color1.getGreen() + (1.0 - maskLevel) * color2.getGreen());
+							int b = (int) (maskLevel * color1.getBlue() + (1.0 - maskLevel) * color2.getBlue());
+							int a = (int) (maskLevel * color1.getAlpha() + (1.0 - maskLevel) * color2.getAlpha());
+							result.setRGB(x, y, r, g, b, a);
 						}
+				});
+			}
 
-						Color color1 = Color.create(image1.getRGB(image1Data, x, y), image1.hasAlpha());
-						Color color2 = Color.create(image2.getRGB(image2Data, x, y), image2.hasAlpha());
-						double maskLevel = mask.getNormalizedPixelLevel(x, y);
-
-						int r = (int) (maskLevel * color1.getRed() + (1.0 - maskLevel) * color2.getRed());
-						int g = (int) (maskLevel * color1.getGreen() + (1.0 - maskLevel) * color2.getGreen());
-						int b = (int) (maskLevel * color1.getBlue() + (1.0 - maskLevel) * color2.getBlue());
-						int a = (int) (maskLevel * color1.getAlpha() + (1.0 - maskLevel) * color2.getAlpha());
-						result.setRGB(resultData, x, y, r, g, b, a);
-					}
-			});
-		}
-
-		if (mask.getPixelCount() < minParallelSize)
-		{
-			ThreadHelper.getInstance().processSerial(tasks);
-		}
-		else
-		{
-			ThreadHelper.getInstance().processInParallel(tasks, true);
+			if (mask.getPixelCount() < minParallelSize)
+			{
+				ThreadHelper.getInstance().processSerial(tasks);
+			}
+			else
+			{
+				ThreadHelper.getInstance().processInParallel(tasks, true);
+			}
 		}
 
 		return result;
@@ -581,29 +586,31 @@ public class ImageHelper
 			throw new IllegalArgumentException("mask type must be ImageType.Grayscale.");
 
 		Image overlay = Image.create(image.getWidth(), image.getHeight(), ImageType.ARGB);
-		ThreadHelper.getInstance().processRowsInParallel(0, image.getHeight(), (y) ->
+		try (PixelWriteSession _ = overlay.beginPixelWrites())
 		{
-			int[] overlayData = overlay.getDataIntBased();
-			for (int x = 0; x < image.getWidth(); x++)
+			ThreadHelper.getInstance().processRowsInParallel(0, image.getHeight(), (y) ->
 			{
-				int xInMask = x + imageOffsetInMask.x;
-				int yInMask = y + imageOffsetInMask.y;
-				if (xInMask < 0 || yInMask < 0 || xInMask >= mask.getWidth() || yInMask >= mask.getHeight())
+				for (int x = 0; x < image.getWidth(); x++)
 				{
-					continue;
+					int xInMask = x + imageOffsetInMask.x;
+					int yInMask = y + imageOffsetInMask.y;
+					if (xInMask < 0 || yInMask < 0 || xInMask >= mask.getWidth() || yInMask >= mask.getHeight())
+					{
+						continue;
+					}
+
+					int maskLevel = (int) (mask.getNormalizedPixelLevel(xInMask, yInMask) * color.getAlpha());
+					if (invertMask)
+						maskLevel = 255 - maskLevel;
+
+					int r = color.getRed();
+					int g = color.getGreen();
+					int b = color.getBlue();
+					int a = 255 - maskLevel;
+					overlay.setRGB(x, y, r, g, b, a);
 				}
-
-				int maskLevel = (int) (mask.getNormalizedPixelLevel(xInMask, yInMask) * color.getAlpha());
-				if (invertMask)
-					maskLevel = 255 - maskLevel;
-
-				int r = color.getRed();
-				int g = color.getGreen();
-				int b = color.getBlue();
-				int a = 255 - maskLevel;
-				overlay.setRGB(overlayData, x, y, r, g, b, a);
-			}
-		});
+			});
+		}
 
 		Image result = image.deepCopy();
 		Painter p = result.createPainter();

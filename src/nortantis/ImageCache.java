@@ -22,6 +22,8 @@ import nortantis.geom.IntDimension;
 import nortantis.platform.Color;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
+import nortantis.platform.PixelReadSession;
+import nortantis.platform.PixelWriteSession;
 import nortantis.util.Assets;
 import nortantis.util.ConcurrentHashMapF;
 import nortantis.util.FileHelper;
@@ -151,34 +153,23 @@ public class ImageCache
 					{
 						if (maximizeOpacity)
 						{
-							int[] imageData = null;
-							if (imageAndMasks.image.isIntBased())
+							try (PixelReadSession ignored = imageAndMasks.image.beginPixelReads())
 							{
-								imageData = imageAndMasks.image.getDataIntBased();
-							}
-
-							int highestAlpha = 0;
-							for (int y = 0; y < imageAndMasks.image.getHeight(); y++)
-							{
-								for (int x = 0; x < imageAndMasks.image.getWidth(); x++)
+								int highestAlpha = 0;
+								for (int y = 0; y < imageAndMasks.image.getHeight(); y++)
 								{
-									Color imageColor;
-									if (imageData == null)
+									for (int x = 0; x < imageAndMasks.image.getWidth(); x++)
 									{
-										imageColor = imageAndMasks.image.getPixelColor(x, y);
-									}
-									else
-									{
-										imageColor = imageAndMasks.image.getPixelColor(imageData, x, y);
-									}
+										Color imageColor = imageAndMasks.image.getPixelColor(x, y);
 
-									if (imageColor.getAlpha() > highestAlpha)
-									{
-										highestAlpha = imageColor.getAlpha();
+										if (imageColor.getAlpha() > highestAlpha)
+										{
+											highestAlpha = imageColor.getAlpha();
+										}
 									}
 								}
+								alphaScale = 255f / highestAlpha;
 							}
-							alphaScale = 255f / highestAlpha;
 						}
 					}
 
@@ -188,15 +179,17 @@ public class ImageCache
 					if ((fillWithColor && !fillColor.equals(Color.transparentBlack)) || !filterColor.equals(MapSettings.defaultIconFilterColor) || maximizeOpacity)
 					{
 						Image result = Image.create(imageAndMasks.image.getWidth(), imageAndMasks.image.getHeight(), ImageType.ARGB);
-						int[] resultData = result.getDataIntBased();
 
 						Image colorMask = imageAndMasks.getOrCreateColorMask();
-						for (int y = 0; y < result.getHeight(); y++)
+						try (PixelReadSession _ = imageAndMasks.image.beginPixelReads();
+								PixelWriteSession _ = result.beginPixelWrites())
 						{
-							for (int x = 0; x < result.getWidth(); x++)
+							for (int y = 0; y < result.getHeight(); y++)
 							{
+								for (int x = 0; x < result.getWidth(); x++)
+								{
 
-								Color originalColor = imageAndMasks.image.getPixelColor(x, y);
+									Color originalColor = imageAndMasks.image.getPixelColor(x, y);
 
 								int alpha;
 								if (maximizeOpacity)
@@ -239,7 +232,8 @@ public class ImageCache
 								int b = Helper.linearComboBase255(filteredAlpha, filteredImageColor.getBlue(), (int) (fillColor.getBlue() * fillColorScale));
 								int a = Math.max(filteredAlpha, Math.min(fillColor.getAlpha(), colorMask.getGrayLevel(x, y)));
 
-								result.setRGB(resultData, x, y, r, g, b, a);
+									result.setRGB(x, y, r, g, b, a);
+								}
 							}
 						}
 						return result;

@@ -18,6 +18,53 @@ public abstract class Image
 		maxPixelLevelAsFloat = getMaxPixelLevel();
 	}
 
+	/**
+	 * Begins a pixel read session. This caches pixel data for efficient single-pixel reads. Use with try-with-resources to ensure the
+	 * session is properly closed.
+	 *
+	 * If a write session is in progress, it will be auto-flushed with a warning.
+	 *
+	 * @return A session object that should be closed when done reading.
+	 */
+	public abstract PixelReadSession beginPixelReads();
+
+	/**
+	 * Ends a pixel read session, releasing the cached pixel data. This is called automatically when the PixelReadSession is closed.
+	 */
+	public abstract void endPixelReads();
+
+	/**
+	 * Begins a pixel write session. This caches pixel data for efficient single-pixel writes. Use with try-with-resources to ensure the
+	 * session is properly closed and changes are flushed.
+	 *
+	 * If a read session is in progress, it will be auto-ended with a warning.
+	 *
+	 * @return A session object that should be closed when done writing.
+	 */
+	public abstract PixelWriteSession beginPixelWrites();
+
+	/**
+	 * Ends a pixel write session, flushing cached pixel data to the underlying image. This is called automatically when the
+	 * PixelWriteSession is closed.
+	 */
+	public abstract void endPixelWrites();
+
+	/**
+	 * Returns true if a pixel read session is currently active.
+	 */
+	public boolean isInPixelRead()
+	{
+		return false;
+	}
+
+	/**
+	 * Returns true if a pixel write session is currently active.
+	 */
+	public boolean isInPixelWrite()
+	{
+		return false;
+	}
+
 	public final int getGrayLevel(int x, int y)
 	{
 		return getBandLevel(x, y, 0);
@@ -38,26 +85,15 @@ public abstract class Image
 
 	public abstract int getRGB(int x, int y);
 
-	public abstract int getRGB(int[] data, int x, int y);
-
 	public abstract void setRGB(int x, int y, int rgb);
 
 	public abstract void setRGB(int x, int y, int red, int green, int blue);
 
 	public abstract void setRGB(int x, int y, int red, int green, int blue, int alpha);
 
-	public abstract void setRGB(int[] data, int x, int y, int red, int green, int blue);
-
-	public abstract void setRGB(int[] data, int x, int y, int red, int green, int blue, int alpha);
-
 	public abstract void setAlpha(int x, int y, int alpha);
 
 	public abstract Color getPixelColor(int x, int y);
-
-	public Color getPixelColor(int[] data, int x, int y)
-	{
-		return Color.create(getRGB(data, x, y), hasAlpha());
-	}
 
 	public float getNormalizedPixelLevel(int x, int y)
 	{
@@ -163,8 +199,6 @@ public abstract class Image
 	public abstract Image copySubImage(IntRectangle bounds, boolean addAlphaChanel);
 
 	public abstract int[] getDataIntBased();
-
-	public abstract boolean isIntBased();
 
 	public abstract Image copyAndAddAlphaChanel();
 

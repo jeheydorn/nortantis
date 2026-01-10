@@ -54,7 +54,9 @@ public class SkiaMapCreatorTest
 		assertTrue(actual.getWidth() > 0);
 		assertTrue(actual.getHeight() > 0);
 
-		// Optionally save it to see what it looks like
+		// TODO - Once I have Skia rendering working, change this test to compare actual pixels.
+
+		// Save it to see what it looks like
 		FileHelper.createFolder(Paths.get("unit test files", "failed maps").toString());
 		actual.write(Paths.get("unit test files", "failed maps", "skia_" + settingsFileName + ".png").toString());
 	}
