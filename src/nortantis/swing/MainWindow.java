@@ -60,6 +60,7 @@ import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileSystemView;
 
+import nortantis.platform.awt.AwtFactory;
 import nortantis.platform.skia.SkiaFactory;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -2065,7 +2066,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	private void setPlaceholderImage(String[] message)
 	{
-		mapEditingPanel.setImage(AwtBridge.toBufferedImage(ImageHelper.createPlaceholderImage(message, AwtBridge.fromAwtColor(SwingHelper.getTextColorForPlaceholderImages()))));
+		mapEditingPanel.setImage(AwtBridge.toBufferedImage(ImageHelper.createPlaceholderImage(message, AwtBridge.fromAwtColorToPlatformColor(SwingHelper.getTextColorForPlaceholderImages()))));
 
 		// Clear out the map from map creator so that causing the window to
 		// re-zoom while the placeholder image

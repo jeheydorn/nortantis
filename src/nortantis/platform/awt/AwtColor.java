@@ -6,7 +6,7 @@ import java.util.Objects;
 import nortantis.platform.Color;
 
 @SuppressWarnings("serial")
-public class AwtColor extends Color implements Serializable
+public class AwtColor extends Color
 {
 	java.awt.Color color;
 

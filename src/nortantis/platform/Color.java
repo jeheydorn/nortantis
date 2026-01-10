@@ -2,7 +2,9 @@ package nortantis.platform;
 
 import nortantis.HSBColor;
 
-public abstract class Color
+import java.io.Serializable;
+
+public abstract class Color implements Serializable
 {
 	public abstract int getRGB();
 

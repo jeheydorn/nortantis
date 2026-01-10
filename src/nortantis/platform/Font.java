@@ -1,6 +1,8 @@
 package nortantis.platform;
 
-public abstract class Font
+import java.io.Serializable;
+
+public abstract class Font implements Serializable
 {
 	public static Font create(String name, FontStyle style, float size)
 	{

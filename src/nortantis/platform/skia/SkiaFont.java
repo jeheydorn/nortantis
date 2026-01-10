@@ -1,5 +1,6 @@
 package nortantis.platform.skia;
 
+import java.io.Serializable;
 import java.util.Objects;
 import org.jetbrains.skia.Font;
 import org.jetbrains.skia.FontMgr;

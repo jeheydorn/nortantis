@@ -7,7 +7,7 @@ import nortantis.platform.Font;
 import nortantis.platform.FontStyle;
 
 @SuppressWarnings("serial")
-public class AwtFont extends Font implements Serializable
+public class AwtFont extends Font
 {
 	public java.awt.Font font;
 

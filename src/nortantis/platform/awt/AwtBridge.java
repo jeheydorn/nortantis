@@ -3,16 +3,8 @@ package nortantis.platform.awt;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
-import nortantis.platform.Color;
-import nortantis.platform.Font;
-import nortantis.platform.FontStyle;
-import nortantis.platform.Image;
-import nortantis.platform.Painter;
-import nortantis.platform.skia.SkiaColor;
-import nortantis.platform.skia.SkiaFont;
+import nortantis.platform.*;
 import nortantis.platform.skia.SkiaImage;
 
 /**
@@ -109,6 +101,15 @@ public class AwtBridge
 			return null;
 		}
 		return new AwtColor(color);
+	}
+
+	public static Color fromAwtColorToPlatformColor(java.awt.Color color)
+	{
+		if (color == null)
+		{
+			return null;
+		}
+		return PlatformFactory.getInstance().createColor(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha());
 	}
 
 	/**
