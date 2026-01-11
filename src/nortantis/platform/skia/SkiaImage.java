@@ -1,39 +1,26 @@
 package nortantis.platform.skia;
 
+import nortantis.geom.IntRectangle;
+import nortantis.platform.*;
+import nortantis.platform.Color;
+import nortantis.platform.Image;
+import nortantis.util.Logger;
+import org.imgscalr.Scalr.Method;
+import org.jetbrains.skia.*;
+
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
-import org.jetbrains.skia.Bitmap;
-import org.jetbrains.skia.Canvas;
-import org.jetbrains.skia.ColorAlphaType;
-import org.jetbrains.skia.ImageInfo;
-import org.jetbrains.skia.ColorType;
-import org.jetbrains.skia.Surface;
-import org.jetbrains.skia.SurfaceProps;
-import org.imgscalr.Scalr.Method;
-import nortantis.geom.IntRectangle;
-import nortantis.platform.Color;
-import nortantis.platform.DrawQuality;
-import nortantis.platform.Image;
-import nortantis.platform.ImageType;
-import nortantis.platform.Painter;
-import nortantis.platform.PixelReadSession;
-import nortantis.platform.PixelWriteSession;
-import nortantis.util.Logger;
 
 public class SkiaImage extends Image
 {
-	private Bitmap bitmap;
+	Bitmap bitmap;
 	private final int width;
 	private final int height;
 	private org.jetbrains.skia.Image cachedSkiaImage;
-
-	// Session state for pixel read/write optimization
-	private int[] cachedPixelArray;
-	private boolean inReadSession;
-	private boolean inWriteSession;
+	private PixelReader currentPixelReader;
 
 	public SkiaImage(int width, int height, ImageType type)
 	{
@@ -66,7 +53,7 @@ public class SkiaImage extends Image
 		return cachedSkiaImage;
 	}
 
-	private void invalidateCachedImage()
+	void invalidateCachedImage()
 	{
 		if (cachedSkiaImage != null)
 		{
@@ -76,199 +63,21 @@ public class SkiaImage extends Image
 	}
 
 	@Override
-	public PixelReadSession beginPixelReads()
+	public PixelReader createNewPixelReader()
 	{
-		if (inWriteSession)
-		{
-			Logger.println("Warning: beginPixelReads called while in write session, auto-flushing writes");
-			endPixelWrites();
-		}
-
-		if (!inReadSession)
-		{
-			cachedPixelArray = readPixelsToIntArray();
-			inReadSession = true;
-		}
-
-		return new PixelReadSession(this);
+		return new SkiaPixelReader(this);
 	}
 
 	@Override
-	public void endPixelReads()
+	public PixelReaderWriter createNewPixelReaderWriter()
 	{
-		if (inReadSession)
-		{
-			cachedPixelArray = null;
-			inReadSession = false;
-		}
+		return new SkiaPixelReaderWriter(this);
 	}
 
 	@Override
-	public PixelWriteSession beginPixelWrites()
+	public void endPixelReadsOrWrites()
 	{
-		if (inReadSession)
-		{
-			Logger.println("Warning: beginPixelWrites called while in read session, discarding read array");
-			endPixelReads();
-		}
-
-		if (!inWriteSession)
-		{
-			cachedPixelArray = readPixelsToIntArray();
-			inWriteSession = true;
-		}
-
-		return new PixelWriteSession(this);
-	}
-
-	@Override
-	public void endPixelWrites()
-	{
-		if (inWriteSession)
-		{
-			writePixelsFromIntArray(cachedPixelArray);
-			cachedPixelArray = null;
-			inWriteSession = false;
-		}
-	}
-
-	@Override
-	public boolean isInPixelRead()
-	{
-		return inReadSession;
-	}
-
-	@Override
-	public boolean isInPixelWrite()
-	{
-		return inWriteSession;
-	}
-
-	/**
-	 * Called when something directly modifies the bitmap (not through the cached pixel array). This handles any active sessions by flushing
-	 * writes or discarding reads as needed.
-	 */
-	private void handleDirectBitmapModification()
-	{
-		if (inReadSession)
-		{
-			Logger.println("Warning: Direct bitmap modification during read session, discarding cached read array");
-			cachedPixelArray = null;
-			inReadSession = false;
-		}
-		if (inWriteSession)
-		{
-			Logger.println("Warning: Direct bitmap modification during write session, flushing cached write array first");
-			// Set flags before calling writePixelsFromIntArray to prevent recursion
-			int[] arrayToFlush = cachedPixelArray;
-			cachedPixelArray = null;
-			inWriteSession = false;
-			writePixelsFromIntArray(arrayToFlush);
-		}
-	}
-
-	@Override
-	public int getBandLevel(int x, int y, int band)
-	{
-		int rgb = getRGB(x, y);
-		if (band == 0)
-			return (rgb >> 16) & 0xFF;
-		if (band == 1)
-			return (rgb >> 8) & 0xFF;
-		if (band == 2)
-			return rgb & 0xFF;
-		return (rgb >> 24) & 0xFF;
-	}
-
-	@Override
-	public void setBandLevel(int x, int y, int band, int level)
-	{
-		int rgb = getRGB(x, y);
-		int r = (rgb >> 16) & 0xFF;
-		int g = (rgb >> 8) & 0xFF;
-		int b = rgb & 0xFF;
-		int a = (rgb >> 24) & 0xFF;
-
-		if (band == 0)
-			r = level;
-		else if (band == 1)
-			g = level;
-		else if (band == 2)
-			b = level;
-		else if (band == 3)
-			a = level;
-
-		setRGB(x, y, (a << 24) | (r << 16) | (g << 8) | b);
-	}
-
-	@Override
-	public int getAlpha(int x, int y)
-	{
-		return (getRGB(x, y) >> 24) & 0xFF;
-	}
-
-	@Override
-	public void setPixelColor(int x, int y, Color color)
-	{
-		setRGB(x, y, color.getRGB());
-	}
-
-	@Override
-	public int getRGB(int x, int y)
-	{
-		if (cachedPixelArray != null)
-		{
-			return cachedPixelArray[y * width + x];
-		}
-		return bitmap.getColor(x, y);
-	}
-
-	@Override
-	public void setRGB(int x, int y, int rgb)
-	{
-		if (inWriteSession && cachedPixelArray != null)
-		{
-			cachedPixelArray[y * width + x] = rgb;
-			invalidateCachedImage();
-			return;
-		}
-
-		// Handle any active session before direct bitmap modification
-		handleDirectBitmapModification();
-
-		// Direct bitmap modification (slow path)
-		Canvas canvas = new Canvas(bitmap, new SurfaceProps());
-		org.jetbrains.skia.Paint paint = new org.jetbrains.skia.Paint();
-		paint.setColor(rgb);
-		canvas.drawPoint(x + 0.5f, y + 0.5f, paint);
-		canvas.close();
-		paint.close();
-		invalidateCachedImage();
-	}
-
-	@Override
-	public void setRGB(int x, int y, int red, int green, int blue)
-	{
-		setRGB(x, y, (255 << 24) | (red << 16) | (green << 8) | blue);
-	}
-
-	@Override
-	public void setRGB(int x, int y, int red, int green, int blue, int alpha)
-	{
-		setRGB(x, y, (alpha << 24) | (red << 16) | (green << 8) | blue);
-	}
-
-	@Override
-	public void setAlpha(int x, int y, int alpha)
-	{
-		int rgb = getRGB(x, y);
-		setRGB(x, y, (alpha << 24) | (rgb & 0xFFFFFF));
-	}
-
-	@Override
-	public Color getPixelColor(int x, int y)
-	{
-		return new SkiaColor(getRGB(x, y), hasAlpha());
+		currentPixelReader = null;
 	}
 
 	@Override
@@ -286,7 +95,6 @@ public class SkiaImage extends Image
 	@Override
 	public Painter createPainter(DrawQuality quality)
 	{
-		handleDirectBitmapModification();
 		return new SkiaPainter(new Canvas(bitmap, new SurfaceProps()));
 	}
 
@@ -364,12 +172,6 @@ public class SkiaImage extends Image
 	}
 
 	@Override
-	public int[] getDataIntBased()
-	{
-		return null; // As requested, not supported for Skia implementation yet.
-	}
-
-	@Override
 	public Image copyAndAddAlphaChanel()
 	{
 		if (hasAlpha())
@@ -394,7 +196,7 @@ public class SkiaImage extends Image
 	/**
 	 * Reads all pixels from the Skia bitmap into an int[] array. Format: ARGB, one int per pixel, row-major order.
 	 */
-	public int[] readPixelsToIntArray()
+	int[] readPixelsToIntArray()
 	{
 		byte[] bytes = bitmap.readPixels(new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null), width * 4, 0, 0);
 
@@ -411,7 +213,7 @@ public class SkiaImage extends Image
 	/**
 	 * Reads a rectangular region of pixels into an int[] array.
 	 */
-	public int[] readPixelsToIntArray(int srcX, int srcY, int regionWidth, int regionHeight)
+	int[] readPixelsToIntArray(int srcX, int srcY, int regionWidth, int regionHeight)
 	{
 		byte[] bytes = bitmap.readPixels(new ImageInfo(regionWidth, regionHeight, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null), regionWidth * 4, srcX, srcY);
 
@@ -428,9 +230,8 @@ public class SkiaImage extends Image
 	/**
 	 * Writes an int[] array back to the Skia bitmap. Format: ARGB, one int per pixel, row-major order.
 	 */
-	public void writePixelsFromIntArray(int[] pixels)
+	void writePixelsFromIntArray(int[] pixels)
 	{
-		handleDirectBitmapModification();
 		ByteBuffer buffer = ByteBuffer.allocate(pixels.length * 4).order(ByteOrder.nativeOrder());
 		buffer.asIntBuffer().put(pixels);
 		bitmap.installPixels(new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null), buffer.array(), width * 4);
@@ -441,10 +242,8 @@ public class SkiaImage extends Image
 	 * Writes an int[] array to a rectangular region of the Skia bitmap. Uses a temporary bitmap and canvas drawing for efficiency with
 	 * large images.
 	 */
-	public void writePixelsToRegion(int[] regionPixels, int destX, int destY, int regionWidth, int regionHeight)
+	void writePixelsToRegion(int[] regionPixels, int destX, int destY, int regionWidth, int regionHeight)
 	{
-		handleDirectBitmapModification();
-
 		// Create a temporary bitmap with the region pixels
 		Bitmap tempBitmap = new Bitmap();
 		tempBitmap.allocPixels(new ImageInfo(regionWidth, regionHeight, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null));
@@ -462,4 +261,5 @@ public class SkiaImage extends Image
 		tempBitmap.close();
 		invalidateCachedImage();
 	}
+
 }

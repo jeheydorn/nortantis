@@ -22,8 +22,6 @@ import nortantis.geom.IntDimension;
 import nortantis.platform.Color;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
-import nortantis.platform.PixelReadSession;
-import nortantis.platform.PixelWriteSession;
 import nortantis.util.Assets;
 import nortantis.util.ConcurrentHashMapF;
 import nortantis.util.FileHelper;
@@ -153,7 +151,7 @@ public class ImageCache
 					{
 						if (maximizeOpacity)
 						{
-							try (PixelReadSession ignored = imageAndMasks.image.beginPixelReads())
+							try (PixelReadSession ignored = imageAndMasks.image.createPixelReader())
 							{
 								int highestAlpha = 0;
 								for (int y = 0; y < imageAndMasks.image.getHeight(); y++)
@@ -181,8 +179,8 @@ public class ImageCache
 						Image result = Image.create(imageAndMasks.image.getWidth(), imageAndMasks.image.getHeight(), ImageType.ARGB);
 
 						Image colorMask = imageAndMasks.getOrCreateColorMask();
-						try (PixelReadSession _ = imageAndMasks.image.beginPixelReads();
-								PixelWriteSession _ = result.beginPixelWrites())
+						try (PixelReadSession _ = imageAndMasks.image.createPixelReader();
+								PixelWriteSession _ = result.createPixelReaderWriter())
 						{
 							for (int y = 0; y < result.getHeight(); y++)
 							{

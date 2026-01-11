@@ -1,0 +1,55 @@
+package nortantis.platform.awt;
+
+import nortantis.platform.Color;
+import nortantis.platform.Image;
+import nortantis.platform.PixelReaderWriter;
+
+public class AwtPixelReaderWriter extends AwtPixelReader implements PixelReaderWriter
+{
+	AwtPixelReaderWriter(AwtImage image)
+	{
+		super(image);
+	}
+
+	@Override
+	public void setPixelColor(int x, int y, Color color)
+	{
+		setRGB(x, y, color.getRGB());
+	}
+
+	@Override
+	public void setRGB(int x, int y, int rgb)
+	{
+		if (cachedPixelArray != null)
+		{
+			cachedPixelArray[(y * image.getWidth()) + x] = rgb;
+			return;
+		}
+		setRGB(x, y, rgb);
+	}
+
+	@Override
+	public void setRGB(int x, int y, int red, int green, int blue)
+	{
+		setRGB(x, y, (red << 16) | (green << 8) | blue);
+	}
+
+	@Override
+	public void setRGB(int x, int y, int red, int green, int blue, int alpha)
+	{
+		setRGB(x, y, (alpha << 24) | (red << 16) | (green << 8) | blue);
+	}
+
+	@Override
+	public void setBandLevel(int x, int y, int band, int level)
+	{
+		raster.setSample(x, y, band, level);
+	}
+
+	@Override
+	public void setAlpha(int x, int y, int alpha)
+	{
+		int newColor = (getRGB(x, y) & 0x00FFFFFF) | (alpha << 24);
+		setRGB(x, y, newColor);
+	}
+}

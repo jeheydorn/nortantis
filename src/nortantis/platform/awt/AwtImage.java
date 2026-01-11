@@ -16,133 +16,85 @@ import nortantis.platform.DrawQuality;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
-import nortantis.platform.PixelReadSession;
-import nortantis.platform.PixelWriteSession;
+import nortantis.platform.PixelReader;
+import nortantis.platform.PixelReaderWriter;
 import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
 
 class AwtImage extends Image
 {
 	public BufferedImage image;
-	WritableRaster raster;
-	Raster alphaRaster;
-
-	// Session state for pixel read/write optimization
-	private int[] cachedPixelArray;
-	private boolean inReadSession;
-	private boolean inWriteSession;
 
 	public AwtImage(int width, int height, ImageType type)
 	{
 		super(type);
 		image = new BufferedImage(width, height, toBufferedImageType(type));
-		createRastersIfNeeded();
 	}
 
 	public AwtImage(BufferedImage bufferedImage)
 	{
 		super(toImageType(bufferedImage.getType()));
 		image = bufferedImage;
-		createRastersIfNeeded();
-	}
-
-	private void createRastersIfNeeded()
-	{
-		raster = image.getRaster();
-
-		if (hasAlpha())
-		{
-			alphaRaster = image.getAlphaRaster();
-		}
 	}
 
 	/**
 	 * Returns true if the BufferedImage uses an int-based format that is compatible with our expected ARGB/RGB pixel interpretation.
 	 * TYPE_INT_BGR is excluded because it has reversed byte order.
 	 */
-	private boolean isCompatibleIntFormat()
+	boolean isCompatibleIntFormat()
 	{
 		int type = image.getType();
 		return type == BufferedImage.TYPE_INT_RGB || type == BufferedImage.TYPE_INT_ARGB;
 	}
 
 	@Override
-	public PixelReadSession beginPixelReads()
+	public PixelReader createPixelReader()
 	{
-		if (!isCompatibleIntFormat())
+		if (currentPixelReader != null)
 		{
-			return new PixelReadSession(this);
+			if (currentPixelReader instanceof  PixelReaderWriter)
+			{
+				throw new IllegalStateException("Pixel reader/writer already created");
+			}
+			throw new IllegalStateException("Pixel reader already created");
 		}
 
-		if (inWriteSession)
-		{
-			Logger.println("Warning: beginPixelReads called while in write session, auto-flushing writes");
-			endPixelWrites();
-		}
-
-		if (!inReadSession)
-		{
-			cachedPixelArray = getDataIntBased();
-			inReadSession = true;
-		}
-
-		return new PixelReadSession(this);
+		currentPixelReader = new AwtPixelReader(this);
+		return currentPixelReader;
 	}
 
 	@Override
-	public void endPixelReads()
+	public PixelReaderWriter createPixelReaderWriter()
 	{
-		if (inReadSession)
+		if (currentPixelReader != null)
 		{
-			cachedPixelArray = null;
-			inReadSession = false;
+			if (currentPixelReader instanceof PixelReaderWriter)
+			{
+				throw new IllegalStateException("Pixel reader/writer already created");
+			}
+			throw new IllegalStateException("Pixel reader already created");
 		}
+
+		currentPixelReader = new AwtPixelReaderWriter(this);
+		return (PixelReaderWriter) currentPixelReader;
 	}
 
 	@Override
-	public PixelWriteSession beginPixelWrites()
+	public void endPixelReadsOrWrites()
 	{
-		if (!isCompatibleIntFormat())
-		{
-			return new PixelWriteSession(this);
-		}
-
-		if (inReadSession)
-		{
-			Logger.println("Warning: beginPixelWrites called while in read session, discarding read array");
-			endPixelReads();
-		}
-
-		if (!inWriteSession)
-		{
-			cachedPixelArray = getDataIntBased();
-			inWriteSession = true;
-		}
-
-		return new PixelWriteSession(this);
+		currentPixelReader = null;
 	}
 
 	@Override
-	public void endPixelWrites()
+	public PixelReader createNewPixelReader()
 	{
-		if (inWriteSession)
-		{
-			// For AWT, writes go directly to the underlying array, so no flush needed
-			cachedPixelArray = null;
-			inWriteSession = false;
-		}
+		return new AwtPixelReader(this);
 	}
 
 	@Override
-	public boolean isInPixelRead()
+	public PixelReaderWriter createNewPixelReaderWriter()
 	{
-		return inReadSession;
-	}
-
-	@Override
-	public boolean isInPixelWrite()
-	{
-		return inWriteSession;
+		return new AwtPixelReaderWriter(this);
 	}
 
 	private int toBufferedImageType(ImageType type)
@@ -201,74 +153,6 @@ class AwtImage extends Image
 		{
 			throw new IllegalArgumentException("Unrecognized buffered image type: " + bufferedImageTypeToString(bufferedImageType));
 		}
-	}
-
-	@Override
-	public void setPixelColor(int x, int y, Color color)
-	{
-		image.setRGB(x, y, color.getRGB());
-	}
-
-	@Override
-	public int getRGB(int x, int y)
-	{
-		if (cachedPixelArray != null)
-		{
-			return cachedPixelArray[(y * image.getWidth()) + x];
-		}
-		return image.getRGB(x, y);
-	}
-
-	@Override
-	public void setRGB(int x, int y, int rgb)
-	{
-		if (cachedPixelArray != null && inWriteSession)
-		{
-			cachedPixelArray[(y * image.getWidth()) + x] = rgb;
-			return;
-		}
-		image.setRGB(x, y, rgb);
-	}
-
-	@Override
-	public void setRGB(int x, int y, int red, int green, int blue)
-	{
-		setRGB(x, y, (red << 16) | (green << 8) | blue);
-	}
-
-	@Override
-	public void setRGB(int x, int y, int red, int green, int blue, int alpha)
-	{
-		setRGB(x, y, (alpha << 24) | (red << 16) | (green << 8) | blue);
-	}
-
-	@Override
-	public int getBandLevel(int x, int y, int band)
-	{
-		return raster.getSample(x, y, band);
-	}
-
-	@Override
-	public void setBandLevel(int x, int y, int band, int level)
-	{
-		raster.setSample(x, y, band, level);
-	}
-
-	@Override
-	public int getAlpha(int x, int y)
-	{
-		if (hasAlpha())
-		{
-			return alphaRaster.getSample(x, y, 0);
-		}
-
-		return 0;
-	}
-
-	@Override
-	public Color getPixelColor(int x, int y)
-	{
-		return new AwtColor(image.getRGB(x, y), hasAlpha());
 	}
 
 	@Override
@@ -365,19 +249,6 @@ class AwtImage extends Image
 		Image result = Image.create(bounds.width, bounds.height, addAlphaChanel ? ImageType.ARGB : getType());
 		result.createPainter().drawImage(sub, 0, 0);
 		return result;
-	}
-
-	@Override
-	public void setAlpha(int x, int y, int alpha)
-	{
-		int newColor = (image.getRGB(x, y) & 0x00FFFFFF) | (alpha << 24);
-		setRGB(x, y, newColor);
-	}
-
-	@Override
-	public int[] getDataIntBased()
-	{
-		return ((DataBufferInt) raster.getDataBuffer()).getData();
 	}
 
 	@Override

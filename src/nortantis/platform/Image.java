@@ -2,6 +2,8 @@ package nortantis.platform;
 
 import java.io.InputStream;
 
+import nortantis.platform.awt.AwtPixelReader;
+import nortantis.platform.awt.AwtPixelReaderWriter;
 import org.imgscalr.Scalr.Method;
 
 import nortantis.geom.IntDimension;
@@ -11,93 +13,12 @@ public abstract class Image
 {
 	private final ImageType type;
 	private final float maxPixelLevelAsFloat;
+	protected PixelReader currentPixelReader;
 
 	protected Image(ImageType type)
 	{
 		this.type = type;
 		maxPixelLevelAsFloat = getMaxPixelLevel();
-	}
-
-	/**
-	 * Begins a pixel read session. This caches pixel data for efficient single-pixel reads. Use with try-with-resources to ensure the
-	 * session is properly closed.
-	 *
-	 * If a write session is in progress, it will be auto-flushed with a warning.
-	 *
-	 * @return A session object that should be closed when done reading.
-	 */
-	public abstract PixelReadSession beginPixelReads();
-
-	/**
-	 * Ends a pixel read session, releasing the cached pixel data. This is called automatically when the PixelReadSession is closed.
-	 */
-	public abstract void endPixelReads();
-
-	/**
-	 * Begins a pixel write session. This caches pixel data for efficient single-pixel writes. Use with try-with-resources to ensure the
-	 * session is properly closed and changes are flushed.
-	 *
-	 * If a read session is in progress, it will be auto-ended with a warning.
-	 *
-	 * @return A session object that should be closed when done writing.
-	 */
-	public abstract PixelWriteSession beginPixelWrites();
-
-	/**
-	 * Ends a pixel write session, flushing cached pixel data to the underlying image. This is called automatically when the
-	 * PixelWriteSession is closed.
-	 */
-	public abstract void endPixelWrites();
-
-	/**
-	 * Returns true if a pixel read session is currently active.
-	 */
-	public boolean isInPixelRead()
-	{
-		return false;
-	}
-
-	/**
-	 * Returns true if a pixel write session is currently active.
-	 */
-	public boolean isInPixelWrite()
-	{
-		return false;
-	}
-
-	public final int getGrayLevel(int x, int y)
-	{
-		return getBandLevel(x, y, 0);
-	}
-
-	public abstract int getBandLevel(int x, int y, int band);
-
-	public void setGrayLevel(int x, int y, int level)
-	{
-		setBandLevel(x, y, 0, level);
-	}
-
-	public abstract void setBandLevel(int x, int y, int band, int level);
-
-	public abstract int getAlpha(int x, int y);
-
-	public abstract void setPixelColor(int x, int y, Color color);
-
-	public abstract int getRGB(int x, int y);
-
-	public abstract void setRGB(int x, int y, int rgb);
-
-	public abstract void setRGB(int x, int y, int red, int green, int blue);
-
-	public abstract void setRGB(int x, int y, int red, int green, int blue, int alpha);
-
-	public abstract void setAlpha(int x, int y, int alpha);
-
-	public abstract Color getPixelColor(int x, int y);
-
-	public float getNormalizedPixelLevel(int x, int y)
-	{
-		return getGrayLevel(x, y) / maxPixelLevelAsFloat;
 	}
 
 	public abstract int getWidth();
@@ -182,14 +103,12 @@ public abstract class Image
 	public abstract Image deepCopy();
 
 	/**
-	 * Creates an image with the given bounds in this image, backed by the same data as the original image. This means that modifications to
-	 * the result will modify the original image.
+	 * Creates an image with the given bounds in this image, backed by the same data as the original image. This means that modifications to the result will modify the original image.
 	 */
 	public abstract Image getSubImage(IntRectangle bounds);
 
 	/**
-	 * Creates an image with the given bounds in this image, backed by a copy of the data from the original image. This means that
-	 * modifications to the result will NOT modify the original image.
+	 * Creates an image with the given bounds in this image, backed by a copy of the data from the original image. This means that modifications to the result will NOT modify the original image.
 	 */
 	public Image copySubImage(IntRectangle bounds)
 	{
@@ -198,19 +117,73 @@ public abstract class Image
 
 	public abstract Image copySubImage(IntRectangle bounds, boolean addAlphaChanel);
 
-	public abstract int[] getDataIntBased();
-
 	public abstract Image copyAndAddAlphaChanel();
 
 	public Image copyAndRemoveAlphaChanel()
 	{
 		Image result = Image.create(getWidth(), getHeight(), ImageType.RGB);
-		for (int y = 0; y < getHeight(); y++)
-			for (int x = 0; x < getWidth(); x++)
-			{
-				result.setRGB(x, y, getRGB(x, y));
-			}
+		try (PixelReaderWriter resultPixels = result.createPixelReaderWriter(); PixelReader thisPixels = createPixelReader())
+		{
+			for (int y = 0; y < getHeight(); y++)
+				for (int x = 0; x < getWidth(); x++)
+				{
+					resultPixels.setRGB(x, y, thisPixels.getRGB(x, y));
+				}
+		}
 		return result;
 	}
 
+	/**
+	 * Begins a pixel read session. This caches pixel data for efficient single-pixel reads. Use with try-with-resources to ensure the session is properly closed.
+	 *
+	 * If a write session is in progress, it will be auto-flushed with a warning.
+	 *
+	 * @return A session object that should be closed when done reading.
+	 */
+	public abstract PixelReader createNewPixelReader();
+
+	/**
+	 *  Runs when pixel reads finish.
+	 */
+	public abstract void endPixelReadsOrWrites();
+
+	/**
+	 * Begins a pixel write session. This caches pixel data for efficient single-pixel writes. Use with try-with-resources to ensure the session is properly closed and changes are flushed.
+	 *
+	 * If a read session is in progress, it will be auto-ended with a warning.
+	 *
+	 * @return A session object that should be closed when done writing.
+	 */
+	public abstract PixelReaderWriter createNewPixelReaderWriter();
+
+
+	public PixelReader createPixelReader()
+	{
+		if (currentPixelReader != null)
+		{
+			if (currentPixelReader instanceof  PixelReaderWriter)
+			{
+				throw new IllegalStateException("Pixel reader/writer already created");
+			}
+			throw new IllegalStateException("Pixel reader already created");
+		}
+
+		currentPixelReader = createNewPixelReader();
+		return currentPixelReader;
+	}
+
+	public PixelReaderWriter createPixelReaderWriter()
+	{
+		if (currentPixelReader != null)
+		{
+			if (currentPixelReader instanceof PixelReaderWriter)
+			{
+				throw new IllegalStateException("Pixel reader/writer already created");
+			}
+			throw new IllegalStateException("Pixel reader already created");
+		}
+
+		currentPixelReader = createNewPixelReaderWriter();
+		return (PixelReaderWriter) currentPixelReader;
+	}
 }

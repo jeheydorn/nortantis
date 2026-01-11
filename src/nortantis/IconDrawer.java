@@ -31,8 +31,6 @@ import nortantis.graph.voronoi.Corner;
 import nortantis.platform.Color;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
-import nortantis.platform.PixelReadSession;
-import nortantis.platform.PixelWriteSession;
 import nortantis.swing.MapEdits;
 import nortantis.util.Assets;
 import nortantis.util.Function;
@@ -1019,10 +1017,10 @@ public class IconDrawer
 		IntDimension mapOrSnippetSize = mapOrSnippet.size();
 
 		// Begin pixel sessions for efficient read/write
-		try (PixelReadSession _ = landTexture.beginPixelReads();
-				PixelReadSession _ = oceanTexture.beginPixelReads();
-				PixelReadSession _ = landBackground.beginPixelReads();
-				PixelWriteSession _ = mapOrSnippet.beginPixelWrites())
+		try (PixelReadSession _ = landTexture.createPixelReader();
+				PixelReadSession _ = oceanTexture.createPixelReader();
+				PixelReadSession _ = landBackground.createPixelReader();
+				PixelWriteSession _ = mapOrSnippet.createPixelReaderWriter())
 		{
 			for (int y : new Range(icon.getHeight()))
 			{
