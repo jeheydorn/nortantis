@@ -12,6 +12,8 @@ import nortantis.platform.Color;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
+import nortantis.platform.PixelReader;
+import nortantis.platform.PixelReaderWriter;
 import nortantis.util.ImageHelper;
 import nortantis.util.Range;
 import nortantis.util.Tuple2;
@@ -141,67 +143,70 @@ public class ImageAndMasks
 	{
 		Stack<IntPoint> q = new Stack<>();
 
-		// Add the 4 corners of contentMask to q if their alpha is below opaqueThreshold.
-		if (image.getAlpha(0, 0) < opaqueThreshold)
+		try (PixelReader imagePixels = image.createPixelReader(); PixelReaderWriter contentMaskPixels = contentMask.createPixelReaderWriter())
 		{
-			q.push(new IntPoint(0, 0));
-		}
-		if (image.getAlpha(contentMask.getWidth() - 1, 0) < opaqueThreshold)
-		{
-			q.push(new IntPoint(contentMask.getWidth() - 1, 0));
-		}
-		if (image.getAlpha(0, contentMask.getHeight() - 1) < opaqueThreshold)
-		{
-			q.push(new IntPoint(0, contentMask.getHeight() - 1));
-		}
-		if (image.getAlpha(contentMask.getWidth() - 1, contentMask.getHeight() - 1) < opaqueThreshold)
-		{
-			q.push(new IntPoint(contentMask.getWidth() - 1, contentMask.getHeight() - 1));
-		}
-
-		Painter p = contentMask.createPainter();
-		p.setColor(Color.white);
-		p.fillRect(0, 0, contentMask.getWidth(), contentMask.getHeight());
-		p.dispose();
-
-		boolean[][] visited = new boolean[image.getWidth()][image.getHeight()];
-		while (!q.isEmpty())
-		{
-			IntPoint next = q.pop();
-
-			int x = next.x;
-			int y = next.y;
-
-			if (x < 0 || x >= image.getWidth() || y < 0 || y >= image.getHeight() || visited[x][y])
+			// Add the 4 corners of contentMask to q if their alpha is below opaqueThreshold.
+			if (imagePixels.getAlpha(0, 0) < opaqueThreshold)
 			{
-				continue;
+				q.push(new IntPoint(0, 0));
+			}
+			if (imagePixels.getAlpha(contentMask.getWidth() - 1, 0) < opaqueThreshold)
+			{
+				q.push(new IntPoint(contentMask.getWidth() - 1, 0));
+			}
+			if (imagePixels.getAlpha(0, contentMask.getHeight() - 1) < opaqueThreshold)
+			{
+				q.push(new IntPoint(0, contentMask.getHeight() - 1));
+			}
+			if (imagePixels.getAlpha(contentMask.getWidth() - 1, contentMask.getHeight() - 1) < opaqueThreshold)
+			{
+				q.push(new IntPoint(contentMask.getWidth() - 1, contentMask.getHeight() - 1));
 			}
 
-			if (visited[x][y])
+			Painter p = contentMask.createPainter();
+			p.setColor(Color.white);
+			p.fillRect(0, 0, contentMask.getWidth(), contentMask.getHeight());
+			p.dispose();
+
+			boolean[][] visited = new boolean[image.getWidth()][image.getHeight()];
+			while (!q.isEmpty())
 			{
-				continue;
-			}
+				IntPoint next = q.pop();
 
-			visited[x][y] = true;
+				int x = next.x;
+				int y = next.y;
 
-			if (image.getAlpha(x, y) < opaqueThreshold)
-			{
-				// This is part of the "background" that should be black in the mask
-				contentMask.setGrayLevel(x, y, 0);
-
-				if (!isNarrowPassage(image, x, y, narrowPassageThreshold))
+				if (x < 0 || x >= image.getWidth() || y < 0 || y >= image.getHeight() || visited[x][y])
 				{
-					// Add neighbors to the queue
-					q.push(new IntPoint(x + 1, y));
-					q.push(new IntPoint(x - 1, y));
-					q.push(new IntPoint(x, y + 1));
-					q.push(new IntPoint(x, y - 1));
+					continue;
 				}
-			}
-			else
-			{
-				// This pixel is part of the "content", so leave it white and add it to the content bounds.
-				addToContentBounds(next);
+
+				if (visited[x][y])
+				{
+					continue;
+				}
+
+				visited[x][y] = true;
+
+				if (imagePixels.getAlpha(x, y) < opaqueThreshold)
+				{
+					// This is part of the "background" that should be black in the mask
+					contentMaskPixels.setGrayLevel(x, y, 0);
+
+					if (!isNarrowPassage(imagePixels, x, y, narrowPassageThreshold))
+					{
+						// Add neighbors to the queue
+						q.push(new IntPoint(x + 1, y));
+						q.push(new IntPoint(x - 1, y));
+						q.push(new IntPoint(x, y + 1));
+						q.push(new IntPoint(x, y - 1));
+					}
+				}
+				else
+				{
+					// This pixel is part of the "content", so leave it white and add it to the content bounds.
+					addToContentBounds(next);
+				}
 			}
 		}
 	}
@@ -209,80 +214,83 @@ public class ImageAndMasks
 	private void remove4DirectionalSilhouetteFromContentMask()
 	{
 		// Remove pixels using silhouettes from each direction to cleanup stuff the narrow passage check leaves behind.
-		// From Top
-		for (int x = 0; x < image.getWidth(); x++)
+		try (PixelReader imagePixels = image.createPixelReader(); PixelReaderWriter contentMaskPixels = contentMask.createPixelReaderWriter())
 		{
-			for (int y = 0; y < image.getHeight(); y++)
-			{
-				int alpha = image.getAlpha(x, y);
-				if (alpha < opaqueThreshold)
-				{
-					contentMask.setGrayLevel(x, y, 0);
-				}
-				else
-				{
-					addToContentBounds(new IntPoint(x, y));
-					break;
-				}
-			}
-		}
-
-		// From Bottom
-		for (int x = 0; x < image.getWidth(); x++)
-		{
-			for (int y = image.getHeight() - 1; y >= 0; y--)
-			{
-				int alpha = image.getAlpha(x, y);
-				if (alpha < opaqueThreshold)
-				{
-					contentMask.setGrayLevel(x, y, 0);
-				}
-				else
-				{
-					addToContentBounds(new IntPoint(x, y));
-					break;
-				}
-			}
-		}
-
-		// From left side
-		for (int y = 0; y < image.getHeight(); y++)
-		{
+			// From Top
 			for (int x = 0; x < image.getWidth(); x++)
 			{
-				int alpha = image.getAlpha(x, y);
-				if (alpha < opaqueThreshold)
+				for (int y = 0; y < image.getHeight(); y++)
 				{
-					contentMask.setGrayLevel(x, y, 0);
-				}
-				else
-				{
-					addToContentBounds(new IntPoint(x, y));
-					break;
+					int alpha = imagePixels.getAlpha(x, y);
+					if (alpha < opaqueThreshold)
+					{
+						contentMaskPixels.setGrayLevel(x, y, 0);
+					}
+					else
+					{
+						addToContentBounds(new IntPoint(x, y));
+						break;
+					}
 				}
 			}
-		}
 
-		// From right side
-		for (int y = 0; y < image.getHeight(); y++)
-		{
-			for (int x = image.getWidth() - 1; x >= 0; x--)
+			// From Bottom
+			for (int x = 0; x < image.getWidth(); x++)
 			{
-				int alpha = image.getAlpha(x, y);
-				if (alpha < opaqueThreshold)
+				for (int y = image.getHeight() - 1; y >= 0; y--)
 				{
-					contentMask.setGrayLevel(x, y, 0);
+					int alpha = imagePixels.getAlpha(x, y);
+					if (alpha < opaqueThreshold)
+					{
+						contentMaskPixels.setGrayLevel(x, y, 0);
+					}
+					else
+					{
+						addToContentBounds(new IntPoint(x, y));
+						break;
+					}
 				}
-				else
+			}
+
+			// From left side
+			for (int y = 0; y < image.getHeight(); y++)
+			{
+				for (int x = 0; x < image.getWidth(); x++)
 				{
-					addToContentBounds(new IntPoint(x, y));
-					break;
+					int alpha = imagePixels.getAlpha(x, y);
+					if (alpha < opaqueThreshold)
+					{
+						contentMaskPixels.setGrayLevel(x, y, 0);
+					}
+					else
+					{
+						addToContentBounds(new IntPoint(x, y));
+						break;
+					}
+				}
+			}
+
+			// From right side
+			for (int y = 0; y < image.getHeight(); y++)
+			{
+				for (int x = image.getWidth() - 1; x >= 0; x--)
+				{
+					int alpha = imagePixels.getAlpha(x, y);
+					if (alpha < opaqueThreshold)
+					{
+						contentMaskPixels.setGrayLevel(x, y, 0);
+					}
+					else
+					{
+						addToContentBounds(new IntPoint(x, y));
+						break;
+					}
 				}
 			}
 		}
 	}
 
-	private boolean isNarrowPassage(Image image, int x, int y, int distanceToCheck)
+	private boolean isNarrowPassage(PixelReader imagePixels, int x, int y, int distanceToCheck)
 	{
 		if (distanceToCheck == 0)
 		{
@@ -296,7 +304,7 @@ public class ImageAndMasks
 			{
 				break;
 			}
-			if (image.getAlpha(x, y + j) >= opaqueThreshold)
+			if (imagePixels.getAlpha(x, y + j) >= opaqueThreshold)
 			{
 				upFound = true;
 				break;
@@ -312,7 +320,7 @@ public class ImageAndMasks
 				{
 					break;
 				}
-				if (image.getAlpha(x, y - j) >= opaqueThreshold)
+				if (imagePixels.getAlpha(x, y - j) >= opaqueThreshold)
 				{
 					return true;
 				}
@@ -326,7 +334,7 @@ public class ImageAndMasks
 			{
 				break;
 			}
-			if (image.getAlpha(x + i, y) >= opaqueThreshold)
+			if (imagePixels.getAlpha(x + i, y) >= opaqueThreshold)
 			{
 				rightFound = true;
 				break;
@@ -342,7 +350,7 @@ public class ImageAndMasks
 				{
 					break;
 				}
-				if (image.getAlpha(x - i, y) >= opaqueThreshold)
+				if (imagePixels.getAlpha(x - i, y) >= opaqueThreshold)
 				{
 					return true;
 				}
@@ -354,116 +362,125 @@ public class ImageAndMasks
 
 	private void createContentMaskUsing3WaySilhouetteIntersection()
 	{
-		// Top
 		Image topSilhouette = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
-		{
-			List<IntPoint> points = new ArrayList<>();
-			for (int x = 0; x < image.getWidth(); x++)
-			{
-				IntPoint point = findUppermostOpaquePixel(image, x);
-				if (point != null)
-				{
-					addToContentBounds(point);
-					if (points.isEmpty())
-					{
-						points.add(new IntPoint(x, image.getHeight()));
-					}
-					points.add(point);
-				}
-			}
-
-			if (points.size() < 3)
-			{
-				contentMask = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
-				return;
-			}
-			points.add(new IntPoint(points.get(points.size() - 1).x, image.getHeight()));
-			drawWhitePolygonFromPoints(topSilhouette, points);
-		}
-
-		// Bottom
 		Image bottomSilhouette = null;
-		if (iconType == IconType.cities)
-		{
-			bottomSilhouette = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
-			List<IntPoint> points = new ArrayList<>();
-			for (int x = 0; x < image.getWidth(); x++)
-			{
-				IntPoint point = findLowestOpaquePixel(image, x);
-				if (point != null)
-				{
-					addToContentBounds(point);
-					if (points.isEmpty())
-					{
-						points.add(new IntPoint(x, 0));
-					}
-					points.add(point);
-				}
-			}
-
-			if (points.size() < 3)
-			{
-				contentMask = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
-				return;
-			}
-			points.add(new IntPoint(points.get(points.size() - 1).x, 0));
-			drawWhitePolygonFromPoints(bottomSilhouette, points);
-		}
-
-		// Left side
 		Image leftSilhouette = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
-		{
-			List<IntPoint> points = new ArrayList<>();
-			for (int y = 0; y < image.getHeight(); y++)
-			{
-				IntPoint point = findLeftmostOpaquePixel(image, y);
-				addToContentBounds(point);
-				if (point != null)
-				{
-					if (points.isEmpty())
-					{
-						points.add(new IntPoint(image.getWidth(), y));
-					}
-					points.add(point);
-				}
-			}
-
-			points.add(new IntPoint(image.getWidth(), points.get(points.size() - 1).y));
-			drawWhitePolygonFromPoints(leftSilhouette, points);
-
-		}
-
-		// Right side
 		Image rightSilhouette = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
+
+		try (PixelReader imagePixels = image.createPixelReader())
 		{
-			List<IntPoint> points = new ArrayList<>();
-			for (int y = 0; y < image.getHeight(); y++)
+			// Top
 			{
-				IntPoint point = findRightmostOpaquePixel(image, y);
-				if (point != null)
+				List<IntPoint> points = new ArrayList<>();
+				for (int x = 0; x < image.getWidth(); x++)
 				{
-					if (points.isEmpty())
+					IntPoint point = findUppermostOpaquePixel(imagePixels, image.getHeight(), x);
+					if (point != null)
 					{
-						points.add(new IntPoint(0, y));
+						addToContentBounds(point);
+						if (points.isEmpty())
+						{
+							points.add(new IntPoint(x, image.getHeight()));
+						}
+						points.add(point);
 					}
-					points.add(point);
 				}
+
+				if (points.size() < 3)
+				{
+					contentMask = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
+					return;
+				}
+				points.add(new IntPoint(points.get(points.size() - 1).x, image.getHeight()));
+				drawWhitePolygonFromPoints(topSilhouette, points);
 			}
-			points.add(new IntPoint(0, points.get(points.size() - 1).y));
-			drawWhitePolygonFromPoints(rightSilhouette, points);
+
+			// Bottom
+			if (iconType == IconType.cities)
+			{
+				bottomSilhouette = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
+				List<IntPoint> points = new ArrayList<>();
+				for (int x = 0; x < image.getWidth(); x++)
+				{
+					IntPoint point = findLowestOpaquePixel(imagePixels, image.getHeight(), x);
+					if (point != null)
+					{
+						addToContentBounds(point);
+						if (points.isEmpty())
+						{
+							points.add(new IntPoint(x, 0));
+						}
+						points.add(point);
+					}
+				}
+
+				if (points.size() < 3)
+				{
+					contentMask = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
+					return;
+				}
+				points.add(new IntPoint(points.get(points.size() - 1).x, 0));
+				drawWhitePolygonFromPoints(bottomSilhouette, points);
+			}
+
+			// Left side
+			{
+				List<IntPoint> points = new ArrayList<>();
+				for (int y = 0; y < image.getHeight(); y++)
+				{
+					IntPoint point = findLeftmostOpaquePixel(imagePixels, image.getWidth(), y);
+					addToContentBounds(point);
+					if (point != null)
+					{
+						if (points.isEmpty())
+						{
+							points.add(new IntPoint(image.getWidth(), y));
+						}
+						points.add(point);
+					}
+				}
+
+				points.add(new IntPoint(image.getWidth(), points.get(points.size() - 1).y));
+				drawWhitePolygonFromPoints(leftSilhouette, points);
+			}
+
+			// Right side
+			{
+				List<IntPoint> points = new ArrayList<>();
+				for (int y = 0; y < image.getHeight(); y++)
+				{
+					IntPoint point = findRightmostOpaquePixel(imagePixels, image.getWidth(), y);
+					if (point != null)
+					{
+						if (points.isEmpty())
+						{
+							points.add(new IntPoint(0, y));
+						}
+						points.add(point);
+					}
+				}
+				points.add(new IntPoint(0, points.get(points.size() - 1).y));
+				drawWhitePolygonFromPoints(rightSilhouette, points);
+			}
 		}
 
 		// The mask image is the intersection of the 3 or 4 silhouettes.
 
 		contentMask = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
-		for (int x = 0; x < contentMask.getWidth(); x++)
+		try (PixelReader topPixels = topSilhouette.createPixelReader();
+				PixelReader leftPixels = leftSilhouette.createPixelReader();
+				PixelReader rightPixels = rightSilhouette.createPixelReader();
+				PixelReader bottomPixels = bottomSilhouette != null ? bottomSilhouette.createPixelReader() : null;
+				PixelReaderWriter contentMaskPixels = contentMask.createPixelReaderWriter())
 		{
-			for (int y = 0; y < contentMask.getHeight(); y++)
+			for (int x = 0; x < contentMask.getWidth(); x++)
 			{
-				if (topSilhouette.getGrayLevel(x, y) > 0 && leftSilhouette.getGrayLevel(x, y) > 0 && rightSilhouette.getGrayLevel(x, y) > 0
-						&& (bottomSilhouette == null || bottomSilhouette.getGrayLevel(x, y) > 0))
+				for (int y = 0; y < contentMask.getHeight(); y++)
 				{
-					contentMask.setGrayLevel(x, y, 255);
+					if (topPixels.getGrayLevel(x, y) > 0 && leftPixels.getGrayLevel(x, y) > 0 && rightPixels.getGrayLevel(x, y) > 0 && (bottomPixels == null || bottomPixels.getGrayLevel(x, y) > 0))
+					{
+						contentMaskPixels.setGrayLevel(x, y, 255);
+					}
 				}
 			}
 		}
@@ -511,27 +528,30 @@ public class ImageAndMasks
 	{
 		getOrCreateContentMask();
 		contentYStarts = new Integer[image.getWidth()];
-		for (int x : new Range(image.getWidth()))
+		try (PixelReader contentMaskPixels = contentMask.createPixelReader())
 		{
-			if (x < contentBounds.x)
+			for (int x : new Range(image.getWidth()))
 			{
-				contentYStarts[x] = null;
-			}
-			else if (x > contentBounds.x + contentBounds.width)
-			{
-				contentYStarts[x] = null;
-			}
-			else
-			{
-				IntPoint point = findLowermostOpaquePixelOnMask(contentMask, x);
-				if (point != null)
+				if (x < contentBounds.x)
 				{
-					assert point.x == x;
-					contentYStarts[x] = point.y;
+					contentYStarts[x] = null;
+				}
+				else if (x > contentBounds.x + contentBounds.width)
+				{
+					contentYStarts[x] = null;
 				}
 				else
 				{
-					contentYStarts[x] = null;
+					IntPoint point = findLowermostOpaquePixelOnMask(contentMaskPixels, contentMask.getHeight(), x);
+					if (point != null)
+					{
+						assert point.x == x;
+						contentYStarts[x] = point.y;
+					}
+					else
+					{
+						contentYStarts[x] = null;
+					}
 				}
 			}
 		}
@@ -586,16 +606,19 @@ public class ImageAndMasks
 
 		// Create a line along the bottom of the content of the image.
 		List<IntPoint> points = new ArrayList<>();
-		for (int x = 0; x < contentMask.getWidth(); x++)
+		try (PixelReader contentMaskPixels = contentMask.createPixelReader())
 		{
-			IntPoint point = findLowermostOpaquePixelOnMask(contentMask, x);
-			if (point != null)
+			for (int x = 0; x < contentMask.getWidth(); x++)
 			{
-				if (points.isEmpty())
+				IntPoint point = findLowermostOpaquePixelOnMask(contentMaskPixels, contentMask.getHeight(), x);
+				if (point != null)
 				{
+					if (points.isEmpty())
+					{
+						points.add(point);
+					}
 					points.add(point);
 				}
-				points.add(point);
 			}
 		}
 
@@ -690,12 +713,15 @@ public class ImageAndMasks
 		}
 
 		int max = Integer.MIN_VALUE;
-		for (int y = 0; y < image.getHeight(); y++)
+		try (PixelReader imagePixels = image.createPixelReader())
 		{
-			int value = image.getGrayLevel(column, y);
-			if (value > max)
+			for (int y = 0; y < image.getHeight(); y++)
 			{
-				max = value;
+				int value = imagePixels.getGrayLevel(column, y);
+				if (value > max)
+				{
+					max = value;
+				}
 			}
 		}
 		return max;
@@ -749,13 +775,11 @@ public class ImageAndMasks
 		p.fillPolygon(xPoints, yPoints);
 	}
 
-	private static IntPoint findLowermostOpaquePixelOnMask(Image contentMask, int x)
+	private static IntPoint findLowermostOpaquePixelOnMask(PixelReader contentMaskPixels, int height, int x)
 	{
-		assert contentMask.isGrayscaleOrBinary();
-
-		for (int y = contentMask.getHeight() - 1; y >= 0; y--)
+		for (int y = height - 1; y >= 0; y--)
 		{
-			if (contentMask.getGrayLevel(x, y) > 0)
+			if (contentMaskPixels.getGrayLevel(x, y) > 0)
 			{
 				return new IntPoint(x, y);
 			}
@@ -764,11 +788,11 @@ public class ImageAndMasks
 		return null;
 	}
 
-	private static IntPoint findUppermostOpaquePixel(Image icon, int x)
+	private static IntPoint findUppermostOpaquePixel(PixelReader iconPixels, int height, int x)
 	{
-		for (int y = 0; y < icon.getHeight(); y++)
+		for (int y = 0; y < height; y++)
 		{
-			int alpha = icon.getAlpha(x, y);
+			int alpha = iconPixels.getAlpha(x, y);
 			if (alpha >= opaqueThreshold)
 			{
 				return new IntPoint(x, y);
@@ -778,11 +802,11 @@ public class ImageAndMasks
 		return null;
 	}
 
-	private static IntPoint findLowestOpaquePixel(Image icon, int x)
+	private static IntPoint findLowestOpaquePixel(PixelReader iconPixels, int height, int x)
 	{
-		for (int y = icon.getHeight() - 1; y >= 0; y--)
+		for (int y = height - 1; y >= 0; y--)
 		{
-			int alpha = icon.getAlpha(x, y);
+			int alpha = iconPixels.getAlpha(x, y);
 			if (alpha >= opaqueThreshold)
 			{
 				return new IntPoint(x, y);
@@ -792,11 +816,11 @@ public class ImageAndMasks
 		return null;
 	}
 
-	private static IntPoint findLeftmostOpaquePixel(Image icon, int y)
+	private static IntPoint findLeftmostOpaquePixel(PixelReader iconPixels, int width, int y)
 	{
-		for (int x = 0; x < icon.getWidth(); x++)
+		for (int x = 0; x < width; x++)
 		{
-			int alpha = icon.getAlpha(x, y);
+			int alpha = iconPixels.getAlpha(x, y);
 			if (alpha >= opaqueThreshold)
 			{
 				return new IntPoint(x, y);
@@ -806,11 +830,11 @@ public class ImageAndMasks
 		return null;
 	}
 
-	private static IntPoint findRightmostOpaquePixel(Image icon, int y)
+	private static IntPoint findRightmostOpaquePixel(PixelReader iconPixels, int width, int y)
 	{
-		for (int x = icon.getWidth() - 1; x >= 0; x--)
+		for (int x = width - 1; x >= 0; x--)
 		{
-			int alpha = icon.getAlpha(x, y);
+			int alpha = iconPixels.getAlpha(x, y);
 			if (alpha >= opaqueThreshold)
 			{
 				return new IntPoint(x, y);

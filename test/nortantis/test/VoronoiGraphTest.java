@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import nortantis.platform.*;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -14,11 +15,6 @@ import nortantis.geom.Point;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Corner;
 import nortantis.graph.voronoi.VoronoiGraph;
-import nortantis.platform.Color;
-import nortantis.platform.Image;
-import nortantis.platform.ImageType;
-import nortantis.platform.Painter;
-import nortantis.platform.PlatformFactory;
 import nortantis.platform.awt.AwtFactory;
 
 public class VoronoiGraphTest
@@ -44,9 +40,12 @@ public class VoronoiGraphTest
 		center.elevation = 1.0;
 		Painter p = image.createPainter();
 		VoronoiGraph.drawTriangleElevation(p, corner1, corner2, center);
-		assertEquals(0, Color.create(image.getRGB((int) corner1.loc.x, (int) corner1.loc.y)).getBlue());
-		assertEquals(125, Color.create(image.getRGB((int) corner2.loc.x - 1, (int) corner2.loc.y)).getBlue());
-		assertEquals(251, Color.create(image.getRGB((int) center.loc.x - 1, (int) center.loc.y - 2)).getBlue());
+		try (PixelReader pixels = image.createPixelReader())
+		{
+			assertEquals(0, Color.create(pixels.getRGB((int) corner1.loc.x, (int) corner1.loc.y)).getBlue());
+			assertEquals(125, Color.create(pixels.getRGB((int) corner2.loc.x - 1, (int) corner2.loc.y)).getBlue());
+			assertEquals(251, Color.create(pixels.getRGB((int) center.loc.x - 1, (int) center.loc.y - 2)).getBlue());
+		}
 	}
 
 	@Test
@@ -63,9 +62,12 @@ public class VoronoiGraphTest
 		center.elevation = 1.0;
 		Painter p = image.createPainter();
 		VoronoiGraph.drawTriangleElevation(p, corner1, corner2, center);
-		assertEquals((int) (corner1.elevation * 255), Color.create(image.getRGB((int) corner1.loc.x, (int) corner1.loc.y)).getBlue());
-		assertEquals((int) (corner2.elevation * 255), Color.create(image.getRGB((int) corner2.loc.x - 1, (int) corner2.loc.y)).getBlue());
-		assertEquals((int) (center.elevation * 253), Color.create(image.getRGB((int) center.loc.x - 1, (int) center.loc.y - 2)).getBlue());
+		try (PixelReader pixels = image.createPixelReader())
+		{
+			assertEquals((int) (corner1.elevation * 255), Color.create(pixels.getRGB((int) corner1.loc.x, (int) corner1.loc.y)).getBlue());
+			assertEquals((int) (corner2.elevation * 255), Color.create(pixels.getRGB((int) corner2.loc.x - 1, (int) corner2.loc.y)).getBlue());
+			assertEquals((int) (center.elevation * 253), Color.create(pixels.getRGB((int) center.loc.x - 1, (int) center.loc.y - 2)).getBlue());
+		}
 	}
 
 	@Test
@@ -82,9 +84,12 @@ public class VoronoiGraphTest
 		center.elevation = 1.0;
 		Painter p = image.createPainter();
 		VoronoiGraph.drawTriangleElevation(p, corner1, corner2, center);
-		assertEquals((int) (corner1.elevation * 255), Color.create(image.getRGB((int) corner1.loc.x, (int) corner1.loc.y)).getBlue());
-		assertEquals((int) (corner2.elevation * 255), Color.create(image.getRGB((int) corner2.loc.x, (int) corner2.loc.y)).getBlue());
-		assertEquals((int) (center.elevation * 249), Color.create(image.getRGB((int) center.loc.x - 1, (int) center.loc.y - 1)).getBlue());
+		try (PixelReader pixels = image.createPixelReader())
+		{
+			assertEquals((int) (corner1.elevation * 255), Color.create(pixels.getRGB((int) corner1.loc.x, (int) corner1.loc.y)).getBlue());
+			assertEquals((int) (corner2.elevation * 255), Color.create(pixels.getRGB((int) corner2.loc.x, (int) corner2.loc.y)).getBlue());
+			assertEquals((int) (center.elevation * 249), Color.create(pixels.getRGB((int) center.loc.x - 1, (int) center.loc.y - 1)).getBlue());
+		}
 	}
 
 	/**

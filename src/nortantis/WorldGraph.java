@@ -38,6 +38,7 @@ import nortantis.platform.Color;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
+import nortantis.platform.PixelReader;
 import nortantis.platform.Transform;
 import nortantis.util.Helper;
 import nortantis.util.Range;
@@ -568,9 +569,9 @@ public class WorldGraph extends VoronoiGraph
 		{
 			buildCenterLookupTableIfNeeded();
 			Color color;
-			try
+			try (PixelReader pixels = centerLookupTable.createPixelReader())
 			{
-				color = Color.create(centerLookupTable.getRGB((int) point.x, (int) point.y));
+				color = Color.create(pixels.getRGB((int) point.x, (int) point.y));
 			}
 			catch (IndexOutOfBoundsException e)
 			{

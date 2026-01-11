@@ -31,6 +31,8 @@ import nortantis.graph.voronoi.Corner;
 import nortantis.platform.Color;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
+import nortantis.platform.PixelReader;
+import nortantis.platform.PixelReaderWriter;
 import nortantis.swing.MapEdits;
 import nortantis.util.Assets;
 import nortantis.util.Function;
@@ -1017,18 +1019,20 @@ public class IconDrawer
 		IntDimension mapOrSnippetSize = mapOrSnippet.size();
 
 		// Begin pixel sessions for efficient read/write
-		try (PixelReadSession _ = landTexture.createPixelReader();
-				PixelReadSession _ = oceanTexture.createPixelReader();
-				PixelReadSession _ = landBackground.createPixelReader();
-				PixelWriteSession _ = mapOrSnippet.createPixelReaderWriter())
+		try (PixelReader landTexturePixels = landTexture.createPixelReader();
+				PixelReader oceanTexturePixels = oceanTexture.createPixelReader();
+				PixelReader landBackgroundPixels = landBackground.createPixelReader();
+				PixelReader contentMaskPixels = contentMask.createPixelReader();
+				PixelReader shadingMaskPixels = shadingMask.createPixelReader();
+				PixelReaderWriter mapOrSnippetPixels = mapOrSnippet.createPixelReaderWriter())
 		{
 			for (int y : new Range(icon.getHeight()))
 			{
 				for (int x = 0; x < icon.getWidth(); x++)
 				{
 					// grey level of mask at the corresponding pixel in mask.
-					float contentMaskLevel = contentMask.getNormalizedPixelLevel(x, y);
-					float shadingMaskLevel = shadingMask.getNormalizedPixelLevel(x, y);
+					float contentMaskLevel = contentMaskPixels.getNormalizedPixelLevel(x, y);
+					float shadingMaskLevel = shadingMaskPixels.getNormalizedPixelLevel(x, y);
 					Color bgColorNoIcons;
 					Color mapColor;
 					Color landTextureColor;
@@ -1054,31 +1058,34 @@ public class IconDrawer
 
 					if (type == IconType.decorations)
 					{
-						bgColorNoIcons = closest.isWater ? Color.create(oceanTexture.getRGB(xLoc, yLoc), oceanTexture.hasAlpha())
-								: Color.create(landBackground.getRGB(xLoc, yLoc), landBackground.hasAlpha());
+						bgColorNoIcons = closest.isWater ? Color.create(oceanTexturePixels.getRGB(xLoc, yLoc), oceanTexture.hasAlpha())
+								: Color.create(landBackgroundPixels.getRGB(xLoc, yLoc), landBackground.hasAlpha());
 
-						landTextureColor = closest.isWater ? Color.create(oceanTexture.getRGB(xLoc, yLoc), oceanTexture.hasAlpha())
-								: Color.create(landBackground.getRGB(xLoc, yLoc), landBackground.hasAlpha());
+						landTextureColor = closest.isWater ? Color.create(oceanTexturePixels.getRGB(xLoc, yLoc), oceanTexture.hasAlpha())
+								: Color.create(landBackgroundPixels.getRGB(xLoc, yLoc), landBackground.hasAlpha());
 					}
 					else
 					{
-						bgColorNoIcons = Color.create(landBackground.getRGB(xLoc, yLoc), landBackground.hasAlpha());
+						bgColorNoIcons = Color.create(landBackgroundPixels.getRGB(xLoc, yLoc), landBackground.hasAlpha());
 
-						landTextureColor = Color.create(landTexture.getRGB(xLoc, yLoc), landTexture.hasAlpha());
+						landTextureColor = Color.create(landTexturePixels.getRGB(xLoc, yLoc), landTexture.hasAlpha());
 					}
 
-					mapColor = Color.create(mapOrSnippet.getRGB(xLoc, yLoc), mapOrSnippet.hasAlpha());
+					mapColor = Color.create(mapOrSnippetPixels.getRGB(xLoc, yLoc), mapOrSnippet.hasAlpha());
 
-					// Use the shading mask to blend the coastline shading with the land background texture for pixels with transparency in the
+					// Use the shading mask to blend the coastline shading with the land background texture for pixels with transparency in
+					// the
 					// icon and non-zero values in the content mask. This way coastline shading doesn't draw through icons, since that would
-					// look weird when the icon extends over the coastline. It also makes the transparent pixels in the content of the icon draw
-					// the land background texture when the shading mask is white, so that icons extending into the ocean draw the land texture
+					// look weird when the icon extends over the coastline. It also makes the transparent pixels in the content of the icon
+					// draw
+					// the land background texture when the shading mask is white, so that icons extending into the ocean draw the land
+					// texture
 					// behind them rather than the ocean texture.
 					int red = (int) (Helper.linearCombo(contentMaskLevel, Helper.linearCombo(shadingMaskLevel, bgColorNoIcons.getRed(), landTextureColor.getRed()), mapColor.getRed()));
 					int green = (int) (Helper.linearCombo(contentMaskLevel, Helper.linearCombo(shadingMaskLevel, bgColorNoIcons.getGreen(), landTextureColor.getGreen()), mapColor.getGreen()));
 					int blue = (int) (Helper.linearCombo(contentMaskLevel, Helper.linearCombo(shadingMaskLevel, bgColorNoIcons.getBlue(), landTextureColor.getBlue()), mapColor.getBlue()));
 					int alpha = (int) (Helper.linearCombo(contentMaskLevel, (Helper.linearCombo(shadingMaskLevel, bgColorNoIcons.getAlpha(), landTextureColor.getAlpha())), mapColor.getAlpha()));
-					mapOrSnippet.setRGB(xLoc, yLoc, red, green, blue, alpha);
+					mapOrSnippetPixels.setRGB(xLoc, yLoc, red, green, blue, alpha);
 				}
 			}
 		}

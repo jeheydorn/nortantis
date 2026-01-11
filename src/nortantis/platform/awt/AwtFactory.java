@@ -28,6 +28,7 @@ import nortantis.platform.BackgroundTask;
 import nortantis.platform.Color;
 import nortantis.platform.Font;
 import nortantis.platform.FontStyle;
+import nortantis.platform.PixelReaderWriter;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
@@ -150,20 +151,23 @@ public class AwtFactory extends PlatformFactory
 		Painter p = newImage.createPainter();
 		p.drawImage(image, 0, 0);
 		p.dispose();
-		for (int i = 0; i < newImage.getWidth(); i++)
+		try (PixelReaderWriter pixels = newImage.createPixelReaderWriter())
 		{
-			for (int j = 0; j < newImage.getHeight(); j++)
+			for (int i = 0; i < newImage.getWidth(); i++)
 			{
-				int argb = newImage.getRGB(i, j);
-				int alpha = (argb >> 24) & 0xff;
-				int rgb = argb & 0x00ffffff;
-				if (alpha != 0)
+				for (int j = 0; j < newImage.getHeight(); j++)
 				{
-					newImage.setRGB(i, j, rgb);
-				}
-				else
-				{
-					newImage.setRGB(i, j, 0x000000);
+					int argb = pixels.getRGB(i, j);
+					int alpha = (argb >> 24) & 0xff;
+					int rgb = argb & 0x00ffffff;
+					if (alpha != 0)
+					{
+						pixels.setRGB(i, j, rgb);
+					}
+					else
+					{
+						pixels.setRGB(i, j, 0x000000);
+					}
 				}
 			}
 		}

@@ -10,6 +10,8 @@ import nortantis.platform.Color;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
+import nortantis.platform.PixelReader;
+import nortantis.platform.PixelReaderWriter;
 import nortantis.util.Assets;
 import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
@@ -68,28 +70,31 @@ public class GraphCreator
 	private static void subtractTextureFromHeightMapUsingSeaLevel(Image image, Image texture)
 	{
 		float maxPixelValue = (float) image.getMaxPixelLevel();
-		for (int y = 0; y < image.getHeight(); y++)
+		try (PixelReaderWriter imagePixels = image.createPixelReaderWriter(); PixelReader texturePixels = texture.createPixelReader())
 		{
-			for (int x = 0; x < image.getWidth(); x++)
+			for (int y = 0; y < image.getHeight(); y++)
 			{
-				float elevation = image.getGrayLevel(x, y);
-				float scale;
-				if (elevation > WorldGraph.seaLevel * maxPixelValue)
+				for (int x = 0; x < image.getWidth(); x++)
 				{
-					scale = Math.abs(elevation - WorldGraph.seaLevel * maxPixelValue) / maxPixelValue;
-				}
-				else
-				{
-					scale = 0f;
-				}
+					float elevation = imagePixels.getGrayLevel(x, y);
+					float scale;
+					if (elevation > WorldGraph.seaLevel * maxPixelValue)
+					{
+						scale = Math.abs(elevation - WorldGraph.seaLevel * maxPixelValue) / maxPixelValue;
+					}
+					else
+					{
+						scale = 0f;
+					}
 
-				float tValue = maxPixelValue - texture.getGrayLevel(x, y);
-				int newValue = (int) ((elevation - scale * (tValue)));
-				if (newValue < 0)
-				{
-					newValue = 0;
+					float tValue = maxPixelValue - texturePixels.getGrayLevel(x, y);
+					int newValue = (int) ((elevation - scale * (tValue)));
+					if (newValue < 0)
+					{
+						newValue = 0;
+					}
+					imagePixels.setGrayLevel(x, y, newValue);
 				}
-				image.setGrayLevel(x, y, newValue);
 			}
 		}
 

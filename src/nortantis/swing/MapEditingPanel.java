@@ -898,23 +898,25 @@ public class MapEditingPanel extends UnscaledImagePanel
 			// Determines the size at which the rotation and move tool icons appear.
 
 			BufferedImage rotateIcon = AwtBridge.toBufferedImage(Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "rotate text.png").toString()));
-			rotateIconScaled = AwtBridge.toBufferedImage(ImageHelper.scaleByWidth(AwtBridge.fromBufferedImage(rotateIcon), (int) (rotateIcon.getWidth() * resolution * smallIconScale), Method.ULTRA_QUALITY));
+			rotateIconScaled = AwtBridge
+					.toBufferedImage(ImageHelper.scaleByWidth(AwtBridge.fromBufferedImage(rotateIcon), (int) (rotateIcon.getWidth() * resolution * smallIconScale), Method.ULTRA_QUALITY));
 
 			{
 				Image moveIcon = Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "move text.png").toString());
 				Image moveIconScaledWrapped = ImageHelper.scaleByWidth(moveIcon, (int) (moveIcon.getWidth() * resolution * smallIconScale), Method.ULTRA_QUALITY);
 				moveIconScaledSmall = AwtBridge.toBufferedImage(moveIconScaledWrapped);
 				redMoveIconScaledSmall = AwtBridge.toBufferedImage(ImageHelper.copyAlphaTo(
-						ImageHelper.colorify(ImageHelper.convertToGrayscale(moveIconScaledWrapped), AwtBridge.fromAwtColor(getInvalidPositionColor()), ColorifyAlgorithm.algorithm2), moveIconScaledWrapped));
+						ImageHelper.colorify(ImageHelper.convertToGrayscale(moveIconScaledWrapped), AwtBridge.fromAwtColor(getInvalidPositionColor()), ColorifyAlgorithm.algorithm2),
+						moveIconScaledWrapped));
 			}
 
 			{
 				BufferedImage scaleIcon = AwtBridge.toBufferedImage(Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "scale.png").toString()));
 				Image scaleIconScaledWrapped = ImageHelper.scaleByWidth(AwtBridge.fromBufferedImage(scaleIcon), (int) (scaleIcon.getWidth() * resolution * smallIconScale), Method.ULTRA_QUALITY);
 				scaleIconScaledSmall = AwtBridge.toBufferedImage(scaleIconScaledWrapped);
-				redScaleIconScaledSmall = AwtBridge.toBufferedImage(
-						ImageHelper.copyAlphaTo(ImageHelper.colorify(ImageHelper.convertToGrayscale(scaleIconScaledWrapped), AwtBridge.fromAwtColor(getInvalidPositionColor()), ColorifyAlgorithm.algorithm2),
-								scaleIconScaledWrapped));
+				redScaleIconScaledSmall = AwtBridge.toBufferedImage(ImageHelper.copyAlphaTo(
+						ImageHelper.colorify(ImageHelper.convertToGrayscale(scaleIconScaledWrapped), AwtBridge.fromAwtColor(getInvalidPositionColor()), ColorifyAlgorithm.algorithm2),
+						scaleIconScaledWrapped));
 			}
 
 			{
@@ -922,16 +924,17 @@ public class MapEditingPanel extends UnscaledImagePanel
 				Image moveIconScaledWrapped = ImageHelper.scaleByWidth(moveIcon, (int) (moveIcon.getWidth() * resolution * mediumIconScale), Method.ULTRA_QUALITY);
 				moveIconScaledMedium = AwtBridge.toBufferedImage(moveIconScaledWrapped);
 				redMoveIconScaledMedium = AwtBridge.toBufferedImage(ImageHelper.copyAlphaTo(
-						ImageHelper.colorify(ImageHelper.convertToGrayscale(moveIconScaledWrapped), AwtBridge.fromAwtColor(getInvalidPositionColor()), ColorifyAlgorithm.algorithm2), moveIconScaledWrapped));
+						ImageHelper.colorify(ImageHelper.convertToGrayscale(moveIconScaledWrapped), AwtBridge.fromAwtColor(getInvalidPositionColor()), ColorifyAlgorithm.algorithm2),
+						moveIconScaledWrapped));
 			}
 
 			{
 				BufferedImage scaleIcon = AwtBridge.toBufferedImage(Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "scale.png").toString()));
 				Image scaleIconScaledWrapped = ImageHelper.scaleByWidth(AwtBridge.fromBufferedImage(scaleIcon), (int) (scaleIcon.getWidth() * resolution * mediumIconScale), Method.ULTRA_QUALITY);
 				scaleIconScaledMedium = AwtBridge.toBufferedImage(scaleIconScaledWrapped);
-				redScaleIconScaledMedium = AwtBridge.toBufferedImage(
-						ImageHelper.copyAlphaTo(ImageHelper.colorify(ImageHelper.convertToGrayscale(scaleIconScaledWrapped), AwtBridge.fromAwtColor(getInvalidPositionColor()), ColorifyAlgorithm.algorithm2),
-								scaleIconScaledWrapped));
+				redScaleIconScaledMedium = AwtBridge.toBufferedImage(ImageHelper.copyAlphaTo(
+						ImageHelper.colorify(ImageHelper.convertToGrayscale(scaleIconScaledWrapped), AwtBridge.fromAwtColor(getInvalidPositionColor()), ColorifyAlgorithm.algorithm2),
+						scaleIconScaledWrapped));
 			}
 
 			{

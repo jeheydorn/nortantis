@@ -1,47 +1,29 @@
 package nortantis.test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.function.Consumer;
-
+import nortantis.*;
+import nortantis.editor.FreeIcon;
+import nortantis.editor.MapParts;
+import nortantis.editor.MapUpdater;
+import nortantis.geom.IntPoint;
+import nortantis.geom.IntRectangle;
+import nortantis.platform.*;
+import nortantis.platform.awt.AwtFactory;
+import nortantis.swing.MapEdits;
+import nortantis.util.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import nortantis.MapCreator;
-import nortantis.MapSettings;
-import nortantis.MapText;
-import nortantis.SettingsGenerator;
-import nortantis.WarningLogger;
-import nortantis.editor.FreeIcon;
-import nortantis.editor.MapParts;
-import nortantis.editor.MapUpdater;
-import nortantis.geom.IntPoint;
-import nortantis.geom.IntRectangle;
-import nortantis.platform.Color;
-import nortantis.platform.Image;
-import nortantis.platform.ImageType;
-import nortantis.platform.PlatformFactory;
-import nortantis.platform.awt.AwtFactory;
-import nortantis.swing.MapEdits;
-import nortantis.util.Assets;
-import nortantis.util.FileHelper;
-import nortantis.util.ImageHelper;
-import nortantis.util.Logger;
-import nortantis.util.Tuple1;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
+import java.util.function.Consumer;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class MapCreatorTest
 {
@@ -99,7 +81,7 @@ public class MapCreatorTest
 					break;
 				}
 
-				//System.out.println("Running incremental icon drawing test number " + iconNumber);
+				// System.out.println("Running incremental icon drawing test number " + iconNumber);
 
 				IntRectangle changedBounds = mapCreator.incrementalUpdateIcons(settings, mapParts, fullMapForUpdates, Arrays.asList(icon));
 
@@ -152,7 +134,7 @@ public class MapCreatorTest
 					break;
 				}
 
-				//System.out.println("Running incremental text drawing test number " + textNumber);
+				// System.out.println("Running incremental text drawing test number " + textNumber);
 
 				IntRectangle changedBounds = mapCreator.incrementalUpdateText(settings, mapParts, fullMapForUpdates, Arrays.asList(text));
 				changedBounds = changedBounds.findIntersection(new IntRectangle(new IntPoint(0, 0), mapParts.background.getMapBoundsIncludingBorder().toIntDimension()));
@@ -201,9 +183,8 @@ public class MapCreatorTest
 	}
 
 	/**
-	 * Tests that a map which is drawn with no edits matches the same map drawn the second time with newly created edits. This simulates the
-	 * case where you create a new map in the editor and it draws for the first time, then you do something to trigger it to do a full
-	 * redraw.
+	 * Tests that a map which is drawn with no edits matches the same map drawn the second time with newly created edits. This simulates the case where you create a new map in the editor and it draws
+	 * for the first time, then you do something to trigger it to do a full redraw.
 	 */
 	@Test
 	public void drawWithoutEditsMatchesWithEdits()
@@ -381,24 +362,24 @@ public class MapCreatorTest
 		expectedWarnings.add("Unable to find the mountain image group 'jagged' in art pack 'nortantis'. The group 'round' in that art pack will be used instead.");
 		expectedWarnings.add("Unable to find the art pack 'custom' to load the hill image group 'jagged'. The art pack 'nortantis' will be used instead.");
 		expectedWarnings.add("Unable to find the hill image group 'jagged' in art pack 'nortantis'. The group 'round' in that art pack will be used instead.");
-		expectedWarnings
-				.add("Unable to find the art pack 'custom' to load the sand image group 'dunes'. The art pack 'nortantis' will be used instead because it has the same image group folder name.");
-		expectedWarnings
-				.add("Unable to find the art pack 'custom' to load the hill image group 'sharp'. The art pack 'nortantis' will be used instead because it has the same image group folder name.");
+		expectedWarnings.add(
+				"Unable to find the art pack 'custom' to load the sand image group 'dunes'. The art pack 'nortantis' will be used instead because it has the same image group folder name.");
+		expectedWarnings.add(
+				"Unable to find the art pack 'custom' to load the hill image group 'sharp'. The art pack 'nortantis' will be used instead because it has the same image group folder name.");
 		expectedWarnings.add("Unable to find the art pack 'custom' to load the tree image group 'generated deciduous 6'. The art pack 'nortantis' will be used instead.");
 		expectedWarnings.add("Unable to find the tree image group 'generated deciduous 6' in art pack 'nortantis'. The group 'original pine' in that art pack will be used instead.");
-		expectedWarnings
-				.add("Unable to find the art pack 'custom' to load the tree image group 'pine'. The art pack 'nortantis' will be used instead because it has the same image group folder name.");
-		expectedWarnings
-				.add("Unable to find the art pack 'custom' to load the mountain image group 'sharp'. The art pack 'nortantis' will be used instead because it has the same image group folder name.");
+		expectedWarnings.add(
+				"Unable to find the art pack 'custom' to load the tree image group 'pine'. The art pack 'nortantis' will be used instead because it has the same image group folder name.");
+		expectedWarnings.add(
+				"Unable to find the art pack 'custom' to load the mountain image group 'sharp'. The art pack 'nortantis' will be used instead because it has the same image group folder name.");
 		expectedWarnings.add(
 				"Unable to find the art pack 'custom' to load the icon 'compass 1' from decoration image group 'compasses'. The art pack 'nortantis' will be used instead because it has the same image group folder and image name.");
 		expectedWarnings.add("Unable to find the art pack 'custom' to load the icon 'ship 6' from decoration image group 'boats'. The art pack 'nortantis' will be used instead.");
 		expectedWarnings.add("Unable to find the decoration image group 'boats' in art pack 'custom'. The group 'ships' in art pack 'nortantis' will be used instead.");
 		expectedWarnings.add("Unable to find the art pack 'custom' to load the icon 'small house 1' from city image group 'other'. The art pack 'nortantis' will be used instead.");
 		expectedWarnings.add("Unable to find the city image group 'other' in art pack 'custom'. The group 'flat' in art pack 'nortantis' will be used instead.");
-		expectedWarnings
-				.add("Unable to find the city icon 'small house 1' in art pack 'custom', group 'other'. The icon 'town on a hill' in art pack 'nortantis', group 'flat', will be used instead.");
+		expectedWarnings.add(
+				"Unable to find the city icon 'small house 1' in art pack 'custom', group 'other'. The icon 'town on a hill' in art pack 'nortantis', group 'flat', will be used instead.");
 		expectedWarnings.add(
 				"Unable to find the art pack 'custom' to load the icon 'town' from city image group 'middle ages'. The art pack 'nortantis' will be used instead because it has the same image group folder and image name.");
 		expectedWarnings.add("Unable to find the art pack 'custom' to load the icon 'simple_ship' from decoration image group 'boats'. The art pack 'nortantis' will be used instead.");
@@ -440,8 +421,8 @@ public class MapCreatorTest
 		expectedWarnings.add(
 				"The art pack 'custom' no longer has mountain images, so it does not have the mountain image group 'jagged'. The art pack 'nortantis' will be used instead because it has mountain images.");
 		expectedWarnings.add("Unable to find the mountain image group 'jagged' in art pack 'nortantis'. The group 'round' in that art pack will be used instead.");
-		expectedWarnings
-				.add("The art pack 'custom' no longer has hill images, so it does not have the hill image group 'jagged'. The art pack 'nortantis' will be used instead because it has hill images.");
+		expectedWarnings.add(
+				"The art pack 'custom' no longer has hill images, so it does not have the hill image group 'jagged'. The art pack 'nortantis' will be used instead because it has hill images.");
 		expectedWarnings.add("Unable to find the hill image group 'jagged' in art pack 'nortantis'. The group 'round' in that art pack will be used instead.");
 		expectedWarnings.add(
 				"The art pack 'custom' no longer has sand images, so it does not have the sand image group 'dunes'. The art pack 'nortantis' will be used instead because it has the same image group folder name.");
@@ -462,8 +443,8 @@ public class MapCreatorTest
 		expectedWarnings.add(
 				"The art pack 'custom' no longer has city images, so it does not have the icon 'small house 1' from city image group 'other'. The art pack 'nortantis' will be used instead because it has city images.");
 		expectedWarnings.add("Unable to find the city image group 'other' in art pack 'custom'. The group 'flat' in art pack 'nortantis' will be used instead.");
-		expectedWarnings
-				.add("Unable to find the city icon 'small house 1' in art pack 'custom', group 'other'. The icon 'town on a hill' in art pack 'nortantis', group 'flat', will be used instead.");
+		expectedWarnings.add(
+				"Unable to find the city icon 'small house 1' in art pack 'custom', group 'other'. The icon 'town on a hill' in art pack 'nortantis', group 'flat', will be used instead.");
 		expectedWarnings.add(
 				"The art pack 'custom' no longer has city images, so it does not have the icon 'town' from city image group 'middle ages'. The art pack 'nortantis' will be used instead because it has the same image group folder and image name.");
 		expectedWarnings.add(
@@ -758,23 +739,26 @@ public class MapCreatorTest
 
 		if (image1.getWidth() == image2.getWidth() && image1.getHeight() == image2.getHeight())
 		{
-			for (int x = 0; x < image1.getWidth(); x++)
+			try (PixelReader image1Pixels = image1.createPixelReader(); PixelReader image2Pixels = image1.createNewPixelReader())
 			{
-				for (int y = 0; y < image1.getHeight(); y++)
+				for (int x = 0; x < image1.getWidth(); x++)
 				{
-					if (threshold == 0)
+					for (int y = 0; y < image1.getHeight(); y++)
 					{
-						if (image1.getRGB(x, y) != image2.getRGB(x, y))
+						if (threshold == 0)
 						{
-							return "Images differ at pixel (" + x + ", " + y + ")";
+							if (image1Pixels.getRGB(x, y) != image2Pixels.getRGB(x, y))
+							{
+								return "Images differ at pixel (" + x + ", " + y + ")";
+							}
 						}
-					}
-					else
-					{
-						int diff = image1.getPixelColor(x, y).manhattanDistanceTo(image2.getPixelColor(x, y));
-						if (diff > threshold)
+						else
 						{
-							return "Images differ at pixel (" + x + ", " + y + ") by " + diff;
+							int diff = image1Pixels.getPixelColor(x, y).manhattanDistanceTo(image2Pixels.getPixelColor(x, y));
+							if (diff > threshold)
+							{
+								return "Images differ at pixel (" + x + ", " + y + ") by " + diff;
+							}
 						}
 					}
 				}
@@ -797,31 +781,34 @@ public class MapCreatorTest
 		if (image1.getWidth() == image2.getWidth() && image1.getHeight() == image2.getHeight())
 		{
 			Image diff = Image.create(image1.getWidth(), image1.getHeight(), ImageType.RGB);
-			for (int x = 0; x < image1.getWidth(); x++)
+			try (PixelReader image1Pixels = image1.createPixelReader(); PixelReader image2Pixels = image1.createNewPixelReader(); PixelReaderWriter diffPixels = diff.createPixelReaderWriter())
 			{
-				for (int y = 0; y < image1.getHeight(); y++)
+				for (int x = 0; x < image1.getWidth(); x++)
 				{
-					if (threshold == 0)
+					for (int y = 0; y < image1.getHeight(); y++)
 					{
-						if (image1.getRGB(x, y) != image2.getRGB(x, y))
+						if (threshold == 0)
 						{
-							diff.setRGB(x, y, Color.white.getRGB());
+							if (image1Pixels.getRGB(x, y) != image2Pixels.getRGB(x, y))
+							{
+								diffPixels.setRGB(x, y, Color.white.getRGB());
+							}
+							else
+							{
+								diffPixels.setRGB(x, y, Color.black.getRGB());
+							}
 						}
 						else
 						{
-							diff.setRGB(x, y, Color.black.getRGB());
-						}
-					}
-					else
-					{
-						int difference = image1.getPixelColor(x, y).manhattanDistanceTo(image2.getPixelColor(x, y));
-						if (difference > threshold)
-						{
-							diff.setRGB(x, y, Color.white.getRGB());
-						}
-						else
-						{
-							diff.setRGB(x, y, Color.black.getRGB());
+							int difference = image1Pixels.getPixelColor(x, y).manhattanDistanceTo(image2Pixels.getPixelColor(x, y));
+							if (difference > threshold)
+							{
+								diffPixels.setRGB(x, y, Color.white.getRGB());
+							}
+							else
+							{
+								diffPixels.setRGB(x, y, Color.black.getRGB());
+							}
 						}
 					}
 				}

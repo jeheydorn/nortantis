@@ -50,11 +50,14 @@ public class AwtBridge
 		int width = image.getWidth();
 		int height = image.getHeight();
 		BufferedImage bi = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-		for (int y = 0; y < height; y++)
+		try (PixelReader pixels = image.createPixelReader())
 		{
-			for (int x = 0; x < width; x++)
+			for (int y = 0; y < height; y++)
 			{
-				bi.setRGB(x, y, image.getRGB(x, y));
+				for (int x = 0; x < width; x++)
+				{
+					bi.setRGB(x, y, pixels.getRGB(x, y));
+				}
 			}
 		}
 		return bi;

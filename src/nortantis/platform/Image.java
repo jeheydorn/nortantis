@@ -103,12 +103,14 @@ public abstract class Image
 	public abstract Image deepCopy();
 
 	/**
-	 * Creates an image with the given bounds in this image, backed by the same data as the original image. This means that modifications to the result will modify the original image.
+	 * Creates an image with the given bounds in this image, backed by the same data as the original image. This means that modifications to
+	 * the result will modify the original image.
 	 */
 	public abstract Image getSubImage(IntRectangle bounds);
 
 	/**
-	 * Creates an image with the given bounds in this image, backed by a copy of the data from the original image. This means that modifications to the result will NOT modify the original image.
+	 * Creates an image with the given bounds in this image, backed by a copy of the data from the original image. This means that
+	 * modifications to the result will NOT modify the original image.
 	 */
 	public Image copySubImage(IntRectangle bounds)
 	{
@@ -134,7 +136,8 @@ public abstract class Image
 	}
 
 	/**
-	 * Begins a pixel read session. This caches pixel data for efficient single-pixel reads. Use with try-with-resources to ensure the session is properly closed.
+	 * Begins a pixel read session. This caches pixel data for efficient single-pixel reads. Use with try-with-resources to ensure the
+	 * session is properly closed.
 	 *
 	 * If a write session is in progress, it will be auto-flushed with a warning.
 	 *
@@ -143,12 +146,13 @@ public abstract class Image
 	public abstract PixelReader createNewPixelReader();
 
 	/**
-	 *  Runs when pixel reads finish.
+	 * Runs when pixel reads finish.
 	 */
 	public abstract void endPixelReadsOrWrites();
 
 	/**
-	 * Begins a pixel write session. This caches pixel data for efficient single-pixel writes. Use with try-with-resources to ensure the session is properly closed and changes are flushed.
+	 * Begins a pixel write session. This caches pixel data for efficient single-pixel writes. Use with try-with-resources to ensure the
+	 * session is properly closed and changes are flushed.
 	 *
 	 * If a read session is in progress, it will be auto-ended with a warning.
 	 *
@@ -161,9 +165,9 @@ public abstract class Image
 	{
 		if (currentPixelReader != null)
 		{
-			if (currentPixelReader instanceof  PixelReaderWriter)
+			if (currentPixelReader instanceof PixelReaderWriter)
 			{
-				throw new IllegalStateException("Pixel reader/writer already created");
+				throw new IllegalStateException("Pixel reader and writer already created");
 			}
 			throw new IllegalStateException("Pixel reader already created");
 		}
@@ -178,7 +182,7 @@ public abstract class Image
 		{
 			if (currentPixelReader instanceof PixelReaderWriter)
 			{
-				throw new IllegalStateException("Pixel reader/writer already created");
+				throw new IllegalStateException("Pixel reader and writer already created");
 			}
 			throw new IllegalStateException("Pixel reader already created");
 		}

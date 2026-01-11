@@ -9,6 +9,8 @@ import org.imgscalr.Scalr.Method;
 
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
+import nortantis.platform.PixelReader;
+import nortantis.platform.PixelReaderWriter;
 import nortantis.platform.PlatformFactory;
 import nortantis.platform.awt.AwtFactory;
 import nortantis.util.ImageHelper;
@@ -83,56 +85,62 @@ public class BackgroundGenerator
 		ImageType randomImageType = texture.getType() == ImageType.Grayscale16Bit ? ImageType.Grayscale16Bit : ImageType.Grayscale8Bit;
 		Image randomImage = ImageHelper.genWhiteNoise(rand, rows, cols, randomImageType);
 
-		for (int channel : new Range(numberOfColorChannels))
+		try (PixelReader texturePixels = texture.createPixelReader())
 		{
-			float[][] kernel = new float[rows][cols];
-			for (int r = 0; r < rows; r++)
+			for (int channel : new Range(numberOfColorChannels))
 			{
-				for (int c = 0; c < cols; c++)
+				float[][] kernel = new float[rows][cols];
+				for (int r = 0; r < rows; r++)
 				{
-					int textureR = r - (rows - texture.getHeight()) / 2;
-					int textureC = c - (cols - texture.getWidth()) / 2;
-					if (textureR >= 0 && textureR < texture.getHeight() && textureC >= 0 && textureC < texture.getWidth())
+					for (int c = 0; c < cols; c++)
 					{
-						float level;
-						if (texture.isGrayscaleOrBinary())
+						int textureR = r - (rows - texture.getHeight()) / 2;
+						int textureC = c - (cols - texture.getWidth()) / 2;
+						if (textureR >= 0 && textureR < texture.getHeight() && textureC >= 0 && textureC < texture.getWidth())
 						{
-							level = texture.getNormalizedPixelLevel(textureC, textureR);
+							float level;
+							if (texture.isGrayscaleOrBinary())
+							{
+								level = texturePixels.getNormalizedPixelLevel(textureC, textureR);
+							}
+							else
+							{
+								// Color image
+								level = texturePixels.getBandLevel(textureC, textureR, channel);
+							}
+
+							float ar = calcSmoothParamether(textureR, alphaRows, alpha, texture.getHeight());
+							float ac = calcSmoothParamether(textureC, alphaCols, alpha, texture.getWidth());
+
+							kernel[r][c] = means[channel] + varianceScaler * (level - means[channel]) * ar * ac;
 						}
 						else
 						{
-							// Color image
-							level = texture.getBandLevel(textureC, textureR, channel);
+							kernel[r][c] = means[channel];
 						}
-
-						float ar = calcSmoothParamether(textureR, alphaRows, alpha, texture.getHeight());
-						float ac = calcSmoothParamether(textureC, alphaCols, alpha, texture.getWidth());
-
-						kernel[r][c] = means[channel] + varianceScaler * (level - means[channel]) * ar * ac;
-					}
-					else
-					{
-						kernel[r][c] = means[channel];
 					}
 				}
-			}
 
-			Image grayImage = ImageHelper.convolveGrayscale(randomImage, kernel, true, false);
-			kernel = null;
+				Image grayImage = ImageHelper.convolveGrayscale(randomImage, kernel, true, false);
+				kernel = null;
 
-			if (numberOfColorChannels == 1)
-			{
-				allChannels = grayImage;
-			}
-			else
-			{
-				// Copy grayImage to a color channel in allChanels.
-				for (int y = 0; y < allChannels.getHeight(); y++)
+				if (numberOfColorChannels == 1)
 				{
-					for (int x = 0; x < allChannels.getWidth(); x++)
+					allChannels = grayImage;
+				}
+				else
+				{
+					// Copy grayImage to a color channel in allChanels.
+					try (PixelReader grayImagePixels = grayImage.createPixelReader(); PixelReaderWriter allChannelsPixels = allChannels.createPixelReaderWriter())
 					{
-						int level = grayImage.getGrayLevel(x, y);
-						allChannels.setBandLevel(x, y, channel, level);
+						for (int y = 0; y < allChannels.getHeight(); y++)
+						{
+							for (int x = 0; x < allChannels.getWidth(); x++)
+							{
+								int level = grayImagePixels.getGrayLevel(x, y);
+								allChannelsPixels.setBandLevel(x, y, channel, level);
+							}
+						}
 					}
 				}
 			}

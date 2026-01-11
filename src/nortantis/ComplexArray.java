@@ -2,6 +2,7 @@ package nortantis;
 
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
+import nortantis.platform.PixelReaderWriter;
 import nortantis.util.Tuple2;
 
 /**
@@ -168,12 +169,15 @@ public class ComplexArray
 	{
 		Image image = Image.create(cols, rows, imageType);
 		int maxPixelValue = Image.getMaxPixelLevelForType(imageType);
-		for (int r = rowStart; r < rowStart + rows; r++)
+		try (PixelReaderWriter imagePixels = image.createPixelReaderWriter())
 		{
-			for (int c = colStart; c < colStart + cols; c++)
+			for (int r = rowStart; r < rowStart + rows; r++)
 			{
-				int value = Math.min(maxPixelValue, (int) (array[r][c] * maxPixelValue));
-				image.setGrayLevel(c - colStart, r - rowStart, value);
+				for (int c = colStart; c < colStart + cols; c++)
+				{
+					int value = Math.min(maxPixelValue, (int) (array[r][c] * maxPixelValue));
+					imagePixels.setGrayLevel(c - colStart, r - rowStart, value);
+				}
 			}
 		}
 		return image;

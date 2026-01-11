@@ -39,6 +39,8 @@ import nortantis.platform.DrawQuality;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
+import nortantis.platform.PixelReader;
+import nortantis.platform.PixelReaderWriter;
 import nortantis.swing.MapEdits;
 import nortantis.util.Assets;
 import nortantis.util.FileHelper;
@@ -613,7 +615,7 @@ public class MapCreator implements WarningLogger
 
 		double startTime = System.currentTimeMillis();
 
-		// If we're within resolution buffer of our estimated maximum resolution, then be conservative about memory usage.
+		// If we're within resolutionBuffer of our estimated maximum resolution, then be conservative about memory usage.
 		// My tests showed that running frayed edge and grunge calculation inline with other stuff gave a 22% speedup.
 		final double resolutionBuffer = 0.5;
 		boolean isLowMemoryMode = settings.resolution >= calcMaxResolutionScale() - resolutionBuffer;
@@ -1830,95 +1832,98 @@ public class MapCreator implements WarningLogger
 
 		// Multiply the image by blurBox. Also remove the padded edges off of blurBox.
 		assert image.getType() == ImageType.Grayscale8Bit;
-		for (int y = 0; y < image.getHeight(); y++)
-			for (int x = 0; x < image.getWidth(); x++)
-			{
-				float imageLevel = image.getNormalizedPixelLevel(x, y);
-
-				// Retrieve the blur level as though blurBox has all 4 quadrants
-				// and middle created, even though it only only has the upper
-				// left corner + 1 pixel.
-				int blurBoxX1;
-				if (x > blurLevel)
+		try (PixelReaderWriter imagePixels = image.createPixelReaderWriter(); PixelReader blurBoxPixels = blurBox.createPixelReader())
+		{
+			for (int y = 0; y < image.getHeight(); y++)
+				for (int x = 0; x < image.getWidth(); x++)
 				{
-					if (x < image.getWidth() - blurLevel)
+					float imageLevel = imagePixels.getNormalizedPixelLevel(x, y);
+
+					// Retrieve the blur level as though blurBox has all 4 quadrants
+					// and middle created, even though it only only has the upper
+					// left corner + 1 pixel.
+					int blurBoxX1;
+					if (x > blurLevel)
 					{
-						// x is between the corners.
-						blurBoxX1 = blurBox.getWidth() - 1;
+						if (x < image.getWidth() - blurLevel)
+						{
+							// x is between the corners.
+							blurBoxX1 = blurBox.getWidth() - 1;
+						}
+						else
+						{
+							// x is under the right corner.
+							blurBoxX1 = image.getWidth() - x;
+						}
 					}
 					else
 					{
-						// x is under the right corner.
-						blurBoxX1 = image.getWidth() - x;
+						// x is under the left corner.
+						blurBoxX1 = x;
 					}
-				}
-				else
-				{
-					// x is under the left corner.
-					blurBoxX1 = x;
-				}
 
-				int blurBoxX2;
-				int x2 = image.getWidth() - x - 1;
-				if (x2 > blurLevel)
-				{
-					if (x2 < image.getWidth() - blurLevel)
+					int blurBoxX2;
+					int x2 = image.getWidth() - x - 1;
+					if (x2 > blurLevel)
 					{
-						// x2 is between the corners.
-						blurBoxX2 = blurBox.getWidth() - 1;
+						if (x2 < image.getWidth() - blurLevel)
+						{
+							// x2 is between the corners.
+							blurBoxX2 = blurBox.getWidth() - 1;
+						}
+						else
+						{
+							// x2 is under the right corner.
+							blurBoxX2 = image.getWidth() - x2;
+						}
 					}
 					else
 					{
-						// x2 is under the right corner.
-						blurBoxX2 = image.getWidth() - x2;
+						// x2 is under the left corner.
+						blurBoxX2 = x2;
 					}
-				}
-				else
-				{
-					// x2 is under the left corner.
-					blurBoxX2 = x2;
-				}
 
-				int blurBoxY1;
-				if (y > blurLevel)
-				{
-					if (y < image.getHeight() - blurLevel)
+					int blurBoxY1;
+					if (y > blurLevel)
 					{
-						blurBoxY1 = blurBox.getHeight() - 1;
+						if (y < image.getHeight() - blurLevel)
+						{
+							blurBoxY1 = blurBox.getHeight() - 1;
+						}
+						else
+						{
+							blurBoxY1 = image.getHeight() - y;
+						}
 					}
 					else
 					{
-						blurBoxY1 = image.getHeight() - y;
+						blurBoxY1 = y;
 					}
-				}
-				else
-				{
-					blurBoxY1 = y;
-				}
 
-				int blurBoxY2;
-				int y2 = image.getHeight() - y - 1;
-				if (y2 > blurLevel)
-				{
-					if (y2 < image.getHeight() - blurLevel)
+					int blurBoxY2;
+					int y2 = image.getHeight() - y - 1;
+					if (y2 > blurLevel)
 					{
-						blurBoxY2 = blurBox.getHeight() - 1;
+						if (y2 < image.getHeight() - blurLevel)
+						{
+							blurBoxY2 = blurBox.getHeight() - 1;
+						}
+						else
+						{
+							blurBoxY2 = image.getHeight() - y2;
+						}
 					}
 					else
 					{
-						blurBoxY2 = image.getHeight() - y2;
+						blurBoxY2 = y2;
 					}
-				}
-				else
-				{
-					blurBoxY2 = y2;
-				}
 
-				float blurBoxLevel = Math.max(blurBox.getGrayLevel(blurBoxX1, blurBoxY1),
-						Math.max(blurBox.getGrayLevel(blurBoxX2, blurBoxY1), Math.max(blurBox.getGrayLevel(blurBoxX1, blurBoxY2), blurBox.getGrayLevel(blurBoxX2, blurBoxY2))));
+					float blurBoxLevel = Math.max(blurBoxPixels.getGrayLevel(blurBoxX1, blurBoxY1),
+							Math.max(blurBoxPixels.getGrayLevel(blurBoxX2, blurBoxY1), Math.max(blurBoxPixels.getGrayLevel(blurBoxX1, blurBoxY2), blurBoxPixels.getGrayLevel(blurBoxX2, blurBoxY2))));
 
-				image.setGrayLevel(x, y, (int) (imageLevel * blurBoxLevel));
-			}
+					imagePixels.setGrayLevel(x, y, (int) (imageLevel * blurBoxLevel));
+				}
+		}
 	}
 
 	public static void drawRivers(MapSettings settings, WorldGraph graph, Image map, Collection<Edge> edgesToDraw, Rectangle drawBounds)

@@ -1,7 +1,5 @@
 package nortantis.platform;
 
-import nortantis.platform.awt.AwtPixelReader;
-
 public interface PixelReaderWriter extends PixelReader, AutoCloseable
 {
 	public void setGrayLevel(int x, int y, int level);

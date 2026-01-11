@@ -52,7 +52,7 @@ class AwtImage extends Image
 	{
 		if (currentPixelReader != null)
 		{
-			if (currentPixelReader instanceof  PixelReaderWriter)
+			if (currentPixelReader instanceof PixelReaderWriter)
 			{
 				throw new IllegalStateException("Pixel reader/writer already created");
 			}

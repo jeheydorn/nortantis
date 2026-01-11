@@ -155,9 +155,7 @@ public class SkiaImage extends Image
 		Canvas canvas = surface.getCanvas();
 
 		org.jetbrains.skia.Image srcImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(bitmap);
-		canvas.drawImageRect(srcImage,
-				org.jetbrains.skia.Rect.makeXYWH(bounds.x, bounds.y, bounds.width, bounds.height),
-				org.jetbrains.skia.Rect.makeXYWH(0, 0, w, h));
+		canvas.drawImageRect(srcImage, org.jetbrains.skia.Rect.makeXYWH(bounds.x, bounds.y, bounds.width, bounds.height), org.jetbrains.skia.Rect.makeXYWH(0, 0, w, h));
 		srcImage.close();
 
 		// Get the result as an image snapshot and extract pixels to a new bitmap
@@ -196,7 +194,7 @@ public class SkiaImage extends Image
 	/**
 	 * Reads all pixels from the Skia bitmap into an int[] array. Format: ARGB, one int per pixel, row-major order.
 	 */
-	int[] readPixelsToIntArray()
+	public int[] readPixelsToIntArray()
 	{
 		byte[] bytes = bitmap.readPixels(new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null), width * 4, 0, 0);
 

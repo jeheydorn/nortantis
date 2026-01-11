@@ -12,6 +12,12 @@ public class AwtPixelReaderWriter extends AwtPixelReader implements PixelReaderW
 	}
 
 	@Override
+	public void setGrayLevel(int x, int y, int level)
+	{
+		setBandLevel(x, y, 0, level);
+	}
+
+	@Override
 	public void setPixelColor(int x, int y, Color color)
 	{
 		setRGB(x, y, color.getRGB());

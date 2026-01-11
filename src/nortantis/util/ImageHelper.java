@@ -145,15 +145,16 @@ public class ImageHelper
 	}
 
 	/**
-	 * Update one piece of a scaled image. Takes an area defined by boundsInSource and scales it into target. This implementation bicubic scaling is about five times slower than the one used by
-	 * ImgScalr, but is much faster when I only want to update a small piece of a scaled image.
+	 * Update one piece of a scaled image. Takes an area defined by boundsInSource and scales it into target. This implementation bicubic
+	 * scaling is about five times slower than the one used by ImgScalr, but is much faster when I only want to update a small piece of a
+	 * scaled image.
 	 *
 	 * @param source
-	 * 		The unscaled image.
+	 *            The unscaled image.
 	 * @param target
-	 * 		The scaled image
+	 *            The scaled image
 	 * @param boundsInSource
-	 * 		The area in the source image that will be scaled and placed into the target image.
+	 *            The area in the source image that will be scaled and placed into the target image.
 	 */
 	public static void scaleInto(Image source, Image target, IntRectangle boundsInSource)
 	{
@@ -220,7 +221,7 @@ public class ImageHelper
 	/**
 	 *
 	 * @param size
-	 * 		Number of pixels from 3 standard deviations from one side of the Guassian to the other.
+	 *            Number of pixels from 3 standard deviations from one side of the Guassian to the other.
 	 * @return
 	 */
 	public static float[][] createGaussianKernel(int size)
@@ -371,13 +372,16 @@ public class ImageHelper
 		if (!image.isGrayscaleOrBinary())
 			throw new IllegalArgumentException("Image type must a supported grayscale type, but was " + image.getType());
 
-		for (int y = 0; y < image.getHeight(); y++)
-			for (int x = 0; x < image.getWidth(); x++)
-			{
-				double value = image.getGrayLevel(x, y);
-				int newValue = (int) (value * scale);
-				image.setGrayLevel(x, y, newValue);
-			}
+		try (PixelReaderWriter pixels = image.createPixelReaderWriter())
+		{
+			for (int y = 0; y < image.getHeight(); y++)
+				for (int x = 0; x < image.getWidth(); x++)
+				{
+					double value = pixels.getGrayLevel(x, y);
+					int newValue = (int) (value * scale);
+					pixels.setGrayLevel(x, y, newValue);
+				}
+		}
 	}
 
 	/**
@@ -404,9 +408,11 @@ public class ImageHelper
 	}
 
 	/**
-	 * Sets pixels in image1 to a linear combination of that pixel from image1 and from image2 using the gray levels in the given mask. The mask must be ImageType.Grayscale.
+	 * Sets pixels in image1 to a linear combination of that pixel from image1 and from image2 using the gray levels in the given mask. The
+	 * mask must be ImageType.Grayscale.
 	 *
-	 * An advantage of this over maskWithImageInPlace is that since it creates a new image for the result, the result respects transparency if image1 doesn't have alpha but image2 does.
+	 * An advantage of this over maskWithImageInPlace is that since it creates a new image for the result, the result respects transparency
+	 * if image1 doesn't have alpha but image2 does.
 	 */
 	public static Image maskWithImage(Image image1, Image image2, Image mask)
 	{
@@ -444,7 +450,10 @@ public class ImageHelper
 		List<Runnable> tasks = new ArrayList<>(numTasks);
 		int rowsPerJob = mask.getHeight() / numTasks;
 
-		try (PixelReadSession _ = image1.createPixelReader(); PixelReadSession _ = image2.createPixelReader(); PixelWriteSession _ = result.createPixelReaderWriter())
+		try (PixelReader image1Pixels = image1.createPixelReader();
+				PixelReader image2Pixels = image2.createPixelReader();
+				PixelReader maskPixels = mask.createPixelReader();
+				PixelReaderWriter resultPixels = result.createPixelReaderWriter())
 		{
 			for (int taskNumber : new Range(numTasks))
 			{
@@ -459,15 +468,15 @@ public class ImageHelper
 								continue;
 							}
 
-							Color color1 = Color.create(image1.getRGB(x, y), image1.hasAlpha());
-							Color color2 = Color.create(image2.getRGB(x, y), image2.hasAlpha());
-							double maskLevel = mask.getNormalizedPixelLevel(x, y);
+							Color color1 = Color.create(image1Pixels.getRGB(x, y), image1.hasAlpha());
+							Color color2 = Color.create(image2Pixels.getRGB(x, y), image2.hasAlpha());
+							double maskLevel = maskPixels.getNormalizedPixelLevel(x, y);
 
 							int r = (int) (maskLevel * color1.getRed() + (1.0 - maskLevel) * color2.getRed());
 							int g = (int) (maskLevel * color1.getGreen() + (1.0 - maskLevel) * color2.getGreen());
 							int b = (int) (maskLevel * color1.getBlue() + (1.0 - maskLevel) * color2.getBlue());
 							int a = (int) (maskLevel * color1.getAlpha() + (1.0 - maskLevel) * color2.getAlpha());
-							result.setRGB(x, y, r, g, b, a);
+							resultPixels.setRGB(x, y, r, g, b, a);
 						}
 				});
 			}
@@ -491,7 +500,8 @@ public class ImageHelper
 	}
 
 	/**
-	 * Sets pixels in image1 to a linear combination of that pixel from image1 and from image2 using the gray levels in the given mask. The mask must be ImageType.Grayscale.
+	 * Sets pixels in image1 to a linear combination of that pixel from image1 and from image2 using the gray levels in the given mask. The
+	 * mask must be ImageType.Grayscale.
 	 */
 	public static void maskWithImageInPlace(Image image1, Image image2, Image mask, IntPoint maskOffset, boolean invertMask)
 	{
@@ -529,24 +539,29 @@ public class ImageHelper
 		Image image1Snippet = image1.copySubImage(maskBoundsInImage1, true);
 		Image image2Snippet = image2.copySubImage(maskBoundsInImage1);
 
-		ThreadHelper.getInstance().processRowsInParallel(0, image2Snippet.getHeight(), (y) ->
+		try (PixelReader image1SnippetPixels = image1Snippet.createPixelReader();
+				PixelReaderWriter image2SnippetPixels = image2Snippet.createPixelReaderWriter();
+				PixelReader maskPixels = mask.createPixelReader())
 		{
-			for (int x = 0; x < image1Snippet.getWidth(); x++)
+			ThreadHelper.getInstance().processRowsInParallel(0, image2Snippet.getHeight(), (y) ->
 			{
-				Color c1 = image1Snippet.getPixelColor(x, y);
-				Color c2 = image2Snippet.getPixelColor(x, y);
+				for (int x = 0; x < image1Snippet.getWidth(); x++)
+				{
+					Color c1 = image1SnippetPixels.getPixelColor(x, y);
+					Color c2 = image2SnippetPixels.getPixelColor(x, y);
 
-				int xInMask = x + diff.x;
-				int yInMask = y + diff.y;
-				int maskLevel = invertMask ? 255 - mask.getGrayLevel(xInMask, yInMask) : mask.getGrayLevel(xInMask, yInMask);
+					int xInMask = x + diff.x;
+					int yInMask = y + diff.y;
+					int maskLevel = invertMask ? 255 - maskPixels.getGrayLevel(xInMask, yInMask) : maskPixels.getGrayLevel(xInMask, yInMask);
 
-				int r = Helper.linearComboBase255(maskLevel, (c1.getRed()), (c2.getRed()));
-				int g = Helper.linearComboBase255(maskLevel, (c1.getGreen()), (c2.getGreen()));
-				int b = Helper.linearComboBase255(maskLevel, (c1.getBlue()), (c2.getBlue()));
-				int a = Helper.linearComboBase255(maskLevel, c1.getAlpha(), c2.getAlpha());
-				image2Snippet.setRGB(x, y, r, g, b, a);
-			}
-		});
+					int r = Helper.linearComboBase255(maskLevel, (c1.getRed()), (c2.getRed()));
+					int g = Helper.linearComboBase255(maskLevel, (c1.getGreen()), (c2.getGreen()));
+					int b = Helper.linearComboBase255(maskLevel, (c1.getBlue()), (c2.getBlue()));
+					int a = Helper.linearComboBase255(maskLevel, c1.getAlpha(), c2.getAlpha());
+					image2SnippetPixels.setRGB(x, y, r, g, b, a);
+				}
+			});
+		}
 
 		{
 			Painter p = image1.createPainter();
@@ -574,7 +589,7 @@ public class ImageHelper
 			throw new IllegalArgumentException("mask type must be ImageType.Grayscale.");
 
 		Image overlay = Image.create(image.getWidth(), image.getHeight(), ImageType.ARGB);
-		try (PixelWriteSession _ = overlay.createPixelReaderWriter())
+		try (PixelReader maskPixels = mask.createPixelReader(); PixelReaderWriter overlayPixels = overlay.createPixelReaderWriter())
 		{
 			ThreadHelper.getInstance().processRowsInParallel(0, image.getHeight(), (y) ->
 			{
@@ -587,7 +602,7 @@ public class ImageHelper
 						continue;
 					}
 
-					int maskLevel = (int) (mask.getNormalizedPixelLevel(xInMask, yInMask) * color.getAlpha());
+					int maskLevel = (int) (maskPixels.getNormalizedPixelLevel(xInMask, yInMask) * color.getAlpha());
 					if (invertMask)
 						maskLevel = 255 - maskLevel;
 
@@ -595,7 +610,7 @@ public class ImageHelper
 					int g = color.getGreen();
 					int b = color.getBlue();
 					int a = 255 - maskLevel;
-					overlay.setRGB(x, y, r, g, b, a);
+					overlayPixels.setRGB(x, y, r, g, b, a);
 				}
 			});
 		}
@@ -614,29 +629,32 @@ public class ImageHelper
 			throw new IllegalArgumentException("Mask must be of type ImageType.Binary.");
 		}
 
-		ThreadHelper.getInstance().processRowsInParallel(0, mask.getHeight(), (yInMask) ->
+		try (PixelReader maskPixels = mask.createPixelReader(); PixelReaderWriter imagePixels = image.createPixelReaderWriter())
 		{
-			for (int xInMask = 0; xInMask < mask.getWidth(); xInMask++)
+			ThreadHelper.getInstance().processRowsInParallel(0, mask.getHeight(), (yInMask) ->
 			{
-				if (mask.getGrayLevel(xInMask, yInMask) > 0) // Check if the mask pixel is "on"
+				for (int xInMask = 0; xInMask < mask.getWidth(); xInMask++)
 				{
-					int xInImage = xInMask + maskOffsetInImage.x;
-					int yInImage = yInMask + maskOffsetInImage.y;
-
-					if (xInImage >= 0 && xInImage < image.getWidth() && yInImage >= 0 && yInImage < image.getHeight())
+					if (maskPixels.getGrayLevel(xInMask, yInMask) > 0) // Check if the mask pixel is "on"
 					{
-						image.setPixelColor(xInImage, yInImage, color);
+						int xInImage = xInMask + maskOffsetInImage.x;
+						int yInImage = yInMask + maskOffsetInImage.y;
+
+						if (xInImage >= 0 && xInImage < image.getWidth() && yInImage >= 0 && yInImage < image.getHeight())
+						{
+							imagePixels.setPixelColor(xInImage, yInImage, color);
+						}
 					}
 				}
-			}
-		});
+			});
+		}
 	}
 
 	/**
 	 * Like maskWithColor except multiple colors can be specified.
 	 *
 	 * @param colorIndexes
-	 * 		Each pixel stores a gray level which (converted to an int) is an index into colors.
+	 *            Each pixel stores a gray level which (converted to an int) is an index into colors.
 	 */
 	public static Image maskWithMultipleColors(Image image, Map<Integer, Color> colors, Image colorIndexes, Image mask, boolean invertMask)
 	{
@@ -655,48 +673,54 @@ public class ImageHelper
 		int numTasks = ThreadHelper.getInstance().getThreadCount();
 		List<Runnable> tasks = new ArrayList<>(numTasks);
 		int rowsPerJob = image.getHeight() / numTasks;
-		for (int taskNumber : new Range(numTasks))
+		try (PixelReader imagePixels = image.createPixelReader();
+				PixelReader colorIndexesPixels = colorIndexes.createPixelReader();
+				PixelReader maskPixels = mask.createPixelReader();
+				PixelReaderWriter resultPixels = result.createPixelReaderWriter())
 		{
-			tasks.add(() ->
+			for (int taskNumber : new Range(numTasks))
 			{
-				int endY = taskNumber == numTasks - 1 ? image.getHeight() : (taskNumber + 1) * rowsPerJob;
-				for (int y = taskNumber * rowsPerJob; y < endY; y++)
+				tasks.add(() ->
 				{
-					for (int x = 0; x < image.getWidth(); x++)
+					int endY = taskNumber == numTasks - 1 ? image.getHeight() : (taskNumber + 1) * rowsPerJob;
+					for (int y = taskNumber * rowsPerJob; y < endY; y++)
 					{
-						Color col = Color.create(image.getRGB(x, y));
-						Color color = colors.get(WorldGraph.getValueFromColor(colorIndexes.getPixelColor(x, y)));
-						if (color != null)
+						for (int x = 0; x < image.getWidth(); x++)
 						{
-							int maskLevel = mask.getGrayLevel(x, y);
-							if (mask.getType() == ImageType.Grayscale8Bit)
+							Color col = Color.create(imagePixels.getRGB(x, y));
+							Color color = colors.get(WorldGraph.getValueFromColor(colorIndexesPixels.getPixelColor(x, y)));
+							if (color != null)
 							{
-								if (invertMask)
-									maskLevel = 255 - maskLevel;
+								int maskLevel = maskPixels.getGrayLevel(x, y);
+								if (mask.getType() == ImageType.Grayscale8Bit)
+								{
+									if (invertMask)
+										maskLevel = 255 - maskLevel;
 
-								int r = ((maskLevel * col.getRed()) + (255 - maskLevel) * color.getRed()) / 255;
-								int g = ((maskLevel * col.getGreen()) + (255 - maskLevel) * color.getGreen()) / 255;
-								int b = ((maskLevel * col.getBlue()) + (255 - maskLevel) * color.getBlue()) / 255;
-								result.setRGB(x, y, r, g, b);
-							}
-							else
-							{
-								// TYPE_BYTE_BINARY
+									int r = ((maskLevel * col.getRed()) + (255 - maskLevel) * color.getRed()) / 255;
+									int g = ((maskLevel * col.getGreen()) + (255 - maskLevel) * color.getGreen()) / 255;
+									int b = ((maskLevel * col.getBlue()) + (255 - maskLevel) * color.getBlue()) / 255;
+									resultPixels.setRGB(x, y, r, g, b);
+								}
+								else
+								{
+									// TYPE_BYTE_BINARY
 
-								if (invertMask)
-									maskLevel = 255 - maskLevel;
+									if (invertMask)
+										maskLevel = 255 - maskLevel;
 
-								int r = ((maskLevel * col.getRed()) + (1 - maskLevel) * color.getRed());
-								int g = ((maskLevel * col.getGreen()) + (1 - maskLevel) * color.getGreen());
-								int b = ((maskLevel * col.getBlue()) + (1 - maskLevel) * color.getBlue());
-								result.setRGB(x, y, r, g, b);
+									int r = ((maskLevel * col.getRed()) + (1 - maskLevel) * color.getRed());
+									int g = ((maskLevel * col.getGreen()) + (1 - maskLevel) * color.getGreen());
+									int b = ((maskLevel * col.getBlue()) + (1 - maskLevel) * color.getBlue());
+									resultPixels.setRGB(x, y, r, g, b);
+								}
 							}
 						}
 					}
-				}
-			});
+				});
+			}
+			ThreadHelper.getInstance().processInParallel(tasks, true);
 		}
-		ThreadHelper.getInstance().processInParallel(tasks, true);
 
 		return result;
 
@@ -706,11 +730,11 @@ public class ImageHelper
 	 * Creates a new Image in which the values of the given alphaMask to be the alpha channel in image.
 	 *
 	 * @param image
-	 * 		Image to get color data from
+	 *            Image to get color data from
 	 * @param alphaMask
-	 * 		Must be type ImageType.Grayscale. It must also be the same dimension as image.
+	 *            Must be type ImageType.Grayscale. It must also be the same dimension as image.
 	 * @param invertMask
-	 * 		If true, the alpha values from alphaMask will be inverted.
+	 *            If true, the alpha values from alphaMask will be inverted.
 	 */
 	public static Image setAlphaFromMask(Image image, Image alphaMask, boolean invertMask)
 	{
@@ -734,9 +758,9 @@ public class ImageHelper
 	 * Returns a new Image with adjusted transparency.
 	 *
 	 * @param original
-	 * 		The original Image.
+	 *            The original Image.
 	 * @param alpha
-	 * 		The alpha value (0 = fully transparent, 255 = fully opaque).
+	 *            The alpha value (0 = fully transparent, 255 = fully opaque).
 	 * @return A new Image with the specified transparency applied.
 	 */
 	public static Image applyAlpha(Image original, Integer alpha)
@@ -766,11 +790,11 @@ public class ImageHelper
 	 *
 	 * @param image
 	 * @param alphaMask
-	 * 		Must be type ImageType.Grayscale. It must also be the same dimension as image.
+	 *            Must be type ImageType.Grayscale. It must also be the same dimension as image.
 	 * @param invertMask
-	 * 		If true, the alpha values from alphaMask will be inverted.
+	 *            If true, the alpha values from alphaMask will be inverted.
 	 * @param imageOffsetInMask
-	 * 		Used if the image is smaller than the mask, so only a piece of the mask should be used.
+	 *            Used if the image is smaller than the mask, so only a piece of the mask should be used.
 	 * @return A new image
 	 */
 	public static Image setAlphaFromMaskInRegion(Image image, Image alphaMask, boolean invertMask, IntPoint imageOffsetInMask)
@@ -781,32 +805,35 @@ public class ImageHelper
 		}
 
 		Image result = Image.create(image.getWidth(), image.getHeight(), ImageType.ARGB);
-		for (int y = 0; y < image.getHeight(); y++)
-			for (int x = 0; x < image.getWidth(); x++)
-			{
-				int xInMask = x + imageOffsetInMask.x;
-				int yInMask = y + imageOffsetInMask.y;
-				if (xInMask < 0 || yInMask < 0 || xInMask >= alphaMask.getWidth() || yInMask >= alphaMask.getHeight())
+		try (PixelReader alphaMaskPixels = alphaMask.createPixelReader(); PixelReader imagePixels = image.createPixelReader(); PixelReaderWriter resultPixels = result.createPixelReaderWriter())
+		{
+			for (int y = 0; y < image.getHeight(); y++)
+				for (int x = 0; x < image.getWidth(); x++)
 				{
-					continue;
-				}
-
-				int maskLevel = alphaMask.getGrayLevel(xInMask, yInMask);
-				if (alphaMask.getType() == ImageType.Binary)
-				{
-					if (maskLevel == 1)
+					int xInMask = x + imageOffsetInMask.x;
+					int yInMask = y + imageOffsetInMask.y;
+					if (xInMask < 0 || yInMask < 0 || xInMask >= alphaMask.getWidth() || yInMask >= alphaMask.getHeight())
 					{
-						maskLevel = 255;
+						continue;
 					}
-				}
-				if (invertMask)
-				{
-					maskLevel = 255 - maskLevel;
-				}
 
-				Color originalColor = image.getPixelColor(x, y);
-				result.setPixelColor(x, y, Color.create(originalColor.getRed(), originalColor.getGreen(), originalColor.getBlue(), Math.min(maskLevel, originalColor.getAlpha())));
-			}
+					int maskLevel = alphaMaskPixels.getGrayLevel(xInMask, yInMask);
+					if (alphaMask.getType() == ImageType.Binary)
+					{
+						if (maskLevel == 1)
+						{
+							maskLevel = 255;
+						}
+					}
+					if (invertMask)
+					{
+						maskLevel = 255 - maskLevel;
+					}
+
+					Color originalColor = imagePixels.getPixelColor(x, y);
+					resultPixels.setPixelColor(x, y, Color.create(originalColor.getRed(), originalColor.getGreen(), originalColor.getBlue(), Math.min(maskLevel, originalColor.getAlpha())));
+				}
+		}
 		return result;
 	}
 
@@ -823,14 +850,17 @@ public class ImageHelper
 		}
 
 		Image result = Image.create(target.getWidth(), target.getHeight(), ImageType.ARGB);
-		for (int y = 0; y < target.getHeight(); y++)
-			for (int x = 0; x < target.getWidth(); x++)
-			{
+		try (PixelReader alphaSourcePixels = alphaSource.createPixelReader(); PixelReader targetPixels = target.createPixelReader(); PixelReaderWriter resultPixels = result.createPixelReaderWriter())
+		{
+			for (int y = 0; y < target.getHeight(); y++)
+				for (int x = 0; x < target.getWidth(); x++)
+				{
 
-				int alphaLevel = alphaSource.getAlpha(x, y);
-				Color originalColor = target.getPixelColor(x, y);
-				result.setPixelColor(x, y, Color.create(originalColor.getRed(), originalColor.getGreen(), originalColor.getBlue(), alphaLevel));
-			}
+					int alphaLevel = alphaSourcePixels.getAlpha(x, y);
+					Color originalColor = targetPixels.getPixelColor(x, y);
+					resultPixels.setPixelColor(x, y, Color.create(originalColor.getRed(), originalColor.getGreen(), originalColor.getBlue(), alphaLevel));
+				}
+		}
 		return result;
 	}
 
@@ -864,35 +894,44 @@ public class ImageHelper
 			throw new IllegalArgumentException();
 
 		Image result = Image.create(redChanel.getWidth(), redChanel.getHeight(), ImageType.ARGB);
-		for (int y = 0; y < redChanel.getHeight(); y++)
-			for (int x = 0; x < redChanel.getWidth(); x++)
-			{
-				int red = Color.create(redChanel.getRGB(x, y)).getRed();
-				int green = Color.create(greenChanel.getRGB(x, y)).getGreen();
-				int blue = Color.create(blueChanel.getRGB(x, y)).getBlue();
+		try (PixelReader redPixels = redChanel.createPixelReader();
+				PixelReader greenPixels = greenChanel.createPixelReader();
+				PixelReader bluePixels = blueChanel.createPixelReader();
+				PixelReader alphaPixels = alphaChanel.createPixelReader();
+				PixelReaderWriter resultPixels = result.createPixelReaderWriter())
+		{
+			for (int y = 0; y < redChanel.getHeight(); y++)
+				for (int x = 0; x < redChanel.getWidth(); x++)
+				{
+					int red = Color.create(redPixels.getRGB(x, y)).getRed();
+					int green = Color.create(greenPixels.getRGB(x, y)).getGreen();
+					int blue = Color.create(bluePixels.getRGB(x, y)).getBlue();
 
-				int maskLevel = alphaChanel.getGrayLevel(x, y);
+					int maskLevel = alphaPixels.getGrayLevel(x, y);
 
-				result.setRGB(x, y, red, green, blue, maskLevel);
-			}
+					resultPixels.setRGB(x, y, red, green, blue, maskLevel);
+				}
+		}
 		return result;
 	}
 
 	/**
-	 * Extracts the specified region from image2, then makes the given mask be the alpha channel of that extracted region, then draws the extracted region onto image1.
+	 * Extracts the specified region from image2, then makes the given mask be the alpha channel of that extracted region, then draws the
+	 * extracted region onto image1.
 	 *
 	 * @param image1
-	 * 		The image to draw to.
+	 *            The image to draw to.
 	 * @param image2
-	 * 		The background image which the mask indicates to pull pixel values from.
+	 *            The background image which the mask indicates to pull pixel values from.
 	 * @param mask
-	 * 		Pixel values tell how to combine values from image1 and image2.
+	 *            Pixel values tell how to combine values from image1 and image2.
 	 * @param xLoc
-	 * 		X component of the upper left corner at which image2 pixel values will be drawn into image1, using the mask, before rotation is applied.
+	 *            X component of the upper left corner at which image2 pixel values will be drawn into image1, using the mask, before
+	 *            rotation is applied.
 	 * @param yLoc
-	 * 		Like xLoc, but for Y component.
+	 *            Like xLoc, but for Y component.
 	 * @param angle
-	 * 		Angle at which to rotate the mask before drawing into image 1. It will be rotated about the center of the mask.
+	 *            Angle at which to rotate the mask before drawing into image 1. It will be rotated about the center of the mask.
 	 */
 	public static void combineImagesWithMaskInRegion(Image image1, Image image2, Image mask, int xLoc, int yLoc, double angle, Point pivot)
 	{
@@ -925,18 +964,21 @@ public class ImageHelper
 
 			Image region = copySnippetRotated(image2, xLoc, yLoc, mask.getWidth(), mask.getHeight(), angle, pivot);
 
-			for (int y = 0; y < region.getHeight(); y++)
-				for (int x = 0; x < region.getWidth(); x++)
-				{
-					int grayLevel = mask.getGrayLevel(x, y);
-					Color r = Color.create(region.getRGB(x, y), true);
+			try (PixelReader maskPixels = mask.createPixelReader(); PixelReaderWriter regionPixels = region.createPixelReaderWriter())
+			{
+				for (int y = 0; y < region.getHeight(); y++)
+					for (int x = 0; x < region.getWidth(); x++)
+					{
+						int grayLevel = maskPixels.getGrayLevel(x, y);
+						Color r = Color.create(regionPixels.getRGB(x, y), true);
 
-					// Don't clobber the alpha level from the region.
-					int alphaLevel = Math.min(r.getAlpha(), grayLevel);
+						// Don't clobber the alpha level from the region.
+						int alphaLevel = Math.min(r.getAlpha(), grayLevel);
 
-					// Only change the alpha channel of the region.
-					region.setRGB(x, y, Color.create(r.getRed(), r.getGreen(), r.getBlue(), alphaLevel).getRGB());
-				}
+						// Only change the alpha channel of the region.
+						regionPixels.setRGB(x, y, Color.create(r.getRed(), r.getGreen(), r.getBlue(), alphaLevel).getRGB());
+					}
+			}
 
 			Painter p = image1.createPainter();
 			p.rotate(angle, pivot);
@@ -946,7 +988,8 @@ public class ImageHelper
 	}
 
 	/**
-	 * Creates an image the requested width and height that contains a region extracted from 'image', rotated at the given angle about the given pivot.
+	 * Creates an image the requested width and height that contains a region extracted from 'image', rotated at the given angle about the
+	 * given pivot.
 	 *
 	 * Warning: This adds an alpha channel, so the output image may not be the same type as the input image.
 	 */
@@ -984,8 +1027,9 @@ public class ImageHelper
 
 	/**
 	 *
-	 * Creates a copy of a piece of an image, preserving the color of transparent pixels. This is the same as copySnippet if the snippet is only for being displayed, but when combining with layers
-	 * with alpha later, it can make a difference. Also, this version is much slower.
+	 * Creates a copy of a piece of an image, preserving the color of transparent pixels. This is the same as copySnippet if the snippet is
+	 * only for being displayed, but when combining with layers with alpha later, it can make a difference. Also, this version is much
+	 * slower.
 	 *
 	 * It is important the the result is a copy even if the desired region is exactly the input.
 	 */
@@ -993,16 +1037,19 @@ public class ImageHelper
 	{
 		IntRectangle sourceBounds = new IntRectangle(0, 0, source.size().width, source.size().height);
 		Image result = Image.create(width, height, source.getType());
-		for (int y = 0; y < height; y++)
+		try (PixelReader sourcePixels = source.createPixelReader(); PixelReaderWriter resultPixels = result.createPixelReaderWriter())
 		{
-			for (int x = 0; x < width; x++)
+			for (int y = 0; y < height; y++)
 			{
-				int xInSource = xLoc + x;
-				int yInSource = yLoc + y;
-				if (sourceBounds.contains(xInSource, yInSource))
+				for (int x = 0; x < width; x++)
 				{
-					int rgb = source.getRGB(xInSource, yInSource);
-					result.setRGB(x, y, rgb);
+					int xInSource = xLoc + x;
+					int yInSource = yLoc + y;
+					if (sourceBounds.contains(xInSource, yInSource))
+					{
+						int rgb = sourcePixels.getRGB(xInSource, yInSource);
+						resultPixels.setRGB(x, y, rgb);
+					}
 				}
 			}
 		}
@@ -1021,17 +1068,20 @@ public class ImageHelper
 	public static Image rotate90Degrees(Image image, boolean isClockwise)
 	{
 		Image result = Image.create(image.getHeight(), image.getWidth(), image.getType());
-		for (int y = 0; y < image.getHeight(); y++)
+		try (PixelReader imagePixels = image.createPixelReader(); PixelReaderWriter resultPixels = result.createPixelReaderWriter())
 		{
-			for (int x = 0; x < image.getWidth(); x++)
+			for (int y = 0; y < image.getHeight(); y++)
 			{
-				if (isClockwise)
+				for (int x = 0; x < image.getWidth(); x++)
 				{
-					result.setRGB(image.getHeight() - y - 1, image.getWidth() - x - 1, image.getRGB(x, y));
-				}
-				else
-				{
-					result.setRGB(y, x, image.getRGB(x, y));
+					if (isClockwise)
+					{
+						resultPixels.setRGB(image.getHeight() - y - 1, image.getWidth() - x - 1, imagePixels.getRGB(x, y));
+					}
+					else
+					{
+						resultPixels.setRGB(y, x, imagePixels.getRGB(x, y));
+					}
 				}
 			}
 		}
@@ -1064,26 +1114,29 @@ public class ImageHelper
 			throw new IllegalArgumentException("Unsupported buffered image type for target. Actual type: " + target.getType());
 		}
 
-		for (int r = 0; r < toDraw.getHeight(); r++)
+		try (PixelReader toDrawPixels = toDraw.createPixelReader(); PixelReaderWriter targetPixels = target.createPixelReaderWriter())
 		{
-			int targetR = yLoc + r;
-			if (targetR < 0 || targetR >= target.getHeight())
+			for (int r = 0; r < toDraw.getHeight(); r++)
 			{
-				continue;
-			}
-			for (int c = 0; c < toDraw.getWidth(); c++)
-			{
-				int targetC = xLoc + c;
-				if (targetC < 0 || targetC >= target.getWidth())
+				int targetR = yLoc + r;
+				if (targetR < 0 || targetR >= target.getHeight())
 				{
 					continue;
 				}
-
-				int toDrawValue = toDraw.getGrayLevel(c, r);
-				int targetValue = target.getGrayLevel(targetC, targetR);
-				if (toDrawValue > targetValue)
+				for (int c = 0; c < toDraw.getWidth(); c++)
 				{
-					target.setGrayLevel(targetC, targetR, toDrawValue);
+					int targetC = xLoc + c;
+					if (targetC < 0 || targetC >= target.getWidth())
+					{
+						continue;
+					}
+
+					int toDrawValue = toDrawPixels.getGrayLevel(c, r);
+					int targetValue = targetPixels.getGrayLevel(targetC, targetR);
+					if (toDrawValue > targetValue)
+					{
+						targetPixels.setGrayLevel(targetC, targetR, toDrawValue);
+					}
 				}
 			}
 		}
@@ -1093,15 +1146,16 @@ public class ImageHelper
 	 * Convolves a gray-scale image and with a kernel. The input image is unchanged.
 	 *
 	 * @param img
-	 * 		Image to convolve
+	 *            Image to convolve
 	 * @param kernel
-	 * 		The kernel to convolve with.
+	 *            The kernel to convolve with.
 	 * @param maximizeContrast
-	 * 		Iff true, the contrast of the convolved image will be maximized while it is still in floating point representation. In the result the pixel values will range from 0 to 255 for 8 bit pixels,
-	 * 		or 65535 for 16 bit. This is better than maximizing the contrast of the result because the result is a Image, which has less precise values than floats.
+	 *            Iff true, the contrast of the convolved image will be maximized while it is still in floating point representation. In the
+	 *            result the pixel values will range from 0 to 255 for 8 bit pixels, or 65535 for 16 bit. This is better than maximizing the
+	 *            contrast of the result because the result is a Image, which has less precise values than floats.
 	 * @param paddImageToAvoidWrapping
-	 * 		Normally, in wage convolution done using fast Fourier transforms will do wrapping when calculating values of pixels along edges. Set this flag to add black padding pixels to the edge of the
-	 * 		image to avoid this.
+	 *            Normally, in wage convolution done using fast Fourier transforms will do wrapping when calculating values of pixels along
+	 *            edges. Set this flag to add black padding pixels to the edge of the image to avoid this.
 	 * @return The convolved image.
 	 */
 	public static Image convolveGrayscale(Image img, float[][] kernel, boolean maximizeContrast, boolean paddImageToAvoidWrapping)
@@ -1123,17 +1177,17 @@ public class ImageHelper
 	}
 
 	/**
-	 * Convolves a gray-scale image with a kernel. The input image is unchanged. The convolved image will be scaled while it is still in floating point representation. Values below 0 will be made 0.
-	 * Values above 1 will be made 1.
+	 * Convolves a gray-scale image with a kernel. The input image is unchanged. The convolved image will be scaled while it is still in
+	 * floating point representation. Values below 0 will be made 0. Values above 1 will be made 1.
 	 *
 	 * @param img
-	 * 		Image to convolve
+	 *            Image to convolve
 	 * @param kernel
 	 * @param scale
-	 * 		Amount to multiply levels by.
+	 *            Amount to multiply levels by.
 	 * @param paddImageToAvoidWrapping
-	 * 		Normally, in wage convolution done using fast Fourier transforms will do wrapping when calculating values of pixels along edges. Set this flag to add black padding pixels to the edge of the
-	 * 		image to avoid this.
+	 *            Normally, in wage convolution done using fast Fourier transforms will do wrapping when calculating values of pixels along
+	 *            edges. Set this flag to add black padding pixels to the edge of the image to avoid this.
 	 * @return The convolved image.
 	 */
 	public static Image convolveGrayscaleThenScale(Image img, float[][] kernel, float scale, boolean paddImageToAvoidWrapping)
@@ -1144,17 +1198,17 @@ public class ImageHelper
 	}
 
 	/**
-	 * Convolves a gray-scale image with a kernel. The input image is unchanged. The convolved image will be scaled while it is still in floating point representation. Values below 0 will be made 0.
-	 * Values above 1 will be made 1.
+	 * Convolves a gray-scale image with a kernel. The input image is unchanged. The convolved image will be scaled while it is still in
+	 * floating point representation. Values below 0 will be made 0. Values above 1 will be made 1.
 	 *
 	 * @param img
-	 * 		Image to convolve
+	 *            Image to convolve
 	 * @param kernel
 	 * @param scale
-	 * 		Amount to multiply levels by.
+	 *            Amount to multiply levels by.
 	 * @param paddImageToAvoidWrapping
-	 * 		Normally, in wage convolution done using fast Fourier transforms will do wrapping when calculating values of pixels along edges. Set this flag to add black padding pixels to the edge of the
-	 * 		image to avoid this.
+	 *            Normally, in wage convolution done using fast Fourier transforms will do wrapping when calculating values of pixels along
+	 *            edges. Set this flag to add black padding pixels to the edge of the image to avoid this.
 	 * @return The convolved image.
 	 */
 	public static Image convolveGrayscaleThenScale(Image img, float[][] kernel, float scale, boolean paddImageToAvoidWrapping, ImageType resultType)
@@ -1229,14 +1283,17 @@ public class ImageHelper
 		boolean isGrayscale = img.isGrayscaleOrBinary();
 		float maxPixelValue = img.getMaxPixelLevel();
 
-		for (int r = 0; r < img.getHeight(); r++)
+		try (PixelReader imgPixels = img.createPixelReader())
 		{
-			for (int c = 0; c < img.getWidth(); c++)
+			for (int r = 0; r < img.getHeight(); r++)
 			{
-				float grayLevel = img.getGrayLevel(c, r);
-				if (isGrayscale)
-					grayLevel /= maxPixelValue;
-				data.setRealInput(c + imgColPaddingOver2, r + imgRowPaddingOver2, grayLevel);
+				for (int c = 0; c < img.getWidth(); c++)
+				{
+					float grayLevel = imgPixels.getGrayLevel(c, r);
+					if (isGrayscale)
+						grayLevel /= maxPixelValue;
+					data.setRealInput(c + imgColPaddingOver2, r + imgRowPaddingOver2, grayLevel);
+				}
 			}
 		}
 
@@ -1251,11 +1308,12 @@ public class ImageHelper
 	 *
 	 * @param input
 	 * @param rows
-	 * 		Number of rows in the output
+	 *            Number of rows in the output
 	 * @param cols
-	 * 		Number of columns in the output
+	 *            Number of columns in the output
 	 * @param flipXAndYAxis
-	 * 		For kernels. Flip the kernel along the x and y axis as I get the values from it. This is needed to do convolution instead of cross-correlation.
+	 *            For kernels. Flip the kernel along the x and y axis as I get the values from it. This is needed to do convolution instead
+	 *            of cross-correlation.
 	 * @return
 	 */
 	public static ComplexArray forwardFFT(float[][] input, int rows, int cols, boolean flipXAndYAxis)
@@ -1293,11 +1351,14 @@ public class ImageHelper
 	{
 		Image image = Image.create(array[0].length, array.length, imageType);
 		int maxPixelValue = Image.getMaxPixelLevelForType(imageType);
-		for (int y = 0; y < image.getHeight(); y++)
+		try (PixelReaderWriter imagePixels = image.createPixelReaderWriter())
 		{
-			for (int x = 0; x < image.getWidth(); x++)
+			for (int y = 0; y < image.getHeight(); y++)
 			{
-				image.setGrayLevel(x, y, (int) (array[y][x] * maxPixelValue));
+				for (int x = 0; x < image.getWidth(); x++)
+				{
+					imagePixels.setGrayLevel(x, y, (int) (array[y][x] * maxPixelValue));
+				}
 			}
 		}
 		return image;
@@ -1324,11 +1385,14 @@ public class ImageHelper
 		// Note - I tried having this method process rows in parallel, but it was slower.
 		Image image = Image.create(cols, rows, imageType);
 		int maxPixelValue = Image.getMaxPixelLevelForType(image.getType());
-		for (int y = 0; y < image.getHeight(); y++)
+		try (PixelReaderWriter imagePixels = image.createPixelReaderWriter())
 		{
-			for (int x = 0; x < image.getWidth(); x++)
+			for (int y = 0; y < image.getHeight(); y++)
 			{
-				image.setGrayLevel(x, y, (int) (rand.nextFloat() * maxPixelValue));
+				for (int x = 0; x < image.getWidth(); x++)
+				{
+					imagePixels.setGrayLevel(x, y, (int) (rand.nextFloat() * maxPixelValue));
+				}
 			}
 		}
 		return image;
@@ -1360,11 +1424,11 @@ public class ImageHelper
 	 * Do histogram matching on an image.
 	 *
 	 * @param target
-	 * 		The image to do histogram matching on.
+	 *            The image to do histogram matching on.
 	 * @param source
-	 * 		The source of histogram information.
+	 *            The source of histogram information.
 	 * @param resultType
-	 * 		Image type of the result.
+	 *            Image type of the result.
 	 */
 	public static Image matchHistogram(Image target, Image source, ImageType resultType)
 	{
@@ -1393,11 +1457,11 @@ public class ImageHelper
 	 * Creates a colored image from a grayscale one and a given color.
 	 *
 	 * @param image
-	 * 		Grayscale image
+	 *            Grayscale image
 	 * @param color
-	 * 		Color to use
+	 *            Color to use
 	 * @param how
-	 * 		Algorithm to use when determining pixel colors
+	 *            Algorithm to use when determining pixel colors
 	 * @return
 	 */
 	public static Image colorify(Image image, Color color, ColorifyAlgorithm how)
@@ -1409,13 +1473,13 @@ public class ImageHelper
 	 * Creates a colored image from a grayscale one and a given color.
 	 *
 	 * @param image
-	 * 		Grayscale image
+	 *            Grayscale image
 	 * @param color
-	 * 		Color to use
+	 *            Color to use
 	 * @param how
-	 * 		Algorithm to use when determining pixel colors
+	 *            Algorithm to use when determining pixel colors
 	 * @param forceAddAlpha
-	 * 		Forces the result to have an alpha channel, even when "color" is opaque.
+	 *            Forces the result to have an alpha channel, even when "color" is opaque.
 	 * @return
 	 */
 	public static Image colorify(Image image, Color color, ColorifyAlgorithm how, boolean forceAddAlpha)
@@ -1431,28 +1495,31 @@ public class ImageHelper
 		Image result = Image.create(image.getWidth(), image.getHeight(), resultType);
 
 		float[] hsb = color.getHSB();
-		if (resultType == ImageType.ARGB)
+		try (PixelReader imagePixels = image.createPixelReader(); PixelReaderWriter resultPixels = result.createPixelReaderWriter())
 		{
-			ThreadHelper.getInstance().processRowsInParallel(0, image.getHeight(), (y) ->
+			if (resultType == ImageType.ARGB)
 			{
-				for (int x = 0; x < image.getWidth(); x++)
+				ThreadHelper.getInstance().processRowsInParallel(0, image.getHeight(), (y) ->
 				{
-					float level = image.getNormalizedPixelLevel(x, y);
-					result.setRGB(x, y, colorifyPixel(level, hsb, how));
-					result.setAlpha(x, y, color.getAlpha());
-				}
-			});
-		}
-		else
-		{
-			ThreadHelper.getInstance().processRowsInParallel(0, image.getHeight(), (y) ->
+					for (int x = 0; x < image.getWidth(); x++)
+					{
+						float level = imagePixels.getNormalizedPixelLevel(x, y);
+						resultPixels.setRGB(x, y, colorifyPixel(level, hsb, how));
+						resultPixels.setAlpha(x, y, color.getAlpha());
+					}
+				});
+			}
+			else
 			{
-				for (int x = 0; x < image.getWidth(); x++)
+				ThreadHelper.getInstance().processRowsInParallel(0, image.getHeight(), (y) ->
 				{
-					float level = image.getNormalizedPixelLevel(x, y);
-					result.setRGB(x, y, colorifyPixel(level, hsb, how));
-				}
-			});
+					for (int x = 0; x < image.getWidth(); x++)
+					{
+						float level = imagePixels.getNormalizedPixelLevel(x, y);
+						resultPixels.setRGB(x, y, colorifyPixel(level, hsb, how));
+					}
+				});
+			}
 		}
 
 		return result;
@@ -1503,20 +1570,21 @@ public class ImageHelper
 	}
 
 	/**
-	 * Like colorify but for multiple colors. Colorifies an image using a an array of colors and a second image which maps those colors to pixels. This way you can specify multiple colors for the
-	 * resulting image.
+	 * Like colorify but for multiple colors. Colorifies an image using a an array of colors and a second image which maps those colors to
+	 * pixels. This way you can specify multiple colors for the resulting image.
 	 *
 	 * @param image
-	 * 		The image to colorify
+	 *            The image to colorify
 	 * @param colorMap
-	 * 		Used as a map from region index (in politicalRegions) to region color.
+	 *            Used as a map from region index (in politicalRegions) to region color.
 	 * @param colorIndexes
-	 * 		Each pixel stores a gray level which (converted to an int) is an index into colors.
+	 *            Each pixel stores a gray level which (converted to an int) is an index into colors.
 	 * @param how
-	 * 		Determines the algorithm to use for coloring pixels
+	 *            Determines the algorithm to use for coloring pixels
 	 * @param where
-	 * 		Allows colorifying only a snippet of image. If given, then it is assumed that colorIndex is possibly smaller than image, and this point is the upper left corner in image where the result
-	 * 		should be extracted from, using the width and height of colorIndexes.
+	 *            Allows colorifying only a snippet of image. If given, then it is assumed that colorIndex is possibly smaller than image,
+	 *            and this point is the upper left corner in image where the result should be extracted from, using the width and height of
+	 *            colorIndexes.
 	 */
 	public static Image colorifyMulti(Image image, Map<Integer, Color> colorMap, Image colorIndexes, ColorifyAlgorithm how, IntPoint where)
 	{
@@ -1544,26 +1612,29 @@ public class ImageHelper
 		IntRectangle imageBounds = new IntRectangle(0, 0, image.getWidth(), image.getHeight());
 
 		IntPoint whereFinal = where;
-		ThreadHelper.getInstance().processRowsInParallel(0, colorIndexes.getHeight(), (y) ->
+		try (PixelReader imagePixels = image.createPixelReader(); PixelReader colorIndexesPixels = colorIndexes.createPixelReader(); PixelReaderWriter resultPixels = result.createPixelReaderWriter())
 		{
-			for (int x = 0; x < colorIndexes.getWidth(); x++)
+			ThreadHelper.getInstance().processRowsInParallel(0, colorIndexes.getHeight(), (y) ->
 			{
-				if (!imageBounds.contains(x + whereFinal.x, y + whereFinal.y))
+				for (int x = 0; x < colorIndexes.getWidth(); x++)
 				{
-					continue;
+					if (!imageBounds.contains(x + whereFinal.x, y + whereFinal.y))
+					{
+						continue;
+					}
+					float level = imagePixels.getNormalizedPixelLevel(x + whereFinal.x, y + whereFinal.y);
+					int colorKey = WorldGraph.getValueFromColor(colorIndexesPixels.getPixelColor(x, y));
+					float[] hsb = hsbMap.get(colorKey);
+					// hsb can be null if a region edit is missing from the nort file. I saw this happen, but I don't know what caused it.
+					// When it did happen, it happened to region 0, which is also the color index used for ocean, so I don't think there
+					// is any functional impact to skipping drawing those pixels.
+					if (hsb != null)
+					{
+						resultPixels.setRGB(x, y, colorifyPixel(level, hsb, how));
+					}
 				}
-				float level = image.getNormalizedPixelLevel(x + whereFinal.x, y + whereFinal.y);
-				int colorKey = WorldGraph.getValueFromColor(colorIndexes.getPixelColor(x, y));
-				float[] hsb = hsbMap.get(colorKey);
-				// hsb can be null if a region edit is missing from the nort file. I saw this happen, but I don't know what caused it.
-				// When it did happen, it happened to region 0, which is also the color index used for ocean, so I don't think there
-				// is any functional impact to skipping drawing those pixels.
-				if (hsb != null)
-				{
-					result.setRGB(x, y, colorifyPixel(level, hsb, how));
-				}
-			}
-		});
+			});
+		}
 
 		return result;
 	}
@@ -1621,11 +1692,14 @@ public class ImageHelper
 	public static float calcMeanOfGrayscaleImage(Image image)
 	{
 		long sum = 0;
-		for (int r = 0; r < image.getHeight(); r++)
+		try (PixelReader imagePixels = image.createPixelReader())
 		{
-			for (int c = 0; c < image.getWidth(); c++)
+			for (int r = 0; r < image.getHeight(); r++)
 			{
-				sum += image.getGrayLevel(c, r);
+				for (int c = 0; c < image.getWidth(); c++)
+				{
+					sum += imagePixels.getGrayLevel(c, r);
+				}
 			}
 		}
 
@@ -1635,32 +1709,35 @@ public class ImageHelper
 	public static float[] calcMeanOfEachColor(Image image)
 	{
 		float[] result = new float[3];
-		for (int channel : new Range(3))
+		try (PixelReader imagePixels = image.createPixelReader())
 		{
-			long sum = 0;
-			for (int r = 0; r < image.getHeight(); r++)
+			for (int channel : new Range(3))
 			{
-				for (int c = 0; c < image.getWidth(); c++)
+				long sum = 0;
+				for (int r = 0; r < image.getHeight(); r++)
 				{
-					Color color = Color.create(image.getRGB(c, r));
-					int level;
-					if (channel == 0)
+					for (int c = 0; c < image.getWidth(); c++)
 					{
-						level = color.getRed();
-					}
-					else if (channel == 1)
-					{
-						level = color.getGreen();
-					}
-					else
-					{
-						level = color.getBlue();
-					}
+						Color color = Color.create(imagePixels.getRGB(c, r));
+						int level;
+						if (channel == 0)
+						{
+							level = color.getRed();
+						}
+						else if (channel == 1)
+						{
+							level = color.getGreen();
+						}
+						else
+						{
+							level = color.getBlue();
+						}
 
-					sum += level;
+						sum += level;
+					}
 				}
+				result[channel] = sum / ((float) (image.getHeight() * image.getWidth()));
 			}
-			result[channel] = sum / ((float) (image.getHeight() * image.getWidth()));
 		}
 
 		return result;
@@ -1669,11 +1746,14 @@ public class ImageHelper
 	public static Image flipOnXAxis(Image image)
 	{
 		Image result = Image.create(image.getWidth(), image.getHeight(), image.getType());
-		for (int y = 0; y < image.getHeight(); y++)
+		try (PixelReader imagePixels = image.createPixelReader(); PixelReaderWriter resultPixels = result.createPixelReaderWriter())
 		{
-			for (int x = 0; x < image.getWidth(); x++)
+			for (int y = 0; y < image.getHeight(); y++)
 			{
-				result.setRGB(image.getWidth() - x - 1, y, image.getRGB(x, y));
+				for (int x = 0; x < image.getWidth(); x++)
+				{
+					resultPixels.setRGB(image.getWidth() - x - 1, y, imagePixels.getRGB(x, y));
+				}
 			}
 		}
 
@@ -1683,11 +1763,14 @@ public class ImageHelper
 	public static Image flipOnYAxis(Image image)
 	{
 		Image result = Image.create(image.getWidth(), image.getHeight(), image.getType());
-		for (int y = 0; y < image.getHeight(); y++)
+		try (PixelReader imagePixels = image.createPixelReader(); PixelReaderWriter resultPixels = result.createPixelReaderWriter())
 		{
-			for (int x = 0; x < image.getWidth(); x++)
+			for (int y = 0; y < image.getHeight(); y++)
 			{
-				result.setRGB(x, image.getHeight() - y - 1, image.getRGB(x, y));
+				for (int x = 0; x < image.getWidth(); x++)
+				{
+					resultPixels.setRGB(x, image.getHeight() - y - 1, imagePixels.getRGB(x, y));
+				}
 			}
 		}
 
@@ -1713,15 +1796,18 @@ public class ImageHelper
 			throw new IllegalArgumentException("Source and target must be the same size. Source size: " + source.size() + ", target size: " + target.size());
 		}
 
-		for (int y = 0; y < source.getHeight(); y++)
-			for (int x = 0; x < source.getWidth(); x++)
-			{
-				int value = source.getGrayLevel(x, y);
-				if (value >= lowThreshold && value < highThreshold)
+		try (PixelReader sourcePixels = source.createPixelReader(); PixelReaderWriter targetPixels = target.createPixelReaderWriter())
+		{
+			for (int y = 0; y < source.getHeight(); y++)
+				for (int x = 0; x < source.getWidth(); x++)
 				{
-					target.setGrayLevel(x, y, fillValue);
+					int value = sourcePixels.getGrayLevel(x, y);
+					if (value >= lowThreshold && value < highThreshold)
+					{
+						targetPixels.setGrayLevel(x, y, fillValue);
+					}
 				}
-			}
+		}
 	}
 
 	/**
@@ -1744,14 +1830,17 @@ public class ImageHelper
 			throw new IllegalArgumentException("Images for thresholding and subtracting must be the same size. First size: " + toThreshold.size() + ", second size: " + toSubtractFrom.size());
 		}
 
-		ThreadHelper.getInstance().processRowsInParallel(0, toThreshold.getHeight(), (y) ->
+		try (PixelReader toThresholdPixels = toThreshold.createPixelReader(); PixelReaderWriter toSubtractFromPixels = toSubtractFrom.createPixelReaderWriter())
 		{
-			for (int x = 0; x < toThreshold.getWidth(); x++)
+			ThreadHelper.getInstance().processRowsInParallel(0, toThreshold.getHeight(), (y) ->
 			{
-				int thresholdedValue = toThreshold.getGrayLevel(x, y) >= threshold ? highValue : 0;
-				toSubtractFrom.setGrayLevel(x, y, Math.max(0, toSubtractFrom.getGrayLevel(x, y) - thresholdedValue));
-			}
-		});
+				for (int x = 0; x < toThreshold.getWidth(); x++)
+				{
+					int thresholdedValue = toThresholdPixels.getGrayLevel(x, y) >= threshold ? highValue : 0;
+					toSubtractFromPixels.setGrayLevel(x, y, Math.max(0, toSubtractFromPixels.getGrayLevel(x, y) - thresholdedValue));
+				}
+			});
+		}
 	}
 
 	/**
@@ -1774,14 +1863,17 @@ public class ImageHelper
 			throw new IllegalArgumentException("Images for thresholding and adding must be the same size. First size: " + toThreshold.size() + ", second size: " + toAddTo.size());
 		}
 
-		ThreadHelper.getInstance().processRowsInParallel(0, toThreshold.getHeight(), (y) ->
+		try (PixelReader toThresholdPixels = toThreshold.createPixelReader(); PixelReaderWriter toAddToPixels = toAddTo.createPixelReaderWriter())
 		{
-			for (int x = 0; x < toThreshold.getWidth(); x++)
+			ThreadHelper.getInstance().processRowsInParallel(0, toThreshold.getHeight(), (y) ->
 			{
-				int thresholdedValue = toThreshold.getGrayLevel(x, y) >= threshold ? highValue : 0;
-				toAddTo.setGrayLevel(x, y, Math.max(0, toAddTo.getGrayLevel(x, y) + thresholdedValue));
-			}
-		});
+				for (int x = 0; x < toThreshold.getWidth(); x++)
+				{
+					int thresholdedValue = toThresholdPixels.getGrayLevel(x, y) >= threshold ? highValue : 0;
+					toAddToPixels.setGrayLevel(x, y, Math.max(0, toAddToPixels.getGrayLevel(x, y) + thresholdedValue));
+				}
+			});
+		}
 	}
 
 	public static void threshold(Image image, int threshold)
@@ -1794,11 +1886,11 @@ public class ImageHelper
 	 * Thresholds an image in-place
 	 *
 	 * @param image
-	 * 		Input and output image.
+	 *            Input and output image.
 	 * @param threshold
-	 * 		Pixel values equal to or greater than this value will be set to highValue. Pixel values lower than this will be set to 0.
+	 *            Pixel values equal to or greater than this value will be set to highValue. Pixel values lower than this will be set to 0.
 	 * @param highValue
-	 * 		Value pixels will be set to if thresholded high.
+	 *            Value pixels will be set to if thresholded high.
 	 */
 	public static void threshold(Image image, int threshold, int highValue)
 	{
@@ -1807,19 +1899,22 @@ public class ImageHelper
 			throw new IllegalArgumentException("Unsupported image type for thresholding: " + image.getType());
 		}
 
-		for (int y = 0; y < image.getHeight(); y++)
-			for (int x = 0; x < image.getWidth(); x++)
-			{
-				int value = image.getGrayLevel(x, y);
-				if (value >= threshold)
+		try (PixelReaderWriter imagePixels = image.createPixelReaderWriter())
+		{
+			for (int y = 0; y < image.getHeight(); y++)
+				for (int x = 0; x < image.getWidth(); x++)
 				{
-					image.setGrayLevel(x, y, highValue);
+					int value = imagePixels.getGrayLevel(x, y);
+					if (value >= threshold)
+					{
+						imagePixels.setGrayLevel(x, y, highValue);
+					}
+					else
+					{
+						imagePixels.setGrayLevel(x, y, 0);
+					}
 				}
-				else
-				{
-					image.setGrayLevel(x, y, 0);
-				}
-			}
+		}
 	}
 
 	public static void add(Image target, Image other)
@@ -1834,22 +1929,25 @@ public class ImageHelper
 		}
 
 		int maxPixelValue = target.getMaxPixelLevel();
-		for (int y = 0; y < target.getHeight(); y++)
-			for (int x = 0; x < target.getWidth(); x++)
-			{
-				double value = (int) target.getGrayLevel(x, y);
-				double otherValue = (int) other.getGrayLevel(x, y);
-				target.setGrayLevel(x, y, (int) Math.min(maxPixelValue, value + otherValue));
-			}
+		try (PixelReaderWriter targetPixels = target.createPixelReaderWriter(); PixelReader otherPixels = other.createPixelReader())
+		{
+			for (int y = 0; y < target.getHeight(); y++)
+				for (int x = 0; x < target.getWidth(); x++)
+				{
+					double value = (int) targetPixels.getGrayLevel(x, y);
+					double otherValue = (int) otherPixels.getGrayLevel(x, y);
+					targetPixels.setGrayLevel(x, y, (int) Math.min(maxPixelValue, value + otherValue));
+				}
+		}
 	}
 
 	/**
 	 * Subtracts other from target and stores the result in target.
 	 *
 	 * @param target
-	 * 		Image to subtract from.
+	 *            Image to subtract from.
 	 * @param other
-	 * 		Values to subtract.
+	 *            Values to subtract.
 	 */
 	public static void subtract(Image target, Image other)
 	{
@@ -1863,17 +1961,21 @@ public class ImageHelper
 			throw new IllegalArgumentException("Unsupported other image type for subtracting: " + other.getType());
 		}
 
-		for (int y = 0; y < target.getHeight(); y++)
-			for (int x = 0; x < target.getWidth(); x++)
-			{
-				int value = target.getGrayLevel(x, y);
-				int otherValue = other.getGrayLevel(x, y);
-				target.setGrayLevel(x, y, Math.max(0, value - otherValue));
-			}
+		try (PixelReaderWriter targetPixels = target.createPixelReaderWriter(); PixelReader otherPixels = other.createPixelReader())
+		{
+			for (int y = 0; y < target.getHeight(); y++)
+				for (int x = 0; x < target.getWidth(); x++)
+				{
+					int value = targetPixels.getGrayLevel(x, y);
+					int otherValue = otherPixels.getGrayLevel(x, y);
+					targetPixels.setGrayLevel(x, y, Math.max(0, value - otherValue));
+				}
+		}
 	}
 
 	/**
-	 * Extracts the snippet in source defined by boundsInSourceToCopyFrom and pastes that snippet into target at the location defined by upperLeftCornerToPasteIntoInTarget.
+	 * Extracts the snippet in source defined by boundsInSourceToCopyFrom and pastes that snippet into target at the location defined by
+	 * upperLeftCornerToPasteIntoInTarget.
 	 */
 	public static void copySnippetFromSourceAndPasteIntoTarget(Image target, Image source, IntPoint upperLeftCornerToPasteIntoInTarget, IntRectangle boundsInSourceToCopyFrom,
 			int widthOfBorderToNotDrawOn)

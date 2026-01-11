@@ -22,6 +22,8 @@ import nortantis.geom.IntDimension;
 import nortantis.platform.Color;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
+import nortantis.platform.PixelReader;
+import nortantis.platform.PixelReaderWriter;
 import nortantis.util.Assets;
 import nortantis.util.ConcurrentHashMapF;
 import nortantis.util.FileHelper;
@@ -151,14 +153,14 @@ public class ImageCache
 					{
 						if (maximizeOpacity)
 						{
-							try (PixelReadSession ignored = imageAndMasks.image.createPixelReader())
+							try (PixelReader imagePixels = imageAndMasks.image.createPixelReader())
 							{
 								int highestAlpha = 0;
 								for (int y = 0; y < imageAndMasks.image.getHeight(); y++)
 								{
 									for (int x = 0; x < imageAndMasks.image.getWidth(); x++)
 									{
-										Color imageColor = imageAndMasks.image.getPixelColor(x, y);
+										Color imageColor = imagePixels.getPixelColor(x, y);
 
 										if (imageColor.getAlpha() > highestAlpha)
 										{
@@ -179,58 +181,61 @@ public class ImageCache
 						Image result = Image.create(imageAndMasks.image.getWidth(), imageAndMasks.image.getHeight(), ImageType.ARGB);
 
 						Image colorMask = imageAndMasks.getOrCreateColorMask();
-						try (PixelReadSession _ = imageAndMasks.image.createPixelReader();
-								PixelWriteSession _ = result.createPixelReaderWriter())
+						try (PixelReader imagePixels = imageAndMasks.image.createPixelReader();
+								PixelReader colorMaskPixels = colorMask.createPixelReader();
+								PixelReaderWriter resultPixels = result.createPixelReaderWriter())
 						{
 							for (int y = 0; y < result.getHeight(); y++)
 							{
 								for (int x = 0; x < result.getWidth(); x++)
 								{
 
-									Color originalColor = imageAndMasks.image.getPixelColor(x, y);
+									Color originalColor = imagePixels.getPixelColor(x, y);
 
-								int alpha;
-								if (maximizeOpacity)
-								{
-									// I'm clamping the value to 255 in case of truncation errors, although I doubt that's possible.
-									alpha = Math.min(255, (int) (originalColor.getAlpha() * alphaScale));
-								}
-								else
-								{
-									alpha = originalColor.getAlpha();
-								}
+									int alpha;
+									if (maximizeOpacity)
+									{
+										// I'm clamping the value to 255 in case of truncation errors, although I doubt that's possible.
+										alpha = Math.min(255, (int) (originalColor.getAlpha() * alphaScale));
+									}
+									else
+									{
+										alpha = originalColor.getAlpha();
+									}
 
-								double fillColorAlpha = (fillWithColor ? fillColor.getAlpha() : 0) / 255.0;
-								double fillColorScale;
-								if (fillColorAlpha == 1.0)
-								{
-									// Save some time since this is a simple and common case.
-									fillColorScale = 1.0;
-								}
-								else
-								{
-									// Use a curve that is 0 when fillColorAlpha is 0, 1 when fillColorAlpha is 1, and is mostly equal to 1
-									// but dies off
-									// quickly as fillColorAlpha reaches 0. That way when the fill color is transparent, it doesn't mix with
-									// icon pixels
-									// that are partially transparent.
-									fillColorScale = 1.0 - Math.pow(1.0 - fillColorAlpha, 50);
-								}
+									double fillColorAlpha = (fillWithColor ? fillColor.getAlpha() : 0) / 255.0;
+									double fillColorScale;
+									if (fillColorAlpha == 1.0)
+									{
+										// Save some time since this is a simple and common case.
+										fillColorScale = 1.0;
+									}
+									else
+									{
+										// Use a curve that is 0 when fillColorAlpha is 0, 1 when fillColorAlpha is 1, and is mostly equal
+										// to 1
+										// but dies off
+										// quickly as fillColorAlpha reaches 0. That way when the fill color is transparent, it doesn't mix
+										// with
+										// icon pixels
+										// that are partially transparent.
+										fillColorScale = 1.0 - Math.pow(1.0 - fillColorAlpha, 50);
+									}
 
-								Color filteredImageColor;
-								int filteredAlpha;
-								// Use filter color
-								float[] hsb = originalColor.getHSB();
-								filteredImageColor = Color.createFromHSB(hsb[0] + filterHSB[0] - (float) Math.floor(hsb[0] + filterHSB[0]), Helper.clamp(hsb[1] + filterHSB[1], 0f, 1f),
-										Helper.clamp(hsb[2] + filterHSB[2], 0f, 1f));
-								filteredAlpha = Math.min(255, (int) (alpha * filterAlphaScale));
+									Color filteredImageColor;
+									int filteredAlpha;
+									// Use filter color
+									float[] hsb = originalColor.getHSB();
+									filteredImageColor = Color.createFromHSB(hsb[0] + filterHSB[0] - (float) Math.floor(hsb[0] + filterHSB[0]), Helper.clamp(hsb[1] + filterHSB[1], 0f, 1f),
+											Helper.clamp(hsb[2] + filterHSB[2], 0f, 1f));
+									filteredAlpha = Math.min(255, (int) (alpha * filterAlphaScale));
 
-								int r = Helper.linearComboBase255(filteredAlpha, filteredImageColor.getRed(), (int) (fillColor.getRed() * fillColorScale));
-								int g = Helper.linearComboBase255(filteredAlpha, filteredImageColor.getGreen(), (int) (fillColor.getGreen() * fillColorScale));
-								int b = Helper.linearComboBase255(filteredAlpha, filteredImageColor.getBlue(), (int) (fillColor.getBlue() * fillColorScale));
-								int a = Math.max(filteredAlpha, Math.min(fillColor.getAlpha(), colorMask.getGrayLevel(x, y)));
+									int r = Helper.linearComboBase255(filteredAlpha, filteredImageColor.getRed(), (int) (fillColor.getRed() * fillColorScale));
+									int g = Helper.linearComboBase255(filteredAlpha, filteredImageColor.getGreen(), (int) (fillColor.getGreen() * fillColorScale));
+									int b = Helper.linearComboBase255(filteredAlpha, filteredImageColor.getBlue(), (int) (fillColor.getBlue() * fillColorScale));
+									int a = Math.max(filteredAlpha, Math.min(fillColor.getAlpha(), colorMaskPixels.getGrayLevel(x, y)));
 
-									result.setRGB(x, y, r, g, b, a);
+									resultPixels.setRGB(x, y, r, g, b, a);
 								}
 							}
 						}

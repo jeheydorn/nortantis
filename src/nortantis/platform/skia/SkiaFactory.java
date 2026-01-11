@@ -53,8 +53,7 @@ public class SkiaFactory extends PlatformFactory
 			// This is more reliable than drawing through a Canvas, which can leave
 			// the bitmap in a state where Image.makeFromBitmap fails later.
 			Bitmap bitmap = new Bitmap();
-			bitmap.allocPixels(new org.jetbrains.skia.ImageInfo(image.getWidth(), image.getHeight(),
-					org.jetbrains.skia.ColorType.Companion.getN32(), org.jetbrains.skia.ColorAlphaType.PREMUL, null));
+			bitmap.allocPixels(new org.jetbrains.skia.ImageInfo(image.getWidth(), image.getHeight(), org.jetbrains.skia.ColorType.Companion.getN32(), org.jetbrains.skia.ColorAlphaType.PREMUL, null));
 
 			// Use readPixels to directly copy pixel data from image to bitmap
 			image.readPixels(bitmap, 0, 0);

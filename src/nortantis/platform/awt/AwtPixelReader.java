@@ -25,7 +25,7 @@ public class AwtPixelReader implements PixelReader
 		maxPixelLevelAsFloat = image.getMaxPixelLevel();
 		if (image.isCompatibleIntFormat())
 		{
-			this.cachedPixelArray =  ((DataBufferInt) raster.getDataBuffer()).getData();
+			this.cachedPixelArray = ((DataBufferInt) raster.getDataBuffer()).getData();
 		}
 		bufferedImage = AwtFactory.unwrap(image);
 	}
@@ -86,7 +86,7 @@ public class AwtPixelReader implements PixelReader
 	}
 
 	@Override
-	public void close() throws Exception
+	public void close()
 	{
 		image.endPixelReadsOrWrites();
 	}

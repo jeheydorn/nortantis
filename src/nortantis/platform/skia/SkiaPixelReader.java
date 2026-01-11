@@ -67,7 +67,7 @@ public class SkiaPixelReader implements PixelReader
 
 
 	@Override
-	public void close() throws Exception
+	public void close()
 	{
 		image.endPixelReadsOrWrites();
 	}
