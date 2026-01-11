@@ -20,7 +20,6 @@ public class SkiaImage extends Image
 	private final int width;
 	private final int height;
 	private org.jetbrains.skia.Image cachedSkiaImage;
-	private PixelReader currentPixelReader;
 
 	public SkiaImage(int width, int height, ImageType type)
 	{
