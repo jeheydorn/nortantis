@@ -1,5 +1,6 @@
 package nortantis.platform.awt;
 
+import nortantis.geom.IntRectangle;
 import nortantis.platform.Color;
 import nortantis.platform.Image;
 import nortantis.platform.PixelReader;
@@ -17,9 +18,9 @@ public class AwtPixelReader implements PixelReader
 	Raster alphaRaster;
 	protected final float maxPixelLevelAsFloat;
 	protected final Image image;
+	protected final IntRectangle bounds;
 
-
-	AwtPixelReader(AwtImage image)
+	AwtPixelReader(AwtImage image, IntRectangle bounds)
 	{
 		this.image = image;
 		maxPixelLevelAsFloat = image.getMaxPixelLevel();
@@ -28,6 +29,12 @@ public class AwtPixelReader implements PixelReader
 			this.cachedPixelArray = ((DataBufferInt) raster.getDataBuffer()).getData();
 		}
 		bufferedImage = AwtFactory.unwrap(image);
+		this.bounds = bounds;
+	}
+
+	AwtPixelReader(AwtImage image)
+	{
+		this(image, null);
 	}
 
 	private void createRastersIfNeeded()

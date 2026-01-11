@@ -1,21 +1,29 @@
 package nortantis.platform.skia;
 
+import nortantis.geom.IntRectangle;
 import nortantis.platform.Color;
 import nortantis.platform.PixelReader;
 
 public class SkiaPixelReader implements PixelReader
 {
-	protected int[] cachedPixelArray;
+	protected final IntRectangle bounds;
+	protected final int[] cachedPixelArray;
 	protected final float maxPixelLevelAsFloat;
 	protected final SkiaImage image;
 	protected final int width;
 
-	public SkiaPixelReader(SkiaImage image)
+	public SkiaPixelReader(SkiaImage image, IntRectangle bounds)
 	{
 		maxPixelLevelAsFloat = image.getMaxPixelLevel();
 		cachedPixelArray = image.readPixelsToIntArray();
 		this.image = image;
 		width = image.getWidth();
+		this.bounds = bounds;
+	}
+
+	public SkiaPixelReader(SkiaImage image)
+	{
+		this(image, null);
 	}
 
 	@Override

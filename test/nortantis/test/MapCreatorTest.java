@@ -739,7 +739,7 @@ public class MapCreatorTest
 
 		if (image1.getWidth() == image2.getWidth() && image1.getHeight() == image2.getHeight())
 		{
-			try (PixelReader image1Pixels = image1.createPixelReader(); PixelReader image2Pixels = image1.createNewPixelReader())
+			try (PixelReader image1Pixels = image1.createPixelReader(); PixelReader image2Pixels = image1.createPixelReader())
 			{
 				for (int x = 0; x < image1.getWidth(); x++)
 				{
@@ -781,7 +781,7 @@ public class MapCreatorTest
 		if (image1.getWidth() == image2.getWidth() && image1.getHeight() == image2.getHeight())
 		{
 			Image diff = Image.create(image1.getWidth(), image1.getHeight(), ImageType.RGB);
-			try (PixelReader image1Pixels = image1.createPixelReader(); PixelReader image2Pixels = image1.createNewPixelReader(); PixelReaderWriter diffPixels = diff.createPixelReaderWriter())
+			try (PixelReader image1Pixels = image1.createPixelReader(); PixelReader image2Pixels = image1.createPixelReader(); PixelReaderWriter diffPixels = diff.createPixelReaderWriter())
 			{
 				for (int x = 0; x < image1.getWidth(); x++)
 				{

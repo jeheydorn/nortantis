@@ -1,13 +1,10 @@
 package nortantis.platform;
 
-import java.io.InputStream;
-
-import nortantis.platform.awt.AwtPixelReader;
-import nortantis.platform.awt.AwtPixelReaderWriter;
-import org.imgscalr.Scalr.Method;
-
 import nortantis.geom.IntDimension;
 import nortantis.geom.IntRectangle;
+import org.imgscalr.Scalr.Method;
+
+import java.io.InputStream;
 
 public abstract class Image
 {
@@ -103,14 +100,12 @@ public abstract class Image
 	public abstract Image deepCopy();
 
 	/**
-	 * Creates an image with the given bounds in this image, backed by the same data as the original image. This means that modifications to
-	 * the result will modify the original image.
+	 * Creates an image with the given bounds in this image, backed by the same data as the original image. This means that modifications to the result will modify the original image.
 	 */
 	public abstract Image getSubImage(IntRectangle bounds);
 
 	/**
-	 * Creates an image with the given bounds in this image, backed by a copy of the data from the original image. This means that
-	 * modifications to the result will NOT modify the original image.
+	 * Creates an image with the given bounds in this image, backed by a copy of the data from the original image. This means that modifications to the result will NOT modify the original image.
 	 */
 	public Image copySubImage(IntRectangle bounds)
 	{
@@ -136,14 +131,15 @@ public abstract class Image
 	}
 
 	/**
-	 * Begins a pixel read session. This caches pixel data for efficient single-pixel reads. Use with try-with-resources to ensure the
-	 * session is properly closed.
-	 *
-	 * If a write session is in progress, it will be auto-flushed with a warning.
-	 *
-	 * @return A session object that should be closed when done reading.
+	 * Creates a pixel reader for reading individual pixel values from this image.
 	 */
-	public abstract PixelReader createNewPixelReader();
+	public abstract PixelReader innerMakeNewPixelReader();
+
+	/**
+	 * Creates a pixel reader that is restricted to read from the given bounds of this image. For the Skia implementation, this is much more efficient than creating a pixel reader for the entire
+	 * image.
+	 */
+	public abstract PixelReader innerMakeNewPixelReader(IntRectangle bounds);
 
 	/**
 	 * Runs when pixel reads finish.
@@ -151,16 +147,17 @@ public abstract class Image
 	public abstract void endPixelReadsOrWrites();
 
 	/**
-	 * Begins a pixel write session. This caches pixel data for efficient single-pixel writes. Use with try-with-resources to ensure the
-	 * session is properly closed and changes are flushed.
-	 *
-	 * If a read session is in progress, it will be auto-ended with a warning.
-	 *
-	 * @return A session object that should be closed when done writing.
+	 * Creates a pixel reader/writer for reading and writing individual pixel values for this image.
 	 */
-	public abstract PixelReaderWriter createNewPixelReaderWriter();
+	public abstract PixelReaderWriter innerMakeNewPixelReaderWriter();
 
 
+	public abstract PixelReaderWriter innerMakeNewPixelReaderWriter(IntRectangle bounds);
+
+	/**
+	 * Creates a pixel reader/writier that is restricted to read/write in the given bounds of this image. For the Skia implementation, this is much more efficient than creating a pixel reader for the
+	 * entire image.
+	 */
 	public PixelReader createPixelReader()
 	{
 		if (currentPixelReader != null)
@@ -172,7 +169,7 @@ public abstract class Image
 			throw new IllegalStateException("Pixel reader already created");
 		}
 
-		currentPixelReader = createNewPixelReader();
+		currentPixelReader = innerMakeNewPixelReader();
 		return currentPixelReader;
 	}
 
@@ -187,7 +184,7 @@ public abstract class Image
 			throw new IllegalStateException("Pixel reader already created");
 		}
 
-		currentPixelReader = createNewPixelReaderWriter();
+		currentPixelReader = innerMakeNewPixelReaderWriter();
 		return (PixelReaderWriter) currentPixelReader;
 	}
 }

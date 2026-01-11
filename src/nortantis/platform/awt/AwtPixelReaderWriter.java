@@ -1,14 +1,19 @@
 package nortantis.platform.awt;
 
+import nortantis.geom.IntRectangle;
 import nortantis.platform.Color;
-import nortantis.platform.Image;
 import nortantis.platform.PixelReaderWriter;
 
 public class AwtPixelReaderWriter extends AwtPixelReader implements PixelReaderWriter
 {
 	AwtPixelReaderWriter(AwtImage image)
 	{
-		super(image);
+		this(image, null);
+	}
+
+	AwtPixelReaderWriter(AwtImage image, IntRectangle bounds)
+	{
+		super(image, bounds);
 	}
 
 	@Override

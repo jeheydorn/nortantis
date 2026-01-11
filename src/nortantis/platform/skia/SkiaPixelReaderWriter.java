@@ -1,15 +1,19 @@
 package nortantis.platform.skia;
 
+import nortantis.geom.IntRectangle;
 import nortantis.platform.Color;
 import nortantis.platform.PixelReaderWriter;
-import org.jetbrains.skia.Canvas;
-import org.jetbrains.skia.SurfaceProps;
 
 public class SkiaPixelReaderWriter extends SkiaPixelReader implements PixelReaderWriter
 {
 	public SkiaPixelReaderWriter(SkiaImage image)
 	{
-		super(image);
+		this(image, null);
+	}
+
+	public SkiaPixelReaderWriter(SkiaImage image, IntRectangle bounds)
+	{
+		super(image, bounds);
 	}
 
 	@Override
