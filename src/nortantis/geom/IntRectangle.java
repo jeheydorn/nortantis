@@ -20,6 +20,11 @@ public class IntRectangle
 		this(location.x, location.y, size.width, size.height);
 	}
 
+	public IntRectangle(IntPoint location, int width, int height)
+	{
+		this(location.x, location.y, width, height);
+	}
+
 	public IntDimension size()
 	{
 		return new IntDimension(width, height);

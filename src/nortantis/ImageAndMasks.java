@@ -213,7 +213,7 @@ public class ImageAndMasks
 
 	private void remove4DirectionalSilhouetteFromContentMask()
 	{
-		// Remove pixels using silhouettes from each direction to cleanup stuff the narrow passage check leaves behind.
+		// Remove pixels using silhouettes from each direction to clean up stuff the narrow passage check leaves behind.
 		try (PixelReader imagePixels = image.createPixelReader(); PixelReaderWriter contentMaskPixels = contentMask.createPixelReaderWriter())
 		{
 			// From Top

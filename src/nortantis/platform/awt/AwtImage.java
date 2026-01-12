@@ -86,21 +86,9 @@ class AwtImage extends Image
 	}
 
 	@Override
-	public PixelReader innerMakeNewPixelReader()
-	{
-		return new AwtPixelReader(this);
-	}
-
-	@Override
 	public PixelReader innerMakeNewPixelReader(IntRectangle bounds)
 	{
 		return new AwtPixelReader(this, bounds);
-	}
-
-	@Override
-	public PixelReaderWriter innerMakeNewPixelReaderWriter()
-	{
-		return new AwtPixelReaderWriter(this);
 	}
 
 	@Override

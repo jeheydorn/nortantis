@@ -145,16 +145,15 @@ public class ImageHelper
 	}
 
 	/**
-	 * Update one piece of a scaled image. Takes an area defined by boundsInSource and scales it into target. This implementation bicubic
-	 * scaling is about five times slower than the one used by ImgScalr, but is much faster when I only want to update a small piece of a
-	 * scaled image.
+	 * Update one piece of a scaled image. Takes an area defined by boundsInSource and scales it into target. This implementation bicubic scaling is about five times slower than the one used by
+	 * ImgScalr, but is much faster when I only want to update a small piece of a scaled image.
 	 *
 	 * @param source
-	 *            The unscaled image.
+	 * 		The unscaled image.
 	 * @param target
-	 *            The scaled image
+	 * 		The scaled image
 	 * @param boundsInSource
-	 *            The area in the source image that will be scaled and placed into the target image.
+	 * 		The area in the source image that will be scaled and placed into the target image.
 	 */
 	public static void scaleInto(Image source, Image target, IntRectangle boundsInSource)
 	{
@@ -178,7 +177,7 @@ public class ImageHelper
 					Math.min((int) (boundsInSource.height * scale) + 1, target.getHeight() - 1 - upperLeftY));
 		}
 
-		try (PixelReader sourcePixels = source.createPixelReader(); PixelReaderWriter targetPixels = target.createPixelReaderWriter())
+		try (PixelReader sourcePixels = source.createPixelReader(boundsInSource); PixelReaderWriter targetPixels = target.createPixelReaderWriter(pixelsToUpdate))
 		{
 			for (int y = pixelsToUpdate.y; y < pixelsToUpdate.y + pixelsToUpdate.height; y++)
 			{
@@ -221,7 +220,7 @@ public class ImageHelper
 	/**
 	 *
 	 * @param size
-	 *            Number of pixels from 3 standard deviations from one side of the Guassian to the other.
+	 * 		Number of pixels from 3 standard deviations from one side of the Guassian to the other.
 	 * @return
 	 */
 	public static float[][] createGaussianKernel(int size)
@@ -408,11 +407,9 @@ public class ImageHelper
 	}
 
 	/**
-	 * Sets pixels in image1 to a linear combination of that pixel from image1 and from image2 using the gray levels in the given mask. The
-	 * mask must be ImageType.Grayscale.
+	 * Sets pixels in image1 to a linear combination of that pixel from image1 and from image2 using the gray levels in the given mask. The mask must be ImageType.Grayscale.
 	 *
-	 * An advantage of this over maskWithImageInPlace is that since it creates a new image for the result, the result respects transparency
-	 * if image1 doesn't have alpha but image2 does.
+	 * An advantage of this over maskWithImageInPlace is that since it creates a new image for the result, the result respects transparency if image1 doesn't have alpha but image2 does.
 	 */
 	public static Image maskWithImage(Image image1, Image image2, Image mask)
 	{
@@ -500,8 +497,7 @@ public class ImageHelper
 	}
 
 	/**
-	 * Sets pixels in image1 to a linear combination of that pixel from image1 and from image2 using the gray levels in the given mask. The
-	 * mask must be ImageType.Grayscale.
+	 * Sets pixels in image1 to a linear combination of that pixel from image1 and from image2 using the gray levels in the given mask. The mask must be ImageType.Grayscale.
 	 */
 	public static void maskWithImageInPlace(Image image1, Image image2, Image mask, IntPoint maskOffset, boolean invertMask)
 	{
@@ -535,24 +531,22 @@ public class ImageHelper
 			return;
 		}
 		IntPoint diff = maskBoundsInImage1.upperLeftCorner().subtract(maskBounds.upperLeftCorner());
+		IntRectangle maskBoundsInMask = new IntRectangle(diff.x, diff.y, maskBoundsInImage1.width, maskBoundsInImage1.height);
 
-		Image image1Snippet = image1.copySubImage(maskBoundsInImage1, true);
 		Image image2Snippet = image2.copySubImage(maskBoundsInImage1);
 
-		try (PixelReader image1SnippetPixels = image1Snippet.createPixelReader();
+		try (PixelReader image1Pixels = image1.createPixelReader(maskBoundsInImage1);
 				PixelReaderWriter image2SnippetPixels = image2Snippet.createPixelReaderWriter();
-				PixelReader maskPixels = mask.createPixelReader())
+				PixelReader maskPixels = mask.createPixelReader(maskBoundsInMask))
 		{
 			ThreadHelper.getInstance().processRowsInParallel(0, image2Snippet.getHeight(), (y) ->
 			{
-				for (int x = 0; x < image1Snippet.getWidth(); x++)
+				for (int x = 0; x < image2Snippet.getWidth(); x++)
 				{
-					Color c1 = image1SnippetPixels.getPixelColor(x, y);
+					Color c1 = image1Pixels.getPixelColor(x + maskBoundsInImage1.x, y + maskBoundsInImage1.y);
 					Color c2 = image2SnippetPixels.getPixelColor(x, y);
 
-					int xInMask = x + diff.x;
-					int yInMask = y + diff.y;
-					int maskLevel = invertMask ? 255 - maskPixels.getGrayLevel(xInMask, yInMask) : maskPixels.getGrayLevel(xInMask, yInMask);
+					int maskLevel = invertMask ? 255 - maskPixels.getGrayLevel(x, y) : maskPixels.getGrayLevel(x, y);
 
 					int r = Helper.linearComboBase255(maskLevel, (c1.getRed()), (c2.getRed()));
 					int g = Helper.linearComboBase255(maskLevel, (c1.getGreen()), (c2.getGreen()));
@@ -589,11 +583,12 @@ public class ImageHelper
 			throw new IllegalArgumentException("mask type must be ImageType.Grayscale.");
 
 		Image overlay = Image.create(image.getWidth(), image.getHeight(), ImageType.ARGB);
-		try (PixelReader maskPixels = mask.createPixelReader(); PixelReaderWriter overlayPixels = overlay.createPixelReaderWriter())
+		try (PixelReader maskPixels = mask.createPixelReader(new IntRectangle(imageOffsetInMask, overlay.getWidth(), overlay.getHeight()));
+				PixelReaderWriter overlayPixels = overlay.createPixelReaderWriter())
 		{
-			ThreadHelper.getInstance().processRowsInParallel(0, image.getHeight(), (y) ->
+			ThreadHelper.getInstance().processRowsInParallel(0, overlay.getHeight(), (y) ->
 			{
-				for (int x = 0; x < image.getWidth(); x++)
+				for (int x = 0; x < overlay.getWidth(); x++)
 				{
 					int xInMask = x + imageOffsetInMask.x;
 					int yInMask = y + imageOffsetInMask.y;
@@ -629,7 +624,7 @@ public class ImageHelper
 			throw new IllegalArgumentException("Mask must be of type ImageType.Binary.");
 		}
 
-		try (PixelReader maskPixels = mask.createPixelReader(); PixelReaderWriter imagePixels = image.createPixelReaderWriter())
+		try (PixelReader maskPixels = mask.createPixelReader(); PixelReaderWriter imagePixels = image.createPixelReaderWriter(new IntRectangle(maskOffsetInImage, mask.getWidth(), mask.getHeight())))
 		{
 			ThreadHelper.getInstance().processRowsInParallel(0, mask.getHeight(), (yInMask) ->
 			{
@@ -654,7 +649,7 @@ public class ImageHelper
 	 * Like maskWithColor except multiple colors can be specified.
 	 *
 	 * @param colorIndexes
-	 *            Each pixel stores a gray level which (converted to an int) is an index into colors.
+	 * 		Each pixel stores a gray level which (converted to an int) is an index into colors.
 	 */
 	public static Image maskWithMultipleColors(Image image, Map<Integer, Color> colors, Image colorIndexes, Image mask, boolean invertMask)
 	{
@@ -730,11 +725,11 @@ public class ImageHelper
 	 * Creates a new Image in which the values of the given alphaMask to be the alpha channel in image.
 	 *
 	 * @param image
-	 *            Image to get color data from
+	 * 		Image to get color data from
 	 * @param alphaMask
-	 *            Must be type ImageType.Grayscale. It must also be the same dimension as image.
+	 * 		Must be type ImageType.Grayscale. It must also be the same dimension as image.
 	 * @param invertMask
-	 *            If true, the alpha values from alphaMask will be inverted.
+	 * 		If true, the alpha values from alphaMask will be inverted.
 	 */
 	public static Image setAlphaFromMask(Image image, Image alphaMask, boolean invertMask)
 	{
@@ -758,9 +753,9 @@ public class ImageHelper
 	 * Returns a new Image with adjusted transparency.
 	 *
 	 * @param original
-	 *            The original Image.
+	 * 		The original Image.
 	 * @param alpha
-	 *            The alpha value (0 = fully transparent, 255 = fully opaque).
+	 * 		The alpha value (0 = fully transparent, 255 = fully opaque).
 	 * @return A new Image with the specified transparency applied.
 	 */
 	public static Image applyAlpha(Image original, Integer alpha)
@@ -790,11 +785,11 @@ public class ImageHelper
 	 *
 	 * @param image
 	 * @param alphaMask
-	 *            Must be type ImageType.Grayscale. It must also be the same dimension as image.
+	 * 		Must be type ImageType.Grayscale. It must also be the same dimension as image.
 	 * @param invertMask
-	 *            If true, the alpha values from alphaMask will be inverted.
+	 * 		If true, the alpha values from alphaMask will be inverted.
 	 * @param imageOffsetInMask
-	 *            Used if the image is smaller than the mask, so only a piece of the mask should be used.
+	 * 		Used if the image is smaller than the mask, so only a piece of the mask should be used.
 	 * @return A new image
 	 */
 	public static Image setAlphaFromMaskInRegion(Image image, Image alphaMask, boolean invertMask, IntPoint imageOffsetInMask)
@@ -805,7 +800,10 @@ public class ImageHelper
 		}
 
 		Image result = Image.create(image.getWidth(), image.getHeight(), ImageType.ARGB);
-		try (PixelReader alphaMaskPixels = alphaMask.createPixelReader(); PixelReader imagePixels = image.createPixelReader(); PixelReaderWriter resultPixels = result.createPixelReaderWriter())
+		IntRectangle imageBoundsInMask = imageOffsetInMask == null ? null : new IntRectangle(imageOffsetInMask, image.getWidth(), image.getHeight());
+		try (PixelReader alphaMaskPixels = alphaMask.createPixelReader(imageBoundsInMask);
+				PixelReader imagePixels = image.createPixelReader();
+				PixelReaderWriter resultPixels = result.createPixelReaderWriter())
 		{
 			for (int y = 0; y < image.getHeight(); y++)
 				for (int x = 0; x < image.getWidth(); x++)
@@ -916,22 +914,20 @@ public class ImageHelper
 	}
 
 	/**
-	 * Extracts the specified region from image2, then makes the given mask be the alpha channel of that extracted region, then draws the
-	 * extracted region onto image1.
+	 * Extracts the specified region from image2, then makes the given mask be the alpha channel of that extracted region, then draws the extracted region onto image1.
 	 *
 	 * @param image1
-	 *            The image to draw to.
+	 * 		The image to draw to.
 	 * @param image2
-	 *            The background image which the mask indicates to pull pixel values from.
+	 * 		The background image which the mask indicates to pull pixel values from.
 	 * @param mask
-	 *            Pixel values tell how to combine values from image1 and image2.
+	 * 		Pixel values tell how to combine values from image1 and image2.
 	 * @param xLoc
-	 *            X component of the upper left corner at which image2 pixel values will be drawn into image1, using the mask, before
-	 *            rotation is applied.
+	 * 		X component of the upper left corner at which image2 pixel values will be drawn into image1, using the mask, before rotation is applied.
 	 * @param yLoc
-	 *            Like xLoc, but for Y component.
+	 * 		Like xLoc, but for Y component.
 	 * @param angle
-	 *            Angle at which to rotate the mask before drawing into image 1. It will be rotated about the center of the mask.
+	 * 		Angle at which to rotate the mask before drawing into image 1. It will be rotated about the center of the mask.
 	 */
 	public static void combineImagesWithMaskInRegion(Image image1, Image image2, Image mask, int xLoc, int yLoc, double angle, Point pivot)
 	{
@@ -988,8 +984,7 @@ public class ImageHelper
 	}
 
 	/**
-	 * Creates an image the requested width and height that contains a region extracted from 'image', rotated at the given angle about the
-	 * given pivot.
+	 * Creates an image the requested width and height that contains a region extracted from 'image', rotated at the given angle about the given pivot.
 	 *
 	 * Warning: This adds an alpha channel, so the output image may not be the same type as the input image.
 	 */
@@ -1027,17 +1022,17 @@ public class ImageHelper
 
 	/**
 	 *
-	 * Creates a copy of a piece of an image, preserving the color of transparent pixels. This is the same as copySnippet if the snippet is
-	 * only for being displayed, but when combining with layers with alpha later, it can make a difference. Also, this version is much
-	 * slower.
+	 * Creates a copy of a piece of an image, preserving the color of transparent pixels. This is the same as copySnippet if the snippet is only for being displayed, but when combining with layers
+	 * with alpha later, it can make a difference. Also, this version is much slower.
 	 *
-	 * It is important the the result is a copy even if the desired region is exactly the input.
+	 * It is important the result is a copy even if the desired region is exactly the input.
 	 */
 	public static Image copySnippetPreservingAlphaOfTransparentPixels(Image source, int xLoc, int yLoc, int width, int height)
 	{
 		IntRectangle sourceBounds = new IntRectangle(0, 0, source.size().width, source.size().height);
 		Image result = Image.create(width, height, source.getType());
-		try (PixelReader sourcePixels = source.createPixelReader(); PixelReaderWriter resultPixels = result.createPixelReaderWriter())
+		IntRectangle copyBoundsInSource = new IntRectangle(xLoc, yLoc, width, height).findIntersection(sourceBounds);
+		try (PixelReader sourcePixels = source.createPixelReader(copyBoundsInSource); PixelReaderWriter resultPixels = result.createPixelReaderWriter())
 		{
 			for (int y = 0; y < height; y++)
 			{
@@ -1103,6 +1098,21 @@ public class ImageHelper
 		}
 	}
 
+	/**
+	 * Draws one binary image onto another, but only overwrites pixels in the target where the source pixel value is greater than the target pixel value. This performs a conditional copy operation
+	 * where pixels are only updated if the source value exceeds the current target value.
+	 *
+	 * @param target
+	 * 		The destination binary image to draw onto. Must be of type ImageType.Binary. Modified in place.
+	 * @param toDraw
+	 * 		The source binary image to draw from. Must be of type ImageType.Binary.
+	 * @param xLoc
+	 * 		The x-coordinate in the target image where the upper-left corner of toDraw will be placed.
+	 * @param yLoc
+	 * 		The y-coordinate in the target image where the upper-left corner of toDraw will be placed.
+	 * @throws IllegalArgumentException
+	 * 		If either target or toDraw is not of type ImageType.Binary.
+	 */
 	public static void drawIfPixelValueIsGreaterThanTarget(Image target, Image toDraw, int xLoc, int yLoc)
 	{
 		if (toDraw.getType() != ImageType.Binary)
@@ -1114,7 +1124,8 @@ public class ImageHelper
 			throw new IllegalArgumentException("Unsupported buffered image type for target. Actual type: " + target.getType());
 		}
 
-		try (PixelReader toDrawPixels = toDraw.createPixelReader(); PixelReaderWriter targetPixels = target.createPixelReaderWriter())
+		try (PixelReader toDrawPixels = toDraw.createPixelReader();
+				PixelReaderWriter targetPixels = target.createPixelReaderWriter(new IntRectangle(xLoc, yLoc, toDraw.getWidth(), toDraw.getHeight())))
 		{
 			for (int r = 0; r < toDraw.getHeight(); r++)
 			{
@@ -1146,16 +1157,15 @@ public class ImageHelper
 	 * Convolves a gray-scale image and with a kernel. The input image is unchanged.
 	 *
 	 * @param img
-	 *            Image to convolve
+	 * 		Image to convolve
 	 * @param kernel
-	 *            The kernel to convolve with.
+	 * 		The kernel to convolve with.
 	 * @param maximizeContrast
-	 *            Iff true, the contrast of the convolved image will be maximized while it is still in floating point representation. In the
-	 *            result the pixel values will range from 0 to 255 for 8 bit pixels, or 65535 for 16 bit. This is better than maximizing the
-	 *            contrast of the result because the result is a Image, which has less precise values than floats.
+	 * 		Iff true, the contrast of the convolved image will be maximized while it is still in floating point representation. In the result the pixel values will range from 0 to 255 for 8 bit pixels,
+	 * 		or 65535 for 16 bit. This is better than maximizing the contrast of the result because the result is a Image, which has less precise values than floats.
 	 * @param paddImageToAvoidWrapping
-	 *            Normally, in wage convolution done using fast Fourier transforms will do wrapping when calculating values of pixels along
-	 *            edges. Set this flag to add black padding pixels to the edge of the image to avoid this.
+	 * 		Normally, in wage convolution done using fast Fourier transforms will do wrapping when calculating values of pixels along edges. Set this flag to add black padding pixels to the edge of the
+	 * 		image to avoid this.
 	 * @return The convolved image.
 	 */
 	public static Image convolveGrayscale(Image img, float[][] kernel, boolean maximizeContrast, boolean paddImageToAvoidWrapping)
@@ -1177,17 +1187,17 @@ public class ImageHelper
 	}
 
 	/**
-	 * Convolves a gray-scale image with a kernel. The input image is unchanged. The convolved image will be scaled while it is still in
-	 * floating point representation. Values below 0 will be made 0. Values above 1 will be made 1.
+	 * Convolves a gray-scale image with a kernel. The input image is unchanged. The convolved image will be scaled while it is still in floating point representation. Values below 0 will be made 0.
+	 * Values above 1 will be made 1.
 	 *
 	 * @param img
-	 *            Image to convolve
+	 * 		Image to convolve
 	 * @param kernel
 	 * @param scale
-	 *            Amount to multiply levels by.
+	 * 		Amount to multiply levels by.
 	 * @param paddImageToAvoidWrapping
-	 *            Normally, in wage convolution done using fast Fourier transforms will do wrapping when calculating values of pixels along
-	 *            edges. Set this flag to add black padding pixels to the edge of the image to avoid this.
+	 * 		Normally, in wage convolution done using fast Fourier transforms will do wrapping when calculating values of pixels along edges. Set this flag to add black padding pixels to the edge of the
+	 * 		image to avoid this.
 	 * @return The convolved image.
 	 */
 	public static Image convolveGrayscaleThenScale(Image img, float[][] kernel, float scale, boolean paddImageToAvoidWrapping)
@@ -1198,17 +1208,17 @@ public class ImageHelper
 	}
 
 	/**
-	 * Convolves a gray-scale image with a kernel. The input image is unchanged. The convolved image will be scaled while it is still in
-	 * floating point representation. Values below 0 will be made 0. Values above 1 will be made 1.
+	 * Convolves a gray-scale image with a kernel. The input image is unchanged. The convolved image will be scaled while it is still in floating point representation. Values below 0 will be made 0.
+	 * Values above 1 will be made 1.
 	 *
 	 * @param img
-	 *            Image to convolve
+	 * 		Image to convolve
 	 * @param kernel
 	 * @param scale
-	 *            Amount to multiply levels by.
+	 * 		Amount to multiply levels by.
 	 * @param paddImageToAvoidWrapping
-	 *            Normally, in wage convolution done using fast Fourier transforms will do wrapping when calculating values of pixels along
-	 *            edges. Set this flag to add black padding pixels to the edge of the image to avoid this.
+	 * 		Normally, in wage convolution done using fast Fourier transforms will do wrapping when calculating values of pixels along edges. Set this flag to add black padding pixels to the edge of the
+	 * 		image to avoid this.
 	 * @return The convolved image.
 	 */
 	public static Image convolveGrayscaleThenScale(Image img, float[][] kernel, float scale, boolean paddImageToAvoidWrapping, ImageType resultType)
@@ -1308,12 +1318,11 @@ public class ImageHelper
 	 *
 	 * @param input
 	 * @param rows
-	 *            Number of rows in the output
+	 * 		Number of rows in the output
 	 * @param cols
-	 *            Number of columns in the output
+	 * 		Number of columns in the output
 	 * @param flipXAndYAxis
-	 *            For kernels. Flip the kernel along the x and y axis as I get the values from it. This is needed to do convolution instead
-	 *            of cross-correlation.
+	 * 		For kernels. Flip the kernel along the x and y axis as I get the values from it. This is needed to do convolution instead of cross-correlation.
 	 * @return
 	 */
 	public static ComplexArray forwardFFT(float[][] input, int rows, int cols, boolean flipXAndYAxis)
@@ -1424,11 +1433,11 @@ public class ImageHelper
 	 * Do histogram matching on an image.
 	 *
 	 * @param target
-	 *            The image to do histogram matching on.
+	 * 		The image to do histogram matching on.
 	 * @param source
-	 *            The source of histogram information.
+	 * 		The source of histogram information.
 	 * @param resultType
-	 *            Image type of the result.
+	 * 		Image type of the result.
 	 */
 	public static Image matchHistogram(Image target, Image source, ImageType resultType)
 	{
@@ -1457,11 +1466,11 @@ public class ImageHelper
 	 * Creates a colored image from a grayscale one and a given color.
 	 *
 	 * @param image
-	 *            Grayscale image
+	 * 		Grayscale image
 	 * @param color
-	 *            Color to use
+	 * 		Color to use
 	 * @param how
-	 *            Algorithm to use when determining pixel colors
+	 * 		Algorithm to use when determining pixel colors
 	 * @return
 	 */
 	public static Image colorify(Image image, Color color, ColorifyAlgorithm how)
@@ -1473,13 +1482,13 @@ public class ImageHelper
 	 * Creates a colored image from a grayscale one and a given color.
 	 *
 	 * @param image
-	 *            Grayscale image
+	 * 		Grayscale image
 	 * @param color
-	 *            Color to use
+	 * 		Color to use
 	 * @param how
-	 *            Algorithm to use when determining pixel colors
+	 * 		Algorithm to use when determining pixel colors
 	 * @param forceAddAlpha
-	 *            Forces the result to have an alpha channel, even when "color" is opaque.
+	 * 		Forces the result to have an alpha channel, even when "color" is opaque.
 	 * @return
 	 */
 	public static Image colorify(Image image, Color color, ColorifyAlgorithm how, boolean forceAddAlpha)
@@ -1570,21 +1579,20 @@ public class ImageHelper
 	}
 
 	/**
-	 * Like colorify but for multiple colors. Colorifies an image using a an array of colors and a second image which maps those colors to
-	 * pixels. This way you can specify multiple colors for the resulting image.
+	 * Like colorify but for multiple colors. Colorifies an image using a an array of colors and a second image which maps those colors to pixels. This way you can specify multiple colors for the
+	 * resulting image.
 	 *
 	 * @param image
-	 *            The image to colorify
+	 * 		The image to colorify
 	 * @param colorMap
-	 *            Used as a map from region index (in politicalRegions) to region color.
+	 * 		Used as a map from region index (in politicalRegions) to region color.
 	 * @param colorIndexes
-	 *            Each pixel stores a gray level which (converted to an int) is an index into colors.
+	 * 		Each pixel stores a gray level which (converted to an int) is an index into colors.
 	 * @param how
-	 *            Determines the algorithm to use for coloring pixels
+	 * 		Determines the algorithm to use for coloring pixels
 	 * @param where
-	 *            Allows colorifying only a snippet of image. If given, then it is assumed that colorIndex is possibly smaller than image,
-	 *            and this point is the upper left corner in image where the result should be extracted from, using the width and height of
-	 *            colorIndexes.
+	 * 		Allows colorifying only a snippet of image. If given, then it is assumed that colorIndex is possibly smaller than image, and this point is the upper left corner in image where the result
+	 * 		should be extracted from, using the width and height of colorIndexes.
 	 */
 	public static Image colorifyMulti(Image image, Map<Integer, Color> colorMap, Image colorIndexes, ColorifyAlgorithm how, IntPoint where)
 	{
@@ -1612,7 +1620,10 @@ public class ImageHelper
 		IntRectangle imageBounds = new IntRectangle(0, 0, image.getWidth(), image.getHeight());
 
 		IntPoint whereFinal = where;
-		try (PixelReader imagePixels = image.createPixelReader(); PixelReader colorIndexesPixels = colorIndexes.createPixelReader(); PixelReaderWriter resultPixels = result.createPixelReaderWriter())
+		IntRectangle boundsInImage = where == null ? null : new IntRectangle(where, colorIndexes.getWidth(), colorIndexes.getHeight());
+		try (PixelReader imagePixels = image.createPixelReader(boundsInImage);
+				PixelReader colorIndexesPixels = colorIndexes.createPixelReader();
+				PixelReaderWriter resultPixels = result.createPixelReaderWriter())
 		{
 			ThreadHelper.getInstance().processRowsInParallel(0, colorIndexes.getHeight(), (y) ->
 			{
@@ -1811,7 +1822,7 @@ public class ImageHelper
 	}
 
 	/**
-	 * Thresholds values from toThreshold and then subtracts those values from from toSubtractFrom. threshold is not modified.
+	 * Thresholds values from toThreshold and then subtracts those values from toSubtractFrom. threshold is not modified.
 	 */
 	public static void subtractThresholded(Image toThreshold, int threshold, int highValue, Image toSubtractFrom)
 	{
@@ -1844,7 +1855,7 @@ public class ImageHelper
 	}
 
 	/**
-	 * Thresholds values from toThreshold and then subtracts those values from from toSubtractFrom. threshold is not modified.
+	 * Thresholds values from toThreshold and then subtracts those values from toSubtractFrom. threshold is not modified.
 	 */
 	public static void addThresholded(Image toThreshold, int threshold, int highValue, Image toAddTo)
 	{
@@ -1886,11 +1897,11 @@ public class ImageHelper
 	 * Thresholds an image in-place
 	 *
 	 * @param image
-	 *            Input and output image.
+	 * 		Input and output image.
 	 * @param threshold
-	 *            Pixel values equal to or greater than this value will be set to highValue. Pixel values lower than this will be set to 0.
+	 * 		Pixel values equal to or greater than this value will be set to highValue. Pixel values lower than this will be set to 0.
 	 * @param highValue
-	 *            Value pixels will be set to if thresholded high.
+	 * 		Value pixels will be set to if thresholded high.
 	 */
 	public static void threshold(Image image, int threshold, int highValue)
 	{
@@ -1945,9 +1956,9 @@ public class ImageHelper
 	 * Subtracts other from target and stores the result in target.
 	 *
 	 * @param target
-	 *            Image to subtract from.
+	 * 		Image to subtract from.
 	 * @param other
-	 *            Values to subtract.
+	 * 		Values to subtract.
 	 */
 	public static void subtract(Image target, Image other)
 	{
@@ -1974,8 +1985,7 @@ public class ImageHelper
 	}
 
 	/**
-	 * Extracts the snippet in source defined by boundsInSourceToCopyFrom and pastes that snippet into target at the location defined by
-	 * upperLeftCornerToPasteIntoInTarget.
+	 * Extracts the snippet in source defined by boundsInSourceToCopyFrom and pastes that snippet into target at the location defined by upperLeftCornerToPasteIntoInTarget.
 	 */
 	public static void copySnippetFromSourceAndPasteIntoTarget(Image target, Image source, IntPoint upperLeftCornerToPasteIntoInTarget, IntRectangle boundsInSourceToCopyFrom,
 			int widthOfBorderToNotDrawOn)

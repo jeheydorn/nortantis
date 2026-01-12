@@ -1,47 +1,22 @@
 package nortantis;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.PriorityQueue;
-import java.util.Random;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-
+import nortantis.MapSettings.LineStyle;
+import nortantis.geom.IntRectangle;
+import nortantis.geom.Point;
+import nortantis.geom.Rectangle;
+import nortantis.graph.voronoi.*;
+import nortantis.graph.voronoi.nodename.as3delaunay.Voronoi;
+import nortantis.platform.*;
+import nortantis.util.Helper;
+import nortantis.util.Range;
 import org.apache.commons.lang3.function.TriFunction;
 import org.apache.commons.math3.distribution.BetaDistribution;
 import org.apache.commons.math3.random.JDKRandomGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
 
-import nortantis.MapSettings.LineStyle;
-import nortantis.geom.Point;
-import nortantis.geom.Rectangle;
-import nortantis.graph.voronoi.Center;
-import nortantis.graph.voronoi.Corner;
-import nortantis.graph.voronoi.Edge;
-import nortantis.graph.voronoi.EdgeDrawType;
-import nortantis.graph.voronoi.NoisyEdges;
-import nortantis.graph.voronoi.VoronoiGraph;
-import nortantis.graph.voronoi.nodename.as3delaunay.Voronoi;
-import nortantis.platform.Color;
-import nortantis.platform.Image;
-import nortantis.platform.ImageType;
-import nortantis.platform.Painter;
-import nortantis.platform.PixelReader;
-import nortantis.platform.Transform;
-import nortantis.util.Helper;
-import nortantis.util.Range;
+import java.util.*;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /**
  * TestGraphImpl.java
@@ -569,7 +544,8 @@ public class WorldGraph extends VoronoiGraph
 		{
 			buildCenterLookupTableIfNeeded();
 			Color color;
-			try (PixelReader pixels = centerLookupTable.createPixelReader())
+			// TODO See if creating the pixel reader below is fast enough.
+			try (PixelReader pixels = centerLookupTable.createPixelReader(new IntRectangle((int) point.x, (int) point.y, 1, 1)))
 			{
 				color = Color.create(pixels.getRGB((int) point.x, (int) point.y));
 			}
@@ -1531,8 +1507,6 @@ public class WorldGraph extends VoronoiGraph
 	 * 
 	 * @param end
 	 *            The end of the search
-	 * @param edgeType
-	 *            The type of edge to return
 	 * @return A path
 	 */
 	private Set<Edge> createPathFromBackPointers(CornerSearchNode end)
@@ -1686,8 +1660,6 @@ public class WorldGraph extends VoronoiGraph
 	 * 
 	 * @param end
 	 *            The end of the search
-	 * @param edgeType
-	 *            The type of edge to return
 	 * @return A path
 	 */
 	private List<Edge> createPathFromBackPointers(CenterSearchNode end)

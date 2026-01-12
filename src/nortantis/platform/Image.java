@@ -131,11 +131,6 @@ public abstract class Image
 	}
 
 	/**
-	 * Creates a pixel reader for reading individual pixel values from this image.
-	 */
-	public abstract PixelReader innerMakeNewPixelReader();
-
-	/**
 	 * Creates a pixel reader that is restricted to read from the given bounds of this image. For the Skia implementation, this is much more efficient than creating a pixel reader for the entire
 	 * image.
 	 */
@@ -146,19 +141,21 @@ public abstract class Image
 	 */
 	public abstract void endPixelReadsOrWrites();
 
-	/**
-	 * Creates a pixel reader/writer for reading and writing individual pixel values for this image.
-	 */
-	public abstract PixelReaderWriter innerMakeNewPixelReaderWriter();
-
 
 	public abstract PixelReaderWriter innerMakeNewPixelReaderWriter(IntRectangle bounds);
 
-	/**
-	 * Creates a pixel reader/writier that is restricted to read/write in the given bounds of this image. For the Skia implementation, this is much more efficient than creating a pixel reader for the
-	 * entire image.
-	 */
+
 	public PixelReader createPixelReader()
+	{
+		return createPixelReader(null);
+	}
+
+	/**
+	 * Creates a pixel reader that is restricted to read/write in the given bounds of this image. For the Skia implementation, this is much more efficient than creating a pixel reader for the
+	 * entire image.
+	 * @bounds If not null, then is the bounds in the image the reader should be for. If null, then create a reader for the while image. Note that passing in a non-null bounds that restricts reading to a subset of this image does not change the coordinates you should use when accessing pixels through the reader.
+	 */
+	public PixelReader createPixelReader(IntRectangle bounds)
 	{
 		if (currentPixelReader != null)
 		{
@@ -169,12 +166,22 @@ public abstract class Image
 			throw new IllegalStateException("Pixel reader already created");
 		}
 
-		currentPixelReader = innerMakeNewPixelReader();
+		currentPixelReader = innerMakeNewPixelReader(bounds);
 		return currentPixelReader;
 	}
 
 	public PixelReaderWriter createPixelReaderWriter()
 	{
+		return createPixelReaderWriter(null);
+	}
+
+	/**
+	 * Creates a pixel reader/writier that is restricted to read/write in the given bounds of this image. For the Skia implementation, this is much more efficient than creating a pixel reader for the
+	 * entire image.
+	 * @bounds If not null, then is the bounds in the image the reader/writer should be for. If null, then create a reader for the while image. Note that passing in a non-null bounds that restricts reading/writing to a subset of this image does not change the coordinates you should use when accessing pixels through the reader/writer.
+	 */
+	public PixelReaderWriter createPixelReaderWriter(IntRectangle bounds)
+	{
 		if (currentPixelReader != null)
 		{
 			if (currentPixelReader instanceof PixelReaderWriter)
@@ -184,7 +191,7 @@ public abstract class Image
 			throw new IllegalStateException("Pixel reader already created");
 		}
 
-		currentPixelReader = innerMakeNewPixelReaderWriter();
+		currentPixelReader = innerMakeNewPixelReaderWriter(bounds);
 		return (PixelReaderWriter) currentPixelReader;
 	}
 }

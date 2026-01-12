@@ -62,21 +62,9 @@ public class SkiaImage extends Image
 	}
 
 	@Override
-	public PixelReader innerMakeNewPixelReader()
-	{
-		return new SkiaPixelReader(this);
-	}
-
-	@Override
 	public PixelReader innerMakeNewPixelReader(IntRectangle bounds)
 	{
 		return new SkiaPixelReader(this, bounds);
-	}
-
-	@Override
-	public PixelReaderWriter innerMakeNewPixelReaderWriter()
-	{
-		return new SkiaPixelReaderWriter(this);
 	}
 
 	@Override

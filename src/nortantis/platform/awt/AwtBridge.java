@@ -8,8 +8,7 @@ import nortantis.platform.*;
 import nortantis.platform.skia.SkiaImage;
 
 /**
- * Bridge class for converting between platform-agnostic types and AWT types. This class can efficiently handle both AWT and Skia platform
- * types, using optimized bulk operations when possible.
+ * Bridge class for converting between platform-agnostic types and AWT types. This class can efficiently handle both AWT and Skia platform types, using optimized bulk operations when possible.
  */
 public class AwtBridge
 {
@@ -45,6 +44,8 @@ public class AwtBridge
 
 			return bi;
 		}
+
+		assert false; // If I support a new image type for use with AWT, see if I can handle it here more efficiently than the code below.
 
 		// Fallback for unknown image types: pixel-by-pixel conversion
 		int width = image.getWidth();
@@ -161,9 +162,8 @@ public class AwtBridge
 	}
 
 	/**
-	 * Wraps a Graphics2D in an AwtPainter for platform-agnostic drawing. Note: When using this with SkiaFactory as the main platform, the
-	 * Painter will only work correctly with AWT-based platform types (use fromAwtColor, fromAwtFont for colors/fonts passed to this
-	 * Painter).
+	 * Wraps a Graphics2D in an AwtPainter for platform-agnostic drawing. Note: When using this with SkiaFactory as the main platform, the Painter will only work correctly with AWT-based platform
+	 * types (use fromAwtColor, fromAwtFont for colors/fonts passed to this Painter).
 	 */
 	public static Painter wrapGraphics(Graphics2D g)
 	{
