@@ -123,6 +123,12 @@ public class IntRectangle
 		}
 	}
 
+	public boolean isEmpty()
+	{
+		return width <= 0 || height <= 0;
+	}
+
+
 	public Rectangle toRectangle()
 	{
 		return new Rectangle(x, y, width, height);

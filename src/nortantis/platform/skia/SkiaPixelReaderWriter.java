@@ -52,8 +52,14 @@ public class SkiaPixelReaderWriter extends SkiaPixelReader implements PixelReade
 	@Override
 	public void setRGB(int x, int y, int rgb)
 	{
-		cachedPixelArray[y * width + x] = rgb;
-		return;
+		if (bounds != null)
+		{
+			cachedPixelArray[(y - bounds.y) * bounds.width + (x - bounds.x)] = rgb;
+		}
+		else
+		{
+			cachedPixelArray[y * width + x] = rgb;
+		}
 	}
 
 	@Override
@@ -78,8 +84,16 @@ public class SkiaPixelReaderWriter extends SkiaPixelReader implements PixelReade
 	@Override
 	public void close()
 	{
-		super.close();
+		if (bounds == null)
+		{
+			image.writePixelsFromIntArray(cachedPixelArray);
+		}
+		else
+		{
+			image.writePixelsToRegion(cachedPixelArray, bounds.x, bounds.y, bounds.width, bounds.height);
+		}
 		image.invalidateCachedImage();
+		super.close();
 	}
 
 }

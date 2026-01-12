@@ -50,49 +50,23 @@ class AwtImage extends Image
 	@Override
 	public PixelReader createPixelReader()
 	{
-		if (currentPixelReader != null)
-		{
-			if (currentPixelReader instanceof PixelReaderWriter)
-			{
-				throw new IllegalStateException("Pixel reader/writer already created");
-			}
-			throw new IllegalStateException("Pixel reader already created");
-		}
-
-		currentPixelReader = new AwtPixelReader(this);
-		return currentPixelReader;
+		return new AwtPixelReader(this);
 	}
 
 	@Override
 	public PixelReaderWriter createPixelReaderWriter()
 	{
-		if (currentPixelReader != null)
-		{
-			if (currentPixelReader instanceof PixelReaderWriter)
-			{
-				throw new IllegalStateException("Pixel reader/writer already created");
-			}
-			throw new IllegalStateException("Pixel reader already created");
-		}
-
-		currentPixelReader = new AwtPixelReaderWriter(this);
-		return (PixelReaderWriter) currentPixelReader;
+		return new AwtPixelReaderWriter(this);
 	}
 
 	@Override
-	public void endPixelReadsOrWrites()
-	{
-		currentPixelReader = null;
-	}
-
-	@Override
-	public PixelReader innerMakeNewPixelReader(IntRectangle bounds)
+	public PixelReader innerCreateNewPixelReader(IntRectangle bounds)
 	{
 		return new AwtPixelReader(this, bounds);
 	}
 
 	@Override
-	public PixelReaderWriter innerMakeNewPixelReaderWriter(IntRectangle bounds)
+	public PixelReaderWriter innerCreateNewPixelReaderWriter(IntRectangle bounds)
 	{
 		return new AwtPixelReaderWriter(this, bounds);
 	}

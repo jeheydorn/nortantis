@@ -544,14 +544,10 @@ public class WorldGraph extends VoronoiGraph
 		{
 			buildCenterLookupTableIfNeeded();
 			Color color;
-			// TODO See if creating the pixel reader below is fast enough.
+			// TODO See if creating the pixel reader below is fast enough. If not, which is likely, I will likely need to create a reader just for the image being placed.
 			try (PixelReader pixels = centerLookupTable.createPixelReader(new IntRectangle((int) point.x, (int) point.y, 1, 1)))
 			{
 				color = Color.create(pixels.getRGB((int) point.x, (int) point.y));
-			}
-			catch (IndexOutOfBoundsException e)
-			{
-				color = null;
 			}
 			int index = color.getRed() | (color.getGreen() << 8) | (color.getBlue() << 16);
 			return centers.get(index);

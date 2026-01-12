@@ -15,7 +15,15 @@ public class SkiaPixelReader implements PixelReader
 	public SkiaPixelReader(SkiaImage image, IntRectangle bounds)
 	{
 		maxPixelLevelAsFloat = image.getMaxPixelLevel();
-		cachedPixelArray = image.readPixelsToIntArray();
+		if (bounds == null)
+		{
+			cachedPixelArray = image.readPixelsToIntArray();
+		}
+		else
+		{
+			cachedPixelArray = image.readPixelsToIntArray(bounds.x, bounds.y, bounds.width, bounds.height);
+			;
+		}
 		this.image = image;
 		width = image.getWidth();
 		this.bounds = bounds;
@@ -50,8 +58,13 @@ public class SkiaPixelReader implements PixelReader
 	{
 		if (cachedPixelArray != null)
 		{
+			if (bounds != null)
+			{
+				return cachedPixelArray[(y - bounds.y) * bounds.width + (x - bounds.x)];
+			}
 			return cachedPixelArray[y * width + x];
 		}
+		assert false;
 		return image.bitmap.getColor(x, y);
 	}
 
@@ -77,6 +90,5 @@ public class SkiaPixelReader implements PixelReader
 	@Override
 	public void close()
 	{
-		image.endPixelReadsOrWrites();
 	}
 }

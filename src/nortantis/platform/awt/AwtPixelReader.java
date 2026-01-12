@@ -23,12 +23,13 @@ public class AwtPixelReader implements PixelReader
 	AwtPixelReader(AwtImage image, IntRectangle bounds)
 	{
 		this.image = image;
+		bufferedImage = AwtFactory.unwrap(image);
 		maxPixelLevelAsFloat = image.getMaxPixelLevel();
+		createRasters();
 		if (image.isCompatibleIntFormat())
 		{
 			this.cachedPixelArray = ((DataBufferInt) raster.getDataBuffer()).getData();
 		}
-		bufferedImage = AwtFactory.unwrap(image);
 		this.bounds = bounds;
 	}
 
@@ -37,7 +38,7 @@ public class AwtPixelReader implements PixelReader
 		this(image, null);
 	}
 
-	private void createRastersIfNeeded()
+	private void createRasters()
 	{
 		raster = bufferedImage.getRaster();
 
@@ -95,6 +96,5 @@ public class AwtPixelReader implements PixelReader
 	@Override
 	public void close()
 	{
-		image.endPixelReadsOrWrites();
 	}
 }

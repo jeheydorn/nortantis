@@ -10,7 +10,6 @@ public abstract class Image
 {
 	private final ImageType type;
 	private final float maxPixelLevelAsFloat;
-	protected PixelReader currentPixelReader;
 
 	protected Image(ImageType type)
 	{
@@ -134,15 +133,9 @@ public abstract class Image
 	 * Creates a pixel reader that is restricted to read from the given bounds of this image. For the Skia implementation, this is much more efficient than creating a pixel reader for the entire
 	 * image.
 	 */
-	public abstract PixelReader innerMakeNewPixelReader(IntRectangle bounds);
+	protected abstract PixelReader innerCreateNewPixelReader(IntRectangle bounds);
 
-	/**
-	 * Runs when pixel reads finish.
-	 */
-	public abstract void endPixelReadsOrWrites();
-
-
-	public abstract PixelReaderWriter innerMakeNewPixelReaderWriter(IntRectangle bounds);
+	protected abstract PixelReaderWriter innerCreateNewPixelReaderWriter(IntRectangle bounds);
 
 
 	public PixelReader createPixelReader()
@@ -151,23 +144,23 @@ public abstract class Image
 	}
 
 	/**
-	 * Creates a pixel reader that is restricted to read/write in the given bounds of this image. For the Skia implementation, this is much more efficient than creating a pixel reader for the
-	 * entire image.
-	 * @bounds If not null, then is the bounds in the image the reader should be for. If null, then create a reader for the while image. Note that passing in a non-null bounds that restricts reading to a subset of this image does not change the coordinates you should use when accessing pixels through the reader.
+	 * Creates a pixel reader that is restricted to read/write in the given bounds of this image. For the Skia implementation, this is much more efficient than creating a pixel reader for the entire
+	 * image.
+	 *
+	 * @bounds If not null, then is the bounds in the image the reader should be for. If null, then create a reader for the while image. Note that passing in a non-null bounds that restricts reading
+	 * 		to a subset of this image does not change the coordinates you should use when accessing pixels through the reader. Also, if the bounds you give extends behind the image, it will be clipped.
 	 */
 	public PixelReader createPixelReader(IntRectangle bounds)
 	{
-		if (currentPixelReader != null)
+		if (bounds != null)
 		{
-			if (currentPixelReader instanceof PixelReaderWriter)
+			IntRectangle intersection = bounds.findIntersection(new IntRectangle(0, 0, getWidth(), getHeight()));
+			if (intersection == null)
 			{
-				throw new IllegalStateException("Pixel reader and writer already created");
+				bounds = new IntRectangle(bounds.x, bounds.y, 0, 0);
 			}
-			throw new IllegalStateException("Pixel reader already created");
 		}
-
-		currentPixelReader = innerMakeNewPixelReader(bounds);
-		return currentPixelReader;
+		return innerCreateNewPixelReader(bounds);
 	}
 
 	public PixelReaderWriter createPixelReaderWriter()
@@ -178,20 +171,21 @@ public abstract class Image
 	/**
 	 * Creates a pixel reader/writier that is restricted to read/write in the given bounds of this image. For the Skia implementation, this is much more efficient than creating a pixel reader for the
 	 * entire image.
-	 * @bounds If not null, then is the bounds in the image the reader/writer should be for. If null, then create a reader for the while image. Note that passing in a non-null bounds that restricts reading/writing to a subset of this image does not change the coordinates you should use when accessing pixels through the reader/writer.
+	 *
+	 * @bounds If not null, then is the bounds in the image the reader/writer should be for. If null, then create a reader for the while image. Note that passing in a non-null bounds that restricts
+	 * 		reading/writing to a subset of this image does not change the coordinates you should use when accessing pixels through the reader/writer. Also, if the bounds you give extends behind the
+	 * 		image, it will be clipped.
 	 */
 	public PixelReaderWriter createPixelReaderWriter(IntRectangle bounds)
 	{
-		if (currentPixelReader != null)
+		if (bounds != null)
 		{
-			if (currentPixelReader instanceof PixelReaderWriter)
+			IntRectangle intersection = bounds.findIntersection(new IntRectangle(0, 0, getWidth(), getHeight()));
+			if (intersection == null)
 			{
-				throw new IllegalStateException("Pixel reader and writer already created");
+				bounds = new IntRectangle(bounds.x, bounds.y, 0, 0);
 			}
-			throw new IllegalStateException("Pixel reader already created");
 		}
-
-		currentPixelReader = innerMakeNewPixelReaderWriter(bounds);
-		return (PixelReaderWriter) currentPixelReader;
+		return innerCreateNewPixelReaderWriter(bounds);
 	}
 }

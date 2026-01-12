@@ -2140,7 +2140,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	public static void main(String[] args)
 	{
 		// Tell drawing code to use AWT.
-		PlatformFactory.setInstance(new SkiaFactory());
+		PlatformFactory.setInstance(new AwtFactory());
 
 		setLookAndFeel(UserPreferences.getInstance().lookAndFeel);
 

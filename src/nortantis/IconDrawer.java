@@ -1053,9 +1053,9 @@ public class IconDrawer
 		IntRectangle iconBoundsInMapOrSnippet = new IntRectangle(xLeft, yTop, icon.getWidth(), icon.getHeight());
 
 		// Begin pixel sessions for efficient read/write
-		try (PixelReader landTexturePixels = landTexture.createPixelReader();
-				PixelReader oceanTexturePixels = oceanTexture.createPixelReader();
-				PixelReader landBackgroundPixels = landBackground.createPixelReader();
+		try (PixelReader landTexturePixels = landTexture.createPixelReader(iconBoundsInMapOrSnippet);
+				PixelReader oceanTexturePixels = oceanTexture.createPixelReader(iconBoundsInMapOrSnippet);
+				PixelReader landBackgroundPixels = landBackground.createPixelReader(iconBoundsInMapOrSnippet);
 				PixelReader contentMaskPixels = contentMask.createPixelReader();
 				PixelReader shadingMaskPixels = shadingMask.createPixelReader();
 				PixelReaderWriter mapOrSnippetPixels = mapOrSnippet.createPixelReaderWriter(iconBoundsInMapOrSnippet))
