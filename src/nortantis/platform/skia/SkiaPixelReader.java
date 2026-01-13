@@ -22,7 +22,6 @@ public class SkiaPixelReader implements PixelReader
 		else
 		{
 			cachedPixelArray = image.readPixelsToIntArray(bounds.x, bounds.y, bounds.width, bounds.height);
-			;
 		}
 		this.image = image;
 		width = image.getWidth();

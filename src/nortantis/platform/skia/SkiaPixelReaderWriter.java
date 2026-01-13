@@ -84,13 +84,16 @@ public class SkiaPixelReaderWriter extends SkiaPixelReader implements PixelReade
 	@Override
 	public void close()
 	{
-		if (bounds == null)
+		if (cachedPixelArray != null)
 		{
-			image.writePixelsFromIntArray(cachedPixelArray);
-		}
-		else
-		{
-			image.writePixelsToRegion(cachedPixelArray, bounds.x, bounds.y, bounds.width, bounds.height);
+			if (bounds == null)
+			{
+				image.writePixelsFromIntArray(cachedPixelArray);
+			}
+			else
+			{
+				image.writePixelsToRegion(cachedPixelArray, bounds.x, bounds.y, bounds.width, bounds.height);
+			}
 		}
 		image.invalidateCachedImage();
 		super.close();

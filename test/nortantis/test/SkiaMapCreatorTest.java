@@ -35,9 +35,9 @@ public class SkiaMapCreatorTest
 	}
 
 	@Test
-	public void allTypesOfEdits()
+	public void simpleSmallWorld()
 	{
-		generateAndCompare("allTypesOfEdits.nort");
+		generateAndCompare("simpleSmallWorld.nort");
 	}
 
 	private void generateAndCompare(String settingsFileName)
