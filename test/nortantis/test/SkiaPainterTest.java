@@ -59,6 +59,27 @@ public class SkiaPainterTest
 		compareWithExpected(image, "blankImageARGB");
 	}
 
+	@Test
+	public void testBlankImageGrayscale8Bit()
+	{
+		Image image = Image.create(testImageWidth, testImageHeight, ImageType.Grayscale8Bit);
+		compareWithExpected(image, "blankImageGrayscale8Bit");
+	}
+
+	@Test
+	public void testBlankImageGrayscale16Bit()
+	{
+		Image image = Image.create(testImageWidth, testImageHeight, ImageType.Grayscale16Bit);
+		compareWithExpected(image, "blankImageGrayscale16Bit");
+	}
+
+	@Test
+	public void testBlankImageBinary()
+	{
+		Image image = Image.create(testImageWidth, testImageHeight, ImageType.Binary);
+		compareWithExpected(image, "blankImageBinary");
+	}
+
 	// ==================== Shape Drawing Tests ====================
 
 	@Test
@@ -671,6 +692,99 @@ public class SkiaPainterTest
 			assertEquals(150, readColor.getGreen(), "Green component");
 			assertEquals(200, readColor.getBlue(), "Blue component");
 		}
+	}
+
+	@Test
+	public void testPixelReaderWriterGrayscale8Bit()
+	{
+		Image image = Image.create(testImageWidth, testImageHeight, ImageType.Grayscale8Bit);
+
+		// Create a gradient pattern
+		try (PixelReaderWriter writer = image.createPixelReaderWriter())
+		{
+			for (int y = 0; y < testImageHeight; y++)
+			{
+				int level = (int) (y * 2.55);
+				for (int x = 0; x < testImageWidth; x++)
+				{
+					writer.setGrayLevel(x, y, level);
+				}
+			}
+		}
+
+		try (PixelReader reader = image.createPixelReader())
+		{
+			assertEquals(0, reader.getGrayLevel(50, 0), "Gray level at top should be 0");
+			int middleLevel = reader.getGrayLevel(50, 50);
+			assertTrue(middleLevel > 100 && middleLevel < 150, "Gray level at middle should be around 127, got: " + middleLevel);
+			int bottomLevel = reader.getGrayLevel(50, 99);
+			assertTrue(bottomLevel > 240, "Gray level at bottom should be close to 255, got: " + bottomLevel);
+		}
+
+		compareWithExpected(image, "pixelReaderWriterGrayscale8Bit");
+	}
+
+	@Test
+	public void testPixelReaderWriterGrayscale16Bit()
+	{
+		Image image = Image.create(testImageWidth, testImageHeight, ImageType.Grayscale16Bit);
+
+		// Create a gradient pattern
+		try (PixelReaderWriter writer = image.createPixelReaderWriter())
+		{
+			for (int y = 0; y < testImageHeight; y++)
+			{
+				int level = (int) (y * 2.55);
+				for (int x = 0; x < testImageWidth; x++)
+				{
+					writer.setGrayLevel(x, y, level);
+				}
+			}
+		}
+
+		try (PixelReader reader = image.createPixelReader())
+		{
+			assertEquals(0, reader.getGrayLevel(50, 0), "Gray level at top should be 0");
+			int middleLevel = reader.getGrayLevel(50, 50);
+			assertTrue(middleLevel > 100 && middleLevel < 150, "Gray level at middle should be around 127, got: " + middleLevel);
+			int bottomLevel = reader.getGrayLevel(50, 99);
+			assertTrue(bottomLevel > 240, "Gray level at bottom should be close to 255, got: " + bottomLevel);
+		}
+
+		compareWithExpected(image, "pixelReaderWriterGrayscale16Bit");
+	}
+
+	@Test
+	public void testPixelReaderWriterBinary()
+	{
+		Image image = Image.create(testImageWidth, testImageHeight, ImageType.Binary);
+
+		// Create a checkerboard pattern
+		try (PixelReaderWriter writer = image.createPixelReaderWriter())
+		{
+			for (int y = 0; y < testImageHeight; y++)
+			{
+				for (int x = 0; x < testImageWidth; x++)
+				{
+					// Create 10x10 checkerboard squares
+					boolean isWhite = ((x / 10) + (y / 10)) % 2 == 0;
+					writer.setGrayLevel(x, y, isWhite ? 255 : 0);
+				}
+			}
+		}
+
+		try (PixelReader reader = image.createPixelReader())
+		{
+			// Check white square (top-left)
+			int whiteLevel = reader.getGrayLevel(5, 5);
+			assertTrue(whiteLevel > 200, "White square should be close to 255, got: " + whiteLevel);
+
+			// Check black square
+			int blackLevel = reader.getGrayLevel(15, 5);
+			assertTrue(blackLevel < 55, "Black square should be close to 0, got: " + blackLevel);
+		}
+
+		compareWithExpected(image, "pixelReaderWriterBinary");
 	}
 
 	// ==================== Combined Test ====================
