@@ -533,7 +533,7 @@ public class ImageHelper
 		IntPoint diff = maskBoundsInImage1.upperLeftCorner().subtract(maskBounds.upperLeftCorner());
 		IntRectangle maskBoundsInMask = new IntRectangle(diff.x, diff.y, maskBoundsInImage1.width, maskBoundsInImage1.height);
 
-		Image image2Snippet = image2.copySubImage(maskBoundsInImage1);
+		Image image2Snippet = image2.copySubImage(maskBoundsInImage1, image1.hasAlpha() || image2.hasAlpha());
 
 		try (PixelReader image1Pixels = image1.createPixelReader(maskBoundsInImage1);
 				PixelReaderWriter image2SnippetPixels = image2Snippet.createPixelReaderWriter();

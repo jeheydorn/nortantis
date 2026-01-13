@@ -91,7 +91,8 @@ public class AwtPixelReader implements PixelReader
 			return alphaRaster.getSample(x, y, 0);
 		}
 
-		return 0;
+		// Images without alpha are fully opaque
+		return 255;
 	}
 
 	@Override

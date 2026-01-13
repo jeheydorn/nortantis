@@ -36,7 +36,7 @@ public class AwtPixelReaderWriter extends AwtPixelReader implements PixelReaderW
 			cachedPixelArray[(y * image.getWidth()) + x] = rgb;
 			return;
 		}
-		setRGB(x, y, rgb);
+		bufferedImage.setRGB(x, y, rgb);
 	}
 
 	@Override
