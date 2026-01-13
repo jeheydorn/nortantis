@@ -2066,7 +2066,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	private void setPlaceholderImage(String[] message)
 	{
-		mapEditingPanel.setImage(AwtBridge.toBufferedImage(ImageHelper.createPlaceholderImage(message, AwtBridge.fromAwtColorToPlatformColor(SwingHelper.getTextColorForPlaceholderImages()))));
+		mapEditingPanel.setImage(AwtBridge.toBufferedImage(ImageHelper.createPlaceholderImage(message, AwtBridge.fromAwtColor(SwingHelper.getTextColorForPlaceholderImages()))));
 
 		// Clear out the map from map creator so that causing the window to
 		// re-zoom while the placeholder image
@@ -2140,7 +2140,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	public static void main(String[] args)
 	{
 		// Tell drawing code to use AWT.
-		PlatformFactory.setInstance(new AwtFactory());
+		PlatformFactory.setInstance(new SkiaFactory());
 
 		setLookAndFeel(UserPreferences.getInstance().lookAndFeel);
 

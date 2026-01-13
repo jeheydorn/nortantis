@@ -1,15 +1,19 @@
 package nortantis.platform.skia;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Objects;
+
 import org.jetbrains.skia.Font;
 import org.jetbrains.skia.FontMgr;
 import org.jetbrains.skia.Typeface;
 import nortantis.platform.FontStyle;
 
-public class SkiaFont extends nortantis.platform.Font
+public class SkiaFont extends nortantis.platform.Font implements Serializable
 {
-	public final Font skiaFont;
+	public transient Font skiaFont;
 	private final String name;
 	private final FontStyle style;
 	private final float size;
@@ -19,7 +23,6 @@ public class SkiaFont extends nortantis.platform.Font
 		this.name = name;
 		this.style = style;
 		this.size = size;
-
 		org.jetbrains.skia.FontStyle skiaStyle = org.jetbrains.skia.FontStyle.Companion.getNORMAL();
 		if (style == FontStyle.Bold)
 		{
@@ -33,7 +36,6 @@ public class SkiaFont extends nortantis.platform.Font
 		{
 			skiaStyle = org.jetbrains.skia.FontStyle.Companion.getBOLD_ITALIC();
 		}
-
 		Typeface typeface = FontMgr.Companion.getDefault().matchFamilyStyle(name, skiaStyle);
 		this.skiaFont = new Font(typeface, size);
 	}
@@ -97,5 +99,32 @@ public class SkiaFont extends nortantis.platform.Font
 	public int hashCode()
 	{
 		return Objects.hash(name, style, size);
+	}
+
+	// Custom serialization methods
+	private void writeObject(ObjectOutputStream out) throws IOException
+	{
+		out.defaultWriteObject();
+	}
+
+	private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException
+	{
+		in.defaultReadObject();
+		// Reconstruct the transient skiaFont field after deserialization
+		org.jetbrains.skia.FontStyle skiaStyle = org.jetbrains.skia.FontStyle.Companion.getNORMAL();
+		if (style == FontStyle.Bold)
+		{
+			skiaStyle = org.jetbrains.skia.FontStyle.Companion.getBOLD();
+		}
+		else if (style == FontStyle.Italic)
+		{
+			skiaStyle = org.jetbrains.skia.FontStyle.Companion.getITALIC();
+		}
+		else if (style == FontStyle.BoldItalic)
+		{
+			skiaStyle = org.jetbrains.skia.FontStyle.Companion.getBOLD_ITALIC();
+		}
+		Typeface typeface = FontMgr.Companion.getDefault().matchFamilyStyle(name, skiaStyle);
+		this.skiaFont = new Font(typeface, size);
 	}
 }

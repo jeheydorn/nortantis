@@ -96,18 +96,9 @@ public class AwtBridge
 	}
 
 	/**
-	 * Creates an AwtColor from a java.awt.Color.
+	 * Creates a Color of the default platform implementation from a java.awt.Color.
 	 */
 	public static Color fromAwtColor(java.awt.Color color)
-	{
-		if (color == null)
-		{
-			return null;
-		}
-		return new AwtColor(color);
-	}
-
-	public static Color fromAwtColorToPlatformColor(java.awt.Color color)
 	{
 		if (color == null)
 		{
