@@ -65,7 +65,14 @@ public class AwtPixelReader implements PixelReader
 	{
 		if (cachedPixelArray != null)
 		{
-			return cachedPixelArray[(y * image.getWidth()) + x];
+			int rgb = cachedPixelArray[(y * image.getWidth()) + x];
+			// For non-alpha images (TYPE_INT_RGB), the high byte is undefined garbage.
+			// Normalize it to 0xFF to match BufferedImage.getRGB() behavior.
+			if (!image.hasAlpha())
+			{
+				rgb |= 0xFF000000;
+			}
+			return rgb;
 		}
 		return bufferedImage.getRGB(x, y);
 	}
