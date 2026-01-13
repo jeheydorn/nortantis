@@ -293,12 +293,12 @@ public class SkiaPainterTest
 
 		Font font = PlatformFactory.getInstance().createFont("SansSerif", FontStyle.Plain, 14);
 		painter.setFont(font);
-		painter.setColor(createColor(0, 0, 0));
+		painter.setColor(Color.green);
 		painter.drawString("Hello", 10, 30);
 
 		Font boldFont = PlatformFactory.getInstance().createFont("SansSerif", FontStyle.Bold, 18);
 		painter.setFont(boldFont);
-		painter.setColor(createColor(255, 0, 0));
+		painter.setColor(Color.red);
 		painter.drawString("World", 10, 60);
 		painter.dispose();
 
