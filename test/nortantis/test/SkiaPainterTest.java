@@ -1,0 +1,777 @@
+package nortantis.test;
+
+import nortantis.Stroke;
+import nortantis.StrokeType;
+import nortantis.geom.FloatPoint;
+import nortantis.platform.*;
+import nortantis.platform.awt.AwtFactory;
+import nortantis.platform.skia.SkiaFactory;
+import nortantis.util.Assets;
+import nortantis.util.FileHelper;
+import nortantis.util.ImageHelper;
+import org.apache.commons.io.FileUtils;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import java.io.File;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * Unit tests for SkiaPainter drawing operations and SkiaPixelReaderWriter.
+ *
+ * These tests follow the pattern from SkiaMapCreatorTest: they compare rendered images against
+ * expected images stored in "unit test files/expected skia tests/". When an expected image doesn't exist,
+ * the test creates it from the actual output. Failed tests save their output to
+ * "unit test files/failed skia tests/" along with a diff image.
+ */
+public class SkiaPainterTest
+{
+	private static final String expectedFolderName = "expected skia tests";
+	private static final String failedFolderName = "failed skia tests";
+	private static final int testImageWidth = 100;
+	private static final int testImageHeight = 100;
+
+	@BeforeAll
+	public static void setUpBeforeClass() throws Exception
+	{
+		PlatformFactory.setInstance(new SkiaFactory());
+		Assets.disableAddedArtPacksForUnitTests();
+
+		FileHelper.createFolder(Paths.get("unit test files", expectedFolderName).toString());
+		FileUtils.deleteDirectory(new File(Paths.get("unit test files", failedFolderName).toString()));
+	}
+
+	@Test
+	public void testBlankImageRGB()
+	{
+		Image image = Image.create(testImageWidth, testImageHeight, ImageType.RGB);
+		compareWithExpected(image, "blankImageRGB");
+	}
+
+	@Test
+	public void testBlankImageARGB()
+	{
+		Image image = Image.create(testImageWidth, testImageHeight, ImageType.ARGB);
+		compareWithExpected(image, "blankImageARGB");
+	}
+
+	// ==================== Shape Drawing Tests ====================
+
+	@Test
+	public void testDrawLine()
+	{
+		Image image = createTestImage();
+		Painter painter = image.createPainter(DrawQuality.High);
+		painter.setColor(createColor(255, 0, 0));
+		painter.setBasicStroke(2.0f);
+		painter.drawLine(10, 10, 90, 90);
+		painter.drawLine(10, 90, 90, 10);
+		painter.dispose();
+
+		compareWithExpected(image, "drawLine");
+	}
+
+	@Test
+	public void testDrawLineFloat()
+	{
+		Image image = createTestImage();
+		Painter painter = image.createPainter(DrawQuality.High);
+		painter.setColor(createColor(0, 128, 255));
+		painter.setBasicStroke(1.5f);
+		painter.drawLine(10.5f, 20.5f, 80.5f, 70.5f);
+		painter.drawLine(50.0f, 10.0f, 50.0f, 90.0f);
+		painter.dispose();
+
+		compareWithExpected(image, "drawLineFloat");
+	}
+
+	@Test
+	public void testDrawRect()
+	{
+		Image image = createTestImage();
+		Painter painter = image.createPainter(DrawQuality.High);
+		painter.setColor(createColor(0, 0, 255));
+		painter.setBasicStroke(2.0f);
+		painter.drawRect(10, 10, 80, 80);
+		painter.setColor(createColor(255, 0, 0));
+		painter.drawRect(25, 25, 50, 50);
+		painter.dispose();
+
+		compareWithExpected(image, "drawRect");
+	}
+
+	@Test
+	public void testFillRect()
+	{
+		Image image = createTestImage();
+		Painter painter = image.createPainter(DrawQuality.High);
+		painter.setColor(createColor(0, 255, 0));
+		painter.fillRect(10, 10, 40, 40);
+		painter.setColor(createColor(255, 128, 0));
+		painter.fillRect(50, 50, 40, 40);
+		painter.dispose();
+
+		compareWithExpected(image, "fillRect");
+	}
+
+	@Test
+	public void testDrawOval()
+	{
+		Image image = createTestImage();
+		Painter painter = image.createPainter(DrawQuality.High);
+		painter.setColor(createColor(128, 0, 128));
+		painter.setBasicStroke(2.0f);
+		painter.drawOval(10, 10, 80, 80);
+		painter.setColor(createColor(0, 128, 128));
+		painter.drawOval(20, 30, 60, 40);
+		painter.dispose();
+
+		compareWithExpected(image, "drawOval");
+	}
+
+	@Test
+	public void testFillOval()
+	{
+		Image image = createTestImage();
+		Painter painter = image.createPainter(DrawQuality.High);
+		painter.setColor(createColor(255, 200, 0));
+		painter.fillOval(10, 10, 80, 80);
+		painter.setColor(createColor(200, 50, 100));
+		painter.fillOval(30, 40, 40, 30);
+		painter.dispose();
+
+		compareWithExpected(image, "fillOval");
+	}
+
+	@Test
+	public void testDrawPolygon()
+	{
+		Image image = createTestImage();
+		Painter painter = image.createPainter(DrawQuality.High);
+		painter.setColor(createColor(0, 100, 200));
+		painter.setBasicStroke(2.0f);
+
+		int[] xPoints = { 50, 90, 70, 30, 10 };
+		int[] yPoints = { 10, 40, 90, 90, 40 };
+		painter.drawPolygon(xPoints, yPoints);
+		painter.dispose();
+
+		compareWithExpected(image, "drawPolygon");
+	}
+
+	@Test
+	public void testFillPolygon()
+	{
+		Image image = createTestImage();
+		Painter painter = image.createPainter(DrawQuality.High);
+		painter.setColor(createColor(100, 200, 50));
+
+		int[] xPoints = { 50, 90, 70, 30, 10 };
+		int[] yPoints = { 10, 40, 90, 90, 40 };
+		painter.fillPolygon(xPoints, yPoints);
+		painter.dispose();
+
+		compareWithExpected(image, "fillPolygon");
+	}
+
+	@Test
+	public void testDrawPolyline()
+	{
+		Image image = createTestImage();
+		Painter painter = image.createPainter(DrawQuality.High);
+		painter.setColor(createColor(200, 100, 50));
+		painter.setBasicStroke(3.0f);
+
+		int[] xPoints = { 10, 30, 50, 70, 90 };
+		int[] yPoints = { 50, 20, 80, 20, 50 };
+		painter.drawPolyline(xPoints, yPoints);
+		painter.dispose();
+
+		compareWithExpected(image, "drawPolyline");
+	}
+
+	@Test
+	public void testDrawPolygonFloat()
+	{
+		Image image = createTestImage();
+		Painter painter = image.createPainter(DrawQuality.High);
+		painter.setColor(createColor(150, 50, 200));
+		painter.setBasicStroke(2.0f);
+
+		List<FloatPoint> points = Arrays.asList(new FloatPoint(50.5f, 10.5f), new FloatPoint(90.5f, 40.5f), new FloatPoint(70.5f, 90.5f), new FloatPoint(30.5f, 90.5f),
+				new FloatPoint(10.5f, 40.5f));
+		painter.drawPolygonFloat(points);
+		painter.dispose();
+
+		compareWithExpected(image, "drawPolygonFloat");
+	}
+
+	// ==================== Stroke Tests ====================
+
+	@Test
+	public void testBasicStroke()
+	{
+		Image image = createTestImage();
+		Painter painter = image.createPainter(DrawQuality.High);
+		painter.setColor(createColor(0, 0, 0));
+
+		painter.setBasicStroke(1.0f);
+		painter.drawLine(10, 20, 90, 20);
+
+		painter.setBasicStroke(3.0f);
+		painter.drawLine(10, 50, 90, 50);
+
+		painter.setBasicStroke(5.0f);
+		painter.drawLine(10, 80, 90, 80);
+		painter.dispose();
+
+		compareWithExpected(image, "basicStroke");
+	}
+
+	@Test
+	public void testDashedStroke()
+	{
+		Image image = createTestImage();
+		Painter painter = image.createPainter(DrawQuality.High);
+		painter.setColor(createColor(0, 0, 0));
+
+		painter.setStroke(new Stroke(StrokeType.Dashes, 2.0f), 1.0);
+		painter.drawLine(10, 30, 90, 30);
+
+		painter.setStroke(new Stroke(StrokeType.Rounded_Dashes, 2.0f), 1.0);
+		painter.drawLine(10, 50, 90, 50);
+
+		painter.setStroke(new Stroke(StrokeType.Dots, 2.0f), 1.0);
+		painter.drawLine(10, 70, 90, 70);
+		painter.dispose();
+
+		compareWithExpected(image, "dashedStroke");
+	}
+
+	@Test
+	public void testStrokeSolidNoEndDecorations()
+	{
+		Image image = createTestImage();
+		Painter painter = image.createPainter(DrawQuality.High);
+		painter.setColor(createColor(100, 100, 100));
+
+		painter.setStrokeToSolidLineWithNoEndDecorations(6.0f);
+		painter.drawLine(10, 50, 90, 50);
+		painter.dispose();
+
+		compareWithExpected(image, "strokeSolidNoEndDecorations");
+	}
+
+	// ==================== Gradient Test ====================
+
+	@Test
+	public void testGradient()
+	{
+		Image image = createTestImage();
+		Painter painter = image.createPainter(DrawQuality.High);
+
+		Color startColor = createColor(255, 0, 0);
+		Color endColor = createColor(0, 0, 255);
+		painter.setGradient(0, 0, startColor, 100, 100, endColor);
+		painter.fillRect(10, 10, 80, 80);
+		painter.dispose();
+
+		compareWithExpected(image, "gradient");
+	}
+
+	// ==================== Text Drawing Test ====================
+
+	@Test
+	public void testDrawString()
+	{
+		Image image = createTestImage();
+		Painter painter = image.createPainter(DrawQuality.High);
+
+		Font font = PlatformFactory.getInstance().createFont("SansSerif", FontStyle.Plain, 14);
+		painter.setFont(font);
+		painter.setColor(createColor(0, 0, 0));
+		painter.drawString("Hello", 10, 30);
+
+		Font boldFont = PlatformFactory.getInstance().createFont("SansSerif", FontStyle.Bold, 18);
+		painter.setFont(boldFont);
+		painter.setColor(createColor(255, 0, 0));
+		painter.drawString("World", 10, 60);
+		painter.dispose();
+
+		compareWithExpected(image, "drawString");
+	}
+
+	@Test
+	public void testStringWidthAndCharWidth()
+	{
+		Image image = createTestImage();
+		Painter painter = image.createPainter(DrawQuality.High);
+
+		// Use Arial as it's more commonly available across platforms
+		Font font = PlatformFactory.getInstance().createFont("Arial", FontStyle.Plain, 14);
+		painter.setFont(font);
+
+		int stringWidth = painter.stringWidth("Test");
+		int charWidth = painter.charWidth('T');
+		int fontAscent = painter.getFontAscent();
+		int fontDescent = painter.getFontDescent();
+
+		// If the font is found, width should be positive
+		// Font metrics can be 0 if font is not available, which is acceptable
+		assertTrue(stringWidth >= 0, "String width should be non-negative");
+		assertTrue(charWidth >= 0, "Char width should be non-negative");
+		assertTrue(fontAscent >= 0, "Font ascent should be non-negative");
+		assertTrue(fontDescent >= 0, "Font descent should be non-negative");
+
+		// At least one metric should be positive if any font rendering works
+		assertTrue(stringWidth > 0 || charWidth > 0 || fontAscent > 0,
+			"At least one font metric should be positive if font rendering is available. " +
+			"stringWidth=" + stringWidth + ", charWidth=" + charWidth + ", fontAscent=" + fontAscent);
+
+		painter.dispose();
+	}
+
+	// ==================== Image Drawing Test ====================
+
+	@Test
+	public void testDrawImage()
+	{
+		Image canvas = createTestImage();
+		Image smallImage = Image.create(20, 20, ImageType.ARGB);
+
+		try (PixelReaderWriter writer = smallImage.createPixelReaderWriter())
+		{
+			for (int y = 0; y < 20; y++)
+			{
+				for (int x = 0; x < 20; x++)
+				{
+					if ((x + y) % 7 == 0)
+					{
+						writer.setRGB(x, y, 255, 0, 0);
+					}
+					else
+					{
+						writer.setRGB(x, y, 0, 255, 0);
+					}
+				}
+			}
+		}
+
+		compareWithExpected(canvas, "smallImage"); // TODO remove
+
+		Painter painter = canvas.createPainter(DrawQuality.High);
+		painter.drawImage(smallImage, 10, 10);
+		painter.drawImage(smallImage, 50, 50, 40, 40);
+		painter.dispose();
+
+		compareWithExpected(canvas, "drawImage");
+	}
+
+	// ==================== Transform Tests ====================
+
+	@Test
+	public void testTranslate()
+	{
+		Image image = createTestImage();
+		Painter painter = image.createPainter(DrawQuality.High);
+
+		painter.setColor(createColor(255, 0, 0));
+		painter.fillRect(0, 0, 20, 20);
+
+		painter.translate(30, 30);
+		painter.setColor(createColor(0, 255, 0));
+		painter.fillRect(0, 0, 20, 20);
+
+		painter.translate(30, 30);
+		painter.setColor(createColor(0, 0, 255));
+		painter.fillRect(0, 0, 20, 20);
+		painter.dispose();
+
+		compareWithExpected(image, "translate");
+	}
+
+	@Test
+	public void testRotate()
+	{
+		Image image = createTestImage();
+		Painter painter = image.createPainter(DrawQuality.High);
+
+		painter.setColor(createColor(255, 0, 0));
+		painter.fillRect(40, 10, 20, 30);
+
+		painter.rotate(Math.PI / 4, 50, 50);
+		painter.setColor(createColor(0, 255, 0, 128));
+		painter.fillRect(40, 10, 20, 30);
+		painter.dispose();
+
+		compareWithExpected(image, "rotate");
+	}
+
+	// ==================== Clip Test ====================
+
+	@Test
+	public void testSetClip()
+	{
+		Image image = createTestImage();
+		Painter painter = image.createPainter(DrawQuality.High);
+
+		painter.setClip(20, 20, 60, 60);
+		painter.setColor(createColor(255, 0, 0));
+		painter.fillRect(0, 0, 100, 100);
+		painter.dispose();
+
+		compareWithExpected(image, "setClip");
+	}
+
+	// ==================== Alpha Composite Tests ====================
+
+	@Test
+	public void testAlphaCompositeWithAlpha()
+	{
+		Image image = Image.create(testImageWidth, testImageHeight, ImageType.ARGB);
+		Painter painter = image.createPainter(DrawQuality.High);
+
+		painter.setColor(createColor(255, 0, 0));
+		painter.fillRect(20, 20, 60, 60);
+
+		painter.setColor(createColor(0, 0, 255));
+		painter.setAlphaComposite(nortantis.platform.AlphaComposite.SrcOver, 0.5f);
+		painter.fillRect(40, 40, 60, 60);
+		painter.dispose();
+
+		compareWithExpected(image, "alphaCompositeWithAlpha");
+	}
+
+	// ==================== PixelReaderWriter Tests ====================
+
+	@Test
+	public void testPixelReaderWriterSetGetRGB()
+	{
+		Image image = createTestImage();
+
+		// Initialize all pixels to black first
+		try (PixelReaderWriter writer = image.createPixelReaderWriter())
+		{
+			for (int y = 0; y < testImageHeight; y++)
+			{
+				for (int x = 0; x < testImageWidth; x++)
+				{
+					writer.setRGB(x, y, 0, 0, 0);
+				}
+			}
+
+			// Now set specific test pixels
+			writer.setRGB(10, 10, 255, 0, 0);
+			writer.setRGB(20, 20, 0, 255, 0);
+			writer.setRGB(30, 30, 0, 0, 255);
+			// Use full alpha for RGB images
+			writer.setRGB(40, 40, 255, 255, 0);
+		}
+
+		try (PixelReader reader = image.createPixelReader())
+		{
+			int rgb1 = reader.getRGB(10, 10);
+			assertEquals(255, (rgb1 >> 16) & 0xFF, "Red channel at (10,10)");
+			assertEquals(0, (rgb1 >> 8) & 0xFF, "Green channel at (10,10)");
+			assertEquals(0, rgb1 & 0xFF, "Blue channel at (10,10)");
+
+			int rgb2 = reader.getRGB(20, 20);
+			assertEquals(0, (rgb2 >> 16) & 0xFF, "Red channel at (20,20)");
+			assertEquals(255, (rgb2 >> 8) & 0xFF, "Green channel at (20,20)");
+
+			int rgb3 = reader.getRGB(30, 30);
+			assertEquals(0, (rgb3 >> 16) & 0xFF, "Red channel at (30,30)");
+			assertEquals(0, (rgb3 >> 8) & 0xFF, "Green channel at (30,30)");
+			assertEquals(255, rgb3 & 0xFF, "Blue channel at (30,30)");
+		}
+
+		compareWithExpected(image, "pixelReaderWriterSetGetRGB");
+	}
+
+	@Test
+	public void testPixelReaderWriterSetPixelColor()
+	{
+		Image image = createTestImage();
+
+		Color cyan = createColor(0, 255, 255);
+		Color magenta = createColor(255, 0, 255);
+
+		try (PixelReaderWriter writer = image.createPixelReaderWriter())
+		{
+			for (int y = 0; y < 50; y++)
+			{
+				for (int x = 0; x < 50; x++)
+				{
+					writer.setPixelColor(x, y, cyan);
+				}
+			}
+			for (int y = 50; y < 100; y++)
+			{
+				for (int x = 50; x < 100; x++)
+				{
+					writer.setPixelColor(x, y, magenta);
+				}
+			}
+		}
+
+		compareWithExpected(image, "pixelReaderWriterSetPixelColor");
+	}
+
+	@Test
+	public void testPixelReaderWriterBandLevel()
+	{
+		Image image = createTestImage();
+
+		// Initialize all pixels to black first, then set individual bands
+		try (PixelReaderWriter writer = image.createPixelReaderWriter())
+		{
+			for (int y = 0; y < 100; y++)
+			{
+				for (int x = 0; x < 100; x++)
+				{
+					// Initialize to black
+					writer.setRGB(x, y, 0, 0, 0);
+				}
+			}
+
+			// Now set individual band levels
+			for (int y = 0; y < 100; y++)
+			{
+				for (int x = 0; x < 100; x++)
+				{
+					if (x < 33)
+					{
+						writer.setBandLevel(x, y, 0, 255);
+					}
+					else if (x < 66)
+					{
+						writer.setBandLevel(x, y, 1, 255);
+					}
+					else
+					{
+						writer.setBandLevel(x, y, 2, 255);
+					}
+				}
+			}
+		}
+
+		try (PixelReader reader = image.createPixelReader())
+		{
+			assertEquals(255, reader.getBandLevel(10, 50, 0), "Red band at (10,50)");
+			assertEquals(0, reader.getBandLevel(10, 50, 1), "Green band at (10,50)");
+			assertEquals(0, reader.getBandLevel(10, 50, 2), "Blue band at (10,50)");
+
+			assertEquals(0, reader.getBandLevel(50, 50, 0), "Red band at (50,50)");
+			assertEquals(255, reader.getBandLevel(50, 50, 1), "Green band at (50,50)");
+		}
+
+		compareWithExpected(image, "pixelReaderWriterBandLevel");
+	}
+
+	@Test
+	public void testPixelReaderWriterGrayLevel()
+	{
+		Image image = createTestImage();
+
+		// Initialize all pixels to black first, then set gray levels
+		try (PixelReaderWriter writer = image.createPixelReaderWriter())
+		{
+			for (int y = 0; y < 100; y++)
+			{
+				for (int x = 0; x < 100; x++)
+				{
+					// Initialize to black
+					writer.setRGB(x, y, 0, 0, 0);
+				}
+			}
+
+			// Now set gray levels (setGrayLevel sets band 0 = red)
+			for (int y = 0; y < 100; y++)
+			{
+				int level = (int) (y * 2.55);
+				for (int x = 0; x < 100; x++)
+				{
+					writer.setGrayLevel(x, y, level);
+				}
+			}
+		}
+
+		try (PixelReader reader = image.createPixelReader())
+		{
+			assertEquals(0, reader.getGrayLevel(50, 0), "Gray level at top");
+			int middleLevel = reader.getGrayLevel(50, 50);
+			assertTrue(middleLevel > 100 && middleLevel < 150, "Gray level at middle should be around 127");
+
+			float normalized = reader.getNormalizedPixelLevel(50, 50);
+			assertTrue(normalized > 0.4f && normalized < 0.6f, "Normalized level at middle should be around 0.5");
+		}
+
+		compareWithExpected(image, "pixelReaderWriterGrayLevel");
+	}
+
+	@Test
+	public void testPixelReaderWriterAlpha()
+	{
+		Image image = Image.create(testImageWidth, testImageHeight, ImageType.ARGB);
+
+		// Create a pattern with different alpha values
+		try (PixelReaderWriter writer = image.createPixelReaderWriter())
+		{
+			// Outer border: fully opaque red
+			for (int y = 0; y < 100; y++)
+			{
+				for (int x = 0; x < 100; x++)
+				{
+					writer.setRGB(x, y, 255, 0, 0, 255);
+				}
+			}
+
+			// Inner area: semi-transparent blue
+			for (int y = 20; y < 80; y++)
+			{
+				for (int x = 20; x < 80; x++)
+				{
+					writer.setRGB(x, y, 0, 0, 255, 128);
+				}
+			}
+		}
+
+		try (PixelReader reader = image.createPixelReader())
+		{
+			assertEquals(255, reader.getAlpha(10, 10), "Alpha at (10,10) should be 255");
+			// Alpha at center should be semi-transparent
+			int centerAlpha = reader.getAlpha(50, 50);
+			assertTrue(centerAlpha > 0 && centerAlpha < 255,
+				"Alpha at center should be semi-transparent, got: " + centerAlpha);
+		}
+
+		compareWithExpected(image, "pixelReaderWriterAlpha");
+	}
+
+	@Test
+	public void testPixelReaderWriterGetPixelColor()
+	{
+		Image image = createTestImage();
+
+		Color testColor = createColor(100, 150, 200);
+
+		try (PixelReaderWriter writer = image.createPixelReaderWriter())
+		{
+			writer.setPixelColor(50, 50, testColor);
+		}
+
+		try (PixelReader reader = image.createPixelReader())
+		{
+			Color readColor = reader.getPixelColor(50, 50);
+			assertEquals(100, readColor.getRed(), "Red component");
+			assertEquals(150, readColor.getGreen(), "Green component");
+			assertEquals(200, readColor.getBlue(), "Blue component");
+		}
+	}
+
+	// ==================== Combined Test ====================
+
+	@Test
+	public void testCombinedDrawing()
+	{
+		Image image = Image.create(200, 200, ImageType.ARGB);
+		Painter painter = image.createPainter(DrawQuality.High);
+
+		painter.setColor(createColor(230, 230, 230));
+		painter.fillRect(0, 0, 200, 200);
+
+		painter.setColor(createColor(100, 100, 200));
+		painter.fillOval(10, 10, 80, 80);
+
+		painter.setColor(createColor(200, 100, 100));
+		int[] xPoints = { 150, 190, 170, 130, 110 };
+		int[] yPoints = { 20, 50, 90, 90, 50 };
+		painter.fillPolygon(xPoints, yPoints);
+
+		painter.setColor(createColor(100, 200, 100));
+		painter.fillRect(10, 110, 80, 80);
+
+		Color startColor = createColor(255, 200, 0);
+		Color endColor = createColor(200, 0, 255);
+		painter.setGradient(110, 110, startColor, 190, 190, endColor);
+		painter.fillRect(110, 110, 80, 80);
+
+		painter.setColor(createColor(0, 0, 0));
+		painter.setBasicStroke(2.0f);
+		painter.drawRect(10, 10, 80, 80);
+		painter.drawRect(110, 10, 80, 80);
+		painter.drawRect(10, 110, 80, 80);
+		painter.drawRect(110, 110, 80, 80);
+
+		Font font = PlatformFactory.getInstance().createFont("SansSerif", FontStyle.Bold, 12);
+		painter.setFont(font);
+		painter.setColor(createColor(0, 0, 0));
+		painter.drawString("Shapes", 70, 198);
+
+		painter.dispose();
+
+		compareWithExpected(image, "combinedDrawing");
+	}
+
+	// ==================== Helper Methods ====================
+
+	private Image createTestImage()
+	{
+		return Image.create(testImageWidth, testImageHeight, ImageType.RGB);
+	}
+
+	private Color createColor(int r, int g, int b)
+	{
+		return PlatformFactory.getInstance().createColor(r, g, b);
+	}
+
+	private Color createColor(int r, int g, int b, int a)
+	{
+		return PlatformFactory.getInstance().createColor(r, g, b, a);
+	}
+
+	private static String getExpectedFilePath(String testName)
+	{
+		return Paths.get("unit test files", expectedFolderName, testName + ".png").toString();
+	}
+
+	private static String getFailedFilePath(String testName)
+	{
+		return Paths.get("unit test files", failedFolderName, testName + ".png").toString();
+	}
+
+	private static String getDiffFilePath(String testName)
+	{
+		return Paths.get("unit test files", failedFolderName, testName + " - diff.png").toString();
+	}
+
+	private void compareWithExpected(Image actual, String testName)
+	{
+		String expectedFilePath = getExpectedFilePath(testName);
+		Image expected;
+
+		if (new File(expectedFilePath).exists())
+		{
+			expected = Assets.readImage(expectedFilePath);
+		}
+		else
+		{
+			expected = actual;
+			ImageHelper.write(actual, expectedFilePath);
+			return;
+		}
+
+		String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(expected, actual);
+		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
+		{
+			FileHelper.createFolder(Paths.get("unit test files", failedFolderName).toString());
+			ImageHelper.write(actual, getFailedFilePath(testName));
+			MapTestUtil.createImageDiffIfImagesAreSameSize(expected, actual, testName, failedFolderName);
+			fail("Test '" + testName + "' failed: " + comparisonErrorMessage);
+		}
+	}
+}
