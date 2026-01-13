@@ -726,7 +726,7 @@ public class SkiaPainterTest
 
 	private Color createColor(int r, int g, int b)
 	{
-		return PlatformFactory.getInstance().createColor(r, g, b);
+		return Color.create(r, g, b);
 	}
 
 	private Color createColor(int r, int g, int b, int a)

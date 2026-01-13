@@ -233,7 +233,7 @@ public class SkiaImage extends Image
 		BufferedImage bi = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 		int[] pixels = ((DataBufferInt) bi.getRaster().getDataBuffer()).getData();
 
-		byte[] bytes = bitmap.readPixels(new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null), width * 4, 0, 0);
+		byte[] bytes = bitmap.readPixels(imageInfo, width * 4, 0, 0);
 
 		ByteBuffer buffer = ByteBuffer.wrap(bytes).order(ByteOrder.nativeOrder());
 		IntBuffer intBuffer = buffer.asIntBuffer();
@@ -247,7 +247,7 @@ public class SkiaImage extends Image
 	 */
 	public int[] readPixelsToIntArray()
 	{
-		byte[] bytes = bitmap.readPixels(new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null), width * 4, 0, 0);
+		byte[] bytes = bitmap.readPixels(imageInfo, width * 4, 0, 0);
 
 		if (bytes == null)
 		{
@@ -264,7 +264,7 @@ public class SkiaImage extends Image
 	 */
 	int[] readPixelsToIntArray(int srcX, int srcY, int regionWidth, int regionHeight)
 	{
-		byte[] bytes = bitmap.readPixels(new ImageInfo(regionWidth, regionHeight, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null), regionWidth * 4, srcX, srcY);
+		byte[] bytes = bitmap.readPixels(imageInfo, regionWidth * 4, srcX, srcY);
 
 		if (bytes == null)
 		{
@@ -283,7 +283,7 @@ public class SkiaImage extends Image
 	{
 		ByteBuffer buffer = ByteBuffer.allocate(pixels.length * 4).order(ByteOrder.nativeOrder());
 		buffer.asIntBuffer().put(pixels);
-		bitmap.installPixels(new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null), buffer.array(), width * 4);
+		bitmap.installPixels(imageInfo, buffer.array(), width * 4);
 		invalidateCachedImage();
 	}
 
@@ -295,11 +295,11 @@ public class SkiaImage extends Image
 	{
 		// Create a temporary bitmap with the region pixels
 		Bitmap tempBitmap = new Bitmap();
-		tempBitmap.allocPixels(new ImageInfo(regionWidth, regionHeight, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null));
+		tempBitmap.allocPixels(new ImageInfo(regionWidth, regionHeight, ColorType.Companion.getN32(), imageInfo.getColorAlphaType(), null));
 
 		ByteBuffer buffer = ByteBuffer.allocate(regionPixels.length * 4).order(ByteOrder.nativeOrder());
 		buffer.asIntBuffer().put(regionPixels);
-		tempBitmap.installPixels(new ImageInfo(regionWidth, regionHeight, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null), buffer.array(), regionWidth * 4);
+		tempBitmap.installPixels(new ImageInfo(regionWidth, regionHeight, ColorType.Companion.getN32(), imageInfo.getColorAlphaType(), null), buffer.array(), regionWidth * 4);
 
 		// Draw the temp image onto the main bitmap using Canvas
 		Canvas canvas = new Canvas(bitmap, new SurfaceProps());

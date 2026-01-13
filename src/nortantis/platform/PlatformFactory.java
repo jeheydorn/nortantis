@@ -2,6 +2,9 @@ package nortantis.platform;
 
 import java.io.InputStream;
 
+/**
+ * Abstracts the library used for drawing.
+ */
 public abstract class PlatformFactory
 {
 	private static PlatformFactory instance;
@@ -11,34 +14,81 @@ public abstract class PlatformFactory
 		return instance;
 	}
 
+	/**
+	 * Sets the default platform instance to use when creating new objects of the types in nortantis.platform.
+	 * Objects can be created using a different platform by calling that platform's methods directly, but if you do
+	 * that, you must be careful not to mix objects from different platforms. Mixing is not allowed. For example,
+	 * a SkiaPainter cannot draw text using an AwtFont.
+	 */
 	public static void setInstance(PlatformFactory instance)
 	{
 		PlatformFactory.instance = instance;
 	}
 
+	/**
+	 * Creates an image.
+	 * Note - callers outside the nortantis.platform packages should call Image.create(...)
+	 */
 	public abstract Image createImage(int width, int height, ImageType type);
 
+	/**
+	 * Reads an image from a file.
+	 * Note - callers outside the nortantis.platform packages should call Image.read(...)
+	 */
 	public abstract Image readImage(String filePath);
 
+	/**
+	 * Reads an image from a file.
+	 * Note - callers outside the nortantis.platform packages should call Image.read(...)
+	 */
 	public abstract Image readImage(InputStream stream);
 
+	/**
+	 * Writes an image to a file.
+	 * Note - callers outside the nortantis.platform packages should call Image.write(...)
+	 */
 	public abstract void writeImage(Image image, String filePath);
 
+	/**
+	 * Checks whether a font exists on the system.
+	 * Note - callers outside the nortantis.platform packages should call Font.isInstalled(...)
+	 */
 	public abstract boolean isFontInstalled(String fontFamily);
 
+	/**
+	 * Creates a font.
+	 * Note - callers outside the nortantis.platform packages should call Font.create(...)
+	 */
 	public abstract Font createFont(String name, FontStyle style, float size);
 
+	/**
+	 * Creates a color.
+	 * Note - callers outside the nortantis.platform packages should call Color.create(...)
+	 */
 	public abstract Color createColor(int rgb, boolean hasAlpha);
 
+	/**
+	 * Creates a color. Alpha is assumed to be 255.
+	 * Note - callers outside the nortantis.platform packages should call Color.create(...)
+	 */
 	public abstract Color createColor(int red, int green, int blue);
 
+	/**
+	 * Creates a color. Alpha is assumed to be 255.
+	 * Note - callers outside the nortantis.platform packages should call Color.create(...)
+	 */
 	public abstract Color createColor(float red, float green, float blue);
 
+	/**
+	 * Creates a color.
+	 * Note - callers outside the nortantis.platform packages should call Color.create(...)
+	 */
 	public abstract Color createColor(int red, int green, int blue, int alpha);
 
 	/**
 	 * Creates a Color from hue, saturation, and brightness.
-	 * 
+	 * Note - callers outside the nortantis.platform packages should call Color.createFromHSB(...)
+	 *
 	 * @param hue
 	 *            In the range [0...1].
 	 * @param saturation
