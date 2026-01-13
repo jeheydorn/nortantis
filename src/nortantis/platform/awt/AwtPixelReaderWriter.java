@@ -42,7 +42,7 @@ public class AwtPixelReaderWriter extends AwtPixelReader implements PixelReaderW
 	@Override
 	public void setRGB(int x, int y, int red, int green, int blue)
 	{
-		setRGB(x, y, (red << 16) | (green << 8) | blue);
+		setRGB(x, y, (255 << 24) |(red << 16) | (green << 8) | blue);
 	}
 
 	@Override

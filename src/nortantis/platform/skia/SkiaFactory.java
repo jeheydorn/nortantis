@@ -1,22 +1,17 @@
 package nortantis.platform.skia;
 
-import java.io.File;
+import nortantis.platform.*;
+import org.jetbrains.skia.Bitmap;
+import org.jetbrains.skia.EncodedImageFormat;
+import org.jetbrains.skia.ImageInfo;
+
+import javax.swing.*;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
-import javax.swing.SwingUtilities;
-import org.jetbrains.skia.Bitmap;
-import org.jetbrains.skia.EncodedImageFormat;
-import org.jetbrains.skia.Image;
-import nortantis.platform.BackgroundTask;
-import nortantis.platform.Color;
-import nortantis.platform.Font;
-import nortantis.platform.FontStyle;
-import nortantis.platform.ImageType;
-import nortantis.platform.PlatformFactory;
+import java.util.concurrent.Executors;
 
 public class SkiaFactory extends PlatformFactory
 {
@@ -53,13 +48,14 @@ public class SkiaFactory extends PlatformFactory
 			// This is more reliable than drawing through a Canvas, which can leave
 			// the bitmap in a state where Image.makeFromBitmap fails later.
 			Bitmap bitmap = new Bitmap();
-			bitmap.allocPixels(new org.jetbrains.skia.ImageInfo(image.getWidth(), image.getHeight(), org.jetbrains.skia.ColorType.Companion.getN32(), org.jetbrains.skia.ColorAlphaType.PREMUL, null));
+			ImageInfo imageInfo = SkiaImage.getImageInfoForType(ImageType.ARGB, image.getWidth(), image.getHeight());
+			bitmap.allocPixels(imageInfo);
 
 			// Use readPixels to directly copy pixel data from image to bitmap
 			image.readPixels(bitmap, 0, 0);
 			image.close();
 
-			return new SkiaImage(bitmap, ImageType.ARGB);
+			return new SkiaImage(bitmap, imageInfo, ImageType.ARGB);
 		}
 		catch (Exception e)
 		{

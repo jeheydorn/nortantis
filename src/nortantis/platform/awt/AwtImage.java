@@ -95,7 +95,7 @@ class AwtImage extends Image
 		}
 		else
 		{
-			throw new IllegalArgumentException("Unimplemented image type: " + type);
+			throw new IllegalArgumentException("Unimplemented BufferedImage type: " + type);
 		}
 	}
 

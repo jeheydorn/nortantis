@@ -4,7 +4,6 @@ import nortantis.geom.IntRectangle;
 import nortantis.platform.*;
 import nortantis.platform.Color;
 import nortantis.platform.Image;
-import nortantis.util.Logger;
 import org.imgscalr.Scalr.Method;
 import org.jetbrains.skia.*;
 
@@ -20,22 +19,75 @@ public class SkiaImage extends Image
 	private final int width;
 	private final int height;
 	private org.jetbrains.skia.Image cachedSkiaImage;
+	private ImageInfo imageInfo;
 
 	public SkiaImage(int width, int height, ImageType type)
 	{
 		super(type);
 		this.width = width;
 		this.height = height;
-		this.bitmap = new Bitmap();
-		this.bitmap.allocPixels(new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null));
+		imageInfo = getImageInfoForType(type, width, height);
+		this.bitmap = createBitmap(imageInfo);
 	}
 
-	public SkiaImage(Bitmap bitmap, ImageType type)
+	public SkiaImage(Bitmap bitmap, ImageInfo imageInfo, ImageType type)
 	{
 		super(type);
 		this.bitmap = bitmap;
+		this.imageInfo = imageInfo;
 		this.width = bitmap.getWidth();
 		this.height = bitmap.getHeight();
+	}
+
+	private Bitmap createBitmap(ImageInfo imageInfo)
+	{
+		Bitmap bitmap = new Bitmap();
+		bitmap.allocPixels(imageInfo);
+		Color eraseColor = hasAlpha() ? Color.transparentBlack : Color.black;
+		bitmap.erase(eraseColor.getRGB());
+		return bitmap;
+	}
+
+	public static ImageInfo getImageInfoForType(ImageType type, int width, int height)
+	{
+		ColorType colorType = toSkiaBitmapType(type);
+		return switch (type)
+		{
+			case ARGB -> new ImageInfo(width, height, colorType, ColorAlphaType.UNPREMUL, null);
+			case RGB -> new ImageInfo(width, height, colorType, ColorAlphaType.OPAQUE, null);
+			case Grayscale8Bit -> new ImageInfo(width, height, colorType, ColorAlphaType.OPAQUE, null);
+			case Grayscale16Bit -> new ImageInfo(width, height, colorType, ColorAlphaType.OPAQUE, null);
+			case Binary -> new ImageInfo(width, height, colorType, ColorAlphaType.OPAQUE, null);
+		};
+	}
+
+
+	private static ColorType toSkiaBitmapType(ImageType type)
+	{
+		if (type == ImageType.ARGB)
+		{
+			return ColorType.Companion.getN32();
+		}
+		if (type == ImageType.RGB)
+		{
+			return ColorType.Companion.getN32();
+		}
+		if (type == ImageType.Grayscale8Bit)
+		{
+			return ColorType.GRAY_8;
+		}
+		if (type == ImageType.Binary)
+		{
+			return ColorType.GRAY_8;
+		}
+		if (type == ImageType.Grayscale16Bit)
+		{
+			return ColorType.RGBA_F16;
+		}
+		else
+		{
+			throw new IllegalArgumentException("Unimplemented Skia image type: " + type);
+		}
 	}
 
 	public Bitmap getBitmap()
@@ -107,7 +159,7 @@ public class SkiaImage extends Image
 
 		// Create image from source bitmap and draw scaled
 		org.jetbrains.skia.Image srcImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(bitmap);
-		canvas.drawImageRect(srcImage, org.jetbrains.skia.Rect.makeXYWH(0, 0, width, height));
+		canvas.drawImageRect(srcImage, Rect.makeXYWH(0, 0, width, height));
 		srcImage.close();
 
 		// Get the result as an image snapshot and extract pixels to a new bitmap
@@ -118,13 +170,13 @@ public class SkiaImage extends Image
 		resultImage.close();
 		surface.close();
 
-		return new SkiaImage(scaledBitmap, getType());
+		return new SkiaImage(scaledBitmap, imageInfo, getType());
 	}
 
 	@Override
 	public Image deepCopy()
 	{
-		return new SkiaImage(bitmap.makeClone(), getType());
+		return new SkiaImage(bitmap.makeClone(), imageInfo, getType());
 	}
 
 	@Override
@@ -148,18 +200,19 @@ public class SkiaImage extends Image
 		Canvas canvas = surface.getCanvas();
 
 		org.jetbrains.skia.Image srcImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(bitmap);
-		canvas.drawImageRect(srcImage, org.jetbrains.skia.Rect.makeXYWH(bounds.x, bounds.y, bounds.width, bounds.height), org.jetbrains.skia.Rect.makeXYWH(0, 0, w, h));
+		canvas.drawImageRect(srcImage, Rect.makeXYWH(bounds.x, bounds.y, bounds.width, bounds.height), Rect.makeXYWH(0, 0, w, h));
 		srcImage.close();
 
 		// Get the result as an image snapshot and extract pixels to a new bitmap
 		org.jetbrains.skia.Image resultImage = surface.makeImageSnapshot();
 		Bitmap subBitmap = new Bitmap();
-		subBitmap.allocPixels(new ImageInfo(w, h, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null));
+		ImageInfo subImageInfo = new ImageInfo(w, h, imageInfo.getColorType(), imageInfo.getColorAlphaType(), null);
+		subBitmap.allocPixels();
 		resultImage.readPixels(subBitmap, 0, 0);
 		resultImage.close();
 		surface.close();
 
-		return new SkiaImage(subBitmap, addAlphaChanel ? ImageType.ARGB : getType());
+		return new SkiaImage(subBitmap, subImageInfo, addAlphaChanel ? ImageType.ARGB : getType());
 	}
 
 	@Override
@@ -167,7 +220,12 @@ public class SkiaImage extends Image
 	{
 		if (hasAlpha())
 			return deepCopy();
-		return new SkiaImage(bitmap, ImageType.ARGB);
+		// TODO if performance is a concern, I could make ImageType.RGB be the same as ARB under the hood, so I just have to change metadata and return a deep copy here.
+
+		SkiaImage result = new SkiaImage(width, height, ImageType.ARGB);
+		Painter p = result.createPainter();
+		p.drawImage(this, 0, 0);
+		return result;
 	}
 
 	public BufferedImage toBufferedImage()
