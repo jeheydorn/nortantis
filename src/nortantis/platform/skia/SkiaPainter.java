@@ -110,6 +110,8 @@ public class SkiaPainter extends Painter
 			throw new IllegalArgumentException("SkiaPainter.setColor requires SkiaColor, got " + color.getClass().getName());
 		}
 		this.color = (SkiaColor) color;
+		// Clear any shader that might be set (e.g., from setGradient) so the solid color is used
+		paint.setShader(null);
 		paint.setColor(this.color.getRGB());
 	}
 

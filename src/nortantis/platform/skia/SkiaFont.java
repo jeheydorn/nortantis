@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 import org.jetbrains.skia.Font;
@@ -17,6 +19,28 @@ public class SkiaFont extends nortantis.platform.Font implements Serializable
 	private final String name;
 	private final FontStyle style;
 	private final float size;
+
+	// Map Java logical font names to actual system font names that Skia can find
+	private static final Map<String, String> LOGICAL_FONT_MAPPING = new HashMap<>();
+	static
+	{
+		// Sans-serif fonts
+		LOGICAL_FONT_MAPPING.put("SansSerif", "Arial");
+		LOGICAL_FONT_MAPPING.put("Dialog", "Arial");
+		LOGICAL_FONT_MAPPING.put("DialogInput", "Arial");
+		// Serif fonts
+		LOGICAL_FONT_MAPPING.put("Serif", "Times New Roman");
+		// Monospace fonts
+		LOGICAL_FONT_MAPPING.put("Monospaced", "Consolas");
+	}
+
+	/**
+	 * Maps Java logical font names to actual system font names. If the font name is already a system font name, it is returned unchanged.
+	 */
+	private static String mapFontName(String fontName)
+	{
+		return LOGICAL_FONT_MAPPING.getOrDefault(fontName, fontName);
+	}
 
 	public SkiaFont(String name, FontStyle style, float size)
 	{
@@ -36,7 +60,8 @@ public class SkiaFont extends nortantis.platform.Font implements Serializable
 		{
 			skiaStyle = org.jetbrains.skia.FontStyle.Companion.getBOLD_ITALIC();
 		}
-		Typeface typeface = FontMgr.Companion.getDefault().matchFamilyStyle(name, skiaStyle);
+		String mappedName = mapFontName(name);
+		Typeface typeface = FontMgr.Companion.getDefault().matchFamilyStyle(mappedName, skiaStyle);
 		this.skiaFont = new Font(typeface, size);
 	}
 
@@ -124,7 +149,8 @@ public class SkiaFont extends nortantis.platform.Font implements Serializable
 		{
 			skiaStyle = org.jetbrains.skia.FontStyle.Companion.getBOLD_ITALIC();
 		}
-		Typeface typeface = FontMgr.Companion.getDefault().matchFamilyStyle(name, skiaStyle);
+		String mappedName = mapFontName(name);
+		Typeface typeface = FontMgr.Companion.getDefault().matchFamilyStyle(mappedName, skiaStyle);
 		this.skiaFont = new Font(typeface, size);
 	}
 }
