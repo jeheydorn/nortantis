@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class MapCreatorTest
 {
+	final static String failedMapsFolderName = "failed maps";
 
 	@BeforeAll
 	public static void setUpBeforeClass() throws Exception
@@ -35,13 +36,13 @@ public class MapCreatorTest
 		Assets.disableAddedArtPacksForUnitTests();
 
 		FileHelper.createFolder(Paths.get("unit test files", "expected maps").toString());
-		FileUtils.deleteDirectory(new File(Paths.get("unit test files", "failed maps").toString()));
+		FileUtils.deleteDirectory(new File(Paths.get("unit test files", failedMapsFolderName).toString()));
 
 		String[] mapSettingsFileNames = new File(Paths.get("unit test files", "map settings").toString()).list();
 
 		for (String settingsFileName : mapSettingsFileNames)
 		{
-			String expectedMapFilePath = getExpectedMapFilePath(settingsFileName);
+			String expectedMapFilePath = MapTestUtil.getExpectedMapFilePath(settingsFileName);
 			String filePath = Paths.get("unit test files", "map settings", settingsFileName).toString();
 			if (!new File(filePath).isDirectory() && !new File(expectedMapFilePath).exists())
 			{
@@ -93,17 +94,17 @@ public class MapCreatorTest
 				Image actualSnippet = fullMapForUpdates.getSubImage(changedBounds);
 
 				// Compare incremental result against expected
-				String comparisonErrorMessage = checkIfImagesEqual(expectedSnippet, actualSnippet, diffThreshold);
+				String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(expectedSnippet, actualSnippet, diffThreshold);
 				if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
 				{
-					FileHelper.createFolder(Paths.get("unit test files", "failed maps").toString());
+					FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
 
 					String expectedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + iconNumber + " expected.png";
-					Path expectedPath = Paths.get("unit test files", "failed maps", expectedSnippetName);
+					Path expectedPath = Paths.get("unit test files", failedMapsFolderName, expectedSnippetName);
 					ImageHelper.write(expectedSnippet, expectedPath.toString());
 
 					String failedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + iconNumber + " failed.png";
-					Path failedPath = Paths.get("unit test files", "failed maps", failedSnippetName);
+					Path failedPath = Paths.get("unit test files", failedMapsFolderName, failedSnippetName);
 					ImageHelper.write(actualSnippet, failedPath.toString());
 
 					createImageDiffIfImagesAreSameSize(expectedSnippet, actualSnippet, failedSnippetName, diffThreshold);
@@ -111,12 +112,12 @@ public class MapCreatorTest
 				}
 			}
 
-			String comparisonErrorMessage = checkIfImagesEqual(fullMap, fullMapForUpdates, diffThreshold);
+			String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(fullMap, fullMapForUpdates, diffThreshold);
 			if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
 			{
-				FileHelper.createFolder(Paths.get("unit test files", "failed maps").toString());
+				FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
 				String failedMapName = settingsFileName + " full map for incremental draw test";
-				ImageHelper.write(fullMapForUpdates, getFailedMapFilePath(failedMapName));
+				ImageHelper.write(fullMapForUpdates, MapTestUtil.getFailedMapFilePath(failedMapName, failedMapsFolderName));
 				createImageDiffIfImagesAreSameSize(fullMap, fullMapForUpdates, failedMapName, diffThreshold);
 				fail("Incremental update did not match expected image: " + comparisonErrorMessage);
 			}
@@ -147,17 +148,17 @@ public class MapCreatorTest
 				Image actualSnippet = fullMapForUpdates.getSubImage(changedBounds);
 
 				// Compare incremental result against expected
-				String comparisonErrorMessage = checkIfImagesEqual(expectedSnippet, actualSnippet, diffThreshold);
+				String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(expectedSnippet, actualSnippet, diffThreshold);
 				if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
 				{
-					FileHelper.createFolder(Paths.get("unit test files", "failed maps").toString());
+					FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
 
 					String expectedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + textNumber + " expected.png";
-					Path expectedPath = Paths.get("unit test files", "failed maps", expectedSnippetName);
+					Path expectedPath = Paths.get("unit test files", failedMapsFolderName, expectedSnippetName);
 					ImageHelper.write(expectedSnippet, expectedPath.toString());
 
 					String failedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + textNumber + " failed.png";
-					Path failedPath = Paths.get("unit test files", "failed maps", failedSnippetName);
+					Path failedPath = Paths.get("unit test files", failedMapsFolderName, failedSnippetName);
 					ImageHelper.write(actualSnippet, failedPath.toString());
 
 					createImageDiffIfImagesAreSameSize(expectedSnippet, actualSnippet, failedSnippetName, diffThreshold);
@@ -165,12 +166,12 @@ public class MapCreatorTest
 				}
 			}
 
-			String comparisonErrorMessage = checkIfImagesEqual(fullMap, fullMapForUpdates, diffThreshold);
+			String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(fullMap, fullMapForUpdates, diffThreshold);
 			if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
 			{
-				FileHelper.createFolder(Paths.get("unit test files", "failed maps").toString());
+				FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
 				String failedMapName = settingsFileName + " full map for incremental draw test";
-				ImageHelper.write(fullMapForUpdates, getFailedMapFilePath(failedMapName));
+				ImageHelper.write(fullMapForUpdates, MapTestUtil.getFailedMapFilePath(failedMapName, failedMapsFolderName));
 				createImageDiffIfImagesAreSameSize(fullMap, fullMapForUpdates, failedMapName, diffThreshold);
 				fail("Incremental update did not match expected image: " + comparisonErrorMessage);
 			}
@@ -241,40 +242,15 @@ public class MapCreatorTest
 		assertTrue(settings.edits.isInitialized());
 		Image drawnWithEdits = createMapUsingUpdater(updater, mapTuple, doneTuple);
 
-		String comparisonErrorMessage = checkIfImagesEqual(drawnWithoutEdits, drawnWithEdits);
+		String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(drawnWithoutEdits, drawnWithEdits);
 		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
 		{
-			FileHelper.createFolder(Paths.get("unit test files", "failed maps").toString());
-			drawnWithoutEdits.write(Paths.get("unit test files", "failed maps", "compareWithAndWithoutEdits_NoEdits.png").toString());
-			drawnWithEdits.write(Paths.get("unit test files", "failed maps", "compareWithAndWithoutEdits_WithEdits.png").toString());
+			FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
+			drawnWithoutEdits.write(Paths.get("unit test files", failedMapsFolderName, "compareWithAndWithoutEdits_NoEdits.png").toString());
+			drawnWithEdits.write(Paths.get("unit test files", failedMapsFolderName, "compareWithAndWithoutEdits_WithEdits.png").toString());
 			createImageDiffIfImagesAreSameSize(drawnWithoutEdits, drawnWithEdits, "noOceanOrCoastEffects");
 			fail(comparisonErrorMessage);
 		}
-	}
-
-	private Image createMapUsingUpdater(MapUpdater updater, Tuple1<Image> mapTuple, Tuple1<Boolean> doneTuple)
-	{
-		doneTuple.set(false);
-		mapTuple.set(null);
-		updater.createAndShowMapFull();
-		updater.dowWhenMapIsNotDrawing(() ->
-		{
-			doneTuple.set(true);
-		});
-
-		while (!doneTuple.get())
-		{
-			try
-			{
-				Thread.sleep(100);
-			}
-			catch (InterruptedException e)
-			{
-				e.printStackTrace();
-				break;
-			}
-		}
-		return mapTuple.get();
 	}
 
 	@Test
@@ -355,7 +331,7 @@ public class MapCreatorTest
 	public void iconReplacements()
 	{
 		// Clear the custom images path to force icons to be replaced with images from the installed art pack.
-		List<String> warnings = generateAndCompare("iconReplacements.nort", (settings -> settings.customImagesPath = null)).getWarningMessages();
+		List<String> warnings = MapTestUtil.generateAndCompare("iconReplacements.nort", (settings -> settings.customImagesPath = null), failedMapsFolderName).getWarningMessages();
 
 		Set<String> expectedWarnings = new TreeSet<>();
 		expectedWarnings.add("Unable to find the art pack 'custom' to load the mountain image group 'jagged'. The art pack 'nortantis' will be used instead.");
@@ -406,10 +382,10 @@ public class MapCreatorTest
 	@Test
 	public void iconReplacementsWithMissingIconTypes()
 	{
-		List<String> warnings = generateAndCompare("iconReplacementsWithMissingIconTypes.nort", (settings) ->
+		List<String> warnings = MapTestUtil.generateAndCompare("iconReplacementsWithMissingIconTypes.nort", (settings) ->
 		{
 			settings.customImagesPath = Paths.get("unit test files", "map settings", "empty custom images").toAbsolutePath().toString();
-		}).getWarningMessages();
+		}, failedMapsFolderName).getWarningMessages();
 
 		Set<String> expectedWarnings = new TreeSet<>();
 		expectedWarnings.add(
@@ -570,250 +546,56 @@ public class MapCreatorTest
 		generateAndCompare("clearedMapRegionEdit0Removed.nort");
 	}
 
-	private void generateRandomHeightmapAndCompare(long seed)
+
+	private Image createMapUsingUpdater(MapUpdater updater, Tuple1<Image> mapTuple, Tuple1<Boolean> doneTuple)
 	{
-		String expectedFileName = "random heightmap for seed " + seed;
-		String expectedMapFilePath = getExpectedMapFilePath(expectedFileName);
-		Image expected;
-		if (new File(expectedMapFilePath).exists())
+		doneTuple.set(false);
+		mapTuple.set(null);
+		updater.createAndShowMapFull();
+		updater.dowWhenMapIsNotDrawing(() ->
 		{
-			expected = Assets.readImage(expectedMapFilePath);
-		}
-		else
+			doneTuple.set(true);
+		});
+
+		while (!doneTuple.get())
 		{
-			expected = null;
+			try
+			{
+				Thread.sleep(100);
+			}
+			catch (InterruptedException e)
+			{
+				e.printStackTrace();
+				break;
+			}
 		}
-
-		MapSettings settings = SettingsGenerator.generate(new Random(seed), Assets.installedArtPack, null);
-		settings.resolution = 0.5;
-		MapCreator mapCreator = new MapCreator();
-		Logger.println("Creating random heightmap to match '" + expectedFileName + "'");
-		Image actual;
-		actual = mapCreator.createHeightMap(settings);
-
-		if (expected == null)
-		{
-			// Create the expected map from the actual one.
-			expected = actual;
-			ImageHelper.write(actual, getExpectedMapFilePath(expectedFileName));
-		}
-
-		// Test deep copy after creating the map because MapCreator sets some fields during map creation, so it's a
-		// more complete test that way.
-		testDeepCopy(settings);
-
-		String comparisonErrorMessage = checkIfImagesEqual(expected, actual);
-		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
-		{
-			FileHelper.createFolder(Paths.get("unit test files", "failed maps").toString());
-			ImageHelper.write(actual, getFailedMapFilePath(expectedFileName));
-			createImageDiffIfImagesAreSameSize(expected, actual, expectedFileName);
-			fail(comparisonErrorMessage);
-		}
-	}
-
-	private static String getExpectedMapFilePath(String settingsFileName)
-	{
-		return Paths.get("unit test files", "expected maps", FilenameUtils.getBaseName(settingsFileName) + ".png").toString();
-	}
-
-	private static String getFailedMapFilePath(String settingsFileName)
-	{
-		return Paths.get("unit test files", "failed maps", FilenameUtils.getBaseName(settingsFileName) + ".png").toString();
-	}
-
-	private static String getDiffFilePath(String settingsFileName)
-	{
-		return Paths.get("unit test files", "failed maps", FilenameUtils.getBaseName(settingsFileName) + " - diff.png").toString();
+		return mapTuple.get();
 	}
 
 	private void generateRandomAndCompare(long seed)
 	{
-		String expectedFileName = "random map for seed " + seed;
-		String expectedMapFilePath = getExpectedMapFilePath(expectedFileName);
-		Image expected;
-		if (new File(expectedMapFilePath).exists())
-		{
-			expected = Assets.readImage(expectedMapFilePath);
-		}
-		else
-		{
-			expected = null;
-		}
+		MapTestUtil.generateRandomAndCompare(1, failedMapsFolderName);
+	}
 
-		MapSettings settings = SettingsGenerator.generate(new Random(seed), Assets.installedArtPack, null);
-		settings.resolution = 0.5;
-		MapCreator mapCreator = new MapCreator();
-		Logger.println("Creating random map to match '" + expectedFileName + "'");
-		Image actual;
-		actual = mapCreator.createMap(settings, null, null);
-
-		if (expected == null)
-		{
-			// Create the expected map from the actual one.
-			expected = actual;
-			ImageHelper.write(actual, getExpectedMapFilePath(expectedFileName));
-		}
-
-		// Test deep copy after creating the map because MapCreator sets some fields during map creation, so it's a
-		// more complete test that way.
-		testDeepCopy(settings);
-
-		String comparisonErrorMessage = checkIfImagesEqual(expected, actual);
-		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
-		{
-			FileHelper.createFolder(Paths.get("unit test files", "failed maps").toString());
-			ImageHelper.write(actual, getFailedMapFilePath(expectedFileName));
-			createImageDiffIfImagesAreSameSize(expected, actual, expectedFileName);
-			fail(comparisonErrorMessage);
-		}
+	private void generateRandomHeightmapAndCompare(long seed)
+	{
+		MapTestUtil.generateRandomHeightmapAndCompare(1, failedMapsFolderName);
 	}
 
 	private void generateAndCompare(String settingsFileName)
 	{
-		generateAndCompare(settingsFileName, null);
-	}
-
-	private WarningLogger generateAndCompare(String settingsFileName, Consumer<MapSettings> preprocessSettings)
-	{
-		String expectedMapFilePath = getExpectedMapFilePath(settingsFileName);
-		Image expected;
-		if (new File(expectedMapFilePath).exists())
-		{
-			expected = Assets.readImage(expectedMapFilePath);
-		}
-		else
-		{
-			expected = null;
-		}
-
-		String settingsPath = Paths.get("unit test files", "map settings", settingsFileName).toString();
-		MapSettings settings = new MapSettings(settingsPath);
-		if (preprocessSettings != null)
-		{
-			preprocessSettings.accept(settings);
-		}
-		MapCreator mapCreator = new MapCreator();
-		Logger.println("Creating map from '" + settingsPath + "'");
-		Image actual;
-		actual = mapCreator.createMap(settings, null, null);
-
-		// Test deep copy after creating the map because MapCreator sets some fields during map creation, so it's a
-		// more complete test that way.
-		testDeepCopy(settings);
-
-		String comparisonErrorMessage = checkIfImagesEqual(expected, actual);
-		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
-		{
-			FileHelper.createFolder(Paths.get("unit test files", "failed maps").toString());
-			ImageHelper.write(actual, getFailedMapFilePath(settingsFileName));
-			createImageDiffIfImagesAreSameSize(expected, actual, settingsFileName);
-			fail(comparisonErrorMessage);
-		}
-
-		return mapCreator;
-	}
-
-	private void testDeepCopy(MapSettings settings)
-	{
-		MapSettings copy = settings.deepCopy();
-		assertEquals(settings, copy);
-	}
-
-	private String checkIfImagesEqual(Image image1, Image image2)
-	{
-		return checkIfImagesEqual(image1, image2, 0);
-	}
-
-	private String checkIfImagesEqual(Image image1, Image image2, int threshold)
-	{
-		if (image1 == null)
-		{
-			return "Image 1 is null.";
-		}
-
-		if (image2 == null)
-		{
-			return "Image 2 is null.";
-		}
-
-		if (image1.getWidth() == image2.getWidth() && image1.getHeight() == image2.getHeight())
-		{
-			try (PixelReader image1Pixels = image1.createPixelReader(); PixelReader image2Pixels = image1.createPixelReader())
-			{
-				for (int x = 0; x < image1.getWidth(); x++)
-				{
-					for (int y = 0; y < image1.getHeight(); y++)
-					{
-						if (threshold == 0)
-						{
-							if (image1Pixels.getRGB(x, y) != image2Pixels.getRGB(x, y))
-							{
-								return "Images differ at pixel (" + x + ", " + y + ")";
-							}
-						}
-						else
-						{
-							int diff = image1Pixels.getPixelColor(x, y).manhattanDistanceTo(image2Pixels.getPixelColor(x, y));
-							if (diff > threshold)
-							{
-								return "Images differ at pixel (" + x + ", " + y + ") by " + diff;
-							}
-						}
-					}
-				}
-			}
-		}
-		else
-		{
-			return "Images have differing dimensions.";
-		}
-		return null;
+		MapTestUtil.generateAndCompare(settingsFileName, null, failedMapsFolderName);
 	}
 
 	private void createImageDiffIfImagesAreSameSize(Image image1, Image image2, String settingsFileName)
 	{
-		createImageDiffIfImagesAreSameSize(image1, image2, settingsFileName, 0);
+		MapTestUtil.createImageDiffIfImagesAreSameSize(image1, image2, settingsFileName, failedMapsFolderName);
 	}
 
 	private void createImageDiffIfImagesAreSameSize(Image image1, Image image2, String settingsFileName, int threshold)
 	{
-		if (image1.getWidth() == image2.getWidth() && image1.getHeight() == image2.getHeight())
-		{
-			Image diff = Image.create(image1.getWidth(), image1.getHeight(), ImageType.RGB);
-			try (PixelReader image1Pixels = image1.createPixelReader(); PixelReader image2Pixels = image1.createPixelReader(); PixelReaderWriter diffPixels = diff.createPixelReaderWriter())
-			{
-				for (int x = 0; x < image1.getWidth(); x++)
-				{
-					for (int y = 0; y < image1.getHeight(); y++)
-					{
-						if (threshold == 0)
-						{
-							if (image1Pixels.getRGB(x, y) != image2Pixels.getRGB(x, y))
-							{
-								diffPixels.setRGB(x, y, Color.white.getRGB());
-							}
-							else
-							{
-								diffPixels.setRGB(x, y, Color.black.getRGB());
-							}
-						}
-						else
-						{
-							int difference = image1Pixels.getPixelColor(x, y).manhattanDistanceTo(image2Pixels.getPixelColor(x, y));
-							if (difference > threshold)
-							{
-								diffPixels.setRGB(x, y, Color.white.getRGB());
-							}
-							else
-							{
-								diffPixels.setRGB(x, y, Color.black.getRGB());
-							}
-						}
-					}
-				}
-			}
-			ImageHelper.write(diff, getDiffFilePath(settingsFileName));
-		}
+		MapTestUtil.createImageDiffIfImagesAreSameSize(image1, image2, settingsFileName, threshold, failedMapsFolderName);
 	}
+
+
 }
