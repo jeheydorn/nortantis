@@ -1,24 +1,34 @@
 package nortantis.swing;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.EventQueue;
-import java.awt.FlowLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
-import java.awt.event.MouseWheelEvent;
-import java.awt.event.MouseWheelListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import com.formdev.flatlaf.FlatDarkLaf;
+import com.formdev.flatlaf.FlatLightLaf;
+import nortantis.CancelledException;
+import nortantis.DebugFlags;
+import nortantis.ImageCache;
+import nortantis.MapSettings;
+import nortantis.editor.*;
+import nortantis.geom.IntRectangle;
+import nortantis.graph.voronoi.Center;
+import nortantis.graph.voronoi.Edge;
+import nortantis.platform.BackgroundTask;
+import nortantis.platform.Image;
+import nortantis.platform.PlatformFactory;
+import nortantis.platform.awt.AwtBridge;
+import nortantis.platform.awt.AwtFactory;
+import nortantis.util.*;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.imgscalr.Scalr.Method;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+
+import javax.swing.*;
+import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileSystemView;
+import java.awt.*;
+import java.awt.event.*;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -31,71 +41,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
-import java.util.Properties;
-import java.util.Set;
-import java.util.TreeSet;
-
-import javax.swing.BorderFactory;
-import javax.swing.BoxLayout;
-import javax.swing.ButtonGroup;
-import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JRadioButtonMenuItem;
-import javax.swing.JScrollPane;
-import javax.swing.JSplitPane;
-import javax.swing.JTextArea;
-import javax.swing.KeyStroke;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
-import javax.swing.filechooser.FileFilter;
-import javax.swing.filechooser.FileSystemView;
-
-import nortantis.platform.awt.AwtFactory;
-import nortantis.platform.skia.SkiaFactory;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.imgscalr.Scalr.Method;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-
-import com.formdev.flatlaf.FlatDarkLaf;
-import com.formdev.flatlaf.FlatLightLaf;
-
-import nortantis.CancelledException;
-import nortantis.DebugFlags;
-import nortantis.ImageCache;
-import nortantis.MapSettings;
-import nortantis.editor.CenterEdit;
-import nortantis.editor.DisplayQuality;
-import nortantis.editor.EdgeEdit;
-import nortantis.editor.ExportAction;
-import nortantis.editor.MapUpdater;
-import nortantis.editor.UserPreferences;
-import nortantis.geom.IntRectangle;
-import nortantis.graph.voronoi.Center;
-import nortantis.graph.voronoi.Edge;
-import nortantis.platform.BackgroundTask;
-import nortantis.platform.Image;
-import nortantis.platform.PlatformFactory;
-import nortantis.platform.awt.AwtBridge;
-import nortantis.util.Assets;
-import nortantis.util.FileHelper;
-import nortantis.util.ILoggerTarget;
-import nortantis.util.ImageHelper;
-import nortantis.util.Logger;
-import nortantis.util.OSHelper;
 
 @SuppressWarnings("serial")
 public class MainWindow extends JFrame implements ILoggerTarget
@@ -2140,7 +2087,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	public static void main(String[] args)
 	{
 		// Tell drawing code to use AWT.
-		PlatformFactory.setInstance(new SkiaFactory());
+		PlatformFactory.setInstance(new AwtFactory());
 
 		setLookAndFeel(UserPreferences.getInstance().lookAndFeel);
 
