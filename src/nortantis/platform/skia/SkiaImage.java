@@ -90,6 +90,33 @@ public class SkiaImage extends Image
 		}
 	}
 
+	/**
+	 * Returns the number of bytes per pixel for this image's color type.
+	 */
+	private int getBytesPerPixel()
+	{
+		ImageType type = getType();
+		if (type == ImageType.Grayscale8Bit || type == ImageType.Binary)
+		{
+			return 1;
+		}
+		if (type == ImageType.Grayscale16Bit)
+		{
+			return 8; // RGBA_F16 = 16 bits * 4 channels = 8 bytes
+		}
+		// ARGB and RGB use N32 = 4 bytes
+		return 4;
+	}
+
+	/**
+	 * Returns true if this image uses a grayscale format (1 byte per pixel).
+	 */
+	private boolean isGrayscaleFormat()
+	{
+		ImageType type = getType();
+		return type == ImageType.Grayscale8Bit || type == ImageType.Binary;
+	}
+
 	public Bitmap getBitmap()
 	{
 		return bitmap;
@@ -244,10 +271,13 @@ public class SkiaImage extends Image
 
 	/**
 	 * Reads all pixels from the Skia bitmap into an int[] array. Format: ARGB, one int per pixel, row-major order.
+	 * For grayscale images, converts single-byte gray values to ARGB format.
 	 */
 	public int[] readPixelsToIntArray()
 	{
-		byte[] bytes = bitmap.readPixels(imageInfo, width * 4, 0, 0);
+		int bytesPerPixel = getBytesPerPixel();
+		int rowStride = width * bytesPerPixel;
+		byte[] bytes = bitmap.readPixels(imageInfo, rowStride, 0, 0);
 
 		if (bytes == null)
 		{
@@ -255,16 +285,32 @@ public class SkiaImage extends Image
 		}
 
 		int[] pixels = new int[width * height];
-		ByteBuffer.wrap(bytes).order(ByteOrder.nativeOrder()).asIntBuffer().get(pixels);
+
+		if (isGrayscaleFormat())
+		{
+			// Convert 1-byte grayscale to ARGB int format
+			for (int i = 0; i < pixels.length; i++)
+			{
+				int gray = bytes[i] & 0xFF;
+				pixels[i] = (255 << 24) | (gray << 16) | (gray << 8) | gray;
+			}
+		}
+		else
+		{
+			ByteBuffer.wrap(bytes).order(ByteOrder.nativeOrder()).asIntBuffer().get(pixels);
+		}
 		return pixels;
 	}
 
 	/**
 	 * Reads a rectangular region of pixels into an int[] array.
+	 * For grayscale images, converts single-byte gray values to ARGB format.
 	 */
 	int[] readPixelsToIntArray(int srcX, int srcY, int regionWidth, int regionHeight)
 	{
-		byte[] bytes = bitmap.readPixels(imageInfo, regionWidth * 4, srcX, srcY);
+		int bytesPerPixel = getBytesPerPixel();
+		int rowStride = regionWidth * bytesPerPixel;
+		byte[] bytes = bitmap.readPixels(imageInfo, rowStride, srcX, srcY);
 
 		if (bytes == null)
 		{
@@ -272,34 +318,86 @@ public class SkiaImage extends Image
 		}
 
 		int[] pixels = new int[regionWidth * regionHeight];
-		ByteBuffer.wrap(bytes).order(ByteOrder.nativeOrder()).asIntBuffer().get(pixels);
+
+		if (isGrayscaleFormat())
+		{
+			// Convert 1-byte grayscale to ARGB int format
+			for (int i = 0; i < pixels.length; i++)
+			{
+				int gray = bytes[i] & 0xFF;
+				pixels[i] = (255 << 24) | (gray << 16) | (gray << 8) | gray;
+			}
+		}
+		else
+		{
+			ByteBuffer.wrap(bytes).order(ByteOrder.nativeOrder()).asIntBuffer().get(pixels);
+		}
 		return pixels;
 	}
 
 	/**
 	 * Writes an int[] array back to the Skia bitmap. Format: ARGB, one int per pixel, row-major order.
+	 * For grayscale images, extracts the gray value from ARGB and writes single bytes.
 	 */
 	void writePixelsFromIntArray(int[] pixels)
 	{
-		ByteBuffer buffer = ByteBuffer.allocate(pixels.length * 4).order(ByteOrder.nativeOrder());
-		buffer.asIntBuffer().put(pixels);
-		bitmap.installPixels(imageInfo, buffer.array(), width * 4);
+		int bytesPerPixel = getBytesPerPixel();
+		int rowStride = width * bytesPerPixel;
+
+		if (isGrayscaleFormat())
+		{
+			// Convert ARGB int format to 1-byte grayscale
+			byte[] bytes = new byte[pixels.length];
+			for (int i = 0; i < pixels.length; i++)
+			{
+				// Extract red channel as gray value (assumes gray pixels have R=G=B)
+				bytes[i] = (byte) ((pixels[i] >> 16) & 0xFF);
+			}
+			bitmap.installPixels(imageInfo, bytes, rowStride);
+		}
+		else
+		{
+			ByteBuffer buffer = ByteBuffer.allocate(pixels.length * 4).order(ByteOrder.nativeOrder());
+			buffer.asIntBuffer().put(pixels);
+			bitmap.installPixels(imageInfo, buffer.array(), rowStride);
+		}
 		invalidateCachedImage();
 	}
 
 	/**
 	 * Writes an int[] array to a rectangular region of the Skia bitmap. Uses a temporary bitmap and canvas drawing for efficiency with
-	 * large images.
+	 * large images. For grayscale images, extracts gray values from ARGB ints.
 	 */
 	void writePixelsToRegion(int[] regionPixels, int destX, int destY, int regionWidth, int regionHeight)
 	{
 		// Create a temporary bitmap with the region pixels
 		Bitmap tempBitmap = new Bitmap();
-		tempBitmap.allocPixels(new ImageInfo(regionWidth, regionHeight, ColorType.Companion.getN32(), imageInfo.getColorAlphaType(), null));
+		ImageInfo tempImageInfo;
 
-		ByteBuffer buffer = ByteBuffer.allocate(regionPixels.length * 4).order(ByteOrder.nativeOrder());
-		buffer.asIntBuffer().put(regionPixels);
-		tempBitmap.installPixels(new ImageInfo(regionWidth, regionHeight, ColorType.Companion.getN32(), imageInfo.getColorAlphaType(), null), buffer.array(), regionWidth * 4);
+		if (isGrayscaleFormat())
+		{
+			// For grayscale, create a GRAY_8 temp bitmap
+			tempImageInfo = new ImageInfo(regionWidth, regionHeight, ColorType.GRAY_8, ColorAlphaType.OPAQUE, null);
+			tempBitmap.allocPixels(tempImageInfo);
+
+			// Convert ARGB int format to 1-byte grayscale
+			byte[] bytes = new byte[regionPixels.length];
+			for (int i = 0; i < regionPixels.length; i++)
+			{
+				// Extract red channel as gray value (assumes gray pixels have R=G=B)
+				bytes[i] = (byte) ((regionPixels[i] >> 16) & 0xFF);
+			}
+			tempBitmap.installPixels(tempImageInfo, bytes, regionWidth);
+		}
+		else
+		{
+			tempImageInfo = new ImageInfo(regionWidth, regionHeight, ColorType.Companion.getN32(), imageInfo.getColorAlphaType(), null);
+			tempBitmap.allocPixels(tempImageInfo);
+
+			ByteBuffer buffer = ByteBuffer.allocate(regionPixels.length * 4).order(ByteOrder.nativeOrder());
+			buffer.asIntBuffer().put(regionPixels);
+			tempBitmap.installPixels(tempImageInfo, buffer.array(), regionWidth * 4);
+		}
 
 		// Draw the temp image onto the main bitmap using Canvas
 		Canvas canvas = new Canvas(bitmap, new SurfaceProps());
