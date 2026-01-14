@@ -63,7 +63,6 @@ public class SkiaPixelReader implements PixelReader
 			}
 			return cachedPixelArray[y * width + x];
 		}
-		assert false;
 		return image.bitmap.getColor(x, y);
 	}
 

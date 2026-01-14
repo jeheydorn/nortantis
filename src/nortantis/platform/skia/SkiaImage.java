@@ -234,7 +234,7 @@ public class SkiaImage extends Image
 		org.jetbrains.skia.Image resultImage = surface.makeImageSnapshot();
 		Bitmap subBitmap = new Bitmap();
 		ImageInfo subImageInfo = new ImageInfo(w, h, imageInfo.getColorType(), imageInfo.getColorAlphaType(), null);
-		subBitmap.allocPixels();
+		subBitmap.allocPixels(subImageInfo);
 		resultImage.readPixels(subBitmap, 0, 0);
 		resultImage.close();
 		surface.close();

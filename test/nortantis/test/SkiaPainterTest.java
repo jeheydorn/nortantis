@@ -3,6 +3,7 @@ package nortantis.test;
 import nortantis.Stroke;
 import nortantis.StrokeType;
 import nortantis.geom.FloatPoint;
+import nortantis.geom.IntRectangle;
 import nortantis.platform.*;
 import nortantis.platform.skia.SkiaFactory;
 import nortantis.util.Assets;
@@ -457,6 +458,146 @@ public class SkiaPainterTest
 		painter.dispose();
 
 		compareWithExpected(canvas, "drawImage");
+	}
+
+	@Test
+	public void testCopySubImage()
+	{
+		// Create source image with a distinctive pattern
+		Image source = Image.create(80, 80, ImageType.RGB);
+		try (PixelReaderWriter writer = source.createPixelReaderWriter())
+		{
+			for (int y = 0; y < 80; y++)
+			{
+				for (int x = 0; x < 80; x++)
+				{
+					// Create quadrants with different colors
+					if (x < 40 && y < 40)
+					{
+						writer.setRGB(x, y, 255, 0, 0); // Red top-left
+					}
+					else if (x >= 40 && y < 40)
+					{
+						writer.setRGB(x, y, 0, 255, 0); // Green top-right
+					}
+					else if (x < 40 && y >= 40)
+					{
+						writer.setRGB(x, y, 0, 0, 255); // Blue bottom-left
+					}
+					else
+					{
+						writer.setRGB(x, y, 255, 255, 0); // Yellow bottom-right
+					}
+				}
+			}
+		}
+
+		// Copy a sub-region that spans all four quadrants (center 40x40)
+		IntRectangle bounds = new IntRectangle(20, 20, 40, 40);
+		Image subImage = source.copySubImage(bounds);
+
+		// Verify dimensions
+		assertEquals(40, subImage.getWidth(), "Sub-image width");
+		assertEquals(40, subImage.getHeight(), "Sub-image height");
+		assertEquals(ImageType.RGB, subImage.getType(), "Sub-image type should match source");
+
+		// Verify pixel content
+		try (PixelReader reader = subImage.createPixelReader())
+		{
+			// Top-left of sub-image should be red (from original at 20,20)
+			int rgb1 = reader.getRGB(5, 5);
+			assertEquals(255, (rgb1 >> 16) & 0xFF, "Red channel at sub-image top-left");
+			assertEquals(0, (rgb1 >> 8) & 0xFF, "Green channel at sub-image top-left");
+			assertEquals(0, rgb1 & 0xFF, "Blue channel at sub-image top-left");
+
+			// Top-right of sub-image should be green (from original at 60,20)
+			int rgb2 = reader.getRGB(35, 5);
+			assertEquals(0, (rgb2 >> 16) & 0xFF, "Red channel at sub-image top-right");
+			assertEquals(255, (rgb2 >> 8) & 0xFF, "Green channel at sub-image top-right");
+			assertEquals(0, rgb2 & 0xFF, "Blue channel at sub-image top-right");
+
+			// Bottom-left of sub-image should be blue (from original at 20,60)
+			int rgb3 = reader.getRGB(5, 35);
+			assertEquals(0, (rgb3 >> 16) & 0xFF, "Red channel at sub-image bottom-left");
+			assertEquals(0, (rgb3 >> 8) & 0xFF, "Green channel at sub-image bottom-left");
+			assertEquals(255, rgb3 & 0xFF, "Blue channel at sub-image bottom-left");
+
+			// Bottom-right of sub-image should be yellow (from original at 60,60)
+			int rgb4 = reader.getRGB(35, 35);
+			assertEquals(255, (rgb4 >> 16) & 0xFF, "Red channel at sub-image bottom-right");
+			assertEquals(255, (rgb4 >> 8) & 0xFF, "Green channel at sub-image bottom-right");
+			assertEquals(0, rgb4 & 0xFF, "Blue channel at sub-image bottom-right");
+		}
+
+		// Verify that modifications to sub-image don't affect the original
+		try (PixelReaderWriter writer = subImage.createPixelReaderWriter())
+		{
+			writer.setRGB(5, 5, 0, 0, 0); // Set to black
+		}
+
+		// Original should still be red at the corresponding location
+		try (PixelReader reader = source.createPixelReader())
+		{
+			int rgb = reader.getRGB(25, 25);
+			assertEquals(255, (rgb >> 16) & 0xFF, "Original should still be red after modifying copy");
+		}
+
+		compareWithExpected(subImage, "copySubImage");
+	}
+
+	@Test
+	public void testCopySubImageWithAlphaChannel()
+	{
+		// Create an RGB source image (no alpha)
+		Image source = Image.create(60, 60, ImageType.RGB);
+		try (PixelReaderWriter writer = source.createPixelReaderWriter())
+		{
+			for (int y = 0; y < 60; y++)
+			{
+				for (int x = 0; x < 60; x++)
+				{
+					writer.setRGB(x, y, 100, 150, 200);
+				}
+			}
+		}
+
+		// Copy with alpha channel added
+		IntRectangle bounds = new IntRectangle(10, 10, 40, 40);
+		Image subImageWithAlpha = source.copySubImage(bounds, true);
+
+		// Verify type is ARGB
+		assertEquals(ImageType.ARGB, subImageWithAlpha.getType(), "Sub-image should have alpha channel");
+		assertEquals(40, subImageWithAlpha.getWidth(), "Sub-image width");
+		assertEquals(40, subImageWithAlpha.getHeight(), "Sub-image height");
+
+		compareWithExpected(subImageWithAlpha, "copySubImageWithAlpha");
+	}
+
+	@Test
+	public void testCopySubImageGrayscale()
+	{
+		// Create a grayscale source with a gradient
+		Image source = Image.create(80, 80, ImageType.Grayscale8Bit);
+		try (PixelReaderWriter writer = source.createPixelReaderWriter())
+		{
+			for (int y = 0; y < 80; y++)
+			{
+				for (int x = 0; x < 80; x++)
+				{
+					int level = (x + y) * 255 / 158; // Gradient from top-left to bottom-right
+					writer.setGrayLevel(x, y, Math.min(255, level));
+				}
+			}
+		}
+
+		// Copy a sub-region
+		IntRectangle bounds = new IntRectangle(20, 20, 40, 40);
+		Image subImage = source.copySubImage(bounds);
+
+		assertEquals(40, subImage.getWidth(), "Sub-image width");
+		assertEquals(40, subImage.getHeight(), "Sub-image height");
+
+		compareWithExpected(subImage, "copySubImageGrayscale");
 	}
 
 	// ==================== Transform Tests ====================

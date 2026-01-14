@@ -3,6 +3,7 @@ package nortantis.platform.skia;
 import nortantis.geom.IntRectangle;
 import nortantis.platform.Color;
 import nortantis.platform.PixelReaderWriter;
+import org.jetbrains.skia.IRect;
 
 public class SkiaPixelReaderWriter extends SkiaPixelReader implements PixelReaderWriter
 {
@@ -52,13 +53,20 @@ public class SkiaPixelReaderWriter extends SkiaPixelReader implements PixelReade
 	@Override
 	public void setRGB(int x, int y, int rgb)
 	{
-		if (bounds != null)
+		if (cachedPixelArray != null)
 		{
-			cachedPixelArray[(y - bounds.y) * bounds.width + (x - bounds.x)] = rgb;
+			if (bounds != null)
+			{
+				cachedPixelArray[(y - bounds.y) * bounds.width + (x - bounds.x)] = rgb;
+			}
+			else
+			{
+				cachedPixelArray[y * width + x] = rgb;
+			}
 		}
 		else
 		{
-			cachedPixelArray[y * width + x] = rgb;
+			image.bitmap.erase(rgb, IRect.makeXYWH(x, y, 1, 1));
 		}
 	}
 
