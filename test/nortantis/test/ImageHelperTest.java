@@ -326,6 +326,11 @@ public class ImageHelperTest
 		Image original = createColorTestImage();
 		Image result = ImageHelper.applyAlpha(original, 128);
 
+		try(PixelReader reader = result.createPixelReader())
+		{
+			assertEquals(reader.getPixelColor(20, 20).getAlpha(), 128);
+		}
+
 		assertEquals(ImageType.ARGB, result.getType(), "Result should have alpha channel");
 		compareWithExpected(result, "applyAlpha");
 	}
@@ -364,23 +369,6 @@ public class ImageHelperTest
 
 		ImageHelper.setAlphaOfAllPixels(image, 0);
 		compareWithExpected(image, "setAlphaOfAllPixels");
-	}
-
-	// ==================== Color Channel Tests ====================
-
-	@Test
-	public void testCreateColoredImageFromGrayScaleImages()
-	{
-		Image red = createGrayscaleGradientHorizontal();
-		Image green = createGrayscaleGradientVertical();
-		Image blue = createGrayscaleGradientDiagonal();
-		Image alpha = createSolidGrayscaleImage(200);
-
-		Image result = ImageHelper.createColoredImageFromGrayScaleImages(red, green, blue, alpha);
-
-		assertEquals(ImageType.ARGB, result.getType(), "Result should be ARGB");
-		// Use threshold due to alpha premultiplication differences in PNG round-trip
-		compareWithExpected(result, "createColoredImageFromGrayScaleImages", 4);
 	}
 
 	// ==================== Colorify Tests ====================
@@ -770,11 +758,6 @@ public class ImageHelperTest
 		return mask;
 	}
 
-	private Image createBinaryMask()
-	{
-		return createSmallBinaryMask(testImageWidth, testImageHeight);
-	}
-
 	private Image createSmallBinaryMask(int width, int height)
 	{
 		Image mask = Image.create(width, height, ImageType.Binary);
@@ -826,23 +809,6 @@ public class ImageHelperTest
 		return image;
 	}
 
-	private Image createGrayscaleGradientHorizontal()
-	{
-		Image image = Image.create(testImageWidth, testImageHeight, ImageType.Grayscale8Bit);
-		try (PixelReaderWriter writer = image.createPixelReaderWriter())
-		{
-			for (int y = 0; y < testImageHeight; y++)
-			{
-				for (int x = 0; x < testImageWidth; x++)
-				{
-					int level = (x * 255) / (testImageWidth - 1);
-					writer.setGrayLevel(x, y, level);
-				}
-			}
-		}
-		return image;
-	}
-
 	private Image createGrayscaleGradientVertical()
 	{
 		Image image = Image.create(testImageWidth, testImageHeight, ImageType.Grayscale8Bit);
@@ -860,23 +826,6 @@ public class ImageHelperTest
 		return image;
 	}
 
-	private Image createGrayscaleGradientDiagonal()
-	{
-		Image image = Image.create(testImageWidth, testImageHeight, ImageType.Grayscale8Bit);
-		try (PixelReaderWriter writer = image.createPixelReaderWriter())
-		{
-			for (int y = 0; y < testImageHeight; y++)
-			{
-				for (int x = 0; x < testImageWidth; x++)
-				{
-					int level = ((x + y) * 255) / (testImageWidth + testImageHeight - 2);
-					writer.setGrayLevel(x, y, level);
-				}
-			}
-		}
-		return image;
-	}
-
 	private static String getExpectedFilePath(String testName)
 	{
 		return Paths.get("unit test files", expectedFolderName, testName + ".png").toString();
@@ -885,11 +834,6 @@ public class ImageHelperTest
 	private static String getFailedFilePath(String testName)
 	{
 		return Paths.get("unit test files", failedFolderName, testName + ".png").toString();
-	}
-
-	private static String getDiffFilePath(String testName)
-	{
-		return Paths.get("unit test files", failedFolderName, testName + " - diff.png").toString();
 	}
 
 	private void compareWithExpected(Image actual, String testName)

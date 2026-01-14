@@ -20,7 +20,8 @@ public class SkiaPixelReaderWriter extends SkiaPixelReader implements PixelReade
 	@Override
 	public void setGrayLevel(int x, int y, int level)
 	{
-		setBandLevel(x, y, 0, level);
+		Color gray = Color.create(level, level, level, 255);
+		setRGB(x, y, gray.getRGB());
 	}
 
 	@Override

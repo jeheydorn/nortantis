@@ -643,6 +643,12 @@ public class MapCreator implements WarningLogger
 			{
 				Logger.println("Creating the graph.");
 				WorldGraph graphCreated = createGraph(settings, mapBounds.width, mapBounds.height, r, settings.resolution, !settings.edits.isInitialized());
+				applyRegionEdits(graphCreated, settings.edits);
+				// Apply edge edits before center edits because applying center edits smoothes region boundaries, which depends on rivers, which are
+				// edge edits.
+				applyEdgeEdits(graphCreated, settings.edits, null);
+				applyCenterEdits(graphCreated, settings.edits, null, settings.drawRegionBoundaries || settings.drawRegionColors);
+
 				if (mapParts != null)
 				{
 					mapParts.graph = graphCreated;
@@ -1026,12 +1032,6 @@ public class MapCreator implements WarningLogger
 
 	private Tuple4<Image, Image, List<Set<Center>>, List<IconDrawTask>> drawTerrainAndIcons(MapSettings settings, MapParts mapParts, WorldGraph graph, Background background)
 	{
-		applyRegionEdits(graph, settings.edits);
-		// Apply edge edits before center edits because applying center edits smoothes region boundaries, which depends on rivers, which are
-		// edge edits.
-		applyEdgeEdits(graph, settings.edits, null);
-		applyCenterEdits(graph, settings.edits, null, settings.drawRegionBoundaries || settings.drawRegionColors);
-
 		checkForCancel();
 
 		IconDrawer iconDrawer;

@@ -242,7 +242,7 @@ public class MapTestUtil
 							int rgb2 = image2Pixels.getRGB(x, y);
 							if (rgb1 != rgb2)
 							{
-								return "Images differ at pixel (" + x + ", " + y + ")";
+								return "Images differ at pixel (" + x + ", " + y + "). Color from image1: " + Color.create(rgb1) + ". Color from image2: " + Color.create(rgb2);
 							}
 						}
 						else

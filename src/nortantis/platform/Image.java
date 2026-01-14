@@ -9,12 +9,10 @@ import java.io.InputStream;
 public abstract class Image
 {
 	private final ImageType type;
-	private final float maxPixelLevelAsFloat;
 
 	protected Image(ImageType type)
 	{
 		this.type = type;
-		maxPixelLevelAsFloat = getMaxPixelLevel();
 	}
 
 	public abstract int getWidth();
@@ -114,20 +112,6 @@ public abstract class Image
 	public abstract Image copySubImage(IntRectangle bounds, boolean addAlphaChanel);
 
 	public abstract Image copyAndAddAlphaChanel();
-
-	public Image copyAndRemoveAlphaChanel()
-	{
-		Image result = Image.create(getWidth(), getHeight(), ImageType.RGB);
-		try (PixelReaderWriter resultPixels = result.createPixelReaderWriter(); PixelReader thisPixels = createPixelReader())
-		{
-			for (int y = 0; y < getHeight(); y++)
-				for (int x = 0; x < getWidth(); x++)
-				{
-					resultPixels.setRGB(x, y, thisPixels.getRGB(x, y));
-				}
-		}
-		return result;
-	}
 
 	/**
 	 * Creates a pixel reader that is restricted to read from the given bounds of this image. For the Skia implementation, this is much more efficient than creating a pixel reader for the entire

@@ -862,57 +862,6 @@ public class ImageHelper
 		return result;
 	}
 
-	public static Image createColoredImageFromGrayScaleImages(Image redChanel, Image greenChanel, Image blueChanel, Image alphaChanel)
-	{
-		if (redChanel.getType() != ImageType.Grayscale8Bit)
-			throw new IllegalArgumentException("Red channel image type must be type ImageType.Grayscale.");
-
-		if (greenChanel.getType() != ImageType.Grayscale8Bit)
-			throw new IllegalArgumentException("Green channel image type must be type ImageType.Grayscale");
-
-		if (blueChanel.getType() != ImageType.Grayscale8Bit)
-			throw new IllegalArgumentException("Blue channel image type must be type ImageType.Grayscale");
-
-		if (alphaChanel.getType() != ImageType.Grayscale8Bit)
-			throw new IllegalArgumentException("Alpha channel image type must be type ImageType.Grayscale.");
-
-		if (redChanel.getWidth() != alphaChanel.getWidth())
-			throw new IllegalArgumentException("Alpha channel width is " + alphaChanel.getWidth() + " but red channel image has width " + redChanel.getWidth() + ".");
-		if (redChanel.getHeight() != alphaChanel.getHeight())
-			throw new IllegalArgumentException();
-
-		if (greenChanel.getWidth() != alphaChanel.getWidth())
-			throw new IllegalArgumentException("Alpha channel width is " + alphaChanel.getWidth() + " but green channel image has width " + greenChanel.getWidth() + ".");
-		if (greenChanel.getHeight() != alphaChanel.getHeight())
-			throw new IllegalArgumentException();
-
-		if (blueChanel.getWidth() != alphaChanel.getWidth())
-			throw new IllegalArgumentException("Alpha channel width is " + alphaChanel.getWidth() + " but blue channel image has width " + blueChanel.getWidth() + ".");
-		if (blueChanel.getHeight() != alphaChanel.getHeight())
-			throw new IllegalArgumentException();
-
-		Image result = Image.create(redChanel.getWidth(), redChanel.getHeight(), ImageType.ARGB);
-		try (PixelReader redPixels = redChanel.createPixelReader();
-				PixelReader greenPixels = greenChanel.createPixelReader();
-				PixelReader bluePixels = blueChanel.createPixelReader();
-				PixelReader alphaPixels = alphaChanel.createPixelReader();
-				PixelReaderWriter resultPixels = result.createPixelReaderWriter())
-		{
-			for (int y = 0; y < redChanel.getHeight(); y++)
-				for (int x = 0; x < redChanel.getWidth(); x++)
-				{
-					int red = Color.create(redPixels.getRGB(x, y)).getRed();
-					int green = Color.create(greenPixels.getRGB(x, y)).getGreen();
-					int blue = Color.create(bluePixels.getRGB(x, y)).getBlue();
-
-					int maskLevel = alphaPixels.getGrayLevel(x, y);
-
-					resultPixels.setRGB(x, y, red, green, blue, maskLevel);
-				}
-		}
-		return result;
-	}
-
 	/**
 	 * Extracts the specified region from image2, then makes the given mask be the alpha channel of that extracted region, then draws the extracted region onto image1.
 	 *
@@ -1792,6 +1741,7 @@ public class ImageHelper
 
 		return result;
 	}
+
 	public static Image blur(Image image, int blurLevel, boolean padImageToAvoidWrapping)
 	{
 		if (blurLevel == 0)

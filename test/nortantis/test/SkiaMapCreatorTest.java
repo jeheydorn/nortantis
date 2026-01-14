@@ -67,6 +67,20 @@ public class SkiaMapCreatorTest
 		compareWithExpected(landMask, "drawLandAndOceanBlackAndWhiteTest");
 	}
 
+	private WorldGraph createGraph(String settingsFileName)
+	{
+		String settingsPath = Paths.get("unit test files", "map settings", settingsFileName).toString();
+		MapSettings settings = new MapSettings(settingsPath);
+		MapCreator mapCreator = new MapCreator();
+
+		// Create the map to populate mapParts so we can get the WorldGraph.
+		MapParts mapParts = new MapParts();
+		mapCreator.createMap(settings, null, mapParts);
+		WorldGraph graph = mapParts.graph;
+		return graph;
+	}
+
+
 	@Test
 	public void fractalBGGenerator()
 	{
