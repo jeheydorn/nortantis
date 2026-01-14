@@ -33,7 +33,10 @@ temp.nort
 /unit test files/failed maps
 /unit test files/failed skia maps
 /unit test files/expected skia tests
+/unit test files/expected maps skia
 /unit test files/failed skia tests
+/unit test files/expected image helper tests
+/unit test files/failed image helper tests
 *.msi
 *.exe
 *.deb

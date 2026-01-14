@@ -254,7 +254,7 @@ public class ImageHelper
 		return new NormalDistribution(0, getStandardDeviationSizeForGaussianKernel(size));
 	}
 
-	public static float getGuassianMode(int kernelSize)
+	public static float getGaussianMode(int kernelSize)
 	{
 		if (kernelSize == 0)
 		{
@@ -1787,7 +1787,6 @@ public class ImageHelper
 
 		return result;
 	}
-
 	public static Image blur(Image image, int blurLevel, boolean paddImageToAvoidWrapping)
 	{
 		if (blurLevel == 0)

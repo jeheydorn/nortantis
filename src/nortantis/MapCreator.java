@@ -1087,9 +1087,9 @@ public class MapCreator implements WarningLogger
 		Image map;
 		{
 			Tuple2<Image, Image> tuple = darkenLandNearCoastlinesAndRegionBorders(settings, graph, settings.resolution, background.land, background, null, null, null, true);
-			Image landBackgroundWithLandInOcean = tuple.getFirst();
+			Image landBackgroundWithLandAndOcean = tuple.getFirst();
 			coastShading = tuple.getSecond();
-			map = ImageHelper.maskWithColor(landBackgroundWithLandInOcean, Color.black, landMask, false);
+			map = ImageHelper.maskWithColor(landBackgroundWithLandAndOcean, Color.black, landMask, false);
 
 			if (settings.drawRegionColors)
 			{
@@ -1098,7 +1098,7 @@ public class MapCreator implements WarningLogger
 			}
 			else
 			{
-				landBackground = landBackgroundWithLandInOcean;
+				landBackground = landBackgroundWithLandAndOcean;
 			}
 		}
 
@@ -1219,7 +1219,6 @@ public class MapCreator implements WarningLogger
 		{
 			background.land = null;
 		}
-		landMask = null;
 
 		checkForCancel();
 
@@ -1531,7 +1530,7 @@ public class MapCreator implements WarningLogger
 	private static float calcScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(int kernelSize, double sizeMultiplier)
 	{
 		int lightnessBasedOnKernelSizesBeforeIAddedFixToMakeShadingNotGetLighterWhenItGotWider = (int) (15 * sizeMultiplier);
-		return ImageHelper.getGuassianMode(lightnessBasedOnKernelSizesBeforeIAddedFixToMakeShadingNotGetLighterWhenItGotWider) / ImageHelper.getGuassianMode((int) (kernelSize * sizeMultiplier));
+		return ImageHelper.getGaussianMode(lightnessBasedOnKernelSizesBeforeIAddedFixToMakeShadingNotGetLighterWhenItGotWider) / ImageHelper.getGaussianMode((int) (kernelSize * sizeMultiplier));
 	}
 
 	private static Image removeOceanEffectsFromLandAndLandLockedLakes(WorldGraph graph, Image oceanEffects, Collection<Center> centersToDraw, Rectangle drawBounds)

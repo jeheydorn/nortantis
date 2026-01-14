@@ -9,6 +9,7 @@ import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
 import nortantis.platform.PlatformFactory;
+import nortantis.platform.awt.AwtFactory;
 import nortantis.platform.skia.SkiaFactory;
 import nortantis.util.*;
 import org.apache.commons.io.FileUtils;
