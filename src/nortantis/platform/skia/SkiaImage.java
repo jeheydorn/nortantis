@@ -167,7 +167,8 @@ public class SkiaImage extends Image
 	@Override
 	public Painter createPainter(DrawQuality quality)
 	{
-		return new SkiaPainter(new Canvas(bitmap, new SurfaceProps()));
+		assert !(getType() == ImageType.Binary && quality == DrawQuality.High) : "Binary images should not use high draw quality";
+		return new SkiaPainter(new Canvas(bitmap, new SurfaceProps()), quality);
 	}
 
 	@Override

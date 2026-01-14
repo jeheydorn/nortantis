@@ -1301,7 +1301,7 @@ public class MapCreator implements WarningLogger
 				float[][] kernel = ImageHelper.createGaussianKernel(blurLevel);
 
 				Image coastlineAndLakeShoreMask = Image.create(mapOrSnippet.getWidth(), mapOrSnippet.getHeight(), ImageType.Binary);
-				Painter p = coastlineAndLakeShoreMask.createPainter(DrawQuality.High);
+				Painter p = coastlineAndLakeShoreMask.createPainter();
 				p.setColor(Color.white);
 				graph.drawCoastlineWithLakeShores(p, targetStrokeWidth, centersToDraw, drawBounds);
 

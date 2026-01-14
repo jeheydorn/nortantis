@@ -1,6 +1,8 @@
 package nortantis.platform.skia;
 
 import java.util.List;
+
+import nortantis.platform.*;
 import org.jetbrains.skia.Canvas;
 import org.jetbrains.skia.Paint;
 import org.jetbrains.skia.PaintMode;
@@ -13,12 +15,6 @@ import nortantis.Stroke;
 import nortantis.StrokeType;
 import nortantis.geom.FloatPoint;
 import nortantis.geom.Point;
-import nortantis.platform.AlphaComposite;
-import nortantis.platform.Color;
-import nortantis.platform.Font;
-import nortantis.platform.Image;
-import nortantis.platform.Painter;
-import nortantis.platform.Transform;
 
 public class SkiaPainter extends Painter
 {
@@ -27,11 +23,11 @@ public class SkiaPainter extends Painter
 	private SkiaFont font;
 	private SkiaColor color;
 
-	public SkiaPainter(Canvas canvas)
+	public SkiaPainter(Canvas canvas, DrawQuality quality)
 	{
 		this.canvas = canvas;
 		this.paint = new Paint();
-		this.paint.setAntiAlias(true);
+		this.paint.setAntiAlias(quality == DrawQuality.High);
 	}
 
 	@Override
