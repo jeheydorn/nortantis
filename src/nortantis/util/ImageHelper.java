@@ -1508,13 +1508,18 @@ public class ImageHelper
 		{
 			if (resultType == ImageType.ARGB)
 			{
+				int alpha = color.getAlpha();
 				ThreadHelper.getInstance().processRowsInParallel(0, image.getHeight(), (y) ->
 				{
 					for (int x = 0; x < image.getWidth(); x++)
 					{
 						float level = imagePixels.getNormalizedPixelLevel(x, y);
-						resultPixels.setRGB(x, y, colorifyPixel(level, hsb, how));
-						resultPixels.setAlpha(x, y, color.getAlpha());
+						int rgb = colorifyPixel(level, hsb, how);
+						Color resultColor = Color.create(rgb, false);
+						int r = resultColor.getRed();
+						int g = resultColor.getGreen();
+						int b = resultColor.getBlue();
+						resultPixels.setRGB(x, y, r, g, b, alpha);
 					}
 				});
 			}
@@ -1787,13 +1792,13 @@ public class ImageHelper
 
 		return result;
 	}
-	public static Image blur(Image image, int blurLevel, boolean paddImageToAvoidWrapping)
+	public static Image blur(Image image, int blurLevel, boolean padImageToAvoidWrapping)
 	{
 		if (blurLevel == 0)
 		{
 			return image;
 		}
-		return ImageHelper.convolveGrayscale(image, ImageHelper.createGaussianKernel(blurLevel), false, paddImageToAvoidWrapping);
+		return ImageHelper.convolveGrayscale(image, ImageHelper.createGaussianKernel(blurLevel), false, padImageToAvoidWrapping);
 	}
 
 	/**
