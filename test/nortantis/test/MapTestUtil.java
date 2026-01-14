@@ -57,8 +57,7 @@ public class MapTestUtil
 		}
 		MapCreator mapCreator = new MapCreator();
 		Logger.println("Creating map from '" + settingsPath + "'");
-		Image actual;
-		actual = mapCreator.createMap(settings, null, null);
+		Image actual = mapCreator.createMap(settings, null, null);
 
 		// Test deep copy after creating the map because MapCreator sets some fields during map creation, so it's a
 		// more complete test that way.
