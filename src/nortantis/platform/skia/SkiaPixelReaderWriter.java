@@ -83,13 +83,6 @@ public class SkiaPixelReaderWriter extends SkiaPixelReader implements PixelReade
 	}
 
 	@Override
-	public void setAlpha(int x, int y, int alpha)
-	{
-		int rgb = getRGB(x, y);
-		setRGB(x, y, (alpha << 24) | (rgb & 0xFFFFFF));
-	}
-
-	@Override
 	public void close()
 	{
 		if (cachedPixelArray != null)
