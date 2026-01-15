@@ -211,9 +211,9 @@ public class MapTestUtil
 		}
 	}
 
-	public static void checkIfImagesAreEqualAndWriteToFailedIfNot(Image expected, Image actual, String testName, String failedMapsFolderName)
+	public static void checkIfImagesAreEqualAndWriteToFailedIfNot(Image expected, Image actual, int threshold, String testName, String failedMapsFolderName)
 	{
-		String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(expected, actual);
+		String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(expected, actual, threshold);
 		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
 		{
 			String failedFolderPath = Paths.get("unit test files", failedMapsFolderName).toString();

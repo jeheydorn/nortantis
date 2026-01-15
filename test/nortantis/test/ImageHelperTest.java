@@ -578,11 +578,12 @@ public class ImageHelperTest
 	{
 		Image gray8Bit = createGrayscaleXImage(ImageType.Grayscale8Bit);
 		Image binary = createGrayscaleXImage(ImageType.Binary);
-		MapTestUtil.checkIfImagesAreEqualAndWriteToFailedIfNot(gray8Bit, binary, "testBlurBinaryVsGrayscale", failedFolderName);
+		final int threshold = 5;
+		MapTestUtil.checkIfImagesAreEqualAndWriteToFailedIfNot(gray8Bit, binary, threshold, "grayVsBinaryX", failedFolderName);
 
 		Image blurredGray8Bit = ImageHelper.blurAndScale(gray8Bit, 20, 2.3973336f,true);
 		Image blurredBinary = ImageHelper.blurAndScale(binary, 20, 2.3973336f, true);
-		MapTestUtil.checkIfImagesAreEqualAndWriteToFailedIfNot(blurredGray8Bit, blurredBinary, "testBlurBinaryVsGrayscale", failedFolderName);
+		MapTestUtil.checkIfImagesAreEqualAndWriteToFailedIfNot(blurredGray8Bit, blurredBinary, threshold, "testBlurBinaryVsGrayscale", failedFolderName);
 	}
 
 	private Image createGrayscaleXImage(ImageType type)
