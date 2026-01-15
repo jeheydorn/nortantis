@@ -557,14 +557,7 @@ public class ImageHelperTest
 	@Test
 	public void testBlurLine()
 	{
-		Image image = Image.create(testImageWidth, testImageHeight, ImageType.Grayscale8Bit);
-		Painter painter = image.createPainter(DrawQuality.High);
-		painter.setColor(Color.white);
-		painter.setBasicStroke(2.0f);
-		painter.drawLine(10, 10, 90, 90);
-		painter.drawLine(10, 90, 90, 10);
-		painter.dispose();
-
+		Image image = createGrayscaleXImage(ImageType.Grayscale8Bit);
 		Image blurred = ImageHelper.blur(image, 5, false, true);
 		compareWithExpected(blurred, "blurLine");
 	}
@@ -572,19 +565,38 @@ public class ImageHelperTest
 	@Test
 	public void testBlurAndScaleLine()
 	{
-		Image image = Image.create(testImageWidth, testImageHeight, ImageType.Grayscale8Bit);
-		Painter painter = image.createPainter(DrawQuality.High);
-		painter.setColor(Color.white);
-		painter.setBasicStroke(2.0f);
-		painter.drawLine(10, 10, 90, 90);
-		painter.drawLine(10, 90, 90, 10);
-		painter.dispose();
+		Image image = createGrayscaleXImage(ImageType.Grayscale8Bit);
 		Image blurred = ImageHelper.blurAndScale(image, 20, 2.3973336f,true);
 
 		assertEquals(image.getWidth(), blurred.getWidth(), "Width should match");
 		assertEquals(image.getHeight(), blurred.getHeight(), "Height should match");
 		compareWithExpected(blurred, "blurAndScaleLine");
 	}
+
+	@Test
+	public void testBlurBinaryVsGrayscale()
+	{
+		Image gray8Bit = createGrayscaleXImage(ImageType.Grayscale8Bit);
+		Image binary = createGrayscaleXImage(ImageType.Binary);
+		MapTestUtil.checkIfImagesAreEqualAndWriteToFailedIfNot(gray8Bit, binary, "testBlurBinaryVsGrayscale", failedFolderName);
+
+		Image blurredGray8Bit = ImageHelper.blurAndScale(gray8Bit, 20, 2.3973336f,true);
+		Image blurredBinary = ImageHelper.blurAndScale(binary, 20, 2.3973336f, true);
+		MapTestUtil.checkIfImagesAreEqualAndWriteToFailedIfNot(blurredGray8Bit, blurredBinary, "testBlurBinaryVsGrayscale", failedFolderName);
+	}
+
+	private Image createGrayscaleXImage(ImageType type)
+	{
+		Image image = Image.create(testImageWidth, testImageHeight, type);
+		Painter painter = image.createPainter(DrawQuality.High);
+		painter.setColor(Color.white);
+		painter.setBasicStroke(2.0f);
+		painter.drawLine(10, 10, 90, 90);
+		painter.drawLine(10, 90, 90, 10);
+		painter.dispose();
+		return image;
+	}
+
 
 	// ==================== Array and Noise Tests ====================
 
