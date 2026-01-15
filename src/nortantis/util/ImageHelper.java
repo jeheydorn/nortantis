@@ -1751,6 +1751,15 @@ public class ImageHelper
 		return ImageHelper.convolveGrayscale(image, ImageHelper.createGaussianKernel(blurLevel), false, padImageToAvoidWrapping);
 	}
 
+	public static Image blurAndScale(Image image, int blurLevel, float scale, boolean padImageToAvoidWrapping)
+	{
+		if (blurLevel == 0)
+		{
+			return image;
+		}
+		return ImageHelper.convolveGrayscaleThenScale(image, ImageHelper.createGaussianKernel(blurLevel), scale, padImageToAvoidWrapping);
+	}
+
 	/**
 	 * Changes all pixels in target to fillValue where pixels in source are between lowThreshold inclusive and highThreshold exclusive.
 	 */

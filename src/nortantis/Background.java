@@ -313,7 +313,7 @@ public class Background
 		}
 	}
 
-	static Dimension calcMapBoundsAndAdjustResolutionIfNeeded(MapSettings settings, Dimension maxDimensions)
+	public static Dimension calcMapBoundsAndAdjustResolutionIfNeeded(MapSettings settings, Dimension maxDimensions)
 	{
 		Dimension mapBounds;
 		Dimension sizeFromSettingsAt100PercentResolution;

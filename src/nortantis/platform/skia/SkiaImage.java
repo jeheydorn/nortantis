@@ -167,7 +167,6 @@ public class SkiaImage extends Image
 	@Override
 	public Painter createPainter(DrawQuality quality)
 	{
-		assert !(getType() == ImageType.Binary && quality == DrawQuality.High) : "Binary images should not use high draw quality";
 		return new SkiaPainter(new Canvas(bitmap, new SurfaceProps()), quality);
 	}
 
@@ -352,7 +351,8 @@ public class SkiaImage extends Image
 			for (int i = 0; i < pixels.length; i++)
 			{
 				// Extract red channel as gray value (assumes gray pixels have R=G=B)
-				bytes[i] = (byte) ((pixels[i] >> 16) & 0xFF);
+				byte red = (byte) ((pixels[i] >> 16) & 0xFF); // TODO maybe put back on one line below
+				bytes[i] = red;
 			}
 			bitmap.installPixels(imageInfo, bytes, rowStride);
 		}

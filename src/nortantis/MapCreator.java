@@ -643,11 +643,6 @@ public class MapCreator implements WarningLogger
 			{
 				Logger.println("Creating the graph.");
 				WorldGraph graphCreated = createGraph(settings, mapBounds.width, mapBounds.height, r, settings.resolution, !settings.edits.isInitialized());
-				applyRegionEdits(graphCreated, settings.edits);
-				// Apply edge edits before center edits because applying center edits smoothes region boundaries, which depends on rivers, which are
-				// edge edits.
-				applyEdgeEdits(graphCreated, settings.edits, null);
-				applyCenterEdits(graphCreated, settings.edits, null, settings.drawRegionBoundaries || settings.drawRegionColors);
 
 				if (mapParts != null)
 				{
@@ -1300,7 +1295,7 @@ public class MapCreator implements WarningLogger
 				float[][] kernel = ImageHelper.createGaussianKernel(blurLevel);
 
 				Image coastlineAndLakeShoreMask = Image.create(mapOrSnippet.getWidth(), mapOrSnippet.getHeight(), ImageType.Binary);
-				Painter p = coastlineAndLakeShoreMask.createPainter();
+				Painter p = coastlineAndLakeShoreMask.createPainter(DrawQuality.High);
 				p.setColor(Color.white);
 				graph.drawCoastlineWithLakeShores(p, targetStrokeWidth, centersToDraw, drawBounds);
 
@@ -1308,12 +1303,12 @@ public class MapCreator implements WarningLogger
 				{
 					p.setColor(Color.white);
 					graph.drawRegionBoundariesSolid(p, sizeMultiplier, false, centersToDraw, drawBounds);
-					coastShading = ImageHelper.convolveGrayscaleThenScale(coastlineAndLakeShoreMask, kernel, scale, true);
-
+					p.dispose();
+					coastShading = ImageHelper.blurAndScale(coastlineAndLakeShoreMask, blurLevel, scale, true);
 				}
 				else
 				{
-					coastShading = ImageHelper.convolveGrayscaleThenScale(coastlineAndLakeShoreMask, kernel, scale, true);
+					coastShading = ImageHelper.blurAndScale(coastlineAndLakeShoreMask, blurLevel, scale, true);
 				}
 			}
 
@@ -1603,6 +1598,13 @@ public class MapCreator implements WarningLogger
 		return generateRegionColor(rand, hsb, hueRange, saturationRange, brightnessRange);
 	}
 
+	public static WorldGraph createGraphForUnitTests(MapSettings settings)
+	{
+		Dimension mapBounds = Background.calcMapBoundsAndAdjustResolutionIfNeeded(settings, null);
+		Random r = new Random(settings.randomSeed);
+		return MapCreator.createGraph(settings, mapBounds.width, mapBounds.height, r, settings.resolution, !settings.edits.isInitialized());
+	}
+
 	private static WorldGraph createGraph(MapSettings settings, double width, double height, Random r, double resolutionScale, boolean createElevationBiomesLakesAndRegions)
 	{
 		double widthToUse, heightToUse;
@@ -1625,6 +1627,12 @@ public class MapCreator implements WarningLogger
 		// edits need them in case someone edits a map without region colors,
 		// then later enables region colors.
 		assignRandomRegionColors(graph, settings);
+
+		applyRegionEdits(graph, settings.edits);
+		// Apply edge edits before center edits because applying center edits smoothes region boundaries, which depends on rivers, which are
+		// edge edits.
+		applyEdgeEdits(graph, settings.edits, null);
+		applyCenterEdits(graph, settings.edits, null, settings.drawRegionBoundaries || settings.drawRegionColors);
 
 		return graph;
 	}

@@ -4,14 +4,12 @@ import nortantis.FractalBGGenerator;
 import nortantis.MapCreator;
 import nortantis.MapSettings;
 import nortantis.WorldGraph;
-import nortantis.editor.MapParts;
-import nortantis.platform.Image;
-import nortantis.platform.ImageType;
-import nortantis.platform.Painter;
-import nortantis.platform.PlatformFactory;
-import nortantis.platform.awt.AwtFactory;
+import nortantis.platform.*;
 import nortantis.platform.skia.SkiaFactory;
-import nortantis.util.*;
+import nortantis.util.Assets;
+import nortantis.util.FileHelper;
+import nortantis.util.ImageHelper;
+import nortantis.util.Logger;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -47,39 +45,53 @@ public class SkiaMapCreatorTest
 	public void drawLandAndOceanBlackAndWhiteTest()
 	{
 		final String settingsFileName = "simpleSmallWorld.nort";
-
-		String settingsPath = Paths.get("unit test files", "map settings", settingsFileName).toString();
-		MapSettings settings = new MapSettings(settingsPath);
-		MapCreator mapCreator = new MapCreator();
-		Logger.println("Creating map from '" + settingsPath + "' in drawLandAndOceanBlackAndWhiteTest");
-
-		// Create the map to populate mapParts so we can get the WorldGraph.
-		MapParts mapParts = new MapParts();
-		mapCreator.createMap(settings, null, mapParts);
-		WorldGraph graph = mapParts.graph;
+		MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", settingsFileName).toString());
+		WorldGraph graph = MapCreator.createGraphForUnitTests(settings);
 
 		Image landMask = Image.create(graph.getWidth(), graph.getHeight(), ImageType.Binary);
 		{
-			Painter g = landMask.createPainter();
-			graph.drawLandAndOceanBlackAndWhite(g, graph.centers, null);
+			Painter p = landMask.createPainter();
+			graph.drawLandAndOceanBlackAndWhite(p, graph.centers, null);
 		}
 
 		compareWithExpected(landMask, "drawLandAndOceanBlackAndWhiteTest");
 	}
 
-	private WorldGraph createGraph(String settingsFileName)
+	@Test
+	public void drawCoastlineWithLakeShoresAndBlurTest()
 	{
-		String settingsPath = Paths.get("unit test files", "map settings", settingsFileName).toString();
-		MapSettings settings = new MapSettings(settingsPath);
-		MapCreator mapCreator = new MapCreator();
+		final String settingsFileName = "simpleSmallWorld.nort";
+		MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", settingsFileName).toString());
+		WorldGraph graph = MapCreator.createGraphForUnitTests(settings);
 
-		// Create the map to populate mapParts so we can get the WorldGraph.
-		MapParts mapParts = new MapParts();
-		mapCreator.createMap(settings, null, mapParts);
-		WorldGraph graph = mapParts.graph;
-		return graph;
+		Image coastlineAndLakeShoreMask = Image.create(graph.getWidth(), graph.getHeight(), ImageType.Binary);
+		Painter p = coastlineAndLakeShoreMask.createPainter(DrawQuality.High);
+		p.setColor(Color.white);
+		graph.drawCoastlineWithLakeShores(p, settings.coastlineWidth * settings.resolution, null, null);
+
+		compareWithExpected(coastlineAndLakeShoreMask, "coastlineWithLakeShores");
 	}
 
+	@Test
+	public void coastShadingTest()
+	{
+		final String settingsFileName = "simpleSmallWorld.nort";
+		MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", settingsFileName).toString());
+		WorldGraph graph = MapCreator.createGraphForUnitTests(settings);
+
+		Image coastlineAndLakeShoreMask = Image.create(graph.getWidth(), graph.getHeight(), ImageType.Binary);
+		Painter p = coastlineAndLakeShoreMask.createPainter(DrawQuality.High);
+		p.setColor(Color.white);
+		graph.drawCoastlineWithLakeShores(p, settings.coastlineWidth * settings.resolution, null, null);
+
+		// Test bluing coastline and lake shores.
+		double sizeMultiplier = MapCreator.calcSizeMultipilerFromResolutionScale(settings.resolution);
+		int blurLevel = (int) (settings.coastShadingLevel * sizeMultiplier);
+		float scale = 2.3973336f; // The actual value used when creating this map.
+		Image coastShading = ImageHelper.blurAndScale(coastlineAndLakeShoreMask, blurLevel, scale, true);
+
+		compareWithExpected(coastShading, "coastShading");
+	}
 
 	@Test
 	public void fractalBGGenerator()
