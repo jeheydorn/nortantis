@@ -2,6 +2,7 @@ package nortantis.platform.skia;
 
 import nortantis.geom.IntRectangle;
 import nortantis.platform.Color;
+import nortantis.platform.ImageType;
 import nortantis.platform.PixelReaderWriter;
 import org.jetbrains.skia.IRect;
 
@@ -20,6 +21,12 @@ public class SkiaPixelReaderWriter extends SkiaPixelReader implements PixelReade
 	@Override
 	public void setGrayLevel(int x, int y, int level)
 	{
+		if (image.getType() == ImageType.Binary)
+		{
+			// Binary images use GRAY_8 storage but accept 0 or 1 as input
+			// Any non-zero value becomes white (255)
+			level = level > 0 ? 255 : 0;
+		}
 		Color gray = Color.create(level, level, level, 255);
 		setRGB(x, y, gray.getRGB());
 	}

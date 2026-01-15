@@ -2,6 +2,7 @@ package nortantis.platform.skia;
 
 import nortantis.geom.IntRectangle;
 import nortantis.platform.Color;
+import nortantis.platform.ImageType;
 import nortantis.platform.PixelReader;
 
 public class SkiaPixelReader implements PixelReader
@@ -36,7 +37,14 @@ public class SkiaPixelReader implements PixelReader
 	@Override
 	public int getGrayLevel(int x, int y)
 	{
-		return getBandLevel(x, y, 0);
+		int level = getBandLevel(x, y, 0);
+		if (image.getType() == ImageType.Binary)
+		{
+			// Binary images use GRAY_8 storage (0 or 255) but should return 0 or 1
+			// to match getMaxPixelLevel() which returns 1 for Binary
+			return level > 127 ? 1 : 0;
+		}
+		return level;
 	}
 
 	@Override
