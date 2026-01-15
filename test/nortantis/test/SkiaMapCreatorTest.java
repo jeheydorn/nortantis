@@ -5,6 +5,7 @@ import nortantis.MapCreator;
 import nortantis.MapSettings;
 import nortantis.WorldGraph;
 import nortantis.platform.*;
+import nortantis.platform.awt.AwtFactory;
 import nortantis.platform.skia.SkiaFactory;
 import nortantis.util.Assets;
 import nortantis.util.FileHelper;

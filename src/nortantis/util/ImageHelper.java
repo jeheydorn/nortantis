@@ -1151,7 +1151,7 @@ public class ImageHelper
 	 */
 	public static Image convolveGrayscaleThenScale(Image img, float[][] kernel, float scale, boolean paddImageToAvoidWrapping)
 	{
-		// Only use 16 bit pixels if the input image used them, to save memory.
+		// Only use 16-bit pixels if the input image used them, to save memory.
 		ImageType resultType = img.getType() == ImageType.Grayscale16Bit ? ImageType.Grayscale16Bit : ImageType.Grayscale8Bit;
 		return convolveGrayscaleThenScale(img, kernel, scale, paddImageToAvoidWrapping, resultType);
 	}
@@ -1742,13 +1742,13 @@ public class ImageHelper
 		return result;
 	}
 
-	public static Image blur(Image image, int blurLevel, boolean padImageToAvoidWrapping)
+	public static Image blur(Image image, int blurLevel, boolean maximizeContrast, boolean padImageToAvoidWrapping)
 	{
 		if (blurLevel == 0)
 		{
 			return image;
 		}
-		return ImageHelper.convolveGrayscale(image, ImageHelper.createGaussianKernel(blurLevel), false, padImageToAvoidWrapping);
+		return ImageHelper.convolveGrayscale(image, ImageHelper.createGaussianKernel(blurLevel), maximizeContrast, padImageToAvoidWrapping);
 	}
 
 	public static Image blurAndScale(Image image, int blurLevel, float scale, boolean padImageToAvoidWrapping)

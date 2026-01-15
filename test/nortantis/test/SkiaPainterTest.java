@@ -722,6 +722,49 @@ public class SkiaPainterTest
 	}
 
 	@Test
+	public void testPixelReaderWriterSetGetGrayscale()
+	{
+		Image image = Image.create(testImageWidth, testImageHeight, ImageType.Grayscale8Bit);
+
+		// Initialize all pixels to black first
+		try (PixelReaderWriter writer = image.createPixelReaderWriter())
+		{
+			for (int y = 0; y < testImageHeight; y++)
+			{
+				for (int x = 0; x < testImageWidth; x++)
+				{
+					writer.setRGB(x, y, 0, 0, 0);
+				}
+			}
+
+			// Now set specific test pixels
+			writer.setGrayLevel(10, 10, 100);
+			writer.setGrayLevel(20, 20, 150);
+			writer.setGrayLevel(30, 30, 200);
+			writer.setGrayLevel(99, 99, 255);
+		}
+
+		try (PixelReader reader = image.createPixelReader())
+		{
+			int gray1 = reader.getGrayLevel(10, 10);
+			assertEquals(gray1, 100, "Gray level at (10, 10)");
+
+			// TODO Finish testing other 2 cases
+			int gray2 = reader.getGrayLevel(20, 20);
+			assertEquals(gray2, 150, "Gray level at (20, 20)");
+
+			int gray3 = reader.getGrayLevel(30, 30);
+			assertEquals(gray3, 200, "Gray level at (30, 30)");
+
+			int gray4 = reader.getGrayLevel(99, 99);
+			assertEquals(gray4, 255, "Gray level at (99, 99)");
+
+		}
+
+		compareWithExpected(image, "pixelReaderWriterSetGetGrayscale");
+	}
+
+	@Test
 	public void testPixelReaderWriterSetPixelColor()
 	{
 		Image image = createTestImage();

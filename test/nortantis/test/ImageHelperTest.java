@@ -16,8 +16,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -540,7 +538,7 @@ public class ImageHelperTest
 	public void testBlur()
 	{
 		Image image = createGrayscaleTestImage();
-		Image blurred = ImageHelper.blur(image, 3, true);
+		Image blurred = ImageHelper.blur(image, 3, false,true);
 
 		assertEquals(image.getWidth(), blurred.getWidth(), "Width should match");
 		assertEquals(image.getHeight(), blurred.getHeight(), "Height should match");
@@ -551,9 +549,41 @@ public class ImageHelperTest
 	public void testBlurZeroLevel()
 	{
 		Image image = createGrayscaleTestImage();
-		Image blurred = ImageHelper.blur(image, 0, true);
+		Image blurred = ImageHelper.blur(image, 0, false, true);
 
 		assertSame(image, blurred, "With blur level 0, original should be returned");
+	}
+
+	@Test
+	public void testBlurLine()
+	{
+		Image image = Image.create(testImageWidth, testImageHeight, ImageType.Grayscale8Bit);
+		Painter painter = image.createPainter(DrawQuality.High);
+		painter.setColor(Color.white);
+		painter.setBasicStroke(2.0f);
+		painter.drawLine(10, 10, 90, 90);
+		painter.drawLine(10, 90, 90, 10);
+		painter.dispose();
+
+		Image blurred = ImageHelper.blur(image, 5, false, true);
+		compareWithExpected(blurred, "blurLine");
+	}
+
+	@Test
+	public void testBlurAndScaleLine()
+	{
+		Image image = Image.create(testImageWidth, testImageHeight, ImageType.Grayscale8Bit);
+		Painter painter = image.createPainter(DrawQuality.High);
+		painter.setColor(Color.white);
+		painter.setBasicStroke(2.0f);
+		painter.drawLine(10, 10, 90, 90);
+		painter.drawLine(10, 90, 90, 10);
+		painter.dispose();
+		Image blurred = ImageHelper.blurAndScale(image, 20, 2.3973336f,true);
+
+		assertEquals(image.getWidth(), blurred.getWidth(), "Width should match");
+		assertEquals(image.getHeight(), blurred.getHeight(), "Height should match");
+		compareWithExpected(blurred, "blurAndScaleLine");
 	}
 
 	// ==================== Array and Noise Tests ====================

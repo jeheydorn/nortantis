@@ -645,7 +645,7 @@ public class ImageAndMasks
 			p.dispose();
 		}
 
-		// Blur the line up to a fraction of the height of the content
+		// Blur the line, up to a fraction of the height of the content
 		float[][] kernel = ImageHelper.createGaussianKernel(blurSize);
 
 		// Here I used to just do convolution to blur bottomSilhouette and then maximize the contrast on that result, but the problems is

@@ -968,8 +968,7 @@ public class MapCreator implements WarningLogger
 				frayGraph.drawBorderWhite(frayedBorderMask.createPainter());
 				if (blurLevel > 0)
 				{
-					float[][] kernel = ImageHelper.createGaussianKernel(blurLevel);
-					frayedBorderBlur = ImageHelper.convolveGrayscale(frayedBorderMask, kernel, true, true);
+					frayedBorderBlur = ImageHelper.blur(frayedBorderMask, blurLevel, true, true);
 				}
 				else
 				{
@@ -1292,8 +1291,6 @@ public class MapCreator implements WarningLogger
 			// coastShading can be passed in to save time when calling this method a second time for the text background image.
 			if (coastShading == null)
 			{
-				float[][] kernel = ImageHelper.createGaussianKernel(blurLevel);
-
 				Image coastlineAndLakeShoreMask = Image.create(mapOrSnippet.getWidth(), mapOrSnippet.getHeight(), ImageType.Binary);
 				Painter p = coastlineAndLakeShoreMask.createPainter(DrawQuality.High);
 				p.setColor(Color.white);
@@ -1380,12 +1377,11 @@ public class MapCreator implements WarningLogger
 			if (settings.hasOceanShading(resolutionScale))
 			{
 				Image coastlineMask = createCoastlineMask(settings, graph, targetStrokeWidth, false, 0, centersToDraw, drawBounds);
-				float[][] kernel = ImageHelper.createGaussianKernel((int) (settings.oceanShadingLevel * sizeMultiplier));
 
 				final float scaleForDarkening = coastlineShadingScale;
 				float scale = scaleForDarkening * calcScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(settings.oceanShadingLevel, sizeMultiplier)
 						* calcScaleCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
-				oceanShading = ImageHelper.convolveGrayscaleThenScale(coastlineMask, kernel, scale, true);
+				oceanShading = ImageHelper.blurAndScale(coastlineMask, (int) (settings.oceanShadingLevel * sizeMultiplier), scale, true);
 				if (settings.drawOceanEffectsInLakes)
 				{
 					oceanShading = removeOceanEffectsFromLand(graph, oceanShading, landMask, centersToDraw, drawBounds);
@@ -1831,7 +1827,7 @@ public class MapCreator implements WarningLogger
 		p.fillRect(lineWidth, lineWidth, blurBoxWidth, blurBoxWidth);
 
 		// Use Gaussian blur on the box.
-		blurBox = ImageHelper.convolveGrayscale(blurBox, ImageHelper.createGaussianKernel(blurLevel), true, true);
+		blurBox = ImageHelper.blur(blurBox, blurLevel, true, true);
 
 		// Remove what was the white lines from the top and left, so we're
 		// keeping only the blur that came off the white lines.
