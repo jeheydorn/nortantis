@@ -180,7 +180,12 @@ public class SkiaImage extends Image
 			height = Math.max(1, height);
 		}
 
-		// Use Surface-based rendering, which is more reliable in Skia
+		if (method == Method.ULTRA_QUALITY || method == Method.QUALITY)
+		{
+			return scaleHighQuality(width, height);
+		}
+
+		// Use Surface-based rendering for standard quality
 		Surface surface = Surface.Companion.makeRasterN32Premul(width, height);
 		Canvas canvas = surface.getCanvas();
 
@@ -196,6 +201,27 @@ public class SkiaImage extends Image
 		resultImage.readPixels(scaledBitmap, 0, 0);
 		resultImage.close();
 		surface.close();
+
+		return new SkiaImage(scaledBitmap, imageInfo, getType());
+	}
+
+	/**
+	 * Scales the image using high-quality sampling with mipmaps. Uses FilterMipmap with linear filtering and linear mipmap
+	 * interpolation, which provides better results than bilinear filtering when downscaling significantly.
+	 */
+	private Image scaleHighQuality(int width, int height)
+	{
+		org.jetbrains.skia.Image srcImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(bitmap);
+
+		// Create destination bitmap and get its pixmap
+		Bitmap scaledBitmap = new Bitmap();
+		scaledBitmap.allocPixels(new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null));
+		Pixmap dstPixmap = scaledBitmap.peekPixels();
+
+		// Use FilterMipmap with linear filtering and linear mipmap interpolation for high-quality downscaling
+		SamplingMode sampling = new FilterMipmap(FilterMode.LINEAR, MipmapMode.LINEAR);
+		srcImage.scalePixels(dstPixmap, sampling, false);
+		srcImage.close();
 
 		return new SkiaImage(scaledBitmap, imageInfo, getType());
 	}
