@@ -8,6 +8,8 @@ import org.jetbrains.skia.IRect;
 
 public class SkiaPixelReaderWriter extends SkiaPixelReader implements PixelReaderWriter
 {
+	private boolean modified = false;
+
 	public SkiaPixelReaderWriter(SkiaImage image)
 	{
 		this(image, null);
@@ -61,6 +63,7 @@ public class SkiaPixelReaderWriter extends SkiaPixelReader implements PixelReade
 	@Override
 	public void setRGB(int x, int y, int rgb)
 	{
+		modified = true;
 		if (cachedPixelArray != null)
 		{
 			if (bounds != null)
@@ -93,7 +96,7 @@ public class SkiaPixelReaderWriter extends SkiaPixelReader implements PixelReade
 	@Override
 	public void close()
 	{
-		if (cachedPixelArray != null)
+		if (modified && cachedPixelArray != null)
 		{
 			if (bounds == null)
 			{
@@ -103,8 +106,13 @@ public class SkiaPixelReaderWriter extends SkiaPixelReader implements PixelReade
 			{
 				image.writePixelsToRegion(cachedPixelArray, bounds.x, bounds.y, bounds.width, bounds.height);
 			}
+			image.markCPUDirty(); // Invalidate GPU copy since CPU was modified
 		}
-		image.invalidateCachedImage();
+		else if (modified)
+		{
+			// Direct pixel modifications (no cached array) also need GPU invalidation
+			image.markCPUDirty();
+		}
 		super.close();
 	}
 
