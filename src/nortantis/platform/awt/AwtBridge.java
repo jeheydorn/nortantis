@@ -5,6 +5,7 @@ import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 
 import nortantis.platform.*;
+import nortantis.platform.skia.SkiaFactory;
 import nortantis.platform.skia.SkiaImage;
 
 /**
@@ -29,24 +30,36 @@ public class AwtBridge
 
 		if (image instanceof SkiaImage)
 		{
-			SkiaImage skiaImage = (SkiaImage) image;
-			int width = skiaImage.getWidth();
-			int height = skiaImage.getHeight();
-
-			BufferedImage bi = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-			int[] destPixels = ((DataBufferInt) bi.getRaster().getDataBuffer()).getData();
-
-			int[] srcPixels = skiaImage.readPixelsToIntArray();
-			if (srcPixels != null)
+			if (image.getType() == ImageType.ARGB || image.getType() == ImageType.RGB)
 			{
-				System.arraycopy(srcPixels, 0, destPixels, 0, srcPixels.length);
-			}
+				// We can do this case faster using System.arracopy on the pixel array values.
+				SkiaImage skiaImage = (SkiaImage) image;
+				int width = skiaImage.getWidth();
+				int height = skiaImage.getHeight();
 
-			return bi;
+				BufferedImage bi = new BufferedImage(width, height, image.getType() == ImageType.ARGB ? BufferedImage.TYPE_INT_ARGB : BufferedImage.TYPE_INT_RGB);
+				int[] destPixels = ((DataBufferInt) bi.getRaster().getDataBuffer()).getData();
+
+				int[] srcPixels = skiaImage.readPixelsToIntArray();
+				if (srcPixels != null)
+				{
+					System.arraycopy(srcPixels, 0, destPixels, 0, srcPixels.length);
+				}
+				return bi;
+			}
+			else
+			{
+				return genericImageTypeToBufferedImage(image);
+			}
 		}
 
 		assert false; // If I support a new image type for use with AWT, see if I can handle it here more efficiently than the code below.
 
+		return genericImageTypeToBufferedImage(image);
+	}
+
+	private static BufferedImage genericImageTypeToBufferedImage(Image image)
+	{
 		// Fallback for unknown image types: pixel-by-pixel conversion
 		int width = image.getWidth();
 		int height = image.getHeight();
@@ -65,6 +78,67 @@ public class AwtBridge
 	}
 
 	/**
+	 * Converts any platform Image to an Image of the type corresponding to the current PlatformFactory instance.
+	 */
+	private static Image toPlatformImage(Image image)
+	{
+		if (image == null)
+		{
+			return null;
+		}
+
+		if (PlatformFactory.getInstance() instanceof AwtFactory)
+		{
+			if (image instanceof AwtImage)
+			{
+				return image;
+			}
+
+			if (image instanceof SkiaImage)
+			{
+				return new AwtImage(toBufferedImage(image));
+			}
+
+			return new AwtImage(genericImageTypeToBufferedImage(image));
+		}
+
+		if (PlatformFactory.getInstance() instanceof SkiaFactory && image instanceof SkiaImage)
+		{
+			if (image instanceof AwtImage)
+			{
+				return slowCopyToPlatformImage(image);
+			}
+
+			if (image instanceof SkiaImage)
+			{
+				return image;
+			}
+
+			return slowCopyToPlatformImage(image);
+		}
+
+		return slowCopyToPlatformImage(image);
+	}
+
+	private static Image slowCopyToPlatformImage(Image image)
+	{
+		int width = image.getWidth();
+		int height = image.getHeight();
+		Image result = Image.create(width, height, image.getType());
+		try (PixelReader pixels = image.createPixelReader(); PixelReaderWriter resultPixels = result.createPixelReaderWriter())
+		{
+			for (int y = 0; y < height; y++)
+			{
+				for (int x = 0; x < width; x++)
+				{
+					resultPixels.setRGB(x, y, pixels.getRGB(x, y));
+				}
+			}
+		}
+		return result;
+	}
+
+	/**
 	 * Creates an AwtImage from a BufferedImage.
 	 */
 	public static Image fromBufferedImage(BufferedImage image)
@@ -73,7 +147,8 @@ public class AwtBridge
 		{
 			return null;
 		}
-		return new AwtImage(image);
+
+		return toPlatformImage(new AwtImage(image));
 	}
 
 	/**

@@ -1,14 +1,14 @@
 package nortantis.swing;
 
-import java.awt.Color;
-import java.awt.image.BufferedImage;
-
-import javax.swing.JColorChooser;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-
+import nortantis.platform.Image;
 import nortantis.platform.awt.AwtBridge;
 import nortantis.util.ImageHelper;
+
+import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import java.awt.*;
+import java.awt.image.BufferedImage;
 
 /**
  * For showing a preview of a background color when choosing the background color of a map.
@@ -92,7 +92,8 @@ public class BGColorPreviewPanel extends ImagePanel implements ChangeListener
 	{
 		if (colorifyAlgorithm != ImageHelper.ColorifyAlgorithm.none)
 		{
-			super.setImage(AwtBridge.toBufferedImage(ImageHelper.colorify(AwtBridge.fromBufferedImage(originalBackground), AwtBridge.fromAwtColor(color), colorifyAlgorithm)));
+			Image grayscale = ImageHelper.convertToGrayscale(AwtBridge.fromBufferedImage(originalBackground));
+			super.setImage(AwtBridge.toBufferedImage(ImageHelper.colorify(grayscale, AwtBridge.fromAwtColor(color), colorifyAlgorithm)));
 		}
 	}
 

@@ -197,12 +197,13 @@ public class SkiaImage extends Image
 		// Get the result as an image snapshot and extract pixels to a new bitmap
 		org.jetbrains.skia.Image resultImage = surface.makeImageSnapshot();
 		Bitmap scaledBitmap = new Bitmap();
-		scaledBitmap.allocPixels(new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null));
+		ImageInfo scaledImageInfo = new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null);
+		scaledBitmap.allocPixels();
 		resultImage.readPixels(scaledBitmap, 0, 0);
 		resultImage.close();
 		surface.close();
 
-		return new SkiaImage(scaledBitmap, imageInfo, getType());
+		return new SkiaImage(scaledBitmap, scaledImageInfo, getType());
 	}
 
 	/**
