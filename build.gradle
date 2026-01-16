@@ -85,6 +85,11 @@ eclipse {
 
 application {
     mainClass = 'nortantis.swing.MainWindow'
+    applicationDefaultJvmArgs = [
+        '--enable-native-access=ALL-UNNAMED',
+        //'--add-opens', 'java.base/java.nio=ALL-UNNAMED',
+        //'-Dnortantis.gpu.enable=true',
+    ]
 }
 
 java {

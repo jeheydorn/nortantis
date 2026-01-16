@@ -143,7 +143,7 @@ public class SkiaGPUContext
 		{
 			// GPU is disabled by default due to compatibility issues between LWJGL and Skiko.
 			// Set -Dnortantis.gpu.enable=true to try GPU acceleration.
-			String enableGpu = "true";// System.getProperty("nortantis.gpu.enable", "false"); TODO put back or remove
+			String enableGpu = System.getProperty("nortantis.gpu.enable", "false");
 			if (!Boolean.parseBoolean(enableGpu))
 			{
 				gpuAvailable = false;
