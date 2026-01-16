@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.Random;
 
 import nortantis.platform.*;
+import nortantis.platform.skia.SkiaImage;
+import nortantis.platform.skia.SkiaShaderOps;
 import org.apache.commons.math3.analysis.function.Sinc;
 import org.apache.commons.math3.distribution.NormalDistribution;
 import org.imgscalr.Scalr.Method;
@@ -430,6 +432,13 @@ public class ImageHelper
 			throw new IllegalArgumentException("Image 2 must be type " + ImageType.RGB + " or " + ImageType.ARGB + ", but was type " + image2.getType() + ".");
 		}
 
+		// Use Skia shader implementation if all images are SkiaImage (faster)
+		if (SkiaShaderOps.areAllSkiaImages(image1, image2, mask)
+				&& image1.getWidth() == mask.getWidth() && image1.getHeight() == mask.getHeight())
+		{
+			return SkiaShaderOps.maskWithImage(image1, image2, mask);
+		}
+
 		ImageType resultType;
 		if (image1.hasAlpha() || image2.hasAlpha())
 		{
@@ -573,6 +582,12 @@ public class ImageHelper
 			throw new IllegalArgumentException("Mask width is " + mask.getWidth() + " but image has width " + image.getWidth() + ".");
 		if (image.getHeight() != mask.getHeight())
 			throw new IllegalArgumentException("In maskWithColor, image height was " + image.getHeight() + " but mask height was " + mask.getHeight());
+
+		// Use Skia shader implementation if images are SkiaImage (faster)
+		if (SkiaShaderOps.areAllSkiaImages(image, mask))
+		{
+			return SkiaShaderOps.maskWithColor(image, color, mask, invertMask);
+		}
 
 		return maskWithColorInRegion(image, color, mask, invertMask, new IntPoint(0, 0));
 	}
@@ -737,6 +752,12 @@ public class ImageHelper
 			throw new IllegalArgumentException("Mask width is " + alphaMask.getWidth() + " but image has width " + image.getWidth() + ".");
 		if (image.getHeight() != alphaMask.getHeight())
 			throw new IllegalArgumentException();
+
+		// Use Skia shader implementation if images are SkiaImage (faster)
+		if (SkiaShaderOps.areAllSkiaImages(image, alphaMask))
+		{
+			return SkiaShaderOps.setAlphaFromMask(image, alphaMask, invertMask);
+		}
 
 		return setAlphaFromMaskInRegion(image, alphaMask, invertMask, new IntPoint(0, 0));
 	}
@@ -1449,6 +1470,13 @@ public class ImageHelper
 
 		if (image.getType() != ImageType.Grayscale8Bit)
 			throw new IllegalArgumentException("The image must by type ImageType.Grayscale, but was type " + image.getType());
+
+		// Use Skia shader implementation if image is SkiaImage (faster due to HSB math in shader)
+		if (image instanceof SkiaImage)
+		{
+			return SkiaShaderOps.colorify(image, color, how, forceAddAlpha);
+		}
+
 		ImageType resultType = forceAddAlpha || color.hasTransparency() ? ImageType.ARGB : ImageType.RGB;
 		Image result = Image.create(image.getWidth(), image.getHeight(), resultType);
 
