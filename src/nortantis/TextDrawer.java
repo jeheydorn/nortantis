@@ -406,7 +406,7 @@ public class TextDrawer
 
 		Point drawOffset = drawBounds == null ? null : drawBounds.upperLeftCorner();
 
-		doForEachTextInBounds(textToDraw, graph, drawBounds, ((text, _) ->
+		doForEachTextInBounds(textToDraw, graph, drawBounds, ((text, ignored) ->
 		{
 			if (text.type == TextType.Title)
 			{
