@@ -55,7 +55,7 @@ public class SkiaFactory extends PlatformFactory
 			image.readPixels(bitmap, 0, 0);
 			image.close();
 
-			return new SkiaImage(bitmap, imageInfo, ImageType.ARGB);
+			return new SkiaImage(bitmap, ImageType.ARGB);
 		}
 		catch (Exception e)
 		{

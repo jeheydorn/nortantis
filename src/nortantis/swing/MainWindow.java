@@ -1467,7 +1467,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					// I don't use ImageHelper.scaleInto for the full image case
 					// because it's 5x slower than the below
 					// method, which uses ImgScalr.
-					mapEditingPanel.setImage(AwtBridge.toBufferedImage(ImageHelper.scaleByWidth(AwtBridge.fromBufferedImage(mapEditingPanel.mapFromMapCreator), zoomedWidth, method)));
+					Image map = AwtBridge.fromBufferedImage(mapEditingPanel.mapFromMapCreator);
+					Image mapScaled = ImageHelper.scaleByWidth(map, zoomedWidth, method);
+					mapEditingPanel.setImage(AwtBridge.toBufferedImage(mapScaled));
 				}
 				else
 				{
@@ -1484,7 +1486,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 			if (scrollTo != null)
 			{
-				// For some reason I have to do a whole bunch of revalidation or
+				// For some reason I have to do a bunch of revalidation or
 				// else scrollRectToVisible doesn't realize the map has changed
 				// size.
 				mapEditingPanel.revalidate();

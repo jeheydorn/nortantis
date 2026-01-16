@@ -19,22 +19,20 @@ public class SkiaImage extends Image
 	private final int width;
 	private final int height;
 	private org.jetbrains.skia.Image cachedSkiaImage;
-	private ImageInfo imageInfo;
 
 	public SkiaImage(int width, int height, ImageType type)
 	{
 		super(type);
 		this.width = width;
 		this.height = height;
-		imageInfo = getImageInfoForType(type, width, height);
+		ImageInfo imageInfo = getImageInfoForType(type, width, height);
 		this.bitmap = createBitmap(imageInfo);
 	}
 
-	public SkiaImage(Bitmap bitmap, ImageInfo imageInfo, ImageType type)
+	public SkiaImage(Bitmap bitmap, ImageType type)
 	{
 		super(type);
 		this.bitmap = bitmap;
-		this.imageInfo = imageInfo;
 		this.width = bitmap.getWidth();
 		this.height = bitmap.getHeight();
 	}
@@ -198,12 +196,12 @@ public class SkiaImage extends Image
 		org.jetbrains.skia.Image resultImage = surface.makeImageSnapshot();
 		Bitmap scaledBitmap = new Bitmap();
 		ImageInfo scaledImageInfo = new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null);
-		scaledBitmap.allocPixels();
+		scaledBitmap.allocPixels(scaledImageInfo);
 		resultImage.readPixels(scaledBitmap, 0, 0);
 		resultImage.close();
 		surface.close();
 
-		return new SkiaImage(scaledBitmap, scaledImageInfo, getType());
+		return new SkiaImage(scaledBitmap, getType());
 	}
 
 	/**
@@ -224,13 +222,13 @@ public class SkiaImage extends Image
 		srcImage.scalePixels(dstPixmap, sampling, false);
 		srcImage.close();
 
-		return new SkiaImage(scaledBitmap, imageInfo, getType());
+		return new SkiaImage(scaledBitmap, getType());
 	}
 
 	@Override
 	public Image deepCopy()
 	{
-		return new SkiaImage(bitmap.makeClone(), imageInfo, getType());
+		return new SkiaImage(bitmap.makeClone(), getType());
 	}
 
 	@Override
@@ -260,13 +258,13 @@ public class SkiaImage extends Image
 		// Get the result as an image snapshot and extract pixels to a new bitmap
 		org.jetbrains.skia.Image resultImage = surface.makeImageSnapshot();
 		Bitmap subBitmap = new Bitmap();
-		ImageInfo subImageInfo = new ImageInfo(w, h, imageInfo.getColorType(), imageInfo.getColorAlphaType(), null);
+		ImageInfo subImageInfo = new ImageInfo(w, h, bitmap.getImageInfo().getColorType(), bitmap.getImageInfo().getColorAlphaType(), null);
 		subBitmap.allocPixels(subImageInfo);
 		resultImage.readPixels(subBitmap, 0, 0);
 		resultImage.close();
 		surface.close();
 
-		return new SkiaImage(subBitmap, subImageInfo, addAlphaChanel ? ImageType.ARGB : getType());
+		return new SkiaImage(subBitmap, addAlphaChanel ? ImageType.ARGB : getType());
 	}
 
 	@Override
@@ -287,7 +285,7 @@ public class SkiaImage extends Image
 		BufferedImage bi = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 		int[] pixels = ((DataBufferInt) bi.getRaster().getDataBuffer()).getData();
 
-		byte[] bytes = bitmap.readPixels(imageInfo, width * 4, 0, 0);
+		byte[] bytes = bitmap.readPixels(bitmap.getImageInfo(), width * 4, 0, 0);
 
 		ByteBuffer buffer = ByteBuffer.wrap(bytes).order(ByteOrder.nativeOrder());
 		IntBuffer intBuffer = buffer.asIntBuffer();
@@ -304,7 +302,7 @@ public class SkiaImage extends Image
 	{
 		int bytesPerPixel = getBytesPerPixel();
 		int rowStride = width * bytesPerPixel;
-		byte[] bytes = bitmap.readPixels(imageInfo, rowStride, 0, 0);
+		byte[] bytes = bitmap.readPixels(bitmap.getImageInfo(), rowStride, 0, 0);
 
 		if (bytes == null)
 		{
@@ -337,7 +335,7 @@ public class SkiaImage extends Image
 	{
 		int bytesPerPixel = getBytesPerPixel();
 		int rowStride = regionWidth * bytesPerPixel;
-		byte[] bytes = bitmap.readPixels(imageInfo, rowStride, srcX, srcY);
+		byte[] bytes = bitmap.readPixels(bitmap.getImageInfo(), rowStride, srcX, srcY);
 
 		if (bytes == null)
 		{
@@ -381,13 +379,13 @@ public class SkiaImage extends Image
 				byte red = (byte) ((pixels[i] >> 16) & 0xFF); // TODO maybe put back on one line below
 				bytes[i] = red;
 			}
-			bitmap.installPixels(imageInfo, bytes, rowStride);
+			bitmap.installPixels(bitmap.getImageInfo(), bytes, rowStride);
 		}
 		else
 		{
 			ByteBuffer buffer = ByteBuffer.allocate(pixels.length * 4).order(ByteOrder.nativeOrder());
 			buffer.asIntBuffer().put(pixels);
-			bitmap.installPixels(imageInfo, buffer.array(), rowStride);
+			bitmap.installPixels(bitmap.getImageInfo(), buffer.array(), rowStride);
 		}
 		invalidateCachedImage();
 	}
@@ -419,7 +417,7 @@ public class SkiaImage extends Image
 		}
 		else
 		{
-			tempImageInfo = new ImageInfo(regionWidth, regionHeight, ColorType.Companion.getN32(), imageInfo.getColorAlphaType(), null);
+			tempImageInfo = new ImageInfo(regionWidth, regionHeight, ColorType.Companion.getN32(), bitmap.getImageInfo().getColorAlphaType(), null);
 			tempBitmap.allocPixels(tempImageInfo);
 
 			ByteBuffer buffer = ByteBuffer.allocate(regionPixels.length * 4).order(ByteOrder.nativeOrder());

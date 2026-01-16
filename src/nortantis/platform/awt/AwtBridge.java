@@ -216,7 +216,7 @@ public class AwtBridge
 	}
 
 	/**
-	 * Creates an AwtFont from a java.awt.Font.
+	 * Creates a generic Font for the current platform type from a java.awt.Font.
 	 */
 	public static Font fromAwtFont(java.awt.Font font)
 	{
@@ -224,7 +224,30 @@ public class AwtBridge
 		{
 			return null;
 		}
-		return new AwtFont(font);
+
+		if (PlatformFactory.getInstance() instanceof AwtFactory)
+		{
+			return new AwtFont(font);
+		}
+
+		FontStyle style = FontStyle.Plain;
+		if (font.isBold())
+		{
+			if (font.isItalic())
+			{
+				style = FontStyle.BoldItalic;
+			}
+			else
+			{
+				style = FontStyle.Bold;
+			}
+		}
+		else if (font.isItalic())
+		{
+			style = FontStyle.Italic;
+		}
+
+		return PlatformFactory.getInstance().createFont(font.getName(), style, font.getSize());
 	}
 
 	/**
