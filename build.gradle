@@ -37,6 +37,17 @@ if (osArch == "x86_64" || osArch == "amd64") {
 def skikoVersion = "0.9.37"
 def skikoTarget = "${targetOs}-${targetArch}"
 
+// LWJGL for OpenGL context creation (GPU acceleration)
+def lwjglVersion = "3.3.6"
+def lwjglNatives = ""
+if (targetOs == "windows") {
+    lwjglNatives = targetArch == "arm64" ? "natives-windows-arm64" : "natives-windows"
+} else if (targetOs == "linux") {
+    lwjglNatives = targetArch == "arm64" ? "natives-linux-arm64" : "natives-linux"
+} else if (targetOs == "macos") {
+    lwjglNatives = targetArch == "arm64" ? "natives-macos-arm64" : "natives-macos"
+}
+
 dependencies {
     implementation fileTree(dir: 'libraries', include: ['*.jar'])
     testImplementation platform('org.junit:junit-bom:5.10.2')
@@ -46,6 +57,14 @@ dependencies {
     implementation "org.jetbrains.skiko:skiko:$skikoVersion"
     implementation "org.jetbrains.skiko:skiko-awt-runtime-$skikoTarget:$skikoVersion"
     implementation "org.jetbrains.kotlin:kotlin-stdlib:1.9.23"
+
+    // LWJGL for GPU context creation
+    implementation "org.lwjgl:lwjgl:$lwjglVersion"
+    implementation "org.lwjgl:lwjgl-opengl:$lwjglVersion"
+    implementation "org.lwjgl:lwjgl-glfw:$lwjglVersion"
+    runtimeOnly "org.lwjgl:lwjgl:$lwjglVersion:$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-opengl:$lwjglVersion:$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-glfw:$lwjglVersion:$lwjglNatives"
 }
 
 // Attaches javadocs to libraries in Eclipse.
