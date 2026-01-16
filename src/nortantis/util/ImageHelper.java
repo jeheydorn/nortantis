@@ -1126,7 +1126,7 @@ public class ImageHelper
 	{
 		ComplexArray data = convolveGrayscale(img, kernel, paddImageToAvoidWrapping);
 
-		// Only use 16 bit pixels if the input image used them, to save memory.
+		// Only use 16-bit pixels if the input image used them, to save memory.
 		ImageType resultType = img.getType() == ImageType.Grayscale16Bit ? ImageType.Grayscale16Bit : ImageType.Grayscale8Bit;
 
 		data.moveRealToLeftSide();

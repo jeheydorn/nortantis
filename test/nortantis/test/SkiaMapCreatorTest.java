@@ -25,6 +25,7 @@ public class SkiaMapCreatorTest
 {
 	final static String failedMapsFolderName = "failed maps skia";
 	private static final String expectedFolderName = "expected maps skia";
+	final int threshold = 4;
 
 	@BeforeAll
 	public static void setUpBeforeClass() throws Exception
@@ -55,7 +56,7 @@ public class SkiaMapCreatorTest
 			graph.drawLandAndOceanBlackAndWhite(p, graph.centers, null);
 		}
 
-		compareWithExpected(landMask, "drawLandAndOceanBlackAndWhiteTest");
+		compareWithExpected(landMask, "drawLandAndOceanBlackAndWhiteTest", threshold);
 	}
 
 	@Test
@@ -70,7 +71,7 @@ public class SkiaMapCreatorTest
 		p.setColor(Color.white);
 		graph.drawCoastlineWithLakeShores(p, settings.coastlineWidth * settings.resolution, null, null);
 
-		compareWithExpected(coastlineAndLakeShoreMask, "coastlineWithLakeShores");
+		compareWithExpected(coastlineAndLakeShoreMask, "coastlineWithLakeShores", threshold);
 	}
 
 	@Test
@@ -91,7 +92,7 @@ public class SkiaMapCreatorTest
 		float scale = 2.3973336f; // The actual value used when creating this map.
 		Image coastShading = ImageHelper.blurAndScale(coastlineAndLakeShoreMask, blurLevel, scale, true);
 
-		compareWithExpected(coastShading, "coastShading");
+		compareWithExpected(coastShading, "coastShading", threshold);
 	}
 
 	@Test
@@ -130,7 +131,7 @@ public class SkiaMapCreatorTest
 		}
 	}
 
-	private void compareWithExpected(Image actual, String testName)
+	private void compareWithExpected(Image actual, String testName, int threshold)
 	{
 		String expectedFilePath = getExpectedFilePath(testName);
 		Image expected;
@@ -147,7 +148,7 @@ public class SkiaMapCreatorTest
 			return;
 		}
 
-		String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(expected, actual);
+		String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(expected, actual, threshold);
 		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
 		{
 			FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());

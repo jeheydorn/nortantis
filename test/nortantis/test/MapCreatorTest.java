@@ -55,547 +55,548 @@ public class MapCreatorTest
 		}
 	}
 
-	@Test
-	public void incrementalUpdate_allTypesOfEdits()
-	{
-		// Load settings from the .nort file
-		String settingsFileName = "allTypesOfEdits.nort";
-		String settingsPath = Paths.get("unit test files", "map settings", settingsFileName).toString();
-		MapSettings settings = new MapSettings(settingsPath);
-
-		// Create the full map first (baseline)
-		MapCreator mapCreator = new MapCreator();
-		MapParts mapParts = new MapParts();
-		Image fullMap = mapCreator.createMap(settings, null, mapParts);
-		final int diffThreshold = 10;
-		int failCount = 0;
-
-		{
-			final int numberToTest = 50;
-			Image fullMapForUpdates = fullMap.deepCopy();
-			int iconNumber = 0;
-			for (FreeIcon icon : settings.edits.freeIcons)
-			{
-				iconNumber++;
-				if (iconNumber > numberToTest)
-				{
-					break;
-				}
-
-				// System.out.println("Running incremental icon drawing test number " + iconNumber);
-
-				IntRectangle changedBounds = mapCreator.incrementalUpdateIcons(settings, mapParts, fullMapForUpdates, Arrays.asList(icon));
-
-				assertTrue(changedBounds != null, "Incremental update should produce bounds");
-				assertTrue(changedBounds.width > 0);
-				assertTrue(changedBounds.height > 0);
-
-				Image expectedSnippet = fullMap.getSubImage(changedBounds);
-				Image actualSnippet = fullMapForUpdates.getSubImage(changedBounds);
-
-				// Compare incremental result against expected
-				String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(expectedSnippet, actualSnippet, diffThreshold);
-				if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
-				{
-					FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
-
-					String expectedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + iconNumber + " expected.png";
-					Path expectedPath = Paths.get("unit test files", failedMapsFolderName, expectedSnippetName);
-					ImageHelper.write(expectedSnippet, expectedPath.toString());
-
-					String failedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + iconNumber + " failed.png";
-					Path failedPath = Paths.get("unit test files", failedMapsFolderName, failedSnippetName);
-					ImageHelper.write(actualSnippet, failedPath.toString());
-
-					createImageDiffIfImagesAreSameSize(expectedSnippet, actualSnippet, failedSnippetName, diffThreshold);
-					failCount++;
-				}
-			}
-
-			String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(fullMap, fullMapForUpdates, diffThreshold);
-			if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
-			{
-				FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
-				String failedMapName = settingsFileName + " full map for incremental draw test";
-				ImageHelper.write(fullMapForUpdates, MapTestUtil.getFailedMapFilePath(failedMapName, failedMapsFolderName));
-				createImageDiffIfImagesAreSameSize(fullMap, fullMapForUpdates, failedMapName, diffThreshold);
-				fail("Incremental update did not match expected image: " + comparisonErrorMessage);
-			}
-		}
-
-		{
-			final int numberToTest = 50;
-			Image fullMapForUpdates = fullMap.deepCopy();
-			int textNumber = 0;
-			for (MapText text : settings.edits.text)
-			{
-				textNumber++;
-				if (textNumber > numberToTest)
-				{
-					break;
-				}
-
-				// System.out.println("Running incremental text drawing test number " + textNumber);
-
-				IntRectangle changedBounds = mapCreator.incrementalUpdateText(settings, mapParts, fullMapForUpdates, Arrays.asList(text));
-				changedBounds = changedBounds.findIntersection(new IntRectangle(new IntPoint(0, 0), mapParts.background.getMapBoundsIncludingBorder().toIntDimension()));
-
-				assertTrue(changedBounds != null, "Incremental update should produce bounds");
-				assertTrue(changedBounds.width > 0);
-				assertTrue(changedBounds.height > 0);
-
-				Image expectedSnippet = fullMap.getSubImage(changedBounds);
-				Image actualSnippet = fullMapForUpdates.getSubImage(changedBounds);
-
-				// Compare incremental result against expected
-				String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(expectedSnippet, actualSnippet, diffThreshold);
-				if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
-				{
-					FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
-
-					String expectedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + textNumber + " expected.png";
-					Path expectedPath = Paths.get("unit test files", failedMapsFolderName, expectedSnippetName);
-					ImageHelper.write(expectedSnippet, expectedPath.toString());
-
-					String failedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + textNumber + " failed.png";
-					Path failedPath = Paths.get("unit test files", failedMapsFolderName, failedSnippetName);
-					ImageHelper.write(actualSnippet, failedPath.toString());
-
-					createImageDiffIfImagesAreSameSize(expectedSnippet, actualSnippet, failedSnippetName, diffThreshold);
-					failCount++;
-				}
-			}
-
-			String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(fullMap, fullMapForUpdates, diffThreshold);
-			if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
-			{
-				FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
-				String failedMapName = settingsFileName + " full map for incremental draw test";
-				ImageHelper.write(fullMapForUpdates, MapTestUtil.getFailedMapFilePath(failedMapName, failedMapsFolderName));
-				createImageDiffIfImagesAreSameSize(fullMap, fullMapForUpdates, failedMapName, diffThreshold);
-				fail("Incremental update did not match expected image: " + comparisonErrorMessage);
-			}
-		}
-
-		if (failCount > 0)
-		{
-			fail(failCount + " incremental update tests failed.");
-		}
-	}
-
-	/**
-	 * Tests that a map which is drawn with no edits matches the same map drawn the second time with newly created edits. This simulates the case where you create a new map in the editor and it draws
-	 * for the first time, then you do something to trigger it to do a full redraw.
-	 */
-	@Test
-	public void drawWithoutEditsMatchesWithEdits()
-	{
-		MapSettings settings = SettingsGenerator.generate(new Random(1), Assets.installedArtPack, null);
-		settings.resolution = 0.5;
-		Tuple1<Image> mapTuple = new Tuple1<>();
-		Tuple1<Boolean> doneTuple = new Tuple1<>(false);
-		MapUpdater updater = new MapUpdater(true)
-		{
-
-			@Override
-			protected void onFinishedDrawing(Image map, boolean anotherDrawIsQueued, int borderWidthAsDrawn, IntRectangle incrementalChangeArea, List<String> warningMessages)
-			{
-				mapTuple.set(map);
-				doneTuple.set(true);
-			}
-
-			@Override
-			protected void onFailedToDraw()
-			{
-				fail("Updater failed to draw.");
-			}
-
-			@Override
-			protected void onBeginDraw()
-			{
-			}
-
-			@Override
-			public MapSettings getSettingsFromGUI()
-			{
-				return settings;
-			}
-
-			@Override
-			protected MapEdits getEdits()
-			{
-				return settings.edits;
-			}
-
-			@Override
-			protected Image getCurrentMapForIncrementalUpdate()
-			{
-				throw new UnsupportedOperationException();
-			}
-		};
-
-		updater.setEnabled(true);
-
-		assertTrue(!settings.edits.isInitialized());
-		Image drawnWithoutEdits = createMapUsingUpdater(updater, mapTuple, doneTuple);
-
-		assertTrue(settings.edits.isInitialized());
-		Image drawnWithEdits = createMapUsingUpdater(updater, mapTuple, doneTuple);
-
-		String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(drawnWithoutEdits, drawnWithEdits);
-		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
-		{
-			FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
-			drawnWithoutEdits.write(Paths.get("unit test files", failedMapsFolderName, "compareWithAndWithoutEdits_NoEdits.png").toString());
-			drawnWithEdits.write(Paths.get("unit test files", failedMapsFolderName, "compareWithAndWithoutEdits_WithEdits.png").toString());
-			createImageDiffIfImagesAreSameSize(drawnWithoutEdits, drawnWithEdits, "noOceanOrCoastEffects");
-			fail(comparisonErrorMessage);
-		}
-	}
-
-	@Test
-	public void newRandomMapTest1()
-	{
-		generateRandomAndCompare(1);
-	}
-
-	@Test
-	public void newRandomMapTest2()
-	{
-		generateRandomAndCompare(4);
-	}
-
-	@Test
-	public void newRandomHeightMapTest1()
-	{
-		generateRandomHeightmapAndCompare(1);
-	}
-
-	@Test
-	public void newRandomHeightMapTest2()
-	{
-		generateRandomHeightmapAndCompare(4);
-	}
-
-	@Test
-	public void allTypesOfEdits()
-	{
-		generateAndCompare("allTypesOfEdits.nort");
-	}
-
-	@Test
-	public void rotatedAndFlippedTwiceWithEditsAndTransparencyTest()
-	{
-		generateAndCompare("rotatedAndFlippedTwiceWithEditsAndTransparency.nort");
-	}
-
-	@Test
-	public void rotatedLeftWithTransparentOceanAndPartiallyGrungeTest()
-	{
-		generateAndCompare("rotatedLeftWithTransparentOceanAndPartiallyGrunge.nort");
-	}
-
-	@Test
-	public void customImagesWithSizesInFileNames()
-	{
-		generateAndCompare("customImagesWithSizesInFileNames.nort");
-	}
-
-	@Test
-	public void jsonSaveTestNortFile(@TempDir Path tempDir) throws IOException
-	{
-		runJSonSaveTest("allTypesOfEdits.nort", tempDir);
-	}
-
-	@Test
-	public void jsonSaveTestPropertiesConversion(@TempDir Path tempDir) throws IOException
-	{
-		runJSonSaveTest("propertiesConversion_allTypesOfEdits.properties", tempDir);
-	}
-
-	/**
-	 * Tests that a map can be saved and reloaded and produce the same json.
-	 */
-	private void runJSonSaveTest(String settingsFileName, Path tempDir) throws IOException
-	{
-		String settingsPath = Paths.get("unit test files", "map settings", settingsFileName).toString();
-		MapSettings settings = new MapSettings(settingsPath);
-
-		Path tempFile = tempDir.resolve(FilenameUtils.getBaseName(settingsFileName) + " copy.nort");
-		settings.writeToFile(tempFile.toString());
-		MapSettings actual = new MapSettings(tempFile.toString());
-		assertEquals(settings, actual);
-	}
-
-	@Test
-	public void iconReplacements()
-	{
-		// Clear the custom images path to force icons to be replaced with images from the installed art pack.
-		List<String> warnings = MapTestUtil.generateAndCompare("iconReplacements.nort", (settings -> settings.customImagesPath = null), failedMapsFolderName).getWarningMessages();
-
-		Set<String> expectedWarnings = new TreeSet<>();
-		expectedWarnings.add("Unable to find the art pack 'custom' to load the mountain image group 'jagged'. The art pack 'nortantis' will be used instead.");
-		expectedWarnings.add("Unable to find the mountain image group 'jagged' in art pack 'nortantis'. The group 'round' in that art pack will be used instead.");
-		expectedWarnings.add("Unable to find the art pack 'custom' to load the hill image group 'jagged'. The art pack 'nortantis' will be used instead.");
-		expectedWarnings.add("Unable to find the hill image group 'jagged' in art pack 'nortantis'. The group 'round' in that art pack will be used instead.");
-		expectedWarnings.add(
-				"Unable to find the art pack 'custom' to load the sand image group 'dunes'. The art pack 'nortantis' will be used instead because it has the same image group folder name.");
-		expectedWarnings.add(
-				"Unable to find the art pack 'custom' to load the hill image group 'sharp'. The art pack 'nortantis' will be used instead because it has the same image group folder name.");
-		expectedWarnings.add("Unable to find the art pack 'custom' to load the tree image group 'generated deciduous 6'. The art pack 'nortantis' will be used instead.");
-		expectedWarnings.add("Unable to find the tree image group 'generated deciduous 6' in art pack 'nortantis'. The group 'original pine' in that art pack will be used instead.");
-		expectedWarnings.add(
-				"Unable to find the art pack 'custom' to load the tree image group 'pine'. The art pack 'nortantis' will be used instead because it has the same image group folder name.");
-		expectedWarnings.add(
-				"Unable to find the art pack 'custom' to load the mountain image group 'sharp'. The art pack 'nortantis' will be used instead because it has the same image group folder name.");
-		expectedWarnings.add(
-				"Unable to find the art pack 'custom' to load the icon 'compass 1' from decoration image group 'compasses'. The art pack 'nortantis' will be used instead because it has the same image group folder and image name.");
-		expectedWarnings.add("Unable to find the art pack 'custom' to load the icon 'ship 6' from decoration image group 'boats'. The art pack 'nortantis' will be used instead.");
-		expectedWarnings.add("Unable to find the decoration image group 'boats' in art pack 'custom'. The group 'ships' in art pack 'nortantis' will be used instead.");
-		expectedWarnings.add("Unable to find the art pack 'custom' to load the icon 'small house 1' from city image group 'other'. The art pack 'nortantis' will be used instead.");
-		expectedWarnings.add("Unable to find the city image group 'other' in art pack 'custom'. The group 'flat' in art pack 'nortantis' will be used instead.");
-		expectedWarnings.add(
-				"Unable to find the city icon 'small house 1' in art pack 'custom', group 'other'. The icon 'town on a hill' in art pack 'nortantis', group 'flat', will be used instead.");
-		expectedWarnings.add(
-				"Unable to find the art pack 'custom' to load the icon 'town' from city image group 'middle ages'. The art pack 'nortantis' will be used instead because it has the same image group folder and image name.");
-		expectedWarnings.add("Unable to find the art pack 'custom' to load the icon 'simple_ship' from decoration image group 'boats'. The art pack 'nortantis' will be used instead.");
-		expectedWarnings.add("Unable to find the decoration icon 'simple_ship' in art pack 'custom', group 'boats'. The icon 'ship 6' in art pack 'nortantis', group 'ships', will be used instead.");
-
-		for (String warning : warnings)
-		{
-			if (!expectedWarnings.contains(warning))
-			{
-				fail("Unexpected warning hit: '" + warning + "'");
-			}
-		}
-
-		Set<String> extra = new TreeSet<>(expectedWarnings);
-		extra.removeAll(warnings);
-		if (extra.size() > 0)
-		{
-			fail("Extra warnings found: " + extra);
-		}
-
-		assertEquals(19, warnings.size());
-	}
-
-	@Test
-	public void iconReplacementsWithMissingIconTypes()
-	{
-		List<String> warnings = MapTestUtil.generateAndCompare("iconReplacementsWithMissingIconTypes.nort", (settings) ->
-		{
-			settings.customImagesPath = Paths.get("unit test files", "map settings", "empty custom images").toAbsolutePath().toString();
-		}, failedMapsFolderName).getWarningMessages();
-
-		Set<String> expectedWarnings = new TreeSet<>();
-		expectedWarnings.add(
-				"The art pack 'custom' no longer has tree images, so it does not have the tree image group 'pine'. The art pack 'nortantis' will be used instead because it has the same image group folder name. These trees are not visible because they were drawn at low density, but may become visible if you change the tree height in the Effects tab.");
-		expectedWarnings.add(
-				"The art pack 'custom' no longer has tree images, so it does not have the tree image group 'generated deciduous 6'. The art pack 'nortantis' will be used instead because it has tree images. These trees are not visible because they were drawn at low density, but may become visible if you change the tree height in the Effects tab.");
-		expectedWarnings.add(
-				"Unable to find the tree image group 'generated deciduous 6' in art pack 'nortantis'. The group 'original pine' in that art pack will be used instead. These trees are not visible because they were drawn at low density, but may become visible if you change the tree height in the Effects tab.");
-		expectedWarnings.add(
-				"The art pack 'custom' no longer has mountain images, so it does not have the mountain image group 'jagged'. The art pack 'nortantis' will be used instead because it has mountain images.");
-		expectedWarnings.add("Unable to find the mountain image group 'jagged' in art pack 'nortantis'. The group 'round' in that art pack will be used instead.");
-		expectedWarnings.add(
-				"The art pack 'custom' no longer has hill images, so it does not have the hill image group 'jagged'. The art pack 'nortantis' will be used instead because it has hill images.");
-		expectedWarnings.add("Unable to find the hill image group 'jagged' in art pack 'nortantis'. The group 'round' in that art pack will be used instead.");
-		expectedWarnings.add(
-				"The art pack 'custom' no longer has sand images, so it does not have the sand image group 'dunes'. The art pack 'nortantis' will be used instead because it has the same image group folder name.");
-		expectedWarnings.add(
-				"The art pack 'custom' no longer has hill images, so it does not have the hill image group 'sharp'. The art pack 'nortantis' will be used instead because it has the same image group folder name.");
-		expectedWarnings.add(
-				"The art pack 'custom' no longer has tree images, so it does not have the tree image group 'generated deciduous 6'. The art pack 'nortantis' will be used instead because it has tree images.");
-		expectedWarnings.add("Unable to find the tree image group 'generated deciduous 6' in art pack 'nortantis'. The group 'original pine' in that art pack will be used instead.");
-		expectedWarnings.add(
-				"The art pack 'custom' no longer has tree images, so it does not have the tree image group 'pine'. The art pack 'nortantis' will be used instead because it has the same image group folder name.");
-		expectedWarnings.add(
-				"The art pack 'custom' no longer has mountain images, so it does not have the mountain image group 'sharp'. The art pack 'nortantis' will be used instead because it has the same image group folder name.");
-		expectedWarnings.add(
-				"The art pack 'custom' no longer has decoration images, so it does not have the icon 'compass 1' from decoration image group 'compasses'. The art pack 'nortantis' will be used instead because it has the same image group folder and image name.");
-		expectedWarnings.add(
-				"The art pack 'custom' no longer has decoration images, so it does not have the icon 'ship 6' from decoration image group 'boats'. The art pack 'nortantis' will be used instead because it has decoration images.");
-		expectedWarnings.add("Unable to find the decoration image group 'boats' in art pack 'custom'. The group 'ships' in art pack 'nortantis' will be used instead.");
-		expectedWarnings.add(
-				"The art pack 'custom' no longer has city images, so it does not have the icon 'small house 1' from city image group 'other'. The art pack 'nortantis' will be used instead because it has city images.");
-		expectedWarnings.add("Unable to find the city image group 'other' in art pack 'custom'. The group 'flat' in art pack 'nortantis' will be used instead.");
-		expectedWarnings.add(
-				"Unable to find the city icon 'small house 1' in art pack 'custom', group 'other'. The icon 'town on a hill' in art pack 'nortantis', group 'flat', will be used instead.");
-		expectedWarnings.add(
-				"The art pack 'custom' no longer has city images, so it does not have the icon 'town' from city image group 'middle ages'. The art pack 'nortantis' will be used instead because it has the same image group folder and image name.");
-		expectedWarnings.add(
-				"The art pack 'custom' no longer has decoration images, so it does not have the icon 'compass 6' from decoration image group 'compasses'. The art pack 'nortantis' will be used instead because it has the same image group folder and image name.");
-
-		for (String warning : warnings)
-		{
-			if (!expectedWarnings.contains(warning))
-			{
-				fail("Unexpected warning hit: '" + warning + "'");
-			}
-		}
-
-		Set<String> extra = new TreeSet<>(expectedWarnings);
-		extra.removeAll(warnings);
-		if (extra.size() > 0)
-		{
-			fail("Extra warnings found: " + extra);
-		}
-
-		assertEquals(21, warnings.size());
-	}
-
-	@Test
-	public void frayedEdge_regionColors_textureImageBackground()
-	{
-		generateAndCompare("frayedEdge_regionColors_textureImageBackground.nort");
-	}
-
-	@Test
-	public void noText_NoRegions_SquareBackground_ConcentricWaves_WithEdits()
-	{
-		generateAndCompare("noText_NoRegions_SquareBackground_ConcentricWaves_WithEdits.nort");
-	}
-
-	@Test
-	public void preventCreatingOnlyOneTectonicPlate()
-	{
-		generateAndCompare("preventCreatingOnlyOneTectonicPlate.nort");
-	}
-
-	@Test
-	public void noText_WithCities_GoldenRatio()
-	{
-		generateAndCompare("noText_WithCities_GoldenRatio.nort");
-	}
-
-	@Test
-	public void noText_WithCities_GoldenRatio_withEdits()
-	{
-		generateAndCompare("noText_WithCities_GoldenRatio_withEdits.nort");
-	}
-
-	@Test
-	public void smallWorld_constrainedToForceGeneratingLand()
-	{
-		generateAndCompare("smallWorld_constrainedToForceGeneratingLand.nort");
-	}
-
-	@Test
-	public void smallWorld_allTextDeletedByHand_shouldNotRegenerateText()
-	{
-		generateAndCompare("smallWorld_allTextDeletedByHand_shouldNotRegenerateText.nort");
-	}
-
-	@Test
-	public void backgroundFromTexture_landNotColorized()
-	{
-		generateAndCompare("backgroundFromTexture_landNotColorized.nort");
-	}
-
-	@Test
-	public void backgroundFromTexture_nothingColorized()
-	{
-		generateAndCompare("backgroundFromTexture_nothingColorized.nort");
-	}
-
-	@Test
-	public void backgroundFromTexture_oceanNotColorized()
-	{
-		generateAndCompare("backgroundFromTexture_oceanNotColorized.nort");
-	}
-
-	@Test
-	public void generatedSpecialCharacterInTitleAndColorChanges_replacementCharacterRemoved()
-	{
-		generateAndCompare("generatedSpecialCharacterInTitleAndColorChanges_replacementCharacterRemoved.nort");
-	}
-
-	@Test
-	public void propertiesConversion_allColorsChanged()
-	{
-		generateAndCompare("propertiesConversion_allColorsChanged.properties");
-	}
-
-	@Test
-	public void propertiesConversion_allTypesOfEdits()
-	{
-		generateAndCompare("propertiesConversion_allTypesOfEdits.properties");
-	}
-
-	@Test
-	public void propertiesConversion_noText_WithCities_GoldenRatio()
-	{
-		generateAndCompare("propertiesConversion_noText_WithCities_GoldenRatio.properties");
-	}
-
-	@Test
-	public void regressionTest_polygonsOnTopBug()
-	{
-		generateAndCompare("regressionTest_polygonsOnTopBug.nort");
-	}
-
-	@Test
-	public void iconsDrawOverCoastlines()
-	{
-		generateAndCompare("iconsDrawOverCoastlines.nort");
-	}
-
-	@Test
-	public void clearedMapRegionEdit0Removed()
-	{
-		generateAndCompare("clearedMapRegionEdit0Removed.nort");
-	}
-
-
-	private Image createMapUsingUpdater(MapUpdater updater, Tuple1<Image> mapTuple, Tuple1<Boolean> doneTuple)
-	{
-		doneTuple.set(false);
-		mapTuple.set(null);
-		updater.createAndShowMapFull();
-		updater.dowWhenMapIsNotDrawing(() ->
-		{
-			doneTuple.set(true);
-		});
-
-		while (!doneTuple.get())
-		{
-			try
-			{
-				Thread.sleep(100);
-			}
-			catch (InterruptedException e)
-			{
-				e.printStackTrace();
-				break;
-			}
-		}
-		return mapTuple.get();
-	}
-
-	private void generateRandomAndCompare(long seed)
-	{
-		MapTestUtil.generateRandomAndCompare(1, failedMapsFolderName);
-	}
-
-	private void generateRandomHeightmapAndCompare(long seed)
-	{
-		MapTestUtil.generateRandomHeightmapAndCompare(1, failedMapsFolderName);
-	}
-
-	private void generateAndCompare(String settingsFileName)
-	{
-		MapTestUtil.generateAndCompare(settingsFileName, null, failedMapsFolderName);
-	}
-
-	private void createImageDiffIfImagesAreSameSize(Image image1, Image image2, String settingsFileName)
-	{
-		MapTestUtil.createImageDiffIfImagesAreSameSize(image1, image2, settingsFileName, failedMapsFolderName);
-	}
-
-	private void createImageDiffIfImagesAreSameSize(Image image1, Image image2, String settingsFileName, int threshold)
-	{
-		MapTestUtil.createImageDiffIfImagesAreSameSize(image1, image2, settingsFileName, threshold, failedMapsFolderName);
-	}
+	// Ignore these tests while working on Skia because they test AWT, not Skia. TODO - Put back later
+//	@Test
+//	public void incrementalUpdate_allTypesOfEdits()
+//	{
+//		// Load settings from the .nort file
+//		String settingsFileName = "allTypesOfEdits.nort";
+//		String settingsPath = Paths.get("unit test files", "map settings", settingsFileName).toString();
+//		MapSettings settings = new MapSettings(settingsPath);
+//
+//		// Create the full map first (baseline)
+//		MapCreator mapCreator = new MapCreator();
+//		MapParts mapParts = new MapParts();
+//		Image fullMap = mapCreator.createMap(settings, null, mapParts);
+//		final int diffThreshold = 10;
+//		int failCount = 0;
+//
+//		{
+//			final int numberToTest = 50;
+//			Image fullMapForUpdates = fullMap.deepCopy();
+//			int iconNumber = 0;
+//			for (FreeIcon icon : settings.edits.freeIcons)
+//			{
+//				iconNumber++;
+//				if (iconNumber > numberToTest)
+//				{
+//					break;
+//				}
+//
+//				// System.out.println("Running incremental icon drawing test number " + iconNumber);
+//
+//				IntRectangle changedBounds = mapCreator.incrementalUpdateIcons(settings, mapParts, fullMapForUpdates, Arrays.asList(icon));
+//
+//				assertTrue(changedBounds != null, "Incremental update should produce bounds");
+//				assertTrue(changedBounds.width > 0);
+//				assertTrue(changedBounds.height > 0);
+//
+//				Image expectedSnippet = fullMap.getSubImage(changedBounds);
+//				Image actualSnippet = fullMapForUpdates.getSubImage(changedBounds);
+//
+//				// Compare incremental result against expected
+//				String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(expectedSnippet, actualSnippet, diffThreshold);
+//				if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
+//				{
+//					FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
+//
+//					String expectedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + iconNumber + " expected.png";
+//					Path expectedPath = Paths.get("unit test files", failedMapsFolderName, expectedSnippetName);
+//					ImageHelper.write(expectedSnippet, expectedPath.toString());
+//
+//					String failedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + iconNumber + " failed.png";
+//					Path failedPath = Paths.get("unit test files", failedMapsFolderName, failedSnippetName);
+//					ImageHelper.write(actualSnippet, failedPath.toString());
+//
+//					createImageDiffIfImagesAreSameSize(expectedSnippet, actualSnippet, failedSnippetName, diffThreshold);
+//					failCount++;
+//				}
+//			}
+//
+//			String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(fullMap, fullMapForUpdates, diffThreshold);
+//			if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
+//			{
+//				FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
+//				String failedMapName = settingsFileName + " full map for incremental draw test";
+//				ImageHelper.write(fullMapForUpdates, MapTestUtil.getFailedMapFilePath(failedMapName, failedMapsFolderName));
+//				createImageDiffIfImagesAreSameSize(fullMap, fullMapForUpdates, failedMapName, diffThreshold);
+//				fail("Incremental update did not match expected image: " + comparisonErrorMessage);
+//			}
+//		}
+//
+//		{
+//			final int numberToTest = 50;
+//			Image fullMapForUpdates = fullMap.deepCopy();
+//			int textNumber = 0;
+//			for (MapText text : settings.edits.text)
+//			{
+//				textNumber++;
+//				if (textNumber > numberToTest)
+//				{
+//					break;
+//				}
+//
+//				// System.out.println("Running incremental text drawing test number " + textNumber);
+//
+//				IntRectangle changedBounds = mapCreator.incrementalUpdateText(settings, mapParts, fullMapForUpdates, Arrays.asList(text));
+//				changedBounds = changedBounds.findIntersection(new IntRectangle(new IntPoint(0, 0), mapParts.background.getMapBoundsIncludingBorder().toIntDimension()));
+//
+//				assertTrue(changedBounds != null, "Incremental update should produce bounds");
+//				assertTrue(changedBounds.width > 0);
+//				assertTrue(changedBounds.height > 0);
+//
+//				Image expectedSnippet = fullMap.getSubImage(changedBounds);
+//				Image actualSnippet = fullMapForUpdates.getSubImage(changedBounds);
+//
+//				// Compare incremental result against expected
+//				String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(expectedSnippet, actualSnippet, diffThreshold);
+//				if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
+//				{
+//					FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
+//
+//					String expectedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + textNumber + " expected.png";
+//					Path expectedPath = Paths.get("unit test files", failedMapsFolderName, expectedSnippetName);
+//					ImageHelper.write(expectedSnippet, expectedPath.toString());
+//
+//					String failedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + textNumber + " failed.png";
+//					Path failedPath = Paths.get("unit test files", failedMapsFolderName, failedSnippetName);
+//					ImageHelper.write(actualSnippet, failedPath.toString());
+//
+//					createImageDiffIfImagesAreSameSize(expectedSnippet, actualSnippet, failedSnippetName, diffThreshold);
+//					failCount++;
+//				}
+//			}
+//
+//			String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(fullMap, fullMapForUpdates, diffThreshold);
+//			if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
+//			{
+//				FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
+//				String failedMapName = settingsFileName + " full map for incremental draw test";
+//				ImageHelper.write(fullMapForUpdates, MapTestUtil.getFailedMapFilePath(failedMapName, failedMapsFolderName));
+//				createImageDiffIfImagesAreSameSize(fullMap, fullMapForUpdates, failedMapName, diffThreshold);
+//				fail("Incremental update did not match expected image: " + comparisonErrorMessage);
+//			}
+//		}
+//
+//		if (failCount > 0)
+//		{
+//			fail(failCount + " incremental update tests failed.");
+//		}
+//	}
+//
+//	/**
+//	 * Tests that a map which is drawn with no edits matches the same map drawn the second time with newly created edits. This simulates the case where you create a new map in the editor and it draws
+//	 * for the first time, then you do something to trigger it to do a full redraw.
+//	 */
+//	@Test
+//	public void drawWithoutEditsMatchesWithEdits()
+//	{
+//		MapSettings settings = SettingsGenerator.generate(new Random(1), Assets.installedArtPack, null);
+//		settings.resolution = 0.5;
+//		Tuple1<Image> mapTuple = new Tuple1<>();
+//		Tuple1<Boolean> doneTuple = new Tuple1<>(false);
+//		MapUpdater updater = new MapUpdater(true)
+//		{
+//
+//			@Override
+//			protected void onFinishedDrawing(Image map, boolean anotherDrawIsQueued, int borderWidthAsDrawn, IntRectangle incrementalChangeArea, List<String> warningMessages)
+//			{
+//				mapTuple.set(map);
+//				doneTuple.set(true);
+//			}
+//
+//			@Override
+//			protected void onFailedToDraw()
+//			{
+//				fail("Updater failed to draw.");
+//			}
+//
+//			@Override
+//			protected void onBeginDraw()
+//			{
+//			}
+//
+//			@Override
+//			public MapSettings getSettingsFromGUI()
+//			{
+//				return settings;
+//			}
+//
+//			@Override
+//			protected MapEdits getEdits()
+//			{
+//				return settings.edits;
+//			}
+//
+//			@Override
+//			protected Image getCurrentMapForIncrementalUpdate()
+//			{
+//				throw new UnsupportedOperationException();
+//			}
+//		};
+//
+//		updater.setEnabled(true);
+//
+//		assertTrue(!settings.edits.isInitialized());
+//		Image drawnWithoutEdits = createMapUsingUpdater(updater, mapTuple, doneTuple);
+//
+//		assertTrue(settings.edits.isInitialized());
+//		Image drawnWithEdits = createMapUsingUpdater(updater, mapTuple, doneTuple);
+//
+//		String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(drawnWithoutEdits, drawnWithEdits);
+//		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
+//		{
+//			FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
+//			drawnWithoutEdits.write(Paths.get("unit test files", failedMapsFolderName, "compareWithAndWithoutEdits_NoEdits.png").toString());
+//			drawnWithEdits.write(Paths.get("unit test files", failedMapsFolderName, "compareWithAndWithoutEdits_WithEdits.png").toString());
+//			createImageDiffIfImagesAreSameSize(drawnWithoutEdits, drawnWithEdits, "noOceanOrCoastEffects");
+//			fail(comparisonErrorMessage);
+//		}
+//	}
+//
+//	@Test
+//	public void newRandomMapTest1()
+//	{
+//		generateRandomAndCompare(1);
+//	}
+//
+//	@Test
+//	public void newRandomMapTest2()
+//	{
+//		generateRandomAndCompare(4);
+//	}
+//
+//	@Test
+//	public void newRandomHeightMapTest1()
+//	{
+//		generateRandomHeightmapAndCompare(1);
+//	}
+//
+//	@Test
+//	public void newRandomHeightMapTest2()
+//	{
+//		generateRandomHeightmapAndCompare(4);
+//	}
+//
+//	@Test
+//	public void allTypesOfEdits()
+//	{
+//		generateAndCompare("allTypesOfEdits.nort");
+//	}
+//
+//	@Test
+//	public void rotatedAndFlippedTwiceWithEditsAndTransparencyTest()
+//	{
+//		generateAndCompare("rotatedAndFlippedTwiceWithEditsAndTransparency.nort");
+//	}
+//
+//	@Test
+//	public void rotatedLeftWithTransparentOceanAndPartiallyGrungeTest()
+//	{
+//		generateAndCompare("rotatedLeftWithTransparentOceanAndPartiallyGrunge.nort");
+//	}
+//
+//	@Test
+//	public void customImagesWithSizesInFileNames()
+//	{
+//		generateAndCompare("customImagesWithSizesInFileNames.nort");
+//	}
+//
+//	@Test
+//	public void jsonSaveTestNortFile(@TempDir Path tempDir) throws IOException
+//	{
+//		runJSonSaveTest("allTypesOfEdits.nort", tempDir);
+//	}
+//
+//	@Test
+//	public void jsonSaveTestPropertiesConversion(@TempDir Path tempDir) throws IOException
+//	{
+//		runJSonSaveTest("propertiesConversion_allTypesOfEdits.properties", tempDir);
+//	}
+//
+//	/**
+//	 * Tests that a map can be saved and reloaded and produce the same json.
+//	 */
+//	private void runJSonSaveTest(String settingsFileName, Path tempDir) throws IOException
+//	{
+//		String settingsPath = Paths.get("unit test files", "map settings", settingsFileName).toString();
+//		MapSettings settings = new MapSettings(settingsPath);
+//
+//		Path tempFile = tempDir.resolve(FilenameUtils.getBaseName(settingsFileName) + " copy.nort");
+//		settings.writeToFile(tempFile.toString());
+//		MapSettings actual = new MapSettings(tempFile.toString());
+//		assertEquals(settings, actual);
+//	}
+//
+//	@Test
+//	public void iconReplacements()
+//	{
+//		// Clear the custom images path to force icons to be replaced with images from the installed art pack.
+//		List<String> warnings = MapTestUtil.generateAndCompare("iconReplacements.nort", (settings -> settings.customImagesPath = null), failedMapsFolderName).getWarningMessages();
+//
+//		Set<String> expectedWarnings = new TreeSet<>();
+//		expectedWarnings.add("Unable to find the art pack 'custom' to load the mountain image group 'jagged'. The art pack 'nortantis' will be used instead.");
+//		expectedWarnings.add("Unable to find the mountain image group 'jagged' in art pack 'nortantis'. The group 'round' in that art pack will be used instead.");
+//		expectedWarnings.add("Unable to find the art pack 'custom' to load the hill image group 'jagged'. The art pack 'nortantis' will be used instead.");
+//		expectedWarnings.add("Unable to find the hill image group 'jagged' in art pack 'nortantis'. The group 'round' in that art pack will be used instead.");
+//		expectedWarnings.add(
+//				"Unable to find the art pack 'custom' to load the sand image group 'dunes'. The art pack 'nortantis' will be used instead because it has the same image group folder name.");
+//		expectedWarnings.add(
+//				"Unable to find the art pack 'custom' to load the hill image group 'sharp'. The art pack 'nortantis' will be used instead because it has the same image group folder name.");
+//		expectedWarnings.add("Unable to find the art pack 'custom' to load the tree image group 'generated deciduous 6'. The art pack 'nortantis' will be used instead.");
+//		expectedWarnings.add("Unable to find the tree image group 'generated deciduous 6' in art pack 'nortantis'. The group 'original pine' in that art pack will be used instead.");
+//		expectedWarnings.add(
+//				"Unable to find the art pack 'custom' to load the tree image group 'pine'. The art pack 'nortantis' will be used instead because it has the same image group folder name.");
+//		expectedWarnings.add(
+//				"Unable to find the art pack 'custom' to load the mountain image group 'sharp'. The art pack 'nortantis' will be used instead because it has the same image group folder name.");
+//		expectedWarnings.add(
+//				"Unable to find the art pack 'custom' to load the icon 'compass 1' from decoration image group 'compasses'. The art pack 'nortantis' will be used instead because it has the same image group folder and image name.");
+//		expectedWarnings.add("Unable to find the art pack 'custom' to load the icon 'ship 6' from decoration image group 'boats'. The art pack 'nortantis' will be used instead.");
+//		expectedWarnings.add("Unable to find the decoration image group 'boats' in art pack 'custom'. The group 'ships' in art pack 'nortantis' will be used instead.");
+//		expectedWarnings.add("Unable to find the art pack 'custom' to load the icon 'small house 1' from city image group 'other'. The art pack 'nortantis' will be used instead.");
+//		expectedWarnings.add("Unable to find the city image group 'other' in art pack 'custom'. The group 'flat' in art pack 'nortantis' will be used instead.");
+//		expectedWarnings.add(
+//				"Unable to find the city icon 'small house 1' in art pack 'custom', group 'other'. The icon 'town on a hill' in art pack 'nortantis', group 'flat', will be used instead.");
+//		expectedWarnings.add(
+//				"Unable to find the art pack 'custom' to load the icon 'town' from city image group 'middle ages'. The art pack 'nortantis' will be used instead because it has the same image group folder and image name.");
+//		expectedWarnings.add("Unable to find the art pack 'custom' to load the icon 'simple_ship' from decoration image group 'boats'. The art pack 'nortantis' will be used instead.");
+//		expectedWarnings.add("Unable to find the decoration icon 'simple_ship' in art pack 'custom', group 'boats'. The icon 'ship 6' in art pack 'nortantis', group 'ships', will be used instead.");
+//
+//		for (String warning : warnings)
+//		{
+//			if (!expectedWarnings.contains(warning))
+//			{
+//				fail("Unexpected warning hit: '" + warning + "'");
+//			}
+//		}
+//
+//		Set<String> extra = new TreeSet<>(expectedWarnings);
+//		extra.removeAll(warnings);
+//		if (extra.size() > 0)
+//		{
+//			fail("Extra warnings found: " + extra);
+//		}
+//
+//		assertEquals(19, warnings.size());
+//	}
+//
+//	@Test
+//	public void iconReplacementsWithMissingIconTypes()
+//	{
+//		List<String> warnings = MapTestUtil.generateAndCompare("iconReplacementsWithMissingIconTypes.nort", (settings) ->
+//		{
+//			settings.customImagesPath = Paths.get("unit test files", "map settings", "empty custom images").toAbsolutePath().toString();
+//		}, failedMapsFolderName).getWarningMessages();
+//
+//		Set<String> expectedWarnings = new TreeSet<>();
+//		expectedWarnings.add(
+//				"The art pack 'custom' no longer has tree images, so it does not have the tree image group 'pine'. The art pack 'nortantis' will be used instead because it has the same image group folder name. These trees are not visible because they were drawn at low density, but may become visible if you change the tree height in the Effects tab.");
+//		expectedWarnings.add(
+//				"The art pack 'custom' no longer has tree images, so it does not have the tree image group 'generated deciduous 6'. The art pack 'nortantis' will be used instead because it has tree images. These trees are not visible because they were drawn at low density, but may become visible if you change the tree height in the Effects tab.");
+//		expectedWarnings.add(
+//				"Unable to find the tree image group 'generated deciduous 6' in art pack 'nortantis'. The group 'original pine' in that art pack will be used instead. These trees are not visible because they were drawn at low density, but may become visible if you change the tree height in the Effects tab.");
+//		expectedWarnings.add(
+//				"The art pack 'custom' no longer has mountain images, so it does not have the mountain image group 'jagged'. The art pack 'nortantis' will be used instead because it has mountain images.");
+//		expectedWarnings.add("Unable to find the mountain image group 'jagged' in art pack 'nortantis'. The group 'round' in that art pack will be used instead.");
+//		expectedWarnings.add(
+//				"The art pack 'custom' no longer has hill images, so it does not have the hill image group 'jagged'. The art pack 'nortantis' will be used instead because it has hill images.");
+//		expectedWarnings.add("Unable to find the hill image group 'jagged' in art pack 'nortantis'. The group 'round' in that art pack will be used instead.");
+//		expectedWarnings.add(
+//				"The art pack 'custom' no longer has sand images, so it does not have the sand image group 'dunes'. The art pack 'nortantis' will be used instead because it has the same image group folder name.");
+//		expectedWarnings.add(
+//				"The art pack 'custom' no longer has hill images, so it does not have the hill image group 'sharp'. The art pack 'nortantis' will be used instead because it has the same image group folder name.");
+//		expectedWarnings.add(
+//				"The art pack 'custom' no longer has tree images, so it does not have the tree image group 'generated deciduous 6'. The art pack 'nortantis' will be used instead because it has tree images.");
+//		expectedWarnings.add("Unable to find the tree image group 'generated deciduous 6' in art pack 'nortantis'. The group 'original pine' in that art pack will be used instead.");
+//		expectedWarnings.add(
+//				"The art pack 'custom' no longer has tree images, so it does not have the tree image group 'pine'. The art pack 'nortantis' will be used instead because it has the same image group folder name.");
+//		expectedWarnings.add(
+//				"The art pack 'custom' no longer has mountain images, so it does not have the mountain image group 'sharp'. The art pack 'nortantis' will be used instead because it has the same image group folder name.");
+//		expectedWarnings.add(
+//				"The art pack 'custom' no longer has decoration images, so it does not have the icon 'compass 1' from decoration image group 'compasses'. The art pack 'nortantis' will be used instead because it has the same image group folder and image name.");
+//		expectedWarnings.add(
+//				"The art pack 'custom' no longer has decoration images, so it does not have the icon 'ship 6' from decoration image group 'boats'. The art pack 'nortantis' will be used instead because it has decoration images.");
+//		expectedWarnings.add("Unable to find the decoration image group 'boats' in art pack 'custom'. The group 'ships' in art pack 'nortantis' will be used instead.");
+//		expectedWarnings.add(
+//				"The art pack 'custom' no longer has city images, so it does not have the icon 'small house 1' from city image group 'other'. The art pack 'nortantis' will be used instead because it has city images.");
+//		expectedWarnings.add("Unable to find the city image group 'other' in art pack 'custom'. The group 'flat' in art pack 'nortantis' will be used instead.");
+//		expectedWarnings.add(
+//				"Unable to find the city icon 'small house 1' in art pack 'custom', group 'other'. The icon 'town on a hill' in art pack 'nortantis', group 'flat', will be used instead.");
+//		expectedWarnings.add(
+//				"The art pack 'custom' no longer has city images, so it does not have the icon 'town' from city image group 'middle ages'. The art pack 'nortantis' will be used instead because it has the same image group folder and image name.");
+//		expectedWarnings.add(
+//				"The art pack 'custom' no longer has decoration images, so it does not have the icon 'compass 6' from decoration image group 'compasses'. The art pack 'nortantis' will be used instead because it has the same image group folder and image name.");
+//
+//		for (String warning : warnings)
+//		{
+//			if (!expectedWarnings.contains(warning))
+//			{
+//				fail("Unexpected warning hit: '" + warning + "'");
+//			}
+//		}
+//
+//		Set<String> extra = new TreeSet<>(expectedWarnings);
+//		extra.removeAll(warnings);
+//		if (extra.size() > 0)
+//		{
+//			fail("Extra warnings found: " + extra);
+//		}
+//
+//		assertEquals(21, warnings.size());
+//	}
+//
+//	@Test
+//	public void frayedEdge_regionColors_textureImageBackground()
+//	{
+//		generateAndCompare("frayedEdge_regionColors_textureImageBackground.nort");
+//	}
+//
+//	@Test
+//	public void noText_NoRegions_SquareBackground_ConcentricWaves_WithEdits()
+//	{
+//		generateAndCompare("noText_NoRegions_SquareBackground_ConcentricWaves_WithEdits.nort");
+//	}
+//
+//	@Test
+//	public void preventCreatingOnlyOneTectonicPlate()
+//	{
+//		generateAndCompare("preventCreatingOnlyOneTectonicPlate.nort");
+//	}
+//
+//	@Test
+//	public void noText_WithCities_GoldenRatio()
+//	{
+//		generateAndCompare("noText_WithCities_GoldenRatio.nort");
+//	}
+//
+//	@Test
+//	public void noText_WithCities_GoldenRatio_withEdits()
+//	{
+//		generateAndCompare("noText_WithCities_GoldenRatio_withEdits.nort");
+//	}
+//
+//	@Test
+//	public void smallWorld_constrainedToForceGeneratingLand()
+//	{
+//		generateAndCompare("smallWorld_constrainedToForceGeneratingLand.nort");
+//	}
+//
+//	@Test
+//	public void smallWorld_allTextDeletedByHand_shouldNotRegenerateText()
+//	{
+//		generateAndCompare("smallWorld_allTextDeletedByHand_shouldNotRegenerateText.nort");
+//	}
+//
+//	@Test
+//	public void backgroundFromTexture_landNotColorized()
+//	{
+//		generateAndCompare("backgroundFromTexture_landNotColorized.nort");
+//	}
+//
+//	@Test
+//	public void backgroundFromTexture_nothingColorized()
+//	{
+//		generateAndCompare("backgroundFromTexture_nothingColorized.nort");
+//	}
+//
+//	@Test
+//	public void backgroundFromTexture_oceanNotColorized()
+//	{
+//		generateAndCompare("backgroundFromTexture_oceanNotColorized.nort");
+//	}
+//
+//	@Test
+//	public void generatedSpecialCharacterInTitleAndColorChanges_replacementCharacterRemoved()
+//	{
+//		generateAndCompare("generatedSpecialCharacterInTitleAndColorChanges_replacementCharacterRemoved.nort");
+//	}
+//
+//	@Test
+//	public void propertiesConversion_allColorsChanged()
+//	{
+//		generateAndCompare("propertiesConversion_allColorsChanged.properties");
+//	}
+//
+//	@Test
+//	public void propertiesConversion_allTypesOfEdits()
+//	{
+//		generateAndCompare("propertiesConversion_allTypesOfEdits.properties");
+//	}
+//
+//	@Test
+//	public void propertiesConversion_noText_WithCities_GoldenRatio()
+//	{
+//		generateAndCompare("propertiesConversion_noText_WithCities_GoldenRatio.properties");
+//	}
+//
+//	@Test
+//	public void regressionTest_polygonsOnTopBug()
+//	{
+//		generateAndCompare("regressionTest_polygonsOnTopBug.nort");
+//	}
+//
+//	@Test
+//	public void iconsDrawOverCoastlines()
+//	{
+//		generateAndCompare("iconsDrawOverCoastlines.nort");
+//	}
+//
+//	@Test
+//	public void clearedMapRegionEdit0Removed()
+//	{
+//		generateAndCompare("clearedMapRegionEdit0Removed.nort");
+//	}
+//
+//
+//	private Image createMapUsingUpdater(MapUpdater updater, Tuple1<Image> mapTuple, Tuple1<Boolean> doneTuple)
+//	{
+//		doneTuple.set(false);
+//		mapTuple.set(null);
+//		updater.createAndShowMapFull();
+//		updater.dowWhenMapIsNotDrawing(() ->
+//		{
+//			doneTuple.set(true);
+//		});
+//
+//		while (!doneTuple.get())
+//		{
+//			try
+//			{
+//				Thread.sleep(100);
+//			}
+//			catch (InterruptedException e)
+//			{
+//				e.printStackTrace();
+//				break;
+//			}
+//		}
+//		return mapTuple.get();
+//	}
+//
+//	private void generateRandomAndCompare(long seed)
+//	{
+//		MapTestUtil.generateRandomAndCompare(1, failedMapsFolderName);
+//	}
+//
+//	private void generateRandomHeightmapAndCompare(long seed)
+//	{
+//		MapTestUtil.generateRandomHeightmapAndCompare(1, failedMapsFolderName);
+//	}
+//
+//	private void generateAndCompare(String settingsFileName)
+//	{
+//		MapTestUtil.generateAndCompare(settingsFileName, null, failedMapsFolderName);
+//	}
+//
+//	private void createImageDiffIfImagesAreSameSize(Image image1, Image image2, String settingsFileName)
+//	{
+//		MapTestUtil.createImageDiffIfImagesAreSameSize(image1, image2, settingsFileName, failedMapsFolderName);
+//	}
+//
+//	private void createImageDiffIfImagesAreSameSize(Image image1, Image image2, String settingsFileName, int threshold)
+//	{
+//		MapTestUtil.createImageDiffIfImagesAreSameSize(image1, image2, settingsFileName, threshold, failedMapsFolderName);
+//	}
 
 
 }
