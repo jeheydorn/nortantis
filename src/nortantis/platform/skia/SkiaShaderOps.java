@@ -8,7 +8,7 @@ import org.jetbrains.skia.*;
 
 /**
  * Provides high-performance image operations using Skia shaders and blend modes.
- * These operations use GPU acceleration when available via SkiaGPUContext,
+ * These operations use GPU acceleration when available via GPUExecutor,
  * falling back to SIMD-optimized CPU rendering otherwise.
  */
 public class SkiaShaderOps
@@ -23,9 +23,9 @@ public class SkiaShaderOps
 	 */
 	private static Surface createSurface(int width, int height)
 	{
-		if (SkiaGPUContext.isGPUAvailable())
+		if (GPUExecutor.getInstance().isGPUAvailable())
 		{
-			Surface gpuSurface = SkiaGPUContext.createGPUSurface(width, height);
+			Surface gpuSurface = GPUExecutor.getInstance().createGPUSurface(width, height);
 			if (gpuSurface != null)
 			{
 				return gpuSurface;
@@ -542,7 +542,7 @@ public class SkiaShaderOps
 	 */
 	public static boolean isGPUAccelerated()
 	{
-		return SkiaGPUContext.isGPUAvailable();
+		return GPUExecutor.getInstance().isGPUAvailable();
 	}
 
 	public boolean canProcessOnGPU(Image... images)
