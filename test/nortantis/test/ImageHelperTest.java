@@ -1,5 +1,6 @@
 package nortantis.test;
 
+import nortantis.Stopwatch;
 import nortantis.geom.IntPoint;
 import nortantis.geom.IntRectangle;
 import nortantis.geom.Point;
