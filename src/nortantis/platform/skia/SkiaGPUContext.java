@@ -1,32 +1,19 @@
 package nortantis.platform.skia;
 
-import nortantis.util.Logger;
-import org.jetbrains.skia.*;
-import org.lwjgl.glfw.GLFW;
-import org.lwjgl.glfw.GLFWErrorCallback;
-import org.lwjgl.opengl.GL;
-
-import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.system.MemoryUtil.NULL;
+import org.jetbrains.skia.DirectContext;
+import org.jetbrains.skia.Surface;
 
 /**
- * Manages a singleton GPU DirectContext for Skia rendering.
- * Uses LWJGL to create an offscreen OpenGL context for GPU acceleration.
+ * Manages GPU context for Skia rendering.
  *
- * Thread safety: GPU operations should be restricted to a single thread (typically EDT for Swing apps).
+ * This class now delegates to GPUExecutor for all GPU operations.
+ * All GPU operations happen on a dedicated GPU thread managed by GPUExecutor.
+ *
+ * @deprecated Use {@link GPUExecutor} directly for GPU operations.
  */
+@Deprecated
 public class SkiaGPUContext
 {
-	private static volatile DirectContext directContext;
-	private static volatile GPUBackend backend;
-	private static volatile boolean gpuAvailable = true;
-	private static volatile boolean initialized = false;
-	private static final Object lock = new Object();
-
-	// LWJGL/GLFW resources
-	private static long glfwWindow = NULL;
-	private static boolean glfwInitialized = false;
-
 	/**
 	 * GPU backend types supported by Skia.
 	 */
@@ -40,75 +27,44 @@ public class SkiaGPUContext
 
 	/**
 	 * Returns the shared DirectContext for GPU operations.
-	 * Lazily initializes the context on first call.
 	 *
 	 * @return The DirectContext, or null if GPU is not available
+	 * @deprecated Use GPUExecutor for GPU operations. Direct context access is not thread-safe.
 	 */
+	@Deprecated
 	public static DirectContext getContext()
 	{
-		if (!gpuAvailable)
-		{
-			return null;
-		}
-
-		if (!initialized)
-		{
-			synchronized (lock)
-			{
-				if (!initialized)
-				{
-					initializeContext();
-				}
-			}
-		}
-
-		return directContext;
+		// Cannot safely return context - it can only be accessed from GPU thread
+		// Return null to indicate unavailability for legacy code
+		return null;
 	}
 
 	/**
 	 * Checks if GPU acceleration is available.
+	 *
+	 * @return true if GPU is available
 	 */
 	public static boolean isGPUAvailable()
 	{
-		if (!initialized)
-		{
-			// Trigger lazy initialization
-			getContext();
-		}
-		return gpuAvailable && directContext != null;
+		return GPUExecutor.getInstance().isGPUAvailable();
 	}
 
 	/**
 	 * Releases the GPU context and associated resources.
 	 * Should be called during application shutdown.
+	 *
+	 * @deprecated Use {@link GPUExecutor#shutdown()} instead.
 	 */
+	@Deprecated
 	public static void releaseContext()
 	{
-		synchronized (lock)
-		{
-			if (directContext != null)
-			{
-				try
-				{
-					directContext.abandon();
-					directContext.close();
-				}
-				catch (Exception e)
-				{
-					// Ignore cleanup errors
-				}
-				directContext = null;
-			}
-
-			// Clean up GLFW resources
-			cleanupGLFW();
-
-			initialized = false;
-		}
+		GPUExecutor.getInstance().shutdown();
 	}
 
 	/**
 	 * Detects the best GPU backend for the current platform.
+	 *
+	 * @return The detected GPU backend
 	 */
 	public static GPUBackend detectBestBackend()
 	{
@@ -120,7 +76,6 @@ public class SkiaGPUContext
 		}
 		if (os.contains("win"))
 		{
-			// OpenGL is more widely compatible on Windows
 			return GPUBackend.OPENGL;
 		}
 		if (os.contains("nux") || os.contains("nix"))
@@ -128,231 +83,7 @@ public class SkiaGPUContext
 			return GPUBackend.OPENGL;
 		}
 
-		// Default fallback
 		return GPUBackend.OPENGL;
-	}
-
-	/**
-	 * Initializes the GPU context for the detected platform.
-	 * Uses LWJGL/GLFW to create an offscreen OpenGL context.
-	 * Sets gpuAvailable to false if initialization fails.
-	 */
-	private static void initializeContext()
-	{
-		try
-		{
-			// GPU is disabled by default due to compatibility issues between LWJGL and Skiko.
-			// Set -Dnortantis.gpu.enable=true to try GPU acceleration.
-			String enableGpu = System.getProperty("nortantis.gpu.enable", "false");
-			if (!Boolean.parseBoolean(enableGpu))
-			{
-				gpuAvailable = false;
-				Logger.println("SkiaGPUContext: GPU disabled by default, using CPU rendering. Set -Dnortantis.gpu.enable=true to try GPU.");
-				initialized = true;
-				return;
-			}
-
-			backend = detectBestBackend();
-
-			// Initialize GLFW and create an offscreen OpenGL context
-			if (!initializeGLFW())
-			{
-				gpuAvailable = false;
-				Logger.println("SkiaGPUContext: Failed to initialize GLFW, using CPU rendering");
-				return;
-			}
-
-			// Now try to create the Skia DirectContext
-			directContext = tryCreateDirectContext();
-
-			if (directContext != null)
-			{
-				gpuAvailable = true;
-				Logger.println("SkiaGPUContext: GPU acceleration enabled with backend: " + backend);
-			}
-			else
-			{
-				gpuAvailable = false;
-				Logger.println("SkiaGPUContext: GPU acceleration not available, using CPU rendering");
-			}
-		}
-		catch (Exception | UnsatisfiedLinkError e)
-		{
-			gpuAvailable = false;
-			directContext = null;
-			Logger.println("SkiaGPUContext: Failed to initialize GPU context: " + e.getMessage());
-		}
-		finally
-		{
-			initialized = true;
-		}
-	}
-
-	/**
-	 * Initializes GLFW and creates a hidden window with an OpenGL context.
-	 *
-	 * @return true if successful, false otherwise
-	 */
-	private static boolean initializeGLFW()
-	{
-		try
-		{
-			// Check for headless environment
-			if (isHeadlessEnvironment())
-			{
-				Logger.println("SkiaGPUContext: Headless environment detected, skipping GLFW initialization");
-				return false;
-			}
-
-			// Set up error callback (suppress output to avoid noise)
-			GLFWErrorCallback.createPrint(System.err).set();
-
-			// Initialize GLFW
-			if (!glfwInit())
-			{
-				Logger.println("SkiaGPUContext: Unable to initialize GLFW");
-				return false;
-			}
-			glfwInitialized = true;
-
-			// Configure GLFW for an invisible window
-			glfwDefaultWindowHints();
-			glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE); // Hidden window
-			glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-
-			// Request OpenGL 3.3 core profile (good compatibility)
-			glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-			glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-			glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-			// For macOS compatibility
-			String os = System.getProperty("os.name").toLowerCase();
-			if (os.contains("mac"))
-			{
-				glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
-			}
-
-			// Create a small hidden window (required to get an OpenGL context)
-			glfwWindow = glfwCreateWindow(1, 1, "Skia GPU Context", NULL, NULL);
-			if (glfwWindow == NULL)
-			{
-				Logger.println("SkiaGPUContext: Failed to create GLFW window");
-				glfwTerminate();
-				glfwInitialized = false;
-				return false;
-			}
-
-			// Make the OpenGL context current on this thread
-			glfwMakeContextCurrent(glfwWindow);
-
-			// Initialize LWJGL's OpenGL bindings
-			GL.createCapabilities();
-
-			Logger.println("SkiaGPUContext: GLFW/OpenGL context created successfully");
-			return true;
-		}
-		catch (Exception | UnsatisfiedLinkError e)
-		{
-			Logger.println("SkiaGPUContext: GLFW initialization failed: " + e.getMessage());
-			cleanupGLFW();
-			return false;
-		}
-	}
-
-	/**
-	 * Checks if running in a headless environment where GLFW won't work.
-	 */
-	private static boolean isHeadlessEnvironment()
-	{
-		// Check Java headless mode
-		if (java.awt.GraphicsEnvironment.isHeadless())
-		{
-			return true;
-		}
-
-		// Check for common CI/headless environment variables
-		String display = System.getenv("DISPLAY");
-		String os = System.getProperty("os.name").toLowerCase();
-		if ((os.contains("nux") || os.contains("nix")) && (display == null || display.isEmpty()))
-		{
-			return true;
-		}
-
-		return false;
-	}
-
-	/**
-	 * Safely cleans up GLFW resources.
-	 */
-	private static void cleanupGLFW()
-	{
-		try
-		{
-			if (glfwWindow != NULL)
-			{
-				glfwDestroyWindow(glfwWindow);
-				glfwWindow = NULL;
-			}
-			if (glfwInitialized)
-			{
-				glfwTerminate();
-				glfwInitialized = false;
-			}
-		}
-		catch (Exception e)
-		{
-			// Ignore cleanup errors
-		}
-	}
-
-	/**
-	 * Attempts to create a DirectContext for the current platform.
-	 * Assumes an OpenGL context is already current on the thread.
-	 *
-	 * @return DirectContext if successful, null otherwise
-	 */
-	private static DirectContext tryCreateDirectContext()
-	{
-		try
-		{
-			// Create Skia DirectContext using the current OpenGL context
-			DirectContext ctx = DirectContext.Companion.makeGL();
-
-			// Verify the context works by trying to create a small test surface
-			if (ctx != null)
-			{
-				try
-				{
-					Surface testSurface = Surface.Companion.makeRenderTarget(
-						ctx,
-						false,
-						new ImageInfo(16, 16, ColorType.Companion.getN32(), ColorAlphaType.PREMUL)
-					);
-					if (testSurface != null)
-					{
-						testSurface.close();
-						return ctx;
-					}
-					else
-					{
-						ctx.close();
-						return null;
-					}
-				}
-				catch (Exception e)
-				{
-					ctx.close();
-					return null;
-				}
-			}
-
-			return null;
-		}
-		catch (Exception | UnsatisfiedLinkError e)
-		{
-			// GPU not available on this platform/configuration
-			return null;
-		}
 	}
 
 	/**
@@ -364,69 +95,50 @@ public class SkiaGPUContext
 	 */
 	public static Surface createGPUSurface(int width, int height)
 	{
-		DirectContext ctx = getContext();
-		if (ctx == null)
-		{
-			return null;
-		}
-
-		try
-		{
-			return Surface.Companion.makeRenderTarget(
-				ctx,
-				false, // budgeted
-				new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.PREMUL)
-			);
-		}
-		catch (Exception e)
-		{
-			Logger.printError("SkiaGPUContext: Failed to create GPU surface: " + e.getMessage(), e);
-			return null;
-		}
+		return GPUExecutor.getInstance().createGPUSurface(width, height);
 	}
 
 	/**
 	 * Returns the current GPU backend type.
+	 *
+	 * @return The GPU backend, or OPENGL as default
 	 */
 	public static GPUBackend getBackend()
 	{
-		if (!initialized)
-		{
-			getContext();
-		}
-		return backend;
+		return detectBestBackend();
 	}
 
 	/**
 	 * Forces GPU to be disabled. Useful for testing CPU fallback.
+	 *
+	 * @deprecated GPU enable/disable should be controlled via system property.
 	 */
+	@Deprecated
 	public static void disableGPU()
 	{
-		synchronized (lock)
-		{
-			releaseContext();
-			gpuAvailable = false;
-			initialized = true;
-		}
+		// Cannot disable GPU after executor is started
+		// Use -Dnortantis.gpu.enable=false instead
 	}
 
 	/**
 	 * Re-enables GPU and attempts to reinitialize the context.
+	 *
+	 * @deprecated GPU enable/disable should be controlled via system property.
 	 */
+	@Deprecated
 	public static void enableGPU()
 	{
-		synchronized (lock)
-		{
-			gpuAvailable = true;
-			initialized = false;
-		}
+		// Cannot enable GPU after executor is started
+		// Use -Dnortantis.gpu.enable=true instead
 	}
 
 	/**
 	 * Returns true if the GLFW window/context is valid.
+	 *
+	 * @return true if GPU context is valid
 	 */
 	public static boolean hasValidGLContext()
 	{
-		return glfwWindow != NULL && glfwInitialized;
+		return GPUExecutor.getInstance().isGPUAvailable();
 	}
 }

@@ -5,6 +5,7 @@ import nortantis.geom.IntRectangle;
 import org.imgscalr.Scalr.Method;
 
 import java.io.InputStream;
+import java.util.function.Consumer;
 
 public abstract class Image
 {
@@ -195,5 +196,36 @@ public abstract class Image
 			}
 		}
 		return innerCreateNewPixelReaderWriter(bounds);
+	}
+
+	/**
+	 * Executes drawing operations on this image with automatic resource management.
+	 * Creates a painter, sets manual batch mode for optimal performance,
+	 * executes the operations, and automatically awaits and disposes the painter.
+	 *
+	 * This is the preferred way to perform drawing operations when you want
+	 * all operations batched together and automatically cleaned up.
+	 *
+	 * @param quality The draw quality setting
+	 * @param operations A consumer that receives the painter and performs drawing operations
+	 */
+	public void withPainter(DrawQuality quality, Consumer<Painter> operations)
+	{
+		try (Painter p = createPainter(quality))
+		{
+			p.setManualBatchMode(true); // Single batch for all ops
+			operations.accept(p);
+		} // await() called automatically by close()
+	}
+
+	/**
+	 * Executes drawing operations on this image with automatic resource management.
+	 * Uses normal draw quality.
+	 *
+	 * @param operations A consumer that receives the painter and performs drawing operations
+	 */
+	public void withPainter(Consumer<Painter> operations)
+	{
+		withPainter(DrawQuality.Normal, operations);
 	}
 }

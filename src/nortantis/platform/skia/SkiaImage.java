@@ -12,6 +12,9 @@ import java.awt.image.DataBufferInt;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
+import java.util.Collections;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class SkiaImage extends Image
 {
@@ -26,7 +29,10 @@ public class SkiaImage extends Image
 	private ImageLocation location;
 	private boolean gpuEnabled;
 
-	private static final int GPU_THRESHOLD_PIXELS = 256 * 256;
+	private static final int GPU_THRESHOLD_PIXELS = 512 * 512;
+
+	// Track active GPU batching painters for await before pixel access
+	private final Set<GPUBatchingPainter> activePainters = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
 	public SkiaImage(int width, int height, ImageType type)
 	{
@@ -63,7 +69,7 @@ public class SkiaImage extends Image
 	 */
 	private boolean shouldUseGPU()
 	{
-		return getPixelCount() >= GPU_THRESHOLD_PIXELS && SkiaGPUContext.isGPUAvailable();
+		return getPixelCount() >= GPU_THRESHOLD_PIXELS && GPUExecutor.getInstance().isGPUAvailable();
 	}
 
 	private Bitmap createBitmap(ImageInfo imageInfo)
@@ -146,6 +152,7 @@ public class SkiaImage extends Image
 
 	public Bitmap getBitmap()
 	{
+		awaitPendingPainters();
 		ensureCPUData(); // Ensure CPU bitmap is current before returning
 		return bitmap;
 	}
@@ -195,7 +202,7 @@ public class SkiaImage extends Image
 
 		if (gpuSurface == null)
 		{
-			gpuSurface = SkiaGPUContext.createGPUSurface(width, height);
+			gpuSurface = GPUExecutor.getInstance().createGPUSurface(width, height);
 			if (gpuSurface == null)
 			{
 				// GPU surface creation failed, fall back to CPU
@@ -335,7 +342,28 @@ public class SkiaImage extends Image
 	@Override
 	public void prepareForPixelAccess()
 	{
+		awaitPendingPainters();
 		ensureCPUData();
+	}
+
+	/**
+	 * Waits for all active GPU batching painters to complete their pending operations.
+	 */
+	public void awaitPendingPainters()
+	{
+		for (GPUBatchingPainter painter : activePainters)
+		{
+			painter.await();
+		}
+	}
+
+	/**
+	 * Called by GPUBatchingPainter when it is closed.
+	 * Removes the painter from the active set.
+	 */
+	void onPainterClosed(GPUBatchingPainter painter)
+	{
+		activePainters.remove(painter);
 	}
 
 	@Override
@@ -350,6 +378,7 @@ public class SkiaImage extends Image
 	@Override
 	public PixelReader innerCreateNewPixelReader(IntRectangle bounds)
 	{
+		awaitPendingPainters();
 		ensureCPUData(); // Sync GPU->CPU if needed
 		return new SkiaPixelReader(this, bounds);
 	}
@@ -357,6 +386,7 @@ public class SkiaImage extends Image
 	@Override
 	public PixelReaderWriter innerCreateNewPixelReaderWriter(IntRectangle bounds)
 	{
+		awaitPendingPainters();
 		ensureCPUData(); // Sync GPU->CPU if needed
 		return new SkiaPixelReaderWriter(this, bounds);
 	}
@@ -376,7 +406,7 @@ public class SkiaImage extends Image
 	@Override
 	public Painter createPainter(DrawQuality quality)
 	{
-		if (gpuEnabled)
+		if (gpuEnabled && GPUExecutor.getInstance().isGPUAvailable())
 		{
 			try
 			{
@@ -384,7 +414,10 @@ public class SkiaImage extends Image
 				if (gpuSurface != null)
 				{
 					markGPUDirty();
-					return new SkiaPainter(gpuSurface.getCanvas(), quality);
+					// Create a GPUBatchingPainter for async GPU operations
+					GPUBatchingPainter painter = new GPUBatchingPainter(gpuSurface, this, quality);
+					activePainters.add(painter);
+					return painter;
 				}
 			}
 			catch (Exception e)
@@ -414,9 +447,9 @@ public class SkiaImage extends Image
 		}
 
 		// Try GPU-accelerated scaling if source is GPU-enabled
-		if (gpuEnabled && SkiaGPUContext.isGPUAvailable())
+		if (gpuEnabled && GPUExecutor.getInstance().isGPUAvailable())
 		{
-			Surface gpuDestSurface = SkiaGPUContext.createGPUSurface(width, height);
+			Surface gpuDestSurface = GPUExecutor.getInstance().createGPUSurface(width, height);
 			if (gpuDestSurface != null)
 			{
 				try
@@ -447,6 +480,7 @@ public class SkiaImage extends Image
 		}
 
 		// CPU path: Use Surface-based rendering for standard quality
+		awaitPendingPainters();
 		ensureCPUData(); // Ensure CPU bitmap is current
 		Surface surface = Surface.Companion.makeRasterN32Premul(width, height);
 		Canvas canvas = surface.getCanvas();
@@ -474,6 +508,7 @@ public class SkiaImage extends Image
 	 */
 	private Image scaleHighQuality(int width, int height)
 	{
+		awaitPendingPainters();
 		ensureCPUData(); // Ensure CPU bitmap is current
 		org.jetbrains.skia.Image srcImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(bitmap);
 
@@ -493,6 +528,7 @@ public class SkiaImage extends Image
 	@Override
 	public Image deepCopy()
 	{
+		awaitPendingPainters();
 		ensureCPUData(); // Ensure CPU bitmap is current before copying
 		return new SkiaImage(bitmap.makeClone(), getType());
 	}
@@ -514,9 +550,9 @@ public class SkiaImage extends Image
 		int h = Math.max(1, bounds.height);
 
 		// Try GPU-accelerated copy if source is GPU-enabled
-		if (gpuEnabled && SkiaGPUContext.isGPUAvailable())
+		if (gpuEnabled && GPUExecutor.getInstance().isGPUAvailable())
 		{
-			Surface gpuDestSurface = SkiaGPUContext.createGPUSurface(w, h);
+			Surface gpuDestSurface = GPUExecutor.getInstance().createGPUSurface(w, h);
 			if (gpuDestSurface != null)
 			{
 				try
@@ -547,6 +583,7 @@ public class SkiaImage extends Image
 		}
 
 		// CPU path: Use Surface-based rendering
+		awaitPendingPainters();
 		ensureCPUData(); // Ensure CPU bitmap is current
 		Surface surface = Surface.Companion.makeRasterN32Premul(w, h);
 		Canvas canvas = surface.getCanvas();
@@ -582,6 +619,7 @@ public class SkiaImage extends Image
 
 	public BufferedImage toBufferedImage()
 	{
+		awaitPendingPainters();
 		ensureCPUData(); // Ensure CPU bitmap is current
 		BufferedImage bi = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 		int[] pixels = ((DataBufferInt) bi.getRaster().getDataBuffer()).getData();
@@ -601,6 +639,7 @@ public class SkiaImage extends Image
 	 */
 	public int[] readPixelsToIntArray()
 	{
+		awaitPendingPainters();
 		ensureCPUData(); // Ensure CPU bitmap is current
 		int bytesPerPixel = getBytesPerPixel();
 		int rowStride = width * bytesPerPixel;
@@ -635,6 +674,7 @@ public class SkiaImage extends Image
 	 */
 	int[] readPixelsToIntArray(int srcX, int srcY, int regionWidth, int regionHeight)
 	{
+		awaitPendingPainters();
 		ensureCPUData(); // Ensure CPU bitmap is current
 		int bytesPerPixel = getBytesPerPixel();
 		int rowStride = regionWidth * bytesPerPixel;
