@@ -121,7 +121,10 @@ jar {
 }
 
 test {
-    jvmArgs = ['-ea', '--enable-native-access=ALL-UNNAMED', '-Dfile.encoding=UTF-8', '-Dsun.java2d.d3d=false', '-Xmx3g']
+    jvmArgs = ['-ea', '--enable-native-access=ALL-UNNAMED', '-Dfile.encoding=UTF-8', '-Dsun.java2d.d3d=false', '-Xmx3g',
+               '--add-opens', 'java.base/java.nio=ALL-UNNAMED',
+               '-Dnortantis.gpu.enable=true',
+    ]
     useJUnitPlatform()
     // Fork a new JVM for each test class to ensure complete isolation.
     // This is needed because MapCreatorTest and SkiaMapCreatorTest use different

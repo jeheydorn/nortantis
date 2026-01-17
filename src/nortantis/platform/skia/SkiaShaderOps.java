@@ -18,21 +18,35 @@ public class SkiaShaderOps
 	// ==================== Surface Creation Helper ====================
 
 	/**
-	 * Creates a Surface for shader operations, using GPU if available.
-	 * Falls back to CPU raster surface if GPU is not available.
+	 * Creates a CPU raster surface for shader operations.
 	 */
-	private static Surface createSurface(int width, int height)
+	private static Surface createCPUSurface(int width, int height)
 	{
-		if (GPUExecutor.getInstance().isGPUAvailable())
-		{
-			Surface gpuSurface = GPUExecutor.getInstance().createGPUSurface(width, height);
-			if (gpuSurface != null)
-			{
-				return gpuSurface;
-			}
-		}
-		// Fallback to CPU raster surface
 		return Surface.Companion.makeRaster(new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.UNPREMUL, null));
+	}
+
+	/**
+	 * Creates a GPU surface. Must be called from the GPU thread.
+	 */
+	private static Surface createGPUSurfaceOnGPUThread(int width, int height)
+	{
+		DirectContext ctx = GPUExecutor.getInstance().getContext();
+		if (ctx == null)
+		{
+			return null;
+		}
+		try
+		{
+			return Surface.Companion.makeRenderTarget(
+				ctx,
+				false,
+				new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.UNPREMUL)
+			);
+		}
+		catch (Exception e)
+		{
+			return null;
+		}
 	}
 
 	/**
@@ -95,6 +109,21 @@ public class SkiaShaderOps
 		int height = image1.getHeight();
 		ImageType resultType = (image1.hasAlpha() || image2.hasAlpha()) ? ImageType.ARGB : ImageType.RGB;
 
+		// Check if we should use GPU
+		if (GPUExecutor.getInstance().isGPUAvailable())
+		{
+			return GPUExecutor.getInstance().submit(() ->
+				maskWithImageImpl(skImage1, skImage2, skMask, width, height, resultType, true));
+		}
+		else
+		{
+			return maskWithImageImpl(skImage1, skImage2, skMask, width, height, resultType, false);
+		}
+	}
+
+	private static Image maskWithImageImpl(SkiaImage skImage1, SkiaImage skImage2, SkiaImage skMask,
+			int width, int height, ImageType resultType, boolean useGPU)
+	{
 		org.jetbrains.skia.Image skiImage1 = skImage1.getSkiaImage();
 		org.jetbrains.skia.Image skiImage2 = skImage2.getSkiaImage();
 		org.jetbrains.skia.Image skiMask = skMask.getSkiaImage();
@@ -112,7 +141,12 @@ public class SkiaShaderOps
 		builder.child("mask", shaderMask);
 		Shader resultShader = builder.makeShader(identity);
 
-		Surface surface = createSurface(width, height);
+		Surface surface = useGPU ? createGPUSurfaceOnGPUThread(width, height) : createCPUSurface(width, height);
+		if (surface == null)
+		{
+			// GPU surface creation failed, fall back to CPU
+			surface = createCPUSurface(width, height);
+		}
 		Canvas canvas = surface.getCanvas();
 
 		Paint paint = new Paint();
@@ -202,7 +236,29 @@ public class SkiaShaderOps
 
 		int width = image.getWidth();
 		int height = image.getHeight();
+		ImageType resultType = image.hasAlpha() ? ImageType.ARGB : ImageType.RGB;
 
+		// Extract color components before lambda
+		float r = color.getRed() / 255f;
+		float g = color.getGreen() / 255f;
+		float b = color.getBlue() / 255f;
+		float a = color.getAlpha() / 255f;
+
+		// Check if we should use GPU
+		if (GPUExecutor.getInstance().isGPUAvailable())
+		{
+			return GPUExecutor.getInstance().submit(() ->
+				maskWithColorImpl(skImage, skMask, width, height, r, g, b, a, invertMask, resultType, true));
+		}
+		else
+		{
+			return maskWithColorImpl(skImage, skMask, width, height, r, g, b, a, invertMask, resultType, false);
+		}
+	}
+
+	private static Image maskWithColorImpl(SkiaImage skImage, SkiaImage skMask, int width, int height,
+			float r, float g, float b, float a, boolean invertMask, ImageType resultType, boolean useGPU)
+	{
 		org.jetbrains.skia.Image skiImage = skImage.getSkiaImage();
 		org.jetbrains.skia.Image skiMask = skMask.getSkiaImage();
 
@@ -215,18 +271,18 @@ public class SkiaShaderOps
 		RuntimeShaderBuilder builder = new RuntimeShaderBuilder(effect);
 		builder.child("image", imageShader);
 		builder.child("mask", maskShader);
-		// Pass color RGB as normalized floats (0-1 range)
-		float r = color.getRed() / 255f;
-		float g = color.getGreen() / 255f;
-		float b = color.getBlue() / 255f;
-		float a = color.getAlpha() / 255f;
 		builder.uniform("colorRGB", r, g, b);
 		builder.uniform("colorAlpha", a);
 		builder.uniform("invertMask", invertMask ? 1f : 0f);
 		Shader resultShader = builder.makeShader(identity);
 
-		Surface surface = createSurface(width, height);
-		Canvas canvas = surface.getCanvas();
+		Surface surface = useGPU ? createGPUSurfaceOnGPUThread(width, height) : createCPUSurface(width, height);
+		if (surface == null)
+		{
+			// GPU surface creation failed, fall back to CPU
+			surface = createCPUSurface(width, height);
+		}
+Canvas canvas = surface.getCanvas();
 
 		Paint paint = new Paint();
 		paint.setShader(resultShader);
@@ -242,7 +298,7 @@ public class SkiaShaderOps
 		maskShader.close();
 		builder.close();
 
-		return new SkiaImage(resultBitmap, image.hasAlpha() ? ImageType.ARGB : ImageType.RGB);
+		return new SkiaImage(resultBitmap, resultType);
 	}
 
 	// ==================== setAlphaFromMask ====================
@@ -296,6 +352,21 @@ public class SkiaShaderOps
 		int width = image.getWidth();
 		int height = image.getHeight();
 
+		// Check if we should use GPU
+		if (GPUExecutor.getInstance().isGPUAvailable())
+		{
+			return GPUExecutor.getInstance().submit(() ->
+				setAlphaFromMaskImpl(skImage, skMask, width, height, invertMask, true));
+		}
+		else
+		{
+			return setAlphaFromMaskImpl(skImage, skMask, width, height, invertMask, false);
+		}
+	}
+
+	private static Image setAlphaFromMaskImpl(SkiaImage skImage, SkiaImage skMask, int width, int height,
+			boolean invertMask, boolean useGPU)
+	{
 		org.jetbrains.skia.Image skiImage = skImage.getSkiaImage();
 		org.jetbrains.skia.Image skiMask = skMask.getSkiaImage();
 
@@ -311,7 +382,12 @@ public class SkiaShaderOps
 		builder.uniform("invertMask", invertMask ? 1f : 0f);
 		Shader resultShader = builder.makeShader(identity);
 
-		Surface surface = createSurface(width, height);
+		Surface surface = useGPU ? createGPUSurfaceOnGPUThread(width, height) : createCPUSurface(width, height);
+		if (surface == null)
+		{
+			// GPU surface creation failed, fall back to CPU
+			surface = createCPUSurface(width, height);
+		}
 		Canvas canvas = surface.getCanvas();
 
 		Paint paint = new Paint();
@@ -474,9 +550,27 @@ public class SkiaShaderOps
 
 		float[] hsb = color.getHSB();
 		float alpha = color.getAlpha() / 255f;
+		float r = color.getRed() / 255f;
+		float g = color.getGreen() / 255f;
+		float b = color.getBlue() / 255f;
 
 		ImageType resultType = forceAddAlpha || color.hasTransparency() ? ImageType.ARGB : ImageType.RGB;
 
+		// Check if we should use GPU
+		if (GPUExecutor.getInstance().isGPUAvailable())
+		{
+			return GPUExecutor.getInstance().submit(() ->
+				colorifyImpl(skImage, width, height, how, hsb, alpha, r, g, b, resultType, true));
+		}
+		else
+		{
+			return colorifyImpl(skImage, width, height, how, hsb, alpha, r, g, b, resultType, false);
+		}
+	}
+
+	private static Image colorifyImpl(SkiaImage skImage, int width, int height, ColorifyAlgorithm how,
+			float[] hsb, float alpha, float r, float g, float b, ImageType resultType, boolean useGPU)
+	{
 		org.jetbrains.skia.Image skiImage = skImage.getSkiaImage();
 		Matrix33 identity = Matrix33.Companion.getIDENTITY();
 		Shader imageShader = skiImage.makeShader(FilterTileMode.CLAMP, FilterTileMode.CLAMP, identity);
@@ -504,10 +598,6 @@ public class SkiaShaderOps
 		{
 			effect = getColorifySolidEffect();
 			builder = new RuntimeShaderBuilder(effect);
-			// For solid color, just output the color (straight alpha/UNPREMUL)
-			float r = color.getRed() / 255f;
-			float g = color.getGreen() / 255f;
-			float b = color.getBlue() / 255f;
 			builder.uniform("color", r, g, b, alpha);
 		}
 		else
@@ -518,7 +608,12 @@ public class SkiaShaderOps
 
 		Shader resultShader = builder.makeShader(identity);
 
-		Surface surface = createSurface(width, height);
+		Surface surface = useGPU ? createGPUSurfaceOnGPUThread(width, height) : createCPUSurface(width, height);
+		if (surface == null)
+		{
+			// GPU surface creation failed, fall back to CPU
+			surface = createCPUSurface(width, height);
+		}
 		Canvas canvas = surface.getCanvas();
 
 		Paint paint = new Paint();

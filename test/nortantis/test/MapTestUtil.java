@@ -21,9 +21,9 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 public class MapTestUtil
 {
-	public static String getExpectedMapFilePath(String settingsFileName)
+	public static String getExpectedMapFilePath(String settingsFileName, String expectedMapsFolderName)
 	{
-		return Paths.get("unit test files", "expected maps", FilenameUtils.getBaseName(settingsFileName) + ".png").toString();
+		return Paths.get("unit test files", expectedMapsFolderName, FilenameUtils.getBaseName(settingsFileName) + ".png").toString();
 	}
 
 	public static String getFailedMapFilePath(String settingsFileName, String failedMapsFolderName)
@@ -36,9 +36,9 @@ public class MapTestUtil
 		return Paths.get("unit test files", failedMapsFolderName, FilenameUtils.getBaseName(settingsFileName) + " - diff.png").toString();
 	}
 
-	public static WarningLogger generateAndCompare(String settingsFileName, Consumer<MapSettings> preprocessSettings, String failedMapsFolderName)
+	public static WarningLogger generateAndCompare(String settingsFileName, Consumer<MapSettings> preprocessSettings, String expectedMapsFolderName, String failedMapsFolderName)
 	{
-		String expectedMapFilePath = getExpectedMapFilePath(settingsFileName);
+		String expectedMapFilePath = getExpectedMapFilePath(settingsFileName, expectedMapsFolderName);
 		Image expected;
 		if (new File(expectedMapFilePath).exists())
 		{
@@ -58,6 +58,12 @@ public class MapTestUtil
 		MapCreator mapCreator = new MapCreator();
 		Logger.println("Creating map from '" + settingsPath + "'");
 		Image actual = mapCreator.createMap(settings, null, null);
+		if (expected == null)
+		{
+			// Create the expected map from the actual one.
+			expected = actual;
+			ImageHelper.write(actual, getExpectedMapFilePath(settingsFileName, expectedMapsFolderName));
+		}
 
 		// Test deep copy after creating the map because MapCreator sets some fields during map creation, so it's a
 		// more complete test that way.
@@ -127,10 +133,10 @@ public class MapTestUtil
 		}
 	}
 
-	public static void generateRandomAndCompare(long seed, String failedMapsFolderName)
+	public static void generateRandomAndCompare(long seed, String expectedMapsFolderName, String failedMapsFolderName)
 	{
 		String expectedFileName = "random map for seed " + seed;
-		String expectedMapFilePath = getExpectedMapFilePath(expectedFileName);
+		String expectedMapFilePath = getExpectedMapFilePath(expectedFileName, expectedMapsFolderName);
 		Image expected;
 		if (new File(expectedMapFilePath).exists())
 		{
@@ -152,7 +158,7 @@ public class MapTestUtil
 		{
 			// Create the expected map from the actual one.
 			expected = actual;
-			ImageHelper.write(actual, getExpectedMapFilePath(expectedFileName));
+			ImageHelper.write(actual, getExpectedMapFilePath(expectedFileName, expectedMapsFolderName));
 		}
 
 		// Test deep copy after creating the map because MapCreator sets some fields during map creation, so it's a
@@ -169,10 +175,10 @@ public class MapTestUtil
 		}
 	}
 
-	public static void generateRandomHeightmapAndCompare(long seed, String failedMapsFolderName)
+	public static void generateRandomHeightmapAndCompare(long seed, String expectedMapsFolderName, String failedMapsFolderName)
 	{
 		String expectedFileName = "random heightmap for seed " + seed;
-		String expectedMapFilePath = getExpectedMapFilePath(expectedFileName);
+		String expectedMapFilePath = getExpectedMapFilePath(expectedFileName, expectedMapsFolderName);
 		Image expected;
 		if (new File(expectedMapFilePath).exists())
 		{
@@ -194,7 +200,7 @@ public class MapTestUtil
 		{
 			// Create the expected map from the actual one.
 			expected = actual;
-			ImageHelper.write(actual, getExpectedMapFilePath(expectedFileName));
+			ImageHelper.write(actual, getExpectedMapFilePath(expectedFileName, expectedMapsFolderName));
 		}
 
 		// Test deep copy after creating the map because MapCreator sets some fields during map creation, so it's a

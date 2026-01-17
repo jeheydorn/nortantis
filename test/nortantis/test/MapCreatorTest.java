@@ -28,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class MapCreatorTest
 {
 	final static String failedMapsFolderName = "failed maps";
+	final static String expectedMapsFolderName = "expected maps";
 
 	@BeforeAll
 	public static void setUpBeforeClass() throws Exception
@@ -42,7 +43,7 @@ public class MapCreatorTest
 
 		for (String settingsFileName : mapSettingsFileNames)
 		{
-			String expectedMapFilePath = MapTestUtil.getExpectedMapFilePath(settingsFileName);
+			String expectedMapFilePath = MapTestUtil.getExpectedMapFilePath(settingsFileName, expectedMapsFolderName);
 			String filePath = Paths.get("unit test files", "map settings", settingsFileName).toString();
 			if (!new File(filePath).isDirectory() && !new File(expectedMapFilePath).exists())
 			{

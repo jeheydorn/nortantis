@@ -5,7 +5,6 @@ import nortantis.MapCreator;
 import nortantis.MapSettings;
 import nortantis.WorldGraph;
 import nortantis.platform.*;
-import nortantis.platform.awt.AwtFactory;
 import nortantis.platform.skia.SkiaFactory;
 import nortantis.util.Assets;
 import nortantis.util.FileHelper;
@@ -24,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class SkiaMapCreatorTest
 {
 	final static String failedMapsFolderName = "failed maps skia";
-	private static final String expectedFolderName = "expected maps skia";
+	private static final String expectedMapsFolderName = "expected maps skia";
 	final int threshold = 4;
 
 	@BeforeAll
@@ -99,7 +98,7 @@ public class SkiaMapCreatorTest
 	public void fractalBGGenerator()
 	{
 		String expectedFileName = "skia_fractalBGGenerator";
-		String expectedMapFilePath = MapTestUtil.getExpectedMapFilePath(expectedFileName);
+		String expectedMapFilePath = MapTestUtil.getExpectedMapFilePath(expectedFileName, expectedMapsFolderName);
 		Image expected;
 		if (new File(expectedMapFilePath).exists())
 		{
@@ -143,7 +142,7 @@ public class SkiaMapCreatorTest
 		else
 		{
 			expected = actual;
-			FileHelper.createFolder(Paths.get("unit test files", expectedFolderName).toString());
+			FileHelper.createFolder(Paths.get("unit test files", expectedMapsFolderName).toString());
 			ImageHelper.write(actual, expectedFilePath);
 			return;
 		}
@@ -160,7 +159,7 @@ public class SkiaMapCreatorTest
 
 	private static String getExpectedFilePath(String testName)
 	{
-		return Paths.get("unit test files", expectedFolderName, testName + ".png").toString();
+		return Paths.get("unit test files", expectedMapsFolderName, testName + ".png").toString();
 	}
 
 	private static String getFailedFilePath(String testName)
@@ -175,7 +174,7 @@ public class SkiaMapCreatorTest
 
 	private void generateAndCompare(String settingsFileName)
 	{
-		MapTestUtil.generateAndCompare(settingsFileName, null, failedMapsFolderName);
+		MapTestUtil.generateAndCompare(settingsFileName, null, expectedMapsFolderName, failedMapsFolderName);
 	}
 
 }
