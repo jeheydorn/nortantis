@@ -8,12 +8,45 @@ import org.jetbrains.skia.*;
 
 /**
  * Provides high-performance image operations using Skia shaders and blend modes.
- * These operations run on CPU but use SIMD-optimized native code,
- * making them significantly faster than per-pixel Java loops.
+ * These operations use GPU acceleration when available via SkiaGPUContext,
+ * falling back to SIMD-optimized CPU rendering otherwise.
  */
 public class SkiaShaderOps
 {
 	private static final Object effectLock = new Object();
+
+	// ==================== Surface Creation Helper ====================
+
+	/**
+	 * Creates a Surface for shader operations, using GPU if available.
+	 * Falls back to CPU raster surface if GPU is not available.
+	 */
+	private static Surface createSurface(int width, int height)
+	{
+		if (SkiaGPUContext.isGPUAvailable())
+		{
+			Surface gpuSurface = SkiaGPUContext.createGPUSurface(width, height);
+			if (gpuSurface != null)
+			{
+				return gpuSurface;
+			}
+		}
+		// Fallback to CPU raster surface
+		return Surface.Companion.makeRaster(new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.UNPREMUL, null));
+	}
+
+	/**
+	 * Reads pixels from a surface into a new Bitmap.
+	 */
+	private static Bitmap readPixelsToBitmap(Surface surface, int width, int height)
+	{
+		org.jetbrains.skia.Image resultSkiaImage = surface.makeImageSnapshot();
+		Bitmap resultBitmap = new Bitmap();
+		resultBitmap.allocPixels(new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.UNPREMUL, null));
+		resultSkiaImage.readPixels(resultBitmap, 0, 0);
+		resultSkiaImage.close();
+		return resultBitmap;
+	}
 
 	// ==================== maskWithImage ====================
 
@@ -79,20 +112,16 @@ public class SkiaShaderOps
 		builder.child("mask", shaderMask);
 		Shader resultShader = builder.makeShader(identity);
 
-		Surface surface = Surface.Companion.makeRaster(new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.UNPREMUL, null));
+		Surface surface = createSurface(width, height);
 		Canvas canvas = surface.getCanvas();
 
 		Paint paint = new Paint();
 		paint.setShader(resultShader);
 		canvas.drawRect(Rect.makeWH(width, height), paint);
 
-		org.jetbrains.skia.Image resultSkiaImage = surface.makeImageSnapshot();
-		Bitmap resultBitmap = new Bitmap();
-		resultBitmap.allocPixels(new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.UNPREMUL, null));
-		resultSkiaImage.readPixels(resultBitmap, 0, 0);
+		Bitmap resultBitmap = readPixelsToBitmap(surface, width, height);
 
 		// Clean up
-		resultSkiaImage.close();
 		surface.close();
 		paint.close();
 		resultShader.close();
@@ -106,22 +135,39 @@ public class SkiaShaderOps
 
 	// ==================== maskWithColor ====================
 
-	// SkSL shader for blending image with solid color using mask
-	// mask=1 (white) -> keep image, mask=0 (black) -> use color
+	// SkSL shader for blending image with solid color using mask.
+	// Matches the logic in ImageHelper.maskWithColorInRegion:
+	// - Creates an overlay with (color.rgb, overlayAlpha) where overlayAlpha = 255 - maskLevel
+	// - maskLevel = mask * colorAlpha (or inverted: 255 - mask * colorAlpha)
+	// - Composites overlay onto image using standard SRC_OVER blending
+	// The result is: result = mix(image, color, blendFactor)
+	// where blendFactor = (1 - mask * colorAlpha) for non-inverted
+	// and blendFactor = (mask * colorAlpha) for inverted
 	private static final String MASK_WITH_COLOR_SKSL = """
 			uniform shader image;
 			uniform shader mask;
-			uniform half4 solidColor;
+			uniform half3 colorRGB;
+			uniform half colorAlpha;
 			uniform half invertMask;
 
 			half4 main(float2 coord) {
 			    half4 imgColor = image.eval(coord);
 			    half m = mask.eval(coord).r;
+
+			    // Calculate blend factor matching Java logic:
+			    // maskLevel = m * colorAlpha (in 0-1 range here)
+			    // overlayAlpha = 1 - maskLevel (non-inverted) or maskLevel (inverted)
+			    // blendFactor = overlayAlpha (how much of color to show)
+			    half blendFactor;
 			    if (invertMask > 0.5) {
-			        m = 1.0 - m;
+			        blendFactor = m * colorAlpha;
+			    } else {
+			        blendFactor = 1.0 - m * colorAlpha;
 			    }
-			    // mask=1 -> image, mask=0 -> solidColor
-			    return mix(solidColor, imgColor, m);
+
+			    // Blend image with color
+			    half3 resultRGB = mix(imgColor.rgb, colorRGB, blendFactor);
+			    return half4(resultRGB, imgColor.a);
 			}
 			""";
 
@@ -144,8 +190,10 @@ public class SkiaShaderOps
 
 	/**
 	 * Blends an image with a solid color using a grayscale mask.
-	 * mask=1 (white) -> keep original image
-	 * mask=0 (black) -> use solid color
+	 * Matches the behavior of ImageHelper.maskWithColorInRegion:
+	 * - mask=0 (black), not inverted -> fully show color
+	 * - mask=1 (white), not inverted -> fully show image
+	 * - The color's alpha modulates the mask effect
 	 */
 	public static Image maskWithColor(Image image, Color color, Image mask, boolean invertMask)
 	{
@@ -167,29 +215,26 @@ public class SkiaShaderOps
 		RuntimeShaderBuilder builder = new RuntimeShaderBuilder(effect);
 		builder.child("image", imageShader);
 		builder.child("mask", maskShader);
-		// Convert color to normalized floats (premultiplied)
+		// Pass color RGB as normalized floats (0-1 range)
 		float r = color.getRed() / 255f;
 		float g = color.getGreen() / 255f;
 		float b = color.getBlue() / 255f;
 		float a = color.getAlpha() / 255f;
-		builder.uniform("solidColor", r, g, b, a);
+		builder.uniform("colorRGB", r, g, b);
+		builder.uniform("colorAlpha", a);
 		builder.uniform("invertMask", invertMask ? 1f : 0f);
 		Shader resultShader = builder.makeShader(identity);
 
-		Surface surface = Surface.Companion.makeRaster(new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.UNPREMUL, null));
+		Surface surface = createSurface(width, height);
 		Canvas canvas = surface.getCanvas();
 
 		Paint paint = new Paint();
 		paint.setShader(resultShader);
 		canvas.drawRect(Rect.makeWH(width, height), paint);
 
-		org.jetbrains.skia.Image resultSkiaImage = surface.makeImageSnapshot();
-		Bitmap resultBitmap = new Bitmap();
-		resultBitmap.allocPixels(new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.UNPREMUL, null));
-		resultSkiaImage.readPixels(resultBitmap, 0, 0);
+		Bitmap resultBitmap = readPixelsToBitmap(surface, width, height);
 
 		// Clean up
-		resultSkiaImage.close();
 		surface.close();
 		paint.close();
 		resultShader.close();
@@ -266,20 +311,16 @@ public class SkiaShaderOps
 		builder.uniform("invertMask", invertMask ? 1f : 0f);
 		Shader resultShader = builder.makeShader(identity);
 
-		Surface surface = Surface.Companion.makeRaster(new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.UNPREMUL, null));
+		Surface surface = createSurface(width, height);
 		Canvas canvas = surface.getCanvas();
 
 		Paint paint = new Paint();
 		paint.setShader(resultShader);
 		canvas.drawRect(Rect.makeWH(width, height), paint);
 
-		org.jetbrains.skia.Image resultSkiaImage = surface.makeImageSnapshot();
-		Bitmap resultBitmap = new Bitmap();
-		resultBitmap.allocPixels(new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.UNPREMUL, null));
-		resultSkiaImage.readPixels(resultBitmap, 0, 0);
+		Bitmap resultBitmap = readPixelsToBitmap(surface, width, height);
 
 		// Clean up
-		resultSkiaImage.close();
 		surface.close();
 		paint.close();
 		resultShader.close();
@@ -477,20 +518,16 @@ public class SkiaShaderOps
 
 		Shader resultShader = builder.makeShader(identity);
 
-		Surface surface = Surface.Companion.makeRaster(new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.UNPREMUL, null));
+		Surface surface = createSurface(width, height);
 		Canvas canvas = surface.getCanvas();
 
 		Paint paint = new Paint();
 		paint.setShader(resultShader);
 		canvas.drawRect(Rect.makeWH(width, height), paint);
 
-		org.jetbrains.skia.Image resultSkiaImage = surface.makeImageSnapshot();
-		Bitmap resultBitmap = new Bitmap();
-		resultBitmap.allocPixels(new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.UNPREMUL, null));
-		resultSkiaImage.readPixels(resultBitmap, 0, 0);
+		Bitmap resultBitmap = readPixelsToBitmap(surface, width, height);
 
 		// Clean up
-		resultSkiaImage.close();
 		surface.close();
 		paint.close();
 		resultShader.close();
@@ -501,20 +538,18 @@ public class SkiaShaderOps
 	}
 
 	/**
-	 * Checks if shader operations are available.
+	 * Checks if GPU acceleration is being used for shader operations.
 	 */
-	public static boolean isAvailable()
+	public static boolean isGPUAccelerated()
 	{
-		try
-		{
-			getMaskWithImageEffect();
-			return true;
-		}
-		catch (Exception e)
-		{
-			return false;
-		}
+		return SkiaGPUContext.isGPUAvailable();
 	}
+
+	public boolean canProcessOnGPU(Image... images)
+	{
+		return areAllSkiaImages(images) && isGPUAccelerated();
+	}
+
 
 	/**
 	 * Checks if all images are SkiaImage instances.

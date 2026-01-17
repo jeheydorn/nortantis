@@ -26,12 +26,6 @@ public class SkiaShaderBenchmark
 	}
 
 	@Test
-	public void testShaderAvailable()
-	{
-		assertTrue(SkiaShaderOps.isAvailable(), "Skia shader operations should be available");
-	}
-
-	@Test
 	public void testMaskWithImageCorrectness()
 	{
 		// Test that the shader produces the same results as the Java implementation
