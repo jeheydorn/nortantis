@@ -29,7 +29,7 @@ public class SkiaImage extends Image
 	private ImageLocation location;
 	private boolean gpuEnabled;
 
-	private static final int GPU_THRESHOLD_PIXELS = 512 * 512;
+	private static final int GPU_THRESHOLD_PIXELS =  512 * 512;
 
 	// Track active GPU batching painters for await before pixel access
 	private final Set<GPUBatchingPainter> activePainters = Collections.newSetFromMap(new ConcurrentHashMap<>());
@@ -159,8 +159,9 @@ public class SkiaImage extends Image
 
 	public org.jetbrains.skia.Image getSkiaImage()
 	{
-		// If GPU has latest data and we have a surface, use GPU snapshot
-		if (gpuEnabled && location != ImageLocation.CPU_DIRTY && gpuSurface != null)
+		// If GPU has latest data and we have a surface, and we're on the GPU thread, use GPU snapshot
+		if (gpuEnabled && location != ImageLocation.CPU_DIRTY && gpuSurface != null
+				&& GPUExecutor.getInstance().isOnGPUThread())
 		{
 			if (gpuTexture == null)
 			{
@@ -172,7 +173,13 @@ public class SkiaImage extends Image
 			}
 		}
 
-		// Fallback to CPU bitmap
+		// If GPU has the latest data but we're not on GPU thread, sync to CPU first
+		if (gpuEnabled && location == ImageLocation.GPU_DIRTY)
+		{
+			ensureCPUData();
+		}
+
+		// Return CPU bitmap-based image
 		if (cachedSkiaImage == null)
 		{
 			cachedSkiaImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(bitmap);
@@ -233,6 +240,7 @@ public class SkiaImage extends Image
 
 	/**
 	 * Reads GPU surface pixels into the CPU bitmap.
+	 * Must submit the GPU access to the GPU thread.
 	 */
 	private void syncGPUToCPU()
 	{
@@ -243,13 +251,20 @@ public class SkiaImage extends Image
 
 		try
 		{
-			// Get a snapshot from the GPU surface and read pixels to our bitmap
-			org.jetbrains.skia.Image snapshot = gpuSurface.makeImageSnapshot();
-			if (snapshot != null)
-			{
-				snapshot.readPixels(bitmap, 0, 0);
-				snapshot.close();
-			}
+			// GPU surface access must happen on the GPU thread
+			final Surface surfaceRef = gpuSurface;
+			final Bitmap bitmapRef = bitmap;
+
+			GPUExecutor.getInstance().submit(() -> {
+				// Get a snapshot from the GPU surface and read pixels to our bitmap
+				org.jetbrains.skia.Image snapshot = surfaceRef.makeImageSnapshot();
+				if (snapshot != null)
+				{
+					snapshot.readPixels(bitmapRef, 0, 0);
+					snapshot.close();
+				}
+				return null;
+			});
 
 			// Invalidate the cached Skia image since bitmap changed
 			invalidateCachedImage();
@@ -268,6 +283,7 @@ public class SkiaImage extends Image
 
 	/**
 	 * Uploads CPU bitmap data to the GPU surface.
+	 * Must submit the GPU access to the GPU thread.
 	 */
 	private void syncCPUToGPU()
 	{
@@ -278,12 +294,19 @@ public class SkiaImage extends Image
 
 		try
 		{
-			// Draw the CPU bitmap to the GPU surface
-			Canvas gpuCanvas = gpuSurface.getCanvas();
-			org.jetbrains.skia.Image cpuImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(bitmap);
-			gpuCanvas.clear(0x00000000);
-			gpuCanvas.drawImage(cpuImage, 0, 0);
-			cpuImage.close();
+			// GPU surface access must happen on the GPU thread
+			final Surface surfaceRef = gpuSurface;
+			final Bitmap bitmapRef = bitmap;
+
+			GPUExecutor.getInstance().submit(() -> {
+				// Draw the CPU bitmap to the GPU surface
+				Canvas gpuCanvas = surfaceRef.getCanvas();
+				org.jetbrains.skia.Image cpuImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(bitmapRef);
+				gpuCanvas.clear(0x00000000);
+				gpuCanvas.drawImage(cpuImage, 0, 0);
+				cpuImage.close();
+				return null;
+			});
 
 			// Invalidate GPU texture snapshot
 			invalidateGPUTexture();
@@ -447,35 +470,57 @@ public class SkiaImage extends Image
 		}
 
 		// Try GPU-accelerated scaling if source is GPU-enabled
+		// The entire GPU operation must run on the GPU thread
 		if (gpuEnabled && GPUExecutor.getInstance().isGPUAvailable())
 		{
-			Surface gpuDestSurface = GPUExecutor.getInstance().createGPUSurface(width, height);
-			if (gpuDestSurface != null)
+			final int targetWidth = width;
+			final int targetHeight = height;
+			final ImageType resultType = getType();
+			final Bitmap srcBitmap = bitmap;
+
+			try
 			{
-				try
+				Bitmap scaledBitmap = GPUExecutor.getInstance().submit(() -> {
+					// Create GPU surface on GPU thread
+					DirectContext ctx = GPUExecutor.getInstance().getContext();
+					if (ctx == null) return null;
+
+					Surface gpuDestSurface = Surface.Companion.makeRenderTarget(ctx, false,
+						new ImageInfo(targetWidth, targetHeight, ColorType.Companion.getN32(), ColorAlphaType.PREMUL));
+					if (gpuDestSurface == null) return null;
+
+					try
+					{
+						Canvas gpuCanvas = gpuDestSurface.getCanvas();
+
+						// Use CPU bitmap as source (safer than GPU texture across threads)
+						org.jetbrains.skia.Image srcImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(srcBitmap);
+						gpuCanvas.drawImageRect(srcImage, Rect.makeXYWH(0, 0, targetWidth, targetHeight));
+						srcImage.close();
+
+						// Get result
+						org.jetbrains.skia.Image resultImage = gpuDestSurface.makeImageSnapshot();
+						Bitmap result = new Bitmap();
+						result.allocPixels(new ImageInfo(targetWidth, targetHeight, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null));
+						resultImage.readPixels(result, 0, 0);
+						resultImage.close();
+						return result;
+					}
+					finally
+					{
+						gpuDestSurface.close();
+					}
+				});
+
+				if (scaledBitmap != null)
 				{
-					Canvas gpuCanvas = gpuDestSurface.getCanvas();
-
-					// Use the current best representation of this image
-					org.jetbrains.skia.Image srcImage = getSkiaImage();
-					gpuCanvas.drawImageRect(srcImage, Rect.makeXYWH(0, 0, width, height));
-
-					// Get result and create a new SkiaImage
-					org.jetbrains.skia.Image resultImage = gpuDestSurface.makeImageSnapshot();
-					Bitmap scaledBitmap = new Bitmap();
-					ImageInfo scaledImageInfo = new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null);
-					scaledBitmap.allocPixels(scaledImageInfo);
-					resultImage.readPixels(scaledBitmap, 0, 0);
-					resultImage.close();
-					gpuDestSurface.close();
-
-					return new SkiaImage(scaledBitmap, getType());
+					return new SkiaImage(scaledBitmap, resultType);
 				}
-				catch (Exception e)
-				{
-					gpuDestSurface.close();
-					// Fall through to CPU path
-				}
+				// Fall through to CPU path if GPU operation failed
+			}
+			catch (Exception e)
+			{
+				// Fall through to CPU path
 			}
 		}
 
@@ -550,35 +595,63 @@ public class SkiaImage extends Image
 		int h = Math.max(1, bounds.height);
 
 		// Try GPU-accelerated copy if source is GPU-enabled
+		// The entire GPU operation must run on the GPU thread
 		if (gpuEnabled && GPUExecutor.getInstance().isGPUAvailable())
 		{
-			Surface gpuDestSurface = GPUExecutor.getInstance().createGPUSurface(w, h);
-			if (gpuDestSurface != null)
+			final int targetW = w;
+			final int targetH = h;
+			final int srcX = bounds.x;
+			final int srcY = bounds.y;
+			final int srcW = bounds.width;
+			final int srcH = bounds.height;
+			final ImageType resultType = addAlphaChanel ? ImageType.ARGB : getType();
+			final ColorType colorType = bitmap.getImageInfo().getColorType();
+			final ColorAlphaType alphaType = bitmap.getImageInfo().getColorAlphaType();
+			final Bitmap srcBitmap = bitmap;
+
+			try
 			{
-				try
+				Bitmap subBitmap = GPUExecutor.getInstance().submit(() -> {
+					// Create GPU surface on GPU thread
+					DirectContext ctx = GPUExecutor.getInstance().getContext();
+					if (ctx == null) return null;
+
+					Surface gpuDestSurface = Surface.Companion.makeRenderTarget(ctx, false,
+						new ImageInfo(targetW, targetH, ColorType.Companion.getN32(), ColorAlphaType.PREMUL));
+					if (gpuDestSurface == null) return null;
+
+					try
+					{
+						Canvas gpuCanvas = gpuDestSurface.getCanvas();
+
+						// Use CPU bitmap as source (safer than GPU texture across threads)
+						org.jetbrains.skia.Image srcImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(srcBitmap);
+						gpuCanvas.drawImageRect(srcImage, Rect.makeXYWH(srcX, srcY, srcW, srcH), Rect.makeXYWH(0, 0, targetW, targetH));
+						srcImage.close();
+
+						// Get result
+						org.jetbrains.skia.Image resultImage = gpuDestSurface.makeImageSnapshot();
+						Bitmap result = new Bitmap();
+						result.allocPixels(new ImageInfo(targetW, targetH, colorType, alphaType, null));
+						resultImage.readPixels(result, 0, 0);
+						resultImage.close();
+						return result;
+					}
+					finally
+					{
+						gpuDestSurface.close();
+					}
+				});
+
+				if (subBitmap != null)
 				{
-					Canvas gpuCanvas = gpuDestSurface.getCanvas();
-
-					// Use the current best representation of this image
-					org.jetbrains.skia.Image srcImage = getSkiaImage();
-					gpuCanvas.drawImageRect(srcImage, Rect.makeXYWH(bounds.x, bounds.y, bounds.width, bounds.height), Rect.makeXYWH(0, 0, w, h));
-
-					// Get result and create a new SkiaImage
-					org.jetbrains.skia.Image resultImage = gpuDestSurface.makeImageSnapshot();
-					Bitmap subBitmap = new Bitmap();
-					ImageInfo subImageInfo = new ImageInfo(w, h, bitmap.getImageInfo().getColorType(), bitmap.getImageInfo().getColorAlphaType(), null);
-					subBitmap.allocPixels(subImageInfo);
-					resultImage.readPixels(subBitmap, 0, 0);
-					resultImage.close();
-					gpuDestSurface.close();
-
-					return new SkiaImage(subBitmap, addAlphaChanel ? ImageType.ARGB : getType());
+					return new SkiaImage(subBitmap, resultType);
 				}
-				catch (Exception e)
-				{
-					gpuDestSurface.close();
-					// Fall through to CPU path
-				}
+				// Fall through to CPU path if GPU operation failed
+			}
+			catch (Exception e)
+			{
+				// Fall through to CPU path
 			}
 		}
 

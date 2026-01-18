@@ -4,6 +4,7 @@ import nortantis.platform.Color;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.util.ImageHelper.ColorifyAlgorithm;
+import nortantis.util.Logger;
 import org.jetbrains.skia.*;
 
 /**
@@ -27,26 +28,20 @@ public class SkiaShaderOps
 
 	/**
 	 * Creates a GPU surface. Must be called from the GPU thread.
+	 * GPU render targets require PREMUL alpha type.
 	 */
 	private static Surface createGPUSurfaceOnGPUThread(int width, int height)
 	{
 		DirectContext ctx = GPUExecutor.getInstance().getContext();
 		if (ctx == null)
 		{
-			return null;
+			throw new IllegalStateException("DirectContext is null on GPU thread");
 		}
-		try
-		{
-			return Surface.Companion.makeRenderTarget(
-				ctx,
-				false,
-				new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.UNPREMUL)
-			);
-		}
-		catch (Exception e)
-		{
-			return null;
-		}
+		return Surface.Companion.makeRenderTarget(
+			ctx,
+			false,
+			new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.PREMUL)
+		);
 	}
 
 	/**
@@ -142,11 +137,6 @@ public class SkiaShaderOps
 		Shader resultShader = builder.makeShader(identity);
 
 		Surface surface = useGPU ? createGPUSurfaceOnGPUThread(width, height) : createCPUSurface(width, height);
-		if (surface == null)
-		{
-			// GPU surface creation failed, fall back to CPU
-			surface = createCPUSurface(width, height);
-		}
 		Canvas canvas = surface.getCanvas();
 
 		Paint paint = new Paint();
@@ -277,12 +267,7 @@ public class SkiaShaderOps
 		Shader resultShader = builder.makeShader(identity);
 
 		Surface surface = useGPU ? createGPUSurfaceOnGPUThread(width, height) : createCPUSurface(width, height);
-		if (surface == null)
-		{
-			// GPU surface creation failed, fall back to CPU
-			surface = createCPUSurface(width, height);
-		}
-Canvas canvas = surface.getCanvas();
+		Canvas canvas = surface.getCanvas();
 
 		Paint paint = new Paint();
 		paint.setShader(resultShader);
@@ -383,11 +368,6 @@ Canvas canvas = surface.getCanvas();
 		Shader resultShader = builder.makeShader(identity);
 
 		Surface surface = useGPU ? createGPUSurfaceOnGPUThread(width, height) : createCPUSurface(width, height);
-		if (surface == null)
-		{
-			// GPU surface creation failed, fall back to CPU
-			surface = createCPUSurface(width, height);
-		}
 		Canvas canvas = surface.getCanvas();
 
 		Paint paint = new Paint();
@@ -609,11 +589,6 @@ Canvas canvas = surface.getCanvas();
 		Shader resultShader = builder.makeShader(identity);
 
 		Surface surface = useGPU ? createGPUSurfaceOnGPUThread(width, height) : createCPUSurface(width, height);
-		if (surface == null)
-		{
-			// GPU surface creation failed, fall back to CPU
-			surface = createCPUSurface(width, height);
-		}
 		Canvas canvas = surface.getCanvas();
 
 		Paint paint = new Paint();
