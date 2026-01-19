@@ -61,20 +61,21 @@ public class SkiaShaderOps
 
 		// Try reading directly from surface - Skia converts PREMUL surface -> UNPREMUL bitmap
 		boolean success = surface.readPixels(resultBitmap, 0, 0);
-		if (!success)
-		{
-			// Fallback: try via image snapshot
-			org.jetbrains.skia.Image snapshot = surface.makeImageSnapshot();
-			if (snapshot != null)
-			{
-				success = snapshot.readPixels(resultBitmap, 0, 0);
-				snapshot.close();
-			}
-			if (!success)
-			{
-				throw new RuntimeException("Failed to read pixels from GPU surface (both methods failed)");
-			}
-		}
+		// TODO - Remove this fallback since it doesn't seem to be used, at least from what I saw debugging my unit tests.
+//		if (!success)
+//		{
+//			// Fallback: try via image snapshot
+//			org.jetbrains.skia.Image snapshot = surface.makeImageSnapshot();
+//			if (snapshot != null)
+//			{
+//				success = snapshot.readPixels(resultBitmap, 0, 0);
+//				snapshot.close();
+//			}
+//			if (!success)
+//			{
+//				throw new RuntimeException("Failed to read pixels from GPU surface (both methods failed)");
+//			}
+//		}
 		return resultBitmap;
 	}
 
