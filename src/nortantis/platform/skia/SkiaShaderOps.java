@@ -16,7 +16,21 @@ public class SkiaShaderOps
 {
 	private static final Object effectLock = new Object();
 
+	// Maximum texture dimension for GPU operations.
+	// Most GPUs support 16384, but we use a conservative limit to avoid memory issues.
+	// Images larger than this will use CPU rendering.
+	private static final int MAX_GPU_TEXTURE_DIMENSION = 8192;
+
 	// ==================== Surface Creation Helper ====================
+
+	/**
+	 * Returns true if the given dimensions are suitable for GPU rendering.
+	 * Very large images should use CPU rendering to avoid GPU memory issues.
+	 */
+	private static boolean canUseGPUForSize(int width, int height)
+	{
+		return width <= MAX_GPU_TEXTURE_DIMENSION && height <= MAX_GPU_TEXTURE_DIMENSION;
+	}
 
 	/**
 	 * Creates a CPU raster surface for shader operations.
@@ -29,13 +43,14 @@ public class SkiaShaderOps
 	/**
 	 * Creates a GPU surface. Must be called from the GPU thread.
 	 * GPU render targets require PREMUL alpha type.
+	 * Returns null if surface creation fails.
 	 */
 	private static Surface createGPUSurfaceOnGPUThread(int width, int height)
 	{
 		DirectContext ctx = GPUExecutor.getInstance().getContext();
 		if (ctx == null)
 		{
-			throw new IllegalStateException("DirectContext is null on GPU thread");
+			return null;
 		}
 		return Surface.Companion.makeRenderTarget(
 			ctx,
@@ -129,8 +144,8 @@ public class SkiaShaderOps
 		int height = image1.getHeight();
 		ImageType resultType = (image1.hasAlpha() || image2.hasAlpha()) ? ImageType.ARGB : ImageType.RGB;
 
-		// Check if we should use GPU
-		if (GPUExecutor.getInstance().isGPUAvailable())
+		// Check if we should use GPU (also check size limits to avoid crashes with large images)
+		if (GPUExecutor.getInstance().isGPUAvailable() && canUseGPUForSize(width, height))
 		{
 			return GPUExecutor.getInstance().submit(() ->
 				maskWithImageImpl(skImage1, skImage2, skMask, width, height, resultType, true));
@@ -267,8 +282,8 @@ public class SkiaShaderOps
 		float b = color.getBlue() / 255f;
 		float a = color.getAlpha() / 255f;
 
-		// Check if we should use GPU
-		if (GPUExecutor.getInstance().isGPUAvailable())
+		// Check if we should use GPU (also check size limits to avoid crashes with large images)
+		if (GPUExecutor.getInstance().isGPUAvailable() && canUseGPUForSize(width, height))
 		{
 			return GPUExecutor.getInstance().submit(() ->
 				maskWithColorImpl(skImage, skMask, width, height, r, g, b, a, invertMask, resultType, true));
@@ -375,8 +390,8 @@ public class SkiaShaderOps
 		int width = image.getWidth();
 		int height = image.getHeight();
 
-		// Check if we should use GPU
-		if (GPUExecutor.getInstance().isGPUAvailable())
+		// Check if we should use GPU (also check size limits to avoid crashes with large images)
+		if (GPUExecutor.getInstance().isGPUAvailable() && canUseGPUForSize(width, height))
 		{
 			return GPUExecutor.getInstance().submit(() ->
 				setAlphaFromMaskImpl(skImage, skMask, width, height, invertMask, true));
@@ -580,8 +595,8 @@ public class SkiaShaderOps
 
 		ImageType resultType = forceAddAlpha || color.hasTransparency() ? ImageType.ARGB : ImageType.RGB;
 
-		// Check if we should use GPU
-		if (GPUExecutor.getInstance().isGPUAvailable())
+		// Check if we should use GPU (also check size limits to avoid crashes with large images)
+		if (GPUExecutor.getInstance().isGPUAvailable() && canUseGPUForSize(width, height))
 		{
 			return GPUExecutor.getInstance().submit(() ->
 				colorifyImpl(skImage, width, height, how, hsb, alpha, r, g, b, resultType, true));

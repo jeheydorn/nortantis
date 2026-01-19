@@ -31,6 +31,11 @@ public class SkiaImage extends Image
 
 	private static final int GPU_THRESHOLD_PIXELS =  512 * 512; // TODO Change back to 512 * 512 when I'm done testing
 
+	// Maximum texture dimension for GPU operations.
+	// Most GPUs support 16384, but we use a conservative limit to avoid memory issues and crashes.
+	// Images larger than this will use CPU rendering.
+	private static final int MAX_GPU_TEXTURE_DIMENSION = 8192;
+
 	// Track active GPU batching painters for await before pixel access
 	private final Set<GPUBatchingPainter> activePainters = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
@@ -66,10 +71,15 @@ public class SkiaImage extends Image
 
 	/**
 	 * Determines if this image should use GPU acceleration based on size and availability.
+	 * Uses GPU for medium-sized images, but falls back to CPU for very large images
+	 * to avoid GPU memory issues and crashes.
 	 */
 	private boolean shouldUseGPU()
 	{
-		return getPixelCount() >= GPU_THRESHOLD_PIXELS && GPUExecutor.getInstance().isGPUAvailable();
+		return getPixelCount() >= GPU_THRESHOLD_PIXELS
+				&& width <= MAX_GPU_TEXTURE_DIMENSION
+				&& height <= MAX_GPU_TEXTURE_DIMENSION
+				&& GPUExecutor.getInstance().isGPUAvailable();
 	}
 
 	private Bitmap createBitmap(ImageInfo imageInfo)

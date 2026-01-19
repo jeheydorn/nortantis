@@ -34,8 +34,8 @@ public class ImageHelperTest
 {
 	private static final String expectedFolderName = "expected image helper tests";
 	private static final String failedFolderName = "failed image helper tests";
-	private static final int testImageWidth = 100;
-	private static final int testImageHeight = 100;
+	private static final int testImageWidth = 10000;
+	private static final int testImageHeight = 10000;
 
 	@BeforeAll
 	public static void setUpBeforeClass() throws Exception
