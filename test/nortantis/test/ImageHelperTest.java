@@ -10,6 +10,7 @@ import nortantis.util.Assets;
 import nortantis.util.FileHelper;
 import nortantis.util.ImageHelper;
 import nortantis.util.ImageHelper.ColorifyAlgorithm;
+import nortantis.util.Range;
 import org.apache.commons.io.FileUtils;
 import org.imgscalr.Scalr.Method;
 import org.junit.jupiter.api.BeforeAll;
@@ -57,8 +58,8 @@ public class ImageHelperTest
 		assertEquals(ImageType.Grayscale8Bit, grayscale.getType(), "Result should be grayscale");
 		assertEquals(colorImage.getWidth(), grayscale.getWidth(), "Width should match");
 		assertEquals(colorImage.getHeight(), grayscale.getHeight(), "Height should match");
-
 		compareWithExpected(grayscale, "convertToGrayscale");
+
 	}
 
 	@Test
@@ -258,7 +259,31 @@ public class ImageHelperTest
 		Stopwatch sw = new Stopwatch("maskWithColor");
 		Image result = ImageHelper.maskWithColor(image, color, mask, false);
 		sw.printElapsedTime();
+
 		compareWithExpected(result, "maskWithColor");
+	}
+
+	/**
+	 * Tests that we don't hit any crashes when running GPU drawing back to back.
+	 */
+	@Test
+	public void testMaskWithColorMultipleTimes()
+	{
+		final int numberOfRuns = 2;
+		int successCount = 0;
+		for (int i : new Range(numberOfRuns))
+		{
+			Image image = createColorTestImage();
+			Image mask = createGradientMask();
+			Color color = Color.create(0, 255, 0, 128);
+
+			Stopwatch sw = new Stopwatch("maskWithColor");
+			Image result = ImageHelper.maskWithColor(image, color, mask, false);
+			sw.printElapsedTime();
+			successCount++;
+		}
+
+		assertEquals(successCount, numberOfRuns);
 	}
 
 	@Test

@@ -29,7 +29,7 @@ public class SkiaImage extends Image
 	private ImageLocation location;
 	private boolean gpuEnabled;
 
-	private static final int GPU_THRESHOLD_PIXELS =  512 * 512;
+	private static final int GPU_THRESHOLD_PIXELS =  512 * 512; // TODO Change back to 512 * 512 when I'm done testing
 
 	// Track active GPU batching painters for await before pixel access
 	private final Set<GPUBatchingPainter> activePainters = Collections.newSetFromMap(new ConcurrentHashMap<>());
@@ -256,13 +256,12 @@ public class SkiaImage extends Image
 			final Bitmap bitmapRef = bitmap;
 
 			GPUExecutor.getInstance().submit(() -> {
-				// Get a snapshot from the GPU surface and read pixels to our bitmap
-				org.jetbrains.skia.Image snapshot = surfaceRef.makeImageSnapshot();
-				if (snapshot != null)
-				{
-					snapshot.readPixels(bitmapRef, 0, 0);
-					snapshot.close();
-				}
+				// Flush any pending GPU commands to ensure the surface is up-to-date
+				surfaceRef.flushAndSubmit(true);  // true = sync
+
+				// Read directly from surface instead of using a snapshot.
+				// Skia handles the conversion from PREMUL surface to the bitmap's alpha type.
+				surfaceRef.readPixels(bitmapRef, 0, 0);
 				return null;
 			});
 
@@ -498,12 +497,11 @@ public class SkiaImage extends Image
 						gpuCanvas.drawImageRect(srcImage, Rect.makeXYWH(0, 0, targetWidth, targetHeight));
 						srcImage.close();
 
-						// Get result
-						org.jetbrains.skia.Image resultImage = gpuDestSurface.makeImageSnapshot();
+						// Flush GPU commands and read directly from surface
+						gpuDestSurface.flushAndSubmit(true);
 						Bitmap result = new Bitmap();
 						result.allocPixels(new ImageInfo(targetWidth, targetHeight, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null));
-						resultImage.readPixels(result, 0, 0);
-						resultImage.close();
+						gpuDestSurface.readPixels(result, 0, 0);
 						return result;
 					}
 					finally
@@ -535,13 +533,11 @@ public class SkiaImage extends Image
 		canvas.drawImageRect(srcImage, Rect.makeXYWH(0, 0, width, height));
 		srcImage.close();
 
-		// Get the result as an image snapshot and extract pixels to a new bitmap
-		org.jetbrains.skia.Image resultImage = surface.makeImageSnapshot();
+		// Read directly from surface
 		Bitmap scaledBitmap = new Bitmap();
 		ImageInfo scaledImageInfo = new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null);
 		scaledBitmap.allocPixels(scaledImageInfo);
-		resultImage.readPixels(scaledBitmap, 0, 0);
-		resultImage.close();
+		surface.readPixels(scaledBitmap, 0, 0);
 		surface.close();
 
 		return new SkiaImage(scaledBitmap, getType());
@@ -629,12 +625,11 @@ public class SkiaImage extends Image
 						gpuCanvas.drawImageRect(srcImage, Rect.makeXYWH(srcX, srcY, srcW, srcH), Rect.makeXYWH(0, 0, targetW, targetH));
 						srcImage.close();
 
-						// Get result
-						org.jetbrains.skia.Image resultImage = gpuDestSurface.makeImageSnapshot();
+						// Flush GPU commands and read directly from surface
+						gpuDestSurface.flushAndSubmit(true);
 						Bitmap result = new Bitmap();
 						result.allocPixels(new ImageInfo(targetW, targetH, colorType, alphaType, null));
-						resultImage.readPixels(result, 0, 0);
-						resultImage.close();
+						gpuDestSurface.readPixels(result, 0, 0);
 						return result;
 					}
 					finally
@@ -665,13 +660,11 @@ public class SkiaImage extends Image
 		canvas.drawImageRect(srcImage, Rect.makeXYWH(bounds.x, bounds.y, bounds.width, bounds.height), Rect.makeXYWH(0, 0, w, h));
 		srcImage.close();
 
-		// Get the result as an image snapshot and extract pixels to a new bitmap
-		org.jetbrains.skia.Image resultImage = surface.makeImageSnapshot();
+		// Read directly from surface
 		Bitmap subBitmap = new Bitmap();
 		ImageInfo subImageInfo = new ImageInfo(w, h, bitmap.getImageInfo().getColorType(), bitmap.getImageInfo().getColorAlphaType(), null);
 		subBitmap.allocPixels(subImageInfo);
-		resultImage.readPixels(subBitmap, 0, 0);
-		resultImage.close();
+		surface.readPixels(subBitmap, 0, 0);
 		surface.close();
 
 		return new SkiaImage(subBitmap, addAlphaChanel ? ImageType.ARGB : getType());

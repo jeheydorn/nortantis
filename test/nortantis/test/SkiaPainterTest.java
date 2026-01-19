@@ -23,10 +23,8 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Unit tests for SkiaPainter drawing operations and SkiaPixelReaderWriter.
  *
- * These tests follow the pattern from SkiaMapCreatorTest: they compare rendered images against
- * expected images stored in "unit test files/expected skia tests/". When an expected image doesn't exist,
- * the test creates it from the actual output. Failed tests save their output to
- * "unit test files/failed skia tests/" along with a diff image.
+ * These tests follow the pattern from SkiaMapCreatorTest: they compare rendered images against expected images stored in "unit test files/expected skia tests/". When an expected image doesn't exist,
+ * the test creates it from the actual output. Failed tests save their output to "unit test files/failed skia tests/" along with a diff image.
  */
 public class SkiaPainterTest
 {
@@ -67,12 +65,12 @@ public class SkiaPainterTest
 	}
 
 	// This functionality isn't implemented yet.
-//	@Test
-//	public void testBlankImageGrayscale16Bit()
-//	{
-//		Image image = Image.create(testImageWidth, testImageHeight, ImageType.Grayscale16Bit);
-//		compareWithExpected(image, "blankImageGrayscale16Bit");
-//	}
+	//	@Test
+	//	public void testBlankImageGrayscale16Bit()
+	//	{
+	//		Image image = Image.create(testImageWidth, testImageHeight, ImageType.Grayscale16Bit);
+	//		compareWithExpected(image, "blankImageGrayscale16Bit");
+	//	}
 
 	@Test
 	public void testBlankImageBinary()
@@ -133,22 +131,22 @@ public class SkiaPainterTest
 	}
 
 	// This functionality isn't implemented yet.
-//	@Test
-//	public void testGradientOnGrayscale16Bit()
-//	{
-//		Image image = Image.create(testImageWidth, testImageHeight, ImageType.Grayscale16Bit);
-//		Painter painter = image.createPainter(DrawQuality.High);
-//
-//		// Draw a gradient from black to white
-//		Color startColor = createColor(0, 0, 0);
-//		Color endColor = createColor(255, 255, 255);
-//		painter.setGradient(0, 0, startColor, testImageWidth, testImageHeight, endColor);
-//		painter.fillRect(0, 0, testImageWidth, testImageHeight);
-//
-//		painter.dispose();
-//
-//		compareWithExpected(image, "gradientOnGrayscale16Bit");
-//	}
+	//	@Test
+	//	public void testGradientOnGrayscale16Bit()
+	//	{
+	//		Image image = Image.create(testImageWidth, testImageHeight, ImageType.Grayscale16Bit);
+	//		Painter painter = image.createPainter(DrawQuality.High);
+	//
+	//		// Draw a gradient from black to white
+	//		Color startColor = createColor(0, 0, 0);
+	//		Color endColor = createColor(255, 255, 255);
+	//		painter.setGradient(0, 0, startColor, testImageWidth, testImageHeight, endColor);
+	//		painter.fillRect(0, 0, testImageWidth, testImageHeight);
+	//
+	//		painter.dispose();
+	//
+	//		compareWithExpected(image, "gradientOnGrayscale16Bit");
+	//	}
 
 	// ==================== Shape Drawing Tests ====================
 
@@ -156,12 +154,13 @@ public class SkiaPainterTest
 	public void testDrawLine()
 	{
 		Image image = createTestImage();
-		Painter painter = image.createPainter(DrawQuality.High);
-		painter.setColor(createColor(255, 0, 0));
-		painter.setBasicStroke(2.0f);
-		painter.drawLine(10, 10, 90, 90);
-		painter.drawLine(10, 90, 90, 10);
-		painter.dispose();
+		image.withPainter(DrawQuality.High, (painter) ->
+		{
+			painter.setColor(createColor(255, 0, 0));
+			painter.setBasicStroke(2.0f);
+			painter.drawLine(10, 10, 90, 90);
+			painter.drawLine(10, 90, 90, 10);
+		});
 
 		compareWithExpected(image, "drawLine");
 	}
@@ -199,14 +198,15 @@ public class SkiaPainterTest
 	public void testFillRect()
 	{
 		Image image = createTestImage();
-		Painter painter = image.createPainter(DrawQuality.High);
-		painter.setColor(createColor(0, 255, 0));
-		painter.fillRect(10, 10, 40, 40);
-		painter.setColor(createColor(255, 128, 0));
-		painter.fillRect(50, 50, 40, 40);
-		painter.dispose();
+		image.withPainter(DrawQuality.High, painter ->
+		{
+			painter.setColor(createColor(0, 255, 0));
+			painter.fillRect(10, 10, 40, 40);
+			painter.setColor(createColor(255, 128, 0));
+			painter.fillRect(50, 50, 40, 40);
+		});
 
-		compareWithExpected(image, "fillRect");
+		compareWithExpected(image, "testFillRect");
 	}
 
 	@Test
@@ -293,13 +293,13 @@ public class SkiaPainterTest
 		painter.setColor(createColor(150, 50, 200));
 		painter.setBasicStroke(2.0f);
 
-		List<FloatPoint> points = Arrays.asList(new FloatPoint(50.5f, 10.5f), new FloatPoint(90.5f, 40.5f), new FloatPoint(70.5f, 90.5f), new FloatPoint(30.5f, 90.5f),
-				new FloatPoint(10.5f, 40.5f));
+		List<FloatPoint> points = Arrays.asList(new FloatPoint(50.5f, 10.5f), new FloatPoint(90.5f, 40.5f), new FloatPoint(70.5f, 90.5f), new FloatPoint(30.5f, 90.5f), new FloatPoint(10.5f, 40.5f));
 		painter.drawPolygonFloat(points);
 		painter.dispose();
 
 		compareWithExpected(image, "drawPolygonFloat");
 	}
+
 
 	// ==================== Stroke Tests ====================
 
@@ -420,8 +420,7 @@ public class SkiaPainterTest
 
 		// At least one metric should be positive if any font rendering works
 		assertTrue(stringWidth > 0 || charWidth > 0 || fontAscent > 0,
-			"At least one font metric should be positive if font rendering is available. " +
-			"stringWidth=" + stringWidth + ", charWidth=" + charWidth + ", fontAscent=" + fontAscent);
+				"At least one font metric should be positive if font rendering is available. " + "stringWidth=" + stringWidth + ", charWidth=" + charWidth + ", fontAscent=" + fontAscent);
 
 		painter.dispose();
 	}
@@ -919,8 +918,7 @@ public class SkiaPainterTest
 			assertEquals(255, reader.getAlpha(10, 10), "Alpha at (10,10) should be 255");
 			// Alpha at center should be semi-transparent
 			int centerAlpha = reader.getAlpha(50, 50);
-			assertTrue(centerAlpha > 0 && centerAlpha < 255,
-				"Alpha at center should be semi-transparent, got: " + centerAlpha);
+			assertTrue(centerAlpha > 0 && centerAlpha < 255, "Alpha at center should be semi-transparent, got: " + centerAlpha);
 		}
 
 		compareWithExpected(image, "pixelReaderWriterAlpha");
@@ -978,26 +976,26 @@ public class SkiaPainterTest
 	}
 
 	// This functionality is not implemented yet
-//	@Test
-//	public void testPixelReaderWriterGrayscale16Bit()
-//	{
-//		Image image = Image.create(testImageWidth, testImageHeight, ImageType.Grayscale16Bit);
-//
-//		// Create a gradient pattern
-//		try (PixelReaderWriter writer = image.createPixelReaderWriter())
-//		{
-//			for (int y = 0; y < testImageHeight; y++)
-//			{
-//				int level = (int) (y * 255);
-//				for (int x = 0; x < testImageWidth; x++)
-//				{
-//					writer.setGrayLevel(x, y, level);
-//				}
-//			}
-//		}
-//
-//		compareWithExpected(image, "pixelReaderWriterGrayscale16Bit");
-//	}
+	//	@Test
+	//	public void testPixelReaderWriterGrayscale16Bit()
+	//	{
+	//		Image image = Image.create(testImageWidth, testImageHeight, ImageType.Grayscale16Bit);
+	//
+	//		// Create a gradient pattern
+	//		try (PixelReaderWriter writer = image.createPixelReaderWriter())
+	//		{
+	//			for (int y = 0; y < testImageHeight; y++)
+	//			{
+	//				int level = (int) (y * 255);
+	//				for (int x = 0; x < testImageWidth; x++)
+	//				{
+	//					writer.setGrayLevel(x, y, level);
+	//				}
+	//			}
+	//		}
+	//
+	//		compareWithExpected(image, "pixelReaderWriterGrayscale16Bit");
+	//	}
 
 	@Test
 	public void testPixelReaderWriterBinary()
