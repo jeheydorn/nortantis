@@ -46,20 +46,43 @@ public class SkiaShaderOps
 
 	/**
 	 * Reads pixels from a surface into a new Bitmap.
+	 * For GPU surfaces, flushes pending commands before reading.
+	 * Returns an UNPREMUL bitmap for consistency with the rest of the codebase.
 	 */
 	private static Bitmap readPixelsToBitmap(Surface surface, int width, int height)
 	{
-		org.jetbrains.skia.Image resultSkiaImage = surface.makeImageSnapshot();
+		// Flush any pending GPU commands to ensure the surface is up-to-date
+		surface.flushAndSubmit(true);  // true = sync
+
+		// Read directly to UNPREMUL bitmap (Skia handles the conversion from PREMUL surface)
 		Bitmap resultBitmap = new Bitmap();
-		resultBitmap.allocPixels(new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.UNPREMUL, null));
-		resultSkiaImage.readPixels(resultBitmap, 0, 0);
-		resultSkiaImage.close();
+		ImageInfo dstInfo = new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.UNPREMUL, null);
+		resultBitmap.allocPixels(dstInfo);
+
+		// Try reading directly from surface - Skia converts PREMUL surface -> UNPREMUL bitmap
+		boolean success = surface.readPixels(resultBitmap, 0, 0);
+		if (!success)
+		{
+			// Fallback: try via image snapshot
+			org.jetbrains.skia.Image snapshot = surface.makeImageSnapshot();
+			if (snapshot != null)
+			{
+				success = snapshot.readPixels(resultBitmap, 0, 0);
+				snapshot.close();
+			}
+			if (!success)
+			{
+				throw new RuntimeException("Failed to read pixels from GPU surface (both methods failed)");
+			}
+		}
 		return resultBitmap;
 	}
 
 	// ==================== maskWithImage ====================
 
 	// SkSL shader for mask blending: result = mix(image2, image1, mask)
+	// Note: Skia shaders work in premultiplied color space - image.eval() returns premul values
+	// GPU surfaces also expect premultiplied output, so we don't need extra conversion
 	private static final String MASK_WITH_IMAGE_SKSL = """
 			uniform shader image1;
 			uniform shader image2;
@@ -69,6 +92,7 @@ public class SkiaShaderOps
 			    half4 c1 = image1.eval(coord);
 			    half4 c2 = image2.eval(coord);
 			    half m = mask.eval(coord).r;
+			    // Both inputs and output are premultiplied - mix works correctly in premul space
 			    return mix(c2, c1, m);
 			}
 			""";
@@ -164,9 +188,7 @@ public class SkiaShaderOps
 	// - Creates an overlay with (color.rgb, overlayAlpha) where overlayAlpha = 255 - maskLevel
 	// - maskLevel = mask * colorAlpha (or inverted: 255 - mask * colorAlpha)
 	// - Composites overlay onto image using standard SRC_OVER blending
-	// The result is: result = mix(image, color, blendFactor)
-	// where blendFactor = (1 - mask * colorAlpha) for non-inverted
-	// and blendFactor = (mask * colorAlpha) for inverted
+	// Note: Skia shaders work in premultiplied color space - image.eval() returns premul values
 	private static final String MASK_WITH_COLOR_SKSL = """
 			uniform shader image;
 			uniform shader mask;
@@ -175,7 +197,7 @@ public class SkiaShaderOps
 			uniform half invertMask;
 
 			half4 main(float2 coord) {
-			    half4 imgColor = image.eval(coord);
+			    half4 imgColor = image.eval(coord);  // premultiplied
 			    half m = mask.eval(coord).r;
 
 			    // Calculate blend factor matching Java logic:
@@ -189,9 +211,15 @@ public class SkiaShaderOps
 			        blendFactor = 1.0 - m * colorAlpha;
 			    }
 
-			    // Blend image with color
-			    half3 resultRGB = mix(imgColor.rgb, colorRGB, blendFactor);
-			    return half4(resultRGB, imgColor.a);
+			    // Unpremultiply image color to get straight RGB for blending
+			    half3 imgRGB = imgColor.a > 0.0 ? imgColor.rgb / imgColor.a : half3(0.0);
+
+			    // Blend in straight alpha space
+			    half3 resultRGB = mix(imgRGB, colorRGB, blendFactor);
+			    half resultA = imgColor.a;
+
+			    // Output premultiplied for GPU surface
+			    return half4(resultRGB * resultA, resultA);
 			}
 			""";
 
@@ -206,6 +234,10 @@ public class SkiaShaderOps
 				if (maskWithColorEffect == null)
 				{
 					maskWithColorEffect = RuntimeEffect.Companion.makeForShader(MASK_WITH_COLOR_SKSL);
+					if (maskWithColorEffect == null)
+					{
+						throw new RuntimeException("Failed to compile MASK_WITH_COLOR_SKSL shader");
+					}
 				}
 			}
 		}
@@ -289,22 +321,27 @@ public class SkiaShaderOps
 	// ==================== setAlphaFromMask ====================
 
 	// SkSL shader to set alpha from grayscale mask
-	// Since we use UNPREMUL surfaces, RGB stays unchanged, only alpha changes
+	// Note: Skia shaders work in premultiplied color space - image.eval() returns premul values
 	private static final String SET_ALPHA_FROM_MASK_SKSL = """
 			uniform shader image;
 			uniform shader mask;
 			uniform half invertMask;
 
 			half4 main(float2 coord) {
-			    half4 c = image.eval(coord);
+			    half4 c = image.eval(coord);  // premultiplied: rgb is already multiplied by c.a
 			    half m = mask.eval(coord).r;
 			    if (invertMask > 0.5) {
 			        m = 1.0 - m;
 			    }
 			    // Take minimum of mask and existing alpha
 			    half newAlpha = min(m, c.a);
-			    // RGB stays unchanged (UNPREMUL format)
-			    return half4(c.rgb, newAlpha);
+
+			    // Unpremultiply, then repremultiply with new alpha
+			    // c.rgb = originalRGB * c.a, so originalRGB = c.rgb / c.a
+			    // newPremul = originalRGB * newAlpha = (c.rgb / c.a) * newAlpha
+			    // Simplify: newPremul = c.rgb * (newAlpha / c.a)
+			    half3 newRGB = c.a > 0.0 ? c.rgb * (newAlpha / c.a) : half3(0.0);
+			    return half4(newRGB, newAlpha);
 			}
 			""";
 
@@ -391,6 +428,7 @@ public class SkiaShaderOps
 
 	// SkSL shader for colorify algorithm2
 	// Takes grayscale image and applies HSB color transformation
+	// Note: Grayscale images have alpha=1.0, so premul gray value = straight gray value
 	private static final String COLORIFY_ALG2_SKSL = """
 			uniform shader image;
 			uniform half3 hsb;  // hue, saturation, brightness
@@ -413,15 +451,17 @@ public class SkiaShaderOps
 			}
 
 			half4 main(float2 coord) {
-			    half gray = image.eval(coord).r;
+			    half gray = image.eval(coord).r;  // grayscale, premul doesn't affect it
 			    half I = hsb.z * 255.0;
 			    half overlay = ((I / 255.0) * (I + (2.0 * gray) * (255.0 - I))) / 255.0;
 			    half3 rgb = hsb2rgb(hsb.x, hsb.y, overlay);
-			    return half4(rgb, alpha);
+			    // Output premultiplied for GPU surface
+			    return half4(rgb * alpha, alpha);
 			}
 			""";
 
 	// SkSL shader for colorify algorithm3
+	// Output is premultiplied (rgb * alpha) for GPU render targets
 	private static final String COLORIFY_ALG3_SKSL = """
 			uniform shader image;
 			uniform half3 hsb;
@@ -452,16 +492,19 @@ public class SkiaShaderOps
 			        resultLevel = range * gray + (1.0 - range);
 			    }
 			    half3 rgb = hsb2rgb(hsb.x, hsb.y, resultLevel);
-			    return half4(rgb, alpha);
+			    // Output premultiplied for GPU surface
+			    return half4(rgb * alpha, alpha);
 			}
 			""";
 
 	// SkSL shader for colorify solidColor (just outputs the color)
+	// Output is premultiplied (rgb * alpha) for GPU render targets
 	private static final String COLORIFY_SOLID_SKSL = """
 			uniform half4 color;
 
 			half4 main(float2 coord) {
-			    return color;
+			    // Output premultiplied for GPU surface
+			    return half4(color.rgb * color.a, color.a);
 			}
 			""";
 

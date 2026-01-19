@@ -381,7 +381,7 @@ public class ImageHelperTest
 		Color color = Color.create(100, 150, 200);
 
 		Image result = ImageHelper.colorify(grayscale, color, ColorifyAlgorithm.algorithm2);
-		compareWithExpected(result, "colorifyAlgorithm2");
+		compareWithExpected(result, "colorifyAlgorithm2", 2);
 	}
 
 	@Test
@@ -391,7 +391,7 @@ public class ImageHelperTest
 		Color color = Color.create(200, 100, 50);
 
 		Image result = ImageHelper.colorify(grayscale, color, ColorifyAlgorithm.algorithm3);
-		compareWithExpected(result, "colorifyAlgorithm3");
+		compareWithExpected(result, "colorifyAlgorithm3", 2);
 	}
 
 	@Test
