@@ -274,7 +274,7 @@ public class ImageHelperTest
 			Image mask = createGradientMask();
 			Color color = Color.create(0, 255, 0, 128);
 
-			Stopwatch sw = new Stopwatch("maskWithColor");
+			Stopwatch sw = new Stopwatch("maskWithColor"); // TODO remove when done with it
 			Image result = ImageHelper.maskWithColor(image, color, mask, false);
 			sw.printElapsedTime();
 			successCount++;
