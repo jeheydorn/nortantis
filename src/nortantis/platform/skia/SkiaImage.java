@@ -4,6 +4,7 @@ import nortantis.geom.IntRectangle;
 import nortantis.platform.*;
 import nortantis.platform.Color;
 import nortantis.platform.Image;
+import nortantis.util.Logger;
 import org.imgscalr.Scalr.Method;
 import org.jetbrains.skia.*;
 
@@ -27,14 +28,9 @@ public class SkiaImage extends Image
 	private Surface gpuSurface;
 	private org.jetbrains.skia.Image gpuTexture;
 	private ImageLocation location;
-	private boolean gpuEnabled;
+	private boolean isGpuEnabled;
 
-	private static final int GPU_THRESHOLD_PIXELS =  512 * 512; // TODO Change back to 512 * 512 when I'm done testing
-
-	// Maximum texture dimension for GPU operations.
-	// Most GPUs support 16384, but we use a conservative limit to avoid memory issues and crashes.
-	// Images larger than this will use CPU rendering.
-	private static final int MAX_GPU_TEXTURE_DIMENSION = 8192;
+	private static final int GPU_THRESHOLD_PIXELS =  128 * 128;
 
 	// Track active GPU batching painters for await before pixel access
 	private final Set<GPUBatchingPainter> activePainters = Collections.newSetFromMap(new ConcurrentHashMap<>());
@@ -59,12 +55,56 @@ public class SkiaImage extends Image
 	}
 
 	/**
+	 * Releases resources held by this image, ensuring GPU resources are cleaned up
+	 * on the GPU thread to avoid crashes from finalizers running on the wrong thread.
+	 */
+	@Override
+	public void close()
+	{
+		// Wait for any pending painters to complete
+		awaitPendingPainters();
+
+		// Capture GPU resources and null them out immediately so GC won't try to finalize them
+		final Surface surfaceToClose = gpuSurface;
+		final org.jetbrains.skia.Image textureToClose = gpuTexture;
+		final org.jetbrains.skia.Image cachedToClose = cachedSkiaImage;
+
+		gpuSurface = null;
+		gpuTexture = null;
+		cachedSkiaImage = null;
+
+		// Close GPU resources on the GPU thread to avoid OpenGL threading issues
+		if ((surfaceToClose != null || textureToClose != null)
+				&& GPUExecutor.getInstance().isGPUAvailable())
+		{
+			GPUExecutor.getInstance().submitAsync(() -> {
+				if (surfaceToClose != null) surfaceToClose.close();
+				if (textureToClose != null) textureToClose.close();
+			});
+		}
+
+		// CPU resources can be closed on any thread
+		if (cachedToClose != null)
+		{
+			cachedToClose.close();
+		}
+		if (bitmap != null)
+		{
+			bitmap.close();
+			bitmap = null;
+		}
+
+		isGpuEnabled = false;
+		location = ImageLocation.CPU_ONLY;
+	}
+
+	/**
 	 * Initializes GPU state based on image size and GPU availability.
 	 */
 	private void initializeGPUState()
 	{
-		gpuEnabled = shouldUseGPU();
-		location = gpuEnabled ? ImageLocation.CPU_DIRTY : ImageLocation.CPU_ONLY;
+		isGpuEnabled = shouldUseGPU();
+		location = isGpuEnabled ? ImageLocation.CPU_DIRTY : ImageLocation.CPU_ONLY;
 		gpuSurface = null;
 		gpuTexture = null;
 	}
@@ -72,14 +112,18 @@ public class SkiaImage extends Image
 	/**
 	 * Determines if this image should use GPU acceleration based on size and availability.
 	 * Uses GPU for medium-sized images, but falls back to CPU for very large images
-	 * to avoid GPU memory issues and crashes.
+	 * that exceed the GPU's maximum texture size.
 	 */
 	private boolean shouldUseGPU()
 	{
+		if (!GPUExecutor.getInstance().isGPUAvailable())
+		{
+			return false;
+		}
+		int maxTextureSize = GPUExecutor.getInstance().getMaxTextureSize();
 		return getPixelCount() >= GPU_THRESHOLD_PIXELS
-				&& width <= MAX_GPU_TEXTURE_DIMENSION
-				&& height <= MAX_GPU_TEXTURE_DIMENSION
-				&& GPUExecutor.getInstance().isGPUAvailable();
+				&& width <= maxTextureSize
+				&& height <= maxTextureSize;
 	}
 
 	private Bitmap createBitmap(ImageInfo imageInfo)
@@ -170,7 +214,7 @@ public class SkiaImage extends Image
 	public org.jetbrains.skia.Image getSkiaImage()
 	{
 		// If GPU has latest data and we have a surface, and we're on the GPU thread, use GPU snapshot
-		if (gpuEnabled && location != ImageLocation.CPU_DIRTY && gpuSurface != null
+		if (isGpuEnabled && location != ImageLocation.CPU_DIRTY && gpuSurface != null
 				&& GPUExecutor.getInstance().isOnGPUThread())
 		{
 			if (gpuTexture == null)
@@ -184,7 +228,7 @@ public class SkiaImage extends Image
 		}
 
 		// If GPU has the latest data but we're not on GPU thread, sync to CPU first
-		if (gpuEnabled && location == ImageLocation.GPU_DIRTY)
+		if (isGpuEnabled && location == ImageLocation.GPU_DIRTY)
 		{
 			ensureCPUData();
 		}
@@ -212,7 +256,7 @@ public class SkiaImage extends Image
 	 */
 	private void ensureGPUSurface()
 	{
-		if (!gpuEnabled)
+		if (!isGpuEnabled)
 		{
 			return;
 		}
@@ -223,7 +267,7 @@ public class SkiaImage extends Image
 			if (gpuSurface == null)
 			{
 				// GPU surface creation failed, fall back to CPU
-				gpuEnabled = false;
+				isGpuEnabled = false;
 				location = ImageLocation.CPU_ONLY;
 				return;
 			}
@@ -285,7 +329,7 @@ public class SkiaImage extends Image
 		{
 			System.err.println("SkiaImage: Failed to sync GPU to CPU: " + e.getMessage());
 			// Fall back to CPU-only mode
-			gpuEnabled = false;
+			isGpuEnabled = false;
 			location = ImageLocation.CPU_ONLY;
 		}
 	}
@@ -326,7 +370,7 @@ public class SkiaImage extends Image
 		{
 			System.err.println("SkiaImage: Failed to sync CPU to GPU: " + e.getMessage());
 			// Fall back to CPU-only mode
-			gpuEnabled = false;
+			isGpuEnabled = false;
 			location = ImageLocation.CPU_ONLY;
 		}
 	}
@@ -337,7 +381,7 @@ public class SkiaImage extends Image
 	 */
 	public void markCPUDirty()
 	{
-		if (gpuEnabled && location != ImageLocation.CPU_ONLY)
+		if (isGpuEnabled && location != ImageLocation.CPU_ONLY)
 		{
 			location = ImageLocation.CPU_DIRTY;
 			invalidateGPUTexture();
@@ -351,7 +395,7 @@ public class SkiaImage extends Image
 	 */
 	private void markGPUDirty()
 	{
-		if (gpuEnabled)
+		if (isGpuEnabled)
 		{
 			location = ImageLocation.GPU_DIRTY;
 			invalidateGPUTexture();
@@ -401,7 +445,7 @@ public class SkiaImage extends Image
 	@Override
 	public void prepareForDrawing()
 	{
-		if (gpuEnabled)
+		if (isGpuEnabled)
 		{
 			ensureGPUSurface();
 		}
@@ -438,7 +482,7 @@ public class SkiaImage extends Image
 	@Override
 	public Painter createPainter(DrawQuality quality)
 	{
-		if (gpuEnabled && GPUExecutor.getInstance().isGPUAvailable())
+		if (isGpuEnabled && GPUExecutor.getInstance().isGPUAvailable())
 		{
 			try
 			{
@@ -454,9 +498,9 @@ public class SkiaImage extends Image
 			}
 			catch (Exception e)
 			{
+				Logger.printError("SkiaImage: GPU painter failed, falling back to CPU: " + e.getMessage(), e);
 				// Fallback to CPU
-				System.err.println("SkiaImage: GPU painter failed, falling back to CPU: " + e.getMessage());
-				gpuEnabled = false;
+				isGpuEnabled = false;
 				location = ImageLocation.CPU_ONLY;
 			}
 		}
@@ -480,7 +524,7 @@ public class SkiaImage extends Image
 
 		// Try GPU-accelerated scaling if source is GPU-enabled
 		// The entire GPU operation must run on the GPU thread
-		if (gpuEnabled && GPUExecutor.getInstance().isGPUAvailable())
+		if (isGpuEnabled && GPUExecutor.getInstance().isGPUAvailable())
 		{
 			final int targetWidth = width;
 			final int targetHeight = height;
@@ -602,7 +646,7 @@ public class SkiaImage extends Image
 
 		// Try GPU-accelerated copy if source is GPU-enabled
 		// The entire GPU operation must run on the GPU thread
-		if (gpuEnabled && GPUExecutor.getInstance().isGPUAvailable())
+		if (isGpuEnabled && GPUExecutor.getInstance().isGPUAvailable())
 		{
 			final int targetW = w;
 			final int targetH = h;
@@ -852,6 +896,11 @@ public class SkiaImage extends Image
 		canvas.close();
 		tempBitmap.close();
 		invalidateCachedImage();
+	}
+
+	public boolean isGpuEnabled()
+	{
+		return isGpuEnabled;
 	}
 
 }

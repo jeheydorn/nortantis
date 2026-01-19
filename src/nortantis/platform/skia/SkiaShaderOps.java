@@ -4,7 +4,6 @@ import nortantis.platform.Color;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.util.ImageHelper.ColorifyAlgorithm;
-import nortantis.util.Logger;
 import org.jetbrains.skia.*;
 
 /**
@@ -16,20 +15,16 @@ public class SkiaShaderOps
 {
 	private static final Object effectLock = new Object();
 
-	// Maximum texture dimension for GPU operations.
-	// Most GPUs support 16384, but we use a conservative limit to avoid memory issues.
-	// Images larger than this will use CPU rendering.
-	private static final int MAX_GPU_TEXTURE_DIMENSION = 8192;
-
 	// ==================== Surface Creation Helper ====================
 
 	/**
 	 * Returns true if the given dimensions are suitable for GPU rendering.
-	 * Very large images should use CPU rendering to avoid GPU memory issues.
+	 * Very large images that exceed the GPU's maximum texture size should use CPU rendering.
 	 */
 	private static boolean canUseGPUForSize(int width, int height)
 	{
-		return width <= MAX_GPU_TEXTURE_DIMENSION && height <= MAX_GPU_TEXTURE_DIMENSION;
+		int maxTextureSize = GPUExecutor.getInstance().getMaxTextureSize();
+		return width <= maxTextureSize && height <= maxTextureSize;
 	}
 
 	/**
@@ -676,18 +671,29 @@ public class SkiaShaderOps
 
 	public boolean canProcessOnGPU(Image... images)
 	{
-		return areAllSkiaImages(images) && isGPUAccelerated();
+		return areAllGpuBackedSkiaImages(images) && isGPUAccelerated();
 	}
 
+	/**
+	 * Determines whether the given images should run on the GPU.
+	 */
+	public static boolean shouldRunOnGPU(Image... images)
+	{
+		return isGPUAccelerated() && areAllGpuBackedSkiaImages(images);
+	}
 
 	/**
-	 * Checks if all images are SkiaImage instances.
+	 * Checks if all images are SkiaImage instances that have their data on the GPU.
 	 */
-	public static boolean areAllSkiaImages(Image... images)
+	private static boolean areAllGpuBackedSkiaImages(Image... images)
 	{
-		for (Image img : images)
+		for (Image image : images)
 		{
-			if (!(img instanceof SkiaImage))
+			if (!(image instanceof SkiaImage))
+			{
+				return false;
+			}
+			if (!((SkiaImage)image).isGpuEnabled())
 			{
 				return false;
 			}

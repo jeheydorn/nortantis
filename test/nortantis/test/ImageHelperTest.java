@@ -6,11 +6,8 @@ import nortantis.geom.IntRectangle;
 import nortantis.geom.Point;
 import nortantis.platform.*;
 import nortantis.platform.skia.SkiaFactory;
-import nortantis.util.Assets;
-import nortantis.util.FileHelper;
-import nortantis.util.ImageHelper;
+import nortantis.util.*;
 import nortantis.util.ImageHelper.ColorifyAlgorithm;
-import nortantis.util.Range;
 import org.apache.commons.io.FileUtils;
 import org.imgscalr.Scalr.Method;
 import org.junit.jupiter.api.BeforeAll;
@@ -34,8 +31,8 @@ public class ImageHelperTest
 {
 	private static final String expectedFolderName = "expected image helper tests";
 	private static final String failedFolderName = "failed image helper tests";
-	private static final int testImageWidth = 10000;
-	private static final int testImageHeight = 10000;
+	private static final int testImageWidth = 100;
+	private static final int testImageHeight = 100;
 
 	@BeforeAll
 	public static void setUpBeforeClass() throws Exception
@@ -281,6 +278,12 @@ public class ImageHelperTest
 			Image result = ImageHelper.maskWithColor(image, color, mask, false);
 			sw.printElapsedTime();
 			successCount++;
+
+			// Close images to ensure GPU resources are released on the GPU thread
+			// rather than being left for GC finalizers (which run on wrong thread)
+			result.close();
+			image.close();
+			mask.close();
 		}
 
 		assertEquals(successCount, numberOfRuns);

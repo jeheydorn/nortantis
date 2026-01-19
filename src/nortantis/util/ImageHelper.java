@@ -432,8 +432,7 @@ public class ImageHelper
 			throw new IllegalArgumentException("Image 2 must be type " + ImageType.RGB + " or " + ImageType.ARGB + ", but was type " + image2.getType() + ".");
 		}
 
-		// Use Skia shader implementation if all images are SkiaImage (faster)
-		if (SkiaShaderOps.areAllSkiaImages(image1, image2, mask)
+		if (SkiaShaderOps.shouldRunOnGPU(image1, image2, mask)
 				&& image1.getWidth() == mask.getWidth() && image1.getHeight() == mask.getHeight())
 		{
 			return SkiaShaderOps.maskWithImage(image1, image2, mask);
@@ -583,8 +582,7 @@ public class ImageHelper
 		if (image.getHeight() != mask.getHeight())
 			throw new IllegalArgumentException("In maskWithColor, image height was " + image.getHeight() + " but mask height was " + mask.getHeight());
 
-		// Use Skia shader implementation if images are SkiaImage (faster)
-		if (SkiaShaderOps.areAllSkiaImages(image, mask))
+		if (SkiaShaderOps.shouldRunOnGPU(image, mask))
 		{
 			return SkiaShaderOps.maskWithColor(image, color, mask, invertMask);
 		}
@@ -753,8 +751,7 @@ public class ImageHelper
 		if (image.getHeight() != alphaMask.getHeight())
 			throw new IllegalArgumentException();
 
-		// Use Skia shader implementation if images are SkiaImage (faster)
-		if (SkiaShaderOps.areAllSkiaImages(image, alphaMask))
+		if (SkiaShaderOps.shouldRunOnGPU(image, alphaMask))
 		{
 			return SkiaShaderOps.setAlphaFromMask(image, alphaMask, invertMask);
 		}

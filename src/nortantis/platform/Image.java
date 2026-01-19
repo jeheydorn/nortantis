@@ -7,13 +7,26 @@ import org.imgscalr.Scalr.Method;
 import java.io.InputStream;
 import java.util.function.Consumer;
 
-public abstract class Image
+public abstract class Image implements AutoCloseable
 {
 	private final ImageType type;
 
 	protected Image(ImageType type)
 	{
 		this.type = type;
+	}
+
+	/**
+	 * Releases resources held by this image.
+	 * For GPU-accelerated implementations, this ensures GPU resources are properly
+	 * cleaned up on the GPU thread rather than being left for garbage collection.
+	 *
+	 * The default implementation does nothing. Subclasses with GPU resources should override.
+	 */
+	@Override
+	public void close()
+	{
+		// Default: no-op. SkiaImage overrides to clean up GPU resources.
 	}
 
 	public abstract int getWidth();

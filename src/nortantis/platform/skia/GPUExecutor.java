@@ -14,6 +14,7 @@ import org.jetbrains.skia.ImageInfo;
 import org.jetbrains.skia.Surface;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.opengl.GL;
+import org.lwjgl.opengl.GL11;
 
 import nortantis.util.Logger;
 
@@ -37,6 +38,7 @@ public class GPUExecutor
 	private final AtomicBoolean initialized;
 	private volatile DirectContext directContext;
 	private volatile boolean gpuAvailable;
+	private volatile int maxTextureSize = 8192; // Default fallback, will be queried from GPU
 
 	// LWJGL/GLFW resources (owned by GPU thread)
 	private long glfwWindow = NULL;
@@ -100,6 +102,16 @@ public class GPUExecutor
 	public boolean isGPUAvailable()
 	{
 		return gpuAvailable && directContext != null && running.get();
+	}
+
+	/**
+	 * Returns the maximum texture dimension supported by the GPU.
+	 * This is queried from GL_MAX_TEXTURE_SIZE during initialization.
+	 * Returns a default fallback value if GPU is not available.
+	 */
+	public int getMaxTextureSize()
+	{
+		return maxTextureSize;
 	}
 
 	/**
@@ -478,7 +490,9 @@ public class GPUExecutor
 			// Initialize LWJGL's OpenGL bindings
 			GL.createCapabilities();
 
-			Logger.println("GPUExecutor: GLFW/OpenGL context created successfully on GPU thread");
+			// Query the maximum texture size supported by this GPU
+			maxTextureSize = GL11.glGetInteger(GL11.GL_MAX_TEXTURE_SIZE);
+			Logger.println("GPUExecutor: GLFW/OpenGL context created successfully on GPU thread (max texture size: " + maxTextureSize + ")");
 			return true;
 		}
 		catch (Exception | UnsatisfiedLinkError e)
