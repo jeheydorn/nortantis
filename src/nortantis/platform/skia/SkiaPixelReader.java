@@ -1,27 +1,50 @@
 package nortantis.platform.skia;
 
+import nortantis.geom.IntRectangle;
 import nortantis.platform.Color;
+import nortantis.platform.ImageType;
 import nortantis.platform.PixelReader;
 
 public class SkiaPixelReader implements PixelReader
 {
-	protected int[] cachedPixelArray;
+	protected final IntRectangle bounds;
+	protected final int[] cachedPixelArray;
 	protected final float maxPixelLevelAsFloat;
 	protected final SkiaImage image;
 	protected final int width;
 
-	public SkiaPixelReader(SkiaImage image)
+	public SkiaPixelReader(SkiaImage image, IntRectangle bounds)
 	{
 		maxPixelLevelAsFloat = image.getMaxPixelLevel();
-		cachedPixelArray = image.readPixelsToIntArray();
+		if (bounds == null)
+		{
+			cachedPixelArray = image.readPixelsToIntArray();
+		}
+		else
+		{
+			cachedPixelArray = image.readPixelsToIntArray(bounds.x, bounds.y, bounds.width, bounds.height);
+		}
 		this.image = image;
 		width = image.getWidth();
+		this.bounds = bounds;
+	}
+
+	public SkiaPixelReader(SkiaImage image)
+	{
+		this(image, null);
 	}
 
 	@Override
 	public int getGrayLevel(int x, int y)
 	{
-		return getBandLevel(x, y, 0);
+		int level = getBandLevel(x, y, 0);
+		if (image.getType() == ImageType.Binary)
+		{
+			// Binary images use GRAY_8 storage (0 or 255) but should return 0 or 1
+			// to match getMaxPixelLevel() which returns 1 for Binary
+			return level > 127 ? 1 : 0;
+		}
+		return level;
 	}
 
 	@Override
@@ -42,9 +65,13 @@ public class SkiaPixelReader implements PixelReader
 	{
 		if (cachedPixelArray != null)
 		{
+			if (bounds != null)
+			{
+				return cachedPixelArray[(y - bounds.y) * bounds.width + (x - bounds.x)];
+			}
 			return cachedPixelArray[y * width + x];
 		}
-		return image.bitmap.getColor(x, y);
+		return image.getBitmap().getColor(x, y);
 	}
 
 	@Override
@@ -69,6 +96,5 @@ public class SkiaPixelReader implements PixelReader
 	@Override
 	public void close()
 	{
-		image.endPixelReadsOrWrites();
 	}
 }

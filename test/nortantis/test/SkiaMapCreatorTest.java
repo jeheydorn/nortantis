@@ -1,29 +1,35 @@
 package nortantis.test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import java.io.File;
-import java.nio.file.Paths;
-import java.util.Arrays;
-
-import org.apache.commons.io.FileUtils;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
-import nortantis.MapCreator;
-import nortantis.MapSettings;
+import nortantis.*;
+import nortantis.editor.FreeIcon;
 import nortantis.editor.MapParts;
+import nortantis.geom.Dimension;
 import nortantis.geom.IntRectangle;
-import nortantis.platform.Image;
-import nortantis.platform.PlatformFactory;
+import nortantis.platform.*;
 import nortantis.platform.skia.SkiaFactory;
 import nortantis.util.Assets;
 import nortantis.util.FileHelper;
-import nortantis.util.Logger;
+import nortantis.util.ImageHelper;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Random;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class SkiaMapCreatorTest
 {
+	final static String failedMapsFolderName = "failed maps skia";
+	private static final String expectedMapsFolderName = "expected maps skia";
+	final int threshold = 4;
+
 	@BeforeAll
 	public static void setUpBeforeClass() throws Exception
 	{
@@ -31,33 +37,231 @@ public class SkiaMapCreatorTest
 		Assets.disableAddedArtPacksForUnitTests();
 
 		FileHelper.createFolder(Paths.get("unit test files", "expected maps").toString());
-		FileUtils.deleteDirectory(new File(Paths.get("unit test files", "failed maps").toString()));
+		FileUtils.deleteDirectory(new File(Paths.get("unit test files", failedMapsFolderName).toString()));
 	}
 
 	@Test
-	public void allTypesOfEdits()
+	public void simpleSmallWorld()
 	{
-		generateAndCompare("allTypesOfEdits.nort");
+		generateAndCompare("simpleSmallWorld.nort");
+	}
+
+	@Test
+	public void incrementalUpdate_allTypesOfEdits()
+	{
+		// Load settings from the .nort file
+		String settingsFileName = "simpleSmallWorld.nort";
+		String settingsPath = Paths.get("unit test files", "map settings", settingsFileName).toString();
+		MapSettings settings = new MapSettings(settingsPath);
+
+		// Create the full map first (baseline)
+		MapCreator mapCreator = new MapCreator();
+		MapParts mapParts = new MapParts();
+		Image fullMap = mapCreator.createMap(settings, null, mapParts);
+		final int diffThreshold = 10;
+		int failCount = 0;
+
+		{
+			final int numberToTest = 10;
+			Image fullMapForUpdates = fullMap.deepCopy();
+			int iconNumber = 0;
+			for (FreeIcon icon : settings.edits.freeIcons)
+			{
+				iconNumber++;
+				if (iconNumber > numberToTest)
+				{
+					break;
+				}
+
+				// System.out.println("Running incremental icon drawing test number " + iconNumber);
+
+				IntRectangle changedBounds = mapCreator.incrementalUpdateIcons(settings, mapParts, fullMapForUpdates, Arrays.asList(icon));
+
+				assertTrue(changedBounds != null, "Incremental update should produce bounds");
+				assertTrue(changedBounds.width > 0);
+				assertTrue(changedBounds.height > 0);
+
+				Image expectedSnippet = fullMap.getSubImage(changedBounds);
+				Image actualSnippet = fullMapForUpdates.getSubImage(changedBounds);
+
+				// Compare incremental result against expected
+				String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(expectedSnippet, actualSnippet, diffThreshold);
+				if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
+				{
+					FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
+
+					String expectedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + iconNumber + " expected.png";
+					Path expectedPath = Paths.get("unit test files", failedMapsFolderName, expectedSnippetName);
+					ImageHelper.write(expectedSnippet, expectedPath.toString());
+
+					String failedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + iconNumber + " failed.png";
+					Path failedPath = Paths.get("unit test files", failedMapsFolderName, failedSnippetName);
+					ImageHelper.write(actualSnippet, failedPath.toString());
+
+					createImageDiffIfImagesAreSameSize(expectedSnippet, actualSnippet, failedSnippetName, diffThreshold);
+					failCount++;
+				}
+			}
+
+			String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(fullMap, fullMapForUpdates, diffThreshold);
+			if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
+			{
+				FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
+				String failedMapName = settingsFileName + " full map for incremental draw test";
+				ImageHelper.write(fullMapForUpdates, MapTestUtil.getFailedMapFilePath(failedMapName, failedMapsFolderName));
+				createImageDiffIfImagesAreSameSize(fullMap, fullMapForUpdates, failedMapName, diffThreshold);
+				fail("Incremental update did not match expected image: " + comparisonErrorMessage);
+			}
+		}
+	}
+
+	@Test
+	public void drawLandAndOceanBlackAndWhiteTest()
+	{
+		final String settingsFileName = "simpleSmallWorld.nort";
+		MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", settingsFileName).toString());
+		WorldGraph graph = MapCreator.createGraphForUnitTests(settings);
+
+		Image landMask = Image.create(graph.getWidth(), graph.getHeight(), ImageType.Binary);
+		try (Painter p = landMask.createPainter())
+		{
+			graph.drawLandAndOceanBlackAndWhite(p, graph.centers, null);
+		}
+
+		compareWithExpected(landMask, "drawLandAndOceanBlackAndWhiteTest", threshold);
+	}
+
+	@Test
+	public void drawCoastlineWithLakeShoresAndBlurTest()
+	{
+		final String settingsFileName = "simpleSmallWorld.nort";
+		MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", settingsFileName).toString());
+		WorldGraph graph = MapCreator.createGraphForUnitTests(settings);
+
+		Image coastlineAndLakeShoreMask = Image.create(graph.getWidth(), graph.getHeight(), ImageType.Binary);
+		try (Painter p = coastlineAndLakeShoreMask.createPainter(DrawQuality.High))
+		{
+			p.setColor(Color.white);
+			graph.drawCoastlineWithLakeShores(p, settings.coastlineWidth * settings.resolution, null, null);
+		}
+
+		compareWithExpected(coastlineAndLakeShoreMask, "coastlineWithLakeShores", threshold);
+	}
+
+	@Test
+	public void coastShadingTest()
+	{
+		final String settingsFileName = "simpleSmallWorld.nort";
+		MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", settingsFileName).toString());
+		WorldGraph graph = MapCreator.createGraphForUnitTests(settings);
+
+		Image coastlineAndLakeShoreMask = Image.create(graph.getWidth(), graph.getHeight(), ImageType.Binary);
+		try (Painter p = coastlineAndLakeShoreMask.createPainter(DrawQuality.High))
+		{
+			p.setColor(Color.white);
+			graph.drawCoastlineWithLakeShores(p, settings.coastlineWidth * settings.resolution, null, null);
+		}
+
+		// Test bluing coastline and lake shores.
+		double sizeMultiplier = MapCreator.calcSizeMultipilerFromResolutionScale(settings.resolution);
+		int blurLevel = (int) (settings.coastShadingLevel * sizeMultiplier);
+		float scale = 2.3973336f; // The actual value used when creating this map.
+		Image coastShading = ImageHelper.blurAndScale(coastlineAndLakeShoreMask, blurLevel, scale, true);
+
+		compareWithExpected(coastShading, "coastShading", threshold);
+	}
+
+	@Test
+	public void fractalBGGeneratorTest()
+	{
+		String expectedFileName = "fractalBackground";
+
+		final int widthAndHeight = 48;
+		Image actual = FractalBGGenerator.generate(new Random(42), 1.3f, widthAndHeight, widthAndHeight, 0.75f);
+
+		compareWithExpected(actual, expectedFileName, 0);
+	}
+
+	@Test
+	public void colorizedBackgroundFromTextureTest()
+	{
+		String expectedFileName = "colorizedBackgroundFromTexture";
+
+		Path texturePath = Paths.get("assets", "installed art pack", "background textures", "grungy paper.png");
+		Image texture = ImageCache.getInstance(Assets.installedArtPack, null).getImageFromFile(texturePath);
+		Image generatedTexture = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(397110878), ImageHelper.convertToGrayscale(texture), 1172, 1172);
+		Image grayScaleTexture = ImageHelper.convertToGrayscale(texture);
+		Image actual = ImageHelper.colorify(grayScaleTexture, Color.create(217, 203, 156, 255), ImageHelper.ColorifyAlgorithm.algorithm3);
+
+		compareWithExpected(actual, expectedFileName, 0);
+	}
+
+	@Test
+	public void backgroundFromTextureTest()
+	{
+		final String settingsFileName = "simpleSmallWorld.nort";
+		MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", settingsFileName).toString());
+		Dimension mapBounds = Background.calcMapBoundsAndAdjustResolutionIfNeeded(settings, null);
+		Background background = new Background(settings, mapBounds, new LoggerWarningLogger());
+		Image actual = background.ocean;
+
+		compareWithExpected(actual, "backgroundFromTexture", 0);
+	}
+
+	private void compareWithExpected(Image actual, String testName, int threshold)
+	{
+		String expectedFilePath = getExpectedFilePath(testName);
+		Image expected;
+
+		if (new File(expectedFilePath).exists())
+		{
+			expected = Assets.readImage(expectedFilePath);
+		}
+		else
+		{
+			expected = actual;
+			FileHelper.createFolder(Paths.get("unit test files", expectedMapsFolderName).toString());
+			ImageHelper.write(actual, expectedFilePath);
+			return;
+		}
+
+		String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(expected, actual, threshold);
+		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
+		{
+			FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
+			ImageHelper.write(actual, getFailedFilePath(testName));
+			createImageDiffIfImagesAreSameSize(expected, actual, testName);
+			fail("Test '" + testName + "' failed: " + comparisonErrorMessage);
+		}
+	}
+
+	private static String getExpectedFilePath(String testName)
+	{
+		return Paths.get("unit test files", expectedMapsFolderName, testName + ".png").toString();
+	}
+
+	private static String getFailedFilePath(String testName)
+	{
+		return Paths.get("unit test files", failedMapsFolderName, testName + ".png").toString();
+	}
+
+	private static String getDiffFilePath(String testName)
+	{
+		return Paths.get("unit test files", failedMapsFolderName, testName + " - diff.png").toString();
 	}
 
 	private void generateAndCompare(String settingsFileName)
 	{
-		String settingsPath = Paths.get("unit test files", "map settings", settingsFileName).toString();
-		MapSettings settings = new MapSettings(settingsPath);
+		MapTestUtil.generateAndCompare(settingsFileName, null, expectedMapsFolderName, failedMapsFolderName);
+	}
 
-		MapCreator mapCreator = new MapCreator();
-		Logger.println("Creating map from '" + settingsPath + "' using Skia");
-		Image actual = mapCreator.createMap(settings, null, null);
+	private void createImageDiffIfImagesAreSameSize(Image image1, Image image2, String settingsFileName)
+	{
+		MapTestUtil.createImageDiffIfImagesAreSameSize(image1, image2, settingsFileName, failedMapsFolderName);
+	}
 
-		// For now, we just want to make sure it doesn't crash and produces an image of the right size.
-		// Comparing with AWT output might be tricky due to rendering differences.
-		assertTrue(actual.getWidth() > 0);
-		assertTrue(actual.getHeight() > 0);
-
-		// TODO - Once I have Skia rendering working, change this test to compare actual pixels.
-
-		// Save it to see what it looks like
-		FileHelper.createFolder(Paths.get("unit test files", "failed maps").toString());
-		actual.write(Paths.get("unit test files", "failed maps", "skia_" + settingsFileName + ".png").toString());
+	private void createImageDiffIfImagesAreSameSize(Image image1, Image image2, String settingsFileName, int threshold)
+	{
+		MapTestUtil.createImageDiffIfImagesAreSameSize(image1, image2, settingsFileName, threshold, failedMapsFolderName);
 	}
 }

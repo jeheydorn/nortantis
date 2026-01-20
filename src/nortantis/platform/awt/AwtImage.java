@@ -50,51 +50,25 @@ class AwtImage extends Image
 	@Override
 	public PixelReader createPixelReader()
 	{
-		if (currentPixelReader != null)
-		{
-			if (currentPixelReader instanceof PixelReaderWriter)
-			{
-				throw new IllegalStateException("Pixel reader/writer already created");
-			}
-			throw new IllegalStateException("Pixel reader already created");
-		}
-
-		currentPixelReader = new AwtPixelReader(this);
-		return currentPixelReader;
+		return new AwtPixelReader(this);
 	}
 
 	@Override
 	public PixelReaderWriter createPixelReaderWriter()
 	{
-		if (currentPixelReader != null)
-		{
-			if (currentPixelReader instanceof PixelReaderWriter)
-			{
-				throw new IllegalStateException("Pixel reader/writer already created");
-			}
-			throw new IllegalStateException("Pixel reader already created");
-		}
-
-		currentPixelReader = new AwtPixelReaderWriter(this);
-		return (PixelReaderWriter) currentPixelReader;
-	}
-
-	@Override
-	public void endPixelReadsOrWrites()
-	{
-		currentPixelReader = null;
-	}
-
-	@Override
-	public PixelReader createNewPixelReader()
-	{
-		return new AwtPixelReader(this);
-	}
-
-	@Override
-	public PixelReaderWriter createNewPixelReaderWriter()
-	{
 		return new AwtPixelReaderWriter(this);
+	}
+
+	@Override
+	public PixelReader innerCreateNewPixelReader(IntRectangle bounds)
+	{
+		return new AwtPixelReader(this, bounds);
+	}
+
+	@Override
+	public PixelReaderWriter innerCreateNewPixelReaderWriter(IntRectangle bounds)
+	{
+		return new AwtPixelReaderWriter(this, bounds);
 	}
 
 	private int toBufferedImageType(ImageType type)
@@ -121,7 +95,7 @@ class AwtImage extends Image
 		}
 		else
 		{
-			throw new IllegalArgumentException("Unimplemented image type: " + type);
+			throw new IllegalArgumentException("Unimplemented BufferedImage type: " + type);
 		}
 	}
 
@@ -247,7 +221,10 @@ class AwtImage extends Image
 	{
 		Image sub = getSubImage(bounds);
 		Image result = Image.create(bounds.width, bounds.height, addAlphaChanel ? ImageType.ARGB : getType());
-		result.createPainter().drawImage(sub, 0, 0);
+		try (Painter p = result.createPainter())
+		{
+			p.drawImage(sub, 0, 0);
+		}
 		return result;
 	}
 
@@ -264,7 +241,6 @@ class AwtImage extends Image
 		// Draw the original image onto the new image
 		Graphics2D g2d = copy.createGraphics();
 		g2d.drawImage(image, 0, 0, null);
-		g2d.dispose();
 
 		return new AwtImage(copy);
 	}

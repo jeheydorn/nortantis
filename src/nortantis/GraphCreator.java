@@ -41,12 +41,14 @@ public class GraphCreator
 
 		// Draw elevation map with tectonic plate boundaries.
 		Image heightMap = Image.create(graph.getWidth(), graph.getHeight(), ImageType.Grayscale16Bit);
-		Painter p = heightMap.createPainter();
-		p.setColor(Color.black);
-		p.fillRect(0, 0, graph.getWidth(), graph.getHeight());
-		graph.paintElevationUsingTriangles(p);
+		try (Painter p = heightMap.createPainter())
+		{
+			p.setColor(Color.black);
+			p.fillRect(0, 0, graph.getWidth(), graph.getHeight());
+			graph.paintElevationUsingTriangles(p);
+		}
 
-		heightMap = ImageHelper.blur(heightMap, (int) graph.getMeanCenterWidth() / 2, false);
+		heightMap = ImageHelper.blur(heightMap, (int) graph.getMeanCenterWidth() / 2, false,false);
 
 		// Use a texture generated from mountain elevation to carve mountain shapes into the areas with high elevation.
 		Image mountains = Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal/mountain texture.png").toString());

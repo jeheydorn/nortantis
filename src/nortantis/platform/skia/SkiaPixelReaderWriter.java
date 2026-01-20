@@ -1,21 +1,36 @@
 package nortantis.platform.skia;
 
+import nortantis.geom.IntRectangle;
 import nortantis.platform.Color;
+import nortantis.platform.ImageType;
 import nortantis.platform.PixelReaderWriter;
-import org.jetbrains.skia.Canvas;
-import org.jetbrains.skia.SurfaceProps;
+import org.jetbrains.skia.IRect;
 
 public class SkiaPixelReaderWriter extends SkiaPixelReader implements PixelReaderWriter
 {
+	private boolean modified = false;
+
 	public SkiaPixelReaderWriter(SkiaImage image)
 	{
-		super(image);
+		this(image, null);
+	}
+
+	public SkiaPixelReaderWriter(SkiaImage image, IntRectangle bounds)
+	{
+		super(image, bounds);
 	}
 
 	@Override
 	public void setGrayLevel(int x, int y, int level)
 	{
-		setBandLevel(x, y, 0, level);
+		if (image.getType() == ImageType.Binary)
+		{
+			// Binary images use GRAY_8 storage but accept 0 or 1 as input
+			// Any non-zero value becomes white (255)
+			level = level > 0 ? 255 : 0;
+		}
+		Color gray = Color.create(level, level, level, 255);
+		setRGB(x, y, gray.getRGB());
 	}
 
 	@Override
@@ -48,8 +63,22 @@ public class SkiaPixelReaderWriter extends SkiaPixelReader implements PixelReade
 	@Override
 	public void setRGB(int x, int y, int rgb)
 	{
-		cachedPixelArray[y * width + x] = rgb;
-		return;
+		modified = true;
+		if (cachedPixelArray != null)
+		{
+			if (bounds != null)
+			{
+				cachedPixelArray[(y - bounds.y) * bounds.width + (x - bounds.x)] = rgb;
+			}
+			else
+			{
+				cachedPixelArray[y * width + x] = rgb;
+			}
+		}
+		else
+		{
+			image.getBitmap().erase(rgb, IRect.makeXYWH(x, y, 1, 1));
+		}
 	}
 
 	@Override
@@ -65,17 +94,35 @@ public class SkiaPixelReaderWriter extends SkiaPixelReader implements PixelReade
 	}
 
 	@Override
-	public void setAlpha(int x, int y, int alpha)
-	{
-		int rgb = getRGB(x, y);
-		setRGB(x, y, (alpha << 24) | (rgb & 0xFFFFFF));
-	}
-
-	@Override
 	public void close()
 	{
+		if (modified && cachedPixelArray != null)
+		{
+			if (bounds == null)
+			{
+				image.writePixelsFromIntArray(cachedPixelArray);
+				image.markCPUDirty(); // Invalidate GPU copy since CPU was modified
+			}
+			else
+			{
+				image.writePixelsToRegion(cachedPixelArray, bounds.x, bounds.y, bounds.width, bounds.height);
+				// If GPU is enabled, update only the modified region on the GPU
+				if (image.isGpuEnabled())
+				{
+					image.updateGPURegion(bounds.x, bounds.y, bounds.width, bounds.height);
+				}
+				else
+				{
+					image.markCPUDirty();
+				}
+			}
+		}
+		else if (modified)
+		{
+			// Direct pixel modifications (no cached array) also need GPU invalidation
+			image.markCPUDirty();
+		}
 		super.close();
-		image.invalidateCachedImage();
 	}
 
 }

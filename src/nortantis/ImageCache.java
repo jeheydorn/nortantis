@@ -797,6 +797,8 @@ public class ImageCache
 		instances.clear();
 		// Also clear the assets cache so that any change to the list of art packs becomes visible.
 		Assets.clearArtPackCache();
+
+		System.gc();
 	}
 
 	public static void clearColoredAndScaledImageCaches()

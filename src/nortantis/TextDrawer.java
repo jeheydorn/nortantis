@@ -70,15 +70,15 @@ public class TextDrawer
 	private Random r;
 	private Font citiesFontScaled;
 	/**
-	 * The maximum angle that text can be curved. Note that changing this would require a conversion to existing maps because the editor
-	 * only stores a number between -1 and 1 for text curvature, so changing this would change the angle of curved text on existing maps.
+	 * The maximum angle that text can be curved. Note that changing this would require a conversion to existing maps because the editor only stores a number between -1 and 1 for text curvature, so
+	 * changing this would change the angle of curved text on existing maps.
 	 */
 	private static final double maxTextCurveAngleRange = Math.PI;
 
 	/**
-	 * 
+	 *
 	 * @param settings
-	 *            The map settings to use. Some of these settings are for text drawing.
+	 * 		The map settings to use. Some of these settings are for text drawing.
 	 */
 	public TextDrawer(MapSettings settings)
 	{
@@ -167,99 +167,100 @@ public class TextDrawer
 
 			graphBounds = new Rectangle(0, 0, graph.getWidth(), graph.getHeight());
 
-			Painter p = map.createPainter();
-			p.setColor(settings.textColor);
-
-			addTitle(map, graph, nameCreator, p);
-
-			for (IconDrawTask city : cityDrawTasks)
+			try (Painter p = map.createPainter())
 			{
-				Set<Point> cityLoc = new HashSet<>(1);
-				cityLoc.add(city.centerLoc);
-				String cityName = nameCreator.generateNameOfType(TextType.City, nameCreator.sampleCityTypesForCityFileName(city.fileName), true);
-				double riseOffset = city.scaledSize.height / 2 + (cityYNameOffset * settings.resolution);
-				RotatedRectangle cityArea = city.createArea();
-				drawNameRotated(map, p, graph, cityName, cityLoc, riseOffset, true, cityArea, TextType.City);
-			}
+				p.setColor(settings.textColor);
 
-			setFontForTextType(p, TextType.Region);
-			for (Region region : graph.regions.values())
-			{
-				Set<Point> locations = extractLocationsFromCenters(region.getCenters());
-				String name;
-				try
-				{
-					name = nameCreator.generateNameOfType(TextType.Region, null, true);
-				}
-				catch (NotEnoughNamesException ex)
-				{
-					throw new RuntimeException(ex.getMessage());
-				}
-				drawNameFitIntoCenters(map, p, name, locations, graph, settings.drawBoldBackground, true, TextType.Region);
-			}
+				addTitle(map, graph, nameCreator, p);
 
-			for (Set<Center> mountainGroup : mountainGroups)
-			{
-				if (mountainGroup.size() >= mountainRangeMinSize)
+				for (IconDrawTask city : cityDrawTasks)
 				{
-					setFontForTextType(p, TextType.Mountain_range);
-					Set<Point> locations = extractLocationsFromCenters(mountainGroup);
-					drawNameRotated(map, p, graph, nameCreator.generateNameOfType(TextType.Mountain_range, null, true), locations, 0.0, true, null, TextType.Mountain_range);
+					Set<Point> cityLoc = new HashSet<>(1);
+					cityLoc.add(city.centerLoc);
+					String cityName = nameCreator.generateNameOfType(TextType.City, nameCreator.sampleCityTypesForCityFileName(city.fileName), true);
+					double riseOffset = city.scaledSize.height / 2 + (cityYNameOffset * settings.resolution);
+					RotatedRectangle cityArea = city.createArea();
+					drawNameRotated(map, p, graph, cityName, cityLoc, riseOffset, true, cityArea, TextType.City);
 				}
-				else
+
+				setFontForTextType(p, TextType.Region);
+				for (Region region : graph.regions.values())
 				{
-					setFontForTextType(p, TextType.Other_mountains);
-					if (mountainGroup.size() >= 2)
+					Set<Point> locations = extractLocationsFromCenters(region.getCenters());
+					String name;
+					try
 					{
-						if (mountainGroup.size() == 2)
+						name = nameCreator.generateNameOfType(TextType.Region, null, true);
+					}
+					catch (NotEnoughNamesException ex)
+					{
+						throw new RuntimeException(ex.getMessage());
+					}
+					drawNameFitIntoCenters(map, p, name, locations, graph, settings.drawBoldBackground, true, TextType.Region);
+				}
+
+				for (Set<Center> mountainGroup : mountainGroups)
+				{
+					if (mountainGroup.size() >= mountainRangeMinSize)
+					{
+						setFontForTextType(p, TextType.Mountain_range);
+						Set<Point> locations = extractLocationsFromCenters(mountainGroup);
+						drawNameRotated(map, p, graph, nameCreator.generateNameOfType(TextType.Mountain_range, null, true), locations, 0.0, true, null, TextType.Mountain_range);
+					}
+					else
+					{
+						setFontForTextType(p, TextType.Other_mountains);
+						if (mountainGroup.size() >= 2)
 						{
-							Point location = findCentroid(extractLocationsFromCenters(mountainGroup));
-							MapText text = createMapText(nameCreator.generateNameOfType(TextType.Other_mountains, OtherMountainsType.Peaks, true), location, 0.0, TextType.Other_mountains);
-							if (drawNameRotated(map, p, graph, twoMountainsYOffset * settings.resolution, true, null, text, false, null))
+							if (mountainGroup.size() == 2)
 							{
-								mapTexts.add(text);
+								Point location = findCentroid(extractLocationsFromCenters(mountainGroup));
+								MapText text = createMapText(nameCreator.generateNameOfType(TextType.Other_mountains, OtherMountainsType.Peaks, true), location, 0.0, TextType.Other_mountains);
+								if (drawNameRotated(map, p, graph, twoMountainsYOffset * settings.resolution, true, null, text, false, null))
+								{
+									mapTexts.add(text);
+								}
+							}
+							else
+							{
+								drawNameRotated(map, p, graph, nameCreator.generateNameOfType(TextType.Other_mountains, OtherMountainsType.Mountains, true), extractLocationsFromCenters(mountainGroup),
+										mountainGroupYOffset * settings.resolution, true, null, TextType.Other_mountains);
 							}
 						}
 						else
 						{
-							drawNameRotated(map, p, graph, nameCreator.generateNameOfType(TextType.Other_mountains, OtherMountainsType.Mountains, true), extractLocationsFromCenters(mountainGroup),
-									mountainGroupYOffset * settings.resolution, true, null, TextType.Other_mountains);
-						}
-					}
-					else
-					{
-						Point location = findCentroid(extractLocationsFromCenters(mountainGroup));
-						MapText text = createMapText(nameCreator.generateNameOfType(TextType.Other_mountains, OtherMountainsType.Peak, true), location, 0.0, TextType.Other_mountains);
-						if (drawNameRotated(map, p, graph, singleMountainYOffset * settings.resolution, true, null, text, false, null))
-						{
-							mapTexts.add(text);
+							Point location = findCentroid(extractLocationsFromCenters(mountainGroup));
+							MapText text = createMapText(nameCreator.generateNameOfType(TextType.Other_mountains, OtherMountainsType.Peak, true), location, 0.0, TextType.Other_mountains);
+							if (drawNameRotated(map, p, graph, singleMountainYOffset * settings.resolution, true, null, text, false, null))
+							{
+								mapTexts.add(text);
+							}
 						}
 					}
 				}
-			}
 
-			setFontForTextType(p, TextType.River);
-			for (Set<Center> lake : lakes)
-			{
-				String name = nameCreator.generateNameOfType(TextType.Lake, null, true);
-				Set<Point> locations = extractLocationsFromCenters(lake);
-				drawNameRotated(map, p, graph, name, locations, 0.0, true, null, TextType.Lake);
-			}
-
-			List<River> rivers = findRivers(graph);
-			for (River river : rivers)
-			{
-				if (river.size() >= riverMinLength && river.getWidth() >= riverMinWidth)
+				setFontForTextType(p, TextType.River);
+				for (Set<Center> lake : lakes)
 				{
-					RiverType riverType = river.getWidth() >= largeRiverWidth ? RiverType.Large : RiverType.Small;
-
-					Set<Point> locations = extractLocationsFromEdges(river.getSegmentForPlacingText());
-					drawNameRotated(map, p, graph, nameCreator.generateNameOfType(TextType.River, riverType, true), locations, riverNameRiseHeight * settings.resolution, true, null, TextType.River);
+					String name = nameCreator.generateNameOfType(TextType.Lake, null, true);
+					Set<Point> locations = extractLocationsFromCenters(lake);
+					drawNameRotated(map, p, graph, name, locations, 0.0, true, null, TextType.Lake);
 				}
 
-			}
+				List<River> rivers = findRivers(graph);
+				for (River river : rivers)
+				{
+					if (river.size() >= riverMinLength && river.getWidth() >= riverMinWidth)
+					{
+						RiverType riverType = river.getWidth() >= largeRiverWidth ? RiverType.Large : RiverType.Small;
 
-			p.dispose();
+						Set<Point> locations = extractLocationsFromEdges(river.getSegmentForPlacingText());
+						drawNameRotated(map, p, graph, nameCreator.generateNameOfType(TextType.River, riverType, true), locations, riverNameRiseHeight * settings.resolution, true, null,
+								TextType.River);
+					}
+
+				}
+			}
 		}
 		finally
 		{
@@ -272,60 +273,61 @@ public class TextDrawer
 
 	public void doForEachTextInBounds(List<MapText> mapTexts, WorldGraph graph, Rectangle bounds, BiConsumer<MapText, RotatedRectangle> action)
 	{
-		Painter p = Image.create(1, 1, ImageType.ARGB).createPainter();
-
-		for (MapText text : mapTexts)
+		try (Painter p = Image.create(1, 1, ImageType.ARGB).createPainter())
 		{
-			if (text.value == null || text.value.trim().length() == 0)
+
+			for (MapText text : mapTexts)
 			{
-				// This text was deleted.
-				continue;
-			}
-
-			if (bounds == null)
-			{
-				action.accept(text, null);
-			}
-			else
-			{
-				setFontForText(p, text);
-
-				// This method of detecting which text to draw isn't very precise, as it can have false positives,
-				// but we can't use the Areas in the text object because they get updated during text drawing,
-				// so they aren't useful for telling whether the text will appear in 'bounds'.
-
-				Point textLocation = new Point(text.location.x * settings.resolution, text.location.y * settings.resolution);
-
-				Rectangle singleLineBounds = getLine1BoundsWithoutCurvatureOrSpacing(text.value, textLocation, p, false);
-				singleLineBounds = expandBoundsToIncludeCurvatureAndSpacing(singleLineBounds, text, text.value, p);
-				singleLineBounds = addBackgroundBlendingPadding(singleLineBounds, getFontHeight(p), text);
-
-				Rectangle textBoundsAllLines;
-				// Since it wouldn't be easy from here to figure out whether the text will draw onto one line or two, combine
-				// the bounds for both cases if it's possible the text could be split.
-				if ((text.lineBreak == LineBreak.Auto || text.lineBreak == LineBreak.Two_lines) && text.value.trim().contains(" "))
+				if (text.value == null || text.value.trim().length() == 0)
 				{
-					Pair<String> lines = addLineBreakNearMiddle(text.value);
+					// This text was deleted.
+					continue;
+				}
 
-					Rectangle line1Bounds = getLine1BoundsWithoutCurvatureOrSpacing(lines.getFirst(), textLocation, p, true);
-					line1Bounds = expandBoundsToIncludeCurvatureAndSpacing(line1Bounds, text, lines.getFirst(), p);
-					line1Bounds = addBackgroundBlendingPadding(line1Bounds, getFontHeight(p), text);
-
-					Rectangle line2Bounds = getLine2BoundsWithoutCurvatureOrSpacing(lines.getSecond(), textLocation, p);
-					line2Bounds = expandBoundsToIncludeCurvatureAndSpacing(line2Bounds, text, lines.getFirst(), p);
-					line2Bounds = addBackgroundBlendingPadding(line2Bounds, getFontHeight(p), text);
-
-					textBoundsAllLines = singleLineBounds.add(line1Bounds.add(line2Bounds));
+				if (bounds == null)
+				{
+					action.accept(text, null);
 				}
 				else
 				{
-					textBoundsAllLines = singleLineBounds;
-				}
+					setFontForText(p, text);
 
-				callIfMapTextIsInBounds(bounds, text, textBoundsAllLines, textLocation, action);
+					// This method of detecting which text to draw isn't very precise, as it can have false positives,
+					// but we can't use the Areas in the text object because they get updated during text drawing,
+					// so they aren't useful for telling whether the text will appear in 'bounds'.
+
+					Point textLocation = new Point(text.location.x * settings.resolution, text.location.y * settings.resolution);
+
+					Rectangle singleLineBounds = getLine1BoundsWithoutCurvatureOrSpacing(text.value, textLocation, p, false);
+					singleLineBounds = expandBoundsToIncludeCurvatureAndSpacing(singleLineBounds, text, text.value, p);
+					singleLineBounds = addBackgroundBlendingPadding(singleLineBounds, getFontHeight(p), text);
+
+					Rectangle textBoundsAllLines;
+					// Since it wouldn't be easy from here to figure out whether the text will draw onto one line or two, combine
+					// the bounds for both cases if it's possible the text could be split.
+					if ((text.lineBreak == LineBreak.Auto || text.lineBreak == LineBreak.Two_lines) && text.value.trim().contains(" "))
+					{
+						Pair<String> lines = addLineBreakNearMiddle(text.value);
+
+						Rectangle line1Bounds = getLine1BoundsWithoutCurvatureOrSpacing(lines.getFirst(), textLocation, p, true);
+						line1Bounds = expandBoundsToIncludeCurvatureAndSpacing(line1Bounds, text, lines.getFirst(), p);
+						line1Bounds = addBackgroundBlendingPadding(line1Bounds, getFontHeight(p), text);
+
+						Rectangle line2Bounds = getLine2BoundsWithoutCurvatureOrSpacing(lines.getSecond(), textLocation, p);
+						line2Bounds = expandBoundsToIncludeCurvatureAndSpacing(line2Bounds, text, lines.getFirst(), p);
+						line2Bounds = addBackgroundBlendingPadding(line2Bounds, getFontHeight(p), text);
+
+						textBoundsAllLines = singleLineBounds.add(line1Bounds.add(line2Bounds));
+					}
+					else
+					{
+						textBoundsAllLines = singleLineBounds;
+					}
+
+					callIfMapTextIsInBounds(bounds, text, textBoundsAllLines, textLocation, action);
+				}
 			}
 		}
-		p.dispose();
 	}
 
 	public Rectangle getTextBoundingBoxFor1Or2LineSplit(MapText text)
@@ -335,34 +337,36 @@ public class TextDrawer
 			// This text was deleted.
 			return null;
 		}
-		Painter p = Image.create(1, 1, ImageType.ARGB).createPainter();
-		setFontForText(p, text);
-		Point textLocation = new Point(text.location.x * settings.resolution, text.location.y * settings.resolution);
-
-		// Get bounds for when the text is on one line.
-		Rectangle bounds = getLine1BoundsWithoutCurvatureOrSpacing(text.value, textLocation, p, false);
-		bounds = expandBoundsToIncludeCurvatureAndSpacing(bounds, text, text.value, p);
-		bounds = addBackgroundBlendingPadding(bounds, getFontHeight(p), text);
-		Rectangle boundingBox = new RotatedRectangle(bounds, text.angle, textLocation).getBounds();
-
-		// Since it wouldn't be easy from here to figure out whether the text will draw onto one line or two, also add
-		// the bounds when it splits under two lines.
-		if ((text.lineBreak == LineBreak.Auto || text.lineBreak == LineBreak.Two_lines) && text.value.trim().contains(" "))
+		try (Painter p = Image.create(1, 1, ImageType.ARGB).createPainter())
 		{
-			Pair<String> lines = addLineBreakNearMiddle(text.value);
+			setFontForText(p, text);
+			Point textLocation = new Point(text.location.x * settings.resolution, text.location.y * settings.resolution);
 
-			Rectangle line1Bounds = getLine1BoundsWithoutCurvatureOrSpacing(lines.getFirst(), textLocation, p, true);
-			line1Bounds = expandBoundsToIncludeCurvatureAndSpacing(line1Bounds, text, lines.getFirst(), p);
-			line1Bounds = addBackgroundBlendingPadding(line1Bounds, getFontHeight(p), text);
+			// Get bounds for when the text is on one line.
+			Rectangle bounds = getLine1BoundsWithoutCurvatureOrSpacing(text.value, textLocation, p, false);
+			bounds = expandBoundsToIncludeCurvatureAndSpacing(bounds, text, text.value, p);
+			bounds = addBackgroundBlendingPadding(bounds, getFontHeight(p), text);
+			Rectangle boundingBox = new RotatedRectangle(bounds, text.angle, textLocation).getBounds();
 
-			boundingBox = boundingBox.add(new RotatedRectangle(line1Bounds, text.angle, textLocation).getBounds());
+			// Since it wouldn't be easy from here to figure out whether the text will draw onto one line or two, also add
+			// the bounds when it splits under two lines.
+			if ((text.lineBreak == LineBreak.Auto || text.lineBreak == LineBreak.Two_lines) && text.value.trim().contains(" "))
+			{
+				Pair<String> lines = addLineBreakNearMiddle(text.value);
 
-			Rectangle line2Bounds = getLine2BoundsWithoutCurvatureOrSpacing(lines.getSecond(), textLocation, p);
-			line2Bounds = expandBoundsToIncludeCurvatureAndSpacing(line2Bounds, text, lines.getSecond(), p);
-			boundingBox = boundingBox.add(new RotatedRectangle(line2Bounds, text.angle, textLocation).getBounds());
+				Rectangle line1Bounds = getLine1BoundsWithoutCurvatureOrSpacing(lines.getFirst(), textLocation, p, true);
+				line1Bounds = expandBoundsToIncludeCurvatureAndSpacing(line1Bounds, text, lines.getFirst(), p);
+				line1Bounds = addBackgroundBlendingPadding(line1Bounds, getFontHeight(p), text);
+
+				boundingBox = boundingBox.add(new RotatedRectangle(line1Bounds, text.angle, textLocation).getBounds());
+
+				Rectangle line2Bounds = getLine2BoundsWithoutCurvatureOrSpacing(lines.getSecond(), textLocation, p);
+				line2Bounds = expandBoundsToIncludeCurvatureAndSpacing(line2Bounds, text, lines.getSecond(), p);
+				boundingBox = boundingBox.add(new RotatedRectangle(line2Bounds, text.angle, textLocation).getBounds());
+			}
+
+			return boundingBox;
 		}
-
-		return boundingBox;
 	}
 
 	private Rectangle addBackgroundBlendingPadding(Rectangle textBounds, int fontHeight, MapText text)
@@ -402,43 +406,42 @@ public class TextDrawer
 
 	private void drawText(Image map, WorldGraph graph, List<MapText> textToDraw, Rectangle drawBounds)
 	{
-		Painter p = map.createPainter(DrawQuality.High);
-
-		Point drawOffset = drawBounds == null ? null : drawBounds.upperLeftCorner();
-
-		doForEachTextInBounds(textToDraw, graph, drawBounds, ((text, _) ->
+		try (Painter p = map.createPainter(DrawQuality.High))
 		{
-			if (text.type == TextType.Title)
-			{
-				drawNameSplitIfNeeded(map, p, graph, 0.0, false, null, text, settings.drawBoldBackground, true, drawOffset);
-			}
-			else if (text.type == TextType.City)
-			{
-				drawNameRotated(map, p, graph, 0, false, null, text, false, drawOffset);
-			}
-			else if (text.type == TextType.Region)
-			{
-				drawNameSplitIfNeeded(map, p, graph, 0.0, false, null, text, settings.drawBoldBackground, true, drawOffset);
-			}
-			else if (text.type == TextType.Mountain_range)
-			{
-				drawNameRotated(map, p, graph, 0, false, null, text, false, drawOffset);
-			}
-			else if (text.type == TextType.Other_mountains)
-			{
-				drawNameRotated(map, p, graph, 0, false, null, text, false, drawOffset);
-			}
-			else if (text.type == TextType.River)
-			{
-				drawNameRotated(map, p, graph, 0, false, null, text, false, drawOffset);
-			}
-			else if (text.type == TextType.Lake)
-			{
-				drawNameRotated(map, p, graph, 0, false, null, text, false, drawOffset);
-			}
-		}));
+			Point drawOffset = drawBounds == null ? null : drawBounds.upperLeftCorner();
 
-		p.dispose();
+			doForEachTextInBounds(textToDraw, graph, drawBounds, ((text, ignored) ->
+			{
+				if (text.type == TextType.Title)
+				{
+					drawNameSplitIfNeeded(map, p, graph, 0.0, false, null, text, settings.drawBoldBackground, true, drawOffset);
+				}
+				else if (text.type == TextType.City)
+				{
+					drawNameRotated(map, p, graph, 0, false, null, text, false, drawOffset);
+				}
+				else if (text.type == TextType.Region)
+				{
+					drawNameSplitIfNeeded(map, p, graph, 0.0, false, null, text, settings.drawBoldBackground, true, drawOffset);
+				}
+				else if (text.type == TextType.Mountain_range)
+				{
+					drawNameRotated(map, p, graph, 0, false, null, text, false, drawOffset);
+				}
+				else if (text.type == TextType.Other_mountains)
+				{
+					drawNameRotated(map, p, graph, 0, false, null, text, false, drawOffset);
+				}
+				else if (text.type == TextType.River)
+				{
+					drawNameRotated(map, p, graph, 0, false, null, text, false, drawOffset);
+				}
+				else if (text.type == TextType.Lake)
+				{
+					drawNameRotated(map, p, graph, 0, false, null, text, false, drawOffset);
+				}
+			}));
+		}
 
 		// Only mark this flag if we drew all text, not just an incremental update.
 		if (drawBounds == null || drawBounds.equals(graph.bounds))
@@ -663,13 +666,12 @@ public class TextDrawer
 	}
 
 	/**
-	 * Searches along edges to find corners which are connected by a river. If the river forks, only one direction is followed (the wider
-	 * one).
-	 * 
+	 * Searches along edges to find corners which are connected by a river. If the river forks, only one direction is followed (the wider one).
+	 *
 	 * @param last
-	 *            The search will not go in the direction of this corner.
+	 * 		The search will not go in the direction of this corner.
 	 * @param head
-	 *            The search will go in the direction of this corner.
+	 * 		The search will go in the direction of this corner.
 	 * @return A set of corners which form a river.
 	 */
 	private River followRiver(Set<Corner> riversAlreadyFound, Corner last, Corner head)
@@ -739,8 +741,7 @@ public class TextDrawer
 	}
 
 	/**
-	 * Draws the given name to the map with the area around the name drawn from landAndOceanBackground to make it readable when the name is
-	 * drawn on top of mountains or trees.
+	 * Draws the given name to the map with the area around the name drawn from landAndOceanBackground to make it readable when the name is drawn on top of mountains or trees.
 	 */
 	private void drawBackgroundBlendingForText(Image map, Painter p, MapText text, Point textStart, Rectangle textBoundsBeforeCurvatureAndSpacing, Rectangle textBounds, String name, Point pivot)
 	{
@@ -753,12 +754,15 @@ public class TextDrawer
 
 		Image textBG = Image.create((int) (textBounds.width + padding * 2), (int) (textBounds.height + padding * 2), ImageType.Grayscale8Bit);
 
-		Painter bP = textBG.createPainter(DrawQuality.High);
-		bP.setFont(p.getFont());
-		bP.setColor(Color.white);
-		Point textStartDiffInMaskCausedByCurvatureAndSpacing = textBoundsBeforeCurvatureAndSpacing.upperLeftCorner().subtract(textBounds.upperLeftCorner());
-		Point drawPointForMask = textStartDiffInMaskCausedByCurvatureAndSpacing.add(new Point(padding, padding + p.getFontAscent()));
-		drawStringCurved(bP, text, name, drawPointForMask, false);
+		Point textStartDiffInMaskCausedByCurvatureAndSpacing;
+		try (Painter bP = textBG.createPainter(DrawQuality.High))
+		{
+			bP.setFont(p.getFont());
+			bP.setColor(Color.white);
+			textStartDiffInMaskCausedByCurvatureAndSpacing = textBoundsBeforeCurvatureAndSpacing.upperLeftCorner().subtract(textBounds.upperLeftCorner());
+			Point drawPointForMask = textStartDiffInMaskCausedByCurvatureAndSpacing.add(new Point(padding, padding + p.getFontAscent()));
+			drawStringCurved(bP, text, name, drawPointForMask, false);
+		}
 
 		// Use convolution to make a hazy background for the text.
 		float[][] kernel = ImageHelper.createGaussianKernel(kernelSize);
@@ -786,13 +790,13 @@ public class TextDrawer
 
 	/**
 	 * Draws a curved string.
-	 * 
+	 *
 	 * @param p
-	 *            Context for drawing.
+	 * 		Context for drawing.
 	 * @param name
-	 *            Text to draw
+	 * 		Text to draw
 	 * @param textStart
-	 *            location to start drawing the text at (before applying curvature)
+	 * 		location to start drawing the text at (before applying curvature)
 	 */
 	private void drawStringCurved(Painter p, MapText text, String name, Point textStart, boolean drawBoldBackground)
 	{
@@ -1033,9 +1037,9 @@ public class TextDrawer
 	}
 
 	/**
-	 * 
+	 *
 	 * Side effect: This adds a new MapText to mapTexts.
-	 * 
+	 *
 	 * @return True iff text was drawn.
 	 */
 	private boolean drawNameFitIntoCenters(Image map, Painter p, String name, Set<Point> centerLocations, WorldGraph graph, boolean boldBackground, boolean enableBoundsChecking, TextType textType)
@@ -1055,14 +1059,12 @@ public class TextDrawer
 		{
 			// Try random locations to try to find a place to fit the text.
 			Point[] locationsArray = centerLocations.toArray(new Point[centerLocations.size()]);
-			for (@SuppressWarnings("unused")
-			int i : new Range(30))
+			for (@SuppressWarnings("unused") int i : new Range(30))
 			{
 				// Select a few random locations and choose the one closest to
 				// the centroid.
 				List<Point> samples = new ArrayList<>(3);
-				for (@SuppressWarnings("unused")
-				int sampleNumber : new Range(5))
+				for (@SuppressWarnings("unused") int sampleNumber : new Range(5))
 				{
 					samples.add(locationsArray[r.nextInt(locationsArray.length)]);
 				}
@@ -1116,11 +1118,10 @@ public class TextDrawer
 	}
 
 	/**
-	 * Draws the given name at the given location (centroid). If the name cannot be drawn on one line and still fit with the given
-	 * locations, then it will be drawn on 2 lines.
-	 * 
+	 * Draws the given name at the given location (centroid). If the name cannot be drawn on one line and still fit with the given locations, then it will be drawn on 2 lines.
+	 *
 	 * The actual drawing step is skipped if settings.drawText = false.
-	 * 
+	 *
 	 * @return True iff text was drawn.
 	 */
 	private boolean drawNameSplitIfNeeded(Image map, Painter p, WorldGraph graph, double riseOffset, boolean enableBoundsChecking, RotatedRectangle areaToIgnoreInBoundsChecks, MapText text,
@@ -1167,15 +1168,14 @@ public class TextDrawer
 	}
 
 	/**
-	 * Draws the given name at the centroid of the given plateCenters. The angle the name is drawn at is the least squares line through the
-	 * plate centers. This does not break text into multiple lines.
-	 * 
+	 * Draws the given name at the centroid of the given plateCenters. The angle the name is drawn at is the least squares line through the plate centers. This does not break text into multiple
+	 * lines.
+	 *
 	 * Side effect: This adds a new MapText to mapTexts.
-	 * 
+	 *
 	 * @param riseOffset
-	 *            The text will be raised (positive y) by this much distance above the centroid when drawn. The rotation will be applied to
-	 *            this location. If there is already a name drawn above the object, I try negating the riseOffset to draw the name below it.
-	 *            Positive y is down.
+	 * 		The text will be raised (positive y) by this much distance above the centroid when drawn. The rotation will be applied to this location. If there is already a name drawn above the object, I
+	 * 		try negating the riseOffset to draw the name below it. Positive y is down.
 	 */
 	public void drawNameRotated(Image map, Painter p, WorldGraph graph, String name, Set<Point> locations, double riseOffset, boolean enableBoundsChecking, RotatedRectangle areaToIgnoreInBoundsChecks,
 			TextType type)
@@ -1227,14 +1227,12 @@ public class TextDrawer
 
 	/**
 	 * Draws the given name at the given location (centroid), at the given angle.
-	 * 
+	 *
 	 * If settings.drawText = false, then this method will not do the actual text writing, but will still update the MapText text.
-	 * 
+	 *
 	 * @param riseOffset
-	 *            The text will be raised (positive y) by this much distance above the centroid when drawn. The rotation will be applied to
-	 *            this location. If there is already a name drawn above the object, I try negating the riseOffset to draw the name below it.
-	 *            Positive y is down.
-	 * 
+	 * 		The text will be raised (positive y) by this much distance above the centroid when drawn. The rotation will be applied to this location. If there is already a name drawn above the object, I
+	 * 		try negating the riseOffset to draw the name below it. Positive y is down.
 	 * @return true iff the text was drawn.
 	 */
 	public boolean drawNameRotated(Image map, Painter p, WorldGraph graph, double riseOffset, boolean enableBoundsChecking, RotatedRectangle areaToIgnoreInBoundsChecks, MapText text,
@@ -1292,10 +1290,11 @@ public class TextDrawer
 			// Make sure we don't draw on top of existing text.
 			if (enableBoundsChecking)
 			{
-				boolean overlapsExistingTextOrCityOrIsOffMap = overlapsExistingTextOrCityOrIsOffMap(area1, areaToIgnoreInBoundsChecks)
-						|| (line2 != null && overlapsExistingTextOrCityOrIsOffMap(area2, areaToIgnoreInBoundsChecks));
-				boolean overlapsRegionLakeOrCoastline = overlapsBoundaryThatShouldCauseLineSplit(bounds1, pivot, text.angle, text.type, graph)
-						|| overlapsBoundaryThatShouldCauseLineSplit(bounds2, pivot, text.angle, text.type, graph);
+				boolean overlapsExistingTextOrCityOrIsOffMap =
+						overlapsExistingTextOrCityOrIsOffMap(area1, areaToIgnoreInBoundsChecks) || (line2 != null && overlapsExistingTextOrCityOrIsOffMap(area2, areaToIgnoreInBoundsChecks));
+				boolean overlapsRegionLakeOrCoastline =
+						overlapsBoundaryThatShouldCauseLineSplit(bounds1, pivot, text.angle, text.type, graph) || overlapsBoundaryThatShouldCauseLineSplit(bounds2, pivot, text.angle, text.type,
+								graph);
 				boolean isTypeAllowedToCrossBoundaries = text.type == TextType.Title || text.type == TextType.Region || text.type == TextType.City || text.type == TextType.Mountain_range;
 
 				if (overlapsExistingTextOrCityOrIsOffMap || overlapsRegionLakeOrCoastline)
@@ -1448,16 +1447,17 @@ public class TextDrawer
 
 	public static Dimension getTextDimensions(String text, Font font)
 	{
-		Painter p = Image.create(1, 1, ImageType.ARGB).createPainter();
-		p.setFont(font);
-		return getTextDimensions(text, p);
+		try (Painter p = Image.create(1, 1, ImageType.ARGB).createPainter())
+		{
+			p.setFont(font);
+			return getTextDimensions(text, p);
+		}
 	}
 
 	/**
-	 * Sets the bounds of any texts for which those are null. This is needed because the editor allows making changes when a map is loaded
-	 * from a file before it draws the first time. Text bounds aren't set until the text is drawn the first time, and changing fields before
-	 * the first draw will set an undo point, which will copy the map settings, including edits. So this function must be called each draw
-	 * to make sure null bounds don't get perpetuated from those undo points.
+	 * Sets the bounds of any texts for which those are null. This is needed because the editor allows making changes when a map is loaded from a file before it draws the first time. Text bounds
+	 * aren't set until the text is drawn the first time, and changing fields before the first draw will set an undo point, which will copy the map settings, including edits. So this function must be
+	 * called each draw to make sure null bounds don't get perpetuated from those undo points.
 	 */
 	public void updateTextBoundsIfNeeded(WorldGraph graph)
 	{

@@ -33,7 +33,7 @@ public class Background
 {
 	Image landBeforeRegionColoring;
 	Image land;
-	Image ocean;
+	public Image ocean;
 	Dimension mapBounds;
 	Dimension borderBounds;
 	Image borderBackground;
@@ -313,7 +313,7 @@ public class Background
 		}
 	}
 
-	static Dimension calcMapBoundsAndAdjustResolutionIfNeeded(MapSettings settings, Dimension maxDimensions)
+	public static Dimension calcMapBoundsAndAdjustResolutionIfNeeded(MapSettings settings, Dimension maxDimensions)
 	{
 		Dimension mapBounds;
 		Dimension sizeFromSettingsAt100PercentResolution;
@@ -364,7 +364,10 @@ public class Background
 			if (drawBounds == null || centersToDraw == null)
 			{
 				regionIndexes = Image.create(land.getWidth(), land.getHeight(), ImageType.RGB);
-				graph.drawRegionIndexes(regionIndexes.createPainter(), null, null);
+				try (Painter p = regionIndexes.createPainter())
+				{
+					graph.drawRegionIndexes(p, null, null);
+				}
 
 				landColoredBeforeAddingIconColors = drawRegionColors(graph, landBeforeRegionColoring, regionIndexes, landColorifyAlgorithm, null);
 				updateRegionIndexesAndLandWithIconShapes(settings, graph, tasks, drawBounds);
@@ -374,7 +377,10 @@ public class Background
 			{
 				// Update only a piece of the land
 				regionIndexes = Image.create((int) drawBounds.width, (int) drawBounds.height, ImageType.RGB);
-				graph.drawRegionIndexes(regionIndexes.createPainter(), centersToDraw, drawBounds);
+				try (Painter p = regionIndexes.createPainter())
+				{
+					graph.drawRegionIndexes(p, centersToDraw, drawBounds);
+				}
 
 				Image landSnippetColoredBeforeAddingIconColors = drawRegionColors(graph, landBeforeRegionColoring, regionIndexes, landColorifyAlgorithm,
 						new IntPoint((int) drawBounds.x, (int) drawBounds.y));
@@ -466,8 +472,8 @@ public class Background
 			result = borderBackground.deepCopy();
 		}
 
+		try (Painter p = result.createPainter())
 		{
-			Painter p = result.createPainter();
 			if (result.hasAlpha())
 			{
 				p.setAlphaComposite(AlphaComposite.Src);
@@ -481,7 +487,6 @@ public class Background
 			{
 				p.drawImage(map, 0, 0);
 			}
-
 		}
 
 		Path artPackPath = Assets.getArtPackPath(borderResource.artPack, customImagesPath);
@@ -698,10 +703,11 @@ public class Background
 						ImageHelper.copySnippetFromSourceAndPasteIntoTarget(result, borderBackground, new IntPoint(x - xOffset, y - yOffset), new IntRectangle(x, y, increment, borderWidthScaled), 0);
 					}
 
-					Painter p = result.createPainter();
-					p.setAlphaComposite(alphaCompositeForDrawingCornersAndEdges);
-					p.drawImage(edge, x - xOffset, y - yOffset);
-					p.dispose();
+					try (Painter p = result.createPainter())
+					{
+						p.setAlphaComposite(alphaCompositeForDrawingCornersAndEdges);
+						p.drawImage(edge, x - xOffset, y - yOffset);
+					}
 				}
 			}
 			else
@@ -717,12 +723,12 @@ public class Background
 
 					// The image is too long/tall to draw in the remaining
 					// space.
-					Image partToDraw = ImageHelper.copySnippet(edge, 0, 0, distanceRemaining, borderWidthScaled);
-
-					Painter p = result.createPainter();
-					p.setAlphaComposite(alphaCompositeForDrawingCornersAndEdges);
-					p.drawImage(partToDraw, x - xOffset, y - yOffset);
-					p.dispose();
+					try (Image partToDraw = ImageHelper.copySnippet(edge, 0, 0, distanceRemaining, borderWidthScaled);
+						Painter p = result.createPainter())
+					{
+						p.setAlphaComposite(alphaCompositeForDrawingCornersAndEdges);
+						p.drawImage(partToDraw, x - xOffset, y - yOffset);
+					}
 				}
 			}
 		}
@@ -756,10 +762,11 @@ public class Background
 						ImageHelper.copySnippetFromSourceAndPasteIntoTarget(result, borderBackground, new IntPoint(x - xOffset, y - yOffset), new IntRectangle(x, y, borderWidthScaled, increment), 0);
 					}
 
-					Painter p = result.createPainter();
-					p.setAlphaComposite(alphaCompositeForDrawingCornersAndEdges);
-					p.drawImage(edge, x - xOffset, y - yOffset);
-					p.dispose();
+					try (Painter p = result.createPainter())
+					{
+						p.setAlphaComposite(alphaCompositeForDrawingCornersAndEdges);
+						p.drawImage(edge, x - xOffset, y - yOffset);
+					}
 				}
 			}
 			else
@@ -775,12 +782,12 @@ public class Background
 
 					// The image is too long/tall to draw in the remaining
 					// space.
-					Image partToDraw = ImageHelper.copySnippet(edge, 0, 0, borderWidthScaled, distanceRemaining);
-
-					Painter p = result.createPainter();
-					p.setAlphaComposite(alphaCompositeForDrawingCornersAndEdges);
-					p.drawImage(partToDraw, x - xOffset, y - yOffset);
-					p.dispose();
+					try (Image partToDraw = ImageHelper.copySnippet(edge, 0, 0, borderWidthScaled, distanceRemaining);
+						Painter p = result.createPainter())
+					{
+						p.setAlphaComposite(alphaCompositeForDrawingCornersAndEdges);
+						p.drawImage(partToDraw, x - xOffset, y - yOffset);
+					}
 				}
 			}
 		}
@@ -796,10 +803,12 @@ public class Background
 			ImageHelper.copySnippetFromSourceAndPasteIntoTarget(target, borderBackground, new IntPoint(0, 0).subtract(drawOffset),
 					new IntRectangle(0, 0, upperLeftCorner.getWidth(), upperLeftCorner.getHeight()), 0);
 		}
-		Painter p = target.createPainter();
-		p.setAlphaComposite(alphaCompositeForDrawingCornersAndEdges);
-		p.translate(-drawOffset.x, -drawOffset.y);
-		p.drawImage(upperLeftCorner, 0, 0);
+		try (Painter p = target.createPainter())
+		{
+			p.setAlphaComposite(alphaCompositeForDrawingCornersAndEdges);
+			p.translate(-drawOffset.x, -drawOffset.y);
+			p.drawImage(upperLeftCorner, 0, 0);
+		}
 	}
 
 	private void drawUpperRightCorner(Image target, IntPoint drawOffset)
@@ -810,10 +819,12 @@ public class Background
 			ImageHelper.copySnippetFromSourceAndPasteIntoTarget(target, borderBackground, new IntPoint(((int) borderBounds.width) - cornerWidth, 0).subtract(drawOffset),
 					new IntRectangle(((int) borderBounds.width) - cornerWidth, 0, upperRightCorner.getWidth(), upperRightCorner.getHeight()), 0);
 		}
-		Painter p = target.createPainter();
-		p.setAlphaComposite(alphaCompositeForDrawingCornersAndEdges);
-		p.translate(-drawOffset.x, -drawOffset.y);
-		p.drawImage(upperRightCorner, ((int) borderBounds.width) - cornerWidth, 0);
+		try (Painter p = target.createPainter())
+		{
+			p.setAlphaComposite(alphaCompositeForDrawingCornersAndEdges);
+			p.translate(-drawOffset.x, -drawOffset.y);
+			p.drawImage(upperRightCorner, ((int) borderBounds.width) - cornerWidth, 0);
+		}
 	}
 
 	private void drawLowerLeftCorner(Image target, IntPoint drawOffset)
@@ -825,10 +836,12 @@ public class Background
 					new IntRectangle(0, ((int) borderBounds.height) - cornerWidth, lowerLeftCorner.getWidth(), lowerLeftCorner.getHeight()), 0);
 
 		}
-		Painter p = target.createPainter();
-		p.setAlphaComposite(alphaCompositeForDrawingCornersAndEdges);
-		p.translate(-drawOffset.x, -drawOffset.y);
-		p.drawImage(lowerLeftCorner, 0, ((int) borderBounds.height) - cornerWidth);
+		try (Painter p = target.createPainter())
+		{
+			p.setAlphaComposite(alphaCompositeForDrawingCornersAndEdges);
+			p.translate(-drawOffset.x, -drawOffset.y);
+			p.drawImage(lowerLeftCorner, 0, ((int) borderBounds.height) - cornerWidth);
+		}
 	}
 
 	private void drawLowerRightCorner(Image target, IntPoint drawOffset)
@@ -841,10 +854,12 @@ public class Background
 					new IntRectangle(((int) borderBounds.width) - cornerWidth, ((int) borderBounds.height) - cornerWidth, lowerRightCorner.getWidth(), lowerRightCorner.getHeight()), 0);
 
 		}
-		Painter p = target.createPainter();
-		p.setAlphaComposite(alphaCompositeForDrawingCornersAndEdges);
-		p.translate(-drawOffset.x, -drawOffset.y);
-		p.drawImage(lowerRightCorner, ((int) borderBounds.width) - cornerWidth, ((int) borderBounds.height) - cornerWidth);
+		try (Painter p = target.createPainter())
+		{
+			p.setAlphaComposite(alphaCompositeForDrawingCornersAndEdges);
+			p.translate(-drawOffset.x, -drawOffset.y);
+			p.drawImage(lowerRightCorner, ((int) borderBounds.width) - cornerWidth, ((int) borderBounds.height) - cornerWidth);
+		}
 	}
 
 	public void drawInsetCornersIfBoundsTouchesThem(Image target, Rectangle drawBoundsBeforeBorder)

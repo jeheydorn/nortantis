@@ -36,17 +36,24 @@ public class Logger
 
 	public static void printError(String message, Throwable e)
 	{
-		if (e == null)
+		println(message, true);
+		if (e != null)
 		{
-			return;
+			println(e.getMessage(), true);
+			println(ExceptionUtils.getStackTrace(e), true);
 		}
-
-		println(message);
-		println(e.getMessage());
-		println(ExceptionUtils.getStackTrace(e));
+		else
+		{
+			println("Unable to print the rest of the error message because the exception was null.", true);
+		}
 	}
 
 	public static void println(final Object message)
+	{
+		println(message, false);
+	}
+
+	private static void println(final Object message, boolean isError)
 	{
 		if (getInstance().target != null && getInstance().target.isReadyForLogging())
 		{
@@ -57,7 +64,14 @@ public class Logger
 		}
 		else
 		{
-			System.out.println(message);
+			if (isError)
+			{
+				System.err.println(message);
+			}
+			else
+			{
+				System.out.println(message);
+			}
 		}
 	}
 
@@ -79,7 +93,8 @@ public class Logger
 
 	private synchronized void clearTarget()
 	{
-		getInstance().target.clearLoggerMessages();
+		// TODO put back later
+		//getInstance().target.clearLoggerMessages();
 	}
 
 }

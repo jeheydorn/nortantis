@@ -18,29 +18,29 @@ import nortantis.util.ImageHelper;
 import nortantis.util.Range;
 import nortantis.util.Tuple2;
 
-public class ImageAndMasks
+public class ImageAndMasks implements AutoCloseable
 {
 	private static final int opaqueThreshold = 60;
 	public final Image image;
 	/**
-	 * Used to linearly combine pixel values pulled from the background image without other icons vs the the map being drawn so far.
+	 * Used to linearly combine pixel values pulled from the background image without other icons vs the map being drawn so far.
 	 */
 	private Image contentMask;
-	private IntRectangle contentBounds;
-	private Integer[] contentYStarts;
-
 	/**
 	 * Used to linearly combine pixel values pulled from the land background texture vs the background image without other icons. Used to
 	 * blend coastline shading into icons when icons are allowed to draw over coastlines.
 	 */
 	private Image shadingMask;
+	private Image colorMask;
+	private IntRectangle contentBounds;
+	private Integer[] contentYStarts;
+
 	public final IconType iconType;
 	/**
 	 * Either the width encoded in the icons' file name, or a width calculated based on the size of other icons in the group and the default
 	 * size of icons in the group.
 	 */
 	public final double widthFromFileName;
-	private Image colorMask;
 
 	public final String artPack;
 	public final String fileNameWithoutParametersOrExtension;
@@ -67,6 +67,33 @@ public class ImageAndMasks
 		this.contentMask = contentMask;
 		this.shadingMask = shadingMask;
 		this.contentBounds = contentBounds;
+	}
+
+	/**
+	 * Releases all image resources held by this object.
+	 */
+	@Override
+	public void close()
+	{
+		if (image != null)
+		{
+			image.close();
+		}
+		if (contentMask != null)
+		{
+			contentMask.close();
+			contentMask = null;
+		}
+		if (shadingMask != null)
+		{
+			shadingMask.close();
+			shadingMask = null;
+		}
+		if (colorMask != null)
+		{
+			colorMask.close();
+			colorMask = null;
+		}
 	}
 
 	public synchronized Image getOrCreateContentMask()
@@ -163,10 +190,11 @@ public class ImageAndMasks
 				q.push(new IntPoint(contentMask.getWidth() - 1, contentMask.getHeight() - 1));
 			}
 
-			Painter p = contentMask.createPainter();
-			p.setColor(Color.white);
-			p.fillRect(0, 0, contentMask.getWidth(), contentMask.getHeight());
-			p.dispose();
+			try (Painter p = contentMask.createPainter())
+			{
+				p.setColor(Color.white);
+				p.fillRect(0, 0, contentMask.getWidth(), contentMask.getHeight());
+			}
 
 			boolean[][] visited = new boolean[image.getWidth()][image.getHeight()];
 			while (!q.isEmpty())
@@ -213,7 +241,7 @@ public class ImageAndMasks
 
 	private void remove4DirectionalSilhouetteFromContentMask()
 	{
-		// Remove pixels using silhouettes from each direction to cleanup stuff the narrow passage check leaves behind.
+		// Remove pixels using silhouettes from each direction to clean up stuff the narrow passage check leaves behind.
 		try (PixelReader imagePixels = image.createPixelReader(); PixelReaderWriter contentMaskPixels = contentMask.createPixelReaderWriter())
 		{
 			// From Top
@@ -362,10 +390,11 @@ public class ImageAndMasks
 
 	private void createContentMaskUsing3WaySilhouetteIntersection()
 	{
-		Image topSilhouette = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
-		Image bottomSilhouette = null;
-		Image leftSilhouette = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
-		Image rightSilhouette = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
+		try (Image topSilhouette = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
+				Image leftSilhouette = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
+				Image rightSilhouette = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary))
+		{
+			Image bottomSilhouette = null;
 
 		try (PixelReader imagePixels = image.createPixelReader())
 		{
@@ -464,24 +493,29 @@ public class ImageAndMasks
 			}
 		}
 
-		// The mask image is the intersection of the 3 or 4 silhouettes.
+			// The mask image is the intersection of the 3 or 4 silhouettes.
 
-		contentMask = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
-		try (PixelReader topPixels = topSilhouette.createPixelReader();
-				PixelReader leftPixels = leftSilhouette.createPixelReader();
-				PixelReader rightPixels = rightSilhouette.createPixelReader();
-				PixelReader bottomPixels = bottomSilhouette != null ? bottomSilhouette.createPixelReader() : null;
-				PixelReaderWriter contentMaskPixels = contentMask.createPixelReaderWriter())
-		{
-			for (int x = 0; x < contentMask.getWidth(); x++)
+			contentMask = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
+			try (PixelReader topPixels = topSilhouette.createPixelReader();
+					PixelReader leftPixels = leftSilhouette.createPixelReader();
+					PixelReader rightPixels = rightSilhouette.createPixelReader();
+					PixelReader bottomPixels = bottomSilhouette != null ? bottomSilhouette.createPixelReader() : null;
+					PixelReaderWriter contentMaskPixels = contentMask.createPixelReaderWriter())
 			{
-				for (int y = 0; y < contentMask.getHeight(); y++)
+				for (int x = 0; x < contentMask.getWidth(); x++)
 				{
-					if (topPixels.getGrayLevel(x, y) > 0 && leftPixels.getGrayLevel(x, y) > 0 && rightPixels.getGrayLevel(x, y) > 0 && (bottomPixels == null || bottomPixels.getGrayLevel(x, y) > 0))
+					for (int y = 0; y < contentMask.getHeight(); y++)
 					{
-						contentMaskPixels.setGrayLevel(x, y, 255);
+						if (topPixels.getGrayLevel(x, y) > 0 && leftPixels.getGrayLevel(x, y) > 0 && rightPixels.getGrayLevel(x, y) > 0 && (bottomPixels == null || bottomPixels.getGrayLevel(x, y) > 0))
+						{
+							contentMaskPixels.setGrayLevel(x, y, 255);
+						}
 					}
 				}
+			}
+			if (bottomSilhouette != null)
+			{
+				bottomSilhouette.close();
 			}
 		}
 	}
@@ -634,42 +668,50 @@ public class ImageAndMasks
 			points.add(new IntPoint(contentMask.getWidth() - 1 + (int) (Math.ceil(padding + lineWidth)), points.get(points.size() - 1).y));
 		}
 
-		Image bottomSilhouette = Image.create(contentMask.getWidth() + padding * 2, contentMask.getHeight() + padding, ImageType.Binary);
+		try (Image bottomSilhouette = Image.create(contentMask.getWidth() + padding * 2, contentMask.getHeight() + padding, ImageType.Binary))
 		{
-			Painter p = bottomSilhouette.createPainter();
-			p.setColor(Color.white);
-			assert contentHeight >= 0;
-			p.setBasicStroke(lineWidth);
-			p.translate(padding, 0);
-			p.drawPolyline(points);
-			p.dispose();
+			try (Painter p = bottomSilhouette.createPainter())
+			{
+				p.setColor(Color.white);
+				assert contentHeight >= 0;
+				p.setBasicStroke(lineWidth);
+				p.translate(padding, 0);
+				p.drawPolyline(points);
+			}
+
+			// Blur the line, up to a fraction of the height of the content
+			float[][] kernel = ImageHelper.createGaussianKernel(blurSize);
+
+			// Here I used to just do convolution to blur bottomSilhouette and then maximize the contrast on that result, but the problems is
+			// this often leads to the bottom of the shading mask being not quit white because some parts of the blurred line are brighter than
+			// others, depending on the shape of the line. The result was that the bottom of the shading mask had a visible drop-off when
+			// coloring icons,
+			// which didn't look good.
+			// My solution is to run the convolution with the contrast maximized, then find the pixel values where the blurred line is at its
+			// darkest, then raise the contrast to make that value equal to targetMaxMinMaxPixelValue.
+			Tuple2<ComplexArray, Image> tuple = ImageHelper.convolveGrayscaleThenSetContrast(bottomSilhouette, kernel, true, 0f, 1f, true);
+			try (Image blurredLine = tuple.getSecond())
+			{
+				try (Image withoutPadding = blurredLine.copySubImage(new IntRectangle(padding, 0, contentMask.getWidth(), contentMask.getHeight())))
+				{
+					int minMax = getLowestHighestGrayLevelInContentColumns(withoutPadding, points);
+
+					// THis is approximately the gray level pixel will have at the bottom of the color mask.
+					final float targetMaxMinMaxPixelValue = 230f;
+
+					// Re-use the complex array from the last run to avoid having to re-do the convolution.
+					try (Image blurredLine2 = ImageHelper.realToImage(tuple.getFirst(), blurredLine.getType(), blurredLine.getWidth(), blurredLine.getHeight(), true, 0f,
+							targetMaxMinMaxPixelValue / minMax, false, 0f))
+					{
+						try (Image withoutPadding2 = blurredLine2.copySubImage(new IntRectangle(padding, 0, contentMask.getWidth(), contentMask.getHeight())))
+						{
+							// Use the content mask to set non-content pixels to zero.
+							shadingMask = ImageHelper.maskWithColor(withoutPadding2, Color.black, contentMask, false);
+						}
+					}
+				}
+			}
 		}
-
-		// Blur the line up to a fraction of the height of the content
-		float[][] kernel = ImageHelper.createGaussianKernel(blurSize);
-
-		// Here I used to just do convolution to blur bottomSilhouette and then maximize the contrast on that result, but the problems is
-		// this often leads to the bottom of the shading mask being not quit white because some parts of the blurred line are brighter than
-		// others, depending on the shape of the line. The result was that the bottom of the shading mask had a visible drop-off when
-		// coloring icons,
-		// which didn't look good.
-		// My solution is to run the convolution with the contrast maximized, then find the pixel values where the blurred line is at its
-		// darkest, then raise the contrast to make that value equal to targetMaxMinMaxPixelValue.
-		Tuple2<ComplexArray, Image> tuple = ImageHelper.convolveGrayscaleThenSetContrast(bottomSilhouette, kernel, true, 0f, 1f, true);
-		Image blurredLine = tuple.getSecond();
-		Image withoutPadding = blurredLine.copySubImage(new IntRectangle(padding, 0, contentMask.getWidth(), contentMask.getHeight()));
-
-		int minMax = getLowestHighestGrayLevelInContentColumns(withoutPadding, points);
-
-		// THis is approximately the gray level pixel will have at the bottom of the color mask.
-		final float targetMaxMinMaxPixelValue = 230f;
-
-		// Re-use the complex array from the last run to avoid having to re-do the convolution.
-		blurredLine = ImageHelper.realToImage(tuple.getFirst(), blurredLine.getType(), blurredLine.getWidth(), blurredLine.getHeight(), true, 0f, targetMaxMinMaxPixelValue / minMax, false, 0f);
-		withoutPadding = blurredLine.copySubImage(new IntRectangle(padding, 0, contentMask.getWidth(), contentMask.getHeight()));
-
-		// Use the content mask to set non-content pixels to zero.
-		shadingMask = ImageHelper.maskWithColor(withoutPadding, Color.black, contentMask, false);
 	}
 
 	private int getLowestHighestGrayLevelInContentColumns(Image image, List<IntPoint> columnsToSearch)
@@ -748,9 +790,10 @@ public class ImageAndMasks
 
 		// Convert binary to 8-bit grayscale
 		colorMask = Image.create(contentMask.getWidth(), contentMask.getHeight(), ImageType.Grayscale8Bit);
-		Painter p = colorMask.createPainter();
-		p.drawImage(contentMask, 0, 0);
-		p.dispose();
+		try (Painter p = colorMask.createPainter())
+		{
+			p.drawImage(contentMask, 0, 0);
+		}
 
 		// Only these types use the shading mask in creating the color mask.
 		if (iconType == IconType.mountains || iconType == IconType.hills || iconType == IconType.sand)
@@ -770,9 +813,11 @@ public class ImageAndMasks
 			yPoints[i] = point.y;
 		}
 
-		Painter p = image.createPainter();
-		p.setColor(Color.white);
-		p.fillPolygon(xPoints, yPoints);
+		try (Painter p = image.createPainter())
+		{
+			p.setColor(Color.white);
+			p.fillPolygon(xPoints, yPoints);
+		}
 	}
 
 	private static IntPoint findLowermostOpaquePixelOnMask(PixelReader contentMaskPixels, int height, int x)

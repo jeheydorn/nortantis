@@ -1,50 +1,21 @@
 package nortantis;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Random;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.stream.Collectors;
-
-import org.apache.commons.lang3.NotImplementedException;
-import org.apache.commons.lang3.StringUtils;
-
 import nortantis.editor.CenterEdit;
 import nortantis.editor.CenterIconType;
 import nortantis.editor.CenterTrees;
 import nortantis.editor.FreeIcon;
-import nortantis.geom.Dimension;
-import nortantis.geom.IntDimension;
-import nortantis.geom.IntRectangle;
-import nortantis.geom.Point;
-import nortantis.geom.Rectangle;
+import nortantis.geom.*;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Corner;
-import nortantis.platform.Color;
-import nortantis.platform.Image;
-import nortantis.platform.ImageType;
-import nortantis.platform.PixelReader;
-import nortantis.platform.PixelReaderWriter;
+import nortantis.platform.*;
 import nortantis.swing.MapEdits;
-import nortantis.util.Assets;
-import nortantis.util.Function;
-import nortantis.util.Helper;
-import nortantis.util.ImageHelper;
-import nortantis.util.ListMap;
-import nortantis.util.Logger;
-import nortantis.util.ProbabilityHelper;
-import nortantis.util.Range;
-import nortantis.util.ThreadHelper;
-import nortantis.util.Tuple2;
-import nortantis.util.Tuple3;
+import nortantis.util.*;
+import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 public class IconDrawer
 {
@@ -986,6 +957,39 @@ public class IconDrawer
 		return groups;
 	}
 
+	/**
+	 * Draws an icon onto a map image with proper blending of background textures using content and shading masks.
+	 *
+	 * This method composites an icon with land and ocean textures based on the icon's masks, ensuring that
+	 * transparent areas of the icon show the appropriate background (land or ocean), and that the icon blends
+	 * naturally with coastline shading. The content mask defines which pixels are part of the icon's content,
+	 * and the shading mask controls how background textures blend with the icon.
+	 *
+	 * @param mapOrSnippet
+	 * 		The target image to draw onto (either a full map or a snippet). Modified in place.
+	 * @param imageAndMasks
+	 * 		Container holding the icon image, content mask, and shading mask. The content mask defines the icon's
+	 * 		solid areas, while the shading mask controls texture blending.
+	 * @param landBackground
+	 * 		The background image for land areas (without icons). Must be the same dimensions as mapOrSnippet.
+	 * @param landTexture
+	 * 		The texture image to use for land areas. Must be the same dimensions as mapOrSnippet.
+	 * @param oceanTexture
+	 * 		The texture image to use for ocean areas. Must be the same dimensions as mapOrSnippet.
+	 * @param type
+	 * 		The type of icon being drawn (affects whether ocean texture is used for decorations).
+	 * @param xCenter
+	 * 		The x-coordinate of the icon's center in mapOrSnippet coordinate space.
+	 * @param yCenter
+	 * 		The y-coordinate of the icon's center in mapOrSnippet coordinate space.
+	 * @param graphXCenter
+	 * 		The x-coordinate of the icon's center in the full graph coordinate space (used for water detection).
+	 * @param graphYCenter
+	 * 		The y-coordinate of the icon's center in the full graph coordinate space (used for water detection).
+	 * @throws IllegalArgumentException
+	 * 		If mapOrSnippet, landBackground, landTexture, or oceanTexture have mismatched dimensions, or if
+	 * 		the content mask or shading mask dimensions don't match the icon dimensions.
+	 */
 	private void drawIconWithBackgroundAndMasks(Image mapOrSnippet, ImageAndMasks imageAndMasks, Image landBackground, Image landTexture, Image oceanTexture, IconType type, int xCenter, int yCenter,
 			int graphXCenter, int graphYCenter)
 	{
@@ -1017,14 +1021,15 @@ public class IconDrawer
 		int graphYTop = graphYCenter - icon.getHeight() / 2;
 
 		IntDimension mapOrSnippetSize = mapOrSnippet.size();
+		IntRectangle iconBoundsInMapOrSnippet = new IntRectangle(xLeft, yTop, icon.getWidth(), icon.getHeight());
 
 		// Begin pixel sessions for efficient read/write
-		try (PixelReader landTexturePixels = landTexture.createPixelReader();
-				PixelReader oceanTexturePixels = oceanTexture.createPixelReader();
-				PixelReader landBackgroundPixels = landBackground.createPixelReader();
+		try (PixelReader landTexturePixels = landTexture.createPixelReader(iconBoundsInMapOrSnippet);
+				PixelReader oceanTexturePixels = oceanTexture.createPixelReader(iconBoundsInMapOrSnippet);
+				PixelReader landBackgroundPixels = landBackground.createPixelReader(iconBoundsInMapOrSnippet);
 				PixelReader contentMaskPixels = contentMask.createPixelReader();
 				PixelReader shadingMaskPixels = shadingMask.createPixelReader();
-				PixelReaderWriter mapOrSnippetPixels = mapOrSnippet.createPixelReaderWriter())
+				PixelReaderWriter mapOrSnippetPixels = mapOrSnippet.createPixelReaderWriter(iconBoundsInMapOrSnippet))
 		{
 			for (int y : new Range(icon.getHeight()))
 			{
@@ -1090,8 +1095,10 @@ public class IconDrawer
 			}
 		}
 
-		mapOrSnippet.createPainter().drawImage(imageAndMasks.image, xLeft, yTop);
-
+		try (Painter p = mapOrSnippet.createPainter())
+		{
+			p.drawImage(imageAndMasks.image, xLeft, yTop);
+		}
 	}
 
 	public List<IconDrawTask> getTasksInDrawBoundsSortedAndScaled(Rectangle drawBounds)

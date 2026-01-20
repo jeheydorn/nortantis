@@ -1,5 +1,6 @@
 package nortantis.platform.awt;
 
+import nortantis.geom.IntRectangle;
 import nortantis.platform.Color;
 import nortantis.platform.Image;
 import nortantis.platform.PixelReader;
@@ -17,20 +18,27 @@ public class AwtPixelReader implements PixelReader
 	Raster alphaRaster;
 	protected final float maxPixelLevelAsFloat;
 	protected final Image image;
+	protected final IntRectangle bounds;
 
-
-	AwtPixelReader(AwtImage image)
+	AwtPixelReader(AwtImage image, IntRectangle bounds)
 	{
 		this.image = image;
+		bufferedImage = AwtFactory.unwrap(image);
 		maxPixelLevelAsFloat = image.getMaxPixelLevel();
+		createRasters();
 		if (image.isCompatibleIntFormat())
 		{
 			this.cachedPixelArray = ((DataBufferInt) raster.getDataBuffer()).getData();
 		}
-		bufferedImage = AwtFactory.unwrap(image);
+		this.bounds = bounds;
 	}
 
-	private void createRastersIfNeeded()
+	AwtPixelReader(AwtImage image)
+	{
+		this(image, null);
+	}
+
+	private void createRasters()
 	{
 		raster = bufferedImage.getRaster();
 
@@ -57,7 +65,14 @@ public class AwtPixelReader implements PixelReader
 	{
 		if (cachedPixelArray != null)
 		{
-			return cachedPixelArray[(y * image.getWidth()) + x];
+			int rgb = cachedPixelArray[(y * image.getWidth()) + x];
+			// For non-alpha images (TYPE_INT_RGB), the high byte is undefined garbage.
+			// Normalize it to 0xFF to match BufferedImage.getRGB() behavior.
+			if (!image.hasAlpha())
+			{
+				rgb |= 0xFF000000;
+			}
+			return rgb;
 		}
 		return bufferedImage.getRGB(x, y);
 	}
@@ -76,7 +91,8 @@ public class AwtPixelReader implements PixelReader
 			return alphaRaster.getSample(x, y, 0);
 		}
 
-		return 0;
+		// Images without alpha are fully opaque
+		return 255;
 	}
 
 	@Override
@@ -88,6 +104,5 @@ public class AwtPixelReader implements PixelReader
 	@Override
 	public void close()
 	{
-		image.endPixelReadsOrWrites();
 	}
 }

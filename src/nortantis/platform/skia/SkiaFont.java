@@ -1,25 +1,52 @@
 package nortantis.platform.skia;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
+
 import org.jetbrains.skia.Font;
 import org.jetbrains.skia.FontMgr;
 import org.jetbrains.skia.Typeface;
 import nortantis.platform.FontStyle;
 
-public class SkiaFont extends nortantis.platform.Font
+public class SkiaFont extends nortantis.platform.Font implements Serializable
 {
-	public final Font skiaFont;
+	public transient Font skiaFont;
 	private final String name;
 	private final FontStyle style;
 	private final float size;
+
+	// Map Java logical font names to actual system font names that Skia can find
+	private static final Map<String, String> LOGICAL_FONT_MAPPING = new HashMap<>();
+	static
+	{
+		// Sans-serif fonts
+		LOGICAL_FONT_MAPPING.put("SansSerif", "Arial");
+		LOGICAL_FONT_MAPPING.put("Dialog", "Arial");
+		LOGICAL_FONT_MAPPING.put("DialogInput", "Arial");
+		// Serif fonts
+		LOGICAL_FONT_MAPPING.put("Serif", "Times New Roman");
+		// Monospace fonts
+		LOGICAL_FONT_MAPPING.put("Monospaced", "Consolas");
+	}
+
+	/**
+	 * Maps Java logical font names to actual system font names. If the font name is already a system font name, it is returned unchanged.
+	 */
+	private static String mapFontName(String fontName)
+	{
+		return LOGICAL_FONT_MAPPING.getOrDefault(fontName, fontName);
+	}
 
 	public SkiaFont(String name, FontStyle style, float size)
 	{
 		this.name = name;
 		this.style = style;
 		this.size = size;
-
 		org.jetbrains.skia.FontStyle skiaStyle = org.jetbrains.skia.FontStyle.Companion.getNORMAL();
 		if (style == FontStyle.Bold)
 		{
@@ -33,8 +60,8 @@ public class SkiaFont extends nortantis.platform.Font
 		{
 			skiaStyle = org.jetbrains.skia.FontStyle.Companion.getBOLD_ITALIC();
 		}
-
-		Typeface typeface = FontMgr.Companion.getDefault().matchFamilyStyle(name, skiaStyle);
+		String mappedName = mapFontName(name);
+		Typeface typeface = FontMgr.Companion.getDefault().matchFamilyStyle(mappedName, skiaStyle);
 		this.skiaFont = new Font(typeface, size);
 	}
 
@@ -97,5 +124,33 @@ public class SkiaFont extends nortantis.platform.Font
 	public int hashCode()
 	{
 		return Objects.hash(name, style, size);
+	}
+
+	// Custom serialization methods
+	private void writeObject(ObjectOutputStream out) throws IOException
+	{
+		out.defaultWriteObject();
+	}
+
+	private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException
+	{
+		in.defaultReadObject();
+		// Reconstruct the transient skiaFont field after deserialization
+		org.jetbrains.skia.FontStyle skiaStyle = org.jetbrains.skia.FontStyle.Companion.getNORMAL();
+		if (style == FontStyle.Bold)
+		{
+			skiaStyle = org.jetbrains.skia.FontStyle.Companion.getBOLD();
+		}
+		else if (style == FontStyle.Italic)
+		{
+			skiaStyle = org.jetbrains.skia.FontStyle.Companion.getITALIC();
+		}
+		else if (style == FontStyle.BoldItalic)
+		{
+			skiaStyle = org.jetbrains.skia.FontStyle.Companion.getBOLD_ITALIC();
+		}
+		String mappedName = mapFontName(name);
+		Typeface typeface = FontMgr.Companion.getDefault().matchFamilyStyle(mappedName, skiaStyle);
+		this.skiaFont = new Font(typeface, size);
 	}
 }

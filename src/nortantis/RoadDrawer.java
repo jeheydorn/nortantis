@@ -488,30 +488,31 @@ public class RoadDrawer
 	 */
 	public void drawRoads(Image map, Rectangle drawBounds)
 	{
-		Painter p = map.createPainter(DrawQuality.High);
-
-		if (drawBounds != null)
+		try (Painter p = map.createPainter(DrawQuality.High))
 		{
-			p.translate(-drawBounds.x, -drawBounds.y);
-		}
-
-		Rectangle drawBoundsResolutionInvariant = drawBounds == null ? null
-				: new Rectangle(drawBounds.x * (1.0 / resolutionScale), drawBounds.y * (1.0 / resolutionScale), drawBounds.width * (1.0 / resolutionScale),
-						drawBounds.height * (1.0 / resolutionScale));
-		for (Road road : roads)
-		{
-			if (drawBounds == null || roadOverlapsRectangle(road, drawBoundsResolutionInvariant))
+			if (drawBounds != null)
 			{
-				p.setColor(roadColor);
-				p.setStroke(roadStyle, resolutionScale);
-				// Copy the road's path as an extra precaution to be thread safe because CurveCreator.createCurve accesses the path using
-				// list indexes, so if the list changed size in that method, it could cause an error.
-				List<Point> roadPathCopy = Arrays.asList(road.path.toArray(new Point[] {}));
-				List<Point> path = CurveCreator.createCurve(roadPathCopy);
-				List<IntPoint> pathScaled = path.stream().map(point -> point.mult(resolutionScale).toIntPoint()).toList();
-				p.drawPolyline(pathScaled);
+				p.translate(-drawBounds.x, -drawBounds.y);
 			}
 
+			Rectangle drawBoundsResolutionInvariant = drawBounds == null ? null
+					: new Rectangle(drawBounds.x * (1.0 / resolutionScale), drawBounds.y * (1.0 / resolutionScale), drawBounds.width * (1.0 / resolutionScale),
+							drawBounds.height * (1.0 / resolutionScale));
+			for (Road road : roads)
+			{
+				if (drawBounds == null || roadOverlapsRectangle(road, drawBoundsResolutionInvariant))
+				{
+					p.setColor(roadColor);
+					p.setStroke(roadStyle, resolutionScale);
+					// Copy the road's path as an extra precaution to be thread safe because CurveCreator.createCurve accesses the path using
+					// list indexes, so if the list changed size in that method, it could cause an error.
+					List<Point> roadPathCopy = Arrays.asList(road.path.toArray(new Point[] {}));
+					List<Point> path = CurveCreator.createCurve(roadPathCopy);
+					List<IntPoint> pathScaled = path.stream().map(point -> point.mult(resolutionScale).toIntPoint()).toList();
+					p.drawPolyline(pathScaled);
+				}
+
+			}
 		}
 	}
 
@@ -522,27 +523,29 @@ public class RoadDrawer
 
 	public void drawRoadDebugInfo(Image map)
 	{
-		Painter p = map.createPainter();
-		p.setColor(Color.create(0, 150, 0));
-		for (Road road : roads)
+		try (Painter p = map.createPainter())
 		{
-			if (road.path.size() == 0)
+			p.setColor(Color.create(0, 150, 0));
+			for (Road road : roads)
 			{
-				throw new IllegalArgumentException();
-			}
-			if (road.path.size() == 1)
-			{
-				throw new IllegalArgumentException();
-			}
+				if (road.path.size() == 0)
+				{
+					throw new IllegalArgumentException();
+				}
+				if (road.path.size() == 1)
+				{
+					throw new IllegalArgumentException();
+				}
 
-			for (int i = 0; i < road.path.size(); i++)
-			{
-				Point point = road.path.get(i).mult(resolutionScale);
-				int diameter = (int) Math.max(1, 3 * resolutionScale);
-				p.drawOval((int) point.x, (int) point.y, diameter, diameter);
+				for (int i = 0; i < road.path.size(); i++)
+				{
+					Point point = road.path.get(i).mult(resolutionScale);
+					int diameter = (int) Math.max(1, 3 * resolutionScale);
+					p.drawOval((int) point.x, (int) point.y, diameter, diameter);
 
-				double yOffset = -9 * resolutionScale;
-				p.drawString(i + "", point.x, point.y + yOffset);
+					double yOffset = -9 * resolutionScale;
+					p.drawString(i + "", point.x, point.y + yOffset);
+				}
 			}
 		}
 	}

@@ -1412,33 +1412,34 @@ public class IconsTool extends EditorTool
 
 		previewImage = fadeEdges(previewImage, fadeWidth);
 
-		Painter p = previewImage.createPainter();
-
-		int x = padding;
-		int y = padding;
-		for (int i : new Range(imagesAndMasks.size()))
+		try (Painter p = previewImage.createPainter())
 		{
-			ImageAndMasks imageAndMasks = imagesAndMasks.get(i);
-			Image image = ImageCache.getInstance(settings.artPack, settings.customImagesPath).getColoredIcon(imageAndMasks, iconColor, filterColor, maximizeOpacity, fillWithColor);
-			image = imageAndMasks.cropToContent(image);
-			int widthForHeight = ImageHelper.getWidthWhenScaledByHeight(image, scaledHeight);
-			int scaledWidth = Math.min(widthForHeight, maxRowWidth);
-			int yExtraForCentering = 0;
-			if (scaledHeight > ImageHelper.getHeightWhenScaledByWidth(image, scaledWidth))
+			int x = padding;
+			int y = padding;
+			for (int i : new Range(imagesAndMasks.size()))
 			{
-				yExtraForCentering = (scaledHeight - ImageHelper.getHeightWhenScaledByWidth(image, scaledWidth)) / 2;
+				ImageAndMasks imageAndMasks = imagesAndMasks.get(i);
+				Image image = ImageCache.getInstance(settings.artPack, settings.customImagesPath).getColoredIcon(imageAndMasks, iconColor, filterColor, maximizeOpacity, fillWithColor);
+				image = imageAndMasks.cropToContent(image);
+				int widthForHeight = ImageHelper.getWidthWhenScaledByHeight(image, scaledHeight);
+				int scaledWidth = Math.min(widthForHeight, maxRowWidth);
+				int yExtraForCentering = 0;
+				if (scaledHeight > ImageHelper.getHeightWhenScaledByWidth(image, scaledWidth))
+				{
+					yExtraForCentering = (scaledHeight - ImageHelper.getHeightWhenScaledByWidth(image, scaledWidth)) / 2;
+				}
+				Image scaled = ImageHelper.scaleByWidth(image, scaledWidth, Method.ULTRA_QUALITY);
+
+				if (x - padding + scaled.getWidth() > maxRowWidth)
+				{
+					x = padding;
+					y += scaledHeight;
+				}
+
+				p.drawImage(scaled, x, y + yExtraForCentering);
+
+				x += scaled.getWidth() + horizontalPaddingBetweenImages;
 			}
-			Image scaled = ImageHelper.scaleByWidth(image, scaledWidth, Method.ULTRA_QUALITY);
-
-			if (x - padding + scaled.getWidth() > maxRowWidth)
-			{
-				x = padding;
-				y += scaledHeight;
-			}
-
-			p.drawImage(scaled, x, y + yExtraForCentering);
-
-			x += scaled.getWidth() + horizontalPaddingBetweenImages;
 		}
 
 		return previewImage;
@@ -1446,16 +1447,20 @@ public class IconsTool extends EditorTool
 
 	private static Image fadeEdges(Image image, int fadeWidth)
 	{
-		Image box = Image.create(image.getWidth(), image.getHeight(), ImageType.Grayscale8Bit);
-		Painter p = box.createPainter();
-		p.setColor(Color.white);
-		p.fillRect(fadeWidth, fadeWidth, image.getWidth() - fadeWidth * 2, image.getHeight() - fadeWidth * 2);
-		p.dispose();
+		try (Image box = Image.create(image.getWidth(), image.getHeight(), ImageType.Grayscale8Bit))
+		{
+			try (Painter p = box.createPainter())
+			{
+				p.setColor(Color.white);
+				p.fillRect(fadeWidth, fadeWidth, image.getWidth() - fadeWidth * 2, image.getHeight() - fadeWidth * 2);
+			}
 
-		// Use convolution to make a hazy background for the text.
-		Image hazyBox = ImageHelper.convolveGrayscale(box, ImageHelper.createGaussianKernel(fadeWidth), true, false);
-
-		return ImageHelper.setAlphaFromMask(image, hazyBox, false);
+			// Use convolution to make a hazy background for the text.
+			try (Image hazyBox = ImageHelper.blur(box, fadeWidth, true, false))
+			{
+				return ImageHelper.setAlphaFromMask(image, hazyBox, false);
+			}
+		}
 	}
 
 	@Override

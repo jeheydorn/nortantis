@@ -21,38 +21,38 @@ public class GridDrawer
 	{
 		int alpha = settings.gridOverlayColor.getAlpha();
 
-		Image hexImage = Image.create(image.getWidth(), image.getHeight(), ImageType.ARGB);
-		ImageHelper.setAlphaOfAllPixels(hexImage, 0);
-
+		try (Image hexImage = Image.create(image.getWidth(), image.getHeight(), ImageType.ARGB))
 		{
-			Painter p = hexImage.createPainter(DrawQuality.High);
-			p.setColor(Color.create(settings.gridOverlayColor.getRed(), settings.gridOverlayColor.getGreen(), settings.gridOverlayColor.getBlue()));
-			float lineWidth = settings.gridOverlayLineWidth * (float) settings.resolution;
-			p.setBasicStroke(lineWidth);
-			if (drawBounds != null && settings.gridOverlayShape != GridOverlayShape.Voronoi_polygons)
+			ImageHelper.setAlphaOfAllPixels(hexImage, 0);
+
+			try (Painter p = hexImage.createPainter(DrawQuality.High))
 			{
-				p.translate(-drawBounds.x, -drawBounds.y);
+				p.setColor(Color.create(settings.gridOverlayColor.getRed(), settings.gridOverlayColor.getGreen(), settings.gridOverlayColor.getBlue()));
+				float lineWidth = settings.gridOverlayLineWidth * (float) settings.resolution;
+				p.setBasicStroke(lineWidth);
+				if (drawBounds != null && settings.gridOverlayShape != GridOverlayShape.Voronoi_polygons)
+				{
+					p.translate(-drawBounds.x, -drawBounds.y);
+				}
+
+				float width = mapDimensions.width;
+				float height = mapDimensions.height;
+
+				switch (settings.gridOverlayShape)
+				{
+					case Squares -> drawSquareGrid(p, width, height, settings.gridOverlayRowOrColCount, settings.gridOverlayXOffset, settings.gridOverlayYOffset);
+					case Vertical_hexes -> drawVerticalHexGrid(p, width, height, settings.gridOverlayRowOrColCount, settings.gridOverlayXOffset, settings.gridOverlayYOffset, drawBounds, lineWidth);
+					case Horizontal_hexes -> drawHorizontalHexGrid(p, width, height, settings.gridOverlayRowOrColCount, settings.gridOverlayXOffset, settings.gridOverlayYOffset, drawBounds, lineWidth);
+					case Voronoi_polygons -> drawVoronoiOnLand(p, graph, centersToDraw, drawBounds, settings.drawVoronoiGridOverlayOnlyOnLand);
+					default -> throw new IllegalArgumentException("Unexpected value: " + settings.gridOverlayShape);
+				}
 			}
 
-			float width = mapDimensions.width;
-			float height = mapDimensions.height;
-
-			switch (settings.gridOverlayShape)
+			try (Image alphaApplied = ImageHelper.applyAlpha(hexImage, alpha);
+					Painter p = image.createPainter())
 			{
-				case Squares -> drawSquareGrid(p, width, height, settings.gridOverlayRowOrColCount, settings.gridOverlayXOffset, settings.gridOverlayYOffset);
-				case Vertical_hexes -> drawVerticalHexGrid(p, width, height, settings.gridOverlayRowOrColCount, settings.gridOverlayXOffset, settings.gridOverlayYOffset, drawBounds, lineWidth);
-				case Horizontal_hexes -> drawHorizontalHexGrid(p, width, height, settings.gridOverlayRowOrColCount, settings.gridOverlayXOffset, settings.gridOverlayYOffset, drawBounds, lineWidth);
-				case Voronoi_polygons -> drawVoronoiOnLand(p, graph, centersToDraw, drawBounds, settings.drawVoronoiGridOverlayOnlyOnLand);
-				default -> throw new IllegalArgumentException("Unexpected value: " + settings.gridOverlayShape);
+				p.drawImage(alphaApplied, 0, 0);
 			}
-
-			p.dispose();
-		}
-
-		{
-			Painter p = image.createPainter();
-			p.drawImage(ImageHelper.applyAlpha(hexImage, alpha), 0, 0);
-			p.dispose();
 		}
 	}
 

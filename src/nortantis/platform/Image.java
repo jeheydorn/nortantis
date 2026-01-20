@@ -1,24 +1,32 @@
 package nortantis.platform;
 
-import java.io.InputStream;
-
-import nortantis.platform.awt.AwtPixelReader;
-import nortantis.platform.awt.AwtPixelReaderWriter;
-import org.imgscalr.Scalr.Method;
-
 import nortantis.geom.IntDimension;
 import nortantis.geom.IntRectangle;
+import org.imgscalr.Scalr.Method;
 
-public abstract class Image
+import java.io.InputStream;
+import java.util.function.Consumer;
+
+public abstract class Image implements AutoCloseable
 {
 	private final ImageType type;
-	private final float maxPixelLevelAsFloat;
-	protected PixelReader currentPixelReader;
 
 	protected Image(ImageType type)
 	{
 		this.type = type;
-		maxPixelLevelAsFloat = getMaxPixelLevel();
+	}
+
+	/**
+	 * Releases resources held by this image.
+	 * For GPU-accelerated implementations, this ensures GPU resources are properly
+	 * cleaned up on the GPU thread rather than being left for garbage collection.
+	 *
+	 * The default implementation does nothing. Subclasses with GPU resources should override.
+	 */
+	@Override
+	public void close()
+	{
+		// Default: no-op. SkiaImage overrides to clean up GPU resources.
 	}
 
 	public abstract int getWidth();
@@ -103,14 +111,12 @@ public abstract class Image
 	public abstract Image deepCopy();
 
 	/**
-	 * Creates an image with the given bounds in this image, backed by the same data as the original image. This means that modifications to
-	 * the result will modify the original image.
+	 * Creates an image with the given bounds in this image, backed by the same data as the original image. This means that modifications to the result will modify the original image.
 	 */
 	public abstract Image getSubImage(IntRectangle bounds);
 
 	/**
-	 * Creates an image with the given bounds in this image, backed by a copy of the data from the original image. This means that
-	 * modifications to the result will NOT modify the original image.
+	 * Creates an image with the given bounds in this image, backed by a copy of the data from the original image. This means that modifications to the result will NOT modify the original image.
 	 */
 	public Image copySubImage(IntRectangle bounds)
 	{
@@ -121,73 +127,118 @@ public abstract class Image
 
 	public abstract Image copyAndAddAlphaChanel();
 
-	public Image copyAndRemoveAlphaChanel()
+	/**
+	 * Optional hint that prepares the image for pixel access operations.
+	 * For GPU-accelerated implementations, this ensures CPU bitmap is up-to-date.
+	 * Default implementation is a no-op - the lazy sync will work without explicit calls.
+	 *
+	 * Call this before intensive pixel access operations when you want to batch the sync cost.
+	 */
+	public void prepareForPixelAccess()
 	{
-		Image result = Image.create(getWidth(), getHeight(), ImageType.RGB);
-		try (PixelReaderWriter resultPixels = result.createPixelReaderWriter(); PixelReader thisPixels = createPixelReader())
-		{
-			for (int y = 0; y < getHeight(); y++)
-				for (int x = 0; x < getWidth(); x++)
-				{
-					resultPixels.setRGB(x, y, thisPixels.getRGB(x, y));
-				}
-		}
-		return result;
+		// Default: no-op. Skia overrides to sync GPU->CPU if needed.
 	}
 
 	/**
-	 * Begins a pixel read session. This caches pixel data for efficient single-pixel reads. Use with try-with-resources to ensure the
-	 * session is properly closed.
+	 * Optional hint that prepares the image for drawing operations.
+	 * For GPU-accelerated implementations, this ensures the GPU surface is ready.
+	 * Default implementation is a no-op.
 	 *
-	 * If a write session is in progress, it will be auto-flushed with a warning.
-	 *
-	 * @return A session object that should be closed when done reading.
+	 * Call this before intensive drawing operations when you want to batch the preparation cost.
 	 */
-	public abstract PixelReader createNewPixelReader();
+	public void prepareForDrawing()
+	{
+		// Default: no-op. Skia overrides to ensure GPU ready.
+	}
 
 	/**
-	 * Runs when pixel reads finish.
+	 * Creates a pixel reader that is restricted to read from the given bounds of this image. For the Skia implementation, this is much more efficient than creating a pixel reader for the entire
+	 * image.
 	 */
-	public abstract void endPixelReadsOrWrites();
+	protected abstract PixelReader innerCreateNewPixelReader(IntRectangle bounds);
 
-	/**
-	 * Begins a pixel write session. This caches pixel data for efficient single-pixel writes. Use with try-with-resources to ensure the
-	 * session is properly closed and changes are flushed.
-	 *
-	 * If a read session is in progress, it will be auto-ended with a warning.
-	 *
-	 * @return A session object that should be closed when done writing.
-	 */
-	public abstract PixelReaderWriter createNewPixelReaderWriter();
+	protected abstract PixelReaderWriter innerCreateNewPixelReaderWriter(IntRectangle bounds);
 
 
 	public PixelReader createPixelReader()
 	{
-		if (currentPixelReader != null)
-		{
-			if (currentPixelReader instanceof PixelReaderWriter)
-			{
-				throw new IllegalStateException("Pixel reader and writer already created");
-			}
-			throw new IllegalStateException("Pixel reader already created");
-		}
+		return createPixelReader(null);
+	}
 
-		currentPixelReader = createNewPixelReader();
-		return currentPixelReader;
+	/**
+	 * Creates a pixel reader that is restricted to read/write in the given bounds of this image. For the Skia implementation, this is much more efficient than creating a pixel reader for the entire
+	 * image.
+	 *
+	 * @bounds If not null, then is the bounds in the image the reader should be for. If null, then create a reader for the while image. Note that passing in a non-null bounds that restricts reading
+	 * 		to a subset of this image does not change the coordinates you should use when accessing pixels through the reader. Also, if the bounds you give extends behind the image, it will be clipped.
+	 */
+	public PixelReader createPixelReader(IntRectangle bounds)
+	{
+		if (bounds != null)
+		{
+			IntRectangle intersection = bounds.findIntersection(new IntRectangle(0, 0, getWidth(), getHeight()));
+			if (intersection == null)
+			{
+				bounds = new IntRectangle(bounds.x, bounds.y, 0, 0);
+			}
+		}
+		return innerCreateNewPixelReader(bounds);
 	}
 
 	public PixelReaderWriter createPixelReaderWriter()
 	{
-		if (currentPixelReader != null)
-		{
-			if (currentPixelReader instanceof PixelReaderWriter)
-			{
-				throw new IllegalStateException("Pixel reader and writer already created");
-			}
-			throw new IllegalStateException("Pixel reader already created");
-		}
+		return createPixelReaderWriter(null);
+	}
 
-		currentPixelReader = createNewPixelReaderWriter();
-		return (PixelReaderWriter) currentPixelReader;
+	/**
+	 * Creates a pixel reader/writier that is restricted to read/write in the given bounds of this image. For the Skia implementation, this is much more efficient than creating a pixel reader for the
+	 * entire image.
+	 *
+	 * @bounds If not null, then is the bounds in the image the reader/writer should be for. If null, then create a reader for the while image. Note that passing in a non-null bounds that restricts
+	 * 		reading/writing to a subset of this image does not change the coordinates you should use when accessing pixels through the reader/writer. Also, if the bounds you give extends behind the
+	 * 		image, it will be clipped.
+	 */
+	public PixelReaderWriter createPixelReaderWriter(IntRectangle bounds)
+	{
+		if (bounds != null)
+		{
+			IntRectangle intersection = bounds.findIntersection(new IntRectangle(0, 0, getWidth(), getHeight()));
+			if (intersection == null)
+			{
+				bounds = new IntRectangle(bounds.x, bounds.y, 0, 0);
+			}
+		}
+		return innerCreateNewPixelReaderWriter(bounds);
+	}
+
+	/**
+	 * Executes drawing operations on this image with automatic resource management.
+	 * Creates a painter, sets manual batch mode for optimal performance,
+	 * executes the operations, and automatically awaits and disposes the painter.
+	 *
+	 * This is the preferred way to perform drawing operations when you want
+	 * all operations batched together and automatically cleaned up.
+	 *
+	 * @param quality The draw quality setting
+	 * @param operations A consumer that receives the painter and performs drawing operations
+	 */
+	public void withPainter(DrawQuality quality, Consumer<Painter> operations)
+	{
+		try (Painter p = createPainter(quality))
+		{
+			p.setManualBatchMode(true); // Single batch for all ops
+			operations.accept(p);
+		} // await() called automatically by close()
+	}
+
+	/**
+	 * Executes drawing operations on this image with automatic resource management.
+	 * Uses normal draw quality.
+	 *
+	 * @param operations A consumer that receives the painter and performs drawing operations
+	 */
+	public void withPainter(Consumer<Painter> operations)
+	{
+		withPainter(DrawQuality.Normal, operations);
 	}
 }

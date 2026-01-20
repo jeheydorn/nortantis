@@ -16,6 +16,4 @@ public interface PixelReaderWriter extends PixelReader, AutoCloseable
 
 	public void setRGB(int x, int y, int red, int green, int blue, int alpha);
 
-	public void setAlpha(int x, int y, int alpha);
-
 }
