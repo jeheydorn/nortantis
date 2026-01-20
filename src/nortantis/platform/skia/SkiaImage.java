@@ -390,6 +390,48 @@ public class SkiaImage extends Image
 	}
 
 	/**
+	 * Updates a region of the GPU surface from the CPU bitmap.
+	 * Used for partial updates to avoid full texture uploads.
+	 */
+	void updateGPURegion(int x, int y, int width, int height)
+	{
+		if (!isGpuEnabled || gpuSurface == null)
+		{
+			markCPUDirty();
+			return;
+		}
+
+		try
+		{
+			final Surface surfaceRef = gpuSurface;
+			final Bitmap bitmapRef = bitmap;
+			final int rx = x;
+			final int ry = y;
+			final int rw = width;
+			final int rh = height;
+
+			GPUExecutor.getInstance().submit(() -> {
+				Canvas gpuCanvas = surfaceRef.getCanvas();
+				org.jetbrains.skia.Image cpuImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(bitmapRef);
+
+				Rect srcRect = Rect.makeXYWH(rx, ry, rw, rh);
+				Rect dstRect = Rect.makeXYWH(rx, ry, rw, rh);
+
+				gpuCanvas.drawImageRect(cpuImage, srcRect, dstRect);
+				cpuImage.close();
+				return null;
+			});
+
+			invalidateGPUTexture();
+		}
+		catch (Exception e)
+		{
+			Logger.printError("SkiaImage: Failed to update GPU region: " + e.getMessage(), e);
+			markCPUDirty();
+		}
+	}
+
+	/**
 	 * Marks the GPU surface as having the latest data (CPU is stale).
 	 * Called after GPU drawing operations.
 	 */

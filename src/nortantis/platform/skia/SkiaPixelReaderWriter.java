@@ -101,12 +101,21 @@ public class SkiaPixelReaderWriter extends SkiaPixelReader implements PixelReade
 			if (bounds == null)
 			{
 				image.writePixelsFromIntArray(cachedPixelArray);
+				image.markCPUDirty(); // Invalidate GPU copy since CPU was modified
 			}
 			else
 			{
 				image.writePixelsToRegion(cachedPixelArray, bounds.x, bounds.y, bounds.width, bounds.height);
+				// If GPU is enabled, update only the modified region on the GPU
+				if (image.isGpuEnabled())
+				{
+					image.updateGPURegion(bounds.x, bounds.y, bounds.width, bounds.height);
+				}
+				else
+				{
+					image.markCPUDirty();
+				}
 			}
-			image.markCPUDirty(); // Invalidate GPU copy since CPU was modified
 		}
 		else if (modified)
 		{
