@@ -41,10 +41,12 @@ public class GraphCreator
 
 		// Draw elevation map with tectonic plate boundaries.
 		Image heightMap = Image.create(graph.getWidth(), graph.getHeight(), ImageType.Grayscale16Bit);
-		Painter p = heightMap.createPainter();
-		p.setColor(Color.black);
-		p.fillRect(0, 0, graph.getWidth(), graph.getHeight());
-		graph.paintElevationUsingTriangles(p);
+		try (Painter p = heightMap.createPainter())
+		{
+			p.setColor(Color.black);
+			p.fillRect(0, 0, graph.getWidth(), graph.getHeight());
+			graph.paintElevationUsingTriangles(p);
+		}
 
 		heightMap = ImageHelper.blur(heightMap, (int) graph.getMeanCenterWidth() / 2, false,false);
 

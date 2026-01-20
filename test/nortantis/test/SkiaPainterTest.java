@@ -83,23 +83,22 @@ public class SkiaPainterTest
 	public void testPainterOnGrayscale8Bit()
 	{
 		Image image = Image.create(testImageWidth, testImageHeight, ImageType.Grayscale8Bit);
-		Painter painter = image.createPainter(DrawQuality.High);
+		try (Painter painter = image.createPainter(DrawQuality.High))
+		{
+			// Draw shapes with different gray levels
+			painter.setColor(createColor(255, 255, 255));
+			painter.fillRect(10, 10, 30, 30);
 
-		// Draw shapes with different gray levels
-		painter.setColor(createColor(255, 255, 255));
-		painter.fillRect(10, 10, 30, 30);
+			painter.setColor(createColor(128, 128, 128));
+			painter.fillRect(50, 10, 40, 40);
 
-		painter.setColor(createColor(128, 128, 128));
-		painter.fillRect(50, 10, 40, 40);
+			painter.setColor(createColor(64, 64, 64));
+			painter.fillOval(10, 50, 35, 35);
 
-		painter.setColor(createColor(64, 64, 64));
-		painter.fillOval(10, 50, 35, 35);
-
-		painter.setColor(createColor(200, 200, 200));
-		painter.setBasicStroke(3.0f);
-		painter.drawLine(50, 60, 90, 90);
-
-		painter.dispose();
+			painter.setColor(createColor(200, 200, 200));
+			painter.setBasicStroke(3.0f);
+			painter.drawLine(50, 60, 90, 90);
+		}
 
 		compareWithExpected(image, "painterOnGrayscale8Bit");
 	}
@@ -108,24 +107,23 @@ public class SkiaPainterTest
 	public void testPainterOnBinary()
 	{
 		Image image = Image.create(testImageWidth, testImageHeight, ImageType.Binary);
-		Painter painter = image.createPainter(DrawQuality.High);
+		try (Painter painter = image.createPainter(DrawQuality.High))
+		{
+			// Draw white shapes on black background
+			painter.setColor(createColor(255, 255, 255));
+			painter.fillRect(5, 5, 40, 40);
+			painter.fillOval(50, 5, 45, 45);
 
-		// Draw white shapes on black background
-		painter.setColor(createColor(255, 255, 255));
-		painter.fillRect(5, 5, 40, 40);
-		painter.fillOval(50, 5, 45, 45);
+			// Draw a polygon
+			int[] xPoints = { 25, 45, 35, 15 };
+			int[] yPoints = { 55, 65, 95, 85 };
+			painter.fillPolygon(xPoints, yPoints);
 
-		// Draw a polygon
-		int[] xPoints = { 25, 45, 35, 15 };
-		int[] yPoints = { 55, 65, 95, 85 };
-		painter.fillPolygon(xPoints, yPoints);
-
-		// Draw lines
-		painter.setBasicStroke(2.0f);
-		painter.drawLine(55, 55, 95, 95);
-		painter.drawLine(55, 95, 95, 55);
-
-		painter.dispose();
+			// Draw lines
+			painter.setBasicStroke(2.0f);
+			painter.drawLine(55, 55, 95, 95);
+			painter.drawLine(55, 95, 95, 55);
+		}
 
 		compareWithExpected(image, "painterOnBinary");
 	}
@@ -169,12 +167,13 @@ public class SkiaPainterTest
 	public void testDrawLineFloat()
 	{
 		Image image = createTestImage();
-		Painter painter = image.createPainter(DrawQuality.High);
-		painter.setColor(createColor(0, 128, 255));
-		painter.setBasicStroke(1.5f);
-		painter.drawLine(10.5f, 20.5f, 80.5f, 70.5f);
-		painter.drawLine(50.0f, 10.0f, 50.0f, 90.0f);
-		painter.dispose();
+		try (Painter painter = image.createPainter(DrawQuality.High))
+		{
+			painter.setColor(createColor(0, 128, 255));
+			painter.setBasicStroke(1.5f);
+			painter.drawLine(10.5f, 20.5f, 80.5f, 70.5f);
+			painter.drawLine(50.0f, 10.0f, 50.0f, 90.0f);
+		}
 
 		compareWithExpected(image, "drawLineFloat");
 	}
@@ -183,13 +182,14 @@ public class SkiaPainterTest
 	public void testDrawRect()
 	{
 		Image image = createTestImage();
-		Painter painter = image.createPainter(DrawQuality.High);
-		painter.setColor(createColor(0, 0, 255));
-		painter.setBasicStroke(2.0f);
-		painter.drawRect(10, 10, 80, 80);
-		painter.setColor(createColor(255, 0, 0));
-		painter.drawRect(25, 25, 50, 50);
-		painter.dispose();
+		try (Painter painter = image.createPainter(DrawQuality.High))
+		{
+			painter.setColor(createColor(0, 0, 255));
+			painter.setBasicStroke(2.0f);
+			painter.drawRect(10, 10, 80, 80);
+			painter.setColor(createColor(255, 0, 0));
+			painter.drawRect(25, 25, 50, 50);
+		}
 
 		compareWithExpected(image, "drawRect");
 	}
@@ -213,13 +213,14 @@ public class SkiaPainterTest
 	public void testDrawOval()
 	{
 		Image image = createTestImage();
-		Painter painter = image.createPainter(DrawQuality.High);
-		painter.setColor(createColor(128, 0, 128));
-		painter.setBasicStroke(2.0f);
-		painter.drawOval(10, 10, 80, 80);
-		painter.setColor(createColor(0, 128, 128));
-		painter.drawOval(20, 30, 60, 40);
-		painter.dispose();
+		try (Painter painter = image.createPainter(DrawQuality.High))
+		{
+			painter.setColor(createColor(128, 0, 128));
+			painter.setBasicStroke(2.0f);
+			painter.drawOval(10, 10, 80, 80);
+			painter.setColor(createColor(0, 128, 128));
+			painter.drawOval(20, 30, 60, 40);
+		}
 
 		compareWithExpected(image, "drawOval");
 	}
@@ -228,12 +229,13 @@ public class SkiaPainterTest
 	public void testFillOval()
 	{
 		Image image = createTestImage();
-		Painter painter = image.createPainter(DrawQuality.High);
-		painter.setColor(createColor(255, 200, 0));
-		painter.fillOval(10, 10, 80, 80);
-		painter.setColor(createColor(200, 50, 100));
-		painter.fillOval(30, 40, 40, 30);
-		painter.dispose();
+		try (Painter painter = image.createPainter(DrawQuality.High))
+		{
+			painter.setColor(createColor(255, 200, 0));
+			painter.fillOval(10, 10, 80, 80);
+			painter.setColor(createColor(200, 50, 100));
+			painter.fillOval(30, 40, 40, 30);
+		}
 
 		compareWithExpected(image, "fillOval");
 	}
@@ -242,14 +244,15 @@ public class SkiaPainterTest
 	public void testDrawPolygon()
 	{
 		Image image = createTestImage();
-		Painter painter = image.createPainter(DrawQuality.High);
-		painter.setColor(createColor(0, 100, 200));
-		painter.setBasicStroke(2.0f);
+		try (Painter painter = image.createPainter(DrawQuality.High))
+		{
+			painter.setColor(createColor(0, 100, 200));
+			painter.setBasicStroke(2.0f);
 
-		int[] xPoints = { 50, 90, 70, 30, 10 };
-		int[] yPoints = { 10, 40, 90, 90, 40 };
-		painter.drawPolygon(xPoints, yPoints);
-		painter.dispose();
+			int[] xPoints = { 50, 90, 70, 30, 10 };
+			int[] yPoints = { 10, 40, 90, 90, 40 };
+			painter.drawPolygon(xPoints, yPoints);
+		}
 
 		compareWithExpected(image, "drawPolygon");
 	}
@@ -258,13 +261,14 @@ public class SkiaPainterTest
 	public void testFillPolygon()
 	{
 		Image image = createTestImage();
-		Painter painter = image.createPainter(DrawQuality.High);
-		painter.setColor(createColor(100, 200, 50));
+		try (Painter painter = image.createPainter(DrawQuality.High))
+		{
+			painter.setColor(createColor(100, 200, 50));
 
-		int[] xPoints = { 50, 90, 70, 30, 10 };
-		int[] yPoints = { 10, 40, 90, 90, 40 };
-		painter.fillPolygon(xPoints, yPoints);
-		painter.dispose();
+			int[] xPoints = { 50, 90, 70, 30, 10 };
+			int[] yPoints = { 10, 40, 90, 90, 40 };
+			painter.fillPolygon(xPoints, yPoints);
+		}
 
 		compareWithExpected(image, "fillPolygon");
 	}
@@ -273,14 +277,15 @@ public class SkiaPainterTest
 	public void testDrawPolyline()
 	{
 		Image image = createTestImage();
-		Painter painter = image.createPainter(DrawQuality.High);
-		painter.setColor(createColor(200, 100, 50));
-		painter.setBasicStroke(3.0f);
+		try (Painter painter = image.createPainter(DrawQuality.High))
+		{
+			painter.setColor(createColor(200, 100, 50));
+			painter.setBasicStroke(3.0f);
 
-		int[] xPoints = { 10, 30, 50, 70, 90 };
-		int[] yPoints = { 50, 20, 80, 20, 50 };
-		painter.drawPolyline(xPoints, yPoints);
-		painter.dispose();
+			int[] xPoints = { 10, 30, 50, 70, 90 };
+			int[] yPoints = { 50, 20, 80, 20, 50 };
+			painter.drawPolyline(xPoints, yPoints);
+		}
 
 		compareWithExpected(image, "drawPolyline");
 	}
@@ -289,13 +294,14 @@ public class SkiaPainterTest
 	public void testDrawPolygonFloat()
 	{
 		Image image = createTestImage();
-		Painter painter = image.createPainter(DrawQuality.High);
-		painter.setColor(createColor(150, 50, 200));
-		painter.setBasicStroke(2.0f);
+		try (Painter painter = image.createPainter(DrawQuality.High))
+		{
+			painter.setColor(createColor(150, 50, 200));
+			painter.setBasicStroke(2.0f);
 
-		List<FloatPoint> points = Arrays.asList(new FloatPoint(50.5f, 10.5f), new FloatPoint(90.5f, 40.5f), new FloatPoint(70.5f, 90.5f), new FloatPoint(30.5f, 90.5f), new FloatPoint(10.5f, 40.5f));
-		painter.drawPolygonFloat(points);
-		painter.dispose();
+			List<FloatPoint> points = Arrays.asList(new FloatPoint(50.5f, 10.5f), new FloatPoint(90.5f, 40.5f), new FloatPoint(70.5f, 90.5f), new FloatPoint(30.5f, 90.5f), new FloatPoint(10.5f, 40.5f));
+			painter.drawPolygonFloat(points);
+		}
 
 		compareWithExpected(image, "drawPolygonFloat");
 	}
@@ -307,18 +313,19 @@ public class SkiaPainterTest
 	public void testBasicStroke()
 	{
 		Image image = createTestImage();
-		Painter painter = image.createPainter(DrawQuality.High);
-		painter.setColor(createColor(0, 0, 0));
+		try (Painter painter = image.createPainter(DrawQuality.High))
+		{
+			painter.setColor(createColor(0, 0, 0));
 
-		painter.setBasicStroke(1.0f);
-		painter.drawLine(10, 20, 90, 20);
+			painter.setBasicStroke(1.0f);
+			painter.drawLine(10, 20, 90, 20);
 
-		painter.setBasicStroke(3.0f);
-		painter.drawLine(10, 50, 90, 50);
+			painter.setBasicStroke(3.0f);
+			painter.drawLine(10, 50, 90, 50);
 
-		painter.setBasicStroke(5.0f);
-		painter.drawLine(10, 80, 90, 80);
-		painter.dispose();
+			painter.setBasicStroke(5.0f);
+			painter.drawLine(10, 80, 90, 80);
+		}
 
 		compareWithExpected(image, "basicStroke");
 	}
@@ -327,18 +334,19 @@ public class SkiaPainterTest
 	public void testDashedStroke()
 	{
 		Image image = createTestImage();
-		Painter painter = image.createPainter(DrawQuality.High);
-		painter.setColor(createColor(0, 0, 0));
+		try (Painter painter = image.createPainter(DrawQuality.High))
+		{
+			painter.setColor(createColor(0, 0, 0));
 
-		painter.setStroke(new Stroke(StrokeType.Dashes, 2.0f), 1.0);
-		painter.drawLine(10, 30, 90, 30);
+			painter.setStroke(new Stroke(StrokeType.Dashes, 2.0f), 1.0);
+			painter.drawLine(10, 30, 90, 30);
 
-		painter.setStroke(new Stroke(StrokeType.Rounded_Dashes, 2.0f), 1.0);
-		painter.drawLine(10, 50, 90, 50);
+			painter.setStroke(new Stroke(StrokeType.Rounded_Dashes, 2.0f), 1.0);
+			painter.drawLine(10, 50, 90, 50);
 
-		painter.setStroke(new Stroke(StrokeType.Dots, 2.0f), 1.0);
-		painter.drawLine(10, 70, 90, 70);
-		painter.dispose();
+			painter.setStroke(new Stroke(StrokeType.Dots, 2.0f), 1.0);
+			painter.drawLine(10, 70, 90, 70);
+		}
 
 		compareWithExpected(image, "dashedStroke");
 	}
@@ -347,12 +355,13 @@ public class SkiaPainterTest
 	public void testStrokeSolidNoEndDecorations()
 	{
 		Image image = createTestImage();
-		Painter painter = image.createPainter(DrawQuality.High);
-		painter.setColor(createColor(100, 100, 100));
+		try (Painter painter = image.createPainter(DrawQuality.High))
+		{
+			painter.setColor(createColor(100, 100, 100));
 
-		painter.setStrokeToSolidLineWithNoEndDecorations(6.0f);
-		painter.drawLine(10, 50, 90, 50);
-		painter.dispose();
+			painter.setStrokeToSolidLineWithNoEndDecorations(6.0f);
+			painter.drawLine(10, 50, 90, 50);
+		}
 
 		compareWithExpected(image, "strokeSolidNoEndDecorations");
 	}
@@ -363,13 +372,13 @@ public class SkiaPainterTest
 	public void testGradient()
 	{
 		Image image = createTestImage();
-		Painter painter = image.createPainter(DrawQuality.High);
-
-		Color startColor = createColor(255, 0, 0);
-		Color endColor = createColor(0, 0, 255);
-		painter.setGradient(0, 0, startColor, 100, 100, endColor);
-		painter.fillRect(10, 10, 80, 80);
-		painter.dispose();
+		try (Painter painter = image.createPainter(DrawQuality.High))
+		{
+			Color startColor = createColor(255, 0, 0);
+			Color endColor = createColor(0, 0, 255);
+			painter.setGradient(0, 0, startColor, 100, 100, endColor);
+			painter.fillRect(10, 10, 80, 80);
+		}
 
 		compareWithExpected(image, "gradient");
 	}
@@ -380,18 +389,18 @@ public class SkiaPainterTest
 	public void testDrawString()
 	{
 		Image image = createTestImage();
-		Painter painter = image.createPainter(DrawQuality.High);
+		try (Painter painter = image.createPainter(DrawQuality.High))
+		{
+			Font font = PlatformFactory.getInstance().createFont("SansSerif", FontStyle.Plain, 14);
+			painter.setFont(font);
+			painter.setColor(Color.green);
+			painter.drawString("Hello", 10, 30);
 
-		Font font = PlatformFactory.getInstance().createFont("SansSerif", FontStyle.Plain, 14);
-		painter.setFont(font);
-		painter.setColor(Color.green);
-		painter.drawString("Hello", 10, 30);
-
-		Font boldFont = PlatformFactory.getInstance().createFont("SansSerif", FontStyle.Bold, 18);
-		painter.setFont(boldFont);
-		painter.setColor(Color.red);
-		painter.drawString("World", 10, 60);
-		painter.dispose();
+			Font boldFont = PlatformFactory.getInstance().createFont("SansSerif", FontStyle.Bold, 18);
+			painter.setFont(boldFont);
+			painter.setColor(Color.red);
+			painter.drawString("World", 10, 60);
+		}
 
 		compareWithExpected(image, "drawString");
 	}
@@ -400,29 +409,28 @@ public class SkiaPainterTest
 	public void testStringWidthAndCharWidth()
 	{
 		Image image = createTestImage();
-		Painter painter = image.createPainter(DrawQuality.High);
+		try (Painter painter = image.createPainter(DrawQuality.High))
+		{
+			// Use Arial as it's more commonly available across platforms
+			Font font = PlatformFactory.getInstance().createFont("Arial", FontStyle.Plain, 14);
+			painter.setFont(font);
 
-		// Use Arial as it's more commonly available across platforms
-		Font font = PlatformFactory.getInstance().createFont("Arial", FontStyle.Plain, 14);
-		painter.setFont(font);
+			int stringWidth = painter.stringWidth("Test");
+			int charWidth = painter.charWidth('T');
+			int fontAscent = painter.getFontAscent();
+			int fontDescent = painter.getFontDescent();
 
-		int stringWidth = painter.stringWidth("Test");
-		int charWidth = painter.charWidth('T');
-		int fontAscent = painter.getFontAscent();
-		int fontDescent = painter.getFontDescent();
+			// If the font is found, width should be positive
+			// Font metrics can be 0 if font is not available, which is acceptable
+			assertTrue(stringWidth >= 0, "String width should be non-negative");
+			assertTrue(charWidth >= 0, "Char width should be non-negative");
+			assertTrue(fontAscent >= 0, "Font ascent should be non-negative");
+			assertTrue(fontDescent >= 0, "Font descent should be non-negative");
 
-		// If the font is found, width should be positive
-		// Font metrics can be 0 if font is not available, which is acceptable
-		assertTrue(stringWidth >= 0, "String width should be non-negative");
-		assertTrue(charWidth >= 0, "Char width should be non-negative");
-		assertTrue(fontAscent >= 0, "Font ascent should be non-negative");
-		assertTrue(fontDescent >= 0, "Font descent should be non-negative");
-
-		// At least one metric should be positive if any font rendering works
-		assertTrue(stringWidth > 0 || charWidth > 0 || fontAscent > 0,
-				"At least one font metric should be positive if font rendering is available. " + "stringWidth=" + stringWidth + ", charWidth=" + charWidth + ", fontAscent=" + fontAscent);
-
-		painter.dispose();
+			// At least one metric should be positive if any font rendering works
+			assertTrue(stringWidth > 0 || charWidth > 0 || fontAscent > 0,
+					"At least one font metric should be positive if font rendering is available. " + "stringWidth=" + stringWidth + ", charWidth=" + charWidth + ", fontAscent=" + fontAscent);
+		}
 	}
 
 	// ==================== Image Drawing Test ====================
@@ -453,10 +461,11 @@ public class SkiaPainterTest
 
 		compareWithExpected(canvas, "smallImage"); // TODO remove
 
-		Painter painter = canvas.createPainter(DrawQuality.High);
-		painter.drawImage(smallImage, 10, 10);
-		painter.drawImage(smallImage, 50, 50, 40, 40);
-		painter.dispose();
+		try (Painter painter = canvas.createPainter(DrawQuality.High))
+		{
+			painter.drawImage(smallImage, 10, 10);
+			painter.drawImage(smallImage, 50, 50, 40, 40);
+		}
 
 		compareWithExpected(canvas, "drawImage");
 	}
@@ -607,19 +616,19 @@ public class SkiaPainterTest
 	public void testTranslate()
 	{
 		Image image = createTestImage();
-		Painter painter = image.createPainter(DrawQuality.High);
+		try (Painter painter = image.createPainter(DrawQuality.High))
+		{
+			painter.setColor(createColor(255, 0, 0));
+			painter.fillRect(0, 0, 20, 20);
 
-		painter.setColor(createColor(255, 0, 0));
-		painter.fillRect(0, 0, 20, 20);
+			painter.translate(30, 30);
+			painter.setColor(createColor(0, 255, 0));
+			painter.fillRect(0, 0, 20, 20);
 
-		painter.translate(30, 30);
-		painter.setColor(createColor(0, 255, 0));
-		painter.fillRect(0, 0, 20, 20);
-
-		painter.translate(30, 30);
-		painter.setColor(createColor(0, 0, 255));
-		painter.fillRect(0, 0, 20, 20);
-		painter.dispose();
+			painter.translate(30, 30);
+			painter.setColor(createColor(0, 0, 255));
+			painter.fillRect(0, 0, 20, 20);
+		}
 
 		compareWithExpected(image, "translate");
 	}
@@ -628,15 +637,15 @@ public class SkiaPainterTest
 	public void testRotate()
 	{
 		Image image = createTestImage();
-		Painter painter = image.createPainter(DrawQuality.High);
+		try (Painter painter = image.createPainter(DrawQuality.High))
+		{
+			painter.setColor(createColor(255, 0, 0));
+			painter.fillRect(40, 10, 20, 30);
 
-		painter.setColor(createColor(255, 0, 0));
-		painter.fillRect(40, 10, 20, 30);
-
-		painter.rotate(Math.PI / 4, 50, 50);
-		painter.setColor(createColor(0, 255, 0, 128));
-		painter.fillRect(40, 10, 20, 30);
-		painter.dispose();
+			painter.rotate(Math.PI / 4, 50, 50);
+			painter.setColor(createColor(0, 255, 0, 128));
+			painter.fillRect(40, 10, 20, 30);
+		}
 
 		compareWithExpected(image, "rotate");
 	}
@@ -647,12 +656,12 @@ public class SkiaPainterTest
 	public void testSetClip()
 	{
 		Image image = createTestImage();
-		Painter painter = image.createPainter(DrawQuality.High);
-
-		painter.setClip(20, 20, 60, 60);
-		painter.setColor(createColor(255, 0, 0));
-		painter.fillRect(0, 0, 100, 100);
-		painter.dispose();
+		try (Painter painter = image.createPainter(DrawQuality.High))
+		{
+			painter.setClip(20, 20, 60, 60);
+			painter.setColor(createColor(255, 0, 0));
+			painter.fillRect(0, 0, 100, 100);
+		}
 
 		compareWithExpected(image, "setClip");
 	}
@@ -663,15 +672,15 @@ public class SkiaPainterTest
 	public void testAlphaCompositeWithAlpha()
 	{
 		Image image = Image.create(testImageWidth, testImageHeight, ImageType.ARGB);
-		Painter painter = image.createPainter(DrawQuality.High);
+		try (Painter painter = image.createPainter(DrawQuality.High))
+		{
+			painter.setColor(createColor(255, 0, 0));
+			painter.fillRect(20, 20, 60, 60);
 
-		painter.setColor(createColor(255, 0, 0));
-		painter.fillRect(20, 20, 60, 60);
-
-		painter.setColor(createColor(0, 0, 255));
-		painter.setAlphaComposite(nortantis.platform.AlphaComposite.SrcOver, 0.5f);
-		painter.fillRect(40, 40, 60, 60);
-		painter.dispose();
+			painter.setColor(createColor(0, 0, 255));
+			painter.setAlphaComposite(nortantis.platform.AlphaComposite.SrcOver, 0.5f);
+			painter.fillRect(40, 40, 60, 60);
+		}
 
 		compareWithExpected(image, "alphaCompositeWithAlpha");
 	}
@@ -1036,40 +1045,39 @@ public class SkiaPainterTest
 	public void testCombinedDrawing()
 	{
 		Image image = Image.create(200, 200, ImageType.ARGB);
-		Painter painter = image.createPainter(DrawQuality.High);
+		try (Painter painter = image.createPainter(DrawQuality.High))
+		{
+			painter.setColor(createColor(230, 230, 230));
+			painter.fillRect(0, 0, 200, 200);
 
-		painter.setColor(createColor(230, 230, 230));
-		painter.fillRect(0, 0, 200, 200);
+			painter.setColor(createColor(100, 100, 200));
+			painter.fillOval(10, 10, 80, 80);
 
-		painter.setColor(createColor(100, 100, 200));
-		painter.fillOval(10, 10, 80, 80);
+			painter.setColor(createColor(200, 100, 100));
+			int[] xPoints = { 150, 190, 170, 130, 110 };
+			int[] yPoints = { 20, 50, 90, 90, 50 };
+			painter.fillPolygon(xPoints, yPoints);
 
-		painter.setColor(createColor(200, 100, 100));
-		int[] xPoints = { 150, 190, 170, 130, 110 };
-		int[] yPoints = { 20, 50, 90, 90, 50 };
-		painter.fillPolygon(xPoints, yPoints);
+			painter.setColor(createColor(100, 200, 100));
+			painter.fillRect(10, 110, 80, 80);
 
-		painter.setColor(createColor(100, 200, 100));
-		painter.fillRect(10, 110, 80, 80);
+			Color startColor = createColor(255, 200, 0);
+			Color endColor = createColor(200, 0, 255);
+			painter.setGradient(110, 110, startColor, 190, 190, endColor);
+			painter.fillRect(110, 110, 80, 80);
 
-		Color startColor = createColor(255, 200, 0);
-		Color endColor = createColor(200, 0, 255);
-		painter.setGradient(110, 110, startColor, 190, 190, endColor);
-		painter.fillRect(110, 110, 80, 80);
+			painter.setColor(createColor(0, 0, 0));
+			painter.setBasicStroke(2.0f);
+			painter.drawRect(10, 10, 80, 80);
+			painter.drawRect(110, 10, 80, 80);
+			painter.drawRect(10, 110, 80, 80);
+			painter.drawRect(110, 110, 80, 80);
 
-		painter.setColor(createColor(0, 0, 0));
-		painter.setBasicStroke(2.0f);
-		painter.drawRect(10, 10, 80, 80);
-		painter.drawRect(110, 10, 80, 80);
-		painter.drawRect(10, 110, 80, 80);
-		painter.drawRect(110, 110, 80, 80);
-
-		Font font = PlatformFactory.getInstance().createFont("SansSerif", FontStyle.Bold, 12);
-		painter.setFont(font);
-		painter.setColor(createColor(0, 0, 0));
-		painter.drawString("Shapes", 70, 198);
-
-		painter.dispose();
+			Font font = PlatformFactory.getInstance().createFont("SansSerif", FontStyle.Bold, 12);
+			painter.setFont(font);
+			painter.setColor(createColor(0, 0, 0));
+			painter.drawString("Shapes", 70, 198);
+		}
 
 		compareWithExpected(image, "combinedDrawing");
 	}

@@ -391,10 +391,11 @@ public class ImageHelperTest
 	public void testSetAlphaOfAllPixels()
 	{
 		Image image = Image.create(testImageWidth, testImageHeight, ImageType.ARGB);
-		Painter p = image.createPainter();
-		p.setColor(Color.red);
-		p.fillRect(0, 0, testImageWidth, testImageHeight);
-		p.dispose();
+		try (Painter p = image.createPainter())
+		{
+			p.setColor(Color.red);
+			p.fillRect(0, 0, testImageWidth, testImageHeight);
+		}
 
 		ImageHelper.setAlphaOfAllPixels(image, 0);
 		compareWithExpected(image, "setAlphaOfAllPixels");
@@ -622,12 +623,13 @@ public class ImageHelperTest
 	private Image createGrayscaleXImage(ImageType type)
 	{
 		Image image = Image.create(testImageWidth, testImageHeight, type);
-		Painter painter = image.createPainter(DrawQuality.High);
-		painter.setColor(Color.white);
-		painter.setBasicStroke(2.0f);
-		painter.drawLine(10, 10, 90, 90);
-		painter.drawLine(10, 90, 90, 10);
-		painter.dispose();
+		try (Painter painter = image.createPainter(DrawQuality.High))
+		{
+			painter.setColor(Color.white);
+			painter.setBasicStroke(2.0f);
+			painter.drawLine(10, 10, 90, 90);
+			painter.drawLine(10, 90, 90, 10);
+		}
 		return image;
 	}
 
@@ -721,22 +723,21 @@ public class ImageHelperTest
 	private Image createAsymmetricTestImage()
 	{
 		Image image = Image.create(80, 60, ImageType.RGB);
-		Painter p = image.createPainter(DrawQuality.High);
+		try (Painter p = image.createPainter(DrawQuality.High))
+		{
+			p.setColor(Color.white);
+			p.fillRect(0, 0, 80, 60);
 
-		p.setColor(Color.white);
-		p.fillRect(0, 0, 80, 60);
+			// Draw a triangle in upper left to make it asymmetric
+			p.setColor(Color.red);
+			int[] xPoints = { 10, 40, 10 };
+			int[] yPoints = { 10, 30, 50 };
+			p.fillPolygon(xPoints, yPoints);
 
-		// Draw a triangle in upper left to make it asymmetric
-		p.setColor(Color.red);
-		int[] xPoints = { 10, 40, 10 };
-		int[] yPoints = { 10, 30, 50 };
-		p.fillPolygon(xPoints, yPoints);
-
-		// Draw a circle in upper right
-		p.setColor(Color.blue);
-		p.fillOval(50, 10, 20, 20);
-
-		p.dispose();
+			// Draw a circle in upper right
+			p.setColor(Color.blue);
+			p.fillOval(50, 10, 20, 20);
+		}
 		return image;
 	}
 
@@ -862,10 +863,11 @@ public class ImageHelperTest
 	private Image createSolidColorImage(int width, int height, Color color)
 	{
 		Image image = Image.create(width, height, ImageType.RGB);
-		Painter p = image.createPainter();
-		p.setColor(color);
-		p.fillRect(0, 0, width, height);
-		p.dispose();
+		try (Painter p = image.createPainter())
+		{
+			p.setColor(color);
+			p.fillRect(0, 0, width, height);
+		}
 		return image;
 	}
 

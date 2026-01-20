@@ -568,14 +568,16 @@ public class WorldGraph extends VoronoiGraph
 		if (centerLookupTable == null)
 		{
 			centerLookupTable = Image.create((int) bounds.width, (int) bounds.height, ImageType.RGB);
-			Painter p = centerLookupTable.createPainter();
-			drawPolygons(p, new Function<Center, Color>()
+			try (Painter p = centerLookupTable.createPainter())
 			{
-				public Color apply(Center c)
+				drawPolygons(p, new Function<Center, Color>()
 				{
-					return convertCenterIdToColor(c);
-				}
-			});
+					public Color apply(Center c)
+					{
+						return convertCenterIdToColor(c);
+					}
+				});
+			}
 		}
 	}
 
@@ -606,14 +608,16 @@ public class WorldGraph extends VoronoiGraph
 				}
 			}
 
-			Painter p = centerLookupTable.createPainter();
-			drawPolygons(p, centersWithNeighbors, new Function<Center, Color>()
+			try (Painter p = centerLookupTable.createPainter())
 			{
-				public Color apply(Center c)
+				drawPolygons(p, centersWithNeighbors, new Function<Center, Color>()
 				{
-					return convertCenterIdToColor(c);
-				}
-			});
+					public Color apply(Center c)
+					{
+						return convertCenterIdToColor(c);
+					}
+				});
+			}
 		}
 	}
 

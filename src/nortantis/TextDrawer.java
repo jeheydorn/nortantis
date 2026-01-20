@@ -167,8 +167,9 @@ public class TextDrawer
 
 			graphBounds = new Rectangle(0, 0, graph.getWidth(), graph.getHeight());
 
-			Painter p = map.createPainter();
-			p.setColor(settings.textColor);
+			try (Painter p = map.createPainter())
+			{
+				p.setColor(settings.textColor);
 
 			addTitle(map, graph, nameCreator, p);
 
@@ -258,8 +259,7 @@ public class TextDrawer
 				}
 
 			}
-
-			p.dispose();
+			}
 		}
 		finally
 		{
@@ -272,7 +272,8 @@ public class TextDrawer
 
 	public void doForEachTextInBounds(List<MapText> mapTexts, WorldGraph graph, Rectangle bounds, BiConsumer<MapText, RotatedRectangle> action)
 	{
-		Painter p = Image.create(1, 1, ImageType.ARGB).createPainter();
+		try (Painter p = Image.create(1, 1, ImageType.ARGB).createPainter())
+		{
 
 		for (MapText text : mapTexts)
 		{
@@ -325,7 +326,7 @@ public class TextDrawer
 				callIfMapTextIsInBounds(bounds, text, textBoundsAllLines, textLocation, action);
 			}
 		}
-		p.dispose();
+		}
 	}
 
 	public Rectangle getTextBoundingBoxFor1Or2LineSplit(MapText text)
@@ -335,9 +336,10 @@ public class TextDrawer
 			// This text was deleted.
 			return null;
 		}
-		Painter p = Image.create(1, 1, ImageType.ARGB).createPainter();
-		setFontForText(p, text);
-		Point textLocation = new Point(text.location.x * settings.resolution, text.location.y * settings.resolution);
+		try (Painter p = Image.create(1, 1, ImageType.ARGB).createPainter())
+		{
+			setFontForText(p, text);
+			Point textLocation = new Point(text.location.x * settings.resolution, text.location.y * settings.resolution);
 
 		// Get bounds for when the text is on one line.
 		Rectangle bounds = getLine1BoundsWithoutCurvatureOrSpacing(text.value, textLocation, p, false);
@@ -362,7 +364,8 @@ public class TextDrawer
 			boundingBox = boundingBox.add(new RotatedRectangle(line2Bounds, text.angle, textLocation).getBounds());
 		}
 
-		return boundingBox;
+			return boundingBox;
+		}
 	}
 
 	private Rectangle addBackgroundBlendingPadding(Rectangle textBounds, int fontHeight, MapText text)
@@ -402,7 +405,8 @@ public class TextDrawer
 
 	private void drawText(Image map, WorldGraph graph, List<MapText> textToDraw, Rectangle drawBounds)
 	{
-		Painter p = map.createPainter(DrawQuality.High);
+		try (Painter p = map.createPainter(DrawQuality.High))
+		{
 
 		Point drawOffset = drawBounds == null ? null : drawBounds.upperLeftCorner();
 
@@ -437,8 +441,7 @@ public class TextDrawer
 				drawNameRotated(map, p, graph, 0, false, null, text, false, drawOffset);
 			}
 		}));
-
-		p.dispose();
+		}
 
 		// Only mark this flag if we drew all text, not just an incremental update.
 		if (drawBounds == null || drawBounds.equals(graph.bounds))
@@ -1448,9 +1451,11 @@ public class TextDrawer
 
 	public static Dimension getTextDimensions(String text, Font font)
 	{
-		Painter p = Image.create(1, 1, ImageType.ARGB).createPainter();
-		p.setFont(font);
-		return getTextDimensions(text, p);
+		try (Painter p = Image.create(1, 1, ImageType.ARGB).createPainter())
+		{
+			p.setFont(font);
+			return getTextDimensions(text, p);
+		}
 	}
 
 	/**

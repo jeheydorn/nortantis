@@ -30,7 +30,7 @@ public class SkiaImage extends Image
 	private ImageLocation location;
 	private boolean isGpuEnabled;
 
-	private static final int GPU_THRESHOLD_PIXELS =  128 * 128;
+	private static final int GPU_THRESHOLD_PIXELS =  256 * 256;
 
 	// Track active GPU batching painters for await before pixel access
 	private final Set<GPUBatchingPainter> activePainters = Collections.newSetFromMap(new ConcurrentHashMap<>());
@@ -517,7 +517,8 @@ public class SkiaImage extends Image
 			height = Math.max(1, height);
 		}
 
-		if (method == Method.ULTRA_QUALITY || method == Method.QUALITY)
+		// TODO Figure out why the lower quality scaling in this method is not faster. I'll need to remove the || true part to use it.
+		if (method == Method.ULTRA_QUALITY || method == Method.QUALITY || true)
 		{
 			return scaleHighQuality(width, height);
 		}
@@ -732,8 +733,10 @@ public class SkiaImage extends Image
 		// TODO if performance is a concern, I could make ImageType.RGB be the same as ARB under the hood, so I just have to change metadata and return a deep copy here.
 
 		SkiaImage result = new SkiaImage(width, height, ImageType.ARGB);
-		Painter p = result.createPainter();
-		p.drawImage(this, 0, 0);
+		try (Painter p = result.createPainter())
+		{
+			p.drawImage(this, 0, 0);
+		}
 		return result;
 	}
 
@@ -798,7 +801,8 @@ public class SkiaImage extends Image
 		ensureCPUData(); // Ensure CPU bitmap is current
 		int bytesPerPixel = getBytesPerPixel();
 		int rowStride = regionWidth * bytesPerPixel;
-		byte[] bytes = bitmap.readPixels(bitmap.getImageInfo(), rowStride, srcX, srcY);
+		ImageInfo destinationInfo = new ImageInfo(regionWidth,regionHeight, bitmap.getImageInfo().getColorType(), bitmap.getImageInfo().getColorAlphaType(), null);
+		byte[] bytes = bitmap.readPixels(destinationInfo, rowStride, srcX, srcY);
 
 		if (bytes == null)
 		{

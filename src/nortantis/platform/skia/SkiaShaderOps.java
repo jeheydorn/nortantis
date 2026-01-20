@@ -700,4 +700,29 @@ public class SkiaShaderOps
 		}
 		return true;
 	}
+
+	// If I decide I want to make the above method run on the GPU if any of the images are GPU-backed, here's the code:
+	/**
+	 * Checks if all images are SkiaImage instances that have their data on the GPU.
+	 */
+	private static boolean areAllSkiaImagesAndIsAnyGpuBacked(Image... images)
+	{
+		for (Image image : images)
+		{
+			if (!(image instanceof SkiaImage))
+			{
+				return false;
+			}
+		}
+
+		for (Image image : images)
+		{
+			if (((SkiaImage)image).isGpuEnabled())
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
 }

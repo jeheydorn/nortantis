@@ -148,9 +148,10 @@ public class AwtFactory extends PlatformFactory
 	public static Image convertARGBToRGB(Image image)
 	{
 		Image newImage = Image.create(image.getWidth(), image.getHeight(), ImageType.RGB);
-		Painter p = newImage.createPainter();
-		p.drawImage(image, 0, 0);
-		p.dispose();
+		try (Painter p = newImage.createPainter())
+		{
+			p.drawImage(image, 0, 0);
+		}
 		try (PixelReaderWriter pixels = newImage.createPixelReaderWriter())
 		{
 			for (int i = 0; i < newImage.getWidth(); i++)

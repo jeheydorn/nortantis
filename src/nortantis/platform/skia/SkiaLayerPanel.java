@@ -229,19 +229,21 @@ public class SkiaLayerPanel extends JPanel
 
 			// Create a test image with a gradient
 			SkiaImage testImage = new SkiaImage(400, 300, nortantis.platform.ImageType.ARGB);
-			Painter painter = testImage.createPainter();
-			// Draw a gradient background
-			for (int y = 0; y < 300; y++)
+			try (Painter painter = testImage.createPainter())
 			{
-				int r = (int) (255 * y / 300.0);
-				int b = 255 - r;
-				painter.setColor(nortantis.platform.Color.create(r, 100, b));
-				painter.drawLine(0, y, 400, y);
-			}
+				// Draw a gradient background
+				for (int y = 0; y < 300; y++)
+				{
+					int r = (int) (255 * y / 300.0);
+					int b = 255 - r;
+					painter.setColor(nortantis.platform.Color.create(r, 100, b));
+					painter.drawLine(0, y, 400, y);
+				}
 
-			// Draw some text
-			painter.setColor(nortantis.platform.Color.white);
-			painter.drawString("SkiaLayer GPU Test", 50, 150);
+				// Draw some text
+				painter.setColor(nortantis.platform.Color.white);
+				painter.drawString("SkiaLayer GPU Test", 50, 150);
+			}
 
 			panel.setImage(testImage);
 

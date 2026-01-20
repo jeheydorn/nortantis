@@ -1,50 +1,21 @@
 package nortantis;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Random;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.stream.Collectors;
-
-import org.apache.commons.lang3.NotImplementedException;
-import org.apache.commons.lang3.StringUtils;
-
 import nortantis.editor.CenterEdit;
 import nortantis.editor.CenterIconType;
 import nortantis.editor.CenterTrees;
 import nortantis.editor.FreeIcon;
-import nortantis.geom.Dimension;
-import nortantis.geom.IntDimension;
-import nortantis.geom.IntRectangle;
-import nortantis.geom.Point;
-import nortantis.geom.Rectangle;
+import nortantis.geom.*;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Corner;
-import nortantis.platform.Color;
-import nortantis.platform.Image;
-import nortantis.platform.ImageType;
-import nortantis.platform.PixelReader;
-import nortantis.platform.PixelReaderWriter;
+import nortantis.platform.*;
 import nortantis.swing.MapEdits;
-import nortantis.util.Assets;
-import nortantis.util.Function;
-import nortantis.util.Helper;
-import nortantis.util.ImageHelper;
-import nortantis.util.ListMap;
-import nortantis.util.Logger;
-import nortantis.util.ProbabilityHelper;
-import nortantis.util.Range;
-import nortantis.util.ThreadHelper;
-import nortantis.util.Tuple2;
-import nortantis.util.Tuple3;
+import nortantis.util.*;
+import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 public class IconDrawer
 {
@@ -1124,8 +1095,10 @@ public class IconDrawer
 			}
 		}
 
-		mapOrSnippet.createPainter().drawImage(imageAndMasks.image, xLeft, yTop);
-
+		try (Painter p = mapOrSnippet.createPainter())
+		{
+			p.drawImage(imageAndMasks.image, xLeft, yTop);
+		}
 	}
 
 	public List<IconDrawTask> getTasksInDrawBoundsSortedAndScaled(Rectangle drawBounds)

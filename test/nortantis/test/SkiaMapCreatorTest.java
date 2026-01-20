@@ -48,8 +48,8 @@ public class SkiaMapCreatorTest
 		WorldGraph graph = MapCreator.createGraphForUnitTests(settings);
 
 		Image landMask = Image.create(graph.getWidth(), graph.getHeight(), ImageType.Binary);
+		try (Painter p = landMask.createPainter())
 		{
-			Painter p = landMask.createPainter();
 			graph.drawLandAndOceanBlackAndWhite(p, graph.centers, null);
 		}
 
@@ -64,9 +64,11 @@ public class SkiaMapCreatorTest
 		WorldGraph graph = MapCreator.createGraphForUnitTests(settings);
 
 		Image coastlineAndLakeShoreMask = Image.create(graph.getWidth(), graph.getHeight(), ImageType.Binary);
-		Painter p = coastlineAndLakeShoreMask.createPainter(DrawQuality.High);
-		p.setColor(Color.white);
-		graph.drawCoastlineWithLakeShores(p, settings.coastlineWidth * settings.resolution, null, null);
+		try (Painter p = coastlineAndLakeShoreMask.createPainter(DrawQuality.High))
+		{
+			p.setColor(Color.white);
+			graph.drawCoastlineWithLakeShores(p, settings.coastlineWidth * settings.resolution, null, null);
+		}
 
 		compareWithExpected(coastlineAndLakeShoreMask, "coastlineWithLakeShores", threshold);
 	}
@@ -79,9 +81,11 @@ public class SkiaMapCreatorTest
 		WorldGraph graph = MapCreator.createGraphForUnitTests(settings);
 
 		Image coastlineAndLakeShoreMask = Image.create(graph.getWidth(), graph.getHeight(), ImageType.Binary);
-		Painter p = coastlineAndLakeShoreMask.createPainter(DrawQuality.High);
-		p.setColor(Color.white);
-		graph.drawCoastlineWithLakeShores(p, settings.coastlineWidth * settings.resolution, null, null);
+		try (Painter p = coastlineAndLakeShoreMask.createPainter(DrawQuality.High))
+		{
+			p.setColor(Color.white);
+			graph.drawCoastlineWithLakeShores(p, settings.coastlineWidth * settings.resolution, null, null);
+		}
 
 		// Test bluing coastline and lake shores.
 		double sizeMultiplier = MapCreator.calcSizeMultipilerFromResolutionScale(settings.resolution);

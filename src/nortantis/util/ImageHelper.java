@@ -83,9 +83,10 @@ public class ImageHelper
 	public static Image convertImageToType(Image img, ImageType type)
 	{
 		Image result = Image.create(img.getWidth(), img.getHeight(), type);
-		Painter p = result.createPainter();
-		p.drawImage(img, 0, 0);
-		p.dispose();
+		try (Painter p = result.createPainter())
+		{
+			p.drawImage(img, 0, 0);
+		}
 		return result;
 	}
 
@@ -565,8 +566,8 @@ public class ImageHelper
 			});
 		}
 
+		try (Painter p = image1.createPainter())
 		{
-			Painter p = image1.createPainter();
 			p.setAlphaComposite(AlphaComposite.Src);
 			p.drawImage(image2Snippet, maskBoundsInImage1.x, maskBoundsInImage1.y);
 		}
@@ -595,39 +596,43 @@ public class ImageHelper
 		if (mask.getType() != ImageType.Grayscale8Bit && mask.getType() != ImageType.Binary)
 			throw new IllegalArgumentException("mask type must be ImageType.Grayscale.");
 
-		Image overlay = Image.create(image.getWidth(), image.getHeight(), ImageType.ARGB);
-		try (PixelReader maskPixels = mask.createPixelReader(new IntRectangle(imageOffsetInMask, overlay.getWidth(), overlay.getHeight()));
-				PixelReaderWriter overlayPixels = overlay.createPixelReaderWriter())
+		try (Image overlay = Image.create(image.getWidth(), image.getHeight(), ImageType.ARGB))
 		{
-			ThreadHelper.getInstance().processRowsInParallel(0, overlay.getHeight(), (y) ->
+			try (PixelReader maskPixels = mask.createPixelReader(new IntRectangle(imageOffsetInMask, overlay.getWidth(), overlay.getHeight()));
+					PixelReaderWriter overlayPixels = overlay.createPixelReaderWriter())
 			{
-				for (int x = 0; x < overlay.getWidth(); x++)
+				ThreadHelper.getInstance().processRowsInParallel(0, overlay.getHeight(), (y) ->
 				{
-					int xInMask = x + imageOffsetInMask.x;
-					int yInMask = y + imageOffsetInMask.y;
-					if (xInMask < 0 || yInMask < 0 || xInMask >= mask.getWidth() || yInMask >= mask.getHeight())
+					for (int x = 0; x < overlay.getWidth(); x++)
 					{
-						continue;
+						int xInMask = x + imageOffsetInMask.x;
+						int yInMask = y + imageOffsetInMask.y;
+						if (xInMask < 0 || yInMask < 0 || xInMask >= mask.getWidth() || yInMask >= mask.getHeight())
+						{
+							continue;
+						}
+
+						int maskLevel = (int) (maskPixels.getNormalizedPixelLevel(xInMask, yInMask) * color.getAlpha());
+						if (invertMask)
+							maskLevel = 255 - maskLevel;
+
+						int r = color.getRed();
+						int g = color.getGreen();
+						int b = color.getBlue();
+						int a = 255 - maskLevel;
+						overlayPixels.setRGB(x, y, r, g, b, a);
 					}
+				});
+			}
 
-					int maskLevel = (int) (maskPixels.getNormalizedPixelLevel(xInMask, yInMask) * color.getAlpha());
-					if (invertMask)
-						maskLevel = 255 - maskLevel;
+			Image result = image.deepCopy();
+			try (Painter p = result.createPainter())
+			{
+				p.drawImage(overlay, 0, 0);
+			}
 
-					int r = color.getRed();
-					int g = color.getGreen();
-					int b = color.getBlue();
-					int a = 255 - maskLevel;
-					overlayPixels.setRGB(x, y, r, g, b, a);
-				}
-			});
+			return result;
 		}
-
-		Image result = image.deepCopy();
-		Painter p = result.createPainter();
-		p.drawImage(overlay, 0, 0);
-
-		return result;
 	}
 
 	public static void drawMaskOntoImage(Image image, Image mask, Color color, IntPoint maskOffsetInImage)
@@ -761,10 +766,11 @@ public class ImageHelper
 
 	public static void setAlphaOfAllPixels(Image image, int alpha)
 	{
-		Painter p = image.createPainter();
-		p.setAlphaComposite(AlphaComposite.Clear);
-		p.fillRect(0, 0, image.getWidth(), image.getHeight());
-		p.dispose();
+		try (Painter p = image.createPainter())
+		{
+			p.setAlphaComposite(AlphaComposite.Clear);
+			p.fillRect(0, 0, image.getWidth(), image.getHeight());
+		}
 	}
 
 	/**
@@ -790,10 +796,11 @@ public class ImageHelper
 
 		Image transparentImage = Image.create(original.getWidth(), original.getHeight(), ImageType.ARGB);
 
-		Painter p = transparentImage.createPainter();
-		p.setAlphaComposite(AlphaComposite.SrcOver, alpha / 255f);
-		p.drawImage(original, 0, 0);
-		p.dispose();
+		try (Painter p = transparentImage.createPainter())
+		{
+			p.setAlphaComposite(AlphaComposite.SrcOver, alpha / 255f);
+			p.drawImage(original, 0, 0);
+		}
 
 		return transparentImage;
 	}
@@ -909,43 +916,48 @@ public class ImageHelper
 		if (image1.hasAlpha() || image2.hasAlpha())
 		{
 			Rectangle rotatedMaskBounds = new RotatedRectangle(new Point(0, 0), mask.getWidth(), mask.getHeight(), angle, pivot.subtract(new Point(xLoc, yLoc))).getBounds();
-			Image maskRotated = Image.create((int) rotatedMaskBounds.width, (int) rotatedMaskBounds.height, mask.getType());
+			try (Image maskRotated = Image.create((int) rotatedMaskBounds.width, (int) rotatedMaskBounds.height, mask.getType()))
 			{
-				Painter p = maskRotated.createPainter(DrawQuality.High);
-				p.rotate(angle, pivot.subtract(new Point(xLoc, yLoc).add(rotatedMaskBounds.upperLeftCorner())));
-				p.translate(-rotatedMaskBounds.x, -rotatedMaskBounds.y);
-				p.drawImage(mask, 0, 0);
-			}
+				try (Painter p = maskRotated.createPainter(DrawQuality.High))
+				{
+					p.rotate(angle, pivot.subtract(new Point(xLoc, yLoc).add(rotatedMaskBounds.upperLeftCorner())));
+					p.translate(-rotatedMaskBounds.x, -rotatedMaskBounds.y);
+					p.drawImage(mask, 0, 0);
+				}
 
-			Rectangle rotatedBounds = new RotatedRectangle(new Point(xLoc, yLoc), mask.getWidth(), mask.getHeight(), angle, pivot).getBounds();
-			IntPoint maskOffset = rotatedBounds.upperLeftCorner().toIntPointRounded();
-			maskWithImageInPlace(image1, image2, maskRotated, maskOffset, true);
+				Rectangle rotatedBounds = new RotatedRectangle(new Point(xLoc, yLoc), mask.getWidth(), mask.getHeight(), angle, pivot).getBounds();
+				IntPoint maskOffset = rotatedBounds.upperLeftCorner().toIntPointRounded();
+				maskWithImageInPlace(image1, image2, maskRotated, maskOffset, true);
+			}
 		}
 		else
 		{
 			// This version is a little more precise in where it places the mask, but doesn't work if the images already have alpha.
 
-			Image region = copySnippetRotated(image2, xLoc, yLoc, mask.getWidth(), mask.getHeight(), angle, pivot);
-
-			try (PixelReader maskPixels = mask.createPixelReader(); PixelReaderWriter regionPixels = region.createPixelReaderWriter())
+			try (Image region = copySnippetRotated(image2, xLoc, yLoc, mask.getWidth(), mask.getHeight(), angle, pivot))
 			{
-				for (int y = 0; y < region.getHeight(); y++)
-					for (int x = 0; x < region.getWidth(); x++)
-					{
-						int grayLevel = maskPixels.getGrayLevel(x, y);
-						Color r = Color.create(regionPixels.getRGB(x, y), true);
+				try (PixelReader maskPixels = mask.createPixelReader(); PixelReaderWriter regionPixels = region.createPixelReaderWriter())
+				{
+					for (int y = 0; y < region.getHeight(); y++)
+						for (int x = 0; x < region.getWidth(); x++)
+						{
+							int grayLevel = maskPixels.getGrayLevel(x, y);
+							Color r = Color.create(regionPixels.getRGB(x, y), true);
 
-						// Don't clobber the alpha level from the region.
-						int alphaLevel = Math.min(r.getAlpha(), grayLevel);
+							// Don't clobber the alpha level from the region.
+							int alphaLevel = Math.min(r.getAlpha(), grayLevel);
 
-						// Only change the alpha channel of the region.
-						regionPixels.setRGB(x, y, Color.create(r.getRed(), r.getGreen(), r.getBlue(), alphaLevel).getRGB());
-					}
+							// Only change the alpha channel of the region.
+							regionPixels.setRGB(x, y, Color.create(r.getRed(), r.getGreen(), r.getBlue(), alphaLevel).getRGB());
+						}
+				}
+
+				try (Painter p = image1.createPainter())
+				{
+					p.rotate(angle, pivot);
+					p.drawImage(region, xLoc, yLoc);
+				}
 			}
-
-			Painter p = image1.createPainter();
-			p.rotate(angle, pivot);
-			p.drawImage(region, xLoc, yLoc);
 		}
 
 	}
@@ -958,11 +970,12 @@ public class ImageHelper
 	public static Image copySnippetRotated(Image image, int xLoc, int yLoc, int width, int height, double angle, Point pivot)
 	{
 		Image result = Image.create(width, height, ImageType.ARGB);
-		Painter pResult = result.createPainter(DrawQuality.High);
-		pResult.rotate(-angle, pivot.x - xLoc, pivot.y - yLoc);
-		pResult.translate(-xLoc, -yLoc);
-		pResult.drawImage(image, 0, 0);
-		pResult.dispose();  // Ensure GPU batch is flushed and completed
+		try (Painter pResult = result.createPainter(DrawQuality.High))
+		{
+			pResult.rotate(-angle, pivot.x - xLoc, pivot.y - yLoc);
+			pResult.translate(-xLoc, -yLoc);
+			pResult.drawImage(image, 0, 0);
+		}  // Ensure GPU batch is flushed and completed
 
 		return result;
 	}
@@ -976,10 +989,11 @@ public class ImageHelper
 	public static Image copySnippet(Image source, int xLoc, int yLoc, int width, int height)
 	{
 		Image result = Image.create(width, height, source.getType());
-		Painter pResult = result.createPainter();
-		pResult.translate(-xLoc, -yLoc);
-		pResult.drawImage(source, 0, 0);
-		pResult.dispose();  // Ensure GPU batch is flushed and completed
+		try (Painter pResult = result.createPainter())
+		{
+			pResult.translate(-xLoc, -yLoc);
+			pResult.drawImage(source, 0, 0);
+		}  // Ensure GPU batch is flushed and completed
 
 		return result;
 	}
@@ -1984,11 +1998,12 @@ public class ImageHelper
 		Image snippet = source.getSubImage(new IntRectangle(boundsInSourceToCopyFrom.x, boundsInSourceToCopyFrom.y, boundsInSourceToCopyFrom.width, boundsInSourceToCopyFrom.height));
 
 		// Paste the snippet into the target image
-		Painter p = target.createPainter();
-		p.setClip(widthOfBorderToNotDrawOn, widthOfBorderToNotDrawOn, target.getWidth() - widthOfBorderToNotDrawOn * 2, target.getHeight() - widthOfBorderToNotDrawOn * 2);
-		p.setAlphaComposite(AlphaComposite.Src);
-		p.drawImage(snippet, upperLeftCornerToPasteIntoInTarget.x, upperLeftCornerToPasteIntoInTarget.y);
-		p.dispose();
+		try (Painter p = target.createPainter())
+		{
+			p.setClip(widthOfBorderToNotDrawOn, widthOfBorderToNotDrawOn, target.getWidth() - widthOfBorderToNotDrawOn * 2, target.getHeight() - widthOfBorderToNotDrawOn * 2);
+			p.setAlphaComposite(AlphaComposite.Src);
+			p.drawImage(snippet, upperLeftCornerToPasteIntoInTarget.x, upperLeftCornerToPasteIntoInTarget.y);
+		}
 	}
 
 	public static Image createPlaceholderImage(String[] message, Color textColor)
@@ -2007,17 +2022,21 @@ public class ImageHelper
 			textBounds = new IntDimension(Math.max(textBounds.width, lineBounds.width), textBounds.height + lineBounds.height);
 		}
 
-		Image placeHolder = Image.create((textBounds.width + 15), (textBounds.height + 20), ImageType.ARGB);
-		Painter p = placeHolder.createPainter(DrawQuality.High);
-		p.setFont(font);
-		p.setColor(textColor);
-
-		int fontHeight = TextDrawer.getFontHeight(p);
-		for (int i : new Range(message.length))
+		try (Image placeHolder = Image.create((textBounds.width + 15), (textBounds.height + 20), ImageType.ARGB))
 		{
-			p.drawString(message[i], 14, fontHeight + (i * fontHeight));
-		}
+			try (Painter p = placeHolder.createPainter(DrawQuality.High))
+			{
+				p.setFont(font);
+				p.setColor(textColor);
 
-		return ImageHelper.scaleByWidth(placeHolder, placeHolder.getWidth(), Method.QUALITY);
+				int fontHeight = TextDrawer.getFontHeight(p);
+				for (int i : new Range(message.length))
+				{
+					p.drawString(message[i], 14, fontHeight + (i * fontHeight));
+				}
+			}
+
+			return ImageHelper.scaleByWidth(placeHolder, placeHolder.getWidth(), Method.QUALITY);
+		}
 	}
 }
