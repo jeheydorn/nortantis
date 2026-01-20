@@ -1,20 +1,18 @@
 package nortantis.test;
 
-import nortantis.FractalBGGenerator;
-import nortantis.MapCreator;
-import nortantis.MapSettings;
-import nortantis.WorldGraph;
+import nortantis.*;
+import nortantis.geom.Dimension;
 import nortantis.platform.*;
 import nortantis.platform.skia.SkiaFactory;
 import nortantis.util.Assets;
 import nortantis.util.FileHelper;
 import nortantis.util.ImageHelper;
-import nortantis.util.Logger;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Random;
 
@@ -95,39 +93,41 @@ public class SkiaMapCreatorTest
 	}
 
 	@Test
-	public void fractalBGGenerator()
+	public void fractalBGGeneratorTest()
 	{
-		String expectedFileName = "skia_fractalBGGenerator";
-		String expectedMapFilePath = MapTestUtil.getExpectedMapFilePath(expectedFileName, expectedMapsFolderName);
-		Image expected;
-		if (new File(expectedMapFilePath).exists())
-		{
-			expected = Assets.readImage(expectedMapFilePath);
-		}
-		else
-		{
-			expected = null;
-		}
+		String expectedFileName = "fractalBackground";
 
 		final int widthAndHeight = 48;
-		Logger.println("Creating fractal image " + widthAndHeight + "x" + widthAndHeight + " using Skia");
 		Image actual = FractalBGGenerator.generate(new Random(42), 1.3f, widthAndHeight, widthAndHeight, 0.75f);
 
-		if (expected == null)
-		{
-			// Create the expected map from the actual one.
-			expected = actual;
-			ImageHelper.write(actual, expectedMapFilePath);
-		}
+		compareWithExpected(actual, expectedFileName, 0);
+	}
 
-		String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(expected, actual);
-		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
-		{
-			FileHelper.createFolder(Paths.get("unit test files", "failed maps").toString());
-			ImageHelper.write(actual, MapTestUtil.getFailedMapFilePath(expectedFileName, failedMapsFolderName));
-			MapTestUtil.createImageDiffIfImagesAreSameSize(expected, actual, expectedFileName, failedMapsFolderName);
-			fail(comparisonErrorMessage);
-		}
+	@Test
+	public void colorizedBackgroundFromTextureTest()
+	{
+		String expectedFileName = "colorizedBackgroundFromTexture";
+
+		Path texturePath = Paths.get("assets", "installed art pack", "background textures", "grungy paper.png");
+		Image texture = ImageCache.getInstance(Assets.installedArtPack, null).getImageFromFile(texturePath);
+		Image generatedTexture = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(397110878), ImageHelper.convertToGrayscale(texture),
+				1172, 1172);
+		Image grayScaleTexture = ImageHelper.convertToGrayscale(texture);
+		Image actual = ImageHelper.colorify(grayScaleTexture, Color.create(217, 203, 156, 255), ImageHelper.ColorifyAlgorithm.algorithm3);
+
+		compareWithExpected(actual, expectedFileName, 0);
+	}
+
+	@Test
+	public void backgroundFromTextureTest()
+	{
+		final String settingsFileName = "simpleSmallWorld.nort";
+		MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", settingsFileName).toString());
+		Dimension mapBounds = Background.calcMapBoundsAndAdjustResolutionIfNeeded(settings, null);
+		Background background = new Background(settings, mapBounds, new LoggerWarningLogger());
+		Image actual = background.ocean;
+
+		compareWithExpected(actual, "backgroundFromTexture", 0);
 	}
 
 	private void compareWithExpected(Image actual, String testName, int threshold)

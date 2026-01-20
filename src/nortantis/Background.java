@@ -33,7 +33,7 @@ public class Background
 {
 	Image landBeforeRegionColoring;
 	Image land;
-	Image ocean;
+	public Image ocean;
 	Dimension mapBounds;
 	Dimension borderBounds;
 	Image borderBackground;
