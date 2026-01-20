@@ -77,7 +77,7 @@ public class SkiaPixelReaderWriter extends SkiaPixelReader implements PixelReade
 		}
 		else
 		{
-			image.bitmap.erase(rgb, IRect.makeXYWH(x, y, 1, 1));
+			image.getBitmap().erase(rgb, IRect.makeXYWH(x, y, 1, 1));
 		}
 	}
 

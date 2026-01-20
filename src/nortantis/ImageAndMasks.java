@@ -18,29 +18,29 @@ import nortantis.util.ImageHelper;
 import nortantis.util.Range;
 import nortantis.util.Tuple2;
 
-public class ImageAndMasks
+public class ImageAndMasks implements AutoCloseable
 {
 	private static final int opaqueThreshold = 60;
 	public final Image image;
 	/**
-	 * Used to linearly combine pixel values pulled from the background image without other icons vs the the map being drawn so far.
+	 * Used to linearly combine pixel values pulled from the background image without other icons vs the map being drawn so far.
 	 */
 	private Image contentMask;
-	private IntRectangle contentBounds;
-	private Integer[] contentYStarts;
-
 	/**
 	 * Used to linearly combine pixel values pulled from the land background texture vs the background image without other icons. Used to
 	 * blend coastline shading into icons when icons are allowed to draw over coastlines.
 	 */
 	private Image shadingMask;
+	private Image colorMask;
+	private IntRectangle contentBounds;
+	private Integer[] contentYStarts;
+
 	public final IconType iconType;
 	/**
 	 * Either the width encoded in the icons' file name, or a width calculated based on the size of other icons in the group and the default
 	 * size of icons in the group.
 	 */
 	public final double widthFromFileName;
-	private Image colorMask;
 
 	public final String artPack;
 	public final String fileNameWithoutParametersOrExtension;
@@ -67,6 +67,33 @@ public class ImageAndMasks
 		this.contentMask = contentMask;
 		this.shadingMask = shadingMask;
 		this.contentBounds = contentBounds;
+	}
+
+	/**
+	 * Releases all image resources held by this object.
+	 */
+	@Override
+	public void close()
+	{
+		if (image != null)
+		{
+			image.close();
+		}
+		if (contentMask != null)
+		{
+			contentMask.close();
+			contentMask = null;
+		}
+		if (shadingMask != null)
+		{
+			shadingMask.close();
+			shadingMask = null;
+		}
+		if (colorMask != null)
+		{
+			colorMask.close();
+			colorMask = null;
+		}
 	}
 
 	public synchronized Image getOrCreateContentMask()

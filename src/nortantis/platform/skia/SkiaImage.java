@@ -10,6 +10,7 @@ import org.jetbrains.skia.*;
 
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
+import java.lang.ref.Cleaner;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
@@ -19,21 +20,83 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class SkiaImage extends Image
 {
-	Bitmap bitmap;
+	// Shared Cleaner instance for all SkiaImage instances (creates one daemon thread)
+	private static final Cleaner CLEANER = Cleaner.create();
+
+	// The cleanable registration - calling clean() runs cleanup and deregisters
+	private final Cleaner.Cleanable cleanable;
+
+	// Separate state object for Cleaner - must not reference SkiaImage to allow GC
+	private final ResourceState resourceState;
+
 	private final int width;
 	private final int height;
-	private org.jetbrains.skia.Image cachedSkiaImage;
 
-	// GPU acceleration fields
-	private Surface gpuSurface;
-	private org.jetbrains.skia.Image gpuTexture;
-	private ImageLocation location;
-	private boolean isGpuEnabled;
-
-	private static final int GPU_THRESHOLD_PIXELS =  256 * 256;
+	private static final int GPU_THRESHOLD_PIXELS = 256 * 256;
 
 	// Track active GPU batching painters for await before pixel access
 	private final Set<GPUBatchingPainter> activePainters = Collections.newSetFromMap(new ConcurrentHashMap<>());
+
+	/**
+	 * Holds GPU and CPU resources separately from SkiaImage so that the Cleaner can clean them
+	 * up when SkiaImage becomes unreachable. This class must NOT hold any reference to SkiaImage,
+	 * otherwise it would prevent GC from ever collecting the image.
+	 */
+	private static class ResourceState implements Runnable
+	{
+		// Using volatile for thread-safety since Cleaner runs on its own thread
+		volatile Bitmap bitmap;
+		volatile org.jetbrains.skia.Image cachedSkiaImage;
+		volatile Surface gpuSurface;
+		volatile org.jetbrains.skia.Image gpuTexture;
+		volatile ImageLocation location;
+		volatile boolean isGpuEnabled;
+
+		ResourceState(Bitmap bitmap)
+		{
+			this.bitmap = bitmap;
+		}
+
+		@Override
+		public void run()
+		{
+			// This is the cleanup action - runs on Cleaner thread when SkiaImage is GC'd
+			// or immediately when cleanable.clean() is called
+
+			// Capture references and null them out atomically
+			final Surface surfaceToClose = gpuSurface;
+			final org.jetbrains.skia.Image textureToClose = gpuTexture;
+			final org.jetbrains.skia.Image cachedToClose = cachedSkiaImage;
+			final Bitmap bitmapToClose = bitmap;
+
+			gpuSurface = null;
+			gpuTexture = null;
+			cachedSkiaImage = null;
+			bitmap = null;
+			isGpuEnabled = false;
+			location = ImageLocation.CPU_ONLY;
+
+			// Close GPU resources on the GPU thread to avoid OpenGL threading issues
+			if ((surfaceToClose != null || textureToClose != null)
+					&& GPUExecutor.getInstance().isGPUAvailable())
+			{
+				GPUExecutor.getInstance().submitAsync(() -> {
+					if (surfaceToClose != null) surfaceToClose.close();
+					if (textureToClose != null) textureToClose.close();
+				});
+			}
+
+			// CPU resources can be closed on any thread
+			if (cachedToClose != null)
+			{
+				cachedToClose.close();
+			}
+			if (bitmapToClose != null)
+			{
+				bitmapToClose.close();
+			}
+		}
+	}
 
 	public SkiaImage(int width, int height, ImageType type)
 	{
@@ -41,22 +104,25 @@ public class SkiaImage extends Image
 		this.width = width;
 		this.height = height;
 		ImageInfo imageInfo = getImageInfoForType(type, width, height);
-		this.bitmap = createBitmap(imageInfo);
+		this.resourceState = new ResourceState(createBitmap(imageInfo));
 		initializeGPUState();
+		this.cleanable = CLEANER.register(this, resourceState);
 	}
 
 	public SkiaImage(Bitmap bitmap, ImageType type)
 	{
 		super(type);
-		this.bitmap = bitmap;
 		this.width = bitmap.getWidth();
 		this.height = bitmap.getHeight();
+		this.resourceState = new ResourceState(bitmap);
 		initializeGPUState();
+		this.cleanable = CLEANER.register(this, resourceState);
 	}
 
 	/**
 	 * Releases resources held by this image, ensuring GPU resources are cleaned up
 	 * on the GPU thread to avoid crashes from finalizers running on the wrong thread.
+	 * This method is idempotent - calling it multiple times is safe.
 	 */
 	@Override
 	public void close()
@@ -64,38 +130,8 @@ public class SkiaImage extends Image
 		// Wait for any pending painters to complete
 		awaitPendingPainters();
 
-		// Capture GPU resources and null them out immediately so GC won't try to finalize them
-		final Surface surfaceToClose = gpuSurface;
-		final org.jetbrains.skia.Image textureToClose = gpuTexture;
-		final org.jetbrains.skia.Image cachedToClose = cachedSkiaImage;
-
-		gpuSurface = null;
-		gpuTexture = null;
-		cachedSkiaImage = null;
-
-		// Close GPU resources on the GPU thread to avoid OpenGL threading issues
-		if ((surfaceToClose != null || textureToClose != null)
-				&& GPUExecutor.getInstance().isGPUAvailable())
-		{
-			GPUExecutor.getInstance().submitAsync(() -> {
-				if (surfaceToClose != null) surfaceToClose.close();
-				if (textureToClose != null) textureToClose.close();
-			});
-		}
-
-		// CPU resources can be closed on any thread
-		if (cachedToClose != null)
-		{
-			cachedToClose.close();
-		}
-		if (bitmap != null)
-		{
-			bitmap.close();
-			bitmap = null;
-		}
-
-		isGpuEnabled = false;
-		location = ImageLocation.CPU_ONLY;
+		// clean() is idempotent - runs the cleanup action and deregisters from Cleaner
+		cleanable.clean();
 	}
 
 	/**
@@ -103,10 +139,10 @@ public class SkiaImage extends Image
 	 */
 	private void initializeGPUState()
 	{
-		isGpuEnabled = shouldUseGPU();
-		location = isGpuEnabled ? ImageLocation.CPU_DIRTY : ImageLocation.CPU_ONLY;
-		gpuSurface = null;
-		gpuTexture = null;
+		resourceState.isGpuEnabled = shouldUseGPU();
+		resourceState.location = resourceState.isGpuEnabled ? ImageLocation.CPU_DIRTY : ImageLocation.CPU_ONLY;
+		resourceState.gpuSurface = null;
+		resourceState.gpuTexture = null;
 	}
 
 	/**
@@ -208,45 +244,45 @@ public class SkiaImage extends Image
 	{
 		awaitPendingPainters();
 		ensureCPUData(); // Ensure CPU bitmap is current before returning
-		return bitmap;
+		return resourceState.bitmap;
 	}
 
 	public org.jetbrains.skia.Image getSkiaImage()
 	{
 		// If GPU has latest data and we have a surface, and we're on the GPU thread, use GPU snapshot
-		if (isGpuEnabled && location != ImageLocation.CPU_DIRTY && gpuSurface != null
+		if (resourceState.isGpuEnabled && resourceState.location != ImageLocation.CPU_DIRTY && resourceState.gpuSurface != null
 				&& GPUExecutor.getInstance().isOnGPUThread())
 		{
-			if (gpuTexture == null)
+			if (resourceState.gpuTexture == null)
 			{
-				gpuTexture = gpuSurface.makeImageSnapshot();
+				resourceState.gpuTexture = resourceState.gpuSurface.makeImageSnapshot();
 			}
-			if (gpuTexture != null)
+			if (resourceState.gpuTexture != null)
 			{
-				return gpuTexture;
+				return resourceState.gpuTexture;
 			}
 		}
 
 		// If GPU has the latest data but we're not on GPU thread, sync to CPU first
-		if (isGpuEnabled && location == ImageLocation.GPU_DIRTY)
+		if (resourceState.isGpuEnabled && resourceState.location == ImageLocation.GPU_DIRTY)
 		{
 			ensureCPUData();
 		}
 
 		// Return CPU bitmap-based image
-		if (cachedSkiaImage == null)
+		if (resourceState.cachedSkiaImage == null)
 		{
-			cachedSkiaImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(bitmap);
+			resourceState.cachedSkiaImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(resourceState.bitmap);
 		}
-		return cachedSkiaImage;
+		return resourceState.cachedSkiaImage;
 	}
 
 	void invalidateCachedImage()
 	{
-		if (cachedSkiaImage != null)
+		if (resourceState.cachedSkiaImage != null)
 		{
-			cachedSkiaImage.close();
-			cachedSkiaImage = null;
+			resourceState.cachedSkiaImage.close();
+			resourceState.cachedSkiaImage = null;
 		}
 	}
 
@@ -256,25 +292,25 @@ public class SkiaImage extends Image
 	 */
 	private void ensureGPUSurface()
 	{
-		if (!isGpuEnabled)
+		if (!resourceState.isGpuEnabled)
 		{
 			return;
 		}
 
-		if (gpuSurface == null)
+		if (resourceState.gpuSurface == null)
 		{
-			gpuSurface = GPUExecutor.getInstance().createGPUSurface(width, height);
-			if (gpuSurface == null)
+			resourceState.gpuSurface = GPUExecutor.getInstance().createGPUSurface(width, height);
+			if (resourceState.gpuSurface == null)
 			{
 				// GPU surface creation failed, fall back to CPU
-				isGpuEnabled = false;
-				location = ImageLocation.CPU_ONLY;
+				resourceState.isGpuEnabled = false;
+				resourceState.location = ImageLocation.CPU_ONLY;
 				return;
 			}
 		}
 
 		// If CPU has modifications, upload them to GPU
-		if (location == ImageLocation.CPU_DIRTY)
+		if (resourceState.location == ImageLocation.CPU_DIRTY)
 		{
 			syncCPUToGPU();
 		}
@@ -286,7 +322,7 @@ public class SkiaImage extends Image
 	 */
 	private void ensureCPUData()
 	{
-		if (location == ImageLocation.GPU_DIRTY)
+		if (resourceState.location == ImageLocation.GPU_DIRTY)
 		{
 			syncGPUToCPU();
 		}
@@ -298,7 +334,7 @@ public class SkiaImage extends Image
 	 */
 	private void syncGPUToCPU()
 	{
-		if (gpuSurface == null)
+		if (resourceState.gpuSurface == null)
 		{
 			return;
 		}
@@ -306,8 +342,8 @@ public class SkiaImage extends Image
 		try
 		{
 			// GPU surface access must happen on the GPU thread
-			final Surface surfaceRef = gpuSurface;
-			final Bitmap bitmapRef = bitmap;
+			final Surface surfaceRef = resourceState.gpuSurface;
+			final Bitmap bitmapRef = resourceState.bitmap;
 
 			GPUExecutor.getInstance().submit(() -> {
 				// Flush any pending GPU commands to ensure the surface is up-to-date
@@ -323,14 +359,14 @@ public class SkiaImage extends Image
 			invalidateCachedImage();
 			invalidateGPUTexture();
 
-			location = ImageLocation.SYNCHRONIZED;
+			resourceState.location = ImageLocation.SYNCHRONIZED;
 		}
 		catch (Exception e)
 		{
 			System.err.println("SkiaImage: Failed to sync GPU to CPU: " + e.getMessage());
 			// Fall back to CPU-only mode
-			isGpuEnabled = false;
-			location = ImageLocation.CPU_ONLY;
+			resourceState.isGpuEnabled = false;
+			resourceState.location = ImageLocation.CPU_ONLY;
 		}
 	}
 
@@ -340,7 +376,7 @@ public class SkiaImage extends Image
 	 */
 	private void syncCPUToGPU()
 	{
-		if (gpuSurface == null)
+		if (resourceState.gpuSurface == null)
 		{
 			return;
 		}
@@ -348,8 +384,8 @@ public class SkiaImage extends Image
 		try
 		{
 			// GPU surface access must happen on the GPU thread
-			final Surface surfaceRef = gpuSurface;
-			final Bitmap bitmapRef = bitmap;
+			final Surface surfaceRef = resourceState.gpuSurface;
+			final Bitmap bitmapRef = resourceState.bitmap;
 
 			GPUExecutor.getInstance().submit(() -> {
 				// Draw the CPU bitmap to the GPU surface
@@ -364,14 +400,14 @@ public class SkiaImage extends Image
 			// Invalidate GPU texture snapshot
 			invalidateGPUTexture();
 
-			location = ImageLocation.SYNCHRONIZED;
+			resourceState.location = ImageLocation.SYNCHRONIZED;
 		}
 		catch (Exception e)
 		{
 			System.err.println("SkiaImage: Failed to sync CPU to GPU: " + e.getMessage());
 			// Fall back to CPU-only mode
-			isGpuEnabled = false;
-			location = ImageLocation.CPU_ONLY;
+			resourceState.isGpuEnabled = false;
+			resourceState.location = ImageLocation.CPU_ONLY;
 		}
 	}
 
@@ -381,9 +417,9 @@ public class SkiaImage extends Image
 	 */
 	public void markCPUDirty()
 	{
-		if (isGpuEnabled && location != ImageLocation.CPU_ONLY)
+		if (resourceState.isGpuEnabled && resourceState.location != ImageLocation.CPU_ONLY)
 		{
-			location = ImageLocation.CPU_DIRTY;
+			resourceState.location = ImageLocation.CPU_DIRTY;
 			invalidateGPUTexture();
 		}
 		invalidateCachedImage();
@@ -395,7 +431,7 @@ public class SkiaImage extends Image
 	 */
 	void updateGPURegion(int x, int y, int width, int height)
 	{
-		if (!isGpuEnabled || gpuSurface == null)
+		if (!resourceState.isGpuEnabled || resourceState.gpuSurface == null)
 		{
 			markCPUDirty();
 			return;
@@ -417,9 +453,9 @@ public class SkiaImage extends Image
 			int safeW = safeRight - safeX;
 			int safeH = safeBottom - safeY;
 
-			final Surface surfaceRef = gpuSurface;
+			final Surface surfaceRef = resourceState.gpuSurface;
 
-			ImageInfo info = bitmap.getImageInfo();
+			ImageInfo info = resourceState.bitmap.getImageInfo();
 			int bytesPerPixel = getBytesPerPixel();
 			int rowBytes = safeW * bytesPerPixel;
 
@@ -427,7 +463,7 @@ public class SkiaImage extends Image
 			ImageInfo regionInfo = new ImageInfo(safeW, safeH, info.getColorType(), info.getColorAlphaType(), info.getColorSpace());
 
 			// Read pixels from CPU bitmap
-			byte[] pixelData = bitmap.readPixels(regionInfo, rowBytes, safeX, safeY);
+			byte[] pixelData = resourceState.bitmap.readPixels(regionInfo, rowBytes, safeX, safeY);
 
 			if (pixelData == null)
 			{
@@ -467,9 +503,9 @@ public class SkiaImage extends Image
 	 */
 	private void markGPUDirty()
 	{
-		if (isGpuEnabled)
+		if (resourceState.isGpuEnabled)
 		{
-			location = ImageLocation.GPU_DIRTY;
+			resourceState.location = ImageLocation.GPU_DIRTY;
 			invalidateGPUTexture();
 			invalidateCachedImage();
 		}
@@ -480,10 +516,10 @@ public class SkiaImage extends Image
 	 */
 	private void invalidateGPUTexture()
 	{
-		if (gpuTexture != null)
+		if (resourceState.gpuTexture != null)
 		{
-			gpuTexture.close();
-			gpuTexture = null;
+			resourceState.gpuTexture.close();
+			resourceState.gpuTexture = null;
 		}
 	}
 
@@ -517,7 +553,7 @@ public class SkiaImage extends Image
 	@Override
 	public void prepareForDrawing()
 	{
-		if (isGpuEnabled)
+		if (resourceState.isGpuEnabled)
 		{
 			ensureGPUSurface();
 		}
@@ -554,16 +590,16 @@ public class SkiaImage extends Image
 	@Override
 	public Painter createPainter(DrawQuality quality)
 	{
-		if (isGpuEnabled && GPUExecutor.getInstance().isGPUAvailable())
+		if (resourceState.isGpuEnabled && GPUExecutor.getInstance().isGPUAvailable())
 		{
 			try
 			{
 				ensureGPUSurface();
-				if (gpuSurface != null)
+				if (resourceState.gpuSurface != null)
 				{
 					markGPUDirty();
 					// Create a GPUBatchingPainter for async GPU operations
-					GPUBatchingPainter painter = new GPUBatchingPainter(gpuSurface, this, quality);
+					GPUBatchingPainter painter = new GPUBatchingPainter(resourceState.gpuSurface, this, quality);
 					activePainters.add(painter);
 					return painter;
 				}
@@ -572,11 +608,11 @@ public class SkiaImage extends Image
 			{
 				Logger.printError("SkiaImage: GPU painter failed, falling back to CPU: " + e.getMessage(), e);
 				// Fallback to CPU
-				isGpuEnabled = false;
-				location = ImageLocation.CPU_ONLY;
+				resourceState.isGpuEnabled = false;
+				resourceState.location = ImageLocation.CPU_ONLY;
 			}
 		}
-		return new SkiaPainter(new Canvas(bitmap, new SurfaceProps()), quality);
+		return new SkiaPainter(new Canvas(resourceState.bitmap, new SurfaceProps()), quality);
 	}
 
 	@Override
@@ -597,12 +633,12 @@ public class SkiaImage extends Image
 
 		// Try GPU-accelerated scaling if source is GPU-enabled
 		// The entire GPU operation must run on the GPU thread
-		if (isGpuEnabled && GPUExecutor.getInstance().isGPUAvailable())
+		if (resourceState.isGpuEnabled && GPUExecutor.getInstance().isGPUAvailable())
 		{
 			final int targetWidth = width;
 			final int targetHeight = height;
 			final ImageType resultType = getType();
-			final Bitmap srcBitmap = bitmap;
+			final Bitmap srcBitmap = resourceState.bitmap;
 
 			try
 			{
@@ -656,7 +692,7 @@ public class SkiaImage extends Image
 		Canvas canvas = surface.getCanvas();
 
 		// Create image from source bitmap and draw scaled
-		org.jetbrains.skia.Image srcImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(bitmap);
+		org.jetbrains.skia.Image srcImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(resourceState.bitmap);
 		canvas.drawImageRect(srcImage, Rect.makeXYWH(0, 0, width, height));
 		srcImage.close();
 
@@ -678,7 +714,7 @@ public class SkiaImage extends Image
 	{
 		awaitPendingPainters();
 		ensureCPUData(); // Ensure CPU bitmap is current
-		org.jetbrains.skia.Image srcImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(bitmap);
+		org.jetbrains.skia.Image srcImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(resourceState.bitmap);
 
 		// Create destination bitmap and get its pixmap
 		Bitmap scaledBitmap = new Bitmap();
@@ -698,7 +734,7 @@ public class SkiaImage extends Image
 	{
 		awaitPendingPainters();
 		ensureCPUData(); // Ensure CPU bitmap is current before copying
-		return new SkiaImage(bitmap.makeClone(), getType());
+		return new SkiaImage(resourceState.bitmap.makeClone(), getType());
 	}
 
 	@Override
@@ -719,7 +755,7 @@ public class SkiaImage extends Image
 
 		// Try GPU-accelerated copy if source is GPU-enabled
 		// The entire GPU operation must run on the GPU thread
-		if (isGpuEnabled && GPUExecutor.getInstance().isGPUAvailable())
+		if (resourceState.isGpuEnabled && GPUExecutor.getInstance().isGPUAvailable())
 		{
 			final int targetW = w;
 			final int targetH = h;
@@ -728,9 +764,9 @@ public class SkiaImage extends Image
 			final int srcW = bounds.width;
 			final int srcH = bounds.height;
 			final ImageType resultType = addAlphaChanel ? ImageType.ARGB : getType();
-			final ColorType colorType = bitmap.getImageInfo().getColorType();
-			final ColorAlphaType alphaType = bitmap.getImageInfo().getColorAlphaType();
-			final Bitmap srcBitmap = bitmap;
+			final ColorType colorType = resourceState.bitmap.getImageInfo().getColorType();
+			final ColorAlphaType alphaType = resourceState.bitmap.getImageInfo().getColorAlphaType();
+			final Bitmap srcBitmap = resourceState.bitmap;
 
 			try
 			{
@@ -783,13 +819,13 @@ public class SkiaImage extends Image
 		Surface surface = Surface.Companion.makeRasterN32Premul(w, h);
 		Canvas canvas = surface.getCanvas();
 
-		org.jetbrains.skia.Image srcImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(bitmap);
+		org.jetbrains.skia.Image srcImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(resourceState.bitmap);
 		canvas.drawImageRect(srcImage, Rect.makeXYWH(bounds.x, bounds.y, bounds.width, bounds.height), Rect.makeXYWH(0, 0, w, h));
 		srcImage.close();
 
 		// Read directly from surface
 		Bitmap subBitmap = new Bitmap();
-		ImageInfo subImageInfo = new ImageInfo(w, h, bitmap.getImageInfo().getColorType(), bitmap.getImageInfo().getColorAlphaType(), null);
+		ImageInfo subImageInfo = new ImageInfo(w, h, resourceState.bitmap.getImageInfo().getColorType(), resourceState.bitmap.getImageInfo().getColorAlphaType(), null);
 		subBitmap.allocPixels(subImageInfo);
 		surface.readPixels(subBitmap, 0, 0);
 		surface.close();
@@ -822,7 +858,7 @@ public class SkiaImage extends Image
 		BufferedImage bi = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 		int[] pixels = ((DataBufferInt) bi.getRaster().getDataBuffer()).getData();
 
-		byte[] bytes = bitmap.readPixels(bitmap.getImageInfo(), width * 4, 0, 0);
+		byte[] bytes = resourceState.bitmap.readPixels(resourceState.bitmap.getImageInfo(), width * 4, 0, 0);
 
 		ByteBuffer buffer = ByteBuffer.wrap(bytes).order(ByteOrder.nativeOrder());
 		IntBuffer intBuffer = buffer.asIntBuffer();
@@ -841,7 +877,7 @@ public class SkiaImage extends Image
 		ensureCPUData(); // Ensure CPU bitmap is current
 		int bytesPerPixel = getBytesPerPixel();
 		int rowStride = width * bytesPerPixel;
-		byte[] bytes = bitmap.readPixels(bitmap.getImageInfo(), rowStride, 0, 0);
+		byte[] bytes = resourceState.bitmap.readPixels(resourceState.bitmap.getImageInfo(), rowStride, 0, 0);
 
 		if (bytes == null)
 		{
@@ -876,8 +912,8 @@ public class SkiaImage extends Image
 		ensureCPUData(); // Ensure CPU bitmap is current
 		int bytesPerPixel = getBytesPerPixel();
 		int rowStride = regionWidth * bytesPerPixel;
-		ImageInfo destinationInfo = new ImageInfo(regionWidth,regionHeight, bitmap.getImageInfo().getColorType(), bitmap.getImageInfo().getColorAlphaType(), null);
-		byte[] bytes = bitmap.readPixels(destinationInfo, rowStride, srcX, srcY);
+		ImageInfo destinationInfo = new ImageInfo(regionWidth, regionHeight, resourceState.bitmap.getImageInfo().getColorType(), resourceState.bitmap.getImageInfo().getColorAlphaType(), null);
+		byte[] bytes = resourceState.bitmap.readPixels(destinationInfo, rowStride, srcX, srcY);
 
 		if (bytes == null)
 		{
@@ -921,13 +957,13 @@ public class SkiaImage extends Image
 				byte red = (byte) ((pixels[i] >> 16) & 0xFF); // TODO maybe put back on one line below
 				bytes[i] = red;
 			}
-			bitmap.installPixels(bitmap.getImageInfo(), bytes, rowStride);
+			resourceState.bitmap.installPixels(resourceState.bitmap.getImageInfo(), bytes, rowStride);
 		}
 		else
 		{
 			ByteBuffer buffer = ByteBuffer.allocate(pixels.length * 4).order(ByteOrder.nativeOrder());
 			buffer.asIntBuffer().put(pixels);
-			bitmap.installPixels(bitmap.getImageInfo(), buffer.array(), rowStride);
+			resourceState.bitmap.installPixels(resourceState.bitmap.getImageInfo(), buffer.array(), rowStride);
 		}
 		invalidateCachedImage();
 	}
@@ -959,7 +995,7 @@ public class SkiaImage extends Image
 		}
 		else
 		{
-			tempImageInfo = new ImageInfo(regionWidth, regionHeight, ColorType.Companion.getN32(), bitmap.getImageInfo().getColorAlphaType(), null);
+			tempImageInfo = new ImageInfo(regionWidth, regionHeight, ColorType.Companion.getN32(), resourceState.bitmap.getImageInfo().getColorAlphaType(), null);
 			tempBitmap.allocPixels(tempImageInfo);
 
 			ByteBuffer buffer = ByteBuffer.allocate(regionPixels.length * 4).order(ByteOrder.nativeOrder());
@@ -968,7 +1004,7 @@ public class SkiaImage extends Image
 		}
 
 		// Draw the temp image onto the main bitmap using Canvas
-		Canvas canvas = new Canvas(bitmap, new SurfaceProps());
+		Canvas canvas = new Canvas(resourceState.bitmap, new SurfaceProps());
 		org.jetbrains.skia.Image tempImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(tempBitmap);
 		canvas.drawImage(tempImage, destX, destY);
 		tempImage.close();
@@ -979,7 +1015,7 @@ public class SkiaImage extends Image
 
 	public boolean isGpuEnabled()
 	{
-		return isGpuEnabled;
+		return resourceState.isGpuEnabled;
 	}
 
 }
