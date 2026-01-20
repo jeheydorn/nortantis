@@ -403,22 +403,52 @@ public class SkiaImage extends Image
 
 		try
 		{
+			// Clip to image bounds
+			int safeX = Math.max(0, x);
+			int safeY = Math.max(0, y);
+			int safeRight = Math.min(this.width, x + width);
+			int safeBottom = Math.min(this.height, y + height);
+
+			if (safeX >= safeRight || safeY >= safeBottom)
+			{
+				return;
+			}
+
+			int safeW = safeRight - safeX;
+			int safeH = safeBottom - safeY;
+
 			final Surface surfaceRef = gpuSurface;
-			final Bitmap bitmapRef = bitmap;
-			final int rx = x;
-			final int ry = y;
-			final int rw = width;
-			final int rh = height;
+
+			ImageInfo info = bitmap.getImageInfo();
+			int bytesPerPixel = getBytesPerPixel();
+			int rowBytes = safeW * bytesPerPixel;
+
+			// Create info for the region
+			ImageInfo regionInfo = new ImageInfo(safeW, safeH, info.getColorType(), info.getColorAlphaType(), info.getColorSpace());
+
+			// Read pixels from CPU bitmap
+			byte[] pixelData = bitmap.readPixels(regionInfo, rowBytes, safeX, safeY);
+
+			if (pixelData == null)
+			{
+				markCPUDirty();
+				return;
+			}
 
 			GPUExecutor.getInstance().submit(() -> {
 				Canvas gpuCanvas = surfaceRef.getCanvas();
-				org.jetbrains.skia.Image cpuImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(bitmapRef);
 
-				Rect srcRect = Rect.makeXYWH(rx, ry, rw, rh);
-				Rect dstRect = Rect.makeXYWH(rx, ry, rw, rh);
+				// Create a temporary bitmap for the region
+				Bitmap regionBitmap = new Bitmap();
+				regionBitmap.allocPixels(regionInfo);
+				regionBitmap.installPixels(regionInfo, pixelData, rowBytes);
 
-				gpuCanvas.drawImageRect(cpuImage, srcRect, dstRect);
-				cpuImage.close();
+				org.jetbrains.skia.Image regionImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(regionBitmap);
+
+				gpuCanvas.drawImage(regionImage, safeX, safeY);
+
+				regionImage.close();
+				regionBitmap.close();
 				return null;
 			});
 
