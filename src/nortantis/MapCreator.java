@@ -579,7 +579,7 @@ public class MapCreator implements WarningLogger
 				? settings.concentricWaveCount * (concentricWaveLineWidth * sizeMultiplier + concentricWaveWidthBetweenWaves * sizeMultiplier)
 						+ (settings.jitterToConcentricWaves ? calcJitterVarianceRange(settings.resolution) : 0)
 				: 0;
-		// In theory I shouldn't multiply by 0.75 below, but realistically there doesn't seem to be any visual difference and it helps a lot
+		// In theory, I shouldn't multiply by 0.75 below, but realistically there doesn't seem to be any visual difference and it helps a lot
 		// with performance.
 		double rippleWaveWidth = settings.hasRippleWaves(settings.resolution) ? (settings.oceanWavesLevel * sizeMultiplier) * 0.75 : 0;
 		// There shading from gaussian blur isn't visible all the way out, so save performance by reducing the width

@@ -962,6 +962,7 @@ public class ImageHelper
 		pResult.rotate(-angle, pivot.x - xLoc, pivot.y - yLoc);
 		pResult.translate(-xLoc, -yLoc);
 		pResult.drawImage(image, 0, 0);
+		pResult.dispose();  // Ensure GPU batch is flushed and completed
 
 		return result;
 	}
@@ -978,6 +979,7 @@ public class ImageHelper
 		Painter pResult = result.createPainter();
 		pResult.translate(-xLoc, -yLoc);
 		pResult.drawImage(source, 0, 0);
+		pResult.dispose();  // Ensure GPU batch is flushed and completed
 
 		return result;
 	}
