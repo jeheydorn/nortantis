@@ -181,6 +181,10 @@ public abstract class Image implements AutoCloseable
 			{
 				bounds = new IntRectangle(bounds.x, bounds.y, 0, 0);
 			}
+			else
+			{
+				bounds = intersection;
+			}
 		}
 		return innerCreateNewPixelReader(bounds);
 	}
@@ -206,6 +210,10 @@ public abstract class Image implements AutoCloseable
 			if (intersection == null)
 			{
 				bounds = new IntRectangle(bounds.x, bounds.y, 0, 0);
+			}
+			else
+			{
+				bounds = intersection;
 			}
 		}
 		return innerCreateNewPixelReaderWriter(bounds);
