@@ -5,6 +5,7 @@ import nortantis.editor.FreeIcon;
 import nortantis.editor.MapParts;
 import nortantis.geom.Dimension;
 import nortantis.geom.IntRectangle;
+import nortantis.geom.Dimension;
 import nortantis.platform.*;
 import nortantis.platform.skia.SkiaFactory;
 import nortantis.util.Assets;
@@ -22,6 +23,8 @@ import java.util.Arrays;
 import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.util.Random;
+
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class SkiaMapCreatorTest
@@ -47,7 +50,7 @@ public class SkiaMapCreatorTest
 	}
 
 	@Test
-	public void incrementalUpdate_allTypesOfEdits()
+	public void incrementalUpdate_simpleSmallWorld()
 	{
 		// Load settings from the .nort file
 		String settingsFileName = "simpleSmallWorld.nort";
@@ -189,7 +192,8 @@ public class SkiaMapCreatorTest
 
 		Path texturePath = Paths.get("assets", "installed art pack", "background textures", "grungy paper.png");
 		Image texture = ImageCache.getInstance(Assets.installedArtPack, null).getImageFromFile(texturePath);
-		Image generatedTexture = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(397110878), ImageHelper.convertToGrayscale(texture), 1172, 1172);
+		Image generatedTexture = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(397110878), ImageHelper.convertToGrayscale(texture),
+				1172, 1172);
 		Image grayScaleTexture = ImageHelper.convertToGrayscale(texture);
 		Image actual = ImageHelper.colorify(grayScaleTexture, Color.create(217, 203, 156, 255), ImageHelper.ColorifyAlgorithm.algorithm3);
 
@@ -264,4 +268,5 @@ public class SkiaMapCreatorTest
 	{
 		MapTestUtil.createImageDiffIfImagesAreSameSize(image1, image2, settingsFileName, threshold, failedMapsFolderName);
 	}
+
 }
