@@ -57,28 +57,30 @@ public class MapTestUtil
 		}
 		MapCreator mapCreator = new MapCreator();
 		Logger.println("Creating map from '" + settingsPath + "'");
-		Image actual = mapCreator.createMap(settings, null, null);
-		if (expected == null)
+		try (Image actual = mapCreator.createMap(settings, null, null))
 		{
-			// Create the expected map from the actual one.
-			expected = actual;
-			ImageHelper.write(actual, getExpectedMapFilePath(settingsFileName, expectedMapsFolderName));
+			if (expected == null)
+			{
+				// Create the expected map from the actual one.
+				expected = actual;
+				ImageHelper.write(actual, getExpectedMapFilePath(settingsFileName, expectedMapsFolderName));
+			}
+
+			// Test deep copy after creating the map because MapCreator sets some fields during map creation, so it's a
+			// more complete test that way.
+			testDeepCopy(settings);
+
+			String comparisonErrorMessage = checkIfImagesEqual(expected, actual);
+			if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
+			{
+				FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
+				ImageHelper.write(actual, getFailedMapFilePath(settingsFileName, failedMapsFolderName));
+				createImageDiffIfImagesAreSameSize(expected, actual, settingsFileName, failedMapsFolderName);
+				fail(comparisonErrorMessage);
+			}
+
+			return mapCreator;
 		}
-
-		// Test deep copy after creating the map because MapCreator sets some fields during map creation, so it's a
-		// more complete test that way.
-		testDeepCopy(settings);
-
-		String comparisonErrorMessage = checkIfImagesEqual(expected, actual);
-		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
-		{
-			FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
-			ImageHelper.write(actual, getFailedMapFilePath(settingsFileName, failedMapsFolderName));
-			createImageDiffIfImagesAreSameSize(expected, actual, settingsFileName, failedMapsFolderName);
-			fail(comparisonErrorMessage);
-		}
-
-		return mapCreator;
 	}
 
 	private static void testDeepCopy(MapSettings settings)

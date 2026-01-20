@@ -801,7 +801,10 @@ public class SkiaImage extends Image
 	public Image copyAndAddAlphaChanel()
 	{
 		if (hasAlpha())
+		{
 			return deepCopy();
+		}
+
 		// TODO if performance is a concern, I could make ImageType.RGB be the same as ARB under the hood, so I just have to change metadata and return a deep copy here.
 
 		SkiaImage result = new SkiaImage(width, height, ImageType.ARGB);
