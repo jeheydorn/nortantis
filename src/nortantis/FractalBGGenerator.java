@@ -3,6 +3,7 @@ package nortantis;
 import java.io.IOException;
 import java.util.Random;
 
+import nortantis.util.Stopwatch;
 import org.jtransforms.fft.FloatFFT_2D;
 
 import nortantis.platform.Image;

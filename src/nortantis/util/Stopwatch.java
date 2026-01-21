@@ -1,4 +1,4 @@
-package nortantis;
+package nortantis.util;
 
 /**
  * For finding how long code takes to run.

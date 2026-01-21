@@ -2,6 +2,7 @@ package nortantis.platform.skia;
 
 import nortantis.platform.Image;
 import nortantis.platform.Painter;
+import nortantis.platform.PlatformFactory;
 import nortantis.util.Logger;
 import org.jetbrains.skia.*;
 import org.jetbrains.skiko.*;
@@ -9,6 +10,7 @@ import org.jetbrains.skiko.*;
 import javax.swing.*;
 import java.awt.*;
 
+// TODO remove this if I don't end up using it
 /**
  * A Swing JPanel that uses Skiko's SkiaLayer for GPU-accelerated rendering.
  *
@@ -68,7 +70,7 @@ public class SkiaLayerPanel extends JPanel
 			{
 				// Create with explicit property values matching available API
 				SkiaLayerProperties props = new SkiaLayerProperties();
-				return new SkiaLayer(null, props, null, PixelGeometry.UNKNOWN);
+				return new SkiaLayer(null, props,  SkiaLayerAnalytics.Companion.getEmpty(), PixelGeometry.UNKNOWN);
 			}
 			catch (Exception e2)
 			{
@@ -257,4 +259,11 @@ public class SkiaLayerPanel extends JPanel
 			Logger.println("SkiaLayerPanel: Test window opened");
 		});
 	}
+
+	public static void main(String[] args)
+	{
+		PlatformFactory.setInstance(new SkiaFactory());
+		testSkiaLayer();
+	}
+
 }

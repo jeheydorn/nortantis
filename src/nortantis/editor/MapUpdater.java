@@ -24,7 +24,7 @@ import nortantis.MapCreator;
 import nortantis.MapSettings;
 import nortantis.MapText;
 import nortantis.NameCreator;
-import nortantis.Stopwatch;
+import nortantis.util.Stopwatch;
 import nortantis.geom.Dimension;
 import nortantis.geom.IntRectangle;
 import nortantis.geom.Point;

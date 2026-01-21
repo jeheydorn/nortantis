@@ -5,6 +5,7 @@ import static java.lang.System.out;
 import java.io.IOException;
 import java.util.Random;
 
+import nortantis.util.Stopwatch;
 import org.imgscalr.Scalr.Method;
 
 import nortantis.platform.Image;
