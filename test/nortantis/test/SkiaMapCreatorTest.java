@@ -24,6 +24,7 @@ import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.Random;
+import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -46,7 +47,7 @@ public class SkiaMapCreatorTest
 	@Test
 	public void simpleSmallWorld()
 	{
-		generateAndCompare("simpleSmallWorld.nort");
+		generateAndCompare("simpleSmallWorld.nort", (settings) -> settings.resolution = 0.25);
 	}
 
 	@Test
@@ -56,6 +57,7 @@ public class SkiaMapCreatorTest
 		String settingsFileName = "simpleSmallWorld.nort";
 		String settingsPath = Paths.get("unit test files", "map settings", settingsFileName).toString();
 		MapSettings settings = new MapSettings(settingsPath);
+		settings.resolution = 0.25;
 
 		// Create the full map first (baseline)
 		MapCreator mapCreator = new MapCreator();
@@ -65,7 +67,7 @@ public class SkiaMapCreatorTest
 		int failCount = 0;
 
 		{
-			final int numberToTest = 10;
+			final int numberToTest = 100;
 			Image fullMapForUpdates = fullMap.deepCopy();
 			int iconNumber = 0;
 			for (FreeIcon icon : settings.edits.freeIcons)
@@ -110,7 +112,7 @@ public class SkiaMapCreatorTest
 			if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
 			{
 				FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
-				String failedMapName = settingsFileName + " full map for incremental draw test";
+				String failedMapName = FilenameUtils.getBaseName(settingsFileName) + " full map for incremental draw test";
 				ImageHelper.write(fullMapForUpdates, MapTestUtil.getFailedMapFilePath(failedMapName, failedMapsFolderName));
 				createImageDiffIfImagesAreSameSize(fullMap, fullMapForUpdates, failedMapName, diffThreshold);
 				fail("Incremental update did not match expected image: " + comparisonErrorMessage);
@@ -254,9 +256,9 @@ public class SkiaMapCreatorTest
 		return Paths.get("unit test files", failedMapsFolderName, testName + " - diff.png").toString();
 	}
 
-	private void generateAndCompare(String settingsFileName)
+	private void generateAndCompare(String settingsFileName, Consumer<MapSettings> preprocessSettings)
 	{
-		MapTestUtil.generateAndCompare(settingsFileName, null, expectedMapsFolderName, failedMapsFolderName);
+		MapTestUtil.generateAndCompare(settingsFileName, preprocessSettings, expectedMapsFolderName, failedMapsFolderName);
 	}
 
 	private void createImageDiffIfImagesAreSameSize(Image image1, Image image2, String settingsFileName)

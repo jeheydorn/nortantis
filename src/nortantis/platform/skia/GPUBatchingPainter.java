@@ -54,6 +54,7 @@ public class GPUBatchingPainter extends Painter
 
 	// Pending futures from submitted batches
 	private final List<CompletableFuture<Void>> pendingFutures;
+	private final boolean trackedDither;
 
 	// Current paint state that will be used when the batch is flushed
 	private PaintState currentPaintState;
@@ -85,10 +86,11 @@ public class GPUBatchingPainter extends Painter
 		final PathEffect pathEffect;
 		final Shader shader;
 		final boolean antiAlias;
+		final boolean dither;
 
 		PaintState(int color, BlendMode blendMode, int alpha, PaintMode paintMode,
 				float strokeWidth, PaintStrokeCap strokeCap, PaintStrokeJoin strokeJoin,
-				PathEffect pathEffect, Shader shader, boolean antiAlias)
+				PathEffect pathEffect, Shader shader, boolean antiAlias, boolean dither)
 		{
 			this.color = color;
 			this.blendMode = blendMode;
@@ -100,6 +102,7 @@ public class GPUBatchingPainter extends Painter
 			this.pathEffect = pathEffect;
 			this.shader = shader;
 			this.antiAlias = antiAlias;
+			this.dither = dither;
 		}
 
 		/**
@@ -118,6 +121,7 @@ public class GPUBatchingPainter extends Painter
 			paint.setPathEffect(pathEffect);
 			paint.setShader(shader);
 			paint.setAntiAlias(antiAlias);
+			paint.setDither(dither);
 			return paint;
 		}
 
@@ -179,6 +183,7 @@ public class GPUBatchingPainter extends Painter
 		this.currentBatch = new ArrayList<>(batchSize);
 		this.pendingFutures = new ArrayList<>();
 		this.trackedAntiAlias = (quality == DrawQuality.High);
+		this.trackedDither = (quality == DrawQuality.High);
 		this.currentTransform = Matrix33.Companion.getIDENTITY();
 		this.currentClip = null;
 
@@ -194,7 +199,7 @@ public class GPUBatchingPainter extends Painter
 		currentPaintState = new PaintState(
 				trackedColor, trackedBlendMode, trackedAlpha, trackedPaintMode,
 				trackedStrokeWidth, trackedStrokeCap, trackedStrokeJoin,
-				trackedPathEffect, trackedShader, trackedAntiAlias
+				trackedPathEffect, trackedShader, trackedAntiAlias, trackedDither
 		);
 	}
 
@@ -206,7 +211,7 @@ public class GPUBatchingPainter extends Painter
 		PaintState newState = new PaintState(
 				trackedColor, trackedBlendMode, trackedAlpha, trackedPaintMode,
 				trackedStrokeWidth, trackedStrokeCap, trackedStrokeJoin,
-				trackedPathEffect, trackedShader, trackedAntiAlias
+				trackedPathEffect, trackedShader, trackedAntiAlias, trackedDither
 		);
 
 		if (!newState.isEquivalent(currentPaintState))

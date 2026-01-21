@@ -28,6 +28,7 @@ public class SkiaPainter extends Painter
 		this.canvas = canvas;
 		this.paint = new Paint();
 		this.paint.setAntiAlias(quality == DrawQuality.High);
+		this.paint.setDither(quality == DrawQuality.High);
 	}
 
 	@Override
