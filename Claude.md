@@ -24,6 +24,9 @@ Fantasy map generator and editor that uses tectonic plate simulation to create i
 # Run tests
 ./gradlew test
 
+# Run benchmark with JFR profiling
+./gradlew benchmark
+
 # Format code
 ./gradlew spotlessApply
 ```
@@ -88,12 +91,34 @@ Tests run for both CPU (AWT) and GPU (Skia) backends:
 
 Test data locations:
 - Map settings: `unit test files/map settings/`
-- Expected outputs: 
+- Expected outputs:
 	`unit test files/expected maps/` for MapCreatorTest
 	`unit test files/expected maps skia/` for SkiaMapCreatorTest
 	`unit test files/expected image helper tests` for ImageHelperTest
 	`unit test files/expected skia tests` for SkiaPainterTest
-	
+
+## Performance Benchmarking
+
+Use the benchmark task to profile map creation performance:
+
+```bash
+./gradlew benchmark
+```
+
+This runs `MapCreatorBenchmark` with JFR (Java Flight Recorder) profiling enabled. The JFR recording is saved to `build/profile.jfr`.
+
+**Analyzing results:**
+- Open `build/profile.jfr` in JDK Mission Control (`jmc`) or IntelliJ IDEA
+- Look at "Hot Methods" or "Method Profiling" to find CPU hotspots
+- Use the Call Tree view to see time spent in each method
+
+**When working on performance:**
+1. Run `./gradlew benchmark` to establish a baseline
+2. Make changes
+3. Run benchmark again to measure improvement
+4. Use JFR profile to identify remaining hotspots
+
+The benchmark creates maps using settings from `unit test files/map settings/simpleSmallWorld.nort`.
 
 ## Coding Conventions
 

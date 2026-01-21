@@ -132,6 +132,53 @@ test {
     forkEvery = 1
 }
 
+// Benchmark task with JFR profiling
+// Usage: ./gradlew benchmark
+// Output: build/profile.jfr (open in JDK Mission Control or IntelliJ)
+task benchmark(type: Test) {
+    description = 'Run benchmarks with JFR profiling'
+    group = 'verification'
+
+    // Use the test source set
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+
+    useJUnitPlatform()
+    forkEvery = 1
+
+    // Only run benchmark tests
+    filter {
+        includeTestsMatching 'nortantis.test.MapCreatorBenchmark'
+    }
+
+    jvmArgs = [
+        '-ea',
+        '--enable-native-access=ALL-UNNAMED',
+        '-Dfile.encoding=UTF-8',
+        '-Dsun.java2d.d3d=false',
+        '-Xmx4g',
+        '--add-opens', 'java.base/java.nio=ALL-UNNAMED',
+        '-Dnortantis.gpu.enable=true',
+        // JFR profiling - records to build/profile.jfr
+        '-XX:StartFlightRecording=filename=build/profile.jfr,settings=profile',
+    ]
+
+    testLogging {
+        events "passed", "skipped", "failed"
+        showStandardStreams = true
+    }
+
+    doFirst {
+        println "Starting benchmark with JFR profiling..."
+        println "JFR output will be saved to: build/profile.jfr"
+    }
+
+    doLast {
+        println "\nBenchmark complete!"
+        println "Open build/profile.jfr in JDK Mission Control or IntelliJ to analyze."
+    }
+}
+
 sourceSets {
     main {
         java {
