@@ -753,9 +753,12 @@ public class SkiaImage extends Image
 		int w = Math.max(1, bounds.width);
 		int h = Math.max(1, bounds.height);
 
-		// Try GPU-accelerated copy if source is GPU-enabled
+		// Wait for any pending GPU painters to finish
+		awaitPendingPainters();
+
+		// Try GPU-accelerated copy if source is GPU-enabled and has a GPU surface
 		// The entire GPU operation must run on the GPU thread
-		if (resourceState.isGpuEnabled && GPUExecutor.getInstance().isGPUAvailable())
+		if (resourceState.isGpuEnabled && resourceState.gpuSurface != null && GPUExecutor.getInstance().isGPUAvailable())
 		{
 			final int targetW = w;
 			final int targetH = h;
@@ -766,7 +769,12 @@ public class SkiaImage extends Image
 			final ImageType resultType = addAlphaChanel ? ImageType.ARGB : getType();
 			final ColorType colorType = resourceState.bitmap.getImageInfo().getColorType();
 			final ColorAlphaType alphaType = resourceState.bitmap.getImageInfo().getColorAlphaType();
-			final Bitmap srcBitmap = resourceState.bitmap;
+
+			// Determine source: use GPU surface only if GPU has exclusive latest data (GPU_DIRTY),
+			// otherwise use CPU bitmap to maintain consistency with existing behavior
+			final boolean useGPUSource = resourceState.location == ImageLocation.GPU_DIRTY && resourceState.gpuSurface != null;
+			final Surface srcSurface = useGPUSource ? resourceState.gpuSurface : null;
+			final Bitmap srcBitmap = useGPUSource ? null : resourceState.bitmap;
 
 			try
 			{
@@ -783,8 +791,19 @@ public class SkiaImage extends Image
 					{
 						Canvas gpuCanvas = gpuDestSurface.getCanvas();
 
-						// Use CPU bitmap as source (safer than GPU texture across threads)
-						org.jetbrains.skia.Image srcImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(srcBitmap);
+						// Create source image from GPU surface or CPU bitmap
+						org.jetbrains.skia.Image srcImage;
+						if (srcSurface != null)
+						{
+							// GPU has latest data - use GPU surface snapshot (no CPU sync needed)
+							srcImage = srcSurface.makeImageSnapshot();
+						}
+						else
+						{
+							// CPU has latest data - use CPU bitmap
+							srcImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(srcBitmap);
+						}
+
 						gpuCanvas.drawImageRect(srcImage, Rect.makeXYWH(srcX, srcY, srcW, srcH), Rect.makeXYWH(0, 0, targetW, targetH));
 						srcImage.close();
 
