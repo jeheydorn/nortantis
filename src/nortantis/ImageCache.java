@@ -794,11 +794,6 @@ public class ImageCache
 
 	public static void clear()
 	{
-		// Close all images before clearing
-		for (ImageCache cache : instances.values())
-		{
-			cache.closeAllImages();
-		}
 		instances.clear();
 		// Also clear the assets cache so that any change to the list of art packs becomes visible.
 		Assets.clearArtPackCache();
@@ -810,76 +805,8 @@ public class ImageCache
 	{
 		for (ImageCache cache : instances.values())
 		{
-			// Close colored images
-			for (ConcurrentHashMapF<Tuple4<Color, HSBColor, Boolean, Boolean>, Image> colorMap : cache.coloredCache.values())
-			{
-				for (Image img : colorMap.values())
-				{
-					img.close();
-				}
-			}
 			cache.coloredCache.clear();
-
-			// Close scaled images
-			for (ConcurrentHashMapF<IntDimension, Image> sizeMap : cache.scaledCache.values())
-			{
-				for (Image img : sizeMap.values())
-				{
-					img.close();
-				}
-			}
 			cache.scaledCache.clear();
-		}
-	}
-
-	/**
-	 * Closes all images held by this cache instance.
-	 */
-	private void closeAllImages()
-	{
-		// Close scaled images
-		for (ConcurrentHashMapF<IntDimension, Image> sizeMap : scaledCache.values())
-		{
-			for (Image img : sizeMap.values())
-			{
-				img.close();
-			}
-		}
-
-		// Close colored images
-		for (ConcurrentHashMapF<Tuple4<Color, HSBColor, Boolean, Boolean>, Image> colorMap : coloredCache.values())
-		{
-			for (Image img : colorMap.values())
-			{
-				img.close();
-			}
-		}
-
-		// Close alpha images
-		for (ConcurrentHashMapF<Integer, Image> alphaMap : alphaCache.values())
-		{
-			for (Image img : alphaMap.values())
-			{
-				img.close();
-			}
-		}
-
-		// Close file-cached images
-		for (Image img : fileCache.values())
-		{
-			img.close();
-		}
-
-		// Close icons (ImageAndMasks) - these now implement AutoCloseable
-		for (ConcurrentHashMapF<String, Map<String, ImageAndMasks>> groupMap : iconsWithSizesCache.values())
-		{
-			for (Map<String, ImageAndMasks> nameMap : groupMap.values())
-			{
-				for (ImageAndMasks iam : nameMap.values())
-				{
-					iam.close();
-				}
-			}
 		}
 	}
 }
