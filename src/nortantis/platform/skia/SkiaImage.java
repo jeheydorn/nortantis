@@ -176,7 +176,7 @@ public class SkiaImage extends Image
 		ColorType colorType = toSkiaBitmapType(type);
 		return switch (type)
 		{
-			case ARGB -> new ImageInfo(width, height, colorType, ColorAlphaType.UNPREMUL, null);
+			case ARGB -> new ImageInfo(width, height, colorType, ColorAlphaType.PREMUL, null);
 			case RGB -> new ImageInfo(width, height, colorType, ColorAlphaType.OPAQUE, null);
 			case Grayscale8Bit -> new ImageInfo(width, height, colorType, ColorAlphaType.OPAQUE, null);
 			case Grayscale16Bit -> new ImageInfo(width, height, colorType, ColorAlphaType.OPAQUE, null);
