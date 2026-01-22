@@ -170,7 +170,7 @@ public class SkiaMapCreatorTest
 	}
 
 	@Test
-	public void drawCoastlineWithLakeShoresAndBlurTest()
+	public void drawCoastlineWithLakeShoresTest()
 	{
 		final String settingsFileName = "simpleSmallWorld.nort";
 		MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", settingsFileName).toString());
