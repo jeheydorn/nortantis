@@ -48,6 +48,12 @@ public class Logger
 		}
 	}
 
+	public static void printError(String message)
+	{
+		println(message, true);
+	}
+
+
 	public static void println(final Object message)
 	{
 		println(message, false);
