@@ -1467,9 +1467,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					// I don't use ImageHelper.scaleInto for the full image case
 					// because it's 5x slower than the below
 					// method, which uses ImgScalr.
-					Image map = AwtBridge.fromBufferedImage(mapEditingPanel.mapFromMapCreator);
-					Image mapScaled = ImageHelper.scaleByWidth(map, zoomedWidth, method);
-					mapEditingPanel.setImage(AwtBridge.toBufferedImage(mapScaled));
+					try (Image map = AwtBridge.fromBufferedImage(mapEditingPanel.mapFromMapCreator);
+							Image mapScaled = ImageHelper.scaleByWidth(map, zoomedWidth, method))
+					{
+						mapEditingPanel.setImage(AwtBridge.toBufferedImage(mapScaled));
+					}
 				}
 				else
 				{

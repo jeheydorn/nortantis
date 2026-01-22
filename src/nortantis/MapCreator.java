@@ -1321,26 +1321,28 @@ public class MapCreator implements WarningLogger
 			// coastShading can be passed in to save time when calling this method a second time for the text background image.
 			if (coastShading == null)
 			{
-				Image coastlineAndLakeShoreMask = Image.create(mapOrSnippet.getWidth(), mapOrSnippet.getHeight(), ImageType.Binary);
-				try (Painter p = coastlineAndLakeShoreMask.createPainter(DrawQuality.High))
+				try (Image coastlineAndLakeShoreMask = Image.create(mapOrSnippet.getWidth(), mapOrSnippet.getHeight(), ImageType.Binary))
 				{
-					p.setColor(Color.white);
-					graph.drawCoastlineWithLakeShores(p, targetStrokeWidth, centersToDraw, drawBounds);
+					try (Painter p = coastlineAndLakeShoreMask.createPainter(DrawQuality.High))
+					{
+						p.setColor(Color.white);
+						graph.drawCoastlineWithLakeShores(p, targetStrokeWidth, centersToDraw, drawBounds);
+
+						if (settings.drawRegionBoundaries)
+						{
+							p.setColor(Color.white);
+							graph.drawRegionBoundariesSolid(p, sizeMultiplier, false, centersToDraw, drawBounds);
+						}
+					}
 
 					if (settings.drawRegionBoundaries)
 					{
-						p.setColor(Color.white);
-						graph.drawRegionBoundariesSolid(p, sizeMultiplier, false, centersToDraw, drawBounds);
+						coastShading = ImageHelper.blurAndScale(coastlineAndLakeShoreMask, blurLevel, scale, true);
 					}
-				}
-
-				if (settings.drawRegionBoundaries)
-				{
-					coastShading = ImageHelper.blurAndScale(coastlineAndLakeShoreMask, blurLevel, scale, true);
-				}
-				else
-				{
-					coastShading = ImageHelper.blurAndScale(coastlineAndLakeShoreMask, blurLevel, scale, true);
+					else
+					{
+						coastShading = ImageHelper.blurAndScale(coastlineAndLakeShoreMask, blurLevel, scale, true);
+					}
 				}
 			}
 
@@ -1852,29 +1854,37 @@ public class MapCreator implements WarningLogger
 			lineWidth = 1;
 		}
 		int blurBoxWidth = blurLevel * 2 + lineWidth + 1;
-		Image blurBox = Image.create(blurBoxWidth, blurBoxWidth, ImageType.Binary);
-		try (Painter p = blurBox.createPainter())
+		Image blurredBox;
+		try (Image blurBox = Image.create(blurBoxWidth, blurBoxWidth, ImageType.Binary))
 		{
-			// Fill the image with white.
-			p.setColor(Color.white);
-			p.fillRect(0, 0, blurBoxWidth, blurBoxWidth);
+			try (Painter p = blurBox.createPainter())
+			{
+				// Fill the image with white.
+				p.setColor(Color.white);
+				p.fillRect(0, 0, blurBoxWidth, blurBoxWidth);
 
-			// Remove the white from everywhere except a lineWidth wide line along
-			// the top and left sides.
-			p.setColor(Color.black);
-			p.fillRect(lineWidth, lineWidth, blurBoxWidth, blurBoxWidth);
+				// Remove the white from everywhere except a lineWidth wide line along
+				// the top and left sides.
+				p.setColor(Color.black);
+				p.fillRect(lineWidth, lineWidth, blurBoxWidth, blurBoxWidth);
+			}
+
+			// Use Gaussian blur on the box.
+			blurredBox = ImageHelper.blur(blurBox, blurLevel, true, true);
 		}
-
-		// Use Gaussian blur on the box.
-		blurBox = ImageHelper.blur(blurBox, blurLevel, true, true);
 
 		// Remove what was the white lines from the top and left, so we're
 		// keeping only the blur that came off the white lines.
-		blurBox = ImageHelper.copySnippet(blurBox, new IntRectangle(lineWidth, lineWidth, blurLevel + 1, blurLevel + 1));
+		try (Image blurredBoxTemp = blurredBox)
+		{
+			blurredBox = ImageHelper.copySnippet(blurredBoxTemp, new IntRectangle(lineWidth, lineWidth, blurLevel + 1, blurLevel + 1));
+		}
 
 		// Multiply the image by blurBox. Also remove the padded edges off of blurBox.
 		assert image.getType() == ImageType.Grayscale8Bit;
-		try (PixelReaderWriter imagePixels = image.createPixelReaderWriter(); PixelReader blurBoxPixels = blurBox.createPixelReader())
+		try (Image finalBlurBox = blurredBox;
+				PixelReaderWriter imagePixels = image.createPixelReaderWriter();
+				PixelReader blurBoxPixels = finalBlurBox.createPixelReader())
 		{
 			for (int y = 0; y < image.getHeight(); y++)
 				for (int x = 0; x < image.getWidth(); x++)
@@ -1890,7 +1900,7 @@ public class MapCreator implements WarningLogger
 						if (x < image.getWidth() - blurLevel)
 						{
 							// x is between the corners.
-							blurBoxX1 = blurBox.getWidth() - 1;
+							blurBoxX1 = finalBlurBox.getWidth() - 1;
 						}
 						else
 						{
@@ -1911,7 +1921,7 @@ public class MapCreator implements WarningLogger
 						if (x2 < image.getWidth() - blurLevel)
 						{
 							// x2 is between the corners.
-							blurBoxX2 = blurBox.getWidth() - 1;
+							blurBoxX2 = finalBlurBox.getWidth() - 1;
 						}
 						else
 						{
@@ -1930,7 +1940,7 @@ public class MapCreator implements WarningLogger
 					{
 						if (y < image.getHeight() - blurLevel)
 						{
-							blurBoxY1 = blurBox.getHeight() - 1;
+							blurBoxY1 = finalBlurBox.getHeight() - 1;
 						}
 						else
 						{
@@ -1948,7 +1958,7 @@ public class MapCreator implements WarningLogger
 					{
 						if (y2 < image.getHeight() - blurLevel)
 						{
-							blurBoxY2 = blurBox.getHeight() - 1;
+							blurBoxY2 = finalBlurBox.getHeight() - 1;
 						}
 						else
 						{

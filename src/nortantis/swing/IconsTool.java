@@ -1419,26 +1419,29 @@ public class IconsTool extends EditorTool
 			for (int i : new Range(imagesAndMasks.size()))
 			{
 				ImageAndMasks imageAndMasks = imagesAndMasks.get(i);
-				Image image = ImageCache.getInstance(settings.artPack, settings.customImagesPath).getColoredIcon(imageAndMasks, iconColor, filterColor, maximizeOpacity, fillWithColor);
-				image = imageAndMasks.cropToContent(image);
-				int widthForHeight = ImageHelper.getWidthWhenScaledByHeight(image, scaledHeight);
-				int scaledWidth = Math.min(widthForHeight, maxRowWidth);
-				int yExtraForCentering = 0;
-				if (scaledHeight > ImageHelper.getHeightWhenScaledByWidth(image, scaledWidth))
+				Image coloredImage = ImageCache.getInstance(settings.artPack, settings.customImagesPath).getColoredIcon(imageAndMasks, iconColor, filterColor, maximizeOpacity, fillWithColor);
+				try (Image croppedImage = imageAndMasks.cropToContent(coloredImage))
 				{
-					yExtraForCentering = (scaledHeight - ImageHelper.getHeightWhenScaledByWidth(image, scaledWidth)) / 2;
+					int widthForHeight = ImageHelper.getWidthWhenScaledByHeight(croppedImage, scaledHeight);
+					int scaledWidth = Math.min(widthForHeight, maxRowWidth);
+					int yExtraForCentering = 0;
+					if (scaledHeight > ImageHelper.getHeightWhenScaledByWidth(croppedImage, scaledWidth))
+					{
+						yExtraForCentering = (scaledHeight - ImageHelper.getHeightWhenScaledByWidth(croppedImage, scaledWidth)) / 2;
+					}
+					try (Image scaled = ImageHelper.scaleByWidth(croppedImage, scaledWidth, Method.ULTRA_QUALITY))
+					{
+						if (x - padding + scaled.getWidth() > maxRowWidth)
+						{
+							x = padding;
+							y += scaledHeight;
+						}
+
+						p.drawImage(scaled, x, y + yExtraForCentering);
+
+						x += scaled.getWidth() + horizontalPaddingBetweenImages;
+					}
 				}
-				Image scaled = ImageHelper.scaleByWidth(image, scaledWidth, Method.ULTRA_QUALITY);
-
-				if (x - padding + scaled.getWidth() > maxRowWidth)
-				{
-					x = padding;
-					y += scaledHeight;
-				}
-
-				p.drawImage(scaled, x, y + yExtraForCentering);
-
-				x += scaled.getWidth() + horizontalPaddingBetweenImages;
 			}
 		}
 

@@ -752,27 +752,31 @@ public class TextDrawer
 		}
 		int padding = getBackgroundBlendingPadding(getFontHeight(p), text);
 
-		Image textBG = Image.create((int) (textBounds.width + padding * 2), (int) (textBounds.height + padding * 2), ImageType.Grayscale8Bit);
-
-		Point textStartDiffInMaskCausedByCurvatureAndSpacing;
-		try (Painter bP = textBG.createPainter(DrawQuality.High))
+		try (Image textBG = Image.create((int) (textBounds.width + padding * 2), (int) (textBounds.height + padding * 2), ImageType.Grayscale8Bit))
 		{
-			bP.setFont(p.getFont());
-			bP.setColor(Color.white);
-			textStartDiffInMaskCausedByCurvatureAndSpacing = textBoundsBeforeCurvatureAndSpacing.upperLeftCorner().subtract(textBounds.upperLeftCorner());
-			Point drawPointForMask = textStartDiffInMaskCausedByCurvatureAndSpacing.add(new Point(padding, padding + p.getFontAscent()));
-			drawStringCurved(bP, text, name, drawPointForMask, false);
+			Point textStartDiffInMaskCausedByCurvatureAndSpacing;
+			try (Painter bP = textBG.createPainter(DrawQuality.High))
+			{
+				bP.setFont(p.getFont());
+				bP.setColor(Color.white);
+				textStartDiffInMaskCausedByCurvatureAndSpacing = textBoundsBeforeCurvatureAndSpacing.upperLeftCorner().subtract(textBounds.upperLeftCorner());
+				Point drawPointForMask = textStartDiffInMaskCausedByCurvatureAndSpacing.add(new Point(padding, padding + p.getFontAscent()));
+				drawStringCurved(bP, text, name, drawPointForMask, false);
+			}
+
+			// Use convolution to make a hazy background for the text.
+			float[][] kernel = ImageHelper.createGaussianKernel(kernelSize);
+			try (Image haze1 = ImageHelper.convolveGrayscale(textBG, kernel, true, false))
+			{
+				// Threshold it and convolve it again to make the haze bigger.
+				ImageHelper.threshold(haze1, 1);
+				try (Image haze2 = ImageHelper.convolveGrayscale(haze1, kernel, true, false))
+				{
+					ImageHelper.combineImagesWithMaskInRegion(map, landAndOceanBackground, haze2, ((int) Math.round(textStart.x - textStartDiffInMaskCausedByCurvatureAndSpacing.x)) - padding,
+							(int) Math.round(textStart.y - textStartDiffInMaskCausedByCurvatureAndSpacing.y) - p.getFontAscent() - padding, text.angle, pivot);
+				}
+			}
 		}
-
-		// Use convolution to make a hazy background for the text.
-		float[][] kernel = ImageHelper.createGaussianKernel(kernelSize);
-		Image haze = ImageHelper.convolveGrayscale(textBG, kernel, true, false);
-		// Threshold it and convolve it again to make the haze bigger.
-		ImageHelper.threshold(haze, 1);
-		haze = ImageHelper.convolveGrayscale(haze, kernel, true, false);
-
-		ImageHelper.combineImagesWithMaskInRegion(map, landAndOceanBackground, haze, ((int) Math.round(textStart.x - textStartDiffInMaskCausedByCurvatureAndSpacing.x)) - padding,
-				(int) Math.round(textStart.y - textStartDiffInMaskCausedByCurvatureAndSpacing.y) - p.getFontAscent() - padding, text.angle, pivot);
 	}
 
 	private int getBackgroundBlendingKernelSize(int fontHeight, MapText text)
@@ -1467,10 +1471,9 @@ public class TextDrawer
 		}
 
 		boolean originalDrawText = settings.drawText;
-		try
+		try (Image fakeMapThatNothingShouldDrawOn = Image.create(1, 1, ImageType.ARGB))
 		{
 			settings.drawText = false;
-			Image fakeMapThatNothingShouldDrawOn = Image.create(1, 1, ImageType.ARGB);
 			drawText(fakeMapThatNothingShouldDrawOn, graph, settings.edits.text, null);
 		}
 		finally
