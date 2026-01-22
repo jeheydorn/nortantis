@@ -170,6 +170,14 @@ public class ImageAndMasks implements AutoCloseable
 	{
 		Stack<IntPoint> q = new Stack<>();
 
+		// Fill the content mask with white before creating the PixelReaderWriter,
+		// because SkiaPixelReaderWriter caches pixel data at construction time.
+		try (Painter p = contentMask.createPainter())
+		{
+			p.setColor(Color.white);
+			p.fillRect(0, 0, contentMask.getWidth(), contentMask.getHeight());
+		}
+
 		try (PixelReader imagePixels = image.createPixelReader(); PixelReaderWriter contentMaskPixels = contentMask.createPixelReaderWriter())
 		{
 			// Add the 4 corners of contentMask to q if their alpha is below opaqueThreshold.
@@ -188,12 +196,6 @@ public class ImageAndMasks implements AutoCloseable
 			if (imagePixels.getAlpha(contentMask.getWidth() - 1, contentMask.getHeight() - 1) < opaqueThreshold)
 			{
 				q.push(new IntPoint(contentMask.getWidth() - 1, contentMask.getHeight() - 1));
-			}
-
-			try (Painter p = contentMask.createPainter())
-			{
-				p.setColor(Color.white);
-				p.fillRect(0, 0, contentMask.getWidth(), contentMask.getHeight());
 			}
 
 			boolean[][] visited = new boolean[image.getWidth()][image.getHeight()];

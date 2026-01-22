@@ -5,15 +5,12 @@ import nortantis.editor.FreeIcon;
 import nortantis.editor.MapParts;
 import nortantis.geom.Dimension;
 import nortantis.geom.IntRectangle;
-import nortantis.geom.Dimension;
 import nortantis.platform.*;
-import nortantis.platform.awt.AwtFactory;
 import nortantis.platform.skia.SkiaFactory;
 import nortantis.platform.skia.SkiaImage;
 import nortantis.util.Assets;
 import nortantis.util.FileHelper;
 import nortantis.util.ImageHelper;
-import nortantis.util.Stopwatch;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.junit.jupiter.api.BeforeAll;
@@ -24,11 +21,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Random;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import java.util.Random;
 import java.util.function.Consumer;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class SkiaMapCreatorTest
@@ -361,6 +356,45 @@ public class SkiaMapCreatorTest
 	private void createImageDiffIfImagesAreSameSize(Image image1, Image image2, String settingsFileName, int threshold)
 	{
 		MapTestUtil.createImageDiffIfImagesAreSameSize(image1, image2, settingsFileName, threshold, failedMapsFolderName);
+	}
+
+	@Test
+	public void cityContentMaskTest()
+	{
+		// Load a city icon
+		Path iconPath = Paths.get("assets", "installed art pack", "cities", "middle ages", "walled city width=32.png");
+		Image cityIcon = Assets.readImage(iconPath.toString());
+
+		// Create ImageAndMasks with IconType.cities to trigger flood fill content mask creation
+		ImageAndMasks imageAndMasks = new ImageAndMasks(
+			cityIcon,
+			IconType.cities,
+			32.0, // widthFromFileName
+			"installed art pack",
+			"middle ages",
+			"walled city"
+		);
+
+		// Get or create the content mask
+		Image contentMask = imageAndMasks.getOrCreateContentMask();
+
+		// Count white pixels in the content mask
+		int whiteCount = 0;
+		try (PixelReader maskReader = contentMask.createPixelReader())
+		{
+			for (int y = 0; y < contentMask.getHeight(); y++)
+			{
+				for (int x = 0; x < contentMask.getWidth(); x++)
+				{
+					if (maskReader.getGrayLevel(x, y) > 0)
+						whiteCount++;
+				}
+			}
+		}
+
+		// The content mask should have white pixels representing the city icon's content area.
+		// If flood fill fails, the mask will be all black (0 white pixels).
+		assertTrue(whiteCount > 0, "Content mask should have white pixels representing the city icon content area, but found " + whiteCount);
 	}
 
 }

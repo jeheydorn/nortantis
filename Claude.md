@@ -157,4 +157,8 @@ Image (final rendered map)
 - **Rivers:** Flow from high to low elevation along Voronoi edges
 - **Names:** N-gram generation from classic literature (`assets/books/`)
 
+## CPU Vs GPU rendering
+
+When fixing bugs or performance issues caused by differences between CPU versus GPU rendering, try to fix the issue to make GPU rendering work correctly and efficiently rather than suggest switching to or falling back to CPU rendering. If that's not feasable, ask me before switching anything to CPU rendering.
+
 If you discover anything to be incorrect in these instructions, please let me know.

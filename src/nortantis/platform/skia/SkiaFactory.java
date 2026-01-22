@@ -1,6 +1,7 @@
 package nortantis.platform.skia;
 
 import nortantis.platform.*;
+import nortantis.util.Logger;
 import org.jetbrains.skia.Bitmap;
 import org.jetbrains.skia.EncodedImageFormat;
 import org.jetbrains.skia.ImageInfo;
@@ -52,7 +53,11 @@ public class SkiaFactory extends PlatformFactory
 			bitmap.allocPixels(imageInfo);
 
 			// Use readPixels to directly copy pixel data from image to bitmap
-			image.readPixels(bitmap, 0, 0);
+			boolean readSuccess = image.readPixels(bitmap, 0, 0);
+			if (!readSuccess)
+			{
+				Logger.printError("WARNING: image.readPixels failed for " + image.getWidth() + "x" + image.getHeight() + " image");
+			}
 			image.close();
 
 			return new SkiaImage(bitmap, ImageType.ARGB);
