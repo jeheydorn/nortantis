@@ -71,6 +71,14 @@ public class ImageHelper
 	 */
 	public static Image convertToGrayscale(Image img)
 	{
+		// Use shader-based conversion for SkiaImages to ensure consistent results
+		// on both CPU and GPU. The generic convertImageToType approach relies on
+		// the canvas format for conversion, which doesn't work correctly when the
+		// GPU surface uses N32 format instead of GRAY_8.
+		if (img instanceof SkiaImage)
+		{
+			return SkiaShaderOps.convertToGrayscale(img);
+		}
 		return convertImageToType(img, ImageType.Grayscale8Bit);
 	}
 

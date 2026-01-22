@@ -668,7 +668,7 @@ public class SkiaImage extends Image
 					if (ctx == null) return null;
 
 					Surface gpuDestSurface = Surface.Companion.makeRenderTarget(ctx, false,
-						new ImageInfo(targetWidth, targetHeight, ColorType.Companion.getN32(), ColorAlphaType.PREMUL));
+						new ImageInfo(targetWidth, targetHeight, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null));
 					if (gpuDestSurface == null) return null;
 
 					try
@@ -804,7 +804,7 @@ public class SkiaImage extends Image
 					if (ctx == null) return null;
 
 					Surface gpuDestSurface = Surface.Companion.makeRenderTarget(ctx, false,
-						new ImageInfo(targetW, targetH, ColorType.Companion.getN32(), ColorAlphaType.PREMUL));
+						new ImageInfo(targetW, targetH, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null));
 					if (gpuDestSurface == null) return null;
 
 					try

@@ -51,7 +51,7 @@ public class SkiaShaderOps
 		return Surface.Companion.makeRenderTarget(
 			ctx,
 			false,
-			new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.PREMUL)
+			new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null)
 		);
 	}
 
@@ -660,6 +660,93 @@ public class SkiaShaderOps
 		builder.close();
 
 		return new SkiaImage(resultBitmap, resultType);
+	}
+
+	// ==================== convertToGrayscale ====================
+
+	// SkSL shader for RGB to grayscale conversion using standard luminance formula
+	private static final String GRAYSCALE_SKSL = """
+			uniform shader image;
+
+			half4 main(float2 coord) {
+			    half4 c = image.eval(coord);
+			    // Standard luminance formula (ITU-R BT.601)
+			    half gray = 0.299 * c.r + 0.587 * c.g + 0.114 * c.b;
+			    return half4(gray, gray, gray, c.a);
+			}
+			""";
+
+	private static RuntimeEffect grayscaleEffect;
+
+	private static RuntimeEffect getGrayscaleEffect()
+	{
+		if (grayscaleEffect == null)
+		{
+			synchronized (effectLock)
+			{
+				if (grayscaleEffect == null)
+				{
+					grayscaleEffect = RuntimeEffect.Companion.makeForShader(GRAYSCALE_SKSL);
+				}
+			}
+		}
+		return grayscaleEffect;
+	}
+
+	/**
+	 * Converts an image to grayscale using the standard luminance formula.
+	 * This produces consistent results on both CPU and GPU.
+	 */
+	public static Image convertToGrayscale(Image image)
+	{
+		SkiaImage skImage = (SkiaImage) image;
+		int width = image.getWidth();
+		int height = image.getHeight();
+
+		if (GPUExecutor.getInstance().isGPUAvailable() && canUseGPUForSize(width, height))
+		{
+			return GPUExecutor.getInstance().submit(() ->
+				convertToGrayscaleImpl(skImage, width, height, true));
+		}
+		else
+		{
+			return convertToGrayscaleImpl(skImage, width, height, false);
+		}
+	}
+
+	private static Image convertToGrayscaleImpl(SkiaImage skImage, int width, int height, boolean useGPU)
+	{
+		org.jetbrains.skia.Image skiImage = skImage.getSkiaImage();
+		Matrix33 identity = Matrix33.Companion.getIDENTITY();
+		Shader imageShader = skiImage.makeShader(FilterTileMode.CLAMP, FilterTileMode.CLAMP, identity);
+
+		RuntimeEffect effect = getGrayscaleEffect();
+		RuntimeShaderBuilder builder = new RuntimeShaderBuilder(effect);
+		builder.child("image", imageShader);
+		Shader resultShader = builder.makeShader(identity);
+
+		Surface surface = useGPU ? createGPUSurfaceOnGPUThread(width, height) : createCPUSurface(width, height);
+		Canvas canvas = surface.getCanvas();
+
+		Paint paint = new Paint();
+		paint.setShader(resultShader);
+		canvas.drawRect(Rect.makeWH(width, height), paint);
+
+		// Read to a GRAY_8 bitmap for proper grayscale storage
+		surface.flushAndSubmit(true);
+		Bitmap resultBitmap = new Bitmap();
+		ImageInfo grayInfo = new ImageInfo(width, height, ColorType.GRAY_8, ColorAlphaType.OPAQUE, null);
+		resultBitmap.allocPixels(grayInfo);
+		surface.readPixels(resultBitmap, 0, 0);
+
+		// Clean up
+		surface.close();
+		paint.close();
+		resultShader.close();
+		imageShader.close();
+		builder.close();
+
+		return new SkiaImage(resultBitmap, ImageType.Grayscale8Bit);
 	}
 
 	/**

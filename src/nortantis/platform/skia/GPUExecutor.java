@@ -249,7 +249,7 @@ public class GPUExecutor
 				return Surface.Companion.makeRenderTarget(
 					directContext,
 					false, // budgeted
-					new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.PREMUL)
+					new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null)
 				);
 			}
 			catch (Exception e)
@@ -541,7 +541,7 @@ public class GPUExecutor
 					Surface testSurface = Surface.Companion.makeRenderTarget(
 						ctx,
 						false,
-						new ImageInfo(16, 16, ColorType.Companion.getN32(), ColorAlphaType.PREMUL)
+						new ImageInfo(16, 16, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null)
 					);
 					if (testSurface != null)
 					{

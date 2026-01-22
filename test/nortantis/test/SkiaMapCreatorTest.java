@@ -12,6 +12,7 @@ import nortantis.platform.skia.SkiaImage;
 import nortantis.util.Assets;
 import nortantis.util.FileHelper;
 import nortantis.util.ImageHelper;
+import nortantis.util.Stopwatch;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.junit.jupiter.api.BeforeAll;
@@ -220,18 +221,45 @@ public class SkiaMapCreatorTest
 	}
 
 	@Test
-	public void colorizedBackgroundFromTextureTest()
+	public void colorizedBackgroundFromTextureCPUVsGPUTest()
 	{
-		String expectedFileName = "colorizedBackgroundFromTexture";
+		String testName = "colorizedBackgroundFromTexture";
+		Path texturePath = Paths.get("unit test files", "map settings", "custom images", "background textures", "grungy paper.png");
+		Color color = Color.create(217, 203, 156, 255);
 
-		Path texturePath = Paths.get("assets", "installed art pack", "background textures", "grungy paper.png");
-		Image texture = ImageCache.getInstance(Assets.installedArtPack, null).getImageFromFile(texturePath);
-		Image generatedTexture = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(397110878), ImageHelper.convertToGrayscale(texture),
-				1172, 1172);
-		Image grayScaleTexture = ImageHelper.convertToGrayscale(texture);
-		Image actual = ImageHelper.colorify(grayScaleTexture, Color.create(217, 203, 156, 255), ImageHelper.ColorifyAlgorithm.algorithm3);
+		// Generate with CPU
+		Image cpuResult;
+		SkiaImage.setForceCPU(true);
+		try
+		{
+			Image texture = ImageCache.getInstance(Assets.installedArtPack, null).getImageFromFile(texturePath);
+			Image grayScaleTexture = ImageHelper.convertToGrayscale(texture);
+			cpuResult = ImageHelper.colorify(grayScaleTexture, color, ImageHelper.ColorifyAlgorithm.algorithm3);
+		}
+		finally
+		{
+			SkiaImage.setForceCPU(false);
+		}
 
-		compareWithExpected(actual, expectedFileName, 0);
+		// Generate with GPU
+		Image gpuResult;
+		{
+			Image texture = ImageCache.getInstance(Assets.installedArtPack, null).getImageFromFile(texturePath);
+			Image grayScaleTexture = ImageHelper.convertToGrayscale(texture);
+			gpuResult = ImageHelper.colorify(grayScaleTexture, color, ImageHelper.ColorifyAlgorithm.algorithm3);
+		}
+
+		// Compare CPU and GPU results
+		int diffThreshold = 4;
+		String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(cpuResult, gpuResult, diffThreshold);
+		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
+		{
+			FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
+			ImageHelper.write(cpuResult, Paths.get("unit test files", failedMapsFolderName, testName + " - cpu.png").toString());
+			ImageHelper.write(gpuResult, Paths.get("unit test files", failedMapsFolderName, testName + " - gpu.png").toString());
+			createImageDiffIfImagesAreSameSize(cpuResult, gpuResult, testName, diffThreshold);
+			fail("CPU and GPU results differ: " + comparisonErrorMessage);
+		}
 	}
 
 	@Test
