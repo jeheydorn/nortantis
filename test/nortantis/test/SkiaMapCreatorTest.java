@@ -8,6 +8,7 @@ import nortantis.geom.IntRectangle;
 import nortantis.geom.Dimension;
 import nortantis.platform.*;
 import nortantis.platform.skia.SkiaFactory;
+import nortantis.platform.skia.SkiaImage;
 import nortantis.util.Assets;
 import nortantis.util.FileHelper;
 import nortantis.util.ImageHelper;
@@ -75,70 +76,79 @@ public class SkiaMapCreatorTest
 	@Test
 	public void incrementalUpdate_simpleSmallWorld()
 	{
-		// Load settings from the .nort file
-		String settingsFileName = "simpleSmallWorld.nort";
-		String settingsPath = Paths.get("unit test files", "map settings", settingsFileName).toString();
-		MapSettings settings = new MapSettings(settingsPath);
-		settings.resolution = 0.25;
-
-		// Create the full map first (baseline)
-		MapCreator mapCreator = new MapCreator();
-		MapParts mapParts = new MapParts();
-		Image fullMap = mapCreator.createMap(settings, null, mapParts);
-		final int diffThreshold = 10;
-		int failCount = 0;
-
+		// Force CPU rendering to ensure consistent results between full map and incremental updates
+		SkiaImage.setForceCPU(true);
+		try
 		{
-			final int numberToTest = 100;
-			Image fullMapForUpdates = fullMap.deepCopy();
-			int iconNumber = 0;
-			for (FreeIcon icon : settings.edits.freeIcons)
+			// Load settings from the .nort file
+			String settingsFileName = "simpleSmallWorld.nort";
+			String settingsPath = Paths.get("unit test files", "map settings", settingsFileName).toString();
+			MapSettings settings = new MapSettings(settingsPath);
+			settings.resolution = 0.25;
+
+			// Create the full map first (baseline)
+			MapCreator mapCreator = new MapCreator();
+			MapParts mapParts = new MapParts();
+			Image fullMap = mapCreator.createMap(settings, null, mapParts);
+			final int diffThreshold = 10;
+			int failCount = 0;
+
 			{
-				iconNumber++;
-				if (iconNumber > numberToTest)
+				final int numberToTest = 100;
+				Image fullMapForUpdates = fullMap.deepCopy();
+				int iconNumber = 0;
+				for (FreeIcon icon : settings.edits.freeIcons)
 				{
-					break;
+					iconNumber++;
+					if (iconNumber > numberToTest)
+					{
+						break;
+					}
+
+					// System.out.println("Running incremental icon drawing test number " + iconNumber);
+
+					IntRectangle changedBounds = mapCreator.incrementalUpdateIcons(settings, mapParts, fullMapForUpdates, Arrays.asList(icon));
+
+					assertTrue(changedBounds != null, "Incremental update should produce bounds");
+					assertTrue(changedBounds.width > 0);
+					assertTrue(changedBounds.height > 0);
+
+					Image expectedSnippet = fullMap.getSubImage(changedBounds);
+					Image actualSnippet = fullMapForUpdates.getSubImage(changedBounds);
+
+					// Compare incremental result against expected
+					String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(expectedSnippet, actualSnippet, diffThreshold);
+					if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
+					{
+						FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
+
+						String expectedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + iconNumber + " expected.png";
+						Path expectedPath = Paths.get("unit test files", failedMapsFolderName, expectedSnippetName);
+						ImageHelper.write(expectedSnippet, expectedPath.toString());
+
+						String failedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + iconNumber + " failed.png";
+						Path failedPath = Paths.get("unit test files", failedMapsFolderName, failedSnippetName);
+						ImageHelper.write(actualSnippet, failedPath.toString());
+
+						createImageDiffIfImagesAreSameSize(expectedSnippet, actualSnippet, failedSnippetName, diffThreshold);
+						failCount++;
+					}
 				}
 
-				// System.out.println("Running incremental icon drawing test number " + iconNumber);
-
-				IntRectangle changedBounds = mapCreator.incrementalUpdateIcons(settings, mapParts, fullMapForUpdates, Arrays.asList(icon));
-
-				assertTrue(changedBounds != null, "Incremental update should produce bounds");
-				assertTrue(changedBounds.width > 0);
-				assertTrue(changedBounds.height > 0);
-
-				Image expectedSnippet = fullMap.getSubImage(changedBounds);
-				Image actualSnippet = fullMapForUpdates.getSubImage(changedBounds);
-
-				// Compare incremental result against expected
-				String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(expectedSnippet, actualSnippet, diffThreshold);
+				String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(fullMap, fullMapForUpdates, diffThreshold);
 				if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
 				{
 					FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
-
-					String expectedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + iconNumber + " expected.png";
-					Path expectedPath = Paths.get("unit test files", failedMapsFolderName, expectedSnippetName);
-					ImageHelper.write(expectedSnippet, expectedPath.toString());
-
-					String failedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + iconNumber + " failed.png";
-					Path failedPath = Paths.get("unit test files", failedMapsFolderName, failedSnippetName);
-					ImageHelper.write(actualSnippet, failedPath.toString());
-
-					createImageDiffIfImagesAreSameSize(expectedSnippet, actualSnippet, failedSnippetName, diffThreshold);
-					failCount++;
+					String failedMapName = FilenameUtils.getBaseName(settingsFileName) + " full map for incremental draw test";
+					ImageHelper.write(fullMapForUpdates, MapTestUtil.getFailedMapFilePath(failedMapName, failedMapsFolderName));
+					createImageDiffIfImagesAreSameSize(fullMap, fullMapForUpdates, failedMapName, diffThreshold);
+					fail("Incremental update did not match expected image: " + comparisonErrorMessage);
 				}
 			}
-
-			String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(fullMap, fullMapForUpdates, diffThreshold);
-			if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
-			{
-				FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
-				String failedMapName = FilenameUtils.getBaseName(settingsFileName) + " full map for incremental draw test";
-				ImageHelper.write(fullMapForUpdates, MapTestUtil.getFailedMapFilePath(failedMapName, failedMapsFolderName));
-				createImageDiffIfImagesAreSameSize(fullMap, fullMapForUpdates, failedMapName, diffThreshold);
-				fail("Incremental update did not match expected image: " + comparisonErrorMessage);
-			}
+		}
+		finally
+		{
+			SkiaImage.setForceCPU(false);
 		}
 	}
 

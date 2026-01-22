@@ -34,6 +34,9 @@ public class SkiaImage extends Image
 
 	private static final int GPU_THRESHOLD_PIXELS = 256 * 256;
 
+	// When true, forces all images to use CPU rendering regardless of size
+	private static volatile boolean forceCPU = false;
+
 	// Track active GPU batching painters for await before pixel access
 	private final Set<GPUBatchingPainter> activePainters = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
@@ -146,12 +149,30 @@ public class SkiaImage extends Image
 	}
 
 	/**
+	 * Forces all SkiaImage instances to use CPU rendering regardless of size.
+	 * Useful for tests that need deterministic rendering behavior.
+	 */
+	public static void setForceCPU(boolean force)
+	{
+		forceCPU = force;
+	}
+
+	public static boolean isForceCPU()
+	{
+		return forceCPU;
+	}
+
+	/**
 	 * Determines if this image should use GPU acceleration based on size and availability.
 	 * Uses GPU for medium-sized images, but falls back to CPU for very large images
 	 * that exceed the GPU's maximum texture size.
 	 */
 	private boolean shouldUseGPU()
 	{
+		if (forceCPU)
+		{
+			return false;
+		}
 		if (!GPUExecutor.getInstance().isGPUAvailable())
 		{
 			return false;

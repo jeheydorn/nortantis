@@ -68,7 +68,7 @@ src/nortantis/
 ```java
 // Switch between AWT and SKia rendering:
 PlatformFactory.setInstance(new AwtFactory());    // CPU-only
-PlatformFactory.setInstance(new SkiaFactory());   // Can run on CPU or GPU. See SkiaImage.shouldUseGPU()
+PlatformFactory.setInstance(new SkiaFactory());   // Can run on CPU or GPU. See SkiaImage.shouldUseGPU(). Note that small images are processed on the CPU for performance, according to SkiaImage.GPU_THRESHOLD_PIXELS.
 ```
 
 ### Resource Management
@@ -82,8 +82,8 @@ Use try-with-resources for Image whenever feasible.
 
 ## Testing
 
-Tests run for both CPU (AWT) and GPU (Skia) backends:
-- `MapCreatorTest` - Awt rendering tests. Currently disabled.
+Important tests:
+- `MapCreatorTest` - Awt rendering tests. These tests are very slow, so only run them as needed, and only when testing AWT changes or changes that can affect both Skia and AWT.
 - `SkiaMapCreatorTest` - Test map creation with Skia. Good for testing GPU if enabled.
 - `ImageHelperTest` - Test ImageHelper in Skia
 - `SkiaPainterTest` - Test basic Skia rendering
