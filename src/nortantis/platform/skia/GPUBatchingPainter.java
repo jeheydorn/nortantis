@@ -296,20 +296,33 @@ public class GPUBatchingPainter extends Painter
 			}
 		});
 
-		pendingFutures.add(future);
+		synchronized (pendingFutures)
+		{
+			pendingFutures.add(future);
 
-		// Clean up completed futures periodically
-		pendingFutures.removeIf(CompletableFuture::isDone);
+			// Clean up completed futures periodically
+			pendingFutures.removeIf(CompletableFuture::isDone);
+		}
 	}
 
 	@Override
 	public void await()
 	{
-		// Flush any remaining operations
-		flushBatch();
+		List<CompletableFuture<Void>> futuresToWait;
 
-		// Wait for all pending futures
-		for (CompletableFuture<Void> future : pendingFutures)
+		synchronized (pendingFutures)
+		{
+			// Flush any remaining operations
+			flushBatch();
+
+			// Take a snapshot and clear to avoid ConcurrentModificationException
+			// if another thread calls flushBatch while we're waiting
+			futuresToWait = new ArrayList<>(pendingFutures);
+			pendingFutures.clear();
+		}
+
+		// Wait for all pending futures (outside synchronized block)
+		for (CompletableFuture<Void> future : futuresToWait)
 		{
 			try
 			{
@@ -320,7 +333,6 @@ public class GPUBatchingPainter extends Painter
 				Logger.printError("GPUBatchingPainter: Error waiting for batch", e);
 			}
 		}
-		pendingFutures.clear();
 	}
 
 	@Override
