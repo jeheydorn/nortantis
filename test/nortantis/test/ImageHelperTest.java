@@ -5,6 +5,7 @@ import nortantis.geom.IntPoint;
 import nortantis.geom.IntRectangle;
 import nortantis.geom.Point;
 import nortantis.platform.*;
+import nortantis.platform.awt.AwtFactory;
 import nortantis.platform.skia.SkiaFactory;
 import nortantis.util.*;
 import nortantis.util.ImageHelper.ColorifyAlgorithm;
@@ -133,6 +134,23 @@ public class ImageHelperTest
 		IntRectangle bounds = new IntRectangle(25, 25, 50, 50);
 		ImageHelper.scaleInto(source, target, bounds);
 		compareWithExpected(target, "scaleIntoWithBounds");
+	}
+
+	@Test
+	public void testScaleIntoSkiaSourceAwtTarget()
+	{
+		// Create source using Skia (already the active factory)
+		Image source = createColorTestImage();
+
+		// Create target using Awt factory directly
+		AwtFactory awtFactory = new AwtFactory();
+		Image target = awtFactory.createImage(50, 50, ImageType.RGB);
+
+		ImageHelper.scaleInto(source, target, null);
+
+		// Compare using cross-factory comparison helper since target is AwtImage
+		// but the current PlatformFactory is SkiaFactory
+		compareAwtImageWithExpected(target, awtFactory, "scaleIntoSkiaSourceAwtTarget");
 	}
 
 	// ==================== Copy Snippet Tests ====================
@@ -945,6 +963,35 @@ public class ImageHelperTest
 			FileHelper.createFolder(Paths.get("unit test files", failedFolderName).toString());
 			ImageHelper.write(actual, getFailedFilePath(testName));
 			MapTestUtil.createImageDiffIfImagesAreSameSize(expected, actual, testName, threshold, failedFolderName);
+			fail("Test '" + testName + "' failed: " + comparisonErrorMessage);
+		}
+	}
+
+	/**
+	 * Compare an AwtImage with expected, using AwtFactory for I/O operations.
+	 * This is needed when testing cross-factory scenarios where the current PlatformFactory is Skia
+	 * but the image being tested is an AwtImage.
+	 */
+	private void compareAwtImageWithExpected(Image actual, AwtFactory awtFactory, String testName)
+	{
+		String expectedFilePath = getExpectedFilePath(testName);
+		Image expected;
+
+		if (new File(expectedFilePath).exists())
+		{
+			expected = awtFactory.readImage(expectedFilePath);
+		}
+		else
+		{
+			awtFactory.writeImage(actual, expectedFilePath);
+			return;
+		}
+
+		String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(expected, actual, 0);
+		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
+		{
+			FileHelper.createFolder(Paths.get("unit test files", failedFolderName).toString());
+			awtFactory.writeImage(actual, getFailedFilePath(testName));
 			fail("Test '" + testName + "' failed: " + comparisonErrorMessage);
 		}
 	}
