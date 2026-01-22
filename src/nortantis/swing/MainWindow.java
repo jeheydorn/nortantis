@@ -1479,7 +1479,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					// image.
 					if (mapEditingPanel.mapFromMapCreator != mapEditingPanel.getImage())
 					{
-						ImageHelper.scaleInto(AwtBridge.fromBufferedImage(mapEditingPanel.mapFromMapCreator), AwtBridge.fromBufferedImage(mapEditingPanel.getImage()), incrementalChangeArea);
+						// Use wrapBufferedImage for the target so changes write back to the display BufferedImage.
+						// fromBufferedImage would create a copy when using SkiaFactory, losing the changes.
+						ImageHelper.scaleInto(AwtBridge.fromBufferedImage(mapEditingPanel.mapFromMapCreator), AwtBridge.wrapBufferedImage(mapEditingPanel.getImage()), incrementalChangeArea);
 					}
 				}
 			}

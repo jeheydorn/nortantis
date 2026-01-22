@@ -152,6 +152,24 @@ public class AwtBridge
 	}
 
 	/**
+	 * Wraps a BufferedImage in an AwtImage without converting to the platform type.
+	 * Use this when you need to write back to the original BufferedImage
+	 * (e.g., for incremental updates to a display image).
+	 *
+	 * Unlike fromBufferedImage, this does NOT convert to SkiaImage when using SkiaFactory,
+	 * so changes written to the returned Image will be reflected in the original BufferedImage.
+	 */
+	public static Image wrapBufferedImage(BufferedImage image)
+	{
+		if (image == null)
+		{
+			return null;
+		}
+
+		return new AwtImage(image);
+	}
+
+	/**
 	 * Converts any platform Color to a java.awt.Color for use with Swing components.
 	 */
 	public static java.awt.Color toAwtColor(Color color)
