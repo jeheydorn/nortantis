@@ -51,6 +51,28 @@ public class SkiaMapCreatorTest
 	}
 
 	@Test
+	public void simpleSmallWorldUpperRightQuadrant()
+	{
+		String settingsFileName = "simpleSmallWorld.nort";
+		String settingsPath = Paths.get("unit test files", "map settings", settingsFileName).toString();
+		MapSettings settings = new MapSettings(settingsPath);
+		settings.resolution = 0.25;
+
+		MapCreator mapCreator = new MapCreator();
+		Image fullMap = mapCreator.createMap(settings, null, null);
+
+		// Extract upper-right quadrant
+		int quadrantWidth = fullMap.getWidth() / 2;
+		int quadrantHeight = fullMap.getHeight() / 2;
+		int quadrantX = fullMap.getWidth() - quadrantWidth;
+		int quadrantY = 0;
+		IntRectangle upperRightBounds = new IntRectangle(quadrantX, quadrantY, quadrantWidth, quadrantHeight);
+		Image upperRightQuadrant = fullMap.getSubImage(upperRightBounds);
+
+		compareWithExpected(upperRightQuadrant, "simpleSmallWorldUpperRightQuadrant", threshold);
+	}
+
+	@Test
 	public void incrementalUpdate_simpleSmallWorld()
 	{
 		// Load settings from the .nort file
