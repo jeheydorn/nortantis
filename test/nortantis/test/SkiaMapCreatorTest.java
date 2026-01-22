@@ -7,6 +7,7 @@ import nortantis.geom.Dimension;
 import nortantis.geom.IntRectangle;
 import nortantis.geom.Dimension;
 import nortantis.platform.*;
+import nortantis.platform.awt.AwtFactory;
 import nortantis.platform.skia.SkiaFactory;
 import nortantis.platform.skia.SkiaImage;
 import nortantis.util.Assets;
@@ -53,25 +54,56 @@ public class SkiaMapCreatorTest
 	}
 
 	@Test
-	public void simpleSmallWorldUpperRightQuadrant()
+	public void simpleSmallWorldUpperRightQuadrant_SkiaVsAwt()
 	{
+		String testName = "simpleSmallWorldUpperRightQuadrant_SkiaVsAwt";
 		String settingsFileName = "simpleSmallWorld.nort";
 		String settingsPath = Paths.get("unit test files", "map settings", settingsFileName).toString();
-		MapSettings settings = new MapSettings(settingsPath);
-		settings.resolution = 0.25;
 
-		MapCreator mapCreator = new MapCreator();
-		Image fullMap = mapCreator.createMap(settings, null, null);
+		// Generate with Skia and save to file
+		{
+			PlatformFactory.setInstance(new SkiaFactory());
+			MapSettings settings = new MapSettings(settingsPath);
+			settings.resolution = 0.25;
 
-		// Extract upper-right quadrant
-		int quadrantWidth = fullMap.getWidth() / 2;
-		int quadrantHeight = fullMap.getHeight() / 2;
-		int quadrantX = fullMap.getWidth() - quadrantWidth;
-		int quadrantY = 0;
-		IntRectangle upperRightBounds = new IntRectangle(quadrantX, quadrantY, quadrantWidth, quadrantHeight);
-		Image upperRightQuadrant = fullMap.getSubImage(upperRightBounds);
+			MapCreator mapCreator = new MapCreator();
+			Image fullMap = mapCreator.createMap(settings, null, null);
 
-		compareWithExpected(upperRightQuadrant, "simpleSmallWorldUpperRightQuadrant", threshold);
+			// Extract upper-right quadrant
+			int quadrantWidth = fullMap.getWidth() / 2;
+			int quadrantHeight = fullMap.getHeight() / 2;
+			int quadrantX = fullMap.getWidth() - quadrantWidth;
+			int quadrantY = 0;
+			IntRectangle upperRightBounds = new IntRectangle(quadrantX, quadrantY, quadrantWidth, quadrantHeight);
+			Image skiaQuadrant = fullMap.copySubImage(upperRightBounds, false);
+
+			FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
+			ImageHelper.write(skiaQuadrant, Paths.get("unit test files", failedMapsFolderName, testName + " - skia.png").toString());
+		}
+
+		// The Skia image is saved to disk. Compare it against the expected AWT image.
+		// We can't generate AWT in the same JVM because static Color constants (Color.white, etc.)
+		// are platform-specific and were already initialized with Skia.
+		// Instead, compare against the expected AWT image that was pre-generated.
+		Image skiaQuadrant = Assets.readImage(Paths.get("unit test files", failedMapsFolderName, testName + " - skia.png").toString());
+		String expectedAwtPath = Paths.get("unit test files", expectedMapsFolderName, testName + " - awt.png").toString();
+
+		if (!new File(expectedAwtPath).exists())
+		{
+			fail("Expected AWT image not found at: " + expectedAwtPath +
+				 ". Generate it by running MapCreatorTest.simpleSmallWorldUpperRightQuadrant() or manually.");
+		}
+
+		Image awtQuadrant = Assets.readImage(expectedAwtPath);
+
+		// Compare Skia and AWT results
+		int diffThreshold = 4;
+		String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(skiaQuadrant, awtQuadrant, diffThreshold);
+		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
+		{
+			createImageDiffIfImagesAreSameSize(skiaQuadrant, awtQuadrant, testName, diffThreshold);
+			fail("Skia and AWT results differ: " + comparisonErrorMessage);
+		}
 	}
 
 	@Test
