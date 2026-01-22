@@ -166,6 +166,11 @@ public class ImageHelper
 		double scale = ((double) target.getWidth()) / ((double) source.getWidth());
 
 		IntRectangle pixelsToUpdate;
+		int sourceMinX = boundsInSource != null ? boundsInSource.x : 0;
+		int sourceMinY = boundsInSource != null ? boundsInSource.y : 0;
+		int sourceMaxX = boundsInSource != null ? boundsInSource.x + boundsInSource.width - 1 : source.getWidth() - 1;
+		int sourceMaxY = boundsInSource != null ? boundsInSource.y + boundsInSource.height - 1 : source.getHeight() - 1;
+
 		if (boundsInSource == null)
 		{
 			pixelsToUpdate = new IntRectangle(0, 0, target.getWidth(), target.getHeight());
@@ -186,10 +191,10 @@ public class ImageHelper
 			{
 				for (int x = pixelsToUpdate.x; x < pixelsToUpdate.x + pixelsToUpdate.width; x++)
 				{
-					int x1 = (int) (x / scale);
-					int y1 = (int) (y / scale);
-					int x2 = Math.min(x1 + 1, source.getWidth() - 1);
-					int y2 = Math.min(y1 + 1, source.getHeight() - 1);
+					int x1 = Math.max(sourceMinX, (int) (x / scale));
+					int y1 = Math.max(sourceMinY, (int) (y / scale));
+					int x2 = Math.min(x1 + 1, sourceMaxX);
+					int y2 = Math.min(y1 + 1, sourceMaxY);
 					double dx = x / scale - x1;
 					double dy = y / scale - y1;
 					Color c00 = Color.create(sourcePixels.getRGB(x1, y1), sourceHasAlpha);
