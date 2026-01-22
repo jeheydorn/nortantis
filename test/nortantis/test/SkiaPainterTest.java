@@ -1039,6 +1039,148 @@ public class SkiaPainterTest
 		compareWithExpected(image, "pixelReaderWriterBinary");
 	}
 
+	// ==================== Anti-aliased Stroke Tests ====================
+	// These tests are designed to detect differences between CPU and GPU rendering,
+	// particularly for anti-aliased strokes like roads, coastlines, and rivers.
+
+	@Test
+	public void testAntiAliasedStrokesOnARGB()
+	{
+		// Create a larger image that will use GPU if available (> 256x256 threshold)
+		Image image = Image.create(300, 300, ImageType.ARGB);
+
+		// Fill with a background color
+		try (Painter painter = image.createPainter(DrawQuality.High))
+		{
+			painter.setColor(createColor(220, 210, 180)); // Parchment-like color
+			painter.fillRect(0, 0, 300, 300);
+
+			// Draw strokes similar to roads (dark brown)
+			painter.setColor(createColor(80, 60, 40));
+			painter.setBasicStroke(3.0f);
+			painter.drawLine(20, 150, 280, 150); // Horizontal
+			painter.drawLine(150, 20, 150, 280); // Vertical
+			painter.drawLine(30, 30, 270, 270); // Diagonal
+
+			// Draw strokes similar to coastlines (dark)
+			painter.setColor(createColor(60, 50, 40));
+			painter.setBasicStroke(2.0f);
+			int[] coastX = {20, 50, 80, 100, 130, 160, 180, 200, 230, 260, 280};
+			int[] coastY = {80, 70, 85, 65, 75, 60, 70, 55, 65, 50, 60};
+			painter.drawPolyline(coastX, coastY);
+
+			// Draw strokes similar to rivers (blue)
+			painter.setColor(createColor(60, 90, 140));
+			painter.setBasicStroke(2.5f);
+			int[] riverX = {40, 60, 90, 120, 150, 180, 210, 250};
+			int[] riverY = {250, 230, 245, 220, 235, 210, 225, 200};
+			painter.drawPolyline(riverX, riverY);
+		}
+
+		compareWithExpected(image, "antiAliasedStrokesOnARGB");
+	}
+
+	@Test
+	public void testAntiAliasedStrokesOnRGB()
+	{
+		// Create a larger image that will use GPU if available (> 256x256 threshold)
+		Image image = Image.create(300, 300, ImageType.RGB);
+
+		// Fill with a background color
+		try (Painter painter = image.createPainter(DrawQuality.High))
+		{
+			painter.setColor(createColor(220, 210, 180)); // Parchment-like color
+			painter.fillRect(0, 0, 300, 300);
+
+			// Draw strokes similar to roads (dark brown)
+			painter.setColor(createColor(80, 60, 40));
+			painter.setBasicStroke(3.0f);
+			painter.drawLine(20, 150, 280, 150); // Horizontal
+			painter.drawLine(150, 20, 150, 280); // Vertical
+			painter.drawLine(30, 30, 270, 270); // Diagonal
+
+			// Draw strokes similar to coastlines (dark)
+			painter.setColor(createColor(60, 50, 40));
+			painter.setBasicStroke(2.0f);
+			int[] coastX = {20, 50, 80, 100, 130, 160, 180, 200, 230, 260, 280};
+			int[] coastY = {80, 70, 85, 65, 75, 60, 70, 55, 65, 50, 60};
+			painter.drawPolyline(coastX, coastY);
+
+			// Draw strokes similar to rivers (blue)
+			painter.setColor(createColor(60, 90, 140));
+			painter.setBasicStroke(2.5f);
+			int[] riverX = {40, 60, 90, 120, 150, 180, 210, 250};
+			int[] riverY = {250, 230, 245, 220, 235, 210, 225, 200};
+			painter.drawPolyline(riverX, riverY);
+		}
+
+		compareWithExpected(image, "antiAliasedStrokesOnRGB");
+	}
+
+	@Test
+	public void testImageCompositing()
+	{
+		// Test that draws images onto a larger canvas to detect compositing differences
+		Image canvas = Image.create(300, 300, ImageType.ARGB);
+		Image sourceImage = Image.create(100, 100, ImageType.ARGB);
+
+		// Create a source image with semi-transparent colors
+		try (Painter p = sourceImage.createPainter(DrawQuality.High))
+		{
+			p.setColor(createColor(255, 0, 0, 200)); // Semi-transparent red
+			p.fillRect(0, 0, 100, 100);
+			p.setColor(createColor(0, 255, 0, 150)); // Semi-transparent green
+			p.fillOval(20, 20, 60, 60);
+		}
+
+		// Draw the source image onto the canvas multiple times
+		try (Painter painter = canvas.createPainter(DrawQuality.High))
+		{
+			// Background
+			painter.setColor(createColor(220, 210, 180));
+			painter.fillRect(0, 0, 300, 300);
+
+			// Draw source image at different positions
+			painter.drawImage(sourceImage, 20, 20);
+			painter.drawImage(sourceImage, 120, 120);
+			painter.drawImage(sourceImage, 180, 50);
+		}
+
+		compareWithExpected(canvas, "imageCompositing");
+	}
+
+	@Test
+	public void testSemiTransparentOverlay()
+	{
+		// Test drawing semi-transparent shapes to detect alpha blending differences
+		Image image = Image.create(300, 300, ImageType.ARGB);
+
+		try (Painter painter = image.createPainter(DrawQuality.High))
+		{
+			// Background
+			painter.setColor(createColor(220, 210, 180));
+			painter.fillRect(0, 0, 300, 300);
+
+			// Draw overlapping semi-transparent shapes
+			painter.setColor(createColor(255, 0, 0, 128)); // 50% red
+			painter.fillRect(50, 50, 150, 150);
+
+			painter.setColor(createColor(0, 255, 0, 128)); // 50% green
+			painter.fillRect(100, 100, 150, 150);
+
+			painter.setColor(createColor(0, 0, 255, 128)); // 50% blue
+			painter.fillRect(75, 125, 150, 100);
+
+			// Draw some strokes on top with alpha
+			painter.setColor(createColor(0, 0, 0, 180)); // Semi-transparent black
+			painter.setBasicStroke(4.0f);
+			painter.drawLine(30, 30, 270, 270);
+			painter.drawLine(30, 270, 270, 30);
+		}
+
+		compareWithExpected(image, "semiTransparentOverlay");
+	}
+
 	// ==================== Combined Test ====================
 
 	@Test

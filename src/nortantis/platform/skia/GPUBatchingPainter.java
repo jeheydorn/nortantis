@@ -417,6 +417,9 @@ public class GPUBatchingPainter extends Painter
 		}
 		trackedShader = null; // Clear gradient
 		trackedColor = color.getRGB();
+		// Extract alpha from the color to ensure semi-transparent colors work correctly.
+		// Without this, toPaint()'s paint.setAlpha(alpha) would overwrite the color's alpha.
+		trackedAlpha = color.getAlpha();
 		checkPaintStateChange();
 	}
 

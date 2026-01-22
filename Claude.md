@@ -130,6 +130,8 @@ The benchmark creates maps using settings from `unit test files/map settings/sim
 
 ## Map Generation Pipeline
 
+For "full" draws:
+
 ```
 MapSettings (.nort file)
   ↓
@@ -144,6 +146,9 @@ MapCreator.createMap()
   ↓
 Image (final rendered map)
 ```
+
+"Incremental" draws update only part of the map, going through one of the MapCreator.incrementalUpdate\* methods. Incremental draws or what allows the editor to quickly update the map in near real time while the user is drawing or changing text.
+
 
 ## Key Algorithms
 
