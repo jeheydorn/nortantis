@@ -625,8 +625,7 @@ public class SkiaImage extends Image
 			height = Math.max(1, height);
 		}
 
-		// TODO Figure out why the lower quality scaling in this method is not faster. I'll need to remove the || true part to use it.
-		if (method == Method.ULTRA_QUALITY || method == Method.QUALITY || true)
+		if (method == Method.ULTRA_QUALITY || method == Method.QUALITY || method == Method.BALANCED)
 		{
 			return scaleHighQuality(width, height);
 		}
