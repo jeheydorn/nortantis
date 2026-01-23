@@ -377,26 +377,6 @@ public class ImageHelper
 	}
 
 	/**
-	 * Multiplies each pixel by the given scale. The image must be a supported grayscale type
-	 */
-	public static void scaleGrayLevels(Image image, float scale)
-	{
-		if (!image.isGrayscaleOrBinary())
-			throw new IllegalArgumentException("Image type must a supported grayscale type, but was " + image.getType());
-
-		try (PixelReaderWriter pixels = image.createPixelReaderWriter())
-		{
-			for (int y = 0; y < image.getHeight(); y++)
-				for (int x = 0; x < image.getWidth(); x++)
-				{
-					double value = pixels.getGrayLevel(x, y);
-					int newValue = (int) (value * scale);
-					pixels.setGrayLevel(x, y, newValue);
-				}
-		}
-	}
-
-	/**
 	 * Normalizes the kernel such that the sum of its elements is 1.
 	 */
 	public static void normalize(float[][] kernel)
@@ -691,6 +671,13 @@ public class ImageHelper
 		if (image.getHeight() != mask.getHeight())
 			throw new IllegalArgumentException();
 
+		// Use Skia shader implementation for better performance when available
+		// Only for Grayscale8Bit masks (not Binary) since the shader doesn't handle Binary specially
+		if (SkiaShaderOps.shouldRunOnGPU(image, colorIndexes, mask) && mask.getType() == ImageType.Grayscale8Bit)
+		{
+			return SkiaShaderOps.maskWithMultipleColors(image, colors, colorIndexes, mask, invertMask);
+		}
+
 		Image result = Image.create(image.getWidth(), image.getHeight(), image.getType());
 
 		int numTasks = ThreadHelper.getInstance().getThreadCount();
@@ -880,6 +867,12 @@ public class ImageHelper
 		if (!target.size().equals(alphaSource.size()))
 		{
 			throw new IllegalArgumentException("target and alphaSource are different sizes.");
+		}
+
+		// Use Skia shader implementation for better performance when available
+		if (SkiaShaderOps.shouldRunOnGPU(target, alphaSource))
+		{
+			return SkiaShaderOps.copyAlphaTo(target, alphaSource);
 		}
 
 		Image result = Image.create(target.getWidth(), target.getHeight(), ImageType.ARGB);
@@ -1611,6 +1604,13 @@ public class ImageHelper
 			where = new IntPoint(0, 0);
 		}
 
+		// Use Skia shader implementation when there's no offset and images are GPU-backed
+		if (where.x == 0 && where.y == 0 && image.getWidth() == colorIndexes.getWidth() && image.getHeight() == colorIndexes.getHeight()
+				&& SkiaShaderOps.shouldRunOnGPU(image, colorIndexes) && how != ColorifyAlgorithm.none)
+		{
+			return SkiaShaderOps.colorifyMulti(image, colorMap, colorIndexes, how);
+		}
+
 		Image result = Image.create(colorIndexes.getWidth(), colorIndexes.getHeight(), ImageType.RGB);
 
 		Map<Integer, float[]> hsbMap = new HashMap<>();
@@ -1938,30 +1938,6 @@ public class ImageHelper
 					{
 						imagePixels.setGrayLevel(x, y, 0);
 					}
-				}
-		}
-	}
-
-	public static void add(Image target, Image other)
-	{
-		if (!target.isGrayscaleOrBinary())
-		{
-			throw new IllegalArgumentException("Unsupported target image type for target: " + target.getType());
-		}
-		if (!other.isGrayscaleOrBinary())
-		{
-			throw new IllegalArgumentException("Unsupported other image type for target: " + other.getType());
-		}
-
-		int maxPixelValue = target.getMaxPixelLevel();
-		try (PixelReaderWriter targetPixels = target.createPixelReaderWriter(); PixelReader otherPixels = other.createPixelReader())
-		{
-			for (int y = 0; y < target.getHeight(); y++)
-				for (int x = 0; x < target.getWidth(); x++)
-				{
-					double value = (int) targetPixels.getGrayLevel(x, y);
-					double otherValue = (int) otherPixels.getGrayLevel(x, y);
-					targetPixels.setGrayLevel(x, y, (int) Math.min(maxPixelValue, value + otherValue));
 				}
 		}
 	}

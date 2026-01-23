@@ -1,6 +1,7 @@
 package nortantis.test;
 
 import nortantis.util.Stopwatch;
+import nortantis.WorldGraph;
 import nortantis.geom.IntPoint;
 import nortantis.geom.IntRectangle;
 import nortantis.geom.Point;
@@ -16,6 +17,8 @@ import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -339,6 +342,116 @@ public class ImageHelperTest
 		compareWithExpected(image, "drawMaskOntoImage");
 	}
 
+	@Test
+	public void testMaskWithMultipleColors()
+	{
+		// Create a grayscale base image
+		Image image = createGrayscaleTestImage();
+
+		// Create a map of region IDs to colors
+		Map<Integer, Color> colors = new HashMap<>();
+		colors.put(0, Color.red);
+		colors.put(1, Color.green);
+		colors.put(2, Color.blue);
+		colors.put(3, Color.yellow);
+
+		// Create colorIndexes image where each quadrant has a different region ID encoded as RGB
+		Image colorIndexes = createColorIndexesImage();
+
+		// Create a gradient mask
+		Image mask = createGradientMask();
+
+		Image result = ImageHelper.maskWithMultipleColors(image, colors, colorIndexes, mask, false);
+		compareWithExpected(result, "maskWithMultipleColors");
+	}
+
+	@Test
+	public void testMaskWithMultipleColorsInverted()
+	{
+		Image image = createGrayscaleTestImage();
+
+		Map<Integer, Color> colors = new HashMap<>();
+		colors.put(0, Color.red);
+		colors.put(1, Color.green);
+		colors.put(2, Color.blue);
+		colors.put(3, Color.yellow);
+
+		Image colorIndexes = createColorIndexesImage();
+		Image mask = createGradientMask();
+
+		Image result = ImageHelper.maskWithMultipleColors(image, colors, colorIndexes, mask, true);
+		compareWithExpected(result, "maskWithMultipleColorsInverted");
+	}
+
+	@Test
+	public void testMaskWithMultipleColorsLargeRegionIds()
+	{
+		// Test with region IDs that require full RGB encoding (simulating real-world usage)
+		Image image = createGrayscaleTestImage();
+
+		Map<Integer, Color> colors = new HashMap<>();
+		// Use larger region IDs to test RGB encoding
+		colors.put(256, Color.red);     // Requires green channel
+		colors.put(512, Color.green);   // Requires green channel
+		colors.put(1000, Color.blue);   // Requires green+blue channels
+		colors.put(5000, Color.cyan);   // Requires green+blue channels
+
+		// Create colorIndexes with these larger IDs
+		Image colorIndexes = createColorIndexesImageWithIds(256, 512, 1000, 5000);
+		Image mask = createGradientMask();
+
+		Image result = ImageHelper.maskWithMultipleColors(image, colors, colorIndexes, mask, false);
+		compareWithExpected(result, "maskWithMultipleColorsLargeIds");
+	}
+
+	@Test
+	public void testMaskWithMultipleColorsGPU()
+	{
+		// Test with images large enough to trigger GPU path (>= 256x256 = 65536 pixels)
+		final int gpuTestSize = 300;
+
+		Image image = createGrayscaleTestImageOfSize(gpuTestSize, gpuTestSize);
+
+		Map<Integer, Color> colors = new HashMap<>();
+		colors.put(0, Color.red);
+		colors.put(1, Color.green);
+		colors.put(2, Color.blue);
+		colors.put(3, Color.yellow);
+
+		Image colorIndexes = createColorIndexesImageOfSize(gpuTestSize, gpuTestSize, 0, 1, 2, 3);
+		Image mask = createGradientMaskOfSize(gpuTestSize, gpuTestSize);
+
+		Image result = ImageHelper.maskWithMultipleColors(image, colors, colorIndexes, mask, false);
+
+		assertEquals(gpuTestSize, result.getWidth());
+		assertEquals(gpuTestSize, result.getHeight());
+		compareWithExpected(result, "maskWithMultipleColorsGPU");
+	}
+
+	@Test
+	public void testMaskWithMultipleColorsGPUInverted()
+	{
+		// Test inverted mask with GPU path
+		final int gpuTestSize = 300;
+
+		Image image = createGrayscaleTestImageOfSize(gpuTestSize, gpuTestSize);
+
+		Map<Integer, Color> colors = new HashMap<>();
+		colors.put(0, Color.red);
+		colors.put(1, Color.green);
+		colors.put(2, Color.blue);
+		colors.put(3, Color.yellow);
+
+		Image colorIndexes = createColorIndexesImageOfSize(gpuTestSize, gpuTestSize, 0, 1, 2, 3);
+		Image mask = createGradientMaskOfSize(gpuTestSize, gpuTestSize);
+
+		Image result = ImageHelper.maskWithMultipleColors(image, colors, colorIndexes, mask, true);
+
+		assertEquals(gpuTestSize, result.getWidth());
+		assertEquals(gpuTestSize, result.getHeight());
+		compareWithExpected(result, "maskWithMultipleColorsGPUInverted");
+	}
+
 	// ==================== Alpha Tests ====================
 
 	@Test
@@ -403,6 +516,24 @@ public class ImageHelperTest
 		assertEquals(ImageType.ARGB, result.getType(), "Result should have alpha channel");
 		// Use threshold due to alpha premultiplication differences in PNG round-trip
 		compareWithExpected(result, "copyAlphaTo", 4);
+	}
+
+	@Test
+	public void testCopyAlphaToGPU()
+	{
+		// Test with images large enough to trigger GPU path (>= 256x256 = 65536 pixels)
+		final int gpuTestSize = 300;
+
+		Image target = createColorTestImageOfSize(gpuTestSize, gpuTestSize);
+		Image alphaSource = createARGBTestImageOfSize(gpuTestSize, gpuTestSize);
+
+		Image result = ImageHelper.copyAlphaTo(target, alphaSource);
+
+		assertEquals(ImageType.ARGB, result.getType(), "Result should have alpha channel");
+		assertEquals(gpuTestSize, result.getWidth());
+		assertEquals(gpuTestSize, result.getHeight());
+		// Use threshold due to alpha premultiplication differences in PNG round-trip
+		compareWithExpected(result, "copyAlphaToGPU", 4);
 	}
 
 	@Test
@@ -475,6 +606,82 @@ public class ImageHelperTest
 //		compareWithExpected(result, "colorifyWithAlpha", 4);
 //	}
 
+	// ==================== ColorifyMulti Tests ====================
+
+	@Test
+	public void testColorifyMultiAlgorithm2()
+	{
+		Image grayscale = createGrayscaleTestImage();
+
+		Map<Integer, Color> colorMap = new HashMap<>();
+		colorMap.put(0, Color.red);
+		colorMap.put(1, Color.green);
+		colorMap.put(2, Color.blue);
+		colorMap.put(3, Color.yellow);
+
+		Image colorIndexes = createColorIndexesImage();
+
+		Image result = ImageHelper.colorifyMulti(grayscale, colorMap, colorIndexes, ColorifyAlgorithm.algorithm2, null);
+		compareWithExpected(result, "colorifyMultiAlgorithm2", 2);
+	}
+
+	@Test
+	public void testColorifyMultiAlgorithm3()
+	{
+		Image grayscale = createGrayscaleTestImage();
+
+		Map<Integer, Color> colorMap = new HashMap<>();
+		colorMap.put(0, Color.red);
+		colorMap.put(1, Color.green);
+		colorMap.put(2, Color.blue);
+		colorMap.put(3, Color.yellow);
+
+		Image colorIndexes = createColorIndexesImage();
+
+		Image result = ImageHelper.colorifyMulti(grayscale, colorMap, colorIndexes, ColorifyAlgorithm.algorithm3, null);
+		compareWithExpected(result, "colorifyMultiAlgorithm3", 2);
+	}
+
+	@Test
+	public void testColorifyMultiSolidColor()
+	{
+		Image grayscale = createGrayscaleTestImage();
+
+		Map<Integer, Color> colorMap = new HashMap<>();
+		colorMap.put(0, Color.red);
+		colorMap.put(1, Color.green);
+		colorMap.put(2, Color.blue);
+		colorMap.put(3, Color.yellow);
+
+		Image colorIndexes = createColorIndexesImage();
+
+		Image result = ImageHelper.colorifyMulti(grayscale, colorMap, colorIndexes, ColorifyAlgorithm.solidColor, null);
+		compareWithExpected(result, "colorifyMultiSolidColor");
+	}
+
+	@Test
+	public void testColorifyMultiGPU()
+	{
+		// Test with images large enough to trigger GPU path
+		final int gpuTestSize = 300;
+
+		Image grayscale = createGrayscaleTestImageOfSize(gpuTestSize, gpuTestSize);
+
+		Map<Integer, Color> colorMap = new HashMap<>();
+		colorMap.put(0, Color.red);
+		colorMap.put(1, Color.green);
+		colorMap.put(2, Color.blue);
+		colorMap.put(3, Color.yellow);
+
+		Image colorIndexes = createColorIndexesImageOfSize(gpuTestSize, gpuTestSize, 0, 1, 2, 3);
+
+		Image result = ImageHelper.colorifyMulti(grayscale, colorMap, colorIndexes, ColorifyAlgorithm.algorithm3, null);
+
+		assertEquals(gpuTestSize, result.getWidth());
+		assertEquals(gpuTestSize, result.getHeight());
+		compareWithExpected(result, "colorifyMultiGPU", 2);
+	}
+
 	// ==================== Grayscale Modification Tests ====================
 
 	@Test
@@ -483,14 +690,6 @@ public class ImageHelperTest
 		Image image = createLowContrastGrayscaleImage();
 		ImageHelper.maximizeContrastGrayscale(image);
 		compareWithExpected(image, "maximizeContrastGrayscale");
-	}
-
-	@Test
-	public void testScaleGrayLevels()
-	{
-		Image image = createGrayscaleTestImage();
-		ImageHelper.scaleGrayLevels(image, 0.5f);
-		compareWithExpected(image, "scaleGrayLevels");
 	}
 
 	@Test
@@ -510,16 +709,6 @@ public class ImageHelperTest
 	}
 
 	// ==================== Arithmetic Operations Tests ====================
-
-	@Test
-	public void testAdd()
-	{
-		Image target = createGrayscaleTestImage();
-		Image other = createGrayscaleGradientVertical();
-
-		ImageHelper.add(target, other);
-		compareWithExpected(target, "add");
-	}
 
 	@Test
 	public void testSubtract()
@@ -796,21 +985,50 @@ public class ImageHelperTest
 
 	private Image createARGBTestImage()
 	{
-		Image image = Image.create(testImageWidth, testImageHeight, ImageType.ARGB);
+		return createARGBTestImageOfSize(testImageWidth, testImageHeight);
+	}
+
+	private Image createARGBTestImageOfSize(int width, int height)
+	{
+		Image image = Image.create(width, height, ImageType.ARGB);
 		try (PixelReaderWriter writer = image.createPixelReaderWriter())
 		{
 			// Use min alpha of 64 to avoid fully transparent pixels which lose RGB during PNG round-trip
 			int minAlpha = 64;
-			for (int y = 0; y < testImageHeight; y++)
+			for (int y = 0; y < height; y++)
 			{
-				for (int x = 0; x < testImageWidth; x++)
+				for (int x = 0; x < width; x++)
 				{
 					// Create pattern with varying alpha from minAlpha to 255
-					int alpha = minAlpha + ((255 - minAlpha) * x) / (testImageWidth - 1);
+					int alpha = minAlpha + ((255 - minAlpha) * x) / (width - 1);
 					writer.setRGB(x, y, 255, 128, 64, alpha);
 				}
 			}
 		}
+		return image;
+	}
+
+	private Image createColorTestImageOfSize(int width, int height)
+	{
+		Image image = Image.create(width, height, ImageType.RGB);
+		image.withPainter(DrawQuality.High, (p) ->
+		{
+			int halfWidth = width / 2;
+			int halfHeight = height / 2;
+
+			// Create a pattern with different colors in each quadrant
+			p.setColor(Color.red);
+			p.fillRect(0, 0, halfWidth, halfHeight);
+
+			p.setColor(Color.green);
+			p.fillRect(halfWidth, 0, halfWidth, halfHeight);
+
+			p.setColor(Color.blue);
+			p.fillRect(0, halfHeight, halfWidth, halfHeight);
+
+			p.setColor(Color.yellow);
+			p.fillRect(halfWidth, halfHeight, halfWidth, halfHeight);
+		});
 		return image;
 	}
 
@@ -920,6 +1138,127 @@ public class ImageHelperTest
 			}
 		}
 		return image;
+	}
+
+	/**
+	 * Creates an RGB image where each quadrant encodes a different region ID (0, 1, 2, 3)
+	 * using the WorldGraph.storeValueAsColor encoding.
+	 */
+	private Image createColorIndexesImage()
+	{
+		return createColorIndexesImageWithIds(0, 1, 2, 3);
+	}
+
+	/**
+	 * Creates an RGB image where each quadrant encodes the specified region IDs
+	 * using the WorldGraph color encoding (r << 16 | g << 8 | b).
+	 */
+	private Image createColorIndexesImageWithIds(int topLeftId, int topRightId, int bottomLeftId, int bottomRightId)
+	{
+		Image image = Image.create(testImageWidth, testImageHeight, ImageType.RGB);
+		try (PixelReaderWriter writer = image.createPixelReaderWriter())
+		{
+			for (int y = 0; y < testImageHeight; y++)
+			{
+				for (int x = 0; x < testImageWidth; x++)
+				{
+					int regionId;
+					if (x < testImageWidth / 2 && y < testImageHeight / 2)
+					{
+						regionId = topLeftId;
+					}
+					else if (x >= testImageWidth / 2 && y < testImageHeight / 2)
+					{
+						regionId = topRightId;
+					}
+					else if (x < testImageWidth / 2 && y >= testImageHeight / 2)
+					{
+						regionId = bottomLeftId;
+					}
+					else
+					{
+						regionId = bottomRightId;
+					}
+
+					// Encode region ID as RGB color (reverse of WorldGraph.getValueFromColor)
+					Color encodedColor = WorldGraph.storeValueAsColor(regionId);
+					writer.setRGB(x, y, encodedColor.getRed(), encodedColor.getGreen(), encodedColor.getBlue());
+				}
+			}
+		}
+		return image;
+	}
+
+	/**
+	 * Creates an RGB image of specified size where each quadrant encodes the specified region IDs.
+	 */
+	private Image createColorIndexesImageOfSize(int width, int height, int topLeftId, int topRightId, int bottomLeftId, int bottomRightId)
+	{
+		Image image = Image.create(width, height, ImageType.RGB);
+		try (PixelReaderWriter writer = image.createPixelReaderWriter())
+		{
+			for (int y = 0; y < height; y++)
+			{
+				for (int x = 0; x < width; x++)
+				{
+					int regionId;
+					if (x < width / 2 && y < height / 2)
+					{
+						regionId = topLeftId;
+					}
+					else if (x >= width / 2 && y < height / 2)
+					{
+						regionId = topRightId;
+					}
+					else if (x < width / 2 && y >= height / 2)
+					{
+						regionId = bottomLeftId;
+					}
+					else
+					{
+						regionId = bottomRightId;
+					}
+
+					Color encodedColor = WorldGraph.storeValueAsColor(regionId);
+					writer.setRGB(x, y, encodedColor.getRed(), encodedColor.getGreen(), encodedColor.getBlue());
+				}
+			}
+		}
+		return image;
+	}
+
+	private Image createGrayscaleTestImageOfSize(int width, int height)
+	{
+		Image image = Image.create(width, height, ImageType.Grayscale8Bit);
+		try (PixelReaderWriter writer = image.createPixelReaderWriter())
+		{
+			for (int y = 0; y < height; y++)
+			{
+				for (int x = 0; x < width; x++)
+				{
+					int level = (int) ((x + y) * 255.0 / (width + height - 2));
+					writer.setGrayLevel(x, y, level);
+				}
+			}
+		}
+		return image;
+	}
+
+	private Image createGradientMaskOfSize(int width, int height)
+	{
+		Image mask = Image.create(width, height, ImageType.Grayscale8Bit);
+		try (PixelReaderWriter writer = mask.createPixelReaderWriter())
+		{
+			for (int y = 0; y < height; y++)
+			{
+				for (int x = 0; x < width; x++)
+				{
+					int level = (x * 255) / width;
+					writer.setGrayLevel(x, y, level);
+				}
+			}
+		}
+		return mask;
 	}
 
 	private static String getExpectedFilePath(String testName)
