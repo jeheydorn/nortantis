@@ -37,8 +37,11 @@ public class SkiaImage extends Image
 	// When true, forces all images to use CPU rendering regardless of size
 	private static volatile boolean forceCPU = false;
 
-	// Track active GPU batching painters for await before pixel access
+	// Track active GPU batching painters for await before pixel access (painters drawing ONTO this image)
 	private final Set<GPUBatchingPainter> activePainters = Collections.newSetFromMap(new ConcurrentHashMap<>());
+
+	// Track painters that have pending batched operations using this image as a SOURCE in drawImage calls
+	private final Set<GPUBatchingPainter> referencingPainters = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
 	/**
 	 * Holds GPU and CPU resources separately from SkiaImage so that the Cleaner can clean them
@@ -131,8 +134,11 @@ public class SkiaImage extends Image
 	@Override
 	public void close()
 	{
-		// Wait for any pending painters to complete
+		// Wait for any painters drawing onto this image to complete
 		awaitPendingPainters();
+
+		// Wait for any painters using this image as a source in drawImage to complete
+		awaitReferencingPainters();
 
 		// clean() is idempotent - runs the cleanup action and deregisters from Cleaner
 		cleanable.clean();
@@ -570,6 +576,35 @@ public class SkiaImage extends Image
 	void onPainterClosed(GPUBatchingPainter painter)
 	{
 		activePainters.remove(painter);
+	}
+
+	/**
+	 * Called by GPUBatchingPainter when this image is used as a source in a drawImage call
+	 * and the operation is added to a batch. The painter will be removed when the batch completes.
+	 */
+	void addReferencingPainter(GPUBatchingPainter painter)
+	{
+		referencingPainters.add(painter);
+	}
+
+	/**
+	 * Called by GPUBatchingPainter when a batch containing drawImage operations using this
+	 * image as a source has completed execution on the GPU thread.
+	 */
+	void removeReferencingPainter(GPUBatchingPainter painter)
+	{
+		referencingPainters.remove(painter);
+	}
+
+	/**
+	 * Waits for all painters that have pending batched operations using this image as a source.
+	 */
+	private void awaitReferencingPainters()
+	{
+		for (GPUBatchingPainter painter : referencingPainters)
+		{
+			painter.await();
+		}
 	}
 
 	@Override

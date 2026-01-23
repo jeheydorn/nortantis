@@ -1,7 +1,9 @@
 package nortantis.platform.skia;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 
@@ -70,6 +72,10 @@ public class GPUBatchingPainter extends Painter
 
 	// Track if disposed
 	private boolean disposed = false;
+
+	// Track source images referenced in the current batch (for drawImage calls)
+	// These images need to know this painter has pending operations referencing them
+	private final Set<SkiaImage> sourceImagesInCurrentBatch = new HashSet<>();
 
 	/**
 	 * Immutable snapshot of paint state for a batch.
@@ -257,7 +263,14 @@ public class GPUBatchingPainter extends Painter
 		final Matrix33 transformToUse = currentTransform;
 		final Rect clipToUse = currentClip;
 
+		// Capture and clear source images for this batch
+		final Set<SkiaImage> sourceImagesForThisBatch = new HashSet<>(sourceImagesInCurrentBatch);
+		sourceImagesInCurrentBatch.clear();
+
 		currentBatch.clear();
+
+		// Reference to this painter for the completion callback
+		final GPUBatchingPainter thisPainter = this;
 
 		// Submit to GPU thread
 		CompletableFuture<Void> future = GPUExecutor.getInstance().submitAsync(() -> {
@@ -293,6 +306,12 @@ public class GPUBatchingPainter extends Painter
 			finally
 			{
 				paint.close();
+
+				// Unregister from source images now that the batch has completed
+				for (SkiaImage sourceImage : sourceImagesForThisBatch)
+				{
+					sourceImage.removeReferencingPainter(thisPainter);
+				}
 			}
 		});
 
@@ -371,6 +390,7 @@ public class GPUBatchingPainter extends Painter
 		}
 		final SkiaImage skImage = (SkiaImage) image;
 		final org.jetbrains.skia.Image skiaNativeImage = skImage.getSkiaImage();
+		trackSourceImage(skImage);
 		addOperation((canvas, paint) -> canvas.drawImage(skiaNativeImage, x, y, paint));
 	}
 
@@ -383,7 +403,22 @@ public class GPUBatchingPainter extends Painter
 		}
 		final SkiaImage skImage = (SkiaImage) image;
 		final org.jetbrains.skia.Image skiaNativeImage = skImage.getSkiaImage();
+		trackSourceImage(skImage);
 		addOperation((canvas, paint) -> canvas.drawImageRect(skiaNativeImage, Rect.makeXYWH(x, y, width, height), paint));
+	}
+
+	/**
+	 * Tracks a source image that is being used in the current batch.
+	 * Registers this painter with the image so that closing the image
+	 * will wait for this batch to complete.
+	 */
+	private void trackSourceImage(SkiaImage sourceImage)
+	{
+		if (sourceImagesInCurrentBatch.add(sourceImage))
+		{
+			// First time this image is used in current batch - register with it
+			sourceImage.addReferencingPainter(this);
+		}
 	}
 
 	@Override
