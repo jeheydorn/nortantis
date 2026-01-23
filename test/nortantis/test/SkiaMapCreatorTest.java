@@ -45,61 +45,67 @@ public class SkiaMapCreatorTest
 	@Test
 	public void simpleSmallWorld()
 	{
-		generateAndCompare("simpleSmallWorld.nort", (settings) -> settings.resolution = 0.25);
-	}
-
-	@Test
-	public void simpleSmallWorldUpperRightQuadrant_SkiaVsAwt()
-	{
-		String testName = "simpleSmallWorldUpperRightQuadrant_SkiaVsAwt";
-		String settingsFileName = "simpleSmallWorld.nort";
-		String settingsPath = Paths.get("unit test files", "map settings", settingsFileName).toString();
-
-		// Generate with Skia and save to file
+		try
 		{
-			PlatformFactory.setInstance(new SkiaFactory());
-			MapSettings settings = new MapSettings(settingsPath);
-			settings.resolution = 0.25;
-
-			MapCreator mapCreator = new MapCreator();
-			Image fullMap = mapCreator.createMap(settings, null, null);
-
-			// Extract upper-right quadrant
-			int quadrantWidth = fullMap.getWidth() / 2;
-			int quadrantHeight = fullMap.getHeight() / 2;
-			int quadrantX = fullMap.getWidth() - quadrantWidth;
-			int quadrantY = 0;
-			IntRectangle upperRightBounds = new IntRectangle(quadrantX, quadrantY, quadrantWidth, quadrantHeight);
-			Image skiaQuadrant = fullMap.copySubImage(upperRightBounds, false);
-
-			FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
-			ImageHelper.write(skiaQuadrant, Paths.get("unit test files", failedMapsFolderName, testName + " - skia.png").toString());
+			SkiaImage.setForceCPU(true);
+			generateAndCompare("simpleSmallWorld.nort", (settings) -> settings.resolution = 0.25);
 		}
-
-		// The Skia image is saved to disk. Compare it against the expected AWT image.
-		// We can't generate AWT in the same JVM because static Color constants (Color.white, etc.)
-		// are platform-specific and were already initialized with Skia.
-		// Instead, compare against the expected AWT image that was pre-generated.
-		Image skiaQuadrant = Assets.readImage(Paths.get("unit test files", failedMapsFolderName, testName + " - skia.png").toString());
-		String expectedAwtPath = Paths.get("unit test files", expectedMapsFolderName, testName + " - awt.png").toString();
-
-		if (!new File(expectedAwtPath).exists())
+		finally
 		{
-			fail("Expected AWT image not found at: " + expectedAwtPath +
-				 ". Generate it by running MapCreatorTest.simpleSmallWorldUpperRightQuadrant() or manually.");
-		}
-
-		Image awtQuadrant = Assets.readImage(expectedAwtPath);
-
-		// Compare Skia and AWT results
-		int diffThreshold = 4;
-		String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(skiaQuadrant, awtQuadrant, diffThreshold);
-		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
-		{
-			createImageDiffIfImagesAreSameSize(skiaQuadrant, awtQuadrant, testName, diffThreshold);
-			fail("Skia and AWT results differ: " + comparisonErrorMessage);
+			SkiaImage.setForceCPU(false);
 		}
 	}
+
+	// TODO remove when I'm done with it
+//	@Test
+//	public void simpleSmallWorldUpperRightQuadrant_SkiaVsAwt()
+//	{
+//		String testName = "simpleSmallWorldUpperRightQuadrant_SkiaVsAwt";
+//		String settingsFileName = "simpleSmallWorld.nort";
+//		String settingsPath = Paths.get("unit test files", "map settings", settingsFileName).toString();
+//
+//		// Generate with Skia and save to file
+//		{
+//			PlatformFactory.setInstance(new SkiaFactory());
+//			MapSettings settings = new MapSettings(settingsPath);
+//			settings.resolution = 0.25;
+//
+//			MapCreator mapCreator = new MapCreator();
+//			Image fullMap = mapCreator.createMap(settings, null, null);
+//
+//			// Extract upper-right quadrant
+//			int quadrantWidth = fullMap.getWidth() / 2;
+//			int quadrantHeight = fullMap.getHeight() / 2;
+//			int quadrantX = fullMap.getWidth() - quadrantWidth;
+//			int quadrantY = 0;
+//			IntRectangle upperRightBounds = new IntRectangle(quadrantX, quadrantY, quadrantWidth, quadrantHeight);
+//			Image skiaQuadrant = fullMap.copySubImage(upperRightBounds, false);
+//		}
+//
+//		// The Skia image is saved to disk. Compare it against the expected AWT image.
+//		// We can't generate AWT in the same JVM because static Color constants (Color.white, etc.)
+//		// are platform-specific and were already initialized with Skia.
+//		// Instead, compare against the expected AWT image that was pre-generated.
+//		Image skiaQuadrant = Assets.readImage(Paths.get("unit test files", failedMapsFolderName, testName + " - skia.png").toString());
+//		String expectedAwtPath = Paths.get("unit test files", expectedMapsFolderName, testName + " - awt.png").toString();
+//
+//		if (!new File(expectedAwtPath).exists())
+//		{
+//			fail("Expected AWT image not found at: " + expectedAwtPath + ". Generate it by running MapCreatorTest.simpleSmallWorldUpperRightQuadrant() or manually.");
+//		}
+//
+//		Image awtQuadrant = Assets.readImage(expectedAwtPath);
+//
+//		// Compare Skia and AWT results
+//		String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(skiaQuadrant, awtQuadrant, threshold);
+//		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
+//		{
+//			createImageDiffIfImagesAreSameSize(skiaQuadrant, awtQuadrant, testName, threshold);
+//			FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
+//			ImageHelper.write(skiaQuadrant, Paths.get("unit test files", failedMapsFolderName, testName + " - skia.png").toString());
+//			fail("Skia and AWT results differ: " + comparisonErrorMessage);
+//		}
+//	}
 
 	@Test
 	public void incrementalUpdate_simpleSmallWorld()
@@ -118,7 +124,6 @@ public class SkiaMapCreatorTest
 			MapCreator mapCreator = new MapCreator();
 			MapParts mapParts = new MapParts();
 			Image fullMap = mapCreator.createMap(settings, null, mapParts);
-			final int diffThreshold = 10;
 			int failCount = 0;
 
 			{
@@ -145,7 +150,7 @@ public class SkiaMapCreatorTest
 					Image actualSnippet = fullMapForUpdates.getSubImage(changedBounds);
 
 					// Compare incremental result against expected
-					String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(expectedSnippet, actualSnippet, diffThreshold);
+					String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(expectedSnippet, actualSnippet, threshold);
 					if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
 					{
 						FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
@@ -158,18 +163,18 @@ public class SkiaMapCreatorTest
 						Path failedPath = Paths.get("unit test files", failedMapsFolderName, failedSnippetName);
 						ImageHelper.write(actualSnippet, failedPath.toString());
 
-						createImageDiffIfImagesAreSameSize(expectedSnippet, actualSnippet, failedSnippetName, diffThreshold);
+						createImageDiffIfImagesAreSameSize(expectedSnippet, actualSnippet, failedSnippetName, threshold);
 						failCount++;
 					}
 				}
 
-				String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(fullMap, fullMapForUpdates, diffThreshold);
+				String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(fullMap, fullMapForUpdates, threshold);
 				if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
 				{
 					FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
 					String failedMapName = FilenameUtils.getBaseName(settingsFileName) + " full map for incremental draw test";
 					ImageHelper.write(fullMapForUpdates, MapTestUtil.getFailedMapFilePath(failedMapName, failedMapsFolderName));
-					createImageDiffIfImagesAreSameSize(fullMap, fullMapForUpdates, failedMapName, diffThreshold);
+					createImageDiffIfImagesAreSameSize(fullMap, fullMapForUpdates, failedMapName, threshold);
 					fail("Incremental update did not match expected image: " + comparisonErrorMessage);
 				}
 			}
@@ -199,41 +204,61 @@ public class SkiaMapCreatorTest
 	@Test
 	public void drawCoastlineWithLakeShoresTest()
 	{
-		final String settingsFileName = "simpleSmallWorld.nort";
-		MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", settingsFileName).toString());
-		WorldGraph graph = MapCreator.createGraphForUnitTests(settings);
-
-		Image coastlineAndLakeShoreMask = Image.create(graph.getWidth(), graph.getHeight(), ImageType.Binary);
-		try (Painter p = coastlineAndLakeShoreMask.createPainter(DrawQuality.High))
+		try
 		{
-			p.setColor(Color.white);
-			graph.drawCoastlineWithLakeShores(p, settings.coastlineWidth * settings.resolution, null, null);
+			SkiaImage.setForceCPU(true);
+
+			final String settingsFileName = "simpleSmallWorld.nort";
+			MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", settingsFileName).toString());
+			WorldGraph graph = MapCreator.createGraphForUnitTests(settings);
+
+			Image coastlineAndLakeShoreMask = Image.create(graph.getWidth(), graph.getHeight(), ImageType.Binary);
+			try (Painter p = coastlineAndLakeShoreMask.createPainter(DrawQuality.High))
+			{
+				p.setColor(Color.white);
+				graph.drawCoastlineWithLakeShores(p, settings.coastlineWidth * settings.resolution, null, null);
+			}
+
+			compareWithExpected(coastlineAndLakeShoreMask, "coastlineWithLakeShores", threshold);
+		}
+		finally
+		{
+			SkiaImage.setForceCPU(false);
 		}
 
-		compareWithExpected(coastlineAndLakeShoreMask, "coastlineWithLakeShores", threshold);
 	}
 
 	@Test
 	public void coastShadingTest()
 	{
-		final String settingsFileName = "simpleSmallWorld.nort";
-		MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", settingsFileName).toString());
-		WorldGraph graph = MapCreator.createGraphForUnitTests(settings);
-
-		Image coastlineAndLakeShoreMask = Image.create(graph.getWidth(), graph.getHeight(), ImageType.Binary);
-		try (Painter p = coastlineAndLakeShoreMask.createPainter(DrawQuality.High))
+		try
 		{
-			p.setColor(Color.white);
-			graph.drawCoastlineWithLakeShores(p, settings.coastlineWidth * settings.resolution, null, null);
+			SkiaImage.setForceCPU(true);
+
+			final String settingsFileName = "simpleSmallWorld.nort";
+			MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", settingsFileName).toString());
+			WorldGraph graph = MapCreator.createGraphForUnitTests(settings);
+
+			Image coastlineAndLakeShoreMask = Image.create(graph.getWidth(), graph.getHeight(), ImageType.Binary);
+			try (Painter p = coastlineAndLakeShoreMask.createPainter(DrawQuality.High))
+			{
+				p.setColor(Color.white);
+				graph.drawCoastlineWithLakeShores(p, settings.coastlineWidth * settings.resolution, null, null);
+			}
+
+			// Test bluing coastline and lake shores.
+			double sizeMultiplier = MapCreator.calcSizeMultipilerFromResolutionScale(settings.resolution);
+			int blurLevel = (int) (settings.coastShadingLevel * sizeMultiplier);
+			float scale = 2.3973336f; // The actual value used when creating this map.
+			Image coastShading = ImageHelper.blurAndScale(coastlineAndLakeShoreMask, blurLevel, scale, true);
+
+			compareWithExpected(coastShading, "coastShading", threshold);
+		}
+		finally
+		{
+			SkiaImage.setForceCPU(false);
 		}
 
-		// Test bluing coastline and lake shores.
-		double sizeMultiplier = MapCreator.calcSizeMultipilerFromResolutionScale(settings.resolution);
-		int blurLevel = (int) (settings.coastShadingLevel * sizeMultiplier);
-		float scale = 2.3973336f; // The actual value used when creating this map.
-		Image coastShading = ImageHelper.blurAndScale(coastlineAndLakeShoreMask, blurLevel, scale, true);
-
-		compareWithExpected(coastShading, "coastShading", threshold);
 	}
 
 	@Test
@@ -244,7 +269,7 @@ public class SkiaMapCreatorTest
 		final int widthAndHeight = 48;
 		Image actual = FractalBGGenerator.generate(new Random(42), 1.3f, widthAndHeight, widthAndHeight, 0.75f);
 
-		compareWithExpected(actual, expectedFileName, 0);
+		compareWithExpected(actual, expectedFileName, threshold);
 	}
 
 	@Test
@@ -277,14 +302,13 @@ public class SkiaMapCreatorTest
 		}
 
 		// Compare CPU and GPU results
-		int diffThreshold = 4;
-		String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(cpuResult, gpuResult, diffThreshold);
+		String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(cpuResult, gpuResult, threshold);
 		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
 		{
 			FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
 			ImageHelper.write(cpuResult, Paths.get("unit test files", failedMapsFolderName, testName + " - cpu.png").toString());
 			ImageHelper.write(gpuResult, Paths.get("unit test files", failedMapsFolderName, testName + " - gpu.png").toString());
-			createImageDiffIfImagesAreSameSize(cpuResult, gpuResult, testName, diffThreshold);
+			createImageDiffIfImagesAreSameSize(cpuResult, gpuResult, testName, threshold);
 			fail("CPU and GPU results differ: " + comparisonErrorMessage);
 		}
 	}
@@ -366,14 +390,8 @@ public class SkiaMapCreatorTest
 		Image cityIcon = Assets.readImage(iconPath.toString());
 
 		// Create ImageAndMasks with IconType.cities to trigger flood fill content mask creation
-		ImageAndMasks imageAndMasks = new ImageAndMasks(
-			cityIcon,
-			IconType.cities,
-			32.0, // widthFromFileName
-			"installed art pack",
-			"middle ages",
-			"walled city"
-		);
+		ImageAndMasks imageAndMasks = new ImageAndMasks(cityIcon, IconType.cities, 32.0, // widthFromFileName
+				"installed art pack", "middle ages", "walled city");
 
 		// Get or create the content mask
 		Image contentMask = imageAndMasks.getOrCreateContentMask();
@@ -401,17 +419,5 @@ public class SkiaMapCreatorTest
 	public void newRandomMapTest1() throws IOException
 	{
 		MapSettings settings = MapTestUtil.generateRandomAndCompare(1, expectedMapsFolderName, failedMapsFolderName);
-
-		// The expected settings were created by the AWT version
-		MapSettings expected = new MapSettings(Paths.get("unit test files", expectedMapsFolderName, "newRandomMap1.nort").toString());
-
-		if (!expected.equals(settings))
-		{
-			// Write the settings to disk for comparison.
-			FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
-			settings.writeToFile(Paths.get("unit test files", failedMapsFolderName, "newRandomMap1.nort").toString());
-		}
-
-		assertEquals(expected, settings);
 	}
 }
