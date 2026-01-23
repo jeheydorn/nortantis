@@ -37,7 +37,7 @@ public class SkiaFont extends nortantis.platform.Font implements Serializable
 	/**
 	 * Maps Java logical font names to actual system font names. If the font name is already a system font name, it is returned unchanged.
 	 */
-	private static String mapFontName(String fontName)
+	public static String mapFontName(String fontName)
 	{
 		return LOGICAL_FONT_MAPPING.getOrDefault(fontName, fontName);
 	}

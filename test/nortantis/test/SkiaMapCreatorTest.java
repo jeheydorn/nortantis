@@ -17,14 +17,14 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.function.Consumer;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class SkiaMapCreatorTest
 {
@@ -397,4 +397,21 @@ public class SkiaMapCreatorTest
 		assertTrue(whiteCount > 0, "Content mask should have white pixels representing the city icon content area, but found " + whiteCount);
 	}
 
+	@Test
+	public void newRandomMapTest1() throws IOException
+	{
+		MapSettings settings = MapTestUtil.generateRandomAndCompare(1, expectedMapsFolderName, failedMapsFolderName);
+
+		// The expected settings were created by the AWT version
+		MapSettings expected = new MapSettings(Paths.get("unit test files", expectedMapsFolderName, "newRandomMap1.nort").toString());
+
+		if (!expected.equals(settings))
+		{
+			// Write the settings to disk for comparison.
+			FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
+			settings.writeToFile(Paths.get("unit test files", failedMapsFolderName, "newRandomMap1.nort").toString());
+		}
+
+		assertEquals(expected, settings);
+	}
 }

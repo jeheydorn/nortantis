@@ -4,7 +4,9 @@ import nortantis.platform.*;
 import nortantis.util.Logger;
 import org.jetbrains.skia.Bitmap;
 import org.jetbrains.skia.EncodedImageFormat;
+import org.jetbrains.skia.FontMgr;
 import org.jetbrains.skia.ImageInfo;
+import org.jetbrains.skia.Typeface;
 
 import javax.swing.*;
 import java.io.FileInputStream;
@@ -88,9 +90,20 @@ public class SkiaFactory extends PlatformFactory
 	@Override
 	public boolean isFontInstalled(String fontFamily)
 	{
-		// Simple implementation: try to create it and see if it works.
-		// A better one would use FontMgr.
-		return true;
+		// Map logical font names to actual font names
+		String mappedName = SkiaFont.mapFontName(fontFamily);
+
+		// Try to find the font family in the system
+		Typeface typeface = FontMgr.Companion.getDefault().matchFamilyStyle(mappedName, org.jetbrains.skia.FontStyle.Companion.getNORMAL());
+		if (typeface == null)
+		{
+			return false;
+		}
+
+		// Check if we got a fallback font instead of the requested one.
+		// If the family name doesn't match what we asked for, the font isn't truly installed.
+		String actualFamily = typeface.getFamilyName();
+		return actualFamily != null && actualFamily.equalsIgnoreCase(mappedName);
 	}
 
 	@Override

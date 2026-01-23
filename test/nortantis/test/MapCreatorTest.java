@@ -286,9 +286,11 @@ public class MapCreatorTest
 	}
 
 	@Test
-	public void newRandomMapTest1()
+	public void newRandomMapTest1() throws IOException
 	{
-		generateRandomAndCompare(1);
+		MapSettings settings = generateRandomAndCompare(1);
+		// Write the settings to disk for comparison.
+		//settings.writeToFile(Paths.get("unit test files", expectedMapsFolderName, "newRandomMap1.nort").toString()); TODO remove
 	}
 
 	@Test
@@ -604,9 +606,9 @@ public class MapCreatorTest
 		return mapTuple.get();
 	}
 
-	private void generateRandomAndCompare(long seed)
+	private MapSettings generateRandomAndCompare(long seed)
 	{
-		MapTestUtil.generateRandomAndCompare(1, expectedMapsFolderName, failedMapsFolderName);
+		return MapTestUtil.generateRandomAndCompare(1, expectedMapsFolderName, failedMapsFolderName);
 	}
 
 	private void generateRandomHeightmapAndCompare(long seed)

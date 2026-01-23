@@ -135,7 +135,7 @@ public class MapTestUtil
 		}
 	}
 
-	public static void generateRandomAndCompare(long seed, String expectedMapsFolderName, String failedMapsFolderName)
+	public static MapSettings generateRandomAndCompare(long seed, String expectedMapsFolderName, String failedMapsFolderName)
 	{
 		String expectedFileName = "random map for seed " + seed;
 		String expectedMapFilePath = getExpectedMapFilePath(expectedFileName, expectedMapsFolderName);
@@ -175,6 +175,8 @@ public class MapTestUtil
 			createImageDiffIfImagesAreSameSize(expected, actual, expectedFileName, failedMapsFolderName);
 			fail(comparisonErrorMessage);
 		}
+
+		return settings;
 	}
 
 	public static void generateRandomHeightmapAndCompare(long seed, String expectedMapsFolderName, String failedMapsFolderName)
