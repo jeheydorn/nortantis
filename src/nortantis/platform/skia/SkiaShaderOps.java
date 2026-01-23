@@ -1422,6 +1422,226 @@ public class SkiaShaderOps
 		return true;
 	}
 
+	// ==================== In-Place Operations ====================
+
+	/**
+	 * In-place version of maskWithColor that modifies the source image directly.
+	 * This avoids allocating a new image and can improve performance.
+	 */
+	public static void maskWithColorInPlace(Image image, Color color, Image mask, boolean invertMask)
+	{
+		SkiaImage skImage = (SkiaImage) image;
+		SkiaImage skMask = (SkiaImage) mask;
+
+		int width = image.getWidth();
+		int height = image.getHeight();
+
+		// Extract color components before lambda
+		float r = color.getRed() / 255f;
+		float g = color.getGreen() / 255f;
+		float b = color.getBlue() / 255f;
+		float a = color.getAlpha() / 255f;
+
+		if (GPUExecutor.getInstance().isGPUAvailable() && canUseGPUForSize(width, height))
+		{
+			GPUExecutor.getInstance().submit(() -> {
+				maskWithColorInPlaceImpl(skImage, skMask, width, height, r, g, b, a, invertMask, true);
+				return null;
+			});
+		}
+		else
+		{
+			maskWithColorInPlaceImpl(skImage, skMask, width, height, r, g, b, a, invertMask, false);
+		}
+	}
+
+	private static void maskWithColorInPlaceImpl(SkiaImage skImage, SkiaImage skMask, int width, int height,
+			float r, float g, float b, float a, boolean invertMask, boolean useGPU)
+	{
+		org.jetbrains.skia.Image skiImage = skImage.getSkiaImage();
+		org.jetbrains.skia.Image skiMask = skMask.getSkiaImage();
+
+		Matrix33 identity = Matrix33.Companion.getIDENTITY();
+
+		Shader imageShader = skiImage.makeShader(FilterTileMode.CLAMP, FilterTileMode.CLAMP, identity);
+		Shader maskShader = skiMask.makeShader(FilterTileMode.CLAMP, FilterTileMode.CLAMP, identity);
+
+		RuntimeEffect effect = getMaskWithColorEffect();
+		RuntimeShaderBuilder builder = new RuntimeShaderBuilder(effect);
+		builder.child("image", imageShader);
+		builder.child("mask", maskShader);
+		builder.uniform("colorRGB", r, g, b);
+		builder.uniform("colorAlpha", a);
+		builder.uniform("invertMask", invertMask ? 1f : 0f);
+		Shader resultShader = builder.makeShader(identity);
+
+		Surface surface = useGPU ? createGPUSurfaceOnGPUThread(width, height) : createCPUSurface(width, height);
+		Canvas canvas = surface.getCanvas();
+
+		Paint paint = new Paint();
+		paint.setShader(resultShader);
+		canvas.drawRect(Rect.makeWH(width, height), paint);
+
+		// Replace the original image's pixels with the result (stays on GPU when possible)
+		skImage.replaceFromSurface(surface, useGPU);
+
+		// Clean up
+		surface.close();
+		paint.close();
+		resultShader.close();
+		imageShader.close();
+		maskShader.close();
+		builder.close();
+	}
+
+	/**
+	 * In-place version of maskWithImage that modifies image1 directly.
+	 * This avoids allocating a new image and can improve performance.
+	 */
+	public static void maskWithImageInPlace(Image image1, Image image2, Image mask)
+	{
+		SkiaImage skImage1 = (SkiaImage) image1;
+		SkiaImage skImage2 = (SkiaImage) image2;
+		SkiaImage skMask = (SkiaImage) mask;
+
+		int width = image1.getWidth();
+		int height = image1.getHeight();
+
+		if (GPUExecutor.getInstance().isGPUAvailable() && canUseGPUForSize(width, height))
+		{
+			GPUExecutor.getInstance().submit(() -> {
+				maskWithImageInPlaceImpl(skImage1, skImage2, skMask, width, height, true);
+				return null;
+			});
+		}
+		else
+		{
+			maskWithImageInPlaceImpl(skImage1, skImage2, skMask, width, height, false);
+		}
+	}
+
+	private static void maskWithImageInPlaceImpl(SkiaImage skImage1, SkiaImage skImage2, SkiaImage skMask,
+			int width, int height, boolean useGPU)
+	{
+		org.jetbrains.skia.Image skiImage1 = skImage1.getSkiaImage();
+		org.jetbrains.skia.Image skiImage2 = skImage2.getSkiaImage();
+		org.jetbrains.skia.Image skiMask = skMask.getSkiaImage();
+
+		Matrix33 identity = Matrix33.Companion.getIDENTITY();
+
+		Shader shader1 = skiImage1.makeShader(FilterTileMode.CLAMP, FilterTileMode.CLAMP, identity);
+		Shader shader2 = skiImage2.makeShader(FilterTileMode.CLAMP, FilterTileMode.CLAMP, identity);
+		Shader shaderMask = skiMask.makeShader(FilterTileMode.CLAMP, FilterTileMode.CLAMP, identity);
+
+		RuntimeEffect effect = getMaskWithImageEffect();
+		RuntimeShaderBuilder builder = new RuntimeShaderBuilder(effect);
+		builder.child("image1", shader1);
+		builder.child("image2", shader2);
+		builder.child("mask", shaderMask);
+		Shader resultShader = builder.makeShader(identity);
+
+		Surface surface = useGPU ? createGPUSurfaceOnGPUThread(width, height) : createCPUSurface(width, height);
+		Canvas canvas = surface.getCanvas();
+
+		Paint paint = new Paint();
+		paint.setShader(resultShader);
+		canvas.drawRect(Rect.makeWH(width, height), paint);
+
+		// Replace the original image's pixels with the result (stays on GPU when possible)
+		skImage1.replaceFromSurface(surface, useGPU);
+
+		// Clean up
+		surface.close();
+		paint.close();
+		resultShader.close();
+		shader1.close();
+		shader2.close();
+		shaderMask.close();
+		builder.close();
+	}
+
+	/**
+	 * In-place version of maskWithMultipleColors that modifies the source image directly.
+	 * This avoids allocating a new image and can improve performance.
+	 */
+	public static void maskWithMultipleColorsInPlace(Image image, Map<Integer, Color> colors, Image colorIndexes, Image mask, boolean invertMask)
+	{
+		SkiaImage skImage = (SkiaImage) image;
+		SkiaImage skColorIndexes = (SkiaImage) colorIndexes;
+		SkiaImage skMask = (SkiaImage) mask;
+
+		int width = image.getWidth();
+		int height = image.getHeight();
+
+		// Create the palette texture from the colors map
+		Image palette = createPaletteTexture(colors);
+		SkiaImage skPalette = (SkiaImage) palette;
+
+		try
+		{
+			if (GPUExecutor.getInstance().isGPUAvailable() && canUseGPUForSize(width, height))
+			{
+				GPUExecutor.getInstance().submit(() -> {
+					maskWithMultipleColorsInPlaceImpl(skImage, skColorIndexes, skMask, skPalette, width, height, invertMask, true);
+					return null;
+				});
+			}
+			else
+			{
+				maskWithMultipleColorsInPlaceImpl(skImage, skColorIndexes, skMask, skPalette, width, height, invertMask, false);
+			}
+		}
+		finally
+		{
+			palette.close();
+		}
+	}
+
+	private static void maskWithMultipleColorsInPlaceImpl(SkiaImage skImage, SkiaImage skColorIndexes, SkiaImage skMask,
+			SkiaImage skPalette, int width, int height, boolean invertMask, boolean useGPU)
+	{
+		org.jetbrains.skia.Image skiImage = skImage.getSkiaImage();
+		org.jetbrains.skia.Image skiColorIndexes = skColorIndexes.getSkiaImage();
+		org.jetbrains.skia.Image skiMask = skMask.getSkiaImage();
+		org.jetbrains.skia.Image skiPalette = skPalette.getSkiaImage();
+
+		Matrix33 identity = Matrix33.Companion.getIDENTITY();
+
+		Shader imageShader = skiImage.makeShader(FilterTileMode.CLAMP, FilterTileMode.CLAMP, identity);
+		Shader colorIndexesShader = skiColorIndexes.makeShader(FilterTileMode.CLAMP, FilterTileMode.CLAMP, identity);
+		Shader maskShader = skiMask.makeShader(FilterTileMode.CLAMP, FilterTileMode.CLAMP, identity);
+		Shader paletteShader = skiPalette.makeShader(FilterTileMode.CLAMP, FilterTileMode.CLAMP, identity);
+
+		RuntimeEffect effect = getMaskWithMultipleColorsEffect();
+		RuntimeShaderBuilder builder = new RuntimeShaderBuilder(effect);
+		builder.child("image", imageShader);
+		builder.child("colorIndexes", colorIndexesShader);
+		builder.child("mask", maskShader);
+		builder.child("palette", paletteShader);
+		builder.uniform("invertMask", invertMask ? 1f : 0f);
+		Shader resultShader = builder.makeShader(identity);
+
+		Surface surface = useGPU ? createGPUSurfaceOnGPUThread(width, height) : createCPUSurface(width, height);
+		Canvas canvas = surface.getCanvas();
+
+		Paint paint = new Paint();
+		paint.setShader(resultShader);
+		canvas.drawRect(Rect.makeWH(width, height), paint);
+
+		// Replace the original image's pixels with the result (stays on GPU when possible)
+		skImage.replaceFromSurface(surface, useGPU);
+
+		// Clean up
+		surface.close();
+		paint.close();
+		resultShader.close();
+		imageShader.close();
+		colorIndexesShader.close();
+		maskShader.close();
+		paletteShader.close();
+		builder.close();
+	}
+
 	// If I decide I want to make the above method run on the GPU if any of the images are GPU-backed, here's the code:
 	/**
 	 * Checks if all images are SkiaImage instances that have their data on the GPU.

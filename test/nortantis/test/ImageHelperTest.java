@@ -343,6 +343,34 @@ public class ImageHelperTest
 	}
 
 	@Test
+	public void testMaskWithColorInPlace()
+	{
+		Image image = createColorTestImage();
+		Image mask = createGradientMask();
+		Color color = Color.create(0, 255, 0, 128);
+
+		ImageHelper.maskWithColorInPlace(image, color, mask, false);
+		compareWithExpected(image, "maskWithColorInPlace");
+	}
+
+	@Test
+	public void testMaskWithColorInPlaceGPU()
+	{
+		// Test with images large enough to trigger GPU path (>= 256x256 = 65536 pixels)
+		final int gpuTestSize = 300;
+
+		Image image = createColorTestImageOfSize(gpuTestSize, gpuTestSize);
+		Image mask = createGradientMaskOfSize(gpuTestSize, gpuTestSize);
+		Color color = Color.create(0, 255, 0, 128);
+
+		ImageHelper.maskWithColorInPlace(image, color, mask, false);
+
+		assertEquals(gpuTestSize, image.getWidth());
+		assertEquals(gpuTestSize, image.getHeight());
+		compareWithExpected(image, "maskWithColorInPlaceGPU");
+	}
+
+	@Test
 	public void testMaskWithMultipleColors()
 	{
 		// Create a grayscale base image
@@ -450,6 +478,53 @@ public class ImageHelperTest
 		assertEquals(gpuTestSize, result.getWidth());
 		assertEquals(gpuTestSize, result.getHeight());
 		compareWithExpected(result, "maskWithMultipleColorsGPUInverted");
+	}
+
+	@Test
+	public void testMaskWithMultipleColorsInPlace()
+	{
+		// Create a grayscale base image
+		Image image = createGrayscaleTestImage();
+
+		// Create a map of region IDs to colors
+		Map<Integer, Color> colors = new HashMap<>();
+		colors.put(0, Color.red);
+		colors.put(1, Color.green);
+		colors.put(2, Color.blue);
+		colors.put(3, Color.yellow);
+
+		// Create colorIndexes image where each quadrant has a different region ID encoded as RGB
+		Image colorIndexes = createColorIndexesImage();
+
+		// Create a gradient mask
+		Image mask = createGradientMask();
+
+		ImageHelper.maskWithMultipleColorsInPlace(image, colors, colorIndexes, mask, false);
+		compareWithExpected(image, "maskWithMultipleColorsInPlace");
+	}
+
+	@Test
+	public void testMaskWithMultipleColorsInPlaceGPU()
+	{
+		// Test with images large enough to trigger GPU path (>= 256x256 = 65536 pixels)
+		final int gpuTestSize = 300;
+
+		Image image = createGrayscaleTestImageOfSize(gpuTestSize, gpuTestSize);
+
+		Map<Integer, Color> colors = new HashMap<>();
+		colors.put(0, Color.red);
+		colors.put(1, Color.green);
+		colors.put(2, Color.blue);
+		colors.put(3, Color.yellow);
+
+		Image colorIndexes = createColorIndexesImageOfSize(gpuTestSize, gpuTestSize, 0, 1, 2, 3);
+		Image mask = createGradientMaskOfSize(gpuTestSize, gpuTestSize);
+
+		ImageHelper.maskWithMultipleColorsInPlace(image, colors, colorIndexes, mask, false);
+
+		assertEquals(gpuTestSize, image.getWidth());
+		assertEquals(gpuTestSize, image.getHeight());
+		compareWithExpected(image, "maskWithMultipleColorsInPlaceGPU");
 	}
 
 	// ==================== Alpha Tests ====================

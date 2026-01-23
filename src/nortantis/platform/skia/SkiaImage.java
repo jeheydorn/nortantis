@@ -1101,4 +1101,56 @@ public class SkiaImage extends Image
 		return resourceState.isGpuEnabled;
 	}
 
+	/**
+	 * Replaces this image's pixels by drawing from the source surface.
+	 * Used for in-place shader operations where the result is written back to the original image.
+	 * This method stays on GPU when possible to avoid expensive GPU-CPU-GPU transfers.
+	 *
+	 * @param source The surface containing the shader result
+	 * @param isOnGPUThread True if this is being called from the GPU executor thread
+	 */
+	void replaceFromSurface(Surface source, boolean isOnGPUThread)
+	{
+		awaitPendingPainters();
+
+		// Flush pending GPU commands to ensure the source surface is fully rendered
+		source.flushAndSubmit(true);
+
+		// Make an image snapshot from the source surface
+		org.jetbrains.skia.Image snapshot = source.makeImageSnapshot();
+
+		try
+		{
+			// Check if we can use GPU-to-GPU path
+			// Skip GPU path for grayscale images because GPU surface is always N32 (RGBA) format
+			// and syncGPUToCPU can't convert N32 back to grayscale correctly
+			boolean canUseGPUPath = isOnGPUThread
+					&& resourceState.isGpuEnabled
+					&& resourceState.gpuSurface != null
+					&& resourceState.bitmap.getColorType() == ColorType.Companion.getN32();
+
+			if (canUseGPUPath)
+			{
+				// GPU path: draw directly to GPU surface (fast GPU-to-GPU copy)
+				Canvas gpuCanvas = resourceState.gpuSurface.getCanvas();
+				gpuCanvas.drawImage(snapshot, 0, 0);
+				// Flush the destination surface to ensure the draw is complete
+				resourceState.gpuSurface.flushAndSubmit(true);
+				markGPUDirty();
+			}
+			else
+			{
+				// CPU path: draw to bitmap
+				Canvas canvas = new Canvas(resourceState.bitmap, new SurfaceProps());
+				canvas.drawImage(snapshot, 0, 0);
+				canvas.close();
+				markCPUDirty();
+			}
+		}
+		finally
+		{
+			snapshot.close();
+		}
+	}
+
 }
