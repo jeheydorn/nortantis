@@ -293,21 +293,23 @@ public class NewSettingsDialog extends JDialog
 
 	private void onCreateMap(MainWindow mainWindow)
 	{
+		// Cancel and disable the dialog's own updater to stop it from submitting new GPU jobs
+		updater.cancel();
+		updater.setEnabled(false);
+
+		// Get settings before disposing the dialog
+		MapSettings settings = getSettingsFromGUI();
+
+		// Dispose the dialog immediately
+		dispose();
+
+		// Cancel any current drawing in main window
 		mainWindow.updater.cancel();
 
-		// Disable the updater so that it ignores anything triggered by the window resizing as it closes.
-		// I'm not if that's even possible but I think I saw it happen a few times and try to draw a tiny
-		// map.
-		mainWindow.updater.setEnabled(false);
-
-		mainWindow.updater.dowWhenMapIsNotDrawing(() ->
-		{
-			mainWindow.clearOpenSettingsFilePath();
-			MapSettings settings = getSettingsFromGUI();
-			mainWindow.loadSettingsIntoGUI(settings);
-
-			dispose();
-		});
+		// Load settings into main window - this will start a new draw and show the progress bar immediately.
+		// GPU operations will be serialized through GPUExecutor.
+		mainWindow.clearOpenSettingsFilePath();
+		mainWindow.loadSettingsIntoGUI(settings);
 	}
 
 	private void createLeftPanel(JPanel generatorSettingsPanel)

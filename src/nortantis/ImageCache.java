@@ -578,10 +578,6 @@ public class ImageCache
 	private Image loadIconFromDiskOrCache(IconType iconType, String groupName, String fileName)
 	{
 		Path path = Paths.get(getIconGroupPath(iconType, groupName), fileName);
-		if (!cacheContainsImageFile(path))
-		{
-			Logger.println("Loading icon: " + path);
-		}
 		Image icon = getImageFromFile(path);
 		return icon;
 	}
