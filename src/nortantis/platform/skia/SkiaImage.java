@@ -130,6 +130,9 @@ public class SkiaImage extends Image
 	 * Releases resources held by this image, ensuring GPU resources are cleaned up
 	 * on the GPU thread to avoid crashes from finalizers running on the wrong thread.
 	 * This method is idempotent - calling it multiple times is safe.
+	 *
+	 * If there are pending batched draw operations using this image as a source,
+	 * cleanup is deferred to the Cleaner (via GC) to avoid blocking/deadlocks.
 	 */
 	@Override
 	public void close()
@@ -137,8 +140,13 @@ public class SkiaImage extends Image
 		// Wait for any painters drawing onto this image to complete
 		awaitPendingPainters();
 
-		// Wait for any painters using this image as a source in drawImage to complete
-		awaitReferencingPainters();
+		// If there are painters with pending batched operations using this image as a source,
+		// skip immediate cleanup to avoid blocking. The Cleaner will handle cleanup when
+		// this image becomes unreachable and GC runs.
+		if (!referencingPainters.isEmpty())
+		{
+			return;
+		}
 
 		// clean() is idempotent - runs the cleanup action and deregisters from Cleaner
 		cleanable.clean();
