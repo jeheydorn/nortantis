@@ -153,5 +153,6 @@ public class SkiaFont extends nortantis.platform.Font implements Serializable
 		String mappedName = mapFontName(name);
 		Typeface typeface = FontMgr.Companion.getDefault().matchFamilyStyle(mappedName, skiaStyle);
 		this.skiaFont = new Font(typeface, size);
+		this.skiaFont.setSubpixel(true);
 	}
 }

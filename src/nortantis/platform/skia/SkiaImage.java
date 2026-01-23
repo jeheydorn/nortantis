@@ -79,24 +79,25 @@ public class SkiaImage extends Image
 			isGpuEnabled = false;
 			location = ImageLocation.CPU_ONLY;
 
-			// Close GPU resources on the GPU thread to avoid OpenGL threading issues
-			if ((surfaceToClose != null || textureToClose != null)
-					&& GPUExecutor.getInstance().isGPUAvailable())
+			// Submit ALL cleanup to GPUExecutor to ensure it happens after any pending
+			// draw operations that may reference these resources. This prevents use-after-free
+			// crashes when an image is closed while batched draw operations still reference it.
+			if (GPUExecutor.getInstance().isGPUAvailable())
 			{
 				GPUExecutor.getInstance().submitAsync(() -> {
 					if (surfaceToClose != null) surfaceToClose.close();
 					if (textureToClose != null) textureToClose.close();
+					if (cachedToClose != null) cachedToClose.close();
+					if (bitmapToClose != null) bitmapToClose.close();
 				});
 			}
-
-			// CPU resources can be closed on any thread
-			if (cachedToClose != null)
+			else
 			{
-				cachedToClose.close();
-			}
-			if (bitmapToClose != null)
-			{
-				bitmapToClose.close();
+				// No GPU available, close everything directly
+				if (surfaceToClose != null) surfaceToClose.close();
+				if (textureToClose != null) textureToClose.close();
+				if (cachedToClose != null) cachedToClose.close();
+				if (bitmapToClose != null) bitmapToClose.close();
 			}
 		}
 	}
