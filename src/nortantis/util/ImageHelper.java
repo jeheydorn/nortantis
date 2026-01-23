@@ -599,6 +599,7 @@ public class ImageHelper
 		}
 
 		// Fallback to creating a new image and copying back
+		assert false : "Fallback hit";
 		Image result = maskWithColorInRegion(image, color, mask, invertMask, new IntPoint(0, 0));
 		try (Painter p = image.createPainter())
 		{
@@ -650,6 +651,33 @@ public class ImageHelper
 
 			return result;
 		}
+	}
+
+	/**
+	 * In-place version of maskWithColorInRegion that modifies the source image directly.
+	 * This avoids allocating a new image and can improve performance.
+	 */
+	public static void maskWithColorInRegionInPlace(Image image, Color color, Image mask, boolean invertMask, IntPoint imageOffsetInMask)
+	{
+		if (mask.getType() != ImageType.Grayscale8Bit && mask.getType() != ImageType.Binary)
+			throw new IllegalArgumentException("mask type must be ImageType.Grayscale.");
+
+		if (SkiaShaderOps.shouldRunOnGPU(image, mask))
+		{
+			SkiaShaderOps.maskWithColorInRegionInPlace(image, color, mask, invertMask,
+					imageOffsetInMask.x, imageOffsetInMask.y);
+			return;
+		}
+
+		// Fallback to creating a new image and copying back
+		assert false : "Fallback hit";
+		Image result = maskWithColorInRegion(image, color, mask, invertMask, imageOffsetInMask);
+		try (Painter p = image.createPainter())
+		{
+			p.setAlphaComposite(AlphaComposite.Src);
+			p.drawImage(result, 0, 0);
+		}
+		result.close();
 	}
 
 	public static void drawMaskOntoImage(Image image, Image mask, Color color, IntPoint maskOffsetInImage)
@@ -793,6 +821,7 @@ public class ImageHelper
 		}
 
 		// Fallback to creating a new image and copying back
+		assert false : "Fallback hit";
 		Image result = maskWithMultipleColors(image, colors, colorIndexes, mask, invertMask);
 		try (Painter p = image.createPainter())
 		{

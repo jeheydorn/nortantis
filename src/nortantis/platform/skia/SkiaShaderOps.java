@@ -1494,6 +1494,154 @@ public class SkiaShaderOps
 		builder.close();
 	}
 
+	// ==================== maskWithColorInRegion ====================
+
+	// SkSL shader for blending image with solid color using a mask with offset support.
+	// Similar to MASK_WITH_COLOR_SKSL but allows the mask to be offset relative to the image.
+	// When the mask coordinate falls outside the mask bounds, the image pixel is unchanged.
+	private static final String MASK_WITH_COLOR_IN_REGION_SKSL = """
+			uniform shader image;
+			uniform shader mask;
+			uniform half3 colorRGB;
+			uniform half colorAlpha;
+			uniform half invertMask;
+			uniform float2 maskOffset;
+			uniform float2 maskSize;
+
+			half4 main(float2 coord) {
+			    half4 imgColor = image.eval(coord);  // premultiplied
+
+			    // Calculate mask coordinate with offset
+			    float2 maskCoord = coord + maskOffset;
+
+			    // Bounds check - if out of bounds, return image unchanged
+			    if (maskCoord.x < 0.0 || maskCoord.y < 0.0 ||
+			        maskCoord.x >= maskSize.x || maskCoord.y >= maskSize.y) {
+			        return imgColor;
+			    }
+
+			    half m = mask.eval(maskCoord).r;
+
+			    // Calculate blend factor matching Java logic:
+			    // maskLevel = m * colorAlpha (in 0-1 range here)
+			    // overlayAlpha = 1 - maskLevel (non-inverted) or maskLevel (inverted)
+			    // blendFactor = overlayAlpha (how much of color to show)
+			    half blendFactor;
+			    if (invertMask > 0.5) {
+			        blendFactor = m * colorAlpha;
+			    } else {
+			        blendFactor = 1.0 - m * colorAlpha;
+			    }
+
+			    // Unpremultiply image color to get straight RGB for blending
+			    half3 imgRGB = imgColor.a > 0.0 ? imgColor.rgb / imgColor.a : half3(0.0);
+
+			    // Blend in straight alpha space
+			    half3 resultRGB = mix(imgRGB, colorRGB, blendFactor);
+			    half resultA = imgColor.a;
+
+			    // Output premultiplied for GPU surface
+			    return half4(resultRGB * resultA, resultA);
+			}
+			""";
+
+	private static RuntimeEffect maskWithColorInRegionEffect;
+
+	private static RuntimeEffect getMaskWithColorInRegionEffect()
+	{
+		if (maskWithColorInRegionEffect == null)
+		{
+			synchronized (effectLock)
+			{
+				if (maskWithColorInRegionEffect == null)
+				{
+					maskWithColorInRegionEffect = RuntimeEffect.Companion.makeForShader(MASK_WITH_COLOR_IN_REGION_SKSL);
+					if (maskWithColorInRegionEffect == null)
+					{
+						throw new RuntimeException("Failed to compile MASK_WITH_COLOR_IN_REGION_SKSL shader");
+					}
+				}
+			}
+		}
+		return maskWithColorInRegionEffect;
+	}
+
+	/**
+	 * In-place version of maskWithColorInRegion that modifies the source image directly.
+	 * The mask can be larger than the image, with imageOffsetInMask specifying where
+	 * the image's (0,0) corresponds to in the mask coordinate space.
+	 */
+	public static void maskWithColorInRegionInPlace(Image image, Color color, Image mask, boolean invertMask,
+			int offsetX, int offsetY)
+	{
+		SkiaImage skImage = (SkiaImage) image;
+		SkiaImage skMask = (SkiaImage) mask;
+
+		int width = image.getWidth();
+		int height = image.getHeight();
+
+		float r = color.getRed() / 255f;
+		float g = color.getGreen() / 255f;
+		float b = color.getBlue() / 255f;
+		float a = color.getAlpha() / 255f;
+
+		if (GPUExecutor.getInstance().isGPUAvailable() && canUseGPUForSize(width, height))
+		{
+			GPUExecutor.getInstance().submit(() -> {
+				maskWithColorInRegionInPlaceImpl(skImage, skMask, width, height, r, g, b, a, invertMask,
+						offsetX, offsetY, mask.getWidth(), mask.getHeight(), true);
+				return null;
+			});
+		}
+		else
+		{
+			maskWithColorInRegionInPlaceImpl(skImage, skMask, width, height, r, g, b, a, invertMask,
+					offsetX, offsetY, mask.getWidth(), mask.getHeight(), false);
+		}
+	}
+
+	private static void maskWithColorInRegionInPlaceImpl(SkiaImage skImage, SkiaImage skMask, int width, int height,
+			float r, float g, float b, float a, boolean invertMask,
+			int offsetX, int offsetY, int maskWidth, int maskHeight, boolean useGPU)
+	{
+		org.jetbrains.skia.Image skiImage = skImage.getSkiaImage();
+		org.jetbrains.skia.Image skiMask = skMask.getSkiaImage();
+
+		Matrix33 identity = Matrix33.Companion.getIDENTITY();
+
+		Shader imageShader = skiImage.makeShader(FilterTileMode.CLAMP, FilterTileMode.CLAMP, identity);
+		Shader maskShader = skiMask.makeShader(FilterTileMode.CLAMP, FilterTileMode.CLAMP, identity);
+
+		RuntimeEffect effect = getMaskWithColorInRegionEffect();
+		RuntimeShaderBuilder builder = new RuntimeShaderBuilder(effect);
+		builder.child("image", imageShader);
+		builder.child("mask", maskShader);
+		builder.uniform("colorRGB", r, g, b);
+		builder.uniform("colorAlpha", a);
+		builder.uniform("invertMask", invertMask ? 1f : 0f);
+		builder.uniform("maskOffset", (float) offsetX, (float) offsetY);
+		builder.uniform("maskSize", (float) maskWidth, (float) maskHeight);
+		Shader resultShader = builder.makeShader(identity);
+
+		Surface surface = useGPU ? createGPUSurfaceOnGPUThread(width, height) : createCPUSurface(width, height);
+		Canvas canvas = surface.getCanvas();
+
+		Paint paint = new Paint();
+		paint.setShader(resultShader);
+		canvas.drawRect(Rect.makeWH(width, height), paint);
+
+		// Replace the original image's pixels with the result
+		skImage.replaceFromSurface(surface, useGPU);
+
+		// Clean up
+		surface.close();
+		paint.close();
+		resultShader.close();
+		imageShader.close();
+		maskShader.close();
+		builder.close();
+	}
+
 	/**
 	 * In-place version of maskWithImage that modifies image1 directly.
 	 * This avoids allocating a new image and can improve performance.

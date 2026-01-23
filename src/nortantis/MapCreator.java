@@ -16,6 +16,7 @@ import java.util.concurrent.Future;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
+import nortantis.util.*;
 import org.apache.commons.lang3.StringUtils;
 
 import nortantis.MapSettings.GridOverlayLayer;
@@ -42,14 +43,6 @@ import nortantis.platform.Painter;
 import nortantis.platform.PixelReader;
 import nortantis.platform.PixelReaderWriter;
 import nortantis.swing.MapEdits;
-import nortantis.util.Assets;
-import nortantis.util.FileHelper;
-import nortantis.util.ImageHelper;
-import nortantis.util.Logger;
-import nortantis.util.Range;
-import nortantis.util.ThreadHelper;
-import nortantis.util.Tuple2;
-import nortantis.util.Tuple4;
 
 public class MapCreator implements WarningLogger
 {
@@ -508,7 +501,9 @@ public class MapCreator implements WarningLogger
 		// Add grunge
 		if (settings.drawGrunge && settings.grungeWidth > 0)
 		{
+			Stopwatch sw = new Stopwatch("add grunge incremental");
 			mapSnippet = ImageHelper.maskWithColorInRegion(mapSnippet, settings.frayedBorderColor, mapParts.grunge, true, drawBoundsUpperLeftCornerAdjustedForBorder);
+			sw.printElapsedTime();
 		}
 
 		if (DebugFlags.drawCorners())
@@ -889,7 +884,9 @@ public class MapCreator implements WarningLogger
 			}
 
 			// Add the grunge to the map.
-			map = ImageHelper.maskWithColor(map, settings.frayedBorderColor, grunge, true);
+			Stopwatch sw = new Stopwatch("mask grunge");
+			ImageHelper.maskWithColorInPlace(map, settings.frayedBorderColor, grunge, true);
+			sw.printElapsedTime();
 		}
 
 		drawOverlayImageIfNeededAndUpdateMapParts(map, settings, mapParts);
