@@ -64,11 +64,6 @@ public class SkiaPixelReaderWriter extends SkiaPixelReader implements PixelReade
 	public void setRGB(int x, int y, int rgb)
 	{
 		modified = true;
-		// ARGB images use premultiplied alpha internally, so we need to premultiply when writing
-		if (needsUnpremultiply) // Same condition as for reading - ARGB images
-		{
-			rgb = premultiply(rgb);
-		}
 		if (cachedPixelArray != null)
 		{
 			if (bounds != null)
@@ -84,24 +79,6 @@ public class SkiaPixelReaderWriter extends SkiaPixelReader implements PixelReade
 		{
 			image.getBitmap().erase(rgb, IRect.makeXYWH(x, y, 1, 1));
 		}
-	}
-
-	/**
-	 * Converts an unpremultiplied (straight) ARGB value to premultiplied ARGB.
-	 * In premultiplied format, RGB values are multiplied by alpha.
-	 */
-	private static int premultiply(int argb)
-	{
-		int a = (argb >> 24) & 0xFF;
-		if (a == 255)
-			return argb; // Fully opaque, no change needed
-		if (a == 0)
-			return 0; // Fully transparent
-
-		int r = ((argb >> 16) & 0xFF) * a / 255;
-		int g = ((argb >> 8) & 0xFF) * a / 255;
-		int b = (argb & 0xFF) * a / 255;
-		return (a << 24) | (r << 16) | (g << 8) | b;
 	}
 
 	@Override

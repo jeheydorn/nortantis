@@ -12,7 +12,6 @@ public class SkiaPixelReader implements PixelReader
 	protected final float maxPixelLevelAsFloat;
 	protected final SkiaImage image;
 	protected final int width;
-	protected final boolean needsUnpremultiply;
 
 	public SkiaPixelReader(SkiaImage image, IntRectangle bounds)
 	{
@@ -28,8 +27,6 @@ public class SkiaPixelReader implements PixelReader
 		this.image = image;
 		width = image.getWidth();
 		this.bounds = bounds;
-		// ARGB images use premultiplied alpha internally, so we need to unpremultiply when reading
-		this.needsUnpremultiply = (image.getType() == ImageType.ARGB);
 	}
 
 	public SkiaPixelReader(SkiaImage image)
@@ -66,47 +63,15 @@ public class SkiaPixelReader implements PixelReader
 	@Override
 	public int getRGB(int x, int y)
 	{
-		int argb;
 		if (cachedPixelArray != null)
 		{
 			if (bounds != null)
 			{
-				argb = cachedPixelArray[(y - bounds.y) * bounds.width + (x - bounds.x)];
+				return cachedPixelArray[(y - bounds.y) * bounds.width + (x - bounds.x)];
 			}
-			else
-			{
-				argb = cachedPixelArray[y * width + x];
-			}
+			return cachedPixelArray[y * width + x];
 		}
-		else
-		{
-			argb = image.getBitmap().getColor(x, y);
-		}
-
-		if (needsUnpremultiply)
-		{
-			return unpremultiply(argb);
-		}
-		return argb;
-	}
-
-	/**
-	 * Converts a premultiplied ARGB value to unpremultiplied (straight) ARGB.
-	 * In premultiplied format, RGB values are already multiplied by alpha.
-	 * This reverses that operation to get the original RGB values.
-	 */
-	protected static int unpremultiply(int argb)
-	{
-		int a = (argb >> 24) & 0xFF;
-		if (a == 255)
-			return argb; // Fully opaque, no change needed
-		if (a == 0)
-			return 0; // Fully transparent
-
-		int r = Math.min(255, ((argb >> 16) & 0xFF) * 255 / a);
-		int g = Math.min(255, ((argb >> 8) & 0xFF) * 255 / a);
-		int b = Math.min(255, (argb & 0xFF) * 255 / a);
-		return (a << 24) | (r << 16) | (g << 8) | b;
+		return image.getBitmap().getColor(x, y);
 	}
 
 	@Override

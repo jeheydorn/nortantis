@@ -29,11 +29,10 @@ public class SkiaShaderOps
 
 	/**
 	 * Creates a CPU raster surface for shader operations.
-	 * Uses PREMUL alpha type to match GPU surfaces for consistent rendering.
 	 */
 	private static Surface createCPUSurface(int width, int height)
 	{
-		return Surface.Companion.makeRaster(new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null));
+		return Surface.Companion.makeRaster(new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.UNPREMUL, null));
 	}
 
 	/**
@@ -58,19 +57,19 @@ public class SkiaShaderOps
 	/**
 	 * Reads pixels from a surface into a new Bitmap.
 	 * For GPU surfaces, flushes pending commands before reading.
-	 * Returns a PREMUL bitmap to match the rest of the codebase.
+	 * Returns an UNPREMUL bitmap for consistency with the rest of the codebase.
 	 */
 	private static Bitmap readPixelsToBitmap(Surface surface, int width, int height)
 	{
 		// Flush any pending GPU commands to ensure the surface is up-to-date
 		surface.flushAndSubmit(true);  // true = sync
 
-		// Read directly to PREMUL bitmap (matches both CPU and GPU surfaces)
+		// Read directly to UNPREMUL bitmap (Skia handles the conversion from PREMUL surface)
 		Bitmap resultBitmap = new Bitmap();
-		ImageInfo dstInfo = new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null);
+		ImageInfo dstInfo = new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.UNPREMUL, null);
 		resultBitmap.allocPixels(dstInfo);
 
-		// Read pixels from surface (no conversion needed since both use PREMUL)
+		// Try reading directly from surface - Skia converts PREMUL surface -> UNPREMUL bitmap
 		boolean success = surface.readPixels(resultBitmap, 0, 0);
 		// TODO - Remove this fallback since it doesn't seem to be used, at least from what I saw debugging my unit tests.
 //		if (!success)
