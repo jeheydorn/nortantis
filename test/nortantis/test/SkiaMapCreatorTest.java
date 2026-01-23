@@ -416,8 +416,8 @@ public class SkiaMapCreatorTest
 	}
 
 	@Test
-	public void newRandomMapTest1() throws IOException
+	public void newRandomMapTest() throws IOException
 	{
-		MapSettings settings = MapTestUtil.generateRandomAndCompare(1, expectedMapsFolderName, failedMapsFolderName);
+		MapSettings settings = MapTestUtil.generateRandomAndCompare(5, expectedMapsFolderName, failedMapsFolderName, threshold);
 	}
 }

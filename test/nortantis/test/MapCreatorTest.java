@@ -607,7 +607,7 @@ public class MapCreatorTest
 
 	private MapSettings generateRandomAndCompare(long seed)
 	{
-		return MapTestUtil.generateRandomAndCompare(1, expectedMapsFolderName, failedMapsFolderName);
+		return MapTestUtil.generateRandomAndCompare(1, expectedMapsFolderName, failedMapsFolderName, 0);
 	}
 
 	private void generateRandomHeightmapAndCompare(long seed)

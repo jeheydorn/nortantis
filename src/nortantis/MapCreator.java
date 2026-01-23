@@ -885,7 +885,7 @@ public class MapCreator implements WarningLogger
 
 			// Add the grunge to the map.
 			Stopwatch sw = new Stopwatch("mask grunge");
-			ImageHelper.maskWithColorInPlace(map, settings.frayedBorderColor, grunge, true);
+			map = ImageHelper.maskWithColor(map, settings.frayedBorderColor, grunge, true);
 			sw.printElapsedTime();
 		}
 

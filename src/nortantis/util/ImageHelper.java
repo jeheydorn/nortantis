@@ -584,6 +584,7 @@ public class ImageHelper
 	/**
 	 * In-place version of maskWithColor that modifies the source image directly.
 	 * This avoids allocating a new image and can improve performance.
+	 * // TODO Decide if I want to keep this. It's not much faster, probably slows down CPU only draws, and hangs when GPU is disabled.
 	 */
 	public static void maskWithColorInPlace(Image image, Color color, Image mask, boolean invertMask)
 	{
@@ -716,6 +717,7 @@ public class ImageHelper
 	 */
 	public static Image maskWithMultipleColors(Image image, Map<Integer, Color> colors, Image colorIndexes, Image mask, boolean invertMask)
 	{
+		Stopwatch sw = new Stopwatch("maskWithMultipleColors");
 		if (mask.getType() != ImageType.Grayscale8Bit && mask.getType() != ImageType.Binary)
 			throw new IllegalArgumentException("mask type must be ImageType.Grayscale or ImageType.Binary.");
 		if (colorIndexes.getType() != ImageType.RGB)
@@ -786,49 +788,10 @@ public class ImageHelper
 			}
 			ThreadHelper.getInstance().processInParallel(tasks, true);
 		}
+		sw.printElapsedTime();
 
 		return result;
 
-	}
-
-	/**
-	 * In-place version of maskWithMultipleColors that modifies the source image directly.
-	 * This avoids allocating a new image and can improve performance.
-	 *
-	 * Note: For grayscale input images, the Skia in-place path is not used because the shader
-	 * produces RGB output which can't be written back to a grayscale bitmap format.
-	 */
-	public static void maskWithMultipleColorsInPlace(Image image, Map<Integer, Color> colors, Image colorIndexes, Image mask, boolean invertMask)
-	{
-		if (mask.getType() != ImageType.Grayscale8Bit && mask.getType() != ImageType.Binary)
-			throw new IllegalArgumentException("mask type must be ImageType.Grayscale or ImageType.Binary.");
-		if (colorIndexes.getType() != ImageType.RGB)
-			throw new IllegalArgumentException("colorIndexes type must be type RGB.");
-
-		if (image.getWidth() != mask.getWidth())
-			throw new IllegalArgumentException("Mask width is " + mask.getWidth() + " but image has width " + image.getWidth() + ".");
-		if (image.getHeight() != mask.getHeight())
-			throw new IllegalArgumentException();
-
-		// Use Skia shader implementation for better performance when available
-		// Only for Grayscale8Bit masks (not Binary) since the shader doesn't handle Binary specially
-		// Skip grayscale images because the shader produces RGB output which can't be written to grayscale bitmap
-		boolean isGrayscaleImage = image.getType() == ImageType.Grayscale8Bit || image.getType() == ImageType.Binary;
-		if (!isGrayscaleImage && SkiaShaderOps.shouldRunOnGPU(image, colorIndexes, mask) && mask.getType() == ImageType.Grayscale8Bit)
-		{
-			SkiaShaderOps.maskWithMultipleColorsInPlace(image, colors, colorIndexes, mask, invertMask);
-			return;
-		}
-
-		// Fallback to creating a new image and copying back
-		assert false : "Fallback hit";
-		Image result = maskWithMultipleColors(image, colors, colorIndexes, mask, invertMask);
-		try (Painter p = image.createPainter())
-		{
-			p.setAlphaComposite(AlphaComposite.Src);
-			p.drawImage(result, 0, 0);
-		}
-		result.close();
 	}
 
 	/**

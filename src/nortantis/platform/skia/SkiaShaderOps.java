@@ -10,9 +10,20 @@ import nortantis.util.ImageHelper.ColorifyAlgorithm;
 import org.jetbrains.skia.*;
 
 /**
- * Provides high-performance image operations using Skia shaders and blend modes.
- * These operations use GPU acceleration when available via GPUExecutor,
- * falling back to SIMD-optimized CPU rendering otherwise.
+ * Provides high-performance image operations using Skia shaders and blend modes. These operations use GPU acceleration when available via GPUExecutor, falling back to SIMD-optimized CPU rendering
+ * otherwise.
+ *
+ * <h2>Alpha Handling in Shaders</h2>
+ * <p>
+ * <b>IMPORTANT:</b> When writing SkSL shaders, be aware of premultiplied alpha:
+ * <ul>
+ *   <li>Source images (SkiaImage) are stored as UNPREMUL (see {@link SkiaImage#getImageInfoForType})</li>
+ *   <li>GPU render targets require PREMUL alpha (see {@link #createGPUSurfaceOnGPUThread})</li>
+ *   <li>When shaders sample images via {@code image.eval(coord)}, Skia returns <b>premultiplied</b> values</li>
+ *   <li>To get straight RGB for blending, you must unpremultiply: {@code imgColor.a > 0 ? imgColor.rgb / imgColor.a : half3(0)}</li>
+ *   <li>Before returning from a shader writing to GPU surface, repremultiply: {@code return half4(rgb * alpha, alpha)}</li>
+ * </ul>
+ * </p>
  */
 public class SkiaShaderOps
 {
@@ -21,8 +32,7 @@ public class SkiaShaderOps
 	// ==================== Surface Creation Helper ====================
 
 	/**
-	 * Returns true if the given dimensions are suitable for GPU rendering.
-	 * Very large images that exceed the GPU's maximum texture size should use CPU rendering.
+	 * Returns true if the given dimensions are suitable for GPU rendering. Very large images that exceed the GPU's maximum texture size should use CPU rendering.
 	 */
 	private static boolean canUseGPUForSize(int width, int height)
 	{
@@ -39,9 +49,7 @@ public class SkiaShaderOps
 	}
 
 	/**
-	 * Creates a GPU surface. Must be called from the GPU thread.
-	 * GPU render targets require PREMUL alpha type.
-	 * Returns null if surface creation fails.
+	 * Creates a GPU surface. Must be called from the GPU thread. GPU render targets require PREMUL alpha type. Returns null if surface creation fails.
 	 */
 	private static Surface createGPUSurfaceOnGPUThread(int width, int height)
 	{
@@ -50,17 +58,11 @@ public class SkiaShaderOps
 		{
 			return null;
 		}
-		return Surface.Companion.makeRenderTarget(
-			ctx,
-			false,
-			new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null)
-		);
+		return Surface.Companion.makeRenderTarget(ctx, false, new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null));
 	}
 
 	/**
-	 * Reads pixels from a surface into a new Bitmap.
-	 * For GPU surfaces, flushes pending commands before reading.
-	 * Returns an UNPREMUL bitmap for consistency with the rest of the codebase.
+	 * Reads pixels from a surface into a new Bitmap. For GPU surfaces, flushes pending commands before reading. Returns an UNPREMUL bitmap for consistency with the rest of the codebase.
 	 */
 	private static Bitmap readPixelsToBitmap(Surface surface, int width, int height)
 	{
@@ -75,20 +77,20 @@ public class SkiaShaderOps
 		// Try reading directly from surface - Skia converts PREMUL surface -> UNPREMUL bitmap
 		boolean success = surface.readPixels(resultBitmap, 0, 0);
 		// TODO - Remove this fallback since it doesn't seem to be used, at least from what I saw debugging my unit tests.
-//		if (!success)
-//		{
-//			// Fallback: try via image snapshot
-//			org.jetbrains.skia.Image snapshot = surface.makeImageSnapshot();
-//			if (snapshot != null)
-//			{
-//				success = snapshot.readPixels(resultBitmap, 0, 0);
-//				snapshot.close();
-//			}
-//			if (!success)
-//			{
-//				throw new RuntimeException("Failed to read pixels from GPU surface (both methods failed)");
-//			}
-//		}
+		//		if (!success)
+		//		{
+		//			// Fallback: try via image snapshot
+		//			org.jetbrains.skia.Image snapshot = surface.makeImageSnapshot();
+		//			if (snapshot != null)
+		//			{
+		//				success = snapshot.readPixels(resultBitmap, 0, 0);
+		//				snapshot.close();
+		//			}
+		//			if (!success)
+		//			{
+		//				throw new RuntimeException("Failed to read pixels from GPU surface (both methods failed)");
+		//			}
+		//		}
 		return resultBitmap;
 	}
 
@@ -101,7 +103,7 @@ public class SkiaShaderOps
 			uniform shader image1;
 			uniform shader image2;
 			uniform shader mask;
-
+			
 			half4 main(float2 coord) {
 			    half4 c1 = image1.eval(coord);
 			    half4 c2 = image2.eval(coord);
@@ -129,8 +131,7 @@ public class SkiaShaderOps
 	}
 
 	/**
-	 * Blends two images using a grayscale mask.
-	 * result = mask * image1 + (1 - mask) * image2
+	 * Blends two images using a grayscale mask. result = mask * image1 + (1 - mask) * image2
 	 */
 	public static Image maskWithImage(Image image1, Image image2, Image mask)
 	{
@@ -145,8 +146,7 @@ public class SkiaShaderOps
 		// Check if we should use GPU (also check size limits to avoid crashes with large images)
 		if (GPUExecutor.getInstance().isGPUAvailable() && canUseGPUForSize(width, height))
 		{
-			return GPUExecutor.getInstance().submit(() ->
-				maskWithImageImpl(skImage1, skImage2, skMask, width, height, resultType, true));
+			return GPUExecutor.getInstance().submit(() -> maskWithImageImpl(skImage1, skImage2, skMask, width, height, resultType, true));
 		}
 		else
 		{
@@ -154,8 +154,7 @@ public class SkiaShaderOps
 		}
 	}
 
-	private static Image maskWithImageImpl(SkiaImage skImage1, SkiaImage skImage2, SkiaImage skMask,
-			int width, int height, ImageType resultType, boolean useGPU)
+	private static Image maskWithImageImpl(SkiaImage skImage1, SkiaImage skImage2, SkiaImage skMask, int width, int height, ImageType resultType, boolean useGPU)
 	{
 		org.jetbrains.skia.Image skiImage1 = skImage1.getSkiaImage();
 		org.jetbrains.skia.Image skiImage2 = skImage2.getSkiaImage();
@@ -209,11 +208,11 @@ public class SkiaShaderOps
 			uniform half3 colorRGB;
 			uniform half colorAlpha;
 			uniform half invertMask;
-
+			
 			half4 main(float2 coord) {
 			    half4 imgColor = image.eval(coord);  // premultiplied
 			    half m = mask.eval(coord).r;
-
+			
 			    // Calculate blend factor matching Java logic:
 			    // maskLevel = m * colorAlpha (in 0-1 range here)
 			    // overlayAlpha = 1 - maskLevel (non-inverted) or maskLevel (inverted)
@@ -224,14 +223,14 @@ public class SkiaShaderOps
 			    } else {
 			        blendFactor = 1.0 - m * colorAlpha;
 			    }
-
+			
 			    // Unpremultiply image color to get straight RGB for blending
 			    half3 imgRGB = imgColor.a > 0.0 ? imgColor.rgb / imgColor.a : half3(0.0);
-
+			
 			    // Blend in straight alpha space
 			    half3 resultRGB = mix(imgRGB, colorRGB, blendFactor);
 			    half resultA = imgColor.a;
-
+			
 			    // Output premultiplied for GPU surface
 			    return half4(resultRGB * resultA, resultA);
 			}
@@ -259,11 +258,8 @@ public class SkiaShaderOps
 	}
 
 	/**
-	 * Blends an image with a solid color using a grayscale mask.
-	 * Matches the behavior of ImageHelper.maskWithColorInRegion:
-	 * - mask=0 (black), not inverted -> fully show color
-	 * - mask=1 (white), not inverted -> fully show image
-	 * - The color's alpha modulates the mask effect
+	 * Blends an image with a solid color using a grayscale mask. Matches the behavior of ImageHelper.maskWithColorInRegion: - mask=0 (black), not inverted -> fully show color - mask=1 (white), not
+	 * inverted -> fully show image - The color's alpha modulates the mask effect
 	 */
 	public static Image maskWithColor(Image image, Color color, Image mask, boolean invertMask)
 	{
@@ -283,8 +279,7 @@ public class SkiaShaderOps
 		// Check if we should use GPU (also check size limits to avoid crashes with large images)
 		if (GPUExecutor.getInstance().isGPUAvailable() && canUseGPUForSize(width, height))
 		{
-			return GPUExecutor.getInstance().submit(() ->
-				maskWithColorImpl(skImage, skMask, width, height, r, g, b, a, invertMask, resultType, true));
+			return GPUExecutor.getInstance().submit(() -> maskWithColorImpl(skImage, skMask, width, height, r, g, b, a, invertMask, resultType, true));
 		}
 		else
 		{
@@ -292,8 +287,7 @@ public class SkiaShaderOps
 		}
 	}
 
-	private static Image maskWithColorImpl(SkiaImage skImage, SkiaImage skMask, int width, int height,
-			float r, float g, float b, float a, boolean invertMask, ImageType resultType, boolean useGPU)
+	private static Image maskWithColorImpl(SkiaImage skImage, SkiaImage skMask, int width, int height, float r, float g, float b, float a, boolean invertMask, ImageType resultType, boolean useGPU)
 	{
 		org.jetbrains.skia.Image skiImage = skImage.getSkiaImage();
 		org.jetbrains.skia.Image skiMask = skMask.getSkiaImage();
@@ -340,7 +334,7 @@ public class SkiaShaderOps
 			uniform shader image;
 			uniform shader mask;
 			uniform half invertMask;
-
+			
 			half4 main(float2 coord) {
 			    half4 c = image.eval(coord);  // premultiplied: rgb is already multiplied by c.a
 			    half m = mask.eval(coord).r;
@@ -349,7 +343,7 @@ public class SkiaShaderOps
 			    }
 			    // Take minimum of mask and existing alpha
 			    half newAlpha = min(m, c.a);
-
+			
 			    // Unpremultiply, then repremultiply with new alpha
 			    // c.rgb = originalRGB * c.a, so originalRGB = c.rgb / c.a
 			    // newPremul = originalRGB * newAlpha = (c.rgb / c.a) * newAlpha
@@ -377,8 +371,7 @@ public class SkiaShaderOps
 	}
 
 	/**
-	 * Sets alpha channel from a grayscale mask.
-	 * The result alpha is min(mask, originalAlpha).
+	 * Sets alpha channel from a grayscale mask. The result alpha is min(mask, originalAlpha).
 	 */
 	public static Image setAlphaFromMask(Image image, Image alphaMask, boolean invertMask)
 	{
@@ -391,8 +384,7 @@ public class SkiaShaderOps
 		// Check if we should use GPU (also check size limits to avoid crashes with large images)
 		if (GPUExecutor.getInstance().isGPUAvailable() && canUseGPUForSize(width, height))
 		{
-			return GPUExecutor.getInstance().submit(() ->
-				setAlphaFromMaskImpl(skImage, skMask, width, height, invertMask, true));
+			return GPUExecutor.getInstance().submit(() -> setAlphaFromMaskImpl(skImage, skMask, width, height, invertMask, true));
 		}
 		else
 		{
@@ -400,8 +392,7 @@ public class SkiaShaderOps
 		}
 	}
 
-	private static Image setAlphaFromMaskImpl(SkiaImage skImage, SkiaImage skMask, int width, int height,
-			boolean invertMask, boolean useGPU)
+	private static Image setAlphaFromMaskImpl(SkiaImage skImage, SkiaImage skMask, int width, int height, boolean invertMask, boolean useGPU)
 	{
 		org.jetbrains.skia.Image skiImage = skImage.getSkiaImage();
 		org.jetbrains.skia.Image skiMask = skMask.getSkiaImage();
@@ -447,7 +438,7 @@ public class SkiaShaderOps
 			uniform shader image;
 			uniform half3 hsb;  // hue, saturation, brightness
 			uniform half alpha;
-
+			
 			// HSB to RGB conversion
 			half3 hsb2rgb(half h, half s, half b) {
 			    half c = b * s;
@@ -463,7 +454,7 @@ public class SkiaShaderOps
 			    half m = b - c;
 			    return rgb + m;
 			}
-
+			
 			half4 main(float2 coord) {
 			    half gray = image.eval(coord).r;  // grayscale, premul doesn't affect it
 			    half I = hsb.z * 255.0;
@@ -480,7 +471,7 @@ public class SkiaShaderOps
 			uniform shader image;
 			uniform half3 hsb;
 			uniform half alpha;
-
+			
 			half3 hsb2rgb(half h, half s, half b) {
 			    half c = b * s;
 			    half hPrime = h * 6.0;
@@ -495,7 +486,7 @@ public class SkiaShaderOps
 			    half m = b - c;
 			    return rgb + m;
 			}
-
+			
 			half4 main(float2 coord) {
 			    half gray = image.eval(coord).r;
 			    half resultLevel;
@@ -515,7 +506,7 @@ public class SkiaShaderOps
 	// Output is premultiplied (rgb * alpha) for GPU render targets
 	private static final String COLORIFY_SOLID_SKSL = """
 			uniform half4 color;
-
+			
 			half4 main(float2 coord) {
 			    // Output premultiplied for GPU surface
 			    return half4(color.rgb * color.a, color.a);
@@ -596,8 +587,7 @@ public class SkiaShaderOps
 		// Check if we should use GPU (also check size limits to avoid crashes with large images)
 		if (GPUExecutor.getInstance().isGPUAvailable() && canUseGPUForSize(width, height))
 		{
-			return GPUExecutor.getInstance().submit(() ->
-				colorifyImpl(skImage, width, height, how, hsb, alpha, r, g, b, resultType, true));
+			return GPUExecutor.getInstance().submit(() -> colorifyImpl(skImage, width, height, how, hsb, alpha, r, g, b, resultType, true));
 		}
 		else
 		{
@@ -605,8 +595,7 @@ public class SkiaShaderOps
 		}
 	}
 
-	private static Image colorifyImpl(SkiaImage skImage, int width, int height, ColorifyAlgorithm how,
-			float[] hsb, float alpha, float r, float g, float b, ImageType resultType, boolean useGPU)
+	private static Image colorifyImpl(SkiaImage skImage, int width, int height, ColorifyAlgorithm how, float[] hsb, float alpha, float r, float g, float b, ImageType resultType, boolean useGPU)
 	{
 		org.jetbrains.skia.Image skiImage = skImage.getSkiaImage();
 		Matrix33 identity = Matrix33.Companion.getIDENTITY();
@@ -669,7 +658,7 @@ public class SkiaShaderOps
 	// SkSL shader for RGB to grayscale conversion using standard luminance formula
 	private static final String GRAYSCALE_SKSL = """
 			uniform shader image;
-
+			
 			half4 main(float2 coord) {
 			    half4 c = image.eval(coord);
 			    // Standard luminance formula (ITU-R BT.601)
@@ -696,8 +685,7 @@ public class SkiaShaderOps
 	}
 
 	/**
-	 * Converts an image to grayscale using the standard luminance formula.
-	 * This produces consistent results on both CPU and GPU.
+	 * Converts an image to grayscale using the standard luminance formula. This produces consistent results on both CPU and GPU.
 	 */
 	public static Image convertToGrayscale(Image image)
 	{
@@ -707,8 +695,7 @@ public class SkiaShaderOps
 
 		if (GPUExecutor.getInstance().isGPUAvailable() && canUseGPUForSize(width, height))
 		{
-			return GPUExecutor.getInstance().submit(() ->
-				convertToGrayscaleImpl(skImage, width, height, true));
+			return GPUExecutor.getInstance().submit(() -> convertToGrayscaleImpl(skImage, width, height, true));
 		}
 		else
 		{
@@ -762,43 +749,50 @@ public class SkiaShaderOps
 	// The palette is a 2D texture where color for region ID r is at (r % 256, r / 256)
 	// Note: Uses unpremultiplied alpha (straight alpha) throughout
 	// Note: SkSL doesn't support % operator, so we use floor(x/y)*y subtraction for modulo
+	// Note: Skia shaders work in premultiplied color space - image.eval() returns premul values
 	private static final String MASK_WITH_MULTIPLE_COLORS_SKSL = """
-			uniform shader image;        // Input image (RGB or grayscale)
+			uniform shader srcImage;     // Input image (RGB or grayscale)
 			uniform shader colorIndexes; // Region IDs encoded as RGB
-			uniform shader mask;         // Grayscale blend mask
-			uniform shader palette;      // 2D color palette (256x128)
+			uniform shader blendMask;    // Grayscale blend mask
+			uniform shader colorPalette; // 2D color palette (256x128)
 			uniform half invertMask;
-
+			
 			half4 main(float2 coord) {
-			    half4 imgColor = image.eval(coord);
-			    half3 originalRGB = imgColor.rgb;
-
+			    half4 imgColor = srcImage.eval(coord);  // premultiplied
+			
+			    // Unpremultiply image color to get straight RGB for blending
+			    half3 originalRGB = imgColor.a > 0.0 ? imgColor.rgb / imgColor.a : half3(0.0);
+			
 			    // Decode region ID from colorIndexes (r << 16 | g << 8 | b)
 			    half4 indexColor = colorIndexes.eval(coord);
 			    float regionId = floor(indexColor.r * 255.0 + 0.5) * 65536.0
 			                   + floor(indexColor.g * 255.0 + 0.5) * 256.0
 			                   + floor(indexColor.b * 255.0 + 0.5);
-
+			
 			    // Calculate 2D palette coordinates (simulating regionId % 256 and regionId / 256)
+			    // Use pixel coordinates (not normalized) since shader.eval() expects pixel coords
 			    float py = floor(regionId / 256.0);
 			    float px = regionId - py * 256.0;
-			    float2 paletteCoord = float2((px + 0.5) / 256.0, (py + 0.5) / 128.0);
-			    half4 regionColor = palette.eval(paletteCoord);
-
-			    // If no color for this region (alpha = 0), return original color
+			    float2 paletteCoord = float2(px + 0.5, py + 0.5);  // +0.5 to center on pixel
+			    half4 regionColor = colorPalette.eval(paletteCoord);
+			
+			    // If no color for this region (alpha = 0), return black (matching Java behavior
+			    // where result pixels are not set and remain at their default black value)
 			    if (regionColor.a < 0.01) {
-			        return half4(originalRGB, 1.0);
+			        return half4(0.0, 0.0, 0.0, 1.0);
 			    }
-
+			
 			    // Get mask value
-			    half m = mask.eval(coord).r;
+			    half m = blendMask.eval(coord).r;
 			    if (invertMask > 0.5) {
 			        m = 1.0 - m;
 			    }
-
+			
 			    // Blend: m=1 (white mask) -> show original, m=0 (black mask) -> show region color
 			    half3 blended = mix(regionColor.rgb, originalRGB, m);
-			    return half4(blended, 1.0);
+			
+			    // Output premultiplied for GPU surface
+			    return half4(blended * imgColor.a, imgColor.a);
 			}
 			""";
 
@@ -824,15 +818,19 @@ public class SkiaShaderOps
 	}
 
 	/**
-	 * Blends a grayscale image with multiple colors based on region IDs and a mask.
-	 * Each pixel's region ID is decoded from the colorIndexes image (RGB encoded as r<<16|g<<8|b).
-	 * The corresponding color is looked up from the colors map and blended based on the mask.
+	 * Blends a grayscale image with multiple colors based on region IDs and a mask. Each pixel's region ID is decoded from the colorIndexes image (RGB encoded as r<<16|g<<8|b). The corresponding
+	 * color is looked up from the colors map and blended based on the mask.
 	 *
-	 * @param image        Grayscale source image
-	 * @param colors       Map of region ID to color
-	 * @param colorIndexes RGB image encoding region IDs
-	 * @param mask         Grayscale mask controlling blend (white=original, black=region color)
-	 * @param invertMask   If true, inverts the mask
+	 * @param image
+	 * 		Grayscale source image
+	 * @param colors
+	 * 		Map of region ID to color
+	 * @param colorIndexes
+	 * 		RGB image encoding region IDs
+	 * @param mask
+	 * 		Grayscale mask controlling blend (white=original, black=region color)
+	 * @param invertMask
+	 * 		If true, inverts the mask
 	 * @return Blended RGB image
 	 */
 	public static Image maskWithMultipleColors(Image image, Map<Integer, Color> colors, Image colorIndexes, Image mask, boolean invertMask)
@@ -853,8 +851,7 @@ public class SkiaShaderOps
 		{
 			if (GPUExecutor.getInstance().isGPUAvailable() && canUseGPUForSize(width, height))
 			{
-				return GPUExecutor.getInstance().submit(() ->
-					maskWithMultipleColorsImpl(skImage, skColorIndexes, skMask, skPalette, width, height, invertMask, resultType, true));
+				return GPUExecutor.getInstance().submit(() -> maskWithMultipleColorsImpl(skImage, skColorIndexes, skMask, skPalette, width, height, invertMask, resultType, true));
 			}
 			else
 			{
@@ -868,8 +865,7 @@ public class SkiaShaderOps
 	}
 
 	/**
-	 * Creates a 2D palette texture from the colors map.
-	 * Region ID r is stored at pixel position (r % 256, r / 256).
+	 * Creates a 2D palette texture from the colors map. Region ID r is stored at pixel position (r % 256, r / 256).
 	 */
 	private static Image createPaletteTexture(Map<Integer, Color> colors)
 	{
@@ -902,27 +898,33 @@ public class SkiaShaderOps
 		return palette;
 	}
 
-	private static Image maskWithMultipleColorsImpl(SkiaImage skImage, SkiaImage skColorIndexes, SkiaImage skMask,
-			SkiaImage skPalette, int width, int height, boolean invertMask, ImageType resultType, boolean useGPU)
+	private static Image maskWithMultipleColorsImpl(SkiaImage skImage, SkiaImage skColorIndexes, SkiaImage skMask, SkiaImage skPalette, int width, int height, boolean invertMask, ImageType resultType,
+			boolean useGPU)
 	{
+		Matrix33 identity = Matrix33.Companion.getIDENTITY();
+		SamplingMode nearestSampling = new FilterMipmap(FilterMode.NEAREST, MipmapMode.NONE);
+		SamplingMode defaultSampling = SamplingMode.Companion.getDEFAULT();
+
+		// Create palette shader FIRST, before accessing any other images, to ensure
+		// the palette bitmap data is captured before any potential interference
+		org.jetbrains.skia.Image skiPalette = skPalette.getSkiaImage();
+		Shader paletteShader = skiPalette.makeShader(FilterTileMode.CLAMP, FilterTileMode.CLAMP, nearestSampling, identity);
+
+		// Now get the other images
 		org.jetbrains.skia.Image skiImage = skImage.getSkiaImage();
 		org.jetbrains.skia.Image skiColorIndexes = skColorIndexes.getSkiaImage();
 		org.jetbrains.skia.Image skiMask = skMask.getSkiaImage();
-		org.jetbrains.skia.Image skiPalette = skPalette.getSkiaImage();
 
-		Matrix33 identity = Matrix33.Companion.getIDENTITY();
-
-		Shader imageShader = skiImage.makeShader(FilterTileMode.CLAMP, FilterTileMode.CLAMP, identity);
-		Shader colorIndexesShader = skiColorIndexes.makeShader(FilterTileMode.CLAMP, FilterTileMode.CLAMP, identity);
-		Shader maskShader = skiMask.makeShader(FilterTileMode.CLAMP, FilterTileMode.CLAMP, identity);
-		Shader paletteShader = skiPalette.makeShader(FilterTileMode.CLAMP, FilterTileMode.CLAMP, identity);
+		Shader imageShader = skiImage.makeShader(FilterTileMode.CLAMP, FilterTileMode.CLAMP, defaultSampling, identity);
+		Shader colorIndexesShader = skiColorIndexes.makeShader(FilterTileMode.CLAMP, FilterTileMode.CLAMP, nearestSampling, identity);
+		Shader maskShader = skiMask.makeShader(FilterTileMode.CLAMP, FilterTileMode.CLAMP, defaultSampling, identity);
 
 		RuntimeEffect effect = getMaskWithMultipleColorsEffect();
 		RuntimeShaderBuilder builder = new RuntimeShaderBuilder(effect);
-		builder.child("image", imageShader);
+		builder.child("srcImage", imageShader);
 		builder.child("colorIndexes", colorIndexesShader);
-		builder.child("mask", maskShader);
-		builder.child("palette", paletteShader);
+		builder.child("blendMask", maskShader);
+		builder.child("colorPalette", paletteShader);
 		builder.uniform("invertMask", invertMask ? 1f : 0f);
 		Shader resultShader = builder.makeShader(identity);
 
@@ -956,7 +958,7 @@ public class SkiaShaderOps
 			uniform shader image;        // Grayscale input image
 			uniform shader colorIndexes; // Region IDs encoded as RGB
 			uniform shader palette;      // HSB palette (256x128), HSB stored in RGB channels
-
+			
 			// HSB to RGB conversion
 			half3 hsb2rgb(half h, half s, half b) {
 			    half c = b * s;
@@ -972,32 +974,32 @@ public class SkiaShaderOps
 			    half m = b - c;
 			    return rgb + m;
 			}
-
+			
 			half4 main(float2 coord) {
 			    half gray = image.eval(coord).r;
-
+			
 			    // Decode region ID from colorIndexes
 			    half4 indexColor = colorIndexes.eval(coord);
 			    float regionId = floor(indexColor.r * 255.0 + 0.5) * 65536.0
 			                   + floor(indexColor.g * 255.0 + 0.5) * 256.0
 			                   + floor(indexColor.b * 255.0 + 0.5);
-
+			
 			    // Calculate 2D palette coordinates
 			    float py = floor(regionId / 256.0);
 			    float px = regionId - py * 256.0;
 			    float2 paletteCoord = float2((px + 0.5) / 256.0, (py + 0.5) / 128.0);
 			    half4 hsbColor = palette.eval(paletteCoord);
-
+			
 			    // If no color for this region, return gray
 			    if (hsbColor.a < 0.01) {
 			        return half4(gray, gray, gray, 1.0);
 			    }
-
+			
 			    // HSB values are stored in RGB channels
 			    half h = hsbColor.r;
 			    half s = hsbColor.g;
 			    half brightness = hsbColor.b;
-
+			
 			    // Algorithm 2: overlay formula
 			    half I = brightness * 255.0;
 			    half overlay = ((I / 255.0) * (I + (2.0 * gray) * (255.0 - I))) / 255.0;
@@ -1011,7 +1013,7 @@ public class SkiaShaderOps
 			uniform shader image;
 			uniform shader colorIndexes;
 			uniform shader palette;
-
+			
 			half3 hsb2rgb(half h, half s, half b) {
 			    half c = b * s;
 			    half hPrime = h * 6.0;
@@ -1026,28 +1028,28 @@ public class SkiaShaderOps
 			    half m = b - c;
 			    return rgb + m;
 			}
-
+			
 			half4 main(float2 coord) {
 			    half gray = image.eval(coord).r;
-
+			
 			    half4 indexColor = colorIndexes.eval(coord);
 			    float regionId = floor(indexColor.r * 255.0 + 0.5) * 65536.0
 			                   + floor(indexColor.g * 255.0 + 0.5) * 256.0
 			                   + floor(indexColor.b * 255.0 + 0.5);
-
+			
 			    float py = floor(regionId / 256.0);
 			    float px = regionId - py * 256.0;
 			    float2 paletteCoord = float2((px + 0.5) / 256.0, (py + 0.5) / 128.0);
 			    half4 hsbColor = palette.eval(paletteCoord);
-
+			
 			    if (hsbColor.a < 0.01) {
 			        return half4(gray, gray, gray, 1.0);
 			    }
-
+			
 			    half h = hsbColor.r;
 			    half s = hsbColor.g;
 			    half brightness = hsbColor.b;
-
+			
 			    // Algorithm 3: brightness scaling
 			    half resultLevel;
 			    if (brightness < 0.5) {
@@ -1066,23 +1068,23 @@ public class SkiaShaderOps
 			uniform shader image;
 			uniform shader colorIndexes;
 			uniform shader palette;      // RGB palette for solid colors
-
+			
 			half4 main(float2 coord) {
 			    half4 indexColor = colorIndexes.eval(coord);
 			    float regionId = floor(indexColor.r * 255.0 + 0.5) * 65536.0
 			                   + floor(indexColor.g * 255.0 + 0.5) * 256.0
 			                   + floor(indexColor.b * 255.0 + 0.5);
-
+			
 			    float py = floor(regionId / 256.0);
 			    float px = regionId - py * 256.0;
 			    float2 paletteCoord = float2((px + 0.5) / 256.0, (py + 0.5) / 128.0);
 			    half4 regionColor = palette.eval(paletteCoord);
-
+			
 			    if (regionColor.a < 0.01) {
 			        half gray = image.eval(coord).r;
 			        return half4(gray, gray, gray, 1.0);
 			    }
-
+			
 			    return half4(regionColor.rgb, 1.0);
 			}
 			""";
@@ -1149,14 +1151,17 @@ public class SkiaShaderOps
 	}
 
 	/**
-	 * Colorifies a grayscale image using multiple colors based on region IDs.
-	 * Each pixel's region ID is decoded from the colorIndexes image.
-	 * The corresponding color is looked up and used to colorify the grayscale pixel.
+	 * Colorifies a grayscale image using multiple colors based on region IDs. Each pixel's region ID is decoded from the colorIndexes image. The corresponding color is looked up and used to colorify
+	 * the grayscale pixel.
 	 *
-	 * @param image        Grayscale source image
-	 * @param colorMap     Map of region ID to color
-	 * @param colorIndexes RGB image encoding region IDs
-	 * @param how          Colorify algorithm to use
+	 * @param image
+	 * 		Grayscale source image
+	 * @param colorMap
+	 * 		Map of region ID to color
+	 * @param colorIndexes
+	 * 		RGB image encoding region IDs
+	 * @param how
+	 * 		Colorify algorithm to use
 	 * @return Colorified RGB image
 	 */
 	public static Image colorifyMulti(Image image, Map<Integer, Color> colorMap, Image colorIndexes, ColorifyAlgorithm how)
@@ -1173,17 +1178,14 @@ public class SkiaShaderOps
 		int height = colorIndexes.getHeight();
 
 		// Create palette texture - for algorithm2/3, store HSB; for solidColor, store RGB
-		Image palette = (how == ColorifyAlgorithm.solidColor)
-				? createPaletteTexture(colorMap)
-				: createHSBPaletteTexture(colorMap);
+		Image palette = (how == ColorifyAlgorithm.solidColor) ? createPaletteTexture(colorMap) : createHSBPaletteTexture(colorMap);
 		SkiaImage skPalette = (SkiaImage) palette;
 
 		try
 		{
 			if (GPUExecutor.getInstance().isGPUAvailable() && canUseGPUForSize(width, height))
 			{
-				return GPUExecutor.getInstance().submit(() ->
-					colorifyMultiImpl(skImage, skColorIndexes, skPalette, width, height, how, true));
+				return GPUExecutor.getInstance().submit(() -> colorifyMultiImpl(skImage, skColorIndexes, skPalette, width, height, how, true));
 			}
 			else
 			{
@@ -1197,9 +1199,7 @@ public class SkiaShaderOps
 	}
 
 	/**
-	 * Creates a 2D palette texture storing HSB values.
-	 * Region ID r is stored at pixel position (r % 256, r / 256).
-	 * HSB values are stored in RGB channels (H=R, S=G, B=B).
+	 * Creates a 2D palette texture storing HSB values. Region ID r is stored at pixel position (r % 256, r / 256). HSB values are stored in RGB channels (H=R, S=G, B=B).
 	 */
 	private static Image createHSBPaletteTexture(Map<Integer, Color> colors)
 	{
@@ -1234,8 +1234,7 @@ public class SkiaShaderOps
 		return palette;
 	}
 
-	private static Image colorifyMultiImpl(SkiaImage skImage, SkiaImage skColorIndexes, SkiaImage skPalette,
-			int width, int height, ColorifyAlgorithm how, boolean useGPU)
+	private static Image colorifyMultiImpl(SkiaImage skImage, SkiaImage skColorIndexes, SkiaImage skPalette, int width, int height, ColorifyAlgorithm how, boolean useGPU)
 	{
 		org.jetbrains.skia.Image skiImage = skImage.getSkiaImage();
 		org.jetbrains.skia.Image skiColorIndexes = skColorIndexes.getSkiaImage();
@@ -1296,7 +1295,7 @@ public class SkiaShaderOps
 	private static final String COPY_ALPHA_TO_SKSL = """
 			uniform shader target;
 			uniform shader alphaSource;
-
+			
 			half4 main(float2 coord) {
 			    half4 targetColor = target.eval(coord);
 			    half4 sourceColor = alphaSource.eval(coord);
@@ -1403,6 +1402,18 @@ public class SkiaShaderOps
 		return isGPUAccelerated() && areAllGpuBackedSkiaImages(images);
 	}
 
+	public static boolean areAllSKiaImages(Image... images)
+	{
+		for (Image image : images)
+		{
+			if (!(image instanceof SkiaImage))
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
 	/**
 	 * Checks if all images are SkiaImage instances that have their data on the GPU.
 	 */
@@ -1414,7 +1425,7 @@ public class SkiaShaderOps
 			{
 				return false;
 			}
-			if (!((SkiaImage)image).isGpuEnabled())
+			if (!((SkiaImage) image).isGpuEnabled())
 			{
 				return false;
 			}
@@ -1425,8 +1436,7 @@ public class SkiaShaderOps
 	// ==================== In-Place Operations ====================
 
 	/**
-	 * In-place version of maskWithColor that modifies the source image directly.
-	 * This avoids allocating a new image and can improve performance.
+	 * In-place version of maskWithColor that modifies the source image directly. This avoids allocating a new image and can improve performance.
 	 */
 	public static void maskWithColorInPlace(Image image, Color color, Image mask, boolean invertMask)
 	{
@@ -1444,7 +1454,8 @@ public class SkiaShaderOps
 
 		if (GPUExecutor.getInstance().isGPUAvailable() && canUseGPUForSize(width, height))
 		{
-			GPUExecutor.getInstance().submit(() -> {
+			GPUExecutor.getInstance().submit(() ->
+			{
 				maskWithColorInPlaceImpl(skImage, skMask, width, height, r, g, b, a, invertMask, true);
 				return null;
 			});
@@ -1455,8 +1466,7 @@ public class SkiaShaderOps
 		}
 	}
 
-	private static void maskWithColorInPlaceImpl(SkiaImage skImage, SkiaImage skMask, int width, int height,
-			float r, float g, float b, float a, boolean invertMask, boolean useGPU)
+	private static void maskWithColorInPlaceImpl(SkiaImage skImage, SkiaImage skMask, int width, int height, float r, float g, float b, float a, boolean invertMask, boolean useGPU)
 	{
 		org.jetbrains.skia.Image skiImage = skImage.getSkiaImage();
 		org.jetbrains.skia.Image skiMask = skMask.getSkiaImage();
@@ -1507,21 +1517,21 @@ public class SkiaShaderOps
 			uniform half invertMask;
 			uniform float2 maskOffset;
 			uniform float2 maskSize;
-
+			
 			half4 main(float2 coord) {
 			    half4 imgColor = image.eval(coord);  // premultiplied
-
+			
 			    // Calculate mask coordinate with offset
 			    float2 maskCoord = coord + maskOffset;
-
+			
 			    // Bounds check - if out of bounds, return image unchanged
 			    if (maskCoord.x < 0.0 || maskCoord.y < 0.0 ||
 			        maskCoord.x >= maskSize.x || maskCoord.y >= maskSize.y) {
 			        return imgColor;
 			    }
-
+			
 			    half m = mask.eval(maskCoord).r;
-
+			
 			    // Calculate blend factor matching Java logic:
 			    // maskLevel = m * colorAlpha (in 0-1 range here)
 			    // overlayAlpha = 1 - maskLevel (non-inverted) or maskLevel (inverted)
@@ -1532,14 +1542,14 @@ public class SkiaShaderOps
 			    } else {
 			        blendFactor = 1.0 - m * colorAlpha;
 			    }
-
+			
 			    // Unpremultiply image color to get straight RGB for blending
 			    half3 imgRGB = imgColor.a > 0.0 ? imgColor.rgb / imgColor.a : half3(0.0);
-
+			
 			    // Blend in straight alpha space
 			    half3 resultRGB = mix(imgRGB, colorRGB, blendFactor);
 			    half resultA = imgColor.a;
-
+			
 			    // Output premultiplied for GPU surface
 			    return half4(resultRGB * resultA, resultA);
 			}
@@ -1567,12 +1577,10 @@ public class SkiaShaderOps
 	}
 
 	/**
-	 * In-place version of maskWithColorInRegion that modifies the source image directly.
-	 * The mask can be larger than the image, with imageOffsetInMask specifying where
-	 * the image's (0,0) corresponds to in the mask coordinate space.
+	 * In-place version of maskWithColorInRegion that modifies the source image directly. The mask can be larger than the image, with imageOffsetInMask specifying where the image's (0,0) corresponds
+	 * to in the mask coordinate space.
 	 */
-	public static void maskWithColorInRegionInPlace(Image image, Color color, Image mask, boolean invertMask,
-			int offsetX, int offsetY)
+	public static void maskWithColorInRegionInPlace(Image image, Color color, Image mask, boolean invertMask, int offsetX, int offsetY)
 	{
 		SkiaImage skImage = (SkiaImage) image;
 		SkiaImage skMask = (SkiaImage) mask;
@@ -1587,22 +1595,20 @@ public class SkiaShaderOps
 
 		if (GPUExecutor.getInstance().isGPUAvailable() && canUseGPUForSize(width, height))
 		{
-			GPUExecutor.getInstance().submit(() -> {
-				maskWithColorInRegionInPlaceImpl(skImage, skMask, width, height, r, g, b, a, invertMask,
-						offsetX, offsetY, mask.getWidth(), mask.getHeight(), true);
+			GPUExecutor.getInstance().submit(() ->
+			{
+				maskWithColorInRegionInPlaceImpl(skImage, skMask, width, height, r, g, b, a, invertMask, offsetX, offsetY, mask.getWidth(), mask.getHeight(), true);
 				return null;
 			});
 		}
 		else
 		{
-			maskWithColorInRegionInPlaceImpl(skImage, skMask, width, height, r, g, b, a, invertMask,
-					offsetX, offsetY, mask.getWidth(), mask.getHeight(), false);
+			maskWithColorInRegionInPlaceImpl(skImage, skMask, width, height, r, g, b, a, invertMask, offsetX, offsetY, mask.getWidth(), mask.getHeight(), false);
 		}
 	}
 
-	private static void maskWithColorInRegionInPlaceImpl(SkiaImage skImage, SkiaImage skMask, int width, int height,
-			float r, float g, float b, float a, boolean invertMask,
-			int offsetX, int offsetY, int maskWidth, int maskHeight, boolean useGPU)
+	private static void maskWithColorInRegionInPlaceImpl(SkiaImage skImage, SkiaImage skMask, int width, int height, float r, float g, float b, float a, boolean invertMask, int offsetX, int offsetY,
+			int maskWidth, int maskHeight, boolean useGPU)
 	{
 		org.jetbrains.skia.Image skiImage = skImage.getSkiaImage();
 		org.jetbrains.skia.Image skiMask = skMask.getSkiaImage();
@@ -1643,8 +1649,7 @@ public class SkiaShaderOps
 	}
 
 	/**
-	 * In-place version of maskWithImage that modifies image1 directly.
-	 * This avoids allocating a new image and can improve performance.
+	 * In-place version of maskWithImage that modifies image1 directly. This avoids allocating a new image and can improve performance.
 	 */
 	public static void maskWithImageInPlace(Image image1, Image image2, Image mask)
 	{
@@ -1657,7 +1662,8 @@ public class SkiaShaderOps
 
 		if (GPUExecutor.getInstance().isGPUAvailable() && canUseGPUForSize(width, height))
 		{
-			GPUExecutor.getInstance().submit(() -> {
+			GPUExecutor.getInstance().submit(() ->
+			{
 				maskWithImageInPlaceImpl(skImage1, skImage2, skMask, width, height, true);
 				return null;
 			});
@@ -1668,8 +1674,7 @@ public class SkiaShaderOps
 		}
 	}
 
-	private static void maskWithImageInPlaceImpl(SkiaImage skImage1, SkiaImage skImage2, SkiaImage skMask,
-			int width, int height, boolean useGPU)
+	private static void maskWithImageInPlaceImpl(SkiaImage skImage1, SkiaImage skImage2, SkiaImage skMask, int width, int height, boolean useGPU)
 	{
 		org.jetbrains.skia.Image skiImage1 = skImage1.getSkiaImage();
 		org.jetbrains.skia.Image skiImage2 = skImage2.getSkiaImage();
@@ -1709,8 +1714,7 @@ public class SkiaShaderOps
 	}
 
 	/**
-	 * In-place version of maskWithMultipleColors that modifies the source image directly.
-	 * This avoids allocating a new image and can improve performance.
+	 * In-place version of maskWithMultipleColors that modifies the source image directly. This avoids allocating a new image and can improve performance.
 	 */
 	public static void maskWithMultipleColorsInPlace(Image image, Map<Integer, Color> colors, Image colorIndexes, Image mask, boolean invertMask)
 	{
@@ -1729,7 +1733,8 @@ public class SkiaShaderOps
 		{
 			if (GPUExecutor.getInstance().isGPUAvailable() && canUseGPUForSize(width, height))
 			{
-				GPUExecutor.getInstance().submit(() -> {
+				GPUExecutor.getInstance().submit(() ->
+				{
 					maskWithMultipleColorsInPlaceImpl(skImage, skColorIndexes, skMask, skPalette, width, height, invertMask, true);
 					return null;
 				});
@@ -1745,8 +1750,7 @@ public class SkiaShaderOps
 		}
 	}
 
-	private static void maskWithMultipleColorsInPlaceImpl(SkiaImage skImage, SkiaImage skColorIndexes, SkiaImage skMask,
-			SkiaImage skPalette, int width, int height, boolean invertMask, boolean useGPU)
+	private static void maskWithMultipleColorsInPlaceImpl(SkiaImage skImage, SkiaImage skColorIndexes, SkiaImage skMask, SkiaImage skPalette, int width, int height, boolean invertMask, boolean useGPU)
 	{
 		org.jetbrains.skia.Image skiImage = skImage.getSkiaImage();
 		org.jetbrains.skia.Image skiColorIndexes = skColorIndexes.getSkiaImage();
@@ -1762,10 +1766,10 @@ public class SkiaShaderOps
 
 		RuntimeEffect effect = getMaskWithMultipleColorsEffect();
 		RuntimeShaderBuilder builder = new RuntimeShaderBuilder(effect);
-		builder.child("image", imageShader);
+		builder.child("srcImage", imageShader);
 		builder.child("colorIndexes", colorIndexesShader);
-		builder.child("mask", maskShader);
-		builder.child("palette", paletteShader);
+		builder.child("blendMask", maskShader);
+		builder.child("colorPalette", paletteShader);
 		builder.uniform("invertMask", invertMask ? 1f : 0f);
 		Shader resultShader = builder.makeShader(identity);
 
@@ -1791,6 +1795,7 @@ public class SkiaShaderOps
 	}
 
 	// If I decide I want to make the above method run on the GPU if any of the images are GPU-backed, here's the code:
+
 	/**
 	 * Checks if all images are SkiaImage instances that have their data on the GPU.
 	 */
@@ -1806,7 +1811,7 @@ public class SkiaShaderOps
 
 		for (Image image : images)
 		{
-			if (((SkiaImage)image).isGpuEnabled())
+			if (((SkiaImage) image).isGpuEnabled())
 			{
 				return true;
 			}

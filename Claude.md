@@ -127,7 +127,7 @@ The benchmark creates maps using settings from `unit test files/map settings/sim
 - **Custom Functional Interfaces:** `Function<T, R>`, `Function0<R>`, `Function2<T1, T2, R>`
 - **Tuple Classes:** `Tuple2`, `Tuple3`, `Tuple4`, `Pair`, `OrderlessPair`
 - **Helper class for timing:** nortantis.util.Stopwatch
-- **Avoid falbacks:** Don't add hidden fallbacks in code that could cover up that the desired code path isn't being used. Fail hard instead. If you think you should add a fallback, add an assert false statment to force a crash when the fallback is run.
+- **Avoid hidden falbacks when possible:** Try to avoid add hidden fallbacks in code unless reasonable use cases are likely to need them, especially falling back from GPU to CPU image processing.
 
 ## Map Generation Pipeline
 

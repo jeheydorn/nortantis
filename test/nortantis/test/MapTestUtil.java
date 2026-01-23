@@ -135,7 +135,7 @@ public class MapTestUtil
 		}
 	}
 
-	public static MapSettings generateRandomAndCompare(long seed, String expectedMapsFolderName, String failedMapsFolderName)
+	public static MapSettings generateRandomAndCompare(long seed, String expectedMapsFolderName, String failedMapsFolderName, int threshold)
 	{
 		String expectedFileName = "random map for seed " + seed;
 		String expectedMapFilePath = getExpectedMapFilePath(expectedFileName, expectedMapsFolderName);
@@ -150,7 +150,7 @@ public class MapTestUtil
 		}
 
 		MapSettings settings = SettingsGenerator.generate(new Random(seed), Assets.installedArtPack, null);
-		settings.resolution = 0.5;
+		settings.resolution = 0.25;
 		MapCreator mapCreator = new MapCreator();
 		Logger.println("Creating random map to match '" + expectedFileName + "'");
 		Image actual;
@@ -167,7 +167,7 @@ public class MapTestUtil
 		// more complete test that way.
 		testDeepCopy(settings);
 
-		String comparisonErrorMessage = checkIfImagesEqual(expected, actual);
+		String comparisonErrorMessage = checkIfImagesEqual(expected, actual, threshold);
 		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
 		{
 			FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());

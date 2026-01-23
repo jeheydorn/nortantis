@@ -8,6 +8,7 @@ import nortantis.geom.*;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Corner;
 import nortantis.platform.*;
+import nortantis.platform.skia.GPUExecutor;
 import nortantis.swing.MapEdits;
 import nortantis.util.*;
 import org.apache.commons.lang3.NotImplementedException;
@@ -1028,19 +1029,19 @@ public class IconDrawer
 		IntDimension mapOrSnippetSize = mapOrSnippet.size();
 
 		// Use different code paths for AWT vs Skia because transparent land doesn't work yet with Skia. (And there may also be performance disadvantages to having AWT go through the Skia code path, but I haven't checked that yet).
-		if (PlatformFactory.getInstance() instanceof nortantis.platform.awt.AwtFactory)
+		if (!GPUExecutor.getInstance().isGPUAvailable())
 		{
-			drawIconWithBackgroundAndMasksAwt(mapOrSnippet, imageAndMasks, landBackground, landTexture, oceanTexture, type, xLeft, yTop, graphXLeft, graphYTop, mapOrSnippetSize, icon, contentMask,
+			drawIconWithBackgroundAndMasksDirect(mapOrSnippet, imageAndMasks, landBackground, landTexture, oceanTexture, type, xLeft, yTop, graphXLeft, graphYTop, mapOrSnippetSize, icon, contentMask,
 					shadingMask);
 		}
 		else
 		{
-			drawIconWithBackgroundAndMasksSkia(mapOrSnippet, imageAndMasks, landBackground, landTexture, oceanTexture, type, xLeft, yTop, graphXLeft, graphYTop, mapOrSnippetSize, icon, contentMask,
+			drawIconWithBackgroundAndMasksUsingSnippet(mapOrSnippet, imageAndMasks, landBackground, landTexture, oceanTexture, type, xLeft, yTop, graphXLeft, graphYTop, mapOrSnippetSize, icon, contentMask,
 					shadingMask);
 		}
 	}
 
-	private void drawIconWithBackgroundAndMasksAwt(Image mapOrSnippet, ImageAndMasks imageAndMasks, Image landBackground, Image landTexture, Image oceanTexture, IconType type, int xLeft, int yTop,
+	private void drawIconWithBackgroundAndMasksDirect(Image mapOrSnippet, ImageAndMasks imageAndMasks, Image landBackground, Image landTexture, Image oceanTexture, IconType type, int xLeft, int yTop,
 			int graphXLeft, int graphYTop, IntDimension mapOrSnippetSize, Image icon, Image contentMask, Image shadingMask)
 	{
 		IntRectangle iconBoundsInMapOrSnippet = new IntRectangle(xLeft, yTop, icon.getWidth(), icon.getHeight());
@@ -1125,7 +1126,7 @@ public class IconDrawer
 		}
 	}
 
-	private void drawIconWithBackgroundAndMasksSkia(Image mapOrSnippet, ImageAndMasks imageAndMasks, Image landBackground, Image landTexture, Image oceanTexture, IconType type, int xLeft, int yTop,
+	private void drawIconWithBackgroundAndMasksUsingSnippet(Image mapOrSnippet, ImageAndMasks imageAndMasks, Image landBackground, Image landTexture, Image oceanTexture, IconType type, int xLeft, int yTop,
 			int graphXLeft, int graphYTop, IntDimension mapOrSnippetSize, Image icon, Image contentMask, Image shadingMask)
 	{
 		// Calculate the visible portion of the icon (clipped to map bounds)
