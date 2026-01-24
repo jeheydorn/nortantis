@@ -1,30 +1,18 @@
 package nortantis;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-
-import org.apache.commons.lang3.StringUtils;
-
-import nortantis.geom.Dimension;
-import nortantis.geom.IntPoint;
-import nortantis.geom.IntRectangle;
-import nortantis.geom.Point;
-import nortantis.geom.Rectangle;
+import nortantis.geom.*;
 import nortantis.graph.voronoi.Center;
-import nortantis.platform.AlphaComposite;
-import nortantis.platform.Color;
-import nortantis.platform.Image;
-import nortantis.platform.ImageType;
-import nortantis.platform.Painter;
+import nortantis.platform.*;
 import nortantis.util.Assets;
 import nortantis.util.ImageHelper;
 import nortantis.util.ImageHelper.ColorifyAlgorithm;
+import nortantis.util.Stopwatch;
 import nortantis.util.Tuple2;
+import org.apache.commons.lang3.StringUtils;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
 
 /**
  * An assortment of things needed to draw the background.
@@ -447,7 +435,11 @@ public class Background
 			regionBackgroundColors.put(regionEntry.getKey(), regionEntry.getValue().backgroundColor);
 		}
 
-		return ImageHelper.colorifyMulti(fractalBG, regionBackgroundColors, pixelColors, colorifyAlgorithm, where);
+		Stopwatch sw = new Stopwatch("drawRegionColors");
+
+		Image result = ImageHelper.colorifyMulti(fractalBG, regionBackgroundColors, pixelColors, colorifyAlgorithm, where);;
+		sw.printElapsedTime();
+		return result;
 	}
 
 	public Image createOceanSnippet(Rectangle boundsToCopyFrom)

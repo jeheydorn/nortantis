@@ -501,9 +501,7 @@ public class MapCreator implements WarningLogger
 		// Add grunge
 		if (settings.drawGrunge && settings.grungeWidth > 0)
 		{
-			Stopwatch sw = new Stopwatch("add grunge incremental");
 			mapSnippet = ImageHelper.maskWithColorInRegion(mapSnippet, settings.frayedBorderColor, mapParts.grunge, true, drawBoundsUpperLeftCornerAdjustedForBorder);
-			sw.printElapsedTime();
 		}
 
 		if (DebugFlags.drawCorners())
@@ -884,9 +882,7 @@ public class MapCreator implements WarningLogger
 			}
 
 			// Add the grunge to the map.
-			Stopwatch sw = new Stopwatch("mask grunge");
 			map = ImageHelper.maskWithColor(map, settings.frayedBorderColor, grunge, true);
-			sw.printElapsedTime();
 		}
 
 		drawOverlayImageIfNeededAndUpdateMapParts(map, settings, mapParts);

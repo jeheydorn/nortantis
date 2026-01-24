@@ -47,6 +47,7 @@ public class SkiaMapCreatorTest
 	{
 		try
 		{
+			// Force CPU because GPU-generated images have a tiny amount of random variation for some reason.
 			SkiaImage.setForceCPU(true);
 			generateAndCompare("simpleSmallWorld.nort", (settings) -> settings.resolution = 0.25);
 		}
@@ -418,6 +419,16 @@ public class SkiaMapCreatorTest
 	@Test
 	public void newRandomMapTest() throws IOException
 	{
-		MapSettings settings = MapTestUtil.generateRandomAndCompare(5, expectedMapsFolderName, failedMapsFolderName, threshold);
+		try
+		{
+			// Force CPU because GPU-generated images have a tiny amount of random variation for some reason.
+			SkiaImage.setForceCPU(true);
+			MapSettings settings = MapTestUtil.generateRandomAndCompare(5, expectedMapsFolderName, failedMapsFolderName, threshold);
+		}
+		finally
+		{
+			SkiaImage.setForceCPU(false);
+		}
+
 	}
 }
