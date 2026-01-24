@@ -199,7 +199,7 @@ public class SkiaMapCreatorTest
 			graph.drawLandAndOceanBlackAndWhite(p, graph.centers, null);
 		}
 
-		compareWithExpected(landMask, "drawLandAndOceanBlackAndWhiteTest", threshold);
+		compareWithExpected(landMask, "drawLandAndOceanBlackAndWhiteTest", 0);
 	}
 
 	@Test
@@ -220,7 +220,7 @@ public class SkiaMapCreatorTest
 				graph.drawCoastlineWithLakeShores(p, settings.coastlineWidth * settings.resolution, null, null);
 			}
 
-			compareWithExpected(coastlineAndLakeShoreMask, "coastlineWithLakeShores", threshold);
+			compareWithExpected(coastlineAndLakeShoreMask, "coastlineWithLakeShores", 0);
 		}
 		finally
 		{
@@ -253,7 +253,7 @@ public class SkiaMapCreatorTest
 			float scale = 2.3973336f; // The actual value used when creating this map.
 			Image coastShading = ImageHelper.blurAndScale(coastlineAndLakeShoreMask, blurLevel, scale, true);
 
-			compareWithExpected(coastShading, "coastShading", threshold);
+			compareWithExpected(coastShading, "coastShading", 0);
 		}
 		finally
 		{
@@ -270,7 +270,7 @@ public class SkiaMapCreatorTest
 		final int widthAndHeight = 48;
 		Image actual = FractalBGGenerator.generate(new Random(42), 1.3f, widthAndHeight, widthAndHeight, 0.75f);
 
-		compareWithExpected(actual, expectedFileName, threshold);
+		compareWithExpected(actual, expectedFileName, 0);
 	}
 
 	@Test
@@ -419,7 +419,7 @@ public class SkiaMapCreatorTest
 	@Test
 	public void newRandomMapTest() throws IOException
 	{
-		try
+	try
 		{
 			// Force CPU because GPU-generated images have a tiny amount of random variation for some reason.
 			SkiaImage.setForceCPU(true);

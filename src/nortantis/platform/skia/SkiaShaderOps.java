@@ -144,7 +144,7 @@ public class SkiaShaderOps
 		ImageType resultType = (image1.hasAlpha() || image2.hasAlpha()) ? ImageType.ARGB : ImageType.RGB;
 
 		// Check if we should use GPU (also check size limits to avoid crashes with large images)
-		if (GPUExecutor.getInstance().isGPUAvailable() && canUseGPUForSize(width, height))
+		if (isGPUAccelerated() && canUseGPUForSize(width, height))
 		{
 			return GPUExecutor.getInstance().submit(() -> maskWithImageImpl(skImage1, skImage2, skMask, width, height, resultType, true));
 		}
@@ -277,7 +277,7 @@ public class SkiaShaderOps
 		float a = color.getAlpha() / 255f;
 
 		// Check if we should use GPU (also check size limits to avoid crashes with large images)
-		if (GPUExecutor.getInstance().isGPUAvailable() && canUseGPUForSize(width, height))
+		if (isGPUAccelerated() && canUseGPUForSize(width, height))
 		{
 			return GPUExecutor.getInstance().submit(() -> maskWithColorImpl(skImage, skMask, width, height, r, g, b, a, invertMask, resultType, true));
 		}
@@ -382,7 +382,7 @@ public class SkiaShaderOps
 		int height = image.getHeight();
 
 		// Check if we should use GPU (also check size limits to avoid crashes with large images)
-		if (GPUExecutor.getInstance().isGPUAvailable() && canUseGPUForSize(width, height))
+		if (isGPUAccelerated() && canUseGPUForSize(width, height))
 		{
 			return GPUExecutor.getInstance().submit(() -> setAlphaFromMaskImpl(skImage, skMask, width, height, invertMask, true));
 		}
@@ -585,7 +585,7 @@ public class SkiaShaderOps
 		ImageType resultType = forceAddAlpha || color.hasTransparency() ? ImageType.ARGB : ImageType.RGB;
 
 		// Check if we should use GPU (also check size limits to avoid crashes with large images)
-		if (GPUExecutor.getInstance().isGPUAvailable() && canUseGPUForSize(width, height))
+		if (isGPUAccelerated() && canUseGPUForSize(width, height))
 		{
 			return GPUExecutor.getInstance().submit(() -> colorifyImpl(skImage, width, height, how, hsb, alpha, r, g, b, resultType, true));
 		}
@@ -693,7 +693,7 @@ public class SkiaShaderOps
 		int width = image.getWidth();
 		int height = image.getHeight();
 
-		if (GPUExecutor.getInstance().isGPUAvailable() && canUseGPUForSize(width, height))
+		if (isGPUAccelerated() && canUseGPUForSize(width, height))
 		{
 			return GPUExecutor.getInstance().submit(() -> convertToGrayscaleImpl(skImage, width, height, true));
 		}
@@ -1169,7 +1169,7 @@ public class SkiaShaderOps
 
 		try
 		{
-			if (GPUExecutor.getInstance().isGPUAvailable() && canUseGPUForSize(width, height))
+			if (isGPUAccelerated() && canUseGPUForSize(width, height))
 			{
 				return GPUExecutor.getInstance().submit(() -> colorifyMultiImpl(skImage, skColorIndexes, skPalette, width, height, how, true));
 			}
@@ -1321,7 +1321,7 @@ public class SkiaShaderOps
 		int width = target.getWidth();
 		int height = target.getHeight();
 
-		if (GPUExecutor.getInstance().isGPUAvailable() && canUseGPUForSize(width, height))
+		if (isGPUAccelerated() && canUseGPUForSize(width, height))
 		{
 			return GPUExecutor.getInstance().submit(() -> copyAlphaToImpl(skTarget, skAlphaSource, width, height, true));
 		}
@@ -1369,10 +1369,11 @@ public class SkiaShaderOps
 
 	/**
 	 * Checks if GPU acceleration is being used for shader operations.
+	 * Returns false if SkiaImage.isForceCPU() is true, even if GPU is available.
 	 */
 	public static boolean isGPUAccelerated()
 	{
-		return GPUExecutor.getInstance().isGPUAvailable();
+		return !SkiaImage.isForceCPU() && GPUExecutor.getInstance().isGPUAvailable();
 	}
 
 	public boolean canProcessOnGPU(Image... images)
@@ -1438,7 +1439,7 @@ public class SkiaShaderOps
 		float b = color.getBlue() / 255f;
 		float a = color.getAlpha() / 255f;
 
-		if (GPUExecutor.getInstance().isGPUAvailable() && canUseGPUForSize(width, height))
+		if (isGPUAccelerated() && canUseGPUForSize(width, height))
 		{
 			GPUExecutor.getInstance().submit(() ->
 			{
@@ -1579,7 +1580,7 @@ public class SkiaShaderOps
 		float b = color.getBlue() / 255f;
 		float a = color.getAlpha() / 255f;
 
-		if (GPUExecutor.getInstance().isGPUAvailable() && canUseGPUForSize(width, height))
+		if (isGPUAccelerated() && canUseGPUForSize(width, height))
 		{
 			GPUExecutor.getInstance().submit(() ->
 			{
@@ -1646,7 +1647,7 @@ public class SkiaShaderOps
 		int width = image1.getWidth();
 		int height = image1.getHeight();
 
-		if (GPUExecutor.getInstance().isGPUAvailable() && canUseGPUForSize(width, height))
+		if (isGPUAccelerated() && canUseGPUForSize(width, height))
 		{
 			GPUExecutor.getInstance().submit(() ->
 			{

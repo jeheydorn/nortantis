@@ -90,6 +90,6 @@ public abstract class Color implements Serializable
 
 	public int manhattanDistanceTo(Color other)
 	{
-		return Math.abs(getRed() - other.getRed()) + Math.abs(getGreen() - other.getGreen()) + Math.abs(getBlue() - other.getBlue());
+		return Math.abs(getRed() - other.getRed()) + Math.abs(getGreen() - other.getGreen()) + Math.abs(getBlue() - other.getBlue()) + Math.abs(getAlpha() - other.getAlpha());
 	}
 }

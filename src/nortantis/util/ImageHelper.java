@@ -880,7 +880,18 @@ public class ImageHelper
 					}
 
 					Color originalColor = imagePixels.getPixelColor(x, y);
-					resultPixels.setPixelColor(x, y, Color.create(originalColor.getRed(), originalColor.getGreen(), originalColor.getBlue(), Math.min(maskLevel, originalColor.getAlpha())));
+					int newAlpha = Math.min(maskLevel, originalColor.getAlpha());
+					// When alpha is 0, clear RGB to 0 for proper premultiplied alpha behavior.
+					// This ensures consistent results when the image is later composited,
+					// scaled, or rotated in image editing software.
+					if (newAlpha == 0)
+					{
+						resultPixels.setPixelColor(x, y, Color.transparentBlack);
+					}
+					else
+					{
+						resultPixels.setPixelColor(x, y, Color.create(originalColor.getRed(), originalColor.getGreen(), originalColor.getBlue(), newAlpha));
+					}
 				}
 		}
 		return result;
