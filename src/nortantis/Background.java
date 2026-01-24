@@ -435,12 +435,7 @@ public class Background
 			regionBackgroundColors.put(regionEntry.getKey(), regionEntry.getValue().backgroundColor);
 		}
 
-		Stopwatch sw = new Stopwatch("drawRegionColors");
-
-		Image result = ImageHelper.colorifyMulti(fractalBG, regionBackgroundColors, pixelColors, colorifyAlgorithm, where);
-		;
-		sw.printElapsedTime();
-		return result;
+		return ImageHelper.colorifyMulti(fractalBG, regionBackgroundColors, pixelColors, colorifyAlgorithm, where);
 	}
 
 	public Image createOceanSnippet(Rectangle boundsToCopyFrom)

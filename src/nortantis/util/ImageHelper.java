@@ -352,6 +352,45 @@ public class ImageHelper
 
 		int maxPixelValue = image.getMaxPixelLevel();
 
+		// Optimized path for Skia grayscale images
+		if (image instanceof SkiaImage)
+		{
+			SkiaImage skiaImage = (SkiaImage) image;
+			if (skiaImage.isGrayscaleFormat())
+			{
+				byte[] pixelArray = skiaImage.readGrayscalePixels(null);
+
+				// Find min and max
+				int min = 255;
+				int max = 0;
+				for (int i = 0; i < pixelArray.length; i++)
+				{
+					int value = pixelArray[i] & 0xFF;
+					if (value < min)
+						min = value;
+					if (value > max)
+						max = value;
+				}
+
+				// Apply contrast stretch - use same formula as fallback path
+				if (max > min)
+				{
+					double range = max - min;
+					for (int i = 0; i < pixelArray.length; i++)
+					{
+						int value = pixelArray[i] & 0xFF;
+						int newValue = (int) (((value - min) / range) * maxPixelValue);
+						pixelArray[i] = (byte) newValue;
+					}
+				}
+
+				skiaImage.writeGrayscalePixels(pixelArray);
+				skiaImage.markCPUDirty();
+				return;
+			}
+		}
+
+		// Fallback path for other image types
 		double min = maxPixelValue;
 		double max = 0;
 		try (PixelReaderWriter pixels = image.createPixelReaderWriter())
@@ -1425,8 +1464,24 @@ public class ImageHelper
 
 	public static Image genWhiteNoise(Random rand, int rows, int cols, ImageType imageType)
 	{
-		// Note - I tried having this method process rows in parallel, but it was slower.
 		Image image = Image.create(cols, rows, imageType);
+
+		// Optimized path for Grayscale8Bit using Skia: directly populate byte array
+		// without reading the existing pixels (which are just zeros anyway)
+		if (imageType == ImageType.Grayscale8Bit && image instanceof SkiaImage)
+		{
+			SkiaImage skiaImage = (SkiaImage) image;
+			byte[] pixels = new byte[cols * rows];
+			for (int i = 0; i < pixels.length; i++)
+			{
+				pixels[i] = (byte) (rand.nextFloat() * 255);
+			}
+			skiaImage.writeGrayscalePixels(pixels);
+			skiaImage.markCPUDirty();
+			return image;
+		}
+
+		// Fallback for other image types
 		int maxPixelValue = Image.getMaxPixelLevelForType(image.getType());
 		try (PixelReaderWriter imagePixels = image.createPixelReaderWriter())
 		{
@@ -1973,6 +2028,26 @@ public class ImageHelper
 			throw new IllegalArgumentException("Unsupported image type for thresholding: " + image.getType());
 		}
 
+		// Optimized path for Skia grayscale images
+		if (image instanceof SkiaImage)
+		{
+			SkiaImage skiaImage = (SkiaImage) image;
+			if (skiaImage.isGrayscaleFormat())
+			{
+				byte[] pixels = skiaImage.readGrayscalePixels(null);
+				byte highByte = (byte) highValue;
+				for (int i = 0; i < pixels.length; i++)
+				{
+					int value = pixels[i] & 0xFF;
+					pixels[i] = value >= threshold ? highByte : 0;
+				}
+				skiaImage.writeGrayscalePixels(pixels);
+				skiaImage.markCPUDirty();
+				return;
+			}
+		}
+
+		// Fallback path for other image types
 		try (PixelReaderWriter imagePixels = image.createPixelReaderWriter())
 		{
 			for (int y = 0; y < image.getHeight(); y++)

@@ -8,6 +8,7 @@ import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.PixelReader;
 import nortantis.platform.PixelReaderWriter;
+import nortantis.platform.skia.SkiaImage;
 
 /**
  * Performs histogram equalization on images.
@@ -192,6 +193,31 @@ public class HistogramEqualizer
 		int height = inImage.getHeight();
 		Image outImage = Image.create(width, height, imageType);
 
+		// Optimized path for grayscale Skia images with single lookup table
+		if (lookupTables.size() == 1 && inImage instanceof SkiaImage && outImage instanceof SkiaImage)
+		{
+			SkiaImage skiaIn = (SkiaImage) inImage;
+			SkiaImage skiaOut = (SkiaImage) outImage;
+
+			if (skiaIn.isGrayscaleFormat())
+			{
+				byte[] inPixels = skiaIn.readGrayscalePixels(null);
+				byte[] outPixels = new byte[inPixels.length];
+				int[] lookupTable = lookupTables.get(0);
+
+				for (int i = 0; i < inPixels.length; i++)
+				{
+					int grayLevel = inPixels[i] & 0xFF;
+					outPixels[i] = (byte) lookupTable[grayLevel];
+				}
+
+				skiaOut.writeGrayscalePixels(outPixels);
+				skiaOut.markCPUDirty();
+				return outImage;
+			}
+		}
+
+		// Fallback path for other image types
 		try (PixelReader inPixels = inImage.createPixelReader(); PixelReaderWriter outPixels = outImage.createPixelReaderWriter())
 		{
 			for (int y = 0; y < height; y++)
@@ -231,9 +257,26 @@ public class HistogramEqualizer
 
 	private static int[] countPixelLevels(Image image, int band)
 	{
-
 		// Create the list of pixels to use with the histogram.
 		int[] counts = new int[image.getMaxPixelLevel() + 1];
+
+		// Optimized path for grayscale Skia images
+		if (band == 0 && image instanceof SkiaImage)
+		{
+			SkiaImage skiaImage = (SkiaImage) image;
+			if (skiaImage.isGrayscaleFormat())
+			{
+				byte[] pixels = skiaImage.readGrayscalePixels(null);
+				for (int i = 0; i < pixels.length; i++)
+				{
+					int pixelValue = pixels[i] & 0xFF;
+					counts[pixelValue]++;
+				}
+				return counts;
+			}
+		}
+
+		// Fallback path for other image types
 		try (PixelReader pixels = image.createPixelReader())
 		{
 			for (int y = 0; y < image.getHeight(); y++)

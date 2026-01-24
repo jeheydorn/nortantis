@@ -273,7 +273,7 @@ public class SkiaImage extends Image
 	/**
 	 * Returns true if this image uses a grayscale format (1 byte per pixel).
 	 */
-	private boolean isGrayscaleFormat()
+	public boolean isGrayscaleFormat()
 	{
 		ImageType type = getType();
 		return type == ImageType.Grayscale8Bit || type == ImageType.Binary;
@@ -1109,7 +1109,7 @@ public class SkiaImage extends Image
 	 * Reads grayscale pixels directly as a byte array, avoiding int[] conversion overhead. For use with grayscale image formats
 	 * (Grayscale8Bit, Binary).
 	 */
-	byte[] readGrayscalePixels(IntRectangle bounds)
+	public byte[] readGrayscalePixels(IntRectangle bounds)
 	{
 		awaitPendingPainters();
 		ensureCPUData();
@@ -1126,7 +1126,7 @@ public class SkiaImage extends Image
 	/**
 	 * Writes grayscale pixels directly from a byte array to the full image. For use with grayscale image formats (Grayscale8Bit, Binary).
 	 */
-	void writeGrayscalePixels(byte[] pixels)
+	public void writeGrayscalePixels(byte[] pixels)
 	{
 		awaitPendingPainters();
 		resourceState.bitmap.installPixels(resourceState.bitmap.getImageInfo(), pixels, width);
