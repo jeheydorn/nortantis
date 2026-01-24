@@ -8,6 +8,7 @@ import nortantis.geom.*;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Corner;
 import nortantis.platform.*;
+import nortantis.platform.awt.AwtFactory;
 import nortantis.platform.skia.GPUExecutor;
 import nortantis.swing.MapEdits;
 import nortantis.util.*;
@@ -1029,7 +1030,7 @@ public class IconDrawer
 		IntDimension mapOrSnippetSize = mapOrSnippet.size();
 
 		// Use different code paths for AWT vs Skia because transparent land doesn't work yet with Skia. (And there may also be performance disadvantages to having AWT go through the Skia code path, but I haven't checked that yet).
-		if (!GPUExecutor.getInstance().isGPUAvailable())
+		if (!GPUExecutor.getInstance().isGPUAvailable() || PlatformFactory.getInstance() instanceof AwtFactory)
 		{
 			drawIconWithBackgroundAndMasksDirect(mapOrSnippet, imageAndMasks, landBackground, landTexture, oceanTexture, type, xLeft, yTop, graphXLeft, graphYTop, mapOrSnippetSize, icon, contentMask,
 					shadingMask);

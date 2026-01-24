@@ -36,7 +36,7 @@ public class MapTestUtil
 		return Paths.get("unit test files", failedMapsFolderName, FilenameUtils.getBaseName(settingsFileName) + " - diff.png").toString();
 	}
 
-	public static WarningLogger generateAndCompare(String settingsFileName, Consumer<MapSettings> preprocessSettings, String expectedMapsFolderName, String failedMapsFolderName)
+	public static WarningLogger generateAndCompare(String settingsFileName, Consumer<MapSettings> preprocessSettings, String expectedMapsFolderName, String failedMapsFolderName, int threshold)
 	{
 		String expectedMapFilePath = getExpectedMapFilePath(settingsFileName, expectedMapsFolderName);
 		Image expected;
@@ -70,7 +70,7 @@ public class MapTestUtil
 			// more complete test that way.
 			testDeepCopy(settings);
 
-			String comparisonErrorMessage = checkIfImagesEqual(expected, actual);
+			String comparisonErrorMessage = checkIfImagesEqual(expected, actual, threshold);
 			if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
 			{
 				FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());

@@ -364,7 +364,7 @@ public class MapCreatorTest
 	public void iconReplacements()
 	{
 		// Clear the custom images path to force icons to be replaced with images from the installed art pack.
-		List<String> warnings = MapTestUtil.generateAndCompare("iconReplacements.nort", (settings -> settings.customImagesPath = null), expectedMapsFolderName,failedMapsFolderName).getWarningMessages();
+		List<String> warnings = MapTestUtil.generateAndCompare("iconReplacements.nort", (settings -> settings.customImagesPath = null), expectedMapsFolderName,failedMapsFolderName, 0).getWarningMessages();
 
 		Set<String> expectedWarnings = new TreeSet<>();
 		expectedWarnings.add("Unable to find the art pack 'custom' to load the mountain image group 'jagged'. The art pack 'nortantis' will be used instead.");
@@ -418,7 +418,7 @@ public class MapCreatorTest
 		List<String> warnings = MapTestUtil.generateAndCompare("iconReplacementsWithMissingIconTypes.nort", (settings) ->
 		{
 			settings.customImagesPath = Paths.get("unit test files", "map settings", "empty custom images").toAbsolutePath().toString();
-		},  expectedMapsFolderName, failedMapsFolderName).getWarningMessages();
+		},  expectedMapsFolderName, failedMapsFolderName, 0).getWarningMessages();
 
 		Set<String> expectedWarnings = new TreeSet<>();
 		expectedWarnings.add(
@@ -617,7 +617,12 @@ public class MapCreatorTest
 
 	private void generateAndCompare(String settingsFileName)
 	{
-		MapTestUtil.generateAndCompare(settingsFileName, null,  expectedMapsFolderName, failedMapsFolderName);
+		MapTestUtil.generateAndCompare(settingsFileName, null,  expectedMapsFolderName, failedMapsFolderName, 0);
+	}
+
+	private void generateAndCompare(String settingsFileName, int threshold)
+	{
+		MapTestUtil.generateAndCompare(settingsFileName, null,  expectedMapsFolderName, failedMapsFolderName, threshold);
 	}
 
 	private void createImageDiffIfImagesAreSameSize(Image image1, Image image2, String settingsFileName)

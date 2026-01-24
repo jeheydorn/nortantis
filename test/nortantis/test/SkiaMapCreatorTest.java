@@ -370,7 +370,7 @@ public class SkiaMapCreatorTest
 
 	private void generateAndCompare(String settingsFileName, Consumer<MapSettings> preprocessSettings)
 	{
-		MapTestUtil.generateAndCompare(settingsFileName, preprocessSettings, expectedMapsFolderName, failedMapsFolderName);
+		MapTestUtil.generateAndCompare(settingsFileName, preprocessSettings, expectedMapsFolderName, failedMapsFolderName, 0);
 	}
 
 	private void createImageDiffIfImagesAreSameSize(Image image1, Image image2, String settingsFileName)
