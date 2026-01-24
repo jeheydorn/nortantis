@@ -135,7 +135,7 @@ test {
 // Benchmark task with JFR profiling
 // Usage: ./gradlew benchmark
 // Output: build/profile.jfr (open in JDK Mission Control or IntelliJ)
-task benchmark(type: Test) {
+tasks.register('benchmark', Test) {
     description = 'Run benchmarks with JFR profiling'
     group = 'verification'
 

@@ -599,8 +599,6 @@ public class ImageHelper
 			return;
 		}
 
-		// Fallback to creating a new image and copying back
-		assert false : "Fallback hit";
 		Image result = maskWithColorInRegion(image, color, mask, invertMask, new IntPoint(0, 0));
 		try (Painter p = image.createPainter())
 		{
