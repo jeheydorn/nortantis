@@ -88,6 +88,7 @@ Important tests:
 - `ImageHelperTest` - Test ImageHelper in Skia
 - `SkiaPainterTest` - Test basic Skia rendering
 
+My unit tests can be overly strict sometimes because they compare pixe-by-pixel. If the output images look close enough that a person wouldn't be able to easily tell the difference, then that's probably good enough, as long as the test is consistent in the results it gives.
 
 Test data locations:
 - Map settings: `unit test files/map settings/`

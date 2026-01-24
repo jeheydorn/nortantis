@@ -23,8 +23,9 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Unit tests for SkiaPainter drawing operations and SkiaPixelReaderWriter.
  *
- * These tests follow the pattern from SkiaMapCreatorTest: they compare rendered images against expected images stored in "unit test files/expected skia tests/". When an expected image doesn't exist,
- * the test creates it from the actual output. Failed tests save their output to "unit test files/failed skia tests/" along with a diff image.
+ * These tests follow the pattern from SkiaMapCreatorTest: they compare rendered images against expected images stored in "unit test
+ * files/expected skia tests/". When an expected image doesn't exist, the test creates it from the actual output. Failed tests save their
+ * output to "unit test files/failed skia tests/" along with a diff image.
  */
 public class SkiaPainterTest
 {
@@ -65,12 +66,12 @@ public class SkiaPainterTest
 	}
 
 	// This functionality isn't implemented yet.
-	//	@Test
-	//	public void testBlankImageGrayscale16Bit()
-	//	{
-	//		Image image = Image.create(testImageWidth, testImageHeight, ImageType.Grayscale16Bit);
-	//		compareWithExpected(image, "blankImageGrayscale16Bit");
-	//	}
+	// @Test
+	// public void testBlankImageGrayscale16Bit()
+	// {
+	// Image image = Image.create(testImageWidth, testImageHeight, ImageType.Grayscale16Bit);
+	// compareWithExpected(image, "blankImageGrayscale16Bit");
+	// }
 
 	@Test
 	public void testBlankImageBinary()
@@ -129,22 +130,22 @@ public class SkiaPainterTest
 	}
 
 	// This functionality isn't implemented yet.
-	//	@Test
-	//	public void testGradientOnGrayscale16Bit()
-	//	{
-	//		Image image = Image.create(testImageWidth, testImageHeight, ImageType.Grayscale16Bit);
-	//		Painter painter = image.createPainter(DrawQuality.High);
+	// @Test
+	// public void testGradientOnGrayscale16Bit()
+	// {
+	// Image image = Image.create(testImageWidth, testImageHeight, ImageType.Grayscale16Bit);
+	// Painter painter = image.createPainter(DrawQuality.High);
 	//
-	//		// Draw a gradient from black to white
-	//		Color startColor = createColor(0, 0, 0);
-	//		Color endColor = createColor(255, 255, 255);
-	//		painter.setGradient(0, 0, startColor, testImageWidth, testImageHeight, endColor);
-	//		painter.fillRect(0, 0, testImageWidth, testImageHeight);
+	// // Draw a gradient from black to white
+	// Color startColor = createColor(0, 0, 0);
+	// Color endColor = createColor(255, 255, 255);
+	// painter.setGradient(0, 0, startColor, testImageWidth, testImageHeight, endColor);
+	// painter.fillRect(0, 0, testImageWidth, testImageHeight);
 	//
-	//		painter.dispose();
+	// painter.dispose();
 	//
-	//		compareWithExpected(image, "gradientOnGrayscale16Bit");
-	//	}
+	// compareWithExpected(image, "gradientOnGrayscale16Bit");
+	// }
 
 	// ==================== Shape Drawing Tests ====================
 
@@ -299,7 +300,8 @@ public class SkiaPainterTest
 			painter.setColor(createColor(150, 50, 200));
 			painter.setBasicStroke(2.0f);
 
-			List<FloatPoint> points = Arrays.asList(new FloatPoint(50.5f, 10.5f), new FloatPoint(90.5f, 40.5f), new FloatPoint(70.5f, 90.5f), new FloatPoint(30.5f, 90.5f), new FloatPoint(10.5f, 40.5f));
+			List<FloatPoint> points = Arrays.asList(new FloatPoint(50.5f, 10.5f), new FloatPoint(90.5f, 40.5f), new FloatPoint(70.5f, 90.5f), new FloatPoint(30.5f, 90.5f),
+					new FloatPoint(10.5f, 40.5f));
 			painter.drawPolygonFloat(points);
 		}
 
@@ -985,26 +987,26 @@ public class SkiaPainterTest
 	}
 
 	// This functionality is not implemented yet
-	//	@Test
-	//	public void testPixelReaderWriterGrayscale16Bit()
-	//	{
-	//		Image image = Image.create(testImageWidth, testImageHeight, ImageType.Grayscale16Bit);
+	// @Test
+	// public void testPixelReaderWriterGrayscale16Bit()
+	// {
+	// Image image = Image.create(testImageWidth, testImageHeight, ImageType.Grayscale16Bit);
 	//
-	//		// Create a gradient pattern
-	//		try (PixelReaderWriter writer = image.createPixelReaderWriter())
-	//		{
-	//			for (int y = 0; y < testImageHeight; y++)
-	//			{
-	//				int level = (int) (y * 255);
-	//				for (int x = 0; x < testImageWidth; x++)
-	//				{
-	//					writer.setGrayLevel(x, y, level);
-	//				}
-	//			}
-	//		}
+	// // Create a gradient pattern
+	// try (PixelReaderWriter writer = image.createPixelReaderWriter())
+	// {
+	// for (int y = 0; y < testImageHeight; y++)
+	// {
+	// int level = (int) (y * 255);
+	// for (int x = 0; x < testImageWidth; x++)
+	// {
+	// writer.setGrayLevel(x, y, level);
+	// }
+	// }
+	// }
 	//
-	//		compareWithExpected(image, "pixelReaderWriterGrayscale16Bit");
-	//	}
+	// compareWithExpected(image, "pixelReaderWriterGrayscale16Bit");
+	// }
 
 	@Test
 	public void testPixelReaderWriterBinary()
@@ -1029,11 +1031,11 @@ public class SkiaPainterTest
 		{
 			// Check white square (top-left)
 			int whiteLevel = reader.getGrayLevel(5, 5);
-			//assertTrue(whiteLevel > 200, "White square should be close to 255, got: " + whiteLevel);
+			// assertTrue(whiteLevel > 200, "White square should be close to 255, got: " + whiteLevel);
 
 			// Check black square
 			int blackLevel = reader.getGrayLevel(15, 5);
-			//assertTrue(blackLevel < 55, "Black square should be close to 0, got: " + blackLevel);
+			// assertTrue(blackLevel < 55, "Black square should be close to 0, got: " + blackLevel);
 		}
 
 		compareWithExpected(image, "pixelReaderWriterBinary");
@@ -1065,15 +1067,15 @@ public class SkiaPainterTest
 			// Draw strokes similar to coastlines (dark)
 			painter.setColor(createColor(60, 50, 40));
 			painter.setBasicStroke(2.0f);
-			int[] coastX = {20, 50, 80, 100, 130, 160, 180, 200, 230, 260, 280};
-			int[] coastY = {80, 70, 85, 65, 75, 60, 70, 55, 65, 50, 60};
+			int[] coastX = { 20, 50, 80, 100, 130, 160, 180, 200, 230, 260, 280 };
+			int[] coastY = { 80, 70, 85, 65, 75, 60, 70, 55, 65, 50, 60 };
 			painter.drawPolyline(coastX, coastY);
 
 			// Draw strokes similar to rivers (blue)
 			painter.setColor(createColor(60, 90, 140));
 			painter.setBasicStroke(2.5f);
-			int[] riverX = {40, 60, 90, 120, 150, 180, 210, 250};
-			int[] riverY = {250, 230, 245, 220, 235, 210, 225, 200};
+			int[] riverX = { 40, 60, 90, 120, 150, 180, 210, 250 };
+			int[] riverY = { 250, 230, 245, 220, 235, 210, 225, 200 };
 			painter.drawPolyline(riverX, riverY);
 		}
 
@@ -1102,15 +1104,15 @@ public class SkiaPainterTest
 			// Draw strokes similar to coastlines (dark)
 			painter.setColor(createColor(60, 50, 40));
 			painter.setBasicStroke(2.0f);
-			int[] coastX = {20, 50, 80, 100, 130, 160, 180, 200, 230, 260, 280};
-			int[] coastY = {80, 70, 85, 65, 75, 60, 70, 55, 65, 50, 60};
+			int[] coastX = { 20, 50, 80, 100, 130, 160, 180, 200, 230, 260, 280 };
+			int[] coastY = { 80, 70, 85, 65, 75, 60, 70, 55, 65, 50, 60 };
 			painter.drawPolyline(coastX, coastY);
 
 			// Draw strokes similar to rivers (blue)
 			painter.setColor(createColor(60, 90, 140));
 			painter.setBasicStroke(2.5f);
-			int[] riverX = {40, 60, 90, 120, 150, 180, 210, 250};
-			int[] riverY = {250, 230, 245, 220, 235, 210, 225, 200};
+			int[] riverX = { 40, 60, 90, 120, 150, 180, 210, 250 };
+			int[] riverY = { 250, 230, 245, 220, 235, 210, 225, 200 };
 			painter.drawPolyline(riverX, riverY);
 		}
 

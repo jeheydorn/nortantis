@@ -70,15 +70,15 @@ public class TextDrawer
 	private Random r;
 	private Font citiesFontScaled;
 	/**
-	 * The maximum angle that text can be curved. Note that changing this would require a conversion to existing maps because the editor only stores a number between -1 and 1 for text curvature, so
-	 * changing this would change the angle of curved text on existing maps.
+	 * The maximum angle that text can be curved. Note that changing this would require a conversion to existing maps because the editor
+	 * only stores a number between -1 and 1 for text curvature, so changing this would change the angle of curved text on existing maps.
 	 */
 	private static final double maxTextCurveAngleRange = Math.PI;
 
 	/**
 	 *
 	 * @param settings
-	 * 		The map settings to use. Some of these settings are for text drawing.
+	 *            The map settings to use. Some of these settings are for text drawing.
 	 */
 	public TextDrawer(MapSettings settings)
 	{
@@ -666,12 +666,13 @@ public class TextDrawer
 	}
 
 	/**
-	 * Searches along edges to find corners which are connected by a river. If the river forks, only one direction is followed (the wider one).
+	 * Searches along edges to find corners which are connected by a river. If the river forks, only one direction is followed (the wider
+	 * one).
 	 *
 	 * @param last
-	 * 		The search will not go in the direction of this corner.
+	 *            The search will not go in the direction of this corner.
 	 * @param head
-	 * 		The search will go in the direction of this corner.
+	 *            The search will go in the direction of this corner.
 	 * @return A set of corners which form a river.
 	 */
 	private River followRiver(Set<Corner> riversAlreadyFound, Corner last, Corner head)
@@ -741,7 +742,8 @@ public class TextDrawer
 	}
 
 	/**
-	 * Draws the given name to the map with the area around the name drawn from landAndOceanBackground to make it readable when the name is drawn on top of mountains or trees.
+	 * Draws the given name to the map with the area around the name drawn from landAndOceanBackground to make it readable when the name is
+	 * drawn on top of mountains or trees.
 	 */
 	private void drawBackgroundBlendingForText(Image map, Painter p, MapText text, Point textStart, Rectangle textBoundsBeforeCurvatureAndSpacing, Rectangle textBounds, String name, Point pivot)
 	{
@@ -796,11 +798,11 @@ public class TextDrawer
 	 * Draws a curved string.
 	 *
 	 * @param p
-	 * 		Context for drawing.
+	 *            Context for drawing.
 	 * @param name
-	 * 		Text to draw
+	 *            Text to draw
 	 * @param textStart
-	 * 		location to start drawing the text at (before applying curvature)
+	 *            location to start drawing the text at (before applying curvature)
 	 */
 	private void drawStringCurved(Painter p, MapText text, String name, Point textStart, boolean drawBoldBackground)
 	{
@@ -820,7 +822,7 @@ public class TextDrawer
 	private void drawStringWithOptionalBoldBackground(Painter p, String text, Point textStart, double curvature, int spacing, boolean drawBoldBackground, Color boldBackgroundColorOverride)
 
 	{
-		if (text.length() == 0)
+		if (text.isEmpty())
 
 			return;
 
@@ -1048,7 +1050,7 @@ public class TextDrawer
 	 */
 	private boolean drawNameFitIntoCenters(Image map, Painter p, String name, Set<Point> centerLocations, WorldGraph graph, boolean boldBackground, boolean enableBoundsChecking, TextType textType)
 	{
-		if (name.length() == 0)
+		if (name.isEmpty())
 			return false;
 
 		Point centroid = findCentroid(centerLocations);
@@ -1063,12 +1065,14 @@ public class TextDrawer
 		{
 			// Try random locations to try to find a place to fit the text.
 			Point[] locationsArray = centerLocations.toArray(new Point[centerLocations.size()]);
-			for (@SuppressWarnings("unused") int i : new Range(30))
+			for (@SuppressWarnings("unused")
+			int i : new Range(30))
 			{
 				// Select a few random locations and choose the one closest to
 				// the centroid.
 				List<Point> samples = new ArrayList<>(3);
-				for (@SuppressWarnings("unused") int sampleNumber : new Range(5))
+				for (@SuppressWarnings("unused")
+				int sampleNumber : new Range(5))
 				{
 					samples.add(locationsArray[r.nextInt(locationsArray.length)]);
 				}
@@ -1122,7 +1126,8 @@ public class TextDrawer
 	}
 
 	/**
-	 * Draws the given name at the given location (centroid). If the name cannot be drawn on one line and still fit with the given locations, then it will be drawn on 2 lines.
+	 * Draws the given name at the given location (centroid). If the name cannot be drawn on one line and still fit with the given
+	 * locations, then it will be drawn on 2 lines.
 	 *
 	 * The actual drawing step is skipped if settings.drawText = false.
 	 *
@@ -1172,19 +1177,20 @@ public class TextDrawer
 	}
 
 	/**
-	 * Draws the given name at the centroid of the given plateCenters. The angle the name is drawn at is the least squares line through the plate centers. This does not break text into multiple
-	 * lines.
+	 * Draws the given name at the centroid of the given plateCenters. The angle the name is drawn at is the least squares line through the
+	 * plate centers. This does not break text into multiple lines.
 	 *
 	 * Side effect: This adds a new MapText to mapTexts.
 	 *
 	 * @param riseOffset
-	 * 		The text will be raised (positive y) by this much distance above the centroid when drawn. The rotation will be applied to this location. If there is already a name drawn above the object, I
-	 * 		try negating the riseOffset to draw the name below it. Positive y is down.
+	 *            The text will be raised (positive y) by this much distance above the centroid when drawn. The rotation will be applied to
+	 *            this location. If there is already a name drawn above the object, I try negating the riseOffset to draw the name below it.
+	 *            Positive y is down.
 	 */
 	public void drawNameRotated(Image map, Painter p, WorldGraph graph, String name, Set<Point> locations, double riseOffset, boolean enableBoundsChecking, RotatedRectangle areaToIgnoreInBoundsChecks,
 			TextType type)
 	{
-		if (name.length() == 0)
+		if (name.isEmpty())
 			return;
 
 		Point centroid = findCentroid(locations);
@@ -1235,8 +1241,9 @@ public class TextDrawer
 	 * If settings.drawText = false, then this method will not do the actual text writing, but will still update the MapText text.
 	 *
 	 * @param riseOffset
-	 * 		The text will be raised (positive y) by this much distance above the centroid when drawn. The rotation will be applied to this location. If there is already a name drawn above the object, I
-	 * 		try negating the riseOffset to draw the name below it. Positive y is down.
+	 *            The text will be raised (positive y) by this much distance above the centroid when drawn. The rotation will be applied to
+	 *            this location. If there is already a name drawn above the object, I try negating the riseOffset to draw the name below it.
+	 *            Positive y is down.
 	 * @return true iff the text was drawn.
 	 */
 	public boolean drawNameRotated(Image map, Painter p, WorldGraph graph, double riseOffset, boolean enableBoundsChecking, RotatedRectangle areaToIgnoreInBoundsChecks, MapText text,
@@ -1248,7 +1255,7 @@ public class TextDrawer
 	public boolean drawNameRotated(Image map, Painter p, WorldGraph graph, double riseOffset, boolean enableBoundsChecking, RotatedRectangle areaToIgnoreInBoundsChecks, MapText text,
 			boolean boldBackground, String line1, String line2, boolean allowNegatingRizeOffset, Point drawOffset)
 	{
-		if (line2 != null && line2.equals(""))
+		if (line2 != null && line2.isEmpty())
 		{
 			line2 = null;
 		}
@@ -1294,11 +1301,10 @@ public class TextDrawer
 			// Make sure we don't draw on top of existing text.
 			if (enableBoundsChecking)
 			{
-				boolean overlapsExistingTextOrCityOrIsOffMap =
-						overlapsExistingTextOrCityOrIsOffMap(area1, areaToIgnoreInBoundsChecks) || (line2 != null && overlapsExistingTextOrCityOrIsOffMap(area2, areaToIgnoreInBoundsChecks));
-				boolean overlapsRegionLakeOrCoastline =
-						overlapsBoundaryThatShouldCauseLineSplit(bounds1, pivot, text.angle, text.type, graph) || overlapsBoundaryThatShouldCauseLineSplit(bounds2, pivot, text.angle, text.type,
-								graph);
+				boolean overlapsExistingTextOrCityOrIsOffMap = overlapsExistingTextOrCityOrIsOffMap(area1, areaToIgnoreInBoundsChecks)
+						|| (line2 != null && overlapsExistingTextOrCityOrIsOffMap(area2, areaToIgnoreInBoundsChecks));
+				boolean overlapsRegionLakeOrCoastline = overlapsBoundaryThatShouldCauseLineSplit(bounds1, pivot, text.angle, text.type, graph)
+						|| overlapsBoundaryThatShouldCauseLineSplit(bounds2, pivot, text.angle, text.type, graph);
 				boolean isTypeAllowedToCrossBoundaries = text.type == TextType.Title || text.type == TextType.Region || text.type == TextType.City || text.type == TextType.Mountain_range;
 
 				if (overlapsExistingTextOrCityOrIsOffMap || overlapsRegionLakeOrCoastline)
@@ -1388,7 +1394,7 @@ public class TextDrawer
 
 	private Point getTextLocationWithRiseOffset(MapText text, String line1, String line2, double riseOffset, Painter p)
 	{
-		if (line2 != null && line2.equals(""))
+		if (line2 != null && line2.isEmpty())
 		{
 			line2 = null;
 		}
@@ -1459,9 +1465,10 @@ public class TextDrawer
 	}
 
 	/**
-	 * Sets the bounds of any texts for which those are null. This is needed because the editor allows making changes when a map is loaded from a file before it draws the first time. Text bounds
-	 * aren't set until the text is drawn the first time, and changing fields before the first draw will set an undo point, which will copy the map settings, including edits. So this function must be
-	 * called each draw to make sure null bounds don't get perpetuated from those undo points.
+	 * Sets the bounds of any texts for which those are null. This is needed because the editor allows making changes when a map is loaded
+	 * from a file before it draws the first time. Text bounds aren't set until the text is drawn the first time, and changing fields before
+	 * the first draw will set an undo point, which will copy the map settings, including edits. So this function must be called each draw
+	 * to make sure null bounds don't get perpetuated from those undo points.
 	 */
 	public void updateTextBoundsIfNeeded(WorldGraph graph)
 	{

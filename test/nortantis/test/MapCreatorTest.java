@@ -27,8 +27,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class MapCreatorTest
 {
-	final static String failedMapsFolderName = "failed maps";
-	final static String expectedMapsFolderName = "expected maps";
+	static final String failedMapsFolderName = "failed maps";
+	static final String expectedMapsFolderName = "expected maps";
 
 	@BeforeAll
 	public static void setUpBeforeClass() throws Exception
@@ -57,35 +57,35 @@ public class MapCreatorTest
 	}
 
 	// TODO remove when I'm done with it
-//	/**
-//	 * Generates the upper-right quadrant of simpleSmallWorld using AWT rendering.
-//	 * This is used by SkiaMapCreatorTest to compare Skia vs AWT rendering.
-//	 */
-//	@Test
-//	public void simpleSmallWorldUpperRightQuadrant_generateForComparison()
-//	{
-//		String testName = "simpleSmallWorldUpperRightQuadrant_SkiaVsAwt";
-//		String settingsFileName = "simpleSmallWorld.nort";
-//		String settingsPath = Paths.get("unit test files", "map settings", settingsFileName).toString();
-//		MapSettings settings = new MapSettings(settingsPath);
-//		settings.resolution = 0.25;
-//
-//		MapCreator mapCreator = new MapCreator();
-//		Image fullMap = mapCreator.createMap(settings, null, null);
-//
-//		// Extract upper-right quadrant
-//		int quadrantWidth = fullMap.getWidth() / 2;
-//		int quadrantHeight = fullMap.getHeight() / 2;
-//		int quadrantX = fullMap.getWidth() - quadrantWidth;
-//		int quadrantY = 0;
-//		IntRectangle upperRightBounds = new IntRectangle(quadrantX, quadrantY, quadrantWidth, quadrantHeight);
-//		Image upperRightQuadrant = fullMap.copySubImage(upperRightBounds, false);
-//
-//		// Save to the expected maps folder for Skia test to compare against
-//		String outputPath = Paths.get("unit test files", "expected maps skia", testName + " - awt.png").toString();
-//		FileHelper.createFolder(Paths.get("unit test files", "expected maps skia").toString());
-//		ImageHelper.write(upperRightQuadrant, outputPath);
-//	}
+	// /**
+	// * Generates the upper-right quadrant of simpleSmallWorld using AWT rendering.
+	// * This is used by SkiaMapCreatorTest to compare Skia vs AWT rendering.
+	// */
+	// @Test
+	// public void simpleSmallWorldUpperRightQuadrant_generateForComparison()
+	// {
+	// String testName = "simpleSmallWorldUpperRightQuadrant_SkiaVsAwt";
+	// String settingsFileName = "simpleSmallWorld.nort";
+	// String settingsPath = Paths.get("unit test files", "map settings", settingsFileName).toString();
+	// MapSettings settings = new MapSettings(settingsPath);
+	// settings.resolution = 0.25;
+	//
+	// MapCreator mapCreator = new MapCreator();
+	// Image fullMap = mapCreator.createMap(settings, null, null);
+	//
+	// // Extract upper-right quadrant
+	// int quadrantWidth = fullMap.getWidth() / 2;
+	// int quadrantHeight = fullMap.getHeight() / 2;
+	// int quadrantX = fullMap.getWidth() - quadrantWidth;
+	// int quadrantY = 0;
+	// IntRectangle upperRightBounds = new IntRectangle(quadrantX, quadrantY, quadrantWidth, quadrantHeight);
+	// Image upperRightQuadrant = fullMap.copySubImage(upperRightBounds, false);
+	//
+	// // Save to the expected maps folder for Skia test to compare against
+	// String outputPath = Paths.get("unit test files", "expected maps skia", testName + " - awt.png").toString();
+	// FileHelper.createFolder(Paths.get("unit test files", "expected maps skia").toString());
+	// ImageHelper.write(upperRightQuadrant, outputPath);
+	// }
 
 	// Ignore these tests while working on Skia because they test AWT, not Skia. TODO - Put back later
 	@Test
@@ -217,8 +217,9 @@ public class MapCreatorTest
 	}
 
 	/**
-	 * Tests that a map which is drawn with no edits matches the same map drawn the second time with newly created edits. This simulates the case where you create a new map in the editor and it draws
-	 * for the first time, then you do something to trigger it to do a full redraw.
+	 * Tests that a map which is drawn with no edits matches the same map drawn the second time with newly created edits. This simulates the
+	 * case where you create a new map in the editor and it draws for the first time, then you do something to trigger it to do a full
+	 * redraw.
 	 */
 	@Test
 	public void drawWithoutEditsMatchesWithEdits()
@@ -364,31 +365,32 @@ public class MapCreatorTest
 	public void iconReplacements()
 	{
 		// Clear the custom images path to force icons to be replaced with images from the installed art pack.
-		List<String> warnings = MapTestUtil.generateAndCompare("iconReplacements.nort", (settings -> settings.customImagesPath = null), expectedMapsFolderName,failedMapsFolderName, 0).getWarningMessages();
+		List<String> warnings = MapTestUtil.generateAndCompare("iconReplacements.nort", (settings -> settings.customImagesPath = null), expectedMapsFolderName, failedMapsFolderName, 0)
+				.getWarningMessages();
 
 		Set<String> expectedWarnings = new TreeSet<>();
 		expectedWarnings.add("Unable to find the art pack 'custom' to load the mountain image group 'jagged'. The art pack 'nortantis' will be used instead.");
 		expectedWarnings.add("Unable to find the mountain image group 'jagged' in art pack 'nortantis'. The group 'round' in that art pack will be used instead.");
 		expectedWarnings.add("Unable to find the art pack 'custom' to load the hill image group 'jagged'. The art pack 'nortantis' will be used instead.");
 		expectedWarnings.add("Unable to find the hill image group 'jagged' in art pack 'nortantis'. The group 'round' in that art pack will be used instead.");
-		expectedWarnings.add(
-				"Unable to find the art pack 'custom' to load the sand image group 'dunes'. The art pack 'nortantis' will be used instead because it has the same image group folder name.");
-		expectedWarnings.add(
-				"Unable to find the art pack 'custom' to load the hill image group 'sharp'. The art pack 'nortantis' will be used instead because it has the same image group folder name.");
+		expectedWarnings
+				.add("Unable to find the art pack 'custom' to load the sand image group 'dunes'. The art pack 'nortantis' will be used instead because it has the same image group folder name.");
+		expectedWarnings
+				.add("Unable to find the art pack 'custom' to load the hill image group 'sharp'. The art pack 'nortantis' will be used instead because it has the same image group folder name.");
 		expectedWarnings.add("Unable to find the art pack 'custom' to load the tree image group 'generated deciduous 6'. The art pack 'nortantis' will be used instead.");
 		expectedWarnings.add("Unable to find the tree image group 'generated deciduous 6' in art pack 'nortantis'. The group 'original pine' in that art pack will be used instead.");
-		expectedWarnings.add(
-				"Unable to find the art pack 'custom' to load the tree image group 'pine'. The art pack 'nortantis' will be used instead because it has the same image group folder name.");
-		expectedWarnings.add(
-				"Unable to find the art pack 'custom' to load the mountain image group 'sharp'. The art pack 'nortantis' will be used instead because it has the same image group folder name.");
+		expectedWarnings
+				.add("Unable to find the art pack 'custom' to load the tree image group 'pine'. The art pack 'nortantis' will be used instead because it has the same image group folder name.");
+		expectedWarnings
+				.add("Unable to find the art pack 'custom' to load the mountain image group 'sharp'. The art pack 'nortantis' will be used instead because it has the same image group folder name.");
 		expectedWarnings.add(
 				"Unable to find the art pack 'custom' to load the icon 'compass 1' from decoration image group 'compasses'. The art pack 'nortantis' will be used instead because it has the same image group folder and image name.");
 		expectedWarnings.add("Unable to find the art pack 'custom' to load the icon 'ship 6' from decoration image group 'boats'. The art pack 'nortantis' will be used instead.");
 		expectedWarnings.add("Unable to find the decoration image group 'boats' in art pack 'custom'. The group 'ships' in art pack 'nortantis' will be used instead.");
 		expectedWarnings.add("Unable to find the art pack 'custom' to load the icon 'small house 1' from city image group 'other'. The art pack 'nortantis' will be used instead.");
 		expectedWarnings.add("Unable to find the city image group 'other' in art pack 'custom'. The group 'flat' in art pack 'nortantis' will be used instead.");
-		expectedWarnings.add(
-				"Unable to find the city icon 'small house 1' in art pack 'custom', group 'other'. The icon 'town on a hill' in art pack 'nortantis', group 'flat', will be used instead.");
+		expectedWarnings
+				.add("Unable to find the city icon 'small house 1' in art pack 'custom', group 'other'. The icon 'town on a hill' in art pack 'nortantis', group 'flat', will be used instead.");
 		expectedWarnings.add(
 				"Unable to find the art pack 'custom' to load the icon 'town' from city image group 'middle ages'. The art pack 'nortantis' will be used instead because it has the same image group folder and image name.");
 		expectedWarnings.add("Unable to find the art pack 'custom' to load the icon 'simple_ship' from decoration image group 'boats'. The art pack 'nortantis' will be used instead.");
@@ -418,7 +420,7 @@ public class MapCreatorTest
 		List<String> warnings = MapTestUtil.generateAndCompare("iconReplacementsWithMissingIconTypes.nort", (settings) ->
 		{
 			settings.customImagesPath = Paths.get("unit test files", "map settings", "empty custom images").toAbsolutePath().toString();
-		},  expectedMapsFolderName, failedMapsFolderName, 0).getWarningMessages();
+		}, expectedMapsFolderName, failedMapsFolderName, 0).getWarningMessages();
 
 		Set<String> expectedWarnings = new TreeSet<>();
 		expectedWarnings.add(
@@ -430,8 +432,8 @@ public class MapCreatorTest
 		expectedWarnings.add(
 				"The art pack 'custom' no longer has mountain images, so it does not have the mountain image group 'jagged'. The art pack 'nortantis' will be used instead because it has mountain images.");
 		expectedWarnings.add("Unable to find the mountain image group 'jagged' in art pack 'nortantis'. The group 'round' in that art pack will be used instead.");
-		expectedWarnings.add(
-				"The art pack 'custom' no longer has hill images, so it does not have the hill image group 'jagged'. The art pack 'nortantis' will be used instead because it has hill images.");
+		expectedWarnings
+				.add("The art pack 'custom' no longer has hill images, so it does not have the hill image group 'jagged'. The art pack 'nortantis' will be used instead because it has hill images.");
 		expectedWarnings.add("Unable to find the hill image group 'jagged' in art pack 'nortantis'. The group 'round' in that art pack will be used instead.");
 		expectedWarnings.add(
 				"The art pack 'custom' no longer has sand images, so it does not have the sand image group 'dunes'. The art pack 'nortantis' will be used instead because it has the same image group folder name.");
@@ -452,8 +454,8 @@ public class MapCreatorTest
 		expectedWarnings.add(
 				"The art pack 'custom' no longer has city images, so it does not have the icon 'small house 1' from city image group 'other'. The art pack 'nortantis' will be used instead because it has city images.");
 		expectedWarnings.add("Unable to find the city image group 'other' in art pack 'custom'. The group 'flat' in art pack 'nortantis' will be used instead.");
-		expectedWarnings.add(
-				"Unable to find the city icon 'small house 1' in art pack 'custom', group 'other'. The icon 'town on a hill' in art pack 'nortantis', group 'flat', will be used instead.");
+		expectedWarnings
+				.add("Unable to find the city icon 'small house 1' in art pack 'custom', group 'other'. The icon 'town on a hill' in art pack 'nortantis', group 'flat', will be used instead.");
 		expectedWarnings.add(
 				"The art pack 'custom' no longer has city images, so it does not have the icon 'town' from city image group 'middle ages'. The art pack 'nortantis' will be used instead because it has the same image group folder and image name.");
 		expectedWarnings.add(
@@ -612,17 +614,17 @@ public class MapCreatorTest
 
 	private void generateRandomHeightmapAndCompare(long seed)
 	{
-		MapTestUtil.generateRandomHeightmapAndCompare(1,  expectedMapsFolderName, failedMapsFolderName);
+		MapTestUtil.generateRandomHeightmapAndCompare(1, expectedMapsFolderName, failedMapsFolderName);
 	}
 
 	private void generateAndCompare(String settingsFileName)
 	{
-		MapTestUtil.generateAndCompare(settingsFileName, null,  expectedMapsFolderName, failedMapsFolderName, 0);
+		MapTestUtil.generateAndCompare(settingsFileName, null, expectedMapsFolderName, failedMapsFolderName, 0);
 	}
 
 	private void generateAndCompare(String settingsFileName, int threshold)
 	{
-		MapTestUtil.generateAndCompare(settingsFileName, null,  expectedMapsFolderName, failedMapsFolderName, threshold);
+		MapTestUtil.generateAndCompare(settingsFileName, null, expectedMapsFolderName, failedMapsFolderName, threshold);
 	}
 
 	private void createImageDiffIfImagesAreSameSize(Image image1, Image image2, String settingsFileName)

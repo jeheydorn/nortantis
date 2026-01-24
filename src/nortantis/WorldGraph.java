@@ -544,7 +544,8 @@ public class WorldGraph extends VoronoiGraph
 		{
 			buildCenterLookupTableIfNeeded();
 			Color color;
-			// TODO See if creating the pixel reader below is fast enough. If not, which is likely, I will likely need to cache the centerLookupTable's data in a short[][].
+			// TODO See if creating the pixel reader below is fast enough. If not, which is likely, I will likely need to cache the
+			// centerLookupTable's data in a short[][].
 			try (PixelReader pixels = centerLookupTable.createPixelReader(new IntRectangle((int) point.x, (int) point.y, 1, 1)))
 			{
 				color = Color.create(pixels.getRGB((int) point.x, (int) point.y));

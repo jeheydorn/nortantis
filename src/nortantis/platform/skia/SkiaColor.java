@@ -93,6 +93,6 @@ public class SkiaColor extends Color
 	@Override
 	public String toString()
 	{
-		return String.format("SkiaColor[red=" + getRed() + ", green=" + getGreen() + ", blue=" + getBlue() + ", alpha=" + getAlpha() +"]");
+		return String.format("SkiaColor[red=" + getRed() + ", green=" + getGreen() + ", blue=" + getBlue() + ", alpha=" + getAlpha() + "]");
 	}
 }

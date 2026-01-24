@@ -44,9 +44,8 @@ public class SkiaImage extends Image
 	private final Set<GPUBatchingPainter> referencingPainters = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
 	/**
-	 * Holds GPU and CPU resources separately from SkiaImage so that the Cleaner can clean them
-	 * up when SkiaImage becomes unreachable. This class must NOT hold any reference to SkiaImage,
-	 * otherwise it would prevent GC from ever collecting the image.
+	 * Holds GPU and CPU resources separately from SkiaImage so that the Cleaner can clean them up when SkiaImage becomes unreachable. This
+	 * class must NOT hold any reference to SkiaImage, otherwise it would prevent GC from ever collecting the image.
 	 */
 	private static class ResourceState implements Runnable
 	{
@@ -87,20 +86,29 @@ public class SkiaImage extends Image
 			// crashes when an image is closed while batched draw operations still reference it.
 			if (GPUExecutor.getInstance().isGPUAvailable())
 			{
-				GPUExecutor.getInstance().submitAsync(() -> {
-					if (surfaceToClose != null) surfaceToClose.close();
-					if (textureToClose != null) textureToClose.close();
-					if (cachedToClose != null) cachedToClose.close();
-					if (bitmapToClose != null) bitmapToClose.close();
+				GPUExecutor.getInstance().submitAsync(() ->
+				{
+					if (surfaceToClose != null)
+						surfaceToClose.close();
+					if (textureToClose != null)
+						textureToClose.close();
+					if (cachedToClose != null)
+						cachedToClose.close();
+					if (bitmapToClose != null)
+						bitmapToClose.close();
 				});
 			}
 			else
 			{
 				// No GPU available, close everything directly
-				if (surfaceToClose != null) surfaceToClose.close();
-				if (textureToClose != null) textureToClose.close();
-				if (cachedToClose != null) cachedToClose.close();
-				if (bitmapToClose != null) bitmapToClose.close();
+				if (surfaceToClose != null)
+					surfaceToClose.close();
+				if (textureToClose != null)
+					textureToClose.close();
+				if (cachedToClose != null)
+					cachedToClose.close();
+				if (bitmapToClose != null)
+					bitmapToClose.close();
 			}
 		}
 	}
@@ -127,12 +135,11 @@ public class SkiaImage extends Image
 	}
 
 	/**
-	 * Releases resources held by this image, ensuring GPU resources are cleaned up
-	 * on the GPU thread to avoid crashes from finalizers running on the wrong thread.
-	 * This method is idempotent - calling it multiple times is safe.
+	 * Releases resources held by this image, ensuring GPU resources are cleaned up on the GPU thread to avoid crashes from finalizers
+	 * running on the wrong thread. This method is idempotent - calling it multiple times is safe.
 	 *
-	 * If there are pending batched draw operations using this image as a source,
-	 * cleanup is deferred to the Cleaner (via GC) to avoid blocking/deadlocks.
+	 * If there are pending batched draw operations using this image as a source, cleanup is deferred to the Cleaner (via GC) to avoid
+	 * blocking/deadlocks.
 	 */
 	@Override
 	public void close()
@@ -164,8 +171,7 @@ public class SkiaImage extends Image
 	}
 
 	/**
-	 * Forces all SkiaImage instances to use CPU rendering regardless of size.
-	 * Useful for tests that need deterministic rendering behavior.
+	 * Forces all SkiaImage instances to use CPU rendering regardless of size. Useful for tests that need deterministic rendering behavior.
 	 */
 	public static void setForceCPU(boolean force)
 	{
@@ -178,9 +184,8 @@ public class SkiaImage extends Image
 	}
 
 	/**
-	 * Determines if this image should use GPU acceleration based on size and availability.
-	 * Uses GPU for medium-sized images, but falls back to CPU for very large images
-	 * that exceed the GPU's maximum texture size.
+	 * Determines if this image should use GPU acceleration based on size and availability. Uses GPU for medium-sized images, but falls back
+	 * to CPU for very large images that exceed the GPU's maximum texture size.
 	 */
 	private boolean shouldUseGPU()
 	{
@@ -193,9 +198,7 @@ public class SkiaImage extends Image
 			return false;
 		}
 		int maxTextureSize = GPUExecutor.getInstance().getMaxTextureSize();
-		return getPixelCount() >= GPU_THRESHOLD_PIXELS
-				&& width <= maxTextureSize
-				&& height <= maxTextureSize;
+		return getPixelCount() >= GPU_THRESHOLD_PIXELS && width <= maxTextureSize && height <= maxTextureSize;
 	}
 
 	private Bitmap createBitmap(ImageInfo imageInfo)
@@ -286,8 +289,7 @@ public class SkiaImage extends Image
 	public org.jetbrains.skia.Image getSkiaImage()
 	{
 		// If GPU has latest data and we have a surface, and we're on the GPU thread, use GPU snapshot
-		if (resourceState.isGpuEnabled && resourceState.location != ImageLocation.CPU_DIRTY && resourceState.gpuSurface != null
-				&& GPUExecutor.getInstance().isOnGPUThread())
+		if (resourceState.isGpuEnabled && resourceState.location != ImageLocation.CPU_DIRTY && resourceState.gpuSurface != null && GPUExecutor.getInstance().isOnGPUThread())
 		{
 			if (resourceState.gpuTexture == null)
 			{
@@ -323,8 +325,7 @@ public class SkiaImage extends Image
 	}
 
 	/**
-	 * Lazily creates the GPU surface when needed for drawing.
-	 * Does nothing if GPU is not enabled for this image.
+	 * Lazily creates the GPU surface when needed for drawing. Does nothing if GPU is not enabled for this image.
 	 */
 	private void ensureGPUSurface()
 	{
@@ -353,8 +354,7 @@ public class SkiaImage extends Image
 	}
 
 	/**
-	 * Ensures CPU bitmap has the latest data.
-	 * If GPU was modified, syncs GPU data to CPU.
+	 * Ensures CPU bitmap has the latest data. If GPU was modified, syncs GPU data to CPU.
 	 */
 	private void ensureCPUData()
 	{
@@ -365,8 +365,7 @@ public class SkiaImage extends Image
 	}
 
 	/**
-	 * Reads GPU surface pixels into the CPU bitmap.
-	 * Must submit the GPU access to the GPU thread.
+	 * Reads GPU surface pixels into the CPU bitmap. Must submit the GPU access to the GPU thread.
 	 */
 	private void syncGPUToCPU()
 	{
@@ -381,9 +380,10 @@ public class SkiaImage extends Image
 			final Surface surfaceRef = resourceState.gpuSurface;
 			final Bitmap bitmapRef = resourceState.bitmap;
 
-			GPUExecutor.getInstance().submit(() -> {
+			GPUExecutor.getInstance().submit(() ->
+			{
 				// Flush any pending GPU commands to ensure the surface is up-to-date
-				surfaceRef.flushAndSubmit(true);  // true = sync
+				surfaceRef.flushAndSubmit(true); // true = sync
 
 				// Read directly from surface instead of using a snapshot.
 				// Skia handles the conversion from PREMUL surface to the bitmap's alpha type.
@@ -407,8 +407,7 @@ public class SkiaImage extends Image
 	}
 
 	/**
-	 * Uploads CPU bitmap data to the GPU surface.
-	 * Must submit the GPU access to the GPU thread.
+	 * Uploads CPU bitmap data to the GPU surface. Must submit the GPU access to the GPU thread.
 	 */
 	private void syncCPUToGPU()
 	{
@@ -423,7 +422,8 @@ public class SkiaImage extends Image
 			final Surface surfaceRef = resourceState.gpuSurface;
 			final Bitmap bitmapRef = resourceState.bitmap;
 
-			GPUExecutor.getInstance().submit(() -> {
+			GPUExecutor.getInstance().submit(() ->
+			{
 				// Draw the CPU bitmap to the GPU surface
 				Canvas gpuCanvas = surfaceRef.getCanvas();
 				org.jetbrains.skia.Image cpuImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(bitmapRef);
@@ -448,8 +448,7 @@ public class SkiaImage extends Image
 	}
 
 	/**
-	 * Marks the CPU bitmap as having the latest data (GPU is stale).
-	 * Called after pixel write operations.
+	 * Marks the CPU bitmap as having the latest data (GPU is stale). Called after pixel write operations.
 	 */
 	public void markCPUDirty()
 	{
@@ -462,8 +461,7 @@ public class SkiaImage extends Image
 	}
 
 	/**
-	 * Updates a region of the GPU surface from the CPU bitmap.
-	 * Used for partial updates to avoid full texture uploads.
+	 * Updates a region of the GPU surface from the CPU bitmap. Used for partial updates to avoid full texture uploads.
 	 */
 	void updateGPURegion(int x, int y, int width, int height)
 	{
@@ -507,7 +505,8 @@ public class SkiaImage extends Image
 				return;
 			}
 
-			GPUExecutor.getInstance().submit(() -> {
+			GPUExecutor.getInstance().submit(() ->
+			{
 				Canvas gpuCanvas = surfaceRef.getCanvas();
 
 				// Create a temporary bitmap for the region
@@ -534,8 +533,7 @@ public class SkiaImage extends Image
 	}
 
 	/**
-	 * Marks the GPU surface as having the latest data (CPU is stale).
-	 * Called after GPU drawing operations.
+	 * Marks the GPU surface as having the latest data (CPU is stale). Called after GPU drawing operations.
 	 */
 	private void markGPUDirty()
 	{
@@ -578,8 +576,7 @@ public class SkiaImage extends Image
 	}
 
 	/**
-	 * Called by GPUBatchingPainter when it is closed.
-	 * Removes the painter from the active set.
+	 * Called by GPUBatchingPainter when it is closed. Removes the painter from the active set.
 	 */
 	void onPainterClosed(GPUBatchingPainter painter)
 	{
@@ -587,8 +584,8 @@ public class SkiaImage extends Image
 	}
 
 	/**
-	 * Called by GPUBatchingPainter when this image is used as a source in a drawImage call
-	 * and the operation is added to a batch. The painter will be removed when the batch completes.
+	 * Called by GPUBatchingPainter when this image is used as a source in a drawImage call and the operation is added to a batch. The
+	 * painter will be removed when the batch completes.
 	 */
 	void addReferencingPainter(GPUBatchingPainter painter)
 	{
@@ -596,8 +593,8 @@ public class SkiaImage extends Image
 	}
 
 	/**
-	 * Called by GPUBatchingPainter when a batch containing drawImage operations using this
-	 * image as a source has completed execution on the GPU thread.
+	 * Called by GPUBatchingPainter when a batch containing drawImage operations using this image as a source has completed execution on the
+	 * GPU thread.
 	 */
 	void removeReferencingPainter(GPUBatchingPainter painter)
 	{
@@ -629,6 +626,10 @@ public class SkiaImage extends Image
 	{
 		awaitPendingPainters();
 		ensureCPUData(); // Sync GPU->CPU if needed
+		if (isGrayscaleFormat())
+		{
+			return new SkiaGrayscalePixelReader(this, bounds);
+		}
 		return new SkiaPixelReader(this, bounds);
 	}
 
@@ -637,6 +638,10 @@ public class SkiaImage extends Image
 	{
 		awaitPendingPainters();
 		ensureCPUData(); // Sync GPU->CPU if needed
+		if (isGrayscaleFormat())
+		{
+			return new SkiaGrayscalePixelReaderWriter(this, bounds);
+		}
 		return new SkiaPixelReaderWriter(this, bounds);
 	}
 
@@ -706,14 +711,16 @@ public class SkiaImage extends Image
 
 			try
 			{
-				Bitmap scaledBitmap = GPUExecutor.getInstance().submit(() -> {
+				Bitmap scaledBitmap = GPUExecutor.getInstance().submit(() ->
+				{
 					// Create GPU surface on GPU thread
 					DirectContext ctx = GPUExecutor.getInstance().getContext();
-					if (ctx == null) return null;
+					if (ctx == null)
+						return null;
 
-					Surface gpuDestSurface = Surface.Companion.makeRenderTarget(ctx, false,
-						new ImageInfo(targetWidth, targetHeight, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null));
-					if (gpuDestSurface == null) return null;
+					Surface gpuDestSurface = Surface.Companion.makeRenderTarget(ctx, false, new ImageInfo(targetWidth, targetHeight, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null));
+					if (gpuDestSurface == null)
+						return null;
 
 					try
 					{
@@ -771,8 +778,8 @@ public class SkiaImage extends Image
 	}
 
 	/**
-	 * Scales the image using high-quality sampling with mipmaps. Uses FilterMipmap with linear filtering and linear mipmap
-	 * interpolation, which provides better results than bilinear filtering when downscaling significantly.
+	 * Scales the image using high-quality sampling with mipmaps. Uses FilterMipmap with linear filtering and linear mipmap interpolation,
+	 * which provides better results than bilinear filtering when downscaling significantly.
 	 */
 	private Image scaleHighQuality(int width, int height)
 	{
@@ -842,14 +849,16 @@ public class SkiaImage extends Image
 
 			try
 			{
-				Bitmap subBitmap = GPUExecutor.getInstance().submit(() -> {
+				Bitmap subBitmap = GPUExecutor.getInstance().submit(() ->
+				{
 					// Create GPU surface on GPU thread
 					DirectContext ctx = GPUExecutor.getInstance().getContext();
-					if (ctx == null) return null;
+					if (ctx == null)
+						return null;
 
-					Surface gpuDestSurface = Surface.Companion.makeRenderTarget(ctx, false,
-						new ImageInfo(targetW, targetH, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null));
-					if (gpuDestSurface == null) return null;
+					Surface gpuDestSurface = Surface.Companion.makeRenderTarget(ctx, false, new ImageInfo(targetW, targetH, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null));
+					if (gpuDestSurface == null)
+						return null;
 
 					try
 					{
@@ -924,7 +933,8 @@ public class SkiaImage extends Image
 			return deepCopy();
 		}
 
-		// TODO if performance is a concern, I could make ImageType.RGB be the same as ARB under the hood, so I just have to change metadata and return a deep copy here.
+		// TODO if performance is a concern, I could make ImageType.RGB be the same as ARB under the hood, so I just have to change metadata
+		// and return a deep copy here.
 
 		SkiaImage result = new SkiaImage(width, height, ImageType.ARGB);
 		try (Painter p = result.createPainter())
@@ -951,8 +961,8 @@ public class SkiaImage extends Image
 	}
 
 	/**
-	 * Reads all pixels from the Skia bitmap into an int[] array. Format: ARGB, one int per pixel, row-major order.
-	 * For grayscale images, converts single-byte gray values to ARGB format.
+	 * Reads all pixels from the Skia bitmap into an int[] array. Format: ARGB, one int per pixel, row-major order. For grayscale images,
+	 * converts single-byte gray values to ARGB format.
 	 */
 	public int[] readPixelsToIntArray()
 	{
@@ -986,8 +996,7 @@ public class SkiaImage extends Image
 	}
 
 	/**
-	 * Reads a rectangular region of pixels into an int[] array.
-	 * For grayscale images, converts single-byte gray values to ARGB format.
+	 * Reads a rectangular region of pixels into an int[] array. For grayscale images, converts single-byte gray values to ARGB format.
 	 */
 	int[] readPixelsToIntArray(int srcX, int srcY, int regionWidth, int regionHeight)
 	{
@@ -1022,8 +1031,8 @@ public class SkiaImage extends Image
 	}
 
 	/**
-	 * Writes an int[] array back to the Skia bitmap. Format: ARGB, one int per pixel, row-major order.
-	 * For grayscale images, extracts the gray value from ARGB and writes single bytes.
+	 * Writes an int[] array back to the Skia bitmap. Format: ARGB, one int per pixel, row-major order. For grayscale images, extracts the
+	 * gray value from ARGB and writes single bytes.
 	 */
 	void writePixelsFromIntArray(int[] pixels)
 	{
@@ -1096,18 +1105,67 @@ public class SkiaImage extends Image
 		invalidateCachedImage();
 	}
 
+	/**
+	 * Reads grayscale pixels directly as a byte array, avoiding int[] conversion overhead. For use with grayscale image formats
+	 * (Grayscale8Bit, Binary).
+	 */
+	byte[] readGrayscalePixels(IntRectangle bounds)
+	{
+		awaitPendingPainters();
+		ensureCPUData();
+
+		int x = bounds != null ? bounds.x : 0;
+		int y = bounds != null ? bounds.y : 0;
+		int w = bounds != null ? bounds.width : width;
+		int h = bounds != null ? bounds.height : height;
+
+		ImageInfo info = new ImageInfo(w, h, ColorType.GRAY_8, ColorAlphaType.OPAQUE, null);
+		return resourceState.bitmap.readPixels(info, w, x, y);
+	}
+
+	/**
+	 * Writes grayscale pixels directly from a byte array to the full image. For use with grayscale image formats (Grayscale8Bit, Binary).
+	 */
+	void writeGrayscalePixels(byte[] pixels)
+	{
+		awaitPendingPainters();
+		resourceState.bitmap.installPixels(resourceState.bitmap.getImageInfo(), pixels, width);
+		invalidateCachedImage();
+	}
+
+	/**
+	 * Writes grayscale pixels to a rectangular region of the image. For use with grayscale image formats (Grayscale8Bit, Binary).
+	 */
+	void writeGrayscalePixelsToRegion(byte[] regionPixels, IntRectangle bounds)
+	{
+		awaitPendingPainters();
+		ImageInfo tempImageInfo = new ImageInfo(bounds.width, bounds.height, ColorType.GRAY_8, ColorAlphaType.OPAQUE, null);
+		Bitmap tempBitmap = new Bitmap();
+		tempBitmap.allocPixels(tempImageInfo);
+		tempBitmap.installPixels(tempImageInfo, regionPixels, bounds.width);
+
+		Canvas canvas = new Canvas(resourceState.bitmap, new SurfaceProps());
+		org.jetbrains.skia.Image tempImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(tempBitmap);
+		canvas.drawImage(tempImage, bounds.x, bounds.y);
+		tempImage.close();
+		canvas.close();
+		tempBitmap.close();
+		invalidateCachedImage();
+	}
+
 	public boolean isGpuEnabled()
 	{
 		return resourceState.isGpuEnabled;
 	}
 
 	/**
-	 * Replaces this image's pixels by drawing from the source surface.
-	 * Used for in-place shader operations where the result is written back to the original image.
-	 * This method stays on GPU when possible to avoid expensive GPU-CPU-GPU transfers.
+	 * Replaces this image's pixels by drawing from the source surface. Used for in-place shader operations where the result is written back
+	 * to the original image. This method stays on GPU when possible to avoid expensive GPU-CPU-GPU transfers.
 	 *
-	 * @param source The surface containing the shader result
-	 * @param isOnGPUThread True if this is being called from the GPU executor thread
+	 * @param source
+	 *            The surface containing the shader result
+	 * @param isOnGPUThread
+	 *            True if this is being called from the GPU executor thread
 	 */
 	void replaceFromSurface(Surface source, boolean isOnGPUThread)
 	{
@@ -1124,10 +1182,7 @@ public class SkiaImage extends Image
 			// Check if we can use GPU-to-GPU path
 			// Skip GPU path for grayscale images because GPU surface is always N32 (RGBA) format
 			// and syncGPUToCPU can't convert N32 back to grayscale correctly
-			boolean canUseGPUPath = isOnGPUThread
-					&& resourceState.isGpuEnabled
-					&& resourceState.gpuSurface != null
-					&& resourceState.bitmap.getColorType() == ColorType.Companion.getN32();
+			boolean canUseGPUPath = isOnGPUThread && resourceState.isGpuEnabled && resourceState.gpuSurface != null && resourceState.bitmap.getColorType() == ColorType.Companion.getN32();
 
 			if (canUseGPUPath)
 			{

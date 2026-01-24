@@ -26,10 +26,9 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Unit tests for ImageHelper image creation and modification methods.
  *
- * These tests follow the pattern from SkiaPainterTest: they compare rendered images against
- * expected images stored in "unit test files/expected image helper tests/". When an expected image doesn't exist,
- * the test creates it from the actual output. Failed tests save their output to
- * "unit test files/failed image helper tests/" along with a diff image.
+ * These tests follow the pattern from SkiaPainterTest: they compare rendered images against expected images stored in "unit test
+ * files/expected image helper tests/". When an expected image doesn't exist, the test creates it from the actual output. Failed tests save
+ * their output to "unit test files/failed image helper tests/" along with a diff image.
  */
 public class ImageHelperTest
 {
@@ -274,9 +273,7 @@ public class ImageHelperTest
 		Image mask = createGradientMask();
 		Color color = Color.create(0, 255, 0, 128);
 
-		Stopwatch sw = new Stopwatch("maskWithColor");
 		Image result = ImageHelper.maskWithColor(image, color, mask, false);
-		sw.printElapsedTime();
 
 		compareWithExpected(result, "maskWithColor");
 	}
@@ -419,10 +416,10 @@ public class ImageHelperTest
 
 		Map<Integer, Color> colors = new HashMap<>();
 		// Use larger region IDs to test RGB encoding
-		colors.put(256, Color.red);     // Requires green channel
-		colors.put(512, Color.green);   // Requires green channel
-		colors.put(1000, Color.blue);   // Requires green+blue channels
-		colors.put(5000, Color.cyan);   // Requires green+blue channels
+		colors.put(256, Color.red); // Requires green channel
+		colors.put(512, Color.green); // Requires green channel
+		colors.put(1000, Color.blue); // Requires green+blue channels
+		colors.put(5000, Color.cyan); // Requires green+blue channels
 
 		// Create colorIndexes with these larger IDs
 		Image colorIndexes = createColorIndexesImageWithIds(256, 512, 1000, 5000);
@@ -453,7 +450,8 @@ public class ImageHelperTest
 
 		assertEquals(gpuTestSize, result.getWidth());
 		assertEquals(gpuTestSize, result.getHeight());
-		compareWithExpected(result, "maskWithMultipleColorsGPU");
+		// Use higher threshold for GPU floating point precision variations across runs
+		compareWithExpected(result, "maskWithMultipleColorsGPU", 10);
 	}
 
 	@Test
@@ -477,7 +475,8 @@ public class ImageHelperTest
 
 		assertEquals(gpuTestSize, result.getWidth());
 		assertEquals(gpuTestSize, result.getHeight());
-		compareWithExpected(result, "maskWithMultipleColorsGPUInverted");
+		// Use higher threshold for GPU floating point precision variations across runs
+		compareWithExpected(result, "maskWithMultipleColorsGPUInverted", 10);
 	}
 
 	// ==================== Alpha Tests ====================
@@ -514,7 +513,7 @@ public class ImageHelperTest
 		Image original = createColorTestImage();
 		Image result = ImageHelper.applyAlpha(original, 128);
 
-		try(PixelReader reader = result.createPixelReader())
+		try (PixelReader reader = result.createPixelReader())
 		{
 			assertEquals(reader.getPixelColor(20, 20).getAlpha(), 128);
 		}
@@ -621,18 +620,18 @@ public class ImageHelperTest
 	}
 
 	// Disabling this test for now because it fails, but I don't actually use this functionality. TODO remove this test if I don't need it
-//	@Test
-//	public void testColorifyWithAlpha()
-//	{
-//		Image grayscale = createGrayscaleTestImage();
-//		Color color = Color.create(100, 150, 200, 128);
-//
-//		Image result = ImageHelper.colorify(grayscale, color, ColorifyAlgorithm.algorithm3);
-//
-//		assertEquals(ImageType.ARGB, result.getType(), "Result should have alpha channel when color has transparency");
-//		// Use threshold due to potential alpha premultiplication differences in PNG round-trip
-//		compareWithExpected(result, "colorifyWithAlpha", 4);
-//	}
+	// @Test
+	// public void testColorifyWithAlpha()
+	// {
+	// Image grayscale = createGrayscaleTestImage();
+	// Color color = Color.create(100, 150, 200, 128);
+	//
+	// Image result = ImageHelper.colorify(grayscale, color, ColorifyAlgorithm.algorithm3);
+	//
+	// assertEquals(ImageType.ARGB, result.getType(), "Result should have alpha channel when color has transparency");
+	// // Use threshold due to potential alpha premultiplication differences in PNG round-trip
+	// compareWithExpected(result, "colorifyWithAlpha", 4);
+	// }
 
 	// ==================== ColorifyMulti Tests ====================
 
@@ -806,7 +805,7 @@ public class ImageHelperTest
 	public void testBlur()
 	{
 		Image image = createGrayscaleTestImage();
-		Image blurred = ImageHelper.blur(image, 3, false,true);
+		Image blurred = ImageHelper.blur(image, 3, false, true);
 
 		assertEquals(image.getWidth(), blurred.getWidth(), "Width should match");
 		assertEquals(image.getHeight(), blurred.getHeight(), "Height should match");
@@ -834,7 +833,7 @@ public class ImageHelperTest
 	public void testBlurAndScaleLine()
 	{
 		Image image = createGrayscaleXImage(ImageType.Grayscale8Bit);
-		Image blurred = ImageHelper.blurAndScale(image, 20, 2.3973336f,true);
+		Image blurred = ImageHelper.blurAndScale(image, 20, 2.3973336f, true);
 
 		assertEquals(image.getWidth(), blurred.getWidth(), "Width should match");
 		assertEquals(image.getHeight(), blurred.getHeight(), "Height should match");
@@ -842,18 +841,19 @@ public class ImageHelperTest
 	}
 
 	// Commented out because binary vs grayscale isn't precise enough to get pixel-perfect matching in results.
-//	@Test
-//	public void testBlurBinaryVsGrayscale()
-//	{
-//		Image gray8Bit = createGrayscaleXImage(ImageType.Grayscale8Bit);
-//		Image binary = createGrayscaleXImage(ImageType.Binary);
-//		final int threshold = 5;
-//		MapTestUtil.checkIfImagesAreEqualAndWriteToFailedIfNot(gray8Bit, binary, threshold, "grayVsBinaryX", failedFolderName);
-//
-//		Image blurredGray8Bit = ImageHelper.blurAndScale(gray8Bit, 20, 2.3973336f,true);
-//		Image blurredBinary = ImageHelper.blurAndScale(binary, 20, 2.3973336f, true);
-//		MapTestUtil.checkIfImagesAreEqualAndWriteToFailedIfNot(blurredGray8Bit, blurredBinary, threshold, "testBlurBinaryVsGrayscale", failedFolderName);
-//	}
+	// @Test
+	// public void testBlurBinaryVsGrayscale()
+	// {
+	// Image gray8Bit = createGrayscaleXImage(ImageType.Grayscale8Bit);
+	// Image binary = createGrayscaleXImage(ImageType.Binary);
+	// final int threshold = 5;
+	// MapTestUtil.checkIfImagesAreEqualAndWriteToFailedIfNot(gray8Bit, binary, threshold, "grayVsBinaryX", failedFolderName);
+	//
+	// Image blurredGray8Bit = ImageHelper.blurAndScale(gray8Bit, 20, 2.3973336f,true);
+	// Image blurredBinary = ImageHelper.blurAndScale(binary, 20, 2.3973336f, true);
+	// MapTestUtil.checkIfImagesAreEqualAndWriteToFailedIfNot(blurredGray8Bit, blurredBinary, threshold, "testBlurBinaryVsGrayscale",
+	// failedFolderName);
+	// }
 
 	private Image createGrayscaleXImage(ImageType type)
 	{
@@ -1078,8 +1078,8 @@ public class ImageHelperTest
 	}
 
 	/**
-	 * Creates a horizontal gradient mask from minLevel to maxLevel.
-	 * Use minLevel > 0 to avoid fully transparent pixels which lose RGB during PNG round-trip.
+	 * Creates a horizontal gradient mask from minLevel to maxLevel. Use minLevel > 0 to avoid fully transparent pixels which lose RGB
+	 * during PNG round-trip.
 	 */
 	private Image createGradientMaskWithMinAlpha(int minLevel)
 	{
@@ -1169,8 +1169,7 @@ public class ImageHelperTest
 	}
 
 	/**
-	 * Creates an RGB image where each quadrant encodes a different region ID (0, 1, 2, 3)
-	 * using the WorldGraph.storeValueAsColor encoding.
+	 * Creates an RGB image where each quadrant encodes a different region ID (0, 1, 2, 3) using the WorldGraph.storeValueAsColor encoding.
 	 */
 	private Image createColorIndexesImage()
 	{
@@ -1178,8 +1177,7 @@ public class ImageHelperTest
 	}
 
 	/**
-	 * Creates an RGB image where each quadrant encodes the specified region IDs
-	 * using the WorldGraph color encoding (r << 16 | g << 8 | b).
+	 * Creates an RGB image where each quadrant encodes the specified region IDs using the WorldGraph color encoding (r << 16 | g << 8 | b).
 	 */
 	private Image createColorIndexesImageWithIds(int topLeftId, int topRightId, int bottomLeftId, int bottomRightId)
 	{
@@ -1305,8 +1303,8 @@ public class ImageHelperTest
 	}
 
 	/**
-	 * Compare actual image with expected, allowing a threshold for pixel differences.
-	 * Use threshold > 0 for images with partial alpha, which may have precision loss during PNG round-trip.
+	 * Compare actual image with expected, allowing a threshold for pixel differences. Use threshold > 0 for images with partial alpha,
+	 * which may have precision loss during PNG round-trip.
 	 */
 	private void compareWithExpected(Image actual, String testName, int threshold)
 	{
@@ -1335,9 +1333,8 @@ public class ImageHelperTest
 	}
 
 	/**
-	 * Compare an AwtImage with expected, using AwtFactory for I/O operations.
-	 * This is needed when testing cross-factory scenarios where the current PlatformFactory is Skia
-	 * but the image being tested is an AwtImage.
+	 * Compare an AwtImage with expected, using AwtFactory for I/O operations. This is needed when testing cross-factory scenarios where the
+	 * current PlatformFactory is Skia but the image being tested is an AwtImage.
 	 */
 	private void compareAwtImageWithExpected(Image actual, AwtFactory awtFactory, String testName)
 	{

@@ -130,9 +130,8 @@ public abstract class Painter implements AutoCloseable
 	public abstract void setClip(int x, int y, int width, int height);
 
 	/**
-	 * Waits for any pending asynchronous drawing operations to complete.
-	 * Default implementation is a no-op for synchronous painters.
-	 * Async painters (like GPUBatchingPainter) override this to wait for pending batches.
+	 * Waits for any pending asynchronous drawing operations to complete. Default implementation is a no-op for synchronous painters. Async
+	 * painters (like GPUBatchingPainter) override this to wait for pending batches.
 	 */
 	public void await()
 	{
@@ -140,11 +139,11 @@ public abstract class Painter implements AutoCloseable
 	}
 
 	/**
-	 * Sets manual batch mode. When enabled, operations are batched until await() is called.
-	 * When disabled (default), operations may be auto-flushed at batch size thresholds.
-	 * Default implementation is a no-op for synchronous painters.
+	 * Sets manual batch mode. When enabled, operations are batched until await() is called. When disabled (default), operations may be
+	 * auto-flushed at batch size thresholds. Default implementation is a no-op for synchronous painters.
 	 *
-	 * @param manual true to enable manual batch mode
+	 * @param manual
+	 *            true to enable manual batch mode
 	 */
 	public void setManualBatchMode(boolean manual)
 	{
@@ -152,8 +151,8 @@ public abstract class Painter implements AutoCloseable
 	}
 
 	/**
-	 * Closes this painter, waiting for any pending operations and releasing resources.
-	 * This method is called automatically when using try-with-resources.
+	 * Closes this painter, waiting for any pending operations and releasing resources. This method is called automatically when using
+	 * try-with-resources.
 	 */
 	@Override
 	public void close()

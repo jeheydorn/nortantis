@@ -42,14 +42,14 @@ public class GridDrawer
 				{
 					case Squares -> drawSquareGrid(p, width, height, settings.gridOverlayRowOrColCount, settings.gridOverlayXOffset, settings.gridOverlayYOffset);
 					case Vertical_hexes -> drawVerticalHexGrid(p, width, height, settings.gridOverlayRowOrColCount, settings.gridOverlayXOffset, settings.gridOverlayYOffset, drawBounds, lineWidth);
-					case Horizontal_hexes -> drawHorizontalHexGrid(p, width, height, settings.gridOverlayRowOrColCount, settings.gridOverlayXOffset, settings.gridOverlayYOffset, drawBounds, lineWidth);
+					case Horizontal_hexes -> drawHorizontalHexGrid(p, width, height, settings.gridOverlayRowOrColCount, settings.gridOverlayXOffset, settings.gridOverlayYOffset, drawBounds,
+							lineWidth);
 					case Voronoi_polygons -> drawVoronoiOnLand(p, graph, centersToDraw, drawBounds, settings.drawVoronoiGridOverlayOnlyOnLand);
 					default -> throw new IllegalArgumentException("Unexpected value: " + settings.gridOverlayShape);
 				}
 			}
 
-			try (Image alphaApplied = ImageHelper.applyAlpha(hexImage, alpha);
-					Painter p = image.createPainter())
+			try (Image alphaApplied = ImageHelper.applyAlpha(hexImage, alpha); Painter p = image.createPainter())
 			{
 				p.drawImage(alphaApplied, 0, 0);
 			}

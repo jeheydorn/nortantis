@@ -22,8 +22,8 @@ import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 /**
- * Singleton that manages a dedicated GPU thread with a job queue for serialized GPU operations.
- * All GPU operations (context creation, surface creation, drawing) must happen on this thread.
+ * Singleton that manages a dedicated GPU thread with a job queue for serialized GPU operations. All GPU operations (context creation,
+ * surface creation, drawing) must happen on this thread.
  *
  * Thread safety: Operations can be submitted from any thread, but execution happens only on the GPU thread.
  */
@@ -105,9 +105,8 @@ public class GPUExecutor
 	}
 
 	/**
-	 * Returns the maximum texture dimension supported by the GPU.
-	 * This is queried from GL_MAX_TEXTURE_SIZE during initialization.
-	 * Returns a default fallback value if GPU is not available.
+	 * Returns the maximum texture dimension supported by the GPU. This is queried from GL_MAX_TEXTURE_SIZE during initialization. Returns a
+	 * default fallback value if GPU is not available.
 	 */
 	public int getMaxTextureSize()
 	{
@@ -123,8 +122,7 @@ public class GPUExecutor
 	}
 
 	/**
-	 * Returns the DirectContext. Only valid when called from the GPU thread.
-	 * Package-private for use by GPUBatchingPainter.
+	 * Returns the DirectContext. Only valid when called from the GPU thread. Package-private for use by GPUBatchingPainter.
 	 */
 	DirectContext getContext()
 	{
@@ -138,9 +136,11 @@ public class GPUExecutor
 	/**
 	 * Submits a callable to execute on the GPU thread and blocks until completion.
 	 *
-	 * @param callable The operation to execute
+	 * @param callable
+	 *            The operation to execute
 	 * @return The result of the callable
-	 * @throws RuntimeException if the callable throws an exception
+	 * @throws RuntimeException
+	 *             if the callable throws an exception
 	 */
 	public <T> T submit(Callable<T> callable)
 	{
@@ -179,7 +179,8 @@ public class GPUExecutor
 	/**
 	 * Submits a callable to execute on the GPU thread asynchronously.
 	 *
-	 * @param callable The operation to execute
+	 * @param callable
+	 *            The operation to execute
 	 * @return A CompletableFuture that completes with the result
 	 */
 	public <T> CompletableFuture<T> submitAsync(Callable<T> callable)
@@ -214,12 +215,14 @@ public class GPUExecutor
 	/**
 	 * Submits a runnable to execute on the GPU thread asynchronously.
 	 *
-	 * @param runnable The operation to execute
+	 * @param runnable
+	 *            The operation to execute
 	 * @return A CompletableFuture that completes when done
 	 */
 	public CompletableFuture<Void> submitAsync(Runnable runnable)
 	{
-		return submitAsync(() -> {
+		return submitAsync(() ->
+		{
 			runnable.run();
 			return null;
 		});
@@ -228,8 +231,10 @@ public class GPUExecutor
 	/**
 	 * Creates a GPU surface on the GPU thread.
 	 *
-	 * @param width Surface width
-	 * @param height Surface height
+	 * @param width
+	 *            Surface width
+	 * @param height
+	 *            Surface height
 	 * @return GPU Surface, or null if GPU is not available
 	 */
 	public Surface createGPUSurface(int width, int height)
@@ -239,18 +244,16 @@ public class GPUExecutor
 			return null;
 		}
 
-		return submit(() -> {
+		return submit(() ->
+		{
 			if (directContext == null)
 			{
 				return null;
 			}
 			try
 			{
-				return Surface.Companion.makeRenderTarget(
-					directContext,
-					false, // budgeted
-					new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null)
-				);
+				return Surface.Companion.makeRenderTarget(directContext, false, // budgeted
+						new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null));
 			}
 			catch (Exception e)
 			{
@@ -261,8 +264,7 @@ public class GPUExecutor
 	}
 
 	/**
-	 * Shuts down the GPU executor and releases all resources.
-	 * Should be called during application shutdown.
+	 * Shuts down the GPU executor and releases all resources. Should be called during application shutdown.
 	 */
 	public void shutdown()
 	{
@@ -432,8 +434,7 @@ public class GPUExecutor
 	}
 
 	/**
-	 * Initializes GLFW and creates a hidden window with an OpenGL context.
-	 * Must be called on the GPU thread.
+	 * Initializes GLFW and creates a hidden window with an OpenGL context. Must be called on the GPU thread.
 	 */
 	private boolean initializeGLFW()
 	{
@@ -524,8 +525,7 @@ public class GPUExecutor
 	}
 
 	/**
-	 * Attempts to create a DirectContext for Skia.
-	 * Must be called on the GPU thread with an active OpenGL context.
+	 * Attempts to create a DirectContext for Skia. Must be called on the GPU thread with an active OpenGL context.
 	 */
 	private DirectContext tryCreateDirectContext()
 	{
@@ -538,11 +538,7 @@ public class GPUExecutor
 				// Verify by creating a small test surface
 				try
 				{
-					Surface testSurface = Surface.Companion.makeRenderTarget(
-						ctx,
-						false,
-						new ImageInfo(16, 16, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null)
-					);
+					Surface testSurface = Surface.Companion.makeRenderTarget(ctx, false, new ImageInfo(16, 16, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null));
 					if (testSurface != null)
 					{
 						testSurface.close();
@@ -570,8 +566,7 @@ public class GPUExecutor
 	}
 
 	/**
-	 * Safely cleans up GLFW resources.
-	 * Must be called on the GPU thread.
+	 * Safely cleans up GLFW resources. Must be called on the GPU thread.
 	 */
 	private void cleanupGLFW()
 	{

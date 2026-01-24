@@ -9,7 +9,8 @@ import nortantis.platform.skia.SkiaFactory;
 import nortantis.platform.skia.SkiaImage;
 
 /**
- * Bridge class for converting between platform-agnostic types and AWT types. This class can efficiently handle both AWT and Skia platform types, using optimized bulk operations when possible.
+ * Bridge class for converting between platform-agnostic types and AWT types. This class can efficiently handle both AWT and Skia platform
+ * types, using optimized bulk operations when possible.
  */
 public class AwtBridge
 {
@@ -152,12 +153,11 @@ public class AwtBridge
 	}
 
 	/**
-	 * Wraps a BufferedImage in an AwtImage without converting to the platform type.
-	 * Use this when you need to write back to the original BufferedImage
-	 * (e.g., for incremental updates to a display image).
+	 * Wraps a BufferedImage in an AwtImage without converting to the platform type. Use this when you need to write back to the original
+	 * BufferedImage (e.g., for incremental updates to a display image).
 	 *
-	 * Unlike fromBufferedImage, this does NOT convert to SkiaImage when using SkiaFactory,
-	 * so changes written to the returned Image will be reflected in the original BufferedImage.
+	 * Unlike fromBufferedImage, this does NOT convert to SkiaImage when using SkiaFactory, so changes written to the returned Image will be
+	 * reflected in the original BufferedImage.
 	 */
 	public static Image wrapBufferedImage(BufferedImage image)
 	{
@@ -269,8 +269,9 @@ public class AwtBridge
 	}
 
 	/**
-	 * Wraps a Graphics2D in an AwtPainter for platform-agnostic drawing. Note: When using this with SkiaFactory as the main platform, the Painter will only work correctly with AWT-based platform
-	 * types (use fromAwtColor, fromAwtFont for colors/fonts passed to this Painter).
+	 * Wraps a Graphics2D in an AwtPainter for platform-agnostic drawing. Note: When using this with SkiaFactory as the main platform, the
+	 * Painter will only work correctly with AWT-based platform types (use fromAwtColor, fromAwtFont for colors/fonts passed to this
+	 * Painter).
 	 */
 	public static Painter wrapGraphics(Graphics2D g)
 	{

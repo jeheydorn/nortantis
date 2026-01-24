@@ -398,102 +398,102 @@ public class ImageAndMasks implements AutoCloseable
 		{
 			Image bottomSilhouette = null;
 
-		try (PixelReader imagePixels = image.createPixelReader())
-		{
-			// Top
+			try (PixelReader imagePixels = image.createPixelReader())
 			{
-				List<IntPoint> points = new ArrayList<>();
-				for (int x = 0; x < image.getWidth(); x++)
+				// Top
 				{
-					IntPoint point = findUppermostOpaquePixel(imagePixels, image.getHeight(), x);
-					if (point != null)
+					List<IntPoint> points = new ArrayList<>();
+					for (int x = 0; x < image.getWidth(); x++)
 					{
+						IntPoint point = findUppermostOpaquePixel(imagePixels, image.getHeight(), x);
+						if (point != null)
+						{
+							addToContentBounds(point);
+							if (points.isEmpty())
+							{
+								points.add(new IntPoint(x, image.getHeight()));
+							}
+							points.add(point);
+						}
+					}
+
+					if (points.size() < 3)
+					{
+						contentMask = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
+						return;
+					}
+					points.add(new IntPoint(points.get(points.size() - 1).x, image.getHeight()));
+					drawWhitePolygonFromPoints(topSilhouette, points);
+				}
+
+				// Bottom
+				if (iconType == IconType.cities)
+				{
+					bottomSilhouette = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
+					List<IntPoint> points = new ArrayList<>();
+					for (int x = 0; x < image.getWidth(); x++)
+					{
+						IntPoint point = findLowestOpaquePixel(imagePixels, image.getHeight(), x);
+						if (point != null)
+						{
+							addToContentBounds(point);
+							if (points.isEmpty())
+							{
+								points.add(new IntPoint(x, 0));
+							}
+							points.add(point);
+						}
+					}
+
+					if (points.size() < 3)
+					{
+						contentMask = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
+						return;
+					}
+					points.add(new IntPoint(points.get(points.size() - 1).x, 0));
+					drawWhitePolygonFromPoints(bottomSilhouette, points);
+				}
+
+				// Left side
+				{
+					List<IntPoint> points = new ArrayList<>();
+					for (int y = 0; y < image.getHeight(); y++)
+					{
+						IntPoint point = findLeftmostOpaquePixel(imagePixels, image.getWidth(), y);
 						addToContentBounds(point);
-						if (points.isEmpty())
+						if (point != null)
 						{
-							points.add(new IntPoint(x, image.getHeight()));
+							if (points.isEmpty())
+							{
+								points.add(new IntPoint(image.getWidth(), y));
+							}
+							points.add(point);
 						}
-						points.add(point);
 					}
+
+					points.add(new IntPoint(image.getWidth(), points.get(points.size() - 1).y));
+					drawWhitePolygonFromPoints(leftSilhouette, points);
 				}
 
-				if (points.size() < 3)
+				// Right side
 				{
-					contentMask = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
-					return;
-				}
-				points.add(new IntPoint(points.get(points.size() - 1).x, image.getHeight()));
-				drawWhitePolygonFromPoints(topSilhouette, points);
-			}
-
-			// Bottom
-			if (iconType == IconType.cities)
-			{
-				bottomSilhouette = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
-				List<IntPoint> points = new ArrayList<>();
-				for (int x = 0; x < image.getWidth(); x++)
-				{
-					IntPoint point = findLowestOpaquePixel(imagePixels, image.getHeight(), x);
-					if (point != null)
+					List<IntPoint> points = new ArrayList<>();
+					for (int y = 0; y < image.getHeight(); y++)
 					{
-						addToContentBounds(point);
-						if (points.isEmpty())
+						IntPoint point = findRightmostOpaquePixel(imagePixels, image.getWidth(), y);
+						if (point != null)
 						{
-							points.add(new IntPoint(x, 0));
+							if (points.isEmpty())
+							{
+								points.add(new IntPoint(0, y));
+							}
+							points.add(point);
 						}
-						points.add(point);
 					}
+					points.add(new IntPoint(0, points.get(points.size() - 1).y));
+					drawWhitePolygonFromPoints(rightSilhouette, points);
 				}
-
-				if (points.size() < 3)
-				{
-					contentMask = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
-					return;
-				}
-				points.add(new IntPoint(points.get(points.size() - 1).x, 0));
-				drawWhitePolygonFromPoints(bottomSilhouette, points);
 			}
-
-			// Left side
-			{
-				List<IntPoint> points = new ArrayList<>();
-				for (int y = 0; y < image.getHeight(); y++)
-				{
-					IntPoint point = findLeftmostOpaquePixel(imagePixels, image.getWidth(), y);
-					addToContentBounds(point);
-					if (point != null)
-					{
-						if (points.isEmpty())
-						{
-							points.add(new IntPoint(image.getWidth(), y));
-						}
-						points.add(point);
-					}
-				}
-
-				points.add(new IntPoint(image.getWidth(), points.get(points.size() - 1).y));
-				drawWhitePolygonFromPoints(leftSilhouette, points);
-			}
-
-			// Right side
-			{
-				List<IntPoint> points = new ArrayList<>();
-				for (int y = 0; y < image.getHeight(); y++)
-				{
-					IntPoint point = findRightmostOpaquePixel(imagePixels, image.getWidth(), y);
-					if (point != null)
-					{
-						if (points.isEmpty())
-						{
-							points.add(new IntPoint(0, y));
-						}
-						points.add(point);
-					}
-				}
-				points.add(new IntPoint(0, points.get(points.size() - 1).y));
-				drawWhitePolygonFromPoints(rightSilhouette, points);
-			}
-		}
 
 			// The mask image is the intersection of the 3 or 4 silhouettes.
 
@@ -508,7 +508,8 @@ public class ImageAndMasks implements AutoCloseable
 				{
 					for (int y = 0; y < contentMask.getHeight(); y++)
 					{
-						if (topPixels.getGrayLevel(x, y) > 0 && leftPixels.getGrayLevel(x, y) > 0 && rightPixels.getGrayLevel(x, y) > 0 && (bottomPixels == null || bottomPixels.getGrayLevel(x, y) > 0))
+						if (topPixels.getGrayLevel(x, y) > 0 && leftPixels.getGrayLevel(x, y) > 0 && rightPixels.getGrayLevel(x, y) > 0
+								&& (bottomPixels == null || bottomPixels.getGrayLevel(x, y) > 0))
 						{
 							contentMaskPixels.setGrayLevel(x, y, 255);
 						}
@@ -684,12 +685,15 @@ public class ImageAndMasks implements AutoCloseable
 			// Blur the line, up to a fraction of the height of the content
 			float[][] kernel = ImageHelper.createGaussianKernel(blurSize);
 
-			// Here I used to just do convolution to blur bottomSilhouette and then maximize the contrast on that result, but the problems is
-			// this often leads to the bottom of the shading mask being not quit white because some parts of the blurred line are brighter than
+			// Here I used to just do convolution to blur bottomSilhouette and then maximize the contrast on that result, but the problems
+			// is
+			// this often leads to the bottom of the shading mask being not quit white because some parts of the blurred line are brighter
+			// than
 			// others, depending on the shape of the line. The result was that the bottom of the shading mask had a visible drop-off when
 			// coloring icons,
 			// which didn't look good.
-			// My solution is to run the convolution with the contrast maximized, then find the pixel values where the blurred line is at its
+			// My solution is to run the convolution with the contrast maximized, then find the pixel values where the blurred line is at
+			// its
 			// darkest, then raise the contrast to make that value equal to targetMaxMinMaxPixelValue.
 			Tuple2<ComplexArray, Image> tuple = ImageHelper.convolveGrayscaleThenSetContrast(bottomSilhouette, kernel, true, 0f, 1f, true);
 			try (Image blurredLine = tuple.getSecond())

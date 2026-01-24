@@ -14,18 +14,18 @@ import java.awt.*;
 /**
  * A Swing JPanel that uses Skiko's SkiaLayer for GPU-accelerated rendering.
  *
- * This class provides an alternative to the LWJGL-based GPU context by using
- * Skiko's built-in SkiaLayer component, which manages its own GPU context.
+ * This class provides an alternative to the LWJGL-based GPU context by using Skiko's built-in SkiaLayer component, which manages its own
+ * GPU context.
  *
  * Usage:
+ * 
  * <pre>
  * SkiaLayerPanel panel = new SkiaLayerPanel();
  * panel.setImage(mySkiaImage);
  * frame.add(panel);
  * </pre>
  *
- * Note: This is currently not wired up to the main application.
- * It's provided for manual testing of SkiaLayer-based GPU rendering.
+ * Note: This is currently not wired up to the main application. It's provided for manual testing of SkiaLayer-based GPU rendering.
  */
 public class SkiaLayerPanel extends JPanel
 {
@@ -55,12 +55,10 @@ public class SkiaLayerPanel extends JPanel
 		try
 		{
 			// Try the simpler 4-argument constructor first
-			return new SkiaLayer(
-				null,   // externalAccessibleFactory
-				new SkiaLayerProperties(),  // Use default properties
-				null,   // analytics
-				PixelGeometry.UNKNOWN
-			);
+			return new SkiaLayer(null, // externalAccessibleFactory
+					new SkiaLayerProperties(), // Use default properties
+					null, // analytics
+					PixelGeometry.UNKNOWN);
 		}
 		catch (Exception e)
 		{
@@ -70,7 +68,7 @@ public class SkiaLayerPanel extends JPanel
 			{
 				// Create with explicit property values matching available API
 				SkiaLayerProperties props = new SkiaLayerProperties();
-				return new SkiaLayer(null, props,  SkiaLayerAnalytics.Companion.getEmpty(), PixelGeometry.UNKNOWN);
+				return new SkiaLayer(null, props, SkiaLayerAnalytics.Companion.getEmpty(), PixelGeometry.UNKNOWN);
 			}
 			catch (Exception e2)
 			{
@@ -90,7 +88,8 @@ public class SkiaLayerPanel extends JPanel
 	/**
 	 * Sets the image to display in this panel.
 	 *
-	 * @param image The SkiaImage to display (must be a SkiaImage instance)
+	 * @param image
+	 *            The SkiaImage to display (must be a SkiaImage instance)
 	 */
 	public void setImage(Image image)
 	{
@@ -121,7 +120,8 @@ public class SkiaLayerPanel extends JPanel
 	/**
 	 * Sets whether the image should be scaled to fit the panel.
 	 *
-	 * @param fit true to scale image to fit, false to display at original size
+	 * @param fit
+	 *            true to scale image to fit, false to display at original size
 	 */
 	public void setFitToPanel(boolean fit)
 	{
@@ -200,11 +200,7 @@ public class SkiaLayerPanel extends JPanel
 				float x = (width - scaledWidth) / 2;
 				float y = (height - scaledHeight) / 2;
 
-				canvas.drawImageRect(
-					skiaImg,
-					Rect.makeXYWH(0, 0, imgWidth, imgHeight),
-					Rect.makeXYWH(x, y, scaledWidth, scaledHeight)
-				);
+				canvas.drawImageRect(skiaImg, Rect.makeXYWH(0, 0, imgWidth, imgHeight), Rect.makeXYWH(x, y, scaledWidth, scaledHeight));
 			}
 			else
 			{
@@ -217,12 +213,12 @@ public class SkiaLayerPanel extends JPanel
 	}
 
 	/**
-	 * Simple test method to verify SkiaLayer is working.
-	 * Creates a window with a test pattern.
+	 * Simple test method to verify SkiaLayer is working. Creates a window with a test pattern.
 	 */
 	public static void testSkiaLayer()
 	{
-		SwingUtilities.invokeLater(() -> {
+		SwingUtilities.invokeLater(() ->
+		{
 			JFrame frame = new JFrame("SkiaLayer Test");
 			frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 			frame.setSize(800, 600);

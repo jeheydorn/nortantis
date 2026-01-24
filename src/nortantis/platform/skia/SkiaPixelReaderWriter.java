@@ -29,8 +29,9 @@ public class SkiaPixelReaderWriter extends SkiaPixelReader implements PixelReade
 			// Any non-zero value becomes white (255)
 			level = level > 0 ? 255 : 0;
 		}
-		Color gray = Color.create(level, level, level, 255);
-		setRGB(x, y, gray.getRGB());
+		// Compute gray RGB directly without Color object allocation
+		int rgb = (255 << 24) | (level << 16) | (level << 8) | level;
+		setRGB(x, y, rgb);
 	}
 
 	@Override

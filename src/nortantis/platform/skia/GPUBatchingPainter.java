@@ -33,14 +33,10 @@ import nortantis.platform.Transform;
 import nortantis.util.Logger;
 
 /**
- * A Painter implementation that batches drawing operations and submits them
- * asynchronously to the GPU thread via GPUExecutor.
+ * A Painter implementation that batches drawing operations and submits them asynchronously to the GPU thread via GPUExecutor.
  *
- * Key behaviors:
- * - Operations are captured as lambdas: (canvas, paint) -> { ... }
- * - Paint state is snapshotted once per batch (not per operation)
- * - Flush triggers: batch size reached, paint state change, await() called
- * - await() waits for all pending futures
+ * Key behaviors: - Operations are captured as lambdas: (canvas, paint) -> { ... } - Paint state is snapshotted once per batch (not per
+ * operation) - Flush triggers: batch size reached, paint state change, await() called - await() waits for all pending futures
  */
 public class GPUBatchingPainter extends Painter
 {
@@ -94,9 +90,8 @@ public class GPUBatchingPainter extends Painter
 		final boolean antiAlias;
 		final boolean dither;
 
-		PaintState(int color, BlendMode blendMode, int alpha, PaintMode paintMode,
-				float strokeWidth, PaintStrokeCap strokeCap, PaintStrokeJoin strokeJoin,
-				PathEffect pathEffect, Shader shader, boolean antiAlias, boolean dither)
+		PaintState(int color, BlendMode blendMode, int alpha, PaintMode paintMode, float strokeWidth, PaintStrokeCap strokeCap, PaintStrokeJoin strokeJoin, PathEffect pathEffect, Shader shader,
+				boolean antiAlias, boolean dither)
 		{
 			this.color = color;
 			this.blendMode = blendMode;
@@ -136,16 +131,13 @@ public class GPUBatchingPainter extends Painter
 		 */
 		boolean isEquivalent(PaintState other)
 		{
-			if (other == null) return false;
-			return color == other.color
-					&& blendMode == other.blendMode
-					&& alpha == other.alpha
-					&& paintMode == other.paintMode
-					&& Float.compare(strokeWidth, other.strokeWidth) == 0
-					&& strokeCap == other.strokeCap
-					&& strokeJoin == other.strokeJoin
-					&& pathEffect == other.pathEffect  // Reference comparison for effects
-					&& shader == other.shader  // Reference comparison for shaders
+			if (other == null)
+				return false;
+			return color == other.color && blendMode == other.blendMode && alpha == other.alpha && paintMode == other.paintMode && Float.compare(strokeWidth, other.strokeWidth) == 0
+					&& strokeCap == other.strokeCap && strokeJoin == other.strokeJoin && pathEffect == other.pathEffect // Reference
+																														// comparison for
+																														// effects
+					&& shader == other.shader // Reference comparison for shaders
 					&& antiAlias == other.antiAlias;
 		}
 	}
@@ -168,9 +160,12 @@ public class GPUBatchingPainter extends Painter
 	/**
 	 * Creates a new GPUBatchingPainter for the given GPU surface and target image.
 	 *
-	 * @param gpuSurface The GPU surface to draw on
-	 * @param targetImage The SkiaImage that owns this painter (for cleanup tracking)
-	 * @param quality The draw quality setting
+	 * @param gpuSurface
+	 *            The GPU surface to draw on
+	 * @param targetImage
+	 *            The SkiaImage that owns this painter (for cleanup tracking)
+	 * @param quality
+	 *            The draw quality setting
 	 */
 	public GPUBatchingPainter(Surface gpuSurface, SkiaImage targetImage, DrawQuality quality)
 	{
@@ -202,11 +197,8 @@ public class GPUBatchingPainter extends Painter
 	 */
 	private void snapshotPaintState()
 	{
-		currentPaintState = new PaintState(
-				trackedColor, trackedBlendMode, trackedAlpha, trackedPaintMode,
-				trackedStrokeWidth, trackedStrokeCap, trackedStrokeJoin,
-				trackedPathEffect, trackedShader, trackedAntiAlias, trackedDither
-		);
+		currentPaintState = new PaintState(trackedColor, trackedBlendMode, trackedAlpha, trackedPaintMode, trackedStrokeWidth, trackedStrokeCap, trackedStrokeJoin, trackedPathEffect, trackedShader,
+				trackedAntiAlias, trackedDither);
 	}
 
 	/**
@@ -214,11 +206,8 @@ public class GPUBatchingPainter extends Painter
 	 */
 	private void checkPaintStateChange()
 	{
-		PaintState newState = new PaintState(
-				trackedColor, trackedBlendMode, trackedAlpha, trackedPaintMode,
-				trackedStrokeWidth, trackedStrokeCap, trackedStrokeJoin,
-				trackedPathEffect, trackedShader, trackedAntiAlias, trackedDither
-		);
+		PaintState newState = new PaintState(trackedColor, trackedBlendMode, trackedAlpha, trackedPaintMode, trackedStrokeWidth, trackedStrokeCap, trackedStrokeJoin, trackedPathEffect, trackedShader,
+				trackedAntiAlias, trackedDither);
 
 		if (!newState.isEquivalent(currentPaintState))
 		{
@@ -273,7 +262,8 @@ public class GPUBatchingPainter extends Painter
 		final GPUBatchingPainter thisPainter = this;
 
 		// Submit to GPU thread
-		CompletableFuture<Void> future = GPUExecutor.getInstance().submitAsync(() -> {
+		CompletableFuture<Void> future = GPUExecutor.getInstance().submitAsync(() ->
+		{
 			Canvas canvas = gpuSurface.getCanvas();
 			Paint paint = stateToUse.toPaint();
 
@@ -408,9 +398,8 @@ public class GPUBatchingPainter extends Painter
 	}
 
 	/**
-	 * Tracks a source image that is being used in the current batch.
-	 * Registers this painter with the image so that closing the image
-	 * will wait for this batch to complete.
+	 * Tracks a source image that is being used in the current batch. Registers this painter with the image so that closing the image will
+	 * wait for this batch to complete.
 	 */
 	private void trackSourceImage(SkiaImage sourceImage)
 	{
@@ -475,7 +464,8 @@ public class GPUBatchingPainter extends Painter
 	{
 		trackedPaintMode = PaintMode.STROKE;
 		checkPaintStateChange();
-		addOperation((canvas, paint) -> {
+		addOperation((canvas, paint) ->
+		{
 			paint.setMode(PaintMode.STROKE);
 			canvas.drawRect(Rect.makeXYWH(x, y, width, height), paint);
 		});
@@ -523,7 +513,8 @@ public class GPUBatchingPainter extends Painter
 		final SkiaFont fontToUse = currentFont;
 		trackedPaintMode = PaintMode.FILL;
 		checkPaintStateChange();
-		addOperation((canvas, paint) -> {
+		addOperation((canvas, paint) ->
+		{
 			paint.setMode(PaintMode.FILL);
 			canvas.drawString(string, (float) x, (float) y, fontToUse.skiaFont, paint);
 		});
@@ -572,7 +563,8 @@ public class GPUBatchingPainter extends Painter
 		trackedPaintMode = PaintMode.FILL;
 		checkPaintStateChange();
 
-		addOperation((canvas, paint) -> {
+		addOperation((canvas, paint) ->
+		{
 			Path path = new Path();
 			path.moveTo(xCopy[0], yCopy[0]);
 			for (int i = 1; i < xCopy.length; i++)
@@ -598,7 +590,8 @@ public class GPUBatchingPainter extends Painter
 		trackedPaintMode = PaintMode.STROKE;
 		checkPaintStateChange();
 
-		addOperation((canvas, paint) -> {
+		addOperation((canvas, paint) ->
+		{
 			Path path = new Path();
 			path.moveTo(xCopy[0], yCopy[0]);
 			for (int i = 1; i < xCopy.length; i++)
@@ -624,7 +617,8 @@ public class GPUBatchingPainter extends Painter
 		trackedPaintMode = PaintMode.STROKE;
 		checkPaintStateChange();
 
-		addOperation((canvas, paint) -> {
+		addOperation((canvas, paint) ->
+		{
 			Path path = new Path();
 			path.moveTo(xCopy[0], yCopy[0]);
 			for (int i = 1; i < xCopy.length; i++)
@@ -648,7 +642,8 @@ public class GPUBatchingPainter extends Painter
 		trackedPaintMode = PaintMode.STROKE;
 		checkPaintStateChange();
 
-		addOperation((canvas, paint) -> {
+		addOperation((canvas, paint) ->
+		{
 			Path path = new Path();
 			path.moveTo(pointsCopy.get(0).x, pointsCopy.get(0).y);
 			for (int i = 1; i < pointsCopy.size(); i++)
@@ -669,12 +664,8 @@ public class GPUBatchingPainter extends Painter
 		{
 			throw new IllegalArgumentException("GPUBatchingPainter.setGradient requires SkiaColor");
 		}
-		trackedShader = org.jetbrains.skia.Shader.Companion.makeLinearGradient(
-				x1, y1, x2, y2,
-				new int[] { color1.getRGB(), color2.getRGB() },
-				null,
-				org.jetbrains.skia.GradientStyle.Companion.getDEFAULT()
-		);
+		trackedShader = org.jetbrains.skia.Shader.Companion.makeLinearGradient(x1, y1, x2, y2, new int[] { color1.getRGB(), color2.getRGB() }, null,
+				org.jetbrains.skia.GradientStyle.Companion.getDEFAULT());
 		checkPaintStateChange();
 	}
 
@@ -750,7 +741,8 @@ public class GPUBatchingPainter extends Painter
 	{
 		trackedPaintMode = PaintMode.STROKE;
 		checkPaintStateChange();
-		addOperation((canvas, paint) -> {
+		addOperation((canvas, paint) ->
+		{
 			paint.setMode(PaintMode.STROKE);
 			canvas.drawLine(x1, y1, x2, y2, paint);
 		});
@@ -761,7 +753,8 @@ public class GPUBatchingPainter extends Painter
 	{
 		trackedPaintMode = PaintMode.STROKE;
 		checkPaintStateChange();
-		addOperation((canvas, paint) -> {
+		addOperation((canvas, paint) ->
+		{
 			paint.setMode(PaintMode.STROKE);
 			canvas.drawLine(x1, y1, x2, y2, paint);
 		});
@@ -772,7 +765,8 @@ public class GPUBatchingPainter extends Painter
 	{
 		trackedPaintMode = PaintMode.STROKE;
 		checkPaintStateChange();
-		addOperation((canvas, paint) -> {
+		addOperation((canvas, paint) ->
+		{
 			paint.setMode(PaintMode.STROKE);
 			canvas.drawOval(Rect.makeXYWH(x, y, width, height), paint);
 		});
@@ -783,7 +777,8 @@ public class GPUBatchingPainter extends Painter
 	{
 		trackedPaintMode = PaintMode.FILL;
 		checkPaintStateChange();
-		addOperation((canvas, paint) -> {
+		addOperation((canvas, paint) ->
+		{
 			paint.setMode(PaintMode.FILL);
 			canvas.drawOval(Rect.makeXYWH(x, y, width, height), paint);
 		});
@@ -794,7 +789,8 @@ public class GPUBatchingPainter extends Painter
 	{
 		trackedPaintMode = PaintMode.FILL;
 		checkPaintStateChange();
-		addOperation((canvas, paint) -> {
+		addOperation((canvas, paint) ->
+		{
 			paint.setMode(PaintMode.FILL);
 			canvas.drawRect(Rect.makeXYWH(x, y, width, height), paint);
 		});
@@ -807,7 +803,8 @@ public class GPUBatchingPainter extends Painter
 			return 0;
 
 		// This needs synchronous execution - font metrics need immediate result
-		return GPUExecutor.getInstance().submit(() -> {
+		return GPUExecutor.getInstance().submit(() ->
+		{
 			Paint paint = currentPaintState.toPaint();
 			try
 			{

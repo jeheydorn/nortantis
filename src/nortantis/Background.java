@@ -437,7 +437,8 @@ public class Background
 
 		Stopwatch sw = new Stopwatch("drawRegionColors");
 
-		Image result = ImageHelper.colorifyMulti(fractalBG, regionBackgroundColors, pixelColors, colorifyAlgorithm, where);;
+		Image result = ImageHelper.colorifyMulti(fractalBG, regionBackgroundColors, pixelColors, colorifyAlgorithm, where);
+		;
 		sw.printElapsedTime();
 		return result;
 	}
@@ -715,8 +716,7 @@ public class Background
 
 					// The image is too long/tall to draw in the remaining
 					// space.
-					try (Image partToDraw = ImageHelper.copySnippet(edge, 0, 0, distanceRemaining, borderWidthScaled);
-						Painter p = result.createPainter())
+					try (Image partToDraw = ImageHelper.copySnippet(edge, 0, 0, distanceRemaining, borderWidthScaled); Painter p = result.createPainter())
 					{
 						p.setAlphaComposite(alphaCompositeForDrawingCornersAndEdges);
 						p.drawImage(partToDraw, x - xOffset, y - yOffset);
@@ -774,8 +774,7 @@ public class Background
 
 					// The image is too long/tall to draw in the remaining
 					// space.
-					try (Image partToDraw = ImageHelper.copySnippet(edge, 0, 0, borderWidthScaled, distanceRemaining);
-						Painter p = result.createPainter())
+					try (Image partToDraw = ImageHelper.copySnippet(edge, 0, 0, borderWidthScaled, distanceRemaining); Painter p = result.createPainter())
 					{
 						p.setAlphaComposite(alphaCompositeForDrawingCornersAndEdges);
 						p.drawImage(partToDraw, x - xOffset, y - yOffset);

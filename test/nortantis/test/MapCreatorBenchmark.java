@@ -14,11 +14,9 @@ import java.nio.file.Paths;
 /**
  * Benchmark for map creation performance.
  *
- * Run with JFR profiling:
- *   ./gradlew benchmark
+ * Run with JFR profiling: ./gradlew benchmark
  *
- * The JFR recording will be saved to build/profile.jfr
- * Open it in JDK Mission Control or IntelliJ to analyze hotspots.
+ * The JFR recording will be saved to build/profile.jfr Open it in JDK Mission Control or IntelliJ to analyze hotspots.
  */
 public class MapCreatorBenchmark
 {

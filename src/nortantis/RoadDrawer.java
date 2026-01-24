@@ -504,7 +504,8 @@ public class RoadDrawer
 				{
 					p.setColor(roadColor);
 					p.setStroke(roadStyle, resolutionScale);
-					// Copy the road's path as an extra precaution to be thread safe because CurveCreator.createCurve accesses the path using
+					// Copy the road's path as an extra precaution to be thread safe because CurveCreator.createCurve accesses the path
+					// using
 					// list indexes, so if the list changed size in that method, it could cause an error.
 					List<Point> roadPathCopy = Arrays.asList(road.path.toArray(new Point[] {}));
 					List<Point> path = CurveCreator.createCurve(roadPathCopy);
