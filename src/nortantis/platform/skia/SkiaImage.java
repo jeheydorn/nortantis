@@ -1036,6 +1036,8 @@ public class SkiaImage extends Image
 	 */
 	void writePixelsFromIntArray(int[] pixels)
 	{
+		awaitPendingPainters();
+		
 		int bytesPerPixel = getBytesPerPixel();
 		int rowStride = width * bytesPerPixel;
 
@@ -1066,6 +1068,8 @@ public class SkiaImage extends Image
 	 */
 	void writePixelsToRegion(int[] regionPixels, int destX, int destY, int regionWidth, int regionHeight)
 	{
+		awaitPendingPainters();
+
 		// Create a temporary bitmap with the region pixels
 		Bitmap tempBitmap = new Bitmap();
 		ImageInfo tempImageInfo;

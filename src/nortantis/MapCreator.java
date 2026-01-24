@@ -1905,7 +1905,7 @@ public class MapCreator implements WarningLogger
 					int imgLevel = imagePixels[y * imgWidth + x] & 0xFF;
 
 					// Retrieve the blur level as though blurBox has all 4 quadrants
-					// and middle created, even though it only only has the upper
+					// and middle created, even though it only has the upper
 					// left corner + 1 pixel.
 					int blurBoxX1 = x > blurLevel ? (x < imgWidth - blurLevel ? blurBoxW - 1 : imgWidth - x) : x;
 					int x2 = imgWidth - x - 1;
