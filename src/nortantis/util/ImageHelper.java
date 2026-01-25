@@ -461,7 +461,7 @@ public class ImageHelper
 		try (PixelReader image1Pixels = image1.createPixelReader();
 				PixelReader image2Pixels = image2.createPixelReader();
 				PixelReader maskPixels = mask.createPixelReader();
-				PixelReaderWriter resultPixels = result.createPixelReaderWriter())
+				PixelWriter resultPixels = result.createPixelWriter())
 		{
 			for (int taskNumber : new Range(numTasks))
 			{
@@ -628,8 +628,7 @@ public class ImageHelper
 
 		try (Image overlay = Image.create(image.getWidth(), image.getHeight(), ImageType.ARGB))
 		{
-			try (PixelReader maskPixels = mask.createPixelReader(new IntRectangle(imageOffsetInMask, overlay.getWidth(), overlay.getHeight()));
-					PixelReaderWriter overlayPixels = overlay.createPixelReaderWriter())
+			try (PixelReader maskPixels = mask.createPixelReader(new IntRectangle(imageOffsetInMask, overlay.getWidth(), overlay.getHeight())); PixelWriter overlayPixels = overlay.createPixelWriter())
 			{
 				ThreadHelper.getInstance().processRowsInParallel(0, overlay.getHeight(), (y) ->
 				{
@@ -726,7 +725,7 @@ public class ImageHelper
 		try (PixelReader imagePixels = image.createPixelReader();
 				PixelReader colorIndexesPixels = colorIndexes.createPixelReader();
 				PixelReader maskPixels = mask.createPixelReader();
-				PixelReaderWriter resultPixels = result.createPixelReaderWriter())
+				PixelWriter resultPixels = result.createPixelWriter())
 		{
 			for (int taskNumber : new Range(numTasks))
 			{
@@ -863,9 +862,7 @@ public class ImageHelper
 
 		Image result = Image.create(image.getWidth(), image.getHeight(), ImageType.ARGB);
 		IntRectangle imageBoundsInMask = imageOffsetInMask == null ? null : new IntRectangle(imageOffsetInMask, image.getWidth(), image.getHeight());
-		try (PixelReader alphaMaskPixels = alphaMask.createPixelReader(imageBoundsInMask);
-				PixelReader imagePixels = image.createPixelReader();
-				PixelReaderWriter resultPixels = result.createPixelReaderWriter())
+		try (PixelReader alphaMaskPixels = alphaMask.createPixelReader(imageBoundsInMask); PixelReader imagePixels = image.createPixelReader(); PixelWriter resultPixels = result.createPixelWriter())
 		{
 			for (int y = 0; y < image.getHeight(); y++)
 				for (int x = 0; x < image.getWidth(); x++)
@@ -927,7 +924,7 @@ public class ImageHelper
 		}
 
 		Image result = Image.create(target.getWidth(), target.getHeight(), ImageType.ARGB);
-		try (PixelReader alphaSourcePixels = alphaSource.createPixelReader(); PixelReader targetPixels = target.createPixelReader(); PixelReaderWriter resultPixels = result.createPixelReaderWriter())
+		try (PixelReader alphaSourcePixels = alphaSource.createPixelReader(); PixelReader targetPixels = target.createPixelReader(); PixelWriter resultPixels = result.createPixelWriter())
 		{
 			for (int y = 0; y < target.getHeight(); y++)
 				for (int x = 0; x < target.getWidth(); x++)
@@ -1073,7 +1070,7 @@ public class ImageHelper
 		IntRectangle sourceBounds = new IntRectangle(0, 0, source.size().width, source.size().height);
 		Image result = Image.create(width, height, source.getType());
 		IntRectangle copyBoundsInSource = new IntRectangle(xLoc, yLoc, width, height).findIntersection(sourceBounds);
-		try (PixelReader sourcePixels = source.createPixelReader(copyBoundsInSource); PixelReaderWriter resultPixels = result.createPixelReaderWriter())
+		try (PixelReader sourcePixels = source.createPixelReader(copyBoundsInSource); PixelWriter resultPixels = result.createPixelWriter())
 		{
 			for (int y = 0; y < height; y++)
 			{
@@ -1104,7 +1101,7 @@ public class ImageHelper
 	public static Image rotate90Degrees(Image image, boolean isClockwise)
 	{
 		Image result = Image.create(image.getHeight(), image.getWidth(), image.getType());
-		try (PixelReader imagePixels = image.createPixelReader(); PixelReaderWriter resultPixels = result.createPixelReaderWriter())
+		try (PixelReader imagePixels = image.createPixelReader(); PixelWriter resultPixels = result.createPixelWriter())
 		{
 			for (int y = 0; y < image.getHeight(); y++)
 			{
@@ -1404,7 +1401,7 @@ public class ImageHelper
 	{
 		Image image = Image.create(array[0].length, array.length, imageType);
 		int maxPixelValue = Image.getMaxPixelLevelForType(imageType);
-		try (PixelReaderWriter imagePixels = image.createPixelReaderWriter())
+		try (PixelWriter imagePixels = image.createPixelWriter())
 		{
 			for (int y = 0; y < image.getHeight(); y++)
 			{
@@ -1555,7 +1552,7 @@ public class ImageHelper
 		Image result = Image.create(image.getWidth(), image.getHeight(), resultType);
 
 		float[] hsb = color.getHSB();
-		try (PixelReader imagePixels = image.createPixelReader(); PixelReaderWriter resultPixels = result.createPixelReaderWriter())
+		try (PixelReader imagePixels = image.createPixelReader(); PixelWriter resultPixels = result.createPixelWriter())
 		{
 			if (resultType == ImageType.ARGB)
 			{
@@ -1685,9 +1682,7 @@ public class ImageHelper
 
 		IntPoint whereFinal = where;
 		IntRectangle boundsInImage = where == null ? null : new IntRectangle(where, colorIndexes.getWidth(), colorIndexes.getHeight());
-		try (PixelReader imagePixels = image.createPixelReader(boundsInImage);
-				PixelReader colorIndexesPixels = colorIndexes.createPixelReader();
-				PixelReaderWriter resultPixels = result.createPixelReaderWriter())
+		try (PixelReader imagePixels = image.createPixelReader(boundsInImage); PixelReader colorIndexesPixels = colorIndexes.createPixelReader(); PixelWriter resultPixels = result.createPixelWriter())
 		{
 			ThreadHelper.getInstance().processRowsInParallel(0, colorIndexes.getHeight(), (y) ->
 			{
@@ -1821,7 +1816,7 @@ public class ImageHelper
 	public static Image flipOnXAxis(Image image)
 	{
 		Image result = Image.create(image.getWidth(), image.getHeight(), image.getType());
-		try (PixelReader imagePixels = image.createPixelReader(); PixelReaderWriter resultPixels = result.createPixelReaderWriter())
+		try (PixelReader imagePixels = image.createPixelReader(); PixelWriter resultPixels = result.createPixelWriter())
 		{
 			for (int y = 0; y < image.getHeight(); y++)
 			{
@@ -1838,7 +1833,7 @@ public class ImageHelper
 	public static Image flipOnYAxis(Image image)
 	{
 		Image result = Image.create(image.getWidth(), image.getHeight(), image.getType());
-		try (PixelReader imagePixels = image.createPixelReader(); PixelReaderWriter resultPixels = result.createPixelReaderWriter())
+		try (PixelReader imagePixels = image.createPixelReader(); PixelWriter resultPixels = result.createPixelWriter())
 		{
 			for (int y = 0; y < image.getHeight(); y++)
 			{

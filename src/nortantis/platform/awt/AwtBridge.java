@@ -126,7 +126,7 @@ public class AwtBridge
 		int width = image.getWidth();
 		int height = image.getHeight();
 		Image result = Image.create(width, height, image.getType());
-		try (PixelReader pixels = image.createPixelReader(); PixelReaderWriter resultPixels = result.createPixelReaderWriter())
+		try (PixelReader pixels = image.createPixelReader(); PixelWriter resultPixels = result.createPixelWriter())
 		{
 			for (int y = 0; y < height; y++)
 			{

@@ -1,21 +1,16 @@
 package nortantis;
 
-import static java.lang.System.out;
+import nortantis.platform.*;
+import nortantis.platform.awt.AwtFactory;
+import nortantis.util.ImageHelper;
+import nortantis.util.Range;
+import nortantis.util.Stopwatch;
+import org.imgscalr.Scalr.Method;
 
 import java.io.IOException;
 import java.util.Random;
 
-import nortantis.util.Stopwatch;
-import org.imgscalr.Scalr.Method;
-
-import nortantis.platform.Image;
-import nortantis.platform.ImageType;
-import nortantis.platform.PixelReader;
-import nortantis.platform.PixelReaderWriter;
-import nortantis.platform.PlatformFactory;
-import nortantis.platform.awt.AwtFactory;
-import nortantis.util.ImageHelper;
-import nortantis.util.Range;
+import static java.lang.System.out;
 
 public class BackgroundGenerator
 {

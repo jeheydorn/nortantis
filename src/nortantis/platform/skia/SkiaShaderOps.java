@@ -5,7 +5,7 @@ import java.util.Map;
 import nortantis.platform.Color;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
-import nortantis.platform.PixelReaderWriter;
+import nortantis.platform.PixelWriter;
 import nortantis.util.ImageHelper.ColorifyAlgorithm;
 import org.jetbrains.skia.*;
 
@@ -908,7 +908,7 @@ public class SkiaShaderOps
 	private static Image createPaletteTexture(Map<Integer, Color> colors)
 	{
 		Image palette = Image.create(PALETTE_WIDTH, PALETTE_HEIGHT, ImageType.ARGB);
-		try (PixelReaderWriter writer = palette.createPixelReaderWriter())
+		try (PixelWriter writer = palette.createPixelWriter())
 		{
 			// Initialize with transparent (alpha=0) to indicate missing regions
 			for (int y = 0; y < PALETTE_HEIGHT; y++)
@@ -1194,7 +1194,7 @@ public class SkiaShaderOps
 	private static Image createHSBPaletteTexture(Map<Integer, Color> colors)
 	{
 		Image palette = Image.create(PALETTE_WIDTH, PALETTE_HEIGHT, ImageType.ARGB);
-		try (PixelReaderWriter writer = palette.createPixelReaderWriter())
+		try (PixelWriter writer = palette.createPixelWriter())
 		{
 			// Initialize with transparent (alpha=0) to indicate missing regions
 			for (int y = 0; y < PALETTE_HEIGHT; y++)

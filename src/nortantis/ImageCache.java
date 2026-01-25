@@ -23,7 +23,7 @@ import nortantis.platform.Color;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.PixelReader;
-import nortantis.platform.PixelReaderWriter;
+import nortantis.platform.PixelWriter;
 import nortantis.util.Assets;
 import nortantis.util.ConcurrentHashMapF;
 import nortantis.util.FileHelper;
@@ -183,7 +183,7 @@ public class ImageCache
 						Image colorMask = imageAndMasks.getOrCreateColorMask();
 						try (PixelReader imagePixels = imageAndMasks.image.createPixelReader();
 								PixelReader colorMaskPixels = colorMask.createPixelReader();
-								PixelReaderWriter resultPixels = result.createPixelReaderWriter())
+								PixelWriter resultPixels = result.createPixelWriter())
 						{
 							for (int y = 0; y < result.getHeight(); y++)
 							{
