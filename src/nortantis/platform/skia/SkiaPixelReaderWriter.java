@@ -10,14 +10,25 @@ public class SkiaPixelReaderWriter extends SkiaPixelReader implements PixelReade
 {
 	private boolean modified = false;
 
-	public SkiaPixelReaderWriter(SkiaImage image)
-	{
-		this(image, null);
-	}
-
 	public SkiaPixelReaderWriter(SkiaImage image, IntRectangle bounds)
 	{
-		super(image, bounds);
+		this(image, bounds, true);
+	}
+
+	/**
+	 * Creates a pixel reader/writer for the given image.
+	 *
+	 * @param image
+	 *            The image to read from and write to
+	 * @param bounds
+	 *            If not null, restricts access to these bounds. If null, accesses the whole image.
+	 * @param doInitialRead
+	 *            If true, reads existing pixels from the image into the array. If false, allocates an empty array without reading (useful
+	 *            for write-only operations).
+	 */
+	public SkiaPixelReaderWriter(SkiaImage image, IntRectangle bounds, boolean doInitialRead)
+	{
+		super(image, bounds, doInitialRead);
 	}
 
 	@Override

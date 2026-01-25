@@ -15,14 +15,40 @@ public class SkiaPixelReader implements PixelReader
 
 	public SkiaPixelReader(SkiaImage image, IntRectangle bounds)
 	{
+		this(image, bounds, true);
+	}
+
+	/**
+	 * Creates a pixel reader for the given image.
+	 *
+	 * @param image
+	 *            The image to read from
+	 * @param bounds
+	 *            If not null, restricts reading to these bounds. If null, reads the whole image.
+	 * @param doInitialRead
+	 *            If true, reads existing pixels from the image into the array. If false, allocates an empty array without reading (useful
+	 *            for write-only operations).
+	 */
+	public SkiaPixelReader(SkiaImage image, IntRectangle bounds, boolean doInitialRead)
+	{
 		maxPixelLevelAsFloat = image.getMaxPixelLevel();
-		if (bounds == null)
+		if (doInitialRead)
 		{
-			cachedPixelArray = image.readPixelsToIntArray();
+			if (bounds == null)
+			{
+				cachedPixelArray = image.readPixelsToIntArray();
+			}
+			else
+			{
+				cachedPixelArray = image.readPixelsToIntArray(bounds.x, bounds.y, bounds.width, bounds.height);
+			}
 		}
 		else
 		{
-			cachedPixelArray = image.readPixelsToIntArray(bounds.x, bounds.y, bounds.width, bounds.height);
+			// Allocate empty array without reading
+			int arrayWidth = bounds != null ? bounds.width : image.getWidth();
+			int arrayHeight = bounds != null ? bounds.height : image.getHeight();
+			cachedPixelArray = new int[arrayWidth * arrayHeight];
 		}
 		this.image = image;
 		width = image.getWidth();
@@ -31,7 +57,7 @@ public class SkiaPixelReader implements PixelReader
 
 	public SkiaPixelReader(SkiaImage image)
 	{
-		this(image, null);
+		this(image, null, true);
 	}
 
 	@Override

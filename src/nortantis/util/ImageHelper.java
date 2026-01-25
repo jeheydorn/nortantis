@@ -351,51 +351,15 @@ public class ImageHelper
 		}
 
 		int maxPixelValue = image.getMaxPixelLevel();
-
-		// Optimized path for Skia grayscale images
-		if (image instanceof SkiaImage)
-		{
-			SkiaImage skiaImage = (SkiaImage) image;
-			if (skiaImage.isGrayscaleFormat())
-			{
-				byte[] pixelArray = skiaImage.readGrayscalePixels(null);
-
-				// Find min and max
-				int min = 255;
-				int max = 0;
-				for (int i = 0; i < pixelArray.length; i++)
-				{
-					int value = pixelArray[i] & 0xFF;
-					if (value < min)
-						min = value;
-					if (value > max)
-						max = value;
-				}
-
-				// Apply contrast stretch - use same formula as fallback path
-				if (max > min)
-				{
-					double range = max - min;
-					for (int i = 0; i < pixelArray.length; i++)
-					{
-						int value = pixelArray[i] & 0xFF;
-						int newValue = (int) (((value - min) / range) * maxPixelValue);
-						pixelArray[i] = (byte) newValue;
-					}
-				}
-
-				skiaImage.writeGrayscalePixels(pixelArray);
-				skiaImage.markCPUDirty();
-				return;
-			}
-		}
-
-		// Fallback path for other image types
 		double min = maxPixelValue;
 		double max = 0;
+
+		// Use createPixelReaderWriter since we need to read (find min/max) and write (stretch)
 		try (PixelReaderWriter pixels = image.createPixelReaderWriter())
 		{
+			// Find min and max
 			for (int y = 0; y < image.getHeight(); y++)
+			{
 				for (int x = 0; x < image.getWidth(); x++)
 				{
 					double value = pixels.getGrayLevel(x, y);
@@ -404,13 +368,20 @@ public class ImageHelper
 					if (value > max)
 						max = value;
 				}
-			for (int y = 0; y < image.getHeight(); y++)
+			}
+
+			// Apply contrast stretch
+			if (max > min)
 			{
-				for (int x = 0; x < image.getWidth(); x++)
+				double range = max - min;
+				for (int y = 0; y < image.getHeight(); y++)
 				{
-					double value = pixels.getGrayLevel(x, y);
-					int newValue = (int) (((value - min) / (max - min)) * maxPixelValue);
-					pixels.setGrayLevel(x, y, newValue);
+					for (int x = 0; x < image.getWidth(); x++)
+					{
+						double value = pixels.getGrayLevel(x, y);
+						int newValue = (int) (((value - min) / range) * maxPixelValue);
+						pixels.setGrayLevel(x, y, newValue);
+					}
 				}
 			}
 		}
@@ -1465,25 +1436,9 @@ public class ImageHelper
 	public static Image genWhiteNoise(Random rand, int rows, int cols, ImageType imageType)
 	{
 		Image image = Image.create(cols, rows, imageType);
-
-		// Optimized path for Grayscale8Bit using Skia: directly populate byte array
-		// without reading the existing pixels (which are just zeros anyway)
-		if (imageType == ImageType.Grayscale8Bit && image instanceof SkiaImage)
-		{
-			SkiaImage skiaImage = (SkiaImage) image;
-			byte[] pixels = new byte[cols * rows];
-			for (int i = 0; i < pixels.length; i++)
-			{
-				pixels[i] = (byte) (rand.nextFloat() * 255);
-			}
-			skiaImage.writeGrayscalePixels(pixels);
-			skiaImage.markCPUDirty();
-			return image;
-		}
-
-		// Fallback for other image types
 		int maxPixelValue = Image.getMaxPixelLevelForType(image.getType());
-		try (PixelReaderWriter imagePixels = image.createPixelReaderWriter())
+		// Use createPixelWriter since we're only writing (not reading existing values)
+		try (PixelWriter imagePixels = image.createPixelWriter())
 		{
 			for (int y = 0; y < image.getHeight(); y++)
 			{
@@ -2028,41 +1983,17 @@ public class ImageHelper
 			throw new IllegalArgumentException("Unsupported image type for thresholding: " + image.getType());
 		}
 
-		// Optimized path for Skia grayscale images
-		if (image instanceof SkiaImage)
-		{
-			SkiaImage skiaImage = (SkiaImage) image;
-			if (skiaImage.isGrayscaleFormat())
-			{
-				byte[] pixels = skiaImage.readGrayscalePixels(null);
-				byte highByte = (byte) highValue;
-				for (int i = 0; i < pixels.length; i++)
-				{
-					int value = pixels[i] & 0xFF;
-					pixels[i] = value >= threshold ? highByte : 0;
-				}
-				skiaImage.writeGrayscalePixels(pixels);
-				skiaImage.markCPUDirty();
-				return;
-			}
-		}
-
-		// Fallback path for other image types
+		// Use createPixelReaderWriter since we need to read (check threshold) and write
 		try (PixelReaderWriter imagePixels = image.createPixelReaderWriter())
 		{
 			for (int y = 0; y < image.getHeight(); y++)
+			{
 				for (int x = 0; x < image.getWidth(); x++)
 				{
 					int value = imagePixels.getGrayLevel(x, y);
-					if (value >= threshold)
-					{
-						imagePixels.setGrayLevel(x, y, highValue);
-					}
-					else
-					{
-						imagePixels.setGrayLevel(x, y, 0);
-					}
+					imagePixels.setGrayLevel(x, y, value >= threshold ? highValue : 0);
 				}
+			}
 		}
 	}
 

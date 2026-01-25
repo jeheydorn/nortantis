@@ -13,14 +13,25 @@ public class SkiaGrayscalePixelReaderWriter extends SkiaGrayscalePixelReader imp
 {
 	private boolean modified = false;
 
-	public SkiaGrayscalePixelReaderWriter(SkiaImage image)
-	{
-		this(image, null);
-	}
-
 	public SkiaGrayscalePixelReaderWriter(SkiaImage image, IntRectangle bounds)
 	{
-		super(image, bounds);
+		this(image, bounds, true);
+	}
+
+	/**
+	 * Creates a grayscale pixel reader/writer for the given image.
+	 *
+	 * @param image
+	 *            The grayscale image to read from and write to
+	 * @param bounds
+	 *            If not null, restricts access to these bounds. If null, accesses the whole image.
+	 * @param doInitialRead
+	 *            If true, reads existing pixels from the image into the array. If false, allocates an empty array without reading (useful
+	 *            for write-only operations).
+	 */
+	public SkiaGrayscalePixelReaderWriter(SkiaImage image, IntRectangle bounds, boolean doInitialRead)
+	{
+		super(image, bounds, doInitialRead);
 	}
 
 	@Override

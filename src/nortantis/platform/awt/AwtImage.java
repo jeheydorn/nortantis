@@ -18,6 +18,7 @@ import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
 import nortantis.platform.PixelReader;
 import nortantis.platform.PixelReaderWriter;
+import nortantis.platform.PixelWriter;
 import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
 
@@ -68,6 +69,13 @@ class AwtImage extends Image
 	@Override
 	public PixelReaderWriter innerCreateNewPixelReaderWriter(IntRectangle bounds)
 	{
+		return new AwtPixelReaderWriter(this, bounds);
+	}
+
+	@Override
+	protected PixelWriter innerCreateNewPixelWriter(IntRectangle bounds)
+	{
+		// AWT uses a backing array reference, so no initial read is needed anyway
 		return new AwtPixelReaderWriter(this, bounds);
 	}
 

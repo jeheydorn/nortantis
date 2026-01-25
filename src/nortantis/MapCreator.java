@@ -42,7 +42,6 @@ import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
 import nortantis.platform.PixelReader;
 import nortantis.platform.PixelReaderWriter;
-import nortantis.platform.skia.SkiaImage;
 import nortantis.swing.MapEdits;
 
 public class MapCreator implements WarningLogger
@@ -1885,24 +1884,18 @@ public class MapCreator implements WarningLogger
 		// Multiply the image by blurBox. Also remove the padded edges off of blurBox.
 		assert image.getType() == ImageType.Grayscale8Bit;
 
-		// Optimized path for Skia grayscale images - direct byte array access
-		if (image instanceof SkiaImage && blurredBox instanceof SkiaImage)
+		int imgWidth = image.getWidth();
+		int imgHeight = image.getHeight();
+		int blurBoxW = blurredBox.getWidth();
+
+		// Use PixelReaderWriter for the image (read and write) and PixelReader for blurBox (read only)
+		try (Image finalBlurBox = blurredBox; PixelReaderWriter imagePixels = image.createPixelReaderWriter(); PixelReader blurBoxPixels = finalBlurBox.createPixelReader())
 		{
-			SkiaImage skiaImage = (SkiaImage) image;
-			SkiaImage skiaBlurBox = (SkiaImage) blurredBox;
-
-			byte[] imagePixels = skiaImage.readGrayscalePixels(null);
-			byte[] blurBoxPixels = skiaBlurBox.readGrayscalePixels(null);
-
-			int imgWidth = image.getWidth();
-			int imgHeight = image.getHeight();
-			int blurBoxW = blurredBox.getWidth();
-
 			for (int y = 0; y < imgHeight; y++)
 			{
 				for (int x = 0; x < imgWidth; x++)
 				{
-					int imgLevel = imagePixels[y * imgWidth + x] & 0xFF;
+					int imgLevel = imagePixels.getGrayLevel(x, y);
 
 					// Retrieve the blur level as though blurBox has all 4 quadrants
 					// and middle created, even though it only has the upper
@@ -1915,115 +1908,15 @@ public class MapCreator implements WarningLogger
 					int blurBoxY2 = y2 > blurLevel ? (y2 < imgHeight - blurLevel ? blurBoxW - 1 : imgHeight - y2) : y2;
 
 					// Get all 4 blur values and take the max
-					int b1 = blurBoxPixels[blurBoxY1 * blurBoxW + blurBoxX1] & 0xFF;
-					int b2 = blurBoxPixels[blurBoxY1 * blurBoxW + blurBoxX2] & 0xFF;
-					int b3 = blurBoxPixels[blurBoxY2 * blurBoxW + blurBoxX1] & 0xFF;
-					int b4 = blurBoxPixels[blurBoxY2 * blurBoxW + blurBoxX2] & 0xFF;
+					int b1 = blurBoxPixels.getGrayLevel(blurBoxX1, blurBoxY1);
+					int b2 = blurBoxPixels.getGrayLevel(blurBoxX2, blurBoxY1);
+					int b3 = blurBoxPixels.getGrayLevel(blurBoxX1, blurBoxY2);
+					int b4 = blurBoxPixels.getGrayLevel(blurBoxX2, blurBoxY2);
 					int blurLevel_ = Math.max(b1, Math.max(b2, Math.max(b3, b4)));
 
 					// Multiply: (imgLevel/255) * blurLevel_ -> imgLevel * blurLevel_ / 255
-					imagePixels[y * imgWidth + x] = (byte) ((imgLevel * blurLevel_) / 255);
+					imagePixels.setGrayLevel(x, y, (imgLevel * blurLevel_) / 255);
 				}
-			}
-
-			skiaImage.writeGrayscalePixels(imagePixels);
-			skiaImage.markCPUDirty();
-			blurredBox.close();
-		}
-		else
-		{
-			// Fallback path using PixelReader/PixelReaderWriter
-			try (Image finalBlurBox = blurredBox; PixelReaderWriter imagePixels = image.createPixelReaderWriter(); PixelReader blurBoxPixels = finalBlurBox.createPixelReader())
-			{
-				for (int y = 0; y < image.getHeight(); y++)
-					for (int x = 0; x < image.getWidth(); x++)
-					{
-						float imageLevel = imagePixels.getNormalizedPixelLevel(x, y);
-
-						// Retrieve the blur level as though blurBox has all 4 quadrants
-						// and middle created, even though it only only has the upper
-						// left corner + 1 pixel.
-						int blurBoxX1;
-						if (x > blurLevel)
-						{
-							if (x < image.getWidth() - blurLevel)
-							{
-								// x is between the corners.
-								blurBoxX1 = finalBlurBox.getWidth() - 1;
-							}
-							else
-							{
-								// x is under the right corner.
-								blurBoxX1 = image.getWidth() - x;
-							}
-						}
-						else
-						{
-							// x is under the left corner.
-							blurBoxX1 = x;
-						}
-
-						int blurBoxX2;
-						int x2 = image.getWidth() - x - 1;
-						if (x2 > blurLevel)
-						{
-							if (x2 < image.getWidth() - blurLevel)
-							{
-								// x2 is between the corners.
-								blurBoxX2 = finalBlurBox.getWidth() - 1;
-							}
-							else
-							{
-								// x2 is under the right corner.
-								blurBoxX2 = image.getWidth() - x2;
-							}
-						}
-						else
-						{
-							// x2 is under the left corner.
-							blurBoxX2 = x2;
-						}
-
-						int blurBoxY1;
-						if (y > blurLevel)
-						{
-							if (y < image.getHeight() - blurLevel)
-							{
-								blurBoxY1 = finalBlurBox.getHeight() - 1;
-							}
-							else
-							{
-								blurBoxY1 = image.getHeight() - y;
-							}
-						}
-						else
-						{
-							blurBoxY1 = y;
-						}
-
-						int blurBoxY2;
-						int y2 = image.getHeight() - y - 1;
-						if (y2 > blurLevel)
-						{
-							if (y2 < image.getHeight() - blurLevel)
-							{
-								blurBoxY2 = finalBlurBox.getHeight() - 1;
-							}
-							else
-							{
-								blurBoxY2 = image.getHeight() - y2;
-							}
-						}
-						else
-						{
-							blurBoxY2 = y2;
-						}
-
-						float blurBoxLevel = Math.max(blurBoxPixels.getGrayLevel(blurBoxX1, blurBoxY1),
-								Math.max(blurBoxPixels.getGrayLevel(blurBoxX2, blurBoxY1), Math.max(blurBoxPixels.getGrayLevel(blurBoxX1, blurBoxY2), blurBoxPixels.getGrayLevel(blurBoxX2, blurBoxY2))));
-
-						imagePixels.setGrayLevel(x, y, (int) (imageLevel * blurBoxLevel));
-					}
 			}
 		}
 	}

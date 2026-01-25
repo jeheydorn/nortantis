@@ -18,11 +18,36 @@ public class SkiaGrayscalePixelReader implements PixelReader
 
 	public SkiaGrayscalePixelReader(SkiaImage image, IntRectangle bounds)
 	{
+		this(image, bounds, true);
+	}
+
+	/**
+	 * Creates a grayscale pixel reader for the given image.
+	 *
+	 * @param image
+	 *            The grayscale image to read from
+	 * @param bounds
+	 *            If not null, restricts reading to these bounds. If null, reads the whole image.
+	 * @param doInitialRead
+	 *            If true, reads existing pixels from the image into the array. If false, allocates an empty array without reading (useful
+	 *            for write-only operations).
+	 */
+	public SkiaGrayscalePixelReader(SkiaImage image, IntRectangle bounds, boolean doInitialRead)
+	{
 		this.image = image;
 		this.bounds = bounds;
 		this.width = bounds != null ? bounds.width : image.getWidth();
-		// Read bytes directly from Skia - no conversion needed
-		this.cachedPixelArray = image.readGrayscalePixels(bounds);
+		if (doInitialRead)
+		{
+			// Read bytes directly from Skia - no conversion needed
+			this.cachedPixelArray = image.readGrayscalePixels(bounds);
+		}
+		else
+		{
+			// Allocate empty array without reading
+			int arrayHeight = bounds != null ? bounds.height : image.getHeight();
+			this.cachedPixelArray = new byte[width * arrayHeight];
+		}
 	}
 
 	/**

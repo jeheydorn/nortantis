@@ -1,19 +1,11 @@
 package nortantis.platform;
 
-public interface PixelReaderWriter extends PixelReader, AutoCloseable
+/**
+ * Combined read/write interface for pixel access. Extends both PixelReader for reading and PixelWriter for writing pixels.
+ *
+ * For Skia images, createPixelReaderWriter() reads existing pixels into an array so they can be both read and modified. Use
+ * createPixelWriter() instead when you only need to write pixels without reading existing values.
+ */
+public interface PixelReaderWriter extends PixelReader, PixelWriter
 {
-	public void setGrayLevel(int x, int y, int level);
-
-	public void setBandLevel(int x, int y, int band, int level);
-
-	public int getAlpha(int x, int y);
-
-	public void setPixelColor(int x, int y, Color color);
-
-	public void setRGB(int x, int y, int rgb);
-
-	public void setRGB(int x, int y, int red, int green, int blue);
-
-	public void setRGB(int x, int y, int red, int green, int blue, int alpha);
-
 }

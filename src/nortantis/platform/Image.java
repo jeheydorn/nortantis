@@ -158,6 +158,8 @@ public abstract class Image implements AutoCloseable
 
 	protected abstract PixelReaderWriter innerCreateNewPixelReaderWriter(IntRectangle bounds);
 
+	protected abstract PixelWriter innerCreateNewPixelWriter(IntRectangle bounds);
+
 
 	public PixelReader createPixelReader()
 	{
@@ -219,6 +221,37 @@ public abstract class Image implements AutoCloseable
 			}
 		}
 		return innerCreateNewPixelReaderWriter(bounds);
+	}
+
+	public PixelWriter createPixelWriter()
+	{
+		return createPixelWriter(null);
+	}
+
+	/**
+	 * Creates a pixel writer that is restricted to write in the given bounds of this image. Unlike createPixelReaderWriter(), this does NOT
+	 * read existing pixels from the image first, making it more efficient for pure write operations (like generating noise or filling with
+	 * computed values).
+	 *
+	 * @param bounds
+	 *            If not null, restricts writing to these bounds. If null, writes to the whole image. Note that the coordinates you use when
+	 *            accessing pixels through the writer are still absolute image coordinates, not relative to the bounds.
+	 */
+	public PixelWriter createPixelWriter(IntRectangle bounds)
+	{
+		if (bounds != null)
+		{
+			IntRectangle intersection = bounds.findIntersection(new IntRectangle(0, 0, getWidth(), getHeight()));
+			if (intersection == null)
+			{
+				bounds = new IntRectangle(bounds.x, bounds.y, 0, 0);
+			}
+			else
+			{
+				bounds = intersection;
+			}
+		}
+		return innerCreateNewPixelWriter(bounds);
 	}
 
 	/**
