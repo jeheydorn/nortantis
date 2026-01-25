@@ -993,6 +993,7 @@ public class SkiaImage extends Image
 
 		if (isGrayscaleFormat())
 		{
+			assert false : "This code path isn't used anymore now that grayscale images have their own pixel readers and writers";
 			// Convert 1-byte grayscale to ARGB int format
 			for (int i = 0; i < pixels.length; i++)
 			{
@@ -1028,6 +1029,7 @@ public class SkiaImage extends Image
 
 		if (isGrayscaleFormat())
 		{
+			assert false : "This code path isn't used anymore now that grayscale images have their own pixel readers and writers";
 			// Convert 1-byte grayscale to ARGB int format
 			for (int i = 0; i < pixels.length; i++)
 			{
@@ -1055,6 +1057,7 @@ public class SkiaImage extends Image
 
 		if (isGrayscaleFormat())
 		{
+			assert false : "This code path isn't used anymore now that grayscale images have their own pixel readers and writers";
 			// Convert ARGB int format to 1-byte grayscale
 			byte[] bytes = new byte[pixels.length];
 			for (int i = 0; i < pixels.length; i++)
@@ -1088,6 +1091,7 @@ public class SkiaImage extends Image
 
 		if (isGrayscaleFormat())
 		{
+			assert false : "This code path isn't used anymore now that grayscale images have their own pixel readers and writers";
 			// For grayscale, create a GRAY_8 temp bitmap
 			tempImageInfo = new ImageInfo(regionWidth, regionHeight, ColorType.GRAY_8, ColorAlphaType.OPAQUE, null);
 			tempBitmap.allocPixels(tempImageInfo);
