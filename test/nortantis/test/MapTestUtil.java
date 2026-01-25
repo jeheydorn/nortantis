@@ -4,6 +4,9 @@ import nortantis.MapCreator;
 import nortantis.MapSettings;
 import nortantis.SettingsGenerator;
 import nortantis.WarningLogger;
+import nortantis.MapText;
+import nortantis.editor.FreeIcon;
+import nortantis.editor.MapParts;
 import nortantis.platform.*;
 import nortantis.util.Assets;
 import nortantis.util.FileHelper;
@@ -13,6 +16,7 @@ import org.apache.commons.io.FilenameUtils;
 
 import java.io.File;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Random;
 import java.util.function.Consumer;
 
@@ -287,6 +291,255 @@ public class MapTestUtil
 			return "Images have differing dimensions.";
 		}
 		return null;
+	}
+
+	// Benchmark utilities
+
+	public static String formatTime(long nanos)
+	{
+		if (nanos < 1_000_000)
+		{
+			return String.format("%.2f µs", nanos / 1000.0);
+		}
+		else if (nanos < 1_000_000_000)
+		{
+			return String.format("%.2f ms", nanos / 1_000_000.0);
+		}
+		else
+		{
+			return String.format("%.2f s", nanos / 1_000_000_000.0);
+		}
+	}
+
+	public static int countFreeIcons(MapSettings settings)
+	{
+		int count = 0;
+		for (@SuppressWarnings("unused") FreeIcon icon : settings.edits.freeIcons)
+		{
+			count++;
+		}
+		return count;
+	}
+
+	public static int countMapTexts(MapSettings settings)
+	{
+		int count = 0;
+		for (@SuppressWarnings("unused") MapText text : settings.edits.text)
+		{
+			count++;
+		}
+		return count;
+	}
+
+	public static void runMapCreationBenchmark(String platformName, double resolution, int warmupIterations, int benchmarkIterations)
+			throws Exception
+	{
+		System.out.println("\n=== Map Creation Benchmark (" + platformName + ") ===\n");
+
+		String settingsPath = Paths.get("unit test files", "map settings", "simpleSmallWorld.nort").toString();
+		MapSettings settings = new MapSettings(settingsPath);
+		settings.resolution = resolution;
+
+		System.out.println("Settings: " + settingsPath);
+		System.out.println("Resolution: " + settings.resolution);
+
+		// Warmup
+		System.out.println("\nWarmup (" + warmupIterations + " iterations)...");
+		for (int i = 0; i < warmupIterations; i++)
+		{
+			MapCreator mapCreator = new MapCreator();
+			Image map = mapCreator.createMap(settings, null, null);
+			if (i == 0)
+			{
+				System.out.println("Map size: " + map.getWidth() + "x" + map.getHeight());
+			}
+			map.close();
+		}
+
+		// Benchmark
+		System.out.println("\nRunning benchmark (" + benchmarkIterations + " iterations)...\n");
+
+		long[] times = new long[benchmarkIterations];
+		for (int i = 0; i < benchmarkIterations; i++)
+		{
+			MapCreator mapCreator = new MapCreator();
+
+			long start = System.nanoTime();
+			Image map = mapCreator.createMap(settings, null, null);
+			long elapsed = System.nanoTime() - start;
+
+			times[i] = elapsed;
+			System.out.println("  Iteration " + (i + 1) + ": " + formatTime(elapsed));
+
+			map.close();
+		}
+
+		printStatistics("Map Creation", times, benchmarkIterations);
+	}
+
+	public static void runMapCreationBenchmarkSingleIteration(String platformName, double resolution) throws Exception
+	{
+		System.out.println("\n=== Map Creation Benchmark - High Resolution (" + platformName + ") ===\n");
+
+		String settingsPath = Paths.get("unit test files", "map settings", "simpleSmallWorld.nort").toString();
+		MapSettings settings = new MapSettings(settingsPath);
+		settings.resolution = resolution;
+
+		System.out.println("Settings: " + settingsPath);
+		System.out.println("Resolution: " + settings.resolution);
+
+		System.out.println("\nRunning single iteration...\n");
+
+		MapCreator mapCreator = new MapCreator();
+
+		long start = System.nanoTime();
+		Image map = mapCreator.createMap(settings, null, null);
+		long elapsed = System.nanoTime() - start;
+
+		System.out.println("Map size: " + map.getWidth() + "x" + map.getHeight());
+		System.out.println("Time: " + formatTime(elapsed));
+
+		map.close();
+	}
+
+	public static void runIncrementalDrawingBenchmark(String platformName, double resolution, int warmupIterations, int benchmarkIterations)
+			throws Exception
+	{
+		System.out.println("\n=== Incremental Drawing Benchmark (" + platformName + ") ===\n");
+
+		String settingsPath = Paths.get("unit test files", "map settings", "simpleSmallWorld.nort").toString();
+		MapSettings settings = new MapSettings(settingsPath);
+		settings.resolution = resolution;
+
+		System.out.println("Settings: " + settingsPath);
+		System.out.println("Resolution: " + settings.resolution);
+
+		// Create full map first (required for incremental updates)
+		System.out.println("\nCreating initial full map...");
+		MapCreator mapCreator = new MapCreator();
+		MapParts mapParts = new MapParts();
+		Image fullMap = mapCreator.createMap(settings, null, mapParts);
+		System.out.println("Map size: " + fullMap.getWidth() + "x" + fullMap.getHeight());
+
+		int iconCount = countFreeIcons(settings);
+		int textCount = countMapTexts(settings);
+		System.out.println("Number of icons to update: " + iconCount);
+		System.out.println("Number of text labels to update: " + textCount);
+
+		if (iconCount == 0 && textCount == 0)
+		{
+			System.out.println("No icons or text found in settings - skipping benchmark");
+			fullMap.close();
+			return;
+		}
+
+		// Warmup
+		System.out.println("\nWarmup (" + warmupIterations + " iterations)...");
+		for (int i = 0; i < warmupIterations; i++)
+		{
+			Image mapCopy = fullMap.deepCopy();
+			for (FreeIcon icon : settings.edits.freeIcons)
+			{
+				mapCreator.incrementalUpdateIcons(settings, mapParts, mapCopy, Arrays.asList(icon));
+			}
+			for (MapText text : settings.edits.text)
+			{
+				mapCreator.incrementalUpdateText(settings, mapParts, mapCopy, Arrays.asList(text));
+			}
+			mapCopy.close();
+		}
+
+		// Benchmark icons
+		if (iconCount > 0)
+		{
+			System.out.println("\nRunning icon benchmark (" + benchmarkIterations + " iterations)...\n");
+
+			long[] iconTimes = new long[benchmarkIterations];
+			for (int i = 0; i < benchmarkIterations; i++)
+			{
+				Image mapCopy = fullMap.deepCopy();
+
+				long start = System.nanoTime();
+				for (FreeIcon icon : settings.edits.freeIcons)
+				{
+					mapCreator.incrementalUpdateIcons(settings, mapParts, mapCopy, Arrays.asList(icon));
+				}
+				long elapsed = System.nanoTime() - start;
+
+				iconTimes[i] = elapsed;
+				System.out.println("  Iteration " + (i + 1) + ": " + formatTime(elapsed) + " (" + iconCount + " icons, " + formatTime(elapsed / iconCount) + " per icon)");
+
+				mapCopy.close();
+			}
+
+			printStatistics("Icon", iconTimes, benchmarkIterations, iconCount, "icon");
+		}
+
+		// Benchmark text
+		if (textCount > 0)
+		{
+			System.out.println("\nRunning text benchmark (" + benchmarkIterations + " iterations)...\n");
+
+			long[] textTimes = new long[benchmarkIterations];
+			for (int i = 0; i < benchmarkIterations; i++)
+			{
+				Image mapCopy = fullMap.deepCopy();
+
+				long start = System.nanoTime();
+				for (MapText text : settings.edits.text)
+				{
+					mapCreator.incrementalUpdateText(settings, mapParts, mapCopy, Arrays.asList(text));
+				}
+				long elapsed = System.nanoTime() - start;
+
+				textTimes[i] = elapsed;
+				System.out.println("  Iteration " + (i + 1) + ": " + formatTime(elapsed) + " (" + textCount + " texts, " + formatTime(elapsed / textCount) + " per text)");
+
+				mapCopy.close();
+			}
+
+			printStatistics("Text", textTimes, benchmarkIterations, textCount, "text");
+		}
+
+		fullMap.close();
+	}
+
+	private static void printStatistics(String label, long[] times, int iterations)
+	{
+		long total = 0;
+		long min = Long.MAX_VALUE;
+		long max = Long.MIN_VALUE;
+		for (long t : times)
+		{
+			total += t;
+			min = Math.min(min, t);
+			max = Math.max(max, t);
+		}
+		long avg = total / iterations;
+
+		System.out.println("\n=== " + label + " Results ===");
+		System.out.println("  Average: " + formatTime(avg));
+		System.out.println("  Min:     " + formatTime(min));
+		System.out.println("  Max:     " + formatTime(max));
+	}
+
+	private static void printStatistics(String label, long[] times, int iterations, int itemCount, String itemName)
+	{
+		long total = 0;
+		long min = Long.MAX_VALUE;
+		long max = Long.MIN_VALUE;
+		for (long t : times)
+		{
+			total += t;
+			min = Math.min(min, t);
+			max = Math.max(max, t);
+		}
+		long avg = total / iterations;
+
+		System.out.println("\n=== " + label + " Results ===");
+		System.out.println("  Average: " + formatTime(avg) + " (" + formatTime(avg / itemCount) + " per " + itemName + ")");
+		System.out.println("  Min:     " + formatTime(min));
+		System.out.println("  Max:     " + formatTime(max));
 	}
 
 }

@@ -148,7 +148,8 @@ tasks.register('benchmark', Test) {
 
     // Only run benchmark tests
     filter {
-        includeTestsMatching 'nortantis.test.MapCreatorBenchmark'
+        includeTestsMatching 'nortantis.test.SkiaMapCreatorBenchmark'
+        includeTestsMatching 'nortantis.test.AwtMapCreatorBenchmark'
     }
 
     jvmArgs = [

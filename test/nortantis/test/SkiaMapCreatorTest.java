@@ -57,58 +57,6 @@ public class SkiaMapCreatorTest
 		}
 	}
 
-	// TODO remove when I'm done with it
-	// @Test
-	// public void simpleSmallWorldUpperRightQuadrant_SkiaVsAwt()
-	// {
-	// String testName = "simpleSmallWorldUpperRightQuadrant_SkiaVsAwt";
-	// String settingsFileName = "simpleSmallWorld.nort";
-	// String settingsPath = Paths.get("unit test files", "map settings", settingsFileName).toString();
-	//
-	// // Generate with Skia and save to file
-	// {
-	// PlatformFactory.setInstance(new SkiaFactory());
-	// MapSettings settings = new MapSettings(settingsPath);
-	// settings.resolution = 0.25;
-	//
-	// MapCreator mapCreator = new MapCreator();
-	// Image fullMap = mapCreator.createMap(settings, null, null);
-	//
-	// // Extract upper-right quadrant
-	// int quadrantWidth = fullMap.getWidth() / 2;
-	// int quadrantHeight = fullMap.getHeight() / 2;
-	// int quadrantX = fullMap.getWidth() - quadrantWidth;
-	// int quadrantY = 0;
-	// IntRectangle upperRightBounds = new IntRectangle(quadrantX, quadrantY, quadrantWidth, quadrantHeight);
-	// Image skiaQuadrant = fullMap.copySubImage(upperRightBounds, false);
-	// }
-	//
-	// // The Skia image is saved to disk. Compare it against the expected AWT image.
-	// // We can't generate AWT in the same JVM because static Color constants (Color.white, etc.)
-	// // are platform-specific and were already initialized with Skia.
-	// // Instead, compare against the expected AWT image that was pre-generated.
-	// Image skiaQuadrant = Assets.readImage(Paths.get("unit test files", failedMapsFolderName, testName + " - skia.png").toString());
-	// String expectedAwtPath = Paths.get("unit test files", expectedMapsFolderName, testName + " - awt.png").toString();
-	//
-	// if (!new File(expectedAwtPath).exists())
-	// {
-	// fail("Expected AWT image not found at: " + expectedAwtPath + ". Generate it by running
-	// MapCreatorTest.simpleSmallWorldUpperRightQuadrant() or manually.");
-	// }
-	//
-	// Image awtQuadrant = Assets.readImage(expectedAwtPath);
-	//
-	// // Compare Skia and AWT results
-	// String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(skiaQuadrant, awtQuadrant, threshold);
-	// if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
-	// {
-	// createImageDiffIfImagesAreSameSize(skiaQuadrant, awtQuadrant, testName, threshold);
-	// FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
-	// ImageHelper.write(skiaQuadrant, Paths.get("unit test files", failedMapsFolderName, testName + " - skia.png").toString());
-	// fail("Skia and AWT results differ: " + comparisonErrorMessage);
-	// }
-	// }
-
 	@Test
 	public void incrementalUpdate_simpleSmallWorld()
 	{
@@ -126,7 +74,6 @@ public class SkiaMapCreatorTest
 			MapCreator mapCreator = new MapCreator();
 			MapParts mapParts = new MapParts();
 			Image fullMap = mapCreator.createMap(settings, null, mapParts);
-			int failCount = 0;
 
 			{
 				final int numberToTest = 100;
@@ -166,7 +113,6 @@ public class SkiaMapCreatorTest
 						ImageHelper.write(actualSnippet, failedPath.toString());
 
 						createImageDiffIfImagesAreSameSize(expectedSnippet, actualSnippet, failedSnippetName, threshold);
-						failCount++;
 					}
 				}
 
