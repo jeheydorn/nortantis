@@ -1380,17 +1380,13 @@ public class SkiaShaderOps
 		return !SkiaImage.isForceCPU() && GPUExecutor.getInstance().isGPUAvailable();
 	}
 
-	public boolean canProcessOnGPU(Image... images)
-	{
-		return areAllGpuBackedSkiaImages(images) && isGPUAccelerated();
-	}
-
 	/**
-	 * Determines whether the given images should run on the GPU.
+	 * Determines whether the given images should run on the GPU. Returns true if GPU is available, all images are SkiaImages, and at least
+	 * one image is GPU-backed. Small images that aren't GPU-backed will be uploaded temporarily during shader execution.
 	 */
 	public static boolean shouldRunOnGPU(Image... images)
 	{
-		return isGPUAccelerated() && areAllGpuBackedSkiaImages(images);
+		return isGPUAccelerated() && areAllSkiaImagesAndAtLeastOneGpuBacked(images);
 	}
 
 	public static boolean areAllSKiaImages(Image... images)
@@ -1406,22 +1402,24 @@ public class SkiaShaderOps
 	}
 
 	/**
-	 * Checks if all images are SkiaImage instances that have their data on the GPU.
+	 * Checks if all images are SkiaImage instances and at least one has GPU enabled. This allows shader operations to run on GPU even when
+	 * some images (like small masks) are below the GPU threshold - they will be uploaded temporarily.
 	 */
-	private static boolean areAllGpuBackedSkiaImages(Image... images)
+	private static boolean areAllSkiaImagesAndAtLeastOneGpuBacked(Image... images)
 	{
+		boolean hasGpuBacked = false;
 		for (Image image : images)
 		{
 			if (!(image instanceof SkiaImage))
 			{
 				return false;
 			}
-			if (!((SkiaImage) image).isGpuEnabled())
+			if (((SkiaImage) image).isGpuEnabled())
 			{
-				return false;
+				hasGpuBacked = true;
 			}
 		}
-		return true;
+		return hasGpuBacked;
 	}
 
 	// ==================== In-Place Operations ====================
