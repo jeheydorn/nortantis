@@ -1025,7 +1025,7 @@ public class IconDrawer
 
 		// Use different code paths for AWT vs Skia because transparent land doesn't work yet with Skia. (And there may also be performance
 		// disadvantages to having AWT go through the Skia code path, but I haven't checked that yet).
-		if (!GPUExecutor.getInstance().isGPUAvailable() || PlatformFactory.getInstance() instanceof AwtFactory)
+		if (PlatformFactory.getInstance() instanceof AwtFactory)
 		{
 			drawIconWithBackgroundAndMasksDirect(mapOrSnippet, imageAndMasks, landBackground, landTexture, oceanTexture, type, xLeft, yTop, graphXLeft, graphYTop, mapOrSnippetSize, icon, contentMask,
 					shadingMask);
