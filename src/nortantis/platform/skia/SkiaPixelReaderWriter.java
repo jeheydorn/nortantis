@@ -4,7 +4,6 @@ import nortantis.geom.IntRectangle;
 import nortantis.platform.Color;
 import nortantis.platform.ImageType;
 import nortantis.platform.PixelReaderWriter;
-import org.jetbrains.skia.IRect;
 
 public class SkiaPixelReaderWriter extends SkiaPixelReader implements PixelReaderWriter
 {
@@ -40,30 +39,25 @@ public class SkiaPixelReaderWriter extends SkiaPixelReader implements PixelReade
 			// Any non-zero value becomes white (255)
 			level = level > 0 ? 255 : 0;
 		}
-		// Compute gray RGB directly without Color object allocation
-		int rgb = (255 << 24) | (level << 16) | (level << 8) | level;
-		setRGB(x, y, rgb);
+		// Set R=G=B=level for grayscale, with full alpha
+		setRGB(x, y, level, level, level, 255);
 	}
 
 	@Override
 	public void setBandLevel(int x, int y, int band, int level)
 	{
-		int rgb = getRGB(x, y);
-		int r = (rgb >> 16) & 0xFF;
-		int g = (rgb >> 8) & 0xFF;
-		int b = rgb & 0xFF;
-		int a = (rgb >> 24) & 0xFF;
+		int idx = getByteIndex(x, y);
+		modified = true;
 
+		// BGRA order: [0]=B, [1]=G, [2]=R, [3]=A
 		if (band == 0)
-			r = level;
+			cachedPixelBytes[idx + 2] = (byte) level; // R
 		else if (band == 1)
-			g = level;
+			cachedPixelBytes[idx + 1] = (byte) level; // G
 		else if (band == 2)
-			b = level;
+			cachedPixelBytes[idx] = (byte) level; // B
 		else if (band == 3)
-			a = level;
-
-		setRGB(x, y, (a << 24) | (r << 16) | (g << 8) | b);
+			cachedPixelBytes[idx + 3] = (byte) level; // A
 	}
 
 	@Override
@@ -76,48 +70,52 @@ public class SkiaPixelReaderWriter extends SkiaPixelReader implements PixelReade
 	public void setRGB(int x, int y, int rgb)
 	{
 		modified = true;
-		if (cachedPixelArray != null)
-		{
-			if (bounds != null)
-			{
-				cachedPixelArray[(y - bounds.y) * bounds.width + (x - bounds.x)] = rgb;
-			}
-			else
-			{
-				cachedPixelArray[y * width + x] = rgb;
-			}
-		}
-		else
-		{
-			image.getBitmap().erase(rgb, IRect.makeXYWH(x, y, 1, 1));
-		}
+		int idx = getByteIndex(x, y);
+
+		int r = (rgb >> 16) & 0xFF;
+		int g = (rgb >> 8) & 0xFF;
+		int b = rgb & 0xFF;
+		int a = (rgb >> 24) & 0xFF;
+
+		// BGRA order
+		cachedPixelBytes[idx] = (byte) b;
+		cachedPixelBytes[idx + 1] = (byte) g;
+		cachedPixelBytes[idx + 2] = (byte) r;
+		cachedPixelBytes[idx + 3] = (byte) a;
 	}
 
 	@Override
 	public void setRGB(int x, int y, int red, int green, int blue)
 	{
-		setRGB(x, y, (255 << 24) | (red << 16) | (green << 8) | blue);
+		setRGB(x, y, red, green, blue, 255);
 	}
 
 	@Override
 	public void setRGB(int x, int y, int red, int green, int blue, int alpha)
 	{
-		setRGB(x, y, (alpha << 24) | (red << 16) | (green << 8) | blue);
+		modified = true;
+		int idx = getByteIndex(x, y);
+
+		// BGRA order
+		cachedPixelBytes[idx] = (byte) blue;
+		cachedPixelBytes[idx + 1] = (byte) green;
+		cachedPixelBytes[idx + 2] = (byte) red;
+		cachedPixelBytes[idx + 3] = (byte) alpha;
 	}
 
 	@Override
 	public void close()
 	{
-		if (modified && cachedPixelArray != null)
+		if (modified && cachedPixelBytes != null)
 		{
 			if (bounds == null)
 			{
-				image.writePixelsFromIntArray(cachedPixelArray);
+				image.writePixelsFromByteArray(cachedPixelBytes);
 				image.markCPUDirty(); // Invalidate GPU copy since CPU was modified
 			}
 			else
 			{
-				image.writePixelsToRegion(cachedPixelArray, bounds.x, bounds.y, bounds.width, bounds.height);
+				image.writePixelsToRegionFromByteArray(cachedPixelBytes, bounds);
 				// If GPU is enabled, update only the modified region on the GPU
 				if (image.isGpuEnabled())
 				{

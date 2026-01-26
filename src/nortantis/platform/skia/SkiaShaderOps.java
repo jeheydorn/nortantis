@@ -1389,6 +1389,15 @@ public class SkiaShaderOps
 		return isGPUAccelerated() && areAllSkiaImagesAndAtLeastOneGpuBacked(images);
 	}
 
+	/**
+	 * Returns true if Skia shaders should be used for the given images. This is true when all images are SkiaImages, regardless of whether
+	 * GPU is available. Shaders will run on GPU if available, otherwise on CPU using Skia's optimized CPU rasterizer.
+	 */
+	public static boolean shouldUseSkiaShaders(Image... images)
+	{
+		return areAllSKiaImages(images);
+	}
+
 	public static boolean areAllSKiaImages(Image... images)
 	{
 		for (Image image : images)
