@@ -116,15 +116,16 @@ public class SkiaPixelReaderWriter extends SkiaPixelReader implements PixelReade
 			else
 			{
 				image.writePixelsToRegionFromByteArray(cachedPixelBytes, bounds);
+				// TODO remove commented out code here when I'm sure I won't use it. It does not help icon drawing now, and if I do keep this, it should be optional.
 				// If GPU is enabled, update only the modified region on the GPU
-				if (image.isGpuEnabled())
-				{
-					image.updateGPURegion(bounds.x, bounds.y, bounds.width, bounds.height);
-				}
-				else
-				{
+//				if (image.isGpuEnabled())
+//				{
+//					image.updateGPURegion(bounds.x, bounds.y, bounds.width, bounds.height);
+//				}
+//				else
+//				{
 					image.markCPUDirty();
-				}
+				//}
 			}
 		}
 		else if (modified)

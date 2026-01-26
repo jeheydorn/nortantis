@@ -43,7 +43,7 @@ public class GPUExecutor
 		CPU
 	}
 
-	private static final RenderingMode defaultRenderingMode = RenderingMode.CPU;
+	private static final RenderingMode defaultRenderingMode = RenderingMode.GPU;
 
 	private static volatile GPUExecutor instance;
 	private static final Object instanceLock = new Object();

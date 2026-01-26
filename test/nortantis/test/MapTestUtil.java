@@ -386,13 +386,13 @@ public class MapTestUtil
 		map.close();
 	}
 
-	public static void runIncrementalDrawingBenchmark(String platformName, double resolution, int warmupIterations, int benchmarkIterations) throws Exception
+	public static void runIncrementalDrawingBenchmark(String platformName, int warmupIterations, int benchmarkIterations) throws Exception
 	{
 		System.out.println("\n=== Incremental Drawing Benchmark (" + platformName + ") ===\n");
 
 		String settingsPath = Paths.get("unit test files", "map settings", "simpleSmallWorld.nort").toString();
 		MapSettings settings = new MapSettings(settingsPath);
-		settings.resolution = resolution;
+		settings.resolution = 0.75;
 
 		System.out.println("Settings: " + settingsPath);
 		System.out.println("Resolution: " + settings.resolution);

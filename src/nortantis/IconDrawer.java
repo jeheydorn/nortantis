@@ -1287,11 +1287,14 @@ public class IconDrawer
 		int xToSubtract = drawBounds == null ? 0 : (int) drawBounds.x;
 		int yToSubtract = drawBounds == null ? 0 : (int) drawBounds.y;
 
+		Stopwatch sw = new Stopwatch("drawIconWithBackgroundAndMasks");
+
 		for (final IconDrawTask task : tasksToDrawSorted)
 		{
 			drawIconWithBackgroundAndMasks(mapOrSnippet, task.scaledImageAndMasks, landBackground, landTexture, oceanWithWavesAndShading, task.type, ((int) task.centerLoc.x) - xToSubtract,
 					((int) task.centerLoc.y) - yToSubtract, (int) task.centerLoc.x, (int) task.centerLoc.y);
 		}
+		sw.printElapsedTime();
 	}
 
 	/**
