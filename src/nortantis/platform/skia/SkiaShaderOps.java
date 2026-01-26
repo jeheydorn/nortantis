@@ -1390,12 +1390,12 @@ public class SkiaShaderOps
 	}
 
 	/**
-	 * Returns true if Skia shaders should be used for the given images. This is true when all images are SkiaImages, regardless of whether
-	 * GPU is available. Shaders will run on GPU if available, otherwise on CPU using Skia's optimized CPU rasterizer.
+	 * Returns true if Skia shaders should be used for the given images. This is true when shaders are enabled and all images are SkiaImages.
+	 * Shaders will run on GPU if available, otherwise on CPU using Skia's optimized CPU rasterizer.
 	 */
 	public static boolean shouldUseSkiaShaders(Image... images)
 	{
-		return areAllSKiaImages(images);
+		return GPUExecutor.getInstance().isShadersEnabled() && areAllSKiaImages(images);
 	}
 
 	public static boolean areAllSKiaImages(Image... images)

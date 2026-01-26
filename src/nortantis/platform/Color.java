@@ -88,8 +88,15 @@ public abstract class Color implements Serializable
 		return new HSBColor((int) (hsb[0] * 360f), (int) (hsb[1] * 100f), (int) (hsb[2] * 100f), (int) ((getAlpha() / 255f) * 100f));
 	}
 
+	/**
+	 * Computes the Manhattan distance from one color to another, except is returns zero if both colors are fully transparent.
+	 */
 	public int manhattanDistanceTo(Color other)
 	{
+		if (getAlpha() == 0 && other.getAlpha() == 0)
+		{
+			return 0;
+		}
 		return Math.abs(getRed() - other.getRed()) + Math.abs(getGreen() - other.getGreen()) + Math.abs(getBlue() - other.getBlue()) + Math.abs(getAlpha() - other.getAlpha());
 	}
 }

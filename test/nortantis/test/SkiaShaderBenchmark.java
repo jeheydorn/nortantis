@@ -68,13 +68,19 @@ public class SkiaShaderBenchmark
 			SkiaShaderOps.maskWithImage(image1, image2, mask);
 		}
 
+		// Run twice and average
 		int iterations = 10;
-		long shaderStart = System.nanoTime();
-		for (int i = 0; i < iterations; i++)
+		long totalTime = 0;
+		for (int run = 0; run < 2; run++)
 		{
-			SkiaShaderOps.maskWithImage(image1, image2, mask);
+			long shaderStart = System.nanoTime();
+			for (int i = 0; i < iterations; i++)
+			{
+				SkiaShaderOps.maskWithImage(image1, image2, mask);
+			}
+			totalTime += (System.nanoTime() - shaderStart) / iterations;
 		}
-		long shaderTime = (System.nanoTime() - shaderStart) / iterations;
+		long shaderTime = totalTime / 2;
 
 		System.out.println("  Skia shader:  " + formatTime(shaderTime));
 	}
@@ -96,13 +102,19 @@ public class SkiaShaderBenchmark
 			SkiaShaderOps.colorify(grayscale, color, ImageHelper.ColorifyAlgorithm.algorithm3, false);
 		}
 
+		// Run twice and average
 		int iterations = 10;
-		long shaderStart = System.nanoTime();
-		for (int i = 0; i < iterations; i++)
+		long totalTime = 0;
+		for (int run = 0; run < 2; run++)
 		{
-			SkiaShaderOps.colorify(grayscale, color, ImageHelper.ColorifyAlgorithm.algorithm3, false);
+			long shaderStart = System.nanoTime();
+			for (int i = 0; i < iterations; i++)
+			{
+				SkiaShaderOps.colorify(grayscale, color, ImageHelper.ColorifyAlgorithm.algorithm3, false);
+			}
+			totalTime += (System.nanoTime() - shaderStart) / iterations;
 		}
-		long shaderTime = (System.nanoTime() - shaderStart) / iterations;
+		long shaderTime = totalTime / 2;
 
 		System.out.println("  Skia shader (algorithm3):  " + formatTime(shaderTime));
 	}
@@ -125,13 +137,19 @@ public class SkiaShaderBenchmark
 			SkiaShaderOps.maskWithColor(image, color, mask, false);
 		}
 
+		// Run twice and average
 		int iterations = 10;
-		long shaderStart = System.nanoTime();
-		for (int i = 0; i < iterations; i++)
+		long totalTime = 0;
+		for (int run = 0; run < 2; run++)
 		{
-			SkiaShaderOps.maskWithColor(image, color, mask, false);
+			long shaderStart = System.nanoTime();
+			for (int i = 0; i < iterations; i++)
+			{
+				SkiaShaderOps.maskWithColor(image, color, mask, false);
+			}
+			totalTime += (System.nanoTime() - shaderStart) / iterations;
 		}
-		long shaderTime = (System.nanoTime() - shaderStart) / iterations;
+		long shaderTime = totalTime / 2;
 
 		System.out.println("  Skia shader:  " + formatTime(shaderTime));
 	}
@@ -153,13 +171,19 @@ public class SkiaShaderBenchmark
 			SkiaShaderOps.setAlphaFromMask(image, mask, false);
 		}
 
+		// Run twice and average
 		int iterations = 10;
-		long shaderStart = System.nanoTime();
-		for (int i = 0; i < iterations; i++)
+		long totalTime = 0;
+		for (int run = 0; run < 2; run++)
 		{
-			SkiaShaderOps.setAlphaFromMask(image, mask, false);
+			long shaderStart = System.nanoTime();
+			for (int i = 0; i < iterations; i++)
+			{
+				SkiaShaderOps.setAlphaFromMask(image, mask, false);
+			}
+			totalTime += (System.nanoTime() - shaderStart) / iterations;
 		}
-		long shaderTime = (System.nanoTime() - shaderStart) / iterations;
+		long shaderTime = totalTime / 2;
 
 		System.out.println("  Skia shader:  " + formatTime(shaderTime));
 	}

@@ -80,6 +80,26 @@ try (Painter p = image.createPainter()) {
 ```
 Use try-with-resources for Image whenever feasible.
 
+## Runtime Configuration
+
+GPU and shader behavior is controlled via JVM system properties:
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `-Dnortantis.gpu.enable` | `false` | Enable GPU acceleration via OpenGL |
+| `-Dnortantis.shaders.enable` | same as gpu.enable | Enable Skia shader operations |
+
+**Configuration combinations:**
+
+| gpu.enable | shaders.enable | Result |
+|------------|----------------|--------|
+| false | false | Traditional CPU pixel-by-pixel operations |
+| false | true | CPU-based Skia shaders (useful for performance testing) |
+| true | true | GPU-accelerated shaders |
+| true | false | **Error** - GPU requires shaders |
+
+The shader flag controls whether `ImageHelper` uses `SkiaShaderOps` for image operations. When shaders are enabled but GPU is disabled, shaders run on CPU via Skia's optimized rasterizer.
+
 ## Testing
 
 Important tests:

@@ -38,6 +38,7 @@ public class GPUExecutor
 	private final AtomicBoolean initialized;
 	private volatile DirectContext directContext;
 	private volatile boolean gpuAvailable;
+	private volatile boolean shadersEnabled;
 	private volatile int maxTextureSize = 8192; // Default fallback, will be queried from GPU
 
 	// LWJGL/GLFW resources (owned by GPU thread)
@@ -102,6 +103,15 @@ public class GPUExecutor
 	public boolean isGPUAvailable()
 	{
 		return gpuAvailable && directContext != null && running.get();
+	}
+
+	/**
+	 * Returns true if shader operations are enabled. When true, Skia shaders will be used for image operations (on GPU if available,
+	 * otherwise on CPU). When false, traditional pixel-by-pixel CPU operations are used instead.
+	 */
+	public boolean isShadersEnabled()
+	{
+		return shadersEnabled;
 	}
 
 	/**
@@ -393,11 +403,29 @@ public class GPUExecutor
 		try
 		{
 			// Check if GPU is enabled via system property
-			String enableGpu = System.getProperty("nortantis.gpu.enable", "false");
-			if (!Boolean.parseBoolean(enableGpu))
+			boolean enableGpu = Boolean.parseBoolean(System.getProperty("nortantis.gpu.enable", "false"));
+			// Check if shaders are enabled via system property (defaults to same as GPU setting for convenience)
+			shadersEnabled = Boolean.parseBoolean(System.getProperty("nortantis.shaders.enable", String.valueOf(enableGpu)));
+
+			// Validate: GPU requires shaders to be enabled
+			if (enableGpu && !shadersEnabled)
+			{
+				throw new IllegalStateException(
+						"Invalid configuration: -Dnortantis.gpu.enable=true requires -Dnortantis.shaders.enable=true. "
+								+ "GPU acceleration depends on shader operations.");
+			}
+
+			if (!enableGpu)
 			{
 				gpuAvailable = false;
-				Logger.println("GPUExecutor: GPU disabled by default, using CPU rendering. Set -Dnortantis.gpu.enable=true to try GPU.");
+				if (shadersEnabled)
+				{
+					Logger.println("GPUExecutor: GPU disabled, shaders enabled. Shaders will run on CPU.");
+				}
+				else
+				{
+					Logger.println("GPUExecutor: GPU and shaders disabled, using CPU rendering.");
+				}
 				return;
 			}
 

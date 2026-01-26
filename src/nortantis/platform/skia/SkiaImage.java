@@ -314,6 +314,15 @@ public class SkiaImage extends Image
 		return resourceState.cachedSkiaImage;
 	}
 
+	void invalidateCachedImage()
+	{
+		if (resourceState.cachedSkiaImage != null)
+		{
+			resourceState.cachedSkiaImage.close();
+			resourceState.cachedSkiaImage = null;
+		}
+	}
+
 	/**
 	 * Lazily creates the GPU surface when needed for drawing. Does nothing if GPU is not enabled for this image.
 	 */

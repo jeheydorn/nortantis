@@ -102,40 +102,23 @@ public class MapTestUtil
 	{
 		if (image1.getWidth() == image2.getWidth() && image1.getHeight() == image2.getHeight())
 		{
-			Image diff = Image.create(image1.getWidth(), image1.getHeight(), ImageType.RGB);
-			try (PixelReader image1Pixels = image1.createPixelReader(); PixelReader image2Pixels = image2.createPixelReader(); PixelReaderWriter diffPixels = diff.createPixelReaderWriter())
+			Image diffImage = Image.create(image1.getWidth(), image1.getHeight(), ImageType.RGB);
+			try (PixelReader image1Pixels = image1.createPixelReader(); PixelReader image2Pixels = image2.createPixelReader(); PixelReaderWriter diffPixels = diffImage.createPixelReaderWriter())
 			{
 				for (int x = 0; x < image1.getWidth(); x++)
 				{
 					for (int y = 0; y < image1.getHeight(); y++)
 					{
-						if (threshold == 0)
-						{
-							if (image1Pixels.getRGB(x, y) != image2Pixels.getRGB(x, y))
-							{
-								diffPixels.setRGB(x, y, Color.white.getRGB());
-							}
-							else
-							{
-								diffPixels.setRGB(x, y, Color.black.getRGB());
-							}
-						}
-						else
-						{
-							int difference = image1Pixels.getPixelColor(x, y).manhattanDistanceTo(image2Pixels.getPixelColor(x, y));
-							if (difference > threshold)
-							{
-								diffPixels.setRGB(x, y, Color.white.getRGB());
-							}
-							else
-							{
-								diffPixels.setRGB(x, y, Color.black.getRGB());
-							}
-						}
+						// Skip RGB comparison if both pixels are fully transparent
+						Color color1 = Color.create(image1Pixels.getRGB(x, y));
+						Color color2 = Color.create(image2Pixels.getRGB(x, y));
+						int diff = color1.manhattanDistanceTo(color2);
+
+						diffPixels.setRGB(x, y, Color.create(diff, diff, diff).getRGB());
 					}
 				}
 			}
-			ImageHelper.write(diff, getDiffFilePath(settingsFileName, failedMapsFolderName));
+			ImageHelper.write(diffImage, getDiffFilePath(settingsFileName, failedMapsFolderName));
 		}
 	}
 
@@ -265,22 +248,24 @@ public class MapTestUtil
 				{
 					for (int y = 0; y < image1.getHeight(); y++)
 					{
-						if (threshold == 0)
+						Color color1 = Color.create(image1Pixels.getRGB(x, y));
+						Color color2 = Color.create(image2Pixels.getRGB(x, y));
+						int diff = color1.manhattanDistanceTo(color2);
+
+						if (diff > 0)
 						{
-							int rgb1 = image1Pixels.getRGB(x, y);
-							int rgb2 = image2Pixels.getRGB(x, y);
-							if (rgb1 != rgb2)
+							if (threshold == 0)
 							{
-								return "Images differ at pixel (" + x + ", " + y + "). Color from image1: " + Color.create(rgb1) + ". Color from image2: " + Color.create(rgb2);
+								return "Images differ at pixel (" + x + ", " + y + "). Color from image1: " + color1 + ". Color from image2: " + color2;
 							}
-						}
-						else
-						{
-							int diff = image1Pixels.getPixelColor(x, y).manhattanDistanceTo(image2Pixels.getPixelColor(x, y));
-							if (diff > threshold)
+							else
 							{
-								return "Images differ at pixel (" + x + ", " + y + ") by " + diff;
+								if (diff > threshold)
+								{
+									return "Images differ at pixel (" + x + ", " + y + ") by " + diff;
+								}
 							}
+
 						}
 					}
 				}
@@ -331,8 +316,7 @@ public class MapTestUtil
 		return count;
 	}
 
-	public static void runMapCreationBenchmark(String platformName, double resolution, int warmupIterations, int benchmarkIterations)
-			throws Exception
+	public static void runMapCreationBenchmark(String platformName, double resolution, int warmupIterations, int benchmarkIterations) throws Exception
 	{
 		System.out.println("\n=== Map Creation Benchmark (" + platformName + ") ===\n");
 
@@ -402,8 +386,7 @@ public class MapTestUtil
 		map.close();
 	}
 
-	public static void runIncrementalDrawingBenchmark(String platformName, double resolution, int warmupIterations, int benchmarkIterations)
-			throws Exception
+	public static void runIncrementalDrawingBenchmark(String platformName, double resolution, int warmupIterations, int benchmarkIterations) throws Exception
 	{
 		System.out.println("\n=== Incremental Drawing Benchmark (" + platformName + ") ===\n");
 
