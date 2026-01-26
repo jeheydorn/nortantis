@@ -4,7 +4,6 @@ import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.PlatformFactory;
 import nortantis.platform.skia.SkiaFactory;
-import nortantis.platform.skia.SkiaShaderOps;
 import nortantis.util.ImageHelper;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -14,9 +13,9 @@ import java.util.Random;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Benchmark comparing Java pixel-by-pixel operations vs Skia shader operations.
+ * Benchmark for ImageHelper operations.
  */
-public class SkiaShaderBenchmark
+public class ImageHelperBenchmark
 {
 	@BeforeAll
 	public static void setup()
@@ -36,18 +35,17 @@ public class SkiaShaderBenchmark
 		Image image2 = createTestImage(width, height, ImageType.RGB, 123);
 		Image mask = createTestMask(width, height, 456);
 
-		// Run shader implementation directly
-		Image shaderResult = SkiaShaderOps.maskWithImage(image1, image2, mask);
+		// Run through ImageHelper
+		Image result = ImageHelper.maskWithImage(image1, image2, mask);
 
-		// Now run through ImageHelper (which should use shader internally)
-		// First, run without shader to get baseline
+		// Create copies and run again to verify consistency
 		Image image1Copy = createTestImage(width, height, ImageType.RGB, 42);
 		Image image2Copy = createTestImage(width, height, ImageType.RGB, 123);
 		Image maskCopy = createTestMask(width, height, 456);
-		Image helperResult = ImageHelper.maskWithImage(image1Copy, image2Copy, maskCopy);
+		Image resultCopy = ImageHelper.maskWithImage(image1Copy, image2Copy, maskCopy);
 
 		// Compare results - allow small differences due to floating point
-		assertImagesEqual(shaderResult, helperResult, 2, "Shader result should match ImageHelper result");
+		assertImagesEqual(result, resultCopy, 2, "Results should be consistent");
 	}
 
 	@Test
@@ -55,7 +53,7 @@ public class SkiaShaderBenchmark
 	{
 		System.out.println("\n=== maskWithImage Benchmark ===\n");
 
-		int size = 1024;
+		int size = 4096;
 		System.out.println("Image size: " + size + "x" + size);
 
 		Image image1 = createTestImage(size, size, ImageType.RGB, 42);
@@ -65,7 +63,7 @@ public class SkiaShaderBenchmark
 		// Warmup
 		for (int i = 0; i < 3; i++)
 		{
-			SkiaShaderOps.maskWithImage(image1, image2, mask);
+			ImageHelper.maskWithImage(image1, image2, mask);
 		}
 
 		// Run twice and average
@@ -73,16 +71,16 @@ public class SkiaShaderBenchmark
 		long totalTime = 0;
 		for (int run = 0; run < 2; run++)
 		{
-			long shaderStart = System.nanoTime();
+			long start = System.nanoTime();
 			for (int i = 0; i < iterations; i++)
 			{
-				SkiaShaderOps.maskWithImage(image1, image2, mask);
+				ImageHelper.maskWithImage(image1, image2, mask);
 			}
-			totalTime += (System.nanoTime() - shaderStart) / iterations;
+			totalTime += (System.nanoTime() - start) / iterations;
 		}
-		long shaderTime = totalTime / 2;
+		long avgTime = totalTime / 2;
 
-		System.out.println("  Skia shader:  " + formatTime(shaderTime));
+		System.out.println("  ImageHelper.maskWithImage:  " + formatTime(avgTime));
 	}
 
 	@Test
@@ -90,7 +88,7 @@ public class SkiaShaderBenchmark
 	{
 		System.out.println("\n=== colorify Benchmark (with HSB conversion) ===\n");
 
-		int size = 1024;
+		int size = 4096;
 		System.out.println("Image size: " + size + "x" + size);
 
 		Image grayscale = createTestMask(size, size, 42);
@@ -99,7 +97,7 @@ public class SkiaShaderBenchmark
 		// Warmup
 		for (int i = 0; i < 3; i++)
 		{
-			SkiaShaderOps.colorify(grayscale, color, ImageHelper.ColorifyAlgorithm.algorithm3, false);
+			ImageHelper.colorify(grayscale, color, ImageHelper.ColorifyAlgorithm.algorithm3, false);
 		}
 
 		// Run twice and average
@@ -107,16 +105,16 @@ public class SkiaShaderBenchmark
 		long totalTime = 0;
 		for (int run = 0; run < 2; run++)
 		{
-			long shaderStart = System.nanoTime();
+			long start = System.nanoTime();
 			for (int i = 0; i < iterations; i++)
 			{
-				SkiaShaderOps.colorify(grayscale, color, ImageHelper.ColorifyAlgorithm.algorithm3, false);
+				ImageHelper.colorify(grayscale, color, ImageHelper.ColorifyAlgorithm.algorithm3, false);
 			}
-			totalTime += (System.nanoTime() - shaderStart) / iterations;
+			totalTime += (System.nanoTime() - start) / iterations;
 		}
-		long shaderTime = totalTime / 2;
+		long avgTime = totalTime / 2;
 
-		System.out.println("  Skia shader (algorithm3):  " + formatTime(shaderTime));
+		System.out.println("  ImageHelper.colorify (algorithm3):  " + formatTime(avgTime));
 	}
 
 	@Test
@@ -124,7 +122,7 @@ public class SkiaShaderBenchmark
 	{
 		System.out.println("\n=== maskWithColor Benchmark ===\n");
 
-		int size = 1024;
+		int size = 4096;
 		System.out.println("Image size: " + size + "x" + size);
 
 		Image image = createTestImage(size, size, ImageType.RGB, 42);
@@ -134,7 +132,7 @@ public class SkiaShaderBenchmark
 		// Warmup
 		for (int i = 0; i < 3; i++)
 		{
-			SkiaShaderOps.maskWithColor(image, color, mask, false);
+			ImageHelper.maskWithColor(image, color, mask, false);
 		}
 
 		// Run twice and average
@@ -142,16 +140,16 @@ public class SkiaShaderBenchmark
 		long totalTime = 0;
 		for (int run = 0; run < 2; run++)
 		{
-			long shaderStart = System.nanoTime();
+			long start = System.nanoTime();
 			for (int i = 0; i < iterations; i++)
 			{
-				SkiaShaderOps.maskWithColor(image, color, mask, false);
+				ImageHelper.maskWithColor(image, color, mask, false);
 			}
-			totalTime += (System.nanoTime() - shaderStart) / iterations;
+			totalTime += (System.nanoTime() - start) / iterations;
 		}
-		long shaderTime = totalTime / 2;
+		long avgTime = totalTime / 2;
 
-		System.out.println("  Skia shader:  " + formatTime(shaderTime));
+		System.out.println("  ImageHelper.maskWithColor:  " + formatTime(avgTime));
 	}
 
 	@Test
@@ -159,7 +157,7 @@ public class SkiaShaderBenchmark
 	{
 		System.out.println("\n=== setAlphaFromMask Benchmark ===\n");
 
-		int size = 1024;
+		int size = 4096;
 		System.out.println("Image size: " + size + "x" + size);
 
 		Image image = createTestImage(size, size, ImageType.ARGB, 42);
@@ -168,7 +166,7 @@ public class SkiaShaderBenchmark
 		// Warmup
 		for (int i = 0; i < 3; i++)
 		{
-			SkiaShaderOps.setAlphaFromMask(image, mask, false);
+			ImageHelper.setAlphaFromMask(image, mask, false);
 		}
 
 		// Run twice and average
@@ -176,16 +174,16 @@ public class SkiaShaderBenchmark
 		long totalTime = 0;
 		for (int run = 0; run < 2; run++)
 		{
-			long shaderStart = System.nanoTime();
+			long start = System.nanoTime();
 			for (int i = 0; i < iterations; i++)
 			{
-				SkiaShaderOps.setAlphaFromMask(image, mask, false);
+				ImageHelper.setAlphaFromMask(image, mask, false);
 			}
-			totalTime += (System.nanoTime() - shaderStart) / iterations;
+			totalTime += (System.nanoTime() - start) / iterations;
 		}
-		long shaderTime = totalTime / 2;
+		long avgTime = totalTime / 2;
 
-		System.out.println("  Skia shader:  " + formatTime(shaderTime));
+		System.out.println("  ImageHelper.setAlphaFromMask:  " + formatTime(avgTime));
 	}
 
 	private String formatTime(long nanos)

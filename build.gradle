@@ -160,7 +160,7 @@ tasks.register('benchmark', Test) {
         '-Dsun.java2d.d3d=false',
         '-Xmx4g',
         '--add-opens', 'java.base/java.nio=ALL-UNNAMED',
-        '-Dnortantis.gpu.enable=true',
+        //'-Dnortantis.gpu.enable=true',
         '-Dnortantis.shaders.enable=true',
         // JFR profiling - records to build/profile.jfr
         '-XX:StartFlightRecording=filename=build/profile.jfr,settings=profile',

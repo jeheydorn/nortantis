@@ -12,6 +12,7 @@ import nortantis.util.*;
 import nortantis.util.ImageHelper.ColorifyAlgorithm;
 import org.apache.commons.io.FileUtils;
 import org.imgscalr.Scalr.Method;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -34,6 +35,7 @@ public class ImageHelperTest
 {
 	private static final String expectedFolderName = "expected image helper tests";
 	private static final String failedFolderName = "failed image helper tests";
+	private static final String tempFolderName = "temp image helper tests";
 	private static final int testImageWidth = 100;
 	private static final int testImageHeight = 100;
 
@@ -45,6 +47,14 @@ public class ImageHelperTest
 
 		FileHelper.createFolder(Paths.get("unit test files", expectedFolderName).toString());
 		FileUtils.deleteDirectory(new File(Paths.get("unit test files", failedFolderName).toString()));
+		FileUtils.deleteDirectory(new File(Paths.get("unit test files", tempFolderName).toString()));
+		FileHelper.createFolder(Paths.get("unit test files", tempFolderName).toString());
+	}
+
+	@AfterAll
+	public static void tearDownAfterClass() throws Exception
+	{
+		FileUtils.deleteDirectory(new File(Paths.get("unit test files", tempFolderName).toString()));
 	}
 
 	// ==================== Convert Tests ====================
@@ -1314,6 +1324,14 @@ public class ImageHelperTest
 	 */
 	private void compareWithExpected(Image actual, String testName, int threshold)
 	{
+		// Write actual to temp location and reload to ensure PNG round-trip consistency.
+		// This is needed because GPU shader operations may have data that isn't fully
+		// synchronized when reading pixels directly. The PNG round-trip forces full sync.
+		// TODO remove this when this issue is fixed or if I remove GPU support.
+		String tempFilePath = Paths.get("unit test files", tempFolderName, testName + ".png").toString();
+		ImageHelper.write(actual, tempFilePath);
+		Image actualReloaded = Assets.readImage(tempFilePath);
+
 		String expectedFilePath = getExpectedFilePath(testName);
 		Image expected;
 
@@ -1323,17 +1341,16 @@ public class ImageHelperTest
 		}
 		else
 		{
-			expected = actual;
-			ImageHelper.write(actual, expectedFilePath);
+			ImageHelper.write(actualReloaded, expectedFilePath);
 			return;
 		}
 
-		String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(expected, actual, threshold);
+		String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(expected, actualReloaded, threshold);
 		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
 		{
 			FileHelper.createFolder(Paths.get("unit test files", failedFolderName).toString());
-			ImageHelper.write(actual, getFailedFilePath(testName));
-			MapTestUtil.createImageDiffIfImagesAreSameSize(expected, actual, testName, threshold, failedFolderName);
+			ImageHelper.write(actualReloaded, getFailedFilePath(testName));
+			MapTestUtil.createImageDiffIfImagesAreSameSize(expected, actualReloaded, testName, threshold, failedFolderName);
 			fail("Test '" + testName + "' failed: " + comparisonErrorMessage);
 		}
 	}
