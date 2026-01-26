@@ -22,8 +22,7 @@ import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 /**
- * Singleton that manages a dedicated GPU thread with a job queue for serialized GPU operations. All GPU operations (context creation,
- * surface creation, drawing) must happen on this thread.
+ * Singleton that manages a dedicated GPU thread with a job queue for serialized GPU operations. All GPU operations (context creation, surface creation, drawing) must happen on this thread.
  *
  * Thread safety: Operations can be submitted from any thread, but execution happens only on the GPU thread.
  */
@@ -43,13 +42,14 @@ public class GPUExecutor
 		/** Traditional pixel-by-pixel CPU operations (no shaders) */
 		CPU
 	}
-	private static final RenderingMode defaultRenderingMode = RenderingMode.GPU;
+
+	private static final RenderingMode defaultRenderingMode = RenderingMode.CPU;
 
 	private static volatile GPUExecutor instance;
 	private static final Object instanceLock = new Object();
 
 	// Rendering mode override - set before getInstance() is called, or call reset() to reinitialize
-	private static volatile RenderingMode renderingModeOverride = null;
+	private static volatile RenderingMode renderingModeOverride = defaultRenderingMode;
 
 	private final Thread gpuThread;
 	private final BlockingQueue<GPUJob<?>> jobQueue;
@@ -117,11 +117,11 @@ public class GPUExecutor
 	}
 
 	/**
-	 * Sets the rendering mode. Can be called at any time to change rendering behavior.
-	 * If not set, defaults to GPU mode with auto-detection (uses GPU if available, otherwise falls back to CPU shaders).
+	 * Sets the rendering mode. Can be called at any time to change rendering behavior. If not set, defaults to GPU mode with auto-detection (uses GPU if available, otherwise falls back to CPU
+	 * shaders).
 	 *
 	 * @param mode
-	 *            The rendering mode to use
+	 * 		The rendering mode to use
 	 */
 	public static void setRenderingMode(RenderingMode mode)
 	{
@@ -129,10 +129,14 @@ public class GPUExecutor
 	}
 
 	/**
-	 * Returns the current rendering mode override, or null if using auto-detection.
+	 * Returns the current rendering mode override, or null if using auto-detection. Replace the default value if renderingModeOverride == RenderingMode.DEFAULT.
 	 */
 	public static RenderingMode getRenderingMode()
 	{
+		if (renderingModeOverride == RenderingMode.DEFAULT || renderingModeOverride == null)
+		{
+			return defaultRenderingMode;
+		}
 		return renderingModeOverride;
 	}
 
@@ -141,7 +145,7 @@ public class GPUExecutor
 	 */
 	public boolean isGPUAvailable()
 	{
-		if (renderingModeOverride != null && renderingModeOverride != RenderingMode.DEFAULT && renderingModeOverride != RenderingMode.GPU)
+		if (getRenderingMode() == RenderingMode.CPU || getRenderingMode() == RenderingMode.CPU_SHADERS)
 		{
 			return false;
 		}
@@ -149,12 +153,12 @@ public class GPUExecutor
 	}
 
 	/**
-	 * Returns true if shader operations are enabled. When true, Skia shaders will be used for image operations (on GPU if available,
-	 * otherwise on CPU). When false, traditional pixel-by-pixel CPU operations are used instead.
+	 * Returns true if shader operations are enabled. When true, Skia shaders will be used for image operations (on GPU if available, otherwise on CPU). When false, traditional pixel-by-pixel CPU
+	 * operations are used instead.
 	 */
 	public boolean isShadersEnabled()
 	{
-		if (renderingModeOverride == RenderingMode.CPU)
+		if (getRenderingMode() == RenderingMode.CPU)
 		{
 			return false;
 		}
@@ -162,8 +166,7 @@ public class GPUExecutor
 	}
 
 	/**
-	 * Returns the maximum texture dimension supported by the GPU. This is queried from GL_MAX_TEXTURE_SIZE during initialization. Returns a
-	 * default fallback value if GPU is not available.
+	 * Returns the maximum texture dimension supported by the GPU. This is queried from GL_MAX_TEXTURE_SIZE during initialization. Returns a default fallback value if GPU is not available.
 	 */
 	public int getMaxTextureSize()
 	{
@@ -194,10 +197,10 @@ public class GPUExecutor
 	 * Submits a callable to execute on the GPU thread and blocks until completion.
 	 *
 	 * @param callable
-	 *            The operation to execute
+	 * 		The operation to execute
 	 * @return The result of the callable
 	 * @throws RuntimeException
-	 *             if the callable throws an exception
+	 * 		if the callable throws an exception
 	 */
 	public <T> T submit(Callable<T> callable)
 	{
@@ -237,7 +240,7 @@ public class GPUExecutor
 	 * Submits a callable to execute on the GPU thread asynchronously.
 	 *
 	 * @param callable
-	 *            The operation to execute
+	 * 		The operation to execute
 	 * @return A CompletableFuture that completes with the result
 	 */
 	public <T> CompletableFuture<T> submitAsync(Callable<T> callable)
@@ -273,7 +276,7 @@ public class GPUExecutor
 	 * Submits a runnable to execute on the GPU thread asynchronously.
 	 *
 	 * @param runnable
-	 *            The operation to execute
+	 * 		The operation to execute
 	 * @return A CompletableFuture that completes when done
 	 */
 	public CompletableFuture<Void> submitAsync(Runnable runnable)
@@ -289,9 +292,9 @@ public class GPUExecutor
 	 * Creates a GPU surface on the GPU thread.
 	 *
 	 * @param width
-	 *            Surface width
+	 * 		Surface width
 	 * @param height
-	 *            Surface height
+	 * 		Surface height
 	 * @return GPU Surface, or null if GPU is not available
 	 */
 	public Surface createGPUSurface(int width, int height)
@@ -449,12 +452,8 @@ public class GPUExecutor
 	{
 		try
 		{
-			// Determine rendering mode from override or default to GPU with auto-detection
-			RenderingMode mode = renderingModeOverride;
-			if (mode == null || mode == RenderingMode.DEFAULT)
-			{
-				mode = defaultRenderingMode;
-			}
+			// Determine rendering mode to use.
+			RenderingMode mode = getRenderingMode();
 
 			// Set shader availability based on mode
 			shadersEnabled = (mode != RenderingMode.CPU);
