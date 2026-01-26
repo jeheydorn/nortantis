@@ -1357,12 +1357,11 @@ public class SkiaShaderOps
 	}
 
 	/**
-	 * Checks if GPU acceleration is being used for shader operations. Returns false if SkiaImage.isForceCPU() is true, even if GPU is
-	 * available.
+	 * Checks if GPU acceleration is being used for shader operations.
 	 */
 	public static boolean isGPUAccelerated()
 	{
-		return !SkiaImage.isForceCPU() && GPUExecutor.getInstance().isGPUAvailable();
+		return GPUExecutor.getInstance().isGPUAvailable();
 	}
 
 	/**

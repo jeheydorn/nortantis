@@ -82,23 +82,23 @@ Use try-with-resources for Image whenever feasible.
 
 ## Runtime Configuration
 
-GPU and shader behavior is controlled via JVM system properties:
+GPU and shader behavior is controlled via `GPUExecutor.setRenderingMode()`:
 
-| Flag | Default | Description |
-|------|---------|-------------|
-| `-Dnortantis.gpu.enable` | `false` | Enable GPU acceleration via OpenGL |
-| `-Dnortantis.shaders.enable` | same as gpu.enable | Enable Skia shader operations |
+```java
+GPUExecutor.setRenderingMode(RenderingMode.DEFAULT);     // Auto-detect (try GPU, fall back to CPU shaders)
+GPUExecutor.setRenderingMode(RenderingMode.GPU);         // Force GPU with shaders
+GPUExecutor.setRenderingMode(RenderingMode.CPU_SHADERS); // Force CPU with Skia shaders
+GPUExecutor.setRenderingMode(RenderingMode.CPU);         // Force traditional pixel-by-pixel
+```
 
-**Configuration combinations:**
+| Mode | Description |
+|------|-------------|
+| `DEFAULT` | Auto-detect: try GPU, fall back to CPU shaders if unavailable |
+| `GPU` | GPU acceleration with shaders (fastest, requires GPU hardware) |
+| `CPU_SHADERS` | CPU rendering with Skia shader rasterizer (no GPU required) |
+| `CPU` | Traditional pixel-by-pixel CPU operations (no shaders) |
 
-| gpu.enable | shaders.enable | Result |
-|------------|----------------|--------|
-| false | false | Traditional CPU pixel-by-pixel operations |
-| false | true | CPU-based Skia shaders (useful for performance testing) |
-| true | true | GPU-accelerated shaders |
-| true | false | **Error** - GPU requires shaders |
-
-The shader flag controls whether `ImageHelper` uses `SkiaShaderOps` for image operations. When shaders are enabled but GPU is disabled, shaders run on CPU via Skia's optimized rasterizer.
+The rendering mode can be changed at any time via `setRenderingMode()`. Tests should reset to `DEFAULT` when done.
 
 ## Testing
 
@@ -183,4 +183,4 @@ Image (final rendered map)
 
 When fixing bugs or performance issues caused by differences between CPU versus GPU rendering, try to fix the issue to make GPU rendering work correctly and efficiently rather than suggest switching to or falling back to CPU rendering. If that's not feasable, ask me before switching anything to CPU rendering.
 
-If you discover anything to be incorrect in these instructions, please let me know.
+If you discover anything to be incorrect in these instructions, please update them in Claude.md.

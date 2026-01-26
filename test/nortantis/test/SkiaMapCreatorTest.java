@@ -6,8 +6,9 @@ import nortantis.editor.MapParts;
 import nortantis.geom.Dimension;
 import nortantis.geom.IntRectangle;
 import nortantis.platform.*;
+import nortantis.platform.skia.GPUExecutor;
+import nortantis.platform.skia.GPUExecutor.RenderingMode;
 import nortantis.platform.skia.SkiaFactory;
-import nortantis.platform.skia.SkiaImage;
 import nortantis.util.Assets;
 import nortantis.util.FileHelper;
 import nortantis.util.ImageHelper;
@@ -48,12 +49,12 @@ public class SkiaMapCreatorTest
 		try
 		{
 			// Force CPU because GPU-generated images have a tiny amount of random variation for some reason.
-			SkiaImage.setForceCPU(true);
+			GPUExecutor.setRenderingMode(RenderingMode.CPU);
 			generateAndCompare("simpleSmallWorld.nort", (settings) -> settings.resolution = 0.25);
 		}
 		finally
 		{
-			SkiaImage.setForceCPU(false);
+			GPUExecutor.setRenderingMode(RenderingMode.DEFAULT);
 		}
 	}
 
@@ -61,7 +62,7 @@ public class SkiaMapCreatorTest
 	public void incrementalUpdate_simpleSmallWorld()
 	{
 		// Force CPU rendering to ensure consistent results between full map and incremental updates
-		SkiaImage.setForceCPU(true);
+		GPUExecutor.setRenderingMode(RenderingMode.CPU);
 		try
 		{
 			// Load settings from the .nort file
@@ -129,7 +130,7 @@ public class SkiaMapCreatorTest
 		}
 		finally
 		{
-			SkiaImage.setForceCPU(false);
+			GPUExecutor.setRenderingMode(RenderingMode.DEFAULT);
 		}
 	}
 
@@ -154,7 +155,7 @@ public class SkiaMapCreatorTest
 	{
 		try
 		{
-			SkiaImage.setForceCPU(true);
+			GPUExecutor.setRenderingMode(RenderingMode.CPU);
 
 			final String settingsFileName = "simpleSmallWorld.nort";
 			MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", settingsFileName).toString());
@@ -171,7 +172,7 @@ public class SkiaMapCreatorTest
 		}
 		finally
 		{
-			SkiaImage.setForceCPU(false);
+			GPUExecutor.setRenderingMode(RenderingMode.DEFAULT);
 		}
 
 	}
@@ -181,7 +182,7 @@ public class SkiaMapCreatorTest
 	{
 		try
 		{
-			SkiaImage.setForceCPU(true);
+			GPUExecutor.setRenderingMode(RenderingMode.CPU);
 
 			final String settingsFileName = "simpleSmallWorld.nort";
 			MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", settingsFileName).toString());
@@ -204,7 +205,7 @@ public class SkiaMapCreatorTest
 		}
 		finally
 		{
-			SkiaImage.setForceCPU(false);
+			GPUExecutor.setRenderingMode(RenderingMode.DEFAULT);
 		}
 
 	}
@@ -229,7 +230,7 @@ public class SkiaMapCreatorTest
 
 		// Generate with CPU
 		Image cpuResult;
-		SkiaImage.setForceCPU(true);
+		GPUExecutor.setRenderingMode(RenderingMode.CPU);
 		try
 		{
 			Image texture = ImageCache.getInstance(Assets.installedArtPack, null).getImageFromFile(texturePath);
@@ -238,7 +239,7 @@ public class SkiaMapCreatorTest
 		}
 		finally
 		{
-			SkiaImage.setForceCPU(false);
+			GPUExecutor.setRenderingMode(RenderingMode.DEFAULT);
 		}
 
 		// Generate with GPU
@@ -369,12 +370,12 @@ public class SkiaMapCreatorTest
 		try
 		{
 			// Force CPU because GPU-generated images have a tiny amount of random variation for some reason.
-			SkiaImage.setForceCPU(true);
+			GPUExecutor.setRenderingMode(RenderingMode.CPU);
 			MapSettings settings = MapTestUtil.generateRandomAndCompare(5, expectedMapsFolderName, failedMapsFolderName, threshold);
 		}
 		finally
 		{
-			SkiaImage.setForceCPU(false);
+			GPUExecutor.setRenderingMode(RenderingMode.DEFAULT);
 		}
 
 	}

@@ -29,8 +29,27 @@ import static org.lwjgl.system.MemoryUtil.NULL;
  */
 public class GPUExecutor
 {
+	/**
+	 * Rendering modes for controlling GPU and shader usage.
+	 */
+	public enum RenderingMode
+	{
+		/** Behavior is determined by the default in defaultRenderingMode */
+		DEFAULT,
+		/** GPU acceleration with shaders (fastest, requires GPU hardware) */
+		GPU,
+		/** CPU rendering with Skia shader rasterizer (no GPU required) */
+		CPU_SHADERS,
+		/** Traditional pixel-by-pixel CPU operations (no shaders) */
+		CPU
+	}
+	private static final RenderingMode defaultRenderingMode = RenderingMode.GPU;
+
 	private static volatile GPUExecutor instance;
 	private static final Object instanceLock = new Object();
+
+	// Rendering mode override - set before getInstance() is called, or call reset() to reinitialize
+	private static volatile RenderingMode renderingModeOverride = null;
 
 	private final Thread gpuThread;
 	private final BlockingQueue<GPUJob<?>> jobQueue;
@@ -98,10 +117,34 @@ public class GPUExecutor
 	}
 
 	/**
-	 * Returns true if GPU acceleration is available.
+	 * Sets the rendering mode. Can be called at any time to change rendering behavior.
+	 * If not set, defaults to GPU mode with auto-detection (uses GPU if available, otherwise falls back to CPU shaders).
+	 *
+	 * @param mode
+	 *            The rendering mode to use
+	 */
+	public static void setRenderingMode(RenderingMode mode)
+	{
+		renderingModeOverride = mode;
+	}
+
+	/**
+	 * Returns the current rendering mode override, or null if using auto-detection.
+	 */
+	public static RenderingMode getRenderingMode()
+	{
+		return renderingModeOverride;
+	}
+
+	/**
+	 * Returns true if GPU acceleration is available and enabled.
 	 */
 	public boolean isGPUAvailable()
 	{
+		if (renderingModeOverride != null && renderingModeOverride != RenderingMode.DEFAULT && renderingModeOverride != RenderingMode.GPU)
+		{
+			return false;
+		}
 		return gpuAvailable && directContext != null && running.get();
 	}
 
@@ -111,6 +154,10 @@ public class GPUExecutor
 	 */
 	public boolean isShadersEnabled()
 	{
+		if (renderingModeOverride == RenderingMode.CPU)
+		{
+			return false;
+		}
 		return shadersEnabled;
 	}
 
@@ -402,38 +449,36 @@ public class GPUExecutor
 	{
 		try
 		{
-			// Check if GPU is enabled via system property
-			boolean enableGpu = Boolean.parseBoolean(System.getProperty("nortantis.gpu.enable", "false"));
-			// Check if shaders are enabled via system property (defaults to same as GPU setting for convenience)
-			shadersEnabled = Boolean.parseBoolean(System.getProperty("nortantis.shaders.enable", String.valueOf(enableGpu)));
-
-			// Validate: GPU requires shaders to be enabled
-			if (enableGpu && !shadersEnabled)
+			// Determine rendering mode from override or default to GPU with auto-detection
+			RenderingMode mode = renderingModeOverride;
+			if (mode == null || mode == RenderingMode.DEFAULT)
 			{
-				throw new IllegalStateException(
-						"Invalid configuration: -Dnortantis.gpu.enable=true requires -Dnortantis.shaders.enable=true. "
-								+ "GPU acceleration depends on shader operations.");
+				mode = defaultRenderingMode;
 			}
 
-			if (!enableGpu)
+			// Set shader availability based on mode
+			shadersEnabled = (mode != RenderingMode.CPU);
+
+			if (mode == RenderingMode.CPU)
 			{
 				gpuAvailable = false;
-				if (shadersEnabled)
-				{
-					Logger.println("GPUExecutor: GPU disabled, shaders enabled. Shaders will run on CPU.");
-				}
-				else
-				{
-					Logger.println("GPUExecutor: GPU and shaders disabled, using CPU rendering.");
-				}
+				Logger.println("GPUExecutor: CPU mode - GPU and shaders disabled, using pixel-by-pixel rendering.");
 				return;
 			}
 
+			if (mode == RenderingMode.CPU_SHADERS)
+			{
+				gpuAvailable = false;
+				Logger.println("GPUExecutor: CPU_SHADERS mode - shaders will run on CPU.");
+				return;
+			}
+
+			// GPU mode - try to initialize GPU
 			// Initialize GLFW and create OpenGL context
 			if (!initializeGLFW())
 			{
 				gpuAvailable = false;
-				Logger.println("GPUExecutor: Failed to initialize GLFW, using CPU rendering");
+				Logger.println("GPUExecutor: Failed to initialize GLFW, falling back to CPU shaders");
 				return;
 			}
 
@@ -448,7 +493,7 @@ public class GPUExecutor
 			else
 			{
 				gpuAvailable = false;
-				Logger.println("GPUExecutor: GPU acceleration not available, using CPU rendering");
+				Logger.println("GPUExecutor: GPU acceleration not available, falling back to CPU shaders");
 				cleanupGLFW();
 			}
 		}

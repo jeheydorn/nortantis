@@ -87,8 +87,6 @@ application {
     mainClass = 'nortantis.swing.MainWindow'
     applicationDefaultJvmArgs = [
         '--enable-native-access=ALL-UNNAMED',
-        //'--add-opens', 'java.base/java.nio=ALL-UNNAMED',
-        //'-Dnortantis.gpu.enable=true',
     ]
 }
 
@@ -123,8 +121,6 @@ jar {
 test {
     jvmArgs = ['-ea', '--enable-native-access=ALL-UNNAMED', '-Dfile.encoding=UTF-8', '-Dsun.java2d.d3d=false', '-Xmx3g',
                '--add-opens', 'java.base/java.nio=ALL-UNNAMED',
-               '-Dnortantis.gpu.enable=true',
-               '-Dnortantis.shaders.enable=true',
     ]
     useJUnitPlatform()
     // Fork a new JVM for each test class to ensure complete isolation.
@@ -160,8 +156,6 @@ tasks.register('benchmark', Test) {
         '-Dsun.java2d.d3d=false',
         '-Xmx4g',
         '--add-opens', 'java.base/java.nio=ALL-UNNAMED',
-        //'-Dnortantis.gpu.enable=true',
-        '-Dnortantis.shaders.enable=true',
         // JFR profiling - records to build/profile.jfr
         '-XX:StartFlightRecording=filename=build/profile.jfr,settings=profile',
     ]
