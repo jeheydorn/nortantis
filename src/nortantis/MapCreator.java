@@ -133,31 +133,55 @@ public class MapCreator implements WarningLogger
 		final int paddingToAccountForIntegerTruncation = 4;
 		IntRectangle bounds = null;
 
+		// Compute the union of all change bounds for the hint
 		HashSet<Rectangle> noDuplicates = new HashSet<>(changeBounds);
+		Rectangle allChangeBounds = null;
 		for (Rectangle change : noDuplicates)
 		{
-			if (change == null)
+			if (change != null)
 			{
-				continue;
-			}
-			Rectangle padded = change.pad(paddingToAccountForIntegerTruncation, paddingToAccountForIntegerTruncation);
-			mapParts.iconDrawer.addOrUpdateIconsFromEdits(settings.edits, Collections.emptySet(), this);
-			IntRectangle updateBounds = incrementalUpdateBounds(settings, mapParts, fullSizeMap, padded, effectsPadding, textDrawer, onlyTextChanged);
-			if (bounds == null)
-			{
-				bounds = updateBounds;
-			}
-			else if (updateBounds != null)
-			{
-				bounds = bounds.add(updateBounds);
+				allChangeBounds = Rectangle.add(allChangeBounds, change);
 			}
 		}
-
-		if (bounds == null)
+		if (allChangeBounds == null)
 		{
 			return null;
 		}
-		return bounds.pad(paddingToAccountForIntegerTruncation, paddingToAccountForIntegerTruncation);
+
+		// Set hint for findClosestCenter using the combined change bounds with padding
+		Rectangle hintBounds = allChangeBounds.pad(effectsPadding + paddingToAccountForIntegerTruncation, effectsPadding + paddingToAccountForIntegerTruncation);
+		mapParts.graph.setFindClosestCenterHint(hintBounds.toIntRectangle());
+		try
+		{
+			for (Rectangle change : noDuplicates)
+			{
+				if (change == null)
+				{
+					continue;
+				}
+				Rectangle padded = change.pad(paddingToAccountForIntegerTruncation, paddingToAccountForIntegerTruncation);
+				mapParts.iconDrawer.addOrUpdateIconsFromEdits(settings.edits, Collections.emptySet(), this);
+				IntRectangle updateBounds = incrementalUpdateBounds(settings, mapParts, fullSizeMap, padded, effectsPadding, textDrawer, onlyTextChanged);
+				if (bounds == null)
+				{
+					bounds = updateBounds;
+				}
+				else if (updateBounds != null)
+				{
+					bounds = bounds.add(updateBounds);
+				}
+			}
+
+			if (bounds == null)
+			{
+				return null;
+			}
+			return bounds.pad(paddingToAccountForIntegerTruncation, paddingToAccountForIntegerTruncation);
+		}
+		finally
+		{
+			mapParts.graph.clearFindClosestCenterHint();
+		}
 	}
 
 	/**
@@ -240,64 +264,73 @@ public class MapCreator implements WarningLogger
 		TextDrawer textDrawer = new TextDrawer(settings);
 		textDrawer.setMapTexts(settings.edits.text);
 
-		if (!centersChangedThatAffectedLandOrRegionBoundaries.isEmpty())
+		// Set hint for findClosestCenter using the replace bounds padding with effectsPadding to make it the size of drawBounds in incrementalUpdateBounds.
+		mapParts.graph.setFindClosestCenterHint(replaceBounds.pad(effectsPadding, effectsPadding).toIntRectangle());
+		try
 		{
-			// Only submit low priority changes if this change is itself not one.
-			if (!isLowPriorityChange)
+			if (!centersChangedThatAffectedLandOrRegionBoundaries.isEmpty())
 			{
-				if (settings.drawRegionBoundaries && settings.regionBoundaryStyle.type != StrokeType.Solid)
+				// Only submit low priority changes if this change is itself not one.
+				if (!isLowPriorityChange)
 				{
-					// When using non-solid region boundaries, expand the replace bounds to include region borders inside the replace bounds
-					// so
-					// that the dashed pattern is correct.
-					List<List<Edge>> regionBoundaries = mapParts.graph.findEdgesByDrawType(centersChanged, EdgeDrawType.Region, false);
+					if (settings.drawRegionBoundaries && settings.regionBoundaryStyle.type != StrokeType.Solid)
+					{
+						// When using non-solid region boundaries, expand the replace bounds to include region borders inside the replace bounds
+						// so
+						// that the dashed pattern is correct.
+						List<List<Edge>> regionBoundaries = mapParts.graph.findEdgesByDrawType(centersChanged, EdgeDrawType.Region, false);
 
-					Set<Center> regionBoundaryCenters = new HashSet<>();
-					for (List<Edge> boundary : regionBoundaries)
-					{
-						regionBoundaryCenters.addAll(mapParts.graph.getCentersFromEdges(boundary));
+						Set<Center> regionBoundaryCenters = new HashSet<>();
+						for (List<Edge> boundary : regionBoundaries)
+						{
+							regionBoundaryCenters.addAll(mapParts.graph.getCentersFromEdges(boundary));
+						}
+						if (!regionBoundaryCenters.isEmpty())
+						{
+							addLowPriorityCentersToRedraw(regionBoundaryCenters);
+						}
 					}
-					if (!regionBoundaryCenters.isEmpty())
+
+					// Concentric waves with random breaks need the entire coastline redrawn because a change somewhere in the
+					// coastline can affect the random numbers used to draw the rest of it.
+					if (settings.hasConcentricWaves() && settings.brokenLinesForConcentricWaves)
 					{
-						addLowPriorityCentersToRedraw(regionBoundaryCenters);
+						List<List<Edge>> coastlines;
+						coastlines = mapParts.graph.findShoreEdges(centersChanged, settings.drawOceanEffectsInLakes, false);
+
+						Set<Center> coastlineCenters = new HashSet<>();
+						for (List<Edge> boundary : coastlines)
+						{
+							coastlineCenters.addAll(mapParts.graph.getCentersFromEdges(boundary));
+						}
+						if (!coastlineCenters.isEmpty())
+						{
+							addLowPriorityCentersToRedraw(coastlineCenters);
+						}
 					}
 				}
 
-				// Concentric waves with random breaks need the entire coastline redrawn because a change somewhere in the
-				// coastline can affect the random numbers used to draw the rest of it.
-				if (settings.hasConcentricWaves() && settings.brokenLinesForConcentricWaves)
+				// Expand the replace bounds to include text that touches the centers that changed because that text could switch from one line
+				// to two or vice versa.
+				if (settings.drawText)
 				{
-					List<List<Edge>> coastlines;
-					coastlines = mapParts.graph.findShoreEdges(centersChanged, settings.drawOceanEffectsInLakes, false);
-
-					Set<Center> coastlineCenters = new HashSet<>();
-					for (List<Edge> boundary : coastlines)
-					{
-						coastlineCenters.addAll(mapParts.graph.getCentersFromEdges(boundary));
-					}
-					if (!coastlineCenters.isEmpty())
-					{
-						addLowPriorityCentersToRedraw(coastlineCenters);
-					}
+					Rectangle textChangeBounds = textDrawer.expandBoundsToIncludeText(settings.edits.text, mapParts.graph, centersChangedBounds, settings);
+					replaceBounds = replaceBounds.add(textChangeBounds);
 				}
 			}
 
-			// Expand the replace bounds to include text that touches the centers that changed because that text could switch from one line
-			// to two or vice versa.
-			if (settings.drawText)
-			{
-				Rectangle textChangeBounds = textDrawer.expandBoundsToIncludeText(settings.edits.text, mapParts.graph, centersChangedBounds, settings);
-				replaceBounds = replaceBounds.add(textChangeBounds);
-			}
+			mapParts.iconDrawer = new IconDrawer(mapParts.graph, new Random(), settings);
+			Rectangle iconChangeBounds = mapParts.iconDrawer.addOrUpdateIconsFromEdits(settings.edits, centersChanged, this);
+			replaceBounds = Rectangle.add(replaceBounds, iconChangeBounds);
+
+			replaceBounds = replaceBounds.floor();
+
+			return incrementalUpdateBounds(settings, mapParts, fullSizedMap, replaceBounds, effectsPadding, textDrawer, false);
 		}
-
-		mapParts.iconDrawer = new IconDrawer(mapParts.graph, new Random(), settings);
-		Rectangle iconChangeBounds = mapParts.iconDrawer.addOrUpdateIconsFromEdits(settings.edits, centersChanged, this);
-		replaceBounds = Rectangle.add(replaceBounds, iconChangeBounds);
-
-		replaceBounds = replaceBounds.floor();
-
-		return incrementalUpdateBounds(settings, mapParts, fullSizedMap, replaceBounds, effectsPadding, textDrawer, false);
+		finally
+		{
+			mapParts.graph.clearFindClosestCenterHint();
+		}
 	}
 
 	private void addLowPriorityCentersToRedraw(Collection<Center> toAdd)
@@ -640,7 +673,6 @@ public class MapCreator implements WarningLogger
 		Dimension mapBounds = Background.calcMapBoundsAndAdjustResolutionIfNeeded(settings, maxDimensions);
 		double sizeMultiplier = calcSizeMultipilerFromResolutionScale(settings.resolution);
 
-		Image map;
 		// Kick of a job to create the graph while the background is being created.
 		Future<WorldGraph> graphTask = ThreadHelper.getInstance().submit(() ->
 		{
@@ -682,6 +714,22 @@ public class MapCreator implements WarningLogger
 		WorldGraph graph;
 		graph = ThreadHelper.getInstance().getResult(graphTask);
 
+		// Set hint for findClosestCenter to use cached pixel reader for the entire map
+		graph.setFindClosestCenterHint(new IntRectangle(0, 0, (int) mapBounds.width, (int) mapBounds.height));
+		try
+		{
+			return createMapWithGraph(settings, mapParts, isLowMemoryMode, sizeMultiplier, background, graph, startTime);
+		}
+		finally
+		{
+			graph.clearFindClosestCenterHint();
+		}
+	}
+
+	private Image createMapWithGraph(final MapSettings settings, MapParts mapParts, boolean isLowMemoryMode,
+			double sizeMultiplier, Background background, WorldGraph graph, double startTime) throws CancelledException
+	{
+		Image map;
 		checkForCancel();
 
 		// Kick off frayed border creation. This is started after the graph is created because of previous bugs I've found

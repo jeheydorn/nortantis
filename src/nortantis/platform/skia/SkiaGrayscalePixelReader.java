@@ -110,6 +110,12 @@ public class SkiaGrayscalePixelReader implements PixelReader
 	}
 
 	@Override
+	public IntRectangle getBounds()
+	{
+		return bounds;
+	}
+
+	@Override
 	public void close()
 	{
 	}

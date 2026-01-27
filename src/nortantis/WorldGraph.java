@@ -543,13 +543,28 @@ public class WorldGraph extends VoronoiGraph
 		if (point.x < getWidth() && point.y < getHeight() && point.x >= 0 && point.y >= 0)
 		{
 			buildCenterLookupTableIfNeeded();
+			int x = (int) point.x;
+			int y = (int) point.y;
 			Color color;
-			// TODO See if creating the pixel reader below is fast enough. If not, which is likely, I will likely need to cache the
-			// centerLookupTable's data in a short[][].
-			try (PixelReader pixels = centerLookupTable.createPixelReader(new IntRectangle((int) point.x, (int) point.y, 1, 1)))
+
+			synchronized (centerLookupLock)
 			{
-				color = Color.create(pixels.getRGB((int) point.x, (int) point.y));
+				// Use cached reader if available and point is within bounds
+				IntRectangle cachedBounds = cachedCenterLookupReader != null ? cachedCenterLookupReader.getBounds() : null;
+				if (cachedBounds != null && cachedBounds.contains(x, y))
+				{
+					color = Color.create(cachedCenterLookupReader.getRGB(x, y));
+				}
+				else
+				{
+					// Fall back to single-pixel read
+					try (PixelReader pixels = centerLookupTable.createPixelReader(new IntRectangle(x, y, 1, 1)))
+					{
+						color = Color.create(pixels.getRGB(x, y));
+					}
+				}
 			}
+
 			int index = color.getRed() | (color.getGreen() << 8) | (color.getBlue() << 16);
 			return centers.get(index);
 		}
@@ -563,6 +578,52 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	private Image centerLookupTable;
+
+	// Cached pixel reader for findClosestCenter optimization
+	private final Object centerLookupLock = new Object();
+	private PixelReader cachedCenterLookupReader;
+
+	/**
+	 * Sets a hint for findClosestCenter to cache a PixelReader for the given bounds. This dramatically improves performance when
+	 * findClosestCenter is called many times within a known region (e.g., during icon or text drawing).
+	 *
+	 * Only one hint can be active at a time. Call clearFindClosestCenterHint() when done with the batch operation.
+	 *
+	 * Thread-safe: can be called from any thread, but typically only the background processing thread should set hints. The UI thread can
+	 * still call findClosestCenter and will either use the cached reader (if point is in bounds) or fall back to single-pixel reads.
+	 */
+	public void setFindClosestCenterHint(IntRectangle bounds)
+	{
+		synchronized (centerLookupLock)
+		{
+			clearFindClosestCenterHintInternal();
+			if (bounds != null)
+			{
+				buildCenterLookupTableIfNeeded();
+				cachedCenterLookupReader = centerLookupTable.createPixelReader(bounds);
+			}
+		}
+	}
+
+	/**
+	 * Clears the hint set by setFindClosestCenterHint and releases the cached PixelReader.
+	 */
+	public void clearFindClosestCenterHint()
+	{
+		synchronized (centerLookupLock)
+		{
+			clearFindClosestCenterHintInternal();
+		}
+	}
+
+	private void clearFindClosestCenterHintInternal()
+	{
+		if (cachedCenterLookupReader != null)
+		{
+			cachedCenterLookupReader.close();
+			cachedCenterLookupReader = null;
+		}
+	}
 
 	public void buildCenterLookupTableIfNeeded()
 	{
@@ -591,6 +652,9 @@ public class WorldGraph extends VoronoiGraph
 	 */
 	public void updateCenterLookupTable(Collection<Center> centersToUpdate)
 	{
+		// Clear any cached reader since the lookup table is changing
+		clearFindClosestCenterHint();
+
 		if (centerLookupTable == null)
 		{
 			buildCenterLookupTableIfNeeded();
