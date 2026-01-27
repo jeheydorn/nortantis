@@ -14,6 +14,14 @@ public class Rectangle
 		this.height = height;
 	}
 
+	public Rectangle(Point location, double width, double height)
+	{
+		this.x = location.x;
+		this.y = location.y;
+		this.width = width;
+		this.height = height;
+	}
+
 	public boolean liesOnAxes(Point p, double closeEnoughDistance)
 	{
 		return GenUtils.closeEnough(p.x, x, closeEnoughDistance) || GenUtils.closeEnough(p.y, y, closeEnoughDistance) || GenUtils.closeEnough(p.x, getRight(), closeEnoughDistance)

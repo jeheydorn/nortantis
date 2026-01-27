@@ -936,22 +936,6 @@ public class SkiaImage extends Image
 		return result;
 	}
 
-	public BufferedImage toBufferedImage()
-	{
-		awaitPendingPainters();
-		ensureCPUData(); // Ensure CPU bitmap is current
-		BufferedImage bi = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-		int[] pixels = ((DataBufferInt) bi.getRaster().getDataBuffer()).getData();
-
-		byte[] bytes = resourceState.bitmap.readPixels(resourceState.bitmap.getImageInfo(), width * 4, 0, 0);
-
-		ByteBuffer buffer = ByteBuffer.wrap(bytes).order(ByteOrder.nativeOrder());
-		IntBuffer intBuffer = buffer.asIntBuffer();
-		intBuffer.get(pixels);
-
-		return bi;
-	}
-
 	/**
 	 * Reads all pixels from the Skia bitmap into an int[] array. Format: ARGB, one int per pixel, row-major order. For grayscale images,
 	 * converts single-byte gray values to ARGB format.
@@ -988,6 +972,7 @@ public class SkiaImage extends Image
 		return pixels;
 	}
 
+	// TODO remove this method if I don't use it.
 	/**
 	 * Reads a rectangular region of pixels into an int[] array. For grayscale images, converts single-byte gray values to ARGB format.
 	 */

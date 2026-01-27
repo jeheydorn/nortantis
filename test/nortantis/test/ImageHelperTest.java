@@ -1333,9 +1333,9 @@ public class ImageHelperTest
 		// This is needed because GPU shader operations may have data that isn't fully
 		// synchronized when reading pixels directly. The PNG round-trip forces full sync.
 		// TODO remove this when this issue is fixed or if I remove GPU support.
-//		String tempFilePath = Paths.get("unit test files", tempFolderName, testName + ".png").toString();
-//		ImageHelper.write(actual, tempFilePath);
-//		actual = Assets.readImage(tempFilePath);
+		String tempFilePath = Paths.get("unit test files", tempFolderName, testName + ".png").toString();
+		ImageHelper.write(actual, tempFilePath);
+		actual = Assets.readImage(tempFilePath);
 
 		String expectedFilePath = getExpectedFilePath(testName);
 		Image expected;
