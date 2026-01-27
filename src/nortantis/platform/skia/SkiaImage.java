@@ -903,9 +903,8 @@ public class SkiaImage extends Image
 		Surface surface = Surface.Companion.makeRasterN32Premul(w, h);
 		Canvas canvas = surface.getCanvas();
 
-		org.jetbrains.skia.Image srcImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(resourceState.bitmap);
+		org.jetbrains.skia.Image srcImage = getSkiaImage();
 		canvas.drawImageRect(srcImage, Rect.makeXYWH(bounds.x, bounds.y, bounds.width, bounds.height), Rect.makeXYWH(0, 0, w, h));
-		srcImage.close();
 
 		// Read directly from surface
 		Bitmap subBitmap = new Bitmap();

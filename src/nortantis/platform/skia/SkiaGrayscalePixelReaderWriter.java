@@ -100,14 +100,15 @@ public class SkiaGrayscalePixelReaderWriter extends SkiaGrayscalePixelReader imp
 			else
 			{
 				image.writeGrayscalePixelsToRegion(cachedPixelArray, bounds);
-				if (image.isGpuEnabled())
-				{
-					image.updateGPURegion(bounds.x, bounds.y, bounds.width, bounds.height);
-				}
-				else
-				{
+				// TODO remove and remove updateGPURegion if it turns out to be unnecessary.
+//				if (image.isGpuEnabled())
+//				{
+//					image.updateGPURegion(bounds.x, bounds.y, bounds.width, bounds.height);
+//				}
+//				else
+//				{
 					image.markCPUDirty();
-				}
+//				}
 			}
 		}
 	}

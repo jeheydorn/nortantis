@@ -80,27 +80,12 @@ public class SkiaFactory extends PlatformFactory
 	{
 		try
 		{
-			String extension = FilenameUtils.getExtension(filePath).toLowerCase();
 			SkiaImage skiaImage = (SkiaImage) image;
-
-			if (extension.equals("png"))
-			{
-				// Use Java ImageIO for PNG - Skia's PNG encoder is very slow
-				writeImageWithImageIO(skiaImage, filePath, "png");
-			}
-			else if (extension.equals("jpg") || extension.equals("jpeg"))
-			{
-				// Use Skia for JPEG
-				org.jetbrains.skia.Image skImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(skiaImage.getBitmap());
-				byte[] bytes = skImage.encodeToData(EncodedImageFormat.JPEG, 95).getBytes();
-				Files.write(Paths.get(filePath), bytes);
-				skImage.close();
-			}
-			else
-			{
-				// Default: use ImageIO for other formats
-				writeImageWithImageIO(skiaImage, filePath, extension);
-			}
+			org.jetbrains.skia.Image skImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(skiaImage.getBitmap());
+			// TODO Consider making compression / quality an options, although they will need to be handled differently for JPEG vs PNG.
+			byte[] bytes = skImage.encodeToData(EncodedImageFormat.PNG, 25).getBytes();
+			Files.write(Paths.get(filePath), bytes);
+			skImage.close();
 		}
 		catch (Exception e)
 		{
