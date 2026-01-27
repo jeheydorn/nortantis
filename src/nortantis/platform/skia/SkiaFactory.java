@@ -2,13 +2,18 @@ package nortantis.platform.skia;
 
 import nortantis.platform.*;
 import nortantis.util.Logger;
+import org.apache.commons.io.FilenameUtils;
 import org.jetbrains.skia.Bitmap;
 import org.jetbrains.skia.EncodedImageFormat;
 import org.jetbrains.skia.FontMgr;
 import org.jetbrains.skia.ImageInfo;
 import org.jetbrains.skia.Typeface;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferInt;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -75,16 +80,65 @@ public class SkiaFactory extends PlatformFactory
 	{
 		try
 		{
+			String extension = FilenameUtils.getExtension(filePath).toLowerCase();
 			SkiaImage skiaImage = (SkiaImage) image;
-			org.jetbrains.skia.Image skImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(skiaImage.getBitmap());
-			byte[] bytes = skImage.encodeToData(EncodedImageFormat.PNG, 100).getBytes();
-			Files.write(Paths.get(filePath), bytes);
-			skImage.close();
+
+			if (extension.equals("png"))
+			{
+				// Use Java ImageIO for PNG - Skia's PNG encoder is very slow
+				writeImageWithImageIO(skiaImage, filePath, "png");
+			}
+			else if (extension.equals("jpg") || extension.equals("jpeg"))
+			{
+				// Use Skia for JPEG
+				org.jetbrains.skia.Image skImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(skiaImage.getBitmap());
+				byte[] bytes = skImage.encodeToData(EncodedImageFormat.JPEG, 95).getBytes();
+				Files.write(Paths.get(filePath), bytes);
+				skImage.close();
+			}
+			else
+			{
+				// Default: use ImageIO for other formats
+				writeImageWithImageIO(skiaImage, filePath, extension);
+			}
 		}
 		catch (Exception e)
 		{
 			throw new RuntimeException(e);
 		}
+	}
+
+	/**
+	 * Writes a SkiaImage using Java's ImageIO. This is faster than Skia's encoder for PNG.
+	 */
+	private void writeImageWithImageIO(SkiaImage skiaImage, String filePath, String format) throws Exception
+	{
+		int width = skiaImage.getWidth();
+		int height = skiaImage.getHeight();
+
+		// Determine BufferedImage type based on image type
+		int bufferedImageType = skiaImage.getType() == ImageType.ARGB ? BufferedImage.TYPE_INT_ARGB : BufferedImage.TYPE_INT_RGB;
+		BufferedImage bufferedImage = new BufferedImage(width, height, bufferedImageType);
+
+		// Read pixels from Skia bitmap as byte array (BGRA order)
+		byte[] pixelBytes = skiaImage.readPixelsToByteArray(null);
+
+		// Convert to int array for BufferedImage
+		int[] pixels = ((DataBufferInt) bufferedImage.getRaster().getDataBuffer()).getData();
+
+		// Skia uses BGRA byte order, BufferedImage uses ARGB int order
+		// We need to swizzle the bytes
+		for (int i = 0; i < width * height; i++)
+		{
+			int byteIdx = i * 4;
+			int b = pixelBytes[byteIdx] & 0xFF;
+			int g = pixelBytes[byteIdx + 1] & 0xFF;
+			int r = pixelBytes[byteIdx + 2] & 0xFF;
+			int a = pixelBytes[byteIdx + 3] & 0xFF;
+			pixels[i] = (a << 24) | (r << 16) | (g << 8) | b;
+		}
+
+		ImageIO.write(bufferedImage, format, new File(filePath));
 	}
 
 	@Override

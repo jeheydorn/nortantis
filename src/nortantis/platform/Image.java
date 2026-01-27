@@ -17,7 +17,8 @@ public abstract class Image implements AutoCloseable
 	}
 
 	/**
-	 * Releases resources held by this image. For GPU-accelerated implementations, this ensures GPU resources are properly cleaned up on the GPU thread rather than being left for garbage collection.
+	 * Releases resources held by this image. For GPU-accelerated implementations, this ensures GPU resources are properly cleaned up on the
+	 * GPU thread rather than being left for garbage collection.
 	 *
 	 * The default implementation does nothing. Subclasses with GPU resources should override.
 	 */
@@ -109,12 +110,14 @@ public abstract class Image implements AutoCloseable
 	public abstract Image deepCopy();
 
 	/**
-	 * Creates an image with the given bounds in this image, backed by the same data as the original image. This means that modifications to the result will modify the original image.
+	 * Creates an image with the given bounds in this image, backed by the same data as the original image. This means that modifications to
+	 * the result will modify the original image.
 	 */
 	public abstract Image getSubImage(IntRectangle bounds);
 
 	/**
-	 * Creates an image with the given bounds in this image, backed by a copy of the data from the original image. This means that modifications to the result will NOT modify the original image.
+	 * Creates an image with the given bounds in this image, backed by a copy of the data from the original image. This means that
+	 * modifications to the result will NOT modify the original image.
 	 */
 	public Image copySubImage(IntRectangle bounds)
 	{
@@ -126,8 +129,8 @@ public abstract class Image implements AutoCloseable
 	public abstract Image copyAndAddAlphaChanel();
 
 	/**
-	 * Optional hint that prepares the image for pixel access operations. For GPU-accelerated implementations, this ensures CPU bitmap is up-to-date. Default implementation is a no-op - the lazy sync
-	 * will work without explicit calls.
+	 * Optional hint that prepares the image for pixel access operations. For GPU-accelerated implementations, this ensures CPU bitmap is
+	 * up-to-date. Default implementation is a no-op - the lazy sync will work without explicit calls.
 	 *
 	 * Call this before intensive pixel access operations when you want to batch the sync cost.
 	 */
@@ -137,7 +140,8 @@ public abstract class Image implements AutoCloseable
 	}
 
 	/**
-	 * Optional hint that prepares the image for drawing operations. For GPU-accelerated implementations, this ensures the GPU surface is ready. Default implementation is a no-op.
+	 * Optional hint that prepares the image for drawing operations. For GPU-accelerated implementations, this ensures the GPU surface is
+	 * ready. Default implementation is a no-op.
 	 *
 	 * Call this before intensive drawing operations when you want to batch the preparation cost.
 	 */
@@ -147,8 +151,8 @@ public abstract class Image implements AutoCloseable
 	}
 
 	/**
-	 * Creates a pixel reader that is restricted to read from the given bounds of this image. For the Skia implementation, this is much more efficient than creating a pixel reader for the entire
-	 * image.
+	 * Creates a pixel reader that is restricted to read from the given bounds of this image. For the Skia implementation, this is much more
+	 * efficient than creating a pixel reader for the entire image.
 	 */
 	protected abstract PixelReader innerCreateNewPixelReader(IntRectangle bounds);
 
@@ -163,11 +167,13 @@ public abstract class Image implements AutoCloseable
 	}
 
 	/**
-	 * Creates a pixel reader that is restricted to read/write in the given bounds of this image. For the Skia implementation, this is much more efficient than creating a pixel reader for the entire
-	 * image.
+	 * Creates a pixel reader that is restricted to read/write in the given bounds of this image. For the Skia implementation, this is much
+	 * more efficient than creating a pixel reader for the entire image.
 	 *
-	 * @bounds If not null, then is the bounds in the image the reader should be for. If null, then create a reader for the while image. Note that passing in a non-null bounds that restricts reading
-	 * 		to a subset of this image does not change the coordinates you should use when accessing pixels through the reader. Also, if the bounds you give extends behind the image, it will be clipped.
+	 * @bounds If not null, then is the bounds in the image the reader should be for. If null, then create a reader for the while image.
+	 *         Note that passing in a non-null bounds that restricts reading to a subset of this image does not change the coordinates you
+	 *         should use when accessing pixels through the reader. Also, if the bounds you give extends behind the image, it will be
+	 *         clipped.
 	 */
 	public PixelReader createPixelReader(IntRectangle bounds)
 	{
@@ -192,12 +198,13 @@ public abstract class Image implements AutoCloseable
 	}
 
 	/**
-	 * Creates a pixel reader/writier that is restricted to read/write in the given bounds of this image. For the Skia implementation, this is much more efficient than creating a pixel reader for the
-	 * entire image.
+	 * Creates a pixel reader/writier that is restricted to read/write in the given bounds of this image. For the Skia implementation, this
+	 * is much more efficient than creating a pixel reader for the entire image.
 	 *
-	 * @bounds If not null, then is the bounds in the image the reader/writer should be for. If null, then create a reader for the while image. Note that passing in a non-null bounds that restricts
-	 * 		reading/writing to a subset of this image does not change the coordinates you should use when accessing pixels through the reader/writer. Also, if the bounds you give extends behind the
-	 * 		image, it will be clipped.
+	 * @bounds If not null, then is the bounds in the image the reader/writer should be for. If null, then create a reader for the while
+	 *         image. Note that passing in a non-null bounds that restricts reading/writing to a subset of this image does not change the
+	 *         coordinates you should use when accessing pixels through the reader/writer. Also, if the bounds you give extends behind the
+	 *         image, it will be clipped.
 	 */
 	public PixelReaderWriter createPixelReaderWriter(IntRectangle bounds)
 	{
@@ -217,8 +224,9 @@ public abstract class Image implements AutoCloseable
 	}
 
 	/**
-	 * Creates a pixel writer for the whole image. Unlike createPixelReaderWriter(), this does NOT * read existing pixels from the image first, making it more efficient for pure write operations (like
-	 * generating noise or filling with * computed values). As such, this PixelWriter should only be used if the image is new or the caller wishes to discard all existing pixel values.
+	 * Creates a pixel writer for the whole image. Unlike createPixelReaderWriter(), this does NOT * read existing pixels from the image
+	 * first, making it more efficient for pure write operations (like generating noise or filling with * computed values). As such, this
+	 * PixelWriter should only be used if the image is new or the caller wishes to discard all existing pixel values.
 	 *
 	 * @return
 	 */
@@ -228,13 +236,14 @@ public abstract class Image implements AutoCloseable
 	}
 
 	/**
-	 * Creates a pixel writer that is restricted to write in the given bounds of this image. Unlike createPixelReaderWriter(), this does NOT * read existing pixels from the image first, making it more
-	 * efficient for pure write operations (like * generating noise or filling with * computed values). As such, this PixelWriter should only be used if the image is new or the caller wishes to
-	 * discard all existing pixel values in the given bounds.
+	 * Creates a pixel writer that is restricted to write in the given bounds of this image. Unlike createPixelReaderWriter(), this does NOT
+	 * * read existing pixels from the image first, making it more efficient for pure write operations (like * generating noise or filling
+	 * with * computed values). As such, this PixelWriter should only be used if the image is new or the caller wishes to discard all
+	 * existing pixel values in the given bounds.
 	 *
 	 * @param bounds
-	 * 		If not null, restricts writing to these bounds. If null, writes to the whole image. Note that the coordinates you use when accessing pixels through the writer are still absolute image
-	 * 		coordinates, not relative to the bounds.
+	 *            If not null, restricts writing to these bounds. If null, writes to the whole image. Note that the coordinates you use when
+	 *            accessing pixels through the writer are still absolute image coordinates, not relative to the bounds.
 	 */
 	public PixelWriter createPixelWriter(IntRectangle bounds)
 	{
@@ -254,15 +263,15 @@ public abstract class Image implements AutoCloseable
 	}
 
 	/**
-	 * Executes drawing operations on this image with automatic resource management. Creates a painter, sets manual batch mode for optimal performance, executes the operations, and automatically
-	 * awaits and disposes the painter.
+	 * Executes drawing operations on this image with automatic resource management. Creates a painter, sets manual batch mode for optimal
+	 * performance, executes the operations, and automatically awaits and disposes the painter.
 	 *
 	 * This is the preferred way to perform drawing operations when you want all operations batched together and automatically cleaned up.
 	 *
 	 * @param quality
-	 * 		The draw quality setting
+	 *            The draw quality setting
 	 * @param operations
-	 * 		A consumer that receives the painter and performs drawing operations
+	 *            A consumer that receives the painter and performs drawing operations
 	 */
 	public void withPainter(DrawQuality quality, Consumer<Painter> operations)
 	{
@@ -277,7 +286,7 @@ public abstract class Image implements AutoCloseable
 	 * Executes drawing operations on this image with automatic resource management. Uses normal draw quality.
 	 *
 	 * @param operations
-	 * 		A consumer that receives the painter and performs drawing operations
+	 *            A consumer that receives the painter and performs drawing operations
 	 */
 	public void withPainter(Consumer<Painter> operations)
 	{

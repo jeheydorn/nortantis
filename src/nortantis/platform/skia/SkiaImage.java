@@ -41,8 +41,8 @@ public class SkiaImage extends Image
 	private final Set<GPUBatchingPainter> referencingPainters = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
 	/**
-	 * Holds GPU and CPU resources separately from SkiaImage so that the Cleaner can clean them up when SkiaImage becomes unreachable. This class must NOT hold any reference to SkiaImage, otherwise it
-	 * would prevent GC from ever collecting the image.
+	 * Holds GPU and CPU resources separately from SkiaImage so that the Cleaner can clean them up when SkiaImage becomes unreachable. This
+	 * class must NOT hold any reference to SkiaImage, otherwise it would prevent GC from ever collecting the image.
 	 */
 	private static class ResourceState implements Runnable
 	{
@@ -132,10 +132,11 @@ public class SkiaImage extends Image
 	}
 
 	/**
-	 * Releases resources held by this image, ensuring GPU resources are cleaned up on the GPU thread to avoid crashes from finalizers running on the wrong thread. This method is idempotent - calling
-	 * it multiple times is safe.
+	 * Releases resources held by this image, ensuring GPU resources are cleaned up on the GPU thread to avoid crashes from finalizers
+	 * running on the wrong thread. This method is idempotent - calling it multiple times is safe.
 	 *
-	 * If there are pending batched draw operations using this image as a source, cleanup is deferred to the Cleaner (via GC) to avoid blocking/deadlocks.
+	 * If there are pending batched draw operations using this image as a source, cleanup is deferred to the Cleaner (via GC) to avoid
+	 * blocking/deadlocks.
 	 */
 	@Override
 	public void close()
@@ -167,8 +168,8 @@ public class SkiaImage extends Image
 	}
 
 	/**
-	 * Determines if this image should use GPU acceleration based on size and availability. Uses GPU for medium-sized images, but falls back to CPU for very large images that exceed the GPU's maximum
-	 * texture size.
+	 * Determines if this image should use GPU acceleration based on size and availability. Uses GPU for medium-sized images, but falls back
+	 * to CPU for very large images that exceed the GPU's maximum texture size.
 	 */
 	private boolean shouldUseGPU()
 	{
@@ -563,7 +564,8 @@ public class SkiaImage extends Image
 	}
 
 	/**
-	 * Called by GPUBatchingPainter when this image is used as a source in a drawImage call and the operation is added to a batch. The painter will be removed when the batch completes.
+	 * Called by GPUBatchingPainter when this image is used as a source in a drawImage call and the operation is added to a batch. The
+	 * painter will be removed when the batch completes.
 	 */
 	void addReferencingPainter(GPUBatchingPainter painter)
 	{
@@ -571,7 +573,8 @@ public class SkiaImage extends Image
 	}
 
 	/**
-	 * Called by GPUBatchingPainter when a batch containing drawImage operations using this image as a source has completed execution on the GPU thread.
+	 * Called by GPUBatchingPainter when a batch containing drawImage operations using this image as a source has completed execution on the
+	 * GPU thread.
 	 */
 	void removeReferencingPainter(GPUBatchingPainter painter)
 	{
@@ -767,8 +770,8 @@ public class SkiaImage extends Image
 	}
 
 	/**
-	 * Scales the image using high-quality sampling with mipmaps. Uses FilterMipmap with linear filtering and linear mipmap interpolation, which provides better results than bilinear filtering when
-	 * downscaling significantly.
+	 * Scales the image using high-quality sampling with mipmaps. Uses FilterMipmap with linear filtering and linear mipmap interpolation,
+	 * which provides better results than bilinear filtering when downscaling significantly.
 	 */
 	private Image scaleHighQuality(int width, int height)
 	{
@@ -950,7 +953,8 @@ public class SkiaImage extends Image
 	}
 
 	/**
-	 * Reads all pixels from the Skia bitmap into an int[] array. Format: ARGB, one int per pixel, row-major order. For grayscale images, converts single-byte gray values to ARGB format.
+	 * Reads all pixels from the Skia bitmap into an int[] array. Format: ARGB, one int per pixel, row-major order. For grayscale images,
+	 * converts single-byte gray values to ARGB format.
 	 */
 	public int[] readPixelsToIntArray()
 	{
@@ -1021,7 +1025,8 @@ public class SkiaImage extends Image
 	}
 
 	/**
-	 * Reads grayscale pixels directly as a byte array, avoiding int[] conversion overhead. For use with grayscale image formats (Grayscale8Bit, Binary).
+	 * Reads grayscale pixels directly as a byte array, avoiding int[] conversion overhead. For use with grayscale image formats
+	 * (Grayscale8Bit, Binary).
 	 */
 	byte[] readGrayscalePixels(IntRectangle bounds)
 	{
@@ -1126,13 +1131,13 @@ public class SkiaImage extends Image
 	}
 
 	/**
-	 * Replaces this image's pixels by drawing from the source surface. Used for in-place shader operations where the result is written back to the original image. This method stays on GPU when
-	 * possible to avoid expensive GPU-CPU-GPU transfers.
+	 * Replaces this image's pixels by drawing from the source surface. Used for in-place shader operations where the result is written back
+	 * to the original image. This method stays on GPU when possible to avoid expensive GPU-CPU-GPU transfers.
 	 *
 	 * @param source
-	 * 		The surface containing the shader result
+	 *            The surface containing the shader result
 	 * @param isOnGPUThread
-	 * 		True if this is being called from the GPU executor thread
+	 *            True if this is being called from the GPU executor thread
 	 */
 	void replaceFromSurface(Surface source, boolean isOnGPUThread)
 	{

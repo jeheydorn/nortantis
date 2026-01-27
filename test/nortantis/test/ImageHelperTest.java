@@ -440,55 +440,55 @@ public class ImageHelperTest
 		compareWithExpected(result, "maskWithMultipleColorsLargeIds", 0);
 	}
 
-	 @Test
-	 public void testMaskWithMultipleColorsGPU()
-	 {
-	 // Test with images large enough to trigger GPU path (>= 256x256 = 65536 pixels)
-	 final int gpuTestSize = 300;
+	@Test
+	public void testMaskWithMultipleColorsGPU()
+	{
+		// Test with images large enough to trigger GPU path (>= 256x256 = 65536 pixels)
+		final int gpuTestSize = 300;
 
-	 Image image = createGrayscaleTestImageOfSize(gpuTestSize, gpuTestSize);
+		Image image = createGrayscaleTestImageOfSize(gpuTestSize, gpuTestSize);
 
-	 Map<Integer, Color> colors = new HashMap<>();
-	 colors.put(0, Color.red);
-	 colors.put(1, Color.green);
-	 colors.put(2, Color.blue);
-	 colors.put(3, Color.yellow);
+		Map<Integer, Color> colors = new HashMap<>();
+		colors.put(0, Color.red);
+		colors.put(1, Color.green);
+		colors.put(2, Color.blue);
+		colors.put(3, Color.yellow);
 
-	 Image colorIndexes = createColorIndexesImageOfSize(gpuTestSize, gpuTestSize, 0, 1, 2, 3);
-	 Image mask = createGradientMaskOfSize(gpuTestSize, gpuTestSize);
+		Image colorIndexes = createColorIndexesImageOfSize(gpuTestSize, gpuTestSize, 0, 1, 2, 3);
+		Image mask = createGradientMaskOfSize(gpuTestSize, gpuTestSize);
 
-	 Image result = ImageHelper.maskWithMultipleColors(image, colors, colorIndexes, mask, false);
+		Image result = ImageHelper.maskWithMultipleColors(image, colors, colorIndexes, mask, false);
 
-	 assertEquals(gpuTestSize, result.getWidth());
-	 assertEquals(gpuTestSize, result.getHeight());
-	 // Use higher threshold for GPU floating point precision variations across runs
-	 compareWithExpected(result, "maskWithMultipleColorsGPU", 10);
-	 }
+		assertEquals(gpuTestSize, result.getWidth());
+		assertEquals(gpuTestSize, result.getHeight());
+		// Use higher threshold for GPU floating point precision variations across runs
+		compareWithExpected(result, "maskWithMultipleColorsGPU", 10);
+	}
 
-	 @Test
-	 public void testMaskWithMultipleColorsGPUInverted()
-	 {
-	 // Test inverted mask with GPU path
-	 final int gpuTestSize = 300;
+	@Test
+	public void testMaskWithMultipleColorsGPUInverted()
+	{
+		// Test inverted mask with GPU path
+		final int gpuTestSize = 300;
 
-	 Image image = createGrayscaleTestImageOfSize(gpuTestSize, gpuTestSize);
+		Image image = createGrayscaleTestImageOfSize(gpuTestSize, gpuTestSize);
 
-	 Map<Integer, Color> colors = new HashMap<>();
-	 colors.put(0, Color.red);
-	 colors.put(1, Color.green);
-	 colors.put(2, Color.blue);
-	 colors.put(3, Color.yellow);
+		Map<Integer, Color> colors = new HashMap<>();
+		colors.put(0, Color.red);
+		colors.put(1, Color.green);
+		colors.put(2, Color.blue);
+		colors.put(3, Color.yellow);
 
-	 Image colorIndexes = createColorIndexesImageOfSize(gpuTestSize, gpuTestSize, 0, 1, 2, 3);
-	 Image mask = createGradientMaskOfSize(gpuTestSize, gpuTestSize);
+		Image colorIndexes = createColorIndexesImageOfSize(gpuTestSize, gpuTestSize, 0, 1, 2, 3);
+		Image mask = createGradientMaskOfSize(gpuTestSize, gpuTestSize);
 
-	 Image result = ImageHelper.maskWithMultipleColors(image, colors, colorIndexes, mask, true);
+		Image result = ImageHelper.maskWithMultipleColors(image, colors, colorIndexes, mask, true);
 
-	 assertEquals(gpuTestSize, result.getWidth());
-	 assertEquals(gpuTestSize, result.getHeight());
-	 // Use higher threshold for GPU floating point precision variations across runs
-	 compareWithExpected(result, "maskWithMultipleColorsGPUInverted", 10);
-	 }
+		assertEquals(gpuTestSize, result.getWidth());
+		assertEquals(gpuTestSize, result.getHeight());
+		// Use higher threshold for GPU floating point precision variations across runs
+		compareWithExpected(result, "maskWithMultipleColorsGPUInverted", 10);
+	}
 
 	// ==================== Alpha Tests ====================
 
@@ -1316,7 +1316,10 @@ public class ImageHelperTest
 	/**
 	 * Compare actual image with expected, allowing a threshold for pixel differences. Use threshold > 0 for images with partial alpha,
 	 * which may have precision loss during PNG round-trip.
-	 * @threshold Pixels must be different (in terms of Manhattan distance, not including distance of pixels whose alphas are both zero) by more than this threshold to be considered different. This threshold should be small, 10 or less, or else the threshold could cover up real problems.
+	 * 
+	 * @threshold Pixels must be different (in terms of Manhattan distance, not including distance of pixels whose alphas are both zero) by
+	 *            more than this threshold to be considered different. This threshold should be small, 10 or less, or else the threshold
+	 *            could cover up real problems.
 	 */
 	private void compareWithExpected(Image actual, String testName, int threshold)
 	{

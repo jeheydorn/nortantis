@@ -14,6 +14,7 @@ import nortantis.platform.BackgroundTask;
 import nortantis.platform.Image;
 import nortantis.platform.PlatformFactory;
 import nortantis.platform.awt.AwtBridge;
+import nortantis.platform.skia.GPUExecutor;
 import nortantis.platform.skia.SkiaFactory;
 import nortantis.util.*;
 import org.apache.commons.io.FileUtils;
@@ -2091,6 +2092,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	 */
 	public static void main(String[] args)
 	{
+		GPUExecutor.setRenderingMode(GPUExecutor.RenderingMode.CPU_SHADERS);
 		// Tell drawing code to use either AWT (AwtFactory) or Skia (SkiaFactory).
 		PlatformFactory.setInstance(new SkiaFactory());
 

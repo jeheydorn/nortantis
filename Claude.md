@@ -26,9 +26,6 @@ Fantasy map generator and editor that uses tectonic plate simulation to create i
 
 # Run benchmark with JFR profiling
 ./gradlew benchmark
-
-# Format code
-./gradlew spotlessApply
 ```
 
 ## Project Structure

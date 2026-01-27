@@ -1661,8 +1661,8 @@ public class ImageHelper
 		}
 
 		// Use Skia shader implementation when there's no offset and images are SkiaImages
-		if (where.x == 0 && where.y == 0 && image.getWidth() == colorIndexes.getWidth() && image.getHeight() == colorIndexes.getHeight()
-				&& SkiaShaderOps.shouldUseSkiaShaders(image, colorIndexes) && how != ColorifyAlgorithm.none)
+		if (where.x == 0 && where.y == 0 && image.getWidth() == colorIndexes.getWidth() && image.getHeight() == colorIndexes.getHeight() && SkiaShaderOps.shouldUseSkiaShaders(image, colorIndexes)
+				&& how != ColorifyAlgorithm.none)
 		{
 			return SkiaShaderOps.colorifyMulti(image, colorMap, colorIndexes, how);
 		}

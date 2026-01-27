@@ -299,7 +299,8 @@ public class MapTestUtil
 	public static int countFreeIcons(MapSettings settings)
 	{
 		int count = 0;
-		for (@SuppressWarnings("unused") FreeIcon icon : settings.edits.freeIcons)
+		for (@SuppressWarnings("unused")
+		FreeIcon icon : settings.edits.freeIcons)
 		{
 			count++;
 		}
@@ -309,7 +310,8 @@ public class MapTestUtil
 	public static int countMapTexts(MapSettings settings)
 	{
 		int count = 0;
-		for (@SuppressWarnings("unused") MapText text : settings.edits.text)
+		for (@SuppressWarnings("unused")
+		MapText text : settings.edits.text)
 		{
 			count++;
 		}
