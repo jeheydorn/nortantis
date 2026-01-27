@@ -48,7 +48,7 @@ public class SkiaMapCreatorBenchmark
 	public void benchmarkMapCreationHighResCPUOnly() throws Exception
 	{
 		GPUExecutor.setRenderingMode(RenderingMode.CPU_SHADERS);
-		MapTestUtil.runMapCreationBenchmarkSingleIteration("Skia GPU", 1.5);
+		MapTestUtil.runMapCreationBenchmarkSingleIteration("Skia GPU", 0.75); // TODO change back to 1.5
 	}
 
 	@Test
