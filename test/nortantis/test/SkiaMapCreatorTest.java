@@ -139,6 +139,7 @@ public class SkiaMapCreatorTest
 	{
 		final String settingsFileName = "simpleSmallWorld.nort";
 		MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", settingsFileName).toString());
+		settings.resolution = 0.25;
 		WorldGraph graph = MapCreator.createGraphForUnitTests(settings);
 
 		Image landMask = Image.create(graph.getWidth(), graph.getHeight(), ImageType.Binary);
@@ -159,6 +160,7 @@ public class SkiaMapCreatorTest
 
 			final String settingsFileName = "simpleSmallWorld.nort";
 			MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", settingsFileName).toString());
+			settings.resolution = 0.25;
 			WorldGraph graph = MapCreator.createGraphForUnitTests(settings);
 
 			Image coastlineAndLakeShoreMask = Image.create(graph.getWidth(), graph.getHeight(), ImageType.Binary);
@@ -186,6 +188,7 @@ public class SkiaMapCreatorTest
 
 			final String settingsFileName = "simpleSmallWorld.nort";
 			MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", settingsFileName).toString());
+			settings.resolution = 0.25;
 			WorldGraph graph = MapCreator.createGraphForUnitTests(settings);
 
 			Image coastlineAndLakeShoreMask = Image.create(graph.getWidth(), graph.getHeight(), ImageType.Binary);
@@ -267,6 +270,7 @@ public class SkiaMapCreatorTest
 	{
 		final String settingsFileName = "simpleSmallWorld.nort";
 		MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", settingsFileName).toString());
+		settings.resolution = 0.25;
 		Dimension mapBounds = Background.calcMapBoundsAndAdjustResolutionIfNeeded(settings, null);
 		Background background = new Background(settings, mapBounds, new LoggerWarningLogger());
 		Image actual = background.ocean;

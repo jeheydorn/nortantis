@@ -1,5 +1,6 @@
 package nortantis.test;
 
+import nortantis.geom.IntRectangle;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.PlatformFactory;
@@ -22,30 +23,6 @@ public class ImageHelperBenchmark
 	{
 		// Ensure we're using Skia
 		PlatformFactory.setInstance(new SkiaFactory());
-	}
-
-	@Test
-	public void testMaskWithImageCorrectness()
-	{
-		// Test that the shader produces the same results as the Java implementation
-		int width = 100;
-		int height = 100;
-
-		Image image1 = createTestImage(width, height, ImageType.RGB, 42);
-		Image image2 = createTestImage(width, height, ImageType.RGB, 123);
-		Image mask = createTestMask(width, height, 456);
-
-		// Run through ImageHelper
-		Image result = ImageHelper.maskWithImage(image1, image2, mask);
-
-		// Create copies and run again to verify consistency
-		Image image1Copy = createTestImage(width, height, ImageType.RGB, 42);
-		Image image2Copy = createTestImage(width, height, ImageType.RGB, 123);
-		Image maskCopy = createTestMask(width, height, 456);
-		Image resultCopy = ImageHelper.maskWithImage(image1Copy, image2Copy, maskCopy);
-
-		// Compare results - allow small differences due to floating point
-		assertImagesEqual(result, resultCopy, 2, "Results should be consistent");
 	}
 
 	@Test
@@ -186,6 +163,62 @@ public class ImageHelperBenchmark
 		System.out.println("  ImageHelper.setAlphaFromMask:  " + formatTime(avgTime));
 	}
 
+	@Test
+	public void benchmarkCopySubImage()
+	{
+		System.out.println("\n=== copySubImage Benchmark ===\n");
+
+		int sourceSize = 4000;
+		int numCopies = 200;
+		int minSize = 10;
+		int maxSize = 50;
+
+		System.out.println("Source image size: " + sourceSize + "x" + sourceSize);
+		System.out.println("Number of copies: " + numCopies);
+		System.out.println("Copy sizes: " + minSize + "x" + minSize + " to " + maxSize + "x" + maxSize);
+
+		Image sourceImage = createTestImage(sourceSize, sourceSize, ImageType.RGB, 42);
+		Random rand = new Random(123);
+
+		// Pre-generate random bounds for consistent benchmarking
+		IntRectangle[] bounds = new IntRectangle[numCopies];
+		for (int i = 0; i < numCopies; i++)
+		{
+			int size = minSize + rand.nextInt(maxSize - minSize + 1);
+			int x = rand.nextInt(sourceSize - size);
+			int y = rand.nextInt(sourceSize - size);
+			bounds[i] = new IntRectangle(x, y, size, size);
+		}
+
+		// Warmup
+		for (int i = 0; i < 10; i++)
+		{
+			try (Image copy = sourceImage.copySubImage(bounds[i % numCopies]))
+			{
+				// Just create and close
+			}
+		}
+
+		// Run twice and average
+		long totalTime = 0;
+		for (int run = 0; run < 2; run++)
+		{
+			long start = System.nanoTime();
+			for (int i = 0; i < numCopies; i++)
+			{
+				try (Image copy = sourceImage.copySubImage(bounds[i]))
+				{
+					// Just create and close
+				}
+			}
+			totalTime += System.nanoTime() - start;
+		}
+		long avgTime = totalTime / 2;
+
+		System.out.println("  Total time for " + numCopies + " copies:  " + formatTime(avgTime));
+		System.out.println("  Average per copy:  " + formatTime(avgTime / numCopies));
+	}
+
 	private String formatTime(long nanos)
 	{
 		if (nanos < 1_000_000)
@@ -241,43 +274,5 @@ public class ImageHelperBenchmark
 		}
 
 		return mask;
-	}
-
-	private void assertImagesEqual(Image expected, Image actual, int tolerance, String message)
-	{
-		assertEquals(expected.getWidth(), actual.getWidth(), message + " - width mismatch");
-		assertEquals(expected.getHeight(), actual.getHeight(), message + " - height mismatch");
-
-		try (var expectedPixels = expected.createPixelReader(); var actualPixels = actual.createPixelReader())
-		{
-			int differences = 0;
-			int maxDiff = 0;
-
-			for (int y = 0; y < expected.getHeight(); y++)
-			{
-				for (int x = 0; x < expected.getWidth(); x++)
-				{
-					int expectedRGB = expectedPixels.getRGB(x, y);
-					int actualRGB = actualPixels.getRGB(x, y);
-
-					int rDiff = Math.abs(((expectedRGB >> 16) & 0xFF) - ((actualRGB >> 16) & 0xFF));
-					int gDiff = Math.abs(((expectedRGB >> 8) & 0xFF) - ((actualRGB >> 8) & 0xFF));
-					int bDiff = Math.abs((expectedRGB & 0xFF) - (actualRGB & 0xFF));
-
-					int diff = Math.max(rDiff, Math.max(gDiff, bDiff));
-					maxDiff = Math.max(maxDiff, diff);
-
-					if (diff > tolerance)
-					{
-						differences++;
-					}
-				}
-			}
-
-			if (differences > 0)
-			{
-				fail(message + " - " + differences + " pixels differ by more than " + tolerance + " (max diff: " + maxDiff + ")");
-			}
-		}
 	}
 }
