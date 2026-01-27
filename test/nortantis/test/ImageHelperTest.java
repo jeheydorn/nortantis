@@ -630,20 +630,6 @@ public class ImageHelperTest
 		assertSame(grayscale, result, "None algorithm should return original");
 	}
 
-	// Disabling this test for now because it fails, but I don't actually use this functionality. TODO remove this test if I don't need it
-	// @Test
-	// public void testColorifyWithAlpha()
-	// {
-	// Image grayscale = createGrayscaleTestImage();
-	// Color color = Color.create(100, 150, 200, 128);
-	//
-	// Image result = ImageHelper.colorify(grayscale, color, ColorifyAlgorithm.algorithm3);
-	//
-	// assertEquals(ImageType.ARGB, result.getType(), "Result should have alpha channel when color has transparency");
-	// // Use threshold due to potential alpha premultiplication differences in PNG round-trip
-	// compareWithExpected(result, "colorifyWithAlpha", 4);
-	// }
-
 	// ==================== ColorifyMulti Tests ====================
 
 	@Test
@@ -1347,9 +1333,9 @@ public class ImageHelperTest
 		// This is needed because GPU shader operations may have data that isn't fully
 		// synchronized when reading pixels directly. The PNG round-trip forces full sync.
 		// TODO remove this when this issue is fixed or if I remove GPU support.
-		String tempFilePath = Paths.get("unit test files", tempFolderName, testName + ".png").toString();
-		ImageHelper.write(actual, tempFilePath);
-		actual = Assets.readImage(tempFilePath);
+//		String tempFilePath = Paths.get("unit test files", tempFolderName, testName + ".png").toString();
+//		ImageHelper.write(actual, tempFilePath);
+//		actual = Assets.readImage(tempFilePath);
 
 		String expectedFilePath = getExpectedFilePath(testName);
 		Image expected;
