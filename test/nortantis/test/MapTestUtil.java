@@ -242,6 +242,10 @@ public class MapTestUtil
 
 		if (image1.getWidth() == image2.getWidth() && image1.getHeight() == image2.getHeight())
 		{
+			int maxDifferencesToShow = 10;
+			StringBuilder differences = new StringBuilder();
+			int differenceCount = 0;
+
 			try (PixelReader image1Pixels = image1.createPixelReader(); PixelReader image2Pixels = image2.createPixelReader())
 			{
 				for (int x = 0; x < image1.getWidth(); x++)
@@ -252,23 +256,41 @@ public class MapTestUtil
 						Color color2 = Color.create(image2Pixels.getRGB(x, y));
 						int diff = color1.manhattanDistanceTo(color2);
 
-						if (diff > 0)
+						boolean isDifferent = (threshold == 0 && diff > 0) || (threshold > 0 && diff > threshold);
+						if (isDifferent)
 						{
-							if (threshold == 0)
+							differenceCount++;
+							if (differenceCount <= maxDifferencesToShow)
 							{
-								return "Images differ at pixel (" + x + ", " + y + "). Color from image1: " + color1 + ". Color from image2: " + color2;
-							}
-							else
-							{
-								if (diff > threshold)
+								if (threshold == 0)
 								{
-									return "Images differ at pixel (" + x + ", " + y + ") by " + diff;
+									differences.append("  Pixel (" + x + ", " + y + "): image1=" + color1 + ", image2=" + color2 + "\n");
+								}
+								else
+								{
+									differences.append("  Pixel (" + x + ", " + y + "): diff=" + diff + ", image1=" + color1 + ", image2=" + color2 + "\n");
 								}
 							}
-
 						}
 					}
 				}
+			}
+
+			if (differenceCount > 0)
+			{
+				StringBuilder result = new StringBuilder();
+				result.append("Images differ at " + differenceCount + " pixel(s)");
+				if (threshold > 0)
+				{
+					result.append(" (threshold=" + threshold + ")");
+				}
+				result.append(":\n");
+				result.append(differences);
+				if (differenceCount > maxDifferencesToShow)
+				{
+					result.append("  ... and " + (differenceCount - maxDifferencesToShow) + " more differences\n");
+				}
+				return result.toString();
 			}
 		}
 		else

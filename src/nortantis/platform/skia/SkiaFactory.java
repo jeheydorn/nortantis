@@ -93,39 +93,6 @@ public class SkiaFactory extends PlatformFactory
 		}
 	}
 
-	/**
-	 * Writes a SkiaImage using Java's ImageIO. This is faster than Skia's encoder for PNG.
-	 */
-	private void writeImageWithImageIO(SkiaImage skiaImage, String filePath, String format) throws Exception
-	{
-		int width = skiaImage.getWidth();
-		int height = skiaImage.getHeight();
-
-		// Determine BufferedImage type based on image type
-		int bufferedImageType = skiaImage.getType() == ImageType.ARGB ? BufferedImage.TYPE_INT_ARGB : BufferedImage.TYPE_INT_RGB;
-		BufferedImage bufferedImage = new BufferedImage(width, height, bufferedImageType);
-
-		// Read pixels from Skia bitmap as byte array (BGRA order)
-		byte[] pixelBytes = skiaImage.readPixelsToByteArray(null);
-
-		// Convert to int array for BufferedImage
-		int[] pixels = ((DataBufferInt) bufferedImage.getRaster().getDataBuffer()).getData();
-
-		// Skia uses BGRA byte order, BufferedImage uses ARGB int order
-		// We need to swizzle the bytes
-		for (int i = 0; i < width * height; i++)
-		{
-			int byteIdx = i * 4;
-			int b = pixelBytes[byteIdx] & 0xFF;
-			int g = pixelBytes[byteIdx + 1] & 0xFF;
-			int r = pixelBytes[byteIdx + 2] & 0xFF;
-			int a = pixelBytes[byteIdx + 3] & 0xFF;
-			pixels[i] = (a << 24) | (r << 16) | (g << 8) | b;
-		}
-
-		ImageIO.write(bufferedImage, format, new File(filePath));
-	}
-
 	@Override
 	public boolean isFontInstalled(String fontFamily)
 	{

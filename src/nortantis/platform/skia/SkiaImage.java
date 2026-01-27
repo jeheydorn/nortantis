@@ -897,21 +897,22 @@ public class SkiaImage extends Image
 			}
 		}
 
-		// CPU path: Use Surface-based rendering
+		// CPU path: Direct pixel copy (avoids slow makeFromBitmap)
 		awaitPendingPainters();
 		ensureCPUData(); // Ensure CPU bitmap is current
-		Surface surface = Surface.Companion.makeRasterN32Premul(w, h);
-		Canvas canvas = surface.getCanvas();
 
-		org.jetbrains.skia.Image srcImage = getSkiaImage();
-		canvas.drawImageRect(srcImage, Rect.makeXYWH(bounds.x, bounds.y, bounds.width, bounds.height), Rect.makeXYWH(0, 0, w, h));
+		ImageInfo srcInfo = resourceState.bitmap.getImageInfo();
+		ImageInfo destInfo = new ImageInfo(w, h, srcInfo.getColorType(), srcInfo.getColorAlphaType(), null);
+		int bytesPerPixel = getBytesPerPixel();
+		int rowBytes = w * bytesPerPixel;
 
-		// Read directly from surface
+		// Read pixels directly from the source bitmap region
+		byte[] pixels = resourceState.bitmap.readPixels(destInfo, rowBytes, bounds.x, bounds.y);
+
+		// Create destination bitmap and install the pixels
 		Bitmap subBitmap = new Bitmap();
-		ImageInfo subImageInfo = new ImageInfo(w, h, resourceState.bitmap.getImageInfo().getColorType(), resourceState.bitmap.getImageInfo().getColorAlphaType(), null);
-		subBitmap.allocPixels(subImageInfo);
-		surface.readPixels(subBitmap, 0, 0);
-		surface.close();
+		subBitmap.allocPixels(destInfo);
+		subBitmap.installPixels(destInfo, pixels, rowBytes);
 
 		return new SkiaImage(subBitmap, addAlphaChanel ? ImageType.ARGB : getType());
 	}
