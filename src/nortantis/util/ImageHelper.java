@@ -1,34 +1,32 @@
 package nortantis.util;
 
-import java.awt.Desktop;
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-
+import nortantis.ComplexArray;
+import nortantis.MapSettings;
+import nortantis.TextDrawer;
+import nortantis.WorldGraph;
+import nortantis.geom.*;
+import nortantis.geom.Dimension;
+import nortantis.geom.Point;
+import nortantis.geom.Rectangle;
 import nortantis.platform.*;
+import nortantis.platform.AlphaComposite;
+import nortantis.platform.Color;
+import nortantis.platform.Font;
+import nortantis.platform.Image;
+import nortantis.platform.awt.AwtBridge;
 import nortantis.platform.skia.SkiaImage;
 import nortantis.platform.skia.SkiaShaderOps;
 import org.apache.commons.math3.analysis.function.Sinc;
 import org.apache.commons.math3.distribution.NormalDistribution;
 import org.imgscalr.Scalr.Method;
 import org.jtransforms.fft.FloatFFT_2D;
-
-import nortantis.ComplexArray;
-import nortantis.MapSettings;
-import nortantis.TextDrawer;
-import nortantis.WorldGraph;
-import nortantis.geom.Dimension;
-import nortantis.geom.IntDimension;
-import nortantis.geom.IntPoint;
-import nortantis.geom.IntRectangle;
-import nortantis.geom.Point;
-import nortantis.geom.Rectangle;
-import nortantis.geom.RotatedRectangle;
 import pl.edu.icm.jlargearrays.ConcurrencyUtils;
+
+import java.awt.*;
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
+import java.util.List;
 
 public class ImageHelper
 {
@@ -1042,19 +1040,12 @@ public class ImageHelper
 	 */
 	public static Image copySnippet(Image source, int xLoc, int yLoc, int width, int height)
 	{
-		Image result = Image.create(width, height, source.getType());
-		try (Painter pResult = result.createPainter())
-		{
-			pResult.translate(-xLoc, -yLoc);
-			pResult.drawImage(source, 0, 0);
-		} // Ensure GPU batch is flushed and completed
-
-		return result;
+		return source.copySubImage(new IntRectangle(xLoc, yLoc, width, height));
 	}
 
 	public static Image copySnippet(Image source, IntRectangle boundsInSourceToCopyFrom)
 	{
-		return copySnippet(source, boundsInSourceToCopyFrom.x, boundsInSourceToCopyFrom.y, boundsInSourceToCopyFrom.width, boundsInSourceToCopyFrom.height);
+		return source.copySubImage(boundsInSourceToCopyFrom);
 	}
 
 	/**

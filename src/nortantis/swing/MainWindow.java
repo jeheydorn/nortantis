@@ -590,7 +590,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			protected Image getCurrentMapForIncrementalUpdate()
 			{
-				return AwtBridge.fromBufferedImage(mapEditingPanel.mapFromMapCreator);
+				return AwtBridge.wrapBufferedImage(mapEditingPanel.mapFromMapCreator);
 			}
 
 			@Override
@@ -2092,7 +2092,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	 */
 	public static void main(String[] args)
 	{
-		GPUExecutor.setRenderingMode(GPUExecutor.RenderingMode.CPU_SHADERS);
+		GPUExecutor.setRenderingMode(GPUExecutor.RenderingMode.GPU);
 		// Tell drawing code to use either AWT (AwtFactory) or Skia (SkiaFactory).
 		PlatformFactory.setInstance(new SkiaFactory());
 

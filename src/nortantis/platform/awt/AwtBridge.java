@@ -59,6 +59,24 @@ public class AwtBridge
 		return genericImageTypeToBufferedImage(image);
 	}
 
+	/**
+	 * Converts any platform Image to an AwtImage.
+	 */
+	public static AwtImage toAwtImage(Image image)
+	{
+		if (image == null)
+		{
+			return null;
+		}
+
+		if (image instanceof AwtImage)
+		{
+			return (AwtImage) image;
+		}
+
+		return new AwtImage(toBufferedImage(image));
+	}
+
 	private static BufferedImage genericImageTypeToBufferedImage(Image image)
 	{
 		// Fallback for unknown image types: pixel-by-pixel conversion

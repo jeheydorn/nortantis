@@ -32,7 +32,7 @@ class AwtPainter extends Painter
 	{
 		if (!(image instanceof AwtImage))
 		{
-			throw new IllegalArgumentException("AwtPainter.drawImage requires AwtImage, got " + image.getClass().getName());
+			image = AwtBridge.toAwtImage(image);
 		}
 		g.drawImage(((AwtImage) image).image, x, y, null);
 	}
