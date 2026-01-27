@@ -4,8 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
 public class HelperTest
@@ -72,5 +74,40 @@ public class HelperTest
 		float[] actual = new float[input.length * input[0].length];
 		Helper.copyArray2DTo1D(actual, input);
 		assertArrayEquals(expected, actual, 0f);
+	}
+
+	@Test
+	public void testMaxItemWithMultipleElements()
+	{
+		List<Integer> input = Arrays.asList(3, 1, 4, 1, 5, 9, 2, 6);
+		assertEquals(Integer.valueOf(9), Helper.maxItem(input));
+	}
+
+	@Test
+	public void testMaxItemWithSingleElement()
+	{
+		List<Integer> input = Arrays.asList(42);
+		assertEquals(Integer.valueOf(42), Helper.maxItem(input));
+	}
+
+	@Test
+	public void testMaxItemWithEmptyList()
+	{
+		List<Integer> input = Collections.emptyList();
+		assertNull(Helper.maxItem(input));
+	}
+
+	@Test
+	public void testMaxItemWithStrings()
+	{
+		List<String> input = Arrays.asList("apple", "zebra", "banana");
+		assertEquals("zebra", Helper.maxItem(input));
+	}
+
+	@Test
+	public void testMaxItemWithNegativeNumbers()
+	{
+		List<Integer> input = Arrays.asList(-5, -1, -10, -3);
+		assertEquals(Integer.valueOf(-1), Helper.maxItem(input));
 	}
 }

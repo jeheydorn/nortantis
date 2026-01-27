@@ -720,6 +720,26 @@ public class ImageHelperTest
 		compareWithExpected(result, "colorifyMultiGPU", 2);
 	}
 
+	@Test
+	public void testColorifyMultiLargeRegionIds()
+	{
+		// Test with region IDs that require full RGB encoding (tests dynamic palette sizing)
+		Image grayscale = createGrayscaleTestImage();
+
+		Map<Integer, Color> colorMap = new HashMap<>();
+		// Use larger region IDs to test RGB encoding and palette dimensions (max is 32000)
+		colorMap.put(256, Color.red); // Requires green channel
+		colorMap.put(1000, Color.green); // Requires green+blue channels
+		colorMap.put(10000, Color.blue); // Larger ID
+		colorMap.put(32000, Color.cyan); // Near max region ID
+
+		// Create colorIndexes with these larger IDs
+		Image colorIndexes = createColorIndexesImageWithIds(256, 1000, 10000, 32000);
+
+		Image result = ImageHelper.colorifyMulti(grayscale, colorMap, colorIndexes, ColorifyAlgorithm.algorithm3, null);
+		compareWithExpected(result, "colorifyMultiLargeRegionIds", 2);
+	}
+
 	// ==================== Grayscale Modification Tests ====================
 
 	@Test
@@ -1329,7 +1349,7 @@ public class ImageHelperTest
 		// TODO remove this when this issue is fixed or if I remove GPU support.
 		String tempFilePath = Paths.get("unit test files", tempFolderName, testName + ".png").toString();
 		ImageHelper.write(actual, tempFilePath);
-		Image actualReloaded = Assets.readImage(tempFilePath);
+		actual = Assets.readImage(tempFilePath);
 
 		String expectedFilePath = getExpectedFilePath(testName);
 		Image expected;
@@ -1340,16 +1360,16 @@ public class ImageHelperTest
 		}
 		else
 		{
-			ImageHelper.write(actualReloaded, expectedFilePath);
+			ImageHelper.write(actual, expectedFilePath);
 			return;
 		}
 
-		String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(expected, actualReloaded, threshold);
+		String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(expected, actual, threshold);
 		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
 		{
 			FileHelper.createFolder(Paths.get("unit test files", failedFolderName).toString());
-			ImageHelper.write(actualReloaded, getFailedFilePath(testName));
-			MapTestUtil.createImageDiffIfImagesAreSameSize(expected, actualReloaded, testName, threshold, failedFolderName);
+			ImageHelper.write(actual, getFailedFilePath(testName));
+			MapTestUtil.createImageDiffIfImagesAreSameSize(expected, actual, testName, threshold, failedFolderName);
 			fail("Test '" + testName + "' failed: " + comparisonErrorMessage);
 		}
 	}

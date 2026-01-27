@@ -145,13 +145,27 @@ public class Helper
 		return maxEntry.getValue();
 	}
 
-	public static <T> T maxItem(List<T> list, Comparator<T> comparator)
+	public static <T> T maxItem(Collection<T> list, Comparator<T> comparator)
 	{
 		T maxItem = null;
 
 		for (T item : list)
 		{
 			if (maxItem == null || comparator.compare(item, maxItem) > 0)
+			{
+				maxItem = item;
+			}
+		}
+		return maxItem;
+	}
+
+	public static <T extends Comparable<? super T>> T maxItem(Collection<T> list)
+	{
+		T maxItem = null;
+
+		for (T item : list)
+		{
+			if (maxItem == null || maxItem.compareTo(item) < 0)
 			{
 				maxItem = item;
 			}

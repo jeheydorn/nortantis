@@ -6,6 +6,7 @@ import nortantis.platform.Color;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.PixelWriter;
+import nortantis.util.Helper;
 import nortantis.util.ImageHelper.ColorifyAlgorithm;
 import org.jetbrains.skia.*;
 
@@ -729,22 +730,23 @@ public class SkiaShaderOps
 
 	// ==================== maskWithMultipleColors ====================
 
-	// Palette dimensions for region color lookup (256 * 128 = 32768 slots, covering max region ID of 32000)
-	// Used by colorifyMulti methods
-	private static final int PALETTE_WIDTH = 256;
-	private static final int PALETTE_HEIGHT = 128;
+	// Maximum palette dimensions for region color lookup (256 * 128 = 32768 slots, covering max region ID of 32000)
+	// Actual palette size is calculated dynamically based on the highest region ID
+	private static final int MAX_PALETTE_WIDTH = 256;
+	private static final int MAX_PALETTE_HEIGHT = 128;
 
 	// SkSL shader for blending an image with multiple colors based on region IDs
 	// The colorIndexes image encodes region IDs as RGB (r << 16 | g << 8 | b)
-	// The palette is a 2D texture where color for region ID r is at (r % 256, r / 256)
+	// The palette is a 2D texture where color for region ID r is at (r % paletteWidth, r / paletteWidth)
 	// Note: shader.eval() expects pixel coordinates, not normalized coordinates
 	// Note: Skia shaders work in premultiplied color space - image.eval() returns premul values
 	private static final String MASK_WITH_MULTIPLE_COLORS_SKSL = """
 			uniform shader image;        // Input image (RGB or grayscale)
 			uniform shader colorIndexes; // Region IDs encoded as RGB
 			uniform shader mask;         // Grayscale blend mask
-			uniform shader palette;      // 2D color palette (256x128)
+			uniform shader palette;      // 2D color palette (dynamic size)
 			uniform half invertMask;
+			uniform float paletteWidth;  // Width of palette texture for coordinate calculation
 
 			half4 main(float2 coord) {
 			    half4 imgColor = image.eval(coord);
@@ -757,8 +759,8 @@ public class SkiaShaderOps
 			                   + floor(indexColor.b * 255.0 + 0.5);
 
 			    // Calculate 2D palette coordinates in pixel space
-			    float py = floor(regionId / 256.0);
-			    float px = regionId - py * 256.0;
+			    float py = floor(regionId / paletteWidth);
+			    float px = regionId - py * paletteWidth;
 			    float2 paletteCoord = float2(px + 0.5, py + 0.5);
 			    half4 regionColor = palette.eval(paletteCoord);
 
@@ -826,8 +828,13 @@ public class SkiaShaderOps
 		int height = image.getHeight();
 		ImageType resultType = image.getType();
 
+		// Calculate optimal palette dimensions based on region IDs
+		int[] paletteDims = calculatePaletteDimensions(colors);
+		int paletteWidth = paletteDims[0];
+		int paletteHeight = paletteDims[1];
+
 		// Create palette texture using Image wrapper (same pattern as colorifyMulti)
-		Image palette = createPaletteTexture(colors);
+		Image palette = createPaletteTexture(colors, paletteWidth, paletteHeight);
 		SkiaImage skPalette = (SkiaImage) palette;
 
 		try
@@ -835,11 +842,11 @@ public class SkiaShaderOps
 			// Check if we should use GPU (also check size limits to avoid crashes with large images)
 			if (isGPUAccelerated() && canUseGPUForSize(width, height))
 			{
-				return GPUExecutor.getInstance().submit(() -> maskWithMultipleColorsImpl(skImage, skColorIndexes, skMask, skPalette, width, height, invertMask, resultType, true));
+				return GPUExecutor.getInstance().submit(() -> maskWithMultipleColorsImpl(skImage, skColorIndexes, skMask, skPalette, width, height, invertMask, paletteWidth, resultType, true));
 			}
 			else
 			{
-				return maskWithMultipleColorsImpl(skImage, skColorIndexes, skMask, skPalette, width, height, invertMask, resultType, false);
+				return maskWithMultipleColorsImpl(skImage, skColorIndexes, skMask, skPalette, width, height, invertMask, paletteWidth, resultType, false);
 			}
 		}
 		finally
@@ -848,8 +855,8 @@ public class SkiaShaderOps
 		}
 	}
 
-	private static Image maskWithMultipleColorsImpl(SkiaImage skImage, SkiaImage skColorIndexes, SkiaImage skMask, SkiaImage skPalette, int width, int height, boolean invertMask, ImageType resultType,
-			boolean useGPU)
+	private static Image maskWithMultipleColorsImpl(SkiaImage skImage, SkiaImage skColorIndexes, SkiaImage skMask, SkiaImage skPalette, int width, int height, boolean invertMask, int paletteWidth,
+			ImageType resultType, boolean useGPU)
 	{
 		org.jetbrains.skia.Image skiImage = skImage.getSkiaImage();
 		org.jetbrains.skia.Image skiColorIndexes = skColorIndexes.getSkiaImage();
@@ -870,6 +877,7 @@ public class SkiaShaderOps
 		builder.child("mask", maskShader);
 		builder.child("palette", paletteShader);
 		builder.uniform("invertMask", invertMask ? 1f : 0f);
+		builder.uniform("paletteWidth", (float) paletteWidth);
 		Shader resultShader = builder.makeShader(identity);
 
 		Surface surface = useGPU ? createGPUSurfaceOnGPUThread(width, height) : createCPUSurface(width, height);
@@ -894,36 +902,76 @@ public class SkiaShaderOps
 		return new SkiaImage(resultBitmap, resultType);
 	}
 
+	// Minimum palette width to avoid GPU texture issues with very small textures
+	private static final int MIN_PALETTE_WIDTH = 16;
+
 	/**
-	 * Creates a 2D palette texture from the colors map using the Image wrapper. Region ID r is stored at pixel position (r % 256, r / 256).
-	 * Used by colorifyMulti and maskWithMultipleColorsInPlace methods.
+	 * Calculates optimal palette dimensions based on the highest region ID. Returns {width, height}. For small region counts, creates a
+	 * compact palette. For larger counts, uses a 2D layout with width up to MAX_PALETTE_WIDTH.
 	 */
-	private static Image createPaletteTexture(Map<Integer, Color> colors)
+	private static int[] calculatePaletteDimensions(Map<Integer, Color> colors)
 	{
-		Image palette = Image.create(PALETTE_WIDTH, PALETTE_HEIGHT, ImageType.ARGB);
+		if (colors.isEmpty())
+		{
+			return new int[] { MIN_PALETTE_WIDTH, 1 };
+		}
+
+		int highestKey = Helper.maxItem(colors.keySet());
+		int numSlots = highestKey + 1; // Need slots 0 through highestKey
+
+		// For small palettes, use a single row with minimum width
+		if (numSlots <= MAX_PALETTE_WIDTH)
+		{
+			int width = Math.max(numSlots, MIN_PALETTE_WIDTH);
+			return new int[] { width, 1 };
+		}
+
+		// For larger palettes, use 2D layout with MAX_PALETTE_WIDTH columns
+		int width = MAX_PALETTE_WIDTH;
+		int height = (numSlots + width - 1) / width; // Ceiling division
+		height = Math.min(height, MAX_PALETTE_HEIGHT);
+		return new int[] { width, height };
+	}
+
+	/**
+	 * Creates a 2D palette texture from the colors map using the Image wrapper. Region ID r is stored at pixel position (r % width, r /
+	 * width). Used by colorifyMulti and maskWithMultipleColorsInPlace methods.
+	 *
+	 * @param colors
+	 *            Map of region ID to color
+	 * @param width
+	 *            Palette width (used for coordinate calculation)
+	 * @param height
+	 *            Palette height
+	 * @return The created palette image
+	 */
+	private static Image createPaletteTexture(Map<Integer, Color> colors, int width, int height)
+	{
+		Image palette = Image.create(width, height, ImageType.ARGB);
 		try (PixelWriter writer = palette.createPixelWriter())
 		{
 			// Initialize with transparent (alpha=0) to indicate missing regions
-			for (int y = 0; y < PALETTE_HEIGHT; y++)
+			for (int y = 0; y < height; y++)
 			{
-				for (int x = 0; x < PALETTE_WIDTH; x++)
+				for (int x = 0; x < width; x++)
 				{
 					writer.setRGB(x, y, 0, 0, 0, 0);
 				}
 			}
 
 			// Fill in the colors from the map
+			int maxSlots = width * height;
 			for (Map.Entry<Integer, Color> entry : colors.entrySet())
 			{
 				int regionId = entry.getKey();
-				if (regionId < 0 || regionId >= PALETTE_WIDTH * PALETTE_HEIGHT)
+				if (regionId < 0 || regionId >= maxSlots)
 				{
 					continue; // Skip invalid region IDs
 				}
 				Color color = entry.getValue();
-				int x = regionId % PALETTE_WIDTH;
-				int y = regionId / PALETTE_WIDTH;
-				writer.setRGB(x, y, color.getRed(), color.getGreen(), color.getBlue(), 255);
+				int px = regionId % width;
+				int py = regionId / width;
+				writer.setRGB(px, py, color.getRed(), color.getGreen(), color.getBlue(), 255);
 			}
 		}
 		return palette;
@@ -937,7 +985,8 @@ public class SkiaShaderOps
 	private static final String COLORIFY_MULTI_ALG2_SKSL = """
 			uniform shader image;        // Grayscale input image
 			uniform shader colorIndexes; // Region IDs encoded as RGB
-			uniform shader palette;      // HSB palette (256x128), HSB stored in RGB channels
+			uniform shader palette;      // HSB palette (dynamic size), HSB stored in RGB channels
+			uniform float paletteWidth;  // Width of palette texture for coordinate calculation
 
 			// HSB to RGB conversion
 			half3 hsb2rgb(half h, half s, half b) {
@@ -965,8 +1014,8 @@ public class SkiaShaderOps
 			                   + floor(indexColor.b * 255.0 + 0.5);
 
 			    // Calculate 2D palette coordinates in pixel space
-			    float py = floor(regionId / 256.0);
-			    float px = regionId - py * 256.0;
+			    float py = floor(regionId / paletteWidth);
+			    float px = regionId - py * paletteWidth;
 			    float2 paletteCoord = float2(px + 0.5, py + 0.5);
 			    half4 hsbColor = palette.eval(paletteCoord);
 
@@ -994,6 +1043,7 @@ public class SkiaShaderOps
 			uniform shader image;
 			uniform shader colorIndexes;
 			uniform shader palette;
+			uniform float paletteWidth;  // Width of palette texture for coordinate calculation
 
 			half3 hsb2rgb(half h, half s, half b) {
 			    half c = b * s;
@@ -1018,8 +1068,8 @@ public class SkiaShaderOps
 			                   + floor(indexColor.g * 255.0 + 0.5) * 256.0
 			                   + floor(indexColor.b * 255.0 + 0.5);
 
-			    float py = floor(regionId / 256.0);
-			    float px = regionId - py * 256.0;
+			    float py = floor(regionId / paletteWidth);
+			    float px = regionId - py * paletteWidth;
 			    float2 paletteCoord = float2(px + 0.5, py + 0.5);
 			    half4 hsbColor = palette.eval(paletteCoord);
 
@@ -1050,6 +1100,7 @@ public class SkiaShaderOps
 			uniform shader image;
 			uniform shader colorIndexes;
 			uniform shader palette;      // RGB palette for solid colors
+			uniform float paletteWidth;  // Width of palette texture for coordinate calculation
 
 			half4 main(float2 coord) {
 			    half4 indexColor = colorIndexes.eval(coord);
@@ -1057,8 +1108,8 @@ public class SkiaShaderOps
 			                   + floor(indexColor.g * 255.0 + 0.5) * 256.0
 			                   + floor(indexColor.b * 255.0 + 0.5);
 
-			    float py = floor(regionId / 256.0);
-			    float px = regionId - py * 256.0;
+			    float py = floor(regionId / paletteWidth);
+			    float px = regionId - py * paletteWidth;
 			    float2 paletteCoord = float2(px + 0.5, py + 0.5);
 			    half4 regionColor = palette.eval(paletteCoord);
 
@@ -1159,19 +1210,24 @@ public class SkiaShaderOps
 		int width = colorIndexes.getWidth();
 		int height = colorIndexes.getHeight();
 
+		// Calculate optimal palette dimensions based on region IDs
+		int[] paletteDims = calculatePaletteDimensions(colorMap);
+		int paletteWidth = paletteDims[0];
+		int paletteHeight = paletteDims[1];
+
 		// Create palette texture - for algorithm2/3, store HSB; for solidColor, store RGB
-		Image palette = (how == ColorifyAlgorithm.solidColor) ? createPaletteTexture(colorMap) : createHSBPaletteTexture(colorMap);
+		Image palette = (how == ColorifyAlgorithm.solidColor) ? createPaletteTexture(colorMap, paletteWidth, paletteHeight) : createHSBPaletteTexture(colorMap, paletteWidth, paletteHeight);
 		SkiaImage skPalette = (SkiaImage) palette;
 
 		try
 		{
 			if (isGPUAccelerated() && canUseGPUForSize(width, height))
 			{
-				return GPUExecutor.getInstance().submit(() -> colorifyMultiImpl(skImage, skColorIndexes, skPalette, width, height, how, true));
+				return GPUExecutor.getInstance().submit(() -> colorifyMultiImpl(skImage, skColorIndexes, skPalette, width, height, paletteWidth, how, true));
 			}
 			else
 			{
-				return colorifyMultiImpl(skImage, skColorIndexes, skPalette, width, height, how, false);
+				return colorifyMultiImpl(skImage, skColorIndexes, skPalette, width, height, paletteWidth, how, false);
 			}
 		}
 		finally
@@ -1181,43 +1237,52 @@ public class SkiaShaderOps
 	}
 
 	/**
-	 * Creates a 2D palette texture storing HSB values. Region ID r is stored at pixel position (r % 256, r / 256). HSB values are stored in
-	 * RGB channels (H=R, S=G, B=B).
+	 * Creates a 2D palette texture storing HSB values. Region ID r is stored at pixel position (r % width, r / width). HSB values are stored
+	 * in RGB channels (H=R, S=G, B=B).
+	 *
+	 * @param colors
+	 *            Map of region ID to color
+	 * @param width
+	 *            Palette width (used for coordinate calculation)
+	 * @param height
+	 *            Palette height
+	 * @return The created palette image
 	 */
-	private static Image createHSBPaletteTexture(Map<Integer, Color> colors)
+	private static Image createHSBPaletteTexture(Map<Integer, Color> colors, int width, int height)
 	{
-		Image palette = Image.create(PALETTE_WIDTH, PALETTE_HEIGHT, ImageType.ARGB);
+		Image palette = Image.create(width, height, ImageType.ARGB);
 		try (PixelWriter writer = palette.createPixelWriter())
 		{
 			// Initialize with transparent (alpha=0) to indicate missing regions
-			for (int y = 0; y < PALETTE_HEIGHT; y++)
+			for (int y = 0; y < height; y++)
 			{
-				for (int x = 0; x < PALETTE_WIDTH; x++)
+				for (int x = 0; x < width; x++)
 				{
 					writer.setRGB(x, y, 0, 0, 0, 0);
 				}
 			}
 
 			// Fill in the HSB values from the map
+			int maxSlots = width * height;
 			for (Map.Entry<Integer, Color> entry : colors.entrySet())
 			{
 				int regionId = entry.getKey();
-				if (regionId < 0 || regionId >= PALETTE_WIDTH * PALETTE_HEIGHT)
+				if (regionId < 0 || regionId >= maxSlots)
 				{
 					continue;
 				}
 				Color color = entry.getValue();
 				float[] hsb = color.getHSB();
-				int x = regionId % PALETTE_WIDTH;
-				int y = regionId / PALETTE_WIDTH;
+				int px = regionId % width;
+				int py = regionId / width;
 				// Store HSB as RGB (0-255 range)
-				writer.setRGB(x, y, (int) (hsb[0] * 255), (int) (hsb[1] * 255), (int) (hsb[2] * 255), 255);
+				writer.setRGB(px, py, (int) (hsb[0] * 255), (int) (hsb[1] * 255), (int) (hsb[2] * 255), 255);
 			}
 		}
 		return palette;
 	}
 
-	private static Image colorifyMultiImpl(SkiaImage skImage, SkiaImage skColorIndexes, SkiaImage skPalette, int width, int height, ColorifyAlgorithm how, boolean useGPU)
+	private static Image colorifyMultiImpl(SkiaImage skImage, SkiaImage skColorIndexes, SkiaImage skPalette, int width, int height, int paletteWidth, ColorifyAlgorithm how, boolean useGPU)
 	{
 		org.jetbrains.skia.Image skiImage = skImage.getSkiaImage();
 		org.jetbrains.skia.Image skiColorIndexes = skColorIndexes.getSkiaImage();
@@ -1249,6 +1314,7 @@ public class SkiaShaderOps
 		builder.child("image", imageShader);
 		builder.child("colorIndexes", colorIndexesShader);
 		builder.child("palette", paletteShader);
+		builder.uniform("paletteWidth", (float) paletteWidth);
 		Shader resultShader = builder.makeShader(identity);
 
 		Surface surface = useGPU ? createGPUSurfaceOnGPUThread(width, height) : createCPUSurface(width, height);

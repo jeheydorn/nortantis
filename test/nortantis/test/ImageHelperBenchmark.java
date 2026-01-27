@@ -1,14 +1,18 @@
 package nortantis.test;
 
 import nortantis.geom.IntRectangle;
+import nortantis.platform.Color;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.PlatformFactory;
+import nortantis.platform.skia.GPUExecutor;
 import nortantis.platform.skia.SkiaFactory;
 import nortantis.util.ImageHelper;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -274,5 +278,167 @@ public class ImageHelperBenchmark
 		}
 
 		return mask;
+	}
+
+	@Test
+	public void benchmarkColorifyMulti()
+	{
+		System.out.println("\n=== colorifyMulti Benchmark (Dynamic Palette Sizing) ===\n");
+
+		GPUExecutor.setRenderingMode(GPUExecutor.RenderingMode.GPU);
+		int size = 2048;
+		System.out.println("Image size: " + size + "x" + size);
+
+		// Test with different numbers of regions to show dynamic palette optimization
+		int[] regionCounts = { 5, 20, 100, 256, 500 };
+
+		for (int numRegions : regionCounts)
+		{
+			System.out.println("\nTesting with " + numRegions + " regions:");
+
+			// Create grayscale source image
+			Image grayscale = createTestMask(size, size, 42);
+
+			// Create color index image with region IDs
+			Image colorIndexes = createColorIndexImage(size, size, numRegions, 123);
+
+			// Create color map for regions
+			Map<Integer, Color> colorMap = createColorMap(numRegions, 456);
+
+			// Warmup
+			for (int i = 0; i < 3; i++)
+			{
+				try (Image result = ImageHelper.colorifyMulti(grayscale, colorMap, colorIndexes, ImageHelper.ColorifyAlgorithm.algorithm3, null))
+				{
+					// Just create and close
+				}
+			}
+
+			// Run twice and average
+			int iterations = 5;
+			long totalTime = 0;
+			for (int run = 0; run < 2; run++)
+			{
+				long start = System.nanoTime();
+				for (int i = 0; i < iterations; i++)
+				{
+					try (Image result = ImageHelper.colorifyMulti(grayscale, colorMap, colorIndexes, ImageHelper.ColorifyAlgorithm.algorithm3, null))
+					{
+						// Just create and close
+					}
+				}
+				totalTime += (System.nanoTime() - start) / iterations;
+			}
+			long avgTime = totalTime / 2;
+
+			System.out.println("  colorifyMulti (algorithm3):  " + formatTime(avgTime));
+
+			grayscale.close();
+			colorIndexes.close();
+		}
+	}
+
+	@Test
+	public void benchmarkMaskWithMultipleColors()
+	{
+		System.out.println("\n=== maskWithMultipleColors Benchmark (Dynamic Palette Sizing) ===\n");
+
+		int size = 2048;
+		System.out.println("Image size: " + size + "x" + size);
+
+		// Test with different numbers of regions to show dynamic palette optimization
+		int[] regionCounts = { 5, 20, 100, 256, 500 };
+
+		for (int numRegions : regionCounts)
+		{
+			System.out.println("\nTesting with " + numRegions + " regions:");
+
+			// Create source image
+			Image image = createTestImage(size, size, ImageType.RGB, 42);
+
+			// Create color index image with region IDs
+			Image colorIndexes = createColorIndexImage(size, size, numRegions, 123);
+
+			// Create mask
+			Image mask = createTestMask(size, size, 789);
+
+			// Create color map for regions
+			Map<Integer, Color> colorMap = createColorMap(numRegions, 456);
+
+			// Warmup
+			for (int i = 0; i < 3; i++)
+			{
+				try (Image result = ImageHelper.maskWithMultipleColors(image, colorMap, colorIndexes, mask, false))
+				{
+					// Just create and close
+				}
+			}
+
+			// Run twice and average
+			int iterations = 5;
+			long totalTime = 0;
+			for (int run = 0; run < 2; run++)
+			{
+				long start = System.nanoTime();
+				for (int i = 0; i < iterations; i++)
+				{
+					try (Image result = ImageHelper.maskWithMultipleColors(image, colorMap, colorIndexes, mask, false))
+					{
+						// Just create and close
+					}
+				}
+				totalTime += (System.nanoTime() - start) / iterations;
+			}
+			long avgTime = totalTime / 2;
+
+			System.out.println("  maskWithMultipleColors:  " + formatTime(avgTime));
+
+			image.close();
+			colorIndexes.close();
+			mask.close();
+		}
+	}
+
+	/**
+	 * Creates a color index image where each pixel's RGB encodes a region ID. Region IDs are distributed randomly across the image.
+	 */
+	private Image createColorIndexImage(int width, int height, int numRegions, long seed)
+	{
+		Image image = Image.create(width, height, ImageType.RGB);
+		Random rand = new Random(seed);
+
+		try (var pixels = image.createPixelReaderWriter())
+		{
+			for (int y = 0; y < height; y++)
+			{
+				for (int x = 0; x < width; x++)
+				{
+					int regionId = rand.nextInt(numRegions);
+					// Encode region ID as RGB (r << 16 | g << 8 | b)
+					int r = (regionId >> 16) & 0xFF;
+					int g = (regionId >> 8) & 0xFF;
+					int b = regionId & 0xFF;
+					pixels.setRGB(x, y, r, g, b);
+				}
+			}
+		}
+
+		return image;
+	}
+
+	/**
+	 * Creates a map of region IDs to random colors.
+	 */
+	private Map<Integer, Color> createColorMap(int numRegions, long seed)
+	{
+		Map<Integer, Color> colorMap = new HashMap<>();
+		Random rand = new Random(seed);
+
+		for (int i = 0; i < numRegions; i++)
+		{
+			colorMap.put(i, Color.create(rand.nextInt(256), rand.nextInt(256), rand.nextInt(256)));
+		}
+
+		return colorMap;
 	}
 }
