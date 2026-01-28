@@ -44,8 +44,7 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Controls which algorithm is used for findClosestCenter.
-	 * Default is GRID_BASED for best Skia performance.
+	 * Controls which algorithm is used for findClosestCenter. Default is GRID_BASED for best Skia performance.
 	 */
 	public static CenterLookupMode centerLookupMode = CenterLookupMode.GRID_BASED;
 
@@ -308,12 +307,11 @@ public class WorldGraph extends VoronoiGraph
 
 	/**
 	 * Rebuilds noisy edges for a center.
-	 * 
+	 *
 	 * @param center
-	 *            The center to rebuild noisy edges for.
+	 * 		The center to rebuild noisy edges for.
 	 * @param centersInLoop
-	 *            For performance. The set of centers that the caller is already looping over, so that we don't rebuild noisy edges for
-	 *            neighbors unnecessarily.
+	 * 		For performance. The set of centers that the caller is already looping over, so that we don't rebuild noisy edges for neighbors unnecessarily.
 	 */
 	public void rebuildNoisyEdgesForCenter(Center center, Set<Center> centersInLoop)
 	{
@@ -479,9 +477,9 @@ public class WorldGraph extends VoronoiGraph
 
 		// Add to smallLandMasses any land which is not in a region.
 		List<Set<Center>> smallLandMasses = new ArrayList<>(); // stores small
-																// pieces of
-																// land not in a
-																// region.
+		// pieces of
+		// land not in a
+		// region.
 		for (Center center : centers)
 		{
 			if (!center.isWater && center.region == null)
@@ -507,7 +505,7 @@ public class WorldGraph extends VoronoiGraph
 		for (int i : toRemove)
 		{
 			regionList.get(i).clear(); // This updates the region pointers in
-										// the Centers.
+			// the Centers.
 			regionList.remove(i);
 		}
 
@@ -638,50 +636,119 @@ public class WorldGraph extends VoronoiGraph
 	{
 		buildCenterLookupGridIfNeeded();
 
-		if (point.x < getWidth() && point.y < getHeight() && point.x >= 0 && point.y >= 0)
+		if (returnNullIfNotOnMap && (point.x >= getWidth() || point.y >= getHeight() || point.x < 0 || point.y < 0))
 		{
-			// Get starting center from grid
-			Center candidate = centerLookupGrid.getRepresentative(point);
-			if (candidate == null)
-			{
-				// This shouldn't happen with a properly built grid, but use distance-based fallback
-				return centers.stream().min((c1, c2) -> Double.compare(c1.loc.distanceTo(point), c2.loc.distanceTo(point))).orElse(null);
-			}
+			return null;
+		}
 
-			// Fast path: find which edge sector contains the point and check that edge
-			Center result = findCenterFromEdgeSector(point, candidate);
+		// Get starting center from grid
+		Center candidate = centerLookupGrid.getRepresentative(point);
+		if (candidate == null)
+		{
+			assert false;
+			// This shouldn't happen with a properly built grid, but use distance-based fallback
+			return centers.stream().min((c1, c2) -> Double.compare(c1.loc.distanceTo(point), c2.loc.distanceTo(point))).orElse(null);
+		}
+
+		// Fast path: find which edge sector contains the point and check that edge
+		Center result = findCenterFromEdgeSector(point, candidate);
+		if (result != null)
+		{
+			if (result == candidate)
+			{
+				gridLookupDirectHits++;
+			}
+			else
+			{
+				gridLookupNeighborHits++;
+			}
+			return result;
+		}
+
+		// Fallback - walk to a new candidate and try exhaustive search again
+		gridLookupBfsFallbacks++;
+		Center walkResult = walkToClosestCenter(point, candidate);
+
+		// Try exhaustive search on the walk result
+		if (walkResult != candidate)
+		{
+			result = findCenterFromEdgeSector(point, walkResult);
 			if (result != null)
 			{
-				if (result == candidate)
-				{
-					gridLookupDirectHits++;
-				}
-				else
-				{
-					gridLookupNeighborHits++;
-				}
 				return result;
 			}
+		}
 
-			// Fallback - walk to the center closest by distance
-			gridLookupBfsFallbacks++;
-			return walkToClosestCenter(point, candidate);
-		}
-		else if (!returnNullIfNotOnMap)
+		// Last resort: return the closest center by distance
+		return walkResult;
+	}
+
+	// TODO remove
+	public int exaustiveCount = 0;
+	public int fastCount = 0;
+
+	/**
+	 * Find which center contains the point by checking pie slices. Uses angular sector as fast path, with fallback to exhaustive search.
+	 */
+	private Center findCenterFromEdgeSector(Point point, Center candidate)
+	{
+		// Fast path: try angular sector first
+		Edge sectorEdge = findEdgeByAngularSector(point, candidate);
+		if (sectorEdge != null)
 		{
-			// Point is outside map bounds - find closest border center
-			Optional<Center> opt = centers.stream().filter(c -> c.isBorder).min((c1, c2) -> Double.compare(c1.loc.distanceTo(point), c2.loc.distanceTo(point)));
-			return opt.get();
+			// Check candidate's pie slice for this edge
+			if (isPointInPieSlice(point, candidate, sectorEdge))
+			{
+				fastCount++;
+				return candidate;
+			}
+			// Check neighbor's pie slice for this edge
+			Center neighbor = (sectorEdge.d0 == candidate) ? sectorEdge.d1 : sectorEdge.d0;
+			if (neighbor != null && isPointInPieSlice(point, neighbor, sectorEdge))
+			{
+				fastCount++;
+				return neighbor;
+			}
+			// Fast path failed - fall through to exhaustive search
 		}
-		return null;
+
+		exaustiveCount++;
+		// Exhaustive search: check all pie slices of candidate
+		for (Edge edge : candidate.borders)
+		{
+			if (edge.v0 == null || edge.v1 == null)
+			{
+				continue;
+			}
+			if (edge != sectorEdge && isPointInPieSlice(point, candidate, edge))
+			{
+				return candidate;
+			}
+		}
+
+		// Check all pie slices of immediate neighbors
+		for (Center neighbor : candidate.neighbors)
+		{
+			for (Edge edge : neighbor.borders)
+			{
+				if (edge.v0 == null || edge.v1 == null)
+				{
+					continue;
+				}
+				if (edge != sectorEdge && isPointInPieSlice(point, neighbor, edge))
+				{
+					return neighbor;
+				}
+			}
+		}
+
+		return null; // Need walk fallback
 	}
 
 	/**
-	 * Find which center contains the point by checking edge sectors.
-	 * If point is in candidate's sector and on candidate's side of the edge, return candidate.
-	 * Otherwise return the neighbor on the other side.
+	 * Find which edge's angular sector contains the point (fast, based on straight lines from center to corners).
 	 */
-	private Center findCenterFromEdgeSector(Point point, Center candidate)
+	private Edge findEdgeByAngularSector(Point point, Center candidate)
 	{
 		double qx = point.x - candidate.loc.x;
 		double qy = point.y - candidate.loc.y;
@@ -693,7 +760,6 @@ public class WorldGraph extends VoronoiGraph
 				continue;
 			}
 
-			// Check if point is in this edge's angular sector
 			double v0x = edge.v0.loc.x - candidate.loc.x;
 			double v0y = edge.v0.loc.y - candidate.loc.y;
 			double v1x = edge.v1.loc.x - candidate.loc.x;
@@ -715,27 +781,14 @@ public class WorldGraph extends VoronoiGraph
 
 			if (inSector)
 			{
-				// Point is in this edge's sector
-				// Check if it's on candidate's side of the edge (inside the triangle)
-				if (isPointInTriangle(point, candidate.loc, edge.v0.loc, edge.v1.loc))
-				{
-					return candidate;
-				}
-				else
-				{
-					// Point is beyond the edge - it belongs to the neighbor
-					Center neighbor = (edge.d0 == candidate) ? edge.d1 : edge.d0;
-					return neighbor;
-				}
+				return edge;
 			}
 		}
-
-		return null; // No sector found - need fallback
+		return null;
 	}
 
 	/**
-	 * Walk from the starting center to the center whose loc is closest to the query point.
-	 * This is faster than BFS and converges quickly since Voronoi diagrams are well-structured.
+	 * Walk from the starting center to the center whose loc is closest to the query point. This is faster than BFS and converges quickly since Voronoi diagrams are well-structured.
 	 */
 	private Center walkToClosestCenter(Point query, Center start)
 	{
@@ -768,126 +821,157 @@ public class WorldGraph extends VoronoiGraph
 		}
 	}
 
-	/**
-	 * Tests if a point is inside a center, considering noisy edges.
-	 * Optimized to only test the relevant pie slice based on angular sector.
-	 */
-	private boolean isPointInCenter(Point query, Center center)
-	{
-		// Find which edge's sector contains the query point
-		Edge relevantEdge = findRelevantEdge(query, center);
-		if (relevantEdge == null)
-		{
-			return false;
-		}
-
-		return isPointInPieSlice(query, center, relevantEdge);
-	}
-
-	/**
-	 * Finds which edge's triangular sector (center.loc, v0, v1) contains the query point.
-	 * This is much faster than testing all edges.
-	 */
-	private Edge findRelevantEdge(Point query, Center center)
-	{
-		// Vector from center to query point
-		double qx = query.x - center.loc.x;
-		double qy = query.y - center.loc.y;
-
-		for (Edge edge : center.borders)
-		{
-			if (edge.v0 == null || edge.v1 == null || edge.d0 == null || edge.d1 == null)
-			{
-				continue;
-			}
-
-			// Check if query is in the triangular sector formed by center.loc, v0, v1
-			// Using cross product to check if point is on the correct side of both edge rays
-			double v0x = edge.v0.loc.x - center.loc.x;
-			double v0y = edge.v0.loc.y - center.loc.y;
-			double v1x = edge.v1.loc.x - center.loc.x;
-			double v1y = edge.v1.loc.y - center.loc.y;
-
-			// Cross products to determine which side of each ray the query is on
-			double crossV0 = v0x * qy - v0y * qx; // query relative to v0 ray
-			double crossV1 = v1x * qy - v1y * qx; // query relative to v1 ray
-			double crossEdge = v0x * v1y - v0y * v1x; // v1 relative to v0 ray (determines winding)
-
-			// Query is in sector if it's between the two rays
-			// The sign comparison depends on the winding direction
-			if (crossEdge >= 0)
-			{
-				if (crossV0 >= 0 && crossV1 <= 0)
-				{
-					return edge;
-				}
-			}
-			else
-			{
-				if (crossV0 <= 0 && crossV1 >= 0)
-				{
-					return edge;
-				}
-			}
-		}
-
-		// Fallback: return first valid edge (shouldn't happen for well-formed polygons)
-		for (Edge edge : center.borders)
-		{
-			if (edge.v0 != null && edge.v1 != null && edge.d0 != null && edge.d1 != null)
-			{
-				return edge;
-			}
-		}
-		return null;
-	}
-
 	private boolean isPointInPieSlice(Point query, Center center, Edge edge)
 	{
-		// Use straight Voronoi edges for fast containment test.
-		// This is an approximation that ignores noisy edge variations,
-		// but noisy edges are constrained within Delaunay triangles
-		// so the error is small and localized to boundaries.
 		if (edge.v0 == null || edge.v1 == null)
 		{
 			return false;
 		}
 
-		// Fast triangle test: center.loc, v0, v1
-		return isPointInTriangle(query, center.loc, edge.v0.loc, edge.v1.loc);
+		// Get or build the cached slice polygon
+		CachedSlicePolygon cached = getOrBuildSlicePolygon(center, edge);
+
+		// Quick bounding box rejection
+		if (query.x < cached.minX || query.x > cached.maxX || query.y < cached.minY || query.y > cached.maxY)
+		{
+			return false;
+		}
+
+		// Full polygon containment test
+		return isPointInPolygonArray(query.x, query.y, cached.xCoords, cached.yCoords);
 	}
 
 	/**
-	 * Fast point-in-triangle test using barycentric coordinates.
+	 * Cached slice polygon for fast point-in-polygon tests.
 	 */
-	private boolean isPointInTriangle(Point p, Point a, Point b, Point c)
+	private static class CachedSlicePolygon
 	{
-		double v0x = c.x - a.x;
-		double v0y = c.y - a.y;
-		double v1x = b.x - a.x;
-		double v1y = b.y - a.y;
-		double v2x = p.x - a.x;
-		double v2y = p.y - a.y;
+		final double[] xCoords;
+		final double[] yCoords;
+		final double minX, maxX, minY, maxY;
 
-		double dot00 = v0x * v0x + v0y * v0y;
-		double dot01 = v0x * v1x + v0y * v1y;
-		double dot02 = v0x * v2x + v0y * v2y;
-		double dot11 = v1x * v1x + v1y * v1y;
-		double dot12 = v1x * v2x + v1y * v2y;
+		CachedSlicePolygon(double[] xCoords, double[] yCoords)
+		{
+			this.xCoords = xCoords;
+			this.yCoords = yCoords;
 
-		double invDenom = 1.0 / (dot00 * dot11 - dot01 * dot01);
-		double u = (dot11 * dot02 - dot01 * dot12) * invDenom;
-		double v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+			// Compute bounding box
+			double minX = Double.MAX_VALUE, maxX = -Double.MAX_VALUE;
+			double minY = Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
+			for (int i = 0; i < xCoords.length; i++)
+			{
+				if (xCoords[i] < minX)
+					minX = xCoords[i];
+				if (xCoords[i] > maxX)
+					maxX = xCoords[i];
+				if (yCoords[i] < minY)
+					minY = yCoords[i];
+				if (yCoords[i] > maxY)
+					maxY = yCoords[i];
+			}
+			this.minX = minX;
+			this.maxX = maxX;
+			this.minY = minY;
+			this.maxY = maxY;
+		}
+	}
 
-		return (u >= 0) && (v >= 0) && (u + v <= 1);
+	// Cache for slice polygons: key = (centerIndex << 32) | edgeIndex
+	private Map<Long, CachedSlicePolygon> slicePolygonCache;
+
+	private CachedSlicePolygon getOrBuildSlicePolygon(Center center, Edge edge)
+	{
+		if (slicePolygonCache == null)
+		{
+			slicePolygonCache = new HashMap<>();
+		}
+
+		long key = ((long) center.index << 32) | edge.index;
+		CachedSlicePolygon cached = slicePolygonCache.get(key);
+		if (cached != null)
+		{
+			return cached;
+		}
+
+		// Build the slice polygon: center.loc + noisy edge path
+		// The polygon is: center.loc -> path[0] -> ... -> path[n] -> (implicit close to center.loc)
+		// This correctly encloses the area on this center's side of the noisy edge,
+		// regardless of whether this is d0 or d1 (same approach as dawPieceUsingNoisyEdges in VoronoiGraph)
+		List<Point> noisyPath = noisyEdges != null ? noisyEdges.getNoisyEdge(edge.index) : null;
+
+		int size;
+		double[] xCoords;
+		double[] yCoords;
+
+		if (noisyPath != null && !noisyPath.isEmpty())
+		{
+			size = 1 + noisyPath.size();
+			xCoords = new double[size];
+			yCoords = new double[size];
+			xCoords[0] = center.loc.x;
+			yCoords[0] = center.loc.y;
+			for (int i = 0; i < noisyPath.size(); i++)
+			{
+				Point p = noisyPath.get(i);
+				xCoords[i + 1] = p.x;
+				yCoords[i + 1] = p.y;
+			}
+		}
+		else
+		{
+			// Fallback to straight edge triangle
+			size = 3;
+			xCoords = new double[size];
+			yCoords = new double[size];
+			xCoords[0] = center.loc.x;
+			yCoords[0] = center.loc.y;
+			xCoords[1] = edge.v0.loc.x;
+			yCoords[1] = edge.v0.loc.y;
+			xCoords[2] = edge.v1.loc.x;
+			yCoords[2] = edge.v1.loc.y;
+		}
+
+		cached = new CachedSlicePolygon(xCoords, yCoords);
+		slicePolygonCache.put(key, cached);
+		return cached;
 	}
 
 	/**
-	 * Ray casting algorithm for point-in-polygon test.
+	 * Clears the slice polygon cache for the specified centers and their neighbors. Call this when centers' noisy edges have been rebuilt.
 	 */
-	private boolean isPointInPolygon(Point p, List<Point> polygon)
+	private void clearSlicePolygonCache(Collection<Center> centers)
 	{
-		int n = polygon.size();
+		if (slicePolygonCache == null)
+		{
+			return;
+		}
+
+		Set<Center> centersWithNeighbors = new HashSet<>();
+		for (Center c : centers)
+		{
+			centersWithNeighbors.add(c);
+			for (Center neighbor : c.neighbors)
+			{
+				centersWithNeighbors.add(neighbor);
+			}
+		}
+
+		for (Center c : centersWithNeighbors)
+		{
+			for (Edge edge : c.borders)
+			{
+				long key = ((long) c.index << 32) | edge.index;
+				slicePolygonCache.remove(key);
+			}
+		}
+	}
+
+	/**
+	 * Fast point-in-polygon test using ray casting with array coordinates.
+	 */
+	private boolean isPointInPolygonArray(double px, double py, double[] xCoords, double[] yCoords)
+	{
+		int n = xCoords.length;
 		if (n < 3)
 		{
 			return false;
@@ -896,9 +980,10 @@ public class WorldGraph extends VoronoiGraph
 		boolean inside = false;
 		for (int i = 0, j = n - 1; i < n; j = i++)
 		{
-			Point pi = polygon.get(i);
-			Point pj = polygon.get(j);
-			if ((pi.y > p.y) != (pj.y > p.y) && p.x < (pj.x - pi.x) * (p.y - pi.y) / (pj.y - pi.y) + pi.x)
+			double xi = xCoords[i], yi = yCoords[i];
+			double xj = xCoords[j], yj = yCoords[j];
+
+			if ((yi > py) != (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi)
 			{
 				inside = !inside;
 			}
@@ -925,8 +1010,7 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Spatial grid for efficient center lookup. Each cell stores a representative
-	 * center that is close to that cell's center point.
+	 * Spatial grid for efficient center lookup. Each cell stores a representative center that is close to that cell's center point.
 	 */
 	private class CenterLookupGrid
 	{
@@ -1042,14 +1126,17 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Updates the center lookup table, which is used to lookup which center draws at a given point. This needs to be done when a center
-	 * potentially changed its noisy edges, such as when it switched from inland to coast.
+	 * Updates the center lookup table, which is used to lookup which center draws at a given point. This needs to be done when a center potentially changed its noisy edges, such as when it switched
+	 * from inland to coast.
 	 *
 	 * @param centersToUpdate
-	 *            Centers to update
+	 * 		Centers to update
 	 */
 	public void updateCenterLookupTable(Collection<Center> centersToUpdate)
 	{
+		// Clear slice polygon cache for affected centers (used by grid-based lookup)
+		clearSlicePolygonCache(centersToUpdate);
+
 		synchronized (centerLookupLock)
 		{
 			if (centerLookupTable == null)
@@ -1098,7 +1185,7 @@ public class WorldGraph extends VoronoiGraph
 
 	/**
 	 * Searches for any region touching and polygon in landMass and returns it if found. Otherwise returns null.
-	 * 
+	 *
 	 * Assumes all Centers in landMass either all have the same region, or are all null.
 	 */
 	private Region findRegionTouching(Set<Center> landMass)
@@ -1118,7 +1205,7 @@ public class WorldGraph extends VoronoiGraph
 
 	/**
 	 * Splits apart a region by parts connect by land (not including land from another region).
-	 * 
+	 *
 	 * @param region
 	 * @return
 	 */
@@ -1141,15 +1228,12 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Performs a breadth-first search starting from the given center, exploring all connected centers
-	 * that satisfy the accept predicate.
+	 * Performs a breadth-first search starting from the given center, exploring all connected centers that satisfy the accept predicate.
 	 *
 	 * @param accept
-	 *            A predicate that determines whether a neighboring center should be included in the search.
-	 *            Returns true if the center should be explored, false otherwise.
+	 * 		A predicate that determines whether a neighboring center should be included in the search. Returns true if the center should be explored, false otherwise.
 	 * @param start
-	 *            The center to begin the search from. This center is always included in the result,
-	 *            regardless of the accept predicate.
+	 * 		The center to begin the search from. This center is always included in the result, regardless of the accept predicate.
 	 * @return A set containing the start center and all connected centers that satisfy the accept predicate.
 	 */
 	public Set<Center> breadthFirstSearch(Function<Center, Boolean> accept, Center start)
@@ -1183,17 +1267,13 @@ public class WorldGraph extends VoronoiGraph
 	 * Performs a breadth-first search to find the first center that satisfies the goal predicate.
 	 *
 	 * @param accept
-	 *            A predicate that determines whether to explore a neighboring center. Takes three arguments:
-	 *            the current center being expanded, the neighbor being considered, and the distance from
-	 *            the start (in number of hops). Returns true if the neighbor should be added to the search
-	 *            frontier, false otherwise.
+	 * 		A predicate that determines whether to explore a neighboring center. Takes three arguments: the current center being expanded, the neighbor being considered, and the distance from the start
+	 * 		(in number of hops). Returns true if the neighbor should be added to the search frontier, false otherwise.
 	 * @param isGoal
-	 *            A predicate that determines whether a center is the goal. Returns true if the center
-	 *            satisfies the search criteria.
+	 * 		A predicate that determines whether a center is the goal. Returns true if the center satisfies the search criteria.
 	 * @param start
-	 *            The center to begin the search from.
-	 * @return The first center found that satisfies the isGoal predicate, or null if no such center
-	 *         is reachable within the constraints of the accept predicate.
+	 * 		The center to begin the search from.
+	 * @return The first center found that satisfies the isGoal predicate, or null if no such center is reachable within the constraints of the accept predicate.
 	 */
 	public Center breadthFirstSearchForGoal(TriFunction<Center, Center, Integer, Boolean> accept, Function<Center, Boolean> isGoal, Center start)
 	{
@@ -1802,15 +1882,15 @@ public class WorldGraph extends VoronoiGraph
 
 	/**
 	 * Returns the amount the centers p1 and p2 are from are converging. This is between -1 and 1.
-	 * 
+	 *
 	 * @param p1
-	 *            Location of a center along a tectonic plate border.
+	 * 		Location of a center along a tectonic plate border.
 	 * @param p1Velocity
-	 *            The velocity of the plate p1 is on.
+	 * 		The velocity of the plate p1 is on.
 	 * @param p2
-	 *            Location of a center along a tectonic plate border: not the same tectonic plate as p1
+	 * 		Location of a center along a tectonic plate border: not the same tectonic plate as p1
 	 * @param p2Velocity
-	 *            The velocity of the plate p2 is on.
+	 * 		The velocity of the plate p2 is on.
 	 */
 	private double calcLevelOfConvergence(Point p1, PolarCoordinate p1Velocity, Point p2, PolarCoordinate p2Velocity)
 	{
@@ -1837,11 +1917,11 @@ public class WorldGraph extends VoronoiGraph
 
 	/**
 	 * Calculates the minimum distance (in radians) from angle a1 to angle a2. The result will be in the range [0, pi].
-	 * 
+	 *
 	 * @param a1
-	 *            An angle in radians. This must be between 0 and 2*pi.
+	 * 		An angle in radians. This must be between 0 and 2*pi.
 	 * @param a2
-	 *            An angle in radians. This must be between 0 and 2*pi.
+	 * 		An angle in radians. This must be between 0 and 2*pi.
 	 * @return
 	 */
 	private static double calcAngleDifference(double a1, double a2)
@@ -2002,9 +2082,9 @@ public class WorldGraph extends VoronoiGraph
 
 	/**
 	 * Create path using back pointers in search does for Voronoi edges.
-	 * 
+	 *
 	 * @param end
-	 *            The end of the search
+	 * 		The end of the search
 	 * @return A path
 	 */
 	private Set<Edge> createPathFromBackPointers(CornerSearchNode end)
@@ -2057,14 +2137,14 @@ public class WorldGraph extends VoronoiGraph
 
 	/**
 	 * Uses A* search to find the shortest path between the 2 given centers using Delaunay edges.
-	 * 
+	 *
 	 * @param start
-	 *            Where to begin the search
+	 * 		Where to begin the search
 	 * @param end
-	 *            The goal
+	 * 		The goal
 	 * @param calculateWeight
-	 *            Finds the weight of an edge for determining whether to explore it. This should be the weight of it the Delaunay edge.
-	 *            Likely this will be calculated based on the distance from one end of the Delaunay age
+	 * 		Finds the weight of an edge for determining whether to explore it. This should be the weight of it the Delaunay edge. Likely this will be calculated based on the distance from one end of the
+	 * 		Delaunay age
 	 * @return A path if one is found; null if the and is unreachable from the start.
 	 */
 	public List<Edge> findShortestPath(Center start, Center end, TriFunction<Edge, Center, Double, Double> calculateWeight)
@@ -2155,9 +2235,9 @@ public class WorldGraph extends VoronoiGraph
 
 	/**
 	 * Create path using back pointers in search does for Voronoi edges.
-	 * 
+	 *
 	 * @param end
-	 *            The end of the search
+	 * 		The end of the search
 	 * @return A path
 	 */
 	private List<Edge> createPathFromBackPointers(CenterSearchNode end)
@@ -2704,18 +2784,16 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Finds all edges that the 'accept' function accepts which are touching centersToDraw or are connected to an edge that touches those
-	 * centers.
-	 * 
+	 * Finds all edges that the 'accept' function accepts which are touching centersToDraw or are connected to an edge that touches those centers.
+	 *
 	 * @param centersToDraw
-	 *            Only edges either in/touching this collection or connected to edges that are will be returned.
+	 * 		Only edges either in/touching this collection or connected to edges that are will be returned.
 	 * @param accept
-	 *            Function to determine what edge is to include in results.
+	 * 		Function to determine what edge is to include in results.
 	 * @param searchEntireGraph
-	 *            When false, only centers in centersToDraw will be searched. When true, all centers will be searched. Passing this as false
-	 *            is much more performant, but can cause subtle differences in the results depending on which centers are passed in. Setting
-	 *            this to true enforces that the lists of edges returned are ordered and found the same way for full redraws vs incremental
-	 *            for any edges that touch or pass through centersToDraw.
+	 * 		When false, only centers in centersToDraw will be searched. When true, all centers will be searched. Passing this as false is much more performant, but can cause subtle differences in the
+	 * 		results depending on which centers are passed in. Setting this to true enforces that the lists of edges returned are ordered and found the same way for full redraws vs incremental for any
+	 * 		edges that touch or pass through centersToDraw.
 	 * @return
 	 */
 	public List<List<Edge>> findEdges(Collection<Center> centersToDraw, Function<Edge, Boolean> accept, boolean searchEntireGraph)
@@ -2754,14 +2832,13 @@ public class WorldGraph extends VoronoiGraph
 
 	/**
 	 * Given an edge to start at, this returns an ordered sequence of edges in the path that edge is included in.
-	 * 
+	 *
 	 * @param found
-	 *            Edges that have already been searched, and so will not be searched again.
+	 * 		Edges that have already been searched, and so will not be searched again.
 	 * @param start
-	 *            Where to start to search. Not necessarily the start of the path we're searching for.
+	 * 		Where to start to search. Not necessarily the start of the path we're searching for.
 	 * @param accept
-	 *            Used to test whether edges are part of the desired path. If "edge" returns false for this function, then an empty list is
-	 *            returned.
+	 * 		Used to test whether edges are part of the desired path. If "edge" returns false for this function, then an empty list is returned.
 	 * @return A list of edges forming a path.
 	 */
 	private List<Edge> findPath(Set<Edge> found, Edge start, Function<Edge, Boolean> accept)

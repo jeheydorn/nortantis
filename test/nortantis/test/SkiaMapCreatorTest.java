@@ -21,9 +21,14 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 import java.util.function.Consumer;
+
+import nortantis.geom.Point;
+import nortantis.graph.voronoi.Center;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -382,5 +387,93 @@ public class SkiaMapCreatorTest
 			GPUExecutor.setRenderingMode(RenderingMode.DEFAULT);
 		}
 
+	}
+
+	/**
+	 * Tests that GRID_BASED findClosestCenter returns the same results as PIXEL_UNCACHED.
+	 * Uses high resolution (2.0) to reduce discretization errors at polygon boundaries.
+	 */
+	@Test
+	public void findClosestCenterGridVsPixelTest()
+	{
+		final String settingsFileName = "simpleSmallWorld.nort";
+		MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", settingsFileName).toString());
+		settings.resolution = 2.0; // High resolution to reduce discretization errors
+
+		System.out.println("Creating WorldGraph with resolution " + settings.resolution + "...");
+		WorldGraph graph = MapCreator.createGraphForUnitTests(settings);
+		System.out.println("Graph dimensions: " + graph.getWidth() + "x" + graph.getHeight());
+		System.out.println("Number of centers: " + graph.centers.size());
+
+		// Generate random test points
+		int numPoints = 10_000;
+		Random rand = new Random(12345);
+		Point[] testPoints = new Point[numPoints];
+		for (int i = 0; i < numPoints; i++)
+		{
+			double x = rand.nextDouble() * graph.getWidth();
+			double y = rand.nextDouble() * graph.getHeight();
+			testPoints[i] = new Point(x, y);
+		}
+		System.out.println("Generated " + numPoints + " random test points");
+
+		// Collect results from both modes
+		Center[] pixelResults = new Center[numPoints];
+		Center[] gridResults = new Center[numPoints];
+
+		// Get PIXEL_UNCACHED results
+		WorldGraph.centerLookupMode = WorldGraph.CenterLookupMode.PIXEL_UNCACHED;
+		for (int i = 0; i < numPoints; i++)
+		{
+			pixelResults[i] = graph.findClosestCenter(testPoints[i]);
+		}
+
+		// Get GRID_BASED results
+		WorldGraph.centerLookupMode = WorldGraph.CenterLookupMode.GRID_BASED;
+		WorldGraph.resetGridLookupCounters();
+		for (int i = 0; i < numPoints; i++)
+		{
+			gridResults[i] = graph.findClosestCenter(testPoints[i]);
+		}
+
+		// Print grid lookup statistics
+		System.out.println("Grid lookup stats: directHits=" + WorldGraph.gridLookupDirectHits
+			+ ", neighborHits=" + WorldGraph.gridLookupNeighborHits
+			+ ", bfsFallbacks=" + WorldGraph.gridLookupBfsFallbacks);
+
+		// Reset to default
+		WorldGraph.centerLookupMode = WorldGraph.CenterLookupMode.GRID_BASED;
+
+		// Compare results
+		int mismatches = 0;
+		List<String> mismatchDetails = new ArrayList<>();
+		for (int i = 0; i < numPoints; i++)
+		{
+			if (pixelResults[i] != gridResults[i])
+			{
+				mismatches++;
+				if (mismatchDetails.size() < 20)
+				{
+					Point p = testPoints[i];
+					mismatchDetails.add(String.format("  Point (%.2f, %.2f): pixel=%d, grid=%d", p.x, p.y, pixelResults[i].index, gridResults[i].index));
+				}
+			}
+		}
+
+		double mismatchRate = 100.0 * mismatches / numPoints;
+		System.out.println("Mismatches: " + mismatches + " / " + numPoints + " (" + String.format("%.2f%%", mismatchRate) + ")");
+
+		if (!mismatchDetails.isEmpty())
+		{
+			System.out.println("First " + mismatchDetails.size() + " mismatches:");
+			for (String detail : mismatchDetails)
+			{
+				System.out.println(detail);
+			}
+		}
+
+		// Allow up to 1% mismatch rate due to boundary discretization
+		double maxAllowedMismatchRate = 1.0;
+		assertTrue(mismatchRate <= maxAllowedMismatchRate, "Mismatch rate " + String.format("%.2f%%", mismatchRate) + " exceeds allowed " + maxAllowedMismatchRate + "%");
 	}
 }
