@@ -538,7 +538,6 @@ public class WorldGraph extends VoronoiGraph
 		return findClosestCenter(point, false);
 	}
 
-	int missCount = 0;
 	public Center findClosestCenter(Point point, boolean returnNullIfNotOnMap)
 	{
 		if (point.x < getWidth() && point.y < getHeight() && point.x >= 0 && point.y >= 0)
@@ -551,8 +550,7 @@ public class WorldGraph extends VoronoiGraph
 			synchronized (centerLookupLock)
 			{
 				// Use cached reader if available and point is within bounds
-				IntRectangle cachedBounds = cachedCenterLookupReader != null ? cachedCenterLookupReader.getBounds() : null;
-				if (cachedBounds != null && cachedBounds.contains(x, y))
+				if (cachedCenterLookupBounds != null && cachedCenterLookupBounds.contains(x, y))
 				{
 					color = Color.create(cachedCenterLookupReader.getRGB(x, y));
 				}
@@ -561,8 +559,6 @@ public class WorldGraph extends VoronoiGraph
 					// Fall back to single-pixel read
 					try (PixelReader pixels = centerLookupTable.createPixelReader(new IntRectangle(x, y, 1, 1)))
 					{
-						missCount++;
-						System.out.println("miss count: " + missCount);
 						color = Color.create(pixels.getRGB(x, y));
 					}
 				}
@@ -585,6 +581,7 @@ public class WorldGraph extends VoronoiGraph
 	// Cached pixel reader for findClosestCenter optimization
 	private final Object centerLookupLock = new Object();
 	private PixelReader cachedCenterLookupReader;
+	private IntRectangle cachedCenterLookupBounds;
 
 	/**
 	 * Sets a hint for findClosestCenter to cache a PixelReader for the given bounds. This dramatically improves performance when
@@ -599,7 +596,8 @@ public class WorldGraph extends VoronoiGraph
 	{
 		synchronized (centerLookupLock)
 		{
-			clearFindClosestCenterHintInternal();
+			clearCachedCenterLookupReader();
+			cachedCenterLookupBounds = bounds;
 			if (bounds != null)
 			{
 				buildCenterLookupTableIfNeeded();
@@ -615,11 +613,12 @@ public class WorldGraph extends VoronoiGraph
 	{
 		synchronized (centerLookupLock)
 		{
-			clearFindClosestCenterHintInternal();
+			clearCachedCenterLookupReader();
+			cachedCenterLookupBounds = null;
 		}
 	}
 
-	private void clearFindClosestCenterHintInternal()
+	private void clearCachedCenterLookupReader()
 	{
 		if (cachedCenterLookupReader != null)
 		{
@@ -649,42 +648,51 @@ public class WorldGraph extends VoronoiGraph
 	/**
 	 * Updates the center lookup table, which is used to lookup which center draws at a given point. This needs to be done when a center
 	 * potentially changed its noisy edges, such as when it switched from inland to coast.
-	 * 
+	 *
 	 * @param centersToUpdate
 	 *            Centers to update
 	 */
 	public void updateCenterLookupTable(Collection<Center> centersToUpdate)
 	{
-		// Clear any cached reader since the lookup table is changing
-		clearFindClosestCenterHint();
+		synchronized (centerLookupLock)
+		{
+			// Clear the cached reader since the lookup table is changing, but preserve the hint bounds
+			clearCachedCenterLookupReader();
 
-		if (centerLookupTable == null)
-		{
-			buildCenterLookupTableIfNeeded();
-		}
-		else
-		{
-			// Include neighbors of each center because if a center changed,
-			// that will affect its neighbors as well.
-			Set<Center> centersWithNeighbors = new HashSet<>();
-			for (Center c : centersToUpdate)
+			if (centerLookupTable == null)
 			{
-				centersWithNeighbors.add(c);
-				for (Center neighbor : c.neighbors)
+				buildCenterLookupTableIfNeeded();
+			}
+			else
+			{
+				// Include neighbors of each center because if a center changed,
+				// that will affect its neighbors as well.
+				Set<Center> centersWithNeighbors = new HashSet<>();
+				for (Center c : centersToUpdate)
 				{
-					centersWithNeighbors.add(neighbor);
+					centersWithNeighbors.add(c);
+					for (Center neighbor : c.neighbors)
+					{
+						centersWithNeighbors.add(neighbor);
+					}
+				}
+
+				try (Painter p = centerLookupTable.createPainter())
+				{
+					drawPolygons(p, centersWithNeighbors, new Function<Center, Color>()
+					{
+						public Color apply(Center c)
+						{
+							return convertCenterIdToColor(c);
+						}
+					});
 				}
 			}
 
-			try (Painter p = centerLookupTable.createPainter())
+			// Recreate the cached reader if we had hint bounds
+			if (cachedCenterLookupBounds != null)
 			{
-				drawPolygons(p, centersWithNeighbors, new Function<Center, Color>()
-				{
-					public Color apply(Center c)
-					{
-						return convertCenterIdToColor(c);
-					}
-				});
+				cachedCenterLookupReader = centerLookupTable.createPixelReader(cachedCenterLookupBounds);
 			}
 		}
 	}

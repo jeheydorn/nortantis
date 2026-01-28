@@ -129,12 +129,6 @@ public class SkiaPixelReader implements PixelReader
 
 
 	@Override
-	public IntRectangle getBounds()
-	{
-		return bounds;
-	}
-
-	@Override
 	public void close()
 	{
 	}

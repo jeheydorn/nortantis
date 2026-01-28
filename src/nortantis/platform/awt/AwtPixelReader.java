@@ -18,7 +18,6 @@ public class AwtPixelReader implements PixelReader
 	Raster alphaRaster;
 	protected final float maxPixelLevelAsFloat;
 	protected final Image image;
-	protected final IntRectangle bounds;
 
 	AwtPixelReader(AwtImage image, IntRectangle bounds)
 	{
@@ -30,7 +29,6 @@ public class AwtPixelReader implements PixelReader
 		{
 			this.cachedPixelArray = ((DataBufferInt) raster.getDataBuffer()).getData();
 		}
-		this.bounds = bounds;
 	}
 
 	AwtPixelReader(AwtImage image)
@@ -99,12 +97,6 @@ public class AwtPixelReader implements PixelReader
 	public float getNormalizedPixelLevel(int x, int y)
 	{
 		return getGrayLevel(x, y) / maxPixelLevelAsFloat;
-	}
-
-	@Override
-	public IntRectangle getBounds()
-	{
-		return bounds;
 	}
 
 	@Override
