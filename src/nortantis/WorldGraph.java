@@ -692,6 +692,18 @@ public class WorldGraph extends VoronoiGraph
 		return dividedRegion;
 	}
 
+	/**
+	 * Performs a breadth-first search starting from the given center, exploring all connected centers
+	 * that satisfy the accept predicate.
+	 *
+	 * @param accept
+	 *            A predicate that determines whether a neighboring center should be included in the search.
+	 *            Returns true if the center should be explored, false otherwise.
+	 * @param start
+	 *            The center to begin the search from. This center is always included in the result,
+	 *            regardless of the accept predicate.
+	 * @return A set containing the start center and all connected centers that satisfy the accept predicate.
+	 */
 	public Set<Center> breadthFirstSearch(Function<Center, Boolean> accept, Center start)
 	{
 		Set<Center> explored = new HashSet<>();
@@ -719,6 +731,22 @@ public class WorldGraph extends VoronoiGraph
 		return explored;
 	}
 
+	/**
+	 * Performs a breadth-first search to find the first center that satisfies the goal predicate.
+	 *
+	 * @param accept
+	 *            A predicate that determines whether to explore a neighboring center. Takes three arguments:
+	 *            the current center being expanded, the neighbor being considered, and the distance from
+	 *            the start (in number of hops). Returns true if the neighbor should be added to the search
+	 *            frontier, false otherwise.
+	 * @param isGoal
+	 *            A predicate that determines whether a center is the goal. Returns true if the center
+	 *            satisfies the search criteria.
+	 * @param start
+	 *            The center to begin the search from.
+	 * @return The first center found that satisfies the isGoal predicate, or null if no such center
+	 *         is reachable within the constraints of the accept predicate.
+	 */
 	public Center breadthFirstSearchForGoal(TriFunction<Center, Center, Integer, Boolean> accept, Function<Center, Boolean> isGoal, Center start)
 	{
 		if (isGoal.apply(start))
