@@ -104,52 +104,79 @@ public class SkiaMapCreatorBenchmark
 		}
 		System.out.println("Generated " + numPoints + " random test points");
 
-		// Warmup - force lookup table construction and JIT compilation
-		System.out.println("\nWarmup (1000 lookups)...");
-		for (int i = 0; i < 1000; i++)
+		// Test all 3 modes
+		for (WorldGraph.CenterLookupMode mode : WorldGraph.CenterLookupMode.values())
 		{
-			graph.findClosestCenter(testPoints[i]);
-		}
+			// Create a fresh graph for each mode to ensure we measure initialization time
+			graph = MapCreator.createGraphForUnitTests(settings);
 
-		// Benchmark iterations
-		int iterations = 5;
-		long[] times = new long[iterations];
+			WorldGraph.centerLookupMode = mode;
+			WorldGraph.resetGridLookupCounters();
+			String modeName = mode.name();
+			System.out.println("\n--- " + modeName + " lookup ---");
 
-		System.out.println("\nRunning benchmark (" + iterations + " iterations of " + numPoints + " lookups each)...\n");
+			// Measure initialization time (first call builds the lookup structure)
+			long initStart = System.nanoTime();
+			graph.findClosestCenter(new Point(0, 0));
+			long initTime = System.nanoTime() - initStart;
+			System.out.println("Initialization time (first lookup): " + MapTestUtil.formatTime(initTime));
 
-		for (int iter = 0; iter < iterations; iter++)
-		{
-			long start = System.nanoTime();
-			for (int i = 0; i < numPoints; i++)
+			// Warmup
+			System.out.println("Warmup (1000 lookups)...");
+			for (int i = 0; i < 1000; i++)
 			{
 				graph.findClosestCenter(testPoints[i]);
 			}
-			long elapsed = System.nanoTime() - start;
-			times[iter] = elapsed;
 
-			double perLookupNs = (double) elapsed / numPoints;
-			System.out.println("  Iteration " + (iter + 1) + ": " + MapTestUtil.formatTime(elapsed) + " total, " + String.format("%.2f ns", perLookupNs) + " per lookup");
+			// Benchmark iterations
+			int iterations = 3;
+			long[] times = new long[iterations];
+
+			WorldGraph.resetGridLookupCounters();
+			System.out.println("Running benchmark (" + iterations + " iterations of " + numPoints + " lookups each)...\n");
+
+			for (int iter = 0; iter < iterations; iter++)
+			{
+				long start = System.nanoTime();
+				for (int i = 0; i < numPoints; i++)
+				{
+					graph.findClosestCenter(testPoints[i]);
+				}
+				long elapsed = System.nanoTime() - start;
+				times[iter] = elapsed;
+
+				double perLookupNs = (double) elapsed / numPoints;
+				System.out.println("  Iteration " + (iter + 1) + ": " + MapTestUtil.formatTime(elapsed) + " total, " + String.format("%.2f ns", perLookupNs) + " per lookup");
+			}
+
+			// Statistics
+			long total = 0;
+			long min = Long.MAX_VALUE;
+			long max = Long.MIN_VALUE;
+			for (long t : times)
+			{
+				total += t;
+				min = Math.min(min, t);
+				max = Math.max(max, t);
+			}
+			long avg = total / iterations;
+			double avgPerLookup = (double) avg / numPoints;
+
+			System.out.println("\n=== " + modeName + " Results ===");
+			System.out.println("  Average total time: " + MapTestUtil.formatTime(avg));
+			System.out.println("  Average per lookup: " + String.format("%.2f ns", avgPerLookup));
+			System.out.println("  Throughput: " + String.format("%.2f", (numPoints * 1_000_000_000.0) / avg) + " lookups/sec");
+
+			if (mode == WorldGraph.CenterLookupMode.GRID_BASED)
+			{
+				long totalLookups = iterations * numPoints;
+				System.out.println("  Direct hits: " + WorldGraph.gridLookupDirectHits + " (" + String.format("%.1f%%", 100.0 * WorldGraph.gridLookupDirectHits / totalLookups) + ")");
+				System.out.println("  Neighbor hits: " + WorldGraph.gridLookupNeighborHits + " (" + String.format("%.1f%%", 100.0 * WorldGraph.gridLookupNeighborHits / totalLookups) + ")");
+				System.out.println("  Walk fallbacks: " + WorldGraph.gridLookupBfsFallbacks + " (" + String.format("%.1f%%", 100.0 * WorldGraph.gridLookupBfsFallbacks / totalLookups) + ")");
+			}
 		}
 
-		// Statistics
-		long total = 0;
-		long min = Long.MAX_VALUE;
-		long max = Long.MIN_VALUE;
-		for (long t : times)
-		{
-			total += t;
-			min = Math.min(min, t);
-			max = Math.max(max, t);
-		}
-		long avg = total / iterations;
-		double avgPerLookup = (double) avg / numPoints;
-
-		System.out.println("\n=== Results ===");
-		System.out.println("  Total lookups per iteration: " + numPoints);
-		System.out.println("  Average total time: " + MapTestUtil.formatTime(avg));
-		System.out.println("  Average per lookup: " + String.format("%.2f ns", avgPerLookup));
-		System.out.println("  Min: " + MapTestUtil.formatTime(min));
-		System.out.println("  Max: " + MapTestUtil.formatTime(max));
-		System.out.println("  Throughput: " + String.format("%.2f", (numPoints * 1_000_000_000.0) / avg) + " lookups/sec");
+		// Reset to default
+		WorldGraph.centerLookupMode = WorldGraph.CenterLookupMode.GRID_BASED;
 	}
 }

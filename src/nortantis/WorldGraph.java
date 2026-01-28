@@ -30,6 +30,36 @@ import java.util.function.Function;
  */
 public class WorldGraph extends VoronoiGraph
 {
+	/**
+	 * Controls which algorithm is used for center lookup.
+	 */
+	public enum CenterLookupMode
+	{
+		/** Create a new PixelReader for each lookup (slowest, but no caching issues) */
+		PIXEL_UNCACHED,
+		/** Use a cached PixelReader for lookups (fast, but has caching/update issues with Skia) */
+		PIXEL_CACHED,
+		/** Use spatial grid with geometric tests (fast, no pixel reading, but uses straight edges) */
+		GRID_BASED
+	}
+
+	/**
+	 * Controls which algorithm is used for findClosestCenter.
+	 * Default is GRID_BASED for best Skia performance.
+	 */
+	public static CenterLookupMode centerLookupMode = CenterLookupMode.GRID_BASED;
+
+	// Debug counters for grid-based lookup
+	public static long gridLookupDirectHits = 0;
+	public static long gridLookupNeighborHits = 0;
+	public static long gridLookupBfsFallbacks = 0;
+
+	public static void resetGridLookupCounters()
+	{
+		gridLookupDirectHits = 0;
+		gridLookupNeighborHits = 0;
+		gridLookupBfsFallbacks = 0;
+	}
 
 	// Modify seeFloorLevel to change the number of islands in the ocean.
 	public static final float oceanPlateLevel = 0.2f;
@@ -540,6 +570,47 @@ public class WorldGraph extends VoronoiGraph
 
 	public Center findClosestCenter(Point point, boolean returnNullIfNotOnMap)
 	{
+		switch (centerLookupMode)
+		{
+			case PIXEL_UNCACHED:
+				return findClosestCenterUsingPixelsUncached(point, returnNullIfNotOnMap);
+			case PIXEL_CACHED:
+				return findClosestCenterUsingPixelsCached(point, returnNullIfNotOnMap);
+			case GRID_BASED:
+				return findClosestCenterUsingGrid(point, returnNullIfNotOnMap);
+			default:
+				return findClosestCenterUsingGrid(point, returnNullIfNotOnMap);
+		}
+	}
+
+	private Center findClosestCenterUsingPixelsUncached(Point point, boolean returnNullIfNotOnMap)
+	{
+		if (point.x < getWidth() && point.y < getHeight() && point.x >= 0 && point.y >= 0)
+		{
+			buildCenterLookupTableIfNeeded();
+			int x = (int) point.x;
+			int y = (int) point.y;
+			Color color;
+
+			// Create a new PixelReader for each lookup (no caching)
+			try (PixelReader reader = centerLookupTable.createPixelReader(new IntRectangle(x, y, 1, 1)))
+			{
+				color = Color.create(reader.getRGB(x, y));
+			}
+
+			int index = color.getRed() | (color.getGreen() << 8) | (color.getBlue() << 16);
+			return centers.get(index);
+		}
+		else if (!returnNullIfNotOnMap)
+		{
+			Optional<Center> opt = centers.stream().filter(c -> c.isBorder).min((c1, c2) -> Double.compare(c1.loc.distanceTo(point), c2.loc.distanceTo(point)));
+			return opt.get();
+		}
+		return null;
+	}
+
+	private Center findClosestCenterUsingPixelsCached(Point point, boolean returnNullIfNotOnMap)
+	{
 		if (point.x < getWidth() && point.y < getHeight() && point.x >= 0 && point.y >= 0)
 		{
 			buildCenterLookupTableIfNeeded();
@@ -559,9 +630,280 @@ public class WorldGraph extends VoronoiGraph
 		{
 			Optional<Center> opt = centers.stream().filter(c -> c.isBorder).min((c1, c2) -> Double.compare(c1.loc.distanceTo(point), c2.loc.distanceTo(point)));
 			return opt.get();
-
 		}
 		return null;
+	}
+
+	private Center findClosestCenterUsingGrid(Point point, boolean returnNullIfNotOnMap)
+	{
+		buildCenterLookupGridIfNeeded();
+
+		if (point.x < getWidth() && point.y < getHeight() && point.x >= 0 && point.y >= 0)
+		{
+			// Get starting center from grid
+			Center candidate = centerLookupGrid.getRepresentative(point);
+			if (candidate == null)
+			{
+				// This shouldn't happen with a properly built grid, but use distance-based fallback
+				return centers.stream().min((c1, c2) -> Double.compare(c1.loc.distanceTo(point), c2.loc.distanceTo(point))).orElse(null);
+			}
+
+			// Fast path: find which edge sector contains the point and check that edge
+			Center result = findCenterFromEdgeSector(point, candidate);
+			if (result != null)
+			{
+				if (result == candidate)
+				{
+					gridLookupDirectHits++;
+				}
+				else
+				{
+					gridLookupNeighborHits++;
+				}
+				return result;
+			}
+
+			// Fallback - walk to the center closest by distance
+			gridLookupBfsFallbacks++;
+			return walkToClosestCenter(point, candidate);
+		}
+		else if (!returnNullIfNotOnMap)
+		{
+			// Point is outside map bounds - find closest border center
+			Optional<Center> opt = centers.stream().filter(c -> c.isBorder).min((c1, c2) -> Double.compare(c1.loc.distanceTo(point), c2.loc.distanceTo(point)));
+			return opt.get();
+		}
+		return null;
+	}
+
+	/**
+	 * Find which center contains the point by checking edge sectors.
+	 * If point is in candidate's sector and on candidate's side of the edge, return candidate.
+	 * Otherwise return the neighbor on the other side.
+	 */
+	private Center findCenterFromEdgeSector(Point point, Center candidate)
+	{
+		double qx = point.x - candidate.loc.x;
+		double qy = point.y - candidate.loc.y;
+
+		for (Edge edge : candidate.borders)
+		{
+			if (edge.v0 == null || edge.v1 == null || edge.d0 == null || edge.d1 == null)
+			{
+				continue;
+			}
+
+			// Check if point is in this edge's angular sector
+			double v0x = edge.v0.loc.x - candidate.loc.x;
+			double v0y = edge.v0.loc.y - candidate.loc.y;
+			double v1x = edge.v1.loc.x - candidate.loc.x;
+			double v1y = edge.v1.loc.y - candidate.loc.y;
+
+			double crossV0 = v0x * qy - v0y * qx;
+			double crossV1 = v1x * qy - v1y * qx;
+			double crossEdge = v0x * v1y - v0y * v1x;
+
+			boolean inSector;
+			if (crossEdge >= 0)
+			{
+				inSector = (crossV0 >= 0 && crossV1 <= 0);
+			}
+			else
+			{
+				inSector = (crossV0 <= 0 && crossV1 >= 0);
+			}
+
+			if (inSector)
+			{
+				// Point is in this edge's sector
+				// Check if it's on candidate's side of the edge (inside the triangle)
+				if (isPointInTriangle(point, candidate.loc, edge.v0.loc, edge.v1.loc))
+				{
+					return candidate;
+				}
+				else
+				{
+					// Point is beyond the edge - it belongs to the neighbor
+					Center neighbor = (edge.d0 == candidate) ? edge.d1 : edge.d0;
+					return neighbor;
+				}
+			}
+		}
+
+		return null; // No sector found - need fallback
+	}
+
+	/**
+	 * Walk from the starting center to the center whose loc is closest to the query point.
+	 * This is faster than BFS and converges quickly since Voronoi diagrams are well-structured.
+	 */
+	private Center walkToClosestCenter(Point query, Center start)
+	{
+		Center current = start;
+		double currentDist = current.loc.distanceTo(query);
+
+		// Walk until no neighbor is closer
+		while (true)
+		{
+			Center closest = current;
+			double closestDist = currentDist;
+
+			for (Center neighbor : current.neighbors)
+			{
+				double d = neighbor.loc.distanceTo(query);
+				if (d < closestDist)
+				{
+					closest = neighbor;
+					closestDist = d;
+				}
+			}
+
+			if (closest == current)
+			{
+				// No neighbor is closer - we've found it
+				return current;
+			}
+			current = closest;
+			currentDist = closestDist;
+		}
+	}
+
+	/**
+	 * Tests if a point is inside a center, considering noisy edges.
+	 * Optimized to only test the relevant pie slice based on angular sector.
+	 */
+	private boolean isPointInCenter(Point query, Center center)
+	{
+		// Find which edge's sector contains the query point
+		Edge relevantEdge = findRelevantEdge(query, center);
+		if (relevantEdge == null)
+		{
+			return false;
+		}
+
+		return isPointInPieSlice(query, center, relevantEdge);
+	}
+
+	/**
+	 * Finds which edge's triangular sector (center.loc, v0, v1) contains the query point.
+	 * This is much faster than testing all edges.
+	 */
+	private Edge findRelevantEdge(Point query, Center center)
+	{
+		// Vector from center to query point
+		double qx = query.x - center.loc.x;
+		double qy = query.y - center.loc.y;
+
+		for (Edge edge : center.borders)
+		{
+			if (edge.v0 == null || edge.v1 == null || edge.d0 == null || edge.d1 == null)
+			{
+				continue;
+			}
+
+			// Check if query is in the triangular sector formed by center.loc, v0, v1
+			// Using cross product to check if point is on the correct side of both edge rays
+			double v0x = edge.v0.loc.x - center.loc.x;
+			double v0y = edge.v0.loc.y - center.loc.y;
+			double v1x = edge.v1.loc.x - center.loc.x;
+			double v1y = edge.v1.loc.y - center.loc.y;
+
+			// Cross products to determine which side of each ray the query is on
+			double crossV0 = v0x * qy - v0y * qx; // query relative to v0 ray
+			double crossV1 = v1x * qy - v1y * qx; // query relative to v1 ray
+			double crossEdge = v0x * v1y - v0y * v1x; // v1 relative to v0 ray (determines winding)
+
+			// Query is in sector if it's between the two rays
+			// The sign comparison depends on the winding direction
+			if (crossEdge >= 0)
+			{
+				if (crossV0 >= 0 && crossV1 <= 0)
+				{
+					return edge;
+				}
+			}
+			else
+			{
+				if (crossV0 <= 0 && crossV1 >= 0)
+				{
+					return edge;
+				}
+			}
+		}
+
+		// Fallback: return first valid edge (shouldn't happen for well-formed polygons)
+		for (Edge edge : center.borders)
+		{
+			if (edge.v0 != null && edge.v1 != null && edge.d0 != null && edge.d1 != null)
+			{
+				return edge;
+			}
+		}
+		return null;
+	}
+
+	private boolean isPointInPieSlice(Point query, Center center, Edge edge)
+	{
+		// Use straight Voronoi edges for fast containment test.
+		// This is an approximation that ignores noisy edge variations,
+		// but noisy edges are constrained within Delaunay triangles
+		// so the error is small and localized to boundaries.
+		if (edge.v0 == null || edge.v1 == null)
+		{
+			return false;
+		}
+
+		// Fast triangle test: center.loc, v0, v1
+		return isPointInTriangle(query, center.loc, edge.v0.loc, edge.v1.loc);
+	}
+
+	/**
+	 * Fast point-in-triangle test using barycentric coordinates.
+	 */
+	private boolean isPointInTriangle(Point p, Point a, Point b, Point c)
+	{
+		double v0x = c.x - a.x;
+		double v0y = c.y - a.y;
+		double v1x = b.x - a.x;
+		double v1y = b.y - a.y;
+		double v2x = p.x - a.x;
+		double v2y = p.y - a.y;
+
+		double dot00 = v0x * v0x + v0y * v0y;
+		double dot01 = v0x * v1x + v0y * v1y;
+		double dot02 = v0x * v2x + v0y * v2y;
+		double dot11 = v1x * v1x + v1y * v1y;
+		double dot12 = v1x * v2x + v1y * v2y;
+
+		double invDenom = 1.0 / (dot00 * dot11 - dot01 * dot01);
+		double u = (dot11 * dot02 - dot01 * dot12) * invDenom;
+		double v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+
+		return (u >= 0) && (v >= 0) && (u + v <= 1);
+	}
+
+	/**
+	 * Ray casting algorithm for point-in-polygon test.
+	 */
+	private boolean isPointInPolygon(Point p, List<Point> polygon)
+	{
+		int n = polygon.size();
+		if (n < 3)
+		{
+			return false;
+		}
+
+		boolean inside = false;
+		for (int i = 0, j = n - 1; i < n; j = i++)
+		{
+			Point pi = polygon.get(i);
+			Point pj = polygon.get(j);
+			if ((pi.y > p.y) != (pj.y > p.y) && p.x < (pj.x - pi.x) * (p.y - pi.y) / (pj.y - pi.y) + pi.x)
+			{
+				inside = !inside;
+			}
+		}
+		return inside;
 	}
 
 	private Image centerLookupTable;
@@ -569,6 +911,112 @@ public class WorldGraph extends VoronoiGraph
 	// Cached pixel reader for findClosestCenter optimization - covers the entire map
 	private final Object centerLookupLock = new Object();
 	private PixelReader cachedCenterLookupReader;
+
+	// Grid-based center lookup
+	private CenterLookupGrid centerLookupGrid;
+
+	private void buildCenterLookupGridIfNeeded()
+	{
+		if (centerLookupGrid == null)
+		{
+			centerLookupGrid = new CenterLookupGrid();
+			centerLookupGrid.build(centers, getWidth(), getHeight());
+		}
+	}
+
+	/**
+	 * Spatial grid for efficient center lookup. Each cell stores a representative
+	 * center that is close to that cell's center point.
+	 */
+	private class CenterLookupGrid
+	{
+		private Center[][] grid;
+		private int cellWidth;
+		private int cellHeight;
+		private int gridCols;
+		private int gridRows;
+
+		void build(List<Center> centers, int mapWidth, int mapHeight)
+		{
+			// Calculate cell size based on center density
+			double avgSpacing = Math.sqrt((double) (mapWidth * mapHeight) / centers.size());
+			cellWidth = Math.max(1, (int) (avgSpacing * 2));
+			cellHeight = Math.max(1, (int) (avgSpacing * 2));
+			gridCols = (mapWidth / cellWidth) + 1;
+			gridRows = (mapHeight / cellHeight) + 1;
+
+			// Step 1: Create temp grid holding ALL centers per cell (O(n))
+			@SuppressWarnings("unchecked")
+			List<Center>[][] tempGrid = new ArrayList[gridRows][gridCols];
+			for (int r = 0; r < gridRows; r++)
+			{
+				for (int c = 0; c < gridCols; c++)
+				{
+					tempGrid[r][c] = new ArrayList<>();
+				}
+			}
+
+			// Add each center to the cell containing its loc
+			for (Center center : centers)
+			{
+				int col = clamp((int) (center.loc.x / cellWidth), 0, gridCols - 1);
+				int row = clamp((int) (center.loc.y / cellHeight), 0, gridRows - 1);
+				tempGrid[row][col].add(center);
+			}
+
+			// Step 2: For each cell, pick the center closest to cell's center
+			grid = new Center[gridRows][gridCols];
+			for (int row = 0; row < gridRows; row++)
+			{
+				for (int col = 0; col < gridCols; col++)
+				{
+					Point cellCenter = new Point(col * cellWidth + cellWidth / 2.0, row * cellHeight + cellHeight / 2.0);
+					grid[row][col] = findClosestFromCandidates(tempGrid, row, col, cellCenter);
+				}
+			}
+		}
+
+		private Center findClosestFromCandidates(List<Center>[][] tempGrid, int row, int col, Point target)
+		{
+			Center closest = null;
+			double closestDist = Double.MAX_VALUE;
+
+			// Check 3x3 neighborhood around (row, col)
+			for (int dr = -1; dr <= 1; dr++)
+			{
+				for (int dc = -1; dc <= 1; dc++)
+				{
+					int r = row + dr;
+					int c = col + dc;
+					if (r >= 0 && r < gridRows && c >= 0 && c < gridCols)
+					{
+						for (Center center : tempGrid[r][c])
+						{
+							double d = center.loc.distanceTo(target);
+							if (d < closestDist)
+							{
+								closestDist = d;
+								closest = center;
+							}
+						}
+					}
+				}
+			}
+			return closest;
+		}
+
+		Center getRepresentative(Point query)
+		{
+			int col = clamp((int) (query.x / cellWidth), 0, gridCols - 1);
+			int row = clamp((int) (query.y / cellHeight), 0, gridRows - 1);
+			return grid[row][col];
+		}
+
+		private int clamp(int value, int min, int max)
+		{
+			return Math.max(min, Math.min(max, value));
+		}
+	}
 
 	public void buildCenterLookupTableIfNeeded()
 	{
