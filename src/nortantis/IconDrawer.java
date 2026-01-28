@@ -449,14 +449,25 @@ public class IconDrawer
 		return freeIcons.doWithLockAndReturnResult(() ->
 		{
 			Rectangle conversionBoundsOfIconsChanged = convertToFreeIconsIfNeeded(centersToUpdateIconsFor, edits, warningLogger);
-			Rectangle removedOrReplacedChangeBounds = createDrawTasksForFreeIconsAndRemovedFailedIcons(warningLogger, centersToUpdateIconsFor, replaceBounds);
-			Rectangle combined = Rectangle.add(conversionBoundsOfIconsChanged, removedOrReplacedChangeBounds);
-			if (combined == null)
+
+			// Set hint for findClosestCenter calls in isContentBottomTouchingWater
+			IntRectangle hintBounds = replaceBounds != null ? replaceBounds.toEnclosingIntRectangle() : new IntRectangle(0, 0, graph.getWidth(), graph.getHeight());
+			graph.setFindClosestCenterHint(hintBounds);
+			try
 			{
-				return combined;
+				Rectangle removedOrReplacedChangeBounds = createDrawTasksForFreeIconsAndRemovedFailedIcons(warningLogger, centersToUpdateIconsFor, replaceBounds);
+				Rectangle combined = Rectangle.add(conversionBoundsOfIconsChanged, removedOrReplacedChangeBounds);
+				if (combined == null)
+				{
+					return combined;
+				}
+				double paddingForIntegerTruncation = 4.0;
+				return combined.pad(paddingForIntegerTruncation, paddingForIntegerTruncation);
 			}
-			double paddingForIntegerTruncation = 4.0;
-			return combined.pad(paddingForIntegerTruncation, paddingForIntegerTruncation);
+			finally
+			{
+				graph.clearFindClosestCenterHint();
+			}
 		});
 	}
 

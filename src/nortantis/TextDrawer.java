@@ -1100,6 +1100,17 @@ public class TextDrawer
 		return new Point(newX, newY);
 	}
 
+	/**
+	 * Computes the axis-aligned bounding box that contains both the original rectangle and its rotated form around a pivot. This is needed
+	 * because overlapsBoundaryThatShouldCauseLineSplit looks up both the non-rotated center and the rotated points.
+	 */
+	private static IntRectangle computeRotatedBounds(Rectangle textBounds, Point pivot, double angle)
+	{
+		RotatedRectangle rotated = new RotatedRectangle(textBounds, angle, pivot);
+		Rectangle axisAlignedBounds = rotated.getBounds();
+		return axisAlignedBounds.toEnclosingIntRectangle();
+	}
+
 	private Pair<String> addLineBreakNearMiddle(String name)
 	{
 		int start = name.length() / 2;
@@ -1511,20 +1522,19 @@ public class TextDrawer
 			return false;
 		}
 
-		Center middleCenter = graph.findClosestCenter(textBounds.getCenter(), true);
-
-		if (middleCenter == null)
-		{
-			return false;
-		}
-
 		// Set a hint for findClosestCenter to cover the rotated text bounds.
-		// Pad by the diagonal to account for any rotation angle.
-		double diagonal = Math.sqrt(textBounds.width * textBounds.width + textBounds.height * textBounds.height);
-		IntRectangle hintBounds = textBounds.pad(diagonal / 2, diagonal / 2).toEnclosingIntRectangle();
+		// Compute the bounding box of the rotated corners, then pad by 2 because
+		// IntRectangle.contains uses exclusive upper bounds and pad divides by 2.
+		IntRectangle hintBounds = computeRotatedBounds(textBounds, pivot, angle).pad(2, 2);
 		graph.setFindClosestCenterHint(hintBounds);
 		try
 		{
+			Center middleCenter = graph.findClosestCenter(textBounds.getCenter(), true);
+
+			if (middleCenter == null)
+			{
+				return false;
+			}
 			final int checkFrequency = 10;
 			for (double x = 0; x < textBounds.width; x += checkFrequency * settings.resolution)
 			{

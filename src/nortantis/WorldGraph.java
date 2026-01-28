@@ -538,6 +538,7 @@ public class WorldGraph extends VoronoiGraph
 		return findClosestCenter(point, false);
 	}
 
+	int missCount = 0;
 	public Center findClosestCenter(Point point, boolean returnNullIfNotOnMap)
 	{
 		if (point.x < getWidth() && point.y < getHeight() && point.x >= 0 && point.y >= 0)
@@ -560,6 +561,8 @@ public class WorldGraph extends VoronoiGraph
 					// Fall back to single-pixel read
 					try (PixelReader pixels = centerLookupTable.createPixelReader(new IntRectangle(x, y, 1, 1)))
 					{
+						missCount++;
+						System.out.println("miss count: " + missCount);
 						color = Color.create(pixels.getRGB(x, y));
 					}
 				}
