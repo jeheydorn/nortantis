@@ -685,33 +685,65 @@ public class WorldGraph extends VoronoiGraph
 
 	/**
 	 * Find which center contains the point by checking pie slices.
-	 * Tests the candidate center first, then all its neighbors exhaustively.
+	 * Uses angular sector as a hint to try the likely edge first, then falls back to exhaustive search.
 	 */
 	private Center findCenterFromEdgeSector(Point point, Center candidate)
 	{
-		// Check if point is in any of candidate's pie slices
-		for (Edge edge : candidate.borders)
+		// Fast path: use angular sector to find the likely edge and test it first
+		int hintEdgePos = findAngularSectorEdgePosition(point, candidate);
+		if (hintEdgePos >= 0)
 		{
+			Edge hintEdge = candidate.borders.get(hintEdgePos);
+			if (isPointInPieSlice(point, candidate, hintEdgePos))
+			{
+				return candidate;
+			}
+			// Try the neighbor across this edge
+			Center neighbor = (hintEdge.d0 == candidate) ? hintEdge.d1 : hintEdge.d0;
+			if (neighbor != null)
+			{
+				int neighborEdgePos = findEdgePosition(neighbor, hintEdge);
+				if (neighborEdgePos >= 0 && isPointInPieSlice(point, neighbor, neighborEdgePos))
+				{
+					return neighbor;
+				}
+			}
+		}
+
+		// Exhaustive search: check all pie slices of candidate (skip hint edge already tested)
+		for (int i = 0; i < candidate.borders.size(); i++)
+		{
+			if (i == hintEdgePos)
+			{
+				continue;
+			}
+			Edge edge = candidate.borders.get(i);
 			if (edge.v0 == null || edge.v1 == null)
 			{
 				continue;
 			}
-			if (isPointInPieSlice(point, candidate, edge))
+			if (isPointInPieSlice(point, candidate, i))
 			{
 				return candidate;
 			}
 		}
 
-		// Check immediate neighbors
+		// Check immediate neighbors (skip hint edge already tested)
 		for (Center neighbor : candidate.neighbors)
 		{
-			for (Edge edge : neighbor.borders)
+			for (int i = 0; i < neighbor.borders.size(); i++)
 			{
+				Edge edge = neighbor.borders.get(i);
 				if (edge.v0 == null || edge.v1 == null)
 				{
 					continue;
 				}
-				if (isPointInPieSlice(point, neighbor, edge))
+				// Skip if this is the hint edge we already tested
+				if (hintEdgePos >= 0 && edge == candidate.borders.get(hintEdgePos))
+				{
+					continue;
+				}
+				if (isPointInPieSlice(point, neighbor, i))
 				{
 					return neighbor;
 				}
@@ -719,6 +751,57 @@ public class WorldGraph extends VoronoiGraph
 		}
 
 		return null; // Need walk fallback
+	}
+
+	/**
+	 * Find which edge's angular sector contains the point (fast test using straight lines).
+	 * Returns the edge position in center.borders, or -1 if no sector contains the point.
+	 */
+	private int findAngularSectorEdgePosition(Point point, Center center)
+	{
+		double qx = point.x - center.loc.x;
+		double qy = point.y - center.loc.y;
+
+		for (int i = 0; i < center.borders.size(); i++)
+		{
+			Edge edge = center.borders.get(i);
+			if (edge.v0 == null || edge.v1 == null)
+			{
+				continue;
+			}
+
+			double v0x = edge.v0.loc.x - center.loc.x;
+			double v0y = edge.v0.loc.y - center.loc.y;
+			double v1x = edge.v1.loc.x - center.loc.x;
+			double v1y = edge.v1.loc.y - center.loc.y;
+
+			double crossV0 = v0x * qy - v0y * qx;
+			double crossV1 = v1x * qy - v1y * qx;
+			double crossEdge = v0x * v1y - v0y * v1x;
+
+			boolean inSector = (crossEdge >= 0) ? (crossV0 >= 0 && crossV1 <= 0) : (crossV0 <= 0 && crossV1 >= 0);
+
+			if (inSector)
+			{
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	/**
+	 * Find the position of an edge in a center's borders list.
+	 */
+	private int findEdgePosition(Center center, Edge edge)
+	{
+		for (int i = 0; i < center.borders.size(); i++)
+		{
+			if (center.borders.get(i) == edge)
+			{
+				return i;
+			}
+		}
+		return -1;
 	}
 
 	/**
@@ -755,15 +838,14 @@ public class WorldGraph extends VoronoiGraph
 		}
 	}
 
-	private boolean isPointInPieSlice(Point query, Center center, Edge edge)
+	private boolean isPointInPieSlice(Point query, Center center, int edgePosition)
 	{
-		if (edge.v0 == null || edge.v1 == null)
+		// Get the cached slice polygon using array lookup (faster than HashMap)
+		CachedSlicePolygon cached = getSlicePolygon(center, edgePosition);
+		if (cached == null)
 		{
 			return false;
 		}
-
-		// Get or build the cached slice polygon
-		CachedSlicePolygon cached = getOrBuildSlicePolygon(center, edge);
 
 		// Quick bounding box rejection
 		if (query.x < cached.minX || query.x > cached.maxX || query.y < cached.minY || query.y > cached.maxY)
@@ -810,27 +892,22 @@ public class WorldGraph extends VoronoiGraph
 		}
 	}
 
-	// Cache for slice polygons: key = (centerIndex << 32) | edgeIndex
-	private Map<Long, CachedSlicePolygon> slicePolygonCache;
+	// Array-based cache for slice polygons: [centerIndex][edgePositionInBorders]
+	// This is faster than HashMap because it avoids hash computation and lookup
+	private CachedSlicePolygon[][] slicePolygonsByCenter;
 
-	private CachedSlicePolygon getOrBuildSlicePolygon(Center center, Edge edge)
+	private CachedSlicePolygon getSlicePolygon(Center center, int edgePosition)
 	{
-		if (slicePolygonCache == null)
+		if (slicePolygonsByCenter == null || slicePolygonsByCenter[center.index] == null)
 		{
-			slicePolygonCache = new HashMap<>();
+			return null;
 		}
+		return slicePolygonsByCenter[center.index][edgePosition];
+	}
 
-		long key = ((long) center.index << 32) | edge.index;
-		CachedSlicePolygon cached = slicePolygonCache.get(key);
-		if (cached != null)
-		{
-			return cached;
-		}
-
+	private CachedSlicePolygon buildSlicePolygon(Center center, Edge edge)
+	{
 		// Build the slice polygon: center.loc + noisy edge path
-		// The polygon is: center.loc -> path[0] -> ... -> path[n] -> (implicit close to center.loc)
-		// This correctly encloses the area on this center's side of the noisy edge,
-		// regardless of whether this is d0 or d1 (same approach as dawPieceUsingNoisyEdges in VoronoiGraph)
 		List<Point> noisyPath = noisyEdges != null ? noisyEdges.getNoisyEdge(edge.index) : null;
 
 		int size;
@@ -859,23 +936,25 @@ public class WorldGraph extends VoronoiGraph
 			yCoords = new double[size];
 			xCoords[0] = center.loc.x;
 			yCoords[0] = center.loc.y;
-			xCoords[1] = edge.v0.loc.x;
-			yCoords[1] = edge.v0.loc.y;
-			xCoords[2] = edge.v1.loc.x;
-			yCoords[2] = edge.v1.loc.y;
+			if (edge.v0 != null && edge.v1 != null)
+			{
+				xCoords[1] = edge.v0.loc.x;
+				yCoords[1] = edge.v0.loc.y;
+				xCoords[2] = edge.v1.loc.x;
+				yCoords[2] = edge.v1.loc.y;
+			}
 		}
 
-		cached = new CachedSlicePolygon(xCoords, yCoords);
-		slicePolygonCache.put(key, cached);
-		return cached;
+		return new CachedSlicePolygon(xCoords, yCoords);
 	}
 
 	/**
-	 * Clears the slice polygon cache for the specified centers and their neighbors. Call this when centers' noisy edges have been rebuilt.
+	 * Clears the slice polygon cache for the specified centers and their neighbors.
+	 * Call this when centers' noisy edges have been rebuilt.
 	 */
 	private void clearSlicePolygonCache(Collection<Center> centers)
 	{
-		if (slicePolygonCache == null)
+		if (slicePolygonsByCenter == null)
 		{
 			return;
 		}
@@ -892,10 +971,13 @@ public class WorldGraph extends VoronoiGraph
 
 		for (Center c : centersWithNeighbors)
 		{
-			for (Edge edge : c.borders)
+			// Clear the array for this center so it will be rebuilt
+			if (c.index < slicePolygonsByCenter.length && slicePolygonsByCenter[c.index] != null)
 			{
-				long key = ((long) c.index << 32) | edge.index;
-				slicePolygonCache.remove(key);
+				for (int i = 0; i < slicePolygonsByCenter[c.index].length; i++)
+				{
+					slicePolygonsByCenter[c.index][i] = null;
+				}
 			}
 		}
 	}
@@ -947,36 +1029,37 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Precomputes all slice polygons for all centers and their edges. This makes subsequent lookups faster by avoiding lazy computation.
+	 * Precomputes all slice polygons for all centers and their edges using array-based storage.
 	 */
 	private void precomputeSlicePolygons()
 	{
-		if (slicePolygonCache == null)
-		{
-			slicePolygonCache = new HashMap<>();
-		}
+		// Initialize the 2D array
+		slicePolygonsByCenter = new CachedSlicePolygon[centers.size()][];
 
 		for (Center center : centers)
 		{
-			for (Edge edge : center.borders)
+			slicePolygonsByCenter[center.index] = new CachedSlicePolygon[center.borders.size()];
+			for (int i = 0; i < center.borders.size(); i++)
 			{
+				Edge edge = center.borders.get(i);
 				if (edge.v0 != null && edge.v1 != null)
 				{
-					// This will build and cache the polygon
-					getOrBuildSlicePolygon(center, edge);
+					slicePolygonsByCenter[center.index][i] = buildSlicePolygon(center, edge);
 				}
 			}
 		}
 	}
 
 	/**
-	 * Precomputes slice polygons for the specified centers and their neighbors.
+	 * Rebuilds slice polygons for the specified centers and their neighbors.
 	 */
 	private void precomputeSlicePolygonsForCenters(Collection<Center> centersToUpdate)
 	{
-		if (slicePolygonCache == null)
+		if (slicePolygonsByCenter == null)
 		{
-			slicePolygonCache = new HashMap<>();
+			// Initialize full array if not yet done
+			precomputeSlicePolygons();
+			return;
 		}
 
 		Set<Center> centersWithNeighbors = new HashSet<>();
@@ -991,11 +1074,17 @@ public class WorldGraph extends VoronoiGraph
 
 		for (Center center : centersWithNeighbors)
 		{
-			for (Edge edge : center.borders)
+			// Rebuild the slice polygons array for this center
+			if (slicePolygonsByCenter[center.index] == null)
 			{
+				slicePolygonsByCenter[center.index] = new CachedSlicePolygon[center.borders.size()];
+			}
+			for (int i = 0; i < center.borders.size(); i++)
+			{
+				Edge edge = center.borders.get(i);
 				if (edge.v0 != null && edge.v1 != null)
 				{
-					getOrBuildSlicePolygon(center, edge);
+					slicePolygonsByCenter[center.index][i] = buildSlicePolygon(center, edge);
 				}
 			}
 		}
