@@ -1100,17 +1100,6 @@ public class TextDrawer
 		return new Point(newX, newY);
 	}
 
-	/**
-	 * Computes the axis-aligned bounding box that contains both the original rectangle and its rotated form around a pivot. This is needed
-	 * because overlapsBoundaryThatShouldCauseLineSplit looks up both the non-rotated center and the rotated points.
-	 */
-	private static IntRectangle computeRotatedBounds(Rectangle textBounds, Point pivot, double angle)
-	{
-		RotatedRectangle rotated = new RotatedRectangle(textBounds, angle, pivot);
-		Rectangle axisAlignedBounds = rotated.getBounds();
-		return axisAlignedBounds.toEnclosingIntRectangle();
-	}
-
 	private Pair<String> addLineBreakNearMiddle(String name)
 	{
 		int start = name.length() / 2;
@@ -1522,52 +1511,40 @@ public class TextDrawer
 			return false;
 		}
 
-		// Set a hint for findClosestCenter to cover the rotated text bounds.
-		// Compute the bounding box of the rotated corners, then pad by 2 because
-		// IntRectangle.contains uses exclusive upper bounds and pad divides by 2.
-		IntRectangle hintBounds = computeRotatedBounds(textBounds, pivot, angle).pad(2, 2);
-		graph.setFindClosestCenterHint(hintBounds);
-		try
+		Center middleCenter = graph.findClosestCenter(textBounds.getCenter(), true);
+
+		if (middleCenter == null)
 		{
-			Center middleCenter = graph.findClosestCenter(textBounds.getCenter(), true);
-
-			if (middleCenter == null)
-			{
-				return false;
-			}
-			final int checkFrequency = 10;
-			for (double x = 0; x < textBounds.width; x += checkFrequency * settings.resolution)
-			{
-				if (x + checkFrequency * settings.resolution > textBounds.width)
-				{
-					// This is the final iteration. Change x to be at the end of the text box.
-					x = textBounds.width;
-				}
-
-				for (double y = 0; y < textBounds.height; y += checkFrequency * settings.resolution)
-				{
-					if (y + checkFrequency * settings.resolution > textBounds.height)
-					{
-						// This is the final iteration. Change y to be at the bottom of the text box.
-						y = textBounds.height;
-					}
-
-					Point point = rotate(new Point(textBounds.x + x, textBounds.y + y), pivot, angle);
-					Center c = graph.findClosestCenter(point, true);
-
-					if (c != null)
-					{
-						if (doCentersHaveBoundaryBetweenThem(middleCenter, c, settings, type))
-						{
-							return true;
-						}
-					}
-				}
-			}
+			return false;
 		}
-		finally
+		final int checkFrequency = 10;
+		for (double x = 0; x < textBounds.width; x += checkFrequency * settings.resolution)
 		{
-			graph.clearFindClosestCenterHint();
+			if (x + checkFrequency * settings.resolution > textBounds.width)
+			{
+				// This is the final iteration. Change x to be at the end of the text box.
+				x = textBounds.width;
+			}
+
+			for (double y = 0; y < textBounds.height; y += checkFrequency * settings.resolution)
+			{
+				if (y + checkFrequency * settings.resolution > textBounds.height)
+				{
+					// This is the final iteration. Change y to be at the bottom of the text box.
+					y = textBounds.height;
+				}
+
+				Point point = rotate(new Point(textBounds.x + x, textBounds.y + y), pivot, angle);
+				Center c = graph.findClosestCenter(point, true);
+
+				if (c != null)
+				{
+					if (doCentersHaveBoundaryBetweenThem(middleCenter, c, settings, type))
+					{
+						return true;
+					}
+				}
+			}
 		}
 
 		return false;

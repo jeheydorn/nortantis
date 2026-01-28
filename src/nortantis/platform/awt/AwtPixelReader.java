@@ -100,6 +100,13 @@ public class AwtPixelReader implements PixelReader
 	}
 
 	@Override
+	public void refreshRegion(IntRectangle bounds)
+	{
+		// No-op for AWT - the cached pixel array is a direct reference to the BufferedImage's
+		// backing array, so changes to the image are automatically reflected.
+	}
+
+	@Override
 	public void close()
 	{
 	}

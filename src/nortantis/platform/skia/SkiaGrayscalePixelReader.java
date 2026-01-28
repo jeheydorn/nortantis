@@ -110,6 +110,36 @@ public class SkiaGrayscalePixelReader implements PixelReader
 	}
 
 	@Override
+	public void refreshRegion(IntRectangle refreshBounds)
+	{
+		if (refreshBounds == null)
+		{
+			return;
+		}
+
+		// Compute the intersection of refreshBounds with our cached region
+		IntRectangle cachedRegion = bounds != null ? bounds : new IntRectangle(0, 0, image.getWidth(), image.getHeight());
+		IntRectangle intersection = cachedRegion.findIntersection(refreshBounds);
+		if (intersection == null || intersection.width <= 0 || intersection.height <= 0)
+		{
+			return;
+		}
+
+		// Read the intersection region from the image
+		byte[] regionBytes = image.readGrayscalePixels(intersection);
+
+		// Copy the bytes into the correct positions in cachedPixelArray
+		for (int row = 0; row < intersection.height; row++)
+		{
+			int srcOffset = row * intersection.width;
+			int destY = intersection.y - (bounds != null ? bounds.y : 0) + row;
+			int destX = intersection.x - (bounds != null ? bounds.x : 0);
+			int destOffset = destY * width + destX;
+			System.arraycopy(regionBytes, srcOffset, cachedPixelArray, destOffset, intersection.width);
+		}
+	}
+
+	@Override
 	public void close()
 	{
 	}

@@ -549,19 +549,7 @@ public class WorldGraph extends VoronoiGraph
 
 			synchronized (centerLookupLock)
 			{
-				// Use cached reader if available and point is within bounds
-				if (cachedCenterLookupBounds != null && cachedCenterLookupBounds.contains(x, y))
-				{
-					color = Color.create(cachedCenterLookupReader.getRGB(x, y));
-				}
-				else
-				{
-					// Fall back to single-pixel read
-					try (PixelReader pixels = centerLookupTable.createPixelReader(new IntRectangle(x, y, 1, 1)))
-					{
-						color = Color.create(pixels.getRGB(x, y));
-					}
-				}
+				color = Color.create(cachedCenterLookupReader.getRGB(x, y));
 			}
 
 			int index = color.getRed() | (color.getGreen() << 8) | (color.getBlue() << 16);
@@ -578,69 +566,29 @@ public class WorldGraph extends VoronoiGraph
 
 	private Image centerLookupTable;
 
-	// Cached pixel reader for findClosestCenter optimization
+	// Cached pixel reader for findClosestCenter optimization - covers the entire map
 	private final Object centerLookupLock = new Object();
 	private PixelReader cachedCenterLookupReader;
-	private IntRectangle cachedCenterLookupBounds;
-
-	/**
-	 * Sets a hint for findClosestCenter to cache a PixelReader for the given bounds. This dramatically improves performance when
-	 * findClosestCenter is called many times within a known region (e.g., during icon or text drawing).
-	 *
-	 * Only one hint can be active at a time. Call clearFindClosestCenterHint() when done with the batch operation.
-	 *
-	 * Thread-safe: can be called from any thread, but typically only the background processing thread should set hints. The UI thread can
-	 * still call findClosestCenter and will either use the cached reader (if point is in bounds) or fall back to single-pixel reads.
-	 */
-	public void setFindClosestCenterHint(IntRectangle bounds)
-	{
-		synchronized (centerLookupLock)
-		{
-			clearCachedCenterLookupReader();
-			cachedCenterLookupBounds = bounds;
-			if (bounds != null)
-			{
-				buildCenterLookupTableIfNeeded();
-				cachedCenterLookupReader = centerLookupTable.createPixelReader(bounds);
-			}
-		}
-	}
-
-	/**
-	 * Clears the hint set by setFindClosestCenterHint and releases the cached PixelReader.
-	 */
-	public void clearFindClosestCenterHint()
-	{
-		synchronized (centerLookupLock)
-		{
-			clearCachedCenterLookupReader();
-			cachedCenterLookupBounds = null;
-		}
-	}
-
-	private void clearCachedCenterLookupReader()
-	{
-		if (cachedCenterLookupReader != null)
-		{
-			cachedCenterLookupReader.close();
-			cachedCenterLookupReader = null;
-		}
-	}
 
 	public void buildCenterLookupTableIfNeeded()
 	{
-		if (centerLookupTable == null)
+		synchronized (centerLookupLock)
 		{
-			centerLookupTable = Image.create((int) bounds.width, (int) bounds.height, ImageType.RGB);
-			try (Painter p = centerLookupTable.createPainter())
+			if (centerLookupTable == null)
 			{
-				drawPolygons(p, new Function<Center, Color>()
+				centerLookupTable = Image.create((int) bounds.width, (int) bounds.height, ImageType.RGB);
+				try (Painter p = centerLookupTable.createPainter())
 				{
-					public Color apply(Center c)
+					drawPolygons(p, new Function<Center, Color>()
 					{
-						return convertCenterIdToColor(c);
-					}
-				});
+						public Color apply(Center c)
+						{
+							return convertCenterIdToColor(c);
+						}
+					});
+				}
+				// Create cached reader for the entire map
+				cachedCenterLookupReader = centerLookupTable.createPixelReader();
 			}
 		}
 	}
@@ -656,9 +604,6 @@ public class WorldGraph extends VoronoiGraph
 	{
 		synchronized (centerLookupLock)
 		{
-			// Clear the cached reader since the lookup table is changing, but preserve the hint bounds
-			clearCachedCenterLookupReader();
-
 			if (centerLookupTable == null)
 			{
 				buildCenterLookupTableIfNeeded();
@@ -687,12 +632,13 @@ public class WorldGraph extends VoronoiGraph
 						}
 					});
 				}
-			}
 
-			// Recreate the cached reader if we had hint bounds
-			if (cachedCenterLookupBounds != null)
-			{
-				cachedCenterLookupReader = centerLookupTable.createPixelReader(cachedCenterLookupBounds);
+				// Refresh the cached reader with the changed region
+				Rectangle changedBounds = getBoundingBox(centersWithNeighbors);
+				if (changedBounds != null)
+				{
+					cachedCenterLookupReader.refreshRegion(changedBounds.toEnclosingIntRectangle());
+				}
 			}
 		}
 	}

@@ -129,6 +129,37 @@ public class SkiaPixelReader implements PixelReader
 
 
 	@Override
+	public void refreshRegion(IntRectangle refreshBounds)
+	{
+		if (refreshBounds == null)
+		{
+			return;
+		}
+
+		// Compute the intersection of refreshBounds with our cached region
+		IntRectangle cachedRegion = bounds != null ? bounds : new IntRectangle(0, 0, image.getWidth(), image.getHeight());
+		IntRectangle intersection = cachedRegion.findIntersection(refreshBounds);
+		if (intersection == null || intersection.width <= 0 || intersection.height <= 0)
+		{
+			return;
+		}
+
+		// Read the intersection region from the image
+		byte[] regionBytes = image.readPixelsToByteArray(intersection);
+
+		// Copy the bytes into the correct positions in cachedPixelBytes
+		int bytesPerPixel = 4;
+		for (int row = 0; row < intersection.height; row++)
+		{
+			int srcOffset = row * intersection.width * bytesPerPixel;
+			int destY = intersection.y - (bounds != null ? bounds.y : 0) + row;
+			int destX = intersection.x - (bounds != null ? bounds.x : 0);
+			int destOffset = (destY * regionWidth + destX) * bytesPerPixel;
+			System.arraycopy(regionBytes, srcOffset, cachedPixelBytes, destOffset, intersection.width * bytesPerPixel);
+		}
+	}
+
+	@Override
 	public void close()
 	{
 	}

@@ -390,45 +390,35 @@ public class Background
 	 */
 	private void updateRegionIndexesAndLandWithIconShapes(MapSettings settings, WorldGraph graph, List<IconDrawTask> tasks, Rectangle drawBounds)
 	{
-		// Set hint for findClosestCenter calls in this loop
-		IntRectangle hintBounds = drawBounds != null ? drawBounds.toEnclosingIntRectangle() : new IntRectangle(0, 0, graph.getWidth(), graph.getHeight());
-		graph.setFindClosestCenterHint(hintBounds);
-		try
+		// The image "land" is generated but doesn't yet have colors.
+		for (final IconDrawTask task : tasks)
 		{
-			// The image "land" is generated but doesn't yet have colors.
-			for (final IconDrawTask task : tasks)
+			// Skip decorations
+			if (task.type != IconType.decorations && (drawBounds == null || task.overlaps(drawBounds)))
 			{
-				// Skip decorations
-				if (task.type != IconType.decorations && (drawBounds == null || task.overlaps(drawBounds)))
+				IntRectangle contentBounds = task.scaledImageAndMasks.getOrCreateContentBounds();
+				Point middleOfBottomOfContentBounds = new Point(task.centerLoc.x - (task.scaledSize.width / 2) + (contentBounds.x + contentBounds.width / 2),
+						task.centerLoc.y - (task.scaledSize.height / 2) + (contentBounds.y + contentBounds.height));
+				Point justAboveBottomMiddle = middleOfBottomOfContentBounds.add(0, -contentBounds.height / 8);
+				Center center = graph.findClosestCenter(justAboveBottomMiddle, true);
+				if (center == null)
 				{
-					IntRectangle contentBounds = task.scaledImageAndMasks.getOrCreateContentBounds();
-					Point middleOfBottomOfContentBounds = new Point(task.centerLoc.x - (task.scaledSize.width / 2) + (contentBounds.x + contentBounds.width / 2),
-							task.centerLoc.y - (task.scaledSize.height / 2) + (contentBounds.y + contentBounds.height));
-					Point justAboveBottomMiddle = middleOfBottomOfContentBounds.add(0, -contentBounds.height / 8);
-					Center center = graph.findClosestCenter(justAboveBottomMiddle, true);
-					if (center == null)
-					{
-						continue;
-					}
-					if (center.region == null)
-					{
-						continue;
-					}
-					int regionIndex = center.region.id;
-					Color regionIdColor = WorldGraph.storeValueAsColor(regionIndex);
-
-					int xLoc = (int) task.centerLoc.x - task.scaledSize.width / 2;
-					int yLoc = (int) task.centerLoc.y - task.scaledSize.height / 2;
-
-					Point drawLocation = drawBounds == null ? new Point(xLoc, yLoc) : new Point(xLoc, yLoc).subtract(drawBounds.upperLeftCorner());
-
-					ImageHelper.drawMaskOntoImage(regionIndexes, task.scaledImageAndMasks.getOrCreateContentMask(), regionIdColor, drawLocation.toIntPoint());
+					continue;
 				}
+				if (center.region == null)
+				{
+					continue;
+				}
+				int regionIndex = center.region.id;
+				Color regionIdColor = WorldGraph.storeValueAsColor(regionIndex);
+
+				int xLoc = (int) task.centerLoc.x - task.scaledSize.width / 2;
+				int yLoc = (int) task.centerLoc.y - task.scaledSize.height / 2;
+
+				Point drawLocation = drawBounds == null ? new Point(xLoc, yLoc) : new Point(xLoc, yLoc).subtract(drawBounds.upperLeftCorner());
+
+				ImageHelper.drawMaskOntoImage(regionIndexes, task.scaledImageAndMasks.getOrCreateContentMask(), regionIdColor, drawLocation.toIntPoint());
 			}
-		}
-		finally
-		{
-			graph.clearFindClosestCenterHint();
 		}
 	}
 

@@ -449,25 +449,14 @@ public class IconDrawer
 		return freeIcons.doWithLockAndReturnResult(() ->
 		{
 			Rectangle conversionBoundsOfIconsChanged = convertToFreeIconsIfNeeded(centersToUpdateIconsFor, edits, warningLogger);
-
-			// Set hint for findClosestCenter calls in isContentBottomTouchingWater
-			IntRectangle hintBounds = replaceBounds != null ? replaceBounds.toEnclosingIntRectangle() : new IntRectangle(0, 0, graph.getWidth(), graph.getHeight());
-			graph.setFindClosestCenterHint(hintBounds);
-			try
+			Rectangle removedOrReplacedChangeBounds = createDrawTasksForFreeIconsAndRemovedFailedIcons(warningLogger, centersToUpdateIconsFor, replaceBounds);
+			Rectangle combined = Rectangle.add(conversionBoundsOfIconsChanged, removedOrReplacedChangeBounds);
+			if (combined == null)
 			{
-				Rectangle removedOrReplacedChangeBounds = createDrawTasksForFreeIconsAndRemovedFailedIcons(warningLogger, centersToUpdateIconsFor, replaceBounds);
-				Rectangle combined = Rectangle.add(conversionBoundsOfIconsChanged, removedOrReplacedChangeBounds);
-				if (combined == null)
-				{
-					return combined;
-				}
-				double paddingForIntegerTruncation = 4.0;
-				return combined.pad(paddingForIntegerTruncation, paddingForIntegerTruncation);
+				return combined;
 			}
-			finally
-			{
-				graph.clearFindClosestCenterHint();
-			}
+			double paddingForIntegerTruncation = 4.0;
+			return combined.pad(paddingForIntegerTruncation, paddingForIntegerTruncation);
 		});
 	}
 
@@ -1307,24 +1296,14 @@ public class IconDrawer
 		int xToSubtract = drawBounds == null ? 0 : (int) drawBounds.x;
 		int yToSubtract = drawBounds == null ? 0 : (int) drawBounds.y;
 
-		Stopwatch sw = new Stopwatch("drawIconWithBackgroundAndMasks");
+		//Stopwatch sw = new Stopwatch("drawIconWithBackgroundAndMasks"); TODO remove
 
-		// Compute bounds that cover all icon positions for the hint
-		IntRectangle hintBounds = computeIconBounds(tasksToDrawSorted);
-		graph.setFindClosestCenterHint(hintBounds);
-		try
+		for (final IconDrawTask task : tasksToDrawSorted)
 		{
-			for (final IconDrawTask task : tasksToDrawSorted)
-			{
-				drawIconWithBackgroundAndMasks(mapOrSnippet, task.scaledImageAndMasks, landBackground, landTexture, oceanWithWavesAndShading, task.type, ((int) task.centerLoc.x) - xToSubtract,
-						((int) task.centerLoc.y) - yToSubtract, (int) task.centerLoc.x, (int) task.centerLoc.y);
-			}
+			drawIconWithBackgroundAndMasks(mapOrSnippet, task.scaledImageAndMasks, landBackground, landTexture, oceanWithWavesAndShading, task.type, ((int) task.centerLoc.x) - xToSubtract,
+					((int) task.centerLoc.y) - yToSubtract, (int) task.centerLoc.x, (int) task.centerLoc.y);
 		}
-		finally
-		{
-			graph.clearFindClosestCenterHint();
-		}
-		sw.printElapsedTime();
+		//sw.printElapsedTime();
 	}
 
 	private IntRectangle computeIconBounds(List<IconDrawTask> tasks)
@@ -1465,32 +1444,24 @@ public class IconDrawer
 
 		List<IconDrawTask> cities = new ArrayList<>();
 
-		graph.setFindClosestCenterHint(new IntRectangle(0, 0, graph.getWidth(), graph.getHeight()));
-		try
+		for (Center c : graph.centers)
 		{
-			for (Center c : graph.centers)
+			if (c.isCity)
 			{
-				if (c.isCity)
+				String cityName = cityNames.get(rand.nextInt(cityNames.size()));
+				FreeIcon icon = new FreeIcon(resolutionScale, c.loc, 1.0, IconType.cities, artPackForCities, cityTypeToUse, cityName, c.index, fillColorsByType.get(IconType.cities),
+						iconFilterColorsByType.get(IconType.cities), maximizeOpacityByType.get(IconType.cities), fillWithColorByType.get(IconType.cities));
+				IconDrawTask task = toIconDrawTask(icon);
+				if (!isContentBottomTouchingWater(icon) && !isNeighborACity(c))
 				{
-					String cityName = cityNames.get(rand.nextInt(cityNames.size()));
-					FreeIcon icon = new FreeIcon(resolutionScale, c.loc, 1.0, IconType.cities, artPackForCities, cityTypeToUse, cityName, c.index, fillColorsByType.get(IconType.cities),
-							iconFilterColorsByType.get(IconType.cities), maximizeOpacityByType.get(IconType.cities), fillWithColorByType.get(IconType.cities));
-					IconDrawTask task = toIconDrawTask(icon);
-					if (!isContentBottomTouchingWater(icon) && !isNeighborACity(c))
-					{
-						freeIcons.addOrReplace(icon);
-						cities.add(task);
-					}
-					else
-					{
-						c.isCity = false;
-					}
+					freeIcons.addOrReplace(icon);
+					cities.add(task);
+				}
+				else
+				{
+					c.isCity = false;
 				}
 			}
-		}
-		finally
-		{
-			graph.clearFindClosestCenterHint();
 		}
 
 		return cities;
@@ -1565,40 +1536,72 @@ public class IconDrawer
 		// mountain image file names.
 		Map<Integer, String> rangeMap = new TreeMap<>();
 
-		graph.setFindClosestCenterHint(new IntRectangle(0, 0, graph.getWidth(), graph.getHeight()));
-		try
+		for (Set<Center> group : mountainAndHillGroups)
 		{
-			for (Set<Center> group : mountainAndHillGroups)
+			for (Center c : group)
 			{
-				for (Center c : group)
+				String fileNameRangeId = rangeMap.get(c.mountainRangeId);
+				if (fileNameRangeId == null && !mountainImagesById.isEmpty())
 				{
-					String fileNameRangeId = rangeMap.get(c.mountainRangeId);
-					if (fileNameRangeId == null && !mountainImagesById.isEmpty())
-					{
-						fileNameRangeId = new ArrayList<>(mountainImagesById.keySet()).get(rand.nextInt(mountainImagesById.keySet().size()));
-						rangeMap.put(c.mountainRangeId, fileNameRangeId);
-					}
+					fileNameRangeId = new ArrayList<>(mountainImagesById.keySet()).get(rand.nextInt(mountainImagesById.keySet().size()));
+					rangeMap.put(c.mountainRangeId, fileNameRangeId);
+				}
 
-					if (c.isMountain)
+				if (c.isMountain)
+				{
+					if (mountainImagesById.isEmpty())
 					{
-						if (mountainImagesById.isEmpty())
+						c.isMountain = false;
+					}
+					else
+					{
+						// I'm deliberately putting this line before checking
+						// center size so that the
+						// random number generator is used the same no matter
+						// what resolution the map
+						// is drawn at.
+						int i = Math.abs(rand.nextInt());
+
+						double scale = getWidthScaleForNewShuffledIcon(c, IconType.mountains);
+						Point loc = getAnchoredMountainDrawPoint(c, fileNameRangeId, i, mountainScale, mountainImagesById);
+
+						FreeIcon icon = new FreeIcon(resolutionScale, loc, scale, IconType.mountains, artPackForMountains, fileNameRangeId, i, c.index, fillColorsByType.get(IconType.mountains),
+								iconFilterColorsByType.get(IconType.mountains), maximizeOpacityByType.get(IconType.mountains), fillWithColorByType.get(IconType.mountains));
+
+						IconDrawTask task = toIconDrawTask(icon);
+
+						if (!isContentBottomTouchingWater(task))
 						{
-							c.isMountain = false;
+							freeIcons.addOrReplace(icon);
 						}
 						else
 						{
-							// I'm deliberately putting this line before checking
-							// center size so that the
-							// random number generator is used the same no matter
-							// what resolution the map
+							c.isMountain = false;
+						}
+					}
+				}
+				else if (c.isHill)
+				{
+					if (fileNameRangeId == null || hillImagesById.isEmpty())
+					{
+						c.isHill = false;
+					}
+					else
+					{
+						List<ImageAndMasks> imagesInGroup = hillImagesById.get(fileNameRangeId);
+
+						if (imagesInGroup != null && !imagesInGroup.isEmpty())
+						{
+							// I'm deliberately putting this line before
+							// checking center size so that the
+							// random number generator is used the same no
+							// matter what resolution the map
 							// is drawn at.
 							int i = Math.abs(rand.nextInt());
 
-							double scale = getWidthScaleForNewShuffledIcon(c, IconType.mountains);
-							Point loc = getAnchoredMountainDrawPoint(c, fileNameRangeId, i, mountainScale, mountainImagesById);
-
-							FreeIcon icon = new FreeIcon(resolutionScale, loc, scale, IconType.mountains, artPackForMountains, fileNameRangeId, i, c.index, fillColorsByType.get(IconType.mountains),
-									iconFilterColorsByType.get(IconType.mountains), maximizeOpacityByType.get(IconType.mountains), fillWithColorByType.get(IconType.mountains));
+							double scale = getWidthScaleForNewShuffledIcon(c, IconType.hills);
+							FreeIcon icon = new FreeIcon(resolutionScale, c.loc, scale, IconType.hills, artPackForHills, fileNameRangeId, i, c.index, fillColorsByType.get(IconType.hills),
+									iconFilterColorsByType.get(IconType.hills), maximizeOpacityByType.get(IconType.hills), fillWithColorByType.get(IconType.hills));
 
 							IconDrawTask task = toIconDrawTask(icon);
 
@@ -1608,52 +1611,12 @@ public class IconDrawer
 							}
 							else
 							{
-								c.isMountain = false;
-							}
-						}
-					}
-					else if (c.isHill)
-					{
-						if (fileNameRangeId == null || hillImagesById.isEmpty())
-						{
-							c.isHill = false;
-						}
-						else
-						{
-							List<ImageAndMasks> imagesInGroup = hillImagesById.get(fileNameRangeId);
-
-							if (imagesInGroup != null && !imagesInGroup.isEmpty())
-							{
-								// I'm deliberately putting this line before
-								// checking center size so that the
-								// random number generator is used the same no
-								// matter what resolution the map
-								// is drawn at.
-								int i = Math.abs(rand.nextInt());
-
-								double scale = getWidthScaleForNewShuffledIcon(c, IconType.hills);
-								FreeIcon icon = new FreeIcon(resolutionScale, c.loc, scale, IconType.hills, artPackForHills, fileNameRangeId, i, c.index, fillColorsByType.get(IconType.hills),
-										iconFilterColorsByType.get(IconType.hills), maximizeOpacityByType.get(IconType.hills), fillWithColorByType.get(IconType.hills));
-
-								IconDrawTask task = toIconDrawTask(icon);
-
-								if (!isContentBottomTouchingWater(task))
-								{
-									freeIcons.addOrReplace(icon);
-								}
-								else
-								{
-									c.isHill = false;
-								}
+								c.isHill = false;
 							}
 						}
 					}
 				}
 			}
-		}
-		finally
-		{
-			graph.clearFindClosestCenterHint();
 		}
 	}
 
@@ -1700,34 +1663,26 @@ public class IconDrawer
 		double duneProbabilityPerBiomeGroup = 0.6;
 		double duneProbabilityPerCenter = 0.5;
 
-		graph.setFindClosestCenterHint(new IntRectangle(0, 0, graph.getWidth(), graph.getHeight()));
-		try
+		for (Set<Center> group : groups)
 		{
-			for (Set<Center> group : groups)
+			if (rand.nextDouble() < duneProbabilityPerBiomeGroup)
 			{
-				if (rand.nextDouble() < duneProbabilityPerBiomeGroup)
+				for (Center c : group)
 				{
-					for (Center c : group)
+					if (rand.nextDouble() < duneProbabilityPerCenter)
 					{
-						if (rand.nextDouble() < duneProbabilityPerCenter)
-						{
-							c.isSandDunes = true;
+						c.isSandDunes = true;
 
-							int i = Math.abs(rand.nextInt());
-							FreeIcon icon = new FreeIcon(resolutionScale, c.loc, 1.0, IconType.sand, artPackForDunes, groupId, i, c.index, fillColorsByType.get(IconType.sand),
-									iconFilterColorsByType.get(IconType.sand), maximizeOpacityByType.get(IconType.sand), fillWithColorByType.get(IconType.sand));
-							if (!isContentBottomTouchingWater(icon))
-							{
-								freeIcons.addOrReplace(icon);
-							}
+						int i = Math.abs(rand.nextInt());
+						FreeIcon icon = new FreeIcon(resolutionScale, c.loc, 1.0, IconType.sand, artPackForDunes, groupId, i, c.index, fillColorsByType.get(IconType.sand),
+								iconFilterColorsByType.get(IconType.sand), maximizeOpacityByType.get(IconType.sand), fillWithColorByType.get(IconType.sand));
+						if (!isContentBottomTouchingWater(icon))
+						{
+							freeIcons.addOrReplace(icon);
 						}
 					}
 				}
 			}
-		}
-		finally
-		{
-			graph.clearFindClosestCenterHint();
 		}
 	}
 
@@ -1897,27 +1852,19 @@ public class IconDrawer
 
 		Rectangle changeBounds = null;
 
-		graph.setFindClosestCenterHint(new IntRectangle(0, 0, graph.getWidth(), graph.getHeight()));
-		try
+		for (Entry<Integer, CenterTrees> entry : treesByCenter.entrySet())
 		{
-			for (Entry<Integer, CenterTrees> entry : treesByCenter.entrySet())
+			CenterTrees cTrees = entry.getValue();
+			if (cTrees != null && !cTrees.isDormant)
 			{
-				CenterTrees cTrees = entry.getValue();
-				if (cTrees != null && !cTrees.isDormant)
-				{
-					// This shouldn't log any warnings because replaceTreeAssetsIfNeeded has already been called on CenterTrees in
-					// treesByCenter,
-					// or this call is coming from drawing new trees.
-					CenterTrees toUse = replaceTreeAssetsIfNeeded(cTrees, warningLogger);
+				// This shouldn't log any warnings because replaceTreeAssetsIfNeeded has already been called on CenterTrees in
+				// treesByCenter,
+				// or this call is coming from drawing new trees.
+				CenterTrees toUse = replaceTreeAssetsIfNeeded(cTrees, warningLogger);
 
-					Center c = graph.centers.get(entry.getKey());
-					changeBounds = Rectangle.add(changeBounds, drawTreesAtCenterAndCorners(graph, c, toUse, treesByCenter.keySet()));
-				}
+				Center c = graph.centers.get(entry.getKey());
+				changeBounds = Rectangle.add(changeBounds, drawTreesAtCenterAndCorners(graph, c, toUse, treesByCenter.keySet()));
 			}
-		}
-		finally
-		{
-			graph.clearFindClosestCenterHint();
 		}
 		return changeBounds;
 	}
