@@ -17,6 +17,7 @@ import org.apache.commons.math3.exception.NoDataException;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 
 import nortantis.geom.Dimension;
+import nortantis.geom.IntRectangle;
 import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
 import nortantis.geom.RotatedRectangle;
@@ -1517,34 +1518,46 @@ public class TextDrawer
 			return false;
 		}
 
-		final int checkFrequency = 10;
-		for (double x = 0; x < textBounds.width; x += checkFrequency * settings.resolution)
+		// Set a hint for findClosestCenter to cover the rotated text bounds.
+		// Pad by the diagonal to account for any rotation angle.
+		double diagonal = Math.sqrt(textBounds.width * textBounds.width + textBounds.height * textBounds.height);
+		IntRectangle hintBounds = textBounds.pad(diagonal / 2, diagonal / 2).toEnclosingIntRectangle();
+		graph.setFindClosestCenterHint(hintBounds);
+		try
 		{
-			if (x + checkFrequency * settings.resolution > textBounds.width)
+			final int checkFrequency = 10;
+			for (double x = 0; x < textBounds.width; x += checkFrequency * settings.resolution)
 			{
-				// This is the final iteration. Change x to be at the end of the text box.
-				x = textBounds.width;
-			}
-
-			for (double y = 0; y < textBounds.height; y += checkFrequency * settings.resolution)
-			{
-				if (y + checkFrequency * settings.resolution > textBounds.height)
+				if (x + checkFrequency * settings.resolution > textBounds.width)
 				{
-					// This is the final iteration. Change y to be at the bottom of the text box.
-					y = textBounds.height;
+					// This is the final iteration. Change x to be at the end of the text box.
+					x = textBounds.width;
 				}
 
-				Point point = rotate(new Point(textBounds.x + x, textBounds.y + y), pivot, angle);
-				Center c = graph.findClosestCenter(point, true);
-
-				if (c != null)
+				for (double y = 0; y < textBounds.height; y += checkFrequency * settings.resolution)
 				{
-					if (doCentersHaveBoundaryBetweenThem(middleCenter, c, settings, type))
+					if (y + checkFrequency * settings.resolution > textBounds.height)
 					{
-						return true;
+						// This is the final iteration. Change y to be at the bottom of the text box.
+						y = textBounds.height;
+					}
+
+					Point point = rotate(new Point(textBounds.x + x, textBounds.y + y), pivot, angle);
+					Center c = graph.findClosestCenter(point, true);
+
+					if (c != null)
+					{
+						if (doCentersHaveBoundaryBetweenThem(middleCenter, c, settings, type))
+						{
+							return true;
+						}
 					}
 				}
 			}
+		}
+		finally
+		{
+			graph.clearFindClosestCenterHint();
 		}
 
 		return false;
