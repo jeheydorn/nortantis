@@ -176,9 +176,6 @@ public class SkiaMapCreatorBenchmark
 			}
 		}
 
-		System.out.println("Exaustive count: " + graph.exaustiveCount);
-		System.out.println("Fast count: " + graph.fastCount);
-
 		// Reset to default
 		WorldGraph.centerLookupMode = WorldGraph.CenterLookupMode.GRID_BASED;
 	}

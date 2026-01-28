@@ -683,50 +683,26 @@ public class WorldGraph extends VoronoiGraph
 		return walkResult;
 	}
 
-	// TODO remove
-	public int exaustiveCount = 0;
-	public int fastCount = 0;
-
 	/**
-	 * Find which center contains the point by checking pie slices. Uses angular sector as fast path, with fallback to exhaustive search.
+	 * Find which center contains the point by checking pie slices.
+	 * Tests the candidate center first, then all its neighbors exhaustively.
 	 */
 	private Center findCenterFromEdgeSector(Point point, Center candidate)
 	{
-		// Fast path: try angular sector first
-		Edge sectorEdge = findEdgeByAngularSector(point, candidate);
-		if (sectorEdge != null)
-		{
-			// Check candidate's pie slice for this edge
-			if (isPointInPieSlice(point, candidate, sectorEdge))
-			{
-				fastCount++;
-				return candidate;
-			}
-			// Check neighbor's pie slice for this edge
-			Center neighbor = (sectorEdge.d0 == candidate) ? sectorEdge.d1 : sectorEdge.d0;
-			if (neighbor != null && isPointInPieSlice(point, neighbor, sectorEdge))
-			{
-				fastCount++;
-				return neighbor;
-			}
-			// Fast path failed - fall through to exhaustive search
-		}
-
-		exaustiveCount++;
-		// Exhaustive search: check all pie slices of candidate
+		// Check if point is in any of candidate's pie slices
 		for (Edge edge : candidate.borders)
 		{
 			if (edge.v0 == null || edge.v1 == null)
 			{
 				continue;
 			}
-			if (edge != sectorEdge && isPointInPieSlice(point, candidate, edge))
+			if (isPointInPieSlice(point, candidate, edge))
 			{
 				return candidate;
 			}
 		}
 
-		// Check all pie slices of immediate neighbors
+		// Check immediate neighbors
 		for (Center neighbor : candidate.neighbors)
 		{
 			for (Edge edge : neighbor.borders)
@@ -735,7 +711,7 @@ public class WorldGraph extends VoronoiGraph
 				{
 					continue;
 				}
-				if (edge != sectorEdge && isPointInPieSlice(point, neighbor, edge))
+				if (isPointInPieSlice(point, neighbor, edge))
 				{
 					return neighbor;
 				}
@@ -743,48 +719,6 @@ public class WorldGraph extends VoronoiGraph
 		}
 
 		return null; // Need walk fallback
-	}
-
-	/**
-	 * Find which edge's angular sector contains the point (fast, based on straight lines from center to corners).
-	 */
-	private Edge findEdgeByAngularSector(Point point, Center candidate)
-	{
-		double qx = point.x - candidate.loc.x;
-		double qy = point.y - candidate.loc.y;
-
-		for (Edge edge : candidate.borders)
-		{
-			if (edge.v0 == null || edge.v1 == null || edge.d0 == null || edge.d1 == null)
-			{
-				continue;
-			}
-
-			double v0x = edge.v0.loc.x - candidate.loc.x;
-			double v0y = edge.v0.loc.y - candidate.loc.y;
-			double v1x = edge.v1.loc.x - candidate.loc.x;
-			double v1y = edge.v1.loc.y - candidate.loc.y;
-
-			double crossV0 = v0x * qy - v0y * qx;
-			double crossV1 = v1x * qy - v1y * qx;
-			double crossEdge = v0x * v1y - v0y * v1x;
-
-			boolean inSector;
-			if (crossEdge >= 0)
-			{
-				inSector = (crossV0 >= 0 && crossV1 <= 0);
-			}
-			else
-			{
-				inSector = (crossV0 <= 0 && crossV1 >= 0);
-			}
-
-			if (inSector)
-			{
-				return edge;
-			}
-		}
-		return null;
 	}
 
 	/**
@@ -1006,6 +940,64 @@ public class WorldGraph extends VoronoiGraph
 		{
 			centerLookupGrid = new CenterLookupGrid();
 			centerLookupGrid.build(centers, getWidth(), getHeight());
+
+			// Precompute all slice polygons for faster lookups
+			precomputeSlicePolygons();
+		}
+	}
+
+	/**
+	 * Precomputes all slice polygons for all centers and their edges. This makes subsequent lookups faster by avoiding lazy computation.
+	 */
+	private void precomputeSlicePolygons()
+	{
+		if (slicePolygonCache == null)
+		{
+			slicePolygonCache = new HashMap<>();
+		}
+
+		for (Center center : centers)
+		{
+			for (Edge edge : center.borders)
+			{
+				if (edge.v0 != null && edge.v1 != null)
+				{
+					// This will build and cache the polygon
+					getOrBuildSlicePolygon(center, edge);
+				}
+			}
+		}
+	}
+
+	/**
+	 * Precomputes slice polygons for the specified centers and their neighbors.
+	 */
+	private void precomputeSlicePolygonsForCenters(Collection<Center> centersToUpdate)
+	{
+		if (slicePolygonCache == null)
+		{
+			slicePolygonCache = new HashMap<>();
+		}
+
+		Set<Center> centersWithNeighbors = new HashSet<>();
+		for (Center c : centersToUpdate)
+		{
+			centersWithNeighbors.add(c);
+			for (Center neighbor : c.neighbors)
+			{
+				centersWithNeighbors.add(neighbor);
+			}
+		}
+
+		for (Center center : centersWithNeighbors)
+		{
+			for (Edge edge : center.borders)
+			{
+				if (edge.v0 != null && edge.v1 != null)
+				{
+					getOrBuildSlicePolygon(center, edge);
+				}
+			}
 		}
 	}
 
@@ -1134,8 +1126,9 @@ public class WorldGraph extends VoronoiGraph
 	 */
 	public void updateCenterLookupTable(Collection<Center> centersToUpdate)
 	{
-		// Clear slice polygon cache for affected centers (used by grid-based lookup)
+		// Clear and rebuild slice polygon cache for affected centers (used by grid-based lookup)
 		clearSlicePolygonCache(centersToUpdate);
+		precomputeSlicePolygonsForCenters(centersToUpdate);
 
 		synchronized (centerLookupLock)
 		{
