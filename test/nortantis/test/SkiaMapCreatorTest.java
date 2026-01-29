@@ -85,6 +85,8 @@ public class SkiaMapCreatorTest
 				final int numberToTest = 500;
 				Image fullMapForUpdates = fullMap.deepCopy();
 				int iconNumber = 0;
+				System.out.println("Total icons on map: " + settings.edits.freeIcons.calcSize());
+				System.out.println("Number of icons test: " + numberToTest);
 				for (FreeIcon icon : settings.edits.freeIcons)
 				{
 					iconNumber++;

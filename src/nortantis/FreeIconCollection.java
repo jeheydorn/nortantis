@@ -73,6 +73,17 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		return true;
 	}
 
+	public synchronized int calcSize()
+	{
+		int size = anchoredNonTreeIcons.size();
+		for (CopyOnWriteArrayList<FreeIcon> trees : anchoredTreeIcons.values())
+		{
+			size += trees.size();
+		}
+		size += nonAnchoredIcons.size();
+		return size;
+	}
+
 	public synchronized void addOrReplace(FreeIcon icon)
 	{
 		if (icon.centerIndex != null)
