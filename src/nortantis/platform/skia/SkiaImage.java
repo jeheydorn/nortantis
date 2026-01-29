@@ -897,22 +897,81 @@ public class SkiaImage extends Image
 			}
 		}
 
-		// CPU path: Direct pixel copy (avoids slow makeFromBitmap)
+		// CPU path: Create result image of requested size, copy valid pixels
+		// This matches GPU behavior where drawImageRect clips to valid region
 		awaitPendingPainters();
 		ensureCPUData(); // Ensure CPU bitmap is current
 
 		ImageInfo srcInfo = resourceState.bitmap.getImageInfo();
-		ImageInfo destInfo = new ImageInfo(w, h, srcInfo.getColorType(), srcInfo.getColorAlphaType(), null);
 		int bytesPerPixel = getBytesPerPixel();
-		int rowBytes = w * bytesPerPixel;
 
-		// Read pixels directly from the source bitmap region
-		byte[] pixels = resourceState.bitmap.readPixels(destInfo, rowBytes, bounds.x, bounds.y);
+		// Check if the entire requested bounds are within the source image (common case)
+		// In this case, use direct pixel copy for exact results and better performance
+		if (bounds.x >= 0 && bounds.y >= 0 && bounds.x + w <= width && bounds.y + h <= height)
+		{
+			ImageInfo destInfo = new ImageInfo(w, h, srcInfo.getColorType(), srcInfo.getColorAlphaType(), null);
+			int rowBytes = w * bytesPerPixel;
+
+			// Read pixels directly from the source bitmap region
+			byte[] pixels = resourceState.bitmap.readPixels(destInfo, rowBytes, bounds.x, bounds.y);
+
+			if (pixels == null)
+			{
+				throw new IllegalStateException("copySubImage: readPixels returned null for in-bounds request. bounds=" + bounds
+					+ ", image size=" + width + "x" + height);
+			}
+
+			// Create destination bitmap and install the pixels
+			Bitmap subBitmap = new Bitmap();
+			subBitmap.allocPixels(destInfo);
+			subBitmap.installPixels(destInfo, pixels, rowBytes);
+
+			return new SkiaImage(subBitmap, addAlphaChanel ? ImageType.ARGB : getType());
+		}
+
+		// Out-of-bounds case: Create result image of requested size, copy only valid pixels
+		ImageInfo destInfo = new ImageInfo(w, h, srcInfo.getColorType(), srcInfo.getColorAlphaType(), null);
+		int destRowBytes = w * bytesPerPixel;
+
+		// Create destination pixel array (initialized to zeros/transparent)
+		byte[] destPixels = new byte[w * h * bytesPerPixel];
+
+		// Calculate the valid source region (intersection of requested bounds with source image)
+		IntRectangle requestedBounds = new IntRectangle(bounds.x, bounds.y, w, h);
+		IntRectangle imageBounds = new IntRectangle(0, 0, width, height);
+		IntRectangle validRegion = requestedBounds.findIntersection(imageBounds);
+
+		// If there's any valid region to copy, read and copy those pixels
+		if (validRegion != null)
+		{
+			// Read the valid pixels from source
+			ImageInfo validInfo = new ImageInfo(validRegion.width, validRegion.height, srcInfo.getColorType(), srcInfo.getColorAlphaType(), null);
+			int validRowBytes = validRegion.width * bytesPerPixel;
+			byte[] validPixels = resourceState.bitmap.readPixels(validInfo, validRowBytes, validRegion.x, validRegion.y);
+
+			if (validPixels == null)
+			{
+				throw new IllegalStateException("copySubImage: readPixels returned null. bounds=" + bounds
+					+ ", validRegion=" + validRegion + ", image size=" + width + "x" + height);
+			}
+
+			// Calculate where in the destination the valid pixels should go
+			int destX = validRegion.x - bounds.x;
+			int destY = validRegion.y - bounds.y;
+
+			// Copy valid pixels row by row into the correct position in destination
+			for (int row = 0; row < validRegion.height; row++)
+			{
+				int srcOffset = row * validRowBytes;
+				int destOffset = ((destY + row) * w + destX) * bytesPerPixel;
+				System.arraycopy(validPixels, srcOffset, destPixels, destOffset, validRowBytes);
+			}
+		}
 
 		// Create destination bitmap and install the pixels
 		Bitmap subBitmap = new Bitmap();
 		subBitmap.allocPixels(destInfo);
-		subBitmap.installPixels(destInfo, pixels, rowBytes);
+		subBitmap.installPixels(destInfo, destPixels, destRowBytes);
 
 		return new SkiaImage(subBitmap, addAlphaChanel ? ImageType.ARGB : getType());
 	}
@@ -1023,6 +1082,16 @@ public class SkiaImage extends Image
 		int w = bounds != null ? bounds.width : width;
 		int h = bounds != null ? bounds.height : height;
 
+		// Validate bounds to prevent native crashes
+		if (w <= 0 || h <= 0)
+		{
+			return new byte[0];
+		}
+		if (x < 0 || y < 0 || x + w > width || y + h > height)
+		{
+			throw new IllegalArgumentException("readGrayscalePixels: bounds out of range. bounds=" + bounds + ", image size=" + width + "x" + height);
+		}
+
 		ImageInfo info = new ImageInfo(w, h, ColorType.GRAY_8, ColorAlphaType.OPAQUE, null);
 		return resourceState.bitmap.readPixels(info, w, x, y);
 	}
@@ -1039,6 +1108,16 @@ public class SkiaImage extends Image
 		int y = bounds != null ? bounds.y : 0;
 		int w = bounds != null ? bounds.width : width;
 		int h = bounds != null ? bounds.height : height;
+
+		// Validate bounds to prevent native crashes
+		if (w <= 0 || h <= 0)
+		{
+			return new byte[0];
+		}
+		if (x < 0 || y < 0 || x + w > width || y + h > height)
+		{
+			throw new IllegalArgumentException("readPixelsToByteArray: bounds out of range. bounds=" + bounds + ", image size=" + width + "x" + height);
+		}
 
 		int bytesPerPixel = 4; // N32 format
 		int rowStride = w * bytesPerPixel;
