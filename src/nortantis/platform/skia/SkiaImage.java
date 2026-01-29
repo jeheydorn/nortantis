@@ -1026,8 +1026,9 @@ public class SkiaImage extends Image
 	{
 		awaitPendingPainters();
 
-		// For GPU-only images, scale on the GPU and read back only the (smaller) result.
-		// This avoids reading the entire large source image to CPU.
+		// For GPU-only images, use scalePixels on the GPU thread. This gives the same
+		// high-quality mipmap scaling as the CPU path, but runs on the GPU thread where
+		// it can safely access the GPU-backed source image.
 		if (isGpuOnly())
 		{
 			final int targetWidth = width;
@@ -1039,33 +1040,15 @@ public class SkiaImage extends Image
 			{
 				Bitmap scaledBitmap = GPUExecutor.getInstance().submit(() ->
 				{
-					DirectContext ctx = GPUExecutor.getInstance().getContext();
-					if (ctx == null)
-						return null;
+					org.jetbrains.skia.Image srcImage = self.getSkiaImage();
 
-					Surface gpuDestSurface = Surface.Companion.makeRenderTarget(ctx, false, new ImageInfo(targetWidth, targetHeight, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null));
-					if (gpuDestSurface == null)
-						return null;
+					Bitmap result = new Bitmap();
+					result.allocPixels(new ImageInfo(targetWidth, targetHeight, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null));
+					Pixmap dstPixmap = result.peekPixels();
 
-					try
-					{
-						Canvas gpuCanvas = gpuDestSurface.getCanvas();
-						org.jetbrains.skia.Image srcImage = self.getSkiaImage();
-						SamplingMode sampling = new FilterMipmap(FilterMode.LINEAR, MipmapMode.LINEAR);
-						Rect srcRect = Rect.makeWH(self.width, self.height);
-						Rect dstRect = Rect.makeWH(targetWidth, targetHeight);
-						gpuCanvas.drawImageRect(srcImage, srcRect, dstRect, sampling, null, true);
-
-						gpuDestSurface.flushAndSubmit(true);
-						Bitmap result = new Bitmap();
-						result.allocPixels(new ImageInfo(targetWidth, targetHeight, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null));
-						gpuDestSurface.readPixels(result, 0, 0);
-						return result;
-					}
-					finally
-					{
-						gpuDestSurface.close();
-					}
+					SamplingMode sampling = new FilterMipmap(FilterMode.LINEAR, MipmapMode.LINEAR);
+					srcImage.scalePixels(dstPixmap, sampling, false);
+					return result;
 				});
 
 				if (scaledBitmap != null)

@@ -23,7 +23,7 @@ public class GridDrawer
 
 		try (Image hexImage = Image.create(image.getWidth(), image.getHeight(), ImageType.ARGB))
 		{
-			ImageHelper.setAlphaOfAllPixels(hexImage, 0);
+			ImageHelper.clearImageToTransparent(hexImage);
 
 			try (Painter p = hexImage.createPainter(DrawQuality.High))
 			{

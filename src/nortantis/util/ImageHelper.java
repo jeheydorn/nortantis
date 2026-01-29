@@ -13,14 +13,12 @@ import nortantis.platform.AlphaComposite;
 import nortantis.platform.Color;
 import nortantis.platform.Font;
 import nortantis.platform.Image;
-import nortantis.platform.awt.AwtBridge;
 import nortantis.platform.skia.SkiaImage;
 import nortantis.platform.skia.SkiaShaderOps;
 import org.apache.commons.math3.analysis.function.Sinc;
 import org.apache.commons.math3.distribution.NormalDistribution;
 import org.imgscalr.Scalr.Method;
 import org.jtransforms.fft.FloatFFT_2D;
-import pl.edu.icm.jlargearrays.ConcurrencyUtils;
 
 import java.awt.*;
 import java.io.File;
@@ -32,16 +30,6 @@ public class ImageHelper
 {
 	public static final int minParallelRowCount = 128;
 	public static final int minParallelSize = minParallelRowCount * minParallelRowCount;
-
-	/**
-	 * This should be called before closing the program if methods have been called which use jTransforms or other thread pools.
-	 *
-	 * For some reason this doesn't need to be called when running a GUI, and will throw an error if you do.
-	 */
-	public static void shutdownThreadPool()
-	{
-		ConcurrencyUtils.shutdownThreadPoolAndAwaitTermination();
-	}
 
 	public static Dimension fitDimensionsWithinBoundingBox(Dimension maxDimensions, double originalWidth, double originalHeight)
 	{
@@ -288,29 +276,6 @@ public class ImageHelper
 		// the middle. I also divide by 2 to get half of the size (the length
 		// from center to edge).
 		return kernelSize / (2.0 * 3.0);
-	}
-
-	public static float[][] createFractalKernel(int size, double p)
-	{
-		if (size == 0)
-		{
-			return new float[][] { { 1f } };
-		}
-
-		float[][] kernel = new float[size][size];
-		for (int x : new Range(size))
-		{
-			double xDistanceFromCenter = Math.abs(size / 2.0 - x);
-			for (int y : new Range(size))
-			{
-				double yDistanceFromCenter = Math.abs(size / 2.0 - y);
-				// Find the distance from the center (0,0).
-				double distanceFromCenter = Math.sqrt(xDistanceFromCenter * xDistanceFromCenter + yDistanceFromCenter * yDistanceFromCenter);
-				kernel[y][x] = (float) (1.0 / (Math.pow(distanceFromCenter, p)));
-			}
-		}
-		normalize(kernel);
-		return kernel;
 	}
 
 	public static float[][] createPositiveSincKernel(int size, double scale)
@@ -798,7 +763,7 @@ public class ImageHelper
 		return setAlphaFromMaskInRegion(image, alphaMask, invertMask, new IntPoint(0, 0));
 	}
 
-	public static void setAlphaOfAllPixels(Image image, int alpha)
+	public static void clearImageToTransparent(Image image)
 	{
 		try (Painter p = image.createPainter())
 		{
@@ -1113,20 +1078,6 @@ public class ImageHelper
 		return result;
 	}
 
-	public static void multiplyArrays(float[][] target, float[][] source)
-	{
-		assert target.length == source.length;
-		assert target[0].length == source[0].length;
-
-		for (int r = 0; r < target.length; r++)
-		{
-			for (int c = 0; c < target[r].length; c++)
-			{
-				target[r][c] *= source[r][c];
-			}
-		}
-	}
-
 	/**
 	 * Draws one binary image onto another, but only overwrites pixels in the target where the source pixel value is greater than the target
 	 * pixel value. This performs a conditional copy operation where pixels are only updated if the source value exceeds the current target
@@ -1201,7 +1152,7 @@ public class ImageHelper
 	 */
 	public static Image convolveGrayscale(Image img, float[][] kernel, boolean maximizeContrast, boolean paddImageToAvoidWrapping)
 	{
-		return convolveGrayscaleThenSetContrast(img, kernel, true, 0f, 1f, paddImageToAvoidWrapping).getSecond();
+		return convolveGrayscaleThenSetContrast(img, kernel, maximizeContrast, 0f, 1f, paddImageToAvoidWrapping).getSecond();
 	}
 
 	public static Tuple2<ComplexArray, Image> convolveGrayscaleThenSetContrast(Image img, float[][] kernel, boolean setContrast, float contrastMin, float contrastMax, boolean paddImageToAvoidWrapping)

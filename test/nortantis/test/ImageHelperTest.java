@@ -584,7 +584,7 @@ public class ImageHelperTest
 			p.fillRect(0, 0, testImageWidth, testImageHeight);
 		}
 
-		ImageHelper.setAlphaOfAllPixels(image, 0);
+		ImageHelper.clearImageToTransparent(image);
 		compareWithExpected(image, "setAlphaOfAllPixels");
 	}
 
@@ -822,7 +822,7 @@ public class ImageHelperTest
 	public void testBlur()
 	{
 		Image image = createGrayscaleTestImage();
-		Image blurred = ImageHelper.blur(image, 3, false, true);
+		Image blurred = ImageHelper.blur(image, 3, true, true);
 
 		assertEquals(image.getWidth(), blurred.getWidth(), "Width should match");
 		assertEquals(image.getHeight(), blurred.getHeight(), "Height should match");
@@ -842,7 +842,7 @@ public class ImageHelperTest
 	public void testBlurLine()
 	{
 		Image image = createGrayscaleXImage(ImageType.Grayscale8Bit);
-		Image blurred = ImageHelper.blur(image, 5, false, true);
+		Image blurred = ImageHelper.blur(image, 5, true, true);
 		compareWithExpected(blurred, "blurLine");
 	}
 
