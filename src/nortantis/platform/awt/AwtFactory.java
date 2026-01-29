@@ -45,6 +45,13 @@ public class AwtFactory extends PlatformFactory
 	}
 
 	@Override
+	public Image createImage(int width, int height, ImageType type, boolean forceCPU)
+	{
+		// AWT is always CPU-based, so forceCPU is ignored
+		return new AwtImage(width, height, type);
+	}
+
+	@Override
 	public Image readImage(String filePath)
 	{
 		try

@@ -32,6 +32,12 @@ public class SkiaFactory extends PlatformFactory
 	}
 
 	@Override
+	public nortantis.platform.Image createImage(int width, int height, ImageType type, boolean forceCPU)
+	{
+		return new SkiaImage(width, height, type, forceCPU);
+	}
+
+	@Override
 	public nortantis.platform.Image readImage(String filePath)
 	{
 		try (InputStream stream = new FileInputStream(filePath))

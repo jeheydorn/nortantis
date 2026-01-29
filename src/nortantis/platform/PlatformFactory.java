@@ -30,6 +30,15 @@ public abstract class PlatformFactory
 	public abstract Image createImage(int width, int height, ImageType type);
 
 	/**
+	 * Creates an image with an option to force CPU-only mode. Note - callers outside the nortantis.platform packages should call
+	 * Image.create(...)
+	 *
+	 * @param forceCPU
+	 *            If true, the image will not use GPU acceleration regardless of size.
+	 */
+	public abstract Image createImage(int width, int height, ImageType type, boolean forceCPU);
+
+	/**
 	 * Reads an image from a file. Note - callers outside the nortantis.platform packages should call Image.read(...)
 	 */
 	public abstract Image readImage(String filePath);

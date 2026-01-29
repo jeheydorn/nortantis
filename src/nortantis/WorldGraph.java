@@ -1192,7 +1192,8 @@ public class WorldGraph extends VoronoiGraph
 		{
 			if (centerLookupTable == null)
 			{
-				centerLookupTable = Image.create((int) bounds.width, (int) bounds.height, ImageType.RGB);
+				// Force CPU mode to avoid expensive GPU-to-CPU sync during incremental updates
+			centerLookupTable = Image.create((int) bounds.width, (int) bounds.height, ImageType.RGB, true);
 				try (Painter p = centerLookupTable.createPainter())
 				{
 					drawPolygons(p, new Function<Center, Color>()

@@ -112,12 +112,24 @@ public class SkiaImage extends Image
 
 	public SkiaImage(int width, int height, ImageType type)
 	{
+		this(width, height, type, false);
+	}
+
+	/**
+	 * Creates a new SkiaImage with the given dimensions and type.
+	 *
+	 * @param forceCPU
+	 *            If true, the image will not use GPU acceleration regardless of size. This is useful for images that need frequent CPU-side
+	 *            pixel access to avoid expensive GPU-to-CPU synchronization.
+	 */
+	public SkiaImage(int width, int height, ImageType type, boolean forceCPU)
+	{
 		super(type);
 		this.width = width;
 		this.height = height;
 		ImageInfo imageInfo = getImageInfoForType(type, width, height);
 		this.resourceState = new ResourceState(createBitmap(imageInfo));
-		initializeGPUState();
+		initializeGPUState(forceCPU);
 		this.cleanable = CLEANER.register(this, resourceState);
 	}
 
@@ -161,7 +173,18 @@ public class SkiaImage extends Image
 	 */
 	private void initializeGPUState()
 	{
-		resourceState.isGpuEnabled = shouldUseGPU();
+		initializeGPUState(false);
+	}
+
+	/**
+	 * Initializes GPU state based on image size, GPU availability, and forceCPU flag.
+	 *
+	 * @param forceCPU
+	 *            If true, GPU will not be used regardless of size.
+	 */
+	private void initializeGPUState(boolean forceCPU)
+	{
+		resourceState.isGpuEnabled = !forceCPU && shouldUseGPU();
 		resourceState.location = resourceState.isGpuEnabled ? ImageLocation.CPU_DIRTY : ImageLocation.CPU_ONLY;
 		resourceState.gpuSurface = null;
 		resourceState.gpuTexture = null;
