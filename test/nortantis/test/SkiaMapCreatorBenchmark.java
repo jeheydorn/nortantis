@@ -71,6 +71,16 @@ public class SkiaMapCreatorBenchmark
 		MapTestUtil.runIncrementalDrawingBenchmark("Skia CPU-only", 0, 1);
 	}
 
+	/**
+	 * Benchmark for center editing, which exercises updateCenterLookupTable and the GPU-to-CPU sync path.
+	 */
+	@Test
+	public void benchmarkCenterEditing() throws Exception
+	{
+		WorldGraph.centerLookupMode = WorldGraph.CenterLookupMode.PIXEL_CACHED;
+		MapTestUtil.runCenterEditBenchmark("Skia GPU", 10, 5);
+	}
+
 	@Test
 	public void benchmarkFindClosestCenter() throws Exception
 	{
