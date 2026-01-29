@@ -1635,8 +1635,8 @@ public class ImageHelper
 	 * @param how
 	 *            Determines the algorithm to use for coloring pixels
 	 * @param where
-	 *            Allows colorifying only a snippet of image. If given, then it is assumed that colorIndex is possibly smaller than image,
-	 *            and this point is the upper left corner in image where the result should be extracted from, using the width and height of
+	 *            Allows colorifying only a snippet of image. If given, then it is assumed that colorIndexes is possibly smaller than image,
+	 *            and this point is the upper left corner in image where the snippet should be extracted from, using the width and height of
 	 *            colorIndexes.
 	 */
 	public static Image colorifyMulti(Image image, Map<Integer, Color> colorMap, Image colorIndexes, ColorifyAlgorithm how, IntPoint where)
@@ -1646,16 +1646,17 @@ public class ImageHelper
 		if (colorIndexes.getType() != ImageType.RGB)
 			throw new IllegalArgumentException("colorIndexes type must be type RGB, but was type " + colorIndexes.getType());
 
-		if (where == null)
+		// Extract sub-image if 'where' is specified
+		Image imageToUse = image;
+		if (where != null)
 		{
-			where = new IntPoint(0, 0);
+			imageToUse = image.getSubImage(new IntRectangle(where, colorIndexes.getWidth(), colorIndexes.getHeight()));
 		}
 
-		// Use Skia shader implementation when there's no offset and images are SkiaImages
-		if (where.x == 0 && where.y == 0 && image.getWidth() == colorIndexes.getWidth() && image.getHeight() == colorIndexes.getHeight() && SkiaShaderOps.shouldUseSkiaShaders(image, colorIndexes)
-				&& how != ColorifyAlgorithm.none)
+		// Use Skia shader implementation when images are SkiaImages
+		if (SkiaShaderOps.shouldUseSkiaShaders(imageToUse, colorIndexes) && how != ColorifyAlgorithm.none)
 		{
-			return SkiaShaderOps.colorifyMulti(image, colorMap, colorIndexes, how);
+			return SkiaShaderOps.colorifyMulti(imageToUse, colorMap, colorIndexes, how);
 		}
 
 		Image result = Image.create(colorIndexes.getWidth(), colorIndexes.getHeight(), ImageType.RGB);
@@ -1669,21 +1670,14 @@ public class ImageHelper
 			hsbMap.put(regionId, hsb);
 		}
 
-		IntRectangle imageBounds = new IntRectangle(0, 0, image.getWidth(), image.getHeight());
-
-		IntPoint whereFinal = where;
-		IntRectangle boundsInImage = where == null ? null : new IntRectangle(where, colorIndexes.getWidth(), colorIndexes.getHeight());
-		try (PixelReader imagePixels = image.createPixelReader(boundsInImage); PixelReader colorIndexesPixels = colorIndexes.createPixelReader(); PixelWriter resultPixels = result.createPixelWriter())
+		Image imageToUseFinal = imageToUse;
+		try (PixelReader imagePixels = imageToUseFinal.createPixelReader(); PixelReader colorIndexesPixels = colorIndexes.createPixelReader(); PixelWriter resultPixels = result.createPixelWriter())
 		{
 			ThreadHelper.getInstance().processRowsInParallel(0, colorIndexes.getHeight(), (y) ->
 			{
 				for (int x = 0; x < colorIndexes.getWidth(); x++)
 				{
-					if (!imageBounds.contains(x + whereFinal.x, y + whereFinal.y))
-					{
-						continue;
-					}
-					float level = imagePixels.getNormalizedPixelLevel(x + whereFinal.x, y + whereFinal.y);
+					float level = imagePixels.getNormalizedPixelLevel(x, y);
 					int colorKey = WorldGraph.getValueFromColor(colorIndexesPixels.getPixelColor(x, y));
 					float[] hsb = hsbMap.get(colorKey);
 					// hsb can be null if a region edit is missing from the nort file. I saw this happen, but I don't know what caused it.

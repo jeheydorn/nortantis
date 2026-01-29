@@ -7,6 +7,7 @@ import nortantis.geom.Rectangle;
 import nortantis.graph.voronoi.*;
 import nortantis.graph.voronoi.nodename.as3delaunay.Voronoi;
 import nortantis.platform.*;
+import nortantis.platform.skia.GPUExecutor;
 import nortantis.util.Helper;
 import nortantis.util.Range;
 import org.apache.commons.lang3.function.TriFunction;
@@ -46,7 +47,7 @@ public class WorldGraph extends VoronoiGraph
 	/**
 	 * Controls which algorithm is used for findClosestCenter. Default is GRID_BASED for best Skia performance.
 	 */
-	public static CenterLookupMode centerLookupMode = CenterLookupMode.GRID_BASED;
+	public static CenterLookupMode centerLookupMode = CenterLookupMode.PIXEL_CACHED;
 
 	// Debug counters for grid-based lookup
 	public static long gridLookupDirectHits = 0;
@@ -609,6 +610,11 @@ public class WorldGraph extends VoronoiGraph
 
 	private Center findClosestCenterUsingPixelsCached(Point point, boolean returnNullIfNotOnMap)
 	{
+		if (returnNullIfNotOnMap && (point.x >= getWidth() || point.y >= getHeight() || point.x < 0 || point.y < 0))
+		{
+			return null;
+		}
+
 		if (point.x < getWidth() && point.y < getHeight() && point.x >= 0 && point.y >= 0)
 		{
 			buildCenterLookupTableIfNeeded();
@@ -684,8 +690,7 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Find which center contains the point by checking pie slices.
-	 * Uses angular sector as a hint to try the likely edge first, then falls back to exhaustive search.
+	 * Find which center contains the point by checking pie slices. Uses angular sector as a hint to try the likely edge first, then falls back to exhaustive search.
 	 */
 	private Center findCenterFromEdgeSector(Point point, Center candidate)
 	{
@@ -754,8 +759,7 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Find which edge's angular sector contains the point (fast test using straight lines).
-	 * Returns the edge position in center.borders, or -1 if no sector contains the point.
+	 * Find which edge's angular sector contains the point (fast test using straight lines). Returns the edge position in center.borders, or -1 if no sector contains the point.
 	 */
 	private int findAngularSectorEdgePosition(Point point, Center center)
 	{
@@ -949,8 +953,7 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Clears the slice polygon cache for the specified centers and their neighbors.
-	 * Call this when centers' noisy edges have been rebuilt.
+	 * Clears the slice polygon cache for the specified centers and their neighbors. Call this when centers' noisy edges have been rebuilt.
 	 */
 	private void clearSlicePolygonCache(Collection<Center> centers)
 	{
@@ -1219,42 +1222,48 @@ public class WorldGraph extends VoronoiGraph
 		clearSlicePolygonCache(centersToUpdate);
 		precomputeSlicePolygonsForCenters(centersToUpdate);
 
-		synchronized (centerLookupLock)
+		if (centerLookupMode == CenterLookupMode.PIXEL_CACHED || centerLookupMode == CenterLookupMode.PIXEL_UNCACHED)
 		{
-			if (centerLookupTable == null)
+			synchronized (centerLookupLock)
 			{
-				buildCenterLookupTableIfNeeded();
-			}
-			else
-			{
-				// Include neighbors of each center because if a center changed,
-				// that will affect its neighbors as well.
-				Set<Center> centersWithNeighbors = new HashSet<>();
-				for (Center c : centersToUpdate)
+				if (centerLookupTable == null)
 				{
-					centersWithNeighbors.add(c);
-					for (Center neighbor : c.neighbors)
-					{
-						centersWithNeighbors.add(neighbor);
-					}
+					buildCenterLookupTableIfNeeded();
 				}
-
-				try (Painter p = centerLookupTable.createPainter())
+				else
 				{
-					drawPolygons(p, centersWithNeighbors, new Function<Center, Color>()
+					// Include neighbors of each center because if a center changed,
+					// that will affect its neighbors as well.
+					Set<Center> centersWithNeighbors = new HashSet<>();
+					for (Center c : centersToUpdate)
 					{
-						public Color apply(Center c)
+						centersWithNeighbors.add(c);
+						for (Center neighbor : c.neighbors)
 						{
-							return convertCenterIdToColor(c);
+							centersWithNeighbors.add(neighbor);
 						}
-					});
-				}
+					}
 
-				// Refresh the cached reader with the changed region
-				Rectangle changedBounds = getBoundingBox(centersWithNeighbors);
-				if (changedBounds != null)
-				{
-					cachedCenterLookupReader.refreshRegion(changedBounds.toEnclosingIntRectangle());
+					try (Painter p = centerLookupTable.createPainter())
+					{
+						drawPolygons(p, centersWithNeighbors, new Function<Center, Color>()
+						{
+							public Color apply(Center c)
+							{
+								return convertCenterIdToColor(c);
+							}
+						});
+					}
+
+					if (centerLookupMode == CenterLookupMode.PIXEL_CACHED)
+					{
+						// Refresh the cached reader with the changed region
+						Rectangle changedBounds = getBoundingBox(centersWithNeighbors);
+						if (changedBounds != null)
+						{
+							cachedCenterLookupReader.refreshRegion(changedBounds.toEnclosingIntRectangle());
+						}
+					}
 				}
 			}
 		}

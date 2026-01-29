@@ -82,7 +82,7 @@ public class SkiaMapCreatorTest
 			Image fullMap = mapCreator.createMap(settings, null, mapParts);
 
 			{
-				final int numberToTest = 100;
+				final int numberToTest = 500;
 				Image fullMapForUpdates = fullMap.deepCopy();
 				int iconNumber = 0;
 				for (FreeIcon icon : settings.edits.freeIcons)
@@ -93,7 +93,7 @@ public class SkiaMapCreatorTest
 						break;
 					}
 
-					// System.out.println("Running incremental icon drawing test number " + iconNumber);
+					//System.out.println("Running incremental icon drawing test number " + iconNumber);
 
 					IntRectangle changedBounds = mapCreator.incrementalUpdateIcons(settings, mapParts, fullMapForUpdates, Arrays.asList(icon));
 

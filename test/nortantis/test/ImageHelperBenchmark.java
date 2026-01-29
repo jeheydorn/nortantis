@@ -171,11 +171,12 @@ public class ImageHelperBenchmark
 	public void benchmarkCopySubImage()
 	{
 		System.out.println("\n=== copySubImage Benchmark ===\n");
+		GPUExecutor.setRenderingMode(GPUExecutor.RenderingMode.GPU);
 
 		int sourceSize = 4000;
 		int numCopies = 200;
 		int minSize = 10;
-		int maxSize = 50;
+		int maxSize = 200;
 
 		System.out.println("Source image size: " + sourceSize + "x" + sourceSize);
 		System.out.println("Number of copies: " + numCopies);
