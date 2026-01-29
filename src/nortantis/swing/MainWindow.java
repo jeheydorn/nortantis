@@ -2092,7 +2092,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	 */
 	public static void main(String[] args)
 	{
-		GPUExecutor.setRenderingMode(GPUExecutor.RenderingMode.GPU);
+		GPUExecutor.setRenderingMode(GPUExecutor.RenderingMode.CPU);
 		// Tell drawing code to use either AWT (AwtFactory) or Skia (SkiaFactory).
 		PlatformFactory.setInstance(new SkiaFactory());
 

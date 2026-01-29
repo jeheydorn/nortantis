@@ -1036,7 +1036,7 @@ public class ImageHelper
 	 *
 	 * Creates a copy of a piece of an image.
 	 *
-	 * It is important the the result is a copy even if the desired region is exactly the input.
+	 * It is important that the result is a copy even if the desired region is exactly the input.
 	 */
 	public static Image copySnippet(Image source, int xLoc, int yLoc, int width, int height)
 	{

@@ -111,28 +111,29 @@ public class SkiaPixelReaderWriter extends SkiaPixelReader implements PixelReade
 			if (bounds == null)
 			{
 				image.writePixelsFromByteArray(cachedPixelBytes);
-				image.markCPUDirty(); // Invalidate GPU copy since CPU was modified
 			}
 			else
 			{
 				image.writePixelsToRegionFromByteArray(cachedPixelBytes, bounds);
-				// TODO remove commented out code here when I'm sure I won't use it. It does not help icon drawing now, and if I do keep
-				// this, it should be optional.
-				// If GPU is enabled, update only the modified region on the GPU
-				// if (image.isGpuEnabled())
-				// {
-				// image.updateGPURegion(bounds.x, bounds.y, bounds.width, bounds.height);
-				// }
-				// else
-				// {
+			}
+			// writePixelsFromByteArray/writePixelsToRegionFromByteArray handle GPU-only internally,
+			// so only call markCPUDirty for non-GPU-only images
+			if (!image.isGpuOnly())
+			{
 				image.markCPUDirty();
-				// }
 			}
 		}
 		else if (modified)
 		{
-			// Direct pixel modifications (no cached array) also need GPU invalidation
-			image.markCPUDirty();
+			// Direct pixel modifications (no cached array) also need invalidation
+			if (image.isGpuOnly())
+			{
+				image.markGpuOnlyPixelsWritten();
+			}
+			else
+			{
+				image.markCPUDirty();
+			}
 		}
 		super.close();
 	}

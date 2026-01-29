@@ -83,6 +83,42 @@ public class SkiaShaderOps
 		return resultBitmap;
 	}
 
+	/**
+	 * Creates a SkiaImage from a shader result surface. In GPU-only mode for non-grayscale results, hands off the surface directly to avoid
+	 * GPU→CPU readback. Otherwise reads pixels to a bitmap.
+	 *
+	 * @param surface
+	 *            The surface containing shader results. Ownership is transferred if GPU-only mode is used; otherwise the caller should
+	 *            close it.
+	 * @param width
+	 *            Surface width
+	 * @param height
+	 *            Surface height
+	 * @param resultType
+	 *            The ImageType for the result
+	 * @param useGPU
+	 *            Whether the surface is a GPU surface
+	 * @return A new SkiaImage, and whether the surface ownership was transferred (caller should not close it)
+	 */
+	private static ImageFromSurface createImageFromSurface(Surface surface, int width, int height, ImageType resultType, boolean useGPU)
+	{
+		// In GPU-only mode, hand off the surface directly for non-grayscale results
+		if (useGPU && GPUExecutor.isGpuOnlyMode() && resultType != ImageType.Grayscale8Bit && resultType != ImageType.Binary && resultType != ImageType.Grayscale16Bit)
+		{
+			return new ImageFromSurface(new SkiaImage(surface, width, height, resultType), true);
+		}
+
+		Bitmap resultBitmap = readPixelsToBitmap(surface, width, height);
+		return new ImageFromSurface(new SkiaImage(resultBitmap, resultType), false);
+	}
+
+	/**
+	 * Helper record to return both an image and whether the surface ownership was transferred.
+	 */
+	private record ImageFromSurface(SkiaImage image, boolean surfaceTransferred)
+	{
+	}
+
 	// ==================== maskWithImage ====================
 
 	// SkSL shader for mask blending: result = mix(image2, image1, mask)
@@ -169,10 +205,13 @@ public class SkiaShaderOps
 		paint.setShader(resultShader);
 		canvas.drawRect(Rect.makeWH(width, height), paint);
 
-		Bitmap resultBitmap = readPixelsToBitmap(surface, width, height);
+		ImageFromSurface result = createImageFromSurface(surface, width, height, resultType, useGPU);
 
 		// Clean up
-		surface.close();
+		if (!result.surfaceTransferred())
+		{
+			surface.close();
+		}
 		paint.close();
 		resultShader.close();
 		shader1.close();
@@ -180,7 +219,7 @@ public class SkiaShaderOps
 		shaderMask.close();
 		builder.close();
 
-		return new SkiaImage(resultBitmap, resultType);
+		return result.image();
 	}
 
 	// ==================== maskWithColor ====================
@@ -303,17 +342,20 @@ public class SkiaShaderOps
 		paint.setShader(resultShader);
 		canvas.drawRect(Rect.makeWH(width, height), paint);
 
-		Bitmap resultBitmap = readPixelsToBitmap(surface, width, height);
+		ImageFromSurface result = createImageFromSurface(surface, width, height, resultType, useGPU);
 
 		// Clean up
-		surface.close();
+		if (!result.surfaceTransferred())
+		{
+			surface.close();
+		}
 		paint.close();
 		resultShader.close();
 		imageShader.close();
 		maskShader.close();
 		builder.close();
 
-		return new SkiaImage(resultBitmap, resultType);
+		return result.image();
 	}
 
 	// ==================== setAlphaFromMask ====================
@@ -406,17 +448,20 @@ public class SkiaShaderOps
 		paint.setShader(resultShader);
 		canvas.drawRect(Rect.makeWH(width, height), paint);
 
-		Bitmap resultBitmap = readPixelsToBitmap(surface, width, height);
+		ImageFromSurface result = createImageFromSurface(surface, width, height, ImageType.ARGB, useGPU);
 
 		// Clean up
-		surface.close();
+		if (!result.surfaceTransferred())
+		{
+			surface.close();
+		}
 		paint.close();
 		resultShader.close();
 		imageShader.close();
 		maskShader.close();
 		builder.close();
 
-		return new SkiaImage(resultBitmap, ImageType.ARGB);
+		return result.image();
 	}
 
 	// ==================== colorify ====================
@@ -631,16 +676,19 @@ public class SkiaShaderOps
 		paint.setShader(resultShader);
 		canvas.drawRect(Rect.makeWH(width, height), paint);
 
-		Bitmap resultBitmap = readPixelsToBitmap(surface, width, height);
+		ImageFromSurface result = createImageFromSurface(surface, width, height, resultType, useGPU);
 
 		// Clean up
-		surface.close();
+		if (!result.surfaceTransferred())
+		{
+			surface.close();
+		}
 		paint.close();
 		resultShader.close();
 		imageShader.close();
 		builder.close();
 
-		return new SkiaImage(resultBitmap, resultType);
+		return result.image();
 	}
 
 	// ==================== convertToGrayscale ====================
@@ -887,10 +935,13 @@ public class SkiaShaderOps
 		paint.setShader(resultShader);
 		canvas.drawRect(Rect.makeWH(width, height), paint);
 
-		Bitmap resultBitmap = readPixelsToBitmap(surface, width, height);
+		ImageFromSurface result = createImageFromSurface(surface, width, height, resultType, useGPU);
 
 		// Clean up
-		surface.close();
+		if (!result.surfaceTransferred())
+		{
+			surface.close();
+		}
 		paint.close();
 		resultShader.close();
 		imageShader.close();
@@ -899,7 +950,7 @@ public class SkiaShaderOps
 		paletteShader.close();
 		builder.close();
 
-		return new SkiaImage(resultBitmap, resultType);
+		return result.image();
 	}
 
 	// Minimum palette width to avoid GPU texture issues with very small textures
@@ -1324,10 +1375,13 @@ public class SkiaShaderOps
 		paint.setShader(resultShader);
 		canvas.drawRect(Rect.makeWH(width, height), paint);
 
-		Bitmap resultBitmap = readPixelsToBitmap(surface, width, height);
+		ImageFromSurface result = createImageFromSurface(surface, width, height, ImageType.RGB, useGPU);
 
 		// Clean up
-		surface.close();
+		if (!result.surfaceTransferred())
+		{
+			surface.close();
+		}
 		paint.close();
 		resultShader.close();
 		imageShader.close();
@@ -1335,7 +1389,7 @@ public class SkiaShaderOps
 		paletteShader.close();
 		builder.close();
 
-		return new SkiaImage(resultBitmap, ImageType.RGB);
+		return result.image();
 	}
 
 	// ==================== copyAlphaTo ====================
@@ -1417,17 +1471,20 @@ public class SkiaShaderOps
 		paint.setShader(resultShader);
 		canvas.drawRect(Rect.makeWH(width, height), paint);
 
-		Bitmap resultBitmap = readPixelsToBitmap(surface, width, height);
+		ImageFromSurface result = createImageFromSurface(surface, width, height, ImageType.ARGB, useGPU);
 
 		// Clean up
-		surface.close();
+		if (!result.surfaceTransferred())
+		{
+			surface.close();
+		}
 		paint.close();
 		resultShader.close();
 		targetShader.close();
 		alphaSourceShader.close();
 		builder.close();
 
-		return new SkiaImage(resultBitmap, ImageType.ARGB);
+		return result.image();
 	}
 
 	// ==================== In-Place Operations ====================

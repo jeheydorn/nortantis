@@ -127,9 +127,33 @@ public class SkiaImage extends Image
 		super(type);
 		this.width = width;
 		this.height = height;
-		ImageInfo imageInfo = getImageInfoForType(type, width, height);
-		this.resourceState = new ResourceState(createBitmap(imageInfo));
-		initializeGPUState(forceCPU);
+
+		if (!forceCPU && shouldBeGpuOnlyForType(type, width, height))
+		{
+			// GPU-only path: no CPU bitmap allocated
+			this.resourceState = new ResourceState(null);
+			Surface gpuSurface = GPUExecutor.getInstance().createGPUSurface(width, height);
+			if (gpuSurface != null)
+			{
+				resourceState.gpuSurface = gpuSurface;
+				resourceState.isGpuEnabled = true;
+				resourceState.location = ImageLocation.GPU_ONLY;
+				clearGPUSurface();
+			}
+			else
+			{
+				// GPU surface creation failed, fall back to HYBRID behavior
+				ImageInfo imageInfo = getImageInfoForType(type, width, height);
+				resourceState.bitmap = createBitmap(imageInfo);
+				initializeGPUState(forceCPU);
+			}
+		}
+		else
+		{
+			ImageInfo imageInfo = getImageInfoForType(type, width, height);
+			this.resourceState = new ResourceState(createBitmap(imageInfo));
+			initializeGPUState(forceCPU);
+		}
 		this.cleanable = CLEANER.register(this, resourceState);
 	}
 
@@ -138,8 +162,57 @@ public class SkiaImage extends Image
 		super(type);
 		this.width = bitmap.getWidth();
 		this.height = bitmap.getHeight();
-		this.resourceState = new ResourceState(bitmap);
-		initializeGPUState();
+
+		if (shouldBeGpuOnlyForType(type, bitmap.getWidth(), bitmap.getHeight()))
+		{
+			// GPU-only path: upload bitmap to GPU, then discard it
+			this.resourceState = new ResourceState(null);
+			Surface gpuSurface = GPUExecutor.getInstance().createGPUSurface(width, height);
+			if (gpuSurface != null)
+			{
+				resourceState.gpuSurface = gpuSurface;
+				resourceState.isGpuEnabled = true;
+				resourceState.location = ImageLocation.GPU_ONLY;
+				uploadBitmapToGPU(bitmap);
+				bitmap.close();
+			}
+			else
+			{
+				// GPU surface creation failed, fall back to keeping the bitmap
+				resourceState.bitmap = bitmap;
+				initializeGPUState();
+			}
+		}
+		else
+		{
+			this.resourceState = new ResourceState(bitmap);
+			initializeGPUState();
+		}
+		this.cleanable = CLEANER.register(this, resourceState);
+	}
+
+	/**
+	 * Package-private constructor that wraps an existing GPU surface directly as a GPU-only image. Used by SkiaShaderOps to hand off shader
+	 * result surfaces without GPU→CPU readback. The caller transfers ownership of the surface to this image.
+	 *
+	 * @param gpuSurface
+	 *            The GPU surface to wrap (ownership transferred)
+	 * @param width
+	 *            Image width
+	 * @param height
+	 *            Image height
+	 * @param type
+	 *            Image type
+	 */
+	SkiaImage(Surface gpuSurface, int width, int height, ImageType type)
+	{
+		super(type);
+		this.width = width;
+		this.height = height;
+		this.resourceState = new ResourceState(null);
+		resourceState.gpuSurface = gpuSurface;
+		resourceState.isGpuEnabled = true;
+		resourceState.location = ImageLocation.GPU_ONLY;
 		this.cleanable = CLEANER.register(this, resourceState);
 	}
 
@@ -202,6 +275,70 @@ public class SkiaImage extends Image
 		}
 		int maxTextureSize = GPUExecutor.getInstance().getMaxTextureSize();
 		return getPixelCount() >= GPU_THRESHOLD_PIXELS && width <= maxTextureSize && height <= maxTextureSize;
+	}
+
+	/**
+	 * Static variant of shouldBeGpuOnly for use in constructors before super() returns. Returns true when GPU-only mode is active and the
+	 * image type and size qualify. Grayscale images are excluded because GPU surfaces use N32/PREMUL format.
+	 */
+	private static boolean shouldBeGpuOnlyForType(ImageType type, int w, int h)
+	{
+		if (!GPUExecutor.isGpuOnlyMode())
+		{
+			return false;
+		}
+		// Grayscale images can't be GPU-only because GPU surfaces are N32/PREMUL
+		if (type == ImageType.Grayscale8Bit || type == ImageType.Binary || type == ImageType.Grayscale16Bit)
+		{
+			return false;
+		}
+		long pixels = (long) w * h;
+		if (pixels < GPU_THRESHOLD_PIXELS)
+		{
+			return false;
+		}
+		int maxTextureSize = GPUExecutor.getInstance().getMaxTextureSize();
+		return w <= maxTextureSize && h <= maxTextureSize;
+	}
+
+	/**
+	 * Returns true if this image is GPU-only (no CPU bitmap backing).
+	 */
+	boolean isGpuOnly()
+	{
+		return resourceState.location == ImageLocation.GPU_ONLY && resourceState.bitmap == null;
+	}
+
+	/**
+	 * Clears the GPU surface to transparent or black depending on whether the image has alpha. Must be called after the GPU surface is
+	 * created for GPU-only images.
+	 */
+	private void clearGPUSurface()
+	{
+		final Surface surfaceRef = resourceState.gpuSurface;
+		int clearColor = hasAlpha() ? 0x00000000 : 0xFF000000;
+		GPUExecutor.getInstance().submit(() ->
+		{
+			surfaceRef.getCanvas().clear(clearColor);
+			return null;
+		});
+	}
+
+	/**
+	 * Uploads a bitmap's pixels to the GPU surface and discards the snapshot. Used by the Bitmap constructor when creating GPU-only images.
+	 */
+	private void uploadBitmapToGPU(Bitmap bitmap)
+	{
+		final Surface surfaceRef = resourceState.gpuSurface;
+		GPUExecutor.getInstance().submit(() ->
+		{
+			Canvas gpuCanvas = surfaceRef.getCanvas();
+			gpuCanvas.clear(0x00000000);
+			org.jetbrains.skia.Image cpuImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(bitmap);
+			gpuCanvas.drawImage(cpuImage, 0, 0);
+			cpuImage.close();
+			return null;
+		});
 	}
 
 	private Bitmap createBitmap(ImageInfo imageInfo)
@@ -282,11 +419,37 @@ public class SkiaImage extends Image
 		return type == ImageType.Grayscale8Bit || type == ImageType.Binary;
 	}
 
+	/**
+	 * Returns a CPU bitmap with the current image data. For GPU-only images, this creates a temporary bitmap by reading back from the GPU
+	 * surface. The caller should close the returned bitmap when done if the image is GPU-only.
+	 */
 	public Bitmap getBitmap()
 	{
 		awaitPendingPainters();
+		if (isGpuOnly())
+		{
+			// Read full GPU surface into a new bitmap
+			return readFullGPUSurfaceToBitmap();
+		}
 		ensureCPUData(); // Ensure CPU bitmap is current before returning
 		return resourceState.bitmap;
+	}
+
+	/**
+	 * Reads the full GPU surface contents into a new bitmap. Used by GPU-only images for operations that need CPU access.
+	 */
+	private Bitmap readFullGPUSurfaceToBitmap()
+	{
+		final Surface surfaceRef = resourceState.gpuSurface;
+		return GPUExecutor.getInstance().submit(() ->
+		{
+			surfaceRef.flushAndSubmit(true);
+			Bitmap result = new Bitmap();
+			ImageInfo dstInfo = new ImageInfo(width, height, ColorType.Companion.getN32(), ColorAlphaType.UNPREMUL, null);
+			result.allocPixels(dstInfo);
+			surfaceRef.readPixels(result, 0, 0);
+			return result;
+		});
 	}
 
 	public org.jetbrains.skia.Image getSkiaImage()
@@ -302,6 +465,21 @@ public class SkiaImage extends Image
 			{
 				return resourceState.gpuTexture;
 			}
+		}
+
+		// GPU-only image accessed off GPU thread: read back to a CPU bitmap-based image.
+		// A GPU surface snapshot cannot be returned here because the caller may pass it to a
+		// CPU canvas on a non-GPU thread, which would crash in OpenGL.
+		// The result is cached so the readback only happens once per invalidation cycle.
+		if (isGpuOnly() && !GPUExecutor.getInstance().isOnGPUThread())
+		{
+			if (resourceState.cachedSkiaImage == null)
+			{
+				Bitmap cpuBitmap = readFullGPUSurfaceToBitmap();
+				resourceState.cachedSkiaImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(cpuBitmap);
+				cpuBitmap.close();
+			}
+			return resourceState.cachedSkiaImage;
 		}
 
 		// If GPU has the latest data but we're not on GPU thread, sync to CPU first
@@ -342,6 +520,10 @@ public class SkiaImage extends Image
 			resourceState.gpuSurface = GPUExecutor.getInstance().createGPUSurface(width, height);
 			if (resourceState.gpuSurface == null)
 			{
+				if (isGpuOnly())
+				{
+					throw new IllegalStateException("GPU surface creation failed for GPU-only image (" + width + "x" + height + ")");
+				}
 				// GPU surface creation failed, fall back to CPU
 				resourceState.isGpuEnabled = false;
 				resourceState.location = ImageLocation.CPU_ONLY;
@@ -357,10 +539,15 @@ public class SkiaImage extends Image
 	}
 
 	/**
-	 * Ensures CPU bitmap has the latest data. If GPU was modified, syncs GPU data to CPU.
+	 * Ensures CPU bitmap has the latest data. If GPU was modified, syncs GPU data to CPU. Throws for GPU-only images since they have no CPU
+	 * bitmap.
 	 */
 	private void ensureCPUData()
 	{
+		if (isGpuOnly())
+		{
+			throw new IllegalStateException("ensureCPUData() called on GPU-only image. Use GPU-aware methods instead.");
+		}
 		if (resourceState.location == ImageLocation.GPU_DIRTY)
 		{
 			syncGPUToCPU();
@@ -451,15 +638,30 @@ public class SkiaImage extends Image
 	}
 
 	/**
-	 * Marks the CPU bitmap as having the latest data (GPU is stale). Called after pixel write operations.
+	 * Marks the CPU bitmap as having the latest data (GPU is stale). Called after pixel write operations. Should not be called on GPU-only
+	 * images; use markGpuOnlyPixelsWritten() instead.
 	 */
 	public void markCPUDirty()
 	{
+		if (isGpuOnly())
+		{
+			throw new IllegalStateException("markCPUDirty() called on GPU-only image. Use markGpuOnlyPixelsWritten() instead.");
+		}
 		if (resourceState.isGpuEnabled && resourceState.location != ImageLocation.CPU_ONLY)
 		{
 			resourceState.location = ImageLocation.CPU_DIRTY;
 			invalidateGPUTexture();
 		}
+		invalidateCachedImage();
+	}
+
+	/**
+	 * For GPU-only images, invalidates the GPU texture snapshot and cached image after pixels have been written to the GPU surface. This
+	 * does not change the location state since GPU-only images always stay in GPU_ONLY.
+	 */
+	void markGpuOnlyPixelsWritten()
+	{
+		invalidateGPUTexture();
 		invalidateCachedImage();
 	}
 
@@ -564,7 +766,11 @@ public class SkiaImage extends Image
 	public void prepareForPixelAccess()
 	{
 		awaitPendingPainters();
-		ensureCPUData();
+		if (!isGpuOnly())
+		{
+			ensureCPUData();
+		}
+		// GPU-only images handle pixel access via readPixelsFromGPUSurface/writePixelsToGPUSurface
 	}
 
 	/**
@@ -628,7 +834,11 @@ public class SkiaImage extends Image
 	public PixelReader innerCreateNewPixelReader(IntRectangle bounds)
 	{
 		awaitPendingPainters();
-		ensureCPUData(); // Sync GPU->CPU if needed
+		if (!isGpuOnly())
+		{
+			ensureCPUData(); // Sync GPU->CPU if needed
+		}
+		// For GPU-only images, readPixelsToByteArray handles GPU access internally
 		if (isGrayscaleFormat())
 		{
 			return new SkiaGrayscalePixelReader(this, bounds);
@@ -640,7 +850,11 @@ public class SkiaImage extends Image
 	public PixelReaderWriter innerCreateNewPixelReaderWriter(IntRectangle bounds)
 	{
 		awaitPendingPainters();
-		ensureCPUData(); // Sync GPU->CPU if needed
+		if (!isGpuOnly())
+		{
+			ensureCPUData(); // Sync GPU->CPU if needed
+		}
+		// For GPU-only images, readPixelsToByteArray handles GPU access internally
 		if (isGrayscaleFormat())
 		{
 			return new SkiaGrayscalePixelReaderWriter(this, bounds);
@@ -682,7 +896,16 @@ public class SkiaImage extends Image
 				ensureGPUSurface();
 				if (resourceState.gpuSurface != null)
 				{
-					markGPUDirty();
+					if (isGpuOnly())
+					{
+						resourceState.location = ImageLocation.GPU_ONLY;
+					}
+					else
+					{
+						markGPUDirty();
+					}
+					invalidateGPUTexture();
+					invalidateCachedImage();
 					// Create a GPUBatchingPainter for async GPU operations
 					GPUBatchingPainter painter = new GPUBatchingPainter(resourceState.gpuSurface, this, quality);
 					activePainters.add(painter);
@@ -691,13 +914,17 @@ public class SkiaImage extends Image
 			}
 			catch (Exception e)
 			{
+				if (isGpuOnly())
+				{
+					throw new IllegalStateException("GPU painter creation failed for GPU-only image", e);
+				}
 				Logger.printError("SkiaImage: GPU painter failed, falling back to CPU: " + e.getMessage(), e);
 				// Fallback to CPU
 				resourceState.isGpuEnabled = false;
 				resourceState.location = ImageLocation.CPU_ONLY;
 			}
 		}
-		return new SkiaPainter(new Canvas(resourceState.bitmap, new SurfaceProps()), quality);
+		return new SkiaPainter(new Canvas(resourceState.bitmap, new SurfaceProps()), quality, width, height);
 	}
 
 	@Override
@@ -722,10 +949,11 @@ public class SkiaImage extends Image
 			final int targetWidth = width;
 			final int targetHeight = height;
 			final ImageType resultType = getType();
-			final Bitmap srcBitmap = resourceState.bitmap;
 
 			try
 			{
+				// For GPU-only images, get skia image which returns a GPU snapshot
+				final SkiaImage self = this;
 				Bitmap scaledBitmap = GPUExecutor.getInstance().submit(() ->
 				{
 					// Create GPU surface on GPU thread
@@ -741,10 +969,8 @@ public class SkiaImage extends Image
 					{
 						Canvas gpuCanvas = gpuDestSurface.getCanvas();
 
-						// Use CPU bitmap as source (safer than GPU texture across threads)
-						org.jetbrains.skia.Image srcImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(srcBitmap);
+						org.jetbrains.skia.Image srcImage = self.getSkiaImage();
 						gpuCanvas.drawImageRect(srcImage, Rect.makeXYWH(0, 0, targetWidth, targetHeight));
-						srcImage.close();
 
 						// Flush GPU commands and read directly from surface
 						gpuDestSurface.flushAndSubmit(true);
@@ -799,7 +1025,61 @@ public class SkiaImage extends Image
 	private Image scaleHighQuality(int width, int height)
 	{
 		awaitPendingPainters();
-		ensureCPUData(); // Ensure CPU bitmap is current
+
+		// For GPU-only images, scale on the GPU and read back only the (smaller) result.
+		// This avoids reading the entire large source image to CPU.
+		if (isGpuOnly())
+		{
+			final int targetWidth = width;
+			final int targetHeight = height;
+			final ImageType resultType = getType();
+			final SkiaImage self = this;
+
+			try
+			{
+				Bitmap scaledBitmap = GPUExecutor.getInstance().submit(() ->
+				{
+					DirectContext ctx = GPUExecutor.getInstance().getContext();
+					if (ctx == null)
+						return null;
+
+					Surface gpuDestSurface = Surface.Companion.makeRenderTarget(ctx, false, new ImageInfo(targetWidth, targetHeight, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null));
+					if (gpuDestSurface == null)
+						return null;
+
+					try
+					{
+						Canvas gpuCanvas = gpuDestSurface.getCanvas();
+						org.jetbrains.skia.Image srcImage = self.getSkiaImage();
+						SamplingMode sampling = new FilterMipmap(FilterMode.LINEAR, MipmapMode.LINEAR);
+						Rect srcRect = Rect.makeWH(self.width, self.height);
+						Rect dstRect = Rect.makeWH(targetWidth, targetHeight);
+						gpuCanvas.drawImageRect(srcImage, srcRect, dstRect, sampling, null, true);
+
+						gpuDestSurface.flushAndSubmit(true);
+						Bitmap result = new Bitmap();
+						result.allocPixels(new ImageInfo(targetWidth, targetHeight, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null));
+						gpuDestSurface.readPixels(result, 0, 0);
+						return result;
+					}
+					finally
+					{
+						gpuDestSurface.close();
+					}
+				});
+
+				if (scaledBitmap != null)
+				{
+					return new SkiaImage(scaledBitmap, resultType);
+				}
+			}
+			catch (Exception e)
+			{
+				// Fall through to CPU path
+			}
+		}
+
+		ensureCPUData();
 		org.jetbrains.skia.Image srcImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(resourceState.bitmap);
 
 		// Create destination bitmap and get its pixmap
@@ -819,6 +1099,16 @@ public class SkiaImage extends Image
 	public Image deepCopy()
 	{
 		awaitPendingPainters();
+		if (isGpuOnly())
+		{
+			// Create new GPU-only image and draw via painter
+			SkiaImage copy = new SkiaImage(width, height, getType());
+			try (Painter p = copy.createPainter())
+			{
+				p.drawImage(this, 0, 0);
+			}
+			return copy;
+		}
 		ensureCPUData(); // Ensure CPU bitmap is current before copying
 		return new SkiaImage(resourceState.bitmap.makeClone(), getType());
 	}
@@ -853,12 +1143,12 @@ public class SkiaImage extends Image
 			final int srcW = bounds.width;
 			final int srcH = bounds.height;
 			final ImageType resultType = addAlphaChanel ? ImageType.ARGB : getType();
-			final ColorType colorType = resourceState.bitmap.getImageInfo().getColorType();
-			final ColorAlphaType alphaType = resourceState.bitmap.getImageInfo().getColorAlphaType();
+			// For GPU-only images, use N32/UNPREMUL as the target format
+			final ColorType colorType = isGpuOnly() ? ColorType.Companion.getN32() : resourceState.bitmap.getImageInfo().getColorType();
+			final ColorAlphaType alphaType = isGpuOnly() ? ColorAlphaType.UNPREMUL : resourceState.bitmap.getImageInfo().getColorAlphaType();
 
-			// Determine source: use GPU surface only if GPU has exclusive latest data (GPU_DIRTY),
-			// otherwise use CPU bitmap to maintain consistency with existing behavior
-			final boolean useGPUSource = resourceState.location == ImageLocation.GPU_DIRTY && resourceState.gpuSurface != null;
+			// For GPU-only images, always use GPU source. For hybrid, use GPU source only if GPU has exclusive latest data.
+			final boolean useGPUSource = isGpuOnly() || (resourceState.location == ImageLocation.GPU_DIRTY && resourceState.gpuSurface != null);
 			final Surface srcSurface = useGPUSource ? resourceState.gpuSurface : null;
 			final Bitmap srcBitmap = useGPUSource ? null : resourceState.bitmap;
 
@@ -1025,10 +1315,19 @@ public class SkiaImage extends Image
 	public int[] readPixelsToIntArray()
 	{
 		awaitPendingPainters();
-		ensureCPUData(); // Ensure CPU bitmap is current
-		int bytesPerPixel = getBytesPerPixel();
-		int rowStride = width * bytesPerPixel;
-		byte[] bytes = resourceState.bitmap.readPixels(resourceState.bitmap.getImageInfo(), rowStride, 0, 0);
+
+		byte[] bytes;
+		if (isGpuOnly())
+		{
+			bytes = readPixelsFromGPUSurface(0, 0, width, height);
+		}
+		else
+		{
+			ensureCPUData(); // Ensure CPU bitmap is current
+			int bytesPerPixel = getBytesPerPixel();
+			int rowStride = width * bytesPerPixel;
+			bytes = resourceState.bitmap.readPixels(resourceState.bitmap.getImageInfo(), rowStride, 0, 0);
+		}
 
 		if (bytes == null)
 		{
@@ -1061,11 +1360,20 @@ public class SkiaImage extends Image
 	int[] readPixelsToIntArray(int srcX, int srcY, int regionWidth, int regionHeight)
 	{
 		awaitPendingPainters();
-		ensureCPUData(); // Ensure CPU bitmap is current
-		int bytesPerPixel = getBytesPerPixel();
-		int rowStride = regionWidth * bytesPerPixel;
-		ImageInfo destinationInfo = new ImageInfo(regionWidth, regionHeight, resourceState.bitmap.getImageInfo().getColorType(), resourceState.bitmap.getImageInfo().getColorAlphaType(), null);
-		byte[] bytes = resourceState.bitmap.readPixels(destinationInfo, rowStride, srcX, srcY);
+
+		byte[] bytes;
+		if (isGpuOnly())
+		{
+			bytes = readPixelsFromGPUSurface(srcX, srcY, regionWidth, regionHeight);
+		}
+		else
+		{
+			ensureCPUData(); // Ensure CPU bitmap is current
+			int bytesPerPixel = getBytesPerPixel();
+			int rowStride = regionWidth * bytesPerPixel;
+			ImageInfo destinationInfo = new ImageInfo(regionWidth, regionHeight, resourceState.bitmap.getImageInfo().getColorType(), resourceState.bitmap.getImageInfo().getColorAlphaType(), null);
+			bytes = resourceState.bitmap.readPixels(destinationInfo, rowStride, srcX, srcY);
+		}
 
 		if (bytes == null)
 		{
@@ -1125,7 +1433,6 @@ public class SkiaImage extends Image
 	byte[] readPixelsToByteArray(IntRectangle bounds)
 	{
 		awaitPendingPainters();
-		ensureCPUData();
 
 		int x = bounds != null ? bounds.x : 0;
 		int y = bounds != null ? bounds.y : 0;
@@ -1142,6 +1449,12 @@ public class SkiaImage extends Image
 			throw new IllegalArgumentException("readPixelsToByteArray: bounds out of range. bounds=" + bounds + ", image size=" + width + "x" + height);
 		}
 
+		if (isGpuOnly())
+		{
+			return readPixelsFromGPUSurface(x, y, w, h);
+		}
+
+		ensureCPUData();
 		int bytesPerPixel = 4; // N32 format
 		int rowStride = w * bytesPerPixel;
 		ImageInfo info = new ImageInfo(w, h, resourceState.bitmap.getImageInfo().getColorType(), resourceState.bitmap.getImageInfo().getColorAlphaType(), null);
@@ -1154,6 +1467,12 @@ public class SkiaImage extends Image
 	void writePixelsFromByteArray(byte[] pixels)
 	{
 		awaitPendingPainters();
+		if (isGpuOnly())
+		{
+			writePixelsToGPUSurface(pixels, 0, 0, width, height);
+			markGpuOnlyPixelsWritten();
+			return;
+		}
 		int bytesPerPixel = 4;
 		int rowStride = width * bytesPerPixel;
 		resourceState.bitmap.installPixels(resourceState.bitmap.getImageInfo(), pixels, rowStride);
@@ -1166,6 +1485,12 @@ public class SkiaImage extends Image
 	void writePixelsToRegionFromByteArray(byte[] regionPixels, IntRectangle bounds)
 	{
 		awaitPendingPainters();
+		if (isGpuOnly())
+		{
+			writePixelsToGPUSurface(regionPixels, bounds.x, bounds.y, bounds.width, bounds.height);
+			markGpuOnlyPixelsWritten();
+			return;
+		}
 		int bytesPerPixel = 4;
 
 		ImageInfo tempImageInfo = new ImageInfo(bounds.width, bounds.height, ColorType.Companion.getN32(), resourceState.bitmap.getImageInfo().getColorAlphaType(), null);
@@ -1180,6 +1505,46 @@ public class SkiaImage extends Image
 		canvas.close();
 		tempBitmap.close();
 		invalidateCachedImage();
+	}
+
+	/**
+	 * Reads a rectangle of pixels from the GPU surface. Returns UNPREMUL bytes (same contract as bitmap reads). Submits to the GPU thread.
+	 */
+	private byte[] readPixelsFromGPUSurface(int x, int y, int w, int h)
+	{
+		final Surface surfaceRef = resourceState.gpuSurface;
+		return GPUExecutor.getInstance().submit(() ->
+		{
+			surfaceRef.flushAndSubmit(true);
+			Bitmap tempBitmap = new Bitmap();
+			ImageInfo dstInfo = new ImageInfo(w, h, ColorType.Companion.getN32(), ColorAlphaType.UNPREMUL, null);
+			tempBitmap.allocPixels(dstInfo);
+			surfaceRef.readPixels(tempBitmap, x, y);
+			byte[] bytes = tempBitmap.readPixels(dstInfo, w * 4, 0, 0);
+			tempBitmap.close();
+			return bytes;
+		});
+	}
+
+	/**
+	 * Writes pixels to a region of the GPU surface. The input bytes are UNPREMUL; Skia auto-converts to the surface's PREMUL format.
+	 * Submits to the GPU thread.
+	 */
+	private void writePixelsToGPUSurface(byte[] pixels, int x, int y, int w, int h)
+	{
+		final Surface surfaceRef = resourceState.gpuSurface;
+		GPUExecutor.getInstance().submit(() ->
+		{
+			Bitmap tempBitmap = new Bitmap();
+			ImageInfo srcInfo = new ImageInfo(w, h, ColorType.Companion.getN32(), ColorAlphaType.UNPREMUL, null);
+			tempBitmap.allocPixels(srcInfo);
+			tempBitmap.installPixels(srcInfo, pixels, w * 4);
+			org.jetbrains.skia.Image tempImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(tempBitmap);
+			surfaceRef.getCanvas().drawImage(tempImage, x, y);
+			tempImage.close();
+			tempBitmap.close();
+			return null;
+		});
 	}
 
 	/**
@@ -1218,6 +1583,21 @@ public class SkiaImage extends Image
 	}
 
 	/**
+	 * Creates an org.jetbrains.skia.Image suitable for PNG encoding. For GPU-only images, returns a GPU surface snapshot directly (no
+	 * bitmap allocation needed). For bitmap-backed images, creates an Image from the bitmap.
+	 */
+	org.jetbrains.skia.Image makeEncodableImage()
+	{
+		awaitPendingPainters();
+		if (isGpuOnly())
+		{
+			return getSkiaImage();
+		}
+		ensureCPUData();
+		return org.jetbrains.skia.Image.Companion.makeFromBitmap(resourceState.bitmap);
+	}
+
+	/**
 	 * Replaces this image's pixels by drawing from the source surface. Used for in-place shader operations where the result is written back
 	 * to the original image. This method stays on GPU when possible to avoid expensive GPU-CPU-GPU transfers.
 	 *
@@ -1238,10 +1618,21 @@ public class SkiaImage extends Image
 
 		try
 		{
+			// GPU-only path: draw directly to GPU surface
+			if (isGpuOnly() && isOnGPUThread && resourceState.gpuSurface != null)
+			{
+				Canvas gpuCanvas = resourceState.gpuSurface.getCanvas();
+				gpuCanvas.drawImage(snapshot, 0, 0);
+				resourceState.gpuSurface.flushAndSubmit(true);
+				markGpuOnlyPixelsWritten();
+				return;
+			}
+
 			// Check if we can use GPU-to-GPU path
 			// Skip GPU path for grayscale images because GPU surface is always N32 (RGBA) format
 			// and syncGPUToCPU can't convert N32 back to grayscale correctly
-			boolean canUseGPUPath = isOnGPUThread && resourceState.isGpuEnabled && resourceState.gpuSurface != null && resourceState.bitmap.getColorType() == ColorType.Companion.getN32();
+			boolean canUseGPUPath = isOnGPUThread && resourceState.isGpuEnabled && resourceState.gpuSurface != null && resourceState.bitmap != null
+					&& resourceState.bitmap.getColorType() == ColorType.Companion.getN32();
 
 			if (canUseGPUPath)
 			{

@@ -34,9 +34,9 @@ public class GPUExecutor
 	 */
 	public enum RenderingMode
 	{
-		/** Behavior is determined by the default in defaultRenderingMode */
-		DEFAULT,
-		/** GPU acceleration with shaders (fastest, requires GPU hardware) */
+		/** CPU+GPU dual-backing: large images have both a CPU bitmap and GPU surface (safe default) */
+		HYBRID,
+		/** GPU-only for large images: reduces memory by ~50% but requires GPU hardware */
 		GPU,
 		/** CPU rendering with Skia shader rasterizer (no GPU required) */
 		CPU_SHADERS,
@@ -44,7 +44,7 @@ public class GPUExecutor
 		CPU
 	}
 
-	private static final RenderingMode defaultRenderingMode = RenderingMode.GPU;
+	private static final RenderingMode defaultRenderingMode = RenderingMode.HYBRID;
 
 	private static volatile GPUExecutor instance;
 	private static final Object instanceLock = new Object();
@@ -118,8 +118,8 @@ public class GPUExecutor
 	}
 
 	/**
-	 * Sets the rendering mode. Can be called at any time to change rendering behavior. If not set, defaults to GPU mode with auto-detection
-	 * (uses GPU if available, otherwise falls back to CPU shaders).
+	 * Sets the rendering mode. Can be called at any time to change rendering behavior. If not set, defaults to HYBRID mode (CPU+GPU
+	 * dual-backing for large images).
 	 *
 	 * @param mode
 	 *            The rendering mode to use
@@ -130,16 +130,21 @@ public class GPUExecutor
 	}
 
 	/**
-	 * Returns the current rendering mode override, or null if using auto-detection. Replace the default value if renderingModeOverride ==
-	 * RenderingMode.DEFAULT.
+	 * Returns the current effective rendering mode. If no override has been set (null), returns defaultRenderingMode.
 	 */
 	public static RenderingMode getRenderingMode()
 	{
-		if (renderingModeOverride == RenderingMode.DEFAULT || renderingModeOverride == null)
-		{
-			return defaultRenderingMode;
-		}
-		return renderingModeOverride;
+		RenderingMode override = renderingModeOverride;
+		return override != null ? override : defaultRenderingMode;
+	}
+
+	/**
+	 * Returns true when the rendering mode is GPU and GPU hardware is available. In this mode, large non-grayscale images are backed only
+	 * by a GPU surface (no CPU bitmap), reducing memory usage.
+	 */
+	public static boolean isGpuOnlyMode()
+	{
+		return getRenderingMode() == RenderingMode.GPU && getInstance().isGPUAvailable();
 	}
 
 	/**

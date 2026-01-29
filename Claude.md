@@ -82,20 +82,20 @@ Use try-with-resources for Image whenever feasible.
 GPU and shader behavior is controlled via `GPUExecutor.setRenderingMode()`:
 
 ```java
-GPUExecutor.setRenderingMode(RenderingMode.DEFAULT);     // Auto-detect (try GPU, fall back to CPU shaders)
-GPUExecutor.setRenderingMode(RenderingMode.GPU);         // Force GPU with shaders
+GPUExecutor.setRenderingMode(RenderingMode.HYBRID);      // CPU+GPU dual-backing (default, safe)
+GPUExecutor.setRenderingMode(RenderingMode.GPU);         // GPU-only for large images (reduced memory)
 GPUExecutor.setRenderingMode(RenderingMode.CPU_SHADERS); // Force CPU with Skia shaders
 GPUExecutor.setRenderingMode(RenderingMode.CPU);         // Force traditional pixel-by-pixel
 ```
 
 | Mode | Description |
 |------|-------------|
-| `DEFAULT` | Auto-detect: try GPU, fall back to CPU shaders if unavailable |
-| `GPU` | GPU acceleration with shaders (fastest, requires GPU hardware) |
+| `HYBRID` | CPU+GPU dual-backing: large images have both a CPU bitmap and GPU surface (default, safe) |
+| `GPU` | GPU-only for large images: reduces memory by ~50% but requires GPU hardware. Grayscale and small images still use CPU. |
 | `CPU_SHADERS` | CPU rendering with Skia shader rasterizer (no GPU required) |
 | `CPU` | Traditional pixel-by-pixel CPU operations (no shaders) |
 
-The rendering mode can be changed at any time via `setRenderingMode()`. Tests should reset to `DEFAULT` when done.
+The rendering mode can be changed at any time via `setRenderingMode()`. Tests should reset to `HYBRID` when done.
 
 ## Testing
 

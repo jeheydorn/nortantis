@@ -59,7 +59,7 @@ public class SkiaMapCreatorTest
 		}
 		finally
 		{
-			GPUExecutor.setRenderingMode(RenderingMode.DEFAULT);
+			GPUExecutor.setRenderingMode(RenderingMode.HYBRID);
 		}
 	}
 
@@ -137,7 +137,7 @@ public class SkiaMapCreatorTest
 		}
 		finally
 		{
-			GPUExecutor.setRenderingMode(RenderingMode.DEFAULT);
+			GPUExecutor.setRenderingMode(RenderingMode.HYBRID);
 		}
 	}
 
@@ -181,7 +181,7 @@ public class SkiaMapCreatorTest
 		}
 		finally
 		{
-			GPUExecutor.setRenderingMode(RenderingMode.DEFAULT);
+			GPUExecutor.setRenderingMode(RenderingMode.HYBRID);
 		}
 
 	}
@@ -215,7 +215,7 @@ public class SkiaMapCreatorTest
 		}
 		finally
 		{
-			GPUExecutor.setRenderingMode(RenderingMode.DEFAULT);
+			GPUExecutor.setRenderingMode(RenderingMode.HYBRID);
 		}
 
 	}
@@ -249,7 +249,7 @@ public class SkiaMapCreatorTest
 		}
 		finally
 		{
-			GPUExecutor.setRenderingMode(RenderingMode.DEFAULT);
+			GPUExecutor.setRenderingMode(RenderingMode.HYBRID);
 		}
 
 		// Generate with GPU
@@ -386,7 +386,7 @@ public class SkiaMapCreatorTest
 		}
 		finally
 		{
-			GPUExecutor.setRenderingMode(RenderingMode.DEFAULT);
+			GPUExecutor.setRenderingMode(RenderingMode.HYBRID);
 		}
 
 	}

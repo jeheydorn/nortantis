@@ -87,7 +87,7 @@ public class SkiaFactory extends PlatformFactory
 		try
 		{
 			SkiaImage skiaImage = (SkiaImage) image;
-			org.jetbrains.skia.Image skImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(skiaImage.getBitmap());
+			org.jetbrains.skia.Image skImage = skiaImage.makeEncodableImage();
 			// TODO Consider making compression / quality an options, although they will need to be handled differently for JPEG vs PNG.
 			byte[] bytes = skImage.encodeToData(EncodedImageFormat.PNG, 25).getBytes();
 			Files.write(Paths.get(filePath), bytes);
