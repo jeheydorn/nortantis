@@ -213,21 +213,6 @@ public class MapTestUtil
 		}
 	}
 
-	public static void checkIfImagesAreEqualAndWriteToFailedIfNot(Image expected, Image actual, int threshold, String testName, String failedMapsFolderName)
-	{
-		String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(expected, actual, threshold);
-		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
-		{
-			String failedFolderPath = Paths.get("unit test files", failedMapsFolderName).toString();
-			FileHelper.createFolder(failedFolderPath);
-			ImageHelper.write(expected, Paths.get(failedFolderPath, testName + " expected.png").toString());
-			ImageHelper.write(actual, Paths.get(failedFolderPath, testName + " actual.png").toString());
-			MapTestUtil.createImageDiffIfImagesAreSameSize(expected, actual, testName, failedMapsFolderName);
-			fail(comparisonErrorMessage);
-		}
-	}
-
-
 	public static String checkIfImagesEqual(Image image1, Image image2)
 	{
 		return checkIfImagesEqual(image1, image2, 0);
