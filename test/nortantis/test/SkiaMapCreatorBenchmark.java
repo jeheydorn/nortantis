@@ -40,15 +40,10 @@ public class SkiaMapCreatorBenchmark
 	}
 
 	@Test
-	public void benchmarkMapCreationLowRes() throws Exception
+	public void benchmarkMapCreationLowResCPU() throws Exception
 	{
+		GPUExecutor.setRenderingMode(RenderingMode.CPU);
 		MapTestUtil.runMapCreationBenchmark("Skia GPU", 0.5, 1, 3);
-	}
-
-	@Test
-	public void benchmarkMapCreationHighRes() throws Exception
-	{
-		MapTestUtil.runMapCreationBenchmarkSingleIteration("Skia GPU", 1.5);
 	}
 
 	@Test

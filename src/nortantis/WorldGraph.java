@@ -1192,7 +1192,7 @@ public class WorldGraph extends VoronoiGraph
 		{
 			if (centerLookupTable == null)
 			{
-				// Force CPU mode to avoid expensive GPU-to-CPU sync during incremental updates
+				// Force CPU mode to avoid expensive GPU-to-CPU sync during incremental updates, although that only really matters in RenderingMode.HYBRID mode.
 			centerLookupTable = Image.create((int) bounds.width, (int) bounds.height, ImageType.RGB, true);
 				try (Painter p = centerLookupTable.createPainter())
 				{
