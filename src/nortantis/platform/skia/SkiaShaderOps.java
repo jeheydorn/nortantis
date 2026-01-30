@@ -963,47 +963,38 @@ public class SkiaShaderOps
 		byte[] pixelData = f16Bitmap.readPixels(f16PremulInfo, width * 8, 0, 0);
 		f16Bitmap.close();
 
-		// Extract float gray values from the R channel. Since the surface is PREMUL,
-		// R already holds gray * alpha, which for DECAL gives us the zero-padded value.
+		// Pass 1: Extract float gray values from F16 R channel and find min/max.
+		// Since the surface is PREMUL, R already holds gray * alpha, which for DECAL
+		// gives us the zero-padded value.
 		int pixelCount = width * height;
 		float[] grayValues = new float[pixelCount];
+		float min = Float.MAX_VALUE;
+		float max = -Float.MAX_VALUE;
 		for (int i = 0; i < pixelCount; i++)
 		{
 			int offset = i * 8; // 8 bytes per pixel (4 channels × 2 bytes)
 			short rBits = (short) ((pixelData[offset] & 0xFF) | ((pixelData[offset + 1] & 0xFF) << 8));
-			grayValues[i] = Float.float16ToFloat(rBits);
+			float v = Float.float16ToFloat(rBits);
+			grayValues[i] = v;
+			if (v < min)
+				min = v;
+			if (v > max)
+				max = v;
 		}
 
-		// Maximize contrast in float space
-		float min = Float.MAX_VALUE;
-		float max = -Float.MAX_VALUE;
-		for (float v : grayValues)
-		{
-			min = Math.min(min, v);
-			max = Math.max(max, v);
-		}
+		// Pass 2: Normalize and quantize to 8-bit in one pass, writing directly to byte array.
+		byte[] grayscaleBytes = new byte[pixelCount];
 		if (max > min)
 		{
 			float range = max - min;
 			for (int i = 0; i < pixelCount; i++)
 			{
-				grayValues[i] = (grayValues[i] - min) / range;
+				grayscaleBytes[i] = (byte) Math.min(255, Math.max(0, Math.round((grayValues[i] - min) / range * 255)));
 			}
 		}
 
-		// Quantize to 8-bit grayscale
 		Image result = Image.create(width, height, ImageType.Grayscale8Bit);
-		try (PixelReaderWriter dstPixels = result.createPixelReaderWriter())
-		{
-			for (int y = 0; y < height; y++)
-			{
-				for (int x = 0; x < width; x++)
-				{
-					int idx = y * width + x;
-					dstPixels.setGrayLevel(x, y, Math.min(255, Math.max(0, Math.round(grayValues[idx] * 255))));
-				}
-			}
-		}
+		((SkiaImage) result).writeGrayscalePixels(grayscaleBytes);
 
 		paint.close();
 		blurFilter.close();

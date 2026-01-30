@@ -3,13 +3,8 @@ package nortantis.platform.skia;
 import java.util.List;
 
 import nortantis.platform.*;
-import org.jetbrains.skia.Bitmap;
 import org.jetbrains.skia.BlendMode;
 import org.jetbrains.skia.Canvas;
-import org.jetbrains.skia.ColorAlphaType;
-import org.jetbrains.skia.ColorType;
-import org.jetbrains.skia.DirectContext;
-import org.jetbrains.skia.ImageInfo;
 import org.jetbrains.skia.Matrix33;
 import org.jetbrains.skia.Paint;
 import org.jetbrains.skia.PaintMode;
@@ -17,8 +12,6 @@ import org.jetbrains.skia.PaintStrokeCap;
 import org.jetbrains.skia.PaintStrokeJoin;
 import org.jetbrains.skia.Path;
 import org.jetbrains.skia.Rect;
-import org.jetbrains.skia.Surface;
-import org.jetbrains.skia.SurfaceProps;
 import nortantis.Stroke;
 import nortantis.StrokeType;
 import nortantis.geom.FloatPoint;
@@ -51,11 +44,7 @@ public class SkiaPainter extends Painter
 			throw new IllegalArgumentException("SkiaPainter.drawImage requires SkiaImage, got " + image.getClass().getName());
 		}
 		SkiaImage skImage = (SkiaImage) image;
-		if (skImage.isGpuOnly())
-		{
-			drawGpuOnlySource(skImage, x, y, image.getWidth(), image.getHeight());
-			return;
-		}
+		// getSkiaImage() handles GPU-only images off the GPU thread by returning a cached CPU-backed image.
 		canvas.drawImage(skImage.getSkiaImage(), (float) x, (float) y, paint);
 	}
 
@@ -67,87 +56,9 @@ public class SkiaPainter extends Painter
 			throw new IllegalArgumentException("SkiaPainter.drawImage requires SkiaImage, got " + image.getClass().getName());
 		}
 		SkiaImage skImage = (SkiaImage) image;
-		if (skImage.isGpuOnly())
-		{
-			drawGpuOnlySource(skImage, x, y, width, height);
-			return;
-		}
 		canvas.drawImageRect(skImage.getSkiaImage(), Rect.makeXYWH(x, y, width, height), paint);
 	}
 
-	/**
-	 * Handles drawing a GPU-only source image onto this CPU canvas. Submits the draw to the GPU thread using a temporary GPU surface the
-	 * size of this canvas's destination, replicating the current canvas transform. Only the small result is read back from GPU, avoiding a
-	 * full readback of the large source image.
-	 */
-	private void drawGpuOnlySource(SkiaImage source, int x, int y, int drawWidth, int drawHeight)
-	{
-		final Matrix33 currentTransform = canvas.getLocalToDeviceAsMatrix33();
-		final int blendModeOrdinal = paint.getBlendMode().ordinal();
-		final int alpha = paint.getAlpha();
-		final boolean antiAlias = paint.isAntiAlias();
-		final int srcWidth = source.getWidth();
-		final int srcHeight = source.getHeight();
-		final int dstW = destWidth;
-		final int dstH = destHeight;
-
-		Bitmap resultBitmap = GPUExecutor.getInstance().submit(() ->
-		{
-			DirectContext ctx = GPUExecutor.getInstance().getContext();
-			if (ctx == null)
-				return null;
-
-			Surface gpuSurface = Surface.Companion.makeRenderTarget(ctx, false, new ImageInfo(dstW, dstH, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null));
-			if (gpuSurface == null)
-				return null;
-
-			try
-			{
-				Canvas gpuCanvas = gpuSurface.getCanvas();
-				gpuCanvas.setMatrix(currentTransform);
-
-				Paint gpuPaint = new Paint();
-				gpuPaint.setAntiAlias(antiAlias);
-				gpuPaint.setAlpha(alpha);
-
-				org.jetbrains.skia.Image srcImage = source.getSkiaImage();
-				if (drawWidth == srcWidth && drawHeight == srcHeight)
-				{
-					gpuCanvas.drawImage(srcImage, (float) x, (float) y, gpuPaint);
-				}
-				else
-				{
-					gpuCanvas.drawImageRect(srcImage, Rect.makeXYWH(x, y, drawWidth, drawHeight), gpuPaint);
-				}
-				gpuPaint.close();
-
-				gpuSurface.flushAndSubmit(true);
-				Bitmap result = new Bitmap();
-				result.allocPixels(new ImageInfo(dstW, dstH, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null));
-				gpuSurface.readPixels(result, 0, 0);
-				return result;
-			}
-			finally
-			{
-				gpuSurface.close();
-			}
-		});
-
-		if (resultBitmap != null)
-		{
-			// Draw the GPU-rendered result onto this CPU canvas with identity transform and SRC_OVER blending
-			canvas.save();
-			canvas.resetMatrix();
-			org.jetbrains.skia.Image resultImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(resultBitmap);
-			Paint compositePaint = new Paint();
-			compositePaint.setBlendMode(BlendMode.values()[blendModeOrdinal]);
-			canvas.drawImage(resultImage, 0, 0, compositePaint);
-			compositePaint.close();
-			resultImage.close();
-			resultBitmap.close();
-			canvas.restore();
-		}
-	}
 
 	@Override
 	public void setAlphaComposite(AlphaComposite composite, float alpha)
