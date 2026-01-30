@@ -1039,7 +1039,7 @@ public class MapCreator implements WarningLogger
 				checkForCancel();
 
 				// Whiten the middle of clouds.
-				ImageHelper.darkenMiddleOfImage(grunge, settings.grungeWidth, settings.resolution);
+				ImageHelper.darkenMiddleOfImage(grunge, settings.grungeWidth, settings.resolution, false);
 
 				return grunge;
 			});

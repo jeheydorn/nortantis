@@ -8,6 +8,7 @@ import nortantis.geom.Point;
 import nortantis.platform.*;
 import nortantis.platform.awt.AwtFactory;
 import nortantis.platform.skia.SkiaFactory;
+import nortantis.platform.skia.SkiaShaderOps;
 import nortantis.util.*;
 import nortantis.util.ImageHelper.ColorifyAlgorithm;
 import org.apache.commons.io.FileUtils;
@@ -855,6 +856,57 @@ public class ImageHelperTest
 		assertEquals(image.getWidth(), blurred.getWidth(), "Width should match");
 		assertEquals(image.getHeight(), blurred.getHeight(), "Height should match");
 		compareWithExpected(blurred, "blurAndScaleLine");
+	}
+
+	@Test
+	public void testDarkenMiddleOfImage()
+	{
+		Image image = Image.create(1172, 1172, ImageType.Grayscale8Bit);
+		try (Painter p = image.createPainter())
+		{
+			p.setColor(Color.white);
+			p.fillRect(0, 0, image.getWidth(), image.getHeight());
+		}
+
+		ImageHelper.darkenMiddleOfImage(image, 1127, 0.25, false);
+		compareWithExpected(image, "darkenMiddleOfImage");
+	}
+
+	@Test
+	public void testDarkenMiddleOfImageConvolutionVsSkia()
+	{
+		Image convolutionImage = Image.create(1172, 1172, ImageType.Grayscale8Bit);
+		try (Painter p = convolutionImage.createPainter())
+		{
+			p.setColor(Color.white);
+			p.fillRect(0, 0, convolutionImage.getWidth(), convolutionImage.getHeight());
+		}
+		Image skiaImage = convolutionImage.deepCopy();
+
+		ImageHelper.darkenMiddleOfImage(convolutionImage, 1127, 0.25, true);
+		ImageHelper.darkenMiddleOfImage(skiaImage, 1127, 0.25, false);
+
+		compareWithExpected(convolutionImage, "darkenMiddleOfImage_convolution");
+		compareWithExpected(skiaImage, "darkenMiddleOfImage_skia");
+
+		// Write a diff image (amplified 10x) for visual inspection
+		int width = convolutionImage.getWidth();
+		int height = convolutionImage.getHeight();
+		Image diffImage = Image.create(width, height, ImageType.Grayscale8Bit);
+		try (PixelReader convPixels = convolutionImage.createPixelReader();
+				PixelReader skiaPixels = skiaImage.createPixelReader();
+				PixelReaderWriter diffPixels = diffImage.createPixelReaderWriter())
+		{
+			for (int y = 0; y < height; y++)
+			{
+				for (int x = 0; x < width; x++)
+				{
+					int diff = Math.abs(convPixels.getGrayLevel(x, y) - skiaPixels.getGrayLevel(x, y));
+					diffPixels.setGrayLevel(x, y, Math.min(255, diff * 10));
+				}
+			}
+		}
+		compareWithExpected(diffImage, "darkenMiddleOfImage_diff");
 	}
 
 	// Commented out because binary vs grayscale isn't precise enough to get pixel-perfect matching in results.

@@ -1995,8 +1995,12 @@ public class ImageHelper
 
 	/**
 	 * Makes the middle area of a gray scale image darker following a Gaussian blur drop off.
+	 *
+	 * @param forceConvolutionBlur
+	 *            If true, forces the use of FFT convolution blur instead of Skia's blur. This is useful for testing to compare the two blur
+	 *            algorithms.
 	 */
-	public static void darkenMiddleOfImage(Image image, int grungeWidth, double resolutionScale)
+	public static void darkenMiddleOfImage(Image image, int grungeWidth, double resolutionScale, boolean forceConvolutionBlur)
 	{
 		// Draw a white box.
 
@@ -2033,7 +2037,14 @@ public class ImageHelper
 			}
 
 			// Use Gaussian blur on the box.
-			blurredBox = ImageHelper.blur(blurBox, blurLevel, true, true);
+			if (forceConvolutionBlur)
+			{
+				blurredBox = ImageHelper.convolveGrayscale(blurBox, ImageHelper.createGaussianKernel(blurLevel), true, true);
+			}
+			else
+			{
+				blurredBox = ImageHelper.blur(blurBox, blurLevel, true, true);
+			}
 		}
 
 		// Remove what was the white lines from the top and left, so we're

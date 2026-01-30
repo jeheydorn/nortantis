@@ -789,7 +789,8 @@ public class SkiaShaderOps
 	 * @param sigma
 	 *            Standard deviation of the Gaussian blur
 	 * @param padImageToAvoidWrapping
-	 *            If true, uses CLAMP mode (edge pixels extended). If false, uses REPEAT mode (wraps around).
+	 *            If true, uses DECAL mode (out-of-bounds pixels are black, matching FFT zero-padding). If false, uses REPEAT mode (wraps
+	 *            around).
 	 * @param maximizeContrast
 	 *            If true, stretches the result to use the full 0-255 range
 	 */
@@ -798,7 +799,24 @@ public class SkiaShaderOps
 		SkiaImage skImage = (SkiaImage) image;
 		int width = image.getWidth();
 		int height = image.getHeight();
-		FilterTileMode tileMode = padImageToAvoidWrapping ? FilterTileMode.CLAMP : FilterTileMode.REPEAT;
+		FilterTileMode tileMode = padImageToAvoidWrapping ? FilterTileMode.DECAL : FilterTileMode.REPEAT;
+
+		if (maximizeContrast)
+		{
+			// Use F16 surface for higher precision. An 8-bit N32 surface truncates small
+			// Gaussian tail values (below 0.5/255) to 0, and maximizeContrast then stretches
+			// the remaining narrow range, producing a much narrower gradient than the FFT path.
+			// F16 preserves small values so contrast stretching can amplify the full tails.
+			if (isGPUAccelerated() && canUseGPUForSize(width, height))
+			{
+				return GPUExecutor.getInstance()
+						.submit(() -> blurWithMaximizeContrast(skImage, width, height, sigma, tileMode, true));
+			}
+			else
+			{
+				return blurWithMaximizeContrast(skImage, width, height, sigma, tileMode, false);
+			}
+		}
 
 		Image result;
 		if (isGPUAccelerated() && canUseGPUForSize(width, height))
@@ -808,11 +826,6 @@ public class SkiaShaderOps
 		else
 		{
 			result = blurImpl(skImage, width, height, sigma, tileMode, false);
-		}
-
-		if (maximizeContrast)
-		{
-			maximizeGrayscaleContrast(result);
 		}
 
 		return result;
@@ -827,7 +840,8 @@ public class SkiaShaderOps
 	 * @param sigma
 	 *            Standard deviation of the Gaussian blur
 	 * @param padImageToAvoidWrapping
-	 *            If true, uses CLAMP mode (edge pixels extended). If false, uses REPEAT mode (wraps around).
+	 *            If true, uses DECAL mode (out-of-bounds pixels are black, matching FFT zero-padding). If false, uses REPEAT mode (wraps
+	 *            around).
 	 * @param scale
 	 *            Amount to multiply gray levels by after blurring
 	 */
@@ -836,7 +850,7 @@ public class SkiaShaderOps
 		SkiaImage skImage = (SkiaImage) image;
 		int width = image.getWidth();
 		int height = image.getHeight();
-		FilterTileMode tileMode = padImageToAvoidWrapping ? FilterTileMode.CLAMP : FilterTileMode.REPEAT;
+		FilterTileMode tileMode = padImageToAvoidWrapping ? FilterTileMode.DECAL : FilterTileMode.REPEAT;
 
 		Image result;
 		if (isGPUAccelerated() && canUseGPUForSize(width, height))
@@ -865,18 +879,136 @@ public class SkiaShaderOps
 		paint.setImageFilter(blurFilter);
 		canvas.drawImage(sourceImage, 0, 0, paint);
 
-		// Read result as GRAY_8 bitmap (Skia converts N32 → GRAY_8 using luminance)
-		surface.flushAndSubmit(true);
-		Bitmap resultBitmap = new Bitmap();
-		ImageInfo grayInfo = new ImageInfo(width, height, ColorType.GRAY_8, ColorAlphaType.OPAQUE, null);
-		resultBitmap.allocPixels(grayInfo);
-		surface.readPixels(resultBitmap, 0, 0);
+		Image result;
+		if (tileMode == FilterTileMode.DECAL)
+		{
+			// DECAL mode produces semi-transparent pixels near edges (alpha < 255).
+			// To match FFT zero-padding, we need the premultiplied gray value: R * A / 255.
+			// Read as N32 UNPREMUL to access the alpha channel, then manually compute the zero-padded gray.
+			Bitmap n32Bitmap = readPixelsToBitmap(surface, width, height);
+			surface.close();
 
-		surface.close();
+			SkiaImage tempImage = new SkiaImage(n32Bitmap, ImageType.ARGB);
+			result = nortantis.platform.Image.create(width, height, ImageType.Grayscale8Bit);
+			try (PixelReader srcPixels = tempImage.createPixelReader(); PixelReaderWriter dstPixels = result.createPixelReaderWriter())
+			{
+				for (int y = 0; y < height; y++)
+				{
+					for (int x = 0; x < width; x++)
+					{
+						Color c = Color.create(srcPixels.getRGB(x, y));
+						dstPixels.setGrayLevel(x, y, (c.getRed() * c.getAlpha()) / 255);
+					}
+				}
+			}
+			tempImage.close();
+		}
+		else
+		{
+			// REPEAT/CLAMP: no alpha issues, read directly to GRAY_8
+			surface.flushAndSubmit(true);
+			Bitmap resultBitmap = new Bitmap();
+			ImageInfo grayInfo = new ImageInfo(width, height, ColorType.GRAY_8, ColorAlphaType.OPAQUE, null);
+			resultBitmap.allocPixels(grayInfo);
+			surface.readPixels(resultBitmap, 0, 0);
+			surface.close();
+
+			result = new SkiaImage(resultBitmap, ImageType.Grayscale8Bit);
+		}
+
 		paint.close();
 		blurFilter.close();
 
-		return new SkiaImage(resultBitmap, ImageType.Grayscale8Bit);
+		return result;
+	}
+
+	/**
+	 * Blurs using an F16 (half-float) surface and performs contrast stretching in float space before quantizing to 8-bit. This preserves
+	 * small Gaussian tail values that would be lost on an 8-bit surface (values below 0.5/255 get truncated to 0), which causes
+	 * maximizeContrast to produce a much narrower gradient than the FFT convolution path.
+	 *
+	 * Both CPU and GPU paths use PREMUL alpha so the R channel always holds the premultiplied value. For DECAL mode, this means
+	 * R = gray * alpha, matching FFT zero-padding behavior. For REPEAT mode, alpha is always 1.0 so premul R = straight R.
+	 */
+	private static Image blurWithMaximizeContrast(SkiaImage skImage, int width, int height, float sigma, FilterTileMode tileMode,
+			boolean useGPU)
+	{
+		org.jetbrains.skia.Image sourceImage = skImage.getSkiaImage();
+
+		ImageInfo f16PremulInfo = new ImageInfo(width, height, ColorType.RGBA_F16, ColorAlphaType.PREMUL, null);
+		Surface surface;
+		if (useGPU)
+		{
+			DirectContext ctx = GPUExecutor.getInstance().getContext();
+			surface = Surface.Companion.makeRenderTarget(ctx, false, f16PremulInfo);
+		}
+		else
+		{
+			surface = Surface.Companion.makeRaster(f16PremulInfo);
+		}
+
+		Canvas canvas = surface.getCanvas();
+		ImageFilter blurFilter = ImageFilter.Companion.makeBlur(sigma, sigma, tileMode, null, null);
+		Paint paint = new Paint();
+		paint.setImageFilter(blurFilter);
+		canvas.drawImage(sourceImage, 0, 0, paint);
+
+		// Read F16 PREMUL pixels
+		surface.flushAndSubmit(true);
+		Bitmap f16Bitmap = new Bitmap();
+		f16Bitmap.allocPixels(f16PremulInfo);
+		surface.readPixels(f16Bitmap, 0, 0);
+		surface.close();
+
+		byte[] pixelData = f16Bitmap.readPixels(f16PremulInfo, width * 8, 0, 0);
+		f16Bitmap.close();
+
+		// Extract float gray values from the R channel. Since the surface is PREMUL,
+		// R already holds gray * alpha, which for DECAL gives us the zero-padded value.
+		int pixelCount = width * height;
+		float[] grayValues = new float[pixelCount];
+		for (int i = 0; i < pixelCount; i++)
+		{
+			int offset = i * 8; // 8 bytes per pixel (4 channels × 2 bytes)
+			short rBits = (short) ((pixelData[offset] & 0xFF) | ((pixelData[offset + 1] & 0xFF) << 8));
+			grayValues[i] = Float.float16ToFloat(rBits);
+		}
+
+		// Maximize contrast in float space
+		float min = Float.MAX_VALUE;
+		float max = -Float.MAX_VALUE;
+		for (float v : grayValues)
+		{
+			min = Math.min(min, v);
+			max = Math.max(max, v);
+		}
+		if (max > min)
+		{
+			float range = max - min;
+			for (int i = 0; i < pixelCount; i++)
+			{
+				grayValues[i] = (grayValues[i] - min) / range;
+			}
+		}
+
+		// Quantize to 8-bit grayscale
+		Image result = Image.create(width, height, ImageType.Grayscale8Bit);
+		try (PixelReaderWriter dstPixels = result.createPixelReaderWriter())
+		{
+			for (int y = 0; y < height; y++)
+			{
+				for (int x = 0; x < width; x++)
+				{
+					int idx = y * width + x;
+					dstPixels.setGrayLevel(x, y, Math.min(255, Math.max(0, Math.round(grayValues[idx] * 255))));
+				}
+			}
+		}
+
+		paint.close();
+		blurFilter.close();
+
+		return result;
 	}
 
 	/**
