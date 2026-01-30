@@ -37,7 +37,6 @@ public class SkiaMapCreatorTest
 {
 	static final String failedMapsFolderName = "failed maps skia";
 	private static final String expectedMapsFolderName = "expected maps skia";
-	final int threshold = 4;
 
 	@BeforeAll
 	public static void setUpBeforeClass() throws Exception
@@ -66,6 +65,9 @@ public class SkiaMapCreatorTest
 	@Test
 	public void incrementalUpdate_simpleSmallWorld()
 	{
+		GPUExecutor.setRenderingMode(RenderingMode.CPU_SHADERS);
+		final int threshold = 4;
+
 		// Load settings from the .nort file
 		String settingsFileName = "simpleSmallWorld.nort";
 		String settingsPath = Paths.get("unit test files", "map settings", settingsFileName).toString();
@@ -214,6 +216,7 @@ public class SkiaMapCreatorTest
 		String testName = "colorizedBackgroundFromTexture";
 		Path texturePath = Paths.get("unit test files", "map settings", "custom images", "background textures", "grungy paper.png");
 		Color color = Color.create(217, 203, 156, 255);
+		final int threshold = 4;
 
 		// Generate with CPU
 		Image cpuResult;
@@ -350,17 +353,10 @@ public class SkiaMapCreatorTest
 	@Test
 	public void newRandomMapTest() throws IOException
 	{
-		try
-		{
-			// Force CPU because GPU-generated images have a tiny amount of random variation for some reason.
-			GPUExecutor.setRenderingMode(RenderingMode.CPU);
-			MapTestUtil.generateRandomAndCompare(5, expectedMapsFolderName, failedMapsFolderName, threshold);
-		}
-		finally
-		{
-			GPUExecutor.setRenderingMode(RenderingMode.HYBRID);
-		}
-
+		final int threshold = 4;
+		// Force CPU because GPU-generated images have a tiny amount of random variation for some reason.
+		GPUExecutor.setRenderingMode(RenderingMode.CPU);
+		MapTestUtil.generateRandomAndCompare(5, expectedMapsFolderName, failedMapsFolderName, threshold);
 	}
 
 	/**
