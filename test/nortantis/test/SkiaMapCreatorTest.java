@@ -398,6 +398,8 @@ public class SkiaMapCreatorTest
 	@Test
 	public void findClosestCenterGridVsPixelTest()
 	{
+		WorldGraph.CenterLookupMode originalMode = WorldGraph.centerLookupMode;
+
 		final String settingsFileName = "simpleSmallWorld.nort";
 		MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", settingsFileName).toString());
 		settings.resolution = 2.0; // High resolution to reduce discretization errors
@@ -443,8 +445,8 @@ public class SkiaMapCreatorTest
 			+ ", neighborHits=" + WorldGraph.gridLookupNeighborHits
 			+ ", bfsFallbacks=" + WorldGraph.gridLookupBfsFallbacks);
 
-		// Reset to default
-		WorldGraph.centerLookupMode = WorldGraph.CenterLookupMode.GRID_BASED;
+		// Reset to original mode
+		WorldGraph.centerLookupMode = originalMode;
 
 		// Compare results
 		int mismatches = 0;

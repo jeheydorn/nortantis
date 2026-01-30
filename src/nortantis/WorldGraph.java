@@ -45,7 +45,7 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Controls which algorithm is used for findClosestCenter. Default is GRID_BASED for best Skia performance.
+	 * Controls which algorithm is used for findClosestCenter.
 	 */
 	public static CenterLookupMode centerLookupMode = CenterLookupMode.PIXEL_CACHED;
 
