@@ -550,7 +550,7 @@ public class ImageAndMasks implements AutoCloseable
 	}
 
 	/**
-	 * Finds the lower-most y pixel value for the given x for which the content mask is not black.
+	 * Finds the lowermost y pixel value for the given x for which the content mask is not black.
 	 * 
 	 * @param x
 	 * @return A y value, or null if the content mask is black for all y values of the given x.

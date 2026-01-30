@@ -5,6 +5,8 @@ import java.util.Map;
 import nortantis.platform.Color;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
+import nortantis.platform.PixelReader;
+import nortantis.platform.PixelReaderWriter;
 import nortantis.platform.PixelWriter;
 import nortantis.util.Helper;
 import nortantis.util.ImageHelper.ColorifyAlgorithm;
@@ -79,7 +81,7 @@ public class SkiaShaderOps
 		resultBitmap.allocPixels(dstInfo);
 
 		// Try reading directly from surface - Skia converts PREMUL surface -> UNPREMUL bitmap
-		boolean success = surface.readPixels(resultBitmap, 0, 0);
+		surface.readPixels(resultBitmap, 0, 0);
 		return resultBitmap;
 	}
 
@@ -774,6 +776,165 @@ public class SkiaShaderOps
 		builder.close();
 
 		return new SkiaImage(resultBitmap, ImageType.Grayscale8Bit);
+	}
+
+	// ==================== blur ====================
+
+	/**
+	 * Blurs a grayscale image using Skia's ImageFilter.makeBlur. This uses Skia's optimized blur algorithm (3-pass box filter on CPU, or
+	 * progressive downsampling on GPU), which is O(N) per pixel regardless of blur radius.
+	 *
+	 * @param image
+	 *            Grayscale input image (Grayscale8Bit or Binary)
+	 * @param sigma
+	 *            Standard deviation of the Gaussian blur
+	 * @param padImageToAvoidWrapping
+	 *            If true, uses CLAMP mode (edge pixels extended). If false, uses REPEAT mode (wraps around).
+	 * @param maximizeContrast
+	 *            If true, stretches the result to use the full 0-255 range
+	 */
+	public static Image blur(Image image, float sigma, boolean padImageToAvoidWrapping, boolean maximizeContrast)
+	{
+		SkiaImage skImage = (SkiaImage) image;
+		int width = image.getWidth();
+		int height = image.getHeight();
+		FilterTileMode tileMode = padImageToAvoidWrapping ? FilterTileMode.CLAMP : FilterTileMode.REPEAT;
+
+		Image result;
+		if (isGPUAccelerated() && canUseGPUForSize(width, height))
+		{
+			result = GPUExecutor.getInstance().submit(() -> blurImpl(skImage, width, height, sigma, tileMode, true));
+		}
+		else
+		{
+			result = blurImpl(skImage, width, height, sigma, tileMode, false);
+		}
+
+		if (maximizeContrast)
+		{
+			maximizeGrayscaleContrast(result);
+		}
+
+		return result;
+	}
+
+	/**
+	 * Blurs a grayscale image and scales pixel values by the given factor. Uses Skia's ImageFilter.makeBlur for the blur, then scales
+	 * pixel values and clamps to 0-255.
+	 *
+	 * @param image
+	 *            Grayscale input image (Grayscale8Bit or Binary)
+	 * @param sigma
+	 *            Standard deviation of the Gaussian blur
+	 * @param padImageToAvoidWrapping
+	 *            If true, uses CLAMP mode (edge pixels extended). If false, uses REPEAT mode (wraps around).
+	 * @param scale
+	 *            Amount to multiply gray levels by after blurring
+	 */
+	public static Image blurAndScale(Image image, float sigma, boolean padImageToAvoidWrapping, float scale)
+	{
+		SkiaImage skImage = (SkiaImage) image;
+		int width = image.getWidth();
+		int height = image.getHeight();
+		FilterTileMode tileMode = padImageToAvoidWrapping ? FilterTileMode.CLAMP : FilterTileMode.REPEAT;
+
+		Image result;
+		if (isGPUAccelerated() && canUseGPUForSize(width, height))
+		{
+			result = GPUExecutor.getInstance().submit(() -> blurImpl(skImage, width, height, sigma, tileMode, true));
+		}
+		else
+		{
+			result = blurImpl(skImage, width, height, sigma, tileMode, false);
+		}
+
+		scaleGrayscaleLevels(result, scale);
+
+		return result;
+	}
+
+	private static Image blurImpl(SkiaImage skImage, int width, int height, float sigma, FilterTileMode tileMode, boolean useGPU)
+	{
+		org.jetbrains.skia.Image sourceImage = skImage.getSkiaImage();
+
+		Surface surface = useGPU ? createGPUSurfaceOnGPUThread(width, height) : createCPUSurface(width, height);
+		Canvas canvas = surface.getCanvas();
+
+		ImageFilter blurFilter = ImageFilter.Companion.makeBlur(sigma, sigma, tileMode, null, null);
+		Paint paint = new Paint();
+		paint.setImageFilter(blurFilter);
+		canvas.drawImage(sourceImage, 0, 0, paint);
+
+		// Read result as GRAY_8 bitmap (Skia converts N32 → GRAY_8 using luminance)
+		surface.flushAndSubmit(true);
+		Bitmap resultBitmap = new Bitmap();
+		ImageInfo grayInfo = new ImageInfo(width, height, ColorType.GRAY_8, ColorAlphaType.OPAQUE, null);
+		resultBitmap.allocPixels(grayInfo);
+		surface.readPixels(resultBitmap, 0, 0);
+
+		surface.close();
+		paint.close();
+		blurFilter.close();
+
+		return new SkiaImage(resultBitmap, ImageType.Grayscale8Bit);
+	}
+
+	/**
+	 * Stretches grayscale pixel values to use the full 0-255 range.
+	 */
+	private static void maximizeGrayscaleContrast(Image image)
+	{
+		int min = 255;
+		int max = 0;
+		try (PixelReader pixels = image.createPixelReader())
+		{
+			for (int y = 0; y < image.getHeight(); y++)
+			{
+				for (int x = 0; x < image.getWidth(); x++)
+				{
+					int level = pixels.getGrayLevel(x, y);
+					min = Math.min(min, level);
+					max = Math.max(max, level);
+				}
+			}
+		}
+
+		if (min == max || (min == 0 && max == 255))
+		{
+			return;
+		}
+
+		final int minFinal = min;
+		final int range = max - min;
+		try (PixelReaderWriter pixels = image.createPixelReaderWriter())
+		{
+			for (int y = 0; y < image.getHeight(); y++)
+			{
+				for (int x = 0; x < image.getWidth(); x++)
+				{
+					int level = pixels.getGrayLevel(x, y);
+					pixels.setGrayLevel(x, y, (level - minFinal) * 255 / range);
+				}
+			}
+		}
+	}
+
+	/**
+	 * Multiplies all grayscale pixel values by the given scale factor, clamping to 0-255.
+	 */
+	private static void scaleGrayscaleLevels(Image image, float scale)
+	{
+		try (PixelReaderWriter pixels = image.createPixelReaderWriter())
+		{
+			for (int y = 0; y < image.getHeight(); y++)
+			{
+				for (int x = 0; x < image.getWidth(); x++)
+				{
+					int level = pixels.getGrayLevel(x, y);
+					pixels.setGrayLevel(x, y, Math.min(255, Math.max(0, Math.round(level * scale))));
+				}
+			}
+		}
 	}
 
 	// ==================== maskWithMultipleColors ====================
@@ -1776,15 +1937,6 @@ public class SkiaShaderOps
 	public static boolean isGPUAccelerated()
 	{
 		return GPUExecutor.getInstance().isGPUAvailable();
-	}
-
-	/**
-	 * Determines whether the given images should run on the GPU. Returns true if GPU is available, all images are SkiaImages, and at least
-	 * one image is GPU-backed. Small images that aren't GPU-backed will be uploaded temporarily during shader execution.
-	 */
-	public static boolean shouldRunOnGPU(Image... images)
-	{
-		return isGPUAccelerated() && areAllSkiaImagesAndAtLeastOneGpuBacked(images);
 	}
 
 	/**

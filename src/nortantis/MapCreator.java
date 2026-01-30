@@ -1039,7 +1039,7 @@ public class MapCreator implements WarningLogger
 				checkForCancel();
 
 				// Whiten the middle of clouds.
-				darkenMiddleOfImage(settings.resolution, grunge, settings.grungeWidth);
+				ImageHelper.darkenMiddleOfImage(grunge, settings.grungeWidth, settings.resolution);
 
 				return grunge;
 			});
@@ -1824,96 +1824,6 @@ public class MapCreator implements WarningLogger
 			if (needsRebuild)
 			{
 				graph.rebuildNoisyEdgesForCenter(edge.d0);
-			}
-		}
-	}
-
-	/**
-	 * Makes the middle area of a gray scale image darker following a Gaussian blur drop off.
-	 */
-	private void darkenMiddleOfImage(double resolutionScale, Image image, int grungeWidth)
-	{
-		// Draw a white box.
-
-		int blurLevel = (int) (grungeWidth * resolutionScale);
-		if (blurLevel == 0)
-			blurLevel = 1; // Avoid an exception later.
-
-		// Create a white non-filled in rectangle, then blur it. To be much more
-		// efficient, I only create
-		// the upper left corner plus 1 pixel in both directions since the
-		// corners and edges are all the
-		// same except rotated and the edges are all the same except their
-		// length.
-
-		int lineWidth = (int) (resolutionScale);
-		if (lineWidth == 0)
-		{
-			lineWidth = 1;
-		}
-		int blurBoxWidth = blurLevel * 2 + lineWidth + 1;
-		Image blurredBox;
-		try (Image blurBox = Image.create(blurBoxWidth, blurBoxWidth, ImageType.Binary))
-		{
-			try (Painter p = blurBox.createPainter())
-			{
-				// Fill the image with white.
-				p.setColor(Color.white);
-				p.fillRect(0, 0, blurBoxWidth, blurBoxWidth);
-
-				// Remove the white from everywhere except a lineWidth wide line along
-				// the top and left sides.
-				p.setColor(Color.black);
-				p.fillRect(lineWidth, lineWidth, blurBoxWidth, blurBoxWidth);
-			}
-
-			// Use Gaussian blur on the box.
-			blurredBox = ImageHelper.blur(blurBox, blurLevel, true, true);
-		}
-
-		// Remove what was the white lines from the top and left, so we're
-		// keeping only the blur that came off the white lines.
-		try (Image blurredBoxTemp = blurredBox)
-		{
-			blurredBox = ImageHelper.copySnippet(blurredBoxTemp, new IntRectangle(lineWidth, lineWidth, blurLevel + 1, blurLevel + 1));
-		}
-
-		// Multiply the image by blurBox. Also remove the padded edges off of blurBox.
-		assert image.getType() == ImageType.Grayscale8Bit;
-
-		int imgWidth = image.getWidth();
-		int imgHeight = image.getHeight();
-		int blurBoxW = blurredBox.getWidth();
-
-		// Use PixelReaderWriter for the image (read and write) and PixelReader for blurBox (read only)
-		try (Image finalBlurBox = blurredBox; PixelReaderWriter imagePixels = image.createPixelReaderWriter(); PixelReader blurBoxPixels = finalBlurBox.createPixelReader())
-		{
-			for (int y = 0; y < imgHeight; y++)
-			{
-				for (int x = 0; x < imgWidth; x++)
-				{
-					int imgLevel = imagePixels.getGrayLevel(x, y);
-
-					// Retrieve the blur level as though blurBox has all 4 quadrants
-					// and middle created, even though it only has the upper
-					// left corner + 1 pixel.
-					int blurBoxX1 = x > blurLevel ? (x < imgWidth - blurLevel ? blurBoxW - 1 : imgWidth - x) : x;
-					int x2 = imgWidth - x - 1;
-					int blurBoxX2 = x2 > blurLevel ? (x2 < imgWidth - blurLevel ? blurBoxW - 1 : imgWidth - x2) : x2;
-					int blurBoxY1 = y > blurLevel ? (y < imgHeight - blurLevel ? blurBoxW - 1 : imgHeight - y) : y;
-					int y2 = imgHeight - y - 1;
-					int blurBoxY2 = y2 > blurLevel ? (y2 < imgHeight - blurLevel ? blurBoxW - 1 : imgHeight - y2) : y2;
-
-					// Get all 4 blur values and take the max
-					int b1 = blurBoxPixels.getGrayLevel(blurBoxX1, blurBoxY1);
-					int b2 = blurBoxPixels.getGrayLevel(blurBoxX2, blurBoxY1);
-					int b3 = blurBoxPixels.getGrayLevel(blurBoxX1, blurBoxY2);
-					int b4 = blurBoxPixels.getGrayLevel(blurBoxX2, blurBoxY2);
-					int blurLevel_ = Math.max(b1, Math.max(b2, Math.max(b3, b4)));
-
-					// Multiply: (imgLevel/255) * blurLevel_ -> imgLevel * blurLevel_ / 255
-					imagePixels.setGrayLevel(x, y, (imgLevel * blurLevel_) / 255);
-				}
 			}
 		}
 	}
