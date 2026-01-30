@@ -420,22 +420,6 @@ public class SkiaImage extends Image
 	}
 
 	/**
-	 * Returns a CPU bitmap with the current image data. For GPU-only images, this creates a temporary bitmap by reading back from the GPU
-	 * surface. The caller should close the returned bitmap when done if the image is GPU-only.
-	 */
-	public Bitmap getBitmap()
-	{
-		awaitPendingPainters();
-		if (isGpuOnly())
-		{
-			// Read full GPU surface into a new bitmap
-			return readFullGPUSurfaceToBitmap();
-		}
-		ensureCPUData(); // Ensure CPU bitmap is current before returning
-		return resourceState.bitmap;
-	}
-
-	/**
 	 * Reads the full GPU surface contents into a new bitmap. Used by GPU-only images for operations that need CPU access.
 	 */
 	private Bitmap readFullGPUSurfaceToBitmap()
@@ -1483,7 +1467,10 @@ public class SkiaImage extends Image
 
 		Canvas canvas = new Canvas(resourceState.bitmap, new SurfaceProps());
 		org.jetbrains.skia.Image tempImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(tempBitmap);
-		canvas.drawImage(tempImage, bounds.x, bounds.y);
+		Paint srcPaint = new Paint();
+		srcPaint.setBlendMode(BlendMode.SRC);
+		canvas.drawImage(tempImage, bounds.x, bounds.y, srcPaint);
+		srcPaint.close();
 		tempImage.close();
 		canvas.close();
 		tempBitmap.close();
@@ -1523,7 +1510,10 @@ public class SkiaImage extends Image
 			tempBitmap.allocPixels(srcInfo);
 			tempBitmap.installPixels(srcInfo, pixels, w * 4);
 			org.jetbrains.skia.Image tempImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(tempBitmap);
-			surfaceRef.getCanvas().drawImage(tempImage, x, y);
+			Paint srcPaint = new Paint();
+			srcPaint.setBlendMode(BlendMode.SRC);
+			surfaceRef.getCanvas().drawImage(tempImage, x, y, srcPaint);
+			srcPaint.close();
 			tempImage.close();
 			tempBitmap.close();
 			return null;
@@ -1621,7 +1611,10 @@ public class SkiaImage extends Image
 			{
 				// GPU path: draw directly to GPU surface (fast GPU-to-GPU copy)
 				Canvas gpuCanvas = resourceState.gpuSurface.getCanvas();
-				gpuCanvas.drawImage(snapshot, 0, 0);
+				Paint srcPaint = new Paint();
+				srcPaint.setBlendMode(BlendMode.SRC);
+				gpuCanvas.drawImage(snapshot, 0, 0, srcPaint);
+				srcPaint.close();
 				// Flush the destination surface to ensure the draw is complete
 				resourceState.gpuSurface.flushAndSubmit(true);
 				markGPUDirty();
@@ -1630,7 +1623,10 @@ public class SkiaImage extends Image
 			{
 				// CPU path: draw to bitmap
 				Canvas canvas = new Canvas(resourceState.bitmap, new SurfaceProps());
-				canvas.drawImage(snapshot, 0, 0);
+				Paint srcPaint = new Paint();
+				srcPaint.setBlendMode(BlendMode.SRC);
+				canvas.drawImage(snapshot, 0, 0, srcPaint);
+				srcPaint.close();
 				canvas.close();
 				markCPUDirty();
 			}

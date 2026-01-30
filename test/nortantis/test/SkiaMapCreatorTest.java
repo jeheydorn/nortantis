@@ -60,7 +60,7 @@ public class SkiaMapCreatorTest
 	public void simpleSmallWorld()
 	{
 		GPUExecutor.setRenderingMode(RenderingMode.GPU);
-		generateAndCompare("simpleSmallWorld.nort", (settings) -> settings.resolution = 0.5);
+		generateAndCompare("simpleSmallWorld.nort", (settings) -> settings.resolution = 0.25);
 	}
 
 	@Test
@@ -124,8 +124,10 @@ public class SkiaMapCreatorTest
 			if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
 			{
 				FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
-				String failedMapName = FilenameUtils.getBaseName(settingsFileName) + " full map for incremental draw test";
+				String failedMapName = FilenameUtils.getBaseName(settingsFileName) + " updated full map for incremental draw test";
 				ImageHelper.write(fullMapForUpdates, MapTestUtil.getFailedMapFilePath(failedMapName, failedMapsFolderName));
+				String fullMapName = FilenameUtils.getBaseName(settingsFileName) + " original full map for incremental draw test";
+				ImageHelper.write(fullMap, MapTestUtil.getFailedMapFilePath(fullMapName, failedMapsFolderName));
 				createImageDiffIfImagesAreSameSize(fullMap, fullMapForUpdates, failedMapName, threshold);
 				fail("Incremental update did not match expected image: " + comparisonErrorMessage);
 			}
@@ -297,11 +299,6 @@ public class SkiaMapCreatorTest
 		return Paths.get("unit test files", failedMapsFolderName, testName + ".png").toString();
 	}
 
-	private static String getDiffFilePath(String testName)
-	{
-		return Paths.get("unit test files", failedMapsFolderName, testName + " - diff.png").toString();
-	}
-
 	private void generateAndCompare(String settingsFileName, Consumer<MapSettings> preprocessSettings)
 	{
 		MapTestUtil.generateAndCompare(settingsFileName, preprocessSettings, expectedMapsFolderName, failedMapsFolderName, 0);
@@ -357,7 +354,7 @@ public class SkiaMapCreatorTest
 		{
 			// Force CPU because GPU-generated images have a tiny amount of random variation for some reason.
 			GPUExecutor.setRenderingMode(RenderingMode.CPU);
-			MapSettings settings = MapTestUtil.generateRandomAndCompare(5, expectedMapsFolderName, failedMapsFolderName, threshold);
+			MapTestUtil.generateRandomAndCompare(5, expectedMapsFolderName, failedMapsFolderName, threshold);
 		}
 		finally
 		{
