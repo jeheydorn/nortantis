@@ -14,6 +14,7 @@ import nortantis.util.FileHelper;
 import nortantis.util.ImageHelper;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -48,96 +49,86 @@ public class SkiaMapCreatorTest
 		FileUtils.deleteDirectory(new File(Paths.get("unit test files", failedMapsFolderName).toString()));
 	}
 
+	@AfterEach
+	public void cleanup()
+	{
+		// Reset to GPU mode after each test
+		GPUExecutor.setRenderingModeToDefault();
+	}
+
 	@Test
 	public void simpleSmallWorld()
 	{
-		try
-		{
-			// Force CPU because GPU-generated images have a tiny amount of random variation for some reason.
-			GPUExecutor.setRenderingMode(RenderingMode.CPU);
-			generateAndCompare("simpleSmallWorld.nort", (settings) -> settings.resolution = 0.25);
-		}
-		finally
-		{
-			GPUExecutor.setRenderingMode(RenderingMode.HYBRID);
-		}
+		GPUExecutor.setRenderingMode(RenderingMode.GPU);
+		generateAndCompare("simpleSmallWorld.nort", (settings) -> settings.resolution = 0.5);
 	}
 
 	@Test
 	public void incrementalUpdate_simpleSmallWorld()
 	{
-		// Force CPU rendering to ensure consistent results between full map and incremental updates
-		GPUExecutor.setRenderingMode(RenderingMode.CPU);
-		try
+		// Load settings from the .nort file
+		String settingsFileName = "simpleSmallWorld.nort";
+		String settingsPath = Paths.get("unit test files", "map settings", settingsFileName).toString();
+		MapSettings settings = new MapSettings(settingsPath);
+		settings.resolution = 0.25;
+
+		// Create the full map first (baseline)
+		MapCreator mapCreator = new MapCreator();
+		MapParts mapParts = new MapParts();
+		Image fullMap = mapCreator.createMap(settings, null, mapParts);
+
 		{
-			// Load settings from the .nort file
-			String settingsFileName = "simpleSmallWorld.nort";
-			String settingsPath = Paths.get("unit test files", "map settings", settingsFileName).toString();
-			MapSettings settings = new MapSettings(settingsPath);
-			settings.resolution = 0.25;
-
-			// Create the full map first (baseline)
-			MapCreator mapCreator = new MapCreator();
-			MapParts mapParts = new MapParts();
-			Image fullMap = mapCreator.createMap(settings, null, mapParts);
-
+			final int numberToTest = 500;
+			Image fullMapForUpdates = fullMap.deepCopy();
+			int iconNumber = 0;
+			System.out.println("Total icons on map: " + settings.edits.freeIcons.calcSize());
+			System.out.println("Number of icons test: " + numberToTest);
+			for (FreeIcon icon : settings.edits.freeIcons)
 			{
-				final int numberToTest = 500;
-				Image fullMapForUpdates = fullMap.deepCopy();
-				int iconNumber = 0;
-				System.out.println("Total icons on map: " + settings.edits.freeIcons.calcSize());
-				System.out.println("Number of icons test: " + numberToTest);
-				for (FreeIcon icon : settings.edits.freeIcons)
+				iconNumber++;
+				if (iconNumber > numberToTest)
 				{
-					iconNumber++;
-					if (iconNumber > numberToTest)
-					{
-						break;
-					}
-
-					//System.out.println("Running incremental icon drawing test number " + iconNumber);
-
-					IntRectangle changedBounds = mapCreator.incrementalUpdateIcons(settings, mapParts, fullMapForUpdates, Arrays.asList(icon));
-
-					assertTrue(changedBounds != null, "Incremental update should produce bounds");
-					assertTrue(changedBounds.width > 0);
-					assertTrue(changedBounds.height > 0);
-
-					Image expectedSnippet = fullMap.getSubImage(changedBounds);
-					Image actualSnippet = fullMapForUpdates.getSubImage(changedBounds);
-
-					// Compare incremental result against expected
-					String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(expectedSnippet, actualSnippet, threshold);
-					if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
-					{
-						FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
-
-						String expectedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + iconNumber + " expected.png";
-						Path expectedPath = Paths.get("unit test files", failedMapsFolderName, expectedSnippetName);
-						ImageHelper.write(expectedSnippet, expectedPath.toString());
-
-						String failedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + iconNumber + " failed.png";
-						Path failedPath = Paths.get("unit test files", failedMapsFolderName, failedSnippetName);
-						ImageHelper.write(actualSnippet, failedPath.toString());
-
-						createImageDiffIfImagesAreSameSize(expectedSnippet, actualSnippet, failedSnippetName, threshold);
-					}
+					break;
 				}
 
-				String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(fullMap, fullMapForUpdates, threshold);
+				//System.out.println("Running incremental icon drawing test number " + iconNumber);
+
+				IntRectangle changedBounds = mapCreator.incrementalUpdateIcons(settings, mapParts, fullMapForUpdates, Arrays.asList(icon));
+
+				assertTrue(changedBounds != null, "Incremental update should produce bounds");
+				assertTrue(changedBounds.width > 0);
+				assertTrue(changedBounds.height > 0);
+
+				Image expectedSnippet = fullMap.getSubImage(changedBounds);
+				Image actualSnippet = fullMapForUpdates.getSubImage(changedBounds);
+
+				// Compare incremental result against expected
+				String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(expectedSnippet, actualSnippet, threshold);
 				if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
 				{
 					FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
-					String failedMapName = FilenameUtils.getBaseName(settingsFileName) + " full map for incremental draw test";
-					ImageHelper.write(fullMapForUpdates, MapTestUtil.getFailedMapFilePath(failedMapName, failedMapsFolderName));
-					createImageDiffIfImagesAreSameSize(fullMap, fullMapForUpdates, failedMapName, threshold);
-					fail("Incremental update did not match expected image: " + comparisonErrorMessage);
+
+					String expectedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + iconNumber + " expected.png";
+					Path expectedPath = Paths.get("unit test files", failedMapsFolderName, expectedSnippetName);
+					ImageHelper.write(expectedSnippet, expectedPath.toString());
+
+					String failedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + iconNumber + " failed.png";
+					Path failedPath = Paths.get("unit test files", failedMapsFolderName, failedSnippetName);
+					ImageHelper.write(actualSnippet, failedPath.toString());
+
+					createImageDiffIfImagesAreSameSize(expectedSnippet, actualSnippet, failedSnippetName, threshold);
 				}
 			}
-		}
-		finally
-		{
-			GPUExecutor.setRenderingMode(RenderingMode.HYBRID);
+
+			String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(fullMap, fullMapForUpdates, threshold);
+			if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
+			{
+				FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
+				String failedMapName = FilenameUtils.getBaseName(settingsFileName) + " full map for incremental draw test";
+				ImageHelper.write(fullMapForUpdates, MapTestUtil.getFailedMapFilePath(failedMapName, failedMapsFolderName));
+				createImageDiffIfImagesAreSameSize(fullMap, fullMapForUpdates, failedMapName, threshold);
+				fail("Incremental update did not match expected image: " + comparisonErrorMessage);
+			}
 		}
 	}
 
@@ -161,63 +152,47 @@ public class SkiaMapCreatorTest
 	@Test
 	public void drawCoastlineWithLakeShoresTest()
 	{
-		try
+		GPUExecutor.setRenderingMode(RenderingMode.CPU);
+
+		final String settingsFileName = "simpleSmallWorld.nort";
+		MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", settingsFileName).toString());
+		settings.resolution = 0.25;
+		WorldGraph graph = MapCreator.createGraphForUnitTests(settings);
+
+		Image coastlineAndLakeShoreMask = Image.create(graph.getWidth(), graph.getHeight(), ImageType.Binary);
+		try (Painter p = coastlineAndLakeShoreMask.createPainter(DrawQuality.High))
 		{
-			GPUExecutor.setRenderingMode(RenderingMode.CPU);
-
-			final String settingsFileName = "simpleSmallWorld.nort";
-			MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", settingsFileName).toString());
-			settings.resolution = 0.25;
-			WorldGraph graph = MapCreator.createGraphForUnitTests(settings);
-
-			Image coastlineAndLakeShoreMask = Image.create(graph.getWidth(), graph.getHeight(), ImageType.Binary);
-			try (Painter p = coastlineAndLakeShoreMask.createPainter(DrawQuality.High))
-			{
-				p.setColor(Color.white);
-				graph.drawCoastlineWithLakeShores(p, settings.coastlineWidth * settings.resolution, null, null);
-			}
-
-			compareWithExpected(coastlineAndLakeShoreMask, "coastlineWithLakeShores", 0);
-		}
-		finally
-		{
-			GPUExecutor.setRenderingMode(RenderingMode.HYBRID);
+			p.setColor(Color.white);
+			graph.drawCoastlineWithLakeShores(p, settings.coastlineWidth * settings.resolution, null, null);
 		}
 
+		compareWithExpected(coastlineAndLakeShoreMask, "coastlineWithLakeShores", 0);
 	}
 
 	@Test
 	public void coastShadingTest()
 	{
-		try
+		GPUExecutor.setRenderingMode(RenderingMode.CPU);
+
+		final String settingsFileName = "simpleSmallWorld.nort";
+		MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", settingsFileName).toString());
+		settings.resolution = 0.25;
+		WorldGraph graph = MapCreator.createGraphForUnitTests(settings);
+
+		Image coastlineAndLakeShoreMask = Image.create(graph.getWidth(), graph.getHeight(), ImageType.Binary);
+		try (Painter p = coastlineAndLakeShoreMask.createPainter(DrawQuality.High))
 		{
-			GPUExecutor.setRenderingMode(RenderingMode.CPU);
-
-			final String settingsFileName = "simpleSmallWorld.nort";
-			MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", settingsFileName).toString());
-			settings.resolution = 0.25;
-			WorldGraph graph = MapCreator.createGraphForUnitTests(settings);
-
-			Image coastlineAndLakeShoreMask = Image.create(graph.getWidth(), graph.getHeight(), ImageType.Binary);
-			try (Painter p = coastlineAndLakeShoreMask.createPainter(DrawQuality.High))
-			{
-				p.setColor(Color.white);
-				graph.drawCoastlineWithLakeShores(p, settings.coastlineWidth * settings.resolution, null, null);
-			}
-
-			// Test bluing coastline and lake shores.
-			double sizeMultiplier = MapCreator.calcSizeMultipilerFromResolutionScale(settings.resolution);
-			int blurLevel = (int) (settings.coastShadingLevel * sizeMultiplier);
-			float scale = 2.3973336f; // The actual value used when creating this map.
-			Image coastShading = ImageHelper.blurAndScale(coastlineAndLakeShoreMask, blurLevel, scale, true);
-
-			compareWithExpected(coastShading, "coastShading", 0);
-		}
-		finally
-		{
-			GPUExecutor.setRenderingMode(RenderingMode.HYBRID);
+			p.setColor(Color.white);
+			graph.drawCoastlineWithLakeShores(p, settings.coastlineWidth * settings.resolution, null, null);
 		}
 
+		// Test bluing coastline and lake shores.
+		double sizeMultiplier = MapCreator.calcSizeMultipilerFromResolutionScale(settings.resolution);
+		int blurLevel = (int) (settings.coastShadingLevel * sizeMultiplier);
+		float scale = 2.3973336f; // The actual value used when creating this map.
+		Image coastShading = ImageHelper.blurAndScale(coastlineAndLakeShoreMask, blurLevel, scale, true);
+
+		compareWithExpected(coastShading, "coastShading", 0);
 	}
 
 	@Test
@@ -249,7 +224,7 @@ public class SkiaMapCreatorTest
 		}
 		finally
 		{
-			GPUExecutor.setRenderingMode(RenderingMode.HYBRID);
+			GPUExecutor.setRenderingModeToDefault();
 		}
 
 		// Generate with GPU
@@ -392,8 +367,7 @@ public class SkiaMapCreatorTest
 	}
 
 	/**
-	 * Tests that GRID_BASED findClosestCenter returns the same results as PIXEL_UNCACHED.
-	 * Uses high resolution (2.0) to reduce discretization errors at polygon boundaries.
+	 * Tests that GRID_BASED findClosestCenter returns the same results as PIXEL_UNCACHED. Uses high resolution (2.0) to reduce discretization errors at polygon boundaries.
 	 */
 	@Test
 	public void findClosestCenterGridVsPixelTest()
@@ -441,9 +415,8 @@ public class SkiaMapCreatorTest
 		}
 
 		// Print grid lookup statistics
-		System.out.println("Grid lookup stats: directHits=" + WorldGraph.gridLookupDirectHits
-			+ ", neighborHits=" + WorldGraph.gridLookupNeighborHits
-			+ ", bfsFallbacks=" + WorldGraph.gridLookupBfsFallbacks);
+		System.out.println(
+				"Grid lookup stats: directHits=" + WorldGraph.gridLookupDirectHits + ", neighborHits=" + WorldGraph.gridLookupNeighborHits + ", bfsFallbacks=" + WorldGraph.gridLookupBfsFallbacks);
 
 		// Reset to original mode
 		WorldGraph.centerLookupMode = originalMode;

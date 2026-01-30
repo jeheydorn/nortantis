@@ -36,7 +36,7 @@ public class SkiaMapCreatorBenchmark
 	public void cleanup()
 	{
 		// Reset to GPU mode after each test
-		GPUExecutor.setRenderingMode(RenderingMode.HYBRID);
+		GPUExecutor.setRenderingModeToDefault();
 	}
 
 	@Test
@@ -70,6 +70,7 @@ public class SkiaMapCreatorBenchmark
 	{
 		GPUExecutor.setRenderingMode(RenderingMode.GPU);
 		MapTestUtil.runMapCreationBenchmarkSingleIteration("Skia GPU-only", 1.5);
+		GPUExecutor.setRenderingModeToDefault();
 	}
 
 	@Test
@@ -98,14 +99,17 @@ public class SkiaMapCreatorBenchmark
 	@Test
 	public void benchmarkCenterEditing() throws Exception
 	{
+		WorldGraph.CenterLookupMode originalMode = WorldGraph.centerLookupMode;
 		WorldGraph.centerLookupMode = WorldGraph.CenterLookupMode.PIXEL_CACHED;
 		MapTestUtil.runCenterEditBenchmark("Skia GPU", 10, 5);
+		WorldGraph.centerLookupMode = originalMode;
 	}
 
 	@Test
 	public void benchmarkFindClosestCenter() throws Exception
 	{
 		System.out.println("\n=== findClosestCenter Benchmark (Skia) ===\n");
+		WorldGraph.CenterLookupMode originalMode = WorldGraph.centerLookupMode;
 
 		String settingsPath = Paths.get("unit test files", "map settings", "simpleSmallWorld.nort").toString();
 		MapSettings settings = new MapSettings(settingsPath);
@@ -208,6 +212,6 @@ public class SkiaMapCreatorBenchmark
 		}
 
 		// Reset to default
-		WorldGraph.centerLookupMode = WorldGraph.CenterLookupMode.GRID_BASED;
+		WorldGraph.centerLookupMode = originalMode;
 	}
 }

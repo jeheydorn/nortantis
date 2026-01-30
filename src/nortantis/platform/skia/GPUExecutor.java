@@ -118,8 +118,7 @@ public class GPUExecutor
 	}
 
 	/**
-	 * Sets the rendering mode. Can be called at any time to change rendering behavior. If not set, defaults to HYBRID mode (CPU+GPU
-	 * dual-backing for large images).
+	 * Sets the rendering mode. Can be called at any time to change rendering behavior. If not set, this class uses a default determined by defaultRenderingMode.
 	 *
 	 * @param mode
 	 *            The rendering mode to use
@@ -127,6 +126,14 @@ public class GPUExecutor
 	public static void setRenderingMode(RenderingMode mode)
 	{
 		renderingModeOverride = mode;
+	}
+
+	/**
+	 * Sets the rendering mode to the default rendering mode.
+	 */
+	public static void setRenderingModeToDefault()
+	{
+		renderingModeOverride = defaultRenderingMode;
 	}
 
 	/**

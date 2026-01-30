@@ -222,6 +222,7 @@ public class ImageHelperBenchmark
 
 		System.out.println("  Total time for " + numCopies + " copies:  " + formatTime(avgTime));
 		System.out.println("  Average per copy:  " + formatTime(avgTime / numCopies));
+		GPUExecutor.setRenderingModeToDefault();
 	}
 
 	private String formatTime(long nanos)
@@ -337,6 +338,7 @@ public class ImageHelperBenchmark
 			grayscale.close();
 			colorIndexes.close();
 		}
+		GPUExecutor.setRenderingModeToDefault();
 	}
 
 	@Test
