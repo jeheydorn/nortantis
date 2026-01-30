@@ -40,8 +40,6 @@ import nortantis.platform.DrawQuality;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
-import nortantis.platform.PixelReader;
-import nortantis.platform.PixelReaderWriter;
 import nortantis.swing.MapEdits;
 
 public class MapCreator implements WarningLogger
@@ -59,6 +57,15 @@ public class MapCreator implements WarningLogger
 	private boolean isCanceled;
 	private final List<String> warningMessages;
 	public ConcurrentHashMap<Integer, Center> centersToRedrawLowPriority;
+	private static Boolean memoryModeOverride;
+
+	/**
+	 * Override the memory mode for testing. Pass null to clear the override and resume normal behavior.
+	 */
+	public static void overrideMemoryMode(Boolean isLowMemory)
+	{
+		memoryModeOverride = isLowMemory;
+	}
 
 	public MapCreator()
 	{
@@ -626,7 +633,7 @@ public class MapCreator implements WarningLogger
 		// If we're within resolutionBuffer of our estimated maximum resolution, then be conservative about memory usage.
 		// My tests showed that running frayed edge and grunge calculation inline with other stuff gave a 22% speedup.
 		final double resolutionBuffer = 0.5;
-		boolean isLowMemoryMode = settings.resolution >= calcMaxResolutionScale() - resolutionBuffer;
+		boolean isLowMemoryMode = memoryModeOverride != null ? memoryModeOverride : settings.resolution >= calcMaxResolutionScale() - resolutionBuffer;
 		Logger.println("Using " + (isLowMemoryMode ? "low" : "high") + " memory mode.");
 
 		if (StringUtils.isNotEmpty(settings.customImagesPath))
@@ -709,7 +716,7 @@ public class MapCreator implements WarningLogger
 		List<IconDrawTask> cities;
 		if (mapParts == null || mapParts.mapBeforeAddingText == null || !settings.edits.isInitialized())
 		{
-			Tuple4<Image, Image, List<Set<Center>>, List<IconDrawTask>> tuple = drawTerrainAndIcons(settings, mapParts, graph, background);
+			Tuple4<Image, Image, List<Set<Center>>, List<IconDrawTask>> tuple = drawTerrainAndIcons(settings, mapParts, graph, background, isLowMemoryMode);
 
 			checkForCancel();
 
@@ -890,7 +897,7 @@ public class MapCreator implements WarningLogger
 			map = ImageHelper.maskWithColor(map, settings.frayedBorderColor, grunge, true);
 		}
 
-		drawOverlayImageIfNeededAndUpdateMapParts(map, settings, mapParts);
+		drawOverlayImageIfNeededAndUpdateMapParts(map, settings);
 
 		checkForCancel();
 
@@ -1050,13 +1057,14 @@ public class MapCreator implements WarningLogger
 		}
 	}
 
-	private Tuple4<Image, Image, List<Set<Center>>, List<IconDrawTask>> drawTerrainAndIcons(MapSettings settings, MapParts mapParts, WorldGraph graph, Background background)
+	private Tuple4<Image, Image, List<Set<Center>>, List<IconDrawTask>> drawTerrainAndIcons(MapSettings settings, MapParts mapParts, WorldGraph graph, Background background, boolean isLowMemoryMode)
 	{
 		checkForCancel();
 
 		IconDrawer iconDrawer;
 		boolean needToAddIcons;
 		iconDrawer = new IconDrawer(graph, new Random(r.nextLong()), settings);
+		iconDrawer.setLowMemoryMode(isLowMemoryMode);
 		if (mapParts != null)
 		{
 			mapParts.iconDrawer = iconDrawer;
@@ -1388,7 +1396,7 @@ public class MapCreator implements WarningLogger
 
 			if (settings.hasRippleWaves(resolutionScale))
 			{
-				Image coastlineMask = createCoastlineMask(settings, graph, targetStrokeWidth, false, 0, centersToDraw, drawBounds);
+				Image coastlineMask = createCoastlineMask(settings, graph, targetStrokeWidth, centersToDraw, drawBounds);
 				float[][] kernel = ImageHelper.createPositiveSincKernel((int) (settings.oceanWavesLevel * sizeMultiplier), 1.0 / sizeMultiplier);
 
 				final float scaleForDarkening = coastlineShadingScale;
@@ -1397,7 +1405,7 @@ public class MapCreator implements WarningLogger
 				oceanWaves = ImageHelper.convolveGrayscaleThenScale(coastlineMask, kernel, scale, true);
 				if (settings.drawOceanEffectsInLakes)
 				{
-					oceanWaves = removeOceanEffectsFromLand(graph, oceanWaves, landMask, centersToDraw, drawBounds);
+					oceanWaves = removeOceanEffectsFromLand(oceanWaves, landMask);
 				}
 				else
 				{
@@ -1411,7 +1419,7 @@ public class MapCreator implements WarningLogger
 
 			if (settings.hasOceanShading(resolutionScale))
 			{
-				Image coastlineMask = createCoastlineMask(settings, graph, targetStrokeWidth, false, 0, centersToDraw, drawBounds);
+				Image coastlineMask = createCoastlineMask(settings, graph, targetStrokeWidth, centersToDraw, drawBounds);
 
 				final float scaleForDarkening = coastlineShadingScale;
 				float scale = scaleForDarkening * calcScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(settings.oceanShadingLevel, sizeMultiplier)
@@ -1419,7 +1427,7 @@ public class MapCreator implements WarningLogger
 				oceanShading = ImageHelper.blurAndScale(coastlineMask, (int) (settings.oceanShadingLevel * sizeMultiplier), scale, true);
 				if (settings.drawOceanEffectsInLakes)
 				{
-					oceanShading = removeOceanEffectsFromLand(graph, oceanShading, landMask, centersToDraw, drawBounds);
+					oceanShading = removeOceanEffectsFromLand(oceanShading, landMask);
 				}
 				else
 				{
@@ -1430,8 +1438,7 @@ public class MapCreator implements WarningLogger
 		return new Tuple2<>(oceanWaves, oceanShading);
 	}
 
-	private Image createCoastlineMask(MapSettings settings, WorldGraph graph, double targetStrokeWidth, boolean forceUseCurvesWithinThreshold, double widthBetweenWaves,
-			Collection<Center> centersToDraw, Rectangle drawBounds)
+	private Image createCoastlineMask(MapSettings settings, WorldGraph graph, double targetStrokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
 		Image coastlineMask = Image.create((int) drawBounds.width, (int) drawBounds.height, ImageType.Binary);
 		try (Painter g = coastlineMask.createPainter())
@@ -1540,7 +1547,7 @@ public class MapCreator implements WarningLogger
 
 		if (settings.drawOceanEffectsInLakes)
 		{
-			oceanEffects = removeOceanEffectsFromLand(graph, oceanEffects, landMask, centersToDraw, drawBounds);
+			oceanEffects = removeOceanEffectsFromLand(oceanEffects, landMask);
 		}
 		else
 		{
@@ -1578,7 +1585,7 @@ public class MapCreator implements WarningLogger
 		return ImageHelper.maskWithColor(oceanEffects, Color.black, landAndLakeMask, false);
 	}
 
-	private static Image removeOceanEffectsFromLand(WorldGraph graph, Image oceanEffects, Image landMask, Collection<Center> centersToDraw, Rectangle drawBounds)
+	private static Image removeOceanEffectsFromLand(Image oceanEffects, Image landMask)
 	{
 		return ImageHelper.maskWithColor(oceanEffects, Color.black, landMask, true);
 	}
@@ -1942,7 +1949,7 @@ public class MapCreator implements WarningLogger
 		return warningMessages;
 	}
 
-	private static void drawOverlayImageIfNeededAndUpdateMapParts(Image map, MapSettings settings, MapParts mapParts)
+	private static void drawOverlayImageIfNeededAndUpdateMapParts(Image map, MapSettings settings)
 	{
 		if (settings.drawOverlayImage)
 		{

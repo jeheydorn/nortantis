@@ -9,7 +9,6 @@ import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Corner;
 import nortantis.platform.*;
 import nortantis.platform.awt.AwtFactory;
-import nortantis.platform.skia.GPUExecutor;
 import nortantis.swing.MapEdits;
 import nortantis.util.*;
 import org.apache.commons.lang3.NotImplementedException;
@@ -63,6 +62,12 @@ public class IconDrawer
 	// Implemented as a map instead of a set for concurrency.
 	private Map<IconType, Boolean> maximizeOpacityByType;
 	private Map<IconType, Boolean> fillWithColorByType;
+	private boolean isLowMemoryMode;
+
+	public void setLowMemoryMode(boolean isLowMemoryMode)
+	{
+		this.isLowMemoryMode = isLowMemoryMode;
+	}
 
 	public IconDrawer(WorldGraph graph, Random rand, MapSettings settings)
 	{
@@ -396,7 +401,7 @@ public class IconDrawer
 	{
 		ImageAndMasks imageAndMasks = iconsByGroup.get(groupId).get(iconIndex % iconsByGroup.get(groupId).size());
 		double scale = getWidthScaleForNewShuffledIcon(center, IconType.mountains);
-		double scaledWidth = getBaseWidth(IconType.mountains, imageAndMasks) * scale;
+		double scaledWidth = getBaseWidth(imageAndMasks) * scale;
 		return getImageCenterToDrawImageNearBottomOfCenter(imageAndMasks.image, scaledWidth * mountainScale, center);
 	}
 
@@ -430,8 +435,8 @@ public class IconDrawer
 		// level scaling is done about the icon's center even for
 		// mountains,
 		// so it doesn't affect the Y offset for mountains.
-		double prevScaledHeightWithoutIconScale = getDimensionsWhenScaledByWidth(image.size(), getBaseWidth(IconType.mountains, imageAndMasks) * mountainScale).height;
-		double newScaledHeightWithoutIconScale = getDimensionsWhenScaledByWidth(image.size(), getBaseWidth(IconType.mountains, imageAndMasks) * newMountainScale).height;
+		double prevScaledHeightWithoutIconScale = getDimensionsWhenScaledByWidth(image.size(), getBaseWidth(imageAndMasks) * mountainScale).height;
+		double newScaledHeightWithoutIconScale = getDimensionsWhenScaledByWidth(image.size(), getBaseWidth(imageAndMasks) * newMountainScale).height;
 		double offsetFromBottom = getOffsetFromCenterBottomToPutBottomOfMountainImageAt(meanPolygonWidth);
 		return (prevScaledHeightWithoutIconScale / 2.0 - offsetFromBottom) - (newScaledHeightWithoutIconScale / 2.0 - offsetFromBottom);
 	}
@@ -449,7 +454,7 @@ public class IconDrawer
 		return freeIcons.doWithLockAndReturnResult(() ->
 		{
 			Rectangle conversionBoundsOfIconsChanged = convertToFreeIconsIfNeeded(centersToUpdateIconsFor, edits, warningLogger);
-			Rectangle removedOrReplacedChangeBounds = createDrawTasksForFreeIconsAndRemovedFailedIcons(warningLogger, centersToUpdateIconsFor, replaceBounds);
+			Rectangle removedOrReplacedChangeBounds = createDrawTasksForFreeIconsAndRemovedFailedIcons(warningLogger, replaceBounds);
 			Rectangle combined = Rectangle.add(conversionBoundsOfIconsChanged, removedOrReplacedChangeBounds);
 			if (combined == null)
 			{
@@ -460,7 +465,7 @@ public class IconDrawer
 		});
 	}
 
-	private Rectangle createDrawTasksForFreeIconsAndRemovedFailedIcons(WarningLogger warningLogger, Collection<Center> centersToUpdateIconsFor, Rectangle replaceBounds)
+	private Rectangle createDrawTasksForFreeIconsAndRemovedFailedIcons(WarningLogger warningLogger, Rectangle replaceBounds)
 	{
 		iconsToDraw.clear();
 
@@ -679,7 +684,7 @@ public class IconDrawer
 		return new Tuple3<>(artPackToUse, newGroupId, name);
 	}
 
-	private double getBaseWidth(IconType type, ImageAndMasks imageAndMasks)
+	private double getBaseWidth(ImageAndMasks imageAndMasks)
 	{
 		return meanPolygonWidth * (1.0 / 11.0) * imageAndMasks.widthFromFileName;
 	}
@@ -993,7 +998,7 @@ public class IconDrawer
 	 * 		If mapOrSnippet, landBackground, landTexture, or oceanTexture have mismatched dimensions, or if the content mask or shading mask dimensions don't match the icon dimensions.
 	 */
 	private void drawIconWithBackgroundAndMasks(Image mapOrSnippet, ImageAndMasks imageAndMasks, Image landBackground, Image landTexture, Image oceanTexture, IconType type, int xCenter, int yCenter,
-			int graphXCenter, int graphYCenter)
+			int graphXCenter, int graphYCenter, PixelReader hoistedLandTexturePixels, PixelReader hoistedOceanTexturePixels, PixelReader hoistedLandBackgroundPixels)
 	{
 		Image icon = imageAndMasks.image;
 		Image contentMask = imageAndMasks.getOrCreateContentMask();
@@ -1029,28 +1034,35 @@ public class IconDrawer
 		if (PlatformFactory.getInstance() instanceof AwtFactory)
 		{
 			drawIconWithBackgroundAndMasksDirect(mapOrSnippet, imageAndMasks, landBackground, landTexture, oceanTexture, type, xLeft, yTop, graphXLeft, graphYTop, mapOrSnippetSize, icon, contentMask,
-					shadingMask);
+					shadingMask, hoistedLandTexturePixels, hoistedOceanTexturePixels, hoistedLandBackgroundPixels);
 		}
 		else
 		{
 			drawIconWithBackgroundAndMasksUsingSnippet(mapOrSnippet, imageAndMasks, landBackground, landTexture, oceanTexture, type, xLeft, yTop, graphXLeft, graphYTop, mapOrSnippetSize, icon,
-					contentMask, shadingMask);
+					contentMask, shadingMask, hoistedLandTexturePixels, hoistedOceanTexturePixels, hoistedLandBackgroundPixels);
 		}
 	}
 
 	private void drawIconWithBackgroundAndMasksDirect(Image mapOrSnippet, ImageAndMasks imageAndMasks, Image landBackground, Image landTexture, Image oceanTexture, IconType type, int xLeft, int yTop,
-			int graphXLeft, int graphYTop, IntDimension mapOrSnippetSize, Image icon, Image contentMask, Image shadingMask)
+			int graphXLeft, int graphYTop, IntDimension mapOrSnippetSize, Image icon, Image contentMask, Image shadingMask, PixelReader hoistedLandTexturePixels,
+			PixelReader hoistedOceanTexturePixels, PixelReader hoistedLandBackgroundPixels)
 	{
 		IntRectangle iconBoundsInMapOrSnippet = new IntRectangle(xLeft, yTop, icon.getWidth(), icon.getHeight());
 
-		// Begin pixel sessions for efficient read/write
-		try (PixelReader landTexturePixels = landTexture.createPixelReader(iconBoundsInMapOrSnippet);
-				PixelReader oceanTexturePixels = oceanTexture.createPixelReader(iconBoundsInMapOrSnippet);
-				PixelReader landBackgroundPixels = landBackground.createPixelReader(iconBoundsInMapOrSnippet);
+		boolean useHoisted = hoistedLandTexturePixels != null;
+
+		// Begin pixel sessions for efficient read/write.
+		// If hoisted readers are provided, use them for the shared images; otherwise create bounded readers per icon.
+		try (PixelReader landTexturePixels = useHoisted ? null : landTexture.createPixelReader(iconBoundsInMapOrSnippet);
+				PixelReader oceanTexturePixels = useHoisted ? null : oceanTexture.createPixelReader(iconBoundsInMapOrSnippet);
+				PixelReader landBackgroundPixels = useHoisted ? null : landBackground.createPixelReader(iconBoundsInMapOrSnippet);
 				PixelReader contentMaskPixels = contentMask.createPixelReader();
 				PixelReader shadingMaskPixels = shadingMask.createPixelReader();
 				PixelReaderWriter mapOrSnippetPixels = mapOrSnippet.createPixelReaderWriter(iconBoundsInMapOrSnippet))
 		{
+			PixelReader effectiveLandTexturePixels = useHoisted ? hoistedLandTexturePixels : landTexturePixels;
+			PixelReader effectiveOceanTexturePixels = useHoisted ? hoistedOceanTexturePixels : oceanTexturePixels;
+			PixelReader effectiveLandBackgroundPixels = useHoisted ? hoistedLandBackgroundPixels : landBackgroundPixels;
 			for (int y : new Range(icon.getHeight()))
 			{
 				for (int x = 0; x < icon.getWidth(); x++)
@@ -1084,18 +1096,18 @@ public class IconDrawer
 					if (type == IconType.decorations)
 					{
 						bgColorNoIcons = closest.isWater
-								? Color.create(oceanTexturePixels.getRGB(xLoc, yLoc), oceanTexture.hasAlpha())
-								: Color.create(landBackgroundPixels.getRGB(xLoc, yLoc), landBackground.hasAlpha());
+								? Color.create(effectiveOceanTexturePixels.getRGB(xLoc, yLoc), oceanTexture.hasAlpha())
+								: Color.create(effectiveLandBackgroundPixels.getRGB(xLoc, yLoc), landBackground.hasAlpha());
 
 						landTextureColor = closest.isWater
-								? Color.create(oceanTexturePixels.getRGB(xLoc, yLoc), oceanTexture.hasAlpha())
-								: Color.create(landBackgroundPixels.getRGB(xLoc, yLoc), landBackground.hasAlpha());
+								? Color.create(effectiveOceanTexturePixels.getRGB(xLoc, yLoc), oceanTexture.hasAlpha())
+								: Color.create(effectiveLandBackgroundPixels.getRGB(xLoc, yLoc), landBackground.hasAlpha());
 					}
 					else
 					{
-						bgColorNoIcons = Color.create(landBackgroundPixels.getRGB(xLoc, yLoc), landBackground.hasAlpha());
+						bgColorNoIcons = Color.create(effectiveLandBackgroundPixels.getRGB(xLoc, yLoc), landBackground.hasAlpha());
 
-						landTextureColor = Color.create(landTexturePixels.getRGB(xLoc, yLoc), landTexture.hasAlpha());
+						landTextureColor = Color.create(effectiveLandTexturePixels.getRGB(xLoc, yLoc), landTexture.hasAlpha());
 					}
 
 					mapColor = Color.create(mapOrSnippetPixels.getRGB(xLoc, yLoc), mapOrSnippet.hasAlpha());
@@ -1124,7 +1136,8 @@ public class IconDrawer
 	}
 
 	private void drawIconWithBackgroundAndMasksUsingSnippet(Image mapOrSnippet, ImageAndMasks imageAndMasks, Image landBackground, Image landTexture, Image oceanTexture, IconType type, int xLeft,
-			int yTop, int graphXLeft, int graphYTop, IntDimension mapOrSnippetSize, Image icon, Image contentMask, Image shadingMask)
+			int yTop, int graphXLeft, int graphYTop, IntDimension mapOrSnippetSize, Image icon, Image contentMask, Image shadingMask, PixelReader hoistedLandTexturePixels,
+			PixelReader hoistedOceanTexturePixels, PixelReader hoistedLandBackgroundPixels)
 	{
 		// Calculate the visible portion of the icon (clipped to map bounds)
 		int visibleXStart = Math.max(0, xLeft);
@@ -1145,16 +1158,23 @@ public class IconDrawer
 		// Instead, we only sync the small icon-sized region.
 		Image mapSnippetForIcon = mapOrSnippet.copySubImage(visibleBounds, false);
 
+		boolean useHoisted = hoistedLandTexturePixels != null;
+
 		try
 		{
-			// Begin pixel sessions for efficient read/write
-			try (PixelReader landTexturePixels = landTexture.createPixelReader(visibleBounds);
-					PixelReader oceanTexturePixels = oceanTexture.createPixelReader(visibleBounds);
-					PixelReader landBackgroundPixels = landBackground.createPixelReader(visibleBounds);
+			// Begin pixel sessions for efficient read/write.
+			// If hoisted readers are provided, use them for the shared images; otherwise create bounded readers per icon.
+			try (PixelReader landTexturePixels = useHoisted ? null : landTexture.createPixelReader(visibleBounds);
+					PixelReader oceanTexturePixels = useHoisted ? null : oceanTexture.createPixelReader(visibleBounds);
+					PixelReader landBackgroundPixels = useHoisted ? null : landBackground.createPixelReader(visibleBounds);
 					PixelReader contentMaskPixels = contentMask.createPixelReader();
 					PixelReader shadingMaskPixels = shadingMask.createPixelReader();
 					PixelReaderWriter snippetPixels = mapSnippetForIcon.createPixelReaderWriter())
 			{
+				PixelReader effectiveLandTexturePixels = useHoisted ? hoistedLandTexturePixels : landTexturePixels;
+				PixelReader effectiveOceanTexturePixels = useHoisted ? hoistedOceanTexturePixels : oceanTexturePixels;
+				PixelReader effectiveLandBackgroundPixels = useHoisted ? hoistedLandBackgroundPixels : landBackgroundPixels;
+
 				// Iterate only over the visible portion
 				for (int y = visibleYStart - yTop; y < visibleYEnd - yTop; y++)
 				{
@@ -1185,18 +1205,18 @@ public class IconDrawer
 						if (type == IconType.decorations)
 						{
 							bgColorNoIcons = closest.isWater
-									? Color.create(oceanTexturePixels.getRGB(xLoc, yLoc), oceanTexture.hasAlpha())
-									: Color.create(landBackgroundPixels.getRGB(xLoc, yLoc), landBackground.hasAlpha());
+									? Color.create(effectiveOceanTexturePixels.getRGB(xLoc, yLoc), oceanTexture.hasAlpha())
+									: Color.create(effectiveLandBackgroundPixels.getRGB(xLoc, yLoc), landBackground.hasAlpha());
 
 							landTextureColor = closest.isWater
-									? Color.create(oceanTexturePixels.getRGB(xLoc, yLoc), oceanTexture.hasAlpha())
-									: Color.create(landBackgroundPixels.getRGB(xLoc, yLoc), landBackground.hasAlpha());
+									? Color.create(effectiveOceanTexturePixels.getRGB(xLoc, yLoc), oceanTexture.hasAlpha())
+									: Color.create(effectiveLandBackgroundPixels.getRGB(xLoc, yLoc), landBackground.hasAlpha());
 						}
 						else
 						{
-							bgColorNoIcons = Color.create(landBackgroundPixels.getRGB(xLoc, yLoc), landBackground.hasAlpha());
+							bgColorNoIcons = Color.create(effectiveLandBackgroundPixels.getRGB(xLoc, yLoc), landBackground.hasAlpha());
 
-							landTextureColor = Color.create(landTexturePixels.getRGB(xLoc, yLoc), landTexture.hasAlpha());
+							landTextureColor = Color.create(effectiveLandTexturePixels.getRGB(xLoc, yLoc), landTexture.hasAlpha());
 						}
 
 						mapColor = Color.create(snippetPixels.getRGB(snippetX, snippetY), mapSnippetForIcon.hasAlpha());
@@ -1296,47 +1316,29 @@ public class IconDrawer
 		int xToSubtract = drawBounds == null ? 0 : (int) drawBounds.x;
 		int yToSubtract = drawBounds == null ? 0 : (int) drawBounds.y;
 
-		//Stopwatch sw = new Stopwatch("drawIconWithBackgroundAndMasks"); TODO remove
-
-		for (final IconDrawTask task : tasksToDrawSorted)
+		// In high memory mode, create full-image pixel readers once for the shared read-only images
+		// to avoid repeated GPU thread round-trips (one per icon per image).
+		if (!isLowMemoryMode)
 		{
-			drawIconWithBackgroundAndMasks(mapOrSnippet, task.scaledImageAndMasks, landBackground, landTexture, oceanWithWavesAndShading, task.type, ((int) task.centerLoc.x) - xToSubtract,
-					((int) task.centerLoc.y) - yToSubtract, (int) task.centerLoc.x, (int) task.centerLoc.y);
+			try (PixelReader landTexturePixels = landTexture.createPixelReader();
+					PixelReader oceanTexturePixels = oceanWithWavesAndShading.createPixelReader();
+					PixelReader landBackgroundPixels = landBackground.createPixelReader())
+			{
+				for (final IconDrawTask task : tasksToDrawSorted)
+				{
+					drawIconWithBackgroundAndMasks(mapOrSnippet, task.scaledImageAndMasks, landBackground, landTexture, oceanWithWavesAndShading, task.type, ((int) task.centerLoc.x) - xToSubtract,
+							((int) task.centerLoc.y) - yToSubtract, (int) task.centerLoc.x, (int) task.centerLoc.y, landTexturePixels, oceanTexturePixels, landBackgroundPixels);
+				}
+			}
 		}
-		//sw.printElapsedTime();
-	}
-
-	private IntRectangle computeIconBounds(List<IconDrawTask> tasks)
-	{
-		int minX = Integer.MAX_VALUE;
-		int minY = Integer.MAX_VALUE;
-		int maxX = Integer.MIN_VALUE;
-		int maxY = Integer.MIN_VALUE;
-
-		for (IconDrawTask task : tasks)
+		else
 		{
-			int left = (int) task.centerLoc.x - task.scaledSize.width / 2;
-			int top = (int) task.centerLoc.y - task.scaledSize.height / 2;
-			int right = left + task.scaledSize.width;
-			int bottom = top + task.scaledSize.height;
-
-			if (left < minX)
-				minX = left;
-			if (top < minY)
-				minY = top;
-			if (right > maxX)
-				maxX = right;
-			if (bottom > maxY)
-				maxY = bottom;
+			for (final IconDrawTask task : tasksToDrawSorted)
+			{
+				drawIconWithBackgroundAndMasks(mapOrSnippet, task.scaledImageAndMasks, landBackground, landTexture, oceanWithWavesAndShading, task.type, ((int) task.centerLoc.x) - xToSubtract,
+						((int) task.centerLoc.y) - yToSubtract, (int) task.centerLoc.x, (int) task.centerLoc.y, null, null, null);
+			}
 		}
-
-		// Clamp to valid coordinates (non-negative, within graph bounds)
-		minX = Math.max(0, minX);
-		minY = Math.max(0, minY);
-		maxX = Math.min(graph.getWidth(), maxX);
-		maxY = Math.min(graph.getHeight(), maxY);
-
-		return new IntRectangle(minX, minY, maxX - minX, maxY - minY);
 	}
 
 	/**
@@ -1393,7 +1395,7 @@ public class IconDrawer
 			cities = addOrUnmarkCities();
 			result.setSecond(cities);
 
-			createDrawTasksForFreeIconsAndRemovedFailedIcons(warningLogger, graph.centers, null);
+			createDrawTasksForFreeIconsAndRemovedFailedIcons(warningLogger, null);
 			return result;
 		});
 	}
@@ -1863,7 +1865,7 @@ public class IconDrawer
 				CenterTrees toUse = replaceTreeAssetsIfNeeded(cTrees, warningLogger);
 
 				Center c = graph.centers.get(entry.getKey());
-				changeBounds = Rectangle.add(changeBounds, drawTreesAtCenterAndCorners(graph, c, toUse, treesByCenter.keySet()));
+				changeBounds = Rectangle.add(changeBounds, drawTreesAtCenterAndCorners(c, toUse, treesByCenter.keySet()));
 			}
 		}
 		return changeBounds;
@@ -1887,14 +1889,13 @@ public class IconDrawer
 
 	}
 
-	private Rectangle drawTreesAtCenterAndCorners(WorldGraph graph, Center center, CenterTrees cTrees, Set<Integer> additionalCentersThatWillHaveTrees)
+	private Rectangle drawTreesAtCenterAndCorners(Center center, CenterTrees cTrees, Set<Integer> additionalCentersThatWillHaveTrees)
 	{
 		Rectangle changeBounds = getAnchoredTreeIconBoundsAt(center.index);
 		freeIcons.clearTrees(center.index);
 
-		List<ImageAndMasks> unscaledImages = ImageCache.getInstance(cTrees.artPack, customImagesPath).getIconsInGroup(IconType.trees, cTrees.treeType);
 		Random rand = new Random(cTrees.randomSeed);
-		addTreeNearLocation(graph, unscaledImages, center.loc, cTrees.density, center, rand, cTrees.artPack, cTrees.treeType);
+		addTreeNearLocation(center.loc, cTrees.density, center, rand, cTrees.artPack, cTrees.treeType);
 
 		// Draw trees at the neighboring corners too.
 		// Note that corners use their own Random instance because the random
@@ -1904,7 +1905,7 @@ public class IconDrawer
 		{
 			if (shouldCenterDrawTreesForCorner(center, corner, additionalCentersThatWillHaveTrees))
 			{
-				addTreeNearLocation(graph, unscaledImages, corner.loc, cTrees.density, center, rand, cTrees.artPack, cTrees.treeType);
+				addTreeNearLocation(corner.loc, cTrees.density, center, rand, cTrees.artPack, cTrees.treeType);
 			}
 		}
 
@@ -1990,7 +1991,7 @@ public class IconDrawer
 	}
 
 	@SuppressWarnings("lossy-conversions")
-	private void addTreeNearLocation(WorldGraph graph, List<ImageAndMasks> unscaledImages, Point loc, double forestDensity, Center center, Random rand, String artPack, String groupId)
+	private void addTreeNearLocation(Point loc, double forestDensity, Center center, Random rand, String artPack, String groupId)
 	{
 		// Convert the forestDensity into an integer number of trees to draw
 		// such that the expected
@@ -2068,7 +2069,7 @@ public class IconDrawer
 			imageAndMasks = imagesInGroup.get(icon.iconIndex % imagesInGroup.size());
 		}
 
-		return icon.toIconDrawTask(customImagesPath, resolutionScale, typeLevelScale, getBaseWidth(icon.type, imageAndMasks));
+		return icon.toIconDrawTask(customImagesPath, resolutionScale, typeLevelScale, getBaseWidth(imageAndMasks));
 	}
 
 	private boolean isContentBottomTouchingWater(IconDrawTask iconTask)

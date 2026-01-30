@@ -51,8 +51,9 @@ public class SkiaMapCreatorTest
 	@AfterEach
 	public void cleanup()
 	{
-		// Reset to GPU mode after each test
 		GPUExecutor.setRenderingModeToDefault();
+		MapCreator.overrideMemoryMode(null);
+		ImageCache.clear();
 	}
 
 	@Test
@@ -60,6 +61,36 @@ public class SkiaMapCreatorTest
 	{
 		GPUExecutor.setRenderingMode(RenderingMode.GPU);
 		generateAndCompare("simpleSmallWorld.nort", (settings) -> settings.resolution = 0.25);
+	}
+
+	@Test
+	public void simpleSmallWorldLowMemoryMode()
+	{
+		GPUExecutor.setRenderingMode(RenderingMode.GPU);
+		String settingsPath = Paths.get("unit test files", "map settings", "simpleSmallWorld.nort").toString();
+
+		// Generate with high memory mode (hoisted pixel readers)
+		MapCreator.overrideMemoryMode(false);
+		MapSettings highMemSettings = new MapSettings(settingsPath);
+		highMemSettings.resolution = 0.25;
+		Image highMemoryResult = new MapCreator().createMap(highMemSettings, null, null);
+
+		// Generate with low memory mode (per-icon bounded pixel readers)
+		MapCreator.overrideMemoryMode(true);
+		MapSettings lowMemSettings = new MapSettings(settingsPath);
+		lowMemSettings.resolution = 0.25;
+		Image lowMemoryResult = new MapCreator().createMap(lowMemSettings, null, null);
+
+		// Both memory modes should produce identical output
+		String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(highMemoryResult, lowMemoryResult, 0);
+		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
+		{
+			FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
+			ImageHelper.write(highMemoryResult, Paths.get("unit test files", failedMapsFolderName, "simpleSmallWorldLowMemoryMode - highMemory.png").toString());
+			ImageHelper.write(lowMemoryResult, Paths.get("unit test files", failedMapsFolderName, "simpleSmallWorldLowMemoryMode - lowMemory.png").toString());
+			createImageDiffIfImagesAreSameSize(highMemoryResult, lowMemoryResult, "simpleSmallWorldLowMemoryMode");
+			fail("High memory mode and low memory mode results differ: " + comparisonErrorMessage);
+		}
 	}
 
 	@Test
