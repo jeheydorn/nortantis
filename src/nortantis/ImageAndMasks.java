@@ -3,7 +3,7 @@ package nortantis;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Stack;
+
 
 import nortantis.geom.IntPoint;
 import nortantis.geom.IntRectangle;
@@ -168,7 +168,8 @@ public class ImageAndMasks implements AutoCloseable
 
 	private void floodFillContentMask(int narrowPassageThreshold)
 	{
-		Stack<IntPoint> q = new Stack<>();
+		int width = image.getWidth();
+		int height = image.getHeight();
 
 		// Fill the content mask with white before creating the PixelReaderWriter,
 		// because SkiaPixelReaderWriter caches pixel data at construction time.
@@ -180,43 +181,40 @@ public class ImageAndMasks implements AutoCloseable
 
 		try (PixelReader imagePixels = image.createPixelReader(); PixelReaderWriter contentMaskPixels = contentMask.createPixelReaderWriter())
 		{
-			// Add the 4 corners of contentMask to q if their alpha is below opaqueThreshold.
+			boolean[][] visited = new boolean[width][height];
+
+			// Use an int[] queue with coordinates encoded as y * width + x to avoid IntPoint allocations.
+			int[] queue = new int[width * height];
+			int head = 0;
+			int tail = 0;
+
+			// Add the 4 corners of contentMask to the queue if their alpha is below opaqueThreshold.
 			if (imagePixels.getAlpha(0, 0) < opaqueThreshold)
 			{
-				q.push(new IntPoint(0, 0));
+				visited[0][0] = true;
+				queue[tail++] = 0;
 			}
-			if (imagePixels.getAlpha(contentMask.getWidth() - 1, 0) < opaqueThreshold)
+			if (imagePixels.getAlpha(width - 1, 0) < opaqueThreshold)
 			{
-				q.push(new IntPoint(contentMask.getWidth() - 1, 0));
+				visited[width - 1][0] = true;
+				queue[tail++] = width - 1;
 			}
-			if (imagePixels.getAlpha(0, contentMask.getHeight() - 1) < opaqueThreshold)
+			if (imagePixels.getAlpha(0, height - 1) < opaqueThreshold)
 			{
-				q.push(new IntPoint(0, contentMask.getHeight() - 1));
+				visited[0][height - 1] = true;
+				queue[tail++] = (height - 1) * width;
 			}
-			if (imagePixels.getAlpha(contentMask.getWidth() - 1, contentMask.getHeight() - 1) < opaqueThreshold)
+			if (imagePixels.getAlpha(width - 1, height - 1) < opaqueThreshold)
 			{
-				q.push(new IntPoint(contentMask.getWidth() - 1, contentMask.getHeight() - 1));
+				visited[width - 1][height - 1] = true;
+				queue[tail++] = (height - 1) * width + (width - 1);
 			}
 
-			boolean[][] visited = new boolean[image.getWidth()][image.getHeight()];
-			while (!q.isEmpty())
+			while (head < tail)
 			{
-				IntPoint next = q.pop();
-
-				int x = next.x;
-				int y = next.y;
-
-				if (x < 0 || x >= image.getWidth() || y < 0 || y >= image.getHeight() || visited[x][y])
-				{
-					continue;
-				}
-
-				if (visited[x][y])
-				{
-					continue;
-				}
-
-				visited[x][y] = true;
+				int encoded = queue[head++];
+				int x = encoded % width;
+				int y = encoded / width;
 
 				if (imagePixels.getAlpha(x, y) < opaqueThreshold)
 				{
@@ -225,17 +223,33 @@ public class ImageAndMasks implements AutoCloseable
 
 					if (!isNarrowPassage(imagePixels, x, y, narrowPassageThreshold))
 					{
-						// Add neighbors to the queue
-						q.push(new IntPoint(x + 1, y));
-						q.push(new IntPoint(x - 1, y));
-						q.push(new IntPoint(x, y + 1));
-						q.push(new IntPoint(x, y - 1));
+						// Add unvisited, in-bounds neighbors to the queue
+						if (x + 1 < width && !visited[x + 1][y])
+						{
+							visited[x + 1][y] = true;
+							queue[tail++] = y * width + (x + 1);
+						}
+						if (x - 1 >= 0 && !visited[x - 1][y])
+						{
+							visited[x - 1][y] = true;
+							queue[tail++] = y * width + (x - 1);
+						}
+						if (y + 1 < height && !visited[x][y + 1])
+						{
+							visited[x][y + 1] = true;
+							queue[tail++] = (y + 1) * width + x;
+						}
+						if (y - 1 >= 0 && !visited[x][y - 1])
+						{
+							visited[x][y - 1] = true;
+							queue[tail++] = (y - 1) * width + x;
+						}
 					}
 				}
 				else
 				{
 					// This pixel is part of the "content", so leave it white and add it to the content bounds.
-					addToContentBounds(next);
+					addToContentBounds(new IntPoint(x, y));
 				}
 			}
 		}
@@ -521,12 +535,6 @@ public class ImageAndMasks implements AutoCloseable
 				bottomSilhouette.close();
 			}
 		}
-	}
-
-	public synchronized Image cropToContent()
-	{
-		getOrCreateContentBounds();
-		return image.getSubImage(contentBounds);
 	}
 
 	public synchronized Image cropToContent(Image imageToCrop)
