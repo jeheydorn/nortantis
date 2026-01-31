@@ -1,5 +1,6 @@
 package nortantis.test;
 
+import nortantis.ImageCache;
 import nortantis.MapCreator;
 import nortantis.MapSettings;
 import nortantis.WorldGraph;
@@ -35,8 +36,9 @@ public class SkiaMapCreatorBenchmark
 	@AfterEach
 	public void cleanup()
 	{
-		// Reset to GPU mode after each test
 		GPUExecutor.setRenderingModeToDefault();
+		MapCreator.overrideMemoryMode(null);
+		ImageCache.clear();
 	}
 
 	@Test

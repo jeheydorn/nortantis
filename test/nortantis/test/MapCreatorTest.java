@@ -56,38 +56,6 @@ public class MapCreatorTest
 		}
 	}
 
-	// TODO remove when I'm done with it
-	// /**
-	// * Generates the upper-right quadrant of simpleSmallWorld using AWT rendering.
-	// * This is used by SkiaMapCreatorTest to compare Skia vs AWT rendering.
-	// */
-	// @Test
-	// public void simpleSmallWorldUpperRightQuadrant_generateForComparison()
-	// {
-	// String testName = "simpleSmallWorldUpperRightQuadrant_SkiaVsAwt";
-	// String settingsFileName = "simpleSmallWorld.nort";
-	// String settingsPath = Paths.get("unit test files", "map settings", settingsFileName).toString();
-	// MapSettings settings = new MapSettings(settingsPath);
-	// settings.resolution = 0.25;
-	//
-	// MapCreator mapCreator = new MapCreator();
-	// Image fullMap = mapCreator.createMap(settings, null, null);
-	//
-	// // Extract upper-right quadrant
-	// int quadrantWidth = fullMap.getWidth() / 2;
-	// int quadrantHeight = fullMap.getHeight() / 2;
-	// int quadrantX = fullMap.getWidth() - quadrantWidth;
-	// int quadrantY = 0;
-	// IntRectangle upperRightBounds = new IntRectangle(quadrantX, quadrantY, quadrantWidth, quadrantHeight);
-	// Image upperRightQuadrant = fullMap.copySubImage(upperRightBounds, false);
-	//
-	// // Save to the expected maps folder for Skia test to compare against
-	// String outputPath = Paths.get("unit test files", "expected maps skia", testName + " - awt.png").toString();
-	// FileHelper.createFolder(Paths.get("unit test files", "expected maps skia").toString());
-	// ImageHelper.write(upperRightQuadrant, outputPath);
-	// }
-
-	// Ignore these tests while working on Skia because they test AWT, not Skia. TODO - Put back later
 	@Test
 	public void incrementalUpdate_allTypesOfEdits()
 	{
@@ -149,8 +117,10 @@ public class MapCreatorTest
 			if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
 			{
 				FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
-				String failedMapName = settingsFileName + " full map for incremental draw test";
+				String failedMapName = FilenameUtils.getBaseName(settingsFileName) + " updated full map for incremental draw test";
 				ImageHelper.write(fullMapForUpdates, MapTestUtil.getFailedMapFilePath(failedMapName, failedMapsFolderName));
+				String fullMapName = FilenameUtils.getBaseName(settingsFileName) + " original full map for incremental draw test";
+				ImageHelper.write(fullMap, MapTestUtil.getFailedMapFilePath(fullMapName, failedMapsFolderName));
 				createImageDiffIfImagesAreSameSize(fullMap, fullMapForUpdates, failedMapName, diffThreshold);
 				fail("Incremental update did not match expected image: " + comparisonErrorMessage);
 			}
@@ -203,8 +173,10 @@ public class MapCreatorTest
 			if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
 			{
 				FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
-				String failedMapName = settingsFileName + " full map for incremental draw test";
+				String failedMapName = FilenameUtils.getBaseName(settingsFileName) + " updated full map for incremental draw test";
 				ImageHelper.write(fullMapForUpdates, MapTestUtil.getFailedMapFilePath(failedMapName, failedMapsFolderName));
+				String fullMapName = FilenameUtils.getBaseName(settingsFileName) + " original full map for incremental draw test";
+				ImageHelper.write(fullMap, MapTestUtil.getFailedMapFilePath(fullMapName, failedMapsFolderName));
 				createImageDiffIfImagesAreSameSize(fullMap, fullMapForUpdates, failedMapName, diffThreshold);
 				fail("Incremental update did not match expected image: " + comparisonErrorMessage);
 			}
