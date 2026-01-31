@@ -14,8 +14,8 @@ import nortantis.platform.BackgroundTask;
 import nortantis.platform.Image;
 import nortantis.platform.PlatformFactory;
 import nortantis.platform.awt.AwtBridge;
+import nortantis.platform.awt.AwtFactory;
 import nortantis.platform.skia.GPUExecutor;
-import nortantis.platform.skia.SkiaFactory;
 import nortantis.util.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -2094,7 +2094,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	{
 		GPUExecutor.setRenderingMode(GPUExecutor.RenderingMode.GPU);
 		// Tell drawing code to use either AWT (AwtFactory) or Skia (SkiaFactory).
-		PlatformFactory.setInstance(new SkiaFactory());
+		PlatformFactory.setInstance(new AwtFactory());
 
 		setLookAndFeel(UserPreferences.getInstance().lookAndFeel);
 
