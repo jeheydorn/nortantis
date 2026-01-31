@@ -132,6 +132,7 @@ public class IconsTool extends EditorTool
 	private RowHider brushAndEditOptionsSeparatorHider;
 	private JCheckBox fillWithColorCheckbox;
 	private RowHider fillColorHider;
+	private volatile long previewUpdateGeneration;
 
 	public IconsTool(MainWindow parent, ToolsPanel toolsPanel, MapUpdater mapUpdater)
 	{
@@ -1156,16 +1157,18 @@ public class IconsTool extends EditorTool
 		{
 			return;
 		}
-		updateOneIconTypeButtonPreviewImages(settings, IconType.mountains, mountainTypes, settings.customImagesPath);
-		updateOneIconTypeButtonPreviewImages(settings, IconType.hills, hillTypes, settings.customImagesPath);
-		updateOneIconTypeButtonPreviewImages(settings, IconType.sand, duneTypes, settings.customImagesPath);
-		updateOneIconTypeButtonPreviewImages(settings, IconType.trees, treeTypes, settings.customImagesPath);
+		previewUpdateGeneration++;
+		long generation = previewUpdateGeneration;
+		updateOneIconTypeButtonPreviewImages(settings, IconType.mountains, mountainTypes, settings.customImagesPath, generation);
+		updateOneIconTypeButtonPreviewImages(settings, IconType.hills, hillTypes, settings.customImagesPath, generation);
+		updateOneIconTypeButtonPreviewImages(settings, IconType.sand, duneTypes, settings.customImagesPath, generation);
+		updateOneIconTypeButtonPreviewImages(settings, IconType.trees, treeTypes, settings.customImagesPath, generation);
 
-		updateNamedIconButtonPreviewImages(settings, cityButtons);
-		updateNamedIconButtonPreviewImages(settings, decorationButtons);
+		updateNamedIconButtonPreviewImages(settings, cityButtons, generation);
+		updateNamedIconButtonPreviewImages(settings, decorationButtons, generation);
 	}
 
-	private void updateOneIconTypeButtonPreviewImages(MapSettings settings, IconType iconType, IconTypeButtons buttons, String customImagesPath)
+	private void updateOneIconTypeButtonPreviewImages(MapSettings settings, IconType iconType, IconTypeButtons buttons, String customImagesPath, long generation)
 	{
 		for (RadioButtonWithImage button : buttons.buttons)
 		{
@@ -1180,12 +1183,21 @@ public class IconsTool extends EditorTool
 				@Override
 				protected Image doInBackground() throws Exception
 				{
+					if (generation != previewUpdateGeneration)
+					{
+						return null;
+					}
 					return createIconPreviewForGroup(settings, iconType, buttonText, customImagesPath, iconColor, filterColor, maximizeOpacity, fillWithColor);
 				}
 
 				@Override
 				public void done()
 				{
+					if (generation != previewUpdateGeneration)
+					{
+						return;
+					}
+
 					Image previewImage;
 					try
 					{
@@ -1200,7 +1212,10 @@ public class IconsTool extends EditorTool
 						return;
 					}
 
-					button.setImage(AwtBridge.toBufferedImage(previewImage));
+					if (previewImage != null)
+					{
+						button.setImage(AwtBridge.toBufferedImage(previewImage));
+					}
 				}
 			};
 
@@ -1208,7 +1223,7 @@ public class IconsTool extends EditorTool
 		}
 	}
 
-	private void updateNamedIconButtonPreviewImages(MapSettings settings, NamedIconSelector selector)
+	private void updateNamedIconButtonPreviewImages(MapSettings settings, NamedIconSelector selector, long generation)
 	{
 		if (settings == null)
 		{
@@ -1238,6 +1253,11 @@ public class IconsTool extends EditorTool
 					@Override
 					protected List<Image> doInBackground() throws Exception
 					{
+						if (generation != previewUpdateGeneration)
+						{
+							return null;
+						}
+
 						List<Image> previewImages = new ArrayList<>();
 						Map<String, ImageAndMasks> iconsInGroup = ImageCache.getInstance(settings.artPack, settings.customImagesPath).getIconsByNameForGroup(selector.type, groupId);
 
@@ -1260,6 +1280,11 @@ public class IconsTool extends EditorTool
 					@Override
 					public void done()
 					{
+						if (generation != previewUpdateGeneration)
+						{
+							return;
+						}
+
 						List<Image> previewImages;
 						try
 						{
@@ -1271,6 +1296,11 @@ public class IconsTool extends EditorTool
 							Logger.printError(message, e);
 							e.printStackTrace();
 							JOptionPane.showMessageDialog(IconsTool.this.mainWindow, message, "Error", JOptionPane.ERROR_MESSAGE);
+							return;
+						}
+
+						if (previewImages == null)
+						{
 							return;
 						}
 
