@@ -1049,8 +1049,8 @@ public class IconDrawer
 	}
 
 	private void drawIconWithBackgroundAndMasksDirect(Image mapOrSnippet, ImageAndMasks imageAndMasks, Image landBackground, Image landTexture, Image oceanTexture, IconType type, int xLeft, int yTop,
-			int graphXLeft, int graphYTop, IntDimension mapOrSnippetSize, Image icon, Image contentMask, Image shadingMask, PixelReader hoistedLandTexturePixels,
-			PixelReader hoistedOceanTexturePixels, PixelReader hoistedLandBackgroundPixels)
+			int graphXLeft, int graphYTop, IntDimension mapOrSnippetSize, Image icon, Image contentMask, Image shadingMask, PixelReader hoistedLandTexturePixels, PixelReader hoistedOceanTexturePixels,
+			PixelReader hoistedLandBackgroundPixels)
 	{
 		IntRectangle iconBoundsInMapOrSnippet = new IntRectangle(xLeft, yTop, icon.getWidth(), icon.getHeight());
 
@@ -2091,6 +2091,7 @@ public class IconDrawer
 		final int imageUpperLeftY = (int) iconTask.centerLoc.y - iconTask.scaledSize.height / 2;
 
 		Rectangle scaledContentBounds;
+		double contentMidpointYInMaskSpace;
 		{
 			IntRectangle contentBounds = iconTask.unScaledImageAndMasks.getOrCreateContentBounds();
 			if (contentBounds == null)
@@ -2099,6 +2100,8 @@ public class IconDrawer
 				return false;
 			}
 
+			contentMidpointYInMaskSpace = contentBounds.y + contentBounds.height / 2.0;
+
 			final double xScaleToScaledIconSpace = iconTask.scaledSize.width / (double) iconTask.unScaledImageAndMasks.getOrCreateContentMask().getWidth();
 			final double yScaleToScaledIconSpace = iconTask.scaledSize.height / (double) iconTask.unScaledImageAndMasks.getOrCreateContentMask().getHeight();
 
@@ -2106,12 +2109,7 @@ public class IconDrawer
 					contentBounds.height * yScaleToScaledIconSpace);
 		}
 
-		// The constant in this number is in number of pixels at 100%
-		// resolution. I include the resolution here
-		// so that the loop below will make the same number of steps
-		// (approximately) no matter the resolution.
-		// This is to reduce the chances that icons will appear or disappear
-		// when you draw the map at a different resolution.
+		// The constant in this number is in number of pixels at 100% resolution. I include the resolution here so that the loop below will make the same number of steps (approximately) no matter the resolution. This is to reduce the chances that icons will appear or disappear when you draw the map at a different resolution.
 		final double stepSize = 2.0 * resolutionScale;
 
 		final double xScaleToMaskSpace = ((double) iconTask.unScaledImageAndMasks.getOrCreateContentMask().getWidth()) / iconTask.scaledSize.width;
@@ -2122,6 +2120,12 @@ public class IconDrawer
 			int xInMask = (int) (x * xScaleToMaskSpace);
 			Integer yInMask = iconTask.unScaledImageAndMasks.getContentYStart(xInMask);
 			if (yInMask == null)
+			{
+				continue;
+			}
+			// Skip columns where the content starts in the upper half of the content bounds.
+			// This avoids false positives from wide features like roofs that extend over water.
+			if (yInMask < contentMidpointYInMaskSpace)
 			{
 				continue;
 			}
