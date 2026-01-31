@@ -233,7 +233,7 @@ public class ImageCache
 									int r = Helper.linearComboBase255(filteredAlpha, filteredImageColor.getRed(), (int) (fillColor.getRed() * fillColorScale));
 									int g = Helper.linearComboBase255(filteredAlpha, filteredImageColor.getGreen(), (int) (fillColor.getGreen() * fillColorScale));
 									int b = Helper.linearComboBase255(filteredAlpha, filteredImageColor.getBlue(), (int) (fillColor.getBlue() * fillColorScale));
-									int a = Math.max(filteredAlpha, Math.min(fillColor.getAlpha(), colorMaskPixels.getGrayLevel(x, y)));
+									int a = Math.max(filteredAlpha, Math.min(fillWithColor ? fillColor.getAlpha() : 0, colorMaskPixels.getGrayLevel(x, y)));
 
 									resultPixels.setRGB(x, y, r, g, b, a);
 								}
@@ -279,11 +279,6 @@ public class ImageCache
 		{
 			return Assets.readImage(path.toString());
 		});
-	}
-
-	public boolean cacheContainsImageFile(Path path)
-	{
-		return fileCache.containsKey(path.toString());
 	}
 
 	public ImageAndMasks getImageAndMasks(FreeIcon icon)
