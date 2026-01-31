@@ -64,6 +64,7 @@ import nortantis.editor.CenterTrees;
 import nortantis.editor.FreeIcon;
 import nortantis.editor.UserPreferences;
 import nortantis.geom.IntDimension;
+import nortantis.geom.IntRectangle;
 import nortantis.geom.Point;
 import nortantis.graph.voronoi.Center;
 import nortantis.platform.Font;
@@ -104,7 +105,7 @@ public class ThemePanel extends JTabbedPane
 	private BGColorPreviewPanel oceanDisplayPanel;
 	private BGColorPreviewPanel landDisplayPanel;
 	private ActionListener backgroundImageButtonGroupListener;
-	private Dimension backgroundDisplaySize = new Dimension(150, 110);
+	private static final Dimension backgroundDisplaySize = new Dimension(150, 110);
 	private JComboBox<LandColoringMethod> landColoringMethodComboBox;
 	private JSlider grungeSlider;
 	private JTextField textureImageFilename;
@@ -1550,6 +1551,7 @@ public class ThemePanel extends JTabbedPane
 
 	private void updateBackgroundImageDisplays()
 	{
+		clearBackgroundImageCache();
 		IntDimension size = new IntDimension(backgroundDisplaySize.width, backgroundDisplaySize.height);
 
 		SwingWorker<Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm>, Void> worker = new SwingWorker<Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm>, Void>()
@@ -1615,7 +1617,53 @@ public class ThemePanel extends JTabbedPane
 	static Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm> createBackgroundImageDisplayImages(IntDimension size, long seed, boolean colorizeOcean,
 			boolean colorizeLand, boolean isFractal, boolean isFromTexture, boolean isSolidColor, String textureImageFileName)
 	{
+		synchronized (bgCacheLock)
+		{
+			if (bgCache == null)
+			{
+				bgCache = new BackgroundImageCache(backgroundDisplaySize.width, backgroundDisplaySize.height);
+			}
 
+			// Update max size (grows monotonically)
+			bgCache.maxWidth = Math.max(bgCache.maxWidth, size.width);
+			bgCache.maxHeight = Math.max(bgCache.maxHeight, size.height);
+
+			// Check for cache hit: cached size is large enough
+			if (bgCache.hasImages() && bgCache.generatedSize.width >= size.width && bgCache.generatedSize.height >= size.height)
+			{
+				return cropFromCache(bgCache, size);
+			}
+
+			// Cache miss — generate at the max size
+			IntDimension generateSize = new IntDimension(bgCache.maxWidth, bgCache.maxHeight);
+			Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm> generated = generateBackgroundImages(generateSize, seed, colorizeOcean,
+					colorizeLand, isFractal, isFromTexture, isSolidColor, textureImageFileName);
+
+			// Store in cache
+			bgCache.oceanBackground = generated.getFirst();
+			bgCache.oceanColorifyAlgorithm = generated.getSecond();
+			bgCache.landBackground = generated.getThird();
+			bgCache.landColorifyAlgorithm = generated.getFourth();
+			bgCache.generatedSize = generateSize;
+
+			return cropFromCache(bgCache, size);
+		}
+	}
+
+	private static Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm> cropFromCache(BackgroundImageCache cache, IntDimension size)
+	{
+		IntRectangle cropBounds = new IntRectangle(0, 0, size.width, size.height);
+
+		boolean sameInstance = cache.oceanBackground == cache.landBackground;
+		Image oceanCropped = cache.oceanBackground.copySubImage(cropBounds);
+		Image landCropped = sameInstance ? oceanCropped : cache.landBackground.copySubImage(cropBounds);
+
+		return new Tuple4<>(oceanCropped, cache.oceanColorifyAlgorithm, landCropped, cache.landColorifyAlgorithm);
+	}
+
+	private static Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm> generateBackgroundImages(IntDimension size, long seed, boolean colorizeOcean,
+			boolean colorizeLand, boolean isFractal, boolean isFromTexture, boolean isSolidColor, String textureImageFileName)
+	{
 		Image oceanBackground;
 		ImageHelper.ColorifyAlgorithm oceanColorifyAlgorithm;
 		Image landBackground;
@@ -2231,5 +2279,53 @@ public class ThemePanel extends JTabbedPane
 	void handleImagesRefresh(MapSettings settings)
 	{
 		initializeComboBoxItems(settings);
+	}
+
+	private static final Object bgCacheLock = new Object();
+	private static BackgroundImageCache bgCache;
+
+	static void clearBackgroundImageCache()
+	{
+		synchronized (bgCacheLock)
+		{
+			if (bgCache != null)
+			{
+				bgCache.clearImages();
+			}
+		}
+	}
+
+	private static class BackgroundImageCache
+	{
+		// Never invalidated — grows monotonically
+		int maxWidth;
+		int maxHeight;
+
+		// Invalidated on background setting changes or explicit clear
+		Image oceanBackground;
+		ImageHelper.ColorifyAlgorithm oceanColorifyAlgorithm;
+		Image landBackground;
+		ImageHelper.ColorifyAlgorithm landColorifyAlgorithm;
+		IntDimension generatedSize;
+
+		BackgroundImageCache(int initialMaxWidth, int initialMaxHeight)
+		{
+			this.maxWidth = initialMaxWidth;
+			this.maxHeight = initialMaxHeight;
+		}
+
+		boolean hasImages()
+		{
+			return oceanBackground != null;
+		}
+
+		void clearImages()
+		{
+			oceanBackground = null;
+			oceanColorifyAlgorithm = null;
+			landBackground = null;
+			landColorifyAlgorithm = null;
+			generatedSize = null;
+		}
 	}
 }

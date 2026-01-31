@@ -1296,6 +1296,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		updater.setEnabled(false);
 		undoer.setEnabled(false);
 		ImageCache.clear();
+		ThemePanel.clearBackgroundImageCache();
 		MapSettings settings = getSettingsFromGUI(false);
 		themePanel.handleImagesRefresh(settings);
 		// Tell Icons tool to refresh image previews
