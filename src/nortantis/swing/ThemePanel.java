@@ -1714,8 +1714,9 @@ public class ThemePanel extends JTabbedPane
 
 	/**
 	 * Loads a map settings file into the GUI.
+	 * @return Whether the change affects background images (to signal to the IconsTool that it needs to regenerate preview images).
 	 */
-	public void loadSettingsIntoGUI(MapSettings settings)
+	public boolean loadSettingsIntoGUI(MapSettings settings)
 	{
 		boolean changeEffectsBackgroundImages = doesChangeEffectBackgroundDisplays(settings);
 
@@ -1894,6 +1895,8 @@ public class ThemePanel extends JTabbedPane
 		// For some reason I have to repaint to get color display panels to draw
 		// correctly.
 		repaint();
+
+		return changeEffectsBackgroundImages;
 	}
 
 	private final double scaleMax = 3.0;

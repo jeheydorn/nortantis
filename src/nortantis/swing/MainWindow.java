@@ -1994,8 +1994,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		undoer.setEnabled(false);
 		customImagesPath = settings.customImagesPath;
 		edits = settings.edits;
-		themePanel.loadSettingsIntoGUI(settings);
-		toolsPanel.loadSettingsIntoGUI(settings, isUndoRedoOrAutomaticChange, true, willDoImagesRefresh);
+		boolean changeEffectsBackgroundImages = themePanel.loadSettingsIntoGUI(settings);
+		toolsPanel.loadSettingsIntoGUI(settings, isUndoRedoOrAutomaticChange, changeEffectsBackgroundImages, willDoImagesRefresh);
 		undoer.setEnabled(true);
 		updater.setEnabled(true);
 	}
