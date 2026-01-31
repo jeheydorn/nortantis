@@ -362,7 +362,7 @@ public class MapCreator implements WarningLogger
 			}
 			else
 			{
-				landTextureSnippet = ImageHelper.copySnippet(mapParts.background.land, drawBounds.toIntRectangle());
+				landTextureSnippet = mapParts.background.land.copySubImage(drawBounds.toIntRectangle());
 			}
 
 			checkForCancel();
@@ -379,7 +379,7 @@ public class MapCreator implements WarningLogger
 
 				if (settings.drawRegionColors)
 				{
-					landColoredBeforeAddingIconColors = ImageHelper.copySnippet(mapParts.background.landColoredBeforeAddingIconColors, drawBounds.toIntRectangle());
+					landColoredBeforeAddingIconColors = mapParts.background.landColoredBeforeAddingIconColors.copySubImage(drawBounds.toIntRectangle());
 					landBackground = darkenLandNearCoastlinesAndRegionBorders(settings, mapParts.graph, settings.resolution, landColoredBeforeAddingIconColors, mapParts.background, coastShading,
 							centersToDraw, drawBounds, false).getFirst();
 				}
@@ -493,8 +493,8 @@ public class MapCreator implements WarningLogger
 		}
 		else
 		{
-			mapSnippet = ImageHelper.copySnippet(mapParts.mapBeforeAddingText, drawBounds.toIntRectangle());
-			textBackground = ImageHelper.copySnippet(mapParts.textBackground, drawBounds.toIntRectangle());
+			mapSnippet = mapParts.mapBeforeAddingText.copySubImage(drawBounds.toIntRectangle());
+			textBackground = mapParts.textBackground.copySubImage(drawBounds.toIntRectangle());
 		}
 
 		if (settings.drawText)

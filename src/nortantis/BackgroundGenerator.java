@@ -1,5 +1,6 @@
 package nortantis;
 
+import nortantis.geom.IntRectangle;
 import nortantis.platform.*;
 import nortantis.platform.awt.AwtFactory;
 import nortantis.util.ImageHelper;
@@ -157,7 +158,7 @@ public class BackgroundGenerator
 		}
 
 		Image result = ImageHelper.matchHistogram(allChannels, colorsForHistogramMatching);
-		result = ImageHelper.copySnippet(result, 0, 0, targetCols, targetRows);
+		result = result.copySubImage(new IntRectangle(0, 0, targetCols, targetRows));
 
 		return result;
 	}
@@ -193,7 +194,7 @@ public class BackgroundGenerator
 		}
 
 		// The texture is wider and taller than we need it to be. Return a piece cropped out of the middle.
-		return ImageHelper.copySnippet(texture, (texture.getWidth() - cols) / 2, (texture.getHeight() - rows) / 2, cols, rows);
+		return texture.copySubImage(new IntRectangle((texture.getWidth() - cols) / 2, (texture.getHeight() - rows) / 2, cols, rows));
 	}
 
 	private static Image scaleTextureLargerIfNeeded(Image texture, int rows, int cols)

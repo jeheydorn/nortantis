@@ -3,15 +3,12 @@ package nortantis.platform.awt;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferInt;
-import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
 
 import org.imgscalr.Scalr;
 import org.imgscalr.Scalr.Method;
 
 import nortantis.geom.IntRectangle;
-import nortantis.platform.Color;
 import nortantis.platform.DrawQuality;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
@@ -20,7 +17,6 @@ import nortantis.platform.PixelReader;
 import nortantis.platform.PixelReaderWriter;
 import nortantis.platform.PixelWriter;
 import nortantis.util.ImageHelper;
-import nortantis.util.Logger;
 
 class AwtImage extends Image
 {
@@ -48,27 +44,49 @@ class AwtImage extends Image
 		return type == BufferedImage.TYPE_INT_RGB || type == BufferedImage.TYPE_INT_ARGB;
 	}
 
+	boolean isCompatibleByteFormat()
+	{
+		int type = image.getType();
+		return type == BufferedImage.TYPE_BYTE_GRAY || type == BufferedImage.TYPE_BYTE_BINARY || type == BufferedImage.TYPE_USHORT_GRAY;
+	}
+
 	@Override
 	public PixelReader createPixelReader()
 	{
-		return new AwtPixelReader(this);
+		return createPixelReader(null);
 	}
 
 	@Override
 	public PixelReaderWriter createPixelReaderWriter()
 	{
-		return new AwtPixelReaderWriter(this);
+		return createPixelReaderWriter(null);
 	}
 
 	@Override
 	public PixelReader innerCreateNewPixelReader(IntRectangle bounds)
 	{
+		if (isCompatibleIntFormat())
+		{
+			return new AwtIntPixelReader(this, bounds);
+		}
+		if (isCompatibleByteFormat())
+		{
+			return new AwtGrayscalePixelReader(this, bounds);
+		}
 		return new AwtPixelReader(this, bounds);
 	}
 
 	@Override
 	public PixelReaderWriter innerCreateNewPixelReaderWriter(IntRectangle bounds)
 	{
+		if (isCompatibleIntFormat())
+		{
+			return new AwtIntPixelReaderWriter(this, bounds);
+		}
+		if (isCompatibleByteFormat())
+		{
+			return new AwtGrayscalePixelReaderWriter(this, bounds);
+		}
 		return new AwtPixelReaderWriter(this, bounds);
 	}
 
@@ -76,6 +94,14 @@ class AwtImage extends Image
 	protected PixelWriter innerCreateNewPixelWriter(IntRectangle bounds)
 	{
 		// AWT uses a backing array reference, so no initial read is needed anyway
+		if (isCompatibleIntFormat())
+		{
+			return new AwtIntPixelReaderWriter(this, bounds);
+		}
+		if (isCompatibleByteFormat())
+		{
+			return new AwtGrayscalePixelReaderWriter(this, bounds);
+		}
 		return new AwtPixelReaderWriter(this, bounds);
 	}
 
@@ -227,11 +253,20 @@ class AwtImage extends Image
 	@Override
 	public Image copySubImage(IntRectangle bounds, boolean addAlphaChanel)
 	{
-		Image sub = getSubImage(bounds);
-		Image result = Image.create(bounds.width, bounds.height, addAlphaChanel ? ImageType.ARGB : getType());
+		IntRectangle imageBounds = new IntRectangle(0, 0, getWidth(), getHeight());
+		IntRectangle clipped = bounds.findIntersection(imageBounds);
+
+		ImageType resultType = addAlphaChanel ? ImageType.ARGB : getType();
+		Image result = Image.create(bounds.width, bounds.height, resultType);
+		if (clipped == null || clipped.width <= 0 || clipped.height <= 0)
+		{
+			return result;
+		}
+
+		Image sub = getSubImage(clipped);
 		try (Painter p = result.createPainter())
 		{
-			p.drawImage(sub, 0, 0);
+			p.drawImage(sub, clipped.x - bounds.x, clipped.y - bounds.y);
 		}
 		return result;
 	}

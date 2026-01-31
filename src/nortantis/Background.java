@@ -340,7 +340,7 @@ public class Background
 			// The border is drawn over the map, so there is no padding to remove.
 			return image;
 		}
-		return ImageHelper.copySnippet(image, borderWidthScaled, borderWidthScaled, (int) (image.getWidth() - borderWidthScaled * 2), (int) (image.getHeight() - borderWidthScaled * 2));
+		return image.copySubImage(new IntRectangle(borderWidthScaled, borderWidthScaled, (int) (image.getWidth() - borderWidthScaled * 2), (int) (image.getHeight() - borderWidthScaled * 2)));
 	}
 
 	public void doSetupThatNeedsGraphAndIcons(MapSettings settings, WorldGraph graph, List<IconDrawTask> tasks, Set<Center> centersToDraw, Rectangle drawBounds, Rectangle replaceBounds)
@@ -440,7 +440,7 @@ public class Background
 
 	public Image createOceanSnippet(Rectangle boundsToCopyFrom)
 	{
-		return ImageHelper.copySnippet(ocean, boundsToCopyFrom.toIntRectangle());
+		return ocean.copySubImage(boundsToCopyFrom.toIntRectangle());
 	}
 
 	public Image addBorder(Image map)
@@ -711,7 +711,7 @@ public class Background
 
 					// The image is too long/tall to draw in the remaining
 					// space.
-					try (Image partToDraw = ImageHelper.copySnippet(edge, 0, 0, distanceRemaining, borderWidthScaled); Painter p = result.createPainter())
+					try (Image partToDraw = edge.copySubImage(new IntRectangle(0, 0, distanceRemaining, borderWidthScaled)); Painter p = result.createPainter())
 					{
 						p.setAlphaComposite(alphaCompositeForDrawingCornersAndEdges);
 						p.drawImage(partToDraw, x - xOffset, y - yOffset);
@@ -769,7 +769,7 @@ public class Background
 
 					// The image is too long/tall to draw in the remaining
 					// space.
-					try (Image partToDraw = ImageHelper.copySnippet(edge, 0, 0, borderWidthScaled, distanceRemaining); Painter p = result.createPainter())
+					try (Image partToDraw = edge.copySubImage(new IntRectangle(0, 0, borderWidthScaled, distanceRemaining)); Painter p = result.createPainter())
 					{
 						p.setAlphaComposite(alphaCompositeForDrawingCornersAndEdges);
 						p.drawImage(partToDraw, x - xOffset, y - yOffset);

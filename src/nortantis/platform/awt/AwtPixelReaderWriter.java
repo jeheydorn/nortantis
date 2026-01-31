@@ -6,11 +6,6 @@ import nortantis.platform.PixelReaderWriter;
 
 public class AwtPixelReaderWriter extends AwtPixelReader implements PixelReaderWriter
 {
-	AwtPixelReaderWriter(AwtImage image)
-	{
-		this(image, null);
-	}
-
 	AwtPixelReaderWriter(AwtImage image, IntRectangle bounds)
 	{
 		super(image, bounds);
@@ -31,11 +26,6 @@ public class AwtPixelReaderWriter extends AwtPixelReader implements PixelReaderW
 	@Override
 	public void setRGB(int x, int y, int rgb)
 	{
-		if (cachedPixelArray != null)
-		{
-			cachedPixelArray[(y * image.getWidth()) + x] = rgb;
-			return;
-		}
 		bufferedImage.setRGB(x, y, rgb);
 	}
 

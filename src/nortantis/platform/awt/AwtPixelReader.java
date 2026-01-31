@@ -6,15 +6,13 @@ import nortantis.platform.Image;
 import nortantis.platform.PixelReader;
 
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferInt;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
 
 public class AwtPixelReader implements PixelReader
 {
-	protected int[] cachedPixelArray;
 	protected final BufferedImage bufferedImage;
-	WritableRaster raster;
+	protected WritableRaster raster;
 	Raster alphaRaster;
 	protected final float maxPixelLevelAsFloat;
 	protected final Image image;
@@ -25,15 +23,6 @@ public class AwtPixelReader implements PixelReader
 		bufferedImage = AwtFactory.unwrap(image);
 		maxPixelLevelAsFloat = image.getMaxPixelLevel();
 		createRasters();
-		if (image.isCompatibleIntFormat())
-		{
-			this.cachedPixelArray = ((DataBufferInt) raster.getDataBuffer()).getData();
-		}
-	}
-
-	AwtPixelReader(AwtImage image)
-	{
-		this(image, null);
 	}
 
 	private void createRasters()
@@ -61,17 +50,6 @@ public class AwtPixelReader implements PixelReader
 	@Override
 	public int getRGB(int x, int y)
 	{
-		if (cachedPixelArray != null)
-		{
-			int rgb = cachedPixelArray[(y * image.getWidth()) + x];
-			// For non-alpha images (TYPE_INT_RGB), the high byte is undefined garbage.
-			// Normalize it to 0xFF to match BufferedImage.getRGB() behavior.
-			if (!image.hasAlpha())
-			{
-				rgb |= 0xFF000000;
-			}
-			return rgb;
-		}
 		return bufferedImage.getRGB(x, y);
 	}
 

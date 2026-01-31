@@ -172,7 +172,7 @@ public class ImageHelperTest
 	public void testCopySnippet()
 	{
 		Image source = createColorTestImage();
-		Image snippet = ImageHelper.copySnippet(source, 20, 20, 40, 40);
+		Image snippet = source.copySubImage(new IntRectangle(20, 20, 40, 40));
 
 		assertEquals(40, snippet.getWidth(), "Snippet width should be 40");
 		assertEquals(40, snippet.getHeight(), "Snippet height should be 40");
@@ -184,7 +184,7 @@ public class ImageHelperTest
 	{
 		Image source = createColorTestImage();
 		IntRectangle bounds = new IntRectangle(10, 10, 60, 60);
-		Image snippet = ImageHelper.copySnippet(source, bounds);
+		Image snippet = source.copySubImage(bounds);
 
 		assertEquals(60, snippet.getWidth(), "Snippet width should be 60");
 		assertEquals(60, snippet.getHeight(), "Snippet height should be 60");

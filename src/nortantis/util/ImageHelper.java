@@ -999,22 +999,6 @@ public class ImageHelper
 
 	/**
 	 *
-	 * Creates a copy of a piece of an image.
-	 *
-	 * It is important that the result is a copy even if the desired region is exactly the input.
-	 */
-	public static Image copySnippet(Image source, int xLoc, int yLoc, int width, int height)
-	{
-		return source.copySubImage(new IntRectangle(xLoc, yLoc, width, height));
-	}
-
-	public static Image copySnippet(Image source, IntRectangle boundsInSourceToCopyFrom)
-	{
-		return source.copySubImage(boundsInSourceToCopyFrom);
-	}
-
-	/**
-	 *
 	 * Creates a copy of a piece of an image, preserving the color of transparent pixels. This is the same as copySnippet if the snippet is
 	 * only for being displayed, but when combining with layers with alpha later, it can make a difference. Also, this version is much
 	 * slower.
@@ -1601,7 +1585,7 @@ public class ImageHelper
 		Image imageToUse = image;
 		if (where != null)
 		{
-			imageToUse = image.getSubImage(new IntRectangle(where, colorIndexes.getWidth(), colorIndexes.getHeight()));
+			imageToUse = image.copySubImage(new IntRectangle(where, colorIndexes.getWidth(), colorIndexes.getHeight()));
 		}
 
 		// Use Skia shader implementation when images are SkiaImages
@@ -2051,7 +2035,7 @@ public class ImageHelper
 		// keeping only the blur that came off the white lines.
 		try (Image blurredBoxTemp = blurredBox)
 		{
-			blurredBox = ImageHelper.copySnippet(blurredBoxTemp, new IntRectangle(lineWidth, lineWidth, blurLevel + 1, blurLevel + 1));
+			blurredBox = blurredBoxTemp.copySubImage(new IntRectangle(lineWidth, lineWidth, blurLevel + 1, blurLevel + 1));
 		}
 
 		// Multiply the image by blurBox. Also remove the padded edges off of blurBox.
