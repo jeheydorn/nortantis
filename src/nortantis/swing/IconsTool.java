@@ -1396,7 +1396,7 @@ public class IconsTool extends EditorTool
 		Image previewImage;
 
 		Path backgroundImagePath = settings.getBackgroundImagePath().getFirst();
-		Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm> tuple = ThemePanel.createBackgroundImageDisplaysImages(size, settings.backgroundRandomSeed,
+		Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm> tuple = ThemePanel.createBackgroundImageDisplayImages(size, settings.backgroundRandomSeed,
 				settings.colorizeOcean, settings.colorizeLand, settings.generateBackground, settings.generateBackgroundFromTexture, settings.solidColorBackground,
 				backgroundImagePath == null ? null : backgroundImagePath.toString());
 		if (iconType == IconType.decorations)

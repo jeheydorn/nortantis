@@ -1,11 +1,15 @@
 package nortantis.test;
 
 import nortantis.*;
+import nortantis.editor.CenterEdit;
+import nortantis.editor.CenterIcon;
+import nortantis.editor.CenterIconType;
 import nortantis.editor.FreeIcon;
 import nortantis.editor.MapParts;
 import nortantis.editor.MapUpdater;
 import nortantis.geom.IntPoint;
 import nortantis.geom.IntRectangle;
+import nortantis.graph.voronoi.Center;
 import nortantis.platform.*;
 import nortantis.platform.awt.AwtFactory;
 import nortantis.swing.MapEdits;
@@ -558,6 +562,183 @@ public class MapCreatorTest
 		generateAndCompare("clearedMapRegionEdit0Removed.nort");
 	}
 
+
+	/**
+	 * Tests that adding a mountain via CenterIcon (the editor's Draw mode) produces the same result
+	 * as a full draw. This uses the incrementalUpdateForCentersAndEdges path.
+	 */
+	@Test
+	public void incrementalUpdate_drawMountainViaCenterIcon()
+	{
+		String settingsFileName = "simpleSmallWorld.nort";
+		String settingsPath = Paths.get("unit test files", "map settings", settingsFileName).toString();
+		MapSettings settings = new MapSettings(settingsPath);
+		final int diffThreshold = 15;
+
+		// Create the initial map to populate the graph and freeIcons.
+		MapCreator mapCreator = new MapCreator();
+		MapParts mapParts = new MapParts();
+		Image initialMap = mapCreator.createMap(settings, null, mapParts);
+
+		// Find a land center near the map center.
+		double mapCenterY = mapParts.graph.bounds.height / 2.0;
+		double mapCenterX = mapParts.graph.bounds.width / 2.0;
+		Center targetCenter = null;
+		double bestDist = Double.MAX_VALUE;
+		for (Center c : mapParts.graph.centers)
+		{
+			if (c.isWater || c.isCoast)
+			{
+				continue;
+			}
+			double dist = Math.sqrt(Math.pow(c.loc.x - mapCenterX, 2) + Math.pow(c.loc.y - mapCenterY, 2));
+			if (dist < bestDist)
+			{
+				bestDist = dist;
+				targetCenter = c;
+			}
+		}
+		assertNotNull(targetCenter, "Need a land center near the map center");
+
+		// Add a mountain at the target center via CenterIcon (what the editor's Draw mode does).
+		CenterEdit cEdit = settings.edits.centerEdits.get(targetCenter.index);
+		settings.edits.centerEdits.put(targetCenter.index,
+				cEdit.copyWithIcon(new CenterIcon(CenterIconType.Mountain, Assets.installedArtPack, "round", 0)));
+
+		// Do the incremental update using the centers-and-edges path (same as editor Draw mode).
+		IntRectangle changedBounds = mapCreator.incrementalUpdateForCentersAndEdges(
+				settings, mapParts, initialMap, Set.of(targetCenter.index), null, false);
+		assertNotNull(changedBounds, "Incremental update should produce bounds");
+
+		// Create the expected result with a full draw.
+		MapParts expectedParts = new MapParts();
+		Image expectedMap = mapCreator.createMap(settings, null, expectedParts);
+
+		// Compare the changed region.
+		Image expectedSnippet = expectedMap.getSubImage(changedBounds);
+		Image actualSnippet = initialMap.getSubImage(changedBounds);
+
+		String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(expectedSnippet, actualSnippet, diffThreshold);
+		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
+		{
+			FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
+			ImageHelper.write(expectedSnippet, Paths.get("unit test files", failedMapsFolderName, "drawMountain expected snippet.png").toString());
+			ImageHelper.write(actualSnippet, Paths.get("unit test files", failedMapsFolderName, "drawMountain actual snippet.png").toString());
+			ImageHelper.write(expectedMap, Paths.get("unit test files", failedMapsFolderName, "drawMountain expected full.png").toString());
+			ImageHelper.write(initialMap, Paths.get("unit test files", failedMapsFolderName, "drawMountain actual full.png").toString());
+			fail("Incremental update after drawing mountain via CenterIcon at center " + targetCenter.index
+					+ " did not match full draw: " + comparisonErrorMessage);
+		}
+	}
+
+	@Test
+	public void incrementalUpdate_addRandomIcons_simpleSmallWorld()
+	{
+		String settingsFileName = "simpleSmallWorld.nort";
+		String settingsPath = Paths.get("unit test files", "map settings", settingsFileName).toString();
+		MapSettings settings = new MapSettings(settingsPath);
+		settings.resolution = 0.25;
+		// Threshold of 15 to accommodate minor AWT rendering variance at effects padding boundaries.
+		final int diffThreshold = 15;
+
+		// Create an initial map to establish the graph so we can pick land
+		// centers to place icons on.
+		MapCreator mapCreator = new MapCreator();
+		MapParts setupParts = new MapParts();
+		mapCreator.createMap(settings, null, setupParts);
+
+		// Pick random land centers to place icons on.
+		Random rand = new Random(42);
+		List<Center> landCenters = new ArrayList<>();
+		for (Center c : setupParts.graph.centers)
+		{
+			if (!c.isWater && !c.isCoast)
+			{
+				landCenters.add(c);
+			}
+		}
+		assertTrue(landCenters.size() >= 10, "Need at least 10 land centers for the test");
+
+		// Create new icons at random land positions and add them to edits.
+		int iconCount = 10;
+		List<FreeIcon> addedIcons = new ArrayList<>();
+		for (int i = 0; i < iconCount; i++)
+		{
+			Center center = landCenters.get(rand.nextInt(landCenters.size()));
+			nortantis.geom.Point loc = new nortantis.geom.Point(center.loc.x * settings.resolution, center.loc.y * settings.resolution);
+
+			FreeIcon icon;
+			if (i % 3 == 0)
+			{
+				icon = new FreeIcon(settings.resolution, loc, 1.0, IconType.mountains, Assets.installedArtPack, "round", rand.nextInt(100), center.index, nortantis.platform.Color.create(0, 0, 0),
+						new HSBColor(0, 0, 100, 0), false, false);
+			}
+			else if (i % 3 == 1)
+			{
+				icon = new FreeIcon(settings.resolution, loc, 1.0, IconType.hills, Assets.installedArtPack, "round", rand.nextInt(100), center.index, nortantis.platform.Color.create(0, 0, 0),
+						new HSBColor(0, 0, 100, 0), false, false);
+			}
+			else
+			{
+				icon = new FreeIcon(settings.resolution, loc, 1.0, IconType.cities, Assets.installedArtPack, "flat", "town", center.index, nortantis.platform.Color.create(0, 0, 0),
+						new HSBColor(0, 0, 100, 0), false, false);
+			}
+
+			settings.edits.freeIcons.addOrReplace(icon);
+			addedIcons.add(icon);
+		}
+
+		// Create the full map with all icons present (the expected result).
+		// Use fresh MapParts so incremental updates share the same state.
+		MapParts mapParts = new MapParts();
+		Image fullMap = mapCreator.createMap(settings, null, mapParts);
+
+		// Create a deep copy and incrementally redraw each added icon's area.
+		Image fullMapForUpdates = fullMap.deepCopy();
+		int failCount = 0;
+		for (int i = 0; i < addedIcons.size(); i++)
+		{
+			FreeIcon icon = addedIcons.get(i);
+			IntRectangle changedBounds = mapCreator.incrementalUpdateIcons(settings, mapParts, fullMapForUpdates, Arrays.asList(icon));
+
+			assertTrue(changedBounds != null, "Incremental update should produce bounds for icon " + i);
+			assertTrue(changedBounds.width > 0);
+			assertTrue(changedBounds.height > 0);
+
+			Image expectedSnippet = fullMap.getSubImage(changedBounds);
+			Image actualSnippet = fullMapForUpdates.getSubImage(changedBounds);
+
+			String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(expectedSnippet, actualSnippet, diffThreshold);
+			if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
+			{
+				FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
+
+				String expectedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " added icon " + i + " expected.png";
+				ImageHelper.write(expectedSnippet, Paths.get("unit test files", failedMapsFolderName, expectedSnippetName).toString());
+
+				String failedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " added icon " + i + " failed.png";
+				ImageHelper.write(actualSnippet, Paths.get("unit test files", failedMapsFolderName, failedSnippetName).toString());
+
+				failCount++;
+			}
+		}
+
+		String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(fullMap, fullMapForUpdates, diffThreshold);
+		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
+		{
+			FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
+			String failedMapName = FilenameUtils.getBaseName(settingsFileName) + " added icons full map";
+			ImageHelper.write(fullMapForUpdates, MapTestUtil.getFailedMapFilePath(failedMapName, failedMapsFolderName));
+			String fullMapName = FilenameUtils.getBaseName(settingsFileName) + " added icons expected full map";
+			ImageHelper.write(fullMap, MapTestUtil.getFailedMapFilePath(fullMapName, failedMapsFolderName));
+			fail("Full map after incremental icon additions did not match expected: " + comparisonErrorMessage);
+		}
+
+		if (failCount > 0)
+		{
+			fail(failCount + " incremental icon addition tests failed.");
+		}
+	}
 
 	private Image createMapUsingUpdater(MapUpdater updater, Tuple1<Image> mapTuple, Tuple1<Boolean> doneTuple)
 	{

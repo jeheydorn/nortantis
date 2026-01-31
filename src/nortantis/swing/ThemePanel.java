@@ -1572,7 +1572,7 @@ public class ThemePanel extends JTabbedPane
 				}
 
 				long seed = parseBackgroundSeed();
-				return createBackgroundImageDisplaysImages(size, seed, colorizeOceanCheckbox.isSelected(), colorizeLandCheckbox.isSelected(), rdbtnFractal.isSelected(),
+				return createBackgroundImageDisplayImages(size, seed, colorizeOceanCheckbox.isSelected(), colorizeLandCheckbox.isSelected(), rdbtnFractal.isSelected(),
 						rdbtnGeneratedFromTexture.isSelected(), solidColorButton.isSelected(), texturePath);
 			}
 
@@ -1612,7 +1612,7 @@ public class ThemePanel extends JTabbedPane
 		worker.execute();
 	}
 
-	static Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm> createBackgroundImageDisplaysImages(IntDimension size, long seed, boolean colorizeOcean,
+	static Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm> createBackgroundImageDisplayImages(IntDimension size, long seed, boolean colorizeOcean,
 			boolean colorizeLand, boolean isFractal, boolean isFromTexture, boolean isSolidColor, String textureImageFileName)
 	{
 

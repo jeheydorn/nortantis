@@ -2135,6 +2135,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	 */
 	public static void main(String[] args)
 	{
+		// Rendering mode only matters when using SkiaFactory for the PlatformFactory.
 		GPUExecutor.setRenderingMode(GPUExecutor.RenderingMode.GPU);
 		// Tell drawing code to use either AWT (AwtFactory) or Skia (SkiaFactory).
 		PlatformFactory.setInstance(new AwtFactory());
