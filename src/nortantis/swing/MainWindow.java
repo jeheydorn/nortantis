@@ -30,6 +30,7 @@ import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileSystemView;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -505,9 +506,26 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 
 			@Override
-			protected void onFinishedDrawing(Image map, boolean anotherDrawIsQueued, int borderPaddingAsDrawn, IntRectangle incrementalChangeArea, List<String> warningMessages)
+			protected void onFinishedDrawingFull(Image map, boolean anotherDrawIsQueued, int borderPaddingAsDrawn, List<String> warningMessages)
 			{
-				mapEditingPanel.mapFromMapCreator = AwtBridge.toBufferedImage(map);
+				if (mapEditingPanel.mapFromMapCreator != null && mapEditingPanel.mapFromMapCreator != map)
+				{
+					mapEditingPanel.mapFromMapCreator.close();
+				}
+				mapEditingPanel.mapFromMapCreator = map;
+				onFinishedDrawingCommon(anotherDrawIsQueued, borderPaddingAsDrawn, null, warningMessages);
+			}
+
+			@Override
+			protected void onFinishedDrawingIncremental(boolean anotherDrawIsQueued, int borderPaddingAsDrawn, IntRectangle incrementalChangeArea, List<String> warningMessages)
+			{
+				// Map was already updated in-place by MapCreator on background thread.
+				// Just update the zoomed display for the changed region.
+				onFinishedDrawingCommon(anotherDrawIsQueued, borderPaddingAsDrawn, incrementalChangeArea, warningMessages);
+			}
+
+			private void onFinishedDrawingCommon(boolean anotherDrawIsQueued, int borderPaddingAsDrawn, IntRectangle incrementalChangeArea, List<String> warningMessages)
+			{
 				mapEditingPanel.setBorderPadding(borderPaddingAsDrawn);
 				mapEditingPanel.setGraph(mapParts.graph);
 				mapEditingPanel.setFreeIcons(edits == null ? null : edits.freeIcons);
@@ -590,7 +608,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			protected Image getCurrentMapForIncrementalUpdate()
 			{
-				return AwtBridge.wrapBufferedImage(mapEditingPanel.mapFromMapCreator);
+				return mapEditingPanel.mapFromMapCreator;
 			}
 
 			@Override
@@ -1452,7 +1470,23 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			if (method == Method.QUALITY)
 			{
 				// Can't incrementally zoom. Zoom the whole thing.
-				mapEditingPanel.setImage(AwtBridge.toBufferedImage(ImageHelper.scaleByWidth(AwtBridge.fromBufferedImage(mapEditingPanel.mapFromMapCreator), zoomedWidth, method)));
+				if (zoomedWidth > mapEditingPanel.mapFromMapCreator.getWidth())
+				{
+					// Zooming in: convert smaller source first, then scale up.
+					BufferedImage sourceBI = AwtBridge.toBufferedImage(mapEditingPanel.mapFromMapCreator);
+					try (Image source = AwtBridge.wrapBufferedImage(sourceBI); Image scaled = ImageHelper.scaleByWidth(source, zoomedWidth, method))
+					{
+						mapEditingPanel.setImage(AwtBridge.toBufferedImage(scaled));
+					}
+				}
+				else
+				{
+					// Zooming out (or 1:1): scale down first, then convert smaller result.
+					try (Image scaled = ImageHelper.scaleByWidth(mapEditingPanel.mapFromMapCreator, zoomedWidth, method))
+					{
+						mapEditingPanel.setImage(AwtBridge.toBufferedImage(scaled));
+					}
+				}
 			}
 			else
 			{
@@ -1468,22 +1502,31 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					// I don't use ImageHelper.scaleInto for the full image case
 					// because it's 5x slower than the below
 					// method, which uses ImgScalr.
-					try (Image map = AwtBridge.fromBufferedImage(mapEditingPanel.mapFromMapCreator); Image mapScaled = ImageHelper.scaleByWidth(map, zoomedWidth, method))
+					if (zoomedWidth > mapEditingPanel.mapFromMapCreator.getWidth())
 					{
-						mapEditingPanel.setImage(AwtBridge.toBufferedImage(mapScaled));
+						// Zooming in: convert smaller source first, then scale up.
+						BufferedImage sourceBI = AwtBridge.toBufferedImage(mapEditingPanel.mapFromMapCreator);
+						try (Image source = AwtBridge.wrapBufferedImage(sourceBI); Image scaled = ImageHelper.scaleByWidth(source, zoomedWidth, method))
+						{
+							mapEditingPanel.setImage(AwtBridge.toBufferedImage(scaled));
+						}
+					}
+					else
+					{
+						// Zooming out (or 1:1): scale down first, then convert smaller result.
+						try (Image scaled = ImageHelper.scaleByWidth(mapEditingPanel.mapFromMapCreator, zoomedWidth, method))
+						{
+							mapEditingPanel.setImage(AwtBridge.toBufferedImage(scaled));
+						}
 					}
 				}
 				else
 				{
-					// These two images will be the same if the zoom and display
-					// quality are the same, in which case
-					// ImageHelper.scaleByWidth called above returns the input
-					// image.
-					if (mapEditingPanel.mapFromMapCreator != mapEditingPanel.getImage())
+					if (mapEditingPanel.getImage() != null)
 					{
 						// Use wrapBufferedImage for the target so changes write back to the display BufferedImage.
 						// fromBufferedImage would create a copy when using SkiaFactory, losing the changes.
-						ImageHelper.scaleInto(AwtBridge.fromBufferedImage(mapEditingPanel.mapFromMapCreator), AwtBridge.wrapBufferedImage(mapEditingPanel.getImage()), incrementalChangeArea);
+						ImageHelper.scaleInto(mapEditingPanel.mapFromMapCreator, AwtBridge.wrapBufferedImage(mapEditingPanel.getImage()), incrementalChangeArea);
 					}
 				}
 			}

@@ -625,7 +625,14 @@ public abstract class MapUpdater
 						{
 							boolean anotherDrawIsQueued = next != null;
 							int scaledBorderWidth = settings.drawBorder && settings.borderPosition == BorderPosition.Outside_map ? (int) (settings.borderWidth * settings.resolution) : 0;
-							onFinishedDrawing(map, anotherDrawIsQueued, scaledBorderWidth, replaceBounds, warningMessages);
+							if (replaceBounds != null)
+							{
+								onFinishedDrawingIncremental(anotherDrawIsQueued, scaledBorderWidth, replaceBounds, warningMessages);
+							}
+							else
+							{
+								onFinishedDrawingFull(map, anotherDrawIsQueued, scaledBorderWidth, warningMessages);
+							}
 						}
 
 						isMapBeingDrawn = false;
@@ -751,7 +758,9 @@ public abstract class MapUpdater
 
 	public abstract MapSettings getSettingsFromGUI();
 
-	protected abstract void onFinishedDrawing(Image map, boolean anotherDrawIsQueued, int borderPaddingAsDrawn, IntRectangle incrementalChangeArea, List<String> warningMessages);
+	protected abstract void onFinishedDrawingFull(Image map, boolean anotherDrawIsQueued, int borderPaddingAsDrawn, List<String> warningMessages);
+
+	protected abstract void onFinishedDrawingIncremental(boolean anotherDrawIsQueued, int borderPaddingAsDrawn, IntRectangle incrementalChangeArea, List<String> warningMessages);
 
 	protected abstract void onFailedToDraw();
 

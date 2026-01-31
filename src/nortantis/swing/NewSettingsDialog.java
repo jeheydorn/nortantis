@@ -619,9 +619,25 @@ public class NewSettingsDialog extends JDialog
 			}
 
 			@Override
-			protected void onFinishedDrawing(Image map, boolean anotherDrawIsQueued, int borderWidthAsDrawn, IntRectangle incrementalChangeArea, List<String> warningMessages)
+			protected void onFinishedDrawingFull(Image map, boolean anotherDrawIsQueued, int borderWidthAsDrawn, List<String> warningMessages)
 			{
-				mapEditingPanel.setImage(AwtBridge.toBufferedImage(map));
+				if (mapEditingPanel.mapFromMapCreator != null && mapEditingPanel.mapFromMapCreator != map)
+				{
+					mapEditingPanel.mapFromMapCreator.close();
+				}
+				mapEditingPanel.mapFromMapCreator = map;
+				onFinishedDrawingCommon(anotherDrawIsQueued);
+			}
+
+			@Override
+			protected void onFinishedDrawingIncremental(boolean anotherDrawIsQueued, int borderWidthAsDrawn, IntRectangle incrementalChangeArea, List<String> warningMessages)
+			{
+				onFinishedDrawingCommon(anotherDrawIsQueued);
+			}
+
+			private void onFinishedDrawingCommon(boolean anotherDrawIsQueued)
+			{
+				mapEditingPanel.setImage(AwtBridge.toBufferedImage(mapEditingPanel.mapFromMapCreator));
 
 				if (!anotherDrawIsQueued)
 				{
@@ -647,7 +663,7 @@ public class NewSettingsDialog extends JDialog
 			@Override
 			protected Image getCurrentMapForIncrementalUpdate()
 			{
-				return AwtBridge.fromBufferedImage(mapEditingPanel.mapFromMapCreator);
+				return mapEditingPanel.mapFromMapCreator;
 			}
 
 		};

@@ -58,7 +58,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private EdgeType edgeTypeToHighlight;
 	private boolean highlightLakes;
 	private boolean highlightRivers;
-	public BufferedImage mapFromMapCreator;
+	public Image mapFromMapCreator;
 	private java.awt.Point brushLocation;
 	private int brushDiameter;
 	private double zoom;
