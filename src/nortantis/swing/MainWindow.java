@@ -1697,7 +1697,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			edits.roads.clear();
 
 			undoer.setUndoPoint(UpdateType.Full, null);
-			updater.createAndShowMapTerrainChange();
+			updater.createAndShowMapFull();
 		});
 	}
 
