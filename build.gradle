@@ -127,6 +127,11 @@ test {
     // This is needed because MapCreatorTest and SkiaMapCreatorTest use different
     // PlatformFactory implementations that share global state.
     forkEvery = 1
+    filter {
+        excludeTestsMatching 'nortantis.test.SkiaMapCreatorBenchmark'
+        excludeTestsMatching 'nortantis.test.AwtMapCreatorBenchmark'
+        excludeTestsMatching 'nortantis.test.ImageHelperBenchmark'
+    }
 }
 
 // Benchmark task with JFR profiling
