@@ -1,10 +1,11 @@
 package nortantis.swing;
 
-import java.util.ArrayDeque;
-import java.util.Stack;
-
 import nortantis.MapSettings;
 import nortantis.editor.MapChange;
+
+import java.util.ArrayDeque;
+import java.util.Objects;
+import java.util.Stack;
 
 public class Undoer
 {
@@ -39,9 +40,9 @@ public class Undoer
 		copyOfSettingsWhenEditorWasOpened = null;
 	}
 
-	public void setUndoPoint(UpdateType updateType, EditorTool tool)
+	public boolean setUndoPoint(UpdateType updateType, EditorTool tool)
 	{
-		setUndoPoint(updateType, tool, null);
+		return setUndoPoint(updateType, tool, null);
 	}
 
 	/***
@@ -53,12 +54,13 @@ public class Undoer
 	 *            The tool that is setting the undo point.
 	 * @param preRun
 	 *            Code to run in the foreground thread before drawing if this change undone or redone.
+	 * @return Whether the change requires preview images to be re-created.
 	 */
-	public void setUndoPoint(UpdateType updateType, EditorTool tool, Runnable preRun)
+	public boolean setUndoPoint(UpdateType updateType, EditorTool tool, Runnable preRun)
 	{
 		if (!enabled)
 		{
-			return;
+			return false;
 		}
 
 		if (undoStack == null)
@@ -66,7 +68,7 @@ public class Undoer
 			// This can happen even when not enabled if a map fails to draw and so reset has been called but initialize has not,
 			// because the editor allows user to change settings so they can fix the issue that caused the map to fail to draw.
 			// It will mean that the undo stack will not contain their change, but I'm okay with that.
-			return;
+			return false;
 		}
 
 		MapSettings prevSettings = undoStack.isEmpty() ? copyOfSettingsWhenEditorWasOpened : undoStack.peek().settings;
@@ -74,7 +76,7 @@ public class Undoer
 		if (currentSettings.equals(prevSettings))
 		{
 			// Don't create an undo point if nothing changed.
-			return;
+			return false;
 		}
 
 		redoStack.clear();
@@ -87,6 +89,7 @@ public class Undoer
 		}
 
 		updateUndoRedoEnabled();
+		return doesChangeEffectsBackgroundImages(prevSettings, currentSettings);
 	}
 
 	public void undo()
@@ -122,13 +125,13 @@ public class Undoer
 			assert copyOfSettingsWhenEditorWasOpened.edits.isInitialized();
 
 			settings = copyOfSettingsWhenEditorWasOpened.deepCopy();
-			mainWindow.loadSettingsAndEditsIntoThemeAndToolsPanels(settings, true, false);
 		}
 		else
 		{
 			settings = undoStack.peek().settings.deepCopy();
-			mainWindow.loadSettingsAndEditsIntoThemeAndToolsPanels(settings, true, false);
 		}
+		boolean refreshImagePreviews = doesChangeEffectsBackgroundImages(changeToUndo.settings, settings);
+		mainWindow.loadSettingsAndEditsIntoThemeAndToolsPanels(settings, true, refreshImagePreviews);
 
 		if (changeToUndo.toolThatMadeChange != null)
 		{
@@ -173,7 +176,8 @@ public class Undoer
 		MapChange changeToRedo = redoStack.pop();
 		undoStack.push(changeToRedo);
 		MapSettings newSettings = changeToRedo.settings.deepCopy();
-		mainWindow.loadSettingsAndEditsIntoThemeAndToolsPanels(newSettings, true, false);
+		boolean refreshImagePreviews = doesChangeEffectsBackgroundImages(currentSettings, newSettings);
+		mainWindow.loadSettingsAndEditsIntoThemeAndToolsPanels(newSettings, true, refreshImagePreviews);
 
 		if (changeToRedo.toolThatMadeChange != null)
 		{
@@ -215,5 +219,65 @@ public class Undoer
 	public void setEnabled(boolean enabled)
 	{
 		this.enabled = enabled;
+	}
+
+	private boolean doesChangeEffectsBackgroundImages(MapSettings previous, MapSettings change)
+	{
+		if (!Objects.equals(previous.backgroundRandomSeed, change.backgroundRandomSeed))
+		{
+			return true;
+		}
+
+		if (previous.colorizeOcean != change.colorizeOcean)
+		{
+			return true;
+		}
+
+		if (previous.colorizeLand != change.colorizeLand)
+		{
+			return true;
+		}
+
+		if (previous.generateBackground != change.generateBackground)
+		{
+			return true;
+		}
+
+		if (previous.generateBackgroundFromTexture != change.generateBackgroundFromTexture)
+		{
+			return true;
+		}
+
+		if (previous.solidColorBackground != change.solidColorBackground)
+		{
+			return true;
+		}
+
+		if (!Objects.equals(previous.backgroundTextureImage, change.backgroundTextureImage))
+		{
+			return true;
+		}
+
+		if (!Objects.equals(previous.backgroundTextureResource, change.backgroundTextureResource))
+		{
+			return true;
+		}
+
+		if (previous.backgroundTextureSource != change.backgroundTextureSource)
+		{
+			return true;
+		}
+
+		if (!Objects.equals(previous.landColor, change.landColor))
+		{
+			return true;
+		}
+
+		if (!Objects.equals(previous.oceanColor, change.oceanColor))
+		{
+			return true;
+		}
+
+		return false;
 	}
 }

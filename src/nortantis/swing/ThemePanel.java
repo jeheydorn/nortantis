@@ -219,9 +219,9 @@ public class ThemePanel extends JTabbedPane
 		setMinimumSize(new Dimension(SwingHelper.sidePanelMinimumWidth, getMinimumSize().height));
 
 		addTab("Background", createBackgroundPanel(mainWindow));
-		addTab("Border", createBorderPanel(mainWindow));
-		addTab("Effects", createEffectsPanel(mainWindow));
-		addTab("Fonts", createFontsPanel(mainWindow));
+		addTab("Border", createBorderPanel());
+		addTab("Effects", createEffectsPanel());
+		addTab("Fonts", createFontsPanel());
 	}
 
 	private Component createBackgroundPanel(MainWindow mainWindow)
@@ -671,7 +671,7 @@ public class ThemePanel extends JTabbedPane
 		return organizer.createScrollPane();
 	}
 
-	private Component createBorderPanel(MainWindow mainWindow)
+	private Component createBorderPanel()
 	{
 		GridBagOrganizer organizer = new GridBagOrganizer();
 		JPanel borderPanel = organizer.panel;
@@ -863,7 +863,7 @@ public class ThemePanel extends JTabbedPane
 		return organizer.createScrollPane();
 	}
 
-	private Component createEffectsPanel(MainWindow mainWindow)
+	private Component createEffectsPanel()
 	{
 		GridBagOrganizer organizer = new GridBagOrganizer();
 
@@ -1240,7 +1240,7 @@ public class ThemePanel extends JTabbedPane
 					}
 					else
 					{
-						if (hasVisibleTreeWithinDistance(entry.getKey(), cTrees.treeType, 3))
+						if (hasVisibleTreeWithinDistance(entry.getKey(), 3))
 						{
 							mainWindow.edits.centerEdits.put(entry.getKey(), entry.getValue().copyWithTrees(new CenterTrees(cTrees.artPack, cTrees.treeType, cTrees.density, rand.nextLong(), false)));
 						}
@@ -1371,7 +1371,7 @@ public class ThemePanel extends JTabbedPane
 		return counter.argmax();
 	}
 
-	private boolean hasVisibleTreeWithinDistance(int centerStartIndex, String treeType, int maxSearchDistance)
+	private boolean hasVisibleTreeWithinDistance(int centerStartIndex, int maxSearchDistance)
 	{
 		MapEdits edits = mainWindow.edits;
 		WorldGraph graph = mainWindow.updater.mapParts.graph;
@@ -1405,7 +1405,7 @@ public class ThemePanel extends JTabbedPane
 		coastShadingTransparencySlider.setValue((int) (((1.0 - coastShadingColorDisplay.getBackground().getAlpha() / 255.0) * 100)));
 	}
 
-	private Component createFontsPanel(MainWindow mainWindow)
+	private Component createFontsPanel()
 	{
 		GridBagOrganizer organizer = new GridBagOrganizer();
 
@@ -1714,12 +1714,9 @@ public class ThemePanel extends JTabbedPane
 
 	/**
 	 * Loads a map settings file into the GUI.
-	 * @return Whether the change affects background images (to signal to the IconsTool that it needs to regenerate preview images).
 	 */
-	public boolean loadSettingsIntoGUI(MapSettings settings)
+	public void loadSettingsIntoGUI(MapSettings settings, boolean refreshImagePreviews)
 	{
-		boolean changeEffectsBackgroundImages = doesChangeEffectBackgroundDisplays(settings);
-
 		coastShadingSlider.setValue(settings.coastShadingLevel);
 		oceanShadingSlider.setValue(settings.oceanShadingLevel);
 		rippleWavesLevelSlider.setValue(settings.oceanWavesLevel);
@@ -1887,7 +1884,7 @@ public class ThemePanel extends JTabbedPane
 		drawGridOverlayOnlyOnLandCheckbox.setSelected(settings.drawVoronoiGridOverlayOnlyOnLand);
 		updateGridOverlayFieldVisibilityAndLabelText();
 
-		if (changeEffectsBackgroundImages)
+		if (refreshImagePreviews)
 		{
 			updateBackgroundImageDisplays();
 		}
@@ -1895,8 +1892,6 @@ public class ThemePanel extends JTabbedPane
 		// For some reason I have to repaint to get color display panels to draw
 		// correctly.
 		repaint();
-
-		return changeEffectsBackgroundImages;
 	}
 
 	private final double scaleMax = 3.0;
@@ -1943,66 +1938,6 @@ public class ThemePanel extends JTabbedPane
 				true);
 		SwingHelper.initializeComboBoxItems(textureImageComboBox, Assets.listBackgroundTexturesForAllArtPacks(settings == null ? null : settings.customImagesPath),
 				settings == null ? null : settings.backgroundTextureResource, true);
-	}
-
-	private boolean doesChangeEffectBackgroundDisplays(MapSettings settings)
-	{
-		if (parseBackgroundSeed() != settings.backgroundRandomSeed)
-		{
-			return true;
-		}
-
-		if (colorizeOceanCheckbox.isSelected() != settings.colorizeOcean)
-		{
-			return true;
-		}
-
-		if (colorizeLandCheckbox.isSelected() != settings.colorizeLand)
-		{
-			return true;
-		}
-
-		if (rdbtnFractal.isSelected() != settings.generateBackground)
-		{
-			return true;
-		}
-
-		if (rdbtnGeneratedFromTexture.isSelected() != settings.generateBackgroundFromTexture)
-		{
-			return true;
-		}
-
-		if (solidColorButton.isSelected() != settings.solidColorBackground)
-		{
-			return true;
-		}
-
-		if (!textureImageFilename.getText().equals(FileHelper.replaceHomeFolderPlaceholder(settings.backgroundTextureImage)))
-		{
-			return true;
-		}
-
-		if (!Objects.equals(textureImageComboBox.getSelectedItem(), settings.backgroundTextureResource))
-		{
-			return true;
-		}
-
-		if (!assetsRadioButton.isSelected() && settings.backgroundTextureSource == TextureSource.Assets || !fileRadioButton.isSelected() && settings.backgroundTextureSource == TextureSource.File)
-		{
-			return true;
-		}
-
-		if (!landDisplayPanel.getColor().equals(AwtBridge.toAwtColor(settings.landColor)))
-		{
-			return true;
-		}
-
-		if (!oceanDisplayPanel.getColor().equals(AwtBridge.toAwtColor(settings.oceanColor)))
-		{
-			return true;
-		}
-
-		return false;
 	}
 
 	private long parseBackgroundSeed()
@@ -2232,8 +2167,8 @@ public class ThemePanel extends JTabbedPane
 
 	private void handleFullRedraw()
 	{
-		mainWindow.undoer.setUndoPoint(UpdateType.Full, null);
-		mainWindow.handleThemeChange(true);
+		boolean refreshImagePreviews = mainWindow.undoer.setUndoPoint(UpdateType.Full, null);
+		mainWindow.handleThemeChange(refreshImagePreviews);
 		mainWindow.updater.createAndShowMapFull();
 	}
 

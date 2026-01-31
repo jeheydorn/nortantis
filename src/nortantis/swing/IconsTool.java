@@ -170,11 +170,6 @@ public class IconsTool extends EditorTool
 	}
 
 	@Override
-	public void onBeforeSaving()
-	{
-	}
-
-	@Override
 	public void onSwitchingAway()
 	{
 		mapEditingPanel.clearAllToolSpecificSelectionsAndHighlights();
@@ -1140,7 +1135,7 @@ public class IconsTool extends EditorTool
 		updateIconPreviewButtons(artPack, customImagesPath);
 
 		// Trigger re-creation of image previews
-		loadSettingsIntoGUI(settings, false, true, false);
+		loadSettingsIntoGUI(settings, false, true);
 		unselectAnyIconsBeingEdited();
 	}
 
@@ -2414,7 +2409,7 @@ public class IconsTool extends EditorTool
 	}
 
 	@Override
-	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean changeEffectsBackgroundImages, boolean willDoImagesRefresh)
+	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean refreshImagePreviews)
 	{
 		String customImagesPath = settings.customImagesPath;
 		String artPack = settings.artPack;
@@ -2423,7 +2418,7 @@ public class IconsTool extends EditorTool
 		String artPackToSelect = isUndoRedoOrAutomaticChange && !StringUtils.isEmpty((String) artPackComboBox.getSelectedItem()) ? (String) artPackComboBox.getSelectedItem() : settings.artPack;
 		try
 		{
-			disableImageRefreshes = willDoImagesRefresh;
+			disableImageRefreshes = !refreshImagePreviews;
 			updateArtPackOptions(artPackToSelect, customImagesPath);
 		}
 		finally
@@ -2483,10 +2478,8 @@ public class IconsTool extends EditorTool
 
 
 		updateTypePanels();
-		// Skip updating icon previews now if there will be an images refresh in
-		// a moment, because that will handle it, and because the
-		// ImageCache hasn't been cleared yet.
-		if (changeEffectsBackgroundImages && !willDoImagesRefresh)
+
+		if (refreshImagePreviews)
 		{
 			updateIconTypeButtonPreviewImages(settings);
 		}

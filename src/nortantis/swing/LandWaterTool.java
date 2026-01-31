@@ -125,11 +125,6 @@ public class LandWaterTool extends EditorTool
 	}
 
 	@Override
-	public void onBeforeSaving()
-	{
-	}
-
-	@Override
 	protected JPanel createToolOptionsPanel()
 	{
 		GridBagOrganizer organizer = new GridBagOrganizer();
@@ -1153,7 +1148,7 @@ public class LandWaterTool extends EditorTool
 	}
 
 	@Override
-	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean changeEffectsBackgroundImages, boolean willDoImagesRefresh)
+	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean refreshImagePreviews)
 	{
 		areRegionColorsVisible = settings.drawRegionColors;
 		areRegionBoundariesVisible = settings.drawRegionBoundaries;

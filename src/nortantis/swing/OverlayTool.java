@@ -89,11 +89,6 @@ public class OverlayTool extends EditorTool
 	}
 
 	@Override
-	public void onBeforeSaving()
-	{
-	}
-
-	@Override
 	public void onSwitchingTo()
 	{
 		showOrHideEditorTools();
@@ -460,7 +455,7 @@ public class OverlayTool extends EditorTool
 	}
 
 	@Override
-	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean changeEffectsBackgroundImages, boolean willDoImagesRefresh)
+	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean refreshImagePreviews)
 	{
 		try
 		{

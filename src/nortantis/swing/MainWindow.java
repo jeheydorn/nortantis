@@ -56,7 +56,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	boolean hasDrawnCurrentMapAtLeastOnce;
 	static final String frameTitleBase = "Nortantis";
 	public MapEdits edits;
-	public JMenuItem clearEditsMenuItem;
 
 	JScrollPane mapEditingScrollPane;
 	// Controls how large 100% zoom is, in pixels.
@@ -318,7 +317,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		themePanel = new ThemePanel(this);
 		createMapEditingPanel();
 		createMapUpdater();
-		toolsPanel = new ToolsPanel(this, mapEditingPanel, updater);
+		toolsPanel = new ToolsPanel(this, updater);
 		int toolsPanelWidth = UserPreferences.getInstance().toolsPanelWidth > SwingHelper.sidePanelMinimumWidth ? UserPreferences.getInstance().toolsPanelWidth : SwingHelper.sidePanelPreferredWidth;
 		toolsPanel.setPreferredSize(new Dimension(toolsPanelWidth, toolsPanel.getPreferredSize().height));
 		toolsPanel.setMinimumSize(new Dimension(SwingHelper.sidePanelMinimumWidth, toolsPanel.getMinimumSize().height));
@@ -1040,7 +1039,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		setLookAndFeel(lookAndFeel);
 		UserPreferences.getInstance().lookAndFeel = lookAndFeel;
 		SwingUtilities.updateComponentTreeUI(this);
-		toolsPanel.handleLookAndFeelChange(lookAndFeel);
+		toolsPanel.handleLookAndFeelChange();
 		if (textSearchDialog != null)
 		{
 			textSearchDialog.handleLookAndFeelChange();
@@ -1721,7 +1720,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		CustomImagesDialog dialog = new CustomImagesDialog(this, customImagesPath, (value) ->
 		{
 			customImagesPath = value;
-			loadSettingsAndEditsIntoThemeAndToolsPanels(getSettingsFromGUI(false), false, true);
+			loadSettingsAndEditsIntoThemeAndToolsPanels(getSettingsFromGUI(false), false, false);
 			toolsPanel.handleCustomImagesPathChanged(customImagesPath);
 			undoer.setUndoPoint(UpdateType.Full, null, () -> handleImagesRefresh());
 			updater.createAndShowMapFull(() -> handleImagesRefresh());
@@ -1951,7 +1950,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		updateLastSettingsLoadedOrSaved(settings);
 		toolsPanel.resetToolsForNewMap();
-		loadSettingsAndEditsIntoThemeAndToolsPanels(settings, false, true);
+		loadSettingsAndEditsIntoThemeAndToolsPanels(settings, false, false);
 
 		exportResolution = settings.resolution;
 		imageExportPath = settings.imageExportPath;
@@ -1988,14 +1987,14 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		updateFrameTitle(false, true);
 	}
 
-	void loadSettingsAndEditsIntoThemeAndToolsPanels(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean willDoImagesRefresh)
+	void loadSettingsAndEditsIntoThemeAndToolsPanels(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean refreshImagePreviews)
 	{
 		updater.setEnabled(false);
 		undoer.setEnabled(false);
 		customImagesPath = settings.customImagesPath;
 		edits = settings.edits;
-		boolean changeEffectsBackgroundImages = themePanel.loadSettingsIntoGUI(settings);
-		toolsPanel.loadSettingsIntoGUI(settings, isUndoRedoOrAutomaticChange, changeEffectsBackgroundImages, willDoImagesRefresh);
+		themePanel.loadSettingsIntoGUI(settings, refreshImagePreviews);
+		toolsPanel.loadSettingsIntoGUI(settings, isUndoRedoOrAutomaticChange, refreshImagePreviews);
 		undoer.setEnabled(true);
 		updater.setEnabled(true);
 	}
@@ -2079,7 +2078,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		repaint();
 	}
 
-	void handleThemeChange(boolean changeEffectsBackgroundImages)
+	void handleThemeChange(boolean refreshImagePreviews)
 	{
 		// This check is to filter out automatic changes caused by
 		// loadSettingsIntoGUI.
@@ -2087,7 +2086,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		{
 			// Allow editor tools to update based on changes in the themes
 			// panel.
-			toolsPanel.loadSettingsIntoGUI(getSettingsFromGUI(false), true, changeEffectsBackgroundImages, false);
+			toolsPanel.loadSettingsIntoGUI(getSettingsFromGUI(false), true, refreshImagePreviews);
 		}
 	}
 

@@ -45,7 +45,6 @@ public class ToolsPanel extends JPanel
 	JComboBox<String> zoomComboBox;
 	List<String> zoomLevels;
 	JComboBox<DisplayQuality> displayQualityComboBox;
-	List<String> displayQualityLevels;
 	private TitledBorder toolOptionsPanelBorder;
 	private JProgressBar progressBar;
 	private JPanel bottomPanel;
@@ -57,7 +56,7 @@ public class ToolsPanel extends JPanel
 	private JPanel toolSelectPanel;
 	private CardLayout toolOptionsCardLayout;
 
-	public ToolsPanel(MainWindow mainWindow, MapEditingPanel mapEditingPanel, MapUpdater updater)
+	public ToolsPanel(MainWindow mainWindow, MapUpdater updater)
 	{
 		this.mainWindow = mainWindow;
 		this.updater = updater;
@@ -222,11 +221,11 @@ public class ToolsPanel extends JPanel
 		toolOptionsPanelContainer.setBorder(toolOptionsPanelBorder);
 	}
 
-	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean changeEffectsBackgroundImages, boolean willDoImageRefresh)
+	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean refreshImagePreviews)
 	{
 		for (EditorTool tool : tools)
 		{
-			tool.loadSettingsIntoGUI(settings, isUndoRedoOrAutomaticChange, changeEffectsBackgroundImages, willDoImageRefresh);
+			tool.loadSettingsIntoGUI(settings, isUndoRedoOrAutomaticChange, refreshImagePreviews);
 		}
 	}
 
@@ -348,7 +347,7 @@ public class ToolsPanel extends JPanel
 		}
 	}
 
-	public void handleLookAndFeelChange(LookAndFeel lookAndFeel)
+	public void handleLookAndFeelChange()
 	{
 		updateBordersThatHaveColors();
 		MapSettings settings = mainWindow.getSettingsFromGUI(false);

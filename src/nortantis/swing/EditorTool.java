@@ -53,8 +53,6 @@ public abstract class EditorTool
 
 	public abstract String getImageIconFilePath();
 
-	public abstract void onBeforeSaving();
-
 	public void onSwitchingTo()
 	{
 		// This is needed so that highlights in the overlay tool clear all the way when switching to other tools. I don't know why, maybe a
@@ -287,7 +285,7 @@ public abstract class EditorTool
 		return Math.sqrt((deltaX * deltaX) + (deltaY * deltaY)) <= radius;
 	}
 
-	public abstract void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean changeEffectsBackgroundImages, boolean willDoImagesRefresh);
+	public abstract void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean refreshImagePreviews);
 
 	public abstract void getSettingsFromGUI(MapSettings settings);
 
