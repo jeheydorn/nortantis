@@ -42,6 +42,7 @@ import nortantis.platform.Image;
 import nortantis.platform.awt.AwtBridge;
 import nortantis.swing.ThemePanel.LandColoringMethod;
 import nortantis.util.Assets;
+import nortantis.util.Helper;
 import nortantis.util.FileHelper;
 import nortantis.util.ImageHelper;
 import nortantis.util.ProbabilityHelper;
@@ -89,7 +90,7 @@ public class NewSettingsDialog extends JDialog
 			settings.imageExportPath = null;
 			settings.heightmapExportPath = null;
 			randomizeLand();
-			settings.textRandomSeed = Math.abs(new Random().nextInt());
+			settings.textRandomSeed = Helper.safeAbs(new Random().nextInt());
 			List<String> cityIconTypes = ImageCache.getInstance(settings.artPack, settings.customImagesPath).getIconGroupNames(IconType.cities);
 			if (cityIconTypes.size() > 0)
 			{

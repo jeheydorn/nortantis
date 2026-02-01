@@ -1568,7 +1568,7 @@ public class IconDrawer
 						// random number generator is used the same no matter
 						// what resolution the map
 						// is drawn at.
-						int i = Math.abs(rand.nextInt());
+						int i = Helper.safeAbs(rand.nextInt());
 
 						double scale = getWidthScaleForNewShuffledIcon(c, IconType.mountains);
 						Point loc = getAnchoredMountainDrawPoint(c, fileNameRangeId, i, mountainScale, mountainImagesById);
@@ -1605,7 +1605,7 @@ public class IconDrawer
 							// random number generator is used the same no
 							// matter what resolution the map
 							// is drawn at.
-							int i = Math.abs(rand.nextInt());
+							int i = Helper.safeAbs(rand.nextInt());
 
 							double scale = getWidthScaleForNewShuffledIcon(c, IconType.hills);
 							FreeIcon icon = new FreeIcon(resolutionScale, c.loc, scale, IconType.hills, artPackForHills, fileNameRangeId, i, c.index, fillColorsByType.get(IconType.hills),
@@ -1681,7 +1681,7 @@ public class IconDrawer
 					{
 						c.isSandDunes = true;
 
-						int i = Math.abs(rand.nextInt());
+						int i = Helper.safeAbs(rand.nextInt());
 						FreeIcon icon = new FreeIcon(resolutionScale, c.loc, 1.0, IconType.sand, artPackForDunes, groupId, i, c.index, fillColorsByType.get(IconType.sand),
 								iconFilterColorsByType.get(IconType.sand), maximizeOpacityByType.get(IconType.sand), fillWithColorByType.get(IconType.sand));
 						if (!isContentBottomTouchingWater(icon))
@@ -2009,7 +2009,7 @@ public class IconDrawer
 
 		for (int i = 0; i < numTrees; i++)
 		{
-			int index = Math.abs(rand.nextInt());
+			int index = Helper.safeAbs(rand.nextInt());
 
 			// Draw the image such that it is centered in the center of c.
 			int x = (int) (loc.x);

@@ -14,6 +14,7 @@ import nortantis.MapSettings.OceanWaves;
 import nortantis.geom.IntDimension;
 import nortantis.platform.Color;
 import nortantis.util.Assets;
+import nortantis.util.Helper;
 import nortantis.util.ProbabilityHelper;
 import nortantis.util.Range;
 import nortantis.util.Tuple2;
@@ -291,7 +292,7 @@ public class SettingsGenerator
 
 	private static void setRandomSeeds(MapSettings settings, Random rand)
 	{
-		long seed = Math.abs(rand.nextInt());
+		long seed = Helper.safeAbs(rand.nextInt());
 		settings.randomSeed = seed;
 		settings.regionsRandomSeed = seed;
 		settings.backgroundRandomSeed = seed;

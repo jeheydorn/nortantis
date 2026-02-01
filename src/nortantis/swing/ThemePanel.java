@@ -75,6 +75,7 @@ import nortantis.util.Assets;
 import nortantis.util.ComparableCounter;
 import nortantis.util.Counter;
 import nortantis.util.FileHelper;
+import nortantis.util.Helper;
 import nortantis.util.ImageHelper;
 import nortantis.util.ListMap;
 import nortantis.util.Tuple2;
@@ -338,7 +339,7 @@ public class ThemePanel extends JTabbedPane
 		organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.65);
 
 		backgroundSeedTextField = new JTextField();
-		backgroundSeedTextField.setText(String.valueOf(Math.abs(new Random().nextInt())));
+		backgroundSeedTextField.setText(String.valueOf(Helper.safeAbs(new Random().nextInt())));
 		backgroundSeedTextField.setColumns(10);
 		backgroundSeedTextField.getDocument().addDocumentListener(new DocumentListener()
 		{
@@ -369,7 +370,7 @@ public class ThemePanel extends JTabbedPane
 		{
 			public void actionPerformed(ActionEvent arg0)
 			{
-				backgroundSeedTextField.setText(String.valueOf(Math.abs(new Random().nextInt())));
+				backgroundSeedTextField.setText(String.valueOf(Helper.safeAbs(new Random().nextInt())));
 				updateBackgroundImageDisplays();
 			}
 		});
@@ -788,7 +789,7 @@ public class ThemePanel extends JTabbedPane
 		organizer.addLabelAndComponent("Fray size:", "Determines the number of polygons used when creating the frayed border. Higher values make the fray larger.", frayedEdgeSizeSlider);
 
 		frayedEdgesSeedTextField = new JTextField();
-		frayedEdgesSeedTextField.setText(String.valueOf(Math.abs(new Random().nextInt())));
+		frayedEdgesSeedTextField.setText(String.valueOf(Helper.safeAbs(new Random().nextInt())));
 		frayedEdgesSeedTextField.setColumns(10);
 		frayedEdgesSeedTextField.getDocument().addDocumentListener(new DocumentListener()
 		{
@@ -816,7 +817,7 @@ public class ThemePanel extends JTabbedPane
 		{
 			public void actionPerformed(ActionEvent arg0)
 			{
-				frayedEdgesSeedTextField.setText(String.valueOf(Math.abs(new Random().nextInt())));
+				frayedEdgesSeedTextField.setText(String.valueOf(Helper.safeAbs(new Random().nextInt())));
 			}
 		});
 		newFrayedEdgesSeedButton.setToolTipText("Generate a new random seed.");

@@ -1533,7 +1533,7 @@ public class IconsTool extends EditorTool
 				for (Center center : selected)
 				{
 					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
-					CenterIcon newIcon = new CenterIcon(CenterIconType.Mountain, (String) artPackComboBox.getSelectedItem(), groupId, Math.abs(rand.nextInt()));
+					CenterIcon newIcon = new CenterIcon(CenterIconType.Mountain, (String) artPackComboBox.getSelectedItem(), groupId, Helper.safeAbs(rand.nextInt()));
 					mainWindow.edits.centerEdits.put(center.index, cEdit.copyWithIcon(newIcon));
 				}
 				updater.createAndShowMapIncrementalUsingCenters(selected);
@@ -1548,7 +1548,7 @@ public class IconsTool extends EditorTool
 				for (Center center : groupId)
 				{
 					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
-					CenterIcon newIcon = new CenterIcon(CenterIconType.Hill, (String) artPackComboBox.getSelectedItem(), rangeId, Math.abs(rand.nextInt()));
+					CenterIcon newIcon = new CenterIcon(CenterIconType.Hill, (String) artPackComboBox.getSelectedItem(), rangeId, Helper.safeAbs(rand.nextInt()));
 					mainWindow.edits.centerEdits.put(center.index, cEdit.copyWithIcon(newIcon));
 				}
 				updater.createAndShowMapIncrementalUsingCenters(groupId);
@@ -1563,7 +1563,7 @@ public class IconsTool extends EditorTool
 				for (Center center : selected)
 				{
 					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
-					CenterIcon newIcon = new CenterIcon(CenterIconType.Dune, (String) artPackComboBox.getSelectedItem(), groupId, Math.abs(rand.nextInt()));
+					CenterIcon newIcon = new CenterIcon(CenterIconType.Dune, (String) artPackComboBox.getSelectedItem(), groupId, Helper.safeAbs(rand.nextInt()));
 					mainWindow.edits.centerEdits.put(center.index, cEdit.copyWithIcon(newIcon));
 				}
 				updater.createAndShowMapIncrementalUsingCenters(selected);
@@ -1578,7 +1578,7 @@ public class IconsTool extends EditorTool
 				for (Center center : selected)
 				{
 					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
-					CenterTrees newTrees = new CenterTrees((String) artPackComboBox.getSelectedItem(), treeType, densitySlider.getValue() / 10.0, Math.abs(rand.nextLong()));
+					CenterTrees newTrees = new CenterTrees((String) artPackComboBox.getSelectedItem(), treeType, densitySlider.getValue() / 10.0, Helper.safeAbs(rand.nextLong()));
 					mainWindow.edits.centerEdits.put(center.index, cEdit.copyWithTrees(newTrees));
 				}
 				updater.createAndShowMapIncrementalUsingCenters(selected);
@@ -1696,7 +1696,7 @@ public class IconsTool extends EditorTool
 					String groupId = mountainTypes.getSelectedOption();
 					if (!StringUtils.isEmpty(groupId))
 					{
-						after = before.copyWith((String) artPackComboBox.getSelectedItem(), groupId, Math.abs(rand.nextInt()), getSelectedIconTypeColor(), getSelectedIconTypeFilterColor(),
+						after = before.copyWith((String) artPackComboBox.getSelectedItem(), groupId, Helper.safeAbs(rand.nextInt()), getSelectedIconTypeColor(), getSelectedIconTypeFilterColor(),
 								maximizeOpacityCheckbox.isSelected(), fillWithColorCheckbox.isSelected());
 					}
 				}
@@ -1705,7 +1705,7 @@ public class IconsTool extends EditorTool
 					String groupId = hillTypes.getSelectedOption();
 					if (!StringUtils.isEmpty(groupId))
 					{
-						after = before.copyWith((String) artPackComboBox.getSelectedItem(), groupId, Math.abs(rand.nextInt()), getSelectedIconTypeColor(), getSelectedIconTypeFilterColor(),
+						after = before.copyWith((String) artPackComboBox.getSelectedItem(), groupId, Helper.safeAbs(rand.nextInt()), getSelectedIconTypeColor(), getSelectedIconTypeFilterColor(),
 								maximizeOpacityCheckbox.isSelected(), fillWithColorCheckbox.isSelected());
 					}
 				}
@@ -1714,7 +1714,7 @@ public class IconsTool extends EditorTool
 					String groupId = duneTypes.getSelectedOption();
 					if (!StringUtils.isEmpty(groupId))
 					{
-						after = before.copyWith((String) artPackComboBox.getSelectedItem(), groupId, Math.abs(rand.nextInt()), getSelectedIconTypeColor(), getSelectedIconTypeFilterColor(),
+						after = before.copyWith((String) artPackComboBox.getSelectedItem(), groupId, Helper.safeAbs(rand.nextInt()), getSelectedIconTypeColor(), getSelectedIconTypeFilterColor(),
 								maximizeOpacityCheckbox.isSelected(), fillWithColorCheckbox.isSelected());
 					}
 				}
@@ -1723,7 +1723,7 @@ public class IconsTool extends EditorTool
 					String treeType = treeTypes.getSelectedOption();
 					if (!StringUtils.isEmpty(treeType))
 					{
-						after = before.copyWith((String) artPackComboBox.getSelectedItem(), treeType, Math.abs(rand.nextInt()), getSelectedIconTypeColor(), getSelectedIconTypeFilterColor(),
+						after = before.copyWith((String) artPackComboBox.getSelectedItem(), treeType, Helper.safeAbs(rand.nextInt()), getSelectedIconTypeColor(), getSelectedIconTypeFilterColor(),
 								maximizeOpacityCheckbox.isSelected(), fillWithColorCheckbox.isSelected());
 					}
 				}

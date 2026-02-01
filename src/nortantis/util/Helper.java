@@ -398,6 +398,15 @@ public class Helper
 		return Math.abs(value) & 0x7FFFFFFF;
 	}
 
+	/**
+	 * Returns the absolute value of the given long, safe from overflow. Unlike Math.abs, this handles Long.MIN_VALUE correctly by masking
+	 * off the sign bit.
+	 */
+	public static long safeAbs(long value)
+	{
+		return Math.abs(value) & 0x7FFFFFFFFFFFFFFFL;
+	}
+
 	public static int linearComboBase255(int weightFrom0To255, int value1From0To255, int value2From0To255)
 	{
 		return ((weightFrom0To255 * value1From0To255) + ((255 - weightFrom0To255) * value2From0To255)) / 255;
