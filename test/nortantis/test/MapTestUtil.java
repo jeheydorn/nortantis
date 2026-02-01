@@ -117,7 +117,7 @@ public class MapTestUtil
 						// Skip RGB comparison if both pixels are fully transparent
 						Color color1 = Color.create(image1Pixels.getRGB(x, y));
 						Color color2 = Color.create(image2Pixels.getRGB(x, y));
-						int diff = color1.manhattanDistanceTo(color2);
+						int diff = Math.min(255, color1.manhattanDistanceTo(color2));
 
 						diffPixels.setRGB(x, y, Color.create(diff, diff, diff).getRGB());
 					}

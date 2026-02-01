@@ -389,6 +389,15 @@ public class Helper
 		return (weight * value1) + ((1.0 - weight) * value2);
 	}
 
+	/**
+	 * Returns the absolute value of the given integer, safe from overflow. Unlike Math.abs, this handles Integer.MIN_VALUE correctly by
+	 * masking off the sign bit.
+	 */
+	public static int safeAbs(int value)
+	{
+		return Math.abs(value) & 0x7FFFFFFF;
+	}
+
 	public static int linearComboBase255(int weightFrom0To255, int value1From0To255, int value2From0To255)
 	{
 		return ((weightFrom0To255 * value1From0To255) + ((255 - weightFrom0To255) * value2From0To255)) / 255;

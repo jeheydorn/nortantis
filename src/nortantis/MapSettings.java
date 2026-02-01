@@ -59,7 +59,9 @@ public class MapSettings implements Serializable
 	/**
 	 * When updating this, also update installers/version.txt
 	 */
-	public static final String currentVersion = "3.16";
+	public static final String currentVersion = "3.17";
+	public static final String fileExtension = "nort";
+	public static final String fileExtensionWithDot = "." + fileExtension;
 	public static final double defaultPointPrecision = 2.0;
 	public static final double defaultLloydRelaxationsScale = 0.1;
 	private final double defaultTreeHeightScaleForOldMaps = 0.5;
@@ -1330,6 +1332,7 @@ public class MapSettings implements Serializable
 		runConversionToRemoveRegionIdsOfEditsThatAreWater();
 		runConversionForNewRangesForRandomRegionColorGeneratorSettings();
 		runConversionOnFillWithColorByType();
+		runConversionToFixCompassRosesGroupId();
 	}
 
 	private void runConversionOnFillWithColorByType()
@@ -1350,6 +1353,49 @@ public class MapSettings implements Serializable
 					}
 				}
 			}
+		}
+	}
+
+	/**
+	 * This conversion is needed because I renamed the decorations folder "compasses" to "compass roses" to be more correct.
+	 */
+	private void runConversionToFixCompassRosesGroupId()
+	{
+		if (isVersionGreaterThanOrEqualTo(version, "3.17"))
+		{
+			return;
+		}
+
+		if (edits == null || edits.freeIcons == null)
+		{
+			return;
+		}
+
+		Map<String, ImageAndMasks> imagesInGroup = ImageCache.getInstance(Assets.installedArtPack, customImagesPath).getIconsByNameForGroup(IconType.decorations, "compass roses");
+		if (imagesInGroup == null || imagesInGroup.isEmpty())
+		{
+			return;
+		}
+		List<String> compassRoseNames = new ArrayList<>(imagesInGroup.keySet());
+
+		List<FreeIcon> toReplace = new ArrayList<>();
+		for (FreeIcon icon : edits.freeIcons)
+		{
+			if (icon != null && Assets.installedArtPack.equals(icon.artPack) && "compasses".equals(icon.groupId))
+			{
+				toReplace.add(icon);
+			}
+		}
+
+		for (FreeIcon icon : toReplace)
+		{
+			if (icon.iconName == null)
+			{
+				// Should never happen unless the nort file is corrupted.
+				continue;
+			}
+			String nameToUse = compassRoseNames.get(Helper.safeAbs(icon.iconName.hashCode()) % compassRoseNames.size());
+			edits.freeIcons.replace(icon, icon.copyWithGroupId("compass roses").copyWithName(nameToUse));
 		}
 	}
 
@@ -2217,10 +2263,6 @@ public class MapSettings implements Serializable
 			return name().replace("_", " ");
 		}
 	}
-
-	public static final String fileExtension = "nort";
-	public static final String fileExtensionWithDot = "." + fileExtension;
-
 
 	@Override
 	public String toString()

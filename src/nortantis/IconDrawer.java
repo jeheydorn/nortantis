@@ -654,7 +654,7 @@ public class IconDrawer
 			imagesInGroup = ImageCache.getInstance(artPackToUse, customImagesPath).getIconsByNameForGroup(type, newGroupId);
 			if (imagesInGroup == null || imagesInGroup.isEmpty())
 			{
-				// This shouldn't happens since the new group id shouldn't have
+				// This shouldn't happen since the new group id shouldn't have
 				// been an option if it were empty or null.
 				assert false;
 				return null;
@@ -676,7 +676,8 @@ public class IconDrawer
 			}
 			else
 			{
-				name = ProbabilityHelper.sampleUniform(new Random(name.hashCode()), imagesInGroup.keySet());
+				List<String> names = new ArrayList<>(imagesInGroup.keySet());
+				name = names.get(Helper.safeAbs(name.hashCode()) % names.size());
 			}
 			if (name != null)
 			{
@@ -781,10 +782,10 @@ public class IconDrawer
 				.collect(Collectors.toList());
 		if (compatibleCities.isEmpty())
 		{
-			int index = Math.abs(oldIconName.hashCode() % cityNamesToChooseFrom.size());
+			int index = Helper.safeAbs(oldIconName.hashCode()) % cityNamesToChooseFrom.size();
 			return new ArrayList<>(cityNamesToChooseFrom).get(index);
 		}
-		int index = Math.abs(oldIconName.hashCode() % compatibleCities.size());
+		int index = Helper.safeAbs(oldIconName.hashCode()) % compatibleCities.size();
 		return compatibleCities.get(index);
 	}
 
@@ -794,7 +795,7 @@ public class IconDrawer
 		{
 			return null;
 		}
-		int index = Math.abs(oldGroupId.hashCode() % groupIds.size());
+		int index = Helper.safeAbs(oldGroupId.hashCode()) % groupIds.size();
 		return groupIds.toArray(new String[groupIds.size()])[index];
 	}
 
