@@ -1,33 +1,5 @@
 package nortantis.swing;
 
-import java.awt.CardLayout;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.image.BufferedImage;
-import java.util.Arrays;
-import java.util.List;
-
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.ImageIcon;
-import javax.swing.JComboBox;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JProgressBar;
-import javax.swing.JToggleButton;
-import javax.swing.SwingUtilities;
-import javax.swing.Timer;
-import javax.swing.UIManager;
-import javax.swing.border.LineBorder;
-import javax.swing.border.TitledBorder;
-
 import nortantis.MapSettings;
 import nortantis.editor.DisplayQuality;
 import nortantis.editor.MapUpdater;
@@ -35,6 +7,16 @@ import nortantis.editor.UserPreferences;
 import nortantis.platform.awt.AwtBridge;
 import nortantis.util.Assets;
 import nortantis.util.Logger;
+
+import javax.swing.*;
+import javax.swing.border.LineBorder;
+import javax.swing.border.TitledBorder;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
+import java.util.Arrays;
+import java.util.List;
 
 @SuppressWarnings("serial")
 public class ToolsPanel extends JPanel

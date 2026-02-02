@@ -1,22 +1,18 @@
 package nortantis.platform.awt;
 
-import java.awt.AlphaComposite;
-import java.awt.BasicStroke;
-import java.awt.Graphics2D;
-import java.awt.Stroke;
-import java.awt.geom.Line2D;
-import java.awt.geom.Path2D;
-import java.util.List;
-
-import org.apache.commons.lang3.NotImplementedException;
-
 import nortantis.StrokeType;
 import nortantis.geom.FloatPoint;
+import nortantis.platform.*;
 import nortantis.platform.Color;
 import nortantis.platform.Font;
 import nortantis.platform.Image;
-import nortantis.platform.Painter;
-import nortantis.platform.Transform;
+import org.apache.commons.lang3.NotImplementedException;
+
+import java.awt.*;
+import java.awt.AlphaComposite;
+import java.awt.geom.Line2D;
+import java.awt.geom.Path2D;
+import java.util.List;
 
 class AwtPainter extends Painter
 {

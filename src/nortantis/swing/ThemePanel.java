@@ -1,64 +1,10 @@
 package nortantis.swing;
 
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Dialog;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
-import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Random;
-import java.util.concurrent.ExecutionException;
-
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.ButtonGroup;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JColorChooser;
-import javax.swing.JComboBox;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JRadioButton;
-import javax.swing.JSlider;
-import javax.swing.JTabbedPane;
-import javax.swing.JTextField;
-import javax.swing.SwingWorker;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.StringUtils;
-
-import nortantis.BackgroundGenerator;
-import nortantis.BorderColorOption;
-import nortantis.BorderPosition;
-import nortantis.FractalBGGenerator;
-import nortantis.FreeIconCollection;
-import nortantis.GridOverlayOffset;
-import nortantis.GridOverlayShape;
-import nortantis.IconDrawer;
-import nortantis.IconType;
-import nortantis.ImageAndMasks;
-import nortantis.ImageCache;
-import nortantis.MapSettings;
+import nortantis.*;
 import nortantis.MapSettings.GridOverlayLayer;
 import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanWaves;
-import nortantis.NamedResource;
-import nortantis.SettingsGenerator;
 import nortantis.Stroke;
-import nortantis.StrokeType;
-import nortantis.TextureSource;
-import nortantis.WorldGraph;
 import nortantis.editor.CenterEdit;
 import nortantis.editor.CenterTrees;
 import nortantis.editor.FreeIcon;
@@ -71,16 +17,22 @@ import nortantis.platform.Font;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.awt.AwtBridge;
-import nortantis.util.Assets;
-import nortantis.util.ComparableCounter;
-import nortantis.util.Counter;
-import nortantis.util.FileHelper;
-import nortantis.util.Helper;
-import nortantis.util.ImageHelper;
-import nortantis.util.ListMap;
-import nortantis.util.Tuple2;
-import nortantis.util.Tuple2Comp;
-import nortantis.util.Tuple4;
+import nortantis.util.*;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
+
+import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.nio.file.Path;
+import java.util.*;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 @SuppressWarnings("serial")
 public class ThemePanel extends JTabbedPane

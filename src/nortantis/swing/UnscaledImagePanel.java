@@ -1,12 +1,9 @@
 package nortantis.swing;
 
-import java.awt.Dimension;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
+import javax.swing.*;
+import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
-
-import javax.swing.JPanel;
 
 /**
  * A JPanel panel for showing images, which undoes the scaling Java adds to the Graphics object in paintComponent based on the display

@@ -7,7 +7,6 @@ import nortantis.geom.Rectangle;
 import nortantis.graph.voronoi.*;
 import nortantis.graph.voronoi.nodename.as3delaunay.Voronoi;
 import nortantis.platform.*;
-import nortantis.platform.skia.GPUExecutor;
 import nortantis.util.Helper;
 import nortantis.util.Range;
 import org.apache.commons.lang3.function.TriFunction;

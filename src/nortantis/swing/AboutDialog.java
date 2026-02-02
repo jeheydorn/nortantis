@@ -1,29 +1,16 @@
 package nortantis.swing;
 
-import java.awt.BorderLayout;
-import java.awt.Dialog;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
+import nortantis.MapSettings;
+import nortantis.platform.awt.AwtBridge;
+import nortantis.util.Assets;
+
+import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.nio.file.Paths;
-
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JDialog;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-
-import nortantis.MapSettings;
-import nortantis.platform.awt.AwtBridge;
-import nortantis.util.Assets;
 
 @SuppressWarnings("serial")
 public class AboutDialog extends JDialog

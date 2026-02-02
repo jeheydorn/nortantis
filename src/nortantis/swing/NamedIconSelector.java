@@ -1,22 +1,14 @@
 package nortantis.swing;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-
-import javax.swing.BorderFactory;
-import javax.swing.BoxLayout;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-
 import nortantis.IconType;
 import nortantis.ImageCache;
 import nortantis.editor.UserPreferences;
 import nortantis.util.Tuple2;
+
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.*;
 
 public class NamedIconSelector
 {

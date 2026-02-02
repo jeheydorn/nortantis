@@ -4,8 +4,12 @@ import nortantis.platform.Image;
 import nortantis.platform.Painter;
 import nortantis.platform.PlatformFactory;
 import nortantis.util.Logger;
-import org.jetbrains.skia.*;
-import org.jetbrains.skiko.*;
+import org.jetbrains.skia.PixelGeometry;
+import org.jetbrains.skia.Rect;
+import org.jetbrains.skiko.SkiaLayer;
+import org.jetbrains.skiko.SkiaLayerAnalytics;
+import org.jetbrains.skiko.SkiaLayerProperties;
+import org.jetbrains.skiko.SkikoRenderDelegate;
 
 import javax.swing.*;
 import java.awt.*;

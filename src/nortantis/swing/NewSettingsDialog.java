@@ -1,36 +1,5 @@
 package nortantis.swing;
 
-import java.awt.Component;
-import java.awt.Dialog;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
-import java.awt.event.KeyEvent;
-import java.awt.image.BufferedImage;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Random;
-
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JDialog;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JProgressBar;
-import javax.swing.JSlider;
-import javax.swing.JTextField;
-import javax.swing.Timer;
-
-import org.apache.commons.lang3.StringUtils;
-
 import nortantis.IconType;
 import nortantis.ImageCache;
 import nortantis.MapSettings;
@@ -41,12 +10,16 @@ import nortantis.geom.IntRectangle;
 import nortantis.platform.Image;
 import nortantis.platform.awt.AwtBridge;
 import nortantis.swing.ThemePanel.LandColoringMethod;
-import nortantis.util.Assets;
-import nortantis.util.Helper;
-import nortantis.util.FileHelper;
-import nortantis.util.ImageHelper;
-import nortantis.util.ProbabilityHelper;
-import nortantis.util.Range;
+import nortantis.util.*;
+import org.apache.commons.lang3.StringUtils;
+
+import javax.swing.*;
+import javax.swing.Timer;
+import java.awt.*;
+import java.awt.event.*;
+import java.awt.image.BufferedImage;
+import java.util.*;
+import java.util.List;
 
 @SuppressWarnings("serial")
 public class NewSettingsDialog extends JDialog

@@ -1,55 +1,25 @@
 package nortantis.swing;
 
-import java.awt.Color;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseEvent;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import javax.swing.BorderFactory;
-import javax.swing.ButtonGroup;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
-import javax.swing.JComponent;
-import javax.swing.JPanel;
-import javax.swing.JRadioButton;
-import javax.swing.JSlider;
-import javax.swing.JToggleButton;
-
-import nortantis.DebugFlags;
-import nortantis.MapCreator;
-import nortantis.MapSettings;
-import nortantis.Region;
-import nortantis.RoadDrawer;
-import nortantis.editor.CenterEdit;
-import nortantis.editor.EdgeEdit;
-import nortantis.editor.EdgeType;
-import nortantis.editor.MapUpdater;
-import nortantis.editor.RegionEdit;
-import nortantis.editor.Road;
+import nortantis.*;
+import nortantis.editor.*;
 import nortantis.geom.Point;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Corner;
 import nortantis.graph.voronoi.Edge;
 import nortantis.graph.voronoi.VoronoiGraph;
 import nortantis.platform.awt.AwtBridge;
-import nortantis.util.Assets;
-import nortantis.util.ComparableCounter;
-import nortantis.util.Counter;
-import nortantis.util.GeometryHelper;
-import nortantis.util.Tuple2;
+import nortantis.util.*;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
+import java.nio.file.Paths;
+import java.util.*;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class LandWaterTool extends EditorTool
 {

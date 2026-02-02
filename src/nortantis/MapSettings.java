@@ -1,23 +1,12 @@
 package nortantis;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.Serializable;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-
+import nortantis.editor.*;
+import nortantis.geom.Point;
+import nortantis.platform.Color;
+import nortantis.platform.Font;
+import nortantis.platform.FontStyle;
+import nortantis.swing.MapEdits;
+import nortantis.util.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -26,26 +15,15 @@ import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import org.json.simple.parser.ParseException;
 
-import nortantis.editor.CenterEdit;
-import nortantis.editor.CenterIcon;
-import nortantis.editor.CenterIconType;
-import nortantis.editor.CenterTrees;
-import nortantis.editor.EdgeEdit;
-import nortantis.editor.ExportAction;
-import nortantis.editor.FreeIcon;
-import nortantis.editor.RegionEdit;
-import nortantis.editor.Road;
-import nortantis.geom.Point;
-import nortantis.platform.Color;
-import nortantis.platform.Font;
-import nortantis.platform.FontStyle;
-import nortantis.swing.MapEdits;
-import nortantis.util.Assets;
-import nortantis.util.FileHelper;
-import nortantis.util.Helper;
-import nortantis.util.Logger;
-import nortantis.util.OSHelper;
-import nortantis.util.Tuple2;
+import java.io.File;
+import java.io.IOException;
+import java.io.Serializable;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * For parsing and storing map settings.

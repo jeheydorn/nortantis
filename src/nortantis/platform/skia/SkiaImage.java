@@ -8,12 +8,9 @@ import nortantis.util.Logger;
 import org.imgscalr.Scalr.Method;
 import org.jetbrains.skia.*;
 
-import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferInt;
 import java.lang.ref.Cleaner;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.IntBuffer;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;

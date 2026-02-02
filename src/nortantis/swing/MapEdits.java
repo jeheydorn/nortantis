@@ -1,15 +1,5 @@
 package nortantis.swing;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-
 import nortantis.FreeIconCollection;
 import nortantis.MapText;
 import nortantis.Region;
@@ -21,6 +11,11 @@ import nortantis.geom.Point;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
 import nortantis.util.Range;
+
+import java.io.Serializable;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Stores edits made by a user to a map. This is initialized from the generated map the first time the map is drawn, and then afterwards the

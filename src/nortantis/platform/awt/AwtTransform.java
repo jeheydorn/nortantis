@@ -1,9 +1,9 @@
 package nortantis.platform.awt;
 
+import nortantis.platform.Transform;
+
 import java.awt.geom.AffineTransform;
 import java.util.Objects;
-
-import nortantis.platform.Transform;
 
 public class AwtTransform extends Transform
 {

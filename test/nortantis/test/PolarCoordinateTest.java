@@ -1,11 +1,10 @@
 package nortantis.test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-import org.junit.jupiter.api.Test;
-
 import nortantis.PolarCoordinate;
 import nortantis.geom.Point;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class PolarCoordinateTest
 {

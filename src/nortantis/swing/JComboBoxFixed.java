@@ -1,8 +1,7 @@
 package nortantis.swing;
 
-import java.awt.Dimension;
-
-import javax.swing.JComboBox;
+import javax.swing.*;
+import java.awt.*;
 
 /**
  * A JComboBox that respects when you set the maximum dimensions. See

@@ -1,11 +1,9 @@
 package nortantis;
 
-import java.io.Serializable;
-import java.util.Objects;
-
+import nortantis.platform.Color;
 import org.json.simple.JSONObject;
 
-import nortantis.platform.Color;
+import java.io.Serializable;
 
 @SuppressWarnings("serial")
 public class HSBColor implements Serializable, Comparable<HSBColor>

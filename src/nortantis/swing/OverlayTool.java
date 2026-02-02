@@ -1,26 +1,5 @@
 package nortantis.swing;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseEvent;
-import java.nio.file.Paths;
-import java.util.Arrays;
-
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JPanel;
-import javax.swing.JSlider;
-import javax.swing.JTextField;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.StringUtils;
-
 import nortantis.MapCreator;
 import nortantis.MapSettings;
 import nortantis.editor.MapUpdater;
@@ -34,6 +13,18 @@ import nortantis.swing.MapEditingPanel.IconEditToolsSize;
 import nortantis.util.Assets;
 import nortantis.util.FileHelper;
 import nortantis.util.Tuple2;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
+
+import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
+import java.nio.file.Paths;
+import java.util.Arrays;
 
 public class OverlayTool extends EditorTool
 {

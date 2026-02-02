@@ -1,39 +1,18 @@
 package nortantis;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
+import nortantis.editor.FreeIcon;
+import nortantis.geom.IntDimension;
+import nortantis.platform.*;
+import nortantis.util.*;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.imgscalr.Scalr.Method;
 
-import nortantis.editor.FreeIcon;
-import nortantis.geom.IntDimension;
-import nortantis.platform.Color;
-import nortantis.platform.Image;
-import nortantis.platform.ImageType;
-import nortantis.platform.PixelReader;
-import nortantis.platform.PixelWriter;
-import nortantis.util.Assets;
-import nortantis.util.ConcurrentHashMapF;
-import nortantis.util.FileHelper;
-import nortantis.util.Helper;
-import nortantis.util.ImageHelper;
-import nortantis.util.ListMap;
-import nortantis.util.Logger;
-import nortantis.util.Range;
-import nortantis.util.Tuple2;
-import nortantis.util.Tuple4;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Caches icons in memory to avoid recreating or reloading them.

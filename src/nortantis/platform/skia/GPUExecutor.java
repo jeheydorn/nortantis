@@ -1,22 +1,13 @@
 package nortantis.platform.skia;
 
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import org.jetbrains.skia.ColorAlphaType;
-import org.jetbrains.skia.ColorType;
-import org.jetbrains.skia.DirectContext;
-import org.jetbrains.skia.ImageInfo;
-import org.jetbrains.skia.Surface;
+import nortantis.util.Logger;
+import org.jetbrains.skia.*;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
 
-import nortantis.util.Logger;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.system.MemoryUtil.NULL;

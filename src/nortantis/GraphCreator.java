@@ -1,20 +1,15 @@
 package nortantis;
 
-import java.nio.file.Paths;
-import java.util.Random;
-
 import nortantis.MapSettings.LineStyle;
 import nortantis.geom.Dimension;
 import nortantis.graph.voronoi.nodename.as3delaunay.Voronoi;
-import nortantis.platform.Color;
-import nortantis.platform.Image;
-import nortantis.platform.ImageType;
-import nortantis.platform.Painter;
-import nortantis.platform.PixelReader;
-import nortantis.platform.PixelReaderWriter;
+import nortantis.platform.*;
 import nortantis.util.Assets;
 import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
+
+import java.nio.file.Paths;
+import java.util.Random;
 
 public class GraphCreator
 {

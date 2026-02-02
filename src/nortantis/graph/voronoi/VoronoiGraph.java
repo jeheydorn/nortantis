@@ -1,21 +1,5 @@
 package nortantis.graph.voronoi;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.function.Function;
-
-import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
-
 import nortantis.Biome;
 import nortantis.MapSettings.LineStyle;
 import nortantis.geom.IntPoint;
@@ -28,6 +12,10 @@ import nortantis.platform.Painter;
 import nortantis.platform.Transform;
 import nortantis.util.Range;
 import nortantis.util.VisibleForTesting;
+import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+
+import java.util.*;
+import java.util.function.Function;
 
 /**
  * VoronoiGraph.java

@@ -1,14 +1,10 @@
 package nortantis.swing;
 
+import javax.swing.*;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
-
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.JPanel;
-import javax.swing.JRadioButton;
 
 @SuppressWarnings("serial")
 public class RadioButtonWithImage extends JPanel

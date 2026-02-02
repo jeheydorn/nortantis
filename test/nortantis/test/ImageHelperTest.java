@@ -1,6 +1,5 @@
 package nortantis.test;
 
-import nortantis.util.Stopwatch;
 import nortantis.WorldGraph;
 import nortantis.geom.IntPoint;
 import nortantis.geom.IntRectangle;
@@ -8,9 +7,11 @@ import nortantis.geom.Point;
 import nortantis.platform.*;
 import nortantis.platform.awt.AwtFactory;
 import nortantis.platform.skia.SkiaFactory;
-import nortantis.platform.skia.SkiaShaderOps;
-import nortantis.util.*;
+import nortantis.util.Assets;
+import nortantis.util.FileHelper;
+import nortantis.util.ImageHelper;
 import nortantis.util.ImageHelper.ColorifyAlgorithm;
+import nortantis.util.Range;
 import org.apache.commons.io.FileUtils;
 import org.imgscalr.Scalr.Method;
 import org.junit.jupiter.api.AfterAll;

@@ -1,5 +1,11 @@
 package nortantis.editor;
 
+import nortantis.swing.LookAndFeel;
+import nortantis.util.FileHelper;
+import nortantis.util.Logger;
+import nortantis.util.OSHelper;
+import org.apache.commons.lang3.StringUtils;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.PrintWriter;
@@ -9,20 +15,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayDeque;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Properties;
-import java.util.Set;
-import java.util.TreeSet;
-
-import org.apache.commons.lang3.StringUtils;
-
-import nortantis.swing.LookAndFeel;
-import nortantis.util.FileHelper;
-import nortantis.util.Logger;
-import nortantis.util.OSHelper;
+import java.util.*;
 
 public class UserPreferences
 {

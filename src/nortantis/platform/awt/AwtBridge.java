@@ -1,12 +1,15 @@
 package nortantis.platform.awt;
 
-import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferInt;
-
 import nortantis.platform.*;
+import nortantis.platform.Color;
+import nortantis.platform.Font;
+import nortantis.platform.Image;
 import nortantis.platform.skia.SkiaFactory;
 import nortantis.platform.skia.SkiaImage;
+
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferInt;
 
 /**
  * Bridge class for converting between platform-agnostic types and AWT types. This class can efficiently handle both AWT and Skia platform

@@ -1,12 +1,11 @@
 package nortantis.util;
 
-import java.awt.Desktop;
+import javax.swing.*;
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
-import javax.swing.JOptionPane;
 
 public class OSHelper
 {

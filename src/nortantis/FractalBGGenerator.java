@@ -1,17 +1,16 @@
 package nortantis;
 
-import java.io.IOException;
-import java.util.Random;
-
-import nortantis.util.Stopwatch;
-import org.jtransforms.fft.FloatFFT_2D;
-
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.PlatformFactory;
 import nortantis.platform.awt.AwtFactory;
 import nortantis.util.ImageHelper;
+import nortantis.util.Stopwatch;
 import nortantis.util.ThreadHelper;
+import org.jtransforms.fft.FloatFFT_2D;
+
+import java.io.IOException;
+import java.util.Random;
 
 public class FractalBGGenerator
 {

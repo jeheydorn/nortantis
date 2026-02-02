@@ -1,12 +1,12 @@
 package nortantis;
 
-import java.io.Serializable;
-import java.util.Objects;
-
 import nortantis.geom.Point;
 import nortantis.geom.RotatedRectangle;
 import nortantis.platform.Color;
 import nortantis.platform.Font;
+
+import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * Stores a piece of text (and data about it) drawn onto a map.

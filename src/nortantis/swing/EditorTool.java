@@ -1,17 +1,5 @@
 package nortantis.swing;
 
-import java.awt.event.MouseEvent;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import javax.swing.BorderFactory;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JToggleButton;
-
 import nortantis.MapSettings;
 import nortantis.editor.EdgeType;
 import nortantis.editor.MapUpdater;
@@ -20,6 +8,10 @@ import nortantis.geom.RotatedRectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Corner;
 import nortantis.graph.voronoi.Edge;
+
+import javax.swing.*;
+import java.awt.event.MouseEvent;
+import java.util.*;
 
 public abstract class EditorTool
 {

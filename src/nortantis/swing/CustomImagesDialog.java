@@ -1,9 +1,18 @@
 package nortantis.swing;
 
-import java.awt.BorderLayout;
-import java.awt.Dialog;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
+import nortantis.IconType;
+import nortantis.MapSettings;
+import nortantis.editor.UserPreferences;
+import nortantis.util.Assets;
+import nortantis.util.FileHelper;
+import nortantis.util.Logger;
+import nortantis.util.OSHelper;
+
+import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.filechooser.FileSystemView;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -13,29 +22,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Objects;
 import java.util.function.Consumer;
-
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JDialog;
-import javax.swing.JFileChooser;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JTextField;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-import javax.swing.filechooser.FileSystemView;
-
-import nortantis.IconType;
-import nortantis.MapSettings;
-import nortantis.editor.UserPreferences;
-import nortantis.util.Assets;
-import nortantis.util.FileHelper;
-import nortantis.util.Logger;
-import nortantis.util.OSHelper;
 
 @SuppressWarnings("serial")
 public class CustomImagesDialog extends JDialog

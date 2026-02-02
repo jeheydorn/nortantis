@@ -1,39 +1,27 @@
 package nortantis.platform.awt;
 
-import java.awt.Graphics2D;
-import java.awt.GraphicsEnvironment;
-import java.awt.geom.AffineTransform;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.Iterator;
+import nortantis.geom.IntRectangle;
+import nortantis.geom.Rectangle;
+import nortantis.geom.RotatedRectangle;
+import nortantis.platform.*;
+import nortantis.platform.Color;
+import nortantis.platform.Font;
+import nortantis.platform.Image;
+import nortantis.platform.Painter;
+import nortantis.swing.SwingHelper;
+import org.apache.commons.io.FilenameUtils;
 
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageOutputStream;
-import javax.swing.SwingUtilities;
-import javax.swing.SwingWorker;
-
-import org.apache.commons.io.FilenameUtils;
-
-import nortantis.geom.IntRectangle;
-import nortantis.geom.Rectangle;
-import nortantis.geom.RotatedRectangle;
-import nortantis.platform.BackgroundTask;
-import nortantis.platform.Color;
-import nortantis.platform.Font;
-import nortantis.platform.FontStyle;
-import nortantis.platform.PixelReaderWriter;
-import nortantis.platform.Image;
-import nortantis.platform.ImageType;
-import nortantis.platform.Painter;
-import nortantis.platform.PlatformFactory;
-import nortantis.swing.SwingHelper;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
+import java.io.*;
+import java.util.Iterator;
 
 public class AwtFactory extends PlatformFactory
 {

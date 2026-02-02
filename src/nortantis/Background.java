@@ -6,7 +6,6 @@ import nortantis.platform.*;
 import nortantis.util.Assets;
 import nortantis.util.ImageHelper;
 import nortantis.util.ImageHelper.ColorifyAlgorithm;
-import nortantis.util.Stopwatch;
 import nortantis.util.Tuple2;
 import org.apache.commons.lang3.StringUtils;
 

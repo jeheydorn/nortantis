@@ -1,23 +1,6 @@
 package nortantis;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.BiConsumer;
-import java.util.stream.Collectors;
-
-import org.apache.commons.math3.exception.NoDataException;
-import org.apache.commons.math3.stat.regression.SimpleRegression;
-
 import nortantis.geom.Dimension;
-import nortantis.geom.IntRectangle;
 import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
 import nortantis.geom.RotatedRectangle;
@@ -25,20 +8,15 @@ import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Corner;
 import nortantis.graph.voronoi.Edge;
 import nortantis.graph.voronoi.VoronoiGraph;
-import nortantis.platform.Color;
-import nortantis.platform.DrawQuality;
-import nortantis.platform.Font;
-import nortantis.platform.FontStyle;
-import nortantis.platform.Image;
-import nortantis.platform.ImageType;
-import nortantis.platform.Painter;
-import nortantis.platform.Transform;
-import nortantis.util.Helper;
-import nortantis.util.ImageHelper;
-import nortantis.util.Pair;
-import nortantis.util.Range;
-import nortantis.util.Tuple1;
-import nortantis.util.Tuple2;
+import nortantis.platform.*;
+import nortantis.util.*;
+import org.apache.commons.math3.exception.NoDataException;
+import org.apache.commons.math3.stat.regression.SimpleRegression;
+
+import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
 public class TextDrawer
 {

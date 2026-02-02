@@ -1,10 +1,5 @@
 package nortantis.graph.voronoi;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import nortantis.Biome;
 import nortantis.Region;
 import nortantis.TectonicPlate;
@@ -13,6 +8,11 @@ import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
 import nortantis.util.ComparableCounter;
 import nortantis.util.Counter;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class Center implements Comparable<Center>
 {

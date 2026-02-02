@@ -1,19 +1,9 @@
 package nortantis;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
-
 import nortantis.geom.Point;
-import nortantis.util.Assets;
-import nortantis.util.Function0;
-import nortantis.util.Pair;
-import nortantis.util.ProbabilityHelper;
-import nortantis.util.Range;
-import nortantis.util.Tuple2;
+import nortantis.util.*;
+
+import java.util.*;
 
 public class NameCreator
 {

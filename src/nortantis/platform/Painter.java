@@ -1,12 +1,12 @@
 package nortantis.platform;
 
-import java.util.List;
-
 import nortantis.Stroke;
 import nortantis.geom.FloatPoint;
 import nortantis.geom.IntPoint;
 import nortantis.geom.Point;
 import nortantis.util.Range;
+
+import java.util.List;
 
 public abstract class Painter implements AutoCloseable
 {

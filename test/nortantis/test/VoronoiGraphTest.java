@@ -1,21 +1,20 @@
 package nortantis.test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import nortantis.geom.Point;
+import nortantis.graph.voronoi.Center;
+import nortantis.graph.voronoi.Corner;
+import nortantis.graph.voronoi.VoronoiGraph;
+import nortantis.platform.*;
+import nortantis.platform.awt.AwtFactory;
+import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import nortantis.platform.*;
-import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
-import nortantis.geom.Point;
-import nortantis.graph.voronoi.Center;
-import nortantis.graph.voronoi.Corner;
-import nortantis.graph.voronoi.VoronoiGraph;
-import nortantis.platform.awt.AwtFactory;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class VoronoiGraphTest
 {

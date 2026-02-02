@@ -1,19 +1,13 @@
 package nortantis.platform.skia;
 
 import nortantis.platform.*;
+import nortantis.platform.Color;
+import nortantis.platform.Font;
+import nortantis.platform.FontStyle;
 import nortantis.util.Logger;
-import org.apache.commons.io.FilenameUtils;
-import org.jetbrains.skia.Bitmap;
-import org.jetbrains.skia.EncodedImageFormat;
-import org.jetbrains.skia.FontMgr;
-import org.jetbrains.skia.ImageInfo;
-import org.jetbrains.skia.Typeface;
+import org.jetbrains.skia.*;
 
-import javax.imageio.ImageIO;
 import javax.swing.*;
-import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferInt;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.nio.file.Files;

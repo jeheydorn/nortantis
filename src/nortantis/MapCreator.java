@@ -1,46 +1,22 @@
 package nortantis;
 
+import nortantis.MapSettings.GridOverlayLayer;
+import nortantis.editor.*;
+import nortantis.geom.*;
+import nortantis.graph.voronoi.Center;
+import nortantis.graph.voronoi.Edge;
+import nortantis.graph.voronoi.EdgeDrawType;
+import nortantis.platform.*;
+import nortantis.swing.MapEdits;
+import nortantis.util.*;
+import org.apache.commons.lang3.StringUtils;
+
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
-
-import nortantis.util.*;
-import org.apache.commons.lang3.StringUtils;
-
-import nortantis.MapSettings.GridOverlayLayer;
-import nortantis.editor.CenterEdit;
-import nortantis.editor.EdgeEdit;
-import nortantis.editor.FreeIcon;
-import nortantis.editor.MapParts;
-import nortantis.editor.RegionEdit;
-import nortantis.geom.Dimension;
-import nortantis.geom.IntDimension;
-import nortantis.geom.IntPoint;
-import nortantis.geom.IntRectangle;
-import nortantis.geom.Point;
-import nortantis.geom.Rectangle;
-import nortantis.graph.voronoi.Center;
-import nortantis.graph.voronoi.Edge;
-import nortantis.graph.voronoi.EdgeDrawType;
-import nortantis.platform.AlphaComposite;
-import nortantis.platform.Color;
-import nortantis.platform.DrawQuality;
-import nortantis.platform.Image;
-import nortantis.platform.ImageType;
-import nortantis.platform.Painter;
-import nortantis.swing.MapEdits;
 
 public class MapCreator implements WarningLogger
 {

@@ -1,9 +1,8 @@
 package nortantis.platform.awt;
 
-import java.io.Serializable;
-import java.util.Objects;
-
 import nortantis.platform.Color;
+
+import java.util.Objects;
 
 @SuppressWarnings("serial")
 public class AwtColor extends Color

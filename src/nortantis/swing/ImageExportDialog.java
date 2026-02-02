@@ -1,43 +1,5 @@
 package nortantis.swing;
 
-import java.awt.BorderLayout;
-import java.awt.Component;
-import java.awt.Dialog;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
-import java.io.File;
-import java.nio.file.InvalidPathException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Hashtable;
-import java.util.List;
-
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.ButtonGroup;
-import javax.swing.JButton;
-import javax.swing.JDialog;
-import javax.swing.JFileChooser;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JProgressBar;
-import javax.swing.JRadioButton;
-import javax.swing.JSlider;
-import javax.swing.JTextField;
-import javax.swing.SwingWorker;
-import javax.swing.filechooser.FileFilter;
-import javax.swing.filechooser.FileSystemView;
-
-import org.apache.commons.io.FilenameUtils;
-
 import nortantis.CancelledException;
 import nortantis.ImageCache;
 import nortantis.MapCreator;
@@ -47,6 +9,20 @@ import nortantis.platform.Image;
 import nortantis.util.FileHelper;
 import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
+import org.apache.commons.io.FilenameUtils;
+
+import javax.swing.*;
+import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileSystemView;
+import java.awt.*;
+import java.awt.event.*;
+import java.io.File;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Hashtable;
+import java.util.List;
 
 @SuppressWarnings("serial")
 public class ImageExportDialog extends JDialog

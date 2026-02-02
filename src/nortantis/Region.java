@@ -1,13 +1,13 @@
 package nortantis;
 
+import nortantis.geom.Point;
+import nortantis.graph.voronoi.Center;
+import nortantis.platform.Color;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-
-import nortantis.geom.Point;
-import nortantis.graph.voronoi.Center;
-import nortantis.platform.Color;
 
 /**
  * Represents a political region on the map.

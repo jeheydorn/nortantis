@@ -1,6 +1,6 @@
 package nortantis.swing;
 
-import java.awt.Component;
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;

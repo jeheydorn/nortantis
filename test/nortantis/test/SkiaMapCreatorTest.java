@@ -5,6 +5,8 @@ import nortantis.editor.FreeIcon;
 import nortantis.editor.MapParts;
 import nortantis.geom.Dimension;
 import nortantis.geom.IntRectangle;
+import nortantis.geom.Point;
+import nortantis.graph.voronoi.Center;
 import nortantis.platform.*;
 import nortantis.platform.skia.GPUExecutor;
 import nortantis.platform.skia.GPUExecutor.RenderingMode;
@@ -28,10 +30,8 @@ import java.util.List;
 import java.util.Random;
 import java.util.function.Consumer;
 
-import nortantis.geom.Point;
-import nortantis.graph.voronoi.Center;
-
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class SkiaMapCreatorTest
 {

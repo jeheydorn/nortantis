@@ -1,16 +1,12 @@
 package nortantis.test;
 
 import nortantis.*;
-import nortantis.editor.CenterEdit;
-import nortantis.editor.CenterIcon;
-import nortantis.editor.CenterIconType;
-import nortantis.editor.FreeIcon;
-import nortantis.editor.MapParts;
-import nortantis.editor.MapUpdater;
+import nortantis.editor.*;
 import nortantis.geom.IntPoint;
 import nortantis.geom.IntRectangle;
 import nortantis.graph.voronoi.Center;
-import nortantis.platform.*;
+import nortantis.platform.Image;
+import nortantis.platform.PlatformFactory;
 import nortantis.platform.awt.AwtFactory;
 import nortantis.swing.MapEdits;
 import nortantis.util.*;
@@ -25,7 +21,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.*;
 

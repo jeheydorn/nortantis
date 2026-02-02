@@ -1,32 +1,6 @@
 package nortantis.swing;
 
-import java.awt.BasicStroke;
-import java.awt.Color;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Rectangle;
-import java.awt.RenderingHints;
-import java.awt.Stroke;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Area;
-import java.awt.geom.Ellipse2D;
-import java.awt.image.BufferedImage;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
-
-import org.imgscalr.Scalr.Method;
-
-import nortantis.FreeIconCollection;
-import nortantis.IconDrawTask;
-import nortantis.IconDrawer;
-import nortantis.IconType;
-import nortantis.MapText;
-import nortantis.WorldGraph;
+import nortantis.*;
 import nortantis.editor.EdgeType;
 import nortantis.editor.FreeIcon;
 import nortantis.geom.Point;
@@ -40,6 +14,17 @@ import nortantis.util.Assets;
 import nortantis.util.ImageHelper;
 import nortantis.util.ImageHelper.ColorifyAlgorithm;
 import nortantis.util.Range;
+import org.imgscalr.Scalr.Method;
+
+import java.awt.*;
+import java.awt.Stroke;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Area;
+import java.awt.geom.Ellipse2D;
+import java.awt.image.BufferedImage;
+import java.nio.file.Paths;
+import java.util.*;
+import java.util.List;
 
 @SuppressWarnings("serial")
 public class MapEditingPanel extends UnscaledImagePanel

@@ -1,23 +1,14 @@
 package nortantis;
 
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
-
-import org.apache.commons.lang3.StringUtils;
-
 import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanWaves;
 import nortantis.geom.IntDimension;
 import nortantis.platform.Color;
-import nortantis.util.Assets;
-import nortantis.util.Helper;
-import nortantis.util.ProbabilityHelper;
-import nortantis.util.Range;
-import nortantis.util.Tuple2;
+import nortantis.util.*;
+import org.apache.commons.lang3.StringUtils;
+
+import java.nio.file.Paths;
+import java.util.*;
 
 /**
  * For randomly generating settings with which to generate a map.

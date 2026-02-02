@@ -1,15 +1,9 @@
 package nortantis.test;
 
-import nortantis.MapCreator;
-import nortantis.MapSettings;
-import nortantis.SettingsGenerator;
-import nortantis.WarningLogger;
-import nortantis.WorldGraph;
-import nortantis.MapText;
+import nortantis.*;
 import nortantis.editor.CenterEdit;
 import nortantis.editor.FreeIcon;
 import nortantis.editor.MapParts;
-import nortantis.graph.voronoi.Center;
 import nortantis.platform.*;
 import nortantis.util.Assets;
 import nortantis.util.FileHelper;

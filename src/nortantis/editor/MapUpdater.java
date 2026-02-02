@@ -1,30 +1,6 @@
 package nortantis.editor;
 
-import java.io.IOException;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Queue;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.stream.Collectors;
-
-import nortantis.BorderPosition;
-import nortantis.CancelledException;
-import nortantis.DebugFlags;
-import nortantis.MapCreator;
-import nortantis.MapSettings;
-import nortantis.MapText;
-import nortantis.NameCreator;
-import nortantis.util.Stopwatch;
+import nortantis.*;
 import nortantis.geom.Dimension;
 import nortantis.geom.IntRectangle;
 import nortantis.geom.Point;
@@ -38,6 +14,15 @@ import nortantis.swing.SwingHelper;
 import nortantis.swing.UpdateType;
 import nortantis.util.Helper;
 import nortantis.util.Logger;
+import nortantis.util.Stopwatch;
+
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 public abstract class MapUpdater
 {

@@ -1,19 +1,18 @@
 package nortantis.test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import nortantis.NameCompiler;
+import nortantis.util.Function;
+import nortantis.util.Helper;
+import nortantis.util.Pair;
+import nortantis.util.Range;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
-import org.junit.jupiter.api.Test;
-
-import nortantis.NameCompiler;
-import nortantis.util.Function;
-import nortantis.util.Helper;
-import nortantis.util.Pair;
-import nortantis.util.Range;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class NameCompilerTest
 {

@@ -1,10 +1,6 @@
 package nortantis;
 
-import nortantis.geom.IntDimension;
-import nortantis.geom.IntRectangle;
-import nortantis.geom.Point;
-import nortantis.geom.Rectangle;
-import nortantis.geom.RotatedRectangle;
+import nortantis.geom.*;
 import nortantis.platform.Color;
 import nortantis.platform.Image;
 import nortantis.util.Assets;

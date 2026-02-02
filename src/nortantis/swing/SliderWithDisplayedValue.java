@@ -1,17 +1,14 @@
 package nortantis.swing;
 
-import java.awt.Component;
-import java.awt.Dimension;
-import java.util.Arrays;
-import java.util.function.Function;
-
-import javax.swing.JLabel;
-import javax.swing.JSlider;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-
 import nortantis.editor.UserPreferences;
 import nortantis.util.OSHelper;
+
+import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import java.awt.*;
+import java.util.Arrays;
+import java.util.function.Function;
 
 public class SliderWithDisplayedValue
 {

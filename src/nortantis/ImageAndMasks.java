@@ -1,22 +1,16 @@
 package nortantis;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-
-
 import nortantis.geom.IntPoint;
 import nortantis.geom.IntRectangle;
 import nortantis.geom.Rectangle;
-import nortantis.platform.Color;
-import nortantis.platform.Image;
-import nortantis.platform.ImageType;
-import nortantis.platform.Painter;
-import nortantis.platform.PixelReader;
-import nortantis.platform.PixelReaderWriter;
+import nortantis.platform.*;
 import nortantis.util.ImageHelper;
 import nortantis.util.Range;
 import nortantis.util.Tuple2;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ImageAndMasks implements AutoCloseable
 {

@@ -1,22 +1,15 @@
 package nortantis.platform.awt;
 
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
-import java.awt.image.BufferedImage;
-import java.awt.image.WritableRaster;
-
+import nortantis.geom.IntRectangle;
+import nortantis.platform.*;
+import nortantis.platform.Image;
+import nortantis.util.ImageHelper;
 import org.imgscalr.Scalr;
 import org.imgscalr.Scalr.Method;
 
-import nortantis.geom.IntRectangle;
-import nortantis.platform.DrawQuality;
-import nortantis.platform.Image;
-import nortantis.platform.ImageType;
-import nortantis.platform.Painter;
-import nortantis.platform.PixelReader;
-import nortantis.platform.PixelReaderWriter;
-import nortantis.platform.PixelWriter;
-import nortantis.util.ImageHelper;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.awt.image.WritableRaster;
 
 class AwtImage extends Image
 {

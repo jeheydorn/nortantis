@@ -1,66 +1,7 @@
 package nortantis.swing;
 
-import java.awt.Component;
-import java.awt.KeyEventDispatcher;
-import java.awt.KeyboardFocusManager;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.InputEvent;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseEvent;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Random;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
-
-import javax.swing.AbstractAction;
-import javax.swing.Action;
-import javax.swing.ActionMap;
-import javax.swing.BorderFactory;
-import javax.swing.ButtonGroup;
-import javax.swing.ImageIcon;
-import javax.swing.InputMap;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
-import javax.swing.JComponent;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JRadioButton;
-import javax.swing.JSlider;
-import javax.swing.KeyStroke;
-import javax.swing.SwingWorker;
-
-import nortantis.util.*;
-import org.apache.commons.lang3.StringUtils;
-import org.imgscalr.Scalr.Method;
-
-import nortantis.DebugFlags;
-import nortantis.HSBColor;
-import nortantis.IconDrawTask;
-import nortantis.IconDrawer;
-import nortantis.IconType;
-import nortantis.ImageAndMasks;
-import nortantis.ImageCache;
-import nortantis.MapSettings;
-import nortantis.editor.CenterEdit;
-import nortantis.editor.CenterIcon;
-import nortantis.editor.CenterIconType;
-import nortantis.editor.CenterTrees;
-import nortantis.editor.FreeIcon;
-import nortantis.editor.MapUpdater;
+import nortantis.*;
+import nortantis.editor.*;
 import nortantis.geom.IntDimension;
 import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
@@ -71,6 +12,19 @@ import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
 import nortantis.platform.awt.AwtBridge;
+import nortantis.util.*;
+import org.apache.commons.lang3.StringUtils;
+import org.imgscalr.Scalr.Method;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 public class IconsTool extends EditorTool
 {

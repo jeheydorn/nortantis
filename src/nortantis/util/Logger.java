@@ -1,8 +1,7 @@
 package nortantis.util;
 
-import org.apache.commons.lang3.exception.ExceptionUtils;
-
 import nortantis.platform.PlatformFactory;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 public class Logger
 {

@@ -1,13 +1,9 @@
 package nortantis.util;
 
+import nortantis.platform.*;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import nortantis.platform.Color;
-import nortantis.platform.Image;
-import nortantis.platform.ImageType;
-import nortantis.platform.PixelReader;
-import nortantis.platform.PixelWriter;
 
 /**
  * Performs histogram equalization on images.

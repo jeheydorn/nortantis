@@ -1,36 +1,21 @@
 package nortantis.platform.skia;
 
+import nortantis.Stroke;
+import nortantis.StrokeType;
+import nortantis.geom.FloatPoint;
+import nortantis.platform.*;
+import nortantis.platform.Color;
+import nortantis.platform.Font;
+import nortantis.platform.Image;
+import nortantis.util.Logger;
+import org.jetbrains.skia.*;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
-
-import org.jetbrains.skia.BlendMode;
-import org.jetbrains.skia.Canvas;
-import org.jetbrains.skia.Matrix33;
-import org.jetbrains.skia.Paint;
-import org.jetbrains.skia.PaintMode;
-import org.jetbrains.skia.PaintStrokeCap;
-import org.jetbrains.skia.PaintStrokeJoin;
-import org.jetbrains.skia.Path;
-import org.jetbrains.skia.PathEffect;
-import org.jetbrains.skia.Rect;
-import org.jetbrains.skia.Shader;
-import org.jetbrains.skia.Surface;
-
-import nortantis.Stroke;
-import nortantis.StrokeType;
-import nortantis.geom.FloatPoint;
-import nortantis.platform.AlphaComposite;
-import nortantis.platform.Color;
-import nortantis.platform.DrawQuality;
-import nortantis.platform.Font;
-import nortantis.platform.Image;
-import nortantis.platform.Painter;
-import nortantis.platform.Transform;
-import nortantis.util.Logger;
 
 /**
  * A Painter implementation that batches drawing operations and submits them asynchronously to the GPU thread via GPUExecutor.

@@ -1,10 +1,9 @@
 package nortantis.platform.awt;
 
-import java.io.Serializable;
-import java.util.Objects;
-
 import nortantis.platform.Font;
 import nortantis.platform.FontStyle;
+
+import java.util.Objects;
 
 @SuppressWarnings("serial")
 public class AwtFont extends Font

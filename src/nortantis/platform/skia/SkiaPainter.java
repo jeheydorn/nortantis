@@ -1,21 +1,15 @@
 package nortantis.platform.skia;
 
-import java.util.List;
-
-import nortantis.platform.*;
-import org.jetbrains.skia.BlendMode;
-import org.jetbrains.skia.Canvas;
-import org.jetbrains.skia.Matrix33;
-import org.jetbrains.skia.Paint;
-import org.jetbrains.skia.PaintMode;
-import org.jetbrains.skia.PaintStrokeCap;
-import org.jetbrains.skia.PaintStrokeJoin;
-import org.jetbrains.skia.Path;
-import org.jetbrains.skia.Rect;
 import nortantis.Stroke;
 import nortantis.StrokeType;
 import nortantis.geom.FloatPoint;
-import nortantis.geom.Point;
+import nortantis.platform.*;
+import nortantis.platform.Color;
+import nortantis.platform.Font;
+import nortantis.platform.Image;
+import org.jetbrains.skia.*;
+
+import java.util.List;
 
 public class SkiaPainter extends Painter
 {

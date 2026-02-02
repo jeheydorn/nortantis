@@ -1,19 +1,15 @@
 package nortantis;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
 import nortantis.geom.FloatPoint;
 import nortantis.geom.IntDimension;
 import nortantis.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
-import nortantis.platform.Color;
-import nortantis.platform.DrawQuality;
-import nortantis.platform.Image;
-import nortantis.platform.ImageType;
-import nortantis.platform.Painter;
+import nortantis.platform.*;
 import nortantis.util.ImageHelper;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 public class GridDrawer
 {

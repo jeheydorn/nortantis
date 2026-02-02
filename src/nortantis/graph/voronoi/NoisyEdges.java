@@ -4,20 +4,11 @@
 
 package nortantis.graph.voronoi;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Random;
-import java.util.TreeMap;
-
-//import graph.*;
-//import de.polygonal.math.PM_PRNG;
 import nortantis.CurveCreator;
 import nortantis.MapSettings.LineStyle;
 import nortantis.geom.Point;
+
+import java.util.*;
 
 public class NoisyEdges
 {

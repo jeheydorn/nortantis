@@ -1,15 +1,10 @@
 package nortantis;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
-
 import nortantis.util.ComparableList;
 import nortantis.util.Range;
 import nortantis.util.StringCounterMap;
+
+import java.util.*;
 
 /**
  * Used to generate words using character level n-grams.

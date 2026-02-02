@@ -1,8 +1,8 @@
 package nortantis.platform.skia;
 
-import java.io.Serializable;
-import java.util.Objects;
 import nortantis.platform.Color;
+
+import java.util.Objects;
 
 public class SkiaColor extends Color
 {

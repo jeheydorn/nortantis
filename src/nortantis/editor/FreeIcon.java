@@ -1,20 +1,14 @@
 package nortantis.editor;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-
-import org.apache.commons.lang3.StringUtils;
-
-import nortantis.HSBColor;
-import nortantis.IconDrawTask;
-import nortantis.IconDrawer;
-import nortantis.IconType;
-import nortantis.ImageAndMasks;
-import nortantis.ImageCache;
+import nortantis.*;
 import nortantis.geom.IntDimension;
 import nortantis.geom.Point;
 import nortantis.platform.Color;
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 public class FreeIcon
 {

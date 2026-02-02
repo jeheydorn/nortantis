@@ -1,8 +1,8 @@
 package nortantis.graph.voronoi;
 
-import java.util.ArrayList;
-
 import nortantis.geom.Point;
+
+import java.util.ArrayList;
 
 public class Corner
 {

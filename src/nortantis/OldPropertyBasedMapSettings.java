@@ -1,29 +1,8 @@
 package nortantis;
 
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.JSONValue;
-
 import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanWaves;
-import nortantis.editor.CenterEdit;
-import nortantis.editor.CenterIcon;
-import nortantis.editor.CenterIconType;
-import nortantis.editor.CenterTrees;
-import nortantis.editor.EdgeEdit;
-import nortantis.editor.RegionEdit;
+import nortantis.editor.*;
 import nortantis.geom.Point;
 import nortantis.platform.Color;
 import nortantis.platform.Font;
@@ -31,6 +10,15 @@ import nortantis.platform.FontStyle;
 import nortantis.swing.MapEdits;
 import nortantis.util.Assets;
 import nortantis.util.Function0;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
+
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * The old version of MapSettings using Java properties files. This exists only for backward compatibility when loading old properties-based

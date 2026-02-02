@@ -1,11 +1,11 @@
 package nortantis.graph.voronoi.nodename.as3delaunay;
 
+import nortantis.geom.Point;
+import nortantis.geom.Rectangle;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-
-import nortantis.geom.Point;
-import nortantis.geom.Rectangle;
 
 public final class Site implements ICoord
 {

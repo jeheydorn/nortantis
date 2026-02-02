@@ -1,10 +1,10 @@
 package nortantis;
 
-import java.io.Serializable;
-import java.util.Objects;
-
 import org.apache.commons.io.FilenameUtils;
 import org.json.simple.JSONObject;
+
+import java.io.Serializable;
+import java.util.Objects;
 
 @SuppressWarnings("serial")
 public class NamedResource implements Serializable

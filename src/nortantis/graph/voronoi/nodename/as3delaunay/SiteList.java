@@ -1,9 +1,9 @@
 package nortantis.graph.voronoi.nodename.as3delaunay;
 
-import java.util.ArrayList;
-
 import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
+
+import java.util.ArrayList;
 
 public final class SiteList
 {

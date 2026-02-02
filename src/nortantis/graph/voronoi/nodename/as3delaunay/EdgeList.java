@@ -1,8 +1,8 @@
 package nortantis.graph.voronoi.nodename.as3delaunay;
 
-import java.util.ArrayList;
-
 import nortantis.geom.Point;
+
+import java.util.ArrayList;
 
 public final class EdgeList implements IDisposable
 {
