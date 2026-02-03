@@ -2,7 +2,7 @@ package nortantis.swing;
 
 import nortantis.platform.Image;
 import nortantis.platform.awt.AwtBridge;
-import nortantis.util.ImageHelper;
+import nortantis.platform.ImageHelper;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;

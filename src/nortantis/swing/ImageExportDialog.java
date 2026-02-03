@@ -7,7 +7,7 @@ import nortantis.MapSettings;
 import nortantis.editor.ExportAction;
 import nortantis.platform.Image;
 import nortantis.util.FileHelper;
-import nortantis.util.ImageHelper;
+import nortantis.platform.ImageHelper;
 import nortantis.util.Logger;
 import org.apache.commons.io.FilenameUtils;
 

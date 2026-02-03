@@ -9,7 +9,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.*;
-import java.net.JarURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -17,8 +16,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 
 public class Assets
@@ -305,28 +302,39 @@ public class Assets
 		}
 
 		cachedEntries = new ArrayList<>();
-		String assetPathInEntryFormat = addTrailingSlash(assetsPath);
 
-		URL jarUrl = Assets.class.getResource("/" + assetsPath);
-		if (jarUrl == null)
+		// Try to read the manifest generated at build time (works in JAR and on Android).
+		try (InputStream manifestStream = Assets.class.getResourceAsStream("/assets/manifest.txt"))
 		{
-			throw new RuntimeException("Unable to check installed assets" + " because the URL for the jar file was null. assetsPath: " + assetsPath);
-		}
-
-		try
-		{
-			JarURLConnection jarConnection = (JarURLConnection) jarUrl.openConnection();
-			try (JarFile jarFile = jarConnection.getJarFile())
+			if (manifestStream != null)
 			{
-				jarFile.stream().filter(entry -> entry.getName().startsWith(assetPathInEntryFormat) && !addTrailingSlash(entry.getName()).equals(assetPathInEntryFormat))
-						.forEach(entry -> cachedEntries.add(new CachedEntry(entry.getName(), entry.isDirectory())));
+				try (BufferedReader reader = new BufferedReader(new InputStreamReader(manifestStream, StandardCharsets.UTF_8)))
+				{
+					String line;
+					while ((line = reader.readLine()) != null)
+					{
+						if (line.isEmpty())
+						{
+							continue;
+						}
+						String[] parts = line.split("\t");
+						if (parts.length >= 2)
+						{
+							boolean isDirectory = "D".equals(parts[1]);
+							String name = isDirectory ? addTrailingSlash(parts[0]) : parts[0];
+							cachedEntries.add(new CachedEntry(name, isDirectory));
+						}
+					}
+				}
+				return;
 			}
 		}
 		catch (IOException e)
 		{
-			e.printStackTrace();
+			// Fall through to filesystem-based approach
 		}
 
+		// No manifest found (running from IDE / source). The filesystem paths will be used.
 	}
 
 	/**
@@ -342,28 +350,24 @@ public class Assets
 			String sourceDirParentInEntryFormat = addTrailingSlash(convertToAssetPath(sourceDir.getParent().toString()).substring(1));
 			String sourceDirInEntryFormat = addTrailingSlash(convertToAssetPath(sourceDir.toString()).substring(1));
 
-			// Copy from jar file
-			URL resource = Assets.class.getResource(convertToAssetPath(sourceDir.toString()));
-			JarURLConnection jarConnection = (JarURLConnection) resource.openConnection();
-			try (JarFile jarFile = jarConnection.getJarFile())
+			// Copy from cached entries using getResourceAsStream
+			for (CachedEntry entry : cachedEntries)
 			{
-				Enumeration<JarEntry> entries = jarFile.entries();
-				while (entries.hasMoreElements())
+				if (entry.name.startsWith(sourceDirInEntryFormat) && !addTrailingSlash(entry.name).equals(sourceDirInEntryFormat))
 				{
-					JarEntry entry = entries.nextElement();
-					if (entry.getName().startsWith(sourceDirInEntryFormat) && !addTrailingSlash(entry.getName()).equals(sourceDirInEntryFormat))
-					{
-						String entryPathInParentFolder = entry.getName().substring((addTrailingSlash(sourceDirParentInEntryFormat)).length());
+					String entryPathInParentFolder = entry.name.substring((addTrailingSlash(sourceDirParentInEntryFormat)).length());
 
-						Path destPath = Paths.get(destDir.toString(), entryPathInParentFolder);
-						if (entry.isDirectory())
+					Path destPath = Paths.get(destDir.toString(), entryPathInParentFolder);
+					if (entry.isDirectory)
+					{
+						Files.createDirectories(destPath);
+					}
+					else
+					{
+						Files.createDirectories(destPath.getParent());
+						try (InputStream inputStream = Assets.class.getResourceAsStream("/" + entry.name))
 						{
-							Files.createDirectories(destPath);
-						}
-						else
-						{
-							Files.createDirectories(destPath.getParent());
-							try (InputStream inputStream = jarFile.getInputStream(entry))
+							if (inputStream != null)
 							{
 								Files.copy(inputStream, destPath);
 							}

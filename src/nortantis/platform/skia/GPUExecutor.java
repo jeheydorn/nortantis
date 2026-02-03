@@ -2,15 +2,9 @@ package nortantis.platform.skia;
 
 import nortantis.util.Logger;
 import org.jetbrains.skia.*;
-import org.lwjgl.glfw.GLFWErrorCallback;
-import org.lwjgl.opengl.GL;
-import org.lwjgl.opengl.GL11;
 
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.system.MemoryUtil.NULL;
 
 /**
  * Singleton that manages a dedicated GPU thread with a job queue for serialized GPU operations. All GPU operations (context creation,
@@ -43,6 +37,9 @@ public class GPUExecutor
 	// Rendering mode override - set before getInstance() is called, or call reset() to reinitialize
 	private static volatile RenderingMode renderingModeOverride = defaultRenderingMode;
 
+	// Pluggable GL context provider
+	private static volatile GLContextProvider contextProvider;
+
 	private final Thread gpuThread;
 	private final BlockingQueue<GPUJob<?>> jobQueue;
 	private final AtomicBoolean running;
@@ -52,9 +49,8 @@ public class GPUExecutor
 	private volatile boolean shadersEnabled;
 	private volatile int maxTextureSize = 8192; // Default fallback, will be queried from GPU
 
-	// LWJGL/GLFW resources (owned by GPU thread)
-	private long glfwWindow = NULL;
-	private boolean glfwInitialized = false;
+	// The context provider instance used during initialization (owned by GPU thread)
+	private GLContextProvider activeProvider;
 
 	// Shutdown sentinel job
 	private static final GPUJob<?> SHUTDOWN_SENTINEL = new GPUJob<>(() -> null);
@@ -134,6 +130,15 @@ public class GPUExecutor
 	{
 		RenderingMode override = renderingModeOverride;
 		return override != null ? override : defaultRenderingMode;
+	}
+
+	/**
+	 * Sets the GL context provider used for GPU initialization. Call this before getInstance() if you want to use a custom provider (e.g.,
+	 * an EGL-based provider on Android). If not set, LWJGLContextProvider is discovered via reflection.
+	 */
+	public static void setGLContextProvider(GLContextProvider provider)
+	{
+		contextProvider = provider;
 	}
 
 	/**
@@ -453,6 +458,31 @@ public class GPUExecutor
 	}
 
 	/**
+	 * Resolves the GLContextProvider to use. If one was set explicitly, use that. Otherwise, try to discover LWJGLContextProvider via
+	 * reflection. Returns null if no provider is available.
+	 */
+	private GLContextProvider resolveContextProvider()
+	{
+		GLContextProvider provider = contextProvider;
+		if (provider != null)
+		{
+			return provider;
+		}
+
+		// Try reflective discovery of LWJGLContextProvider
+		try
+		{
+			Class<?> clazz = Class.forName("nortantis.platform.skia.LWJGLContextProvider");
+			return (GLContextProvider) clazz.getDeclaredConstructor().newInstance();
+		}
+		catch (Exception e)
+		{
+			Logger.println("GPUExecutor: LWJGLContextProvider not available: " + e.getMessage());
+			return null;
+		}
+	}
+
+	/**
 	 * Initializes the GPU context. Called on the GPU thread.
 	 */
 	private void initializeGPUContext()
@@ -479,17 +509,38 @@ public class GPUExecutor
 				return;
 			}
 
-			// GPU mode - try to initialize GPU
-			// Initialize GLFW and create OpenGL context
-			if (!initializeGLFW())
+			// GPU mode - try to initialize GPU via provider
+			activeProvider = resolveContextProvider();
+
+			if (activeProvider == null)
 			{
 				gpuAvailable = false;
-				Logger.println("GPUExecutor: Failed to initialize GLFW, falling back to CPU shaders");
+				if (mode == RenderingMode.GPU || mode == RenderingMode.HYBRID)
+				{
+					Logger.println("GPUExecutor: No GLContextProvider available, falling back to CPU shaders");
+				}
 				return;
 			}
 
+			if (activeProvider.isHeadless())
+			{
+				gpuAvailable = false;
+				Logger.println("GPUExecutor: Headless environment detected, falling back to CPU shaders");
+				return;
+			}
+
+			if (!activeProvider.initialize())
+			{
+				gpuAvailable = false;
+				Logger.println("GPUExecutor: Failed to initialize GL context, falling back to CPU shaders");
+				activeProvider = null;
+				return;
+			}
+
+			maxTextureSize = activeProvider.getMaxTextureSize();
+
 			// Create Skia DirectContext
-			directContext = tryCreateDirectContext();
+			directContext = activeProvider.createDirectContext();
 
 			if (directContext != null)
 			{
@@ -500,7 +551,8 @@ public class GPUExecutor
 			{
 				gpuAvailable = false;
 				Logger.println("GPUExecutor: GPU acceleration not available, falling back to CPU shaders");
-				cleanupGLFW();
+				activeProvider.cleanup();
+				activeProvider = null;
 			}
 		}
 		catch (Exception | UnsatisfiedLinkError e)
@@ -508,163 +560,11 @@ public class GPUExecutor
 			gpuAvailable = false;
 			directContext = null;
 			Logger.println("GPUExecutor: Failed to initialize GPU context: " + e.getMessage());
-			cleanupGLFW();
-		}
-	}
-
-	/**
-	 * Initializes GLFW and creates a hidden window with an OpenGL context. Must be called on the GPU thread.
-	 */
-	private boolean initializeGLFW()
-	{
-		try
-		{
-			// Check for headless environment
-			if (isHeadlessEnvironment())
+			if (activeProvider != null)
 			{
-				Logger.println("GPUExecutor: Headless environment detected, skipping GLFW initialization");
-				return false;
+				activeProvider.cleanup();
+				activeProvider = null;
 			}
-
-			// Set up error callback
-			GLFWErrorCallback.createPrint(System.err).set();
-
-			// Initialize GLFW
-			if (!glfwInit())
-			{
-				Logger.println("GPUExecutor: Unable to initialize GLFW");
-				return false;
-			}
-			glfwInitialized = true;
-
-			// Configure GLFW for an invisible window
-			glfwDefaultWindowHints();
-			glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-			glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-
-			// Request OpenGL 3.3 core profile
-			glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-			glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-			glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-			// For macOS compatibility
-			String os = System.getProperty("os.name").toLowerCase();
-			if (os.contains("mac"))
-			{
-				glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
-			}
-
-			// Create a small hidden window
-			glfwWindow = glfwCreateWindow(1, 1, "GPU Executor Context", NULL, NULL);
-			if (glfwWindow == NULL)
-			{
-				Logger.println("GPUExecutor: Failed to create GLFW window");
-				glfwTerminate();
-				glfwInitialized = false;
-				return false;
-			}
-
-			// Make the OpenGL context current on this thread
-			glfwMakeContextCurrent(glfwWindow);
-
-			// Initialize LWJGL's OpenGL bindings
-			GL.createCapabilities();
-
-			// Query the maximum texture size supported by this GPU
-			maxTextureSize = GL11.glGetInteger(GL11.GL_MAX_TEXTURE_SIZE);
-			Logger.println("GPUExecutor: GLFW/OpenGL context created successfully on GPU thread (max texture size: " + maxTextureSize + ")");
-			return true;
-		}
-		catch (Exception | UnsatisfiedLinkError e)
-		{
-			Logger.println("GPUExecutor: GLFW initialization failed: " + e.getMessage());
-			cleanupGLFW();
-			return false;
-		}
-	}
-
-	/**
-	 * Checks if running in a headless environment.
-	 */
-	private boolean isHeadlessEnvironment()
-	{
-		if (java.awt.GraphicsEnvironment.isHeadless())
-		{
-			return true;
-		}
-
-		String display = System.getenv("DISPLAY");
-		String os = System.getProperty("os.name").toLowerCase();
-		if ((os.contains("nux") || os.contains("nix")) && (display == null || display.isEmpty()))
-		{
-			return true;
-		}
-
-		return false;
-	}
-
-	/**
-	 * Attempts to create a DirectContext for Skia. Must be called on the GPU thread with an active OpenGL context.
-	 */
-	private DirectContext tryCreateDirectContext()
-	{
-		try
-		{
-			DirectContext ctx = DirectContext.Companion.makeGL();
-
-			if (ctx != null)
-			{
-				// Verify by creating a small test surface
-				try
-				{
-					Surface testSurface = Surface.Companion.makeRenderTarget(ctx, false, new ImageInfo(16, 16, ColorType.Companion.getN32(), ColorAlphaType.PREMUL, null));
-					if (testSurface != null)
-					{
-						testSurface.close();
-						return ctx;
-					}
-					else
-					{
-						ctx.close();
-						return null;
-					}
-				}
-				catch (Exception e)
-				{
-					ctx.close();
-					return null;
-				}
-			}
-
-			return null;
-		}
-		catch (Exception | UnsatisfiedLinkError e)
-		{
-			return null;
-		}
-	}
-
-	/**
-	 * Safely cleans up GLFW resources. Must be called on the GPU thread.
-	 */
-	private void cleanupGLFW()
-	{
-		try
-		{
-			if (glfwWindow != NULL)
-			{
-				glfwDestroyWindow(glfwWindow);
-				glfwWindow = NULL;
-			}
-			if (glfwInitialized)
-			{
-				glfwTerminate();
-				glfwInitialized = false;
-			}
-		}
-		catch (Exception e)
-		{
-			// Ignore cleanup errors
 		}
 	}
 
@@ -687,7 +587,11 @@ public class GPUExecutor
 			// Ignore cleanup errors
 		}
 
-		cleanupGLFW();
+		if (activeProvider != null)
+		{
+			activeProvider.cleanup();
+			activeProvider = null;
+		}
 		gpuAvailable = false;
 	}
 }

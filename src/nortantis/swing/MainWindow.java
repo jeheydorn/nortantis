@@ -12,10 +12,10 @@ import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
 import nortantis.platform.BackgroundTask;
 import nortantis.platform.Image;
+import nortantis.platform.ImageHelper;
 import nortantis.platform.PlatformFactory;
 import nortantis.platform.awt.AwtBridge;
 import nortantis.platform.awt.AwtFactory;
-import nortantis.platform.skia.GPUExecutor;
 import nortantis.util.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -2135,10 +2135,41 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	 */
 	public static void main(String[] args)
 	{
-		// Rendering mode only matters when using SkiaFactory for the PlatformFactory.
-		GPUExecutor.setRenderingMode(GPUExecutor.RenderingMode.GPU);
 		// Tell drawing code to use either AWT (AwtFactory) or Skia (SkiaFactory).
 		PlatformFactory.setInstance(new AwtFactory());
+
+		// Set up Skia-specific configuration if Skia is available on the classpath.
+		try
+		{
+			Class<?> gpuExecutorClass = Class.forName("nortantis.platform.skia.GPUExecutor");
+			Class<?> renderingModeClass = Class.forName("nortantis.platform.skia.GPUExecutor$RenderingMode");
+			Object gpuMode = Enum.valueOf(renderingModeClass.asSubclass(Enum.class), "GPU");
+			java.lang.reflect.Method setRenderingMode = gpuExecutorClass.getMethod("setRenderingMode", renderingModeClass);
+			setRenderingMode.invoke(null, gpuMode);
+
+			Class<?> skiaFactoryClass = Class.forName("nortantis.platform.skia.SkiaFactory");
+			java.lang.reflect.Method setDispatcher = skiaFactoryClass.getMethod("setMainThreadDispatcher", java.util.function.Consumer.class);
+			java.util.function.Consumer<Runnable> dispatcher = toRun ->
+			{
+				if (javax.swing.SwingUtilities.isEventDispatchThread())
+				{
+					toRun.run();
+				}
+				else
+				{
+					javax.swing.SwingUtilities.invokeLater(toRun);
+				}
+			};
+			setDispatcher.invoke(null, dispatcher);
+		}
+		catch (ClassNotFoundException e)
+		{
+			// Skia not on classpath -- AWT-only build, which is fine.
+		}
+		catch (Exception e)
+		{
+			throw new RuntimeException("Failed to configure Skia", e);
+		}
 
 		setLookAndFeel(UserPreferences.getInstance().lookAndFeel);
 

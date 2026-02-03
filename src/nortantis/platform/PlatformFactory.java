@@ -22,7 +22,13 @@ public abstract class PlatformFactory
 	public static void setInstance(PlatformFactory instance)
 	{
 		PlatformFactory.instance = instance;
+		ImageHelper.setInstance(instance.createImageHelper());
 	}
+
+	/**
+	 * Creates the ImageHelper for this platform. Called when this factory is set as the active platform via setInstance().
+	 */
+	protected abstract ImageHelper createImageHelper();
 
 	/**
 	 * Creates an image. Note - callers outside the nortantis.platform packages should call Image.create(...)

@@ -5,7 +5,7 @@ import nortantis.geom.Dimension;
 import nortantis.graph.voronoi.nodename.as3delaunay.Voronoi;
 import nortantis.platform.*;
 import nortantis.util.Assets;
-import nortantis.util.ImageHelper;
+import nortantis.platform.ImageHelper;
 import nortantis.util.Logger;
 
 import java.nio.file.Paths;

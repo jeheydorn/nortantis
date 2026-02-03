@@ -19,7 +19,7 @@ public class HistogramEqualizer
 	 */
 	List<int[]> lookupTables;
 	List<int[]> inverses;
-	ImageType imageType;
+	public ImageType imageType;
 
 	public HistogramEqualizer(Image image)
 	{

@@ -4,12 +4,11 @@ import nortantis.platform.*;
 import nortantis.platform.Color;
 import nortantis.platform.Font;
 import nortantis.platform.Image;
-import nortantis.platform.skia.SkiaFactory;
-import nortantis.platform.skia.SkiaImage;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
+import java.lang.reflect.Method;
 
 /**
  * Bridge class for converting between platform-agnostic types and AWT types. This class can efficiently handle both AWT and Skia platform
@@ -32,19 +31,18 @@ public class AwtBridge
 			return ((AwtImage) image).image;
 		}
 
-		if (image instanceof SkiaImage)
+		if (isSkiaImage(image))
 		{
 			if (image.getType() == ImageType.ARGB || image.getType() == ImageType.RGB)
 			{
-				// We can do this case faster using System.arracopy on the pixel array values.
-				SkiaImage skiaImage = (SkiaImage) image;
-				int width = skiaImage.getWidth();
-				int height = skiaImage.getHeight();
+				// We can do this case faster using System.arraycopy on the pixel array values.
+				int width = image.getWidth();
+				int height = image.getHeight();
 
 				BufferedImage bi = new BufferedImage(width, height, image.getType() == ImageType.ARGB ? BufferedImage.TYPE_INT_ARGB : BufferedImage.TYPE_INT_RGB);
 				int[] destPixels = ((DataBufferInt) bi.getRaster().getDataBuffer()).getData();
 
-				int[] srcPixels = skiaImage.readPixelsToIntArray();
+				int[] srcPixels = readSkiaPixelsToIntArray(image);
 				if (srcPixels != null)
 				{
 					System.arraycopy(srcPixels, 0, destPixels, 0, srcPixels.length);
@@ -116,7 +114,7 @@ public class AwtBridge
 				return image;
 			}
 
-			if (image instanceof SkiaImage)
+			if (isSkiaImage(image))
 			{
 				return new AwtImage(toBufferedImage(image));
 			}
@@ -124,14 +122,14 @@ public class AwtBridge
 			return new AwtImage(genericImageTypeToBufferedImage(image));
 		}
 
-		if (PlatformFactory.getInstance() instanceof SkiaFactory && image instanceof SkiaImage)
+		if (isSkiaFactory(PlatformFactory.getInstance()))
 		{
 			if (image instanceof AwtImage)
 			{
 				return slowCopyToPlatformImage(image);
 			}
 
-			if (image instanceof SkiaImage)
+			if (isSkiaImage(image))
 			{
 				return image;
 			}
@@ -287,5 +285,28 @@ public class AwtBridge
 		}
 
 		return PlatformFactory.getInstance().createFont(font.getName(), style, font.getSize());
+	}
+
+	private static boolean isSkiaImage(Image image)
+	{
+		return image.getClass().getName().equals("nortantis.platform.skia.SkiaImage");
+	}
+
+	private static boolean isSkiaFactory(PlatformFactory factory)
+	{
+		return factory.getClass().getName().equals("nortantis.platform.skia.SkiaFactory");
+	}
+
+	private static int[] readSkiaPixelsToIntArray(Image image)
+	{
+		try
+		{
+			Method method = image.getClass().getMethod("readPixelsToIntArray");
+			return (int[]) method.invoke(image);
+		}
+		catch (Exception e)
+		{
+			return null;
+		}
 	}
 }

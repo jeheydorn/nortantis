@@ -3,7 +3,7 @@ package nortantis.platform.awt;
 import nortantis.geom.IntRectangle;
 import nortantis.platform.*;
 import nortantis.platform.Image;
-import nortantis.util.ImageHelper;
+import nortantis.platform.ImageHelper;
 import org.imgscalr.Scalr;
 import org.imgscalr.Scalr.Method;
 

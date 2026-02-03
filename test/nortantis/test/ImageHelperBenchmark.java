@@ -7,7 +7,7 @@ import nortantis.platform.ImageType;
 import nortantis.platform.PlatformFactory;
 import nortantis.platform.skia.GPUExecutor;
 import nortantis.platform.skia.SkiaFactory;
-import nortantis.util.ImageHelper;
+import nortantis.platform.ImageHelper;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 

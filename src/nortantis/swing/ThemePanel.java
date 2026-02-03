@@ -15,6 +15,7 @@ import nortantis.geom.Point;
 import nortantis.graph.voronoi.Center;
 import nortantis.platform.Font;
 import nortantis.platform.Image;
+import nortantis.platform.ImageHelper;
 import nortantis.platform.ImageType;
 import nortantis.platform.awt.AwtBridge;
 import nortantis.util.*;

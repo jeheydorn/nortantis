@@ -5,7 +5,7 @@ import nortantis.geom.IntDimension;
 import nortantis.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.platform.*;
-import nortantis.util.ImageHelper;
+import nortantis.platform.ImageHelper;
 
 import java.util.ArrayList;
 import java.util.Collection;

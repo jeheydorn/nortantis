@@ -35,6 +35,8 @@ if (osArch == "x86_64" || osArch == "amd64") {
     throw new GradleException("Unsupported arch: $osArch")
 }
 
+def includeSkia = project.findProperty('includeSkia') != 'false'
+
 def skikoVersion = "0.9.37"
 def skikoTarget = "${targetOs}-${targetArch}"
 
@@ -55,17 +57,20 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     implementation 'com.formdev:flatlaf:3.6.2'
-    implementation "org.jetbrains.skiko:skiko:$skikoVersion"
-    implementation "org.jetbrains.skiko:skiko-awt-runtime-$skikoTarget:$skikoVersion"
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.9.23"
 
-    // LWJGL for GPU context creation
-    implementation "org.lwjgl:lwjgl:$lwjglVersion"
-    implementation "org.lwjgl:lwjgl-opengl:$lwjglVersion"
-    implementation "org.lwjgl:lwjgl-glfw:$lwjglVersion"
-    runtimeOnly "org.lwjgl:lwjgl:$lwjglVersion:$lwjglNatives"
-    runtimeOnly "org.lwjgl:lwjgl-opengl:$lwjglVersion:$lwjglNatives"
-    runtimeOnly "org.lwjgl:lwjgl-glfw:$lwjglVersion:$lwjglNatives"
+    if (includeSkia) {
+        implementation "org.jetbrains.skiko:skiko:$skikoVersion"
+        implementation "org.jetbrains.skiko:skiko-awt-runtime-$skikoTarget:$skikoVersion"
+        implementation "org.jetbrains.kotlin:kotlin-stdlib:1.9.23"
+
+        // LWJGL for GPU context creation
+        implementation "org.lwjgl:lwjgl:$lwjglVersion"
+        implementation "org.lwjgl:lwjgl-opengl:$lwjglVersion"
+        implementation "org.lwjgl:lwjgl-glfw:$lwjglVersion"
+        runtimeOnly "org.lwjgl:lwjgl:$lwjglVersion:$lwjglNatives"
+        runtimeOnly "org.lwjgl:lwjgl-opengl:$lwjglVersion:$lwjglNatives"
+        runtimeOnly "org.lwjgl:lwjgl-glfw:$lwjglVersion:$lwjglNatives"
+    }
 }
 
 // Attaches javadocs to libraries in Eclipse.
@@ -92,8 +97,8 @@ application {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 tasks.withType(JavaCompile) {
@@ -187,6 +192,9 @@ sourceSets {
         java {
             srcDirs = ['src']
             include '**/*.java'
+            if (!includeSkia) {
+                exclude 'nortantis/platform/skia/**'
+            }
         }
     }
     test {
@@ -196,6 +204,36 @@ sourceSets {
         }
     }
 }
+
+// Generate an asset manifest listing all files under assets/ so that code
+// running from a JAR or on Android can enumerate assets without JAR introspection.
+tasks.register('generateAssetManifest') {
+    def assetsDir = file('assets')
+    def outputDir = file("$buildDir/generated-resources/assets")
+    def manifestFile = new File(outputDir, 'manifest.txt')
+
+    inputs.dir(assetsDir)
+    outputs.file(manifestFile)
+
+    doLast {
+        outputDir.mkdirs()
+        def lines = []
+        assetsDir.eachFileRecurse { f ->
+            def relative = assetsDir.toPath().relativize(f.toPath()).toString().replace('\\', '/')
+            def prefix = "assets/" + relative
+            if (f.isDirectory()) {
+                lines << prefix + "/\tD"
+            } else {
+                lines << prefix + "\tF"
+            }
+        }
+        lines.sort()
+        manifestFile.text = lines.join('\n') + '\n'
+    }
+}
+
+sourceSets.main.resources.srcDirs += "$buildDir/generated-resources"
+processResources.dependsOn generateAssetManifest
 
 spotless {
     java {

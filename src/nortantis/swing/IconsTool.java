@@ -9,6 +9,7 @@ import nortantis.geom.RotatedRectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.platform.Color;
 import nortantis.platform.Image;
+import nortantis.platform.ImageHelper;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
 import nortantis.platform.awt.AwtBridge;
@@ -1319,9 +1320,16 @@ public class IconsTool extends EditorTool
 		int scaledHeight;
 		switch (iconType)
 		{
-			case IconType.mountains -> scaledHeight = 35;
-			case IconType.hills, IconType.sand -> scaledHeight = 25;
-			default -> scaledHeight = 35;
+			case mountains:
+				scaledHeight = 35;
+				break;
+			case hills:
+			case sand:
+				scaledHeight = 25;
+				break;
+			default:
+				scaledHeight = 35;
+				break;
 		}
 		return createIconPreview(settings, images, scaledHeight, 9, iconType, iconColor, filterColor, maximizeOpacity, fillWithColor);
 	}

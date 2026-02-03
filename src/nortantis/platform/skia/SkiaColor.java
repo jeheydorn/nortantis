@@ -68,8 +68,58 @@ public class SkiaColor extends Color
 	@Override
 	public float[] getHSB()
 	{
+		return rgbToHSB(getRed(), getGreen(), getBlue());
+	}
+
+	/**
+	 * Pure Java RGB-to-HSB conversion equivalent to java.awt.Color.RGBtoHSB.
+	 */
+	static float[] rgbToHSB(int r, int g, int b)
+	{
 		float[] hsb = new float[3];
-		java.awt.Color.RGBtoHSB(getRed(), getGreen(), getBlue(), hsb);
+		int cmax = Math.max(r, Math.max(g, b));
+		int cmin = Math.min(r, Math.min(g, b));
+		float brightness = cmax / 255.0f;
+		float saturation;
+		float hue;
+		if (cmax != 0)
+		{
+			saturation = (float) (cmax - cmin) / (float) cmax;
+		}
+		else
+		{
+			saturation = 0;
+		}
+		if (saturation == 0)
+		{
+			hue = 0;
+		}
+		else
+		{
+			float redc = (float) (cmax - r) / (float) (cmax - cmin);
+			float greenc = (float) (cmax - g) / (float) (cmax - cmin);
+			float bluec = (float) (cmax - b) / (float) (cmax - cmin);
+			if (r == cmax)
+			{
+				hue = bluec - greenc;
+			}
+			else if (g == cmax)
+			{
+				hue = 2.0f + redc - bluec;
+			}
+			else
+			{
+				hue = 4.0f + greenc - redc;
+			}
+			hue = hue / 6.0f;
+			if (hue < 0)
+			{
+				hue = hue + 1.0f;
+			}
+		}
+		hsb[0] = hue;
+		hsb[1] = saturation;
+		hsb[2] = brightness;
 		return hsb;
 	}
 

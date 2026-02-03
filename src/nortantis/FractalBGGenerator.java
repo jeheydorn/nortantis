@@ -4,7 +4,7 @@ import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.PlatformFactory;
 import nortantis.platform.awt.AwtFactory;
-import nortantis.util.ImageHelper;
+import nortantis.platform.ImageHelper;
 import nortantis.util.Stopwatch;
 import nortantis.util.ThreadHelper;
 import org.jtransforms.fft.FloatFFT_2D;

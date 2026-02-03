@@ -4,7 +4,7 @@ import nortantis.geom.IntPoint;
 import nortantis.geom.IntRectangle;
 import nortantis.geom.Rectangle;
 import nortantis.platform.*;
-import nortantis.util.ImageHelper;
+import nortantis.platform.ImageHelper;
 import nortantis.util.Range;
 import nortantis.util.Tuple2;
 

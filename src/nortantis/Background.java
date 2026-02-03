@@ -4,8 +4,8 @@ import nortantis.geom.*;
 import nortantis.graph.voronoi.Center;
 import nortantis.platform.*;
 import nortantis.util.Assets;
-import nortantis.util.ImageHelper;
-import nortantis.util.ImageHelper.ColorifyAlgorithm;
+import nortantis.platform.ImageHelper;
+import nortantis.platform.ImageHelper.ColorifyAlgorithm;
 import nortantis.util.Tuple2;
 import org.apache.commons.lang3.StringUtils;
 

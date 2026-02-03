@@ -8,6 +8,7 @@ import nortantis.editor.MapUpdater;
 import nortantis.editor.UserPreferences;
 import nortantis.geom.IntRectangle;
 import nortantis.platform.Image;
+import nortantis.platform.ImageHelper;
 import nortantis.platform.awt.AwtBridge;
 import nortantis.swing.ThemePanel.LandColoringMethod;
 import nortantis.util.*;

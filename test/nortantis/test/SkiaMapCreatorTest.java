@@ -13,7 +13,7 @@ import nortantis.platform.skia.GPUExecutor.RenderingMode;
 import nortantis.platform.skia.SkiaFactory;
 import nortantis.util.Assets;
 import nortantis.util.FileHelper;
-import nortantis.util.ImageHelper;
+import nortantis.platform.ImageHelper;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.junit.jupiter.api.AfterEach;

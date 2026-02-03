@@ -4,7 +4,7 @@ import nortantis.platform.*;
 import nortantis.platform.Color;
 import nortantis.platform.Image;
 import nortantis.util.Helper;
-import nortantis.util.ImageHelper.ColorifyAlgorithm;
+import nortantis.platform.ImageHelper.ColorifyAlgorithm;
 import org.jetbrains.skia.*;
 
 import java.util.Map;

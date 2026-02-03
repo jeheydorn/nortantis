@@ -11,8 +11,8 @@ import nortantis.platform.Image;
 import nortantis.platform.awt.AwtBridge;
 import nortantis.platform.awt.AwtFactory;
 import nortantis.util.Assets;
-import nortantis.util.ImageHelper;
-import nortantis.util.ImageHelper.ColorifyAlgorithm;
+import nortantis.platform.ImageHelper;
+import nortantis.platform.ImageHelper.ColorifyAlgorithm;
 import nortantis.util.Range;
 import org.imgscalr.Scalr.Method;
 

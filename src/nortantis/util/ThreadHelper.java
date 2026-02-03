@@ -1,5 +1,7 @@
 package nortantis.util;
 
+import nortantis.platform.ImageHelper;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;

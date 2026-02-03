@@ -8,7 +8,7 @@ import nortantis.platform.*;
 import nortantis.platform.skia.SkiaFactory;
 import nortantis.util.Assets;
 import nortantis.util.FileHelper;
-import nortantis.util.ImageHelper;
+import nortantis.platform.ImageHelper;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;

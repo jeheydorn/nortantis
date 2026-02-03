@@ -6,6 +6,7 @@ import nortantis.geom.IntPoint;
 import nortantis.geom.IntRectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.platform.Image;
+import nortantis.platform.ImageHelper;
 import nortantis.platform.PlatformFactory;
 import nortantis.platform.awt.AwtFactory;
 import nortantis.swing.MapEdits;

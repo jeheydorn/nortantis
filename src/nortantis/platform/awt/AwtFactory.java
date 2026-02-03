@@ -27,6 +27,12 @@ public class AwtFactory extends PlatformFactory
 {
 
 	@Override
+	protected nortantis.platform.ImageHelper createImageHelper()
+	{
+		return new AwtImageHelper();
+	}
+
+	@Override
 	public Image createImage(int width, int height, ImageType type)
 	{
 		return new AwtImage(width, height, type);

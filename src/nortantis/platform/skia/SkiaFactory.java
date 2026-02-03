@@ -7,17 +7,34 @@ import nortantis.platform.FontStyle;
 import nortantis.util.Logger;
 import org.jetbrains.skia.*;
 
-import javax.swing.*;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 
 public class SkiaFactory extends PlatformFactory
 {
 	private final ExecutorService executor = Executors.newCachedThreadPool();
+	private static Consumer<Runnable> mainThreadDispatcher;
+
+	@Override
+	protected nortantis.platform.ImageHelper createImageHelper()
+	{
+		return new SkiaImageHelper();
+	}
+
+	/**
+	 * Sets the dispatcher used to run code on the main UI thread. Must be called before any code that uses
+	 * doInMainUIThreadAsynchronous. On desktop with Swing, pass a lambda that delegates to SwingUtilities. On Android, pass a lambda that
+	 * posts to the main looper Handler.
+	 */
+	public static void setMainThreadDispatcher(Consumer<Runnable> dispatcher)
+	{
+		mainThreadDispatcher = dispatcher;
+	}
 
 	@Override
 	public nortantis.platform.Image createImage(int width, int height, ImageType type)
@@ -145,7 +162,61 @@ public class SkiaFactory extends PlatformFactory
 	@Override
 	public Color createColorFromHSB(float hue, float saturation, float brightness)
 	{
-		return new SkiaColor(java.awt.Color.HSBtoRGB(hue, saturation, brightness), false);
+		return new SkiaColor(hsbToRGB(hue, saturation, brightness), false);
+	}
+
+	/**
+	 * Pure Java HSB-to-RGB conversion equivalent to java.awt.Color.HSBtoRGB.
+	 */
+	static int hsbToRGB(float hue, float saturation, float brightness)
+	{
+		int r = 0, g = 0, b = 0;
+		if (saturation == 0)
+		{
+			r = g = b = (int) (brightness * 255.0f + 0.5f);
+		}
+		else
+		{
+			float h = (hue - (float) Math.floor(hue)) * 6.0f;
+			float f = h - (float) Math.floor(h);
+			float p = brightness * (1.0f - saturation);
+			float q = brightness * (1.0f - saturation * f);
+			float t = brightness * (1.0f - (saturation * (1.0f - f)));
+			switch ((int) h)
+			{
+			case 0:
+				r = (int) (brightness * 255.0f + 0.5f);
+				g = (int) (t * 255.0f + 0.5f);
+				b = (int) (p * 255.0f + 0.5f);
+				break;
+			case 1:
+				r = (int) (q * 255.0f + 0.5f);
+				g = (int) (brightness * 255.0f + 0.5f);
+				b = (int) (p * 255.0f + 0.5f);
+				break;
+			case 2:
+				r = (int) (p * 255.0f + 0.5f);
+				g = (int) (brightness * 255.0f + 0.5f);
+				b = (int) (t * 255.0f + 0.5f);
+				break;
+			case 3:
+				r = (int) (p * 255.0f + 0.5f);
+				g = (int) (q * 255.0f + 0.5f);
+				b = (int) (brightness * 255.0f + 0.5f);
+				break;
+			case 4:
+				r = (int) (t * 255.0f + 0.5f);
+				g = (int) (p * 255.0f + 0.5f);
+				b = (int) (brightness * 255.0f + 0.5f);
+				break;
+			case 5:
+				r = (int) (brightness * 255.0f + 0.5f);
+				g = (int) (p * 255.0f + 0.5f);
+				b = (int) (q * 255.0f + 0.5f);
+				break;
+			}
+		}
+		return 0xFF000000 | (r << 16) | (g << 8) | b;
 	}
 
 	@Override
@@ -168,13 +239,11 @@ public class SkiaFactory extends PlatformFactory
 	@Override
 	public void doInMainUIThreadAsynchronous(Runnable toRun)
 	{
-		if (SwingUtilities.isEventDispatchThread())
+		if (mainThreadDispatcher == null)
 		{
-			toRun.run();
+			throw new IllegalStateException(
+					"Main thread dispatcher not set. Call SkiaFactory.setMainThreadDispatcher() before using background tasks.");
 		}
-		else
-		{
-			SwingUtilities.invokeLater(toRun);
-		}
+		mainThreadDispatcher.accept(toRun);
 	}
 }
