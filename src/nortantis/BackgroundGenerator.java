@@ -106,8 +106,8 @@ public class BackgroundGenerator
 								level = texturePixels.getBandLevel(textureC, textureR, channel);
 							}
 
-							float ar = calcSmoothParamether(textureR, alphaRows, alpha, texture.getHeight());
-							float ac = calcSmoothParamether(textureC, alphaCols, alpha, texture.getWidth());
+							float ar = calcSmoothParameter(textureR, alphaRows, alpha, texture.getHeight());
+							float ac = calcSmoothParameter(textureC, alphaCols, alpha, texture.getWidth());
 
 							kernel[r][c] = means[channel] + varianceScaler * (level - means[channel]) * ar * ac;
 						}
@@ -127,7 +127,7 @@ public class BackgroundGenerator
 				}
 				else
 				{
-					// Copy grayImage to a color channel in allChanels.
+					// Copy grayImage to a color channel in allChannels.
 					try (PixelReader grayImagePixels = grayImage.createPixelReader(); PixelReaderWriter allChannelsPixels = allChannels.createPixelReaderWriter())
 					{
 						for (int y = 0; y < allChannels.getHeight(); y++)
@@ -163,7 +163,7 @@ public class BackgroundGenerator
 		return result;
 	}
 
-	private static float calcSmoothParamether(int textureR, int alphaPixels, float alpha, int imageLength)
+	private static float calcSmoothParameter(int textureR, int alphaPixels, float alpha, int imageLength)
 	{
 		if (textureR <= alphaPixels / 2)
 		{

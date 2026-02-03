@@ -97,11 +97,6 @@ public final class Edge
 		return _rightVertex;
 	}
 
-	public Vertex vertex(LR leftRight)
-	{
-		return (leftRight == LR.LEFT) ? _leftVertex : _rightVertex;
-	}
-
 	public void setVertex(LR leftRight, Vertex v)
 	{
 		if (leftRight == LR.LEFT)

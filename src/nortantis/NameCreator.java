@@ -4,6 +4,7 @@ import nortantis.geom.Point;
 import nortantis.util.*;
 
 import java.util.*;
+import java.util.function.Supplier;
 
 public class NameCreator
 {
@@ -56,7 +57,7 @@ public class NameCreator
 			// Switch to person names
 			return generatePersonName(format, requireUnique, requiredPrefix);
 		}
-		Function0<String> nameCreator = () -> placeNameGenerator.generateName(requiredPrefix);
+		Supplier<String> nameCreator = () -> placeNameGenerator.generateName(requiredPrefix);
 		return innerCreateUniqueName(format, requireUnique, nameCreator);
 	}
 
@@ -72,29 +73,29 @@ public class NameCreator
 			// Switch to place names
 			return generatePlaceName(format, requireUnique, requiredPrefix);
 		}
-		Function0<String> nameCreator = () -> personNameGenerator.generateName(requiredPrefix);
+		Supplier<String> nameCreator = () -> personNameGenerator.generateName(requiredPrefix);
 		return innerCreateUniqueName(format, requireUnique, nameCreator);
 	}
 
 	private String compileName(String format, boolean requireUnique)
 	{
-		Function0<String> nameCreator = () -> nameCompiler.compileName();
+		Supplier<String> nameCreator = () -> nameCompiler.compileName();
 		return innerCreateUniqueName(format, requireUnique, nameCreator);
 	}
 
-	private String innerCreateUniqueName(String format, boolean requireUnique, Function0<String> nameCreator)
+	private String innerCreateUniqueName(String format, boolean requireUnique, Supplier<String> nameCreator)
 	{
 		final int maxRetries = 20;
 
 		if (!requireUnique)
 		{
-			return String.format(format, nameCreator.apply());
+			return String.format(format, nameCreator.get());
 		}
 
 		for (@SuppressWarnings("unused")
 		int retry : new Range(maxRetries))
 		{
-			String name = String.format(format, nameCreator.apply());
+			String name = String.format(format, nameCreator.get());
 			if (!namesGenerated.contains(name))
 			{
 				namesGenerated.add(name);

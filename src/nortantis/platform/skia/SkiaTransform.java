@@ -15,12 +15,6 @@ public class SkiaTransform extends Transform
 	}
 
 	@Override
-	public Transform copy()
-	{
-		return new SkiaTransform(new Matrix33(matrix.getMat()));
-	}
-
-	@Override
 	public boolean equals(Object o)
 	{
 		if (this == o)

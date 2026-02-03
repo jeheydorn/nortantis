@@ -157,7 +157,7 @@ public class NameGeneratorDialog extends JDialog
 				attemptCount++;
 				if (attemptCount >= maxAttempts)
 				{
-					return names + (names.isEmpty() ? "" : "\n") + "Unable to generate enough names with the given contraints. " + "Try using more books or reducing the suffix.";
+					return names + (names.isEmpty() ? "" : "\n") + "Unable to generate enough names with the given constraints. " + "Try using more books or reducing the suffix.";
 				}
 			}
 			names = names + (names.isEmpty() ? "" : "\n") + name;

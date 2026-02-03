@@ -266,7 +266,7 @@ public class MapCreatorTest
 	@Test
 	public void newRandomMapTest1() throws IOException
 	{
-		MapSettings settings = generateRandomAndCompare(1);
+		generateRandomAndCompare(1);
 	}
 
 	@Test
@@ -790,22 +790,17 @@ public class MapCreatorTest
 
 	private MapSettings generateRandomAndCompare(long seed)
 	{
-		return MapTestUtil.generateRandomAndCompare(1, expectedMapsFolderName, failedMapsFolderName, 0);
+		return MapTestUtil.generateRandomAndCompare(seed, expectedMapsFolderName, failedMapsFolderName, 0);
 	}
 
 	private void generateRandomHeightmapAndCompare(long seed)
 	{
-		MapTestUtil.generateRandomHeightmapAndCompare(1, expectedMapsFolderName, failedMapsFolderName);
+		MapTestUtil.generateRandomHeightmapAndCompare(seed, expectedMapsFolderName, failedMapsFolderName);
 	}
 
 	private void generateAndCompare(String settingsFileName)
 	{
 		MapTestUtil.generateAndCompare(settingsFileName, null, expectedMapsFolderName, failedMapsFolderName, 0);
-	}
-
-	private void generateAndCompare(String settingsFileName, int threshold)
-	{
-		MapTestUtil.generateAndCompare(settingsFileName, null, expectedMapsFolderName, failedMapsFolderName, threshold);
 	}
 
 	private void createImageDiffIfImagesAreSameSize(Image image1, Image image2, String settingsFileName)

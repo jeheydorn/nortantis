@@ -866,7 +866,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 	private void drawRivers(Graphics g)
 	{
-		graph.drawRivers(AwtFactory.wrap((Graphics2D) g), null, null, AwtBridge.fromAwtColor(waterHighlightColor), false, null);
+		graph.drawRivers(AwtFactory.wrap((Graphics2D) g), null, null, AwtBridge.fromAwtColor(waterHighlightColor));
 	}
 
 	public void setZoom(double zoom)

@@ -43,12 +43,6 @@ public class AwtFont extends Font
 	}
 
 	@Override
-	public String getFontName()
-	{
-		return font.getFontName();
-	}
-
-	@Override
 	public float getSize()
 	{
 		return font.getSize();

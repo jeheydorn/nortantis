@@ -141,7 +141,7 @@ public class CharacterNGram
 
 	public static void main(String[] args)
 	{
-		List<String> strs = Arrays.asList("yellow", "bannana", "yellowish", "corn", "corn and rice", "corn without rice", "yellow corn");
+		List<String> strs = Arrays.asList("yellow", "banana", "yellowish", "corn", "corn and rice", "corn without rice", "yellow corn");
 		CharacterNGram generator = new CharacterNGram(new Random(), 3);
 		generator.addData(strs);
 		for (@SuppressWarnings("unused")

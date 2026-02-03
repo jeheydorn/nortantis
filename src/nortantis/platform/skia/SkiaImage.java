@@ -647,78 +647,6 @@ public class SkiaImage extends Image
 	}
 
 	/**
-	 * Updates a region of the GPU surface from the CPU bitmap. Used for partial updates to avoid full texture uploads.
-	 */
-	void updateGPURegion(int x, int y, int width, int height)
-	{
-		if (!resourceState.isGpuEnabled || resourceState.gpuSurface == null)
-		{
-			markCPUDirty();
-			return;
-		}
-
-		try
-		{
-			// Clip to image bounds
-			int safeX = Math.max(0, x);
-			int safeY = Math.max(0, y);
-			int safeRight = Math.min(this.width, x + width);
-			int safeBottom = Math.min(this.height, y + height);
-
-			if (safeX >= safeRight || safeY >= safeBottom)
-			{
-				return;
-			}
-
-			int safeW = safeRight - safeX;
-			int safeH = safeBottom - safeY;
-
-			final Surface surfaceRef = resourceState.gpuSurface;
-
-			ImageInfo info = resourceState.bitmap.getImageInfo();
-			int bytesPerPixel = getBytesPerPixel();
-			int rowBytes = safeW * bytesPerPixel;
-
-			// Create info for the region
-			ImageInfo regionInfo = new ImageInfo(safeW, safeH, info.getColorType(), info.getColorAlphaType(), info.getColorSpace());
-
-			// Read pixels from CPU bitmap
-			byte[] pixelData = resourceState.bitmap.readPixels(regionInfo, rowBytes, safeX, safeY);
-
-			if (pixelData == null)
-			{
-				markCPUDirty();
-				return;
-			}
-
-			GPUExecutor.getInstance().submit(() ->
-			{
-				Canvas gpuCanvas = surfaceRef.getCanvas();
-
-				// Create a temporary bitmap for the region
-				Bitmap regionBitmap = new Bitmap();
-				regionBitmap.allocPixels(regionInfo);
-				regionBitmap.installPixels(regionInfo, pixelData, rowBytes);
-
-				org.jetbrains.skia.Image regionImage = org.jetbrains.skia.Image.Companion.makeFromBitmap(regionBitmap);
-
-				gpuCanvas.drawImage(regionImage, safeX, safeY);
-
-				regionImage.close();
-				regionBitmap.close();
-				return null;
-			});
-
-			invalidateGPUTexture();
-		}
-		catch (Exception e)
-		{
-			Logger.printError("SkiaImage: Failed to update GPU region: " + e.getMessage(), e);
-			markCPUDirty();
-		}
-	}
-
-	/**
 	 * Marks the GPU surface as having the latest data (CPU is stale). Called after GPU drawing operations.
 	 */
 	private void markGPUDirty()
@@ -741,17 +669,6 @@ public class SkiaImage extends Image
 			resourceState.gpuTexture.close();
 			resourceState.gpuTexture = null;
 		}
-	}
-
-	@Override
-	public void prepareForPixelAccess()
-	{
-		awaitPendingPainters();
-		if (!isGpuOnly())
-		{
-			ensureCPUData();
-		}
-		// GPU-only images handle pixel access via readPixelsFromGPUSurface/writePixelsToGPUSurface
 	}
 
 	/**
@@ -789,26 +706,6 @@ public class SkiaImage extends Image
 	void removeReferencingPainter(GPUBatchingPainter painter)
 	{
 		referencingPainters.remove(painter);
-	}
-
-	/**
-	 * Waits for all painters that have pending batched operations using this image as a source.
-	 */
-	private void awaitReferencingPainters()
-	{
-		for (GPUBatchingPainter painter : referencingPainters)
-		{
-			painter.await();
-		}
-	}
-
-	@Override
-	public void prepareForDrawing()
-	{
-		if (resourceState.isGpuEnabled)
-		{
-			ensureGPUSurface();
-		}
 	}
 
 	@Override
@@ -905,7 +802,7 @@ public class SkiaImage extends Image
 				resourceState.location = ImageLocation.CPU_ONLY;
 			}
 		}
-		return new SkiaPainter(new Canvas(resourceState.bitmap, new SurfaceProps()), quality, width, height);
+		return new SkiaPainter(new Canvas(resourceState.bitmap, new SurfaceProps()), quality);
 	}
 
 	@Override
@@ -1299,52 +1196,6 @@ public class SkiaImage extends Image
 		}
 
 		int[] pixels = new int[width * height];
-
-		if (isGrayscaleFormat())
-		{
-			assert false : "This code path isn't used anymore now that grayscale images have their own pixel readers and writers";
-			// Convert 1-byte grayscale to ARGB int format
-			for (int i = 0; i < pixels.length; i++)
-			{
-				int gray = bytes[i] & 0xFF;
-				pixels[i] = (255 << 24) | (gray << 16) | (gray << 8) | gray;
-			}
-		}
-		else
-		{
-			ByteBuffer.wrap(bytes).order(ByteOrder.nativeOrder()).asIntBuffer().get(pixels);
-		}
-		return pixels;
-	}
-
-	// TODO remove this method if I don't use it.
-	/**
-	 * Reads a rectangular region of pixels into an int[] array. For grayscale images, converts single-byte gray values to ARGB format.
-	 */
-	int[] readPixelsToIntArray(int srcX, int srcY, int regionWidth, int regionHeight)
-	{
-		awaitPendingPainters();
-
-		byte[] bytes;
-		if (isGpuOnly())
-		{
-			bytes = readPixelsFromGPUSurface(srcX, srcY, regionWidth, regionHeight);
-		}
-		else
-		{
-			ensureCPUData(); // Ensure CPU bitmap is current
-			int bytesPerPixel = getBytesPerPixel();
-			int rowStride = regionWidth * bytesPerPixel;
-			ImageInfo destinationInfo = new ImageInfo(regionWidth, regionHeight, resourceState.bitmap.getImageInfo().getColorType(), resourceState.bitmap.getImageInfo().getColorAlphaType(), null);
-			bytes = resourceState.bitmap.readPixels(destinationInfo, rowStride, srcX, srcY);
-		}
-
-		if (bytes == null)
-		{
-			return null;
-		}
-
-		int[] pixels = new int[regionWidth * regionHeight];
 
 		if (isGrayscaleFormat())
 		{

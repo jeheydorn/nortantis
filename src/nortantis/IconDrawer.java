@@ -29,7 +29,7 @@ public class IconDrawer
 	// there tend to be long polygons along edges, so if this value is much more
 	// than 2,
 	// mountains near the ocean may be connected despite long distances between
-	// them..
+	// them.
 	private final int maxGapSizeInMountainClusters = 2;
 	private final int maxGapBetweenBiomeGroups = 2;
 	// For hills and mountains, if a polygon is this number times
@@ -178,13 +178,7 @@ public class IconDrawer
 
 	public List<Set<Center>> findMountainGroups()
 	{
-		List<Set<Center>> mountainGroups = findCenterGroups(graph, maxGapSizeInMountainClusters, new Function<Center, Boolean>()
-		{
-			public Boolean apply(Center center)
-			{
-				return center.isMountain;
-			}
-		});
+		List<Set<Center>> mountainGroups = findCenterGroups(graph, maxGapSizeInMountainClusters, center -> center.isMountain);
 
 		return mountainGroups;
 
@@ -195,13 +189,7 @@ public class IconDrawer
 	 */
 	public List<Set<Center>> findMountainAndHillGroups()
 	{
-		List<Set<Center>> mountainAndHillGroups = findCenterGroups(graph, maxGapSizeInMountainClusters, new Function<Center, Boolean>()
-		{
-			public Boolean apply(Center center)
-			{
-				return center.isMountain || center.isHill;
-			}
-		});
+		List<Set<Center>> mountainAndHillGroups = findCenterGroups(graph, maxGapSizeInMountainClusters, center -> center.isMountain || center.isHill);
 
 		// Assign mountain group ids to each center that is in a mountain group.
 		int curId = 0;
@@ -721,7 +709,7 @@ public class IconDrawer
 		{
 			return treeHeightScale;
 		}
-		throw new IllegalArgumentException("Unrecognized icon type for gettling type-level scale: " + type);
+		throw new IllegalArgumentException("Unrecognized icon type for getting type-level scale: " + type);
 	}
 
 	private String getNewGroupIdIfNeeded(final String groupId, IconType type, String artPack, ListMap<String, ImageAndMasks> iconsByGroup, WarningLogger warningLogger, boolean isForDormantTrees)
@@ -919,10 +907,10 @@ public class IconDrawer
 
 	/**
 	 * Finds groups of centers that accepted according to a given function. A group is a set of centers for which there exists a path from any member of the set to any other such that you never have
-	 * to skip over more than maxGapSize centers not accepted at once to get to that other center. If distanceThreshold > 1, the result will include those centers which connect centeres that are
+	 * to skip over more than maxGapSize centers not accepted at once to get to that other center. If distanceThreshold > 1, the result will include those centers which connect centers that are
 	 * accepted.
 	 */
-	private static List<Set<Center>> findCenterGroups(WorldGraph graph, int maxGapSize, Function<Center, Boolean> accept)
+	private static List<Set<Center>> findCenterGroups(WorldGraph graph, int maxGapSize, java.util.function.Predicate<Center> accept)
 	{
 		List<Set<Center>> groups = new ArrayList<>();
 		// Contains all explored centers in this graph. This prevents me from
@@ -931,7 +919,7 @@ public class IconDrawer
 		Set<Center> explored = new HashSet<>();
 		for (Center center : graph.centers)
 		{
-			if (accept.apply(center) && !explored.contains(center))
+			if (accept.test(center) && !explored.contains(center))
 			{
 				// Do a breadth-first-search from that center, creating a new
 				// group.
@@ -951,7 +939,7 @@ public class IconDrawer
 						{
 							if (!explored.contains(n))
 							{
-								if (accept.apply(n))
+								if (accept.test(n))
 								{
 									explored.add(n);
 									group.add(n);
@@ -1659,13 +1647,7 @@ public class IconDrawer
 			return;
 		}
 
-		List<Set<Center>> groups = findCenterGroups(graph, maxGapBetweenBiomeGroups, new Function<Center, Boolean>()
-		{
-			public Boolean apply(Center center)
-			{
-				return center.biome.equals(sandDunesBiome);
-			}
-		});
+		List<Set<Center>> groups = findCenterGroups(graph, maxGapBetweenBiomeGroups, center -> center.biome.equals(sandDunesBiome));
 
 		// This is the probability that a temperate desert will be a dune field.
 		double duneProbabilityPerBiomeGroup = 0.6;
@@ -1679,8 +1661,6 @@ public class IconDrawer
 				{
 					if (rand.nextDouble() < duneProbabilityPerCenter)
 					{
-						c.isSandDunes = true;
-
 						int i = Helper.safeAbs(rand.nextInt());
 						FreeIcon icon = new FreeIcon(resolutionScale, c.loc, 1.0, IconType.sand, artPackForDunes, groupId, i, c.index, fillColorsByType.get(IconType.sand),
 								iconFilterColorsByType.get(IconType.sand), maximizeOpacityByType.get(IconType.sand), fillWithColorByType.get(IconType.sand));
@@ -1714,13 +1694,7 @@ public class IconDrawer
 			if (forest.biomeFrequency != 1.0)
 			{
 				String iconGroupId = getGroupIdForForestType(artPackForTrees, forest);
-				List<Set<Center>> groups = findCenterGroups(graph, maxGapBetweenBiomeGroups, new Function<Center, Boolean>()
-				{
-					public Boolean apply(Center center)
-					{
-						return center.biome.equals(forest.biome);
-					}
-				});
+				List<Set<Center>> groups = findCenterGroups(graph, maxGapBetweenBiomeGroups, center -> center.biome.equals(forest.biome));
 				for (Set<Center> group : groups)
 				{
 					if (rand.nextDouble() < forest.biomeFrequency)

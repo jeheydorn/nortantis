@@ -1,7 +1,6 @@
 package nortantis.test;
 
 import nortantis.NameCompiler;
-import nortantis.util.Function;
 import nortantis.util.Helper;
 import nortantis.util.Pair;
 import nortantis.util.Range;
@@ -24,13 +23,7 @@ public class NameCompilerTest
 		// My examples.
 		{
 			List<String> before = Arrays.asList("travel", "distil", "equal", "bake", "free", "dye", "tiptoe", "running", "wheel", "picnic", "stood", "forgave", "seen", "set");
-			List<String> after = Helper.map(before, new Function<String, String>()
-			{
-				public String apply(String item)
-				{
-					return compiler.convertVerbToPresentTense(item);
-				}
-			});
+			List<String> after = Helper.map(before, item -> compiler.convertVerbToPresentTense(item));
 			List<String> expected = Arrays.asList("travelling", // I'm using a British dictionary apparently.
 					"distilling", "equaling", "baking", "freeing", "dyeing", "tiptoeing", "running", "wheeling", "picnicking", "standing", "forgiving", "seeing", "setting");
 			for (int i : new Range(expected.size()))
@@ -42,13 +35,7 @@ public class NameCompilerTest
 		// Examples from text.
 		{
 			List<String> before = Arrays.asList("redeem", "stretched", "set", "wept", "appeared", "rid", "plucked", "put", "laid", "stand", "send", "speak", "afflict", "looked", "rest");
-			List<String> after = Helper.map(before, new Function<String, String>()
-			{
-				public String apply(String item)
-				{
-					return compiler.convertVerbToPresentTense(item);
-				}
-			});
+			List<String> after = Helper.map(before, item -> compiler.convertVerbToPresentTense(item));
 			List<String> expected = Arrays.asList("redeeming", "stretching", "setting", "weeping", "appearing", "riding", "plucking", "putting", "laying", "standing", "sending", "speaking",
 					"afflicting", "looking", "resting");
 			for (int i : new Range(expected.size()))

@@ -4,7 +4,7 @@ import nortantis.geom.Point;
 
 import java.util.ArrayList;
 
-public final class EdgeList implements IDisposable
+public final class EdgeList
 {
 
 	private double _deltax;
@@ -14,7 +14,6 @@ public final class EdgeList implements IDisposable
 	public Halfedge leftEnd;
 	public Halfedge rightEnd;
 
-	@Override
 	public void dispose()
 	{
 		Halfedge halfEdge = leftEnd;

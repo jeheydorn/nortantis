@@ -44,7 +44,7 @@ public class MapSettings implements Serializable
 	public static final double defaultLloydRelaxationsScale = 0.1;
 	private final double defaultTreeHeightScaleForOldMaps = 0.5;
 	private final double defaultRoadWidth = 1.0;
-	private final Stroke defaultRoadStyle = new Stroke(StrokeType.Dots, (float) (MapCreator.calcSizeMultipilerFromResolutionScaleRounded(1.0) * defaultRoadWidth));
+	private final Stroke defaultRoadStyle = new Stroke(StrokeType.Dots, (float) (MapCreator.calcSizeMultiplierFromResolutionScaleRounded(1.0) * defaultRoadWidth));
 	private final Color defaultRoadColor = Color.black;
 	public static final Color defaultIconFillColor = Color.create(155, 105, 49, (int) (255 * 0.7));
 	public static final HSBColor defaultIconFilterColor = new HSBColor(0, 0, 0, 0);
@@ -769,7 +769,7 @@ public class MapSettings implements Serializable
 		}
 
 		version = (String) root.get("version");
-		if (isVersionGreatherThanCurrent(version))
+		if (isVersionGreaterThanCurrent(version))
 		{
 			throw new RuntimeException("The map cannot be loaded because it was made in a new version of Nortantis. That map's version is " + version + ", but you're Nortantis version is "
 					+ currentVersion + ". Try again with a newer version of Nortantis.");
@@ -837,7 +837,7 @@ public class MapSettings implements Serializable
 		}
 		else
 		{
-			coastlineWidth = MapCreator.calcSizeMultipilerFromResolutionScaleRounded(1.0);
+			coastlineWidth = MapCreator.calcSizeMultiplierFromResolutionScaleRounded(1.0);
 		}
 		oceanWavesType = OceanWaves.valueOf((String) root.get("oceanEffect"));
 
@@ -1864,7 +1864,7 @@ public class MapSettings implements Serializable
 		Stroke parsed = parseStroke(obj);
 		if (obj == null)
 		{
-			return new Stroke(StrokeType.Solid, (float) (MapCreator.calcSizeMultipilerFromResolutionScaleRounded(1.0)));
+			return new Stroke(StrokeType.Solid, (float) (MapCreator.calcSizeMultiplierFromResolutionScaleRounded(1.0)));
 		}
 
 		return parsed;
@@ -1965,7 +1965,7 @@ public class MapSettings implements Serializable
 		coastShadingLevel = old.coastShadingLevel;
 		oceanEffectsColor = old.oceanEffectsColor;
 		coastlineColor = old.coastlineColor;
-		coastlineWidth = MapCreator.calcSizeMultipilerFromResolutionScaleRounded(1.0);
+		coastlineWidth = MapCreator.calcSizeMultiplierFromResolutionScaleRounded(1.0);
 		centerLandToWaterProbability = old.centerLandToWaterProbability;
 		edgeLandToWaterProbability = old.edgeLandToWaterProbability;
 		frayedBorder = old.frayedBorder;
@@ -2024,7 +2024,7 @@ public class MapSettings implements Serializable
 		// Convert the settings to json and back to an object to pick up any conversions added in the json parse.
 		String json = toJson();
 
-		// Clear out deprecated properties to make sure I don't accidently use them, and to make my unit test for this code succeed.
+		// Clear out deprecated properties to make sure I don't accidentally use them, and to make my unit test for this code succeed.
 		// Note that I could instead create the "json" object above by assigning the OldPropertyBasedMapSettings to a new object to avoid
 		// this, but that would then require me to create new loading code for any deprecated properties in OldPropertyBasedMapSettings if a
 		// conversion uses the old value in parseFromJson.
@@ -2042,7 +2042,7 @@ public class MapSettings implements Serializable
 		}
 	}
 
-	public static boolean isVersionGreatherThanCurrent(String version)
+	public static boolean isVersionGreaterThanCurrent(String version)
 	{
 		return isVersionGreaterThan(version, currentVersion);
 	}
@@ -2072,13 +2072,13 @@ public class MapSettings implements Serializable
 
 	public boolean hasOceanShading(double resolutionScale)
 	{
-		double sizeMultiplier = MapCreator.calcSizeMultipilerFromResolutionScaleRounded(resolutionScale);
+		double sizeMultiplier = MapCreator.calcSizeMultiplierFromResolutionScaleRounded(resolutionScale);
 		return (int) (sizeMultiplier * oceanShadingLevel) > 0;
 	}
 
 	public boolean hasRippleWaves(double resolutionScale)
 	{
-		double sizeMultiplier = MapCreator.calcSizeMultipilerFromResolutionScaleRounded(resolutionScale);
+		double sizeMultiplier = MapCreator.calcSizeMultiplierFromResolutionScaleRounded(resolutionScale);
 		return oceanWavesType == OceanWaves.Ripples && ((int) oceanWavesLevel * sizeMultiplier) > 0;
 	}
 

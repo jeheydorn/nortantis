@@ -30,7 +30,6 @@ import java.util.concurrent.ExecutionException;
 
 public class SwingHelper
 {
-	public static final int spaceBetweenRowsOfComponents = 8;
 	public static final int borderWidthBetweenComponents = 4;
 	// Fonts in Linux are a little bigger, so make the side panels a little wider.
 	public static final int sidePanelPreferredWidth = OSHelper.isLinux() ? 340 : 314;
@@ -378,7 +377,7 @@ public class SwingHelper
 			{
 				// Should never happen.
 				ex.printStackTrace();
-				String message = "An ExecutionException error occured with no cause: ";
+				String message = "An ExecutionException error occurred with no cause: ";
 				Logger.printError(message, ex);
 				JOptionPane.showMessageDialog(parent, message + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 			}
@@ -386,7 +385,7 @@ public class SwingHelper
 		else
 		{
 			ex.printStackTrace();
-			String message = "An unexpected error occured: ";
+			String message = "An unexpected error occurred: ";
 			Logger.printError(message, ex);
 			JOptionPane.showMessageDialog(parent, message + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 		}
@@ -405,13 +404,6 @@ public class SwingHelper
 		}
 
 		return isCausedByOutOfMemoryError(ex.getCause());
-	}
-
-	public static java.awt.Point transform(java.awt.Point point, AffineTransform transform)
-	{
-		java.awt.Point result = new java.awt.Point();
-		transform.transform(point, result);
-		return result;
 	}
 
 	/**
@@ -456,26 +448,6 @@ public class SwingHelper
 		stackPanel.add(component);
 
 		return stackPanel;
-	}
-
-	public static JPanel placeLabelToLeftOfComponents(JLabel label, Component... components)
-	{
-		JPanel panel = new JPanel();
-		panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
-		panel.add(label);
-		panel.add(Box.createRigidArea(new Dimension(5, 2)));
-		panel.add(Box.createHorizontalGlue());
-		panel.add(Box.createRigidArea(new Dimension(5, 2)));
-		for (int i = 0; i < components.length; i++)
-		{
-			panel.add(components[i]);
-			if (i < components.length - 1)
-			{
-				panel.add(Box.createRigidArea(new Dimension(5, 2)));
-			}
-		}
-
-		return panel;
 	}
 
 	public static JLabel createHyperlink(String text, String URL)

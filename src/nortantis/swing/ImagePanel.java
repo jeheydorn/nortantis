@@ -26,11 +26,6 @@ public class ImagePanel extends JPanel
 		repaint();
 	}
 
-	public BufferedImage getImage()
-	{
-		return image;
-	}
-
 	@Override
 	protected void paintComponent(Graphics g)
 	{

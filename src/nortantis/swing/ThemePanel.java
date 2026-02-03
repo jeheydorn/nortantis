@@ -331,10 +331,10 @@ public class ThemePanel extends JTabbedPane
 				"The random seed used to generate the background image. Note that the background texture will also change based on the" + " resolution you draw at.",
 				Arrays.asList(backgroundSeedTextField, btnNewBackgroundSeed));
 
-		organizer.addSeperator();
+		organizer.addSeparator();
 
 		drawRegionBoundariesCheckbox = new JCheckBox("Draw political region boundaries");
-		drawRegionBoundariesCheckbox.setToolTipText("Whether to show political region boundaires");
+		drawRegionBoundariesCheckbox.setToolTipText("Whether to show political region boundaries");
 		drawRegionBoundariesCheckbox.addItemListener(new ItemListener()
 		{
 			@Override
@@ -374,7 +374,7 @@ public class ThemePanel extends JTabbedPane
 		regionBoundaryColorHider = organizer.addLabelAndComponentsHorizontal("Color:", "The line color of region boundaries",
 				Arrays.asList(regionBoundaryColorDisplay, buttonChooseRegionBoundaryColor), SwingHelper.colorPickerLeftPadding);
 
-		organizer.addSeperator();
+		organizer.addSeparator();
 
 		colorizeLandCheckbox = new JCheckBox("Color land");
 		colorizeLandCheckbox.setToolTipText("Whether to change the land texture to a custom color versus use the color of the texture image");
@@ -448,7 +448,7 @@ public class ThemePanel extends JTabbedPane
 			landColorHider = organizer.addLabelAndComponentsVertical("Land color:", "The color of the land background.", Arrays.asList(container, Box.createVerticalStrut(5), btnChooseLandColor));
 		}
 
-		organizer.addSeperator();
+		organizer.addSeparator();
 		colorizeOceanCheckbox = new JCheckBox("Color ocean");
 		colorizeOceanCheckbox.setToolTipText("Whether to change the ocean texture to a custom color versus use the color of the texture image");
 		colorizeOceanCheckboxHider = organizer.addLeftAlignedComponent(colorizeOceanCheckbox);
@@ -495,7 +495,7 @@ public class ThemePanel extends JTabbedPane
 
 		{
 			{
-				organizer.addSeperator();
+				organizer.addSeparator();
 				drawGridOverlayCheckbox = new JCheckBox("Draw grid");
 				drawGridOverlayCheckbox.addActionListener(new ActionListener()
 				{
@@ -705,7 +705,7 @@ public class ThemePanel extends JTabbedPane
 		borderColorHider.setVisible(false);
 
 		organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.6);
-		organizer.addSeperator();
+		organizer.addSeparator();
 
 		frayedEdgeCheckbox = new JCheckBox("Fray edges");
 		frayedEdgeCheckbox.setToolTipText("Whether to fray the edges of the map.");
@@ -775,7 +775,7 @@ public class ThemePanel extends JTabbedPane
 		newFrayedEdgesSeedButton.setToolTipText("Generate a new random seed.");
 		organizer.addLabelAndComponentsHorizontal("Random seed:", "The random seed used to generate the frayed edges.", Arrays.asList(frayedEdgesSeedTextField, newFrayedEdgesSeedButton));
 
-		organizer.addSeperator();
+		organizer.addSeparator();
 
 		drawGrungeCheckbox = new JCheckBox("Draw grunge");
 		drawGrungeCheckbox.setToolTipText("Whether to draw grunge around the edges of the map.");
@@ -835,7 +835,7 @@ public class ThemePanel extends JTabbedPane
 		lineStyleButtonGroup.add(splinesWithSmoothedCoastlinesButton);
 		organizer.addLabelAndComponentsVertical("Line style:", "The style of lines to use when drawing coastlines, lakeshores, and region boundaries",
 				Arrays.asList(jaggedLinesButton, splinesLinesButton, splinesWithSmoothedCoastlinesButton));
-		organizer.addSeperator();
+		organizer.addSeparator();
 
 		{
 			coastlineWidthSlider = new JSlider();
@@ -907,7 +907,7 @@ public class ThemePanel extends JTabbedPane
 			coastShadingColorDisabledMessageHider.setVisible(false);
 		}
 
-		organizer.addSeperator();
+		organizer.addSeparator();
 
 		oceanShadingSlider = new JSlider();
 		oceanShadingSlider.setPaintTicks(true);
@@ -935,7 +935,7 @@ public class ThemePanel extends JTabbedPane
 					SwingHelper.colorPickerLeftPadding);
 		}
 
-		organizer.addSeperator();
+		organizer.addSeparator();
 
 		ButtonGroup oceanEffectButtonGroup = new ButtonGroup();
 
@@ -1017,7 +1017,7 @@ public class ThemePanel extends JTabbedPane
 		organizer.addLeftAlignedComponent(drawOceanEffectsInLakesCheckbox);
 
 		{
-			organizer.addSeperator();
+			organizer.addSeparator();
 			riverColorDisplay = SwingHelper.createColorPickerPreviewPanel();
 
 			JButton riverColorChooseButton = new JButton("Choose");
@@ -1032,7 +1032,7 @@ public class ThemePanel extends JTabbedPane
 		}
 
 		{
-			organizer.addSeperator();
+			organizer.addSeparator();
 			drawRoadsCheckbox = new JCheckBox("Draw roads");
 			drawRoadsCheckbox.setToolTipText("Whether to show/hide roads");
 			drawRoadsCheckbox.addItemListener(new ItemListener()
@@ -1073,7 +1073,7 @@ public class ThemePanel extends JTabbedPane
 			roadColorHider = organizer.addLabelAndComponentsHorizontal("Color:", "The color of roads", Arrays.asList(roadColorDisplay, buttonRoadColor), SwingHelper.colorPickerLeftPadding);
 		}
 
-		organizer.addSeperator();
+		organizer.addSeparator();
 		mountainScaleSlider = new JSlider(minScaleSliderValue, maxScaleSliderValue);
 		mountainScaleSlider.setMajorTickSpacing(2);
 		mountainScaleSlider.setMinorTickSpacing(1);
@@ -1242,7 +1242,7 @@ public class ThemePanel extends JTabbedPane
 	 * mountains in approximately the same location.
 	 * 
 	 * I didn't bother doing this with dunes or hills because they tend to be short anyway, and so I've anchored them to the centroid of
-	 * centers rather the the bottom.
+	 * centers rather than the bottom.
 	 */
 	private void repositionMountainsForNewScaleAndTriggerTerrainChange()
 	{
@@ -1368,7 +1368,7 @@ public class ThemePanel extends JTabbedPane
 		enableTextCheckBox = new JCheckBox("Enable text");
 		enableTextCheckBox.setToolTipText("Enable/disable drawing text. When unselected, text will still exist, but will not be shown.");
 		organizer.addLeftAlignedComponent(enableTextCheckBox);
-		organizer.addSeperator();
+		organizer.addSeparator();
 
 		titleFontChooser = new FontChooser("Title font:", 70, 50, () -> handleFontsChange());
 		titleFontChooser.addToOrganizer(organizer);
@@ -1383,7 +1383,7 @@ public class ThemePanel extends JTabbedPane
 		riverFontChooser = new FontChooser("River/lake font:", 30, 40, () -> handleFontsChange());
 		riverFontChooser.addToOrganizer(organizer);
 
-		organizer.addSeperator();
+		organizer.addSeparator();
 		textColorDisplay = SwingHelper.createColorPickerPreviewPanel();
 
 		btnChooseTextColor = new JButton("Choose");
@@ -1396,7 +1396,7 @@ public class ThemePanel extends JTabbedPane
 		});
 		organizer.addLabelAndComponentsHorizontal("Text color:", "", Arrays.asList(textColorDisplay, btnChooseTextColor), SwingHelper.colorPickerLeftPadding);
 
-		organizer.addSeperator();
+		organizer.addSeparator();
 		drawBoldBackgroundCheckbox = new JCheckBox("Bold background for region and title names");
 		drawBoldBackgroundCheckbox.setToolTipText("Whether to draw bolded letters behind region and title text to highlight them.");
 		organizer.addLeftAlignedComponent(drawBoldBackgroundCheckbox);

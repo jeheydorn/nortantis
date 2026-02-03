@@ -82,33 +82,6 @@ public class Region
 		return centers.contains(c);
 	}
 
-	public Point findCentroid()
-	{
-		return WorldGraph.findCentroid(centers);
-	}
-
-	public Set<Region> findNeighbors()
-	{
-		Set<Region> result = new HashSet<>();
-		for (Center c : centers)
-		{
-			for (Center n : c.neighbors)
-			{
-				if (n.region == null)
-				{
-					continue;
-				}
-
-				if (n.region != c.region)
-				{
-					result.add(n.region);
-				}
-			}
-		}
-
-		return result;
-	}
-
 	@Override
 	public int hashCode()
 	{

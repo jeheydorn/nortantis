@@ -288,18 +288,4 @@ public class AwtBridge
 
 		return PlatformFactory.getInstance().createFont(font.getName(), style, font.getSize());
 	}
-
-	/**
-	 * Wraps a Graphics2D in an AwtPainter for platform-agnostic drawing. Note: When using this with SkiaFactory as the main platform, the
-	 * Painter will only work correctly with AWT-based platform types (use fromAwtColor, fromAwtFont for colors/fonts passed to this
-	 * Painter).
-	 */
-	public static Painter wrapGraphics(Graphics2D g)
-	{
-		if (g == null)
-		{
-			return null;
-		}
-		return new AwtPainter(g);
-	}
 }

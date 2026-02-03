@@ -30,7 +30,6 @@ public class Center implements Comparable<Center>
 	public boolean isMountain;
 	public boolean isHill;
 	public boolean isCity;
-	public boolean isSandDunes;
 	public double elevation;
 	public double moisture;
 	public Biome biome;

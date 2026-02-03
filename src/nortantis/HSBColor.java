@@ -54,16 +54,6 @@ public class HSBColor implements Serializable, Comparable<HSBColor>
 		return new HSBColor(hue, saturation, brightness, transparency);
 	}
 
-	public Color toColor()
-	{
-		Color base = Color.createFromHSB(hue, saturation, brightness);
-		if (transparency == 0)
-		{
-			return base;
-		}
-		return Color.create(base.getRed(), base.getGreen(), base.getBlue(), getAlpha());
-	}
-
 	public int getAlpha()
 	{
 		return (int) (((100 - transparency) / 100.0) * 255.0);

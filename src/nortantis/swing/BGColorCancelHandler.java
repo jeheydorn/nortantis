@@ -9,19 +9,19 @@ import java.awt.event.ActionListener;
  */
 public class BGColorCancelHandler implements ActionListener
 {
-	private Color orginal;
+	private Color original;
 	private BGColorPreviewPanel target;
 
 	public BGColorCancelHandler(Color original, BGColorPreviewPanel target)
 	{
-		this.orginal = original;
+		this.original = original;
 		this.target = target;
 	}
 
 	@Override
 	public void actionPerformed(ActionEvent arg0)
 	{
-		target.setColor(orginal);
+		target.setColor(original);
 	}
 
 }

@@ -16,6 +16,7 @@ import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * VoronoiGraph.java
@@ -30,7 +31,6 @@ public abstract class VoronoiGraph
 	public final ArrayList<Center> centers = new ArrayList<>();
 	public Rectangle bounds;
 	protected final Random rand;
-	protected Color OCEAN, RIVER, LAKE, BEACH;
 	public NoisyEdges noisyEdges;
 	/**
 	 * This controls how many rivers there are. Bigger means more.
@@ -49,16 +49,18 @@ public abstract class VoronoiGraph
 	 *            Used to scale the graph larger smaller according to the resolution being used.
 	 * @param pointPrecision
 	 *            Used to determine when points should be considered duplicates. Larger numbers mean less duplicate detection, making tiny
-	 *            polygons more likely. This number will be scaled by scaleMultiplyer.
+	 *            polygons more likely. This number will be scaled by scaleMultiplier.
 	 */
 	public VoronoiGraph(Random r, double resolutionScale, double pointPrecision)
 	{
 		this.rand = r;
-		bumps = r.nextInt(5) + 1;
+		// Consume random numbers to preserve the random sequence for downstream code (e.g., noisy edge seeds).
+		// These were previously used by removed fields (bumps, startAngle, dipAngle, dipWidth).
+		r.nextInt();
+		r.nextDouble();
+		r.nextDouble();
+		r.nextDouble();
 		this.resolutionScale = resolutionScale;
-		startAngle = r.nextDouble() * 2 * Math.PI;
-		dipAngle = r.nextDouble() * 2 * Math.PI;
-		dipWidth = r.nextDouble() * .5 + .2;
 		this.pointPrecision = pointPrecision;
 	}
 
@@ -388,7 +390,7 @@ public abstract class VoronoiGraph
 		});
 	}
 
-	public void drawRivers(Painter p, Collection<Edge> edgesToDraw, Rectangle drawBounds, Color riverColor, boolean areRegionBoundariesVisible, Color regionBoundaryColor)
+	public void drawRivers(Painter p, Collection<Edge> edgesToDraw, Rectangle drawBounds, Color riverColor)
 	{
 		if (edgesToDraw == null)
 		{
@@ -713,7 +715,7 @@ public abstract class VoronoiGraph
 		return edges;
 	}
 
-	protected void drawSpecifiedEdges(Painter g, double strokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds, Function<Edge, Boolean> shouldDraw)
+	protected void drawSpecifiedEdges(Painter g, double strokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds, Predicate<Edge> shouldDraw)
 	{
 		if (centersToDraw == null)
 		{
@@ -735,7 +737,7 @@ public abstract class VoronoiGraph
 		{
 			for (final Edge edge : p.borders)
 			{
-				if (!shouldDraw.apply(edge))
+				if (!shouldDraw.test(edge))
 					continue;
 
 				if (!drawn.contains(edge))
@@ -1249,14 +1251,6 @@ public abstract class VoronoiGraph
 	}
 
 	protected abstract void assignCornerElevations();
-
-	double[][] noise;
-	double ISLAND_FACTOR = 1.07; // 1.0 means no small islands; 2.0 leads to a
-									// lot
-	final int bumps;
-	final double startAngle;
-	final double dipAngle;
-	final double dipWidth;
 
 	protected abstract void assignOceanCoastAndLand();
 

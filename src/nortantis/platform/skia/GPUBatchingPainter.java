@@ -29,7 +29,6 @@ public class GPUBatchingPainter extends Painter
 
 	private final Surface gpuSurface;
 	private final SkiaImage targetImage;
-	private final DrawQuality quality;
 	private final int batchSize;
 
 	// Current batch of operations
@@ -164,7 +163,6 @@ public class GPUBatchingPainter extends Painter
 	{
 		this.gpuSurface = gpuSurface;
 		this.targetImage = targetImage;
-		this.quality = quality;
 		this.batchSize = batchSize;
 		this.currentBatch = new ArrayList<>(batchSize);
 		this.pendingFutures = new ArrayList<>();

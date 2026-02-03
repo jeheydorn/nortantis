@@ -17,13 +17,8 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 	public ImageAndMasks scaledImageAndMasks;
 	Point centerLoc;
 	IntDimension scaledSize;
-	int yBottom;
-	/**
-	 * A flag to tell which icons could not be drawn because they don't fit in the space they are supposed to be drawn.
-	 */
-	boolean failedToDraw;
+
 	final IconType type;
-	final String groupId;
 	final String fileName;
 	final Color fillColor;
 	final HSBColor filterColor;
@@ -52,14 +47,11 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 		this.scaledSize = scaledSize;
 		this.type = type;
 
-		yBottom = (int) (centerLoc.y + (scaledSize.height / 2.0));
-
 		this.fileName = fileName;
 		this.fillColor = fillColor;
 		this.filterColor = filterColor;
 		this.maximizeOpacity = maximizeOpacity;
 		this.fillWithColor = fillWithColor;
-		this.groupId = groupId;
 		this.resolutionScale = resolutionScale;
 	}
 

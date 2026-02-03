@@ -111,7 +111,7 @@ public class Assets
 	{
 		ArtPacksFromArtPacksFolderCache.clearCache();
 		artPackPathCache.clear();
-		// Don't clear cachedEntires because it's values never change while the program is running.
+		// Don't clear cachedEntries because it's values never change while the program is running.
 	}
 
 	public static List<NamedResource> listBackgroundTexturesForAllArtPacks(String customImagesFolder)
@@ -144,7 +144,7 @@ public class Assets
 	 *            Art pack name
 	 * @param customImagesFolder
 	 *            The map's custom images folder. Only required if art pack is "custom".
-	 * @return A path to a the art pack assets, which may be in the jar file the program is running from.
+	 * @return A path to the art pack assets, which may be in the jar file the program is running from.
 	 */
 	public static Path getArtPackPath(String artPack, String customImagesFolder)
 	{

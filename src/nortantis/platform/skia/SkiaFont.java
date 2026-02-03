@@ -81,12 +81,6 @@ public class SkiaFont extends nortantis.platform.Font implements Serializable
 	}
 
 	@Override
-	public String getFontName()
-	{
-		return name;
-	}
-
-	@Override
 	public String getName()
 	{
 		return name;

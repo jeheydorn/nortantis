@@ -349,11 +349,6 @@ public class JFontChooser extends JComponent
 		setSelectedFontSize(font.getSize());
 	}
 
-	public String getVersionString()
-	{
-		return ("Version");
-	}
-
 	/**
 	 * Show font selection dialog.
 	 * 

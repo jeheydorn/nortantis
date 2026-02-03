@@ -319,7 +319,7 @@ public class GridBagOrganizer
 		return new RowHider(labelHider, compHider);
 	}
 
-	public RowHider addSeperator()
+	public RowHider addSeparator()
 	{
 		final int minHeight = 2;
 

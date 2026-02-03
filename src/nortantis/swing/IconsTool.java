@@ -284,7 +284,7 @@ public class IconsTool extends EditorTool
 			controlClickBehaviorHider = controlClickBehavior.addToOrganizer(organizer);
 		}
 
-		modeOptionsAndBrushSeparatorHider = organizer.addSeperator();
+		modeOptionsAndBrushSeparatorHider = organizer.addSeparator();
 
 		{
 			densitySlider = new JSlider(1, 50);
@@ -432,7 +432,7 @@ public class IconsTool extends EditorTool
 		CollapsiblePanel colorPanel = new CollapsiblePanel("color_options", "Color", colorOrganizer.panel);
 		colorPickerHider = organizer.addLeftAlignedComponent(colorPanel);
 
-		brushAndEditOptionsSeparatorHider = organizer.addSeperator();
+		brushAndEditOptionsSeparatorHider = organizer.addSeparator();
 
 		{
 			JButton deleteButton;

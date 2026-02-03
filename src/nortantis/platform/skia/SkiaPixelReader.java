@@ -52,11 +52,6 @@ public class SkiaPixelReader implements PixelReader
 		}
 	}
 
-	public SkiaPixelReader(SkiaImage image)
-	{
-		this(image, null, true);
-	}
-
 	@Override
 	public int getGrayLevel(int x, int y)
 	{

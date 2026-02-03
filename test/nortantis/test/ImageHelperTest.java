@@ -329,17 +329,6 @@ public class ImageHelperTest
 	}
 
 	@Test
-	public void testMaskWithImageInPlace()
-	{
-		Image image1 = createColorTestImage();
-		Image image2 = createSolidColorImage(testImageWidth, testImageHeight, Color.green);
-		Image mask = createGradientMask();
-
-		ImageHelper.maskWithImageInPlace(image1, image2, mask);
-		compareWithExpected(image1, "maskWithImageInPlace");
-	}
-
-	@Test
 	public void testDrawMaskOntoImage()
 	{
 		Image image = createColorTestImage();
@@ -347,34 +336,6 @@ public class ImageHelperTest
 
 		ImageHelper.drawMaskOntoImage(image, mask, Color.yellow, new IntPoint(20, 20));
 		compareWithExpected(image, "drawMaskOntoImage");
-	}
-
-	@Test
-	public void testMaskWithColorInPlace()
-	{
-		Image image = createColorTestImage();
-		Image mask = createGradientMask();
-		Color color = Color.create(0, 255, 0, 128);
-
-		ImageHelper.maskWithColorInPlace(image, color, mask, false);
-		compareWithExpected(image, "maskWithColorInPlace");
-	}
-
-	@Test
-	public void testMaskWithColorInPlaceGPU()
-	{
-		// Test with images large enough to trigger GPU path (>= 256x256 = 65536 pixels)
-		final int gpuTestSize = 300;
-
-		Image image = createColorTestImageOfSize(gpuTestSize, gpuTestSize);
-		Image mask = createGradientMaskOfSize(gpuTestSize, gpuTestSize);
-		Color color = Color.create(0, 255, 0, 128);
-
-		ImageHelper.maskWithColorInPlace(image, color, mask, false);
-
-		assertEquals(gpuTestSize, image.getWidth());
-		assertEquals(gpuTestSize, image.getHeight());
-		compareWithExpected(image, "maskWithColorInPlaceGPU");
 	}
 
 	@Test

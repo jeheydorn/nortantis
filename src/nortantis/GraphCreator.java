@@ -108,7 +108,7 @@ public class GraphCreator
 		final Voronoi v = new Voronoi(numSites, graphSize.width, graphSize.height, r);
 
 		// assemble the voronoi structure into a usable graph object representing a map
-		final WorldGraph graph = new WorldGraph(v, lloydRelaxationsScale, r, resolutionScale, MapSettings.defaultPointPrecision, isForFrayedBorder);
+		final WorldGraph graph = new WorldGraph(v, lloydRelaxationsScale, r, resolutionScale, MapSettings.defaultPointPrecision);
 		graph.scaleFlipAndRotate(width, height, rightRotationCount, flipHorizontally, flipVertically);
 		graph.buildNoisyEdges(LineStyle.Jagged, isForFrayedBorder);
 

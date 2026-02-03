@@ -15,12 +15,6 @@ public class AwtTransform extends Transform
 	}
 
 	@Override
-	public Transform copy()
-	{
-		return new AwtTransform(new AffineTransform(((AwtTransform) this).transform));
-	}
-
-	@Override
 	public int hashCode()
 	{
 		return Objects.hash(transform);

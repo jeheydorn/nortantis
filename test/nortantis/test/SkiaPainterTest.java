@@ -1027,17 +1027,6 @@ public class SkiaPainterTest
 			}
 		}
 
-		try (PixelReader reader = image.createPixelReader())
-		{
-			// Check white square (top-left)
-			int whiteLevel = reader.getGrayLevel(5, 5);
-			// assertTrue(whiteLevel > 200, "White square should be close to 255, got: " + whiteLevel);
-
-			// Check black square
-			int blackLevel = reader.getGrayLevel(15, 5);
-			// assertTrue(blackLevel < 55, "Black square should be close to 0, got: " + blackLevel);
-		}
-
 		compareWithExpected(image, "pixelReaderWriterBinary");
 	}
 

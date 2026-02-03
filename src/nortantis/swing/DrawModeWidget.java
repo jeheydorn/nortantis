@@ -155,12 +155,6 @@ public class DrawModeWidget
 		}
 	}
 
-	public void showOrHideOptions(boolean showDrawMode, boolean showEraseMode, boolean showReplaceMode, boolean showEditMode)
-	{
-		container.removeAll();
-		addOptionsToContainer(showDrawMode, showEraseMode, showReplaceMode, showEditMode);
-	}
-
 	public boolean isDrawMode()
 	{
 		return drawModeButton.isSelected();

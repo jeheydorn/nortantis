@@ -119,7 +119,7 @@ public class ImageAndMasks implements AutoCloseable
 			if (iconType == IconType.cities || iconType == IconType.decorations)
 			{
 				// Do a flood fill since buildings in cities should have lines delimiting them on all sides.
-				createContentMaskUsingfloodFillOrSilhouettes();
+				createContentMaskUsingFloodFillOrSilhouettes();
 			}
 			else
 			{
@@ -141,7 +141,7 @@ public class ImageAndMasks implements AutoCloseable
 	 * 
 	 * @return A new image of type ImageType.Binary where white pixels are flood-filled and black pixels are not.
 	 */
-	private void createContentMaskUsingfloodFillOrSilhouettes()
+	private void createContentMaskUsingFloodFillOrSilhouettes()
 	{
 		contentMask = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
 
@@ -704,7 +704,7 @@ public class ImageAndMasks implements AutoCloseable
 				{
 					int minMax = getLowestHighestGrayLevelInContentColumns(withoutPadding, points);
 
-					// THis is approximately the gray level pixel will have at the bottom of the color mask.
+					// This is approximately the gray level pixel will have at the bottom of the color mask.
 					final float targetMaxMinMaxPixelValue = 230f;
 
 					// Re-use the complex array from the last run to avoid having to re-do the convolution.

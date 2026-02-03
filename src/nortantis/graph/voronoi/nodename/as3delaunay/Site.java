@@ -78,7 +78,6 @@ public final class Site implements ICoord
 		return _coord;
 	}
 
-	public double weight;
 	private int _siteIndex;
 	// the edges that define this Site's Voronoi region:
 	public ArrayList<Edge> _edges;
@@ -89,14 +88,13 @@ public final class Site implements ICoord
 
 	public Site(Point p, int index, double weight)
 	{
-		init(p, index, weight);
+		init(p, index);
 	}
 
-	private Site init(Point p, int index, double weight)
+	private Site init(Point p, int index)
 	{
 		_coord = p;
 		_siteIndex = index;
-		this.weight = weight;
 		_edges = new ArrayList<Edge>();
 		_region = null;
 		return this;

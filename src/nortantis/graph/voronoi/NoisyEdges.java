@@ -23,12 +23,12 @@ public class NoisyEdges
 	// but with curves
 	private Map<Integer, List<Point>> curves;
 
-	private double scaleMultiplyer;
+	private double scaleMultiplier;
 	private boolean isForFrayedBorder;
 
-	public NoisyEdges(double scaleMultiplyer, LineStyle style, boolean isForFrayedBorder)
+	public NoisyEdges(double scaleMultiplier, LineStyle style, boolean isForFrayedBorder)
 	{
-		this.scaleMultiplyer = scaleMultiplyer;
+		this.scaleMultiplier = scaleMultiplier;
 		paths = new TreeMap<>();
 		curves = new TreeMap<>();
 		lineStyle = style;
@@ -130,7 +130,7 @@ public class NoisyEdges
 
 	private void subdivide(Point A, Point B, Point C, Point D, double minLength, Random random, List<Point> points)
 	{
-		if (A.subtract(C).length() < minLength * scaleMultiplyer || B.subtract(D).length() < minLength * scaleMultiplyer)
+		if (A.subtract(C).length() < minLength * scaleMultiplier || B.subtract(D).length() < minLength * scaleMultiplier)
 		{
 			return;
 		}

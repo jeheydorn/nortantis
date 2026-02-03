@@ -220,7 +220,7 @@ public class ImageHelper
 	/**
 	 *
 	 * @param size
-	 *            Number of pixels from 3 standard deviations from one side of the Guassian to the other.
+	 *            Number of pixels from 3 standard deviations from one side of the Gaussian to the other.
 	 * @return
 	 */
 	public static float[][] createGaussianKernel(int size)
@@ -465,11 +465,6 @@ public class ImageHelper
 		return result;
 	}
 
-	public static void maskWithImageInPlace(Image image1, Image image2, Image mask)
-	{
-		maskWithImageInPlace(image1, image2, mask, null, false);
-	}
-
 	/**
 	 * Sets pixels in image1 to a linear combination of that pixel from image1 and from image2 using the gray levels in the given mask. The
 	 * mask must be ImageType.Grayscale.
@@ -555,33 +550,6 @@ public class ImageHelper
 		}
 
 		return maskWithColorInRegion(image, color, mask, invertMask, new IntPoint(0, 0));
-	}
-
-	/**
-	 * In-place version of maskWithColor that modifies the source image directly. This avoids allocating a new image and can improve
-	 * performance. // TODO Decide if I want to keep this. It's not much faster, probably slows down CPU only draws, and hangs when GPU is
-	 * disabled.
-	 */
-	public static void maskWithColorInPlace(Image image, Color color, Image mask, boolean invertMask)
-	{
-		if (image.getWidth() != mask.getWidth())
-			throw new IllegalArgumentException("Mask width is " + mask.getWidth() + " but image has width " + image.getWidth() + ".");
-		if (image.getHeight() != mask.getHeight())
-			throw new IllegalArgumentException("In maskWithColor, image height was " + image.getHeight() + " but mask height was " + mask.getHeight());
-
-		if (SkiaShaderOps.shouldUseSkiaShaders(image, mask))
-		{
-			SkiaShaderOps.maskWithColorInPlace(image, color, mask, invertMask);
-			return;
-		}
-
-		Image result = maskWithColorInRegion(image, color, mask, invertMask, new IntPoint(0, 0));
-		try (Painter p = image.createPainter())
-		{
-			p.setAlphaComposite(AlphaComposite.Src);
-			p.drawImage(result, 0, 0);
-		}
-		result.close();
 	}
 
 	public static Image maskWithColorInRegion(Image image, Color color, Image mask, boolean invertMask, IntPoint imageOffsetInMask)
@@ -1374,28 +1342,6 @@ public class ImageHelper
 		return image;
 	}
 
-	public static float[][] tile(float[][] array, int targetRows, int targetCols, int rowOffset, int colOffset)
-	{
-		float[][] result = new float[targetRows][targetCols];
-		for (int r = 0; r < result.length; r++)
-			for (int c = 0; c < result[0].length; c++)
-			{
-				int arrayRow = (r + rowOffset) % array.length;
-				;
-				if (((r + rowOffset) / array.length) % 2 == 1)
-					arrayRow = array.length - 1 - arrayRow;
-
-				int arrayCol = (c + colOffset) % array[0].length;
-				if (((c + colOffset) / array[0].length) % 2 == 1)
-					arrayCol = array[0].length - 1 - arrayCol;
-
-				result[r][c] = array[arrayRow][arrayCol];
-
-			}
-
-		return result;
-	}
-
 	/**
 	 * Do histogram matching on an image.
 	 *
@@ -1558,7 +1504,7 @@ public class ImageHelper
 	}
 
 	/**
-	 * Like colorify but for multiple colors. Colorifies an image using a an array of colors and a second image which maps those colors to
+	 * Like colorify but for multiple colors. Colorifies an image using an array of colors and a second image which maps those colors to
 	 * pixels. This way you can specify multiple colors for the resulting image.
 	 *
 	 * @param image

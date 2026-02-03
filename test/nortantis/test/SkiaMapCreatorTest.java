@@ -222,7 +222,7 @@ public class SkiaMapCreatorTest
 		}
 
 		// Test bluing coastline and lake shores.
-		double sizeMultiplier = MapCreator.calcSizeMultipilerFromResolutionScale(settings.resolution);
+		double sizeMultiplier = MapCreator.calcSizeMultiplierFromResolutionScale(settings.resolution);
 		int blurLevel = (int) (settings.coastShadingLevel * sizeMultiplier);
 		float scale = 2.3973336f; // The actual value used when creating this map.
 		Image coastShading = ImageHelper.blurAndScale(coastlineAndLakeShoreMask, blurLevel, scale, true);

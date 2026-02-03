@@ -357,7 +357,7 @@ public class Background
 				}
 
 				landColoredBeforeAddingIconColors = drawRegionColors(graph, landBeforeRegionColoring, regionIndexes, landColorifyAlgorithm, null);
-				updateRegionIndexesAndLandWithIconShapes(settings, graph, tasks, drawBounds);
+				updateRegionIndexesAndLandWithIconShapes(graph, tasks, drawBounds);
 				land = drawRegionColors(graph, landBeforeRegionColoring, regionIndexes, landColorifyAlgorithm, null);
 			}
 			else
@@ -376,7 +376,7 @@ public class Background
 				ImageHelper.copySnippetFromSourceAndPasteIntoTarget(landColoredBeforeAddingIconColors, landSnippetColoredBeforeAddingIconColors, replaceBounds.upperLeftCorner().toIntPoint(),
 						boundsInSourceToCopyFrom, 0);
 
-				updateRegionIndexesAndLandWithIconShapes(settings, graph, tasks, drawBounds);
+				updateRegionIndexesAndLandWithIconShapes(graph, tasks, drawBounds);
 				Image landSnippet = drawRegionColors(graph, landBeforeRegionColoring, regionIndexes, landColorifyAlgorithm, new IntPoint((int) drawBounds.x, (int) drawBounds.y));
 				ImageHelper.copySnippetFromSourceAndPasteIntoTarget(land, landSnippet, replaceBounds.upperLeftCorner().toIntPoint(), boundsInSourceToCopyFrom, 0);
 			}
@@ -384,10 +384,10 @@ public class Background
 	}
 
 	/***
-	 * Draws icons onto regionIndexes and the land background so that the color of icons is determined by the place they draw at at their
+	 * Draws icons onto regionIndexes and the land background so that the color of icons is determined by the place they draw at their
 	 * base, rather than letting them be multicolored when they cross region boundaries.
 	 */
-	private void updateRegionIndexesAndLandWithIconShapes(MapSettings settings, WorldGraph graph, List<IconDrawTask> tasks, Rectangle drawBounds)
+	private void updateRegionIndexesAndLandWithIconShapes(WorldGraph graph, List<IconDrawTask> tasks, Rectangle drawBounds)
 	{
 		// The image "land" is generated but doesn't yet have colors.
 		for (final IconDrawTask task : tasks)

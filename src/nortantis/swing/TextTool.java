@@ -57,7 +57,7 @@ public class TextTool extends EditorTool
 	private RowHider editToolsSeparatorHider;
 	private final int curvatureSliderDivider = 100;
 	private JSlider spacingSlider;
-	private RowHider actionsSeperatorHider;
+	private RowHider actionsSeparatorHider;
 	private JCheckBox useDefaultFontCheckbox;
 	private RowHider useDefaultFontCheckboxHider;
 	private RowHider fontHider;
@@ -120,7 +120,7 @@ public class TextTool extends EditorTool
 			organizer.addLabelAndComponentsVertical("Mode:", "", radioButtons);
 		}
 
-		actionsSeperatorHider = organizer.addSeperator();
+		actionsSeparatorHider = organizer.addSeparator();
 
 		editTextField = new JTextField();
 		editTextField.addFocusListener(new FocusAdapter()
@@ -196,7 +196,7 @@ public class TextTool extends EditorTool
 			}
 		});
 
-		editToolsSeparatorHider = organizer.addSeperator();
+		editToolsSeparatorHider = organizer.addSeparator();
 
 		JButton clearRotationButton = new JButton("Rotate to Horizontal");
 		clearRotationButton.setToolTipText("Set the rotation angle of the selected text to 0 degrees.");
@@ -217,7 +217,7 @@ public class TextTool extends EditorTool
 		});
 		clearRotationButtonHider = organizer.addLeftAlignedComponents(Arrays.asList(clearRotationButton));
 
-		editToolsSeparatorHider.add(organizer.addSeperator());
+		editToolsSeparatorHider.add(organizer.addSeparator());
 
 		{
 			useDefaultFontCheckbox = new JCheckBox("Use default font");
@@ -264,7 +264,7 @@ public class TextTool extends EditorTool
 			fontHider = fontChooser.addToOrganizer(organizer);
 		}
 
-		editToolsSeparatorHider.add(organizer.addSeperator());
+		editToolsSeparatorHider.add(organizer.addSeparator());
 
 		useDefaultColorCheckbox = new JCheckBox("Use default color");
 		useDefaultColorCheckbox.setToolTipText("When checked, this text uses the text color in the Fonts tab.");
@@ -338,7 +338,7 @@ public class TextTool extends EditorTool
 		boldBackgroundColorOverrideHider = organizer.addLabelAndComponentsHorizontal("Bold background color:", "Change the color of the bold background of this text",
 				Arrays.asList(boldBackgroundColorOverrideDisplay, buttonChooseBoldBackgroundColorOverride), SwingHelper.colorPickerLeftPadding);
 
-		editToolsSeparatorHider.add(organizer.addSeperator());
+		editToolsSeparatorHider.add(organizer.addSeparator());
 
 		{
 			curvatureSlider = new JSlider();
@@ -499,7 +499,7 @@ public class TextTool extends EditorTool
 			editTextField.setText(lastSelected.value);
 			editTextField.requestFocus();
 		}
-		actionsSeperatorHider.setVisible((editButton.isSelected() && lastSelected != null) || addButton.isSelected() || eraseButton.isSelected());
+		actionsSeparatorHider.setVisible((editButton.isSelected() && lastSelected != null) || addButton.isSelected() || eraseButton.isSelected());
 
 		// For some reason this is necessary to prevent the text editing field
 		// from flattening sometimes.
@@ -849,7 +849,7 @@ public class TextTool extends EditorTool
 			spacingSlider.setValue(selectedText.spacing);
 			backgroundFadeSlider.setValue((int) (selectedText.backgroundFade * backgroundFadeDivider));
 		}
-		actionsSeperatorHider.setVisible((editButton.isSelected() && selectedText != null) || addButton.isSelected() || eraseButton.isSelected());
+		actionsSeparatorHider.setVisible((editButton.isSelected() && selectedText != null) || addButton.isSelected() || eraseButton.isSelected());
 		mapEditingPanel.repaint();
 
 		lastSelected = selectedText;

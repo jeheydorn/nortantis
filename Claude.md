@@ -88,12 +88,12 @@ GPUExecutor.setRenderingMode(RenderingMode.CPU_SHADERS); // Force CPU with Skia 
 GPUExecutor.setRenderingMode(RenderingMode.CPU);         // Force traditional pixel-by-pixel
 ```
 
-| Mode | Description |
-|------|-------------|
-| `HYBRID` | CPU+GPU dual-backing: large images have both a CPU bitmap and GPU surface (default, safe) |
-| `GPU` | GPU-only for large images: reduces memory by ~50% but requires GPU hardware. Grayscale and small images still use CPU. |
-| `CPU_SHADERS` | CPU rendering with Skia shader rasterizer (no GPU required) |
-| `CPU` | Traditional pixel-by-pixel CPU operations (no shaders) |
+| Mode          | Description                                                                                                            |
+|---------------|------------------------------------------------------------------------------------------------------------------------|
+| `HYBRID`      | CPU+GPU dual-backing: large images have both a CPU bitmap and GPU surface (default, safe)                              |
+| `GPU`         | GPU-only for large images: reduces memory by ~50% but requires GPU hardware. Grayscale and small images still use CPU. |
+| `CPU_SHADERS` | CPU rendering with Skia shader rasterizer (no GPU required)                                                            |
+| `CPU`         | Traditional pixel-by-pixel CPU operations (no shaders)                                                                 |
 
 The rendering mode can be changed at any time via `setRenderingMode()`. Tests should reset to `HYBRID` when done.
 

@@ -86,7 +86,6 @@ public class WorldGraph extends VoronoiGraph
 	// smaller of the two is less than this size, stop.
 	// Prevents small maps from containing only one tectonic plate.
 	final int minNinthtoLastPlateSize = 100;
-	public boolean isForFrayedBorder;
 	private Double meanCenterWidth;
 	private Double meanCenterWidthBetweenNeighbors;
 	private List<Set<Center>> lakes;
@@ -95,15 +94,14 @@ public class WorldGraph extends VoronoiGraph
 	Set<TectonicPlate> plates;
 	public Map<Integer, Region> regions;
 
-	public WorldGraph(Voronoi v, double lloydRelaxationsScale, Random r, double nonBorderPlateContinentalProbability, double borderPlateContinentalProbability, double sizeMultiplyer,
+	public WorldGraph(Voronoi v, double lloydRelaxationsScale, Random r, double nonBorderPlateContinentalProbability, double borderPlateContinentalProbability, double sizeMultiplier,
 			LineStyle lineStyle, double pointPrecision, boolean createElevationBiomesLakesAndRegions, boolean areRegionBoundariesVisible)
 	{
-		super(r, sizeMultiplyer, pointPrecision);
+		super(r, sizeMultiplier, pointPrecision);
 		this.nonBorderPlateContinentalProbability = nonBorderPlateContinentalProbability;
 		this.borderPlateContinentalProbability = borderPlateContinentalProbability;
 		TectonicPlate.resetIds();
 		initVoronoiGraph(v, numLloydRelaxations, lloydRelaxationsScale, createElevationBiomesLakesAndRegions);
-		setupColors();
 		regions = new TreeMap<>();
 
 		// Switch the center locations the Voronoi centroids of each center
@@ -120,13 +118,12 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * This constructor doens't create tectonic plates or elevation.
+	 * This constructor doesn't create tectonic plates or elevation.
 	 */
-	public WorldGraph(Voronoi v, double lloydRelaxationsScale, Random r, double resolutionScale, double pointPrecision, boolean isForFrayedBorder)
+	public WorldGraph(Voronoi v, double lloydRelaxationsScale, Random r, double resolutionScale, double pointPrecision)
 	{
 		super(r, resolutionScale, pointPrecision);
 		initVoronoiGraph(v, numLloydRelaxations, lloydRelaxationsScale, false);
-		setupColors();
 	}
 
 	private void updateCenterLocationsToCentroids()
@@ -291,15 +288,6 @@ public class WorldGraph extends VoronoiGraph
 		}
 	}
 
-	private void setupColors()
-	{
-		OCEAN = Biome.OCEAN.color;
-		LAKE = Biome.LAKE.color;
-		BEACH = Biome.BEACH.color;
-		RIVER = Color.create(22, 55, 88);
-
-	}
-
 	public void rebuildNoisyEdgesForCenter(Center center)
 	{
 		rebuildNoisyEdgesForCenter(center, null);
@@ -331,7 +319,7 @@ public class WorldGraph extends VoronoiGraph
 
 	public void buildNoisyEdges(LineStyle lineStyle, boolean isForFrayedBorder)
 	{
-		noisyEdges = new NoisyEdges(MapCreator.calcSizeMultipilerFromResolutionScale(resolutionScale), lineStyle, isForFrayedBorder);
+		noisyEdges = new NoisyEdges(MapCreator.calcSizeMultiplierFromResolutionScale(resolutionScale), lineStyle, isForFrayedBorder);
 		noisyEdges.buildNoisyEdges(this);
 	}
 
@@ -1654,10 +1642,10 @@ public class WorldGraph extends VoronoiGraph
 		createTectonicPlates();
 		assignOceanAndContinentalPlates();
 		lowerOceanPlates();
-		assignPlateCornerElivations();
+		assignPlateCornerElevations();
 	}
 
-	private void assignPlateCornerElivations()
+	private void assignPlateCornerElevations()
 	{
 		// long startTime = System.currentTimeMillis();
 
@@ -1871,7 +1859,7 @@ public class WorldGraph extends VoronoiGraph
 		BetaDistribution betaDist = new BetaDistribution(randomData, 1, 3, BetaDistribution.DEFAULT_INVERSE_ABSOLUTE_ACCURACY);
 		for (Center c : centers)
 		{
-			c.tectonicPlate = new TectonicPlate(betaDist.sample(), centers);
+			c.tectonicPlate = new TectonicPlate(betaDist.sample());
 			plateCounts.put(c.tectonicPlate, 1);
 		}
 
@@ -1912,13 +1900,7 @@ public class WorldGraph extends VoronoiGraph
 			{
 				// Choose a center at random.
 				// Choose one of it's neighbors not in the same plate.
-				List<Center> neighborsNotInSamePlate = Helper.filter(c.neighbors, new nortantis.util.Function<Center, Boolean>()
-				{
-					public Boolean apply(Center otherC)
-					{
-						return c.tectonicPlate != otherC.tectonicPlate;
-					}
-				});
+				List<Center> neighborsNotInSamePlate = Helper.filter(c.neighbors, otherC -> c.tectonicPlate != otherC.tectonicPlate);
 				Center neighbor = neighborsNotInSamePlate.get(rand.nextInt(neighborsNotInSamePlate.size()));
 
 				plateCounts.put(c.tectonicPlate, plateCounts.get(c.tectonicPlate) + 1);
@@ -2544,7 +2526,7 @@ public class WorldGraph extends VoronoiGraph
 		return cSize;
 	}
 
-	public void drawCoastlineWithVariation(Painter p, long randomSeed, double variationRange, double widthBetweenWaves, boolean addRandomBreaks, Collection<Center> centersToDraw, Rectangle drawBounds,
+	public void drawCoastlineWithVariation(Painter p, long randomSeed, double variationRange, double widthBetweenWaves, boolean addRandomBreaks, Rectangle drawBounds,
 			BiFunction<Boolean, Random, Double> getNewSkipDistance, List<List<Edge>> shoreEdges)
 	{
 		Transform orig = null;
@@ -2753,30 +2735,6 @@ public class WorldGraph extends VoronoiGraph
 		return result;
 	}
 
-	public List<List<Edge>> findCoastlines(Collection<Center> centersToDraw)
-	{
-		List<List<Edge>> result = new ArrayList<>();
-		Set<Edge> explored = new HashSet<>();
-		for (Center center : (centersToDraw == null ? centers : centersToDraw))
-		{
-			for (Edge edge : center.borders)
-			{
-				if (explored.contains(edge))
-				{
-					continue;
-				}
-
-				List<Edge> coastline = findPath(explored, edge, (e) -> noisyEdges.getEdgeDrawType(e) == EdgeDrawType.Coast);
-				if (coastline != null && !coastline.isEmpty())
-				{
-					result.add(coastline);
-				}
-			}
-		}
-
-		return result;
-	}
-
 	public void drawCoastline(Painter p, double strokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
 		drawSpecifiedEdges(p, strokeWidth, centersToDraw, drawBounds, edge -> edge.isCoast());
@@ -2878,7 +2836,7 @@ public class WorldGraph extends VoronoiGraph
 	 * Finds all edges that the 'accept' function accepts which are touching centersToDraw or are connected to an edge that touches those centers.
 	 *
 	 * @param centersToDraw
-	 * 		Only edges either in/touching this collection or connected to edges that are will be returned.
+	 * 		Only edges either in/touching this collection or connected to edges that are in it will be returned.
 	 * @param accept
 	 * 		Function to determine what edge is to include in results.
 	 * @param searchEntireGraph

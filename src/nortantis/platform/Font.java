@@ -18,8 +18,6 @@ public abstract class Font implements Serializable
 	 */
 	public abstract Font deriveFont(FontStyle style, float size);
 
-	public abstract String getFontName();
-
 	public abstract String getName();
 
 	public abstract String getFamily();

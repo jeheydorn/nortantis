@@ -114,7 +114,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		{
 			try
 			{
-				JOptionPane.showMessageDialog(null, "Unnable to create GUI because of error: " + ex.getMessage() + "\nVersion: " + MapSettings.currentVersion + "\nOS Name: "
+				JOptionPane.showMessageDialog(null, "Unable to create GUI because of error: " + ex.getMessage() + "\nVersion: " + MapSettings.currentVersion + "\nOS Name: "
 						+ System.getProperty("os.name") + "\nStack trace: " + ExceptionUtils.getStackTrace(ex), "Error", JOptionPane.ERROR_MESSAGE);
 			}
 			catch (Exception inner)
@@ -175,7 +175,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 						String lastCheckedVersion = UserPreferences.getInstance().lastVersionFromCheck;
 
-						if (MapSettings.isVersionGreatherThanCurrent(latestVersion) && (StringUtils.isEmpty(lastCheckedVersion) || MapSettings.isVersionGreaterThan(latestVersion, lastCheckedVersion)))
+						if (MapSettings.isVersionGreaterThanCurrent(latestVersion) && (StringUtils.isEmpty(lastCheckedVersion) || MapSettings.isVersionGreaterThan(latestVersion, lastCheckedVersion)))
 						{
 							UserPreferences.getInstance().lastVersionFromCheck = latestVersion;
 							UserPreferences.getInstance().lastVersionCheckTime = currentTime;
@@ -1213,7 +1213,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					{
 						try
 						{
-							if (MapSettings.isVersionGreatherThanCurrent(requiredVersion))
+							if (MapSettings.isVersionGreaterThanCurrent(requiredVersion))
 							{
 								JOptionPane.showMessageDialog(this, "The selected art pack requires Nortantis version " + requiredVersion + ", but this your Nortantis version is "
 										+ MapSettings.currentVersion + ". Update Nortantis and try again.", "Error", JOptionPane.ERROR_MESSAGE);
@@ -1580,9 +1580,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		{
 			if (mapEditingPanel.mapFromMapCreator != null)
 			{
-				final int additionalWidthToRemoveIDontKnowWhereItsCommingFrom = 2;
-				nortantis.geom.Dimension size = new nortantis.geom.Dimension(mapEditingScrollPane.getSize().width - additionalWidthToRemoveIDontKnowWhereItsCommingFrom,
-						mapEditingScrollPane.getSize().height - additionalWidthToRemoveIDontKnowWhereItsCommingFrom);
+				final int additionalWidthToRemoveIDontKnowWhereItsComingFrom = 2;
+				nortantis.geom.Dimension size = new nortantis.geom.Dimension(mapEditingScrollPane.getSize().width - additionalWidthToRemoveIDontKnowWhereItsComingFrom,
+						mapEditingScrollPane.getSize().height - additionalWidthToRemoveIDontKnowWhereItsComingFrom);
 
 				nortantis.geom.Dimension fitted = ImageHelper.fitDimensionsWithinBoundingBox(size, mapEditingPanel.mapFromMapCreator.getWidth(), mapEditingPanel.mapFromMapCreator.getHeight());
 				return (fitted.width / mapEditingPanel.mapFromMapCreator.getWidth()) * mapEditingPanel.osScale;
@@ -1768,7 +1768,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		if (settingsHaveUnsavedChanges())
 		{
-			int n = JOptionPane.showConfirmDialog(this, "Settings have been modfied. Save changes?", "", JOptionPane.YES_NO_CANCEL_OPTION);
+			int n = JOptionPane.showConfirmDialog(this, "Settings have been modified. Save changes?", "", JOptionPane.YES_NO_CANCEL_OPTION);
 			if (n == JOptionPane.YES_OPTION)
 			{
 				saveSettings(this);
@@ -1897,7 +1897,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			catch (IOException e)
 			{
 				e.printStackTrace();
-				Logger.printError("Erorr while saving settings to a new file:", e);
+				Logger.printError("Error while saving settings to a new file:", e);
 				JOptionPane.showMessageDialog(null, e.getMessage(), "Unable to save settings.", JOptionPane.ERROR_MESSAGE);
 			}
 
@@ -1974,7 +1974,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			// Note - this call needs to come after everything that calls into
 			// loadSettingsAndEditsIntoThemeAndToolsPanels because the text
 			// tool
-			// might enable fields when when loading settings, which will cause
+			// might enable fields when loading settings, which will cause
 			// fields to be enabled before the map is ready.
 			enableOrDisableFieldsThatRequireMap(false, settings);
 		}

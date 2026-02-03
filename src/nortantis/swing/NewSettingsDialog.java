@@ -36,7 +36,7 @@ public class NewSettingsDialog extends JDialog
 	private Dimension defaultSize = new Dimension(900, 750);
 	private int amountToSubtractFromLeftAndRightPanels = 40;
 	private Timer progressBarTimer;
-	public final double cityFrequencySliderScale = 100.0 / SettingsGenerator.maxCityProbabillity;
+	public final double cityFrequencySliderScale = 100.0 / SettingsGenerator.maxCityProbability;
 	private JSlider cityFrequencySlider;
 	private JComboBox<String> cityIconsTypeComboBox;
 	private JPanel mapEditingPanelContainer;
@@ -294,7 +294,7 @@ public class NewSettingsDialog extends JDialog
 		generatorSettingsPanel.add(leftPanel);
 
 		dimensionsComboBox = new JComboBox<>();
-		for (String dimension : SettingsGenerator.getAllowedDimmensions())
+		for (String dimension : SettingsGenerator.getAllowedDimensions())
 		{
 			dimensionsComboBox.addItem(dimension);
 		}
@@ -646,9 +646,9 @@ public class NewSettingsDialog extends JDialog
 
 	private nortantis.geom.Dimension getMapDrawingAreaSize()
 	{
-		final int additionalWidthToRemoveIDontKnowWhereItsCommingFrom = 4;
-		return new nortantis.geom.Dimension((mapEditingPanelContainer.getSize().width - additionalWidthToRemoveIDontKnowWhereItsCommingFrom) * mapEditingPanel.osScale,
-				(mapEditingPanelContainer.getSize().height - additionalWidthToRemoveIDontKnowWhereItsCommingFrom) * mapEditingPanel.osScale);
+		final int additionalWidthToRemoveIDontKnowWhereItsComingFrom = 4;
+		return new nortantis.geom.Dimension((mapEditingPanelContainer.getSize().width - additionalWidthToRemoveIDontKnowWhereItsComingFrom) * mapEditingPanel.osScale,
+				(mapEditingPanelContainer.getSize().height - additionalWidthToRemoveIDontKnowWhereItsComingFrom) * mapEditingPanel.osScale);
 
 	}
 
@@ -721,7 +721,7 @@ public class NewSettingsDialog extends JDialog
 				return i;
 			}
 		}
-		throw new IllegalArgumentException("No dropdown menu option with dimentions " + generatedWidth + " x " + generatedHeight);
+		throw new IllegalArgumentException("No dropdown menu option with dimensions " + generatedWidth + " x " + generatedHeight);
 	}
 
 	private void enableOrDisableProgressBar(boolean enable)

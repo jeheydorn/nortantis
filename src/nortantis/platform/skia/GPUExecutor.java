@@ -330,7 +330,8 @@ public class GPUExecutor
 	}
 
 	/**
-	 * Shuts down the GPU executor and releases all resources. Should be called during application shutdown.
+	 * Shuts down the GPU executor and releases all resources. Only needed if the executor must be torn down and recreated within a running
+	 * process.
 	 */
 	public void shutdown()
 	{

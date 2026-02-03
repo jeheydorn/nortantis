@@ -25,7 +25,7 @@ public class TectonicPlate
 		nextID = 0;
 	}
 
-	public TectonicPlate(double growthProbability, List<Center> allCenters)
+	public TectonicPlate(double growthProbability)
 	{
 		this.growthProbability = growthProbability;
 		this.id = nextID++;

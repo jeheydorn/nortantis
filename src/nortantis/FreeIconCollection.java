@@ -113,26 +113,6 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		return anchoredNonTreeIcons.get(centerIndex);
 	}
 
-	public synchronized boolean hasAnchoredIcons(int centerIndex)
-	{
-		if (anchoredNonTreeIcons.get(centerIndex) != null)
-		{
-			return true;
-		}
-
-		return hasTrees(centerIndex);
-	}
-
-	public synchronized List<FreeIcon> getAnchoredIcons(int centerIndex)
-	{
-		List<FreeIcon> result = new ArrayList<FreeIcon>(getTrees(centerIndex));
-		if (getNonTree(centerIndex) != null)
-		{
-			result.add(getNonTree(centerIndex));
-		}
-		return result;
-	}
-
 	public synchronized void clearTrees(int centerIndex)
 	{
 		if (anchoredTreeIcons.containsKey(centerIndex))
@@ -319,7 +299,7 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		}
 
 		Set<FreeIcon> diff;
-		// To avoid a potential deadlock, always compare this object with the one passed in in the same order no matter what direction this
+		// To avoid a potential deadlock, always compare this object with the one passed in the same order no matter what direction this
 		// method is called. That way the locks are always acquired and released in the same order, so we cannot have a circular hold and
 		// wait.
 		if (this.hashCode() > other.hashCode())

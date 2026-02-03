@@ -216,27 +216,27 @@ public class RoadDrawer
 			// If there's already a road here, favor it so we don't make redundant roads that almost follow the same course.
 			boolean alreadyHasRoad = edgesAddedRoadsFor.contains(edge);
 
-			double terrianPenalty;
+			double terrainPenalty;
 			if (center.isMountain)
 			{
-				terrianPenalty = mountainWeight;
+				terrainPenalty = mountainWeight;
 			}
 			else if (center.isHill)
 			{
-				terrianPenalty = hillWeight;
+				terrainPenalty = hillWeight;
 			}
 			else if (center.biome == IconDrawer.sandDunesBiome)
 			{
-				terrianPenalty = dunesWeight;
+				terrainPenalty = dunesWeight;
 			}
 			else
 			{
-				terrianPenalty = 1.0;
+				terrainPenalty = 1.0;
 			}
 
 			double distanceNormalized = Center.distanceBetween(edge.d0, edge.d1) * (1.0 / resolutionScale);
 
-			return (distanceNormalized * terrianPenalty + distanceToEnd) * (alreadyHasRoad ? existingRoadWeight : 1.0);
+			return (distanceNormalized * terrainPenalty + distanceToEnd) * (alreadyHasRoad ? existingRoadWeight : 1.0);
 		});
 
 		if (edges.isEmpty())

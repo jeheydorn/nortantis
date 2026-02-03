@@ -315,7 +315,7 @@ public class OverlayTool extends EditorTool
 	{
 		if (editStart != null && (isMoving || isScaling) && overlayOffsetResolutionInvariant != null)
 		{
-			updateOveralyOffsetOrScaleForEdit(e);
+			updateOverlayOffsetOrScaleForEdit(e);
 
 			showOrHideEditorTools();
 		}
@@ -326,7 +326,7 @@ public class OverlayTool extends EditorTool
 	{
 		if (editStart != null && (isMoving || isScaling) && overlayOffsetResolutionInvariant != null)
 		{
-			updateOveralyOffsetOrScaleForEdit(e);
+			updateOverlayOffsetOrScaleForEdit(e);
 
 			overlayOffsetBeforeEdit = null;
 			overlayScaleBeforeEdit = 0.0;
@@ -339,7 +339,7 @@ public class OverlayTool extends EditorTool
 		clearEditFields();
 	}
 
-	private void updateOveralyOffsetOrScaleForEdit(MouseEvent e)
+	private void updateOverlayOffsetOrScaleForEdit(MouseEvent e)
 	{
 		Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
 		Point graphPointMousePressedLocation = getPointOnGraph(editStart);

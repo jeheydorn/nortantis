@@ -91,7 +91,7 @@ public class TextDrawer
 			mapTexts = new CopyOnWriteArrayList<>();
 		}
 
-		double sizeMultiplier = MapCreator.calcSizeMultipilerFromResolutionScale(settings.resolution);
+		double sizeMultiplier = MapCreator.calcSizeMultiplierFromResolutionScale(settings.resolution);
 		titleFontScaled = settings.titleFont.deriveFont(settings.titleFont.getStyle(), (float) (settings.titleFont.getSize() * sizeMultiplier));
 		regionFontScaled = settings.regionFont.deriveFont(settings.regionFont.getStyle(), (float) (settings.regionFont.getSize() * sizeMultiplier));
 		mountainRangeFontScaled = settings.mountainRangeFont.deriveFont(settings.mountainRangeFont.getStyle(), (float) (settings.mountainRangeFont.getSize() * sizeMultiplier));
@@ -250,7 +250,7 @@ public class TextDrawer
 		drawText(map, graph, mapTexts, null);
 	}
 
-	public void doForEachTextInBounds(List<MapText> mapTexts, WorldGraph graph, Rectangle bounds, BiConsumer<MapText, RotatedRectangle> action)
+	public void doForEachTextInBounds(List<MapText> mapTexts, Rectangle bounds, BiConsumer<MapText, RotatedRectangle> action)
 	{
 		try (Painter p = Image.create(1, 1, ImageType.ARGB).createPainter())
 		{
@@ -373,7 +373,7 @@ public class TextDrawer
 
 		Tuple1<Rectangle> wrapperToMakeCompilerHappy = new Tuple1<>(bounds);
 
-		doForEachTextInBounds(mapTexts, graph, bounds, (text, area) ->
+		doForEachTextInBounds(mapTexts, bounds, (text, area) ->
 		{
 			if (text.lineBreak == LineBreak.Auto)
 			{
@@ -389,7 +389,7 @@ public class TextDrawer
 		{
 			Point drawOffset = drawBounds == null ? null : drawBounds.upperLeftCorner();
 
-			doForEachTextInBounds(textToDraw, graph, drawBounds, ((text, ignored) ->
+			doForEachTextInBounds(textToDraw, drawBounds, ((text, ignored) ->
 			{
 				if (text.type == TextType.Title)
 				{
@@ -433,7 +433,7 @@ public class TextDrawer
 	{
 		if (text.fontOverride != null)
 		{
-			double sizeMultiplier = MapCreator.calcSizeMultipilerFromResolutionScale(settings.resolution);
+			double sizeMultiplier = MapCreator.calcSizeMultiplierFromResolutionScale(settings.resolution);
 			Font derived = text.fontOverride.deriveFont(text.fontOverride.getStyle(), (float) (text.fontOverride.getSize() * sizeMultiplier));
 			p.setFont(derived);
 		}
@@ -475,7 +475,7 @@ public class TextDrawer
 		}
 		else
 		{
-			throw new RuntimeException("Unkown text type: " + type);
+			throw new RuntimeException("Unknown text type: " + type);
 		}
 	}
 
@@ -609,7 +609,7 @@ public class TextDrawer
 
 	private River findRiver(Set<Corner> riversAlreadyFound, Corner start)
 	{
-		// First, follow the river in every direction it flows to find it's mouth (which is the end of the river that is the widest, which
+		// First, follow the river in every direction it flows to find its mouth (which is the end of the river that is the widest, which
 		// should be at the ocean).
 		List<Edge> options = new ArrayList<>();
 		for (Edge e : start.protrudes)
@@ -660,14 +660,14 @@ public class TextDrawer
 		assert head != null;
 		assert !head.equals(last);
 
-		Edge lastTohead = VoronoiGraph.edgeWithCorners(last, head);
+		Edge lastToHead = VoronoiGraph.edgeWithCorners(last, head);
 		River result = new River();
-		result.add(lastTohead);
+		result.add(lastToHead);
 
 		List<Edge> riverEdges = new ArrayList<>();
 		for (Edge e : head.protrudes)
 		{
-			if (e.isRiver() && e != lastTohead)
+			if (e.isRiver() && e != lastToHead)
 			{
 				riverEdges.add(e);
 			}

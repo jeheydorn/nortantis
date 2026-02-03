@@ -17,14 +17,10 @@ public class SkiaPainter extends Painter
 	private Paint paint;
 	private SkiaFont font;
 	private SkiaColor color;
-	private final int destWidth;
-	private final int destHeight;
 
-	public SkiaPainter(Canvas canvas, DrawQuality quality, int destWidth, int destHeight)
+	public SkiaPainter(Canvas canvas, DrawQuality quality)
 	{
 		this.canvas = canvas;
-		this.destWidth = destWidth;
-		this.destHeight = destHeight;
 		this.paint = new Paint();
 		this.paint.setAntiAlias(quality == DrawQuality.High);
 		this.paint.setDither(quality == DrawQuality.High);

@@ -141,28 +141,6 @@ public abstract class Image implements AutoCloseable
 	public abstract Image copyAndAddAlphaChanel();
 
 	/**
-	 * Optional hint that prepares the image for pixel access operations. For GPU-accelerated implementations, this ensures CPU bitmap is
-	 * up-to-date. Default implementation is a no-op - the lazy sync will work without explicit calls.
-	 *
-	 * Call this before intensive pixel access operations when you want to batch the sync cost.
-	 */
-	public void prepareForPixelAccess()
-	{
-		// Default: no-op. Skia overrides to sync GPU->CPU if needed.
-	}
-
-	/**
-	 * Optional hint that prepares the image for drawing operations. For GPU-accelerated implementations, this ensures the GPU surface is
-	 * ready. Default implementation is a no-op.
-	 *
-	 * Call this before intensive drawing operations when you want to batch the preparation cost.
-	 */
-	public void prepareForDrawing()
-	{
-		// Default: no-op. Skia overrides to ensure GPU ready.
-	}
-
-	/**
 	 * Creates a pixel reader that is restricted to read from the given bounds of this image. For the Skia implementation, this is much more
 	 * efficient than creating a pixel reader for the entire image.
 	 */
@@ -292,16 +270,5 @@ public abstract class Image implements AutoCloseable
 			p.setManualBatchMode(true); // Single batch for all ops
 			operations.accept(p);
 		} // await() called automatically by close()
-	}
-
-	/**
-	 * Executes drawing operations on this image with automatic resource management. Uses normal draw quality.
-	 *
-	 * @param operations
-	 *            A consumer that receives the painter and performs drawing operations
-	 */
-	public void withPainter(Consumer<Painter> operations)
-	{
-		withPainter(DrawQuality.Normal, operations);
 	}
 }

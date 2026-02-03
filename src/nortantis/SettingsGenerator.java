@@ -23,7 +23,7 @@ public class SettingsGenerator
 	public static int minWorldSizeForRandomSettings = minWorldSize + 2000;
 	public static int maxWorldSize = 32000; // This must not be more than 2^16 or centerLookupTable in WorldGraph will not work.
 	public static int worldSizePrecision = 1000;
-	public static double maxCityProbabillity = 1.0 / 40.0;
+	public static double maxCityProbability = 1.0 / 40.0;
 	public static int maxFrayedEdgeSizeForUI = 15;
 	public static final int maxConcentricWaveCountInEditor = 5;
 	public static final int maxConcentricWaveCountToGenerate = 3;
@@ -179,11 +179,11 @@ public class SettingsGenerator
 			settings.frayedBorder = true;
 		}
 		settings.frayedBorderBlurLevel = Math.abs(rand.nextInt(150));
-		// Fray size is stored inverted with respect the the UI.
+		// Fray size is stored inverted with respect to the UI.
 		final int maxFraySize = 6;
 		settings.frayedBorderSize = maxFrayedEdgeSizeForUI - Math.abs(rand.nextInt(maxFraySize));
 
-		settings.cityProbability = 0.25 * maxCityProbabillity;
+		settings.cityProbability = 0.25 * maxCityProbability;
 
 		List<String> cityIconTypes = ImageCache.getInstance(settings.artPack, settings.customImagesPath).getIconGroupNames(IconType.cities);
 		if (cityIconTypes.size() > 0)
@@ -238,7 +238,7 @@ public class SettingsGenerator
 		settings.edgeLandToWaterProbability = Math.round(settings.edgeLandToWaterProbability * 100.0) / 100.0;
 		settings.centerLandToWaterProbability = Math.round(settings.centerLandToWaterProbability * 100.0) / 100.0;
 
-		IntDimension dimension = parseGeneratedBackgroundDimensionsFromDropdown(ProbabilityHelper.sampleUniform(rand, getAllowedDimmensions()));
+		IntDimension dimension = parseGeneratedBackgroundDimensionsFromDropdown(ProbabilityHelper.sampleUniform(rand, getAllowedDimensions()));
 		settings.generatedWidth = dimension.width;
 		settings.generatedHeight = dimension.height;
 
@@ -291,7 +291,7 @@ public class SettingsGenerator
 		settings.textRandomSeed = seed;
 	}
 
-	public static List<String> getAllowedDimmensions()
+	public static List<String> getAllowedDimensions()
 	{
 		List<String> result = new ArrayList<>();
 		result.add("4096 x 4096 (square)");

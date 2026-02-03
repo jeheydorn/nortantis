@@ -307,7 +307,7 @@ public class MapCreator implements WarningLogger
 				(int) replaceBounds.height);
 		Image mapSnippet;
 		Image textBackground;
-		double sizeMultiplierRounded = calcSizeMultipilerFromResolutionScaleRounded(settings.resolution);
+		double sizeMultiplierRounded = calcSizeMultiplierFromResolutionScaleRounded(settings.resolution);
 
 		Set<Center> centersToDraw = null;
 		if (!onlyTextChanged)
@@ -557,7 +557,7 @@ public class MapCreator implements WarningLogger
 
 	private double calcEffectsPadding(final MapSettings settings)
 	{
-		double sizeMultiplier = calcSizeMultipilerFromResolutionScaleRounded(settings.resolution);
+		double sizeMultiplier = calcSizeMultiplierFromResolutionScaleRounded(settings.resolution);
 
 		// To handle edge/effects changes outside centersChangedBounds box
 		// caused by centers in centersChanged, pad the bounds of the
@@ -573,7 +573,7 @@ public class MapCreator implements WarningLogger
 		// lot
 		// with performance.
 		double rippleWaveWidth = settings.hasRippleWaves(settings.resolution) ? (settings.oceanWavesLevel * sizeMultiplier) * 0.75 : 0;
-		// There shading from gaussian blur isn't visible all the way out, so save performance by reducing the width
+		// The shading from Gaussian blur isn't visible all the way out, so save performance by reducing the width
 		// contributed by it.
 		double oceanShadingWidth = 0.9 * (settings.oceanShadingLevel * sizeMultiplier);
 		double coastShadingWidth = 0.9 * (settings.coastShadingLevel * sizeMultiplier);
@@ -624,7 +624,7 @@ public class MapCreator implements WarningLogger
 
 		r = new Random(settings.randomSeed);
 		Dimension mapBounds = Background.calcMapBoundsAndAdjustResolutionIfNeeded(settings, maxDimensions);
-		double sizeMultiplier = calcSizeMultipilerFromResolutionScale(settings.resolution);
+		double sizeMultiplier = calcSizeMultiplierFromResolutionScale(settings.resolution);
 
 		// Kick of a job to create the graph while the background is being created.
 		Future<WorldGraph> graphTask = ThreadHelper.getInstance().submit(() ->
@@ -1272,7 +1272,7 @@ public class MapCreator implements WarningLogger
 	private Tuple2<Image, Image> darkenLandNearCoastlinesAndRegionBorders(MapSettings settings, WorldGraph graph, double resolutionScaled, Image mapOrSnippet, Background background,
 			Image coastShading, Collection<Center> centersToDraw, Rectangle drawBounds, boolean addLoggingEntry)
 	{
-		double sizeMultiplier = calcSizeMultipilerFromResolutionScale(resolutionScaled);
+		double sizeMultiplier = calcSizeMultiplierFromResolutionScale(resolutionScaled);
 		int blurLevel = (int) (settings.coastShadingLevel * sizeMultiplier);
 
 		final float scaleForDarkening = coastlineShadingScale;
@@ -1362,7 +1362,7 @@ public class MapCreator implements WarningLogger
 		{
 			drawBounds = graph.bounds;
 		}
-		double sizeMultiplier = calcSizeMultipilerFromResolutionScaleRounded(resolutionScale);
+		double sizeMultiplier = calcSizeMultiplierFromResolutionScaleRounded(resolutionScale);
 
 		Image oceanWaves = null;
 		Image oceanShading = null;
@@ -1437,7 +1437,7 @@ public class MapCreator implements WarningLogger
 	private Image createConcentricWavesMask(MapSettings settings, WorldGraph graph, double resolutionScaled, Image landMask, Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
 		Image oceanEffects = Image.create((int) drawBounds.width, (int) drawBounds.height, ImageType.Grayscale8Bit);
-		double sizeMultiplier = calcSizeMultipilerFromResolutionScaleRounded(resolutionScaled);
+		double sizeMultiplier = calcSizeMultiplierFromResolutionScaleRounded(resolutionScaled);
 
 		double widthBetweenWaves = concentricWaveWidthBetweenWaves * sizeMultiplier;
 		double waveWidth = concentricWaveLineWidth * sizeMultiplier;
@@ -1512,12 +1512,12 @@ public class MapCreator implements WarningLogger
 				p.setColor(Color.create(level, level, level));
 				double varianceRange = settings.jitterToConcentricWaves ? calcJitterVarianceRange(resolutionScaled) : 0.0;
 				p.setStrokeToSolidLineWithNoEndDecorations((float) whiteWidth);
-				graph.drawCoastlineWithVariation(p, settings.backgroundRandomSeed + i, varianceRange, widthBetweenWaves, settings.brokenLinesForConcentricWaves, centersToDraw, drawBounds,
+				graph.drawCoastlineWithVariation(p, settings.backgroundRandomSeed + i, varianceRange, widthBetweenWaves, settings.brokenLinesForConcentricWaves, drawBounds,
 						getNewSkipDistance, shoreEdges);
 
 				p.setColor(Color.black);
 				p.setBasicStroke((float) (whiteWidth - waveWidth));
-				graph.drawCoastlineWithVariation(p, settings.backgroundRandomSeed + i, varianceRange, widthBetweenWaves, false, centersToDraw, drawBounds, getNewSkipDistance, shoreEdges);
+				graph.drawCoastlineWithVariation(p, settings.backgroundRandomSeed + i, varianceRange, widthBetweenWaves, false, drawBounds, getNewSkipDistance, shoreEdges);
 			}
 		}
 
@@ -1535,7 +1535,7 @@ public class MapCreator implements WarningLogger
 
 	private double calcJitterVarianceRange(double resolutionScaled)
 	{
-		double sizeMultiplier = calcSizeMultipilerFromResolutionScaleRounded(resolutionScaled);
+		double sizeMultiplier = calcSizeMultiplierFromResolutionScaleRounded(resolutionScaled);
 		double widthBetweenWaves = concentricWaveWidthBetweenWaves * sizeMultiplier;
 		return 0.25 * widthBetweenWaves;
 	}
@@ -1660,17 +1660,17 @@ public class MapCreator implements WarningLogger
 	/*
 	 * A constant based on the resolution for determining how large things should draw.
 	 */
-	public static double calcSizeMultipilerFromResolutionScale(double resoutionScale)
+	public static double calcSizeMultiplierFromResolutionScale(double resolutionScale)
 	{
-		return (8.0 / 3.0) * resoutionScale;
+		return (8.0 / 3.0) * resolutionScale;
 	}
 
 	/**
-	 * Like calcSizeMultipilerFromResolutionScale, but rounds to the nearest tenth for use with components that have that limit on numeric precision.
+	 * Like calcSizeMultiplierFromResolutionScale, but rounds to the nearest tenth for use with components that have that limit on numeric precision.
 	 */
-	public static double calcSizeMultipilerFromResolutionScaleRounded(double resolutionScale)
+	public static double calcSizeMultiplierFromResolutionScaleRounded(double resolutionScale)
 	{
-		return Math.round(10.0 * calcSizeMultipilerFromResolutionScale(resolutionScale)) / 10.0;
+		return Math.round(10.0 * calcSizeMultiplierFromResolutionScale(resolutionScale)) / 10.0;
 	}
 
 	private static void applyRegionEdits(WorldGraph graph, MapEdits edits)
@@ -1815,7 +1815,7 @@ public class MapCreator implements WarningLogger
 	{
 		try (Painter p = map.createPainter(DrawQuality.High))
 		{
-			graph.drawRivers(p, edgesToDraw, drawBounds, settings.riverColor, settings.drawRegionBoundaries, settings.regionBoundaryColor);
+			graph.drawRivers(p, edgesToDraw, drawBounds, settings.riverColor);
 		}
 	}
 
