@@ -310,7 +310,7 @@ public class MapCreator implements WarningLogger
 		double sizeMultiplierRounded = calcSizeMultiplierFromResolutionScaleRounded(settings.resolution);
 
 		Set<Center> centersToDraw = null;
-		if (!onlyTextChanged)
+		if (!onlyTextChanged || mapParts.mapBeforeAddingText == null)
 		{
 			Center searchStart = mapParts.graph.findClosestCenter(drawBounds.getCenter());
 			centersToDraw = mapParts.graph.breadthFirstSearch(c -> c.isInBoundsIncludingNoisyEdges(drawBounds), searchStart);
@@ -1219,7 +1219,10 @@ public class MapCreator implements WarningLogger
 
 		if (mapParts != null)
 		{
-			mapParts.mapBeforeAddingText = map.deepCopy();
+			if (!isLowMemoryMode)
+			{
+				mapParts.mapBeforeAddingText = map.deepCopy();
+			}
 			mapParts.textBackground = textBackground;
 		}
 
