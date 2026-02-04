@@ -27,9 +27,9 @@ public class FractalBGGenerator
 	 */
 	public static Image generate(Random rand, float p, int width, int height, float contrast)
 	{
-		int cols = ImageHelper.getPowerOf2EqualOrLargerThan(width);
-		int rows = ImageHelper.getPowerOf2EqualOrLargerThan(height);
-		// For some reason this algorithm only works for creating a square result.
+		int cols = ImageHelper.getJTransformsMixedRadixSizeEqualOrLargerThan(width);
+		int rows = ImageHelper.getJTransformsMixedRadixSizeEqualOrLargerThan(height);
+		// For some reason this algorithm only getJTransformsMixedRadixSizeEqualOrLargerThan for creating a square result.
 		if (cols < rows)
 			cols = rows;
 		else if (rows < cols)

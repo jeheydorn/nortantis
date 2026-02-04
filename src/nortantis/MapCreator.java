@@ -1885,7 +1885,7 @@ public class MapCreator implements WarningLogger
 		int maxResolution = (int) Math.sqrt(maxBytes / 148468L);
 
 		// The FFT-based code will create arrays in powers of 2.
-		int nextPowerOf2 = ImageHelper.getPowerOf2EqualOrLargerThan(maxResolution / 100.0);
+		int nextPowerOf2 = ImageHelper.getJTransformsMixedRadixSizeEqualOrLargerThan((int)(maxResolution / 100.0));
 		int resolutionAtNextPowerOf2 = nextPowerOf2 * 100;
 		// Average with the original prediction because not all code is
 		// FFT-based.

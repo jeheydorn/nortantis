@@ -133,6 +133,13 @@ public abstract class EditorTool
 	protected Set<Center> getSelectedCenters(java.awt.Point pointFromMouse, int brushDiameter)
 	{
 		Set<Center> selected = new HashSet<Center>();
+
+		if (updater.mapParts == null || updater.mapParts.graph == null)
+		{
+			assert false;
+			return selected;
+		}
+
 		int brushRadius = (int) ((double) ((brushDiameter / mainWindow.zoom)) * mapEditingPanel.osScale) / 2;
 
 		if (!new RotatedRectangle(updater.mapParts.graph.bounds).overlapsCircle(getPointOnGraph(pointFromMouse), brushRadius))

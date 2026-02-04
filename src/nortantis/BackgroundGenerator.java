@@ -53,8 +53,8 @@ public class BackgroundGenerator
 			texture = scaleTextureLargerIfNeeded(texture, targetRows, targetCols);
 		}
 
-		int rows = ImageHelper.getPowerOf2EqualOrLargerThan(Math.max(texture.getHeight(), targetRows));
-		int cols = ImageHelper.getPowerOf2EqualOrLargerThan(Math.max(texture.getWidth(), targetCols));
+		int rows = ImageHelper.getJTransformsMixedRadixSizeEqualOrLargerThan(Math.max(texture.getHeight(), targetRows));
+		int cols = ImageHelper.getJTransformsMixedRadixSizeEqualOrLargerThan(Math.max(texture.getWidth(), targetCols));
 
 		float alpha = 0.5f;
 		float textureArea = texture.getHeight() * texture.getHeight();

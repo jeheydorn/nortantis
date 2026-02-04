@@ -14,6 +14,7 @@ repositories {
 
 dependencies {
     implementation(fileTree(mapOf("dir" to "libraries", "include" to listOf("*.jar"))))
+    implementation("com.github.wendykierp:JTransforms:3.2:with-dependencies")
     testImplementation(platform("org.junit:junit-bom:5.10.2"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
@@ -27,7 +28,7 @@ eclipse {
             whenMerged {
                 val cp = this as org.gradle.plugins.ide.eclipse.model.Classpath
                 val fileReferenceFactory = FileReferenceFactory()
-                val entry = cp.entries.filterIsInstance<Library>().first { it.path.endsWith("JTransforms-3.1-with-dependencies.jar") }
+                val entry = cp.entries.filterIsInstance<Library>().first { it.path.contains("JTransforms") }
                 entry.javadocPath = fileReferenceFactory.fromPath(file("libraries-doc/JTransforms-3.1-javadoc.jar").toString())
             }
         }

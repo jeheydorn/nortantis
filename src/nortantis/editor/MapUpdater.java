@@ -638,7 +638,7 @@ public abstract class MapUpdater
 						{
 							isMapReadyForInteractions = true;
 
-							while (tasksToRunWhenMapReady.size() > 0)
+							while (tasksToRunWhenMapReady.size() > 0 && isMapReadyForInteractions)
 							{
 								tasksToRunWhenMapReady.poll().run();
 							}

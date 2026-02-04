@@ -1210,9 +1210,9 @@ public abstract class ImageHelper
 	private static ComplexArray convolveGrayscale(Image img, float[][] kernel, boolean paddImageToAvoidWrapping)
 	{
 		int colsPaddingToAvoidWrapping = paddImageToAvoidWrapping ? kernel[0].length / 2 : 0;
-		int cols = getPowerOf2EqualOrLargerThan(Math.max(img.getWidth() + colsPaddingToAvoidWrapping, kernel[0].length));
+		int cols = getJTransformsMixedRadixSizeEqualOrLargerThan(Math.max(img.getWidth() + colsPaddingToAvoidWrapping, kernel[0].length));
 		int rowsPaddingToAvoidWrapping = paddImageToAvoidWrapping ? kernel.length / 2 : 0;
-		int rows = getPowerOf2EqualOrLargerThan(Math.max(img.getHeight() + rowsPaddingToAvoidWrapping, kernel.length));
+		int rows = getJTransformsMixedRadixSizeEqualOrLargerThan(Math.max(img.getHeight() + rowsPaddingToAvoidWrapping, kernel.length));
 		if (cols < 2)
 			cols = 2;
 		if (rows < 2)
@@ -1332,20 +1332,39 @@ public abstract class ImageHelper
 		return image;
 	}
 
-	public static int getPowerOf2EqualOrLargerThan(int value)
+	/**
+	 * Gets the smallest value >= the input whose only prime factors are 2, 3, and 5. These sizes cause JTransforms' FloatFFT_2D to use its
+	 * Mixed-Radix algorithm, which is more efficient than the Bluestein fallback and wastes less memory than padding to a power of 2.
+	 */
+	public static int getJTransformsMixedRadixSizeEqualOrLargerThan(int value)
 	{
-		return getPowerOf2EqualOrLargerThan((double) value);
-	}
-
-	public static int getPowerOf2EqualOrLargerThan(double value)
-	{
-		double logLength = Math.log(value) / Math.log(2.0);
-		if (((int) logLength) == logLength)
+		if (value <= 1)
 		{
-			return (int) value;
+			return 1;
 		}
 
-		return (int) Math.pow(2.0, ((int) logLength) + 1.0);
+		int candidate = value;
+		while (true)
+		{
+			int n = candidate;
+			while (n % 2 == 0)
+			{
+				n /= 2;
+			}
+			while (n % 3 == 0)
+			{
+				n /= 3;
+			}
+			while (n % 5 == 0)
+			{
+				n /= 5;
+			}
+			if (n == 1)
+			{
+				return candidate;
+			}
+			candidate++;
+		}
 	}
 
 	public static Image genWhiteNoise(Random rand, int rows, int cols, ImageType imageType)

@@ -20,6 +20,22 @@ import java.util.stream.Collectors;
 
 public class Assets
 {
+	/**
+	 * Interface for providing InputStreams on platforms where filesystem access doesn't work
+	 * for bundled assets (e.g., Android, which requires AssetManager).
+	 */
+	public interface AssetInputStreamProvider
+	{
+		InputStream open(String assetPath) throws IOException;
+	}
+
+	private static AssetInputStreamProvider assetInputStreamProvider;
+
+	public static void setAssetInputStreamProvider(AssetInputStreamProvider provider)
+	{
+		assetInputStreamProvider = provider;
+	}
+
 	private static final String assetsPath = "assets";
 	public static final String customArtPack = "custom";
 	private static final String artPacksFolder = "art packs";
@@ -231,7 +247,7 @@ public class Assets
 
 	public static List<Path> listFiles(String folderPath, String containsText, String endingText, Set<String> allowedExtensions)
 	{
-		if (isJarAsset(folderPath))
+		if (isPackagedAsset(folderPath))
 		{
 			return listFilesFromJar(folderPath, containsText, endingText);
 		}
@@ -254,6 +270,15 @@ public class Assets
 	private static boolean isJarAsset(String path)
 	{
 		return StringUtils.isNotEmpty(path) && isRunningFromJar() && path.startsWith(getAssetsPath());
+	}
+
+	/**
+	 * Returns true if the given path refers to a packaged asset — either in a JAR file or accessible
+	 * via an AssetInputStreamProvider (e.g., Android's AssetManager).
+	 */
+	private static boolean isPackagedAsset(String path)
+	{
+		return StringUtils.isNotEmpty(path) && path.startsWith(getAssetsPath()) && (isRunningFromJar() || assetInputStreamProvider != null);
 	}
 
 	public static List<Path> listFilesFromJar(String folderPath, String containsText, String endingText)
@@ -345,7 +370,7 @@ public class Assets
 	 */
 	public static void copyDirectoryToDirectory(Path sourceDir, Path destDir) throws IOException
 	{
-		if (isJarAsset(sourceDir.toString()))
+		if (isPackagedAsset(sourceDir.toString()))
 		{
 			String sourceDirParentInEntryFormat = addTrailingSlash(convertToAssetPath(sourceDir.getParent().toString()).substring(1));
 			String sourceDirInEntryFormat = addTrailingSlash(convertToAssetPath(sourceDir.toString()).substring(1));
@@ -365,7 +390,7 @@ public class Assets
 					else
 					{
 						Files.createDirectories(destPath.getParent());
-						try (InputStream inputStream = Assets.class.getResourceAsStream("/" + entry.name))
+						try (InputStream inputStream = createInputStream(entry.name))
 						{
 							if (inputStream != null)
 							{
@@ -418,7 +443,7 @@ public class Assets
 	 */
 	public static List<String> listNonEmptySubFolders(String path)
 	{
-		if (isJarAsset(path))
+		if (isPackagedAsset(path))
 		{
 			return listSubFoldersInJar(path);
 		}
@@ -449,13 +474,17 @@ public class Assets
 	public static boolean isRunningFromJar()
 	{
 		String className = Assets.class.getName().replace('.', '/');
-		String classJar = Assets.class.getResource("/" + className + ".class").toString();
-		return classJar.startsWith("jar:");
+		java.net.URL classUrl = Assets.class.getResource("/" + className + ".class");
+		if (classUrl == null)
+		{
+			return false;
+		}
+		return classUrl.toString().startsWith("jar:");
 	}
 
 	public static String convertToAssetPath(String filePath)
 	{
-		if (!isRunningFromJar())
+		if (!isRunningFromJar() && assetInputStreamProvider == null)
 		{
 			return filePath;
 		}
@@ -491,7 +520,7 @@ public class Assets
 
 	private static BufferedReader createBufferedReader(String filePath) throws FileNotFoundException
 	{
-		if (isJarAsset(filePath))
+		if (isPackagedAsset(filePath))
 		{
 			return new BufferedReader(new InputStreamReader(createInputStream(filePath), StandardCharsets.UTF_8));
 		}
@@ -503,7 +532,7 @@ public class Assets
 
 	public static List<String> readAllLines(String filePath) throws IOException
 	{
-		if (isJarAsset(filePath))
+		if (isPackagedAsset(filePath))
 		{
 			return readAllLinesFromFileInJar(filePath);
 		}
@@ -531,8 +560,19 @@ public class Assets
 
 	private static InputStream createInputStream(String filePath)
 	{
-		if (isJarAsset(filePath))
+		if (isPackagedAsset(filePath))
 		{
+			if (assetInputStreamProvider != null)
+			{
+				try
+				{
+					return assetInputStreamProvider.open(filePath);
+				}
+				catch (IOException e)
+				{
+					throw new RuntimeException("Can't read the file '" + filePath + "'", e);
+				}
+			}
 			try
 			{
 				return createInputStreamFromFileInJar(filePath);
@@ -563,14 +603,45 @@ public class Assets
 
 	public static boolean exists(String filePath)
 	{
-		if (isJarAsset(filePath))
+		if (isPackagedAsset(filePath))
 		{
+			if (assetInputStreamProvider != null)
+			{
+				try (InputStream is = assetInputStreamProvider.open(filePath))
+				{
+					return is != null;
+				}
+				catch (IOException e)
+				{
+					// AssetManager.open() fails for directories. Fall back to the manifest cache.
+					return existsInManifestCache(filePath);
+				}
+			}
 			return existsInJar(filePath);
 		}
 		else
 		{
 			return Files.exists(Paths.get(filePath));
 		}
+	}
+
+	private static boolean existsInManifestCache(String filePath)
+	{
+		if (cachedEntries == null)
+		{
+			return false;
+		}
+		String assetPath = convertToAssetPath(filePath);
+		String entryFormat = assetPath.substring(1);
+		String entryFormatDir = addTrailingSlash(entryFormat);
+		for (CachedEntry entry : cachedEntries)
+		{
+			if (entry.name.equals(entryFormat) || entry.name.equals(entryFormatDir))
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public static boolean existsInJar(String filePath)
@@ -587,9 +658,28 @@ public class Assets
 
 	public static Image readImage(String filePath)
 	{
-		if (isJarAsset(filePath))
+		if (isPackagedAsset(filePath))
 		{
-			return readImageFromJar(filePath);
+			try (InputStream inputStream = createInputStream(filePath))
+			{
+				if (inputStream == null)
+				{
+					throw new RuntimeException(
+							"Can't read the image resource '" + filePath + "' because either it doesn't exist or it's an unsupported format or corrupted.");
+				}
+
+				Image image = PlatformFactory.getInstance().readImage(inputStream);
+				if (image == null)
+				{
+					throw new RuntimeException("Can't read the image resource " + filePath + ". It might be in an unsupported format or corrupted.");
+				}
+
+				return image;
+			}
+			catch (IOException e)
+			{
+				throw new RuntimeException("Error while reading image from resource " + filePath, e);
+			}
 		}
 		else
 		{

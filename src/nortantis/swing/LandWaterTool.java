@@ -984,6 +984,11 @@ public class LandWaterTool extends EditorTool
 		}
 		else if (paintRegionButton.isSelected() && selectColorFromMapButton.isSelected() || mergeRegionsButton.isSelected() || fillRegionColorButton.isSelected())
 		{
+			if (updater.mapParts == null || updater.mapParts.graph == null)
+			{
+				assert false;
+				return;
+			}
 			Center center = updater.mapParts.graph.findClosestCenter(getPointOnGraph(mouseLocation), true);
 			if (center != null)
 			{
