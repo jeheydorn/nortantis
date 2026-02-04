@@ -14,6 +14,7 @@ import java.awt.image.WritableRaster;
 class AwtImage extends Image
 {
 	public BufferedImage image;
+	private boolean isClosed;
 
 	public AwtImage(int width, int height, ImageType type)
 	{
@@ -27,18 +28,31 @@ class AwtImage extends Image
 		image = bufferedImage;
 	}
 
+	@Override
+	public void close()
+	{
+		isClosed = true;
+	}
+
+	private void assertNotClosed()
+	{
+		assert !isClosed : "Image used after close";
+	}
+
 	/**
 	 * Returns true if the BufferedImage uses an int-based format that is compatible with our expected ARGB/RGB pixel interpretation.
 	 * TYPE_INT_BGR is excluded because it has reversed byte order.
 	 */
 	boolean isCompatibleIntFormat()
 	{
+		assertNotClosed();
 		int type = image.getType();
 		return type == BufferedImage.TYPE_INT_RGB || type == BufferedImage.TYPE_INT_ARGB;
 	}
 
 	boolean isCompatibleByteFormat()
 	{
+		assertNotClosed();
 		int type = image.getType();
 		return type == BufferedImage.TYPE_BYTE_GRAY || type == BufferedImage.TYPE_BYTE_BINARY || type == BufferedImage.TYPE_USHORT_GRAY;
 	}
@@ -46,18 +60,21 @@ class AwtImage extends Image
 	@Override
 	public PixelReader createPixelReader()
 	{
+		assertNotClosed();
 		return createPixelReader(null);
 	}
 
 	@Override
 	public PixelReaderWriter createPixelReaderWriter()
 	{
+		assertNotClosed();
 		return createPixelReaderWriter(null);
 	}
 
 	@Override
 	public PixelReader innerCreateNewPixelReader(IntRectangle bounds)
 	{
+		assertNotClosed();
 		if (isCompatibleIntFormat())
 		{
 			return new AwtIntPixelReader(this, bounds);
@@ -72,6 +89,7 @@ class AwtImage extends Image
 	@Override
 	public PixelReaderWriter innerCreateNewPixelReaderWriter(IntRectangle bounds)
 	{
+		assertNotClosed();
 		if (isCompatibleIntFormat())
 		{
 			return new AwtIntPixelReaderWriter(this, bounds);
@@ -86,6 +104,7 @@ class AwtImage extends Image
 	@Override
 	protected PixelWriter innerCreateNewPixelWriter(IntRectangle bounds)
 	{
+		assertNotClosed();
 		// AWT uses a backing array reference, so no initial read is needed anyway
 		if (isCompatibleIntFormat())
 		{
@@ -159,18 +178,21 @@ class AwtImage extends Image
 	@Override
 	public int getWidth()
 	{
+		assertNotClosed();
 		return image.getWidth();
 	}
 
 	@Override
 	public int getHeight()
 	{
+		assertNotClosed();
 		return image.getHeight();
 	}
 
 	@Override
 	public Painter createPainter(DrawQuality quality)
 	{
+		assertNotClosed();
 		java.awt.Graphics2D g = image.createGraphics();
 		if (quality == DrawQuality.High)
 		{
@@ -216,6 +238,7 @@ class AwtImage extends Image
 	@Override
 	public Image scale(Method method, int width, int height)
 	{
+		assertNotClosed();
 		// This library is described at
 		// http://stackoverflow.com/questions/1087236/java-2d-image-resize-ignoring-bicubic-bilinear-interpolation-rendering-hints-os
 		Image scaled = new AwtImage(Scalr.resize(image, method, Scalr.Mode.FIT_EXACT, width, height));
@@ -231,6 +254,7 @@ class AwtImage extends Image
 	@Override
 	public Image deepCopy()
 	{
+		assertNotClosed();
 		java.awt.image.ColorModel cm = image.getColorModel();
 		boolean isAlphaPremultiplied = cm.isAlphaPremultiplied();
 		WritableRaster raster = image.copyData(null);
@@ -240,12 +264,14 @@ class AwtImage extends Image
 	@Override
 	public Image getSubImage(IntRectangle bounds)
 	{
+		assertNotClosed();
 		return new AwtImage(image.getSubimage(bounds.x, bounds.y, bounds.width, bounds.height));
 	}
 
 	@Override
 	public Image copySubImage(IntRectangle bounds, boolean addAlphaChanel)
 	{
+		assertNotClosed();
 		IntRectangle imageBounds = new IntRectangle(0, 0, getWidth(), getHeight());
 		IntRectangle clipped = bounds.findIntersection(imageBounds);
 
@@ -267,6 +293,7 @@ class AwtImage extends Image
 	@Override
 	public Image copyAndAddAlphaChanel()
 	{
+		assertNotClosed();
 		if (hasAlpha())
 		{
 			return deepCopy();

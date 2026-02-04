@@ -19,20 +19,6 @@ public class MapParts
 
 	}
 
-	public MapParts(MapParts other)
-	{
-		this.graph = other.graph;
-		this.textBackground = other.textBackground;
-		this.nameCreator = other.nameCreator;
-		this.background = other.background;
-		this.iconDrawer = other.iconDrawer;
-		this.frayedBorderBlur = other.frayedBorderBlur;
-		this.frayedBorderMask = other.frayedBorderMask;
-		this.frayedBorderColor = other.frayedBorderColor;
-		this.grunge = other.grunge;
-		this.mapBeforeAddingText = other.mapBeforeAddingText;
-	}
-
 	/**
 	 * Used as an input and output during map creation.
 	 */
