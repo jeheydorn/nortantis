@@ -65,6 +65,12 @@ public class MapCreatorTest
 		MapSettings settings = new MapSettings(settingsPath);
 		settings.resolution = 0.5;
 
+		// Force high memory mode so that mapBeforeAddingText is created. The low memory fallback path
+		// re-renders terrain for text-only changes, which can have tiny convolution edge differences.
+		MapCreator.overrideMemoryMode(false);
+		try
+		{
+
 		// Create the full map first (baseline)
 		MapCreator mapCreator = new MapCreator();
 		MapParts mapParts = new MapParts();
@@ -186,6 +192,12 @@ public class MapCreatorTest
 		if (failCount > 0)
 		{
 			fail(failCount + " incremental update tests failed.");
+		}
+
+		}
+		finally
+		{
+			MapCreator.overrideMemoryMode(null);
 		}
 	}
 
