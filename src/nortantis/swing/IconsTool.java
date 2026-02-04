@@ -1342,7 +1342,7 @@ public class IconsTool extends EditorTool
 		final int horizontalPaddingBetweenImages = (int) (2 * osScaling);
 
 		padding = (int) (padding * osScaling);
-		scaledHeight = (int) (scaledHeight * osScaling);
+		scaledHeight = (int) Math.round(scaledHeight * osScaling);
 
 		// Find the size needed for the preview
 		int rowCount = 1;
@@ -1353,7 +1353,7 @@ public class IconsTool extends EditorTool
 			{
 				ImageAndMasks imageAndMasks = imagesAndMasks.get(i);
 				IntDimension croppedSize = imageAndMasks.getOrCreateContentBounds().size();
-				int scaledWidth = Math.min(maxRowWidth, (int) IconDrawer.getDimensionsWhenScaledByHeight(croppedSize, scaledHeight).width);
+				int scaledWidth = Math.min(maxRowWidth, IconDrawer.getDimensionsWhenScaledByHeight(croppedSize, scaledHeight).roundToIntDimension().width);
 
 				if (rowWidth + scaledWidth > maxRowWidth)
 				{

@@ -218,7 +218,7 @@ class AwtImage extends Image
 	{
 		// This library is described at
 		// http://stackoverflow.com/questions/1087236/java-2d-image-resize-ignoring-bicubic-bilinear-interpolation-rendering-hints-os
-		Image scaled = new AwtImage(Scalr.resize(image, method, width, height));
+		Image scaled = new AwtImage(Scalr.resize(image, method, Scalr.Mode.FIT_EXACT, width, height));
 
 		if (isGrayscaleOrBinary() && !scaled.isGrayscaleOrBinary())
 		{

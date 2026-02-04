@@ -576,7 +576,7 @@ public abstract class ImageHelper
 	public static int getHeightWhenScaledByWidth(Image inImage, int xSize)
 	{
 		double aspectRatio = ((double) inImage.getHeight()) / inImage.getWidth();
-		int ySize = (int) (xSize * aspectRatio);
+		int ySize = (int) Math.round(xSize * aspectRatio);
 		if (ySize == 0)
 			ySize = 1;
 		return ySize;
@@ -585,7 +585,7 @@ public abstract class ImageHelper
 	public static int getWidthWhenScaledByHeight(Image inImage, int ySize)
 	{
 		double aspectRatioInverse = ((double) inImage.getWidth()) / inImage.getHeight();
-		int xSize = (int) (aspectRatioInverse * ySize);
+		int xSize = (int) Math.round(aspectRatioInverse * ySize);
 		if (xSize == 0)
 			xSize = 1;
 		return xSize;
