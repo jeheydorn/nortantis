@@ -317,6 +317,7 @@ public abstract class MapUpdater
 		{
 			if (mapParts != null)
 			{
+				mapParts.closeImages();
 				mapParts = new MapParts();
 			}
 		}
@@ -331,13 +332,29 @@ public abstract class MapUpdater
 		}
 		else if (updateType == UpdateType.Terrain)
 		{
+			if (mapParts.mapBeforeAddingText != null)
+			{
+				mapParts.mapBeforeAddingText.close();
+			}
 			mapParts.mapBeforeAddingText = null;
 		}
 		else if (updateType == UpdateType.GrungeAndFray)
 		{
+			if (mapParts.frayedBorderBlur != null)
+			{
+				mapParts.frayedBorderBlur.close();
+			}
 			mapParts.frayedBorderBlur = null;
 			mapParts.frayedBorderColor = null;
+			if (mapParts.frayedBorderMask != null)
+			{
+				mapParts.frayedBorderMask.close();
+			}
 			mapParts.frayedBorderMask = null;
+			if (mapParts.grunge != null)
+			{
+				mapParts.grunge.close();
+			}
 			mapParts.grunge = null;
 		}
 		else if (updateType == UpdateType.ReprocessBooks)
@@ -350,6 +367,10 @@ public abstract class MapUpdater
 		}
 		else if (updateType == UpdateType.GridOverlay)
 		{
+			if (mapParts.mapBeforeAddingText != null)
+			{
+				mapParts.mapBeforeAddingText.close();
+			}
 			mapParts.mapBeforeAddingText = null;
 		}
 		else if (updateType == UpdateType.NoDraw)

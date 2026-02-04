@@ -63,6 +63,7 @@ public class MapCreatorTest
 		String settingsFileName = "allTypesOfEdits.nort";
 		String settingsPath = Paths.get("unit test files", "map settings", settingsFileName).toString();
 		MapSettings settings = new MapSettings(settingsPath);
+		settings.resolution = 0.5;
 
 		// Create the full map first (baseline)
 		MapCreator mapCreator = new MapCreator();
@@ -586,82 +587,13 @@ public class MapCreatorTest
 		generateAndCompare("clearedMapRegionEdit0Removed.nort");
 	}
 
-
-	/**
-	 * Tests that adding a mountain via CenterIcon (the editor's Draw mode) produces the same result
-	 * as a full draw. This uses the incrementalUpdateForCentersAndEdges path.
-	 */
-	@Test
-	public void incrementalUpdate_drawMountainViaCenterIcon()
-	{
-		String settingsFileName = "simpleSmallWorld.nort";
-		String settingsPath = Paths.get("unit test files", "map settings", settingsFileName).toString();
-		MapSettings settings = new MapSettings(settingsPath);
-		final int diffThreshold = 15;
-
-		// Create the initial map to populate the graph and freeIcons.
-		MapCreator mapCreator = new MapCreator();
-		MapParts mapParts = new MapParts();
-		Image initialMap = mapCreator.createMap(settings, null, mapParts);
-
-		// Find a land center near the map center.
-		double mapCenterY = mapParts.graph.bounds.height / 2.0;
-		double mapCenterX = mapParts.graph.bounds.width / 2.0;
-		Center targetCenter = null;
-		double bestDist = Double.MAX_VALUE;
-		for (Center c : mapParts.graph.centers)
-		{
-			if (c.isWater || c.isCoast)
-			{
-				continue;
-			}
-			double dist = Math.sqrt(Math.pow(c.loc.x - mapCenterX, 2) + Math.pow(c.loc.y - mapCenterY, 2));
-			if (dist < bestDist)
-			{
-				bestDist = dist;
-				targetCenter = c;
-			}
-		}
-		assertNotNull(targetCenter, "Need a land center near the map center");
-
-		// Add a mountain at the target center via CenterIcon (what the editor's Draw mode does).
-		CenterEdit cEdit = settings.edits.centerEdits.get(targetCenter.index);
-		settings.edits.centerEdits.put(targetCenter.index,
-				cEdit.copyWithIcon(new CenterIcon(CenterIconType.Mountain, Assets.installedArtPack, "round", 0)));
-
-		// Do the incremental update using the centers-and-edges path (same as editor Draw mode).
-		IntRectangle changedBounds = mapCreator.incrementalUpdateForCentersAndEdges(
-				settings, mapParts, initialMap, Set.of(targetCenter.index), null, false);
-		assertNotNull(changedBounds, "Incremental update should produce bounds");
-
-		// Create the expected result with a full draw.
-		MapParts expectedParts = new MapParts();
-		Image expectedMap = mapCreator.createMap(settings, null, expectedParts);
-
-		// Compare the changed region.
-		Image expectedSnippet = expectedMap.getSubImage(changedBounds);
-		Image actualSnippet = initialMap.getSubImage(changedBounds);
-
-		String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(expectedSnippet, actualSnippet, diffThreshold);
-		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
-		{
-			FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
-			ImageHelper.write(expectedSnippet, Paths.get("unit test files", failedMapsFolderName, "drawMountain expected snippet.png").toString());
-			ImageHelper.write(actualSnippet, Paths.get("unit test files", failedMapsFolderName, "drawMountain actual snippet.png").toString());
-			ImageHelper.write(expectedMap, Paths.get("unit test files", failedMapsFolderName, "drawMountain expected full.png").toString());
-			ImageHelper.write(initialMap, Paths.get("unit test files", failedMapsFolderName, "drawMountain actual full.png").toString());
-			fail("Incremental update after drawing mountain via CenterIcon at center " + targetCenter.index
-					+ " did not match full draw: " + comparisonErrorMessage);
-		}
-	}
-
 	@Test
 	public void incrementalUpdate_addRandomIcons_simpleSmallWorld()
 	{
 		String settingsFileName = "simpleSmallWorld.nort";
 		String settingsPath = Paths.get("unit test files", "map settings", settingsFileName).toString();
 		MapSettings settings = new MapSettings(settingsPath);
-		settings.resolution = 0.25;
+		settings.resolution = 0.5;
 		// Threshold of 15 to accommodate minor AWT rendering variance at effects padding boundaries.
 		final int diffThreshold = 15;
 

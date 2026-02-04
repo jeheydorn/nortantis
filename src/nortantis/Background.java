@@ -1052,4 +1052,64 @@ public class Background
 	{
 		return borderBounds;
 	}
+
+	public void closeImages()
+	{
+		if (land != null)
+		{
+			land.close();
+		}
+		if (landBeforeRegionColoring != null && landBeforeRegionColoring != land)
+		{
+			landBeforeRegionColoring.close();
+		}
+		if (ocean != null && ocean != land)
+		{
+			ocean.close();
+		}
+		if (borderBackground != null && borderBackground != ocean && borderBackground != land)
+		{
+			borderBackground.close();
+		}
+		if (regionIndexes != null)
+		{
+			regionIndexes.close();
+		}
+		if (landColoredBeforeAddingIconColors != null)
+		{
+			landColoredBeforeAddingIconColors.close();
+		}
+		if (upperLeftCorner != null)
+		{
+			upperLeftCorner.close();
+		}
+		if (upperRightCorner != null)
+		{
+			upperRightCorner.close();
+		}
+		if (lowerLeftCorner != null)
+		{
+			lowerLeftCorner.close();
+		}
+		if (lowerRightCorner != null)
+		{
+			lowerRightCorner.close();
+		}
+		if (topEdge != null)
+		{
+			topEdge.close();
+		}
+		if (bottomEdge != null)
+		{
+			bottomEdge.close();
+		}
+		if (leftEdge != null)
+		{
+			leftEdge.close();
+		}
+		if (rightEdge != null)
+		{
+			rightEdge.close();
+		}
+	}
 }

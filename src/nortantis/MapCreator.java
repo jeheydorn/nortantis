@@ -711,6 +711,10 @@ public class MapCreator implements WarningLogger
 
 		if (mapParts == null)
 		{
+			if (background.landColoredBeforeAddingIconColors != null)
+			{
+				background.landColoredBeforeAddingIconColors.close();
+			}
 			background.landColoredBeforeAddingIconColors = null;
 		}
 
@@ -763,6 +767,10 @@ public class MapCreator implements WarningLogger
 			textDrawer.generateText(graph, map, nameCreator, textBackground, mountainGroups, cities, graph.getGeneratedLakes());
 		}
 
+		if (mapParts == null && textBackground != null)
+		{
+			textBackground.close();
+		}
 		textBackground = null;
 
 		if (DebugFlags.drawCorners())
@@ -835,6 +843,10 @@ public class MapCreator implements WarningLogger
 			{
 				background.borderBackground = null;
 			}
+		}
+		if (mapParts == null)
+		{
+			background.closeImages();
 		}
 		background = null;
 
@@ -1073,6 +1085,10 @@ public class MapCreator implements WarningLogger
 		background.doSetupThatNeedsGraphAndIcons(settings, graph, iconsToDraw, null, null, null);
 		if (mapParts == null)
 		{
+			if (background.landBeforeRegionColoring != null && background.landBeforeRegionColoring != background.land)
+			{
+				background.landBeforeRegionColoring.close();
+			}
 			background.landBeforeRegionColoring = null;
 		}
 
@@ -1228,6 +1244,10 @@ public class MapCreator implements WarningLogger
 
 		if (mapParts == null)
 		{
+			if (background.land != null)
+			{
+				background.land.close();
+			}
 			background.land = null;
 		}
 

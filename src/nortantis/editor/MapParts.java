@@ -70,4 +70,31 @@ public class MapParts
 	 */
 	public Image mapBeforeAddingText;
 
+	public void closeImages()
+	{
+		if (textBackground != null)
+		{
+			textBackground.close();
+		}
+		if (frayedBorderBlur != null)
+		{
+			frayedBorderBlur.close();
+		}
+		if (frayedBorderMask != null)
+		{
+			frayedBorderMask.close();
+		}
+		if (grunge != null)
+		{
+			grunge.close();
+		}
+		if (mapBeforeAddingText != null)
+		{
+			mapBeforeAddingText.close();
+		}
+		if (background != null)
+		{
+			background.closeImages();
+		}
+	}
 }
