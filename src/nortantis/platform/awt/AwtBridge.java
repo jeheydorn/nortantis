@@ -7,12 +7,9 @@ import nortantis.platform.Image;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferInt;
-import java.lang.reflect.Method;
 
 /**
- * Bridge class for converting between platform-agnostic types and AWT types. This class can efficiently handle both AWT and Skia platform
- * types, using optimized bulk operations when possible.
+ * Bridge class for converting between platform-agnostic types and AWT types.
  */
 public class AwtBridge
 {
@@ -31,33 +28,21 @@ public class AwtBridge
 			return ((AwtImage) image).image;
 		}
 
-		if (isSkiaImage(image))
+		// Fallback: pixel-by-pixel conversion
+		int width = image.getWidth();
+		int height = image.getHeight();
+		BufferedImage bi = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+		try (PixelReader pixels = image.createPixelReader())
 		{
-			if (image.getType() == ImageType.ARGB || image.getType() == ImageType.RGB)
+			for (int y = 0; y < height; y++)
 			{
-				// We can do this case faster using System.arraycopy on the pixel array values.
-				int width = image.getWidth();
-				int height = image.getHeight();
-
-				BufferedImage bi = new BufferedImage(width, height, image.getType() == ImageType.ARGB ? BufferedImage.TYPE_INT_ARGB : BufferedImage.TYPE_INT_RGB);
-				int[] destPixels = ((DataBufferInt) bi.getRaster().getDataBuffer()).getData();
-
-				int[] srcPixels = readSkiaPixelsToIntArray(image);
-				if (srcPixels != null)
+				for (int x = 0; x < width; x++)
 				{
-					System.arraycopy(srcPixels, 0, destPixels, 0, srcPixels.length);
+					bi.setRGB(x, y, pixels.getRGB(x, y));
 				}
-				return bi;
-			}
-			else
-			{
-				return genericImageTypeToBufferedImage(image);
 			}
 		}
-
-		assert false; // If I support a new image type for use with AWT, see if I can handle it here more efficiently than the code below.
-
-		return genericImageTypeToBufferedImage(image);
+		return bi;
 	}
 
 	/**
@@ -78,86 +63,6 @@ public class AwtBridge
 		return new AwtImage(toBufferedImage(image));
 	}
 
-	private static BufferedImage genericImageTypeToBufferedImage(Image image)
-	{
-		// Fallback for unknown image types: pixel-by-pixel conversion
-		int width = image.getWidth();
-		int height = image.getHeight();
-		BufferedImage bi = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-		try (PixelReader pixels = image.createPixelReader())
-		{
-			for (int y = 0; y < height; y++)
-			{
-				for (int x = 0; x < width; x++)
-				{
-					bi.setRGB(x, y, pixels.getRGB(x, y));
-				}
-			}
-		}
-		return bi;
-	}
-
-	/**
-	 * Converts any platform Image to an Image of the type corresponding to the current PlatformFactory instance.
-	 */
-	private static Image toPlatformImage(Image image)
-	{
-		if (image == null)
-		{
-			return null;
-		}
-
-		if (PlatformFactory.getInstance() instanceof AwtFactory)
-		{
-			if (image instanceof AwtImage)
-			{
-				return image;
-			}
-
-			if (isSkiaImage(image))
-			{
-				return new AwtImage(toBufferedImage(image));
-			}
-
-			return new AwtImage(genericImageTypeToBufferedImage(image));
-		}
-
-		if (isSkiaFactory(PlatformFactory.getInstance()))
-		{
-			if (image instanceof AwtImage)
-			{
-				return slowCopyToPlatformImage(image);
-			}
-
-			if (isSkiaImage(image))
-			{
-				return image;
-			}
-
-			return slowCopyToPlatformImage(image);
-		}
-
-		return slowCopyToPlatformImage(image);
-	}
-
-	private static Image slowCopyToPlatformImage(Image image)
-	{
-		int width = image.getWidth();
-		int height = image.getHeight();
-		Image result = Image.create(width, height, image.getType());
-		try (PixelReader pixels = image.createPixelReader(); PixelWriter resultPixels = result.createPixelWriter())
-		{
-			for (int y = 0; y < height; y++)
-			{
-				for (int x = 0; x < width; x++)
-				{
-					resultPixels.setRGB(x, y, pixels.getRGB(x, y));
-				}
-			}
-		}
-		return result;
-	}
-
 	/**
 	 * Creates an AwtImage from a BufferedImage.
 	 */
@@ -168,15 +73,12 @@ public class AwtBridge
 			return null;
 		}
 
-		return toPlatformImage(new AwtImage(image));
+		return new AwtImage(image);
 	}
 
 	/**
-	 * Wraps a BufferedImage in an AwtImage without converting to the platform type. Use this when you need to write back to the original
-	 * BufferedImage (e.g., for incremental updates to a display image).
-	 *
-	 * Unlike fromBufferedImage, this does NOT convert to SkiaImage when using SkiaFactory, so changes written to the returned Image will be
-	 * reflected in the original BufferedImage.
+	 * Wraps a BufferedImage in an AwtImage without copying. Use this when you need to write back to the original BufferedImage (e.g., for
+	 * incremental updates to a display image).
 	 */
 	public static Image wrapBufferedImage(BufferedImage image)
 	{
@@ -203,7 +105,6 @@ public class AwtBridge
 			return ((AwtColor) color).color;
 		}
 
-		// Works for SkiaColor and any other Color implementation
 		return new java.awt.Color(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha());
 	}
 
@@ -234,7 +135,6 @@ public class AwtBridge
 			return ((AwtFont) font).font;
 		}
 
-		// Works for SkiaFont and any other Font implementation
 		int awtStyle = java.awt.Font.PLAIN;
 		FontStyle style = font.getStyle();
 		if (style == FontStyle.Bold)
@@ -253,7 +153,7 @@ public class AwtBridge
 	}
 
 	/**
-	 * Creates a generic Font for the current platform type from a java.awt.Font.
+	 * Creates a Font for the current platform from a java.awt.Font.
 	 */
 	public static Font fromAwtFont(java.awt.Font font)
 	{
@@ -262,51 +162,6 @@ public class AwtBridge
 			return null;
 		}
 
-		if (PlatformFactory.getInstance() instanceof AwtFactory)
-		{
-			return new AwtFont(font);
-		}
-
-		FontStyle style = FontStyle.Plain;
-		if (font.isBold())
-		{
-			if (font.isItalic())
-			{
-				style = FontStyle.BoldItalic;
-			}
-			else
-			{
-				style = FontStyle.Bold;
-			}
-		}
-		else if (font.isItalic())
-		{
-			style = FontStyle.Italic;
-		}
-
-		return PlatformFactory.getInstance().createFont(font.getName(), style, font.getSize());
-	}
-
-	private static boolean isSkiaImage(Image image)
-	{
-		return image.getClass().getName().equals("nortantis.platform.skia.SkiaImage");
-	}
-
-	private static boolean isSkiaFactory(PlatformFactory factory)
-	{
-		return factory.getClass().getName().equals("nortantis.platform.skia.SkiaFactory");
-	}
-
-	private static int[] readSkiaPixelsToIntArray(Image image)
-	{
-		try
-		{
-			Method method = image.getClass().getMethod("readPixelsToIntArray");
-			return (int[]) method.invoke(image);
-		}
-		catch (Exception e)
-		{
-			return null;
-		}
+		return new AwtFont(font);
 	}
 }

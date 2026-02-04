@@ -7,9 +7,7 @@ Fantasy map generator and editor that uses tectonic plate simulation to create i
 - **Language:** Java 21+
 - **Build System:** Gradle (use `gradlew` wrapper)
 - **UI Framework:** Swing with FlatLaf look-and-feel
-- **Graphics:** Dual rendering backends:
-  - AWT (CPU-based, default)
-  - Skia via Skiko (GPU-accelerated)
+- **Graphics:** AWT (CPU-based rendering)
 - **Testing:** JUnit 5
 
 ## Build and Run
@@ -40,8 +38,7 @@ src/nortantis/
 │   ├── PlatformFactory.java # Factory for graphics backends
 │   ├── Image.java           # Abstract image
 │   ├── Painter.java         # Abstract drawing interface
-│   ├── awt/                  # CPU rendering (AWT)
-│   └── skia/                 # GPU rendering (Skiko)
+│   └── awt/                 # AWT rendering implementation
 ├── swing/                   # UI components
 │   ├── MainWindow.java      # Application entry point
 │   ├── MapEditingPanel.java # Map canvas/viewport
@@ -63,10 +60,11 @@ src/nortantis/
 
 ### Platform Abstraction (Strategy Pattern)
 ```java
-// Switch between AWT and SKia rendering:
-PlatformFactory.setInstance(new AwtFactory());    // CPU-only
-PlatformFactory.setInstance(new SkiaFactory());   // Can run on CPU or GPU. See SkiaImage.shouldUseGPU(). Note that small images are processed on the CPU for performance, according to SkiaImage.GPU_THRESHOLD_PIXELS.
+// The desktop app uses AWT rendering:
+PlatformFactory.setInstance(new AwtFactory());
 ```
+
+The platform abstraction layer allows different rendering backends. The Skia backend has been moved to the Android project.
 
 ### Resource Management
 `Image` and `Painter` implement `AutoCloseable`. Always use try-with-resources for Painters:
@@ -77,43 +75,19 @@ try (Painter p = image.createPainter()) {
 ```
 Use try-with-resources for Image whenever feasible.
 
-## Runtime Configuration
-
-GPU and shader behavior is controlled via `GPUExecutor.setRenderingMode()`:
-
-```java
-GPUExecutor.setRenderingMode(RenderingMode.HYBRID);      // CPU+GPU dual-backing (default, safe)
-GPUExecutor.setRenderingMode(RenderingMode.GPU);         // GPU-only for large images (reduced memory)
-GPUExecutor.setRenderingMode(RenderingMode.CPU_SHADERS); // Force CPU with Skia shaders
-GPUExecutor.setRenderingMode(RenderingMode.CPU);         // Force traditional pixel-by-pixel
-```
-
-| Mode          | Description                                                                                                            |
-|---------------|------------------------------------------------------------------------------------------------------------------------|
-| `HYBRID`      | CPU+GPU dual-backing: large images have both a CPU bitmap and GPU surface (default, safe)                              |
-| `GPU`         | GPU-only for large images: reduces memory by ~50% but requires GPU hardware. Grayscale and small images still use CPU. |
-| `CPU_SHADERS` | CPU rendering with Skia shader rasterizer (no GPU required)                                                            |
-| `CPU`         | Traditional pixel-by-pixel CPU operations (no shaders)                                                                 |
-
-The rendering mode can be changed at any time via `setRenderingMode()`. Tests should reset to `HYBRID` when done.
-
 ## Testing
 
 Important tests:
-- `MapCreatorTest` - Awt rendering tests. These tests are very slow, so only run them as needed, and only when testing AWT changes or changes that can affect both Skia and AWT.
-- `SkiaMapCreatorTest` - Test map creation with Skia. Good for testing GPU if enabled.
-- `ImageHelperTest` - Test ImageHelper in Skia
-- `SkiaPainterTest` - Test basic Skia rendering
+- `MapCreatorTest` - AWT rendering tests. These tests are very slow, so only run them as needed.
+- `ImageHelperTest` - Test ImageHelper operations
 
-My unit tests can be overly strict sometimes because they compare pixe-by-pixel. If the output images look close enough that a person wouldn't be able to easily tell the difference, then that's probably good enough, as long as the test is consistent in the results it gives.
+My unit tests can be overly strict sometimes because they compare pixel-by-pixel. If the output images look close enough that a person wouldn't be able to easily tell the difference, then that's probably good enough, as long as the test is consistent in the results it gives.
 
 Test data locations:
 - Map settings: `unit test files/map settings/`
 - Expected outputs:
 	`unit test files/expected maps/` for MapCreatorTest
-	`unit test files/expected maps skia/` for SkiaMapCreatorTest
 	`unit test files/expected image helper tests` for ImageHelperTest
-	`unit test files/expected skia tests` for SkiaPainterTest
 
 ## Performance Benchmarking
 
@@ -123,7 +97,7 @@ Use the benchmark task to profile map creation performance:
 ./gradlew benchmark
 ```
 
-This runs `MapCreatorBenchmark` with JFR (Java Flight Recorder) profiling enabled. The JFR recording is saved to `build/profile.jfr`.
+This runs `AwtMapCreatorBenchmark` with JFR (Java Flight Recorder) profiling enabled. The JFR recording is saved to `build/profile.jfr`.
 
 **Analyzing results:**
 - Open `build/profile.jfr` in JDK Mission Control (`jmc`) or IntelliJ IDEA
@@ -146,7 +120,6 @@ The benchmark creates maps using settings from `unit test files/map settings/sim
 - **Tuple Classes:** `Tuple2`, `Tuple3`, `Tuple4`, `Pair`, `OrderlessPair`
 - **Helper class for timing:** nortantis.util.Stopwatch
 - **Rectangle classes:** Use `nortantis.geom.Rectangle`, `IntRectangle`, and `RotatedRectangle` for rectangular bounds calculations, including intersections. These classes have methods for intersection, union, containment checks, etc.
-- **Avoid hidden fallbacks when possible:** Try to avoid add hidden fallbacks in code unless reasonable use cases are likely to need them, especially falling back from GPU to CPU image processing.
 
 ## Map Generation Pipeline
 
@@ -177,8 +150,8 @@ Image (final rendered map)
 - **Rivers:** Flow from high to low elevation along Voronoi edges
 - **Names:** N-gram generation from classic literature (`assets/books/`)
 
-## CPU Vs GPU rendering
+## Android / Skia
 
-When fixing bugs or performance issues caused by differences between CPU versus GPU rendering, try to fix the issue to make GPU rendering work correctly and efficiently rather than suggest switching to or falling back to CPU rendering. If that's not feasable, ask me before switching anything to CPU rendering.
+The Skia rendering backend has been moved to the Android project (`NortantisTest`). This project produces a JAR (`./gradlew jar`) that the Android project depends on. See the Android project's CLAUDE.md for details.
 
-If you discover anything to be incorrect in these instructions, please update them in Claude.md.
+If you discover anything to be incorrect in these instructions, please update them in CLAUDE.md.

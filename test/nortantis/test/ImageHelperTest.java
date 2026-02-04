@@ -6,7 +6,6 @@ import nortantis.geom.IntRectangle;
 import nortantis.geom.Point;
 import nortantis.platform.*;
 import nortantis.platform.awt.AwtFactory;
-import nortantis.platform.skia.SkiaFactory;
 import nortantis.util.Assets;
 import nortantis.util.FileHelper;
 import nortantis.platform.ImageHelper;
@@ -44,7 +43,7 @@ public class ImageHelperTest
 	@BeforeAll
 	public static void setUpBeforeClass() throws Exception
 	{
-		PlatformFactory.setInstance(new SkiaFactory());
+		PlatformFactory.setInstance(new AwtFactory());
 		Assets.disableAddedArtPacksForUnitTests();
 
 		FileHelper.createFolder(Paths.get("unit test files", expectedFolderName).toString());
@@ -148,23 +147,6 @@ public class ImageHelperTest
 		IntRectangle bounds = new IntRectangle(25, 25, 50, 50);
 		ImageHelper.scaleInto(source, target, bounds);
 		compareWithExpected(target, "scaleIntoWithBounds");
-	}
-
-	@Test
-	public void testScaleIntoSkiaSourceAwtTarget()
-	{
-		// Create source using Skia (already the active factory)
-		Image source = createColorTestImage();
-
-		// Create target using Awt factory directly
-		AwtFactory awtFactory = new AwtFactory();
-		Image target = awtFactory.createImage(50, 50, ImageType.RGB);
-
-		ImageHelper.scaleInto(source, target, null);
-
-		// Compare using cross-factory comparison helper since target is AwtImage
-		// but the current PlatformFactory is SkiaFactory
-		compareAwtImageWithExpected(target, awtFactory, "scaleIntoSkiaSourceAwtTarget");
 	}
 
 	// ==================== Copy Snippet Tests ====================
@@ -403,56 +385,6 @@ public class ImageHelperTest
 		compareWithExpected(result, "maskWithMultipleColorsLargeIds", 0);
 	}
 
-	@Test
-	public void testMaskWithMultipleColorsGPU()
-	{
-		// Test with images large enough to trigger GPU path (>= 256x256 = 65536 pixels)
-		final int gpuTestSize = 300;
-
-		Image image = createGrayscaleTestImageOfSize(gpuTestSize, gpuTestSize);
-
-		Map<Integer, Color> colors = new HashMap<>();
-		colors.put(0, Color.red);
-		colors.put(1, Color.green);
-		colors.put(2, Color.blue);
-		colors.put(3, Color.yellow);
-
-		Image colorIndexes = createColorIndexesImageOfSize(gpuTestSize, gpuTestSize, 0, 1, 2, 3);
-		Image mask = createGradientMaskOfSize(gpuTestSize, gpuTestSize);
-
-		Image result = ImageHelper.maskWithMultipleColors(image, colors, colorIndexes, mask, false);
-
-		assertEquals(gpuTestSize, result.getWidth());
-		assertEquals(gpuTestSize, result.getHeight());
-		// Use higher threshold for GPU floating point precision variations across runs
-		compareWithExpected(result, "maskWithMultipleColorsGPU", 10);
-	}
-
-	@Test
-	public void testMaskWithMultipleColorsGPUInverted()
-	{
-		// Test inverted mask with GPU path
-		final int gpuTestSize = 300;
-
-		Image image = createGrayscaleTestImageOfSize(gpuTestSize, gpuTestSize);
-
-		Map<Integer, Color> colors = new HashMap<>();
-		colors.put(0, Color.red);
-		colors.put(1, Color.green);
-		colors.put(2, Color.blue);
-		colors.put(3, Color.yellow);
-
-		Image colorIndexes = createColorIndexesImageOfSize(gpuTestSize, gpuTestSize, 0, 1, 2, 3);
-		Image mask = createGradientMaskOfSize(gpuTestSize, gpuTestSize);
-
-		Image result = ImageHelper.maskWithMultipleColors(image, colors, colorIndexes, mask, true);
-
-		assertEquals(gpuTestSize, result.getWidth());
-		assertEquals(gpuTestSize, result.getHeight());
-		// Use higher threshold for GPU floating point precision variations across runs
-		compareWithExpected(result, "maskWithMultipleColorsGPUInverted", 10);
-	}
-
 	// ==================== Alpha Tests ====================
 
 	@Test
@@ -517,24 +449,6 @@ public class ImageHelperTest
 		assertEquals(ImageType.ARGB, result.getType(), "Result should have alpha channel");
 		// Use threshold due to alpha premultiplication differences in PNG round-trip
 		compareWithExpected(result, "copyAlphaTo", 4);
-	}
-
-	@Test
-	public void testCopyAlphaToGPU()
-	{
-		// Test with images large enough to trigger GPU path (>= 256x256 = 65536 pixels)
-		final int gpuTestSize = 300;
-
-		Image target = createColorTestImageOfSize(gpuTestSize, gpuTestSize);
-		Image alphaSource = createARGBTestImageOfSize(gpuTestSize, gpuTestSize);
-
-		Image result = ImageHelper.copyAlphaTo(target, alphaSource);
-
-		assertEquals(ImageType.ARGB, result.getType(), "Result should have alpha channel");
-		assertEquals(gpuTestSize, result.getWidth());
-		assertEquals(gpuTestSize, result.getHeight());
-		// Use threshold due to alpha premultiplication differences in PNG round-trip
-		compareWithExpected(result, "copyAlphaToGPU", 4);
 	}
 
 	@Test
@@ -644,29 +558,6 @@ public class ImageHelperTest
 
 		Image result = ImageHelper.colorifyMulti(grayscale, colorMap, colorIndexes, ColorifyAlgorithm.solidColor, null);
 		compareWithExpected(result, "colorifyMultiSolidColor");
-	}
-
-	@Test
-	public void testColorifyMultiGPU()
-	{
-		// Test with images large enough to trigger GPU path
-		final int gpuTestSize = 300;
-
-		Image grayscale = createGrayscaleTestImageOfSize(gpuTestSize, gpuTestSize);
-
-		Map<Integer, Color> colorMap = new HashMap<>();
-		colorMap.put(0, Color.red);
-		colorMap.put(1, Color.green);
-		colorMap.put(2, Color.blue);
-		colorMap.put(3, Color.yellow);
-
-		Image colorIndexes = createColorIndexesImageOfSize(gpuTestSize, gpuTestSize, 0, 1, 2, 3);
-
-		Image result = ImageHelper.colorifyMulti(grayscale, colorMap, colorIndexes, ColorifyAlgorithm.algorithm3, null);
-
-		assertEquals(gpuTestSize, result.getWidth());
-		assertEquals(gpuTestSize, result.getHeight());
-		compareWithExpected(result, "colorifyMultiGPU", 2);
 	}
 
 	@Test
@@ -832,43 +723,6 @@ public class ImageHelperTest
 
 		ImageHelper.darkenMiddleOfImage(image, 1127, 0.25, false);
 		compareWithExpected(image, "darkenMiddleOfImage");
-	}
-
-	@Test
-	public void testDarkenMiddleOfImageConvolutionVsSkia()
-	{
-		Image convolutionImage = Image.create(1172, 1172, ImageType.Grayscale8Bit);
-		try (Painter p = convolutionImage.createPainter())
-		{
-			p.setColor(Color.white);
-			p.fillRect(0, 0, convolutionImage.getWidth(), convolutionImage.getHeight());
-		}
-		Image skiaImage = convolutionImage.deepCopy();
-
-		ImageHelper.darkenMiddleOfImage(convolutionImage, 1127, 0.25, true);
-		ImageHelper.darkenMiddleOfImage(skiaImage, 1127, 0.25, false);
-
-		compareWithExpected(convolutionImage, "darkenMiddleOfImage_convolution");
-		compareWithExpected(skiaImage, "darkenMiddleOfImage_skia");
-
-		// Write a diff image (amplified 10x) for visual inspection
-		int width = convolutionImage.getWidth();
-		int height = convolutionImage.getHeight();
-		Image diffImage = Image.create(width, height, ImageType.Grayscale8Bit);
-		try (PixelReader convPixels = convolutionImage.createPixelReader();
-				PixelReader skiaPixels = skiaImage.createPixelReader();
-				PixelReaderWriter diffPixels = diffImage.createPixelReaderWriter())
-		{
-			for (int y = 0; y < height; y++)
-			{
-				for (int x = 0; x < width; x++)
-				{
-					int diff = Math.abs(convPixels.getGrayLevel(x, y) - skiaPixels.getGrayLevel(x, y));
-					diffPixels.setGrayLevel(x, y, Math.min(255, diff * 10));
-				}
-			}
-		}
-		compareWithExpected(diffImage, "darkenMiddleOfImage_diff");
 	}
 
 	// Commented out because binary vs grayscale isn't precise enough to get pixel-perfect matching in results.
@@ -1344,9 +1198,6 @@ public class ImageHelperTest
 	private void compareWithExpected(Image actual, String testName, int threshold)
 	{
 		// Write actual to temp location and reload to ensure PNG round-trip consistency.
-		// This is needed because GPU shader operations may have data that isn't fully
-		// synchronized when reading pixels directly. The PNG round-trip forces full sync.
-		// TODO remove this when this issue is fixed or if I remove GPU support.
 		String tempFilePath = Paths.get("unit test files", tempFolderName, testName + ".png").toString();
 		ImageHelper.write(actual, tempFilePath);
 		actual = Assets.readImage(tempFilePath);
@@ -1374,31 +1225,4 @@ public class ImageHelperTest
 		}
 	}
 
-	/**
-	 * Compare an AwtImage with expected, using AwtFactory for I/O operations. This is needed when testing cross-factory scenarios where the
-	 * current PlatformFactory is Skia but the image being tested is an AwtImage.
-	 */
-	private void compareAwtImageWithExpected(Image actual, AwtFactory awtFactory, String testName)
-	{
-		String expectedFilePath = getExpectedFilePath(testName);
-		Image expected;
-
-		if (new File(expectedFilePath).exists())
-		{
-			expected = awtFactory.readImage(expectedFilePath);
-		}
-		else
-		{
-			awtFactory.writeImage(actual, expectedFilePath);
-			return;
-		}
-
-		String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(expected, actual, 0);
-		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
-		{
-			FileHelper.createFolder(Paths.get("unit test files", failedFolderName).toString());
-			awtFactory.writeImage(actual, getFailedFilePath(testName));
-			fail("Test '" + testName + "' failed: " + comparisonErrorMessage);
-		}
-	}
 }

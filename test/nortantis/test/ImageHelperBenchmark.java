@@ -5,8 +5,7 @@ import nortantis.platform.Color;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.PlatformFactory;
-import nortantis.platform.skia.GPUExecutor;
-import nortantis.platform.skia.SkiaFactory;
+import nortantis.platform.awt.AwtFactory;
 import nortantis.platform.ImageHelper;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -23,8 +22,7 @@ public class ImageHelperBenchmark
 	@BeforeAll
 	public static void setup()
 	{
-		// Ensure we're using Skia
-		PlatformFactory.setInstance(new SkiaFactory());
+		PlatformFactory.setInstance(new AwtFactory());
 	}
 
 	@Test
@@ -169,7 +167,6 @@ public class ImageHelperBenchmark
 	public void benchmarkCopySubImage()
 	{
 		System.out.println("\n=== copySubImage Benchmark ===\n");
-		GPUExecutor.setRenderingMode(GPUExecutor.RenderingMode.GPU);
 
 		int sourceSize = 4000;
 		int numCopies = 200;
@@ -220,7 +217,6 @@ public class ImageHelperBenchmark
 
 		System.out.println("  Total time for " + numCopies + " copies:  " + formatTime(avgTime));
 		System.out.println("  Average per copy:  " + formatTime(avgTime / numCopies));
-		GPUExecutor.setRenderingModeToDefault();
 	}
 
 	private String formatTime(long nanos)
@@ -285,7 +281,6 @@ public class ImageHelperBenchmark
 	{
 		System.out.println("\n=== colorifyMulti Benchmark (Dynamic Palette Sizing) ===\n");
 
-		GPUExecutor.setRenderingMode(GPUExecutor.RenderingMode.GPU);
 		int size = 2048;
 		System.out.println("Image size: " + size + "x" + size);
 
@@ -336,7 +331,6 @@ public class ImageHelperBenchmark
 			grayscale.close();
 			colorIndexes.close();
 		}
-		GPUExecutor.setRenderingModeToDefault();
 	}
 
 	@Test
