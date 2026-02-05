@@ -1583,16 +1583,11 @@ public abstract class ImageHelper
 
 	public void darkenMiddleOfImage(Image image, int grungeWidth, double resolutionScale, boolean forceConvolutionBlur)
 	{
-		darkenMiddleOfImage(image, grungeWidth, resolutionScale, forceConvolutionBlur, 1.0);
-	}
-
-	protected void darkenMiddleOfImage(Image image, int grungeWidth, double resolutionScale, boolean forceConvolutionBlur, double lineWidthScale)
-	{
 		int blurLevel = (int) (grungeWidth * resolutionScale);
 		if (blurLevel == 0)
 			blurLevel = 1;
 
-		int lineWidth = (int) (lineWidthScale * resolutionScale);
+		int lineWidth = (int) resolutionScale;
 		if (lineWidth == 0)
 		{
 			lineWidth = 1;
@@ -1631,7 +1626,7 @@ public abstract class ImageHelper
 		int imgHeight = image.getHeight();
 		int blurBoxW = blurredBox.getWidth();
 
-		try (Image finalBlurBox = blurredBox; PixelReaderWriter imagePixels = image.createPixelReaderWriter(); PixelReader blurBoxPixels = finalBlurBox.createPixelReader())
+		try (PixelReaderWriter imagePixels = image.createPixelReaderWriter(); PixelReader blurBoxPixels = blurredBox.createPixelReader())
 		{
 			for (int y = 0; y < imgHeight; y++)
 			{

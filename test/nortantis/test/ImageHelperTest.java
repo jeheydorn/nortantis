@@ -725,21 +725,6 @@ public class ImageHelperTest
 		compareWithExpected(image, "darkenMiddleOfImage");
 	}
 
-	// Commented out because binary vs grayscale isn't precise enough to get pixel-perfect matching in results.
-	// @Test
-	// public void testBlurBinaryVsGrayscale()
-	// {
-	// Image gray8Bit = createGrayscaleXImage(ImageType.Grayscale8Bit);
-	// Image binary = createGrayscaleXImage(ImageType.Binary);
-	// final int threshold = 5;
-	// MapTestUtil.checkIfImagesAreEqualAndWriteToFailedIfNot(gray8Bit, binary, threshold, "grayVsBinaryX", failedFolderName);
-	//
-	// Image blurredGray8Bit = ImageHelper.blurAndScale(gray8Bit, 20, 2.3973336f,true);
-	// Image blurredBinary = ImageHelper.blurAndScale(binary, 20, 2.3973336f, true);
-	// MapTestUtil.checkIfImagesAreEqualAndWriteToFailedIfNot(blurredGray8Bit, blurredBinary, threshold, "testBlurBinaryVsGrayscale",
-	// failedFolderName);
-	// }
-
 	private Image createGrayscaleXImage(ImageType type)
 	{
 		Image image = Image.create(testImageWidth, testImageHeight, type);
