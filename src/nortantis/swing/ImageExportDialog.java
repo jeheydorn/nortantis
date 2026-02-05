@@ -400,12 +400,12 @@ public class ImageExportDialog extends JDialog
 				if (exportAction == ExportAction.OpenInDefaultImageViewer)
 				{
 					Logger.println("Opening the " + (type == ImageExportType.Map ? "map" : "heightmap") + " in your system's default image editor.");
-					fileName = ImageHelper.openImageInSystemDefaultEditor(result, "map_" + settings.randomSeed);
+					fileName = ImageHelper.getInstance().openImageInSystemDefaultEditor(result, "map_" + settings.randomSeed);
 				}
 				else
 				{
 					fileName = pathToSaveTo;
-					ImageHelper.write(result, fileName);
+					ImageHelper.getInstance().write(result, fileName);
 				}
 				Logger.println("Map written to " + fileName);
 				ImageCache.clear();

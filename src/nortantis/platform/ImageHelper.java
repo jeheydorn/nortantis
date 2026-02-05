@@ -40,25 +40,12 @@ public abstract class ImageHelper
 		return instance;
 	}
 
-	// =====================================================================
-	// The 10 overridable methods: static method delegates to instance
-	// =====================================================================
-
-	public static Image convertToGrayscale(Image img)
-	{
-		if (instance != null)
-		{
-			return instance.doConvertToGrayscale(img);
-		}
-		return convertImageToType(img, ImageType.Grayscale8Bit);
-	}
-
-	protected Image doConvertToGrayscale(Image img)
+	public Image convertToGrayscale(Image img)
 	{
 		return convertImageToType(img, ImageType.Grayscale8Bit);
 	}
 
-	public static Image maskWithImage(Image image1, Image image2, Image mask)
+	public Image maskWithImage(Image image1, Image image2, Image mask)
 	{
 		if (mask.getType() != ImageType.Grayscale8Bit && mask.getType() != ImageType.Binary)
 			throw new IllegalArgumentException("mask type must be ImageType.Grayscale" + " or TYPE_BYTE_BINARY.");
@@ -77,19 +64,10 @@ public abstract class ImageHelper
 			throw new IllegalArgumentException("Image 2 must be type " + ImageType.RGB + " or " + ImageType.ARGB + ", but was type " + image2.getType() + ".");
 		}
 
-		if (instance != null)
-		{
-			return instance.doMaskWithImage(image1, image2, mask);
-		}
-		return doMaskWithImageCPU(image1, image2, mask);
+		return maskWithImageCPU(image1, image2, mask);
 	}
 
-	protected Image doMaskWithImage(Image image1, Image image2, Image mask)
-	{
-		return doMaskWithImageCPU(image1, image2, mask);
-	}
-
-	private static Image doMaskWithImageCPU(Image image1, Image image2, Image mask)
+	private Image maskWithImageCPU(Image image1, Image image2, Image mask)
 	{
 		ImageType resultType;
 		if (image1.hasAlpha() || image2.hasAlpha())
@@ -152,26 +130,17 @@ public abstract class ImageHelper
 		return result;
 	}
 
-	public static Image maskWithColor(Image image, Color color, Image mask, boolean invertMask)
+	public Image maskWithColor(Image image, Color color, Image mask, boolean invertMask)
 	{
 		if (image.getWidth() != mask.getWidth())
 			throw new IllegalArgumentException("Mask width is " + mask.getWidth() + " but image has width " + image.getWidth() + ".");
 		if (image.getHeight() != mask.getHeight())
 			throw new IllegalArgumentException("In maskWithColor, image height was " + image.getHeight() + " but mask height was " + mask.getHeight());
 
-		if (instance != null)
-		{
-			return instance.doMaskWithColor(image, color, mask, invertMask);
-		}
 		return maskWithColorInRegion(image, color, mask, invertMask, new IntPoint(0, 0));
 	}
 
-	protected Image doMaskWithColor(Image image, Color color, Image mask, boolean invertMask)
-	{
-		return maskWithColorInRegion(image, color, mask, invertMask, new IntPoint(0, 0));
-	}
-
-	public static Image maskWithMultipleColors(Image image, Map<Integer, Color> colors, Image colorIndexes, Image mask, boolean invertMask)
+	public Image maskWithMultipleColors(Image image, Map<Integer, Color> colors, Image colorIndexes, Image mask, boolean invertMask)
 	{
 		if (mask.getType() != ImageType.Grayscale8Bit && mask.getType() != ImageType.Binary)
 			throw new IllegalArgumentException("mask type must be ImageType.Grayscale or ImageType.Binary.");
@@ -183,19 +152,10 @@ public abstract class ImageHelper
 		if (image.getHeight() != mask.getHeight())
 			throw new IllegalArgumentException();
 
-		if (instance != null)
-		{
-			return instance.doMaskWithMultipleColors(image, colors, colorIndexes, mask, invertMask);
-		}
-		return doMaskWithMultipleColorsCPU(image, colors, colorIndexes, mask, invertMask);
+		return maskWithMultipleColorsCPU(image, colors, colorIndexes, mask, invertMask);
 	}
 
-	protected Image doMaskWithMultipleColors(Image image, Map<Integer, Color> colors, Image colorIndexes, Image mask, boolean invertMask)
-	{
-		return doMaskWithMultipleColorsCPU(image, colors, colorIndexes, mask, invertMask);
-	}
-
-	private static Image doMaskWithMultipleColorsCPU(Image image, Map<Integer, Color> colors, Image colorIndexes, Image mask,
+	private Image maskWithMultipleColorsCPU(Image image, Map<Integer, Color> colors, Image colorIndexes, Image mask,
 			boolean invertMask)
 	{
 		Image result = Image.create(image.getWidth(), image.getHeight(), image.getType());
@@ -255,26 +215,17 @@ public abstract class ImageHelper
 		return result;
 	}
 
-	public static Image setAlphaFromMask(Image image, Image alphaMask, boolean invertMask)
+	public Image setAlphaFromMask(Image image, Image alphaMask, boolean invertMask)
 	{
 		if (image.getWidth() != alphaMask.getWidth())
 			throw new IllegalArgumentException("Mask width is " + alphaMask.getWidth() + " but image has width " + image.getWidth() + ".");
 		if (image.getHeight() != alphaMask.getHeight())
 			throw new IllegalArgumentException();
 
-		if (instance != null)
-		{
-			return instance.doSetAlphaFromMask(image, alphaMask, invertMask);
-		}
 		return setAlphaFromMaskInRegion(image, alphaMask, invertMask, new IntPoint(0, 0));
 	}
 
-	protected Image doSetAlphaFromMask(Image image, Image alphaMask, boolean invertMask)
-	{
-		return setAlphaFromMaskInRegion(image, alphaMask, invertMask, new IntPoint(0, 0));
-	}
-
-	public static Image copyAlphaTo(Image target, Image alphaSource)
+	public Image copyAlphaTo(Image target, Image alphaSource)
 	{
 		if (alphaSource.getType() != ImageType.ARGB)
 		{
@@ -286,19 +237,10 @@ public abstract class ImageHelper
 			throw new IllegalArgumentException("target and alphaSource are different sizes.");
 		}
 
-		if (instance != null)
-		{
-			return instance.doCopyAlphaTo(target, alphaSource);
-		}
-		return doCopyAlphaToCPU(target, alphaSource);
+		return copyAlphaToCPU(target, alphaSource);
 	}
 
-	protected Image doCopyAlphaTo(Image target, Image alphaSource)
-	{
-		return doCopyAlphaToCPU(target, alphaSource);
-	}
-
-	private static Image doCopyAlphaToCPU(Image target, Image alphaSource)
+	private Image copyAlphaToCPU(Image target, Image alphaSource)
 	{
 		Image result = Image.create(target.getWidth(), target.getHeight(), ImageType.ARGB);
 		try (PixelReader alphaSourcePixels = alphaSource.createPixelReader(); PixelReader targetPixels = target.createPixelReader(); PixelWriter resultPixels = result.createPixelWriter())
@@ -315,12 +257,12 @@ public abstract class ImageHelper
 		return result;
 	}
 
-	public static Image colorify(Image image, Color color, ColorifyAlgorithm how)
+	public Image colorify(Image image, Color color, ColorifyAlgorithm how)
 	{
 		return colorify(image, color, how, false);
 	}
 
-	public static Image colorify(Image image, Color color, ColorifyAlgorithm how, boolean forceAddAlpha)
+	public Image colorify(Image image, Color color, ColorifyAlgorithm how, boolean forceAddAlpha)
 	{
 		if (how == ColorifyAlgorithm.none)
 		{
@@ -330,19 +272,10 @@ public abstract class ImageHelper
 		if (image.getType() != ImageType.Grayscale8Bit)
 			throw new IllegalArgumentException("The image must by type ImageType.Grayscale, but was type " + image.getType());
 
-		if (instance != null)
-		{
-			return instance.doColorify(image, color, how, forceAddAlpha);
-		}
-		return doColorifyCPU(image, color, how, forceAddAlpha);
+		return colorifyCPU(image, color, how, forceAddAlpha);
 	}
 
-	protected Image doColorify(Image image, Color color, ColorifyAlgorithm how, boolean forceAddAlpha)
-	{
-		return doColorifyCPU(image, color, how, forceAddAlpha);
-	}
-
-	private static Image doColorifyCPU(Image image, Color color, ColorifyAlgorithm how, boolean forceAddAlpha)
+	private Image colorifyCPU(Image image, Color color, ColorifyAlgorithm how, boolean forceAddAlpha)
 	{
 		ImageType resultType = forceAddAlpha || color.hasTransparency() ? ImageType.ARGB : ImageType.RGB;
 		Image result = Image.create(image.getWidth(), image.getHeight(), resultType);
@@ -383,7 +316,7 @@ public abstract class ImageHelper
 		return result;
 	}
 
-	public static Image colorifyMulti(Image image, Map<Integer, Color> colorMap, Image colorIndexes, ColorifyAlgorithm how, IntPoint where)
+	public Image colorifyMulti(Image image, Map<Integer, Color> colorMap, Image colorIndexes, ColorifyAlgorithm how, IntPoint where)
 	{
 		if (image.getType() != ImageType.Grayscale8Bit)
 			throw new IllegalArgumentException("The image must by type ImageType.Grayscale, but was type " + image.getType());
@@ -397,19 +330,10 @@ public abstract class ImageHelper
 			imageToUse = image.copySubImage(new IntRectangle(where, colorIndexes.getWidth(), colorIndexes.getHeight()));
 		}
 
-		if (instance != null)
-		{
-			return instance.doColorifyMulti(imageToUse, colorMap, colorIndexes, how, where);
-		}
-		return doColorifyMultiCPU(imageToUse, colorMap, colorIndexes, how);
+		return colorifyMultiCPU(imageToUse, colorMap, colorIndexes, how);
 	}
 
-	protected Image doColorifyMulti(Image imageToUse, Map<Integer, Color> colorMap, Image colorIndexes, ColorifyAlgorithm how, IntPoint where)
-	{
-		return doColorifyMultiCPU(imageToUse, colorMap, colorIndexes, how);
-	}
-
-	private static Image doColorifyMultiCPU(Image imageToUse, Map<Integer, Color> colorMap, Image colorIndexes, ColorifyAlgorithm how)
+	private Image colorifyMultiCPU(Image imageToUse, Map<Integer, Color> colorMap, Image colorIndexes, ColorifyAlgorithm how)
 	{
 		Image result = Image.create(colorIndexes.getWidth(), colorIndexes.getHeight(), ImageType.RGB);
 
@@ -443,49 +367,27 @@ public abstract class ImageHelper
 		return result;
 	}
 
-	public static Image blur(Image image, int blurLevel, boolean maximizeContrast, boolean padImageToAvoidWrapping)
+	public Image blur(Image image, int blurLevel, boolean maximizeContrast, boolean padImageToAvoidWrapping)
 	{
 		if (blurLevel == 0)
 		{
 			return image;
 		}
 
-		if (instance != null)
-		{
-			return instance.doBlur(image, blurLevel, maximizeContrast, padImageToAvoidWrapping);
-		}
-		return ImageHelper.convolveGrayscale(image, ImageHelper.createGaussianKernel(blurLevel), maximizeContrast, padImageToAvoidWrapping);
+		return convolveGrayscale(image, createGaussianKernel(blurLevel), maximizeContrast, padImageToAvoidWrapping);
 	}
 
-	protected Image doBlur(Image image, int blurLevel, boolean maximizeContrast, boolean padImageToAvoidWrapping)
-	{
-		return ImageHelper.convolveGrayscale(image, ImageHelper.createGaussianKernel(blurLevel), maximizeContrast, padImageToAvoidWrapping);
-	}
-
-	public static Image blurAndScale(Image image, int blurLevel, float scale, boolean padImageToAvoidWrapping)
+	public Image blurAndScale(Image image, int blurLevel, float scale, boolean padImageToAvoidWrapping)
 	{
 		if (blurLevel == 0)
 		{
 			return image;
 		}
 
-		if (instance != null)
-		{
-			return instance.doBlurAndScale(image, blurLevel, scale, padImageToAvoidWrapping);
-		}
-		return ImageHelper.convolveGrayscaleThenScale(image, ImageHelper.createGaussianKernel(blurLevel), scale, padImageToAvoidWrapping);
+		return convolveGrayscaleThenScale(image, createGaussianKernel(blurLevel), scale, padImageToAvoidWrapping);
 	}
 
-	protected Image doBlurAndScale(Image image, int blurLevel, float scale, boolean padImageToAvoidWrapping)
-	{
-		return ImageHelper.convolveGrayscaleThenScale(image, ImageHelper.createGaussianKernel(blurLevel), scale, padImageToAvoidWrapping);
-	}
-
-	// =====================================================================
-	// Static utility methods below (unchanged)
-	// =====================================================================
-
-	private static int colorifyPixel(float pixelLevelNormalized, float[] hsb, ColorifyAlgorithm how)
+	private int colorifyPixel(float pixelLevelNormalized, float[] hsb, ColorifyAlgorithm how)
 	{
 		if (how == ColorifyAlgorithm.algorithm2)
 		{
@@ -529,7 +431,7 @@ public abstract class ImageHelper
 		none, algorithm2, algorithm3, solidColor
 	}
 
-	public static Dimension fitDimensionsWithinBoundingBox(Dimension maxDimensions, double originalWidth, double originalHeight)
+	public Dimension fitDimensionsWithinBoundingBox(Dimension maxDimensions, double originalWidth, double originalHeight)
 	{
 		double width = originalWidth;
 		double height = originalHeight;
@@ -547,7 +449,7 @@ public abstract class ImageHelper
 		return new Dimension(width, height);
 	}
 
-	public static Image convertImageToType(Image img, ImageType type)
+	public Image convertImageToType(Image img, ImageType type)
 	{
 		Image result = Image.create(img.getWidth(), img.getHeight(), type);
 		try (Painter p = result.createPainter())
@@ -557,23 +459,23 @@ public abstract class ImageHelper
 		return result;
 	}
 
-	public static Image scaleByWidth(Image inImage, int xSize)
+	public Image scaleByWidth(Image inImage, int xSize)
 	{
 		return scaleByWidth(inImage, xSize, Method.QUALITY);
 	}
 
-	public static Image scaleByWidth(Image inImage, int xSize, Method method)
+	public Image scaleByWidth(Image inImage, int xSize, Method method)
 	{
 		int ySize = getHeightWhenScaledByWidth(inImage, xSize);
 		return scale(inImage, xSize, ySize, method);
 	}
 
-	public static Image scale(Image inImage, int width, int height, Method method)
+	public Image scale(Image inImage, int width, int height, Method method)
 	{
 		return inImage.scale(method, width, height);
 	}
 
-	public static int getHeightWhenScaledByWidth(Image inImage, int xSize)
+	public int getHeightWhenScaledByWidth(Image inImage, int xSize)
 	{
 		double aspectRatio = ((double) inImage.getHeight()) / inImage.getWidth();
 		int ySize = (int) Math.round(xSize * aspectRatio);
@@ -582,7 +484,7 @@ public abstract class ImageHelper
 		return ySize;
 	}
 
-	public static int getWidthWhenScaledByHeight(Image inImage, int ySize)
+	public int getWidthWhenScaledByHeight(Image inImage, int ySize)
 	{
 		double aspectRatioInverse = ((double) inImage.getWidth()) / inImage.getHeight();
 		int xSize = (int) Math.round(aspectRatioInverse * ySize);
@@ -591,18 +493,18 @@ public abstract class ImageHelper
 		return xSize;
 	}
 
-	public static Image scaleByHeight(Image inImage, int ySize)
+	public Image scaleByHeight(Image inImage, int ySize)
 	{
 		return scaleByHeight(inImage, ySize, Method.QUALITY);
 	}
 
-	public static Image scaleByHeight(Image inImage, int ySize, Method method)
+	public Image scaleByHeight(Image inImage, int ySize, Method method)
 	{
 		int xSize = getWidthWhenScaledByHeight(inImage, ySize);
 		return inImage.scale(method, xSize, ySize);
 	}
 
-	public static void scaleInto(Image source, Image target, IntRectangle boundsInSource)
+	public void scaleInto(Image source, Image target, IntRectangle boundsInSource)
 	{
 		boolean sourceHasAlpha = source.hasAlpha();
 		boolean targetHasAlpha = target.hasAlpha();
@@ -655,14 +557,14 @@ public abstract class ImageHelper
 		}
 	}
 
-	public static int interpolate(int v00, int v01, int v10, int v11, double dx, double dy)
+	public int interpolate(int v00, int v01, int v10, int v11, double dx, double dy)
 	{
 		double v0 = v00 * (1 - dx) + v01 * dx;
 		double v1 = v10 * (1 - dx) + v11 * dx;
 		return (int) ((v0 * (1 - dy) + v1 * dy) + 0.5);
 	}
 
-	public static float[][] createGaussianKernel(int size)
+	public float[][] createGaussianKernel(int size)
 	{
 		if (size == 0)
 		{
@@ -687,12 +589,12 @@ public abstract class ImageHelper
 		return kernel;
 	}
 
-	public static NormalDistribution createDistributionForSize(int size)
+	public NormalDistribution createDistributionForSize(int size)
 	{
 		return new NormalDistribution(0, getStandardDeviationSizeForGaussianKernel(size));
 	}
 
-	public static float getGaussianMode(int kernelSize)
+	public float getGaussianMode(int kernelSize)
 	{
 		if (kernelSize == 0)
 		{
@@ -703,7 +605,7 @@ public abstract class ImageHelper
 		return (float) dist.density(0.0);
 	}
 
-	protected static double getStandardDeviationSizeForGaussianKernel(int kernelSize)
+	protected double getStandardDeviationSizeForGaussianKernel(int kernelSize)
 	{
 		if (kernelSize == 0)
 		{
@@ -713,7 +615,7 @@ public abstract class ImageHelper
 		return kernelSize / (2.0 * 3.0);
 	}
 
-	public static float[][] createPositiveSincKernel(int size, double scale)
+	public float[][] createPositiveSincKernel(int size, double scale)
 	{
 		if (size == 0)
 		{
@@ -737,7 +639,7 @@ public abstract class ImageHelper
 		return kernel;
 	}
 
-	public static void maximizeContrastGrayscale(Image image)
+	public void maximizeContrastGrayscale(Image image)
 	{
 		if (!image.isGrayscaleOrBinary())
 		{
@@ -778,7 +680,7 @@ public abstract class ImageHelper
 		}
 	}
 
-	public static void normalize(float[][] kernel)
+	public void normalize(float[][] kernel)
 	{
 		float sum = 0;
 		for (float[] row : kernel)
@@ -798,7 +700,7 @@ public abstract class ImageHelper
 		}
 	}
 
-	public static void maskWithImageInPlace(Image image1, Image image2, Image mask, IntPoint maskOffset, boolean invertMask)
+	public void maskWithImageInPlace(Image image1, Image image2, Image mask, IntPoint maskOffset, boolean invertMask)
 	{
 		if (maskOffset == null)
 		{
@@ -863,7 +765,7 @@ public abstract class ImageHelper
 		}
 	}
 
-	public static Image maskWithColorInRegion(Image image, Color color, Image mask, boolean invertMask, IntPoint imageOffsetInMask)
+	public Image maskWithColorInRegion(Image image, Color color, Image mask, boolean invertMask, IntPoint imageOffsetInMask)
 	{
 		if (mask.getType() != ImageType.Grayscale8Bit && mask.getType() != ImageType.Binary)
 			throw new IllegalArgumentException("mask type must be ImageType.Grayscale.");
@@ -906,7 +808,7 @@ public abstract class ImageHelper
 		}
 	}
 
-	public static void drawMaskOntoImage(Image image, Image mask, Color color, IntPoint maskOffsetInImage)
+	public void drawMaskOntoImage(Image image, Image mask, Color color, IntPoint maskOffsetInImage)
 	{
 		if (mask.getType() != ImageType.Binary)
 		{
@@ -934,7 +836,7 @@ public abstract class ImageHelper
 		}
 	}
 
-	public static void clearImageToTransparent(Image image)
+	public void clearImageToTransparent(Image image)
 	{
 		try (Painter p = image.createPainter())
 		{
@@ -943,7 +845,7 @@ public abstract class ImageHelper
 		}
 	}
 
-	public static Image applyAlpha(Image original, Integer alpha)
+	public Image applyAlpha(Image original, Integer alpha)
 	{
 		if (alpha == null)
 		{
@@ -966,7 +868,7 @@ public abstract class ImageHelper
 		return transparentImage;
 	}
 
-	public static Image setAlphaFromMaskInRegion(Image image, Image alphaMask, boolean invertMask, IntPoint imageOffsetInMask)
+	public Image setAlphaFromMaskInRegion(Image image, Image alphaMask, boolean invertMask, IntPoint imageOffsetInMask)
 	{
 		if (alphaMask.getType() != ImageType.Grayscale8Bit && alphaMask.getType() != ImageType.Binary)
 		{
@@ -1015,7 +917,7 @@ public abstract class ImageHelper
 		return result;
 	}
 
-	public static void combineImagesWithMaskInRegion(Image image1, Image image2, Image mask, int xLoc, int yLoc, double angle, Point pivot)
+	public void combineImagesWithMaskInRegion(Image image1, Image image2, Image mask, int xLoc, int yLoc, double angle, Point pivot)
 	{
 		if (mask.getType() != ImageType.Grayscale8Bit)
 			throw new IllegalArgumentException("Expected mask to be type ImageType.Grayscale.");
@@ -1067,7 +969,7 @@ public abstract class ImageHelper
 		}
 	}
 
-	public static Image copySnippetRotated(Image image, int xLoc, int yLoc, int width, int height, double angle, Point pivot)
+	public Image copySnippetRotated(Image image, int xLoc, int yLoc, int width, int height, double angle, Point pivot)
 	{
 		Image result = Image.create(width, height, ImageType.ARGB);
 		try (Painter pResult = result.createPainter(DrawQuality.High))
@@ -1080,7 +982,7 @@ public abstract class ImageHelper
 		return result;
 	}
 
-	public static Image copySnippetPreservingAlphaOfTransparentPixels(Image source, int xLoc, int yLoc, int width, int height)
+	public Image copySnippetPreservingAlphaOfTransparentPixels(Image source, int xLoc, int yLoc, int width, int height)
 	{
 		IntRectangle sourceBounds = new IntRectangle(0, 0, source.size().width, source.size().height);
 		Image result = Image.create(width, height, source.getType());
@@ -1105,12 +1007,12 @@ public abstract class ImageHelper
 		return result;
 	}
 
-	public static Image copySnippetPreservingAlphaOfTransparentPixels(Image source, IntRectangle boundsInSourceToCopyFrom)
+	public Image copySnippetPreservingAlphaOfTransparentPixels(Image source, IntRectangle boundsInSourceToCopyFrom)
 	{
 		return copySnippetPreservingAlphaOfTransparentPixels(source, boundsInSourceToCopyFrom.x, boundsInSourceToCopyFrom.y, boundsInSourceToCopyFrom.width, boundsInSourceToCopyFrom.height);
 	}
 
-	public static Image rotate90Degrees(Image image, boolean isClockwise)
+	public Image rotate90Degrees(Image image, boolean isClockwise)
 	{
 		Image result = Image.create(image.getHeight(), image.getWidth(), image.getType());
 		try (PixelReader imagePixels = image.createPixelReader(); PixelWriter resultPixels = result.createPixelWriter())
@@ -1134,7 +1036,7 @@ public abstract class ImageHelper
 		return result;
 	}
 
-	public static void drawIfPixelValueIsGreaterThanTarget(Image target, Image toDraw, int xLoc, int yLoc)
+	public void drawIfPixelValueIsGreaterThanTarget(Image target, Image toDraw, int xLoc, int yLoc)
 	{
 		if (toDraw.getType() != ImageType.Binary)
 		{
@@ -1174,12 +1076,12 @@ public abstract class ImageHelper
 		}
 	}
 
-	public static Image convolveGrayscale(Image img, float[][] kernel, boolean maximizeContrast, boolean paddImageToAvoidWrapping)
+	public Image convolveGrayscale(Image img, float[][] kernel, boolean maximizeContrast, boolean paddImageToAvoidWrapping)
 	{
 		return convolveGrayscaleThenSetContrast(img, kernel, maximizeContrast, 0f, 1f, paddImageToAvoidWrapping).getSecond();
 	}
 
-	public static Tuple2<ComplexArray, Image> convolveGrayscaleThenSetContrast(Image img, float[][] kernel, boolean setContrast, float contrastMin, float contrastMax, boolean paddImageToAvoidWrapping)
+	public Tuple2<ComplexArray, Image> convolveGrayscaleThenSetContrast(Image img, float[][] kernel, boolean setContrast, float contrastMin, float contrastMax, boolean paddImageToAvoidWrapping)
 	{
 		ComplexArray data = convolveGrayscale(img, kernel, paddImageToAvoidWrapping);
 
@@ -1191,13 +1093,13 @@ public abstract class ImageHelper
 		return new Tuple2<>(data, realToImage(data, resultType, img.getWidth(), img.getHeight(), setContrast, contrastMin, contrastMax, false, 0f));
 	}
 
-	public static Image convolveGrayscaleThenScale(Image img, float[][] kernel, float scale, boolean paddImageToAvoidWrapping)
+	public Image convolveGrayscaleThenScale(Image img, float[][] kernel, float scale, boolean paddImageToAvoidWrapping)
 	{
 		ImageType resultType = img.getType() == ImageType.Grayscale16Bit ? ImageType.Grayscale16Bit : ImageType.Grayscale8Bit;
 		return convolveGrayscaleThenScale(img, kernel, scale, paddImageToAvoidWrapping, resultType);
 	}
 
-	public static Image convolveGrayscaleThenScale(Image img, float[][] kernel, float scale, boolean paddImageToAvoidWrapping, ImageType resultType)
+	public Image convolveGrayscaleThenScale(Image img, float[][] kernel, float scale, boolean paddImageToAvoidWrapping, ImageType resultType)
 	{
 		ComplexArray data = convolveGrayscale(img, kernel, paddImageToAvoidWrapping);
 
@@ -1207,7 +1109,7 @@ public abstract class ImageHelper
 		return realToImage(data, resultType, img.getWidth(), img.getHeight(), false, 0f, 0f, true, scale);
 	}
 
-	private static ComplexArray convolveGrayscale(Image img, float[][] kernel, boolean paddImageToAvoidWrapping)
+	private ComplexArray convolveGrayscale(Image img, float[][] kernel, boolean paddImageToAvoidWrapping)
 	{
 		int colsPaddingToAvoidWrapping = paddImageToAvoidWrapping ? kernel[0].length / 2 : 0;
 		int cols = getJTransformsMixedRadixSizeEqualOrLargerThan(Math.max(img.getWidth() + colsPaddingToAvoidWrapping, kernel[0].length));
@@ -1230,7 +1132,7 @@ public abstract class ImageHelper
 		return data;
 	}
 
-	public static Image realToImage(ComplexArray data, ImageType type, int imageWidth, int imageHeight, boolean setContrast, float contrastMin, float contrastMax, boolean scaleLevels, float scale)
+	public Image realToImage(ComplexArray data, ImageType type, int imageWidth, int imageHeight, boolean setContrast, float contrastMin, float contrastMax, boolean scaleLevels, float scale)
 	{
 		int imgRowPaddingOver2 = (data.getHeight() - imageHeight) / 2;
 		int imgColPaddingOver2 = (data.getWidth() - imageWidth) / 2;
@@ -1248,13 +1150,13 @@ public abstract class ImageHelper
 		return result;
 	}
 
-	public static void inverseFFT(ComplexArray data)
+	public void inverseFFT(ComplexArray data)
 	{
 		FloatFFT_2D fft = new FloatFFT_2D(data.getHeight(), data.getWidth());
 		fft.complexInverse(data.getArrayJTransformsFormat(), true);
 	}
 
-	public static ComplexArray forwardFFT(Image img, int rows, int cols)
+	public ComplexArray forwardFFT(Image img, int rows, int cols)
 	{
 		ComplexArray data = new ComplexArray(cols, rows);
 
@@ -1286,7 +1188,7 @@ public abstract class ImageHelper
 		return data;
 	}
 
-	public static ComplexArray forwardFFT(float[][] input, int rows, int cols, boolean flipXAndYAxis)
+	public ComplexArray forwardFFT(float[][] input, int rows, int cols, boolean flipXAndYAxis)
 	{
 		ComplexArray data = new ComplexArray(cols, rows);
 
@@ -1315,7 +1217,7 @@ public abstract class ImageHelper
 		return data;
 	}
 
-	public static Image arrayToImage(float[][] array, ImageType imageType)
+	public Image arrayToImage(float[][] array, ImageType imageType)
 	{
 		Image image = Image.create(array[0].length, array.length, imageType);
 		int maxPixelValue = Image.getMaxPixelLevelForType(imageType);
@@ -1336,7 +1238,7 @@ public abstract class ImageHelper
 	 * Gets the smallest value >= the input whose only prime factors are 2, 3, and 5. These sizes cause JTransforms' FloatFFT_2D to use its
 	 * Mixed-Radix algorithm, which is more efficient than the Bluestein fallback and wastes less memory than padding to a power of 2.
 	 */
-	public static int getJTransformsMixedRadixSizeEqualOrLargerThan(int value)
+	public int getJTransformsMixedRadixSizeEqualOrLargerThan(int value)
 	{
 		if (value <= 1)
 		{
@@ -1367,7 +1269,7 @@ public abstract class ImageHelper
 		}
 	}
 
-	public static Image genWhiteNoise(Random rand, int rows, int cols, ImageType imageType)
+	public Image genWhiteNoise(Random rand, int rows, int cols, ImageType imageType)
 	{
 		Image image = Image.create(cols, rows, imageType);
 		int maxPixelValue = Image.getMaxPixelLevelForType(image.getType());
@@ -1384,7 +1286,7 @@ public abstract class ImageHelper
 		return image;
 	}
 
-	public static Image matchHistogram(Image target, Image source, ImageType resultType)
+	public Image matchHistogram(Image target, Image source, ImageType resultType)
 	{
 		nortantis.util.HistogramEqualizer targetEqualizer = new nortantis.util.HistogramEqualizer(target);
 		nortantis.util.HistogramEqualizer sourceEqualizer = new nortantis.util.HistogramEqualizer(source);
@@ -1399,17 +1301,17 @@ public abstract class ImageHelper
 		return outImage;
 	}
 
-	public static Image matchHistogram(Image target, Image source)
+	public Image matchHistogram(Image target, Image source)
 	{
 		return matchHistogram(target, source, target.getType());
 	}
 
-	public static void write(Image image, String fileName)
+	public void write(Image image, String fileName)
 	{
 		image.write(fileName);
 	}
 
-	public static String openImageInSystemDefaultEditor(Image map, String filenameWithoutExtension) throws IOException
+	public String openImageInSystemDefaultEditor(Image map, String filenameWithoutExtension) throws IOException
 	{
 		String format = "png";
 		File tempFile = File.createTempFile(filenameWithoutExtension, "." + format);
@@ -1419,7 +1321,7 @@ public abstract class ImageHelper
 		return tempFile.getAbsolutePath();
 	}
 
-	public static void openImageInSystemDefaultEditor(String imageFilePath)
+	public void openImageInSystemDefaultEditor(String imageFilePath)
 	{
 		if (Desktop.isDesktopSupported())
 		{
@@ -1442,12 +1344,12 @@ public abstract class ImageHelper
 		}
 	}
 
-	public static int bound(int value)
+	public int bound(int value)
 	{
 		return Math.min(255, Math.max(0, value));
 	}
 
-	public static float calcMeanOfGrayscaleImage(Image image)
+	public float calcMeanOfGrayscaleImage(Image image)
 	{
 		long sum = 0;
 		try (PixelReader imagePixels = image.createPixelReader())
@@ -1464,7 +1366,7 @@ public abstract class ImageHelper
 		return sum / ((float) (image.getHeight() * image.getWidth()));
 	}
 
-	public static float[] calcMeanOfEachColor(Image image)
+	public float[] calcMeanOfEachColor(Image image)
 	{
 		float[] result = new float[3];
 		try (PixelReader imagePixels = image.createPixelReader())
@@ -1501,7 +1403,7 @@ public abstract class ImageHelper
 		return result;
 	}
 
-	public static Image flipOnXAxis(Image image)
+	public Image flipOnXAxis(Image image)
 	{
 		Image result = Image.create(image.getWidth(), image.getHeight(), image.getType());
 		try (PixelReader imagePixels = image.createPixelReader(); PixelWriter resultPixels = result.createPixelWriter())
@@ -1518,7 +1420,7 @@ public abstract class ImageHelper
 		return result;
 	}
 
-	public static Image flipOnYAxis(Image image)
+	public Image flipOnYAxis(Image image)
 	{
 		Image result = Image.create(image.getWidth(), image.getHeight(), image.getType());
 		try (PixelReader imagePixels = image.createPixelReader(); PixelWriter resultPixels = result.createPixelWriter())
@@ -1535,7 +1437,7 @@ public abstract class ImageHelper
 		return result;
 	}
 
-	public static void fillInTarget(Image target, Image source, int lowThreshold, int highThreshold, int fillValue)
+	public void fillInTarget(Image target, Image source, int lowThreshold, int highThreshold, int fillValue)
 	{
 		if (!target.size().equals(source.size()))
 		{
@@ -1556,7 +1458,7 @@ public abstract class ImageHelper
 		}
 	}
 
-	public static void subtractThresholded(Image toThreshold, int threshold, int highValue, Image toSubtractFrom)
+	public void subtractThresholded(Image toThreshold, int threshold, int highValue, Image toSubtractFrom)
 	{
 		if (!toThreshold.isGrayscaleOrBinary())
 		{
@@ -1586,7 +1488,7 @@ public abstract class ImageHelper
 		}
 	}
 
-	public static void addThresholded(Image toThreshold, int threshold, int highValue, Image toAddTo)
+	public void addThresholded(Image toThreshold, int threshold, int highValue, Image toAddTo)
 	{
 		if (!toThreshold.isGrayscaleOrBinary())
 		{
@@ -1616,13 +1518,13 @@ public abstract class ImageHelper
 		}
 	}
 
-	public static void threshold(Image image, int threshold)
+	public void threshold(Image image, int threshold)
 	{
 		int maxPixelValue = image.getMaxPixelLevel();
 		threshold(image, threshold, maxPixelValue);
 	}
 
-	public static void threshold(Image image, int threshold, int highValue)
+	public void threshold(Image image, int threshold, int highValue)
 	{
 		if (!image.isGrayscaleOrBinary())
 		{
@@ -1642,7 +1544,7 @@ public abstract class ImageHelper
 		}
 	}
 
-	public static void subtract(Image target, Image other)
+	public void subtract(Image target, Image other)
 	{
 		if (!target.isGrayscaleOrBinary())
 		{
@@ -1666,7 +1568,7 @@ public abstract class ImageHelper
 		}
 	}
 
-	public static void copySnippetFromSourceAndPasteIntoTarget(Image target, Image source, IntPoint upperLeftCornerToPasteIntoInTarget, IntRectangle boundsInSourceToCopyFrom,
+	public void copySnippetFromSourceAndPasteIntoTarget(Image target, Image source, IntPoint upperLeftCornerToPasteIntoInTarget, IntRectangle boundsInSourceToCopyFrom,
 			int widthOfBorderToNotDrawOn)
 	{
 		Image snippet = source.getSubImage(new IntRectangle(boundsInSourceToCopyFrom.x, boundsInSourceToCopyFrom.y, boundsInSourceToCopyFrom.width, boundsInSourceToCopyFrom.height));
@@ -1679,13 +1581,18 @@ public abstract class ImageHelper
 		}
 	}
 
-	public static void darkenMiddleOfImage(Image image, int grungeWidth, double resolutionScale, boolean forceConvolutionBlur)
+	public void darkenMiddleOfImage(Image image, int grungeWidth, double resolutionScale, boolean forceConvolutionBlur)
+	{
+		darkenMiddleOfImage(image, grungeWidth, resolutionScale, forceConvolutionBlur, 1.0);
+	}
+
+	protected void darkenMiddleOfImage(Image image, int grungeWidth, double resolutionScale, boolean forceConvolutionBlur, double lineWidthScale)
 	{
 		int blurLevel = (int) (grungeWidth * resolutionScale);
 		if (blurLevel == 0)
 			blurLevel = 1;
 
-		int lineWidth = (int) (resolutionScale);
+		int lineWidth = (int) (lineWidthScale * resolutionScale);
 		if (lineWidth == 0)
 		{
 			lineWidth = 1;
@@ -1705,11 +1612,11 @@ public abstract class ImageHelper
 
 			if (forceConvolutionBlur)
 			{
-				blurredBox = ImageHelper.convolveGrayscale(blurBox, ImageHelper.createGaussianKernel(blurLevel), true, true);
+				blurredBox = convolveGrayscale(blurBox, createGaussianKernel(blurLevel), true, true);
 			}
 			else
 			{
-				blurredBox = ImageHelper.blur(blurBox, blurLevel, true, true);
+				blurredBox = blur(blurBox, blurLevel, true, true);
 			}
 		}
 
@@ -1751,7 +1658,7 @@ public abstract class ImageHelper
 		}
 	}
 
-	public static Image createPlaceholderImage(String[] message, Color textColor)
+	public Image createPlaceholderImage(String[] message, Color textColor)
 	{
 		if (message.length == 0)
 		{
@@ -1781,7 +1688,7 @@ public abstract class ImageHelper
 				}
 			}
 
-			return ImageHelper.scaleByWidth(placeHolder, placeHolder.getWidth(), Method.QUALITY);
+			return scaleByWidth(placeHolder, placeHolder.getWidth(), Method.QUALITY);
 		}
 	}
 }

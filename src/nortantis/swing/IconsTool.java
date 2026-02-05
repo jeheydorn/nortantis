@@ -1389,12 +1389,12 @@ public class IconsTool extends EditorTool
 		if (iconType == IconType.decorations)
 		{
 			previewImage = tuple.getFirst();
-			previewImage = ImageHelper.colorify(previewImage, settings.oceanColor, tuple.getSecond());
+			previewImage = ImageHelper.getInstance().colorify(previewImage, settings.oceanColor, tuple.getSecond());
 		}
 		else
 		{
 			previewImage = tuple.getThird();
-			previewImage = ImageHelper.colorify(previewImage, settings.landColor, tuple.getFourth());
+			previewImage = ImageHelper.getInstance().colorify(previewImage, settings.landColor, tuple.getFourth());
 		}
 
 		previewImage = fadeEdges(previewImage, fadeWidth);
@@ -1409,14 +1409,14 @@ public class IconsTool extends EditorTool
 				Image coloredImage = ImageCache.getInstance(settings.artPack, settings.customImagesPath).getColoredIcon(imageAndMasks, iconColor, filterColor, maximizeOpacity, fillWithColor);
 				try (Image croppedImage = imageAndMasks.cropToContent(coloredImage))
 				{
-					int widthForHeight = ImageHelper.getWidthWhenScaledByHeight(croppedImage, scaledHeight);
+					int widthForHeight = ImageHelper.getInstance().getWidthWhenScaledByHeight(croppedImage, scaledHeight);
 					int scaledWidth = Math.min(widthForHeight, maxRowWidth);
 					int yExtraForCentering = 0;
-					if (scaledHeight > ImageHelper.getHeightWhenScaledByWidth(croppedImage, scaledWidth))
+					if (scaledHeight > ImageHelper.getInstance().getHeightWhenScaledByWidth(croppedImage, scaledWidth))
 					{
-						yExtraForCentering = (scaledHeight - ImageHelper.getHeightWhenScaledByWidth(croppedImage, scaledWidth)) / 2;
+						yExtraForCentering = (scaledHeight - ImageHelper.getInstance().getHeightWhenScaledByWidth(croppedImage, scaledWidth)) / 2;
 					}
-					try (Image scaled = ImageHelper.scaleByWidth(croppedImage, scaledWidth, Method.ULTRA_QUALITY))
+					try (Image scaled = ImageHelper.getInstance().scaleByWidth(croppedImage, scaledWidth, Method.ULTRA_QUALITY))
 					{
 						if (x - padding + scaled.getWidth() > maxRowWidth)
 						{
@@ -1446,9 +1446,9 @@ public class IconsTool extends EditorTool
 			}
 
 			// Use convolution to make a hazy background for the text.
-			try (Image hazyBox = ImageHelper.blur(box, fadeWidth, true, false))
+			try (Image hazyBox = ImageHelper.getInstance().blur(box, fadeWidth, true, false))
 			{
-				return ImageHelper.setAlphaFromMask(image, hazyBox, false);
+				return ImageHelper.getInstance().setAlphaFromMask(image, hazyBox, false);
 			}
 		}
 	}

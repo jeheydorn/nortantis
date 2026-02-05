@@ -19,7 +19,7 @@ public class GridDrawer
 
 		try (Image hexImage = Image.create(image.getWidth(), image.getHeight(), ImageType.ARGB))
 		{
-			ImageHelper.clearImageToTransparent(hexImage);
+			ImageHelper.getInstance().clearImageToTransparent(hexImage);
 
 			try (Painter p = hexImage.createPainter(DrawQuality.High))
 			{
@@ -45,7 +45,7 @@ public class GridDrawer
 				}
 			}
 
-			try (Image alphaApplied = ImageHelper.applyAlpha(hexImage, alpha); Painter p = image.createPainter())
+			try (Image alphaApplied = ImageHelper.getInstance().applyAlpha(hexImage, alpha); Painter p = image.createPainter())
 			{
 				p.drawImage(alphaApplied, 0, 0);
 			}

@@ -563,7 +563,7 @@ public class NewSettingsDialog extends JDialog
 	private void createMapEditingPanel()
 	{
 		BufferedImage placeHolder = AwtBridge
-				.toBufferedImage(ImageHelper.createPlaceholderImage(new String[] { "Drawing..." }, AwtBridge.fromAwtColor(SwingHelper.getTextColorForPlaceholderImages())));
+				.toBufferedImage(ImageHelper.getInstance().createPlaceholderImage(new String[] { "Drawing..." }, AwtBridge.fromAwtColor(SwingHelper.getTextColorForPlaceholderImages())));
 		mapEditingPanel = new MapEditingPanel(placeHolder);
 
 		mapEditingPanelContainer = new JPanel();

@@ -92,8 +92,8 @@ public class BGColorPreviewPanel extends ImagePanel implements ChangeListener
 	{
 		if (colorifyAlgorithm != ImageHelper.ColorifyAlgorithm.none)
 		{
-			Image grayscale = ImageHelper.convertToGrayscale(AwtBridge.fromBufferedImage(originalBackground));
-			super.setImage(AwtBridge.toBufferedImage(ImageHelper.colorify(grayscale, AwtBridge.fromAwtColor(color), colorifyAlgorithm)));
+			Image grayscale = ImageHelper.getInstance().convertToGrayscale(AwtBridge.fromBufferedImage(originalBackground));
+			super.setImage(AwtBridge.toBufferedImage(ImageHelper.getInstance().colorify(grayscale, AwtBridge.fromAwtColor(color), colorifyAlgorithm)));
 		}
 	}
 

@@ -40,7 +40,7 @@ public class ImageHelperBenchmark
 		// Warmup
 		for (int i = 0; i < 3; i++)
 		{
-			ImageHelper.maskWithImage(image1, image2, mask);
+			ImageHelper.getInstance().maskWithImage(image1, image2, mask);
 		}
 
 		// Run twice and average
@@ -51,7 +51,7 @@ public class ImageHelperBenchmark
 			long start = System.nanoTime();
 			for (int i = 0; i < iterations; i++)
 			{
-				ImageHelper.maskWithImage(image1, image2, mask);
+				ImageHelper.getInstance().maskWithImage(image1, image2, mask);
 			}
 			totalTime += (System.nanoTime() - start) / iterations;
 		}
@@ -74,7 +74,7 @@ public class ImageHelperBenchmark
 		// Warmup
 		for (int i = 0; i < 3; i++)
 		{
-			ImageHelper.colorify(grayscale, color, ImageHelper.ColorifyAlgorithm.algorithm3, false);
+			ImageHelper.getInstance().colorify(grayscale, color, ImageHelper.ColorifyAlgorithm.algorithm3, false);
 		}
 
 		// Run twice and average
@@ -85,7 +85,7 @@ public class ImageHelperBenchmark
 			long start = System.nanoTime();
 			for (int i = 0; i < iterations; i++)
 			{
-				ImageHelper.colorify(grayscale, color, ImageHelper.ColorifyAlgorithm.algorithm3, false);
+				ImageHelper.getInstance().colorify(grayscale, color, ImageHelper.ColorifyAlgorithm.algorithm3, false);
 			}
 			totalTime += (System.nanoTime() - start) / iterations;
 		}
@@ -109,7 +109,7 @@ public class ImageHelperBenchmark
 		// Warmup
 		for (int i = 0; i < 3; i++)
 		{
-			ImageHelper.maskWithColor(image, color, mask, false);
+			ImageHelper.getInstance().maskWithColor(image, color, mask, false);
 		}
 
 		// Run twice and average
@@ -120,7 +120,7 @@ public class ImageHelperBenchmark
 			long start = System.nanoTime();
 			for (int i = 0; i < iterations; i++)
 			{
-				ImageHelper.maskWithColor(image, color, mask, false);
+				ImageHelper.getInstance().maskWithColor(image, color, mask, false);
 			}
 			totalTime += (System.nanoTime() - start) / iterations;
 		}
@@ -143,7 +143,7 @@ public class ImageHelperBenchmark
 		// Warmup
 		for (int i = 0; i < 3; i++)
 		{
-			ImageHelper.setAlphaFromMask(image, mask, false);
+			ImageHelper.getInstance().setAlphaFromMask(image, mask, false);
 		}
 
 		// Run twice and average
@@ -154,7 +154,7 @@ public class ImageHelperBenchmark
 			long start = System.nanoTime();
 			for (int i = 0; i < iterations; i++)
 			{
-				ImageHelper.setAlphaFromMask(image, mask, false);
+				ImageHelper.getInstance().setAlphaFromMask(image, mask, false);
 			}
 			totalTime += (System.nanoTime() - start) / iterations;
 		}
@@ -303,7 +303,7 @@ public class ImageHelperBenchmark
 			// Warmup
 			for (int i = 0; i < 3; i++)
 			{
-				try (Image result = ImageHelper.colorifyMulti(grayscale, colorMap, colorIndexes, ImageHelper.ColorifyAlgorithm.algorithm3, null))
+				try (Image result = ImageHelper.getInstance().colorifyMulti(grayscale, colorMap, colorIndexes, ImageHelper.ColorifyAlgorithm.algorithm3, null))
 				{
 					// Just create and close
 				}
@@ -317,7 +317,7 @@ public class ImageHelperBenchmark
 				long start = System.nanoTime();
 				for (int i = 0; i < iterations; i++)
 				{
-					try (Image result = ImageHelper.colorifyMulti(grayscale, colorMap, colorIndexes, ImageHelper.ColorifyAlgorithm.algorithm3, null))
+					try (Image result = ImageHelper.getInstance().colorifyMulti(grayscale, colorMap, colorIndexes, ImageHelper.ColorifyAlgorithm.algorithm3, null))
 					{
 						// Just create and close
 					}
@@ -363,7 +363,7 @@ public class ImageHelperBenchmark
 			// Warmup
 			for (int i = 0; i < 3; i++)
 			{
-				try (Image result = ImageHelper.maskWithMultipleColors(image, colorMap, colorIndexes, mask, false))
+				try (Image result = ImageHelper.getInstance().maskWithMultipleColors(image, colorMap, colorIndexes, mask, false))
 				{
 					// Just create and close
 				}
@@ -377,7 +377,7 @@ public class ImageHelperBenchmark
 				long start = System.nanoTime();
 				for (int i = 0; i < iterations; i++)
 				{
-					try (Image result = ImageHelper.maskWithMultipleColors(image, colorMap, colorIndexes, mask, false))
+					try (Image result = ImageHelper.getInstance().maskWithMultipleColors(image, colorMap, colorIndexes, mask, false))
 					{
 						// Just create and close
 					}

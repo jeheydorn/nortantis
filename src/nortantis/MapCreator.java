@@ -334,7 +334,7 @@ public class MapCreator implements WarningLogger
 			Image landTextureSnippet;
 			if (settings.landColor.hasTransparency())
 			{
-				landTextureSnippet = ImageHelper.copySnippetPreservingAlphaOfTransparentPixels(mapParts.background.land, drawBounds.toIntRectangle());
+				landTextureSnippet = ImageHelper.getInstance().copySnippetPreservingAlphaOfTransparentPixels(mapParts.background.land, drawBounds.toIntRectangle());
 			}
 			else
 			{
@@ -351,7 +351,7 @@ public class MapCreator implements WarningLogger
 						drawBounds, false);
 				Image landBackgroundWithLandInOcean = tuple.getFirst();
 				coastShading = tuple.getSecond();
-				mapSnippet = ImageHelper.maskWithColor(landBackgroundWithLandInOcean, Color.black, landMask, false);
+				mapSnippet = ImageHelper.getInstance().maskWithColor(landBackgroundWithLandInOcean, Color.black, landMask, false);
 
 				if (settings.drawRegionColors)
 				{
@@ -387,7 +387,7 @@ public class MapCreator implements WarningLogger
 			Image oceanTextureSnippet;
 			{
 				oceanTextureSnippet = mapParts.background.createOceanSnippet(drawBounds);
-				mapSnippet = ImageHelper.maskWithImage(mapSnippet, oceanTextureSnippet, landMask);
+				mapSnippet = ImageHelper.getInstance().maskWithImage(mapSnippet, oceanTextureSnippet, landMask);
 			}
 
 			checkForCancel();
@@ -402,13 +402,13 @@ public class MapCreator implements WarningLogger
 				oceanShading = oceanTuple.getSecond();
 				if (oceanShading != null)
 				{
-					mapSnippet = ImageHelper.maskWithColor(mapSnippet, settings.oceanShadingColor, oceanShading, true);
-					oceanWithWavesAndShading = ImageHelper.maskWithColor(oceanWithWavesAndShading, settings.oceanShadingColor, oceanShading, true);
+					mapSnippet = ImageHelper.getInstance().maskWithColor(mapSnippet, settings.oceanShadingColor, oceanShading, true);
+					oceanWithWavesAndShading = ImageHelper.getInstance().maskWithColor(oceanWithWavesAndShading, settings.oceanShadingColor, oceanShading, true);
 				}
 				if (oceanWaves != null)
 				{
-					mapSnippet = ImageHelper.maskWithColor(mapSnippet, settings.oceanWavesColor, oceanWaves, true);
-					oceanWithWavesAndShading = ImageHelper.maskWithColor(oceanWithWavesAndShading, settings.oceanWavesColor, oceanWaves, true);
+					mapSnippet = ImageHelper.getInstance().maskWithColor(mapSnippet, settings.oceanWavesColor, oceanWaves, true);
+					oceanWithWavesAndShading = ImageHelper.getInstance().maskWithColor(oceanWithWavesAndShading, settings.oceanWavesColor, oceanWaves, true);
 				}
 			}
 
@@ -459,12 +459,12 @@ public class MapCreator implements WarningLogger
 			checkForCancel();
 
 			// Update the snippet in mapParts.textBackground because the Fonts tab uses that as part of speeding up text re-drawing.
-			ImageHelper.copySnippetFromSourceAndPasteIntoTarget(mapParts.textBackground, textBackground, replaceBounds.upperLeftCorner().toIntPoint(), boundsInSourceToCopyFrom, 0);
+			ImageHelper.getInstance().copySnippetFromSourceAndPasteIntoTarget(mapParts.textBackground, textBackground, replaceBounds.upperLeftCorner().toIntPoint(), boundsInSourceToCopyFrom, 0);
 
 			// If present, also update the cached version of the map before adding text so that the Fonts tab can draw the map faster.
 			if (mapParts.mapBeforeAddingText != null)
 			{
-				ImageHelper.copySnippetFromSourceAndPasteIntoTarget(mapParts.mapBeforeAddingText, mapSnippet, replaceBounds.upperLeftCorner().toIntPoint(), boundsInSourceToCopyFrom, 0);
+				ImageHelper.getInstance().copySnippetFromSourceAndPasteIntoTarget(mapParts.mapBeforeAddingText, mapSnippet, replaceBounds.upperLeftCorner().toIntPoint(), boundsInSourceToCopyFrom, 0);
 			}
 		}
 		else
@@ -488,7 +488,7 @@ public class MapCreator implements WarningLogger
 		// Add grunge
 		if (settings.drawGrunge && settings.grungeWidth > 0)
 		{
-			mapSnippet = ImageHelper.maskWithColorInRegion(mapSnippet, settings.frayedBorderColor, mapParts.grunge, true, drawBoundsUpperLeftCornerAdjustedForBorder);
+			mapSnippet = ImageHelper.getInstance().maskWithColorInRegion(mapSnippet, settings.frayedBorderColor, mapParts.grunge, true, drawBoundsUpperLeftCornerAdjustedForBorder);
 		}
 
 		if (DebugFlags.drawCorners())
@@ -521,13 +521,13 @@ public class MapCreator implements WarningLogger
 			int blurLevel = (int) (settings.frayedBorderBlurLevel * sizeMultiplierRounded);
 			if (blurLevel > 0)
 			{
-				mapSnippet = ImageHelper.maskWithColorInRegion(mapSnippet, settings.frayedBorderColor, mapParts.frayedBorderBlur, true, drawBoundsUpperLeftCornerAdjustedForBorder);
+				mapSnippet = ImageHelper.getInstance().maskWithColorInRegion(mapSnippet, settings.frayedBorderColor, mapParts.frayedBorderBlur, true, drawBoundsUpperLeftCornerAdjustedForBorder);
 			}
-			mapSnippet = ImageHelper.setAlphaFromMaskInRegion(mapSnippet, mapParts.frayedBorderMask, true, drawBoundsUpperLeftCornerAdjustedForBorder);
+			mapSnippet = ImageHelper.getInstance().setAlphaFromMaskInRegion(mapSnippet, mapParts.frayedBorderMask, true, drawBoundsUpperLeftCornerAdjustedForBorder);
 		}
 
 		// Update the snippet in the main map.
-		ImageHelper.copySnippetFromSourceAndPasteIntoTarget(fullSizedMap, mapSnippet, replaceBoundsUpperLeftCornerAdjustedForBorder, boundsInSourceToCopyFrom,
+		ImageHelper.getInstance().copySnippetFromSourceAndPasteIntoTarget(fullSizedMap, mapSnippet, replaceBoundsUpperLeftCornerAdjustedForBorder, boundsInSourceToCopyFrom,
 				mapParts.background.getBorderPaddingScaledByResolution());
 
 		if (DebugFlags.showIncrementalUpdateBounds())
@@ -882,7 +882,7 @@ public class MapCreator implements WarningLogger
 			}
 
 			// Add the grunge to the map.
-			map = ImageHelper.maskWithColor(map, settings.frayedBorderColor, grunge, true);
+			map = ImageHelper.getInstance().maskWithColor(map, settings.frayedBorderColor, grunge, true);
 		}
 
 		drawOverlayImageIfNeededAndUpdateMapParts(map, settings);
@@ -926,9 +926,9 @@ public class MapCreator implements WarningLogger
 
 			if (frayedBorderBlur != null)
 			{
-				map = ImageHelper.maskWithColor(map, settings.frayedBorderColor, frayedBorderBlur, true);
+				map = ImageHelper.getInstance().maskWithColor(map, settings.frayedBorderColor, frayedBorderBlur, true);
 			}
-			map = ImageHelper.setAlphaFromMask(map, frayedBorderMask, true);
+			map = ImageHelper.getInstance().setAlphaFromMask(map, frayedBorderMask, true);
 		}
 
 		if (nameCreatorTask != null)
@@ -989,7 +989,7 @@ public class MapCreator implements WarningLogger
 				}
 				if (blurLevel > 0)
 				{
-					frayedBorderBlur = ImageHelper.blur(frayedBorderMask, blurLevel, true, true);
+					frayedBorderBlur = ImageHelper.getInstance().blur(frayedBorderMask, blurLevel, true, true);
 				}
 				else
 				{
@@ -1034,7 +1034,7 @@ public class MapCreator implements WarningLogger
 				checkForCancel();
 
 				// Whiten the middle of clouds.
-				ImageHelper.darkenMiddleOfImage(grunge, settings.grungeWidth, settings.resolution, false);
+				ImageHelper.getInstance().darkenMiddleOfImage(grunge, settings.grungeWidth, settings.resolution, false);
 
 				return grunge;
 			});
@@ -1111,7 +1111,7 @@ public class MapCreator implements WarningLogger
 			Tuple2<Image, Image> tuple = darkenLandNearCoastlinesAndRegionBorders(settings, graph, settings.resolution, background.land, background, null, null, null, true);
 			Image landBackgroundWithLandAndOcean = tuple.getFirst();
 			coastShading = tuple.getSecond();
-			map = ImageHelper.maskWithColor(landBackgroundWithLandAndOcean, Color.black, landMask, false);
+			map = ImageHelper.getInstance().maskWithColor(landBackgroundWithLandAndOcean, Color.black, landMask, false);
 
 			if (settings.drawRegionColors)
 			{
@@ -1150,7 +1150,7 @@ public class MapCreator implements WarningLogger
 				throw new IllegalArgumentException("The given ocean background image does not" + " have the same aspect ratio as the given land background image.");
 			}
 
-			map = ImageHelper.maskWithImage(map, background.ocean, landMask);
+			map = ImageHelper.getInstance().maskWithImage(map, background.ocean, landMask);
 		}
 
 		checkForCancel();
@@ -1162,15 +1162,15 @@ public class MapCreator implements WarningLogger
 		if (oceanShading != null)
 		{
 			Logger.println("Adding shading to ocean along coastlines.");
-			map = ImageHelper.maskWithColor(map, settings.oceanShadingColor, oceanShading, true);
-			oceanWithWavesAndShading = ImageHelper.maskWithColor(oceanWithWavesAndShading, settings.oceanShadingColor, oceanShading, true);
+			map = ImageHelper.getInstance().maskWithColor(map, settings.oceanShadingColor, oceanShading, true);
+			oceanWithWavesAndShading = ImageHelper.getInstance().maskWithColor(oceanWithWavesAndShading, settings.oceanShadingColor, oceanShading, true);
 		}
 
 		if (oceanWaves != null)
 		{
 			Logger.println("Adding waves to ocean along coastlines.");
-			map = ImageHelper.maskWithColor(map, settings.oceanWavesColor, oceanWaves, true);
-			oceanWithWavesAndShading = ImageHelper.maskWithColor(oceanWithWavesAndShading, settings.oceanWavesColor, oceanWaves, true);
+			map = ImageHelper.getInstance().maskWithColor(map, settings.oceanWavesColor, oceanWaves, true);
+			oceanWithWavesAndShading = ImageHelper.getInstance().maskWithColor(oceanWithWavesAndShading, settings.oceanWavesColor, oceanWaves, true);
 		}
 
 		checkForCancel();
@@ -1261,16 +1261,16 @@ public class MapCreator implements WarningLogger
 	{
 		iconDrawer.drawNondecorationContentMasksOntoLandMask(landMask, iconsThatDrew, drawBounds);
 
-		Image textBackground = ImageHelper.maskWithColor(landTexture, Color.black, landMask, false);
+		Image textBackground = ImageHelper.getInstance().maskWithColor(landTexture, Color.black, landMask, false);
 		textBackground = darkenLandNearCoastlinesAndRegionBorders(settings, graph, settings.resolution, textBackground, background, coastShading, centersToDraw, drawBounds, false).getFirst();
-		textBackground = ImageHelper.maskWithImage(textBackground, oceanTexture, landMask);
+		textBackground = ImageHelper.getInstance().maskWithImage(textBackground, oceanTexture, landMask);
 		if (oceanShading != null)
 		{
-			textBackground = ImageHelper.maskWithColor(textBackground, settings.oceanShadingColor, oceanShading, true);
+			textBackground = ImageHelper.getInstance().maskWithColor(textBackground, settings.oceanShadingColor, oceanShading, true);
 		}
 		if (oceanWaves != null)
 		{
-			textBackground = ImageHelper.maskWithColor(textBackground, settings.oceanWavesColor, oceanWaves, true);
+			textBackground = ImageHelper.getInstance().maskWithColor(textBackground, settings.oceanWavesColor, oceanWaves, true);
 		}
 		if (settings.drawGridOverlay)
 		{
@@ -1342,11 +1342,11 @@ public class MapCreator implements WarningLogger
 
 					if (settings.drawRegionBoundaries)
 					{
-						coastShading = ImageHelper.blurAndScale(coastlineAndLakeShoreMask, blurLevel, scale, true);
+						coastShading = ImageHelper.getInstance().blurAndScale(coastlineAndLakeShoreMask, blurLevel, scale, true);
 					}
 					else
 					{
-						coastShading = ImageHelper.blurAndScale(coastlineAndLakeShoreMask, blurLevel, scale, true);
+						coastShading = ImageHelper.getInstance().blurAndScale(coastlineAndLakeShoreMask, blurLevel, scale, true);
 					}
 				}
 			}
@@ -1369,11 +1369,11 @@ public class MapCreator implements WarningLogger
 				{
 					colors.put(0, settings.landColor);
 				}
-				return new Tuple2<>(ImageHelper.maskWithMultipleColors(mapOrSnippet, colors, background.regionIndexes, coastShading, true), coastShading);
+				return new Tuple2<>(ImageHelper.getInstance().maskWithMultipleColors(mapOrSnippet, colors, background.regionIndexes, coastShading, true), coastShading);
 			}
 			else
 			{
-				return new Tuple2<>(ImageHelper.maskWithColor(mapOrSnippet, settings.coastShadingColor, coastShading, true), coastShading);
+				return new Tuple2<>(ImageHelper.getInstance().maskWithColor(mapOrSnippet, settings.coastShadingColor, coastShading, true), coastShading);
 			}
 		}
 		return new Tuple2<>(mapOrSnippet, null);
@@ -1396,12 +1396,12 @@ public class MapCreator implements WarningLogger
 			if (settings.hasRippleWaves(resolutionScale))
 			{
 				Image coastlineMask = createCoastlineMask(settings, graph, targetStrokeWidth, centersToDraw, drawBounds);
-				float[][] kernel = ImageHelper.createPositiveSincKernel((int) (settings.oceanWavesLevel * sizeMultiplier), 1.0 / sizeMultiplier);
+				float[][] kernel = ImageHelper.getInstance().createPositiveSincKernel((int) (settings.oceanWavesLevel * sizeMultiplier), 1.0 / sizeMultiplier);
 
 				final float scaleForDarkening = coastlineShadingScale;
 				float scale = scaleForDarkening * calcScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(settings.oceanWavesLevel, sizeMultiplier)
 						* calcScaleCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
-				oceanWaves = ImageHelper.convolveGrayscaleThenScale(coastlineMask, kernel, scale, true);
+				oceanWaves = ImageHelper.getInstance().convolveGrayscaleThenScale(coastlineMask, kernel, scale, true);
 				if (settings.drawOceanEffectsInLakes)
 				{
 					oceanWaves = removeOceanEffectsFromLand(oceanWaves, landMask);
@@ -1423,7 +1423,7 @@ public class MapCreator implements WarningLogger
 				final float scaleForDarkening = coastlineShadingScale;
 				float scale = scaleForDarkening * calcScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(settings.oceanShadingLevel, sizeMultiplier)
 						* calcScaleCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
-				oceanShading = ImageHelper.blurAndScale(coastlineMask, (int) (settings.oceanShadingLevel * sizeMultiplier), scale, true);
+				oceanShading = ImageHelper.getInstance().blurAndScale(coastlineMask, (int) (settings.oceanShadingLevel * sizeMultiplier), scale, true);
 				if (settings.drawOceanEffectsInLakes)
 				{
 					oceanShading = removeOceanEffectsFromLand(oceanShading, landMask);
@@ -1566,7 +1566,7 @@ public class MapCreator implements WarningLogger
 	private static float calcScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(int kernelSize, double sizeMultiplier)
 	{
 		int lightnessBasedOnKernelSizesBeforeIAddedFixToMakeShadingNotGetLighterWhenItGotWider = (int) (15 * sizeMultiplier);
-		return ImageHelper.getGaussianMode(lightnessBasedOnKernelSizesBeforeIAddedFixToMakeShadingNotGetLighterWhenItGotWider) / ImageHelper.getGaussianMode((int) (kernelSize * sizeMultiplier));
+		return ImageHelper.getInstance().getGaussianMode(lightnessBasedOnKernelSizesBeforeIAddedFixToMakeShadingNotGetLighterWhenItGotWider) / ImageHelper.getInstance().getGaussianMode((int) (kernelSize * sizeMultiplier));
 	}
 
 	private static Image removeOceanEffectsFromLandAndLandLockedLakes(WorldGraph graph, Image oceanEffects, Collection<Center> centersToDraw, Rectangle drawBounds)
@@ -1581,12 +1581,12 @@ public class MapCreator implements WarningLogger
 		{
 			graph.drawLandAndLakesBlackAndOceanWhite(p, centersToDraw, drawBounds);
 		}
-		return ImageHelper.maskWithColor(oceanEffects, Color.black, landAndLakeMask, false);
+		return ImageHelper.getInstance().maskWithColor(oceanEffects, Color.black, landAndLakeMask, false);
 	}
 
 	private static Image removeOceanEffectsFromLand(Image oceanEffects, Image landMask)
 	{
-		return ImageHelper.maskWithColor(oceanEffects, Color.black, landMask, true);
+		return ImageHelper.getInstance().maskWithColor(oceanEffects, Color.black, landMask, true);
 	}
 
 	private static float calcScaleCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(double targetStrokeWidth)
@@ -1630,8 +1630,8 @@ public class MapCreator implements WarningLogger
 	private static Color generateRegionColor(Random rand, float[] landHsb, float hueRange, float saturationRange, float brightnessRange)
 	{
 		float hue = (float) (landHsb[0] * 360 + (rand.nextDouble() - 0.5) * hueRange);
-		float saturation = ImageHelper.bound((int) (landHsb[1] * 100 + (rand.nextDouble() - 0.5) * saturationRange));
-		float brightness = ImageHelper.bound((int) (landHsb[2] * 100 + (rand.nextDouble() - 0.5) * brightnessRange));
+		float saturation = ImageHelper.getInstance().bound((int) (landHsb[1] * 100 + (rand.nextDouble() - 0.5) * saturationRange));
+		float brightness = ImageHelper.getInstance().bound((int) (landHsb[2] * 100 + (rand.nextDouble() - 0.5) * brightnessRange));
 		return Color.createFromHSB(hue / 360f, saturation / 100f, brightness / 100f);
 	}
 
@@ -1908,7 +1908,7 @@ public class MapCreator implements WarningLogger
 		int maxResolution = (int) Math.sqrt(maxBytes / 148468L);
 
 		// The FFT-based code will create arrays in powers of 2.
-		int nextPowerOf2 = ImageHelper.getJTransformsMixedRadixSizeEqualOrLargerThan((int)(maxResolution / 100.0));
+		int nextPowerOf2 = ImageHelper.getInstance().getJTransformsMixedRadixSizeEqualOrLargerThan((int)(maxResolution / 100.0));
 		int resolutionAtNextPowerOf2 = nextPowerOf2 * 100;
 		// Average with the original prediction because not all code is
 		// FFT-based.

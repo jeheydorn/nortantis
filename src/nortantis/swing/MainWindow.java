@@ -1474,7 +1474,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				{
 					// Zooming in: convert smaller source first, then scale up.
 					BufferedImage sourceBI = AwtBridge.toBufferedImage(mapEditingPanel.mapFromMapCreator);
-					try (Image source = AwtBridge.wrapBufferedImage(sourceBI); Image scaled = ImageHelper.scaleByWidth(source, zoomedWidth, method))
+					try (Image source = AwtBridge.wrapBufferedImage(sourceBI); Image scaled = ImageHelper.getInstance().scaleByWidth(source, zoomedWidth, method))
 					{
 						mapEditingPanel.setImage(AwtBridge.toBufferedImage(scaled));
 					}
@@ -1482,7 +1482,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				else
 				{
 					// Zooming out (or 1:1): scale down first, then convert smaller result.
-					try (Image scaled = ImageHelper.scaleByWidth(mapEditingPanel.mapFromMapCreator, zoomedWidth, method))
+					try (Image scaled = ImageHelper.getInstance().scaleByWidth(mapEditingPanel.mapFromMapCreator, zoomedWidth, method))
 					{
 						mapEditingPanel.setImage(AwtBridge.toBufferedImage(scaled));
 					}
@@ -1506,7 +1506,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					{
 						// Zooming in: convert smaller source first, then scale up.
 						BufferedImage sourceBI = AwtBridge.toBufferedImage(mapEditingPanel.mapFromMapCreator);
-						try (Image source = AwtBridge.wrapBufferedImage(sourceBI); Image scaled = ImageHelper.scaleByWidth(source, zoomedWidth, method))
+						try (Image source = AwtBridge.wrapBufferedImage(sourceBI); Image scaled = ImageHelper.getInstance().scaleByWidth(source, zoomedWidth, method))
 						{
 							mapEditingPanel.setImage(AwtBridge.toBufferedImage(scaled));
 						}
@@ -1514,7 +1514,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					else
 					{
 						// Zooming out (or 1:1): scale down first, then convert smaller result.
-						try (Image scaled = ImageHelper.scaleByWidth(mapEditingPanel.mapFromMapCreator, zoomedWidth, method))
+						try (Image scaled = ImageHelper.getInstance().scaleByWidth(mapEditingPanel.mapFromMapCreator, zoomedWidth, method))
 						{
 							mapEditingPanel.setImage(AwtBridge.toBufferedImage(scaled));
 						}
@@ -1526,7 +1526,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					{
 						// Use wrapBufferedImage for the target so changes write back to the display BufferedImage.
 						// fromBufferedImage would create a copy when using SkiaFactory, losing the changes.
-						ImageHelper.scaleInto(mapEditingPanel.mapFromMapCreator, AwtBridge.wrapBufferedImage(mapEditingPanel.getImage()), incrementalChangeArea);
+						ImageHelper.getInstance().scaleInto(mapEditingPanel.mapFromMapCreator, AwtBridge.wrapBufferedImage(mapEditingPanel.getImage()), incrementalChangeArea);
 					}
 				}
 			}
@@ -1584,7 +1584,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				nortantis.geom.Dimension size = new nortantis.geom.Dimension(mapEditingScrollPane.getSize().width - additionalWidthToRemoveIDontKnowWhereItsComingFrom,
 						mapEditingScrollPane.getSize().height - additionalWidthToRemoveIDontKnowWhereItsComingFrom);
 
-				nortantis.geom.Dimension fitted = ImageHelper.fitDimensionsWithinBoundingBox(size, mapEditingPanel.mapFromMapCreator.getWidth(), mapEditingPanel.mapFromMapCreator.getHeight());
+				nortantis.geom.Dimension fitted = ImageHelper.getInstance().fitDimensionsWithinBoundingBox(size, mapEditingPanel.mapFromMapCreator.getWidth(), mapEditingPanel.mapFromMapCreator.getHeight());
 				return (fitted.width / mapEditingPanel.mapFromMapCreator.getWidth()) * mapEditingPanel.osScale;
 			}
 			else
@@ -2062,7 +2062,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	private void setPlaceholderImage(String[] message)
 	{
-		mapEditingPanel.setImage(AwtBridge.toBufferedImage(ImageHelper.createPlaceholderImage(message, AwtBridge.fromAwtColor(SwingHelper.getTextColorForPlaceholderImages()))));
+		mapEditingPanel.setImage(AwtBridge.toBufferedImage(ImageHelper.getInstance().createPlaceholderImage(message, AwtBridge.fromAwtColor(SwingHelper.getTextColorForPlaceholderImages()))));
 
 		// Clear out the map from map creator so that causing the window to
 		// re-zoom while the placeholder image

@@ -73,16 +73,16 @@ public class Background
 
 			if (settings.borderColorOption == BorderColorOption.Ocean_color)
 			{
-				borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.oceanColor, oceanColorifyAlgorithm);
+				borderBackground = ImageHelper.getInstance().colorify(oceanGeneratedBackground, settings.oceanColor, oceanColorifyAlgorithm);
 				ocean = borderBackground;
 			}
 			else
 			{
 				if (settings.drawBorder)
 				{
-					borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.borderColor, oceanColorifyAlgorithm, settings.oceanColor.hasTransparency());
+					borderBackground = ImageHelper.getInstance().colorify(oceanGeneratedBackground, settings.borderColor, oceanColorifyAlgorithm, settings.oceanColor.hasTransparency());
 				}
-				ocean = ImageHelper.colorify(oceanGeneratedBackground, settings.oceanColor, oceanColorifyAlgorithm);
+				ocean = ImageHelper.getInstance().colorify(oceanGeneratedBackground, settings.oceanColor, oceanColorifyAlgorithm);
 			}
 
 			if (settings.drawBorder)
@@ -102,7 +102,7 @@ public class Background
 			}
 			else
 			{
-				land = ImageHelper.colorify(removeBorderPadding(landGeneratedBackground), settings.landColor, landColorifyAlgorithm);
+				land = ImageHelper.getInstance().colorify(removeBorderPadding(landGeneratedBackground), settings.landColor, landColorifyAlgorithm);
 				landGeneratedBackground = null;
 			}
 		}
@@ -132,21 +132,21 @@ public class Background
 			Image oceanGeneratedBackground;
 			if (settings.colorizeOcean)
 			{
-				oceanGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(settings.backgroundRandomSeed), ImageHelper.convertToGrayscale(texture),
+				oceanGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(settings.backgroundRandomSeed), ImageHelper.getInstance().convertToGrayscale(texture),
 						((int) mapBounds.height) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0), ((int) mapBounds.width) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0));
 
 				if (settings.borderColorOption == BorderColorOption.Ocean_color)
 				{
-					borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.oceanColor, oceanColorifyAlgorithm);
+					borderBackground = ImageHelper.getInstance().colorify(oceanGeneratedBackground, settings.oceanColor, oceanColorifyAlgorithm);
 					ocean = borderBackground;
 				}
 				else
 				{
 					if (settings.drawBorder)
 					{
-						borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.borderColor, oceanColorifyAlgorithm, settings.oceanColor.hasTransparency());
+						borderBackground = ImageHelper.getInstance().colorify(oceanGeneratedBackground, settings.borderColor, oceanColorifyAlgorithm, settings.oceanColor.hasTransparency());
 					}
-					ocean = ImageHelper.colorify(oceanGeneratedBackground, settings.oceanColor, oceanColorifyAlgorithm);
+					ocean = ImageHelper.getInstance().colorify(oceanGeneratedBackground, settings.oceanColor, oceanColorifyAlgorithm);
 				}
 
 				if (settings.drawBorder)
@@ -172,7 +172,7 @@ public class Background
 					}
 					else
 					{
-						borderBackground = ImageHelper.colorify(ImageHelper.convertToGrayscale(oceanGeneratedBackground), settings.borderColor, oceanColorifyAlgorithm);
+						borderBackground = ImageHelper.getInstance().colorify(ImageHelper.getInstance().convertToGrayscale(oceanGeneratedBackground), settings.borderColor, oceanColorifyAlgorithm);
 					}
 				}
 				else
@@ -197,7 +197,7 @@ public class Background
 					}
 					else
 					{
-						land = ImageHelper.colorify(removeBorderPadding(landGeneratedBackground), settings.landColor, ImageHelper.ColorifyAlgorithm.algorithm3);
+						land = ImageHelper.getInstance().colorify(removeBorderPadding(landGeneratedBackground), settings.landColor, ImageHelper.ColorifyAlgorithm.algorithm3);
 					}
 				}
 				else
@@ -216,7 +216,7 @@ public class Background
 					// otherwise the random texture of the land won't match the
 					// texture of the ocean.
 
-					landGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(settings.backgroundRandomSeed), ImageHelper.convertToGrayscale(texture),
+					landGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(settings.backgroundRandomSeed), ImageHelper.getInstance().convertToGrayscale(texture),
 							((int) mapBounds.height) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0), ((int) mapBounds.width) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0));
 					if (shouldDrawRegionColors)
 					{
@@ -226,7 +226,7 @@ public class Background
 					}
 					else
 					{
-						land = ImageHelper.colorify(removeBorderPadding(landGeneratedBackground), settings.landColor, ImageHelper.ColorifyAlgorithm.algorithm3);
+						land = ImageHelper.getInstance().colorify(removeBorderPadding(landGeneratedBackground), settings.landColor, ImageHelper.ColorifyAlgorithm.algorithm3);
 					}
 					landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm3;
 				}
@@ -248,16 +248,16 @@ public class Background
 
 			if (settings.borderColorOption == BorderColorOption.Ocean_color)
 			{
-				borderBackground = ImageHelper.colorify(background, settings.oceanColor, oceanColorifyAlgorithm);
+				borderBackground = ImageHelper.getInstance().colorify(background, settings.oceanColor, oceanColorifyAlgorithm);
 				ocean = borderBackground;
 			}
 			else
 			{
 				if (settings.drawBorder)
 				{
-					borderBackground = ImageHelper.colorify(background, settings.borderColor, oceanColorifyAlgorithm, settings.oceanColor.hasTransparency());
+					borderBackground = ImageHelper.getInstance().colorify(background, settings.borderColor, oceanColorifyAlgorithm, settings.oceanColor.hasTransparency());
 				}
-				ocean = ImageHelper.colorify(background, settings.oceanColor, oceanColorifyAlgorithm);
+				ocean = ImageHelper.getInstance().colorify(background, settings.oceanColor, oceanColorifyAlgorithm);
 			}
 
 			if (settings.drawBorder)
@@ -276,7 +276,7 @@ public class Background
 			}
 			else
 			{
-				land = ImageHelper.colorify(removeBorderPadding(background), settings.landColor, landColorifyAlgorithm);
+				land = ImageHelper.getInstance().colorify(removeBorderPadding(background), settings.landColor, landColorifyAlgorithm);
 			}
 
 		}
@@ -322,7 +322,7 @@ public class Background
 			}
 			Dimension mapBoundsPlusBorder = new Dimension(mapBounds.width + borderPadding * 2, mapBounds.height + borderPadding * 2);
 
-			Dimension newBounds = ImageHelper.fitDimensionsWithinBoundingBox(maxDimensions, mapBoundsPlusBorder.width, mapBoundsPlusBorder.height);
+			Dimension newBounds = ImageHelper.getInstance().fitDimensionsWithinBoundingBox(maxDimensions, mapBoundsPlusBorder.width, mapBoundsPlusBorder.height);
 			// Change the resolution to match the new bounds.
 			settings.resolution *= ((double) newBounds.width) / mapBoundsPlusBorder.width;
 
@@ -373,12 +373,12 @@ public class Background
 						new IntPoint((int) drawBounds.x, (int) drawBounds.y));
 				IntRectangle boundsInSourceToCopyFrom = new IntRectangle((int) replaceBounds.x - (int) drawBounds.x, (int) replaceBounds.y - (int) drawBounds.y, (int) replaceBounds.width,
 						(int) replaceBounds.height);
-				ImageHelper.copySnippetFromSourceAndPasteIntoTarget(landColoredBeforeAddingIconColors, landSnippetColoredBeforeAddingIconColors, replaceBounds.upperLeftCorner().toIntPoint(),
+				ImageHelper.getInstance().copySnippetFromSourceAndPasteIntoTarget(landColoredBeforeAddingIconColors, landSnippetColoredBeforeAddingIconColors, replaceBounds.upperLeftCorner().toIntPoint(),
 						boundsInSourceToCopyFrom, 0);
 
 				updateRegionIndexesAndLandWithIconShapes(graph, tasks, drawBounds);
 				Image landSnippet = drawRegionColors(graph, landBeforeRegionColoring, regionIndexes, landColorifyAlgorithm, new IntPoint((int) drawBounds.x, (int) drawBounds.y));
-				ImageHelper.copySnippetFromSourceAndPasteIntoTarget(land, landSnippet, replaceBounds.upperLeftCorner().toIntPoint(), boundsInSourceToCopyFrom, 0);
+				ImageHelper.getInstance().copySnippetFromSourceAndPasteIntoTarget(land, landSnippet, replaceBounds.upperLeftCorner().toIntPoint(), boundsInSourceToCopyFrom, 0);
 			}
 		}
 	}
@@ -416,7 +416,7 @@ public class Background
 
 				Point drawLocation = drawBounds == null ? new Point(xLoc, yLoc) : new Point(xLoc, yLoc).subtract(drawBounds.upperLeftCorner());
 
-				ImageHelper.drawMaskOntoImage(regionIndexes, task.scaledImageAndMasks.getOrCreateContentMask(), regionIdColor, drawLocation.toIntPoint());
+				ImageHelper.getInstance().drawMaskOntoImage(regionIndexes, task.scaledImageAndMasks.getOrCreateContentMask(), regionIdColor, drawLocation.toIntPoint());
 			}
 		}
 	}
@@ -425,7 +425,7 @@ public class Background
 	{
 		if (graph.regions.isEmpty())
 		{
-			return ImageHelper.convertImageToType(fractalBG, ImageType.RGB);
+			return ImageHelper.getInstance().convertImageToType(fractalBG, ImageType.RGB);
 		}
 
 		Map<Integer, Color> regionBackgroundColors = new HashMap<>();
@@ -434,7 +434,7 @@ public class Background
 			regionBackgroundColors.put(regionEntry.getKey(), regionEntry.getValue().backgroundColor);
 		}
 
-		return ImageHelper.colorifyMulti(fractalBG, regionBackgroundColors, pixelColors, colorifyAlgorithm, where);
+		return ImageHelper.getInstance().colorifyMulti(fractalBG, regionBackgroundColors, pixelColors, colorifyAlgorithm, where);
 	}
 
 	public Image createOceanSnippet(Rectangle boundsToCopyFrom)
@@ -495,25 +495,25 @@ public class Background
 		if (topEdge != null)
 		{
 			edgeOriginalWidth = topEdge.getHeight();
-			topEdge = ImageHelper.scaleByHeight(topEdge, borderWidthScaled);
+			topEdge = ImageHelper.getInstance().scaleByHeight(topEdge, borderWidthScaled);
 		}
 		bottomEdge = loadImageWithStringInFileName(borderPath, "bottom_edge.", false);
 		if (bottomEdge != null)
 		{
 			edgeOriginalWidth = bottomEdge.getHeight();
-			bottomEdge = ImageHelper.scaleByHeight(bottomEdge, borderWidthScaled);
+			bottomEdge = ImageHelper.getInstance().scaleByHeight(bottomEdge, borderWidthScaled);
 		}
 		leftEdge = loadImageWithStringInFileName(borderPath, "left_edge.", false);
 		if (leftEdge != null)
 		{
 			edgeOriginalWidth = leftEdge.getWidth();
-			leftEdge = ImageHelper.scaleByWidth(leftEdge, borderWidthScaled);
+			leftEdge = ImageHelper.getInstance().scaleByWidth(leftEdge, borderWidthScaled);
 		}
 		rightEdge = loadImageWithStringInFileName(borderPath, "right_edge.", false);
 		if (rightEdge != null)
 		{
 			edgeOriginalWidth = rightEdge.getWidth();
-			rightEdge = ImageHelper.scaleByWidth(rightEdge, borderWidthScaled);
+			rightEdge = ImageHelper.getInstance().scaleByWidth(rightEdge, borderWidthScaled);
 		}
 
 		if (topEdge == null)
@@ -595,19 +595,19 @@ public class Background
 
 		if (upperLeftCorner != null)
 		{
-			upperLeftCorner = ImageHelper.scaleByWidth(upperLeftCorner, cornerWidth);
+			upperLeftCorner = ImageHelper.getInstance().scaleByWidth(upperLeftCorner, cornerWidth);
 		}
 		if (upperRightCorner != null)
 		{
-			upperRightCorner = ImageHelper.scaleByWidth(upperRightCorner, cornerWidth);
+			upperRightCorner = ImageHelper.getInstance().scaleByWidth(upperRightCorner, cornerWidth);
 		}
 		if (lowerLeftCorner != null)
 		{
-			lowerLeftCorner = ImageHelper.scaleByWidth(lowerLeftCorner, cornerWidth);
+			lowerLeftCorner = ImageHelper.getInstance().scaleByWidth(lowerLeftCorner, cornerWidth);
 		}
 		if (lowerRightCorner != null)
 		{
-			lowerRightCorner = ImageHelper.scaleByWidth(lowerRightCorner, cornerWidth);
+			lowerRightCorner = ImageHelper.getInstance().scaleByWidth(lowerRightCorner, cornerWidth);
 		}
 
 		if (upperLeftCorner == null)
@@ -687,7 +687,7 @@ public class Background
 					if (!isBorderOutsideMap)
 					{
 						// Clear out the part of the map that is there.
-						ImageHelper.copySnippetFromSourceAndPasteIntoTarget(result, borderBackground, new IntPoint(x - xOffset, y - yOffset), new IntRectangle(x, y, increment, borderWidthScaled), 0);
+						ImageHelper.getInstance().copySnippetFromSourceAndPasteIntoTarget(result, borderBackground, new IntPoint(x - xOffset, y - yOffset), new IntRectangle(x, y, increment, borderWidthScaled), 0);
 					}
 
 					try (Painter p = result.createPainter())
@@ -704,7 +704,7 @@ public class Background
 					if (!isBorderOutsideMap)
 					{
 						// Clear out the part of the map that is there.
-						ImageHelper.copySnippetFromSourceAndPasteIntoTarget(result, borderBackground, new IntPoint(x - xOffset, y - yOffset),
+						ImageHelper.getInstance().copySnippetFromSourceAndPasteIntoTarget(result, borderBackground, new IntPoint(x - xOffset, y - yOffset),
 								new IntRectangle(x, y, distanceRemaining, borderWidthScaled), 0);
 					}
 
@@ -745,7 +745,7 @@ public class Background
 					if (!isBorderOutsideMap)
 					{
 						// Clear out the part of the map that is there.
-						ImageHelper.copySnippetFromSourceAndPasteIntoTarget(result, borderBackground, new IntPoint(x - xOffset, y - yOffset), new IntRectangle(x, y, borderWidthScaled, increment), 0);
+						ImageHelper.getInstance().copySnippetFromSourceAndPasteIntoTarget(result, borderBackground, new IntPoint(x - xOffset, y - yOffset), new IntRectangle(x, y, borderWidthScaled, increment), 0);
 					}
 
 					try (Painter p = result.createPainter())
@@ -762,7 +762,7 @@ public class Background
 					if (!isBorderOutsideMap)
 					{
 						// Clear out the part of the map that is there.
-						ImageHelper.copySnippetFromSourceAndPasteIntoTarget(result, borderBackground, new IntPoint(x - xOffset, y - yOffset),
+						ImageHelper.getInstance().copySnippetFromSourceAndPasteIntoTarget(result, borderBackground, new IntPoint(x - xOffset, y - yOffset),
 								new IntRectangle(x, y, borderWidthScaled, distanceRemaining), 0);
 					}
 
@@ -785,7 +785,7 @@ public class Background
 		// If the corner protrudes into the map, then erase the map in the area the corner will be drawn on.
 		if (hasInsetCorners || !isBorderOutsideMap)
 		{
-			ImageHelper.copySnippetFromSourceAndPasteIntoTarget(target, borderBackground, new IntPoint(0, 0).subtract(drawOffset),
+			ImageHelper.getInstance().copySnippetFromSourceAndPasteIntoTarget(target, borderBackground, new IntPoint(0, 0).subtract(drawOffset),
 					new IntRectangle(0, 0, upperLeftCorner.getWidth(), upperLeftCorner.getHeight()), 0);
 		}
 		try (Painter p = target.createPainter())
@@ -801,7 +801,7 @@ public class Background
 		// If the corner protrudes into the map, then erase the map in the area the corner will be drawn on.
 		if (hasInsetCorners || !isBorderOutsideMap)
 		{
-			ImageHelper.copySnippetFromSourceAndPasteIntoTarget(target, borderBackground, new IntPoint(((int) borderBounds.width) - cornerWidth, 0).subtract(drawOffset),
+			ImageHelper.getInstance().copySnippetFromSourceAndPasteIntoTarget(target, borderBackground, new IntPoint(((int) borderBounds.width) - cornerWidth, 0).subtract(drawOffset),
 					new IntRectangle(((int) borderBounds.width) - cornerWidth, 0, upperRightCorner.getWidth(), upperRightCorner.getHeight()), 0);
 		}
 		try (Painter p = target.createPainter())
@@ -817,7 +817,7 @@ public class Background
 		// If the corner protrudes into the map, then erase the map in the area the corner will be drawn on.
 		if (hasInsetCorners || !isBorderOutsideMap)
 		{
-			ImageHelper.copySnippetFromSourceAndPasteIntoTarget(target, borderBackground, new IntPoint(0, ((int) borderBounds.height) - cornerWidth).subtract(drawOffset),
+			ImageHelper.getInstance().copySnippetFromSourceAndPasteIntoTarget(target, borderBackground, new IntPoint(0, ((int) borderBounds.height) - cornerWidth).subtract(drawOffset),
 					new IntRectangle(0, ((int) borderBounds.height) - cornerWidth, lowerLeftCorner.getWidth(), lowerLeftCorner.getHeight()), 0);
 
 		}
@@ -834,7 +834,7 @@ public class Background
 		// If the corner protrudes into the map, then erase the map in the area the corner will be drawn on.
 		if (hasInsetCorners || !isBorderOutsideMap)
 		{
-			ImageHelper.copySnippetFromSourceAndPasteIntoTarget(target, borderBackground,
+			ImageHelper.getInstance().copySnippetFromSourceAndPasteIntoTarget(target, borderBackground,
 					new IntPoint(((int) borderBounds.width) - cornerWidth, ((int) borderBounds.height) - cornerWidth).subtract(drawOffset),
 					new IntRectangle(((int) borderBounds.width) - cornerWidth, ((int) borderBounds.height) - cornerWidth, lowerRightCorner.getWidth(), lowerRightCorner.getHeight()), 0);
 
@@ -891,45 +891,45 @@ public class Background
 					case Bottom:
 						return edgeIn;
 					case Left:
-						return ImageHelper.rotate90Degrees(edgeIn, true);
+						return ImageHelper.getInstance().rotate90Degrees(edgeIn, true);
 					case Right:
-						return ImageHelper.rotate90Degrees(edgeIn, false);
+						return ImageHelper.getInstance().rotate90Degrees(edgeIn, false);
 					case Top:
-						return ImageHelper.flipOnYAxis(edgeIn);
+						return ImageHelper.getInstance().flipOnYAxis(edgeIn);
 				}
 			case Left:
 				switch (outputType)
 				{
 					case Bottom:
-						return ImageHelper.rotate90Degrees(edgeIn, false);
+						return ImageHelper.getInstance().rotate90Degrees(edgeIn, false);
 					case Left:
 						return edgeIn;
 					case Right:
-						return ImageHelper.flipOnXAxis(edgeIn);
+						return ImageHelper.getInstance().flipOnXAxis(edgeIn);
 					case Top:
-						return ImageHelper.rotate90Degrees(edgeIn, true);
+						return ImageHelper.getInstance().rotate90Degrees(edgeIn, true);
 				}
 			case Right:
 				switch (outputType)
 				{
 					case Bottom:
-						return ImageHelper.rotate90Degrees(edgeIn, true);
+						return ImageHelper.getInstance().rotate90Degrees(edgeIn, true);
 					case Left:
-						return ImageHelper.flipOnXAxis(edgeIn);
+						return ImageHelper.getInstance().flipOnXAxis(edgeIn);
 					case Right:
 						return edgeIn;
 					case Top:
-						return ImageHelper.rotate90Degrees(edgeIn, false);
+						return ImageHelper.getInstance().rotate90Degrees(edgeIn, false);
 				}
 			case Top:
 				switch (outputType)
 				{
 					case Bottom:
-						return ImageHelper.flipOnYAxis(edgeIn);
+						return ImageHelper.getInstance().flipOnYAxis(edgeIn);
 					case Left:
-						return ImageHelper.rotate90Degrees(edgeIn, false);
+						return ImageHelper.getInstance().rotate90Degrees(edgeIn, false);
 					case Right:
-						return ImageHelper.rotate90Degrees(edgeIn, true);
+						return ImageHelper.getInstance().rotate90Degrees(edgeIn, true);
 					case Top:
 						return edgeIn;
 				}
@@ -953,46 +953,46 @@ public class Background
 					case lowerLeft:
 						return cornerIn;
 					case lowerRight:
-						return ImageHelper.flipOnXAxis(cornerIn);
+						return ImageHelper.getInstance().flipOnXAxis(cornerIn);
 					case upperLeft:
-						return ImageHelper.flipOnYAxis(cornerIn);
+						return ImageHelper.getInstance().flipOnYAxis(cornerIn);
 					case upperRight:
-						return ImageHelper.flipOnXAxis(ImageHelper.flipOnYAxis(cornerIn));
+						return ImageHelper.getInstance().flipOnXAxis(ImageHelper.getInstance().flipOnYAxis(cornerIn));
 				}
 				break;
 			case lowerRight:
 				switch (outputType)
 				{
 					case lowerLeft:
-						return ImageHelper.flipOnXAxis(cornerIn);
+						return ImageHelper.getInstance().flipOnXAxis(cornerIn);
 					case lowerRight:
 						return cornerIn;
 					case upperLeft:
-						return ImageHelper.flipOnXAxis(ImageHelper.flipOnYAxis(cornerIn));
+						return ImageHelper.getInstance().flipOnXAxis(ImageHelper.getInstance().flipOnYAxis(cornerIn));
 					case upperRight:
-						return ImageHelper.flipOnYAxis(cornerIn);
+						return ImageHelper.getInstance().flipOnYAxis(cornerIn);
 				}
 			case upperLeft:
 				switch (outputType)
 				{
 					case lowerLeft:
-						return ImageHelper.flipOnYAxis(cornerIn);
+						return ImageHelper.getInstance().flipOnYAxis(cornerIn);
 					case lowerRight:
-						return ImageHelper.flipOnXAxis(ImageHelper.flipOnYAxis(cornerIn));
+						return ImageHelper.getInstance().flipOnXAxis(ImageHelper.getInstance().flipOnYAxis(cornerIn));
 					case upperLeft:
 						return cornerIn;
 					case upperRight:
-						return ImageHelper.flipOnXAxis(cornerIn);
+						return ImageHelper.getInstance().flipOnXAxis(cornerIn);
 				}
 			case upperRight:
 				switch (outputType)
 				{
 					case lowerLeft:
-						return ImageHelper.flipOnXAxis(ImageHelper.flipOnYAxis(cornerIn));
+						return ImageHelper.getInstance().flipOnXAxis(ImageHelper.getInstance().flipOnYAxis(cornerIn));
 					case lowerRight:
-						return ImageHelper.flipOnYAxis(cornerIn);
+						return ImageHelper.getInstance().flipOnYAxis(cornerIn);
 					case upperLeft:
-						return ImageHelper.flipOnXAxis(cornerIn);
+						return ImageHelper.getInstance().flipOnXAxis(cornerIn);
 					case upperRight:
 						return cornerIn;
 				}

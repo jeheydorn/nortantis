@@ -64,7 +64,7 @@ public class ImageHelperTest
 	public void testConvertToGrayscale()
 	{
 		Image colorImage = createColorTestImage();
-		Image grayscale = ImageHelper.convertToGrayscale(colorImage);
+		Image grayscale = ImageHelper.getInstance().convertToGrayscale(colorImage);
 
 		assertEquals(ImageType.Grayscale8Bit, grayscale.getType(), "Result should be grayscale");
 		assertEquals(colorImage.getWidth(), grayscale.getWidth(), "Width should match");
@@ -77,7 +77,7 @@ public class ImageHelperTest
 	public void testConvertImageToTypeRGB()
 	{
 		Image grayscaleImage = createGrayscaleTestImage();
-		Image rgb = ImageHelper.convertImageToType(grayscaleImage, ImageType.RGB);
+		Image rgb = ImageHelper.getInstance().convertImageToType(grayscaleImage, ImageType.RGB);
 
 		assertEquals(ImageType.RGB, rgb.getType(), "Result should be RGB");
 		compareWithExpected(rgb, "convertImageToTypeRGB");
@@ -87,7 +87,7 @@ public class ImageHelperTest
 	public void testConvertImageToTypeARGB()
 	{
 		Image rgbImage = createColorTestImage();
-		Image argb = ImageHelper.convertImageToType(rgbImage, ImageType.ARGB);
+		Image argb = ImageHelper.getInstance().convertImageToType(rgbImage, ImageType.ARGB);
 
 		assertEquals(ImageType.ARGB, argb.getType(), "Result should be ARGB");
 		compareWithExpected(argb, "convertImageToTypeARGB");
@@ -99,7 +99,7 @@ public class ImageHelperTest
 	public void testScaleByWidth()
 	{
 		Image original = createColorTestImage();
-		Image scaled = ImageHelper.scaleByWidth(original, 50);
+		Image scaled = ImageHelper.getInstance().scaleByWidth(original, 50);
 
 		assertEquals(50, scaled.getWidth(), "Width should be 50");
 		assertTrue(scaled.getHeight() > 0, "Height should be positive");
@@ -110,7 +110,7 @@ public class ImageHelperTest
 	public void testScaleByHeight()
 	{
 		Image original = createColorTestImage();
-		Image scaled = ImageHelper.scaleByHeight(original, 50);
+		Image scaled = ImageHelper.getInstance().scaleByHeight(original, 50);
 
 		assertEquals(50, scaled.getHeight(), "Height should be 50");
 		assertTrue(scaled.getWidth() > 0, "Width should be positive");
@@ -121,7 +121,7 @@ public class ImageHelperTest
 	public void testScale()
 	{
 		Image original = createColorTestImage();
-		Image scaled = ImageHelper.scale(original, 75, 50, Method.QUALITY);
+		Image scaled = ImageHelper.getInstance().scale(original, 75, 50, Method.QUALITY);
 
 		assertEquals(75, scaled.getWidth(), "Width should be 75");
 		assertEquals(50, scaled.getHeight(), "Height should be 50");
@@ -134,7 +134,7 @@ public class ImageHelperTest
 		Image source = createColorTestImage();
 		Image target = Image.create(50, 50, ImageType.RGB);
 
-		ImageHelper.scaleInto(source, target, null);
+		ImageHelper.getInstance().scaleInto(source, target, null);
 		compareWithExpected(target, "scaleInto");
 	}
 
@@ -145,7 +145,7 @@ public class ImageHelperTest
 		Image target = Image.create(50, 50, ImageType.RGB);
 
 		IntRectangle bounds = new IntRectangle(25, 25, 50, 50);
-		ImageHelper.scaleInto(source, target, bounds);
+		ImageHelper.getInstance().scaleInto(source, target, bounds);
 		compareWithExpected(target, "scaleIntoWithBounds");
 	}
 
@@ -179,7 +179,7 @@ public class ImageHelperTest
 	{
 		Image source = createColorTestImage();
 		Point pivot = new Point(50, 50);
-		Image rotated = ImageHelper.copySnippetRotated(source, 20, 20, 60, 60, Math.PI / 4, pivot);
+		Image rotated = ImageHelper.getInstance().copySnippetRotated(source, 20, 20, 60, 60, Math.PI / 4, pivot);
 
 		assertEquals(60, rotated.getWidth(), "Rotated snippet width should be 60");
 		assertEquals(60, rotated.getHeight(), "Rotated snippet height should be 60");
@@ -190,7 +190,7 @@ public class ImageHelperTest
 	public void testCopySnippetPreservingAlphaOfTransparentPixels()
 	{
 		Image source = createARGBTestImage();
-		Image snippet = ImageHelper.copySnippetPreservingAlphaOfTransparentPixels(source, 10, 10, 50, 50);
+		Image snippet = ImageHelper.getInstance().copySnippetPreservingAlphaOfTransparentPixels(source, 10, 10, 50, 50);
 
 		assertEquals(50, snippet.getWidth(), "Snippet width should be 50");
 		assertEquals(50, snippet.getHeight(), "Snippet height should be 50");
@@ -204,7 +204,7 @@ public class ImageHelperTest
 	public void testFlipOnXAxis()
 	{
 		Image original = createAsymmetricTestImage();
-		Image flipped = ImageHelper.flipOnXAxis(original);
+		Image flipped = ImageHelper.getInstance().flipOnXAxis(original);
 
 		assertEquals(original.getWidth(), flipped.getWidth(), "Width should match");
 		assertEquals(original.getHeight(), flipped.getHeight(), "Height should match");
@@ -215,7 +215,7 @@ public class ImageHelperTest
 	public void testFlipOnYAxis()
 	{
 		Image original = createAsymmetricTestImage();
-		Image flipped = ImageHelper.flipOnYAxis(original);
+		Image flipped = ImageHelper.getInstance().flipOnYAxis(original);
 
 		assertEquals(original.getWidth(), flipped.getWidth(), "Width should match");
 		assertEquals(original.getHeight(), flipped.getHeight(), "Height should match");
@@ -226,7 +226,7 @@ public class ImageHelperTest
 	public void testRotate90DegreesClockwise()
 	{
 		Image original = createAsymmetricTestImage();
-		Image rotated = ImageHelper.rotate90Degrees(original, true);
+		Image rotated = ImageHelper.getInstance().rotate90Degrees(original, true);
 
 		assertEquals(original.getHeight(), rotated.getWidth(), "Width should equal original height");
 		assertEquals(original.getWidth(), rotated.getHeight(), "Height should equal original width");
@@ -237,7 +237,7 @@ public class ImageHelperTest
 	public void testRotate90DegreesCounterClockwise()
 	{
 		Image original = createAsymmetricTestImage();
-		Image rotated = ImageHelper.rotate90Degrees(original, false);
+		Image rotated = ImageHelper.getInstance().rotate90Degrees(original, false);
 
 		assertEquals(original.getHeight(), rotated.getWidth(), "Width should equal original height");
 		assertEquals(original.getWidth(), rotated.getHeight(), "Height should equal original width");
@@ -253,7 +253,7 @@ public class ImageHelperTest
 		Image image2 = createSolidColorImage(testImageWidth, testImageHeight, Color.blue);
 		Image mask = createGradientMask();
 
-		Image result = ImageHelper.maskWithImage(image1, image2, mask);
+		Image result = ImageHelper.getInstance().maskWithImage(image1, image2, mask);
 
 		assertEquals(image1.getWidth(), result.getWidth(), "Width should match");
 		assertEquals(image1.getHeight(), result.getHeight(), "Height should match");
@@ -267,7 +267,7 @@ public class ImageHelperTest
 		Image mask = createGradientMask();
 		Color color = Color.create(0, 255, 0, 128);
 
-		Image result = ImageHelper.maskWithColor(image, color, mask, false);
+		Image result = ImageHelper.getInstance().maskWithColor(image, color, mask, false);
 
 		compareWithExpected(result, "maskWithColor");
 	}
@@ -286,7 +286,7 @@ public class ImageHelperTest
 			Image mask = createGradientMask();
 			Color color = Color.create(0, 255, 0, 128);
 
-			Image result = ImageHelper.maskWithColor(image, color, mask, false);
+			Image result = ImageHelper.getInstance().maskWithColor(image, color, mask, false);
 			successCount++;
 
 			// Close images to ensure GPU resources are released on the GPU thread
@@ -306,7 +306,7 @@ public class ImageHelperTest
 		Image mask = createGradientMask();
 		Color color = Color.create(255, 0, 255);
 
-		Image result = ImageHelper.maskWithColor(image, color, mask, true);
+		Image result = ImageHelper.getInstance().maskWithColor(image, color, mask, true);
 		compareWithExpected(result, "maskWithColorInverted");
 	}
 
@@ -316,7 +316,7 @@ public class ImageHelperTest
 		Image image = createColorTestImage();
 		Image mask = createSmallBinaryMask(60, 60);
 
-		ImageHelper.drawMaskOntoImage(image, mask, Color.yellow, new IntPoint(20, 20));
+		ImageHelper.getInstance().drawMaskOntoImage(image, mask, Color.yellow, new IntPoint(20, 20));
 		compareWithExpected(image, "drawMaskOntoImage");
 	}
 
@@ -339,7 +339,7 @@ public class ImageHelperTest
 		// Create a gradient mask
 		Image mask = createGradientMask();
 
-		Image result = ImageHelper.maskWithMultipleColors(image, colors, colorIndexes, mask, false);
+		Image result = ImageHelper.getInstance().maskWithMultipleColors(image, colors, colorIndexes, mask, false);
 		// Higher threshold needed due to shader floating-point variations between JVM processes
 		compareWithExpected(result, "maskWithMultipleColors", 0);
 	}
@@ -358,7 +358,7 @@ public class ImageHelperTest
 		Image colorIndexes = createColorIndexesImage();
 		Image mask = createGradientMask();
 
-		Image result = ImageHelper.maskWithMultipleColors(image, colors, colorIndexes, mask, true);
+		Image result = ImageHelper.getInstance().maskWithMultipleColors(image, colors, colorIndexes, mask, true);
 		// Higher threshold needed due to shader floating-point variations between JVM processes
 		compareWithExpected(result, "maskWithMultipleColorsInverted", 0);
 	}
@@ -380,7 +380,7 @@ public class ImageHelperTest
 		Image colorIndexes = createColorIndexesImageWithIds(256, 512, 1000, 5000);
 		Image mask = createGradientMask();
 
-		Image result = ImageHelper.maskWithMultipleColors(image, colors, colorIndexes, mask, false);
+		Image result = ImageHelper.getInstance().maskWithMultipleColors(image, colors, colorIndexes, mask, false);
 		// Higher threshold needed due to shader floating-point variations between JVM processes
 		compareWithExpected(result, "maskWithMultipleColorsLargeIds", 0);
 	}
@@ -394,7 +394,7 @@ public class ImageHelperTest
 		// Use a mask that avoids alpha=0 (fully transparent pixels lose RGB during PNG round-trip)
 		Image mask = createGradientMaskWithMinAlpha(64);
 
-		Image result = ImageHelper.setAlphaFromMask(image, mask, false);
+		Image result = ImageHelper.getInstance().setAlphaFromMask(image, mask, false);
 
 		assertEquals(ImageType.ARGB, result.getType(), "Result should have alpha channel");
 		// Use threshold due to alpha premultiplication differences in PNG round-trip
@@ -408,7 +408,7 @@ public class ImageHelperTest
 		// Use mask with min alpha to avoid fully transparent pixels
 		Image mask = createGradientMaskWithMinAlpha(64);
 
-		Image result = ImageHelper.setAlphaFromMask(image, mask, true);
+		Image result = ImageHelper.getInstance().setAlphaFromMask(image, mask, true);
 		// Use threshold due to alpha premultiplication differences in PNG round-trip
 		compareWithExpected(result, "setAlphaFromMaskInverted", 4);
 	}
@@ -417,7 +417,7 @@ public class ImageHelperTest
 	public void testApplyAlpha()
 	{
 		Image original = createColorTestImage();
-		Image result = ImageHelper.applyAlpha(original, 128);
+		Image result = ImageHelper.getInstance().applyAlpha(original, 128);
 
 		try (PixelReader reader = result.createPixelReader())
 		{
@@ -432,7 +432,7 @@ public class ImageHelperTest
 	public void testApplyAlphaFull()
 	{
 		Image original = createColorTestImage();
-		Image result = ImageHelper.applyAlpha(original, 255);
+		Image result = ImageHelper.getInstance().applyAlpha(original, 255);
 
 		// When alpha is 255, the original is returned unchanged
 		assertSame(original, result, "With full alpha, original should be returned");
@@ -444,7 +444,7 @@ public class ImageHelperTest
 		Image target = createColorTestImage();
 		Image alphaSource = createARGBTestImage();
 
-		Image result = ImageHelper.copyAlphaTo(target, alphaSource);
+		Image result = ImageHelper.getInstance().copyAlphaTo(target, alphaSource);
 
 		assertEquals(ImageType.ARGB, result.getType(), "Result should have alpha channel");
 		// Use threshold due to alpha premultiplication differences in PNG round-trip
@@ -461,7 +461,7 @@ public class ImageHelperTest
 			p.fillRect(0, 0, testImageWidth, testImageHeight);
 		}
 
-		ImageHelper.clearImageToTransparent(image);
+		ImageHelper.getInstance().clearImageToTransparent(image);
 		compareWithExpected(image, "setAlphaOfAllPixels");
 	}
 
@@ -473,7 +473,7 @@ public class ImageHelperTest
 		Image grayscale = createGrayscaleTestImage();
 		Color color = Color.create(100, 150, 200);
 
-		Image result = ImageHelper.colorify(grayscale, color, ColorifyAlgorithm.algorithm2);
+		Image result = ImageHelper.getInstance().colorify(grayscale, color, ColorifyAlgorithm.algorithm2);
 		compareWithExpected(result, "colorifyAlgorithm2", 2);
 	}
 
@@ -483,7 +483,7 @@ public class ImageHelperTest
 		Image grayscale = createGrayscaleTestImage();
 		Color color = Color.create(200, 100, 50);
 
-		Image result = ImageHelper.colorify(grayscale, color, ColorifyAlgorithm.algorithm3);
+		Image result = ImageHelper.getInstance().colorify(grayscale, color, ColorifyAlgorithm.algorithm3);
 		compareWithExpected(result, "colorifyAlgorithm3", 2);
 	}
 
@@ -493,7 +493,7 @@ public class ImageHelperTest
 		Image grayscale = createGrayscaleTestImage();
 		Color color = Color.create(50, 200, 100);
 
-		Image result = ImageHelper.colorify(grayscale, color, ColorifyAlgorithm.solidColor);
+		Image result = ImageHelper.getInstance().colorify(grayscale, color, ColorifyAlgorithm.solidColor);
 		compareWithExpected(result, "colorifySolidColor");
 	}
 
@@ -503,7 +503,7 @@ public class ImageHelperTest
 		Image grayscale = createGrayscaleTestImage();
 		Color color = Color.create(100, 100, 100);
 
-		Image result = ImageHelper.colorify(grayscale, color, ColorifyAlgorithm.none);
+		Image result = ImageHelper.getInstance().colorify(grayscale, color, ColorifyAlgorithm.none);
 		assertSame(grayscale, result, "None algorithm should return original");
 	}
 
@@ -522,7 +522,7 @@ public class ImageHelperTest
 
 		Image colorIndexes = createColorIndexesImage();
 
-		Image result = ImageHelper.colorifyMulti(grayscale, colorMap, colorIndexes, ColorifyAlgorithm.algorithm2, null);
+		Image result = ImageHelper.getInstance().colorifyMulti(grayscale, colorMap, colorIndexes, ColorifyAlgorithm.algorithm2, null);
 		compareWithExpected(result, "colorifyMultiAlgorithm2", 2);
 	}
 
@@ -539,7 +539,7 @@ public class ImageHelperTest
 
 		Image colorIndexes = createColorIndexesImage();
 
-		Image result = ImageHelper.colorifyMulti(grayscale, colorMap, colorIndexes, ColorifyAlgorithm.algorithm3, null);
+		Image result = ImageHelper.getInstance().colorifyMulti(grayscale, colorMap, colorIndexes, ColorifyAlgorithm.algorithm3, null);
 		compareWithExpected(result, "colorifyMultiAlgorithm3", 2);
 	}
 
@@ -556,7 +556,7 @@ public class ImageHelperTest
 
 		Image colorIndexes = createColorIndexesImage();
 
-		Image result = ImageHelper.colorifyMulti(grayscale, colorMap, colorIndexes, ColorifyAlgorithm.solidColor, null);
+		Image result = ImageHelper.getInstance().colorifyMulti(grayscale, colorMap, colorIndexes, ColorifyAlgorithm.solidColor, null);
 		compareWithExpected(result, "colorifyMultiSolidColor");
 	}
 
@@ -576,7 +576,7 @@ public class ImageHelperTest
 		// Create colorIndexes with these larger IDs
 		Image colorIndexes = createColorIndexesImageWithIds(256, 1000, 10000, 32000);
 
-		Image result = ImageHelper.colorifyMulti(grayscale, colorMap, colorIndexes, ColorifyAlgorithm.algorithm3, null);
+		Image result = ImageHelper.getInstance().colorifyMulti(grayscale, colorMap, colorIndexes, ColorifyAlgorithm.algorithm3, null);
 		compareWithExpected(result, "colorifyMultiLargeRegionIds", 2);
 	}
 
@@ -586,7 +586,7 @@ public class ImageHelperTest
 	public void testMaximizeContrastGrayscale()
 	{
 		Image image = createLowContrastGrayscaleImage();
-		ImageHelper.maximizeContrastGrayscale(image);
+		ImageHelper.getInstance().maximizeContrastGrayscale(image);
 		compareWithExpected(image, "maximizeContrastGrayscale");
 	}
 
@@ -594,7 +594,7 @@ public class ImageHelperTest
 	public void testThreshold()
 	{
 		Image image = createGrayscaleTestImage();
-		ImageHelper.threshold(image, 128);
+		ImageHelper.getInstance().threshold(image, 128);
 		compareWithExpected(image, "threshold");
 	}
 
@@ -602,7 +602,7 @@ public class ImageHelperTest
 	public void testThresholdWithHighValue()
 	{
 		Image image = createGrayscaleTestImage();
-		ImageHelper.threshold(image, 100, 200);
+		ImageHelper.getInstance().threshold(image, 100, 200);
 		compareWithExpected(image, "thresholdWithHighValue");
 	}
 
@@ -614,7 +614,7 @@ public class ImageHelperTest
 		Image target = createSolidGrayscaleImage(200);
 		Image other = createGrayscaleTestImage();
 
-		ImageHelper.subtract(target, other);
+		ImageHelper.getInstance().subtract(target, other);
 		compareWithExpected(target, "subtract");
 	}
 
@@ -624,7 +624,7 @@ public class ImageHelperTest
 		Image target = createGrayscaleTestImage();
 		Image source = createGrayscaleGradientVertical();
 
-		ImageHelper.fillInTarget(target, source, 100, 200, 255);
+		ImageHelper.getInstance().fillInTarget(target, source, 100, 200, 255);
 		compareWithExpected(target, "fillInTarget");
 	}
 
@@ -634,7 +634,7 @@ public class ImageHelperTest
 		Image toThreshold = createGrayscaleTestImage();
 		Image toSubtractFrom = createSolidGrayscaleImage(200);
 
-		ImageHelper.subtractThresholded(toThreshold, 128, 100, toSubtractFrom);
+		ImageHelper.getInstance().subtractThresholded(toThreshold, 128, 100, toSubtractFrom);
 		compareWithExpected(toSubtractFrom, "subtractThresholded");
 	}
 
@@ -644,7 +644,7 @@ public class ImageHelperTest
 		Image toThreshold = createGrayscaleTestImage();
 		Image toAddTo = createSolidGrayscaleImage(50);
 
-		ImageHelper.addThresholded(toThreshold, 128, 100, toAddTo);
+		ImageHelper.getInstance().addThresholded(toThreshold, 128, 100, toAddTo);
 		compareWithExpected(toAddTo, "addThresholded");
 	}
 
@@ -656,7 +656,7 @@ public class ImageHelperTest
 		Image target = Image.create(testImageWidth, testImageHeight, ImageType.Binary);
 		Image toDraw = createSmallBinaryMask(60, 60);
 
-		ImageHelper.drawIfPixelValueIsGreaterThanTarget(target, toDraw, 20, 20);
+		ImageHelper.getInstance().drawIfPixelValueIsGreaterThanTarget(target, toDraw, 20, 20);
 		compareWithExpected(target, "drawIfPixelValueIsGreaterThanTarget");
 	}
 
@@ -666,9 +666,9 @@ public class ImageHelperTest
 	public void testConvolveGrayscale()
 	{
 		Image image = createGrayscaleTestImage();
-		float[][] kernel = ImageHelper.createGaussianKernel(5);
+		float[][] kernel = ImageHelper.getInstance().createGaussianKernel(5);
 
-		Image result = ImageHelper.convolveGrayscale(image, kernel, true, true);
+		Image result = ImageHelper.getInstance().convolveGrayscale(image, kernel, true, true);
 		compareWithExpected(result, "convolveGrayscale");
 	}
 
@@ -676,7 +676,7 @@ public class ImageHelperTest
 	public void testBlur()
 	{
 		Image image = createGrayscaleTestImage();
-		Image blurred = ImageHelper.blur(image, 3, true, true);
+		Image blurred = ImageHelper.getInstance().blur(image, 3, true, true);
 
 		assertEquals(image.getWidth(), blurred.getWidth(), "Width should match");
 		assertEquals(image.getHeight(), blurred.getHeight(), "Height should match");
@@ -687,7 +687,7 @@ public class ImageHelperTest
 	public void testBlurZeroLevel()
 	{
 		Image image = createGrayscaleTestImage();
-		Image blurred = ImageHelper.blur(image, 0, false, true);
+		Image blurred = ImageHelper.getInstance().blur(image, 0, false, true);
 
 		assertSame(image, blurred, "With blur level 0, original should be returned");
 	}
@@ -696,7 +696,7 @@ public class ImageHelperTest
 	public void testBlurLine()
 	{
 		Image image = createGrayscaleXImage(ImageType.Grayscale8Bit);
-		Image blurred = ImageHelper.blur(image, 5, true, true);
+		Image blurred = ImageHelper.getInstance().blur(image, 5, true, true);
 		compareWithExpected(blurred, "blurLine");
 	}
 
@@ -704,7 +704,7 @@ public class ImageHelperTest
 	public void testBlurAndScaleLine()
 	{
 		Image image = createGrayscaleXImage(ImageType.Grayscale8Bit);
-		Image blurred = ImageHelper.blurAndScale(image, 20, 2.3973336f, true);
+		Image blurred = ImageHelper.getInstance().blurAndScale(image, 20, 2.3973336f, true);
 
 		assertEquals(image.getWidth(), blurred.getWidth(), "Width should match");
 		assertEquals(image.getHeight(), blurred.getHeight(), "Height should match");
@@ -721,7 +721,7 @@ public class ImageHelperTest
 			p.fillRect(0, 0, image.getWidth(), image.getHeight());
 		}
 
-		ImageHelper.darkenMiddleOfImage(image, 1127, 0.25, false);
+		ImageHelper.getInstance().darkenMiddleOfImage(image, 1127, 0.25, false);
 		compareWithExpected(image, "darkenMiddleOfImage");
 	}
 
@@ -768,7 +768,7 @@ public class ImageHelperTest
 			}
 		}
 
-		Image result = ImageHelper.arrayToImage(array, ImageType.Grayscale8Bit);
+		Image result = ImageHelper.getInstance().arrayToImage(array, ImageType.Grayscale8Bit);
 
 		assertEquals(testImageWidth, result.getWidth(), "Width should match array columns");
 		assertEquals(testImageHeight, result.getHeight(), "Height should match array rows");
@@ -779,7 +779,7 @@ public class ImageHelperTest
 	public void testGenWhiteNoise()
 	{
 		Random rand = new Random(12345);
-		Image noise = ImageHelper.genWhiteNoise(rand, testImageHeight, testImageWidth, ImageType.Grayscale8Bit);
+		Image noise = ImageHelper.getInstance().genWhiteNoise(rand, testImageHeight, testImageWidth, ImageType.Grayscale8Bit);
 
 		assertEquals(testImageWidth, noise.getWidth(), "Width should match");
 		assertEquals(testImageHeight, noise.getHeight(), "Height should match");
@@ -797,7 +797,7 @@ public class ImageHelperTest
 		IntPoint pasteLocation = new IntPoint(20, 20);
 		IntRectangle copyBounds = new IntRectangle(0, 0, 30, 30);
 
-		ImageHelper.copySnippetFromSourceAndPasteIntoTarget(target, source, pasteLocation, copyBounds, 5);
+		ImageHelper.getInstance().copySnippetFromSourceAndPasteIntoTarget(target, source, pasteLocation, copyBounds, 5);
 		compareWithExpected(target, "copySnippetFromSourceAndPasteIntoTarget");
 	}
 
@@ -809,10 +809,10 @@ public class ImageHelperTest
 		Image image1 = createColorTestImage();
 		Image image2 = createSolidColorImage(testImageWidth, testImageHeight, Color.cyan);
 		Image mask = createGradientMask();
-		mask = ImageHelper.scale(mask, 40, 40, Method.QUALITY);
+		mask = ImageHelper.getInstance().scale(mask, 40, 40, Method.QUALITY);
 
 		Point pivot = new Point(50, 50);
-		ImageHelper.combineImagesWithMaskInRegion(image1, image2, mask, 30, 30, Math.PI / 6, pivot);
+		ImageHelper.getInstance().combineImagesWithMaskInRegion(image1, image2, mask, 30, 30, Math.PI / 6, pivot);
 		compareWithExpected(image1, "combineImagesWithMaskInRegion");
 	}
 
@@ -1199,7 +1199,7 @@ public class ImageHelperTest
 	{
 		// Write actual to temp location and reload to ensure PNG round-trip consistency.
 		String tempFilePath = Paths.get("unit test files", tempFolderName, testName + ".png").toString();
-		ImageHelper.write(actual, tempFilePath);
+		ImageHelper.getInstance().write(actual, tempFilePath);
 		actual = Assets.readImage(tempFilePath);
 
 		String expectedFilePath = getExpectedFilePath(testName);
@@ -1211,7 +1211,7 @@ public class ImageHelperTest
 		}
 		else
 		{
-			ImageHelper.write(actual, expectedFilePath);
+			ImageHelper.getInstance().write(actual, expectedFilePath);
 			return;
 		}
 
@@ -1219,7 +1219,7 @@ public class ImageHelperTest
 		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
 		{
 			FileHelper.createFolder(Paths.get("unit test files", failedFolderName).toString());
-			ImageHelper.write(actual, getFailedFilePath(testName));
+			ImageHelper.getInstance().write(actual, getFailedFilePath(testName));
 			MapTestUtil.createImageDiffIfImagesAreSameSize(expected, actual, testName, threshold, failedFolderName);
 			fail("Test '" + testName + "' failed: " + comparisonErrorMessage);
 		}

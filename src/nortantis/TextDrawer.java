@@ -746,14 +746,14 @@ public class TextDrawer
 			}
 
 			// Use convolution to make a hazy background for the text.
-			float[][] kernel = ImageHelper.createGaussianKernel(kernelSize);
-			try (Image haze1 = ImageHelper.convolveGrayscale(textBG, kernel, true, false))
+			float[][] kernel = ImageHelper.getInstance().createGaussianKernel(kernelSize);
+			try (Image haze1 = ImageHelper.getInstance().convolveGrayscale(textBG, kernel, true, false))
 			{
 				// Threshold it and convolve it again to make the haze bigger.
-				ImageHelper.threshold(haze1, 1);
-				try (Image haze2 = ImageHelper.convolveGrayscale(haze1, kernel, true, false))
+				ImageHelper.getInstance().threshold(haze1, 1);
+				try (Image haze2 = ImageHelper.getInstance().convolveGrayscale(haze1, kernel, true, false))
 				{
-					ImageHelper.combineImagesWithMaskInRegion(map, landAndOceanBackground, haze2, ((int) Math.round(textStart.x - textStartDiffInMaskCausedByCurvatureAndSpacing.x)) - padding,
+					ImageHelper.getInstance().combineImagesWithMaskInRegion(map, landAndOceanBackground, haze2, ((int) Math.round(textStart.x - textStartDiffInMaskCausedByCurvatureAndSpacing.x)) - padding,
 							(int) Math.round(textStart.y - textStartDiffInMaskCausedByCurvatureAndSpacing.y) - p.getFontAscent() - padding, text.angle, pivot);
 				}
 			}

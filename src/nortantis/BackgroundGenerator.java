@@ -53,8 +53,8 @@ public class BackgroundGenerator
 			texture = scaleTextureLargerIfNeeded(texture, targetRows, targetCols);
 		}
 
-		int rows = ImageHelper.getJTransformsMixedRadixSizeEqualOrLargerThan(Math.max(texture.getHeight(), targetRows));
-		int cols = ImageHelper.getJTransformsMixedRadixSizeEqualOrLargerThan(Math.max(texture.getWidth(), targetCols));
+		int rows = ImageHelper.getInstance().getJTransformsMixedRadixSizeEqualOrLargerThan(Math.max(texture.getHeight(), targetRows));
+		int cols = ImageHelper.getInstance().getJTransformsMixedRadixSizeEqualOrLargerThan(Math.max(texture.getWidth(), targetCols));
 
 		float alpha = 0.5f;
 		float textureArea = texture.getHeight() * texture.getHeight();
@@ -70,17 +70,17 @@ public class BackgroundGenerator
 		{
 			numberOfColorChannels = 1;
 			allChannels = null;
-			means = new float[] { ImageHelper.calcMeanOfGrayscaleImage(texture) / maxPixelValue };
+			means = new float[] { ImageHelper.getInstance().calcMeanOfGrayscaleImage(texture) / maxPixelValue };
 		}
 		else
 		{
 			numberOfColorChannels = 3;
 			allChannels = Image.create(cols, rows, ImageType.RGB);
-			means = ImageHelper.calcMeanOfEachColor(texture);
+			means = ImageHelper.getInstance().calcMeanOfEachColor(texture);
 		}
 
 		ImageType randomImageType = texture.getType() == ImageType.Grayscale16Bit ? ImageType.Grayscale16Bit : ImageType.Grayscale8Bit;
-		Image randomImage = ImageHelper.genWhiteNoise(rand, rows, cols, randomImageType);
+		Image randomImage = ImageHelper.getInstance().genWhiteNoise(rand, rows, cols, randomImageType);
 
 		try (PixelReader texturePixels = texture.createPixelReader())
 		{
@@ -118,7 +118,7 @@ public class BackgroundGenerator
 					}
 				}
 
-				Image grayImage = ImageHelper.convolveGrayscale(randomImage, kernel, true, false);
+				Image grayImage = ImageHelper.getInstance().convolveGrayscale(randomImage, kernel, true, false);
 				kernel = null;
 
 				if (numberOfColorChannels == 1)
@@ -150,14 +150,14 @@ public class BackgroundGenerator
 		Image colorsForHistogramMatching;
 		if (texture.getWidth() < targetCols || texture.getHeight() < targetRows)
 		{
-			colorsForHistogramMatching = ImageHelper.scale(texture, Math.max(texture.getWidth(), targetCols), Math.max(texture.getHeight(), targetRows), Method.BALANCED);
+			colorsForHistogramMatching = ImageHelper.getInstance().scale(texture, Math.max(texture.getWidth(), targetCols), Math.max(texture.getHeight(), targetRows), Method.BALANCED);
 		}
 		else
 		{
 			colorsForHistogramMatching = texture;
 		}
 
-		Image result = ImageHelper.matchHistogram(allChannels, colorsForHistogramMatching);
+		Image result = ImageHelper.getInstance().matchHistogram(allChannels, colorsForHistogramMatching);
 		result = result.copySubImage(new IntRectangle(0, 0, targetCols, targetRows));
 
 		return result;
@@ -204,14 +204,14 @@ public class BackgroundGenerator
 		{
 			if (texture.getWidth() * scaleThreshold < cols)
 			{
-				return ImageHelper.scaleByWidth(texture, cols / scaleThreshold);
+				return ImageHelper.getInstance().scaleByWidth(texture, cols / scaleThreshold);
 			}
 		}
 		else
 		{
 			if (texture.getHeight() * scaleThreshold < rows)
 			{
-				return ImageHelper.scaleByHeight(texture, rows / scaleThreshold);
+				return ImageHelper.getInstance().scaleByHeight(texture, rows / scaleThreshold);
 			}
 		}
 		return texture;
@@ -230,7 +230,7 @@ public class BackgroundGenerator
 			out.print("Unable to load image.");
 		}
 		Image result = generateUsingWhiteNoiseConvolution(new Random(), image, 3072, 3072, false);
-		ImageHelper.openImageInSystemDefaultEditor(result, "result");
+		ImageHelper.getInstance().openImageInSystemDefaultEditor(result, "result");
 
 		sw.printElapsedTime();
 		System.out.println("Done.");

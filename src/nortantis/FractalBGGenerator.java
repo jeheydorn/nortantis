@@ -27,8 +27,8 @@ public class FractalBGGenerator
 	 */
 	public static Image generate(Random rand, float p, int width, int height, float contrast)
 	{
-		int cols = ImageHelper.getJTransformsMixedRadixSizeEqualOrLargerThan(width);
-		int rows = ImageHelper.getJTransformsMixedRadixSizeEqualOrLargerThan(height);
+		int cols = ImageHelper.getInstance().getJTransformsMixedRadixSizeEqualOrLargerThan(width);
+		int rows = ImageHelper.getInstance().getJTransformsMixedRadixSizeEqualOrLargerThan(height);
 		// For some reason this algorithm only getJTransformsMixedRadixSizeEqualOrLargerThan for creating a square result.
 		if (cols < rows)
 			cols = rows;
@@ -106,7 +106,7 @@ public class FractalBGGenerator
 
 		sw.printElapsedTime();
 
-		ImageHelper.openImageInSystemDefaultEditor(background, "cloud");
+		ImageHelper.getInstance().openImageInSystemDefaultEditor(background, "cloud");
 		System.out.println("Done.");
 	}
 

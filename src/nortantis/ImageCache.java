@@ -108,7 +108,7 @@ public class ImageCache
 		// but if that did happen it would only result in a little bit of
 		// duplicated work, not a functional
 		// problem.
-		return scaledCache.getOrCreate(icon, () -> new ConcurrentHashMapF<>()).getOrCreate(size, () -> ImageHelper.scale(icon, size.width, size.height, Method.QUALITY));
+		return scaledCache.getOrCreate(icon, () -> new ConcurrentHashMapF<>()).getOrCreate(size, () -> ImageHelper.getInstance().scale(icon, size.width, size.height, Method.QUALITY));
 	}
 
 	/**
@@ -248,7 +248,7 @@ public class ImageCache
 
 		return alphaCache.getOrCreate(image, () -> new ConcurrentHashMapF<>()).getOrCreate(alpha, () ->
 		{
-			return ImageHelper.applyAlpha(image, alpha);
+			return ImageHelper.getInstance().applyAlpha(image, alpha);
 		});
 	}
 

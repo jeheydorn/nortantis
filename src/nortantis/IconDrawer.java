@@ -1352,7 +1352,7 @@ public class IconDrawer
 				int xToSubtract = drawBounds == null ? 0 : (int) drawBounds.x;
 				int yToSubtract = drawBounds == null ? 0 : (int) drawBounds.y;
 
-				ImageHelper.drawIfPixelValueIsGreaterThanTarget(landMask, task.scaledImageAndMasks.getOrCreateContentMask(), xLoc - xToSubtract, yLoc - yToSubtract);
+				ImageHelper.getInstance().drawIfPixelValueIsGreaterThanTarget(landMask, task.scaledImageAndMasks.getOrCreateContentMask(), xLoc - xToSubtract, yLoc - yToSubtract);
 			}
 		}
 	}

@@ -43,18 +43,18 @@ public class GraphCreator
 			graph.paintElevationUsingTriangles(p);
 		}
 
-		heightMap = ImageHelper.blur(heightMap, (int) graph.getMeanCenterWidth() / 2, false, false);
+		heightMap = ImageHelper.getInstance().blur(heightMap, (int) graph.getMeanCenterWidth() / 2, false, false);
 
 		// Use a texture generated from mountain elevation to carve mountain shapes into the areas with high elevation.
 		Image mountains = Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal/mountain texture.png").toString());
 		if (mountains.getType() != ImageType.Grayscale16Bit)
 		{
-			mountains = ImageHelper.convertImageToType(mountains, ImageType.Grayscale16Bit);
+			mountains = ImageHelper.getInstance().convertImageToType(mountains, ImageType.Grayscale16Bit);
 		}
 		double mountainTextureScale = 2.0 / 3.0;
-		mountains = ImageHelper.scaleByWidth(mountains, (int) (mountains.getWidth() * mountainTextureScale));
+		mountains = ImageHelper.getInstance().scaleByWidth(mountains, (int) (mountains.getWidth() * mountainTextureScale));
 		Image mountainTexture = BackgroundGenerator.generateUsingWhiteNoiseConvolution(rand, mountains, graph.getHeight(), graph.getWidth(), false);
-		// ImageHelper.write(mountainTexture, "mountainTexture.png");
+		// ImageHelper.getInstance().write(mountainTexture, "mountainTexture.png");
 		subtractTextureFromHeightMapUsingSeaLevel(heightMap, mountainTexture);
 		mountainTexture = null;
 

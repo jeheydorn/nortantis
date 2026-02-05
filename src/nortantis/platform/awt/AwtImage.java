@@ -245,7 +245,7 @@ class AwtImage extends Image
 
 		if (isGrayscaleOrBinary() && !scaled.isGrayscaleOrBinary())
 		{
-			scaled = ImageHelper.convertImageToType(scaled, getType());
+			scaled = ImageHelper.getInstance().convertImageToType(scaled, getType());
 		}
 
 		return scaled;

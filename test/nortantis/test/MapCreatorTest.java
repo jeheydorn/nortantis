@@ -51,7 +51,7 @@ public class MapCreatorTest
 				MapCreator mapCreator = new MapCreator();
 				Logger.println("Creating map '" + expectedMapFilePath + "'");
 				Image map = mapCreator.createMap(settings, null, null);
-				ImageHelper.write(map, expectedMapFilePath);
+				ImageHelper.getInstance().write(map, expectedMapFilePath);
 			}
 		}
 	}
@@ -109,11 +109,11 @@ public class MapCreatorTest
 
 					String expectedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + iconNumber + " expected.png";
 					Path expectedPath = Paths.get("unit test files", failedMapsFolderName, expectedSnippetName);
-					ImageHelper.write(expectedSnippet, expectedPath.toString());
+					ImageHelper.getInstance().write(expectedSnippet, expectedPath.toString());
 
 					String failedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + iconNumber + " failed.png";
 					Path failedPath = Paths.get("unit test files", failedMapsFolderName, failedSnippetName);
-					ImageHelper.write(actualSnippet, failedPath.toString());
+					ImageHelper.getInstance().write(actualSnippet, failedPath.toString());
 
 					createImageDiffIfImagesAreSameSize(expectedSnippet, actualSnippet, failedSnippetName, diffThreshold);
 					failCount++;
@@ -125,9 +125,9 @@ public class MapCreatorTest
 			{
 				FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
 				String failedMapName = FilenameUtils.getBaseName(settingsFileName) + " updated full map for incremental draw test";
-				ImageHelper.write(fullMapForUpdates, MapTestUtil.getFailedMapFilePath(failedMapName, failedMapsFolderName));
+				ImageHelper.getInstance().write(fullMapForUpdates, MapTestUtil.getFailedMapFilePath(failedMapName, failedMapsFolderName));
 				String fullMapName = FilenameUtils.getBaseName(settingsFileName) + " original full map for incremental draw test";
-				ImageHelper.write(fullMap, MapTestUtil.getFailedMapFilePath(fullMapName, failedMapsFolderName));
+				ImageHelper.getInstance().write(fullMap, MapTestUtil.getFailedMapFilePath(fullMapName, failedMapsFolderName));
 				createImageDiffIfImagesAreSameSize(fullMap, fullMapForUpdates, failedMapName, diffThreshold);
 				fail("Incremental update did not match expected image: " + comparisonErrorMessage);
 			}
@@ -165,11 +165,11 @@ public class MapCreatorTest
 
 					String expectedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + textNumber + " expected.png";
 					Path expectedPath = Paths.get("unit test files", failedMapsFolderName, expectedSnippetName);
-					ImageHelper.write(expectedSnippet, expectedPath.toString());
+					ImageHelper.getInstance().write(expectedSnippet, expectedPath.toString());
 
 					String failedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + textNumber + " failed.png";
 					Path failedPath = Paths.get("unit test files", failedMapsFolderName, failedSnippetName);
-					ImageHelper.write(actualSnippet, failedPath.toString());
+					ImageHelper.getInstance().write(actualSnippet, failedPath.toString());
 
 					createImageDiffIfImagesAreSameSize(expectedSnippet, actualSnippet, failedSnippetName, diffThreshold);
 					failCount++;
@@ -181,9 +181,9 @@ public class MapCreatorTest
 			{
 				FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
 				String failedMapName = FilenameUtils.getBaseName(settingsFileName) + " updated full map for incremental draw test";
-				ImageHelper.write(fullMapForUpdates, MapTestUtil.getFailedMapFilePath(failedMapName, failedMapsFolderName));
+				ImageHelper.getInstance().write(fullMapForUpdates, MapTestUtil.getFailedMapFilePath(failedMapName, failedMapsFolderName));
 				String fullMapName = FilenameUtils.getBaseName(settingsFileName) + " original full map for incremental draw test";
-				ImageHelper.write(fullMap, MapTestUtil.getFailedMapFilePath(fullMapName, failedMapsFolderName));
+				ImageHelper.getInstance().write(fullMap, MapTestUtil.getFailedMapFilePath(fullMapName, failedMapsFolderName));
 				createImageDiffIfImagesAreSameSize(fullMap, fullMapForUpdates, failedMapName, diffThreshold);
 				fail("Incremental update did not match expected image: " + comparisonErrorMessage);
 			}
@@ -682,10 +682,10 @@ public class MapCreatorTest
 				FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
 
 				String expectedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " added icon " + i + " expected.png";
-				ImageHelper.write(expectedSnippet, Paths.get("unit test files", failedMapsFolderName, expectedSnippetName).toString());
+				ImageHelper.getInstance().write(expectedSnippet, Paths.get("unit test files", failedMapsFolderName, expectedSnippetName).toString());
 
 				String failedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " added icon " + i + " failed.png";
-				ImageHelper.write(actualSnippet, Paths.get("unit test files", failedMapsFolderName, failedSnippetName).toString());
+				ImageHelper.getInstance().write(actualSnippet, Paths.get("unit test files", failedMapsFolderName, failedSnippetName).toString());
 
 				failCount++;
 			}
@@ -696,9 +696,9 @@ public class MapCreatorTest
 		{
 			FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
 			String failedMapName = FilenameUtils.getBaseName(settingsFileName) + " added icons full map";
-			ImageHelper.write(fullMapForUpdates, MapTestUtil.getFailedMapFilePath(failedMapName, failedMapsFolderName));
+			ImageHelper.getInstance().write(fullMapForUpdates, MapTestUtil.getFailedMapFilePath(failedMapName, failedMapsFolderName));
 			String fullMapName = FilenameUtils.getBaseName(settingsFileName) + " added icons expected full map";
-			ImageHelper.write(fullMap, MapTestUtil.getFailedMapFilePath(fullMapName, failedMapsFolderName));
+			ImageHelper.getInstance().write(fullMap, MapTestUtil.getFailedMapFilePath(fullMapName, failedMapsFolderName));
 			fail("Full map after incremental icon additions did not match expected: " + comparisonErrorMessage);
 		}
 

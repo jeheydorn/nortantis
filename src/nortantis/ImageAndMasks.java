@@ -685,7 +685,7 @@ public class ImageAndMasks implements AutoCloseable
 			}
 
 			// Blur the line, up to a fraction of the height of the content
-			float[][] kernel = ImageHelper.createGaussianKernel(blurSize);
+			float[][] kernel = ImageHelper.getInstance().createGaussianKernel(blurSize);
 
 			// Here I used to just do convolution to blur bottomSilhouette and then maximize the contrast on that result, but the problems
 			// is
@@ -697,7 +697,7 @@ public class ImageAndMasks implements AutoCloseable
 			// My solution is to run the convolution with the contrast maximized, then find the pixel values where the blurred line is at
 			// its
 			// darkest, then raise the contrast to make that value equal to targetMaxMinMaxPixelValue.
-			Tuple2<ComplexArray, Image> tuple = ImageHelper.convolveGrayscaleThenSetContrast(bottomSilhouette, kernel, true, 0f, 1f, true);
+			Tuple2<ComplexArray, Image> tuple = ImageHelper.getInstance().convolveGrayscaleThenSetContrast(bottomSilhouette, kernel, true, 0f, 1f, true);
 			try (Image blurredLine = tuple.getSecond())
 			{
 				try (Image withoutPadding = blurredLine.copySubImage(new IntRectangle(padding, 0, contentMask.getWidth(), contentMask.getHeight())))
@@ -708,13 +708,13 @@ public class ImageAndMasks implements AutoCloseable
 					final float targetMaxMinMaxPixelValue = 230f;
 
 					// Re-use the complex array from the last run to avoid having to re-do the convolution.
-					try (Image blurredLine2 = ImageHelper.realToImage(tuple.getFirst(), blurredLine.getType(), blurredLine.getWidth(), blurredLine.getHeight(), true, 0f,
+					try (Image blurredLine2 = ImageHelper.getInstance().realToImage(tuple.getFirst(), blurredLine.getType(), blurredLine.getWidth(), blurredLine.getHeight(), true, 0f,
 							targetMaxMinMaxPixelValue / minMax, false, 0f))
 					{
 						try (Image withoutPadding2 = blurredLine2.copySubImage(new IntRectangle(padding, 0, contentMask.getWidth(), contentMask.getHeight())))
 						{
 							// Use the content mask to set non-content pixels to zero.
-							shadingMask = ImageHelper.maskWithColor(withoutPadding2, Color.black, contentMask, false);
+							shadingMask = ImageHelper.getInstance().maskWithColor(withoutPadding2, Color.black, contentMask, false);
 						}
 					}
 				}
@@ -806,7 +806,7 @@ public class ImageAndMasks implements AutoCloseable
 		// Only these types use the shading mask in creating the color mask.
 		if (iconType == IconType.mountains || iconType == IconType.hills || iconType == IconType.sand)
 		{
-			ImageHelper.subtract(colorMask, getOrCreateShadingMask());
+			ImageHelper.getInstance().subtract(colorMask, getOrCreateShadingMask());
 		}
 	}
 

@@ -1641,7 +1641,7 @@ public class ThemePanel extends JTabbedPane
 				{
 					oceanColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm3;
 
-					oceanBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(seed), ImageHelper.convertToGrayscale(texture), size.height, size.width);
+					oceanBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(seed), ImageHelper.getInstance().convertToGrayscale(texture), size.height, size.width);
 				}
 				else
 				{
@@ -1669,7 +1669,7 @@ public class ThemePanel extends JTabbedPane
 					{
 						landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm3;
 
-						landBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(seed), ImageHelper.convertToGrayscale(texture), size.height, size.width);
+						landBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(seed), ImageHelper.getInstance().convertToGrayscale(texture), size.height, size.width);
 					}
 					else
 					{
