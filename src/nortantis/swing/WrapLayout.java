@@ -87,38 +87,11 @@ public class WrapLayout extends FlowLayout
 	{
 		synchronized (target.getTreeLock())
 		{
-			// Each row must fit with the width allocated to the container.
-			// When the container width = 0, the preferred width of the container
-			// has not yet been calculated so lets ask for the maximum.
-
-			int targetWidth = target.getSize().width;
-			Container container = target;
-
-			while (container.getSize().width == 0 && container.getParent() != null)
-			{
-				container = container.getParent();
-			}
-
-			targetWidth = container.getSize().width;
-
-			if (targetWidth == 0)
-				targetWidth = Integer.MAX_VALUE;
-
 			int hgap = getHgap();
 			int vgap = getVgap();
 			Insets insets = target.getInsets();
 			int horizontalInsetsAndGap = insets.left + insets.right + (hgap * 2);
-			int maxWidth = targetWidth - horizontalInsetsAndGap;
-
-			// When using a scroll pane we need to make sure the preferred size is less than the size of the target container so shrinking
-			// and expanding the container size works correctly when the scroll bar appears and disappears.
-			JScrollPane scrollPane = (JScrollPane) SwingUtilities.getAncestorOfClass(JScrollPane.class, target);
-			if (scrollPane != null && scrollPane.getVerticalScrollBar().isVisible() && target.isValid())
-			{
-				// JEH note - Changed +1 to +6 to fix issue where one icon in last row of a panel was hidden because the panel wasn't tall
-				// enough to show it.
-				maxWidth -= scrollPane.getVerticalScrollBar().getWidth() + 6;
-			}
+			int maxWidth = computeMaxWidth(target, horizontalInsetsAndGap);
 
 			// Fit components into the allowed width
 
@@ -177,10 +150,11 @@ public class WrapLayout extends FlowLayout
 		synchronized (target.getTreeLock())
 		{
 			Insets insets = target.getInsets();
-			int maxWidth = target.getWidth() - (insets.left + insets.right + getHgap() * 2);
-			int nmembers = target.getComponentCount();
 			int hgap = getHgap();
 			int vgap = getVgap();
+			int horizontalInsetsAndGap = insets.left + insets.right + (hgap * 2);
+			int maxWidth = computeMaxWidth(target, horizontalInsetsAndGap);
+			int nmembers = target.getComponentCount();
 
 			boolean ltr = target.getComponentOrientation().isLeftToRight();
 			int align = getAlignment();
@@ -276,6 +250,45 @@ public class WrapLayout extends FlowLayout
 				x += m.getWidth() + hgap;
 			}
 		}
+	}
+
+	/**
+	 * Computes the maximum content width available for laying out components, accounting for the container's current
+	 * width and any ancestor scroll pane whose vertical scrollbar reduces available space.
+	 */
+	private int computeMaxWidth(Container target, int horizontalInsetsAndGap)
+	{
+		// When the container width = 0, the preferred width of the container has not yet been calculated so walk up the
+		// parent chain to find a container with a known width.
+		int targetWidth = target.getSize().width;
+		Container container = target;
+
+		while (container.getSize().width == 0 && container.getParent() != null)
+		{
+			container = container.getParent();
+		}
+
+		targetWidth = container.getSize().width;
+
+		if (targetWidth == 0)
+			targetWidth = Integer.MAX_VALUE;
+
+		int maxWidth = targetWidth - horizontalInsetsAndGap;
+
+		// When inside a scroll pane with a visible vertical scrollbar, cap maxWidth to the viewport width so that the
+		// preferred size calculation and actual layout agree on available space.
+		JScrollPane scrollPane = (JScrollPane) SwingUtilities.getAncestorOfClass(JScrollPane.class, target);
+		if (scrollPane != null && scrollPane.getVerticalScrollBar().isVisible())
+		{
+			int viewportWidth = scrollPane.getViewport().getWidth();
+			if (viewportWidth > 0)
+			{
+				int viewportMaxWidth = viewportWidth - horizontalInsetsAndGap;
+				maxWidth = Math.min(maxWidth, viewportMaxWidth);
+			}
+		}
+
+		return maxWidth;
 	}
 
 	/*
