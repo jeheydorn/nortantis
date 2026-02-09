@@ -1,7 +1,5 @@
 package nortantis.swing;
 
-import nortantis.util.OSHelper;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -81,31 +79,30 @@ public class DrawModeWidget
 			}
 		};
 
-		boolean isWindows = OSHelper.isWindows();
 		drawModeButton = new JToggleButton("<html><u>D</u>raw</html>");
 		drawModeButton.setToolTipText(drawTooltipWithoutKeyboardShortcut + " (Alt+D)");
 		drawModeButton.setSelected(true);
 		drawModeButton.addActionListener(modeListener);
 		drawModeButton.setMnemonic(KeyEvent.VK_D);
-		drawModeButton.setPreferredSize(new Dimension(isWindows ? 51 : 57, drawModeButton.getPreferredSize().height));
+		SwingHelper.reduceHorizontalMargin(drawModeButton);
 
 		replaceModeButton = new JToggleButton("<html><u>R</u>eplace</html>");
 		replaceModeButton.setToolTipText(replaceTooltipWithoutKeyboardShortcut + " (Alt+R)");
 		replaceModeButton.addActionListener(modeListener);
 		replaceModeButton.setMnemonic(KeyEvent.VK_R);
-		replaceModeButton.setPreferredSize(new Dimension(isWindows ? 65 : 75, replaceModeButton.getPreferredSize().height));
+		SwingHelper.reduceHorizontalMargin(replaceModeButton);
 
 		editModeButton = new JToggleButton("<html>Edi<u>t</u></html>");
 		editModeButton.setToolTipText(editTooltipWithoutKeyboardShortcut + " (Alt+T)");
 		editModeButton.addActionListener(modeListener);
 		editModeButton.setMnemonic(KeyEvent.VK_T);
-		editModeButton.setPreferredSize(new Dimension(isWindows ? 51 : 53, editModeButton.getPreferredSize().height));
+		SwingHelper.reduceHorizontalMargin(editModeButton);
 
 		eraseModeButton = new JToggleButton("<html><u>E</u>rase</html>");
 		eraseModeButton.setToolTipText(eraseTooltipWithoutKeyboardShortcut + " (Alt+E)");
 		eraseModeButton.addActionListener(modeListener);
 		eraseModeButton.setMnemonic(KeyEvent.VK_E);
-		eraseModeButton.setPreferredSize(new Dimension(isWindows ? 51 : 61, eraseModeButton.getPreferredSize().height));
+		SwingHelper.reduceHorizontalMargin(eraseModeButton);
 	}
 
 	public RowHider addToOrganizer(GridBagOrganizer organizer, String labelTooltip)
@@ -180,8 +177,7 @@ public class DrawModeWidget
 		drawModeButton.setText(html);
 		drawModeButton.setToolTipText(tooltipWithoutShortcut + " (" + shortcutText + ")");
 		drawModeButton.setMnemonic(mnemonic);
-		boolean isWindows = OSHelper.isWindows();
-		drawModeButton.setPreferredSize(new Dimension(isWindows ? 51 : 57, drawModeButton.getPreferredSize().height));
+		SwingHelper.reduceHorizontalMargin(drawModeButton);
 	}
 
 	public void selectEditMode()

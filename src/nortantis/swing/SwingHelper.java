@@ -140,6 +140,13 @@ public class SwingHelper
 		}
 	}
 
+	public static void reduceHorizontalMargin(AbstractButton button)
+	{
+		Insets m = button.getMargin();
+		final int amountToReduce = 3;
+		button.setMargin(new Insets(m.top, m.left - amountToReduce, m.bottom, m.right - amountToReduce));
+	}
+
 	public static JPanel createColorPickerPreviewPanel()
 	{
 		JPanel panel = new JPanel();

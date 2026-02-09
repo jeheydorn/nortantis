@@ -18,6 +18,7 @@ public class SegmentedButtonWidget
 		for (JToggleButton button : buttons)
 		{
 			group.add(button);
+			SwingHelper.reduceHorizontalMargin(button);
 		}
 
 		container = new JPanel();
