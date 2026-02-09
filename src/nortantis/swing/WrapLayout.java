@@ -199,6 +199,19 @@ public class WrapLayout extends FlowLayout
 
 			// Finish last row
 			moveComponents(target, insets.left + hgap, y, maxWidth - x, rowHeight, rowStart, nmembers, ltr, align);
+
+			// If the actual layout needs more height than the container was allocated, preferredLayoutSize() must have
+			// underestimated (e.g. due to the parent walk using a wider width than we actually got). Schedule a
+			// revalidation so the preferred size is recalculated with the now-known correct width.
+			int neededHeight = y + rowHeight + vgap + insets.bottom;
+			if (neededHeight > target.getHeight() + 1)
+			{
+				SwingUtilities.invokeLater(() ->
+				{
+					target.revalidate();
+					target.repaint();
+				});
+			}
 		}
 	}
 
@@ -275,16 +288,23 @@ public class WrapLayout extends FlowLayout
 
 		int maxWidth = targetWidth - horizontalInsetsAndGap;
 
-		// When inside a scroll pane with a visible vertical scrollbar, cap maxWidth to the viewport width so that the
-		// preferred size calculation and actual layout agree on available space.
+		// When inside a scroll pane, use the viewport width as a tighter upper bound. This matters in two cases:
+		// 1. Scrollbar visible: viewport is narrower than the container's reported width.
+		// 2. Initial layout (target width is 0): the parent walk may find an ancestor wider than this panel will
+		//    actually get; the viewport width is a closer estimate.
 		JScrollPane scrollPane = (JScrollPane) SwingUtilities.getAncestorOfClass(JScrollPane.class, target);
-		if (scrollPane != null && scrollPane.getVerticalScrollBar().isVisible())
+		if (scrollPane != null)
 		{
-			int viewportWidth = scrollPane.getViewport().getWidth();
-			if (viewportWidth > 0)
+			boolean scrollBarVisible = scrollPane.getVerticalScrollBar().isVisible();
+			boolean initialLayout = target.getSize().width == 0;
+			if (scrollBarVisible || initialLayout)
 			{
-				int viewportMaxWidth = viewportWidth - horizontalInsetsAndGap;
-				maxWidth = Math.min(maxWidth, viewportMaxWidth);
+				int viewportWidth = scrollPane.getViewport().getWidth();
+				if (viewportWidth > 0)
+				{
+					int viewportMaxWidth = viewportWidth - horizontalInsetsAndGap;
+					maxWidth = Math.min(maxWidth, viewportMaxWidth);
+				}
 			}
 		}
 
