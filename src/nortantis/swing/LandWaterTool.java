@@ -387,17 +387,16 @@ public class LandWaterTool extends EditorTool
 				}
 				else
 				{
-					Counter<Integer> regionIdCounts = new ComparableCounter<>();
-					for (Center center : selected)
+					Set<Center> mouseDownCenters = getSelectedCenters(e.getPoint(), 1);
+					if (mouseDownCenters == null || mouseDownCenters.isEmpty())
 					{
-						CenterEdit edit = mainWindow.edits.centerEdits.get(center.index);
-						if (edit.regionId != null)
-						{
-							regionIdCounts.addCount(edit.regionId, 1);
-						}
+						// The mouse press was not on the map
+						return;
 					}
-
-					if (regionIdCounts.isEmpty())
+					assert mouseDownCenters.size() == 1;
+					Center mouseDownCenter = mouseDownCenters.iterator().next();
+					CenterEdit centerEdit = mainWindow.edits.centerEdits.get(mouseDownCenter.index);
+					if (centerEdit.regionId == null)
 					{
 						// Find the nearest political region when drawing in water.
 						nortantis.geom.Point graphPoint = getPointOnGraph(e.getPoint());
@@ -409,7 +408,7 @@ public class LandWaterTool extends EditorTool
 					}
 					else
 					{
-						regionIdToExpand = regionIdCounts.argmax();
+						regionIdToExpand = centerEdit.regionId;
 					}
 				}
 			}

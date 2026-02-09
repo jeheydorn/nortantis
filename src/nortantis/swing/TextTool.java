@@ -25,9 +25,7 @@ public class TextTool extends EditorTool
 	private JTextField editTextField;
 	private MapText lastSelected;
 	private Point mousePressedLocation;
-	private JRadioButton editButton;
-	private JRadioButton addButton;
-	private JRadioButton eraseButton;
+	private DrawModeWidget modeWidget;
 	private RowHider textTypeHider;
 	private JComboBox<TextType> textTypeComboBox;
 	private TextType textTypeForAdds;
@@ -82,43 +80,10 @@ public class TextTool extends EditorTool
 		drawTextDisabledLabelHider = organizer.addLeftAlignedComponent(drawTextDisabledLabel);
 		drawTextDisabledLabelHider.setVisible(false);
 
-		{
-			ButtonGroup group = new ButtonGroup();
-			List<JRadioButton> radioButtons = new ArrayList<>();
-
-			ActionListener listener = new ActionListener()
-			{
-
-				@Override
-				public void actionPerformed(ActionEvent e)
-				{
-					handleActionChanged();
-				}
-			};
-
-			editButton = new JRadioButton("<HTML>Edi<U>t</U></HTML>");
-			group.add(editButton);
-			radioButtons.add(editButton);
-			editButton.addActionListener(listener);
-			editButton.setMnemonic(KeyEvent.VK_T);
-			editButton.setToolTipText("Edit text (Alt+T)");
-
-			addButton = new JRadioButton("<HTML><U>A</U>dd</HTML>");
-			group.add(addButton);
-			radioButtons.add(addButton);
-			addButton.addActionListener(listener);
-			addButton.setMnemonic(KeyEvent.VK_A);
-			addButton.setToolTipText("Add new text of the selected text type (Alt+A)");
-
-			eraseButton = new JRadioButton("<HTML><U>E</U>rase</HTML>");
-			group.add(eraseButton);
-			radioButtons.add(eraseButton);
-			eraseButton.addActionListener(listener);
-			eraseButton.setMnemonic(KeyEvent.VK_E);
-			eraseButton.setToolTipText("Erase text (Alt+E)");
-
-			organizer.addLabelAndComponentsVertical("Mode:", "", radioButtons);
-		}
+		modeWidget = new DrawModeWidget("Add new text of the selected text type", "Erase text", false, "", true, "Edit text",
+				() -> handleActionChanged());
+		modeWidget.configureDrawButton("<html><u>A</u>dd</html>", "Add new text of the selected text type", KeyEvent.VK_A, "Alt+A");
+		modeWidget.addToOrganizer(organizer, "");
 
 		actionsSeparatorHider = organizer.addSeparator();
 
@@ -152,12 +117,12 @@ public class TextTool extends EditorTool
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				if (addButton.isSelected())
+				if (modeWidget.isDrawMode())
 				{
 					textTypeForAdds = (TextType) textTypeComboBox.getSelectedItem();
 				}
 
-				if (editButton.isSelected() && lastSelected != null)
+				if (modeWidget.isEditMode() && lastSelected != null)
 				{
 					MapText before = lastSelected.deepCopy();
 					lastSelected.type = (TextType) textTypeComboBox.getSelectedItem();
@@ -186,7 +151,7 @@ public class TextTool extends EditorTool
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				if (editButton.isSelected() && lastSelected != null)
+				if (modeWidget.isEditMode() && lastSelected != null)
 				{
 					MapText before = lastSelected.deepCopy();
 					lastSelected.lineBreak = (LineBreak) lineBreakComboBox.getSelectedItem();
@@ -431,7 +396,7 @@ public class TextTool extends EditorTool
 		});
 		booksHider = organizer.addLeftAlignedComponentWithStackedLabel("Books for generating text:", "Selected books will be used to generate new names.", booksWidget.getContentPanel());
 
-		editButton.doClick();
+		modeWidget.selectEditMode();
 
 		organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.64);
 		organizer.addVerticalFillerRow();
@@ -455,7 +420,7 @@ public class TextTool extends EditorTool
 
 	protected void showOrHideBoldBackgroundFields(MapText selectedText)
 	{
-		boldBackgroundColorOverrideHider.setVisible(editButton.isSelected() && selectedText != null && !useDefaultColorCheckbox.isSelected() && areBoldBackgroundsVisible
+		boldBackgroundColorOverrideHider.setVisible(modeWidget.isEditMode() && selectedText != null && !useDefaultColorCheckbox.isSelected() && areBoldBackgroundsVisible
 				&& (selectedText.type == TextType.Title || selectedText.type == TextType.Region));
 	}
 
@@ -468,19 +433,19 @@ public class TextTool extends EditorTool
 			handleSelectingTextToEdit(null, false);
 		}
 
-		if (addButton.isSelected() || eraseButton.isSelected())
+		if (modeWidget.isDrawMode() || modeWidget.isEraseMode())
 		{
 			lastSelected = null;
 		}
 
-		if (addButton.isSelected())
+		if (modeWidget.isDrawMode())
 		{
 			textTypeComboBox.setSelectedItem(textTypeForAdds);
 			lineBreakComboBox.setSelectedItem(LineBreak.Auto);
 		}
 
-		textTypeHider.setVisible(addButton.isSelected());
-		booksHider.setVisible(addButton.isSelected());
+		textTypeHider.setVisible(modeWidget.isDrawMode());
+		booksHider.setVisible(modeWidget.isDrawMode());
 		editTextFieldHider.setVisible(false);
 		lineBreakHider.setVisible(false);
 		useDefaultColorCheckboxHider.setVisible(false);
@@ -494,12 +459,12 @@ public class TextTool extends EditorTool
 		boldBackgroundColorOverrideHider.setVisible(false);
 		fontHider.setVisible(false);
 		clearRotationButtonHider.setVisible(false);
-		if (editButton.isSelected() && lastSelected != null)
+		if (modeWidget.isEditMode() && lastSelected != null)
 		{
 			editTextField.setText(lastSelected.value);
 			editTextField.requestFocus();
 		}
-		actionsSeparatorHider.setVisible((editButton.isSelected() && lastSelected != null) || addButton.isSelected() || eraseButton.isSelected());
+		actionsSeparatorHider.setVisible((modeWidget.isEditMode() && lastSelected != null) || modeWidget.isDrawMode() || modeWidget.isEraseMode());
 
 		// For some reason this is necessary to prevent the text editing field
 		// from flattening sometimes.
@@ -509,7 +474,7 @@ public class TextTool extends EditorTool
 			getToolOptionsPanel().repaint();
 		}
 
-		brushSizeHider.setVisible(eraseButton.isSelected());
+		brushSizeHider.setVisible(modeWidget.isEraseMode());
 		mapEditingPanel.clearHighlightedAreas();
 		mapEditingPanel.repaint();
 		mapEditingPanel.hideBrush();
@@ -566,17 +531,17 @@ public class TextTool extends EditorTool
 		isRotating = false;
 		isMoving = false;
 
-		if (eraseButton.isSelected())
+		if (modeWidget.isEraseMode())
 		{
 			deleteTexts(e.getPoint());
 		}
-		else if (addButton.isSelected())
+		else if (modeWidget.isDrawMode())
 		{
 			// This is differed if the map is currently drawing so that we don't try to generate text while the text drawer is reprocessing
 			// books after a book checkbox was checked.
 			updater.dowWhenMapIsNotDrawing(() ->
 			{
-				if (addButton.isSelected())
+				if (modeWidget.isDrawMode())
 				{
 					MapText addedText = updater.mapParts.nameCreator.createUserAddedText((TextType) textTypeComboBox.getSelectedItem(), getPointOnGraph(e.getPoint()), mainWindow.displayQualityScale);
 					mainWindow.edits.text.add(addedText);
@@ -589,7 +554,7 @@ public class TextTool extends EditorTool
 				}
 			});
 		}
-		else if (editButton.isSelected())
+		else if (modeWidget.isEditMode())
 		{
 			if (lastSelected != null && mapEditingPanel.isInRotateTool(e.getPoint()))
 			{
@@ -678,7 +643,7 @@ public class TextTool extends EditorTool
 				mapEditingPanel.repaint();
 			}
 		}
-		else if (eraseButton.isSelected())
+		else if (modeWidget.isEraseMode())
 		{
 			deleteTexts(e.getPoint());
 		}
@@ -747,7 +712,7 @@ public class TextTool extends EditorTool
 			}
 		}
 
-		if (eraseButton.isSelected())
+		if (modeWidget.isEraseMode())
 		{
 			mapEditingPanel.clearHighlightedAreas();
 			mapEditingPanel.repaint();
@@ -765,8 +730,7 @@ public class TextTool extends EditorTool
 
 	public void changeToEditModeAndSelectText(MapText selectedText, boolean grabFocus)
 	{
-		editButton.setSelected(true);
-		handleActionChanged();
+		modeWidget.selectEditMode();
 		handleSelectingTextToEdit(selectedText, grabFocus);
 	}
 
@@ -849,7 +813,7 @@ public class TextTool extends EditorTool
 			spacingSlider.setValue(selectedText.spacing);
 			backgroundFadeSlider.setValue((int) (selectedText.backgroundFade * backgroundFadeDivider));
 		}
-		actionsSeparatorHider.setVisible((editButton.isSelected() && selectedText != null) || addButton.isSelected() || eraseButton.isSelected());
+		actionsSeparatorHider.setVisible((modeWidget.isEditMode() && selectedText != null) || modeWidget.isDrawMode() || modeWidget.isEraseMode());
 		mapEditingPanel.repaint();
 
 		lastSelected = selectedText;
@@ -888,7 +852,7 @@ public class TextTool extends EditorTool
 
 	public MapText getTextBeingEdited()
 	{
-		if (editButton.isSelected() && lastSelected != null)
+		if (modeWidget.isEditMode() && lastSelected != null)
 		{
 			return lastSelected;
 		}
@@ -899,7 +863,7 @@ public class TextTool extends EditorTool
 	public void onSwitchingAway()
 	{
 		// Keep any text edits being done and clear the selected text.
-		if (editButton.isSelected())
+		if (modeWidget.isEditMode())
 		{
 			handleSelectingTextToEdit(null, false);
 		}
@@ -946,12 +910,12 @@ public class TextTool extends EditorTool
 			return;
 		}
 
-		if (eraseButton.isSelected())
+		if (modeWidget.isEraseMode())
 		{
 			List<MapText> mapTextsSelected = getMapTextsSelectedByCurrentBrushSizeAndShowBrush(mouseLocation);
 			mapEditingPanel.setHighlightedAreasFromTexts(mapTextsSelected);
 		}
-		else if (editButton.isSelected() && lastSelected == null)
+		else if (modeWidget.isEditMode() && lastSelected == null)
 		{
 			List<MapText> mapTextsSelected = getMapTextsSelectedByCurrentBrushSizeAndShowBrush(mouseLocation);
 			mapEditingPanel.setHighlightedAreasFromTexts(mapTextsSelected);
@@ -966,7 +930,7 @@ public class TextTool extends EditorTool
 	private List<MapText> getMapTextsSelectedByCurrentBrushSizeAndShowBrush(java.awt.Point mouseLocation)
 	{
 		List<MapText> mapTextsSelected = null;
-		int brushDiameter = editButton.isSelected() ? 1 : brushSizes.get(brushSizeComboBox.getSelectedIndex());
+		int brushDiameter = modeWidget.isEditMode() ? 1 : brushSizes.get(brushSizeComboBox.getSelectedIndex());
 		if (brushDiameter > 1)
 		{
 			mapEditingPanel.showBrush(mouseLocation, brushDiameter);
@@ -1008,7 +972,7 @@ public class TextTool extends EditorTool
 		defaultBoldBackgroundColor = settings.boldBackgroundColor;
 		boolean boldBackgroundVisibleChanged = areBoldBackgroundsVisible != settings.drawBoldBackground;
 		areBoldBackgroundsVisible = settings.drawBoldBackground;
-		if (editButton.isSelected() && lastSelected != null && boldBackgroundVisibleChanged)
+		if (modeWidget.isEditMode() && lastSelected != null && boldBackgroundVisibleChanged)
 		{
 			handleSelectingTextToEdit(lastSelected, false);
 		}
@@ -1017,7 +981,7 @@ public class TextTool extends EditorTool
 		drawTextDisabledLabelHider.setVisible(!settings.drawText);
 		if (!settings.drawText)
 		{
-			if (editButton.isSelected())
+			if (modeWidget.isEditMode())
 			{
 				handleSelectingTextToEdit(null, false);
 			}
@@ -1042,7 +1006,7 @@ public class TextTool extends EditorTool
 	@Override
 	public void onBeforeLoadingNewMap()
 	{
-		if (editButton.isSelected() && lastSelected != null)
+		if (modeWidget.isEditMode() && lastSelected != null)
 		{
 			lastSelected = null;
 			editTextField.setText("");

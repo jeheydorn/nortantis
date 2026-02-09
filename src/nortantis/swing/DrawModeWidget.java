@@ -174,4 +174,18 @@ public class DrawModeWidget
 	{
 		return editModeButton.isSelected();
 	}
+
+	public void configureDrawButton(String html, String tooltipWithoutShortcut, int mnemonic, String shortcutText)
+	{
+		drawModeButton.setText(html);
+		drawModeButton.setToolTipText(tooltipWithoutShortcut + " (" + shortcutText + ")");
+		drawModeButton.setMnemonic(mnemonic);
+		boolean isWindows = OSHelper.isWindows();
+		drawModeButton.setPreferredSize(new Dimension(isWindows ? 51 : 57, drawModeButton.getPreferredSize().height));
+	}
+
+	public void selectEditMode()
+	{
+		editModeButton.doClick();
+	}
 }
