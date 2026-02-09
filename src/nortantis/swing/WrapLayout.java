@@ -138,7 +138,7 @@ public class WrapLayout extends FlowLayout
 
 					// Can't add the component to current row. Start a new row.
 
-					if (rowWidth + d.width > maxWidth)
+					if (rowWidth > 0 && rowWidth + hgap + d.width > maxWidth)
 					{
 						addRow(dim, rowWidth, rowHeight);
 						rowWidth = 0;
@@ -166,13 +166,125 @@ public class WrapLayout extends FlowLayout
 		}
 	}
 
+	/**
+	 * Lays out the container by wrapping components to the next row when they would exceed the container width. This
+	 * override fixes a bug in FlowLayout where the horizontal gap is not included in the wrap check, causing components
+	 * to be clipped on the right edge.
+	 */
+	@Override
+	public void layoutContainer(Container target)
+	{
+		synchronized (target.getTreeLock())
+		{
+			Insets insets = target.getInsets();
+			int maxWidth = target.getWidth() - (insets.left + insets.right + getHgap() * 2);
+			int nmembers = target.getComponentCount();
+			int hgap = getHgap();
+			int vgap = getVgap();
+
+			boolean ltr = target.getComponentOrientation().isLeftToRight();
+			int align = getAlignment();
+
+			// Pass 1: Assign positions row by row
+
+			int y = insets.top + vgap;
+			int rowStart = 0;
+
+			// x tracks the current placement position within the row (before alignment adjustment)
+			int x = 0;
+			int rowHeight = 0;
+
+			for (int i = 0; i < nmembers; i++)
+			{
+				Component m = target.getComponent(i);
+				if (m.isVisible())
+				{
+					Dimension d = m.getPreferredSize();
+					m.setSize(d.width, d.height);
+
+					if (x > 0 && x + hgap + d.width > maxWidth)
+					{
+						// Finish current row
+						moveComponents(target, insets.left + hgap, y, maxWidth - x, rowHeight, rowStart, i, ltr,
+								align);
+						y += vgap + rowHeight;
+						x = 0;
+						rowHeight = 0;
+						rowStart = i;
+					}
+
+					if (x > 0)
+					{
+						x += hgap;
+					}
+
+					x += d.width;
+					rowHeight = Math.max(rowHeight, d.height);
+				}
+			}
+
+			// Finish last row
+			moveComponents(target, insets.left + hgap, y, maxWidth - x, rowHeight, rowStart, nmembers, ltr, align);
+		}
+	}
+
+	/**
+	 * Positions components within a single row, applying alignment and vertical centering.
+	 */
+	private void moveComponents(Container target, int x, int y, int extraWidth, int rowHeight, int rowStart,
+			int rowEnd, boolean ltr, int align)
+	{
+		switch (align)
+		{
+		case FlowLayout.CENTER:
+			x += extraWidth / 2;
+			break;
+		case FlowLayout.RIGHT:
+			// Fall through to TRAILING
+		case FlowLayout.TRAILING:
+			if (ltr)
+			{
+				x += extraWidth;
+			}
+			break;
+		case FlowLayout.LEFT:
+			// Fall through to LEADING
+		case FlowLayout.LEADING:
+			if (!ltr)
+			{
+				x += extraWidth;
+			}
+			break;
+		}
+
+		int hgap = getHgap();
+
+		for (int i = rowStart; i < rowEnd; i++)
+		{
+			Component m = target.getComponent(i);
+			if (m.isVisible())
+			{
+				int cy = y + (rowHeight - m.getHeight()) / 2;
+				if (ltr)
+				{
+					m.setLocation(x, cy);
+				}
+				else
+				{
+					m.setLocation(target.getWidth() - x - m.getWidth(), cy);
+				}
+				x += m.getWidth() + hgap;
+			}
+		}
+	}
+
 	/*
 	 * A new row has been completed. Use the dimensions of this row to update the preferred size for the container.
 	 *
 	 * @param dim update the width and height when appropriate
-	 * 
+	 *
 	 * @param rowWidth the width of the row to add
-	 * 
+	 *
 	 * @param rowHeight the height of the row to add
 	 */
 	private void addRow(Dimension dim, int rowWidth, int rowHeight)

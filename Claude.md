@@ -114,7 +114,7 @@ The benchmark creates maps using settings from `unit test files/map settings/sim
 
 ## Coding Conventions
 
-- **Formatting:** Eclipse formatter config in `eclipse-formatter-config.xml`, enforced by Spotless
+- **Formatting:** Eclipse formatter config in `eclipse-formatter-config.xml`
 - **Naming:** PascalCase for classes, camelCase for methods/variables
 - **Custom Functional Interfaces:** `Function<T, R>`, `Function0<R>`, `Function2<T1, T2, R>`
 - **Tuple Classes:** `Tuple2`, `Tuple3`, `Tuple4`, `Pair`, `OrderlessPair`

@@ -32,7 +32,7 @@ public class SwingHelper
 {
 	public static final int borderWidthBetweenComponents = 4;
 	// Fonts in Linux are a little bigger, so make the side panels a little wider.
-	public static final int sidePanelPreferredWidth = OSHelper.isLinux() ? 340 : 314;
+	public static final int sidePanelPreferredWidth = OSHelper.isLinux() ? 340 : 317;
 	public static final int sidePanelMinimumWidth = sidePanelPreferredWidth;
 	public static final int colorPickerLeftPadding = 2;
 	public static final int sidePanelScrollSpeed = 30;
