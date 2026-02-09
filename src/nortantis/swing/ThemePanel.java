@@ -631,7 +631,7 @@ public class ThemePanel extends JTabbedPane
 		GridBagOrganizer organizer = new GridBagOrganizer();
 		JPanel borderPanel = organizer.panel;
 
-		drawBorderCheckbox = new JCheckBox("Create border");
+		drawBorderCheckbox = new JCheckBox("Draw border");
 		drawBorderCheckbox.setToolTipText("When checked, a border will be drawn around the map.");
 		drawBorderCheckbox.addActionListener(new ActionListener()
 		{
