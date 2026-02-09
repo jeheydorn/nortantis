@@ -59,17 +59,7 @@ public class NewSettingsDialog extends JDialog
 		}
 		else
 		{
-			settings = settingsToKeepThemeFrom.deepCopy();
-			// Clear out export paths so that creating a new map was the same theme doesn't overwrite exported files from the previous map.
-			settings.imageExportPath = null;
-			settings.heightmapExportPath = null;
-			randomizeLand();
-			settings.textRandomSeed = Helper.safeAbs(new Random().nextInt());
-			List<String> cityIconTypes = ImageCache.getInstance(settings.artPack, settings.customImagesPath).getIconGroupNames(IconType.cities);
-			if (cityIconTypes.size() > 0)
-			{
-				settings.cityIconTypeName = ProbabilityHelper.sampleUniform(new Random(), new ArrayList<>(cityIconTypes));
-			}
+			settings = SettingsGenerator.newMapWithSameTheme(settingsToKeepThemeFrom);
 		}
 		loadSettingsIntoGUI(settings);
 
@@ -500,63 +490,13 @@ public class NewSettingsDialog extends JDialog
 
 	private void randomizeTheme()
 	{
-		MapSettings randomSettings = SettingsGenerator.generate(new Random(), (String) artPackComboBox.getSelectedItem(), settings.customImagesPath);
-		settings.oceanShadingLevel = randomSettings.oceanShadingLevel;
-		settings.oceanWavesLevel = randomSettings.oceanWavesLevel;
-		settings.concentricWaveCount = randomSettings.concentricWaveCount;
-		settings.oceanWavesType = randomSettings.oceanWavesType;
-		settings.riverColor = randomSettings.riverColor;
-		settings.roadColor = randomSettings.roadColor;
-		settings.coastShadingLevel = randomSettings.coastShadingLevel;
-		settings.coastShadingColor = randomSettings.coastShadingColor;
-		settings.oceanWavesColor = randomSettings.oceanWavesColor;
-		settings.coastlineColor = randomSettings.coastlineColor;
-		settings.frayedBorder = randomSettings.frayedBorder;
-		settings.frayedBorderSize = randomSettings.frayedBorderSize;
-		settings.frayedBorderColor = randomSettings.frayedBorderColor;
-		settings.frayedBorderBlurLevel = randomSettings.frayedBorderBlurLevel;
-		settings.frayedBorderSeed = randomSettings.frayedBorderSeed;
-		settings.grungeWidth = randomSettings.grungeWidth;
-		settings.generateBackground = randomSettings.generateBackground;
-		settings.generateBackgroundFromTexture = randomSettings.generateBackgroundFromTexture;
-		settings.solidColorBackground = randomSettings.solidColorBackground;
-		settings.colorizeOcean = randomSettings.colorizeOcean;
-		settings.colorizeLand = randomSettings.colorizeLand;
-		settings.backgroundTextureResource = randomSettings.backgroundTextureResource;
-		settings.backgroundTextureImage = randomSettings.backgroundTextureImage;
-		settings.backgroundRandomSeed = randomSettings.backgroundRandomSeed;
-		settings.oceanColor = randomSettings.oceanColor;
-		settings.borderColorOption = randomSettings.borderColorOption;
-		settings.borderColor = randomSettings.borderColor;
-		settings.landColor = randomSettings.landColor;
-		settings.regionBaseColor = randomSettings.regionBaseColor;
-		settings.hueRange = randomSettings.hueRange;
-		settings.saturationRange = randomSettings.saturationRange;
-		settings.brightnessRange = randomSettings.brightnessRange;
-		settings.titleFont = randomSettings.titleFont;
-		settings.regionFont = randomSettings.regionFont;
-		settings.mountainRangeFont = randomSettings.mountainRangeFont;
-		settings.otherMountainsFont = randomSettings.otherMountainsFont;
-		settings.riverFont = randomSettings.riverFont;
-		settings.boldBackgroundColor = randomSettings.boldBackgroundColor;
-		settings.textColor = randomSettings.textColor;
-		settings.drawBoldBackground = randomSettings.drawBoldBackground;
-		settings.drawRegionBoundaries = randomSettings.drawRegionBoundaries;
-		settings.regionBoundaryStyle = randomSettings.regionBoundaryStyle;
-		settings.drawRegionColors = randomSettings.drawRegionColors;
-		settings.regionsRandomSeed = randomSettings.regionsRandomSeed;
-		settings.drawBorder = randomSettings.drawBorder;
-		settings.borderResource = randomSettings.borderResource;
-		settings.borderWidth = randomSettings.borderWidth;
-		settings.lineStyle = randomSettings.lineStyle;
-
+		SettingsGenerator.randomizeTheme(settings, (String) artPackComboBox.getSelectedItem(), settings.customImagesPath);
 		handleMapChange();
 	}
 
 	private void randomizeLand()
 	{
-		MapSettings randomSettings = SettingsGenerator.generate(null);
-		settings.randomSeed = randomSettings.randomSeed;
+		SettingsGenerator.randomizeLand(settings);
 		handleMapChange();
 	}
 

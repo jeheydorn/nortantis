@@ -4,6 +4,7 @@ import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanWaves;
 import nortantis.geom.IntDimension;
 import nortantis.platform.Color;
+import nortantis.swing.MapEdits;
 import nortantis.util.*;
 import org.apache.commons.lang3.StringUtils;
 
@@ -319,4 +320,99 @@ public class SettingsGenerator
 		Collections.sort(result);
 		return result;
 	}
+
+	/**
+	 * Creates new map settings that keep the theme (colors, fonts, border, background, etc.) from
+	 * the given settings but generate a new world layout and text names.
+	 */
+	public static MapSettings newMapWithSameTheme(MapSettings currentSettings)
+	{
+		MapSettings settings = currentSettings.deepCopy();
+		settings.edits = new MapEdits();
+		settings.imageExportPath = null;
+		settings.heightmapExportPath = null;
+		// Randomize only land seed
+		settings.randomSeed = Helper.safeAbs(new Random().nextInt());
+		// Separately randomize text seed for new names
+		settings.textRandomSeed = Helper.safeAbs(new Random().nextInt());
+		// Randomize city icon type
+		try
+		{
+			List<String> cityIconTypes = ImageCache.getInstance(settings.artPack, currentSettings.customImagesPath)
+					.getIconGroupNames(IconType.cities);
+			if (cityIconTypes != null && !cityIconTypes.isEmpty())
+			{
+				settings.cityIconTypeName = ProbabilityHelper.sampleUniform(new Random(), new ArrayList<>(cityIconTypes));
+			}
+		}
+		catch (Exception e)
+		{
+			// ignore
+		}
+		return settings;
+	}
+
+	/**
+	 * Randomizes only the theme (visual appearance) fields of the given settings, keeping the
+	 * world layout (land seed, world size, probabilities, etc.) unchanged.
+	 */
+	public static void randomizeTheme(MapSettings settings, String artPack, String customImagesPath)
+	{
+		MapSettings randomSettings = generate(new Random(), artPack, customImagesPath);
+		settings.oceanShadingLevel = randomSettings.oceanShadingLevel;
+		settings.oceanWavesLevel = randomSettings.oceanWavesLevel;
+		settings.concentricWaveCount = randomSettings.concentricWaveCount;
+		settings.oceanWavesType = randomSettings.oceanWavesType;
+		settings.riverColor = randomSettings.riverColor;
+		settings.roadColor = randomSettings.roadColor;
+		settings.coastShadingLevel = randomSettings.coastShadingLevel;
+		settings.coastShadingColor = randomSettings.coastShadingColor;
+		settings.oceanWavesColor = randomSettings.oceanWavesColor;
+		settings.coastlineColor = randomSettings.coastlineColor;
+		settings.frayedBorder = randomSettings.frayedBorder;
+		settings.frayedBorderSize = randomSettings.frayedBorderSize;
+		settings.frayedBorderColor = randomSettings.frayedBorderColor;
+		settings.frayedBorderBlurLevel = randomSettings.frayedBorderBlurLevel;
+		settings.frayedBorderSeed = randomSettings.frayedBorderSeed;
+		settings.grungeWidth = randomSettings.grungeWidth;
+		settings.generateBackground = randomSettings.generateBackground;
+		settings.generateBackgroundFromTexture = randomSettings.generateBackgroundFromTexture;
+		settings.solidColorBackground = randomSettings.solidColorBackground;
+		settings.colorizeOcean = randomSettings.colorizeOcean;
+		settings.colorizeLand = randomSettings.colorizeLand;
+		settings.backgroundTextureResource = randomSettings.backgroundTextureResource;
+		settings.backgroundTextureImage = randomSettings.backgroundTextureImage;
+		settings.backgroundRandomSeed = randomSettings.backgroundRandomSeed;
+		settings.oceanColor = randomSettings.oceanColor;
+		settings.borderColorOption = randomSettings.borderColorOption;
+		settings.borderColor = randomSettings.borderColor;
+		settings.landColor = randomSettings.landColor;
+		settings.regionBaseColor = randomSettings.regionBaseColor;
+		settings.hueRange = randomSettings.hueRange;
+		settings.saturationRange = randomSettings.saturationRange;
+		settings.brightnessRange = randomSettings.brightnessRange;
+		settings.titleFont = randomSettings.titleFont;
+		settings.regionFont = randomSettings.regionFont;
+		settings.mountainRangeFont = randomSettings.mountainRangeFont;
+		settings.otherMountainsFont = randomSettings.otherMountainsFont;
+		settings.riverFont = randomSettings.riverFont;
+		settings.boldBackgroundColor = randomSettings.boldBackgroundColor;
+		settings.textColor = randomSettings.textColor;
+		settings.drawBoldBackground = randomSettings.drawBoldBackground;
+		settings.drawRegionBoundaries = randomSettings.drawRegionBoundaries;
+		settings.regionBoundaryStyle = randomSettings.regionBoundaryStyle;
+		settings.drawRegionColors = randomSettings.drawRegionColors;
+		settings.regionsRandomSeed = randomSettings.regionsRandomSeed;
+		settings.drawBorder = randomSettings.drawBorder;
+		settings.borderResource = randomSettings.borderResource;
+		settings.borderWidth = randomSettings.borderWidth;
+		settings.lineStyle = randomSettings.lineStyle;
+	}
+
+	public static void randomizeLand(MapSettings settings)
+	{
+		MapSettings randomSettings = SettingsGenerator.generate(null);
+		settings.randomSeed = randomSettings.randomSeed;
+	}
+
 }
