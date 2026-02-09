@@ -260,6 +260,7 @@ public class IconsTool extends EditorTool
 		}
 
 		GridBagOrganizer colorOrganizer = new GridBagOrganizer();
+
 		{
 			maximizeOpacityCheckbox = new JCheckBox("Maximize opacity");
 			maximizeOpacityCheckbox.setToolTipText("Scale the alpha of all pixels to use the full range, thus removing any 'extra' transparency.");
