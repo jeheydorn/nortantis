@@ -1298,39 +1298,43 @@ public class IconsTool extends EditorTool
 		padding = (int) (padding * osScaling);
 		scaledHeight = (int) Math.round(scaledHeight * osScaling);
 
-		// Find the size needed for the preview
+		// Pre-compute the scaled width for each icon using content bounds.
+		// This uses the same formula as ImageHelper.getWidthWhenScaledByHeight.
+		int[] scaledWidths = new int[imagesAndMasks.size()];
+		for (int i : new Range(imagesAndMasks.size()))
+		{
+			IntDimension croppedSize = imagesAndMasks.get(i).getOrCreateContentBounds().size();
+			int widthForHeight = Math.max(1, (int) Math.round(((double) croppedSize.width) / croppedSize.height * scaledHeight));
+			scaledWidths[i] = Math.min(widthForHeight, maxRowWidth);
+		}
+
+		// Compute the layout positions for each icon. This determines both the
+		// background size and where icons are drawn, ensuring they always match.
+		int[] xPositions = new int[imagesAndMasks.size()];
+		int[] yPositions = new int[imagesAndMasks.size()];
 		int rowCount = 1;
 		int largestRowWidth = 0;
 		{
-			int rowWidth = 0;
+			int x = 0;
+			int y = 0;
 			for (int i : new Range(imagesAndMasks.size()))
 			{
-				ImageAndMasks imageAndMasks = imagesAndMasks.get(i);
-				IntDimension croppedSize = imageAndMasks.getOrCreateContentBounds().size();
-				int scaledWidth = Math.min(maxRowWidth, IconDrawer.getDimensionsWhenScaledByHeight(croppedSize, scaledHeight).roundToIntDimension().width);
-
-				if (rowWidth + scaledWidth > maxRowWidth)
+				if (x > 0 && x + scaledWidths[i] > maxRowWidth)
 				{
-					// Add a new row
+					largestRowWidth = Math.max(largestRowWidth, x - horizontalPaddingBetweenImages);
 					rowCount++;
-					largestRowWidth = Math.max(largestRowWidth, rowWidth);
-					rowWidth = scaledWidth;
+					x = 0;
+					y += scaledHeight;
 				}
-				else
-				{
-					// Since no preview image can be larger than a maxRowWidth, we must be adding an icon to a row that already has at least
-					// 1.
-					rowWidth += horizontalPaddingBetweenImages + scaledWidth;
-				}
-				largestRowWidth = Math.max(largestRowWidth, rowWidth);
+				xPositions[i] = x + padding;
+				yPositions[i] = y + padding;
+				x += scaledWidths[i] + horizontalPaddingBetweenImages;
 			}
+			largestRowWidth = Math.max(largestRowWidth, x > 0 ? x - horizontalPaddingBetweenImages : 0);
 		}
 
 		// Create the background image for the preview
 		final int fadeWidth = Math.max(padding - 2, 0);
-		// Multiply the width padding by 2.2 instead of 2 to compensate for the
-		// image library I'm using not always scaling to the size I
-		// give.
 
 		IntDimension size = new IntDimension(Math.min(maxRowWidth, largestRowWidth) + (padding * 2), (rowCount * scaledHeight) + (padding * 2));
 
@@ -1355,16 +1359,13 @@ public class IconsTool extends EditorTool
 
 		try (Painter p = previewImage.createPainter())
 		{
-			int x = padding;
-			int y = padding;
 			for (int i : new Range(imagesAndMasks.size()))
 			{
 				ImageAndMasks imageAndMasks = imagesAndMasks.get(i);
 				Image coloredImage = ImageCache.getInstance(settings.artPack, settings.customImagesPath).getColoredIcon(imageAndMasks, iconColor, filterColor, maximizeOpacity, fillWithColor);
 				try (Image croppedImage = imageAndMasks.cropToContent(coloredImage))
 				{
-					int widthForHeight = ImageHelper.getInstance().getWidthWhenScaledByHeight(croppedImage, scaledHeight);
-					int scaledWidth = Math.min(widthForHeight, maxRowWidth);
+					int scaledWidth = scaledWidths[i];
 					int yExtraForCentering = 0;
 					if (scaledHeight > ImageHelper.getInstance().getHeightWhenScaledByWidth(croppedImage, scaledWidth))
 					{
@@ -1372,15 +1373,7 @@ public class IconsTool extends EditorTool
 					}
 					try (Image scaled = ImageHelper.getInstance().scaleByWidth(croppedImage, scaledWidth, Method.ULTRA_QUALITY))
 					{
-						if (x - padding + scaled.getWidth() > maxRowWidth)
-						{
-							x = padding;
-							y += scaledHeight;
-						}
-
-						p.drawImage(scaled, x, y + yExtraForCentering);
-
-						x += scaled.getWidth() + horizontalPaddingBetweenImages;
+						p.drawImage(scaled, xPositions[i], yPositions[i] + yExtraForCentering);
 					}
 				}
 			}
