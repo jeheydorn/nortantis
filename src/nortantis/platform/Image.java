@@ -68,8 +68,8 @@ public abstract class Image implements AutoCloseable
 	 * Creates a new Image with the given dimensions and type, with an option to force CPU-only mode.
 	 *
 	 * @param forceCPU
-	 *            If true, the image will not use GPU acceleration regardless of size. This is useful for images that need frequent
-	 *            CPU-side pixel access to avoid expensive GPU-to-CPU synchronization.
+	 *            If true, the image will not use GPU acceleration regardless of size. This is useful for images that need frequent CPU-side
+	 *            pixel access to avoid expensive GPU-to-CPU synchronization.
 	 */
 	public static Image create(int width, int height, ImageType type, boolean forceCPU)
 	{

@@ -80,8 +80,7 @@ public class TextTool extends EditorTool
 		drawTextDisabledLabelHider = organizer.addLeftAlignedComponent(drawTextDisabledLabel);
 		drawTextDisabledLabelHider.setVisible(false);
 
-		modeWidget = new DrawModeWidget("Add new text of the selected text type", "Erase text", false, "", true, "Edit text",
-				() -> handleActionChanged());
+		modeWidget = new DrawModeWidget("Add new text of the selected text type", "Erase text", false, "", true, "Edit text", () -> handleActionChanged());
 		modeWidget.configureDrawButton("<html><u>A</u>dd</html>", "Add new text of the selected text type", KeyEvent.VK_A, "Alt+A");
 		modeWidget.addToOrganizer(organizer, "");
 

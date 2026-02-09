@@ -21,8 +21,8 @@ import java.util.stream.Collectors;
 public class Assets
 {
 	/**
-	 * Interface for providing InputStreams on platforms where filesystem access doesn't work
-	 * for bundled assets (e.g., Android, which requires AssetManager).
+	 * Interface for providing InputStreams on platforms where filesystem access doesn't work for bundled assets (e.g., Android, which
+	 * requires AssetManager).
 	 */
 	public interface AssetInputStreamProvider
 	{
@@ -273,8 +273,8 @@ public class Assets
 	}
 
 	/**
-	 * Returns true if the given path refers to a packaged asset — either in a JAR file or accessible
-	 * via an AssetInputStreamProvider (e.g., Android's AssetManager).
+	 * Returns true if the given path refers to a packaged asset — either in a JAR file or accessible via an AssetInputStreamProvider (e.g.,
+	 * Android's AssetManager).
 	 */
 	private static boolean isPackagedAsset(String path)
 	{
@@ -664,8 +664,7 @@ public class Assets
 			{
 				if (inputStream == null)
 				{
-					throw new RuntimeException(
-							"Can't read the image resource '" + filePath + "' because either it doesn't exist or it's an unsupported format or corrupted.");
+					throw new RuntimeException("Can't read the image resource '" + filePath + "' because either it doesn't exist or it's an unsupported format or corrupted.");
 				}
 
 				Image image = PlatformFactory.getInstance().readImage(inputStream);

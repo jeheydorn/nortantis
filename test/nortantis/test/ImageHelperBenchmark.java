@@ -61,9 +61,9 @@ public class ImageHelperBenchmark
 	}
 
 	@Test
-	public void benchmarkColorify()
+	public void benchmarkColorize()
 	{
-		System.out.println("\n=== colorify Benchmark (with HSB conversion) ===\n");
+		System.out.println("\n=== colorize Benchmark (with HSB conversion) ===\n");
 
 		int size = 4096;
 		System.out.println("Image size: " + size + "x" + size);
@@ -74,7 +74,7 @@ public class ImageHelperBenchmark
 		// Warmup
 		for (int i = 0; i < 3; i++)
 		{
-			ImageHelper.getInstance().colorify(grayscale, color, ImageHelper.ColorifyAlgorithm.algorithm3, false);
+			ImageHelper.getInstance().colorize(grayscale, color, ImageHelper.ColorizeAlgorithm.algorithm3, false);
 		}
 
 		// Run twice and average
@@ -85,13 +85,13 @@ public class ImageHelperBenchmark
 			long start = System.nanoTime();
 			for (int i = 0; i < iterations; i++)
 			{
-				ImageHelper.getInstance().colorify(grayscale, color, ImageHelper.ColorifyAlgorithm.algorithm3, false);
+				ImageHelper.getInstance().colorize(grayscale, color, ImageHelper.ColorizeAlgorithm.algorithm3, false);
 			}
 			totalTime += (System.nanoTime() - start) / iterations;
 		}
 		long avgTime = totalTime / 2;
 
-		System.out.println("  ImageHelper.colorify (algorithm3):  " + formatTime(avgTime));
+		System.out.println("  ImageHelper.colorize (algorithm3):  " + formatTime(avgTime));
 	}
 
 	@Test
@@ -277,9 +277,9 @@ public class ImageHelperBenchmark
 	}
 
 	@Test
-	public void benchmarkColorifyMulti()
+	public void benchmarkColorizeMulti()
 	{
-		System.out.println("\n=== colorifyMulti Benchmark (Dynamic Palette Sizing) ===\n");
+		System.out.println("\n=== colorizeMulti Benchmark (Dynamic Palette Sizing) ===\n");
 
 		int size = 2048;
 		System.out.println("Image size: " + size + "x" + size);
@@ -303,7 +303,7 @@ public class ImageHelperBenchmark
 			// Warmup
 			for (int i = 0; i < 3; i++)
 			{
-				try (Image result = ImageHelper.getInstance().colorifyMulti(grayscale, colorMap, colorIndexes, ImageHelper.ColorifyAlgorithm.algorithm3, null))
+				try (Image result = ImageHelper.getInstance().colorizeMulti(grayscale, colorMap, colorIndexes, ImageHelper.ColorizeAlgorithm.algorithm3, null))
 				{
 					// Just create and close
 				}
@@ -317,7 +317,7 @@ public class ImageHelperBenchmark
 				long start = System.nanoTime();
 				for (int i = 0; i < iterations; i++)
 				{
-					try (Image result = ImageHelper.getInstance().colorifyMulti(grayscale, colorMap, colorIndexes, ImageHelper.ColorifyAlgorithm.algorithm3, null))
+					try (Image result = ImageHelper.getInstance().colorizeMulti(grayscale, colorMap, colorIndexes, ImageHelper.ColorizeAlgorithm.algorithm3, null))
 					{
 						// Just create and close
 					}
@@ -326,7 +326,7 @@ public class ImageHelperBenchmark
 			}
 			long avgTime = totalTime / 2;
 
-			System.out.println("  colorifyMulti (algorithm3):  " + formatTime(avgTime));
+			System.out.println("  colorizeMulti (algorithm3):  " + formatTime(avgTime));
 
 			grayscale.close();
 			colorIndexes.close();

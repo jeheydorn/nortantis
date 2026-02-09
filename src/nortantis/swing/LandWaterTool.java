@@ -27,17 +27,17 @@ public class LandWaterTool extends EditorTool
 	private JPanel colorDisplay;
 	private RowHider colorChooserHider;
 
-	private JRadioButton landButton;
-	private JRadioButton oceanButton;
-	private JRadioButton lakesButton;
-	private JRadioButton riversButton;
+	private JToggleButton landButton;
+	private JToggleButton oceanButton;
+	private JToggleButton lakesButton;
+	private JToggleButton riversButton;
 	private RowHider riverOptionHider;
 	private JSlider riverWidthSlider;
 	private Corner riverStart;
 	private Center roadStart;
 	private RowHider modeHider;
-	private JRadioButton fillRegionColorButton;
-	private JRadioButton mergeRegionsButton;
+	private JToggleButton fillRegionColorButton;
+	private JToggleButton mergeRegionsButton;
 	private Region selectedRegion;
 	private JToggleButton selectColorFromMapButton;
 
@@ -60,7 +60,8 @@ public class LandWaterTool extends EditorTool
 	private DrawModeWidget modeWidget;
 	private JToggleButton newRegionButton;
 	private RowHider newRegionButtonHider;
-	private JRadioButton roadsButton;
+	private JToggleButton roadsButton;
+	private SegmentedButtonWidget brushTypeWidget;
 	static String toolbarName = "Land & Water";
 	static String colorGeneratorSettingsName = "Color Generator Settings";
 
@@ -101,11 +102,7 @@ public class LandWaterTool extends EditorTool
 		JPanel toolOptionsPanel = organizer.panel;
 		toolOptionsPanel.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
 
-		List<JComponent> radioButtons = new ArrayList<>();
-		ButtonGroup group = new ButtonGroup();
-		oceanButton = new JRadioButton("Ocean");
-		group.add(oceanButton);
-		radioButtons.add(oceanButton);
+		oceanButton = new JToggleButton("Ocean");
 		brushActionListener = new ActionListener()
 		{
 			@Override
@@ -121,8 +118,8 @@ public class LandWaterTool extends EditorTool
 
 				if (brushSizeComboBox != null)
 				{
-					brushSizeHider.setVisible(oceanButton.isSelected() || lakesButton.isSelected() || landButton.isSelected()
-							|| (riversButton.isSelected() && modeWidget.isEraseMode()) || (roadsButton.isSelected() && modeWidget.isEraseMode()));
+					brushSizeHider.setVisible(oceanButton.isSelected() || lakesButton.isSelected() || landButton.isSelected() || (riversButton.isSelected() && modeWidget.isEraseMode())
+							|| (roadsButton.isSelected() && modeWidget.isEraseMode()));
 				}
 
 				showOrHideRoadAndRiverOptions();
@@ -130,40 +127,28 @@ public class LandWaterTool extends EditorTool
 		};
 		oceanButton.addActionListener(brushActionListener);
 
-		lakesButton = new JRadioButton("Lakes");
-		group.add(lakesButton);
-		radioButtons.add(lakesButton);
+		lakesButton = new JToggleButton("Lakes");
 		lakesButton.setToolTipText("Lakes are the same as ocean except ocean effects (waves or shading) along their shores can be disabled, and they don't do coastline smoothing when enabled.");
 		lakesButton.addActionListener(brushActionListener);
 
-		riversButton = new JRadioButton("Rivers");
-		group.add(riversButton);
-		radioButtons.add(riversButton);
+		riversButton = new JToggleButton("Rivers");
 		riversButton.addActionListener(brushActionListener);
 
-		fillRegionColorButton = new JRadioButton("Fill region color");
-		mergeRegionsButton = new JRadioButton("Merge regions");
-		landButton = new JRadioButton("Land");
-		roadsButton = new JRadioButton("Roads");
-
-		group.add(landButton);
-		radioButtons.add(landButton);
+		landButton = new JToggleButton("Land");
 		landButton.addActionListener(brushActionListener);
 
-		group.add(fillRegionColorButton);
-		radioButtons.add(fillRegionColorButton);
+		fillRegionColorButton = new JToggleButton("Fill region color");
 		fillRegionColorButton.addActionListener(brushActionListener);
 
-		group.add(mergeRegionsButton);
-		radioButtons.add(mergeRegionsButton);
+		mergeRegionsButton = new JToggleButton("Merge regions");
 		mergeRegionsButton.addActionListener(brushActionListener);
 
-		group.add(roadsButton);
-		radioButtons.add(roadsButton);
+		roadsButton = new JToggleButton("Roads");
 		roadsButton.addActionListener(brushActionListener);
 
 		oceanButton.setSelected(true); // Selected by default
-		organizer.addLabelAndComponentsVertical("Brush:", "", radioButtons);
+		brushTypeWidget = new SegmentedButtonWidget(List.of(oceanButton, lakesButton, riversButton, landButton, fillRegionColorButton, mergeRegionsButton, roadsButton));
+		brushTypeWidget.addToOrganizer(organizer, "Brush:", "");
 
 		// Create new region button
 		{
@@ -302,6 +287,8 @@ public class LandWaterTool extends EditorTool
 			oceanButton.setSelected(true);
 		}
 
+		brushTypeWidget.updateSegmentPositions();
+
 		brushActionListener.actionPerformed(null);
 
 		showOrHideNewRegionButton();
@@ -400,10 +387,8 @@ public class LandWaterTool extends EditorTool
 					{
 						// Find the nearest political region when drawing in water.
 						nortantis.geom.Point graphPoint = getPointOnGraph(e.getPoint());
-						Optional<CenterEdit> nearest = mainWindow.edits.centerEdits.values().stream()
-								.filter(cEdit -> cEdit.regionId != null)
-								.min((c1, c2) -> Double.compare(updater.mapParts.graph.centers.get(c1.index).loc.distanceTo(graphPoint),
-										updater.mapParts.graph.centers.get(c2.index).loc.distanceTo(graphPoint)));
+						Optional<CenterEdit> nearest = mainWindow.edits.centerEdits.values().stream().filter(cEdit -> cEdit.regionId != null).min((c1, c2) -> Double
+								.compare(updater.mapParts.graph.centers.get(c1.index).loc.distanceTo(graphPoint), updater.mapParts.graph.centers.get(c2.index).loc.distanceTo(graphPoint)));
 						regionIdToExpand = nearest.map(edit -> edit.regionId).orElse(null);
 					}
 					else
@@ -788,9 +773,8 @@ public class LandWaterTool extends EditorTool
 		}
 
 		// Find the closest center with a region.
-		Optional<CenterEdit> opt = mainWindow.edits.centerEdits.values().stream().filter(cEdit1 -> cEdit1.regionId != null)
-				.min((cEdit1, cEdit2) -> Double.compare(updater.mapParts.graph.centers.get(cEdit1.index).loc.distanceTo(center.loc),
-						updater.mapParts.graph.centers.get(cEdit2.index).loc.distanceTo(center.loc)));
+		Optional<CenterEdit> opt = mainWindow.edits.centerEdits.values().stream().filter(cEdit1 -> cEdit1.regionId != null).min((cEdit1, cEdit2) -> Double
+				.compare(updater.mapParts.graph.centers.get(cEdit1.index).loc.distanceTo(center.loc), updater.mapParts.graph.centers.get(cEdit2.index).loc.distanceTo(center.loc)));
 		if (opt.isPresent())
 		{
 			return opt.get().regionId;

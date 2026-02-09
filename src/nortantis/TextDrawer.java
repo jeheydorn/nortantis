@@ -753,7 +753,8 @@ public class TextDrawer
 				ImageHelper.getInstance().threshold(haze1, 1);
 				try (Image haze2 = ImageHelper.getInstance().convolveGrayscale(haze1, kernel, true, false))
 				{
-					ImageHelper.getInstance().combineImagesWithMaskInRegion(map, landAndOceanBackground, haze2, ((int) Math.round(textStart.x - textStartDiffInMaskCausedByCurvatureAndSpacing.x)) - padding,
+					ImageHelper.getInstance().combineImagesWithMaskInRegion(map, landAndOceanBackground, haze2,
+							((int) Math.round(textStart.x - textStartDiffInMaskCausedByCurvatureAndSpacing.x)) - padding,
 							(int) Math.round(textStart.y - textStartDiffInMaskCausedByCurvatureAndSpacing.y) - p.getFontAscent() - padding, text.angle, pivot);
 				}
 			}

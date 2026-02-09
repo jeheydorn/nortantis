@@ -20,7 +20,7 @@ public class BGColorPreviewPanel extends ImagePanel implements ChangeListener
 	private BufferedImage originalBackground;
 	private Color color;
 	private Color colorBeingSelected;
-	private ImageHelper.ColorifyAlgorithm colorifyAlgorithm;
+	private ImageHelper.ColorizeAlgorithm colorizeAlgorithm;
 
 	public BGColorPreviewPanel()
 	{
@@ -31,13 +31,13 @@ public class BGColorPreviewPanel extends ImagePanel implements ChangeListener
 	{
 		this.colorBeingSelected = colorChooser.getColor();
 		colorBeingSelected = colorChooser.getColor();
-		colorifyImageIfPresent(colorBeingSelected);
+		colorizeImageIfPresent(colorBeingSelected);
 	}
 
 	public void setColor(Color color)
 	{
 		this.color = color;
-		colorifyImageIfPresent(color);
+		colorizeImageIfPresent(color);
 	}
 
 	public void finishSelectingColor()
@@ -45,22 +45,22 @@ public class BGColorPreviewPanel extends ImagePanel implements ChangeListener
 		if (colorBeingSelected != null)
 		{
 			color = colorBeingSelected;
-			colorifyImageIfPresent(color);
+			colorizeImageIfPresent(color);
 		}
 	}
 
-	private void colorifyImageIfPresent(Color color)
+	private void colorizeImageIfPresent(Color color)
 	{
 		if (originalBackground != null)
 		{
-			colorifyImage(color);
+			colorizeImage(color);
 			repaint();
 		}
 	}
 
-	public void setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm colorfyAlgorithm)
+	public void setColorizeAlgorithm(ImageHelper.ColorizeAlgorithm colorizeAlgorithm)
 	{
-		this.colorifyAlgorithm = colorfyAlgorithm;
+		this.colorizeAlgorithm = colorizeAlgorithm;
 	}
 
 	public Color getColor()
@@ -78,22 +78,22 @@ public class BGColorPreviewPanel extends ImagePanel implements ChangeListener
 	{
 		originalBackground = image;
 
-		if (color == null || colorifyAlgorithm == ImageHelper.ColorifyAlgorithm.none)
+		if (color == null || colorizeAlgorithm == ImageHelper.ColorizeAlgorithm.none)
 		{
 			super.setImage(originalBackground);
 		}
 		else
 		{
-			colorifyImage(color);
+			colorizeImage(color);
 		}
 	}
 
-	private void colorifyImage(Color color)
+	private void colorizeImage(Color color)
 	{
-		if (colorifyAlgorithm != ImageHelper.ColorifyAlgorithm.none)
+		if (colorizeAlgorithm != ImageHelper.ColorizeAlgorithm.none)
 		{
 			Image grayscale = ImageHelper.getInstance().convertToGrayscale(AwtBridge.fromBufferedImage(originalBackground));
-			super.setImage(AwtBridge.toBufferedImage(ImageHelper.getInstance().colorify(grayscale, AwtBridge.fromAwtColor(color), colorifyAlgorithm)));
+			super.setImage(AwtBridge.toBufferedImage(ImageHelper.getInstance().colorize(grayscale, AwtBridge.fromAwtColor(color), colorizeAlgorithm)));
 		}
 	}
 

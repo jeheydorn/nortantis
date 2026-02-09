@@ -9,7 +9,7 @@ import nortantis.platform.awt.AwtFactory;
 import nortantis.util.Assets;
 import nortantis.util.FileHelper;
 import nortantis.platform.ImageHelper;
-import nortantis.platform.ImageHelper.ColorifyAlgorithm;
+import nortantis.platform.ImageHelper.ColorizeAlgorithm;
 import nortantis.util.Range;
 import org.apache.commons.io.FileUtils;
 import org.imgscalr.Scalr.Method;
@@ -465,52 +465,52 @@ public class ImageHelperTest
 		compareWithExpected(image, "setAlphaOfAllPixels");
 	}
 
-	// ==================== Colorify Tests ====================
+	// ==================== colorize Tests ====================
 
 	@Test
-	public void testColorifyAlgorithm2()
+	public void testColorizeAlgorithm2()
 	{
 		Image grayscale = createGrayscaleTestImage();
 		Color color = Color.create(100, 150, 200);
 
-		Image result = ImageHelper.getInstance().colorify(grayscale, color, ColorifyAlgorithm.algorithm2);
-		compareWithExpected(result, "colorifyAlgorithm2", 2);
+		Image result = ImageHelper.getInstance().colorize(grayscale, color, ColorizeAlgorithm.algorithm2);
+		compareWithExpected(result, "colorizeAlgorithm2", 2);
 	}
 
 	@Test
-	public void testColorifyAlgorithm3()
+	public void testColorizeAlgorithm3()
 	{
 		Image grayscale = createGrayscaleTestImage();
 		Color color = Color.create(200, 100, 50);
 
-		Image result = ImageHelper.getInstance().colorify(grayscale, color, ColorifyAlgorithm.algorithm3);
-		compareWithExpected(result, "colorifyAlgorithm3", 2);
+		Image result = ImageHelper.getInstance().colorize(grayscale, color, ColorizeAlgorithm.algorithm3);
+		compareWithExpected(result, "colorizeAlgorithm3", 2);
 	}
 
 	@Test
-	public void testColorifySolidColor()
+	public void testColorizeSolidColor()
 	{
 		Image grayscale = createGrayscaleTestImage();
 		Color color = Color.create(50, 200, 100);
 
-		Image result = ImageHelper.getInstance().colorify(grayscale, color, ColorifyAlgorithm.solidColor);
-		compareWithExpected(result, "colorifySolidColor");
+		Image result = ImageHelper.getInstance().colorize(grayscale, color, ColorizeAlgorithm.solidColor);
+		compareWithExpected(result, "colorizeSolidColor");
 	}
 
 	@Test
-	public void testColorifyNone()
+	public void testColorizeNone()
 	{
 		Image grayscale = createGrayscaleTestImage();
 		Color color = Color.create(100, 100, 100);
 
-		Image result = ImageHelper.getInstance().colorify(grayscale, color, ColorifyAlgorithm.none);
+		Image result = ImageHelper.getInstance().colorize(grayscale, color, ColorizeAlgorithm.none);
 		assertSame(grayscale, result, "None algorithm should return original");
 	}
 
-	// ==================== ColorifyMulti Tests ====================
+	// ==================== colorizeMulti Tests ====================
 
 	@Test
-	public void testColorifyMultiAlgorithm2()
+	public void testColorizeMultiAlgorithm2()
 	{
 		Image grayscale = createGrayscaleTestImage();
 
@@ -522,12 +522,12 @@ public class ImageHelperTest
 
 		Image colorIndexes = createColorIndexesImage();
 
-		Image result = ImageHelper.getInstance().colorifyMulti(grayscale, colorMap, colorIndexes, ColorifyAlgorithm.algorithm2, null);
-		compareWithExpected(result, "colorifyMultiAlgorithm2", 2);
+		Image result = ImageHelper.getInstance().colorizeMulti(grayscale, colorMap, colorIndexes, ColorizeAlgorithm.algorithm2, null);
+		compareWithExpected(result, "colorizeMultiAlgorithm2", 2);
 	}
 
 	@Test
-	public void testColorifyMultiAlgorithm3()
+	public void testColorizeMultiAlgorithm3()
 	{
 		Image grayscale = createGrayscaleTestImage();
 
@@ -539,12 +539,12 @@ public class ImageHelperTest
 
 		Image colorIndexes = createColorIndexesImage();
 
-		Image result = ImageHelper.getInstance().colorifyMulti(grayscale, colorMap, colorIndexes, ColorifyAlgorithm.algorithm3, null);
-		compareWithExpected(result, "colorifyMultiAlgorithm3", 2);
+		Image result = ImageHelper.getInstance().colorizeMulti(grayscale, colorMap, colorIndexes, ColorizeAlgorithm.algorithm3, null);
+		compareWithExpected(result, "colorizeMultiAlgorithm3", 2);
 	}
 
 	@Test
-	public void testColorifyMultiSolidColor()
+	public void testColorizeMultiSolidColor()
 	{
 		Image grayscale = createGrayscaleTestImage();
 
@@ -556,12 +556,12 @@ public class ImageHelperTest
 
 		Image colorIndexes = createColorIndexesImage();
 
-		Image result = ImageHelper.getInstance().colorifyMulti(grayscale, colorMap, colorIndexes, ColorifyAlgorithm.solidColor, null);
-		compareWithExpected(result, "colorifyMultiSolidColor");
+		Image result = ImageHelper.getInstance().colorizeMulti(grayscale, colorMap, colorIndexes, ColorizeAlgorithm.solidColor, null);
+		compareWithExpected(result, "colorizeMultiSolidColor");
 	}
 
 	@Test
-	public void testColorifyMultiLargeRegionIds()
+	public void testColorizeMultiLargeRegionIds()
 	{
 		// Test with region IDs that require full RGB encoding (tests dynamic palette sizing)
 		Image grayscale = createGrayscaleTestImage();
@@ -576,8 +576,8 @@ public class ImageHelperTest
 		// Create colorIndexes with these larger IDs
 		Image colorIndexes = createColorIndexesImageWithIds(256, 1000, 10000, 32000);
 
-		Image result = ImageHelper.getInstance().colorifyMulti(grayscale, colorMap, colorIndexes, ColorifyAlgorithm.algorithm3, null);
-		compareWithExpected(result, "colorifyMultiLargeRegionIds", 2);
+		Image result = ImageHelper.getInstance().colorizeMulti(grayscale, colorMap, colorIndexes, ColorizeAlgorithm.algorithm3, null);
+		compareWithExpected(result, "colorizeMultiLargeRegionIds", 2);
 	}
 
 	// ==================== Grayscale Modification Tests ====================

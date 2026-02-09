@@ -297,9 +297,10 @@ public class WorldGraph extends VoronoiGraph
 	 * Rebuilds noisy edges for a center.
 	 *
 	 * @param center
-	 * 		The center to rebuild noisy edges for.
+	 *            The center to rebuild noisy edges for.
 	 * @param centersInLoop
-	 * 		For performance. The set of centers that the caller is already looping over, so that we don't rebuild noisy edges for neighbors unnecessarily.
+	 *            For performance. The set of centers that the caller is already looping over, so that we don't rebuild noisy edges for
+	 *            neighbors unnecessarily.
 	 */
 	public void rebuildNoisyEdgesForCenter(Center center, Set<Center> centersInLoop)
 	{
@@ -677,7 +678,8 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Find which center contains the point by checking pie slices. Uses angular sector as a hint to try the likely edge first, then falls back to exhaustive search.
+	 * Find which center contains the point by checking pie slices. Uses angular sector as a hint to try the likely edge first, then falls
+	 * back to exhaustive search.
 	 */
 	private Center findCenterFromEdgeSector(Point point, Center candidate)
 	{
@@ -746,7 +748,8 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Find which edge's angular sector contains the point (fast test using straight lines). Returns the edge position in center.borders, or -1 if no sector contains the point.
+	 * Find which edge's angular sector contains the point (fast test using straight lines). Returns the edge position in center.borders, or
+	 * -1 if no sector contains the point.
 	 */
 	private int findAngularSectorEdgePosition(Point point, Center center)
 	{
@@ -796,7 +799,8 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Walk from the starting center to the center whose loc is closest to the query point. This is faster than BFS and converges quickly since Voronoi diagrams are well-structured.
+	 * Walk from the starting center to the center whose loc is closest to the query point. This is faster than BFS and converges quickly
+	 * since Voronoi diagrams are well-structured.
 	 */
 	private Center walkToClosestCenter(Point query, Center start)
 	{
@@ -1179,8 +1183,9 @@ public class WorldGraph extends VoronoiGraph
 		{
 			if (centerLookupTable == null)
 			{
-				// Force CPU mode to avoid expensive GPU-to-CPU sync during incremental updates, although that only really matters in RenderingMode.HYBRID mode.
-			centerLookupTable = Image.create((int) bounds.width, (int) bounds.height, ImageType.RGB, true);
+				// Force CPU mode to avoid expensive GPU-to-CPU sync during incremental updates, although that only really matters in
+				// RenderingMode.HYBRID mode.
+				centerLookupTable = Image.create((int) bounds.width, (int) bounds.height, ImageType.RGB, true);
 				try (Painter p = centerLookupTable.createPainter())
 				{
 					drawPolygons(p, new Function<Center, Color>()
@@ -1198,11 +1203,11 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Updates the center lookup table, which is used to lookup which center draws at a given point. This needs to be done when a center potentially changed its noisy edges, such as when it switched
-	 * from inland to coast.
+	 * Updates the center lookup table, which is used to lookup which center draws at a given point. This needs to be done when a center
+	 * potentially changed its noisy edges, such as when it switched from inland to coast.
 	 *
 	 * @param centersToUpdate
-	 * 		Centers to update
+	 *            Centers to update
 	 */
 	public void updateCenterLookupTable(Collection<Center> centersToUpdate)
 	{
@@ -1310,9 +1315,10 @@ public class WorldGraph extends VoronoiGraph
 	 * Performs a breadth-first search starting from the given center, exploring all connected centers that satisfy the accept predicate.
 	 *
 	 * @param accept
-	 * 		A predicate that determines whether a neighboring center should be included in the search. Returns true if the center should be explored, false otherwise.
+	 *            A predicate that determines whether a neighboring center should be included in the search. Returns true if the center
+	 *            should be explored, false otherwise.
 	 * @param start
-	 * 		The center to begin the search from. This center is always included in the result, regardless of the accept predicate.
+	 *            The center to begin the search from. This center is always included in the result, regardless of the accept predicate.
 	 * @return A set containing the start center and all connected centers that satisfy the accept predicate.
 	 */
 	public Set<Center> breadthFirstSearch(Function<Center, Boolean> accept, Center start)
@@ -1346,13 +1352,15 @@ public class WorldGraph extends VoronoiGraph
 	 * Performs a breadth-first search to find the first center that satisfies the goal predicate.
 	 *
 	 * @param accept
-	 * 		A predicate that determines whether to explore a neighboring center. Takes three arguments: the current center being expanded, the neighbor being considered, and the distance from the start
-	 * 		(in number of hops). Returns true if the neighbor should be added to the search frontier, false otherwise.
+	 *            A predicate that determines whether to explore a neighboring center. Takes three arguments: the current center being
+	 *            expanded, the neighbor being considered, and the distance from the start (in number of hops). Returns true if the neighbor
+	 *            should be added to the search frontier, false otherwise.
 	 * @param isGoal
-	 * 		A predicate that determines whether a center is the goal. Returns true if the center satisfies the search criteria.
+	 *            A predicate that determines whether a center is the goal. Returns true if the center satisfies the search criteria.
 	 * @param start
-	 * 		The center to begin the search from.
-	 * @return The first center found that satisfies the isGoal predicate, or null if no such center is reachable within the constraints of the accept predicate.
+	 *            The center to begin the search from.
+	 * @return The first center found that satisfies the isGoal predicate, or null if no such center is reachable within the constraints of
+	 *         the accept predicate.
 	 */
 	public Center breadthFirstSearchForGoal(TriFunction<Center, Center, Integer, Boolean> accept, Function<Center, Boolean> isGoal, Center start)
 	{
@@ -1957,13 +1965,13 @@ public class WorldGraph extends VoronoiGraph
 	 * Returns the amount the centers p1 and p2 are from are converging. This is between -1 and 1.
 	 *
 	 * @param p1
-	 * 		Location of a center along a tectonic plate border.
+	 *            Location of a center along a tectonic plate border.
 	 * @param p1Velocity
-	 * 		The velocity of the plate p1 is on.
+	 *            The velocity of the plate p1 is on.
 	 * @param p2
-	 * 		Location of a center along a tectonic plate border: not the same tectonic plate as p1
+	 *            Location of a center along a tectonic plate border: not the same tectonic plate as p1
 	 * @param p2Velocity
-	 * 		The velocity of the plate p2 is on.
+	 *            The velocity of the plate p2 is on.
 	 */
 	private double calcLevelOfConvergence(Point p1, PolarCoordinate p1Velocity, Point p2, PolarCoordinate p2Velocity)
 	{
@@ -1992,9 +2000,9 @@ public class WorldGraph extends VoronoiGraph
 	 * Calculates the minimum distance (in radians) from angle a1 to angle a2. The result will be in the range [0, pi].
 	 *
 	 * @param a1
-	 * 		An angle in radians. This must be between 0 and 2*pi.
+	 *            An angle in radians. This must be between 0 and 2*pi.
 	 * @param a2
-	 * 		An angle in radians. This must be between 0 and 2*pi.
+	 *            An angle in radians. This must be between 0 and 2*pi.
 	 * @return
 	 */
 	private static double calcAngleDifference(double a1, double a2)
@@ -2157,7 +2165,7 @@ public class WorldGraph extends VoronoiGraph
 	 * Create path using back pointers in search does for Voronoi edges.
 	 *
 	 * @param end
-	 * 		The end of the search
+	 *            The end of the search
 	 * @return A path
 	 */
 	private Set<Edge> createPathFromBackPointers(CornerSearchNode end)
@@ -2212,12 +2220,12 @@ public class WorldGraph extends VoronoiGraph
 	 * Uses A* search to find the shortest path between the 2 given centers using Delaunay edges.
 	 *
 	 * @param start
-	 * 		Where to begin the search
+	 *            Where to begin the search
 	 * @param end
-	 * 		The goal
+	 *            The goal
 	 * @param calculateWeight
-	 * 		Finds the weight of an edge for determining whether to explore it. This should be the weight of it the Delaunay edge. Likely this will be calculated based on the distance from one end of the
-	 * 		Delaunay age
+	 *            Finds the weight of an edge for determining whether to explore it. This should be the weight of it the Delaunay edge.
+	 *            Likely this will be calculated based on the distance from one end of the Delaunay age
 	 * @return A path if one is found; null if the and is unreachable from the start.
 	 */
 	public List<Edge> findShortestPath(Center start, Center end, TriFunction<Edge, Center, Double, Double> calculateWeight)
@@ -2310,7 +2318,7 @@ public class WorldGraph extends VoronoiGraph
 	 * Create path using back pointers in search does for Voronoi edges.
 	 *
 	 * @param end
-	 * 		The end of the search
+	 *            The end of the search
 	 * @return A path
 	 */
 	private List<Edge> createPathFromBackPointers(CenterSearchNode end)
@@ -2833,16 +2841,18 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Finds all edges that the 'accept' function accepts which are touching centersToDraw or are connected to an edge that touches those centers.
+	 * Finds all edges that the 'accept' function accepts which are touching centersToDraw or are connected to an edge that touches those
+	 * centers.
 	 *
 	 * @param centersToDraw
-	 * 		Only edges either in/touching this collection or connected to edges that are in it will be returned.
+	 *            Only edges either in/touching this collection or connected to edges that are in it will be returned.
 	 * @param accept
-	 * 		Function to determine what edge is to include in results.
+	 *            Function to determine what edge is to include in results.
 	 * @param searchEntireGraph
-	 * 		When false, only centers in centersToDraw will be searched. When true, all centers will be searched. Passing this as false is much more performant, but can cause subtle differences in the
-	 * 		results depending on which centers are passed in. Setting this to true enforces that the lists of edges returned are ordered and found the same way for full redraws vs incremental for any
-	 * 		edges that touch or pass through centersToDraw.
+	 *            When false, only centers in centersToDraw will be searched. When true, all centers will be searched. Passing this as false
+	 *            is much more performant, but can cause subtle differences in the results depending on which centers are passed in. Setting
+	 *            this to true enforces that the lists of edges returned are ordered and found the same way for full redraws vs incremental
+	 *            for any edges that touch or pass through centersToDraw.
 	 * @return
 	 */
 	public List<List<Edge>> findEdges(Collection<Center> centersToDraw, Function<Edge, Boolean> accept, boolean searchEntireGraph)
@@ -2883,11 +2893,12 @@ public class WorldGraph extends VoronoiGraph
 	 * Given an edge to start at, this returns an ordered sequence of edges in the path that edge is included in.
 	 *
 	 * @param found
-	 * 		Edges that have already been searched, and so will not be searched again.
+	 *            Edges that have already been searched, and so will not be searched again.
 	 * @param start
-	 * 		Where to start to search. Not necessarily the start of the path we're searching for.
+	 *            Where to start to search. Not necessarily the start of the path we're searching for.
 	 * @param accept
-	 * 		Used to test whether edges are part of the desired path. If "edge" returns false for this function, then an empty list is returned.
+	 *            Used to test whether edges are part of the desired path. If "edge" returns false for this function, then an empty list is
+	 *            returned.
 	 * @return A list of edges forming a path.
 	 */
 	private List<Edge> findPath(Set<Edge> found, Edge start, Function<Edge, Boolean> accept)

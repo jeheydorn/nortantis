@@ -15,8 +15,8 @@ public class DebugFlags
 	private static boolean printIncrementalUpdateTimes = false;
 
 	/**
-	 * Causes the indexes of edges to be printed to standard out when adding rivers in the Land and Water tool. This is useful when
-	 * you're debugging a need to find the index of an edge for setting a conditional breakpoint.
+	 * Causes the indexes of edges to be printed to standard out when adding rivers in the Land and Water tool. This is useful when you're
+	 * debugging a need to find the index of an edge for setting a conditional breakpoint.
 	 */
 	private static boolean printRiverEdgeIndexes = false;
 

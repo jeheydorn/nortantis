@@ -1508,11 +1508,11 @@ public class ThemePanel extends JTabbedPane
 		clearBackgroundImageCache();
 		IntDimension size = new IntDimension(backgroundDisplaySize.width, backgroundDisplaySize.height);
 
-		SwingWorker<Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm>, Void> worker = new SwingWorker<Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm>, Void>()
+		SwingWorker<Tuple4<Image, ImageHelper.ColorizeAlgorithm, Image, ImageHelper.ColorizeAlgorithm>, Void> worker = new SwingWorker<Tuple4<Image, ImageHelper.ColorizeAlgorithm, Image, ImageHelper.ColorizeAlgorithm>, Void>()
 		{
 
 			@Override
-			protected Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm> doInBackground() throws Exception
+			protected Tuple4<Image, ImageHelper.ColorizeAlgorithm, Image, ImageHelper.ColorizeAlgorithm> doInBackground() throws Exception
 			{
 				MapSettings tempSettings = new MapSettings();
 				getSettingsFromGUI(tempSettings);
@@ -1535,7 +1535,7 @@ public class ThemePanel extends JTabbedPane
 			@Override
 			public void done()
 			{
-				Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm> tuple;
+				Tuple4<Image, ImageHelper.ColorizeAlgorithm, Image, ImageHelper.ColorizeAlgorithm> tuple;
 				try
 				{
 					tuple = get();
@@ -1551,15 +1551,15 @@ public class ThemePanel extends JTabbedPane
 				}
 
 				Image oceanBackground = tuple.getFirst();
-				ImageHelper.ColorifyAlgorithm oceanColorifyAlgorithm = tuple.getSecond();
+				ImageHelper.ColorizeAlgorithm oceanColorizeAlgorithm = tuple.getSecond();
 				Image landBackground = tuple.getThird();
-				ImageHelper.ColorifyAlgorithm landColorifyAlgorithm = tuple.getFourth();
+				ImageHelper.ColorizeAlgorithm landColorizeAlgorithm = tuple.getFourth();
 
-				oceanDisplayPanel.setColorifyAlgorithm(oceanColorifyAlgorithm);
+				oceanDisplayPanel.setColorizeAlgorithm(oceanColorizeAlgorithm);
 				oceanDisplayPanel.setImage(AwtBridge.toBufferedImage(oceanBackground));
 				oceanDisplayPanel.repaint();
 
-				landDisplayPanel.setColorifyAlgorithm(landColorifyAlgorithm);
+				landDisplayPanel.setColorizeAlgorithm(landColorizeAlgorithm);
 				landDisplayPanel.setImage(AwtBridge.toBufferedImage(landBackground));
 				landDisplayPanel.repaint();
 			}
@@ -1568,7 +1568,7 @@ public class ThemePanel extends JTabbedPane
 		worker.execute();
 	}
 
-	static Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm> createBackgroundImageDisplayImages(IntDimension size, long seed, boolean colorizeOcean,
+	static Tuple4<Image, ImageHelper.ColorizeAlgorithm, Image, ImageHelper.ColorizeAlgorithm> createBackgroundImageDisplayImages(IntDimension size, long seed, boolean colorizeOcean,
 			boolean colorizeLand, boolean isFractal, boolean isFromTexture, boolean isSolidColor, String textureImageFileName)
 	{
 		synchronized (bgCacheLock)
@@ -1590,21 +1590,21 @@ public class ThemePanel extends JTabbedPane
 
 			// Cache miss — generate at the max size
 			IntDimension generateSize = new IntDimension(bgCache.maxWidth, bgCache.maxHeight);
-			Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm> generated = generateBackgroundImages(generateSize, seed, colorizeOcean,
-					colorizeLand, isFractal, isFromTexture, isSolidColor, textureImageFileName);
+			Tuple4<Image, ImageHelper.ColorizeAlgorithm, Image, ImageHelper.ColorizeAlgorithm> generated = generateBackgroundImages(generateSize, seed, colorizeOcean, colorizeLand, isFractal,
+					isFromTexture, isSolidColor, textureImageFileName);
 
 			// Store in cache
 			bgCache.oceanBackground = generated.getFirst();
-			bgCache.oceanColorifyAlgorithm = generated.getSecond();
+			bgCache.oceanColorizeAlgorithm = generated.getSecond();
 			bgCache.landBackground = generated.getThird();
-			bgCache.landColorifyAlgorithm = generated.getFourth();
+			bgCache.landColorizeAlgorithm = generated.getFourth();
 			bgCache.generatedSize = generateSize;
 
 			return cropFromCache(bgCache, size);
 		}
 	}
 
-	private static Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm> cropFromCache(BackgroundImageCache cache, IntDimension size)
+	private static Tuple4<Image, ImageHelper.ColorizeAlgorithm, Image, ImageHelper.ColorizeAlgorithm> cropFromCache(BackgroundImageCache cache, IntDimension size)
 	{
 		IntRectangle cropBounds = new IntRectangle(0, 0, size.width, size.height);
 
@@ -1612,21 +1612,21 @@ public class ThemePanel extends JTabbedPane
 		Image oceanCropped = cache.oceanBackground.copySubImage(cropBounds);
 		Image landCropped = sameInstance ? oceanCropped : cache.landBackground.copySubImage(cropBounds);
 
-		return new Tuple4<>(oceanCropped, cache.oceanColorifyAlgorithm, landCropped, cache.landColorifyAlgorithm);
+		return new Tuple4<>(oceanCropped, cache.oceanColorizeAlgorithm, landCropped, cache.landColorizeAlgorithm);
 	}
 
-	private static Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm> generateBackgroundImages(IntDimension size, long seed, boolean colorizeOcean,
+	private static Tuple4<Image, ImageHelper.ColorizeAlgorithm, Image, ImageHelper.ColorizeAlgorithm> generateBackgroundImages(IntDimension size, long seed, boolean colorizeOcean,
 			boolean colorizeLand, boolean isFractal, boolean isFromTexture, boolean isSolidColor, String textureImageFileName)
 	{
 		Image oceanBackground;
-		ImageHelper.ColorifyAlgorithm oceanColorifyAlgorithm;
+		ImageHelper.ColorizeAlgorithm oceanColorizeAlgorithm;
 		Image landBackground;
-		ImageHelper.ColorifyAlgorithm landColorifyAlgorithm;
+		ImageHelper.ColorizeAlgorithm landColorizeAlgorithm;
 
 		if (isFractal)
 		{
-			oceanColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm2;
-			landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm2;
+			oceanColorizeAlgorithm = ImageHelper.ColorizeAlgorithm.algorithm2;
+			landColorizeAlgorithm = ImageHelper.ColorizeAlgorithm.algorithm2;
 
 			oceanBackground = landBackground = FractalBGGenerator.generate(new Random(seed), 1.3f, size.width, size.height, 0.75f);
 		}
@@ -1639,13 +1639,13 @@ public class ThemePanel extends JTabbedPane
 
 				if (colorizeOcean)
 				{
-					oceanColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm3;
+					oceanColorizeAlgorithm = ImageHelper.ColorizeAlgorithm.algorithm3;
 
 					oceanBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(seed), ImageHelper.getInstance().convertToGrayscale(texture), size.height, size.width);
 				}
 				else
 				{
-					oceanColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
+					oceanColorizeAlgorithm = ImageHelper.ColorizeAlgorithm.none;
 
 					oceanBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(seed), texture, size.height, size.width);
 				}
@@ -1656,24 +1656,24 @@ public class ThemePanel extends JTabbedPane
 					landBackground = oceanBackground;
 					if (colorizeLand)
 					{
-						landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm3;
+						landColorizeAlgorithm = ImageHelper.ColorizeAlgorithm.algorithm3;
 					}
 					else
 					{
-						landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
+						landColorizeAlgorithm = ImageHelper.ColorizeAlgorithm.none;
 					}
 				}
 				else
 				{
 					if (colorizeLand)
 					{
-						landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm3;
+						landColorizeAlgorithm = ImageHelper.ColorizeAlgorithm.algorithm3;
 
 						landBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(seed), ImageHelper.getInstance().convertToGrayscale(texture), size.height, size.width);
 					}
 					else
 					{
-						landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
+						landColorizeAlgorithm = ImageHelper.ColorizeAlgorithm.none;
 
 						landBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(seed), texture, size.height, size.width);
 					}
@@ -1681,25 +1681,25 @@ public class ThemePanel extends JTabbedPane
 			}
 			catch (RuntimeException e)
 			{
-				oceanColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
-				landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
+				oceanColorizeAlgorithm = ImageHelper.ColorizeAlgorithm.none;
+				landColorizeAlgorithm = ImageHelper.ColorizeAlgorithm.none;
 				oceanBackground = landBackground = Image.create(size.width, size.height, ImageType.ARGB);
 			}
 		}
 		else if (isSolidColor)
 		{
-			oceanColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.solidColor;
-			landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.solidColor;
+			oceanColorizeAlgorithm = ImageHelper.ColorizeAlgorithm.solidColor;
+			landColorizeAlgorithm = ImageHelper.ColorizeAlgorithm.solidColor;
 			oceanBackground = landBackground = Image.create(size.width, size.height, ImageType.Grayscale8Bit);
 		}
 		else
 		{
-			oceanColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
-			landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
+			oceanColorizeAlgorithm = ImageHelper.ColorizeAlgorithm.none;
+			landColorizeAlgorithm = ImageHelper.ColorizeAlgorithm.none;
 			oceanBackground = landBackground = Image.create(size.width, size.height, ImageType.RGB);
 		}
 
-		return new Tuple4<>(oceanBackground, oceanColorifyAlgorithm, landBackground, landColorifyAlgorithm);
+		return new Tuple4<>(oceanBackground, oceanColorizeAlgorithm, landBackground, landColorizeAlgorithm);
 	}
 
 	private void handleLandColoringMethodChanged()
@@ -2257,9 +2257,9 @@ public class ThemePanel extends JTabbedPane
 
 		// Invalidated on background setting changes or explicit clear
 		Image oceanBackground;
-		ImageHelper.ColorifyAlgorithm oceanColorifyAlgorithm;
+		ImageHelper.ColorizeAlgorithm oceanColorizeAlgorithm;
 		Image landBackground;
-		ImageHelper.ColorifyAlgorithm landColorifyAlgorithm;
+		ImageHelper.ColorizeAlgorithm landColorizeAlgorithm;
 		IntDimension generatedSize;
 
 		BackgroundImageCache(int initialMaxWidth, int initialMaxHeight)
@@ -2276,9 +2276,9 @@ public class ThemePanel extends JTabbedPane
 		void clearImages()
 		{
 			oceanBackground = null;
-			oceanColorifyAlgorithm = null;
+			oceanColorizeAlgorithm = null;
 			landBackground = null;
-			landColorifyAlgorithm = null;
+			landColorizeAlgorithm = null;
 			generatedSize = null;
 		}
 	}

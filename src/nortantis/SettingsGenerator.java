@@ -322,8 +322,8 @@ public class SettingsGenerator
 	}
 
 	/**
-	 * Creates new map settings that keep the theme (colors, fonts, border, background, etc.) from
-	 * the given settings but generate a new world layout and text names.
+	 * Creates new map settings that keep the theme (colors, fonts, border, background, etc.) from the given settings but generate a new
+	 * world layout and text names.
 	 */
 	public static MapSettings newMapWithSameTheme(MapSettings currentSettings)
 	{
@@ -338,8 +338,7 @@ public class SettingsGenerator
 		// Randomize city icon type
 		try
 		{
-			List<String> cityIconTypes = ImageCache.getInstance(settings.artPack, currentSettings.customImagesPath)
-					.getIconGroupNames(IconType.cities);
+			List<String> cityIconTypes = ImageCache.getInstance(settings.artPack, currentSettings.customImagesPath).getIconGroupNames(IconType.cities);
 			if (cityIconTypes != null && !cityIconTypes.isEmpty())
 			{
 				settings.cityIconTypeName = ProbabilityHelper.sampleUniform(new Random(), new ArrayList<>(cityIconTypes));
@@ -353,8 +352,8 @@ public class SettingsGenerator
 	}
 
 	/**
-	 * Randomizes only the theme (visual appearance) fields of the given settings, keeping the
-	 * world layout (land seed, world size, probabilities, etc.) unchanged.
+	 * Randomizes only the theme (visual appearance) fields of the given settings, keeping the world layout (land seed, world size,
+	 * probabilities, etc.) unchanged.
 	 */
 	public static void randomizeTheme(MapSettings settings, String artPack, String customImagesPath)
 	{

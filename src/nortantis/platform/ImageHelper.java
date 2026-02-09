@@ -155,8 +155,7 @@ public abstract class ImageHelper
 		return maskWithMultipleColorsCPU(image, colors, colorIndexes, mask, invertMask);
 	}
 
-	private Image maskWithMultipleColorsCPU(Image image, Map<Integer, Color> colors, Image colorIndexes, Image mask,
-			boolean invertMask)
+	private Image maskWithMultipleColorsCPU(Image image, Map<Integer, Color> colors, Image colorIndexes, Image mask, boolean invertMask)
 	{
 		Image result = Image.create(image.getWidth(), image.getHeight(), image.getType());
 
@@ -257,14 +256,14 @@ public abstract class ImageHelper
 		return result;
 	}
 
-	public Image colorify(Image image, Color color, ColorifyAlgorithm how)
+	public Image colorize(Image image, Color color, ColorizeAlgorithm how)
 	{
-		return colorify(image, color, how, false);
+		return colorize(image, color, how, false);
 	}
 
-	public Image colorify(Image image, Color color, ColorifyAlgorithm how, boolean forceAddAlpha)
+	public Image colorize(Image image, Color color, ColorizeAlgorithm how, boolean forceAddAlpha)
 	{
-		if (how == ColorifyAlgorithm.none)
+		if (how == ColorizeAlgorithm.none)
 		{
 			return image;
 		}
@@ -272,11 +271,6 @@ public abstract class ImageHelper
 		if (image.getType() != ImageType.Grayscale8Bit)
 			throw new IllegalArgumentException("The image must by type ImageType.Grayscale, but was type " + image.getType());
 
-		return colorifyCPU(image, color, how, forceAddAlpha);
-	}
-
-	private Image colorifyCPU(Image image, Color color, ColorifyAlgorithm how, boolean forceAddAlpha)
-	{
 		ImageType resultType = forceAddAlpha || color.hasTransparency() ? ImageType.ARGB : ImageType.RGB;
 		Image result = Image.create(image.getWidth(), image.getHeight(), resultType);
 
@@ -291,7 +285,7 @@ public abstract class ImageHelper
 					for (int x = 0; x < image.getWidth(); x++)
 					{
 						float level = imagePixels.getNormalizedPixelLevel(x, y);
-						int rgb = colorifyPixel(level, hsb, how);
+						int rgb = colorizePixel(level, hsb, how);
 						Color resultColor = Color.create(rgb, false);
 						int r = resultColor.getRed();
 						int g = resultColor.getGreen();
@@ -307,7 +301,7 @@ public abstract class ImageHelper
 					for (int x = 0; x < image.getWidth(); x++)
 					{
 						float level = imagePixels.getNormalizedPixelLevel(x, y);
-						resultPixels.setRGB(x, y, colorifyPixel(level, hsb, how));
+						resultPixels.setRGB(x, y, colorizePixel(level, hsb, how));
 					}
 				});
 			}
@@ -316,7 +310,7 @@ public abstract class ImageHelper
 		return result;
 	}
 
-	public Image colorifyMulti(Image image, Map<Integer, Color> colorMap, Image colorIndexes, ColorifyAlgorithm how, IntPoint where)
+	public Image colorizeMulti(Image image, Map<Integer, Color> colorMap, Image colorIndexes, ColorizeAlgorithm how, IntPoint where)
 	{
 		if (image.getType() != ImageType.Grayscale8Bit)
 			throw new IllegalArgumentException("The image must by type ImageType.Grayscale, but was type " + image.getType());
@@ -330,10 +324,10 @@ public abstract class ImageHelper
 			imageToUse = image.copySubImage(new IntRectangle(where, colorIndexes.getWidth(), colorIndexes.getHeight()));
 		}
 
-		return colorifyMultiCPU(imageToUse, colorMap, colorIndexes, how);
+		return colorizeMultiInternal(imageToUse, colorMap, colorIndexes, how);
 	}
 
-	private Image colorifyMultiCPU(Image imageToUse, Map<Integer, Color> colorMap, Image colorIndexes, ColorifyAlgorithm how)
+	private Image colorizeMultiInternal(Image imageToUse, Map<Integer, Color> colorMap, Image colorIndexes, ColorizeAlgorithm how)
 	{
 		Image result = Image.create(colorIndexes.getWidth(), colorIndexes.getHeight(), ImageType.RGB);
 
@@ -358,7 +352,7 @@ public abstract class ImageHelper
 					float[] hsb = hsbMap.get(colorKey);
 					if (hsb != null)
 					{
-						resultPixels.setRGB(x, y, colorifyPixel(level, hsb, how));
+						resultPixels.setRGB(x, y, colorizePixel(level, hsb, how));
 					}
 				}
 			});
@@ -387,15 +381,15 @@ public abstract class ImageHelper
 		return convolveGrayscaleThenScale(image, createGaussianKernel(blurLevel), scale, padImageToAvoidWrapping);
 	}
 
-	private int colorifyPixel(float pixelLevelNormalized, float[] hsb, ColorifyAlgorithm how)
+	private int colorizePixel(float pixelLevelNormalized, float[] hsb, ColorizeAlgorithm how)
 	{
-		if (how == ColorifyAlgorithm.algorithm2)
+		if (how == ColorizeAlgorithm.algorithm2)
 		{
 			float I = hsb[2] * 255f;
 			float overlay = ((I / 255f) * (I + (2 * pixelLevelNormalized) * (255f - I))) / 255f;
 			return Color.createFromHSB(hsb[0], hsb[1], overlay).getRGB();
 		}
-		else if (how == ColorifyAlgorithm.algorithm3)
+		else if (how == ColorizeAlgorithm.algorithm3)
 		{
 			float resultLevel;
 			if (hsb[2] < 0.5f)
@@ -409,22 +403,22 @@ public abstract class ImageHelper
 			}
 			return Color.createFromHSB(hsb[0], hsb[1], resultLevel).getRGB();
 		}
-		else if (how == ColorifyAlgorithm.solidColor)
+		else if (how == ColorizeAlgorithm.solidColor)
 		{
 			return Color.createFromHSB(hsb[0], hsb[1], hsb[2]).getRGB();
 		}
-		else if (how == ColorifyAlgorithm.none)
+		else if (how == ColorizeAlgorithm.none)
 		{
 			return Color.createFromHSB(hsb[0], hsb[1], hsb[2]).getRGB();
 		}
 		else
 		{
-			throw new IllegalArgumentException("Unrecognize colorify algorithm.");
+			throw new IllegalArgumentException("Unrecognize colorize algorithm.");
 		}
 
 	}
 
-	public enum ColorifyAlgorithm
+	public enum ColorizeAlgorithm
 	{
 		// algorithm3 preserves contrast a little better than algorithm2.
 		// solidColor paints the pixels one color.
@@ -1568,8 +1562,7 @@ public abstract class ImageHelper
 		}
 	}
 
-	public void copySnippetFromSourceAndPasteIntoTarget(Image target, Image source, IntPoint upperLeftCornerToPasteIntoInTarget, IntRectangle boundsInSourceToCopyFrom,
-			int widthOfBorderToNotDrawOn)
+	public void copySnippetFromSourceAndPasteIntoTarget(Image target, Image source, IntPoint upperLeftCornerToPasteIntoInTarget, IntRectangle boundsInSourceToCopyFrom, int widthOfBorderToNotDrawOn)
 	{
 		Image snippet = source.getSubImage(new IntRectangle(boundsInSourceToCopyFrom.x, boundsInSourceToCopyFrom.y, boundsInSourceToCopyFrom.width, boundsInSourceToCopyFrom.height));
 

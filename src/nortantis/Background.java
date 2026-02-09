@@ -5,7 +5,7 @@ import nortantis.graph.voronoi.Center;
 import nortantis.platform.*;
 import nortantis.util.Assets;
 import nortantis.platform.ImageHelper;
-import nortantis.platform.ImageHelper.ColorifyAlgorithm;
+import nortantis.platform.ImageHelper.ColorizeAlgorithm;
 import nortantis.util.Tuple2;
 import org.apache.commons.lang3.StringUtils;
 
@@ -25,8 +25,8 @@ public class Background
 	Dimension borderBounds;
 	Image borderBackground;
 	private boolean shouldDrawRegionColors;
-	private ImageHelper.ColorifyAlgorithm landColorifyAlgorithm;
-	private ImageHelper.ColorifyAlgorithm oceanColorifyAlgorithm;
+	private ColorizeAlgorithm landColorizeAlgorithm;
+	private ColorizeAlgorithm oceanColorizeAlgorithm;
 	// regionIndexes is a gray scale image where the level of each pixel is the
 	// index of the region it is in.
 	Image regionIndexes;
@@ -52,7 +52,7 @@ public class Background
 		shouldDrawRegionColors = settings.drawRegionColors && (!settings.generateBackgroundFromTexture || settings.colorizeLand);
 
 		Image landGeneratedBackground;
-		landColorifyAlgorithm = ColorifyAlgorithm.none;
+		landColorizeAlgorithm = ColorizeAlgorithm.none;
 		this.mapBounds = mapBounds;
 
 		borderWidthScaled = calcBorderWidthScaledByResolution(settings);
@@ -68,21 +68,21 @@ public class Background
 			Image oceanGeneratedBackground = FractalBGGenerator.generate(new Random(settings.backgroundRandomSeed), fractalPower,
 					((int) mapBounds.width) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0), ((int) mapBounds.height) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0), 0.75f);
 			landGeneratedBackground = oceanGeneratedBackground;
-			landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm2;
-			oceanColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm2;
+			landColorizeAlgorithm = ColorizeAlgorithm.algorithm2;
+			oceanColorizeAlgorithm = ColorizeAlgorithm.algorithm2;
 
 			if (settings.borderColorOption == BorderColorOption.Ocean_color)
 			{
-				borderBackground = ImageHelper.getInstance().colorify(oceanGeneratedBackground, settings.oceanColor, oceanColorifyAlgorithm);
+				borderBackground = ImageHelper.getInstance().colorize(oceanGeneratedBackground, settings.oceanColor, oceanColorizeAlgorithm);
 				ocean = borderBackground;
 			}
 			else
 			{
 				if (settings.drawBorder)
 				{
-					borderBackground = ImageHelper.getInstance().colorify(oceanGeneratedBackground, settings.borderColor, oceanColorifyAlgorithm, settings.oceanColor.hasTransparency());
+					borderBackground = ImageHelper.getInstance().colorize(oceanGeneratedBackground, settings.borderColor, oceanColorizeAlgorithm, settings.oceanColor.hasTransparency());
 				}
-				ocean = ImageHelper.getInstance().colorify(oceanGeneratedBackground, settings.oceanColor, oceanColorifyAlgorithm);
+				ocean = ImageHelper.getInstance().colorize(oceanGeneratedBackground, settings.oceanColor, oceanColorizeAlgorithm);
 			}
 
 			if (settings.drawBorder)
@@ -102,7 +102,7 @@ public class Background
 			}
 			else
 			{
-				land = ImageHelper.getInstance().colorify(removeBorderPadding(landGeneratedBackground), settings.landColor, landColorifyAlgorithm);
+				land = ImageHelper.getInstance().colorize(removeBorderPadding(landGeneratedBackground), settings.landColor, landColorizeAlgorithm);
 				landGeneratedBackground = null;
 			}
 		}
@@ -127,7 +127,7 @@ public class Background
 				throw new RuntimeException("Unable to read the texture image file name \"" + texturePath + "\"", e);
 			}
 
-			oceanColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm3;
+			oceanColorizeAlgorithm = ColorizeAlgorithm.algorithm3;
 
 			Image oceanGeneratedBackground;
 			if (settings.colorizeOcean)
@@ -137,16 +137,16 @@ public class Background
 
 				if (settings.borderColorOption == BorderColorOption.Ocean_color)
 				{
-					borderBackground = ImageHelper.getInstance().colorify(oceanGeneratedBackground, settings.oceanColor, oceanColorifyAlgorithm);
+					borderBackground = ImageHelper.getInstance().colorize(oceanGeneratedBackground, settings.oceanColor, oceanColorizeAlgorithm);
 					ocean = borderBackground;
 				}
 				else
 				{
 					if (settings.drawBorder)
 					{
-						borderBackground = ImageHelper.getInstance().colorify(oceanGeneratedBackground, settings.borderColor, oceanColorifyAlgorithm, settings.oceanColor.hasTransparency());
+						borderBackground = ImageHelper.getInstance().colorize(oceanGeneratedBackground, settings.borderColor, oceanColorizeAlgorithm, settings.oceanColor.hasTransparency());
 					}
-					ocean = ImageHelper.getInstance().colorify(oceanGeneratedBackground, settings.oceanColor, oceanColorifyAlgorithm);
+					ocean = ImageHelper.getInstance().colorize(oceanGeneratedBackground, settings.oceanColor, oceanColorizeAlgorithm);
 				}
 
 				if (settings.drawBorder)
@@ -172,7 +172,7 @@ public class Background
 					}
 					else
 					{
-						borderBackground = ImageHelper.getInstance().colorify(ImageHelper.getInstance().convertToGrayscale(oceanGeneratedBackground), settings.borderColor, oceanColorifyAlgorithm);
+						borderBackground = ImageHelper.getInstance().colorize(ImageHelper.getInstance().convertToGrayscale(oceanGeneratedBackground), settings.borderColor, oceanColorizeAlgorithm);
 					}
 				}
 				else
@@ -188,7 +188,7 @@ public class Background
 
 				if (settings.colorizeLand)
 				{
-					landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm3;
+					landColorizeAlgorithm = ColorizeAlgorithm.algorithm3;
 					if (shouldDrawRegionColors)
 					{
 						// Drawing region colors must be done later because it
@@ -197,12 +197,12 @@ public class Background
 					}
 					else
 					{
-						land = ImageHelper.getInstance().colorify(removeBorderPadding(landGeneratedBackground), settings.landColor, ImageHelper.ColorifyAlgorithm.algorithm3);
+						land = ImageHelper.getInstance().colorize(removeBorderPadding(landGeneratedBackground), settings.landColor, ColorizeAlgorithm.algorithm3);
 					}
 				}
 				else
 				{
-					landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
+					landColorizeAlgorithm = ColorizeAlgorithm.none;
 					land = removeBorderPadding(landGeneratedBackground);
 				}
 			}
@@ -226,16 +226,16 @@ public class Background
 					}
 					else
 					{
-						land = ImageHelper.getInstance().colorify(removeBorderPadding(landGeneratedBackground), settings.landColor, ImageHelper.ColorifyAlgorithm.algorithm3);
+						land = ImageHelper.getInstance().colorize(removeBorderPadding(landGeneratedBackground), settings.landColor, ColorizeAlgorithm.algorithm3);
 					}
-					landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm3;
+					landColorizeAlgorithm = ColorizeAlgorithm.algorithm3;
 				}
 				else
 				{
 					landGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(settings.backgroundRandomSeed), texture,
 							((int) mapBounds.height) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0), ((int) mapBounds.width) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0));
 					land = removeBorderPadding(landGeneratedBackground);
-					landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
+					landColorizeAlgorithm = ColorizeAlgorithm.none;
 				}
 			}
 		}
@@ -243,21 +243,21 @@ public class Background
 		{
 			Image background = Image.create(((int) mapBounds.width) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0), ((int) mapBounds.height) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0),
 					ImageType.Grayscale8Bit);
-			landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.solidColor;
-			oceanColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.solidColor;
+			landColorizeAlgorithm = ColorizeAlgorithm.solidColor;
+			oceanColorizeAlgorithm = ColorizeAlgorithm.solidColor;
 
 			if (settings.borderColorOption == BorderColorOption.Ocean_color)
 			{
-				borderBackground = ImageHelper.getInstance().colorify(background, settings.oceanColor, oceanColorifyAlgorithm);
+				borderBackground = ImageHelper.getInstance().colorize(background, settings.oceanColor, oceanColorizeAlgorithm);
 				ocean = borderBackground;
 			}
 			else
 			{
 				if (settings.drawBorder)
 				{
-					borderBackground = ImageHelper.getInstance().colorify(background, settings.borderColor, oceanColorifyAlgorithm, settings.oceanColor.hasTransparency());
+					borderBackground = ImageHelper.getInstance().colorize(background, settings.borderColor, oceanColorizeAlgorithm, settings.oceanColor.hasTransparency());
 				}
-				ocean = ImageHelper.getInstance().colorify(background, settings.oceanColor, oceanColorifyAlgorithm);
+				ocean = ImageHelper.getInstance().colorize(background, settings.oceanColor, oceanColorizeAlgorithm);
 			}
 
 			if (settings.drawBorder)
@@ -276,7 +276,7 @@ public class Background
 			}
 			else
 			{
-				land = ImageHelper.getInstance().colorify(removeBorderPadding(background), settings.landColor, landColorifyAlgorithm);
+				land = ImageHelper.getInstance().colorize(removeBorderPadding(background), settings.landColor, landColorizeAlgorithm);
 			}
 
 		}
@@ -356,9 +356,9 @@ public class Background
 					graph.drawRegionIndexes(p, null, null);
 				}
 
-				landColoredBeforeAddingIconColors = drawRegionColors(graph, landBeforeRegionColoring, regionIndexes, landColorifyAlgorithm, null);
+				landColoredBeforeAddingIconColors = drawRegionColors(graph, landBeforeRegionColoring, regionIndexes, landColorizeAlgorithm, null);
 				updateRegionIndexesAndLandWithIconShapes(graph, tasks, drawBounds);
-				land = drawRegionColors(graph, landBeforeRegionColoring, regionIndexes, landColorifyAlgorithm, null);
+				land = drawRegionColors(graph, landBeforeRegionColoring, regionIndexes, landColorizeAlgorithm, null);
 			}
 			else
 			{
@@ -369,23 +369,23 @@ public class Background
 					graph.drawRegionIndexes(p, centersToDraw, drawBounds);
 				}
 
-				Image landSnippetColoredBeforeAddingIconColors = drawRegionColors(graph, landBeforeRegionColoring, regionIndexes, landColorifyAlgorithm,
+				Image landSnippetColoredBeforeAddingIconColors = drawRegionColors(graph, landBeforeRegionColoring, regionIndexes, landColorizeAlgorithm,
 						new IntPoint((int) drawBounds.x, (int) drawBounds.y));
 				IntRectangle boundsInSourceToCopyFrom = new IntRectangle((int) replaceBounds.x - (int) drawBounds.x, (int) replaceBounds.y - (int) drawBounds.y, (int) replaceBounds.width,
 						(int) replaceBounds.height);
-				ImageHelper.getInstance().copySnippetFromSourceAndPasteIntoTarget(landColoredBeforeAddingIconColors, landSnippetColoredBeforeAddingIconColors, replaceBounds.upperLeftCorner().toIntPoint(),
-						boundsInSourceToCopyFrom, 0);
+				ImageHelper.getInstance().copySnippetFromSourceAndPasteIntoTarget(landColoredBeforeAddingIconColors, landSnippetColoredBeforeAddingIconColors,
+						replaceBounds.upperLeftCorner().toIntPoint(), boundsInSourceToCopyFrom, 0);
 
 				updateRegionIndexesAndLandWithIconShapes(graph, tasks, drawBounds);
-				Image landSnippet = drawRegionColors(graph, landBeforeRegionColoring, regionIndexes, landColorifyAlgorithm, new IntPoint((int) drawBounds.x, (int) drawBounds.y));
+				Image landSnippet = drawRegionColors(graph, landBeforeRegionColoring, regionIndexes, landColorizeAlgorithm, new IntPoint((int) drawBounds.x, (int) drawBounds.y));
 				ImageHelper.getInstance().copySnippetFromSourceAndPasteIntoTarget(land, landSnippet, replaceBounds.upperLeftCorner().toIntPoint(), boundsInSourceToCopyFrom, 0);
 			}
 		}
 	}
 
 	/***
-	 * Draws icons onto regionIndexes and the land background so that the color of icons is determined by the place they draw at their
-	 * base, rather than letting them be multicolored when they cross region boundaries.
+	 * Draws icons onto regionIndexes and the land background so that the color of icons is determined by the place they draw at their base,
+	 * rather than letting them be multicolored when they cross region boundaries.
 	 */
 	private void updateRegionIndexesAndLandWithIconShapes(WorldGraph graph, List<IconDrawTask> tasks, Rectangle drawBounds)
 	{
@@ -421,7 +421,7 @@ public class Background
 		}
 	}
 
-	private Image drawRegionColors(WorldGraph graph, Image fractalBG, Image pixelColors, ImageHelper.ColorifyAlgorithm colorifyAlgorithm, IntPoint where)
+	private Image drawRegionColors(WorldGraph graph, Image fractalBG, Image pixelColors, ColorizeAlgorithm colorizeAlgorithm, IntPoint where)
 	{
 		if (graph.regions.isEmpty())
 		{
@@ -434,7 +434,7 @@ public class Background
 			regionBackgroundColors.put(regionEntry.getKey(), regionEntry.getValue().backgroundColor);
 		}
 
-		return ImageHelper.getInstance().colorifyMulti(fractalBG, regionBackgroundColors, pixelColors, colorifyAlgorithm, where);
+		return ImageHelper.getInstance().colorizeMulti(fractalBG, regionBackgroundColors, pixelColors, colorizeAlgorithm, where);
 	}
 
 	public Image createOceanSnippet(Rectangle boundsToCopyFrom)
@@ -687,7 +687,8 @@ public class Background
 					if (!isBorderOutsideMap)
 					{
 						// Clear out the part of the map that is there.
-						ImageHelper.getInstance().copySnippetFromSourceAndPasteIntoTarget(result, borderBackground, new IntPoint(x - xOffset, y - yOffset), new IntRectangle(x, y, increment, borderWidthScaled), 0);
+						ImageHelper.getInstance().copySnippetFromSourceAndPasteIntoTarget(result, borderBackground, new IntPoint(x - xOffset, y - yOffset),
+								new IntRectangle(x, y, increment, borderWidthScaled), 0);
 					}
 
 					try (Painter p = result.createPainter())
@@ -745,7 +746,8 @@ public class Background
 					if (!isBorderOutsideMap)
 					{
 						// Clear out the part of the map that is there.
-						ImageHelper.getInstance().copySnippetFromSourceAndPasteIntoTarget(result, borderBackground, new IntPoint(x - xOffset, y - yOffset), new IntRectangle(x, y, borderWidthScaled, increment), 0);
+						ImageHelper.getInstance().copySnippetFromSourceAndPasteIntoTarget(result, borderBackground, new IntPoint(x - xOffset, y - yOffset),
+								new IntRectangle(x, y, borderWidthScaled, increment), 0);
 					}
 
 					try (Painter p = result.createPainter())

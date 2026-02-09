@@ -29,12 +29,12 @@ import java.util.stream.Collectors;
 
 public class IconsTool extends EditorTool
 {
-	private JRadioButton mountainsButton;
-	private JRadioButton treesButton;
+	private JToggleButton mountainsButton;
+	private JToggleButton treesButton;
 	private JComboBox<ImageIcon> brushSizeComboBox;
 	private RowHider brushSizeHider;
-	private JRadioButton hillsButton;
-	private JRadioButton dunesButton;
+	private JToggleButton hillsButton;
+	private JToggleButton dunesButton;
 	private IconTypeButtons mountainTypes;
 	private IconTypeButtons hillTypes;
 	private IconTypeButtons duneTypes;
@@ -44,8 +44,9 @@ public class IconsTool extends EditorTool
 	private JSlider densitySlider;
 	private Random rand;
 	private RowHider densityHider;
-	private JRadioButton citiesButton;
-	private JRadioButton decorationsButton;
+	private JToggleButton citiesButton;
+	private JToggleButton decorationsButton;
+	private SegmentedButtonWidget iconTypeWidget;
 	private DrawModeWidget modeWidget;
 	private Set<FreeIcon> iconsToEdit;
 	private java.awt.Point editStart;
@@ -146,85 +147,38 @@ public class IconsTool extends EditorTool
 				"Move or scale individual icons", () -> handleModeChanged());
 		modeWidget.addToOrganizer(organizer, "");
 
-		// Icon type radio buttons
+		// Icon type buttons
 		{
-			ButtonGroup group = new ButtonGroup();
-			List<JComponent> radioButtons = new ArrayList<>();
+			ActionListener typeListener = new ActionListener()
+			{
+				@Override
+				public void actionPerformed(ActionEvent event)
+				{
+					updateTypePanels();
+				}
+			};
 
-			mountainsButton = new JRadioButton("Mountains");
-			group.add(mountainsButton);
-			radioButtons.add(mountainsButton);
+			mountainsButton = new JToggleButton("Mountains");
 			mountainsButton.setSelected(true);
-			mountainsButton.addActionListener(new ActionListener()
-			{
-				@Override
-				public void actionPerformed(ActionEvent event)
-				{
-					updateTypePanels();
-				}
-			});
+			mountainsButton.addActionListener(typeListener);
 
-			hillsButton = new JRadioButton("Hills");
-			group.add(hillsButton);
-			radioButtons.add(hillsButton);
-			hillsButton.addActionListener(new ActionListener()
-			{
-				@Override
-				public void actionPerformed(ActionEvent event)
-				{
-					updateTypePanels();
-				}
-			});
+			hillsButton = new JToggleButton("Hills");
+			hillsButton.addActionListener(typeListener);
 
-			dunesButton = new JRadioButton("Dunes");
-			group.add(dunesButton);
-			radioButtons.add(dunesButton);
-			dunesButton.addActionListener(new ActionListener()
-			{
-				@Override
-				public void actionPerformed(ActionEvent event)
-				{
-					updateTypePanels();
-				}
-			});
+			dunesButton = new JToggleButton("Dunes");
+			dunesButton.addActionListener(typeListener);
 
-			treesButton = new JRadioButton("Trees");
-			group.add(treesButton);
-			radioButtons.add(treesButton);
-			treesButton.addActionListener(new ActionListener()
-			{
-				@Override
-				public void actionPerformed(ActionEvent event)
-				{
-					updateTypePanels();
-				}
-			});
+			treesButton = new JToggleButton("Trees");
+			treesButton.addActionListener(typeListener);
 
-			citiesButton = new JRadioButton("Cities");
-			group.add(citiesButton);
-			radioButtons.add(citiesButton);
-			citiesButton.addActionListener(new ActionListener()
-			{
-				@Override
-				public void actionPerformed(ActionEvent event)
-				{
-					updateTypePanels();
-				}
-			});
+			citiesButton = new JToggleButton("Cities");
+			citiesButton.addActionListener(typeListener);
 
-			decorationsButton = new JRadioButton("Decorations");
-			group.add(decorationsButton);
-			radioButtons.add(decorationsButton);
-			decorationsButton.addActionListener(new ActionListener()
-			{
-				@Override
-				public void actionPerformed(ActionEvent event)
-				{
-					updateTypePanels();
-				}
-			});
+			decorationsButton = new JToggleButton("Decorations");
+			decorationsButton.addActionListener(typeListener);
 
-			iconTypeButtonsHider = organizer.addLabelAndComponentsVertical("Type:", "The type of icon to add/replace.", radioButtons);
+			iconTypeWidget = new SegmentedButtonWidget(List.of(mountainsButton, hillsButton, dunesButton, treesButton, citiesButton, decorationsButton));
+			iconTypeButtonsHider = iconTypeWidget.addToOrganizer(organizer, "Type:", "The type of icon to add/replace.");
 		}
 
 		// Icon type checkboxes
@@ -1383,18 +1337,18 @@ public class IconsTool extends EditorTool
 		Image previewImage;
 
 		Path backgroundImagePath = settings.getBackgroundImagePath().getFirst();
-		Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm> tuple = ThemePanel.createBackgroundImageDisplayImages(size, settings.backgroundRandomSeed,
+		Tuple4<Image, ImageHelper.ColorizeAlgorithm, Image, ImageHelper.ColorizeAlgorithm> tuple = ThemePanel.createBackgroundImageDisplayImages(size, settings.backgroundRandomSeed,
 				settings.colorizeOcean, settings.colorizeLand, settings.generateBackground, settings.generateBackgroundFromTexture, settings.solidColorBackground,
 				backgroundImagePath == null ? null : backgroundImagePath.toString());
 		if (iconType == IconType.decorations)
 		{
 			previewImage = tuple.getFirst();
-			previewImage = ImageHelper.getInstance().colorify(previewImage, settings.oceanColor, tuple.getSecond());
+			previewImage = ImageHelper.getInstance().colorize(previewImage, settings.oceanColor, tuple.getSecond());
 		}
 		else
 		{
 			previewImage = tuple.getThird();
-			previewImage = ImageHelper.getInstance().colorify(previewImage, settings.landColor, tuple.getFourth());
+			previewImage = ImageHelper.getInstance().colorize(previewImage, settings.landColor, tuple.getFourth());
 		}
 
 		previewImage = fadeEdges(previewImage, fadeWidth);

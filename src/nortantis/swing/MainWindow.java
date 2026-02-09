@@ -1584,7 +1584,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				nortantis.geom.Dimension size = new nortantis.geom.Dimension(mapEditingScrollPane.getSize().width - additionalWidthToRemoveIDontKnowWhereItsComingFrom,
 						mapEditingScrollPane.getSize().height - additionalWidthToRemoveIDontKnowWhereItsComingFrom);
 
-				nortantis.geom.Dimension fitted = ImageHelper.getInstance().fitDimensionsWithinBoundingBox(size, mapEditingPanel.mapFromMapCreator.getWidth(), mapEditingPanel.mapFromMapCreator.getHeight());
+				nortantis.geom.Dimension fitted = ImageHelper.getInstance().fitDimensionsWithinBoundingBox(size, mapEditingPanel.mapFromMapCreator.getWidth(),
+						mapEditingPanel.mapFromMapCreator.getHeight());
 				return (fitted.width / mapEditingPanel.mapFromMapCreator.getWidth()) * mapEditingPanel.osScale;
 			}
 			else

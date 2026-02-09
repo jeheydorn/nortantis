@@ -135,11 +135,11 @@ public class OldPropertyBasedMapSettings implements Serializable
 		oceanEffect = getProperty("addWavesToOcean", () ->
 		{
 			String str = props.getProperty("oceanEffect");
-			if (str == null || str.equals(""))
+			if (str == null || str.isEmpty())
 			{
 				// Try the old property name.
 				String str2 = props.getProperty("addWavesToOcean");
-				if (str2 == null || str2.equals(""))
+				if (str2 == null || str2.isEmpty())
 				{
 					return OceanWaves.Ripples;
 				}

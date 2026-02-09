@@ -71,128 +71,128 @@ public class MapCreatorTest
 		try
 		{
 
-		// Create the full map first (baseline)
-		MapCreator mapCreator = new MapCreator();
-		MapParts mapParts = new MapParts();
-		Image fullMap = mapCreator.createMap(settings, null, mapParts);
-		final int diffThreshold = 10;
-		int failCount = 0;
+			// Create the full map first (baseline)
+			MapCreator mapCreator = new MapCreator();
+			MapParts mapParts = new MapParts();
+			Image fullMap = mapCreator.createMap(settings, null, mapParts);
+			final int diffThreshold = 10;
+			int failCount = 0;
 
-		{
-			final int numberToTest = 50;
-			Image fullMapForUpdates = fullMap.deepCopy();
-			int iconNumber = 0;
-			for (FreeIcon icon : settings.edits.freeIcons)
 			{
-				iconNumber++;
-				if (iconNumber > numberToTest)
+				final int numberToTest = 50;
+				Image fullMapForUpdates = fullMap.deepCopy();
+				int iconNumber = 0;
+				for (FreeIcon icon : settings.edits.freeIcons)
 				{
-					break;
+					iconNumber++;
+					if (iconNumber > numberToTest)
+					{
+						break;
+					}
+
+					// System.out.println("Running incremental icon drawing test number " + iconNumber);
+
+					IntRectangle changedBounds = mapCreator.incrementalUpdateIcons(settings, mapParts, fullMapForUpdates, Arrays.asList(icon));
+
+					assertTrue(changedBounds != null, "Incremental update should produce bounds");
+					assertTrue(changedBounds.width > 0);
+					assertTrue(changedBounds.height > 0);
+
+					Image expectedSnippet = fullMap.getSubImage(changedBounds);
+					Image actualSnippet = fullMapForUpdates.getSubImage(changedBounds);
+
+					// Compare incremental result against expected
+					String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(expectedSnippet, actualSnippet, diffThreshold);
+					if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
+					{
+						FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
+
+						String expectedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + iconNumber + " expected.png";
+						Path expectedPath = Paths.get("unit test files", failedMapsFolderName, expectedSnippetName);
+						ImageHelper.getInstance().write(expectedSnippet, expectedPath.toString());
+
+						String failedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + iconNumber + " failed.png";
+						Path failedPath = Paths.get("unit test files", failedMapsFolderName, failedSnippetName);
+						ImageHelper.getInstance().write(actualSnippet, failedPath.toString());
+
+						createImageDiffIfImagesAreSameSize(expectedSnippet, actualSnippet, failedSnippetName, diffThreshold);
+						failCount++;
+					}
 				}
 
-				// System.out.println("Running incremental icon drawing test number " + iconNumber);
-
-				IntRectangle changedBounds = mapCreator.incrementalUpdateIcons(settings, mapParts, fullMapForUpdates, Arrays.asList(icon));
-
-				assertTrue(changedBounds != null, "Incremental update should produce bounds");
-				assertTrue(changedBounds.width > 0);
-				assertTrue(changedBounds.height > 0);
-
-				Image expectedSnippet = fullMap.getSubImage(changedBounds);
-				Image actualSnippet = fullMapForUpdates.getSubImage(changedBounds);
-
-				// Compare incremental result against expected
-				String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(expectedSnippet, actualSnippet, diffThreshold);
+				String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(fullMap, fullMapForUpdates, diffThreshold);
 				if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
 				{
 					FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
-
-					String expectedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + iconNumber + " expected.png";
-					Path expectedPath = Paths.get("unit test files", failedMapsFolderName, expectedSnippetName);
-					ImageHelper.getInstance().write(expectedSnippet, expectedPath.toString());
-
-					String failedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + iconNumber + " failed.png";
-					Path failedPath = Paths.get("unit test files", failedMapsFolderName, failedSnippetName);
-					ImageHelper.getInstance().write(actualSnippet, failedPath.toString());
-
-					createImageDiffIfImagesAreSameSize(expectedSnippet, actualSnippet, failedSnippetName, diffThreshold);
-					failCount++;
+					String failedMapName = FilenameUtils.getBaseName(settingsFileName) + " updated full map for incremental draw test";
+					ImageHelper.getInstance().write(fullMapForUpdates, MapTestUtil.getFailedMapFilePath(failedMapName, failedMapsFolderName));
+					String fullMapName = FilenameUtils.getBaseName(settingsFileName) + " original full map for incremental draw test";
+					ImageHelper.getInstance().write(fullMap, MapTestUtil.getFailedMapFilePath(fullMapName, failedMapsFolderName));
+					createImageDiffIfImagesAreSameSize(fullMap, fullMapForUpdates, failedMapName, diffThreshold);
+					fail("Incremental update did not match expected image: " + comparisonErrorMessage);
 				}
 			}
 
-			String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(fullMap, fullMapForUpdates, diffThreshold);
-			if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
 			{
-				FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
-				String failedMapName = FilenameUtils.getBaseName(settingsFileName) + " updated full map for incremental draw test";
-				ImageHelper.getInstance().write(fullMapForUpdates, MapTestUtil.getFailedMapFilePath(failedMapName, failedMapsFolderName));
-				String fullMapName = FilenameUtils.getBaseName(settingsFileName) + " original full map for incremental draw test";
-				ImageHelper.getInstance().write(fullMap, MapTestUtil.getFailedMapFilePath(fullMapName, failedMapsFolderName));
-				createImageDiffIfImagesAreSameSize(fullMap, fullMapForUpdates, failedMapName, diffThreshold);
-				fail("Incremental update did not match expected image: " + comparisonErrorMessage);
-			}
-		}
-
-		{
-			final int numberToTest = 50;
-			Image fullMapForUpdates = fullMap.deepCopy();
-			int textNumber = 0;
-			for (MapText text : settings.edits.text)
-			{
-				textNumber++;
-				if (textNumber > numberToTest)
+				final int numberToTest = 50;
+				Image fullMapForUpdates = fullMap.deepCopy();
+				int textNumber = 0;
+				for (MapText text : settings.edits.text)
 				{
-					break;
+					textNumber++;
+					if (textNumber > numberToTest)
+					{
+						break;
+					}
+
+					// System.out.println("Running incremental text drawing test number " + textNumber);
+
+					IntRectangle changedBounds = mapCreator.incrementalUpdateText(settings, mapParts, fullMapForUpdates, Arrays.asList(text));
+					changedBounds = changedBounds.findIntersection(new IntRectangle(new IntPoint(0, 0), mapParts.background.getMapBoundsIncludingBorder().toIntDimension()));
+
+					assertTrue(changedBounds != null, "Incremental update should produce bounds");
+					assertTrue(changedBounds.width > 0);
+					assertTrue(changedBounds.height > 0);
+
+					Image expectedSnippet = fullMap.getSubImage(changedBounds);
+					Image actualSnippet = fullMapForUpdates.getSubImage(changedBounds);
+
+					// Compare incremental result against expected
+					String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(expectedSnippet, actualSnippet, diffThreshold);
+					if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
+					{
+						FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
+
+						String expectedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + textNumber + " expected.png";
+						Path expectedPath = Paths.get("unit test files", failedMapsFolderName, expectedSnippetName);
+						ImageHelper.getInstance().write(expectedSnippet, expectedPath.toString());
+
+						String failedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + textNumber + " failed.png";
+						Path failedPath = Paths.get("unit test files", failedMapsFolderName, failedSnippetName);
+						ImageHelper.getInstance().write(actualSnippet, failedPath.toString());
+
+						createImageDiffIfImagesAreSameSize(expectedSnippet, actualSnippet, failedSnippetName, diffThreshold);
+						failCount++;
+					}
 				}
 
-				// System.out.println("Running incremental text drawing test number " + textNumber);
-
-				IntRectangle changedBounds = mapCreator.incrementalUpdateText(settings, mapParts, fullMapForUpdates, Arrays.asList(text));
-				changedBounds = changedBounds.findIntersection(new IntRectangle(new IntPoint(0, 0), mapParts.background.getMapBoundsIncludingBorder().toIntDimension()));
-
-				assertTrue(changedBounds != null, "Incremental update should produce bounds");
-				assertTrue(changedBounds.width > 0);
-				assertTrue(changedBounds.height > 0);
-
-				Image expectedSnippet = fullMap.getSubImage(changedBounds);
-				Image actualSnippet = fullMapForUpdates.getSubImage(changedBounds);
-
-				// Compare incremental result against expected
-				String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(expectedSnippet, actualSnippet, diffThreshold);
+				String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(fullMap, fullMapForUpdates, diffThreshold);
 				if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
 				{
 					FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
-
-					String expectedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + textNumber + " expected.png";
-					Path expectedPath = Paths.get("unit test files", failedMapsFolderName, expectedSnippetName);
-					ImageHelper.getInstance().write(expectedSnippet, expectedPath.toString());
-
-					String failedSnippetName = FilenameUtils.getBaseName(settingsFileName) + " icon " + textNumber + " failed.png";
-					Path failedPath = Paths.get("unit test files", failedMapsFolderName, failedSnippetName);
-					ImageHelper.getInstance().write(actualSnippet, failedPath.toString());
-
-					createImageDiffIfImagesAreSameSize(expectedSnippet, actualSnippet, failedSnippetName, diffThreshold);
-					failCount++;
+					String failedMapName = FilenameUtils.getBaseName(settingsFileName) + " updated full map for incremental draw test";
+					ImageHelper.getInstance().write(fullMapForUpdates, MapTestUtil.getFailedMapFilePath(failedMapName, failedMapsFolderName));
+					String fullMapName = FilenameUtils.getBaseName(settingsFileName) + " original full map for incremental draw test";
+					ImageHelper.getInstance().write(fullMap, MapTestUtil.getFailedMapFilePath(fullMapName, failedMapsFolderName));
+					createImageDiffIfImagesAreSameSize(fullMap, fullMapForUpdates, failedMapName, diffThreshold);
+					fail("Incremental update did not match expected image: " + comparisonErrorMessage);
 				}
 			}
 
-			String comparisonErrorMessage = MapTestUtil.checkIfImagesEqual(fullMap, fullMapForUpdates, diffThreshold);
-			if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
+			if (failCount > 0)
 			{
-				FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
-				String failedMapName = FilenameUtils.getBaseName(settingsFileName) + " updated full map for incremental draw test";
-				ImageHelper.getInstance().write(fullMapForUpdates, MapTestUtil.getFailedMapFilePath(failedMapName, failedMapsFolderName));
-				String fullMapName = FilenameUtils.getBaseName(settingsFileName) + " original full map for incremental draw test";
-				ImageHelper.getInstance().write(fullMap, MapTestUtil.getFailedMapFilePath(fullMapName, failedMapsFolderName));
-				createImageDiffIfImagesAreSameSize(fullMap, fullMapForUpdates, failedMapName, diffThreshold);
-				fail("Incremental update did not match expected image: " + comparisonErrorMessage);
+				fail(failCount + " incremental update tests failed.");
 			}
-		}
-
-		if (failCount > 0)
-		{
-			fail(failCount + " incremental update tests failed.");
-		}
 
 		}
 		finally
@@ -375,8 +375,7 @@ public class MapCreatorTest
 				.add("Unable to find the art pack 'custom' to load the mountain image group 'sharp'. The art pack 'nortantis' will be used instead because it has the same image group folder name.");
 		expectedWarnings.add("Unable to find the art pack 'custom' to load the icon 'ship 6' from decoration image group 'boats'. The art pack 'nortantis' will be used instead.");
 		expectedWarnings.add("Unable to find the decoration image group 'boats' in art pack 'custom'. The group 'other' in art pack 'nortantis' will be used instead.");
-		expectedWarnings.add(
-				"Unable to find the decoration icon 'ship 6' in art pack 'custom', group 'boats'. The icon 'anchor' in art pack 'nortantis', group 'other', will be used instead.");
+		expectedWarnings.add("Unable to find the decoration icon 'ship 6' in art pack 'custom', group 'boats'. The icon 'anchor' in art pack 'nortantis', group 'other', will be used instead.");
 		expectedWarnings.add("Unable to find the art pack 'custom' to load the icon 'small house 1' from city image group 'other'. The art pack 'nortantis' will be used instead.");
 		expectedWarnings.add("Unable to find the city image group 'other' in art pack 'custom'. The group 'flat' in art pack 'nortantis' will be used instead.");
 		expectedWarnings
@@ -388,8 +387,7 @@ public class MapCreatorTest
 		expectedWarnings.add(
 				"Unable to find the decoration icon 'compass 1' in art pack 'custom', group 'compasses'. The icon 'simple compass rose' in art pack 'nortantis', group 'compass roses', will be used instead.");
 		expectedWarnings.add("Unable to find the art pack 'custom' to load the icon 'simple_ship' from decoration image group 'boats'. The art pack 'nortantis' will be used instead.");
-		expectedWarnings.add(
-				"Unable to find the decoration icon 'simple_ship' in art pack 'custom', group 'boats'. The icon 'anchor' in art pack 'nortantis', group 'other', will be used instead.");
+		expectedWarnings.add("Unable to find the decoration icon 'simple_ship' in art pack 'custom', group 'boats'. The icon 'anchor' in art pack 'nortantis', group 'other', will be used instead.");
 
 		for (String warning : warnings)
 		{
@@ -432,8 +430,8 @@ public class MapCreatorTest
 				"The art pack 'custom' no longer has tree images, so it does not have the tree image group 'generated deciduous 6'. The art pack 'nortantis' will be used instead because it has tree images. These trees are not visible because they were drawn at low density, but may become visible if you change the tree height in the Effects tab.");
 		expectedWarnings.add(
 				"Unable to find the tree image group 'generated deciduous 6' in art pack 'nortantis'. The group 'original pine' in that art pack will be used instead. These trees are not visible because they were drawn at low density, but may become visible if you change the tree height in the Effects tab.");
-		expectedWarnings.add(
-				"The art pack 'custom' no longer has hill images, so it does not have the hill image group 'jagged'. The art pack 'nortantis' will be used instead because it has hill images.");
+		expectedWarnings
+				.add("The art pack 'custom' no longer has hill images, so it does not have the hill image group 'jagged'. The art pack 'nortantis' will be used instead because it has hill images.");
 		expectedWarnings.add("Unable to find the hill image group 'jagged' in art pack 'nortantis'. The group 'round' in that art pack will be used instead.");
 		expectedWarnings.add(
 				"The art pack 'custom' no longer has mountain images, so it does not have the mountain image group 'jagged'. The art pack 'nortantis' will be used instead because it has mountain images.");
@@ -459,8 +457,7 @@ public class MapCreatorTest
 		expectedWarnings.add(
 				"The art pack 'custom' no longer has decoration images, so it does not have the icon 'ship 6' from decoration image group 'boats'. The art pack 'nortantis' will be used instead because it has decoration images.");
 		expectedWarnings.add("Unable to find the decoration image group 'boats' in art pack 'custom'. The group 'other' in art pack 'nortantis' will be used instead.");
-		expectedWarnings.add(
-				"Unable to find the decoration icon 'ship 6' in art pack 'custom', group 'boats'. The icon 'anchor' in art pack 'nortantis', group 'other', will be used instead.");
+		expectedWarnings.add("Unable to find the decoration icon 'ship 6' in art pack 'custom', group 'boats'. The icon 'anchor' in art pack 'nortantis', group 'other', will be used instead.");
 		expectedWarnings.add(
 				"The art pack 'custom' no longer has city images, so it does not have the icon 'small house 1' from city image group 'other'. The art pack 'nortantis' will be used instead because it has city images.");
 		expectedWarnings.add("Unable to find the city image group 'other' in art pack 'custom'. The group 'flat' in art pack 'nortantis' will be used instead.");

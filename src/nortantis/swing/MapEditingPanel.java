@@ -12,7 +12,7 @@ import nortantis.platform.awt.AwtBridge;
 import nortantis.platform.awt.AwtFactory;
 import nortantis.util.Assets;
 import nortantis.platform.ImageHelper;
-import nortantis.platform.ImageHelper.ColorifyAlgorithm;
+import nortantis.platform.ImageHelper.ColorizeAlgorithm;
 import nortantis.util.Range;
 import org.imgscalr.Scalr.Method;
 
@@ -883,43 +883,43 @@ public class MapEditingPanel extends UnscaledImagePanel
 			// Determines the size at which the rotation and move tool icons appear.
 
 			BufferedImage rotateIcon = AwtBridge.toBufferedImage(Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "rotate text.png").toString()));
-			rotateIconScaled = AwtBridge
-					.toBufferedImage(ImageHelper.getInstance().scaleByWidth(AwtBridge.fromBufferedImage(rotateIcon), (int) (rotateIcon.getWidth() * resolution * smallIconScale), Method.ULTRA_QUALITY));
+			rotateIconScaled = AwtBridge.toBufferedImage(
+					ImageHelper.getInstance().scaleByWidth(AwtBridge.fromBufferedImage(rotateIcon), (int) (rotateIcon.getWidth() * resolution * smallIconScale), Method.ULTRA_QUALITY));
 
 			try (Image moveIcon = Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "move text.png").toString());
 					Image moveIconScaledWrapped = ImageHelper.getInstance().scaleByWidth(moveIcon, (int) (moveIcon.getWidth() * resolution * smallIconScale), Method.ULTRA_QUALITY))
 			{
 				moveIconScaledSmall = AwtBridge.toBufferedImage(moveIconScaledWrapped);
-				redMoveIconScaledSmall = AwtBridge.toBufferedImage(ImageHelper.getInstance().copyAlphaTo(
-						ImageHelper.getInstance().colorify(ImageHelper.getInstance().convertToGrayscale(moveIconScaledWrapped), AwtBridge.fromAwtColor(getInvalidPositionColor()), ColorifyAlgorithm.algorithm2),
-						moveIconScaledWrapped));
+				redMoveIconScaledSmall = AwtBridge
+						.toBufferedImage(ImageHelper.getInstance().copyAlphaTo(ImageHelper.getInstance().colorize(ImageHelper.getInstance().convertToGrayscale(moveIconScaledWrapped),
+								AwtBridge.fromAwtColor(getInvalidPositionColor()), ColorizeAlgorithm.algorithm2), moveIconScaledWrapped));
 			}
 
 			try (Image scaleIcon = Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "scale.png").toString());
 					Image scaleIconScaledWrapped = ImageHelper.getInstance().scaleByWidth(scaleIcon, (int) (scaleIcon.getWidth() * resolution * smallIconScale), Method.ULTRA_QUALITY))
 			{
 				scaleIconScaledSmall = AwtBridge.toBufferedImage(scaleIconScaledWrapped);
-				redScaleIconScaledSmall = AwtBridge.toBufferedImage(ImageHelper.getInstance().copyAlphaTo(
-						ImageHelper.getInstance().colorify(ImageHelper.getInstance().convertToGrayscale(scaleIconScaledWrapped), AwtBridge.fromAwtColor(getInvalidPositionColor()), ColorifyAlgorithm.algorithm2),
-						scaleIconScaledWrapped));
+				redScaleIconScaledSmall = AwtBridge
+						.toBufferedImage(ImageHelper.getInstance().copyAlphaTo(ImageHelper.getInstance().colorize(ImageHelper.getInstance().convertToGrayscale(scaleIconScaledWrapped),
+								AwtBridge.fromAwtColor(getInvalidPositionColor()), ColorizeAlgorithm.algorithm2), scaleIconScaledWrapped));
 			}
 
 			try (Image moveIcon = Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "move text.png").toString());
 					Image moveIconScaledWrapped = ImageHelper.getInstance().scaleByWidth(moveIcon, (int) (moveIcon.getWidth() * resolution * mediumIconScale), Method.ULTRA_QUALITY))
 			{
 				moveIconScaledMedium = AwtBridge.toBufferedImage(moveIconScaledWrapped);
-				redMoveIconScaledMedium = AwtBridge.toBufferedImage(ImageHelper.getInstance().copyAlphaTo(
-						ImageHelper.getInstance().colorify(ImageHelper.getInstance().convertToGrayscale(moveIconScaledWrapped), AwtBridge.fromAwtColor(getInvalidPositionColor()), ColorifyAlgorithm.algorithm2),
-						moveIconScaledWrapped));
+				redMoveIconScaledMedium = AwtBridge
+						.toBufferedImage(ImageHelper.getInstance().copyAlphaTo(ImageHelper.getInstance().colorize(ImageHelper.getInstance().convertToGrayscale(moveIconScaledWrapped),
+								AwtBridge.fromAwtColor(getInvalidPositionColor()), ColorizeAlgorithm.algorithm2), moveIconScaledWrapped));
 			}
 
 			try (Image scaleIcon = Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "scale.png").toString());
 					Image scaleIconScaledWrapped = ImageHelper.getInstance().scaleByWidth(scaleIcon, (int) (scaleIcon.getWidth() * resolution * mediumIconScale), Method.ULTRA_QUALITY))
 			{
 				scaleIconScaledMedium = AwtBridge.toBufferedImage(scaleIconScaledWrapped);
-				redScaleIconScaledMedium = AwtBridge.toBufferedImage(ImageHelper.getInstance().copyAlphaTo(
-						ImageHelper.getInstance().colorify(ImageHelper.getInstance().convertToGrayscale(scaleIconScaledWrapped), AwtBridge.fromAwtColor(getInvalidPositionColor()), ColorifyAlgorithm.algorithm2),
-						scaleIconScaledWrapped));
+				redScaleIconScaledMedium = AwtBridge
+						.toBufferedImage(ImageHelper.getInstance().copyAlphaTo(ImageHelper.getInstance().colorize(ImageHelper.getInstance().convertToGrayscale(scaleIconScaledWrapped),
+								AwtBridge.fromAwtColor(getInvalidPositionColor()), ColorizeAlgorithm.algorithm2), scaleIconScaledWrapped));
 			}
 
 			try (Image moveIcon = Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "move text.png").toString());

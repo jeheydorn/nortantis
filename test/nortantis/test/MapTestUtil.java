@@ -534,11 +534,11 @@ public class MapTestUtil
 	}
 
 	/**
-	 * Benchmark for incremental center editing, which exercises the updateCenterLookupTable code path.
-	 * This is the code path that can cause GPU-to-CPU sync overhead when centerLookupTable is GPU-backed.
+	 * Benchmark for incremental center editing, which exercises the updateCenterLookupTable code path. This is the code path that can cause
+	 * GPU-to-CPU sync overhead when centerLookupTable is GPU-backed.
 	 *
-	 * This benchmark actually modifies centers by toggling their land/water status, which triggers
-	 * updateCenterLookupTable to rebuild the affected region of the lookup table.
+	 * This benchmark actually modifies centers by toggling their land/water status, which triggers updateCenterLookupTable to rebuild the
+	 * affected region of the lookup table.
 	 */
 	public static void runCenterEditBenchmark(String platformName, int centersPerIteration, int iterations) throws Exception
 	{
