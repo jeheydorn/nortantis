@@ -190,7 +190,7 @@ public class MapSettings implements Serializable
 	public boolean flipHorizontally;
 	public boolean flipVertically;
 
-	private ConcurrentHashMap<IconType, Color> iconColorsByType;
+	private ConcurrentHashMap<IconType, Color> iconFillColorsByType;
 	private ConcurrentHashMap<IconType, HSBColor> iconFilterColorsByType;
 	// Implemented as a map instead of a set for concurrency.
 	private ConcurrentHashMap<IconType, Boolean> maximizeOpacityByType;
@@ -208,7 +208,7 @@ public class MapSettings implements Serializable
 
 	public MapSettings()
 	{
-		iconColorsByType = new ConcurrentHashMap<>();
+		iconFillColorsByType = new ConcurrentHashMap<>();
 		iconFilterColorsByType = new ConcurrentHashMap<>();
 		maximizeOpacityByType = new ConcurrentHashMap<>();
 		fillWithColorByType = new ConcurrentHashMap<>();
@@ -455,15 +455,15 @@ public class MapSettings implements Serializable
 		root.put("flipVertically", flipVertically);
 
 		{
-			JSONObject iconColorsObj = new JSONObject();
-			for (Map.Entry<IconType, Color> entry : iconColorsByType.entrySet())
+			JSONObject iconFillColorsObj = new JSONObject();
+			for (Map.Entry<IconType, Color> entry : iconFillColorsByType.entrySet())
 			{
 				IconType key = entry.getKey();
 				Color value = entry.getValue();
 
-				iconColorsObj.put(key, colorToString(value));
+				iconFillColorsObj.put(key, colorToString(value));
 			}
-			root.put("iconColorsByType", iconColorsObj);
+			root.put("iconColorsByType", iconFillColorsObj);
 		}
 
 		{
@@ -641,9 +641,9 @@ public class MapSettings implements Serializable
 			{
 				iconObj.put("density", icon.density);
 			}
-			if (icon.color != null && !icon.color.equals(defaultIconFillColor))
+			if (icon.fillColor != null && !icon.fillColor.equals(defaultIconFillColor))
 			{
-				iconObj.put("color", colorToString(icon.color));
+				iconObj.put("color", colorToString(icon.fillColor));
 			}
 			if (icon.filterColor != null && !icon.filterColor.equals(defaultIconFilterColor))
 			{
@@ -1186,7 +1186,7 @@ public class MapSettings implements Serializable
 			flipVertically = false;
 		}
 
-		iconColorsByType.clear();
+		iconFillColorsByType.clear();
 		if (root.containsKey("iconColorsByType"))
 		{
 			JSONObject mapObj = (JSONObject) root.get("iconColorsByType");
@@ -1195,15 +1195,15 @@ public class MapSettings implements Serializable
 				String keyString = (String) key;
 				IconType iconType = IconType.valueOf(keyString);
 				Color color = parseColor((String) mapObj.get(key));
-				iconColorsByType.put(iconType, color);
+				iconFillColorsByType.put(iconType, color);
 			}
 		}
-		// Make sure they are all populated with transparent values.
+		// Make sure they are all populated with default values.
 		for (IconType iconType : IconType.values())
 		{
-			if (!iconColorsByType.containsKey(iconType))
+			if (!iconFillColorsByType.containsKey(iconType))
 			{
-				iconColorsByType.put(iconType, defaultIconFillColor);
+				iconFillColorsByType.put(iconType, defaultIconFillColor);
 			}
 		}
 
@@ -1320,14 +1320,14 @@ public class MapSettings implements Serializable
 		{
 			for (IconType iconType : IconType.values())
 			{
-				if (iconColorsByType.containsKey(iconType))
+				if (iconFillColorsByType.containsKey(iconType))
 				{
-					Color color = iconColorsByType.get(iconType);
+					Color color = iconFillColorsByType.get(iconType);
 					fillWithColorByType.put(iconType, !color.equals(Color.transparentBlack) && !color.equals(defaultIconFillColor));
 
-					if (iconColorsByType.get(iconType).equals(Color.transparentBlack))
+					if (iconFillColorsByType.get(iconType).equals(Color.transparentBlack))
 					{
-						iconColorsByType.put(iconType, defaultIconFillColor);
+						iconFillColorsByType.put(iconType, defaultIconFillColor);
 					}
 				}
 			}
@@ -2121,23 +2121,23 @@ public class MapSettings implements Serializable
 		}
 	}
 
-	public Color getIconColorForType(IconType iconType)
+	public Color getIconFillColorForType(IconType iconType)
 	{
-		if (iconColorsByType.containsKey(iconType))
+		if (iconFillColorsByType.containsKey(iconType))
 		{
-			return iconColorsByType.get(iconType);
+			return iconFillColorsByType.get(iconType);
 		}
 		return defaultIconFillColor;
 	}
 
-	public void setIconColorForType(IconType iconType, Color color)
+	public void setIconFillColorForType(IconType iconType, Color color)
 	{
-		iconColorsByType.put(iconType, color);
+		iconFillColorsByType.put(iconType, color);
 	}
 
-	public Map<IconType, Color> copyIconColorsByType()
+	public Map<IconType, Color> copyIconFillColorsByType()
 	{
-		return Collections.unmodifiableMap(iconColorsByType);
+		return Collections.unmodifiableMap(iconFillColorsByType);
 	}
 
 	public HSBColor getIconFilterColorForType(IconType iconType)
@@ -2264,7 +2264,7 @@ public class MapSettings implements Serializable
 				drawGridOverlay, drawGrunge, drawOceanEffectsInLakes, drawOverlayImage, drawRegionBoundaries, drawRegionColors, drawRoads, drawText, drawVoronoiGridOverlayOnlyOnLand, duneScale,
 				edgeLandToWaterProbability, edits, fadeConcentricWaves, fillWithColorByType, flipHorizontally, flipVertically, frayedBorder, frayedBorderBlurLevel, frayedBorderColor, frayedBorderSeed,
 				frayedBorderSize, generateBackground, generateBackgroundFromTexture, generatedHeight, generatedWidth, gridOverlayColor, gridOverlayLayer, gridOverlayLineWidth,
-				gridOverlayRowOrColCount, gridOverlayShape, gridOverlayXOffset, gridOverlayYOffset, grungeWidth, heightmapExportPath, heightmapResolution, hillScale, hueRange, iconColorsByType,
+				gridOverlayRowOrColCount, gridOverlayShape, gridOverlayXOffset, gridOverlayYOffset, grungeWidth, heightmapExportPath, heightmapResolution, hillScale, hueRange, iconFillColorsByType,
 				iconFilterColorsByType, imageExportPath, jitterToConcentricWaves, landColor, lineStyle, lloydRelaxationsScale, maximizeOpacityByType, mountainRangeFont, mountainScale, oceanColor,
 				oceanEffectsColor, oceanEffectsLevel, oceanShadingColor, oceanShadingLevel, oceanWavesColor, oceanWavesLevel, oceanWavesType, otherMountainsFont, overlayImageDefaultScale,
 				overlayImageDefaultTransparency, overlayImagePath, overlayImageTransparency, overlayOffsetResolutionInvariant, overlayScale, pointPrecision, randomSeed, regionBaseColor,
@@ -2317,7 +2317,7 @@ public class MapSettings implements Serializable
 				&& gridOverlayLineWidth == other.gridOverlayLineWidth && gridOverlayRowOrColCount == other.gridOverlayRowOrColCount && gridOverlayShape == other.gridOverlayShape
 				&& gridOverlayXOffset == other.gridOverlayXOffset && gridOverlayYOffset == other.gridOverlayYOffset && grungeWidth == other.grungeWidth
 				&& Objects.equals(heightmapExportPath, other.heightmapExportPath) && Double.doubleToLongBits(heightmapResolution) == Double.doubleToLongBits(other.heightmapResolution)
-				&& Double.doubleToLongBits(hillScale) == Double.doubleToLongBits(other.hillScale) && hueRange == other.hueRange && Objects.equals(iconColorsByType, other.iconColorsByType)
+				&& Double.doubleToLongBits(hillScale) == Double.doubleToLongBits(other.hillScale) && hueRange == other.hueRange && Objects.equals(iconFillColorsByType, other.iconFillColorsByType)
 				&& Objects.equals(iconFilterColorsByType, other.iconFilterColorsByType) && Objects.equals(imageExportPath, other.imageExportPath)
 				&& jitterToConcentricWaves == other.jitterToConcentricWaves && Objects.equals(landColor, other.landColor) && lineStyle == other.lineStyle
 				&& Double.doubleToLongBits(lloydRelaxationsScale) == Double.doubleToLongBits(other.lloydRelaxationsScale) && Objects.equals(maximizeOpacityByType, other.maximizeOpacityByType)

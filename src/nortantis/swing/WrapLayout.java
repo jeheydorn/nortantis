@@ -140,9 +140,8 @@ public class WrapLayout extends FlowLayout
 	}
 
 	/**
-	 * Lays out the container by wrapping components to the next row when they would exceed the container width. This
-	 * override fixes a bug in FlowLayout where the horizontal gap is not included in the wrap check, causing components
-	 * to be clipped on the right edge.
+	 * Lays out the container by wrapping components to the next row when they would exceed the container width. This override fixes a bug
+	 * in FlowLayout where the horizontal gap is not included in the wrap check, causing components to be clipped on the right edge.
 	 */
 	@Override
 	public void layoutContainer(Container target)
@@ -179,8 +178,7 @@ public class WrapLayout extends FlowLayout
 					if (x > 0 && x + hgap + d.width > maxWidth)
 					{
 						// Finish current row
-						moveComponents(target, insets.left + hgap, y, maxWidth - x, rowHeight, rowStart, i, ltr,
-								align);
+						moveComponents(target, insets.left + hgap, y, maxWidth - x, rowHeight, rowStart, i, ltr, align);
 						y += vgap + rowHeight;
 						x = 0;
 						rowHeight = 0;
@@ -218,30 +216,29 @@ public class WrapLayout extends FlowLayout
 	/**
 	 * Positions components within a single row, applying alignment and vertical centering.
 	 */
-	private void moveComponents(Container target, int x, int y, int extraWidth, int rowHeight, int rowStart,
-			int rowEnd, boolean ltr, int align)
+	private void moveComponents(Container target, int x, int y, int extraWidth, int rowHeight, int rowStart, int rowEnd, boolean ltr, int align)
 	{
 		switch (align)
 		{
-		case FlowLayout.CENTER:
-			x += extraWidth / 2;
-			break;
-		case FlowLayout.RIGHT:
-			// Fall through to TRAILING
-		case FlowLayout.TRAILING:
-			if (ltr)
-			{
-				x += extraWidth;
-			}
-			break;
-		case FlowLayout.LEFT:
-			// Fall through to LEADING
-		case FlowLayout.LEADING:
-			if (!ltr)
-			{
-				x += extraWidth;
-			}
-			break;
+			case FlowLayout.CENTER:
+				x += extraWidth / 2;
+				break;
+			case FlowLayout.RIGHT:
+				// Fall through to TRAILING
+			case FlowLayout.TRAILING:
+				if (ltr)
+				{
+					x += extraWidth;
+				}
+				break;
+			case FlowLayout.LEFT:
+				// Fall through to LEADING
+			case FlowLayout.LEADING:
+				if (!ltr)
+				{
+					x += extraWidth;
+				}
+				break;
 		}
 
 		int hgap = getHgap();
@@ -266,8 +263,8 @@ public class WrapLayout extends FlowLayout
 	}
 
 	/**
-	 * Computes the maximum content width available for laying out components, accounting for the container's current
-	 * width and any ancestor scroll pane whose vertical scrollbar reduces available space.
+	 * Computes the maximum content width available for laying out components, accounting for the container's current width and any ancestor
+	 * scroll pane whose vertical scrollbar reduces available space.
 	 */
 	private int computeMaxWidth(Container target, int horizontalInsetsAndGap)
 	{
@@ -291,7 +288,7 @@ public class WrapLayout extends FlowLayout
 		// When inside a scroll pane, use the viewport width as a tighter upper bound. This matters in two cases:
 		// 1. Scrollbar visible: viewport is narrower than the container's reported width.
 		// 2. Initial layout (target width is 0): the parent walk may find an ancestor wider than this panel will
-		//    actually get; the viewport width is a closer estimate.
+		// actually get; the viewport width is a closer estimate.
 		JScrollPane scrollPane = (JScrollPane) SwingUtilities.getAncestorOfClass(JScrollPane.class, target);
 		if (scrollPane != null)
 		{

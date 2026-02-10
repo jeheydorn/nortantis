@@ -63,7 +63,7 @@ public class IconsTool extends EditorTool
 	private RowHider iconTypeCheckboxesHider;
 	private RowHider colorPickerHider;
 	private JPanel fillColorDisplay;
-	private Map<IconType, Color> iconColorsByType;
+	private Map<IconType, Color> fillColorsByType;
 	private Map<IconType, HSBColor> iconFilterColorsByType;
 	private Map<IconType, Boolean> maximizeOpacityByType;
 	private Map<IconType, Boolean> fillWithColorByType;
@@ -94,7 +94,7 @@ public class IconsTool extends EditorTool
 	{
 		super(parent, toolsPanel, mapUpdater);
 		rand = new Random();
-		iconColorsByType = new TreeMap<>();
+		fillColorsByType = new TreeMap<>();
 		iconFilterColorsByType = new TreeMap<>();
 		maximizeOpacityByType = new TreeMap<>();
 		fillWithColorByType = new TreeMap<>();
@@ -701,7 +701,7 @@ public class IconsTool extends EditorTool
 					String iconName = fileNames.get(iconToEdit.iconIndex % fileNames.size());
 					nameLabel.setText(iconName);
 				}
-				setColorFieldsWithoutRunningListeners(iconToEdit.color, iconToEdit.filterColor, iconToEdit.maximizeOpacity, iconToEdit.fillWithColor);
+				setColorFieldsWithoutRunningListeners(iconToEdit.fillColor, iconToEdit.filterColor, iconToEdit.maximizeOpacity, iconToEdit.fillWithColor);
 			}
 			else
 			{
@@ -719,7 +719,7 @@ public class IconsTool extends EditorTool
 				Color iconColorMode;
 				{
 					Counter<Color> counter = new HashCounter<Color>();
-					iconsToEdit.stream().forEach(iconToEdit -> counter.incrementCount(iconToEdit.color));
+					iconsToEdit.stream().forEach(iconToEdit -> counter.incrementCount(iconToEdit.fillColor));
 					iconColorMode = counter.argmax();
 				}
 
@@ -800,7 +800,7 @@ public class IconsTool extends EditorTool
 		if (modeWidget.isDrawMode() || modeWidget.isReplaceMode())
 		{
 			IconType selectedType = getSelectedIconType();
-			iconColorsByType.put(selectedType, AwtBridge.fromAwtColor(fillColorDisplay.getBackground()));
+			fillColorsByType.put(selectedType, AwtBridge.fromAwtColor(fillColorDisplay.getBackground()));
 			iconFilterColorsByType.put(selectedType, getFilterColor());
 			maximizeOpacityByType.put(selectedType, maximizeOpacityCheckbox.isSelected());
 			fillWithColorByType.put(selectedType, fillWithColorCheckbox.isSelected());
@@ -854,7 +854,7 @@ public class IconsTool extends EditorTool
 				boolean maximizeOpacityToUse = whatChanged == WhatHSBColorFieldChanged.maximizeOpacity ? maximizeOpacityCheckbox.isSelected() : iconToEdit.maximizeOpacity;
 				boolean fillWithColorToUse = (whatChanged == WhatHSBColorFieldChanged.FillColor || whatChanged == WhatHSBColorFieldChanged.FillWithColorCheckbox) ? fillWithColorCheckbox.isSelected()
 						: iconToEdit.fillWithColor;
-				Color fillColorToUse = whatChanged == WhatHSBColorFieldChanged.FillColor ? AwtBridge.fromAwtColor(fillColorDisplay.getBackground()) : iconToEdit.color;
+				Color fillColorToUse = whatChanged == WhatHSBColorFieldChanged.FillColor ? AwtBridge.fromAwtColor(fillColorDisplay.getBackground()) : iconToEdit.fillColor;
 				FreeIcon updatedIcon = iconToEdit.copyWithColors(fillColorToUse, filterColorToUse, maximizeOpacityToUse, fillWithColorToUse);
 				mainWindow.edits.freeIcons.replace(iconToEdit, updatedIcon);
 				updated.add(updatedIcon);
@@ -869,7 +869,7 @@ public class IconsTool extends EditorTool
 
 	private void setColorForSelectedType()
 	{
-		if (iconColorsByType == null || iconFilterColorsByType == null || maximizeOpacityByType == null)
+		if (fillColorsByType == null || iconFilterColorsByType == null || maximizeOpacityByType == null || fillWithColorByType == null)
 		{
 			return;
 		}
@@ -877,8 +877,8 @@ public class IconsTool extends EditorTool
 		if (modeWidget.isDrawMode() || modeWidget.isReplaceMode())
 		{
 			IconType selectedType = getSelectedIconType();
-			setColorFieldsWithoutRunningListeners(iconColorsByType.get(selectedType), iconFilterColorsByType.get(selectedType), maximizeOpacityByType.get(selectedType),
-					fillWithColorByType.get(selectedType));
+			setColorFieldsWithoutRunningListeners(fillColorsByType.get(selectedType), iconFilterColorsByType.get(selectedType), Boolean.TRUE.equals(maximizeOpacityByType.get(selectedType)),
+					Boolean.TRUE.equals(fillWithColorByType.get(selectedType)));
 		}
 	}
 
@@ -1082,10 +1082,10 @@ public class IconsTool extends EditorTool
 	{
 		for (RadioButtonWithImage button : buttons.buttons)
 		{
-			Color iconColor = iconColorsByType.get(iconType);
+			Color iconColor = fillColorsByType.get(iconType);
 			HSBColor filterColor = iconFilterColorsByType.get(iconType);
-			boolean maximizeOpacity = maximizeOpacityByType.get(iconType);
-			boolean fillWithColor = fillWithColorByType.get(iconType);
+			boolean maximizeOpacity = Boolean.TRUE.equals(maximizeOpacityByType.get(iconType));
+			boolean fillWithColor = Boolean.TRUE.equals(fillWithColorByType.get(iconType));
 
 			final String buttonText = button.getText();
 			SwingWorker<Image, Void> worker = new SwingWorker<>()
@@ -1151,10 +1151,10 @@ public class IconsTool extends EditorTool
 		for (String groupId : ImageCache.getInstance(settings.artPack, settings.customImagesPath).getIconGroupNames(selector.type))
 		{
 			final List<Tuple2<String, UnscaledImageToggleButton>> namesAndButtons = selector.getIconNamesAndButtons(groupId);
-			Color iconColor = iconColorsByType.get(selector.type);
+			Color iconColor = fillColorsByType.get(selector.type);
 			HSBColor filterColor = iconFilterColorsByType.get(selector.type);
-			boolean maximizeOpacity = maximizeOpacityByType.get(selector.type);
-			boolean fillWithColor = fillWithColorByType.get(selector.type);
+			boolean maximizeOpacity = Boolean.TRUE.equals(maximizeOpacityByType.get(selector.type));
+			boolean fillWithColor = Boolean.TRUE.equals(fillWithColorByType.get(selector.type));
 
 			if (namesAndButtons != null)
 			{
@@ -1537,7 +1537,7 @@ public class IconsTool extends EditorTool
 	private Color getSelectedIconTypeColor()
 	{
 		IconType selectedType = getSelectedIconType();
-		return iconColorsByType.get(selectedType);
+		return fillColorsByType.get(selectedType);
 	}
 
 	private HSBColor getSelectedIconTypeFilterColor()
@@ -2392,10 +2392,10 @@ public class IconsTool extends EditorTool
 			}
 		}
 
-		iconColorsByType.clear();
+		fillColorsByType.clear();
 		for (IconType iconType : IconType.values())
 		{
-			iconColorsByType.put(iconType, settings.getIconColorForType(iconType));
+			fillColorsByType.put(iconType, settings.getIconFillColorForType(iconType));
 		}
 
 		iconFilterColorsByType.clear();
@@ -2432,9 +2432,9 @@ public class IconsTool extends EditorTool
 		assert !StringUtils.isEmpty(settings.artPack);
 
 		// Selected colors per icon type
-		for (Map.Entry<IconType, Color> entry : iconColorsByType.entrySet())
+		for (Map.Entry<IconType, Color> entry : fillColorsByType.entrySet())
 		{
-			settings.setIconColorForType(entry.getKey(), entry.getValue());
+			settings.setIconFillColorForType(entry.getKey(), entry.getValue());
 		}
 		for (Map.Entry<IconType, HSBColor> entry : iconFilterColorsByType.entrySet())
 		{

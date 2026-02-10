@@ -105,7 +105,7 @@ public class IconDrawer
 
 		averageCenterWidthBetweenNeighbors = graph.getMeanCenterWidthBetweenNeighbors();
 		maxSizeToDrawGeneratedMountainOrHill = averageCenterWidthBetweenNeighbors * maxAverageCenterWidthsBetweenNeighborsToDrawGeneratedMountainOrHill;
-		fillColorsByType = settings.copyIconColorsByType();
+		fillColorsByType = settings.copyIconFillColorsByType();
 		iconFilterColorsByType = settings.copyIconFilterColorsByType();
 		maximizeOpacityByType = settings.copymaximizeOpacityByType();
 		fillWithColorByType = settings.copyFillWithColorByType();
@@ -615,7 +615,7 @@ public class IconDrawer
 					return icon;
 				}
 
-				FreeIcon updated = icon.copyWith(artPackAndGroupAndName.getFirst(), artPackAndGroupAndName.getSecond(), artPackAndGroupAndName.getThird(), icon.color, icon.filterColor,
+				FreeIcon updated = icon.copyWith(artPackAndGroupAndName.getFirst(), artPackAndGroupAndName.getSecond(), artPackAndGroupAndName.getThird(), icon.fillColor, icon.filterColor,
 						icon.maximizeOpacity, icon.fillWithColor);
 				return updated;
 			}
@@ -1301,6 +1301,7 @@ public class IconDrawer
 			return;
 		}
 
+		Stopwatch sw = new Stopwatch("drawIcons");
 		int xToSubtract = drawBounds == null ? 0 : (int) drawBounds.x;
 		int yToSubtract = drawBounds == null ? 0 : (int) drawBounds.y;
 
@@ -1327,6 +1328,7 @@ public class IconDrawer
 						((int) task.centerLoc.y) - yToSubtract, (int) task.centerLoc.x, (int) task.centerLoc.y, null, null, null);
 			}
 		}
+		sw.printElapsedTime();
 	}
 
 	/**
@@ -1671,7 +1673,7 @@ public class IconDrawer
 	public void addTrees()
 	{
 		String artPackForTrees;
-		if (ImageCache.getInstance(artPackForNewMap, customImagesPath).getIconGroupsAsListsForType(IconType.sand).isEmpty())
+		if (ImageCache.getInstance(artPackForNewMap, customImagesPath).getIconGroupsAsListsForType(IconType.trees).isEmpty())
 		{
 			Logger.println("The selected art pack, '" + artPackForNewMap + "', has no trees. Trees from the '" + Assets.installedArtPack + "' art pack will be used instead.");
 			artPackForTrees = Assets.installedArtPack;
