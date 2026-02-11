@@ -342,47 +342,27 @@ public class ImageCache
 			return imagesAndMasks;
 		}
 
-		// Maps from image base without encoded parameters to (image base name without width, width, file name, alpha).
+		// Maps from image base without encoded parameters to (original file name, base name, width, alpha).
 		Map<String, FilenameParams> baseNamesToParams = new TreeMap<>();
 		for (String fileName : fileNames)
 		{
-			Tuple2<String, Double> nameAndWidth = parseBaseNameAndSize(fileName, WhichDimension.Width);
-			Tuple2<String, Double> nameAndHeight = parseBaseNameAndSize(nameAndWidth.getFirst(), WhichDimension.Height);
-			if (nameAndWidth.getSecond() == null)
+			ParsedFilename parsed = parseFilenameParams(fileName);
+
+			Double width = parsed.width();
+			if (width == null && parsed.height() != null)
 			{
-				// Check if height is stored in the file name.
-				if (nameAndHeight.getSecond() != null)
-				{
-					// Convert the height to a width using the aspect ratio of the icon.
-					Image icon = loadIconFromDiskOrCache(iconType, groupName, fileName);
-					double width = IconDrawer.getDimensionsWhenScaledByHeight(icon.size(), nameAndHeight.getSecond()).width;
-					nameAndWidth = new Tuple2<>(nameAndHeight.getFirst(), width);
-				}
-			}
-			else
-			{
-				if (nameAndHeight.getSecond() != null)
-				{
-					throw new RuntimeException("The image " + fileName + " has both an encoded height and width. Only one is allowed.");
-				}
+				// Convert the height to a width using the aspect ratio of the icon.
+				Image icon = loadIconFromDiskOrCache(iconType, groupName, fileName);
+				width = IconDrawer.getDimensionsWhenScaledByHeight(icon.size(), parsed.height()).width;
 			}
 
-			Tuple2<String, Integer> nameAndAlpha = parseAlpha(nameAndWidth.getFirst());
-			String fileNameBaseWithoutEncodedParameters = nameAndAlpha.getFirst();
-			if (baseNamesToParams.containsKey(fileNameBaseWithoutEncodedParameters))
+			if (baseNamesToParams.containsKey(parsed.baseName()))
 			{
-				throw new RuntimeException("There are multiple images for " + iconType + " named '" + fileNameBaseWithoutEncodedParameters
+				throw new RuntimeException("There are multiple images for " + iconType + " named '" + parsed.baseName()
 						+ "' whose file names only differ by their encoded width or height or extension." + " Rename one of them.");
 			}
 
-			Integer alpha = null;
-			if (nameAndAlpha.getSecond() != null)
-			{
-				alpha = nameAndAlpha.getSecond();
-			}
-
-			baseNamesToParams.put(fileNameBaseWithoutEncodedParameters, new FilenameParams(fileName, fileNameBaseWithoutEncodedParameters, nameAndWidth.getSecond(), alpha));
-
+			baseNamesToParams.put(parsed.baseName(), new FilenameParams(fileName, parsed.baseName(), width, parsed.alpha()));
 		}
 
 		Tuple2<Image, Double> tuple = findIconToUseForReferenceWhenSizingOtherIcons(iconType, groupName, baseNamesToParams);
@@ -556,122 +536,97 @@ public class ImageCache
 		return icon;
 	}
 
-	/**
-	 * Given a file name (without the path), this parses out the width or height encoded in the file name, along with the rest of the file
-	 * name, not including the extension. The width can be encoded as "width=[number]", or as "w[number]" for short, and height can be
-	 * encoded as height=[number] or h[number]. The width or height must be delimited from the rest of the file name by either a space or
-	 * underscore.
-	 * 
-	 * Example: fileName: "large castle w2.png", dimension=Width, result: ("large castle", 2)
-	 * 
-	 * @param fileName
-	 *            Image file name, including extension but excluding file path.
-	 * @param dimension
-	 *            Whether to check for width vs height.
-	 * @return A 2-tuple, where the first item is the file name without the width encoded string. Note that spaces and underscores that
-	 *         delimited the width or height encoded string are also removed. The second item is the width or height, or null if the file
-	 *         name did not contain an encoded size.
-	 */
-	public static Tuple2<String, Double> parseBaseNameAndSize(String fileName, WhichDimension dimension)
+	public record ParsedFilename(String baseName, Double width, Double height, Integer alpha)
 	{
-		if (fileName == null || fileName.isEmpty())
-		{
-			return new Tuple2<>(null, null);
-		}
-
-		// Remove the file extension
-		int dotIndex = fileName.lastIndexOf('.');
-		String baseName = (dotIndex == -1) ? fileName : fileName.substring(0, dotIndex);
-
-		// Define the regex pattern for width
-		Pattern pattern;
-		if (dimension == WhichDimension.Width)
-		{
-			pattern = Pattern.compile("(.*?)(?:\\s|_)(?:width=|w)(\\d+)");
-		}
-		else
-		{
-			pattern = Pattern.compile("(.*?)(?:\\s|_)(?:height=|h)(\\d+)");
-		}
-		Matcher matcher = pattern.matcher(baseName);
-
-		if (matcher.find())
-		{
-			String nameWithoutWidth = matcher.group(1).trim();
-			Double size = (double) Integer.parseInt(matcher.group(2));
-			if (size == 0.0)
-			{
-				throw new RuntimeException("The image '" + fileName + "' has an encoded width or height of 0.");
-			}
-
-			return new Tuple2<>(nameWithoutWidth, size);
-		}
-
-		return new Tuple2<>(baseName, null);
 	}
 
 	/**
-	 * Given a file name (without the path), this parses out the encoded alpha value, if present.
-	 * 
-	 * @return A 2-tuple in which the first parameter is the filename without the encoded alpha, and the second is the encoded alpha value.
+	 * Parses encoded width, height, and alpha values from an icon file name. Parameters can appear in any order and are delimited from the
+	 * rest of the name by a space or underscore. Width can be encoded as "width=N" or "wN", height as "height=N" or "hN", and alpha as
+	 * "alpha=N" or "aN".
+	 *
+	 * Examples:
+	 * <ul>
+	 * <li>"large castle w2.png" → baseName="large castle", width=2.0</li>
+	 * <li>"tower h15 a128.png" → baseName="tower", height=15.0, alpha=128</li>
+	 * <li>"castle a50 w20.png" → baseName="castle", width=20.0, alpha=50</li>
+	 * </ul>
+	 *
+	 * @param fileName
+	 *            Image file name, including extension but excluding file path.
+	 * @return Parsed filename components with encoded parameters extracted.
+	 * @throws RuntimeException
+	 *             if the file has both width and height, a size of 0, or alpha &gt; 255.
 	 */
-	public static Tuple2<String, Integer> parseAlpha(String fileName)
+	public static ParsedFilename parseFilenameParams(String fileName)
 	{
 		if (fileName == null || fileName.isEmpty())
 		{
-			return null;
+			return new ParsedFilename(null, null, null, null);
 		}
 
 		// Remove the file extension
 		int dotIndex = fileName.lastIndexOf('.');
 		String baseName = (dotIndex == -1) ? fileName : fileName.substring(0, dotIndex);
 
-		// Define the regex pattern for width
-		Pattern pattern = Pattern.compile("(.*?)(?:\\s|_)(?:alpha=|a)(\\d+)");
-		Matcher matcher = pattern.matcher(baseName);
+		Double width = null;
+		Double height = null;
+		Integer alpha = null;
 
-		if (matcher.find())
+		// Extract width
+		Pattern widthPattern = Pattern.compile("(.*?)(?:\\s|_)(?:width=|w)(\\d+)");
+		Matcher widthMatcher = widthPattern.matcher(baseName);
+		if (widthMatcher.find())
 		{
-			String nameWithoutAlpha = matcher.group(1).trim();
-			int alpha = Integer.parseInt(matcher.group(2));
+			width = (double) Integer.parseInt(widthMatcher.group(2));
+			if (width == 0.0)
+			{
+				throw new RuntimeException("The image '" + fileName + "' has an encoded width of 0.");
+			}
+			baseName = (widthMatcher.group(1) + baseName.substring(widthMatcher.end())).trim();
+		}
+
+		// Extract height
+		Pattern heightPattern = Pattern.compile("(.*?)(?:\\s|_)(?:height=|h)(\\d+)");
+		Matcher heightMatcher = heightPattern.matcher(baseName);
+		if (heightMatcher.find())
+		{
+			height = (double) Integer.parseInt(heightMatcher.group(2));
+			if (height == 0.0)
+			{
+				throw new RuntimeException("The image '" + fileName + "' has an encoded height of 0.");
+			}
+			baseName = (heightMatcher.group(1) + baseName.substring(heightMatcher.end())).trim();
+		}
+
+		// Extract alpha
+		Pattern alphaPattern = Pattern.compile("(.*?)(?:\\s|_)(?:alpha=|a)(\\d+)");
+		Matcher alphaMatcher = alphaPattern.matcher(baseName);
+		if (alphaMatcher.find())
+		{
+			alpha = Integer.parseInt(alphaMatcher.group(2));
 			if (alpha > 255)
 			{
 				throw new RuntimeException("The image '" + fileName + "' has an encoded alpha greater than 255.");
 			}
-
-			if (alpha < 0)
-			{
-				// Not possible to hit with my regex.
-				throw new RuntimeException("The image '" + fileName + "' has an encoded alpha less than 0.");
-			}
-
-			return new Tuple2<>(nameWithoutAlpha, alpha);
+			baseName = (alphaMatcher.group(1) + baseName.substring(alphaMatcher.end())).trim();
 		}
-		return new Tuple2<>(baseName, null);
-	}
 
-	public enum WhichDimension
-	{
-		Width, Height
+		if (width != null && height != null)
+		{
+			throw new RuntimeException("The image " + fileName + " has both an encoded height and width. Only one is allowed.");
+		}
+
+		return new ParsedFilename(baseName, width, height, alpha);
 	}
 
 	public Set<String> getIconGroupFileNamesWithoutWidthOrExtensionAsSet(IconType iconType, String groupName)
 	{
 		List<String> fileNames = getIconGroupFileNames(iconType, groupName);
-		Set<String> result = new TreeSet<String>();
-		for (int i : new Range(fileNames.size()))
+		Set<String> result = new TreeSet<>();
+		for (String fileName : fileNames)
 		{
-			Tuple2<String, Double> nameAndWidth = parseBaseNameAndSize(fileNames.get(i), WhichDimension.Width);
-			if (nameAndWidth.getSecond() == null)
-			{
-				Tuple2<String, Double> nameAndHeight = parseBaseNameAndSize(fileNames.get(i), WhichDimension.Height);
-				result.add(nameAndHeight.getFirst());
-			}
-			else
-			{
-				result.add(nameAndWidth.getFirst());
-			}
-
+			result.add(parseFilenameParams(fileName).baseName());
 		}
 		return result;
 	}
@@ -679,20 +634,10 @@ public class ImageCache
 	public List<String> getIconGroupFileNamesWithoutWidthOrExtensionAsList(IconType iconType, String groupName)
 	{
 		List<String> fileNames = getIconGroupFileNames(iconType, groupName);
-		List<String> result = new ArrayList<String>();
-		for (int i : new Range(fileNames.size()))
+		List<String> result = new ArrayList<>();
+		for (String fileName : fileNames)
 		{
-			Tuple2<String, Double> nameAndWidth = parseBaseNameAndSize(fileNames.get(i), WhichDimension.Width);
-			if (nameAndWidth.getSecond() == null)
-			{
-				Tuple2<String, Double> nameAndHeight = parseBaseNameAndSize(fileNames.get(i), WhichDimension.Height);
-				result.add(nameAndHeight.getFirst());
-			}
-			else
-			{
-				result.add(nameAndWidth.getFirst());
-			}
-
+			result.add(parseFilenameParams(fileName).baseName());
 		}
 		return result;
 	}
