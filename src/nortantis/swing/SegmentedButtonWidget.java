@@ -41,13 +41,15 @@ public class SegmentedButtonWidget
 
 		container = new JPanel()
 		{
-			private boolean hasRequestedRevalidation = false;
-
 			@Override
 			public Dimension getPreferredSize()
 			{
 				Dimension pref = super.getPreferredSize();
 
+				// WrapLayout's preferredLayoutSize overestimates available width during
+				// initial layout (parent-walk finds the viewport, but GridBag only gives
+				// this component ~60% of that minus cell insets). Compute wrapping at a
+				// tighter width so the correct multi-row height is returned.
 				int width = getWidth();
 				if (width <= 0)
 				{
@@ -65,31 +67,10 @@ public class SegmentedButtonWidget
 			@Override
 			public Dimension getMinimumSize()
 			{
+				// GridBagLayout may use minimum sizes to determine row heights.
+				// Return preferred size so the row is always tall enough for wrapped
+				// buttons.
 				return getPreferredSize();
-			}
-
-			@Override
-			public void setBounds(int x, int y, int width, int height)
-			{
-				super.setBounds(x, y, width, height);
-
-				if (!hasRequestedRevalidation && width > 0)
-				{
-					int neededHeight = computeWrappedHeight(width);
-					if (neededHeight > height + 1)
-					{
-						hasRequestedRevalidation = true;
-						SwingUtilities.invokeLater(() ->
-						{
-							Container parent = getParent();
-							if (parent != null)
-							{
-								parent.revalidate();
-								parent.repaint();
-							}
-						});
-					}
-				}
 			}
 
 			private int computeWrappedHeight(int containerWidth)
