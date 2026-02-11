@@ -132,6 +132,10 @@ sourceSets {
             setSrcDirs(listOf("src"))
             include("**/*.java")
         }
+        resources {
+            setSrcDirs(listOf("src"))
+            include("**/*.properties", "**/manifest.txt")
+        }
     }
     test {
         java {

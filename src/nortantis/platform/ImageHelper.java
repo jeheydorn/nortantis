@@ -1654,6 +1654,10 @@ public abstract class ImageHelper
 		}
 
 		Font font = MapSettings.parseFont("URW Chancery L\t0\t30");
+		if (font.canDisplayUpTo(String.join("", message)) != -1)
+		{
+			font = Font.create("SansSerif", FontStyle.Plain, 30);
+		}
 
 		IntDimension textBounds = TextDrawer.getTextDimensions(message[0], font).toIntDimension();
 		for (int i : new Range(1, message.length))

@@ -10,6 +10,7 @@ import nortantis.graph.voronoi.Corner;
 import nortantis.platform.*;
 import nortantis.platform.awt.AwtFactory;
 import nortantis.swing.MapEdits;
+import nortantis.swing.translation.Translation;
 import nortantis.util.*;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
@@ -641,8 +642,7 @@ public class IconDrawer
 			newGroupId = chooseNewGroupId(ImageCache.getInstance(artPackToUse, customImagesPath).getIconGroupNames(type), groupId);
 			if (newGroupId == null)
 			{
-				warningLogger.addWarningMessage("Unable to find the " + type.getSingularName() + " image group '" + groupId + "' in art pack '" + artPack + "'. There are no " + type.getSingularName()
-						+ " icons, so none will be drawn.");
+				warningLogger.addWarningMessage(Translation.get("warning.groupNotFound.noIcons", type.getSingularName(), groupId, artPack));
 				return null;
 			}
 			imagesInGroup = ImageCache.getInstance(artPackToUse, customImagesPath).getIconsByNameForGroup(type, newGroupId);
@@ -653,8 +653,7 @@ public class IconDrawer
 				assert false;
 				return null;
 			}
-			warningLogger.addWarningMessage("Unable to find the " + type.getSingularName() + " image group '" + groupId + "' in art pack '" + artPack + "'. The group '" + newGroupId
-					+ "' in art pack '" + artPackToUse + "' will be used instead.");
+			warningLogger.addWarningMessage(Translation.get("warning.groupNotFound.replacement", type.getSingularName(), groupId, artPack, newGroupId, artPackToUse));
 		}
 
 		String oldName = name;
@@ -674,8 +673,7 @@ public class IconDrawer
 			}
 			if (name != null)
 			{
-				warningLogger.addWarningMessage("Unable to find the " + type.getSingularName() + " icon '" + oldName + "' in art pack '" + artPack + "', group '" + groupId + "'. The icon '" + name
-						+ "' in art pack '" + artPackToUse + "', group '" + newGroupId + "', will be used instead.");
+				warningLogger.addWarningMessage(Translation.get("warning.iconNotFound.replacement", type.getSingularName(), oldName, artPack, groupId, name, artPackToUse, newGroupId));
 			}
 		}
 
@@ -719,8 +717,7 @@ public class IconDrawer
 	private String getNewGroupIdIfNeeded(final String groupId, IconType type, String artPack, ListMap<String, ImageAndMasks> iconsByGroup, WarningLogger warningLogger, boolean isForDormantTrees)
 	{
 
-		String dormantTreesMessage = isForDormantTrees ? " These trees are not visible because they were drawn at low density, but may become visible if you change the tree height in the Effects tab."
-				: "";
+		String dormantTreesMessage = isForDormantTrees ? Translation.get("warning.dormantTrees") : "";
 
 		if (!iconsByGroup.containsKey(groupId))
 		{
@@ -728,13 +725,11 @@ public class IconDrawer
 			String newGroupId = chooseNewGroupId(iconsByGroup.keySet(), groupId);
 			if (newGroupId == null)
 			{
-				warningLogger.addWarningMessage("Unable to find the " + type.getSingularName() + " image group '" + groupId + "' in art pack '" + artPack + "'. There are no " + type.getSingularName()
-						+ " icons in that art pack, so none will be drawn.");
+				warningLogger.addWarningMessage(Translation.get("warning.groupNotFound.noIconsInPack", type.getSingularName(), groupId, artPack));
 			}
 			else
 			{
-				warningLogger.addWarningMessage("Unable to find the " + type.getSingularName() + " image group '" + groupId + "' in art pack '" + artPack + "'. The group '" + newGroupId
-						+ "' in that art pack will be used instead." + dormantTreesMessage);
+				warningLogger.addWarningMessage(Translation.get("warning.groupNotFound.replacementInPack", type.getSingularName(), groupId, artPack, newGroupId, dormantTreesMessage));
 			}
 			return newGroupId;
 		}
@@ -792,8 +787,7 @@ public class IconDrawer
 
 	private String chooseNewArtPackIfNeeded(IconType type, String oldArtPack, String oldGroupId, String oldIconName, WarningLogger warningLogger, boolean isForDormantTrees)
 	{
-		String dormantTreesMessage = isForDormantTrees ? " These trees are not visible because they were drawn at low density, but may become visible if you change the tree height in the Effects tab."
-				: "";
+		String dormantTreesMessage = isForDormantTrees ? Translation.get("warning.dormantTrees") : "";
 
 		List<String> allArtPacks = Assets.listArtPacks(!StringUtils.isEmpty(customImagesPath));
 		if (!allArtPacks.contains(oldArtPack))
@@ -809,8 +803,7 @@ public class IconDrawer
 				{
 					if (ImageCache.getInstance(artPack, customImagesPath).hasGroupName(type, oldGroupId))
 					{
-						warningLogger.addWarningMessage("Unable to find the art pack '" + oldArtPack + "' to load the " + type.getSingularName() + " image group '" + oldGroupId + "'. The art pack '"
-								+ artPack + "' will be used instead because it has the same image group folder name." + dormantTreesMessage);
+						warningLogger.addWarningMessage(Translation.get("warning.artPackNotFound.sameGroup", oldArtPack, type.getSingularName(), oldGroupId, artPack, dormantTreesMessage));
 						return artPack;
 					}
 				}
@@ -818,8 +811,7 @@ public class IconDrawer
 				{
 					if (ImageCache.getInstance(artPack, customImagesPath).hasNamedIcon(type, oldGroupId, oldIconName))
 					{
-						warningLogger.addWarningMessage("Unable to find the art pack '" + oldArtPack + "' to load the icon '" + oldIconName + "' from " + type.getSingularName() + " image group '"
-								+ oldGroupId + "'. The art pack '" + artPack + "' will be used instead because it has the same image group folder and image name.");
+						warningLogger.addWarningMessage(Translation.get("warning.artPackNotFound.sameIcon", oldArtPack, oldIconName, type.getSingularName(), oldGroupId, artPack));
 						return artPack;
 					}
 				}
@@ -829,13 +821,11 @@ public class IconDrawer
 			String artPackToUse = Assets.installedArtPack;
 			if (StringUtils.isEmpty(oldIconName))
 			{
-				warningLogger.addWarningMessage("Unable to find the art pack '" + oldArtPack + "' to load the " + type.getSingularName() + " image group '" + oldGroupId + "'. The art pack '"
-						+ artPackToUse + "' will be used instead." + dormantTreesMessage);
+				warningLogger.addWarningMessage(Translation.get("warning.artPackNotFound.group", oldArtPack, type.getSingularName(), oldGroupId, artPackToUse, dormantTreesMessage));
 			}
 			else
 			{
-				warningLogger.addWarningMessage("Unable to find the art pack '" + oldArtPack + "' to load the icon '" + oldIconName + "' from " + type.getSingularName() + " image group '" + oldGroupId
-						+ "'. The art pack '" + artPackToUse + "' will be used instead.");
+				warningLogger.addWarningMessage(Translation.get("warning.artPackNotFound.icon", oldArtPack, oldIconName, type.getSingularName(), oldGroupId, artPackToUse));
 			}
 
 			return artPackToUse;
@@ -853,8 +843,7 @@ public class IconDrawer
 				{
 					if (ImageCache.getInstance(artPack, customImagesPath).hasGroupName(type, oldGroupId))
 					{
-						warningLogger.addWarningMessage("The art pack '" + oldArtPack + "' no longer has " + type.getSingularName() + " images, so it does not have the " + type.getSingularName()
-								+ " image group '" + oldGroupId + "'. The art pack '" + artPack + "' will be used instead because it has the same image group folder name." + dormantTreesMessage);
+						warningLogger.addWarningMessage(Translation.get("warning.artPackNoImages.sameGroup", oldArtPack, type.getSingularName(), oldGroupId, artPack, dormantTreesMessage));
 						return artPack;
 					}
 				}
@@ -862,9 +851,7 @@ public class IconDrawer
 				{
 					if (ImageCache.getInstance(artPack, customImagesPath).hasNamedIcon(type, oldGroupId, oldIconName))
 					{
-						warningLogger.addWarningMessage("The art pack '" + oldArtPack + "' no longer has " + type.getSingularName() + " images, so it does not have the icon '" + oldIconName
-								+ "' from " + type.getSingularName() + " image group '" + oldGroupId + "'. The art pack '" + artPack
-								+ "' will be used instead because it has the same image group folder and image name.");
+						warningLogger.addWarningMessage(Translation.get("warning.artPackNoImages.sameIcon", oldArtPack, type.getSingularName(), oldIconName, oldGroupId, artPack));
 						return artPack;
 					}
 				}
@@ -877,15 +864,12 @@ public class IconDrawer
 
 					if (StringUtils.isEmpty(oldIconName))
 					{
-						warningLogger.addWarningMessage("The art pack '" + oldArtPack + "' no longer has " + type.getSingularName() + " images, so it does not have the " + type.getSingularName()
-								+ " image group '" + oldGroupId + "'. The art pack '" + artPack + "' will be used instead because it has " + type.getSingularName() + " images." + dormantTreesMessage);
+						warningLogger.addWarningMessage(Translation.get("warning.artPackNoImages.hasType.group", oldArtPack, type.getSingularName(), oldGroupId, artPack, dormantTreesMessage));
 						return artPack;
 					}
 					else
 					{
-						warningLogger.addWarningMessage("The art pack '" + oldArtPack + "' no longer has " + type.getSingularName() + " images, so it does not have the icon '" + oldIconName
-								+ "' from " + type.getSingularName() + " image group '" + oldGroupId + "'. The art pack '" + artPack + "' will be used instead because it has " + type.getSingularName()
-								+ " images.");
+						warningLogger.addWarningMessage(Translation.get("warning.artPackNoImages.hasType.icon", oldArtPack, type.getSingularName(), oldIconName, oldGroupId, artPack));
 						return artPack;
 					}
 			}

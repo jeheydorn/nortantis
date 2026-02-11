@@ -79,6 +79,12 @@ public class AwtFont extends Font
 	}
 
 	@Override
+	public int canDisplayUpTo(String str)
+	{
+		return font.canDisplayUpTo(str);
+	}
+
+	@Override
 	public int hashCode()
 	{
 		return Objects.hash(font);

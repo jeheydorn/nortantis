@@ -1,5 +1,7 @@
 package nortantis.swing;
 
+import nortantis.swing.translation.Translation;
+
 import javax.swing.*;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -28,24 +30,24 @@ public class DrawModeWidget
 			changeListener.run();
 		};
 
-		drawModeButton = new JToggleButton("<html><u>D</u>raw</html>");
-		drawModeButton.setToolTipText(drawTooltipWithoutKeyboardShortcut + " (Alt+D)");
+		drawModeButton = new JToggleButton(Translation.get("drawMode.draw"));
+		drawModeButton.setToolTipText(drawTooltipWithoutKeyboardShortcut + " (" + Translation.get("drawMode.draw.shortcut") + ")");
 		drawModeButton.setSelected(true);
 		drawModeButton.addActionListener(modeListener);
 		drawModeButton.setMnemonic(KeyEvent.VK_D);
 
-		replaceModeButton = new JToggleButton("<html><u>R</u>eplace</html>");
-		replaceModeButton.setToolTipText(replaceTooltipWithoutKeyboardShortcut + " (Alt+R)");
+		replaceModeButton = new JToggleButton(Translation.get("drawMode.replace"));
+		replaceModeButton.setToolTipText(replaceTooltipWithoutKeyboardShortcut + " (" + Translation.get("drawMode.replace.shortcut") + ")");
 		replaceModeButton.addActionListener(modeListener);
 		replaceModeButton.setMnemonic(KeyEvent.VK_R);
 
-		editModeButton = new JToggleButton("<html>Edi<u>t</u></html>");
-		editModeButton.setToolTipText(editTooltipWithoutKeyboardShortcut + " (Alt+T)");
+		editModeButton = new JToggleButton(Translation.get("drawMode.edit"));
+		editModeButton.setToolTipText(editTooltipWithoutKeyboardShortcut + " (" + Translation.get("drawMode.edit.shortcut") + ")");
 		editModeButton.addActionListener(modeListener);
 		editModeButton.setMnemonic(KeyEvent.VK_T);
 
-		eraseModeButton = new JToggleButton("<html><u>E</u>rase</html>");
-		eraseModeButton.setToolTipText(eraseTooltipWithoutKeyboardShortcut + " (Alt+E)");
+		eraseModeButton = new JToggleButton(Translation.get("drawMode.erase"));
+		eraseModeButton.setToolTipText(eraseTooltipWithoutKeyboardShortcut + " (" + Translation.get("drawMode.erase.shortcut") + ")");
 		eraseModeButton.addActionListener(modeListener);
 		eraseModeButton.setMnemonic(KeyEvent.VK_E);
 
@@ -66,7 +68,7 @@ public class DrawModeWidget
 
 	public RowHider addToOrganizer(GridBagOrganizer organizer, String labelTooltip)
 	{
-		return segmentedWidget.addToOrganizer(organizer, "Mode:", labelTooltip);
+		return segmentedWidget.addToOrganizer(organizer, Translation.get("drawMode.mode.label"), labelTooltip);
 	}
 
 	public boolean isDrawMode()
@@ -89,10 +91,10 @@ public class DrawModeWidget
 		return editModeButton.isSelected();
 	}
 
-	public void configureDrawButton(String html, String tooltipWithoutShortcut, int mnemonic, String shortcutText)
+	public void configureDrawButton(String translatedHtml, String tooltipWithoutShortcut, int mnemonic, String translatedShortcutText)
 	{
-		drawModeButton.setText(html);
-		drawModeButton.setToolTipText(tooltipWithoutShortcut + " (" + shortcutText + ")");
+		drawModeButton.setText(translatedHtml);
+		drawModeButton.setToolTipText(tooltipWithoutShortcut + " (" + translatedShortcutText + ")");
 		drawModeButton.setMnemonic(mnemonic);
 		SwingHelper.reduceHorizontalMargin(drawModeButton);
 	}

@@ -2108,7 +2108,7 @@ public class MapSettings implements Serializable
 		if (backgroundTextureSource == TextureSource.File && StringUtils.isEmpty(backgroundTextureImage))
 		{
 			return new Tuple2<>(Assets.getBackgroundTextureResourcePath(backgroundTextureResource, customImagesPath),
-					"The selected background texture source is '" + backgroundTextureSource + "', but no texture image file is selected. An image from assets was used instead.");
+					nortantis.swing.translation.Translation.get("warning.backgroundTextureFallback", backgroundTextureSource));
 		}
 		if (backgroundTextureSource == TextureSource.Assets)
 		{

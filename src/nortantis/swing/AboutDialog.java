@@ -2,6 +2,7 @@ package nortantis.swing;
 
 import nortantis.MapSettings;
 import nortantis.platform.awt.AwtBridge;
+import nortantis.swing.translation.Translation;
 import nortantis.util.Assets;
 
 import javax.swing.*;
@@ -17,7 +18,7 @@ public class AboutDialog extends JDialog
 {
 	public AboutDialog(MainWindow mainWindow)
 	{
-		super(mainWindow, "About Nortantis", Dialog.ModalityType.APPLICATION_MODAL);
+		super(mainWindow, Translation.get("about.title"), Dialog.ModalityType.APPLICATION_MODAL);
 		setResizable(false);
 		setLayout(new BorderLayout());
 		JPanel content = new JPanel();
@@ -43,17 +44,16 @@ public class AboutDialog extends JDialog
 		JPanel rightPanel = new JPanel();
 		rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
 		rightPanel.setPreferredSize(new Dimension(nortantisImage.getWidth(), nortantisImage.getHeight()));
-		JLabel text = new JLabel("<html>" + "Nortantis version " + MapSettings.currentVersion + "" + "<html>");
+		JLabel text = new JLabel("<html>" + Translation.get("about.version", MapSettings.currentVersion) + "<html>");
 		rightPanel.add(text);
 
 		rightPanel.add(new JLabel(" "));
 
-		rightPanel.add(new JLabel("<html>If you have encountered a bug and wish to report it, you may do so at the Nortantis project's" + " GitHub issue tracker here: </html>"));
+		rightPanel.add(new JLabel("<html>" + Translation.get("about.bugReport") + " </html>"));
 		rightPanel.add(SwingHelper.createHyperlink("github.com/jeheydorn/nortantis/issues", "https://github.com/jeheydorn/nortantis/issues"));
 
 		rightPanel.add(new JLabel(" "));
-		rightPanel.add(new JLabel("<html>If you have enjoyed Nortantis and wish to support it, and you like clean, happy, fantasy "
-				+ "romance novels, then please consider purchasing one of my books listed at:</html>"));
+		rightPanel.add(new JLabel("<html>" + Translation.get("about.support") + "</html>"));
 		rightPanel.add(SwingHelper.createHyperlink("jandjheydorn.com/", "https://jandjheydorn.com/"));
 
 		rightPanel.add(Box.createVerticalGlue());
@@ -63,7 +63,7 @@ public class AboutDialog extends JDialog
 		JPanel bottomPanel = new JPanel();
 		content.add(bottomPanel, BorderLayout.SOUTH);
 		bottomPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
-		JButton closeButton = new JButton("<html><u>C</u>lose</html>");
+		JButton closeButton = new JButton(Translation.get("about.close"));
 		closeButton.setMnemonic(KeyEvent.VK_C);
 		closeButton.addActionListener(new ActionListener()
 		{

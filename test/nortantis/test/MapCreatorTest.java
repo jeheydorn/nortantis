@@ -34,6 +34,7 @@ public class MapCreatorTest
 	public static void setUpBeforeClass() throws Exception
 	{
 		PlatformFactory.setInstance(new AwtFactory());
+		nortantis.swing.translation.Translation.initialize();
 		Assets.disableAddedArtPacksForUnitTests();
 
 		FileHelper.createFolder(Paths.get("unit test files", "expected maps").toString());
@@ -354,6 +355,10 @@ public class MapCreatorTest
 	@Test
 	public void iconReplacements()
 	{
+		// Warning message strings are locale-dependent, so only check them in English.
+		org.junit.jupiter.api.Assumptions.assumeTrue(nortantis.swing.translation.Translation.getEffectiveLocale().getLanguage().equals("en"),
+				"Skipping warning text verification in non-English locale");
+
 		// Clear the custom images path to force icons to be replaced with images from the installed art pack.
 		List<String> warnings = MapTestUtil.generateAndCompare("iconReplacements.nort", (settings -> settings.customImagesPath = null), expectedMapsFolderName, failedMapsFolderName, 0)
 				.getWarningMessages();
@@ -418,6 +423,10 @@ public class MapCreatorTest
 	@Test
 	public void iconReplacementsWithMissingIconTypes()
 	{
+		// Warning message strings are locale-dependent, so only check them in English.
+		org.junit.jupiter.api.Assumptions.assumeTrue(nortantis.swing.translation.Translation.getEffectiveLocale().getLanguage().equals("en"),
+				"Skipping warning text verification in non-English locale");
+
 		List<String> warnings = MapTestUtil.generateAndCompare("iconReplacementsWithMissingIconTypes.nort", (settings) ->
 		{
 			settings.customImagesPath = Paths.get("unit test files", "map settings", "empty custom images").toAbsolutePath().toString();

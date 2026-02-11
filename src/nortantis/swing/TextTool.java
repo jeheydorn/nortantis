@@ -9,6 +9,8 @@ import nortantis.geom.RotatedRectangle;
 import nortantis.platform.Color;
 import nortantis.platform.Font;
 import nortantis.platform.awt.AwtBridge;
+import nortantis.swing.translation.TranslatedEnumRenderer;
+import nortantis.swing.translation.Translation;
 import nortantis.util.Assets;
 import nortantis.util.Tuple2;
 
@@ -76,12 +78,12 @@ public class TextTool extends EditorTool
 		JPanel toolOptionsPanel = organizer.panel;
 		toolOptionsPanel.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
 
-		drawTextDisabledLabel = new JLabel("<html>This tool is disabled because drawing text is disabled in the Fonts tab.</html>");
+		drawTextDisabledLabel = new JLabel("<html>" + Translation.get("textTool.disabled") + "</html>");
 		drawTextDisabledLabelHider = organizer.addLeftAlignedComponent(drawTextDisabledLabel);
 		drawTextDisabledLabelHider.setVisible(false);
 
-		modeWidget = new DrawModeWidget("Add new text of the selected text type", "Erase text", false, "", true, "Edit text", () -> handleActionChanged());
-		modeWidget.configureDrawButton("<html><u>A</u>dd</html>", "Add new text of the selected text type", KeyEvent.VK_A, "Alt+A");
+		modeWidget = new DrawModeWidget(Translation.get("textTool.addMode"), Translation.get("textTool.eraseMode"), false, "", true, Translation.get("textTool.editMode"), () -> handleActionChanged());
+		modeWidget.configureDrawButton(Translation.get("textTool.add"), Translation.get("textTool.addMode"), KeyEvent.VK_A, Translation.get("textTool.add.shortcut"));
 		modeWidget.addToOrganizer(organizer, "");
 
 		actionsSeparatorHider = organizer.addSeparator();
@@ -130,7 +132,8 @@ public class TextTool extends EditorTool
 				}
 			}
 		});
-		textTypeHider = organizer.addLabelAndComponent("Text type:", "", textTypeComboBox);
+		textTypeComboBox.setRenderer(new TranslatedEnumRenderer());
+		textTypeHider = organizer.addLabelAndComponent(Translation.get("textTool.textType.label"), "", textTypeComboBox);
 		textTypeForAdds = TextType.City;
 
 		for (TextType type : TextType.values())
@@ -139,7 +142,8 @@ public class TextTool extends EditorTool
 		}
 
 		lineBreakComboBox = new JComboBoxFixed<>();
-		lineBreakHider = organizer.addLabelAndComponent("Number of lines:", "", lineBreakComboBox);
+		lineBreakComboBox.setRenderer(new TranslatedEnumRenderer());
+		lineBreakHider = organizer.addLabelAndComponent(Translation.get("textTool.lineBreak.label"), "", lineBreakComboBox);
 		for (LineBreak type : LineBreak.values())
 		{
 			lineBreakComboBox.addItem(type);
@@ -162,8 +166,8 @@ public class TextTool extends EditorTool
 
 		editToolsSeparatorHider = organizer.addSeparator();
 
-		JButton clearRotationButton = new JButton("Rotate to Horizontal");
-		clearRotationButton.setToolTipText("Set the rotation angle of the selected text to 0 degrees.");
+		JButton clearRotationButton = new JButton(Translation.get("textTool.rotateToHorizontal"));
+		clearRotationButton.setToolTipText(Translation.get("textTool.rotateToHorizontal.tooltip"));
 		clearRotationButton.addActionListener(new ActionListener()
 		{
 			@Override
@@ -184,8 +188,8 @@ public class TextTool extends EditorTool
 		editToolsSeparatorHider.add(organizer.addSeparator());
 
 		{
-			useDefaultFontCheckbox = new JCheckBox("Use default font");
-			useDefaultFontCheckbox.setToolTipText("When checked, this text uses the font for its type in the Fonts tab.");
+			useDefaultFontCheckbox = new JCheckBox(Translation.get("textTool.useDefaultFont"));
+			useDefaultFontCheckbox.setToolTipText(Translation.get("textTool.useDefaultFont.tooltip"));
 			useDefaultFontCheckbox.addActionListener(new ActionListener()
 			{
 				@Override
@@ -215,7 +219,7 @@ public class TextTool extends EditorTool
 			});
 			useDefaultFontCheckboxHider = organizer.addLeftAlignedComponent(useDefaultFontCheckbox);
 
-			fontChooser = new FontChooser("Font: ", 30, 40, () ->
+			fontChooser = new FontChooser(Translation.get("textTool.font.label"), 30, 40, () ->
 			{
 				if (lastSelected != null)
 				{
@@ -230,8 +234,8 @@ public class TextTool extends EditorTool
 
 		editToolsSeparatorHider.add(organizer.addSeparator());
 
-		useDefaultColorCheckbox = new JCheckBox("Use default color");
-		useDefaultColorCheckbox.setToolTipText("When checked, this text uses the text color in the Fonts tab.");
+		useDefaultColorCheckbox = new JCheckBox(Translation.get("textTool.useDefaultColor"));
+		useDefaultColorCheckbox.setToolTipText(Translation.get("textTool.useDefaultColor.tooltip"));
 		useDefaultColorCheckbox.addActionListener(new ActionListener()
 		{
 			@Override
@@ -263,12 +267,12 @@ public class TextTool extends EditorTool
 		useDefaultColorCheckboxHider = organizer.addLeftAlignedComponent(useDefaultColorCheckbox);
 
 		colorOverrideDisplay = SwingHelper.createColorPickerPreviewPanel();
-		JButton buttonChooseColorOverride = new JButton("Choose");
+		JButton buttonChooseColorOverride = new JButton(Translation.get("common.choose"));
 		buttonChooseColorOverride.addActionListener(new ActionListener()
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				SwingHelper.showColorPicker(organizer.panel, colorOverrideDisplay, "Text Color", () ->
+				SwingHelper.showColorPicker(organizer.panel, colorOverrideDisplay, Translation.get("textTool.color.title"), () ->
 				{
 					if (lastSelected != null)
 					{
@@ -279,16 +283,16 @@ public class TextTool extends EditorTool
 				});
 			}
 		});
-		colorOverrideHider = organizer.addLabelAndComponentsHorizontal("Color:", "Change the color of this text", Arrays.asList(colorOverrideDisplay, buttonChooseColorOverride),
-				SwingHelper.colorPickerLeftPadding);
+		colorOverrideHider = organizer.addLabelAndComponentsHorizontal(Translation.get("textTool.color.label"), Translation.get("textTool.color.help"),
+				Arrays.asList(colorOverrideDisplay, buttonChooseColorOverride), SwingHelper.colorPickerLeftPadding);
 
 		boldBackgroundColorOverrideDisplay = SwingHelper.createColorPickerPreviewPanel();
-		JButton buttonChooseBoldBackgroundColorOverride = new JButton("Choose");
+		JButton buttonChooseBoldBackgroundColorOverride = new JButton(Translation.get("common.choose"));
 		buttonChooseBoldBackgroundColorOverride.addActionListener(new ActionListener()
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				SwingHelper.showColorPicker(organizer.panel, boldBackgroundColorOverrideDisplay, "Text Bold Background Color", () ->
+				SwingHelper.showColorPicker(organizer.panel, boldBackgroundColorOverrideDisplay, Translation.get("textTool.boldBackgroundColor.title"), () ->
 				{
 					if (lastSelected != null)
 					{
@@ -299,7 +303,7 @@ public class TextTool extends EditorTool
 				});
 			}
 		});
-		boldBackgroundColorOverrideHider = organizer.addLabelAndComponentsHorizontal("Bold background color:", "Change the color of the bold background of this text",
+		boldBackgroundColorOverrideHider = organizer.addLabelAndComponentsHorizontal(Translation.get("textTool.boldBackgroundColor.label"), Translation.get("textTool.boldBackgroundColor.help"),
 				Arrays.asList(boldBackgroundColorOverrideDisplay, buttonChooseBoldBackgroundColorOverride), SwingHelper.colorPickerLeftPadding);
 
 		editToolsSeparatorHider.add(organizer.addSeparator());
@@ -322,13 +326,13 @@ public class TextTool extends EditorTool
 				}
 			}, 34);
 			JButton clearCurvatureButton = new JButton("x");
-			clearCurvatureButton.setToolTipText("Clear curvature");
+			clearCurvatureButton.setToolTipText(Translation.get("textTool.clearCurvature.tooltip"));
 			SwingHelper.addListener(clearCurvatureButton, () ->
 			{
 				curvatureSlider.setValue(0);
 			});
 
-			editSlidersHider = sliderWithDisplay.addToOrganizer(organizer, "Curvature:", "How much to curve the text", clearCurvatureButton, 0, 0);
+			editSlidersHider = sliderWithDisplay.addToOrganizer(organizer, Translation.get("textTool.curvature.label"), Translation.get("textTool.curvature.help"), clearCurvatureButton, 0, 0);
 		}
 
 		{
@@ -349,13 +353,13 @@ public class TextTool extends EditorTool
 				}
 			}, 34);
 			JButton clearSpacingButton = new JButton("x");
-			clearSpacingButton.setToolTipText("Clear spacing");
+			clearSpacingButton.setToolTipText(Translation.get("textTool.clearSpacing.tooltip"));
 			SwingHelper.addListener(clearSpacingButton, () ->
 			{
 				spacingSlider.setValue(0);
 			});
 
-			editSlidersHider.add(sliderWithDisplay.addToOrganizer(organizer, "Spacing:", "How much space to add between letters", clearSpacingButton, 0, 0));
+			editSlidersHider.add(sliderWithDisplay.addToOrganizer(organizer, Translation.get("textTool.spacing.label"), Translation.get("textTool.spacing.help"), clearSpacingButton, 0, 0));
 		}
 
 		{
@@ -375,14 +379,14 @@ public class TextTool extends EditorTool
 				}
 			}, 34);
 			JButton clearBackgroundFadeButton = new JButton("x");
-			clearBackgroundFadeButton.setToolTipText("Clear background fading");
+			clearBackgroundFadeButton.setToolTipText(Translation.get("textTool.clearBackgroundFade.tooltip"));
 			SwingHelper.addListener(clearBackgroundFadeButton, () ->
 			{
 				backgroundFadeSlider.setValue(0);
 			});
 
 			editSlidersHider.add(
-					sliderWithDisplay.addToOrganizer(organizer, "Background fade:", "How much to fade out icons, rivers, roads, and coastlines around this text.", clearBackgroundFadeButton, 0, 0));
+					sliderWithDisplay.addToOrganizer(organizer, Translation.get("textTool.backgroundFade.label"), Translation.get("textTool.backgroundFade.help"), clearBackgroundFadeButton, 0, 0));
 		}
 
 		Tuple2<JComboBox<ImageIcon>, RowHider> brushSizeTuple = organizer.addBrushSizeComboBox(brushSizes);
@@ -393,7 +397,7 @@ public class TextTool extends EditorTool
 		{
 			updater.reprocessBooks();
 		});
-		booksHider = organizer.addLeftAlignedComponentWithStackedLabel("Books for generating text:", "Selected books will be used to generate new names.", booksWidget.getContentPanel());
+		booksHider = organizer.addLeftAlignedComponentWithStackedLabel(Translation.get("textTool.booksForText.label"), Translation.get("textTool.booksForText.help"), booksWidget.getContentPanel());
 
 		modeWidget.selectEditMode();
 
@@ -482,7 +486,7 @@ public class TextTool extends EditorTool
 	@Override
 	public String getToolbarName()
 	{
-		return "Text";
+		return Translation.get("textTool.name");
 	}
 
 	@Override

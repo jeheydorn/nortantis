@@ -32,6 +32,12 @@ public abstract class Font implements Serializable
 
 	public abstract float getSize();
 
+	/**
+	 * Returns the index of the first character in the given string that this font cannot display, or -1 if the font can display the entire
+	 * string.
+	 */
+	public abstract int canDisplayUpTo(String str);
+
 	public static boolean isInstalled(String fontFamily)
 	{
 		return PlatformFactory.getInstance().isFontInstalled(fontFamily);

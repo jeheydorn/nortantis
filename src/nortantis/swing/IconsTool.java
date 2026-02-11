@@ -13,6 +13,7 @@ import nortantis.platform.ImageHelper;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
 import nortantis.platform.awt.AwtBridge;
+import nortantis.swing.translation.Translation;
 import nortantis.util.*;
 import org.apache.commons.lang3.StringUtils;
 import org.imgscalr.Scalr.Method;
@@ -105,7 +106,7 @@ public class IconsTool extends EditorTool
 	@Override
 	public String getToolbarName()
 	{
-		return "Icons";
+		return Translation.get("iconsTool.name");
 	}
 
 	@Override
@@ -143,8 +144,8 @@ public class IconsTool extends EditorTool
 		JPanel toolOptionsPanel = organizer.panel;
 		toolOptionsPanel.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
 
-		modeWidget = new DrawModeWidget("Draw using the selected brush", "Erase using the selected brush", true, "Use the selected brush to replace existing icons of the same type", true,
-				"Move or scale individual icons", () -> handleModeChanged());
+		modeWidget = new DrawModeWidget(Translation.get("iconsTool.drawMode"), Translation.get("iconsTool.eraseMode"), true, Translation.get("iconsTool.replaceMode"), true,
+				Translation.get("iconsTool.moveMode"), () -> handleModeChanged());
 		modeWidget.addToOrganizer(organizer, "");
 
 		// Icon type buttons
@@ -158,50 +159,50 @@ public class IconsTool extends EditorTool
 				}
 			};
 
-			mountainsButton = new JToggleButton("Mountains");
+			mountainsButton = new JToggleButton(Translation.get("IconType.mountains"));
 			mountainsButton.setSelected(true);
 			mountainsButton.addActionListener(typeListener);
 
-			hillsButton = new JToggleButton("Hills");
+			hillsButton = new JToggleButton(Translation.get("IconType.hills"));
 			hillsButton.addActionListener(typeListener);
 
-			dunesButton = new JToggleButton("Dunes");
+			dunesButton = new JToggleButton(Translation.get("IconType.sand"));
 			dunesButton.addActionListener(typeListener);
 
-			treesButton = new JToggleButton("Trees");
+			treesButton = new JToggleButton(Translation.get("IconType.trees"));
 			treesButton.addActionListener(typeListener);
 
-			citiesButton = new JToggleButton("Cities");
+			citiesButton = new JToggleButton(Translation.get("IconType.cities"));
 			citiesButton.addActionListener(typeListener);
 
-			decorationsButton = new JToggleButton("Decorations");
+			decorationsButton = new JToggleButton(Translation.get("IconType.decorations"));
 			decorationsButton.addActionListener(typeListener);
 
 			iconTypeWidget = new SegmentedButtonWidget(List.of(mountainsButton, hillsButton, dunesButton, treesButton, citiesButton, decorationsButton));
 			iconTypeWidget.setReserveScrollBarSpace(true);
-			iconTypeButtonsHider = iconTypeWidget.addToOrganizer(organizer, "Type:", "The type of icon to add/replace.");
+			iconTypeButtonsHider = iconTypeWidget.addToOrganizer(organizer, Translation.get("iconsTool.type.label"), Translation.get("iconsTool.type.help"));
 		}
 
 		// Icon type toggle buttons for edit/erase mode filtering
 		{
-			mountainsToggle = new JToggleButton("Mountains");
-			hillsToggle = new JToggleButton("Hills");
-			dunesToggle = new JToggleButton("Dunes");
-			treesToggle = new JToggleButton("Trees");
-			citiesToggle = new JToggleButton("Cities");
-			decorationsToggle = new JToggleButton("Decorations");
+			mountainsToggle = new JToggleButton(Translation.get("IconType.mountains"));
+			hillsToggle = new JToggleButton(Translation.get("IconType.hills"));
+			dunesToggle = new JToggleButton(Translation.get("IconType.sand"));
+			treesToggle = new JToggleButton(Translation.get("IconType.trees"));
+			citiesToggle = new JToggleButton(Translation.get("IconType.cities"));
+			decorationsToggle = new JToggleButton(Translation.get("IconType.decorations"));
 
 			List<JToggleButton> toggles = List.of(mountainsToggle, hillsToggle, dunesToggle, treesToggle, citiesToggle, decorationsToggle);
 			toggles.forEach(button -> button.setSelected(true));
 
 			SegmentedButtonWidget iconTypeCheckboxesWidget = new SegmentedButtonWidget(toggles, true);
 			iconTypeCheckboxesWidget.setReserveScrollBarSpace(true);
-			iconTypeCheckboxesHider = iconTypeCheckboxesWidget.addToOrganizer(organizer, "Types:", "Filters the type of icons to select.");
+			iconTypeCheckboxesHider = iconTypeCheckboxesWidget.addToOrganizer(organizer, Translation.get("iconsTool.types.label"), Translation.get("iconsTool.types.help"));
 
-			JButton selectAll = new JButton("Select All");
+			JButton selectAll = new JButton(Translation.get("iconsTool.selectAll"));
 			selectAll.addActionListener(e -> toggles.forEach(button -> button.setSelected(true)));
 
-			JButton deselectAll = new JButton("Deselect All");
+			JButton deselectAll = new JButton(Translation.get("iconsTool.deselectAll"));
 			deselectAll.addActionListener(e -> toggles.forEach(button -> button.setSelected(false)));
 
 			iconTypeCheckboxesHider.add(organizer.addLabelAndComponentsHorizontal("", "", Arrays.asList(selectAll, deselectAll)));
@@ -223,25 +224,25 @@ public class IconsTool extends EditorTool
 			densitySlider = new JSlider(1, 50);
 			densitySlider.setValue(7);
 			SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(densitySlider);
-			densityHider = sliderWithDisplay.addToOrganizer(organizer, "Density:", "");
+			densityHider = sliderWithDisplay.addToOrganizer(organizer, Translation.get("iconsTool.density.label"), "");
 		}
 
 		{
 			typeLabel = new JLabel();
-			iconMetadataHider = organizer.addLabelAndComponent("Type: ", "The type of this icon.", typeLabel);
+			iconMetadataHider = organizer.addLabelAndComponent(Translation.get("iconsTool.metadata.type") + " ", "The type of this icon.", typeLabel);
 			artPackLabel = new JLabel();
-			iconMetadataHider.add(organizer.addLabelAndComponent("Art pack: ", "The art pack this icon is from.", artPackLabel, 0));
+			iconMetadataHider.add(organizer.addLabelAndComponent(Translation.get("iconsTool.metadata.artPack") + " ", "The art pack this icon is from.", artPackLabel, 0));
 			groupLabel = new JLabel();
-			iconMetadataHider.add(organizer.addLabelAndComponent("Group: ", "The icon group folder this icon is from.", groupLabel, 0));
+			iconMetadataHider.add(organizer.addLabelAndComponent(Translation.get("iconsTool.metadata.group") + " ", "The icon group folder this icon is from.", groupLabel, 0));
 			nameLabel = new JLabel();
-			iconMetadataHider.add(organizer.addLabelAndComponent("Name: ", "The icon's file name, not including modifiers or the extension.", nameLabel, 0));
+			iconMetadataHider.add(organizer.addLabelAndComponent(Translation.get("iconsTool.metadata.name") + " ", "The icon's file name, not including modifiers or the extension.", nameLabel, 0));
 		}
 
 		GridBagOrganizer colorOrganizer = new GridBagOrganizer();
 
 		{
-			maximizeOpacityCheckbox = new JCheckBox("Maximize opacity");
-			maximizeOpacityCheckbox.setToolTipText("Scale the alpha of all pixels to use the full range, thus removing any 'extra' transparency.");
+			maximizeOpacityCheckbox = new JCheckBox(Translation.get("iconsTool.maximizeOpacity"));
+			maximizeOpacityCheckbox.setToolTipText(Translation.get("iconsTool.maximizeOpacity.tooltip"));
 			maximizeOpacityCheckbox.addActionListener(new ActionListener()
 			{
 
@@ -268,13 +269,13 @@ public class IconsTool extends EditorTool
 				}, labelWidth);
 
 				JButton clearButton = new JButton("x");
-				clearButton.setToolTipText("Clear hue");
+				clearButton.setToolTipText(Translation.get("iconsTool.clearHue.tooltip"));
 				SwingHelper.addListener(clearButton, () ->
 				{
 					hueSlider.setValue(0);
 				});
 
-				sliderWithDisplay.addToOrganizer(colorOrganizer, "Hue:", "Amount to add to the hue of colors in icons before applying fill color", clearButton, 0, 0);
+				sliderWithDisplay.addToOrganizer(colorOrganizer, Translation.get("iconsTool.hue.label"), Translation.get("iconsTool.hue.help"), clearButton, 0, 0);
 			}
 
 			{
@@ -288,13 +289,13 @@ public class IconsTool extends EditorTool
 				}, labelWidth);
 
 				JButton clearButton = new JButton("x");
-				clearButton.setToolTipText("Clear saturation");
+				clearButton.setToolTipText(Translation.get("iconsTool.clearSaturation.tooltip"));
 				SwingHelper.addListener(clearButton, () ->
 				{
 					saturationSlider.setValue(0);
 				});
 
-				sliderWithDisplay.addToOrganizer(colorOrganizer, "Saturation:", "Amount to add to the saturation of colors in icons before applying fill color", clearButton, 0, 0);
+				sliderWithDisplay.addToOrganizer(colorOrganizer, Translation.get("iconsTool.saturation.label"), Translation.get("iconsTool.saturation.help"), clearButton, 0, 0);
 			}
 
 			{
@@ -308,13 +309,13 @@ public class IconsTool extends EditorTool
 				}, labelWidth);
 
 				JButton clearButton = new JButton("x");
-				clearButton.setToolTipText("Clear brightness");
+				clearButton.setToolTipText(Translation.get("iconsTool.clearBrightness.tooltip"));
 				SwingHelper.addListener(clearButton, () ->
 				{
 					brightnessSlider.setValue(0);
 				});
 
-				sliderWithDisplay.addToOrganizer(colorOrganizer, "Brightness:", "Amount to add to the brightness of colors in icons before applying fill color", clearButton, 0, 0);
+				sliderWithDisplay.addToOrganizer(colorOrganizer, Translation.get("iconsTool.brightness.label"), Translation.get("iconsTool.brightness.help"), clearButton, 0, 0);
 			}
 
 			{
@@ -328,18 +329,18 @@ public class IconsTool extends EditorTool
 				}, labelWidth);
 
 				JButton clearButton = new JButton("x");
-				clearButton.setToolTipText("Clear transparency");
+				clearButton.setToolTipText(Translation.get("iconsTool.clearTransparency.tooltip"));
 				SwingHelper.addListener(clearButton, () ->
 				{
 					transparencySlider.setValue(0);
 				});
 
-				sliderWithDisplay.addToOrganizer(colorOrganizer, "Transparency:", "Transparency to add to icons before applying fill color", clearButton, 0, 0);
+				sliderWithDisplay.addToOrganizer(colorOrganizer, Translation.get("iconsTool.transparency.label"), Translation.get("iconsTool.transparency.help"), clearButton, 0, 0);
 			}
 		}
 
 		{
-			fillWithColorCheckbox = new JCheckBox("Fill with color");
+			fillWithColorCheckbox = new JCheckBox(Translation.get("iconsTool.fillWithColor"));
 			fillWithColorCheckbox.addActionListener(e ->
 			{
 				fillColorHider.setVisible(fillWithColorCheckbox.isSelected());
@@ -349,21 +350,22 @@ public class IconsTool extends EditorTool
 			colorOrganizer.addHorizontalSpacerRowToHelpComponentAlignment(0.66);
 
 			fillColorDisplay = SwingHelper.createColorPickerPreviewPanel();
-			JButton chooseColorButton = new JButton("Choose");
+			JButton chooseColorButton = new JButton(Translation.get("common.choose"));
 			chooseColorButton.addActionListener(new ActionListener()
 			{
 				public void actionPerformed(ActionEvent e)
 				{
-					SwingHelper.showColorPicker(organizer.panel, fillColorDisplay, "Fill Color", () ->
+					SwingHelper.showColorPicker(organizer.panel, fillColorDisplay, Translation.get("iconsTool.fillColor.title"), () ->
 					{
 						handleColorChange(WhatHSBColorFieldChanged.FillColor);
 					});
 				}
 			});
-			fillColorHider = colorOrganizer.addLabelAndComponentsHorizontal("Fill color:", "Color to fill transparent pixels in the icon with", Arrays.asList(fillColorDisplay, chooseColorButton));
+			fillColorHider = colorOrganizer.addLabelAndComponentsHorizontal(Translation.get("iconsTool.fillColor.label"), Translation.get("iconsTool.fillColor.help"),
+					Arrays.asList(fillColorDisplay, chooseColorButton));
 		}
 
-		CollapsiblePanel colorPanel = new CollapsiblePanel("color_options", "Color", colorOrganizer.panel);
+		CollapsiblePanel colorPanel = new CollapsiblePanel("color_options", Translation.get("iconsTool.colorOptions"), colorOrganizer.panel);
 		colorPickerHider = organizer.addLeftAlignedComponent(colorPanel);
 
 		brushAndEditOptionsSeparatorHider = organizer.addSeparator();
@@ -371,8 +373,8 @@ public class IconsTool extends EditorTool
 		{
 			JButton deleteButton;
 			{
-				deleteButton = new JButton("Delete");
-				deleteButton.setToolTipText("Delete the selected icons (DELETE key)");
+				deleteButton = new JButton(Translation.get("iconsTool.delete"));
+				deleteButton.setToolTipText(Translation.get("iconsTool.delete.tooltip"));
 
 				// Define the action to perform
 				Action deleteAction = new AbstractAction()
@@ -403,8 +405,8 @@ public class IconsTool extends EditorTool
 
 			JButton copyButton;
 			{
-				copyButton = new JButton("Copy");
-				copyButton.setToolTipText("Copy the selected icons (Ctrl+C)");
+				copyButton = new JButton(Translation.get("iconsTool.copy"));
+				copyButton.setToolTipText(Translation.get("iconsTool.copy.tooltip"));
 				// Define the action to perform
 				Action copyAction = new AbstractAction("Copy")
 				{
@@ -435,8 +437,8 @@ public class IconsTool extends EditorTool
 
 			JButton pasteButton;
 			{
-				pasteButton = new JButton("Paste");
-				pasteButton.setToolTipText("Paste the selected icons (Ctrl+V)");
+				pasteButton = new JButton(Translation.get("iconsTool.paste"));
+				pasteButton.setToolTipText(Translation.get("iconsTool.paste.tooltip"));
 				// Define the action to perform
 				Action pasteAction = new AbstractAction("Paste")
 				{
@@ -467,8 +469,8 @@ public class IconsTool extends EditorTool
 
 			JButton clearScaleButton;
 			{
-				clearScaleButton = new JButton("Reset Scale");
-				clearScaleButton.setToolTipText("Set the icon-specific scaling for the selected icons back to the scale they were created at");
+				clearScaleButton = new JButton(Translation.get("iconsTool.resetScale"));
+				clearScaleButton.setToolTipText(Translation.get("iconsTool.resetScale.tooltip"));
 				clearScaleButton.addActionListener(new ActionListener()
 				{
 
@@ -494,8 +496,7 @@ public class IconsTool extends EditorTool
 					handleImagesRefresh(mainWindow.getSettingsFromGUI(false));
 				}
 			});
-			artPackComboBoxHider = organizer.addLabelAndComponent("Art pack:", "For filtering the icons shown in this tool. '" + Assets.installedArtPack + "' selects art that comes with Nortantis. '"
-					+ Assets.customArtPack + "' selects images from this map's custom images folder, if it has one. Other options are art packs installed on this machine.", artPackComboBox);
+			artPackComboBoxHider = organizer.addLabelAndComponent(Translation.get("iconsTool.artPack.label"), Translation.get("iconsTool.artPack.help"), artPackComboBox);
 		}
 
 		mountainTypes =

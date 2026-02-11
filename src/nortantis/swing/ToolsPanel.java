@@ -5,6 +5,7 @@ import nortantis.editor.DisplayQuality;
 import nortantis.editor.MapUpdater;
 import nortantis.editor.UserPreferences;
 import nortantis.platform.awt.AwtBridge;
+import nortantis.swing.translation.Translation;
 import nortantis.util.Assets;
 import nortantis.util.Logger;
 
@@ -30,7 +31,7 @@ public class ToolsPanel extends JPanel
 	private TitledBorder toolOptionsPanelBorder;
 	private JProgressBar progressBar;
 	private JPanel bottomPanel;
-	static final String fitToWindowZoomLevel = "Fit to Window";
+	static final String fitToWindowZoomLevel = Translation.get("tools.fitToWindow");
 	private final String defaultZoomLevel = fitToWindowZoomLevel;
 	private Timer progressBarTimer;
 	MainWindow mainWindow;
@@ -115,7 +116,7 @@ public class ToolsPanel extends JPanel
 		progressBarPanel.setBorder(BorderFactory.createEmptyBorder(0, SwingHelper.borderWidthBetweenComponents - 2, 0, SwingHelper.borderWidthBetweenComponents));
 		progressBar = new JProgressBar();
 		progressBar.setStringPainted(true);
-		progressBar.setString("Drawing...");
+		progressBar.setString(Translation.get("mainWindow.drawingMap"));
 		progressBar.setIndeterminate(true);
 		progressBar.setVisible(false);
 		progressBarPanel.add(progressBar);
@@ -127,8 +128,8 @@ public class ToolsPanel extends JPanel
 		bottomPanel.setBorder(BorderFactory.createEmptyBorder(SwingHelper.borderWidthBetweenComponents, SwingHelper.borderWidthBetweenComponents, SwingHelper.borderWidthBetweenComponents,
 				SwingHelper.borderWidthBetweenComponents));
 
-		JLabel lblZoom = new JLabel("Zoom");
-		lblZoom.setToolTipText("Zoom the map in or out (mouse wheel). To view more details at higher zoom levels," + " adjust the 'Display quality'.");
+		JLabel lblZoom = new JLabel(Translation.get("tools.zoom.label"));
+		lblZoom.setToolTipText(Translation.get("tools.zoom.tooltip"));
 
 		zoomLevels = Arrays.asList(new String[] { fitToWindowZoomLevel, "50%", "75%", "100%", "150%", "200%", "275%" });
 		zoomComboBox = new JComboBoxFixed<>();
@@ -151,8 +152,8 @@ public class ToolsPanel extends JPanel
 		// bottomPanel.add(Box.createHorizontalGlue());
 		bottomPanel.add(Box.createRigidArea(new Dimension(12, 4)));
 
-		JLabel lblDisplayQuality = new JLabel("Display Quality");
-		lblDisplayQuality.setToolTipText("Change the quality of the map displayed in the editor. Does not apply when exporting the map to an image. Higher values make the editor slower.");
+		JLabel lblDisplayQuality = new JLabel(Translation.get("tools.displayQuality.label"));
+		lblDisplayQuality.setToolTipText(Translation.get("tools.displayQuality.tooltip"));
 
 		displayQualityComboBox = new JComboBoxFixed<>();
 		for (DisplayQuality quality : DisplayQuality.values())
@@ -197,9 +198,9 @@ public class ToolsPanel extends JPanel
 
 	private void updateBordersThatHaveColors()
 	{
-		toolSelectPanel.setBorder(BorderFactory.createTitledBorder(new LineBorder(UIManager.getColor("controlShadow"), 1), "Editing Tools"));
+		toolSelectPanel.setBorder(BorderFactory.createTitledBorder(new LineBorder(UIManager.getColor("controlShadow"), 1), Translation.get("tools.editingTools")));
 
-		toolOptionsPanelBorder = BorderFactory.createTitledBorder(new LineBorder(UIManager.getColor("controlShadow"), 1), currentTool.getToolbarName() + " Options");
+		toolOptionsPanelBorder = BorderFactory.createTitledBorder(new LineBorder(UIManager.getColor("controlShadow"), 1), currentTool.getToolbarName() + " " + Translation.get("tools.optionsSuffix"));
 		toolOptionsPanelContainer.setBorder(toolOptionsPanelBorder);
 	}
 
@@ -253,7 +254,7 @@ public class ToolsPanel extends JPanel
 		// I'm calling onSwitchingAway after setting currentTool because the place EditorTool.shouldShowTextWhenTextIsEnabled
 		// in MainWindow.createMapUpdater depends on it.
 		prevTool.onSwitchingAway();
-		toolOptionsPanelBorder.setTitle(currentTool.getToolbarName() + " Options");
+		toolOptionsPanelBorder.setTitle(currentTool.getToolbarName() + " " + Translation.get("tools.optionsSuffix"));
 		toolOptionsCardLayout.show(toolOptionsPanelContainer, currentTool.getToolbarName());
 		toolOptionsPanelContainer.revalidate();
 		toolOptionsPanelContainer.repaint();

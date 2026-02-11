@@ -11,6 +11,8 @@ import nortantis.platform.Image;
 import nortantis.platform.ImageHelper;
 import nortantis.platform.awt.AwtBridge;
 import nortantis.swing.ThemePanel.LandColoringMethod;
+import nortantis.swing.translation.TranslatedEnumRenderer;
+import nortantis.swing.translation.Translation;
 import nortantis.util.*;
 import org.apache.commons.lang3.StringUtils;
 
@@ -48,7 +50,7 @@ public class NewSettingsDialog extends JDialog
 
 	public NewSettingsDialog(MainWindow mainWindow, MapSettings settingsToKeepThemeFrom)
 	{
-		super(mainWindow, "Create New Map", Dialog.ModalityType.APPLICATION_MODAL);
+		super(mainWindow, Translation.get("newSettingsDialog.title"), Dialog.ModalityType.APPLICATION_MODAL);
 		this.mainWindow = mainWindow;
 
 		createGUI(mainWindow);
@@ -104,7 +106,7 @@ public class NewSettingsDialog extends JDialog
 		bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.X_AXIS));
 
 		{
-			JButton randomizeThemeButton = new JButton("Randomize Theme");
+			JButton randomizeThemeButton = new JButton(Translation.get("newSettingsDialog.randomizeTheme"));
 			randomizeThemeButton.addActionListener(new ActionListener()
 			{
 				@Override
@@ -118,7 +120,7 @@ public class NewSettingsDialog extends JDialog
 		}
 
 		{
-			JButton randomizeLandButton = new JButton("Randomize Land");
+			JButton randomizeLandButton = new JButton(Translation.get("newSettingsDialog.randomizeLand"));
 			randomizeLandButton.addActionListener(new ActionListener()
 			{
 				@Override
@@ -132,8 +134,8 @@ public class NewSettingsDialog extends JDialog
 		}
 
 		{
-			JButton flipHorizontallyButton = new JButton("↔ Flip");
-			flipHorizontallyButton.setToolTipText("Flip the land shape horizontally.");
+			JButton flipHorizontallyButton = new JButton(Translation.get("newSettingsDialog.flipHorizontal"));
+			flipHorizontallyButton.setToolTipText(Translation.get("newSettingsDialog.flipHorizontal.tooltip"));
 			flipHorizontallyButton.addActionListener(new ActionListener()
 			{
 				@Override
@@ -156,8 +158,8 @@ public class NewSettingsDialog extends JDialog
 		}
 
 		{
-			JButton flipVerticallyButton = new JButton("↕ Flip");
-			flipVerticallyButton.setToolTipText("Flip the land shape vertically.");
+			JButton flipVerticallyButton = new JButton(Translation.get("newSettingsDialog.flipVertical"));
+			flipVerticallyButton.setToolTipText(Translation.get("newSettingsDialog.flipVertical.tooltip"));
 			flipVerticallyButton.addActionListener(new ActionListener()
 			{
 				@Override
@@ -180,8 +182,8 @@ public class NewSettingsDialog extends JDialog
 		}
 
 		{
-			JButton rotateButton = new JButton("↺ Left");
-			rotateButton.setToolTipText("Rotate the land shape counterclockwise by 90°.");
+			JButton rotateButton = new JButton(Translation.get("newSettingsDialog.rotateLeft"));
+			rotateButton.setToolTipText(Translation.get("newSettingsDialog.rotateLeft.tooltip"));
 
 			rotateButton.addActionListener(new ActionListener()
 			{
@@ -204,8 +206,8 @@ public class NewSettingsDialog extends JDialog
 		}
 
 		{
-			JButton rotateButton = new JButton("↻ Right");
-			rotateButton.setToolTipText("Rotate the land shape clockwise by 90°.");
+			JButton rotateButton = new JButton(Translation.get("newSettingsDialog.rotateRight"));
+			rotateButton.setToolTipText(Translation.get("newSettingsDialog.rotateRight.tooltip"));
 			rotateButton.addActionListener(new ActionListener()
 			{
 				@Override
@@ -221,7 +223,7 @@ public class NewSettingsDialog extends JDialog
 
 		progressBar = new JProgressBar();
 		progressBar.setStringPainted(true);
-		progressBar.setString("Drawing...");
+		progressBar.setString(Translation.get("newSettingsDialog.drawing"));
 		progressBar.setIndeterminate(true);
 		progressBar.setVisible(false);
 		bottomPanel.add(progressBar);
@@ -229,7 +231,7 @@ public class NewSettingsDialog extends JDialog
 
 		JPanel bottomButtonsPanel = new JPanel();
 		bottomButtonsPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
-		JButton createMapButton = new JButton("<html>C<u>r</u>eate Map</html>");
+		JButton createMapButton = new JButton(Translation.get("newSettingsDialog.create"));
 		createMapButton.setMnemonic(KeyEvent.VK_R);
 		bottomButtonsPanel.add(createMapButton);
 		createMapButton.addActionListener(new ActionListener()
@@ -290,9 +292,7 @@ public class NewSettingsDialog extends JDialog
 			dimensionsComboBox.addItem(dimension);
 		}
 		createMapChangeListener(dimensionsComboBox);
-		organizer.addLabelAndComponent("Dimensions: <br>(cannot be changed in editor)",
-				"Dimensions of the map when exported at 100% resolution, although the resolution can be scaled up or down while" + " exporting. This doesn't include the border, if you add one.",
-				dimensionsComboBox);
+		organizer.addLabelAndComponent(Translation.get("newSettingsDialog.dimensions.label"), Translation.get("newSettingsDialog.dimensions.help"), dimensionsComboBox);
 
 		worldSizeSlider = new JSlider();
 		worldSizeSlider.setSnapToTicks(true);
@@ -303,7 +303,7 @@ public class NewSettingsDialog extends JDialog
 		worldSizeSlider.setMinimum(SettingsGenerator.minWorldSize);
 		worldSizeSlider.setMaximum(SettingsGenerator.maxWorldSize);
 		createMapChangeListener(worldSizeSlider);
-		organizer.addLabelAndComponent("World size: <br>(cannot be changed in editor)", "The number of polygons in the randomly generated world.", worldSizeSlider);
+		organizer.addLabelAndComponent(Translation.get("newSettingsDialog.worldSize.label"), Translation.get("newSettingsDialog.worldSize.help"), worldSizeSlider);
 
 		edgeLandToWaterProbSlider = new JSlider();
 		edgeLandToWaterProbSlider.setValue(70);
@@ -320,7 +320,7 @@ public class NewSettingsDialog extends JDialog
 			edgeLandToWaterProbSlider.setLabelTable(labelTable);
 		}
 		createMapChangeListener(edgeLandToWaterProbSlider);
-		organizer.addLabelAndComponent("Edge land probability:", "The probability that a tectonic plate touching the edge of the map will be land rather than ocean.", edgeLandToWaterProbSlider);
+		organizer.addLabelAndComponent(Translation.get("newSettingsDialog.edgeLandProbability.label"), Translation.get("newSettingsDialog.edgeLandProbability.help"), edgeLandToWaterProbSlider);
 
 		centerLandToWaterProbSlider = new JSlider();
 		centerLandToWaterProbSlider.setValue(70);
@@ -337,8 +337,7 @@ public class NewSettingsDialog extends JDialog
 			centerLandToWaterProbSlider.setLabelTable(labelTable);
 		}
 		createMapChangeListener(centerLandToWaterProbSlider);
-		organizer.addLabelAndComponent("Center land probability:", "The probability that a tectonic plate not touching the edge of the map will be land rather than ocean.",
-				centerLandToWaterProbSlider);
+		organizer.addLabelAndComponent(Translation.get("newSettingsDialog.centerLandProbability.label"), Translation.get("newSettingsDialog.centerLandProbability.help"), centerLandToWaterProbSlider);
 
 		landColoringMethodComboBox = new JComboBox<LandColoringMethod>();
 		for (LandColoringMethod method : LandColoringMethod.values())
@@ -346,14 +345,16 @@ public class NewSettingsDialog extends JDialog
 			landColoringMethodComboBox.addItem(method);
 		}
 
+		landColoringMethodComboBox.setRenderer(new TranslatedEnumRenderer());
 		createMapChangeListener(landColoringMethodComboBox);
-		organizer.addLabelAndComponent("Land coloring method:", "How to color the land.", landColoringMethodComboBox);
+		organizer.addLabelAndComponent(Translation.get("theme.landColoringMethod.label"), Translation.get("theme.landColoringMethod.help"), landColoringMethodComboBox);
 
-		JButton changeButton = new JButton("Change");
+		JButton changeButton = new JButton(Translation.get("newSettingsDialog.change"));
 		pathDisplay = new JTextField();
 		pathDisplay.setText(FileHelper.replaceHomeFolderPlaceholder(UserPreferences.getInstance().defaultCustomImagesPath));
 		pathDisplay.setEditable(false);
-		organizer.addLabelAndComponentsHorizontal("Custom Images Folder:", "Configure custom images to use when generating this map.", Arrays.asList(pathDisplay, changeButton));
+		organizer.addLabelAndComponentsHorizontal(Translation.get("newSettingsDialog.customImagesFolder.label"), Translation.get("newSettingsDialog.customImagesFolder.help"),
+				Arrays.asList(pathDisplay, changeButton));
 
 		changeButton.addActionListener(new ActionListener()
 		{
@@ -416,9 +417,8 @@ public class NewSettingsDialog extends JDialog
 		generatorSettingsPanel.add(rightPanel);
 
 		artPackComboBox = new JComboBox<String>();
-		JLabel artPackLabel = new JLabel("Art pack:");
-		artPackLabel.setToolTipText("The set of images and icons to use. '" + Assets.installedArtPack + "' is the images that come installed with Nortantis. '" + Assets.customArtPack
-				+ "' means use the custom images folder, if one is selected.");
+		JLabel artPackLabel = new JLabel(Translation.get("newSettingsDialog.artPack.label"));
+		artPackLabel.setToolTipText(Translation.get("newSettingsDialog.artPack.help"));
 		artPackComboBox.addActionListener(new ActionListener()
 		{
 			@Override
@@ -432,8 +432,8 @@ public class NewSettingsDialog extends JDialog
 
 		cityIconsTypeComboBox = new JComboBox<String>();
 		createMapChangeListener(cityIconsTypeComboBox);
-		JLabel cityIconTypeLabel = new JLabel("City icon type:");
-		cityIconTypeLabel.setToolTipText("The set of city images to use.");
+		JLabel cityIconTypeLabel = new JLabel(Translation.get("newSettingsDialog.cityIconType.label"));
+		cityIconTypeLabel.setToolTipText(Translation.get("newSettingsDialog.cityIconType.help"));
 
 		JPanel rowPanel = new JPanel();
 		rowPanel.setLayout(new BoxLayout(rowPanel, BoxLayout.X_AXIS));
@@ -455,11 +455,12 @@ public class NewSettingsDialog extends JDialog
 		cityFrequencySlider.setMaximum(100);
 		cityFrequencySlider.setMajorTickSpacing(25);
 		createMapChangeListener(cityFrequencySlider);
-		organizer.addLabelAndComponent("City frequency:", "Higher values create more cities. Lower values create less cities. Zero means no cities.", cityFrequencySlider);
+		organizer.addLabelAndComponent(Translation.get("newSettingsDialog.cityFrequency.label"), Translation.get("newSettingsDialog.cityFrequency.help"), cityFrequencySlider);
 
 		booksWidget = new BooksWidget(true, () -> handleMapChange());
 		booksWidget.getContentPanel().setPreferredSize(new Dimension(360, 180));
-		organizer.addLeftAlignedComponentWithStackedLabel("Books for generating text:", "Selected books will be used to generate new names.", booksWidget.getContentPanel());
+		organizer.addLeftAlignedComponentWithStackedLabel(Translation.get("newSettingsDialog.booksForText.label"), Translation.get("newSettingsDialog.booksForText.help"),
+				booksWidget.getContentPanel());
 
 		organizer.addLeftAlignedComponent(Box.createRigidArea(new Dimension((defaultSize.width / 2) - amountToSubtractFromLeftAndRightPanels, 0)));
 
@@ -502,8 +503,8 @@ public class NewSettingsDialog extends JDialog
 
 	private void createMapEditingPanel()
 	{
-		BufferedImage placeHolder = AwtBridge
-				.toBufferedImage(ImageHelper.getInstance().createPlaceholderImage(new String[] { "Drawing..." }, AwtBridge.fromAwtColor(SwingHelper.getTextColorForPlaceholderImages())));
+		BufferedImage placeHolder = AwtBridge.toBufferedImage(ImageHelper.getInstance().createPlaceholderImage(new String[] { Translation.get("newSettingsDialog.drawing") },
+				AwtBridge.fromAwtColor(SwingHelper.getTextColorForPlaceholderImages())));
 		mapEditingPanel = new MapEditingPanel(placeHolder);
 
 		mapEditingPanelContainer = new JPanel();

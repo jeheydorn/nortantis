@@ -29,20 +29,11 @@ public enum IconType
 
 	public String getSingularNameForGUILowerCase()
 	{
-		if (this == sand)
-		{
-			return "dunes";
-		}
-		return getSingularName();
+		return nortantis.swing.translation.Translation.get("IconType." + name() + ".singular");
 	}
 
 	public String getNameForGUI()
 	{
-		if (this == sand)
-		{
-			return "Dunes";
-		}
-		// Capitalize first letter.
-		return toString().substring(0, 1).toUpperCase() + toString().substring(1);
+		return nortantis.swing.translation.Translation.get("IconType." + name());
 	}
 }

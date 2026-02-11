@@ -1,5 +1,7 @@
 package nortantis.swing;
 
+import nortantis.swing.translation.Translation;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -23,7 +25,7 @@ public class FontChooser
 		this.maxFontDisplaySize = maxFontSize;
 		this.okAction = okAction;
 		this.labelText = labelText;
-		chooseButton = new JButton("Choose");
+		chooseButton = new JButton(Translation.get("fontChooser.choose"));
 	}
 
 	public RowHider addToOrganizer(GridBagOrganizer organizer)

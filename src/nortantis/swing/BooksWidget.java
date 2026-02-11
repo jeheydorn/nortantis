@@ -1,6 +1,7 @@
 package nortantis.swing;
 
 import nortantis.SettingsGenerator;
+import nortantis.swing.translation.Translation;
 
 import javax.swing.*;
 import java.awt.*;
@@ -27,25 +28,31 @@ public class BooksWidget
 
 		JPanel buttonsPanel = new JPanel();
 		buttonsPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-		JButton checkAll = new JButton("Check All");
+		JButton checkAll = new JButton(Translation.get("books.checkAll"));
 		checkAll.addActionListener(new ActionListener()
 		{
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
 				checkOrUncheckAllBooks(true);
-				actionToRunWhenSelectionChanges.run();
+				if (actionToRunWhenSelectionChanges != null)
+				{
+					actionToRunWhenSelectionChanges.run();
+				}
 			}
 		});
 
-		JButton uncheckAll = new JButton("Uncheck All");
+		JButton uncheckAll = new JButton(Translation.get("books.uncheckAll"));
 		uncheckAll.addActionListener(new ActionListener()
 		{
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
 				checkOrUncheckAllBooks(false);
-				actionToRunWhenSelectionChanges.run();
+				if (actionToRunWhenSelectionChanges != null)
+				{
+					actionToRunWhenSelectionChanges.run();
+				}
 			}
 		});
 		buttonsPanel.add(checkAll);

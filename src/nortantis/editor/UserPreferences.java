@@ -33,6 +33,7 @@ public class UserPreferences
 	public LookAndFeel lookAndFeel = LookAndFeel.Dark;
 	public int toolsPanelWidth;
 	public int themePanelWidth;
+	public String language;
 
 	public static UserPreferences instance;
 
@@ -126,6 +127,11 @@ public class UserPreferences
 					hideGridOverlaySeizureWarning = Boolean.parseBoolean(value);
 				}
 
+				if (props.containsKey("language"))
+				{
+					language = props.getProperty("language");
+				}
+
 			}
 		}
 		catch (Exception e)
@@ -164,6 +170,7 @@ public class UserPreferences
 		props.setProperty("lookAndFeel", lookAndFeel.name());
 		props.setProperty("toolsPanelWidth", toolsPanelWidth + "");
 		props.setProperty("themePanelWidth", themePanelWidth + "");
+		props.setProperty("language", language == null ? "" : language);
 
 		try
 		{

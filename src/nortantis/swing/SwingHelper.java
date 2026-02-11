@@ -1,6 +1,7 @@
 package nortantis.swing;
 
 import nortantis.editor.UserPreferences;
+import nortantis.swing.translation.Translation;
 import nortantis.util.Logger;
 import nortantis.util.OSHelper;
 import org.apache.commons.io.FilenameUtils;
@@ -368,33 +369,32 @@ public class SwingHelper
 				ex.getCause().printStackTrace();
 				if (isCausedByOutOfMemoryError(ex))
 				{
-					String message = isExport ? "Out of memory. Try exporting at a lower resolution, or decreasing the Display Quality before exporting."
-							: "Out of memory. Try decreasing the Display Quality.";
+					String message = isExport ? Translation.get("common.outOfMemoryExport") : Translation.get("common.outOfMemory");
 					Logger.printError(message, ex);
-					JOptionPane.showMessageDialog(parent, message, "Error", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(parent, message, Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
 				}
 				else
 				{
-					String message = "Error while creating map:";
+					String message = Translation.get("common.errorCreatingMap");
 					Logger.printError(message, ex.getCause());
-					JOptionPane.showMessageDialog(parent, message + " " + ex.getCause().getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(parent, message + " " + ex.getCause().getMessage(), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
 				}
 			}
 			else
 			{
 				// Should never happen.
 				ex.printStackTrace();
-				String message = "An ExecutionException error occurred with no cause: ";
+				String message = Translation.get("common.executionError");
 				Logger.printError(message, ex);
-				JOptionPane.showMessageDialog(parent, message + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(parent, message + ex.getMessage(), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
 			}
 		}
 		else
 		{
 			ex.printStackTrace();
-			String message = "An unexpected error occurred: ";
+			String message = Translation.get("common.unexpectedError");
 			Logger.printError(message, ex);
-			JOptionPane.showMessageDialog(parent, message + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(parent, message + ex.getMessage(), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
 		}
 	}
 
@@ -420,8 +420,8 @@ public class SwingHelper
 	 */
 	public static boolean showDismissibleMessage(String title, String message, Dimension popupSize, int JOptionPaneMessageType, Component parentComponent)
 	{
-		JCheckBox checkBox = new JCheckBox("Don't show this message again.");
-		Object[] options = { "OK" };
+		JCheckBox checkBox = new JCheckBox(Translation.get("common.dontShowAgain"));
+		Object[] options = { Translation.get("common.ok") };
 		JPanel panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 		JLabel label = new JLabel("<html>" + message + "</html>");

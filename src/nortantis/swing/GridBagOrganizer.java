@@ -1,6 +1,7 @@
 package nortantis.swing;
 
 import nortantis.geom.Point;
+import nortantis.swing.translation.Translation;
 import nortantis.util.Tuple2;
 
 import javax.swing.*;
@@ -389,7 +390,7 @@ public class GridBagOrganizer
 		JPanel brushSizeContainer = new JPanel();
 		brushSizeContainer.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
 		brushSizeContainer.add(brushSizeComboBox);
-		RowHider brushSizeHider = addLabelAndComponent("Brush size:", "", brushSizeContainer);
+		RowHider brushSizeHider = addLabelAndComponent(Translation.get("gridBagOrganizer.brushSize.label"), "", brushSizeContainer);
 
 		return new Tuple2<>(brushSizeComboBox, brushSizeHider);
 	}

@@ -10,6 +10,7 @@ import nortantis.geom.Point;
 import nortantis.platform.Image;
 import nortantis.swing.MapEditingPanel.IconEditToolsLocation;
 import nortantis.swing.MapEditingPanel.IconEditToolsSize;
+import nortantis.swing.translation.Translation;
 import nortantis.util.Assets;
 import nortantis.util.FileHelper;
 import nortantis.util.Tuple2;
@@ -58,7 +59,7 @@ public class OverlayTool extends EditorTool
 	@Override
 	public String getToolbarName()
 	{
-		return "Overlay";
+		return Translation.get("overlayTool.name");
 	}
 
 	@Override
@@ -149,8 +150,8 @@ public class OverlayTool extends EditorTool
 		toolOptionsPanel.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
 
 		{
-			drawOverlayImageCheckbox = new JCheckBox("Enable overlay image");
-			drawOverlayImageCheckbox.setToolTipText("Show or hide the selected overlay image, if any.");
+			drawOverlayImageCheckbox = new JCheckBox(Translation.get("overlayTool.enableOverlay"));
+			drawOverlayImageCheckbox.setToolTipText(Translation.get("overlayTool.enableOverlay.tooltip"));
 			drawOverlayImageCheckbox.addActionListener(new ActionListener()
 			{
 				@Override
@@ -191,7 +192,7 @@ public class OverlayTool extends EditorTool
 				}
 			});
 
-			btnsBrowseOverlayImage = new JButton("Browse");
+			btnsBrowseOverlayImage = new JButton(Translation.get("theme.browse"));
 			btnsBrowseOverlayImage.addActionListener(new ActionListener()
 			{
 				public void actionPerformed(ActionEvent e)
@@ -209,7 +210,7 @@ public class OverlayTool extends EditorTool
 			overlayImageChooseButtonPanel.add(btnsBrowseOverlayImage);
 			overlayImageChooseButtonPanel.add(Box.createHorizontalGlue());
 
-			organizer.addLabelAndComponentsVertical("Image:", "Image to draw over the map (not including borders). This is useful when drawing a map from a reference image.",
+			organizer.addLabelAndComponentsVertical(Translation.get("overlayTool.image.label"), Translation.get("overlayTool.image.help"),
 					Arrays.asList(overlayImagePath, Box.createVerticalStrut(5), overlayImageChooseButtonPanel));
 		}
 
@@ -221,12 +222,12 @@ public class OverlayTool extends EditorTool
 			overlayImageTransparencySlider.setMinimum(0);
 			SwingHelper.addListener(overlayImageTransparencySlider, () -> handleOverlayImageChange());
 			SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(overlayImageTransparencySlider, (value) -> String.format("%s%%", value), null, 30);
-			sliderWithDisplay.addToOrganizer(organizer, "Transparency:", "Transparency to add to the overlay image to help with seeing the map underneath it.");
+			sliderWithDisplay.addToOrganizer(organizer, Translation.get("overlayTool.transparency.label"), Translation.get("overlayTool.transparency.help"));
 		}
 
 		{
-			fitToMapButton = new JButton("Fit to Map");
-			fitToMapButton.setToolTipText("Resize and position the overlay image to fit the entire map, including borders.");
+			fitToMapButton = new JButton(Translation.get("overlayTool.fitToMap"));
+			fitToMapButton.setToolTipText(Translation.get("overlayTool.fitToMap.tooltip"));
 			fitToMapButton.addActionListener(new ActionListener()
 			{
 				@Override
@@ -238,8 +239,8 @@ public class OverlayTool extends EditorTool
 				}
 			});
 
-			fitInsideBorderButton = new JButton("Fit Inside Border");
-			fitInsideBorderButton.setToolTipText("Resize and position the overlay image to fit the drawable space on the map (the ocean/land), not including the border.");
+			fitInsideBorderButton = new JButton(Translation.get("overlayTool.fitInsideBorder"));
+			fitInsideBorderButton.setToolTipText(Translation.get("overlayTool.fitInsideBorder.tooltip"));
 			fitInsideBorderButton.addActionListener(new ActionListener()
 			{
 				@Override
@@ -258,6 +259,10 @@ public class OverlayTool extends EditorTool
 						Dimension mapSize = updater.mapParts.background.getMapBoundsIncludingBorder();
 						double scaledBorderWidth = updater.mapParts.background.getBorderWidthScaledByResolution();
 						IntRectangle overlayPositionAtScale1 = calcOverlayPositionForScale(1.0);
+						if (overlayPositionAtScale1 == null)
+						{
+							return;
+						}
 						if (Math.abs(overlayPositionAtScale1.x) < Math.abs(overlayPositionAtScale1.y))
 						{
 							// The overlay image is wide and short, causing it to expand to the left and right sides of the map.

@@ -4,6 +4,7 @@ import nortantis.MapSettings;
 import nortantis.NameCreator;
 import nortantis.NotEnoughNamesException;
 import nortantis.editor.NameType;
+import nortantis.swing.translation.Translation;
 import nortantis.util.Range;
 
 import javax.swing.*;
@@ -21,7 +22,7 @@ public class NameGeneratorDialog extends JDialog
 
 	public NameGeneratorDialog(MainWindow mainWindow, MapSettings settings)
 	{
-		super(mainWindow, "Name Generator", Dialog.ModalityType.APPLICATION_MODAL);
+		super(mainWindow, Translation.get("nameGenerator.title"), Dialog.ModalityType.APPLICATION_MODAL);
 		setSize(new Dimension(500, 810));
 
 		JPanel contents = new JPanel();
@@ -31,30 +32,30 @@ public class NameGeneratorDialog extends JDialog
 		GridBagOrganizer organizer = new GridBagOrganizer();
 		contents.add(organizer.panel, BorderLayout.CENTER);
 		ButtonGroup buttonGroup = new ButtonGroup();
-		JRadioButton personNameRadioButton = new JRadioButton("Person");
+		JRadioButton personNameRadioButton = new JRadioButton(Translation.get("nameGenerator.person"));
 		buttonGroup.add(personNameRadioButton);
-		JRadioButton placeNameRadioButton = new JRadioButton("Place");
+		JRadioButton placeNameRadioButton = new JRadioButton(Translation.get("nameGenerator.place"));
 		buttonGroup.add(placeNameRadioButton);
-		organizer.addLabelAndComponentsHorizontal("Name type:", "", Arrays.asList(personNameRadioButton, placeNameRadioButton));
+		organizer.addLabelAndComponentsHorizontal(Translation.get("nameGenerator.nameType.label"), "", Arrays.asList(personNameRadioButton, placeNameRadioButton));
 
-		final String beginsWithLabel = "Begins with:";
+		final String beginsWithLabel = Translation.get("nameGenerator.beginsWith.label");
 		JTextField beginsWith = new JTextField();
-		organizer.addLabelAndComponent(beginsWithLabel, "Constrains generated names to start with the given letters.", beginsWith);
+		organizer.addLabelAndComponent(beginsWithLabel, Translation.get("nameGenerator.beginsWith.help"), beginsWith);
 
-		final String endsWithLabel = "Ends with:";
+		final String endsWithLabel = Translation.get("nameGenerator.endsWith.label");
 		JTextField endsWith = new JTextField();
-		organizer.addLabelAndComponent(endsWithLabel, "Constraints generated names to end with these letters.", endsWith, 0);
+		organizer.addLabelAndComponent(endsWithLabel, Translation.get("nameGenerator.endsWith.help"), endsWith, 0);
 
 		personNameRadioButton.setSelected(true);
 
 		BooksWidget booksWidget = new BooksWidget(true, null);
 		booksWidget.checkSelectedBooks(settings.books);
-		organizer.addLeftAlignedComponentWithStackedLabel("Books for generating names:", "Selected books will be used to generate names.", booksWidget.getContentPanel(),
+		organizer.addLeftAlignedComponentWithStackedLabel(Translation.get("nameGenerator.booksForNames.label"), Translation.get("nameGenerator.booksForNames.help"), booksWidget.getContentPanel(),
 				GridBagOrganizer.rowVerticalInset, 2, true, 0.2);
 
 		JPanel generatePanel = new JPanel();
 		generatePanel.setLayout(new FlowLayout(FlowLayout.LEFT));
-		JButton generateButton = new JButton("<html><u>G</u>enerate Names<html>");
+		JButton generateButton = new JButton(Translation.get("nameGenerator.generateNames"));
 		generatePanel.add(generateButton);
 		generateButton.setMnemonic(KeyEvent.VK_G);
 		organizer.addLeftAlignedComponent(generatePanel, 0, 0, false);
@@ -65,8 +66,8 @@ public class NameGeneratorDialog extends JDialog
 			{
 				if (!beginsWith.getText().chars().allMatch(Character::isLetter) || !endsWith.getText().chars().allMatch(Character::isLetter))
 				{
-					String message = beginsWithLabel.replace(":", "") + " and " + endsWithLabel.replace(":", "") + " must contain only letters.";
-					JOptionPane.showMessageDialog(NameGeneratorDialog.this, message, "Error", JOptionPane.ERROR_MESSAGE);
+					String message = Translation.get("nameGenerator.lettersOnly", beginsWithLabel.replace(":", ""), endsWithLabel.replace(":", ""));
+					JOptionPane.showMessageDialog(NameGeneratorDialog.this, message, Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
 					return;
 				}
 
@@ -83,13 +84,13 @@ public class NameGeneratorDialog extends JDialog
 		textBox = new JTextArea(numberToGenerate, 30);
 		textBox.setEditable(false);
 		JScrollPane textBoxScrollPane = new JScrollPane(textBox);
-		organizer.addLeftAlignedComponentWithStackedLabel("Generated names:", "", textBoxScrollPane, true, 0.8);
+		organizer.addLeftAlignedComponentWithStackedLabel(Translation.get("nameGenerator.generatedNames.label"), "", textBoxScrollPane, true, 0.8);
 
 		JPanel bottomButtonsPanel = new JPanel();
 		contents.add(bottomButtonsPanel, BorderLayout.SOUTH);
 		bottomButtonsPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
 
-		JButton doneButton = new JButton("<html><u>D</u>one</html>");
+		JButton doneButton = new JButton(Translation.get("nameGenerator.done"));
 		doneButton.setMnemonic(KeyEvent.VK_D);
 		doneButton.addActionListener(new ActionListener()
 		{
@@ -139,15 +140,13 @@ public class NameGeneratorDialog extends JDialog
 				{
 					if (requiredSuffix.length() > 0)
 					{
-						return names + (names.isEmpty() ? "" : "\n") + "Error: Unable to generate enough names with the given books and requested suffix. "
-								+ "Try either adding more books or removing or reducing the suffix.";
+						return names + (names.isEmpty() ? "" : "\n") + Translation.get("nameGenerator.errorSuffix");
 					}
 					else if (requiredPrefix.length() > 0)
 					{
-						return names + (names.isEmpty() ? "" : "\n") + "Error: Unable to generate enough names with the given books and required prefix. "
-								+ "Try including more books or removing or reducing the prefix.";
+						return names + (names.isEmpty() ? "" : "\n") + Translation.get("nameGenerator.errorPrefix");
 					}
-					return names + (names.isEmpty() ? "" : "\n") + "Error: Unable to generate enough names. Try including more books.";
+					return names + (names.isEmpty() ? "" : "\n") + Translation.get("nameGenerator.errorGeneral");
 				}
 				catch (Exception ex)
 				{
@@ -157,7 +156,7 @@ public class NameGeneratorDialog extends JDialog
 				attemptCount++;
 				if (attemptCount >= maxAttempts)
 				{
-					return names + (names.isEmpty() ? "" : "\n") + "Unable to generate enough names with the given constraints. " + "Try using more books or reducing the suffix.";
+					return names + (names.isEmpty() ? "" : "\n") + Translation.get("nameGenerator.errorConstraints");
 				}
 			}
 			names = names + (names.isEmpty() ? "" : "\n") + name;
