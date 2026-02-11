@@ -10,6 +10,7 @@ import java.awt.*;
 public class WrapLayout extends FlowLayout
 {
 	private boolean reserveScrollBarSpace;
+	private int lastRevalidationWidth = -1;
 
 	/**
 	 * Constructs a new <code>WrapLayout</code> with a left alignment and a default 5-unit horizontal and vertical gap.
@@ -212,9 +213,13 @@ public class WrapLayout extends FlowLayout
 			// If the actual layout needs more height than the container was allocated, preferredLayoutSize() must have
 			// underestimated (e.g. due to the parent walk using a wider width than we actually got). Schedule a
 			// revalidation so the preferred size is recalculated with the now-known correct width.
+			// Guard: only schedule once per target width to avoid an infinite revalidation loop. If we already
+			// tried at this width and the container is still constrained (e.g. by a split pane), retrying won't help.
 			int neededHeight = y + rowHeight + vgap + insets.bottom;
-			if (neededHeight > target.getHeight() + 1)
+			int currentWidth = target.getWidth();
+			if (neededHeight > target.getHeight() + 1 && currentWidth != lastRevalidationWidth)
 			{
+				lastRevalidationWidth = currentWidth;
 				SwingUtilities.invokeLater(() ->
 				{
 					target.revalidate();
