@@ -54,12 +54,12 @@ public class IconsTool extends EditorTool
 	private boolean isScaling;
 	private JComboBox<String> artPackComboBox;
 	private RowHider iconTypeButtonsHider;
-	private JCheckBox mountainsCheckbox;
-	private JCheckBox hillsCheckbox;
-	private JCheckBox dunesCheckbox;
-	private JCheckBox treesCheckbox;
-	private JCheckBox citiesCheckbox;
-	private JCheckBox decorationsCheckbox;
+	private JToggleButton mountainsToggle;
+	private JToggleButton hillsToggle;
+	private JToggleButton dunesToggle;
+	private JToggleButton treesToggle;
+	private JToggleButton citiesToggle;
+	private JToggleButton decorationsToggle;
 	private RowHider iconTypeCheckboxesHider;
 	private RowHider colorPickerHider;
 	private JPanel fillColorDisplay;
@@ -178,55 +178,33 @@ public class IconsTool extends EditorTool
 			decorationsButton.addActionListener(typeListener);
 
 			iconTypeWidget = new SegmentedButtonWidget(List.of(mountainsButton, hillsButton, dunesButton, treesButton, citiesButton, decorationsButton));
+			iconTypeWidget.setReserveScrollBarSpace(true);
 			iconTypeButtonsHider = iconTypeWidget.addToOrganizer(organizer, "Type:", "The type of icon to add/replace.");
 		}
 
-		// Icon type checkboxes
+		// Icon type toggle buttons for edit/erase mode filtering
 		{
-			List<JCheckBox> checkBoxes = new ArrayList<>();
+			mountainsToggle = new JToggleButton("Mountains");
+			hillsToggle = new JToggleButton("Hills");
+			dunesToggle = new JToggleButton("Dunes");
+			treesToggle = new JToggleButton("Trees");
+			citiesToggle = new JToggleButton("Cities");
+			decorationsToggle = new JToggleButton("Decorations");
 
-			mountainsCheckbox = new JCheckBox("Mountains");
-			checkBoxes.add(mountainsCheckbox);
+			List<JToggleButton> toggles = List.of(mountainsToggle, hillsToggle, dunesToggle, treesToggle, citiesToggle, decorationsToggle);
+			toggles.forEach(button -> button.setSelected(true));
 
-			hillsCheckbox = new JCheckBox("Hills");
-			checkBoxes.add(hillsCheckbox);
+			SegmentedButtonWidget iconTypeCheckboxesWidget = new SegmentedButtonWidget(toggles, true);
+			iconTypeCheckboxesWidget.setReserveScrollBarSpace(true);
+			iconTypeCheckboxesHider = iconTypeCheckboxesWidget.addToOrganizer(organizer, "Types:", "Filters the type of icons to select.");
 
-			dunesCheckbox = new JCheckBox("Dunes");
-			checkBoxes.add(dunesCheckbox);
+			JButton selectAll = new JButton("Select All");
+			selectAll.addActionListener(e -> toggles.forEach(button -> button.setSelected(true)));
 
-			treesCheckbox = new JCheckBox("Trees");
-			checkBoxes.add(treesCheckbox);
+			JButton deselectAll = new JButton("Deselect All");
+			deselectAll.addActionListener(e -> toggles.forEach(button -> button.setSelected(false)));
 
-			citiesCheckbox = new JCheckBox("Cities");
-			checkBoxes.add(citiesCheckbox);
-
-			decorationsCheckbox = new JCheckBox("Decorations");
-			checkBoxes.add(decorationsCheckbox);
-
-			iconTypeCheckboxesHider = organizer.addLabelAndComponentsVertical("Types:", "Filters the type of icons to select.", checkBoxes);
-
-			JButton checkAll = new JButton("Check All");
-			checkAll.addActionListener(new ActionListener()
-			{
-
-				@Override
-				public void actionPerformed(ActionEvent e)
-				{
-					checkBoxes.stream().forEach(button -> button.setSelected(true));
-				}
-			});
-
-			JButton uncheckAll = new JButton("Uncheck All");
-			uncheckAll.addActionListener(new ActionListener()
-			{
-				@Override
-				public void actionPerformed(ActionEvent e)
-				{
-					checkBoxes.stream().forEach(button -> button.setSelected(false));
-				}
-			});
-			checkBoxes.stream().forEach(button -> button.setSelected(true));
-			iconTypeCheckboxesHider.add(organizer.addLabelAndComponentsHorizontal("", "", Arrays.asList(checkAll, uncheckAll)));
+			iconTypeCheckboxesHider.add(organizer.addLabelAndComponentsHorizontal("", "", Arrays.asList(selectAll, deselectAll)));
 			iconTypeCheckboxesHider.setVisible(false);
 		}
 
@@ -1693,7 +1671,7 @@ public class IconsTool extends EditorTool
 
 	private void handleEraseIcons(MouseEvent e)
 	{
-		if (treesCheckbox.isSelected())
+		if (treesToggle.isSelected())
 		{
 			eraseTreesThatFailedToDrawDueToLowDensity(e);
 		}
@@ -2314,32 +2292,32 @@ public class IconsTool extends EditorTool
 		}
 		else
 		{
-			if (mountainsCheckbox.isSelected() && icon.type == IconType.mountains)
+			if (mountainsToggle.isSelected() && icon.type == IconType.mountains)
 			{
 				return true;
 			}
 
-			if (hillsCheckbox.isSelected() && icon.type == IconType.hills)
+			if (hillsToggle.isSelected() && icon.type == IconType.hills)
 			{
 				return true;
 			}
 
-			if (dunesCheckbox.isSelected() && icon.type == IconType.sand)
+			if (dunesToggle.isSelected() && icon.type == IconType.sand)
 			{
 				return true;
 			}
 
-			if (treesCheckbox.isSelected() && icon.type == IconType.trees)
+			if (treesToggle.isSelected() && icon.type == IconType.trees)
 			{
 				return true;
 			}
 
-			if (decorationsCheckbox.isSelected() && icon.type == IconType.decorations)
+			if (decorationsToggle.isSelected() && icon.type == IconType.decorations)
 			{
 				return true;
 			}
 
-			if (citiesCheckbox.isSelected() && icon.type == IconType.cities)
+			if (citiesToggle.isSelected() && icon.type == IconType.cities)
 			{
 				return true;
 			}

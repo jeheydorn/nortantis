@@ -9,25 +9,48 @@ public class SegmentedButtonWidget
 	private final List<JToggleButton> buttons;
 	private final JPanel container;
 	private final ButtonGroup group;
+	private final WrapLayout wrapLayout;
 
 	public SegmentedButtonWidget(List<JToggleButton> buttons)
 	{
+		this(buttons, false);
+	}
+
+	public SegmentedButtonWidget(List<JToggleButton> buttons, boolean multiSelect)
+	{
 		this.buttons = buttons;
 
-		group = new ButtonGroup();
+		if (multiSelect)
+		{
+			group = null;
+		}
+		else
+		{
+			group = new ButtonGroup();
+			for (JToggleButton button : buttons)
+			{
+				group.add(button);
+			}
+		}
+
 		for (JToggleButton button : buttons)
 		{
-			group.add(button);
 			SwingHelper.reduceHorizontalMargin(button);
 		}
 
 		container = new JPanel();
-		container.setLayout(new WrapLayout(WrapLayout.LEFT));
+		wrapLayout = new WrapLayout(WrapLayout.LEFT);
+		container.setLayout(wrapLayout);
 		container.setBorder(BorderFactory.createEmptyBorder(-5, -5, -5, -5));
 		for (JToggleButton button : buttons)
 		{
 			container.add(button);
 		}
+	}
+
+	public void setReserveScrollBarSpace(boolean reserveScrollBarSpace)
+	{
+		wrapLayout.setReserveScrollBarSpace(reserveScrollBarSpace);
 	}
 
 	public void updateSegmentPositions()

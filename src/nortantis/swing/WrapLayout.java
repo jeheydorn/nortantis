@@ -9,6 +9,8 @@ import java.awt.*;
 @SuppressWarnings("serial")
 public class WrapLayout extends FlowLayout
 {
+	private boolean reserveScrollBarSpace;
+
 	/**
 	 * Constructs a new <code>WrapLayout</code> with a left alignment and a default 5-unit horizontal and vertical gap.
 	 */
@@ -44,6 +46,15 @@ public class WrapLayout extends FlowLayout
 	public WrapLayout(int align, int hgap, int vgap)
 	{
 		super(align, hgap, vgap);
+	}
+
+	/**
+	 * When true, always reserves space for the ancestor scroll pane's vertical scrollbar width, even when the scrollbar is not currently
+	 * visible. This keeps wrapping consistent regardless of scrollbar visibility.
+	 */
+	public void setReserveScrollBarSpace(boolean reserveScrollBarSpace)
+	{
+		this.reserveScrollBarSpace = reserveScrollBarSpace;
 	}
 
 	/**
@@ -302,6 +313,13 @@ public class WrapLayout extends FlowLayout
 					int viewportMaxWidth = viewportWidth - horizontalInsetsAndGap;
 					maxWidth = Math.min(maxWidth, viewportMaxWidth);
 				}
+			}
+			else if (reserveScrollBarSpace && scrollPane.getVerticalScrollBarPolicy() == ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED)
+			{
+				// Reserve space for the scrollbar even when it is not currently visible,
+				// so wrapping stays consistent regardless of scrollbar visibility.
+				int scrollBarWidth = scrollPane.getVerticalScrollBar().getPreferredSize().width;
+				maxWidth -= scrollBarWidth;
 			}
 		}
 
