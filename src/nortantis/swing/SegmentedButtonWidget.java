@@ -16,6 +16,7 @@ public class SegmentedButtonWidget
 		this(buttons, false);
 	}
 
+	@SuppressWarnings("serial")
 	public SegmentedButtonWidget(List<JToggleButton> buttons, boolean multiSelect)
 	{
 		this.buttons = buttons;
@@ -38,7 +39,102 @@ public class SegmentedButtonWidget
 			SwingHelper.reduceHorizontalMargin(button);
 		}
 
-		container = new JPanel();
+		container = new JPanel()
+		{
+			private boolean hasRequestedRevalidation = false;
+
+			@Override
+			public Dimension getPreferredSize()
+			{
+				Dimension pref = super.getPreferredSize();
+
+				int width = getWidth();
+				if (width <= 0)
+				{
+					width = (int) (SwingHelper.sidePanelPreferredWidth * 0.6) - 20;
+				}
+				int neededHeight = computeWrappedHeight(width);
+				if (neededHeight > pref.height)
+				{
+					pref = new Dimension(pref.width, neededHeight);
+				}
+
+				return pref;
+			}
+
+			@Override
+			public Dimension getMinimumSize()
+			{
+				return getPreferredSize();
+			}
+
+			@Override
+			public void setBounds(int x, int y, int width, int height)
+			{
+				super.setBounds(x, y, width, height);
+
+				if (!hasRequestedRevalidation && width > 0)
+				{
+					int neededHeight = computeWrappedHeight(width);
+					if (neededHeight > height + 1)
+					{
+						hasRequestedRevalidation = true;
+						SwingUtilities.invokeLater(() ->
+						{
+							Container parent = getParent();
+							if (parent != null)
+							{
+								parent.revalidate();
+								parent.repaint();
+							}
+						});
+					}
+				}
+			}
+
+			private int computeWrappedHeight(int containerWidth)
+			{
+				Insets insets = getInsets();
+				int hgap = wrapLayout.getHgap();
+				int vgap = wrapLayout.getVgap();
+				int maxWidth = containerWidth - insets.left - insets.right - hgap * 2;
+				int rowWidth = 0;
+				int rowHeight = 0;
+				int totalHeight = 0;
+
+				for (int i = 0; i < getComponentCount(); i++)
+				{
+					Component c = getComponent(i);
+					if (c.isVisible())
+					{
+						Dimension d = c.getPreferredSize();
+						if (rowWidth > 0 && rowWidth + hgap + d.width > maxWidth)
+						{
+							if (totalHeight > 0)
+							{
+								totalHeight += vgap;
+							}
+							totalHeight += rowHeight;
+							rowWidth = 0;
+							rowHeight = 0;
+						}
+						if (rowWidth > 0)
+						{
+							rowWidth += hgap;
+						}
+						rowWidth += d.width;
+						rowHeight = Math.max(rowHeight, d.height);
+					}
+				}
+				if (totalHeight > 0)
+				{
+					totalHeight += vgap;
+				}
+				totalHeight += rowHeight;
+				totalHeight += insets.top + insets.bottom + vgap * 2;
+				return totalHeight;
+			}
+		};
 		wrapLayout = new WrapLayout(WrapLayout.LEFT);
 		container.setLayout(wrapLayout);
 		container.setBorder(BorderFactory.createEmptyBorder(-5, -5, -5, -5));
