@@ -7,10 +7,10 @@ import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
 import nortantis.geom.RotatedRectangle;
 import nortantis.graph.voronoi.Center;
+import nortantis.platform.*;
 import nortantis.platform.Color;
+import nortantis.platform.Font;
 import nortantis.platform.Image;
-import nortantis.platform.ImageHelper;
-import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
 import nortantis.platform.awt.AwtBridge;
 import nortantis.swing.translation.Translation;
@@ -122,9 +122,16 @@ public class IconsTool extends EditorTool
 	}
 
 	@Override
-	public String getImageIconFilePath()
+	public Image getToolIcon()
 	{
-		return Paths.get(Assets.getAssetsPath(), "internal/Icon tool.png").toString();
+		Image icon = Image.read(Paths.get(Assets.getAssetsPath(), "internal/Icon tool.png").toString());
+		try (nortantis.platform.Painter p = icon.createPainter(DrawQuality.High))
+		{
+			p.setColor(Color.black);
+			p.setFont(Font.create("Gabriola", FontStyle.Plain, 19));
+			p.drawString("Icons", 11, 48);
+		}
+		return icon;
 	}
 
 	@Override

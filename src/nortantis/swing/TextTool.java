@@ -7,7 +7,9 @@ import nortantis.TextType;
 import nortantis.editor.MapUpdater;
 import nortantis.geom.RotatedRectangle;
 import nortantis.platform.Color;
+import nortantis.platform.DrawQuality;
 import nortantis.platform.Font;
+import nortantis.platform.FontStyle;
 import nortantis.platform.awt.AwtBridge;
 import nortantis.swing.translation.TranslatedEnumRenderer;
 import nortantis.swing.translation.Translation;
@@ -502,9 +504,16 @@ public class TextTool extends EditorTool
 	}
 
 	@Override
-	public String getImageIconFilePath()
+	public nortantis.platform.Image getToolIcon()
 	{
-		return Paths.get(Assets.getAssetsPath(), "internal/Text tool.png").toString();
+		nortantis.platform.Image icons = nortantis.platform.Image.read(Paths.get(Assets.getAssetsPath(), "internal/Text tool.png").toString());
+		try (nortantis.platform.Painter p = icons.createPainter(DrawQuality.High))
+		{
+			p.setColor(Color.black);
+			p.setFont(Font.create("Gabriola", FontStyle.Plain, 34));
+			p.drawString("Text", 3, 37);
+		}
+		return icons;
 	}
 
 	@Override

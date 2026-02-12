@@ -7,9 +7,15 @@ import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Corner;
 import nortantis.graph.voronoi.Edge;
 import nortantis.graph.voronoi.VoronoiGraph;
+import nortantis.platform.DrawQuality;
+import nortantis.platform.Font;
+import nortantis.platform.FontStyle;
+import nortantis.platform.Image;
 import nortantis.platform.awt.AwtBridge;
 import nortantis.swing.translation.Translation;
-import nortantis.util.*;
+import nortantis.util.Assets;
+import nortantis.util.GeometryHelper;
+import nortantis.util.Tuple2;
 
 import javax.swing.*;
 import java.awt.*;
@@ -98,9 +104,17 @@ public class LandWaterTool extends EditorTool
 	}
 
 	@Override
-	public String getImageIconFilePath()
+	public Image getToolIcon()
 	{
-		return Paths.get(Assets.getAssetsPath(), "internal/Land Water tool.png").toString();
+		Image icon = Image.read(Paths.get(Assets.getAssetsPath(), "internal/Land Water tool.png").toString());
+		try (nortantis.platform.Painter p = icon.createPainter(DrawQuality.High))
+		{
+			p.setColor(nortantis.platform.Color.black);
+			p.setFont(Font.create("Gabriola", FontStyle.Plain, 19));
+			p.drawString("Land", 7, 15);
+			p.drawString("Water", 12, 48);
+		}
+		return icon;
 	}
 
 	@Override

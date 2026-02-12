@@ -8,6 +8,7 @@ import nortantis.geom.RotatedRectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Corner;
 import nortantis.graph.voronoi.Edge;
+import nortantis.platform.Image;
 
 import javax.swing.*;
 import java.awt.event.MouseEvent;
@@ -43,7 +44,7 @@ public abstract class EditorTool
 
 	public abstract String getKeyboardShortcutText();
 
-	public abstract String getImageIconFilePath();
+	public abstract Image getToolIcon();
 
 	public void onSwitchingTo()
 	{

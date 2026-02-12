@@ -71,7 +71,7 @@ public class ToolsPanel extends JPanel
 			};
 			try
 			{
-				BufferedImage icon = AwtBridge.toBufferedImage(Assets.readImage(tool.getImageIconFilePath()));
+				BufferedImage icon = AwtBridge.toBufferedImage(tool.getToolIcon());
 				toolButton.setIcon(new ImageIcon(icon));
 			}
 			catch (Exception e)

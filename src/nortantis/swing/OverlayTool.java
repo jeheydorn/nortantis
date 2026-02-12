@@ -7,7 +7,7 @@ import nortantis.geom.Dimension;
 import nortantis.geom.IntDimension;
 import nortantis.geom.IntRectangle;
 import nortantis.geom.Point;
-import nortantis.platform.Image;
+import nortantis.platform.*;
 import nortantis.swing.MapEditingPanel.IconEditToolsLocation;
 import nortantis.swing.MapEditingPanel.IconEditToolsSize;
 import nortantis.swing.translation.Translation;
@@ -75,9 +75,16 @@ public class OverlayTool extends EditorTool
 	}
 
 	@Override
-	public String getImageIconFilePath()
+	public Image getToolIcon()
 	{
-		return Paths.get(Assets.getAssetsPath(), "internal/Overlay tool.png").toString();
+		Image icon = Image.read(Paths.get(Assets.getAssetsPath(), "internal/Overlay tool.png").toString());
+		try (nortantis.platform.Painter p = icon.createPainter(DrawQuality.High))
+		{
+			p.setColor(Color.black);
+			p.setFont(Font.create("Gabriola", FontStyle.Plain, 19));
+			p.drawString("Overlay", 4, 48);
+		}
+		return icon;
 	}
 
 	@Override
