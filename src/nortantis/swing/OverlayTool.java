@@ -93,7 +93,6 @@ public class OverlayTool extends EditorTool
 	{
 		return switch (Translation.getEffectiveLocale().getLanguage())
 		{
-			case "de" -> OSHelper.isLinux() ? 0 : -9;
 			case "es" -> -2;
 			case "pt" -> 5;
 			case "ru" -> 5;
