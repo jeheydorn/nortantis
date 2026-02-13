@@ -14,6 +14,7 @@ import nortantis.platform.awt.AwtBridge;
 import nortantis.swing.translation.TranslatedEnumRenderer;
 import nortantis.swing.translation.Translation;
 import nortantis.util.Assets;
+import nortantis.util.OSHelper;
 import nortantis.util.Tuple2;
 
 import javax.swing.*;
@@ -522,7 +523,7 @@ public class TextTool extends EditorTool
 		return switch (Translation.getEffectiveLocale().getLanguage())
 		{
 			case "zh" -> -4;
-			case "fr" -> -2;
+			case "fr" -> OSHelper.isLinux() ? -1 : -2;
 			case "pt" -> -1;
 			case "ru" -> -1;
 			default -> 0;

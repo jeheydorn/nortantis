@@ -13,6 +13,7 @@ import nortantis.swing.MapEditingPanel.IconEditToolsSize;
 import nortantis.swing.translation.Translation;
 import nortantis.util.Assets;
 import nortantis.util.FileHelper;
+import nortantis.util.OSHelper;
 import nortantis.util.Tuple2;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -92,7 +93,7 @@ public class OverlayTool extends EditorTool
 	{
 		return switch (Translation.getEffectiveLocale().getLanguage())
 		{
-			case "de" -> -9;
+			case "de" -> OSHelper.isLinux() ? 0 : -9;
 			case "es" -> -2;
 			case "pt" -> 5;
 			case "ru" -> 5;

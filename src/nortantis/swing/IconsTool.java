@@ -140,7 +140,9 @@ public class IconsTool extends EditorTool
 		return switch (Translation.getEffectiveLocale().getLanguage())
 		{
 			case "de" -> -9;
-			case "pt" -> 0;
+			case "pt" -> OSHelper.isLinux() ? -6 : 0;
+			case "fr" -> OSHelper.isLinux() ? -7 : 0;
+			case "ru" -> OSHelper.isLinux() ? -2 : 0;
 			default -> 0;
 		};
 	}

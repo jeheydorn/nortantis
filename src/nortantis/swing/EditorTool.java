@@ -312,17 +312,38 @@ public abstract class EditorTool
 
 	protected static Font createToolIconFont(int baseFontSize, String text)
 	{
-		double scale = switch (Translation.getEffectiveLocale().getLanguage())
+		String language = Translation.getEffectiveLocale().getLanguage();
+		double scale = switch (language)
 		{
 			case "es" -> 0.9;
-			case "ru" -> 0.8;
-			case "zh" -> 0.85;
 			case "fr" -> 0.97;
 			case "pt" -> 0.91;
+			case "ru" -> 0.8;
+			case "zh" -> 0.85;
 			default -> 1.0;
 		};
-		int fontSize = (int) (baseFontSize * scale);
-		String fontFamily = OSHelper.isLinux() ? "URW Chancery L" : OSHelper.isMac() ? "Apple Chancery" : "Gabriola";
+		
+		double osScale;
+		if (OSHelper.isLinux())
+		{
+			osScale = switch (language)
+					{
+						case "en" -> 0.9;
+						case "de" -> 0.9;
+						case "es" -> 0.85;
+						case "fr" -> 0.8;
+						case "pt" -> 0.85;
+						case "ru" -> 0.65;
+						default -> 1.0;
+					};
+		}
+		else
+		{
+			osScale = 1.0;
+		}
+		
+		int fontSize = (int) (baseFontSize * scale * osScale);
+		String fontFamily = OSHelper.isLinux() ? "Gurajada" : OSHelper.isMac() ? "Apple Chancery" : "Gabriola";
 		Font font = Font.create(fontFamily, FontStyle.Plain, fontSize);
 		if (font.canDisplayUpTo(text) != -1)
 		{
