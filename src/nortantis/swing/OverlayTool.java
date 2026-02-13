@@ -80,11 +80,24 @@ public class OverlayTool extends EditorTool
 		Image icon = Image.read(Paths.get(Assets.getAssetsPath(), "internal/Overlay tool.png").toString());
 		try (nortantis.platform.Painter p = icon.createPainter(DrawQuality.High))
 		{
+			String text = Translation.get("overlayTool.toolIcon");
 			p.setColor(Color.black);
-			p.setFont(Font.create("Gabriola", FontStyle.Plain, 19));
-			p.drawString("Overlay", 4, 48);
+			p.setFont(createToolIconFont(19, text));
+			p.drawString(text, 4 + getXOffSetBasedOnLanguage(), 48);
 		}
 		return icon;
+	}
+
+	private int getXOffSetBasedOnLanguage()
+	{
+		return switch (Translation.getEffectiveLocale().getLanguage())
+		{
+			case "de" -> -9;
+			case "es" -> -2;
+			case "pt" -> 5;
+			case "ru" -> 5;
+			default -> 0;
+		};
 	}
 
 	@Override

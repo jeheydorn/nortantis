@@ -8,7 +8,10 @@ import nortantis.geom.RotatedRectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Corner;
 import nortantis.graph.voronoi.Edge;
+import nortantis.platform.Font;
+import nortantis.platform.FontStyle;
 import nortantis.platform.Image;
+import nortantis.swing.translation.Translation;
 
 import javax.swing.*;
 import java.awt.event.MouseEvent;
@@ -304,6 +307,26 @@ public abstract class EditorTool
 	public void handleCustomImagesPathChanged(String customImagesPath)
 	{
 
+	}
+
+	protected static Font createToolIconFont(int baseFontSize, String text)
+	{
+		double scale = switch (Translation.getEffectiveLocale().getLanguage())
+		{
+			case "es" -> 0.9;
+			case "ru" -> 0.8;
+			case "zh" -> 0.85;
+			case "fr" -> 0.97;
+			case "pt" -> 0.91;
+			default -> 1.0;
+		};
+		int fontSize = (int) (baseFontSize * scale);
+		Font font = Font.create("Gabriola", FontStyle.Plain, fontSize);
+		if (font.canDisplayUpTo(text) != -1)
+		{
+			font = Font.create("SansSerif", FontStyle.Plain, fontSize);
+		}
+		return font;
 	}
 
 	protected boolean isSelected()

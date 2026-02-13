@@ -509,11 +509,24 @@ public class TextTool extends EditorTool
 		nortantis.platform.Image icons = nortantis.platform.Image.read(Paths.get(Assets.getAssetsPath(), "internal/Text tool.png").toString());
 		try (nortantis.platform.Painter p = icons.createPainter(DrawQuality.High))
 		{
+			String text = Translation.get("textTool.toolIcon");
 			p.setColor(Color.black);
-			p.setFont(Font.create("Gabriola", FontStyle.Plain, 34));
-			p.drawString("Text", 3, 37);
+			p.setFont(createToolIconFont(34, text));
+			p.drawString(text, 3 + getXOffSetBasedOnLanguage(), 37);
 		}
 		return icons;
+	}
+
+	private int getXOffSetBasedOnLanguage()
+	{
+		return switch (Translation.getEffectiveLocale().getLanguage())
+		{
+			case "zh" -> -4;
+			case "fr" -> -2;
+			case "pt" -> -1;
+			case "ru" -> -1;
+			default -> 0;
+		};
 	}
 
 	@Override

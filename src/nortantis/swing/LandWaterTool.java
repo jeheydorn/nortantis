@@ -109,13 +109,29 @@ public class LandWaterTool extends EditorTool
 		Image icon = Image.read(Paths.get(Assets.getAssetsPath(), "internal/Land Water tool.png").toString());
 		try (nortantis.platform.Painter p = icon.createPainter(DrawQuality.High))
 		{
+			String land = Translation.get("landWaterTool.toolIcon.land");
+			String water = Translation.get("landWaterTool.toolIcon.water");
+			p.setFont(createToolIconFont(19, land + water));
 			p.setColor(nortantis.platform.Color.black);
-			p.setFont(Font.create("Gabriola", FontStyle.Plain, 19));
-			p.drawString("Land", 7, 15);
-			p.drawString("Water", 12, 48);
+			p.drawString(land, 7, 15);
+			p.drawString(water, 12 + getXOffSetBasedOnLanguage(), 48);
 		}
 		return icon;
 	}
+
+	private int getXOffSetBasedOnLanguage()
+	{
+		return switch (Translation.getEffectiveLocale().getLanguage())
+		{
+			case "de" -> -3;
+			case "es" -> 3;
+			case "fr" -> 4;
+			case "pt" -> 4;
+			case "ru" -> 4;
+			default -> 0;
+		};
+	}
+
 
 	@Override
 	protected JPanel createToolOptionsPanel()

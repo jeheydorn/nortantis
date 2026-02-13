@@ -127,12 +127,24 @@ public class IconsTool extends EditorTool
 		Image icon = Image.read(Paths.get(Assets.getAssetsPath(), "internal/Icon tool.png").toString());
 		try (nortantis.platform.Painter p = icon.createPainter(DrawQuality.High))
 		{
+			String text = Translation.get("iconsTool.toolIcon");
 			p.setColor(Color.black);
-			p.setFont(Font.create("Gabriola", FontStyle.Plain, 19));
-			p.drawString("Icons", 11, 48);
+			p.setFont(createToolIconFont(19, text));
+			p.drawString(text, 11 + getXOffSetBasedOnLanguage(), 48);
 		}
 		return icon;
 	}
+
+	private int getXOffSetBasedOnLanguage()
+	{
+		return switch (Translation.getEffectiveLocale().getLanguage())
+		{
+			case "de" -> -9;
+			case "pt" -> 0;
+			default -> 0;
+		};
+	}
+
 
 	@Override
 	public void onSwitchingAway()
