@@ -12,6 +12,7 @@ import nortantis.platform.Font;
 import nortantis.platform.FontStyle;
 import nortantis.platform.Image;
 import nortantis.swing.translation.Translation;
+import nortantis.util.OSHelper;
 
 import javax.swing.*;
 import java.awt.event.MouseEvent;
@@ -321,9 +322,11 @@ public abstract class EditorTool
 			default -> 1.0;
 		};
 		int fontSize = (int) (baseFontSize * scale);
-		Font font = Font.create("Gabriola", FontStyle.Plain, fontSize);
+		String fontFamily = OSHelper.isLinux() ? "URW Chancery L" : OSHelper.isMac() ? "Apple Chancery" : "Gabriola";
+		Font font = Font.create(fontFamily, FontStyle.Plain, fontSize);
 		if (font.canDisplayUpTo(text) != -1)
 		{
+			// The font cannot display the text
 			font = Font.create("SansSerif", FontStyle.Plain, fontSize);
 		}
 		return font;
