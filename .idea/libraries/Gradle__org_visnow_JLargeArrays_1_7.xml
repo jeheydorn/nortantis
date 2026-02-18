@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="Gradle: org.visnow:JLargeArrays:1.7" type="java-imported" external-system-id="GRADLE">
+    <properties groupId="org.visnow" artifactId="JLargeArrays" version="1.7" baseVersion="1.7" />
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.visnow/JLargeArrays/1.7/dd76108ef8fb9b5b4a65e266e82a1a40698ba5e7/JLargeArrays-1.7.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
