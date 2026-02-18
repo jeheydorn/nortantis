@@ -1,5 +1,11 @@
 package nortantis.editor;
 
+import nortantis.swing.LookAndFeel;
+import nortantis.util.FileHelper;
+import nortantis.util.Logger;
+import nortantis.util.OSHelper;
+import org.apache.commons.lang3.StringUtils;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.PrintWriter;
@@ -9,20 +15,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayDeque;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Properties;
-import java.util.Set;
-import java.util.TreeSet;
-
-import org.apache.commons.lang3.StringUtils;
-
-import nortantis.swing.LookAndFeel;
-import nortantis.util.FileHelper;
-import nortantis.util.Logger;
-import nortantis.util.OSHelper;
+import java.util.*;
 
 public class UserPreferences
 {
@@ -40,6 +33,7 @@ public class UserPreferences
 	public LookAndFeel lookAndFeel = LookAndFeel.Dark;
 	public int toolsPanelWidth;
 	public int themePanelWidth;
+	public String language;
 
 	public static UserPreferences instance;
 
@@ -86,7 +80,7 @@ public class UserPreferences
 				{
 					defaultCustomImagesPath = FileHelper.replaceHomeFolderWithPlaceholder(props.getProperty("defaultCustomImagesPath"));
 				}
-				
+
 				// I used the wrong name when creating this property, but changing it now would make the popup show up for existing users,
 				// and there is no functional problem with just leaving it.
 				if (props.containsKey("showNewMapWithSameThemeRegionColorsMessage"))
@@ -109,8 +103,7 @@ public class UserPreferences
 				if (props.containsKey("lastVersionCheckTime"))
 				{
 					// Convert the string back to LocalDateTime
-					lastVersionCheckTime = LocalDateTime.parse(props.getProperty("lastVersionCheckTime"),
-							DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+					lastVersionCheckTime = LocalDateTime.parse(props.getProperty("lastVersionCheckTime"), DateTimeFormatter.ISO_LOCAL_DATE_TIME);
 				}
 
 				if (props.containsKey("lookAndFeel") && !StringUtils.isEmpty(props.getProperty("lookAndFeel")))
@@ -132,6 +125,11 @@ public class UserPreferences
 				{
 					String value = props.getProperty("hideGridOverlaySeizureWarning");
 					hideGridOverlaySeizureWarning = Boolean.parseBoolean(value);
+				}
+
+				if (props.containsKey("language"))
+				{
+					language = props.getProperty("language");
 				}
 
 			}
@@ -168,11 +166,11 @@ public class UserPreferences
 		props.setProperty("hideGridOverlaySeizureWarning", hideGridOverlaySeizureWarning + "");
 		props.setProperty("collapsedPanels", String.join("\t", collapsedPanels));
 		props.setProperty("lastVersionFromCheck", lastVersionFromCheck == null ? "" : lastVersionFromCheck);
-		props.setProperty("lastVersionCheckTime",
-				(lastVersionCheckTime == null ? LocalDateTime.MIN : lastVersionCheckTime).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+		props.setProperty("lastVersionCheckTime", (lastVersionCheckTime == null ? LocalDateTime.MIN : lastVersionCheckTime).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
 		props.setProperty("lookAndFeel", lookAndFeel.name());
 		props.setProperty("toolsPanelWidth", toolsPanelWidth + "");
 		props.setProperty("themePanelWidth", themePanelWidth + "");
+		props.setProperty("language", language == null ? "" : language);
 
 		try
 		{

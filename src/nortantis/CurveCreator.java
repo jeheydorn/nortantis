@@ -1,9 +1,9 @@
 package nortantis;
 
+import nortantis.geom.Point;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import nortantis.geom.Point;
 
 /**
  * Creates curves using centripetal Catmull-Rom splines
@@ -11,7 +11,7 @@ import nortantis.geom.Point;
 public class CurveCreator
 {
 	public static final double defaultDistanceBetweenPoints = 4.0;
-	
+
 	/**
 	 * Creates a curve from p1 to p2 inclusive by creating a centripetal Catmull-Rom spline.
 	 * 
@@ -64,7 +64,7 @@ public class CurveCreator
 
 		return curve;
 	}
-	
+
 	/**
 	 * Creates a curve that passes through the given points.
 	 * 
@@ -83,7 +83,7 @@ public class CurveCreator
 	 * @param path
 	 *            List of points that defines where the curve should go.
 	 * @param distanceBetweenPoints
-	 * 			  Determines the number of points to add to the curve.
+	 *            Determines the number of points to add to the curve.
 	 * @return the curve
 	 */
 	public static List<Point> createCurve(List<Point> path, double distanceBetweenPoints)

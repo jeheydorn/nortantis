@@ -1,32 +1,6 @@
 package nortantis.swing;
 
-import java.awt.BasicStroke;
-import java.awt.Color;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Rectangle;
-import java.awt.RenderingHints;
-import java.awt.Stroke;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Area;
-import java.awt.geom.Ellipse2D;
-import java.awt.image.BufferedImage;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
-
-import org.imgscalr.Scalr.Method;
-
-import nortantis.FreeIconCollection;
-import nortantis.IconDrawTask;
-import nortantis.IconDrawer;
-import nortantis.IconType;
-import nortantis.MapText;
-import nortantis.WorldGraph;
+import nortantis.*;
 import nortantis.editor.EdgeType;
 import nortantis.editor.FreeIcon;
 import nortantis.geom.Point;
@@ -34,11 +8,23 @@ import nortantis.geom.RotatedRectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
 import nortantis.platform.Image;
+import nortantis.platform.awt.AwtBridge;
 import nortantis.platform.awt.AwtFactory;
 import nortantis.util.Assets;
-import nortantis.util.ImageHelper;
-import nortantis.util.ImageHelper.ColorifyAlgorithm;
+import nortantis.platform.ImageHelper;
+import nortantis.platform.ImageHelper.ColorizeAlgorithm;
 import nortantis.util.Range;
+import org.imgscalr.Scalr.Method;
+
+import java.awt.*;
+import java.awt.Stroke;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Area;
+import java.awt.geom.Ellipse2D;
+import java.awt.image.BufferedImage;
+import java.nio.file.Paths;
+import java.util.*;
+import java.util.List;
 
 @SuppressWarnings("serial")
 public class MapEditingPanel extends UnscaledImagePanel
@@ -57,7 +43,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private EdgeType edgeTypeToHighlight;
 	private boolean highlightLakes;
 	private boolean highlightRivers;
-	public BufferedImage mapFromMapCreator;
+	public Image mapFromMapCreator;
 	private java.awt.Point brushLocation;
 	private int brushDiameter;
 	private double zoom;
@@ -93,7 +79,6 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private final double smallIconScale = 0.2;
 	private final double mediumIconScale = 0.4;
 	private final double largeIconScale = 0.6;
-
 
 	public MapEditingPanel(BufferedImage image)
 	{
@@ -208,7 +193,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		int n = 0;
 		for (FreeIcon icon : icons)
 		{
-			nortantis.geom.Rectangle iconBounds = iconDrawer.toIconDrawTask(icon).createBounds();
+			nortantis.geom.Rectangle iconBounds = iconDrawer.toIconDrawTask(icon).getOrCreateContentBoundsPadded();
 			if (bounds == null)
 			{
 				bounds = iconBounds;
@@ -225,15 +210,13 @@ public class MapEditingPanel extends UnscaledImagePanel
 			}
 			else
 			{
-				averageSize = new nortantis.geom.Dimension((iconBounds.size().width + averageSize.width * (n - 1)) / n,
-						(iconBounds.size().height + averageSize.height * (n - 1)) / n);
+				averageSize = new nortantis.geom.Dimension((iconBounds.size().width + averageSize.width * (n - 1)) / n, (iconBounds.size().height + averageSize.height * (n - 1)) / n);
 			}
 		}
 		return bounds;
 	}
 
-	private void showIconEditToolsAt(FreeIcon icon, boolean isValidPosition, IconEditToolsLocation toolsLocation,
-			IconEditToolsSize editToolsSize, boolean showEditBox)
+	private void showIconEditToolsAt(FreeIcon icon, boolean isValidPosition, IconEditToolsLocation toolsLocation, IconEditToolsSize editToolsSize, boolean showEditBox)
 	{
 		assert iconDrawer != null;
 		if (iconDrawer == null)
@@ -241,12 +224,11 @@ public class MapEditingPanel extends UnscaledImagePanel
 			return;
 		}
 
-		showIconEditToolsAt(iconDrawer.toIconDrawTask(icon).createBounds(), isValidPosition, toolsLocation, editToolsSize, showEditBox,
-				true);
+		showIconEditToolsAt(iconDrawer.toIconDrawTask(icon).getOrCreateContentBoundsPadded(), isValidPosition, toolsLocation, editToolsSize, showEditBox, true);
 	}
 
-	public void showIconEditToolsAt(nortantis.geom.Rectangle rectangle, boolean isValidPosition, IconEditToolsLocation toolsLocation,
-			IconEditToolsSize editToolsSize, boolean showEditBox, boolean editBoxIsInMapSpace)
+	public void showIconEditToolsAt(nortantis.geom.Rectangle rectangle, boolean isValidPosition, IconEditToolsLocation toolsLocation, IconEditToolsSize editToolsSize, boolean showEditBox,
+			boolean editBoxIsInMapSpace)
 	{
 		iconToEditBounds = rectangle == null ? null : rectangle.scaleAboutOrigin(1.0 / resolution);
 		this.isIconToEditInAValidPosition = isValidPosition;
@@ -298,8 +280,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		{
 			if (text.line1Bounds != null)
 			{
-				highlightedAreas
-						.add(AwtFactory.toAwtArea(text.line1Bounds.addRotatedRectangleThatHasTheSameAngleAndPivot(text.line2Bounds)));
+				highlightedAreas.add(AwtFactory.toAwtArea(text.line1Bounds.addRotatedRectangleThatHasTheSameAngleAndPivot(text.line2Bounds)));
 			}
 		}
 	}
@@ -347,7 +328,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 				IconDrawTask task = iconDrawer.toIconDrawTask(icon);
 				if (task != null)
 				{
-					nortantis.geom.Rectangle bounds = task.createBounds();
+					nortantis.geom.Rectangle bounds = task.getOrCreateContentBoundsPadded();
 					highlightedAreas.add(AwtFactory.toAwtArea(bounds));
 				}
 			}
@@ -361,7 +342,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 				IconDrawTask task = iconDrawer.toIconDrawTask(icon);
 				if (task != null)
 				{
-					nortantis.geom.Rectangle bounds = task.createBounds();
+					nortantis.geom.Rectangle bounds = task.getOrCreateContentBoundsPadded();
 					redHighlightedAreas.add(AwtFactory.toAwtArea(bounds));
 				}
 			}
@@ -558,7 +539,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 					IconDrawTask task = iconDrawer.toIconDrawTask(icon);
 					if (task != null)
 					{
-						nortantis.geom.Rectangle bounds = task.createBounds();
+						nortantis.geom.Rectangle bounds = task.getOrCreateContentBoundsPadded();
 						((Graphics2D) g).draw(AwtFactory.toAwtArea(bounds));
 					}
 				}
@@ -590,7 +571,8 @@ public class MapEditingPanel extends UnscaledImagePanel
 		if (!isIconToEditInAValidPosition)
 		{
 			final int inset = (int) (10 * resolution);
-			if (inset > 0 && editBounds.width > inset * 2 && editBounds.height > inset * 2)
+			final int minXSize = 8;
+			if (inset > 0 && editBounds.width > inset * 2 + minXSize && editBounds.height > inset * 2 + minXSize)
 			{
 				Stroke prevStroke = g.getStroke();
 				RenderingHints hints = g.getRenderingHints();
@@ -600,18 +582,18 @@ public class MapEditingPanel extends UnscaledImagePanel
 				if (editBounds.width > editBounds.height)
 				{
 					int additionalWidthInset = (editBounds.width - editBounds.height) / 2;
-					g.drawLine(editBounds.x + inset + additionalWidthInset, editBounds.y + inset,
-							editBounds.x + editBounds.width - (inset + additionalWidthInset), editBounds.y + editBounds.height - inset);
-					g.drawLine(editBounds.x + inset + additionalWidthInset, editBounds.y + editBounds.height - inset,
-							editBounds.x + editBounds.width - (inset + additionalWidthInset), editBounds.y + inset);
+					g.drawLine(editBounds.x + inset + additionalWidthInset, editBounds.y + inset, editBounds.x + editBounds.width - (inset + additionalWidthInset),
+							editBounds.y + editBounds.height - inset);
+					g.drawLine(editBounds.x + inset + additionalWidthInset, editBounds.y + editBounds.height - inset, editBounds.x + editBounds.width - (inset + additionalWidthInset),
+							editBounds.y + inset);
 				}
 				else
 				{
 					int additionalHeightInset = (editBounds.height - editBounds.width) / 2;
 					g.drawLine(editBounds.x + inset, editBounds.y + inset + additionalHeightInset, editBounds.x + editBounds.width - inset,
 							editBounds.y + editBounds.height - (inset + additionalHeightInset));
-					g.drawLine(editBounds.x + inset, editBounds.y + editBounds.height - (inset + additionalHeightInset),
-							editBounds.x + editBounds.width - inset, editBounds.y + inset + additionalHeightInset);
+					g.drawLine(editBounds.x + inset, editBounds.y + editBounds.height - (inset + additionalHeightInset), editBounds.x + editBounds.width - inset,
+							editBounds.y + inset + additionalHeightInset);
 				}
 
 				g.setStroke(prevStroke);
@@ -711,8 +693,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 		// Place the image for the move tool.
 		{
-			int x = (int) (textBoxBounds.x) + (int) (Math.round(textBoxBounds.width / 2.0))
-					- (int) (Math.round(moveIconScaledSmall.getWidth() / 2.0));
+			int x = (int) (textBoxBounds.x) + (int) (Math.round(textBoxBounds.width / 2.0)) - (int) (Math.round(moveIconScaledSmall.getWidth() / 2.0));
 			int y = (int) (textBoxBounds.y) - (moveIconScaledSmall.getHeight()) - padding;
 			g2.drawImage(moveIconScaledSmall, x, y, null);
 			moveToolArea = new Area(new Ellipse2D.Double(x, y, moveIconScaledSmall.getWidth(), moveIconScaledSmall.getHeight()));
@@ -885,7 +866,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 	private void drawRivers(Graphics g)
 	{
-		graph.drawRivers(AwtFactory.wrap((Graphics2D) g), null, null, AwtFactory.wrap(waterHighlightColor), false, null);
+		graph.drawRivers(AwtFactory.wrap((Graphics2D) g), null, null, AwtBridge.fromAwtColor(waterHighlightColor));
 	}
 
 	public void setZoom(double zoom)
@@ -901,66 +882,56 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 			// Determines the size at which the rotation and move tool icons appear.
 
-			BufferedImage rotateIcon = AwtFactory
-					.unwrap(Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "rotate text.png").toString()));
-			rotateIconScaled = AwtFactory.unwrap(ImageHelper.scaleByWidth(AwtFactory.wrap(rotateIcon),
-					(int) (rotateIcon.getWidth() * resolution * smallIconScale), Method.ULTRA_QUALITY));
+			BufferedImage rotateIcon = AwtBridge.toBufferedImage(Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "rotate text.png").toString()));
+			rotateIconScaled = AwtBridge.toBufferedImage(
+					ImageHelper.getInstance().scaleByWidth(AwtBridge.fromBufferedImage(rotateIcon), (int) (rotateIcon.getWidth() * resolution * smallIconScale), Method.ULTRA_QUALITY));
 
+			try (Image moveIcon = Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "move text.png").toString());
+					Image moveIconScaledWrapped = ImageHelper.getInstance().scaleByWidth(moveIcon, (int) (moveIcon.getWidth() * resolution * smallIconScale), Method.ULTRA_QUALITY))
 			{
-				Image moveIcon = Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "move text.png").toString());
-				Image moveIconScaledWrapped = ImageHelper.scaleByWidth(moveIcon, (int) (moveIcon.getWidth() * resolution * smallIconScale),
-						Method.ULTRA_QUALITY);
-				moveIconScaledSmall = AwtFactory.unwrap(moveIconScaledWrapped);
-				redMoveIconScaledSmall = AwtFactory
-						.unwrap(ImageHelper.copyAlphaTo(ImageHelper.colorify(ImageHelper.convertToGrayscale(moveIconScaledWrapped),
-								AwtFactory.wrap(getInvalidPositionColor()), ColorifyAlgorithm.algorithm2), moveIconScaledWrapped));
+				moveIconScaledSmall = AwtBridge.toBufferedImage(moveIconScaledWrapped);
+				redMoveIconScaledSmall = AwtBridge
+						.toBufferedImage(ImageHelper.getInstance().copyAlphaTo(ImageHelper.getInstance().colorize(ImageHelper.getInstance().convertToGrayscale(moveIconScaledWrapped),
+								AwtBridge.fromAwtColor(getInvalidPositionColor()), ColorizeAlgorithm.algorithm2), moveIconScaledWrapped));
 			}
 
+			try (Image scaleIcon = Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "scale.png").toString());
+					Image scaleIconScaledWrapped = ImageHelper.getInstance().scaleByWidth(scaleIcon, (int) (scaleIcon.getWidth() * resolution * smallIconScale), Method.ULTRA_QUALITY))
 			{
-				BufferedImage scaleIcon = AwtFactory
-						.unwrap(Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "scale.png").toString()));
-				Image scaleIconScaledWrapped = ImageHelper.scaleByWidth(AwtFactory.wrap(scaleIcon),
-						(int) (scaleIcon.getWidth() * resolution * smallIconScale), Method.ULTRA_QUALITY);
-				scaleIconScaledSmall = AwtFactory.unwrap(scaleIconScaledWrapped);
-				redScaleIconScaledSmall = AwtFactory
-						.unwrap(ImageHelper.copyAlphaTo(ImageHelper.colorify(ImageHelper.convertToGrayscale(scaleIconScaledWrapped),
-								AwtFactory.wrap(getInvalidPositionColor()), ColorifyAlgorithm.algorithm2), scaleIconScaledWrapped));
+				scaleIconScaledSmall = AwtBridge.toBufferedImage(scaleIconScaledWrapped);
+				redScaleIconScaledSmall = AwtBridge
+						.toBufferedImage(ImageHelper.getInstance().copyAlphaTo(ImageHelper.getInstance().colorize(ImageHelper.getInstance().convertToGrayscale(scaleIconScaledWrapped),
+								AwtBridge.fromAwtColor(getInvalidPositionColor()), ColorizeAlgorithm.algorithm2), scaleIconScaledWrapped));
 			}
 
+			try (Image moveIcon = Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "move text.png").toString());
+					Image moveIconScaledWrapped = ImageHelper.getInstance().scaleByWidth(moveIcon, (int) (moveIcon.getWidth() * resolution * mediumIconScale), Method.ULTRA_QUALITY))
 			{
-				Image moveIcon = Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "move text.png").toString());
-				Image moveIconScaledWrapped = ImageHelper.scaleByWidth(moveIcon, (int) (moveIcon.getWidth() * resolution * mediumIconScale),
-						Method.ULTRA_QUALITY);
-				moveIconScaledMedium = AwtFactory.unwrap(moveIconScaledWrapped);
-				redMoveIconScaledMedium = AwtFactory
-						.unwrap(ImageHelper.copyAlphaTo(ImageHelper.colorify(ImageHelper.convertToGrayscale(moveIconScaledWrapped),
-								AwtFactory.wrap(getInvalidPositionColor()), ColorifyAlgorithm.algorithm2), moveIconScaledWrapped));
+				moveIconScaledMedium = AwtBridge.toBufferedImage(moveIconScaledWrapped);
+				redMoveIconScaledMedium = AwtBridge
+						.toBufferedImage(ImageHelper.getInstance().copyAlphaTo(ImageHelper.getInstance().colorize(ImageHelper.getInstance().convertToGrayscale(moveIconScaledWrapped),
+								AwtBridge.fromAwtColor(getInvalidPositionColor()), ColorizeAlgorithm.algorithm2), moveIconScaledWrapped));
 			}
 
+			try (Image scaleIcon = Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "scale.png").toString());
+					Image scaleIconScaledWrapped = ImageHelper.getInstance().scaleByWidth(scaleIcon, (int) (scaleIcon.getWidth() * resolution * mediumIconScale), Method.ULTRA_QUALITY))
 			{
-				BufferedImage scaleIcon = AwtFactory
-						.unwrap(Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "scale.png").toString()));
-				Image scaleIconScaledWrapped = ImageHelper.scaleByWidth(AwtFactory.wrap(scaleIcon),
-						(int) (scaleIcon.getWidth() * resolution * mediumIconScale), Method.ULTRA_QUALITY);
-				scaleIconScaledMedium = AwtFactory.unwrap(scaleIconScaledWrapped);
-				redScaleIconScaledMedium = AwtFactory
-						.unwrap(ImageHelper.copyAlphaTo(ImageHelper.colorify(ImageHelper.convertToGrayscale(scaleIconScaledWrapped),
-								AwtFactory.wrap(getInvalidPositionColor()), ColorifyAlgorithm.algorithm2), scaleIconScaledWrapped));
+				scaleIconScaledMedium = AwtBridge.toBufferedImage(scaleIconScaledWrapped);
+				redScaleIconScaledMedium = AwtBridge
+						.toBufferedImage(ImageHelper.getInstance().copyAlphaTo(ImageHelper.getInstance().colorize(ImageHelper.getInstance().convertToGrayscale(scaleIconScaledWrapped),
+								AwtBridge.fromAwtColor(getInvalidPositionColor()), ColorizeAlgorithm.algorithm2), scaleIconScaledWrapped));
 			}
 
+			try (Image moveIcon = Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "move text.png").toString());
+					Image moveIconScaledWrapped = ImageHelper.getInstance().scaleByWidth(moveIcon, (int) (moveIcon.getWidth() * resolution * largeIconScale), Method.ULTRA_QUALITY))
 			{
-				Image moveIcon = Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "move text.png").toString());
-				Image moveIconScaledWrapped = ImageHelper.scaleByWidth(moveIcon, (int) (moveIcon.getWidth() * resolution * largeIconScale),
-						Method.ULTRA_QUALITY);
-				moveIconScaledLarge = AwtFactory.unwrap(moveIconScaledWrapped);
+				moveIconScaledLarge = AwtBridge.toBufferedImage(moveIconScaledWrapped);
 			}
 
+			try (Image scaleIcon = Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "scale.png").toString());
+					Image scaleIconScaledWrapped = ImageHelper.getInstance().scaleByWidth(scaleIcon, (int) (scaleIcon.getWidth() * resolution * largeIconScale), Method.ULTRA_QUALITY))
 			{
-				BufferedImage scaleIcon = AwtFactory
-						.unwrap(Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "scale.png").toString()));
-				Image scaleIconScaledWrapped = ImageHelper.scaleByWidth(AwtFactory.wrap(scaleIcon),
-						(int) (scaleIcon.getWidth() * resolution * largeIconScale), Method.ULTRA_QUALITY);
-				scaleIconScaledLarge = AwtFactory.unwrap(scaleIconScaledWrapped);
+				scaleIconScaledLarge = AwtBridge.toBufferedImage(scaleIconScaledWrapped);
 			}
 		}
 	}

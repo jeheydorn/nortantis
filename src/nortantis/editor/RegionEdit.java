@@ -1,8 +1,8 @@
 package nortantis.editor;
 
-import java.io.Serializable;
-
 import nortantis.platform.Color;
+
+import java.io.Serializable;
 
 @SuppressWarnings("serial")
 public class RegionEdit implements Serializable

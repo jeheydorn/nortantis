@@ -1,6 +1,8 @@
 package nortantis.platform;
 
-public abstract class Font
+import java.io.Serializable;
+
+public abstract class Font implements Serializable
 {
 	public static Font create(String name, FontStyle style, float size)
 	{
@@ -16,20 +18,35 @@ public abstract class Font
 	 */
 	public abstract Font deriveFont(FontStyle style, float size);
 
-	public abstract String getFontName();
 	public abstract String getName();
+
 	public abstract String getFamily();
 
 	public abstract FontStyle getStyle();
+
 	public boolean isItalic()
 	{
 		FontStyle style = getStyle();
 		return style == FontStyle.Italic || style == FontStyle.BoldItalic;
 	}
+
 	public abstract float getSize();
+
+	/**
+	 * Returns the index of the first character in the given string that this font cannot display, or -1 if the font can display the entire
+	 * string.
+	 */
+	public abstract int canDisplayUpTo(String str);
 
 	public static boolean isInstalled(String fontFamily)
 	{
 		return PlatformFactory.getInstance().isFontInstalled(fontFamily);
 	}
+
+	@Override
+	public String toString()
+	{
+		return "Font [getName()=" + getName() + ", getSize()=" + getSize() + "]";
+	}
+
 }

@@ -1,9 +1,9 @@
 package nortantis.graph.voronoi.nodename.as3delaunay;
 
-import java.util.HashMap;
-
 import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
+
+import java.util.HashMap;
 
 /**
  * The line segment connecting the two Sites is part of the Delaunay triangulation; the line segment connecting the two Vertices is part of
@@ -78,7 +78,7 @@ public final class Edge
 		return new LineSegment(_clippedVertices.get(LR.LEFT), _clippedVertices.get(LR.RIGHT));
 	}
 
-	final public static Edge DELETED = new Edge(-1);
+	public static final Edge DELETED = new Edge(-1);
 	// the equation of the edge: ax + by = c
 	public double a, b, c;
 	// the two Voronoi vertices that the edge connects
@@ -95,11 +95,6 @@ public final class Edge
 	public Vertex get_rightVertex()
 	{
 		return _rightVertex;
-	}
-
-	public Vertex vertex(LR leftRight)
-	{
-		return (leftRight == LR.LEFT) ? _leftVertex : _rightVertex;
 	}
 
 	public void setVertex(LR leftRight, Vertex v)
@@ -203,8 +198,7 @@ public final class Edge
 
 	public String toString()
 	{
-		return "Edge " + _edgeIndex + "; sites " + _sites.get(LR.LEFT) + ", " + _sites.get(LR.RIGHT) + "; endVertices "
-				+ (_leftVertex != null ? _leftVertex.get_vertexIndex() : "null") + ", "
+		return "Edge " + _edgeIndex + "; sites " + _sites.get(LR.LEFT) + ", " + _sites.get(LR.RIGHT) + "; endVertices " + (_leftVertex != null ? _leftVertex.get_vertexIndex() : "null") + ", "
 				+ (_rightVertex != null ? _rightVertex.get_vertexIndex() : "null") + "::";
 	}
 

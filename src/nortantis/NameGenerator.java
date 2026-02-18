@@ -1,15 +1,9 @@
 package nortantis;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import nortantis.util.Range;
+
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class NameGenerator
 {
@@ -34,8 +28,8 @@ public class NameGenerator
 	 * @param probabilityOfKeepingNameLength3
 	 *            With this probability, words generated with length 3 will be rejected and another sample will be attempted.
 	 */
-	public NameGenerator(Random r, List<String> corporaNames, double maxWordLengthComparedToAverage, double probabilityOfKeepingNameLength1,
-			double probabilityOfKeepingNameLength2, double probabilityOfKeepingNameLength3)
+	public NameGenerator(Random r, List<String> corporaNames, double maxWordLengthComparedToAverage, double probabilityOfKeepingNameLength1, double probabilityOfKeepingNameLength2,
+			double probabilityOfKeepingNameLength3)
 	{
 		this.maxWordLengthComparedToAverage = maxWordLengthComparedToAverage;
 		this.probabilityOfKeepingNameLength1 = probabilityOfKeepingNameLength1;
@@ -82,8 +76,8 @@ public class NameGenerator
 				}
 			});
 			attemptCount++;
-		} while (((longestWord.length() > (averageWordLength * maxWordLengthComparedToAverage)) || isTooShort(name))
-				&& attemptCount < maxAttemptsToGetCorrectLength);
+		}
+		while (((longestWord.length() > (averageWordLength * maxWordLengthComparedToAverage)) || isTooShort(name)) && attemptCount < maxAttemptsToGetCorrectLength);
 
 		// Capitalize first letter of generated names, including for multi-word names.
 		name = capitalizeAllFirstLetters(name);
@@ -125,8 +119,7 @@ public class NameGenerator
 	private String capitalizeRomanNumerals(String str)
 	{
 		String[] pieces = str.split(" ");
-		List<String> piecesList = Arrays.stream(pieces).map((s) -> romanNumerals.contains(s.toUpperCase()) ? s.toUpperCase() : s)
-				.collect(Collectors.toList());
+		List<String> piecesList = Arrays.stream(pieces).map((s) -> romanNumerals.contains(s.toUpperCase()) ? s.toUpperCase() : s).collect(Collectors.toList());
 		return String.join(" ", piecesList);
 	}
 

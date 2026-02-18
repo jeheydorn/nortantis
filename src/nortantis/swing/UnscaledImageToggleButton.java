@@ -1,14 +1,9 @@
 package nortantis.swing;
 
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Insets;
+import javax.swing.*;
+import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
-
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
-import javax.swing.JToggleButton;
 
 @SuppressWarnings("serial")
 public class UnscaledImageToggleButton extends JToggleButton
@@ -55,9 +50,8 @@ public class UnscaledImageToggleButton extends JToggleButton
 		}
 
 		double osScale = SwingHelper.getOSScale();
-		// Set the icon to a fake one that is the size we want. 
-		super.setIcon(new ImageIcon(new BufferedImage((int) (icon.getIconWidth() / osScale), (int) (icon.getIconHeight() / osScale),
-				BufferedImage.TYPE_INT_ARGB)));
+		// Set the icon to a fake one that is the size we want.
+		super.setIcon(new ImageIcon(new BufferedImage((int) (icon.getIconWidth() / osScale), (int) (icon.getIconHeight() / osScale), BufferedImage.TYPE_INT_ARGB)));
 		toDraw = convertIconToBufferedImage(icon);
 	}
 

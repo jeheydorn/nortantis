@@ -9,40 +9,31 @@ public enum IconType
 	{
 		switch (this)
 		{
-		case mountains:
-			return "mountain";
-		case hills:
-			return "hill";
-		case sand:
-			return "sand";
-		case trees:
-			return "tree";
-		case cities:
-			return "city";
-		case decorations:
-			return "decoration";
-		default:
-			assert false;
-			return toString();
+			case mountains:
+				return "mountain";
+			case hills:
+				return "hill";
+			case sand:
+				return "sand";
+			case trees:
+				return "tree";
+			case cities:
+				return "city";
+			case decorations:
+				return "decoration";
+			default:
+				assert false;
+				return toString();
 		}
 	}
-	
+
 	public String getSingularNameForGUILowerCase()
 	{
-		if (this == sand)
-		{
-			return "dunes";
-		}
-		return getSingularName();
+		return nortantis.swing.translation.Translation.get("IconType." + name() + ".singular");
 	}
-	
+
 	public String getNameForGUI()
 	{
-		if (this == sand)
-		{
-			return "Dunes";
-		}
-		//Capitalize first letter.
-		return toString().substring(0, 1).toUpperCase() + toString().substring(1);
+		return nortantis.swing.translation.Translation.get("IconType." + name());
 	}
 }

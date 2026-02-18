@@ -1,23 +1,5 @@
 package nortantis.graph.voronoi;
 
-import static org.junit.Assert.assertEquals;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.function.Function;
-
-import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
-
 import nortantis.Biome;
 import nortantis.MapSettings.LineStyle;
 import nortantis.geom.IntPoint;
@@ -26,11 +8,15 @@ import nortantis.geom.Rectangle;
 import nortantis.graph.voronoi.nodename.as3delaunay.LineSegment;
 import nortantis.graph.voronoi.nodename.as3delaunay.Voronoi;
 import nortantis.platform.Color;
-import nortantis.platform.Image;
-import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
 import nortantis.platform.Transform;
 import nortantis.util.Range;
+import nortantis.util.VisibleForTesting;
+import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+
+import java.util.*;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * VoronoiGraph.java
@@ -40,12 +26,11 @@ import nortantis.util.Range;
 public abstract class VoronoiGraph
 {
 
-	final public ArrayList<Edge> edges = new ArrayList<>();
-	final public ArrayList<Corner> corners = new ArrayList<>();
-	final public ArrayList<Center> centers = new ArrayList<>();
+	public final ArrayList<Edge> edges = new ArrayList<>();
+	public final ArrayList<Corner> corners = new ArrayList<>();
+	public final ArrayList<Center> centers = new ArrayList<>();
 	public Rectangle bounds;
-	final protected Random rand;
-	protected Color OCEAN, RIVER, LAKE, BEACH;
+	protected final Random rand;
 	public NoisyEdges noisyEdges;
 	/**
 	 * This controls how many rivers there are. Bigger means more.
@@ -54,7 +39,7 @@ public abstract class VoronoiGraph
 	protected double resolutionScale;
 	public static final int riversThisSizeOrSmallerWillNotBeDrawn = 2;
 
-	final static double verySmall = 0.0000001;
+	static final double verySmall = 0.0000001;
 	double pointPrecision;
 
 	/**
@@ -64,16 +49,18 @@ public abstract class VoronoiGraph
 	 *            Used to scale the graph larger smaller according to the resolution being used.
 	 * @param pointPrecision
 	 *            Used to determine when points should be considered duplicates. Larger numbers mean less duplicate detection, making tiny
-	 *            polygons more likely. This number will be scaled by scaleMultiplyer.
+	 *            polygons more likely. This number will be scaled by scaleMultiplier.
 	 */
 	public VoronoiGraph(Random r, double resolutionScale, double pointPrecision)
 	{
 		this.rand = r;
-		bumps = r.nextInt(5) + 1;
+		// Consume random numbers to preserve the random sequence for downstream code (e.g., noisy edge seeds).
+		// These were previously used by removed fields (bumps, startAngle, dipAngle, dipWidth).
+		r.nextInt();
+		r.nextDouble();
+		r.nextDouble();
+		r.nextDouble();
 		this.resolutionScale = resolutionScale;
-		startAngle = r.nextDouble() * 2 * Math.PI;
-		dipAngle = r.nextDouble() * 2 * Math.PI;
-		dipWidth = r.nextDouble() * .5 + .2;
 		this.pointPrecision = pointPrecision;
 	}
 
@@ -161,9 +148,9 @@ public abstract class VoronoiGraph
 
 	}
 
-	abstract protected Biome getBiome(Center p);
+	protected abstract Biome getBiome(Center p);
 
-	abstract protected Color getColor(Biome biome);
+	protected abstract Color getColor(Biome biome);
 
 	/* an additional smoothing method across corners */
 	private void improveCorners()
@@ -238,7 +225,8 @@ public abstract class VoronoiGraph
 		p.fillPolygon(x, y);
 	}
 
-	private static void drawTriangleElevation(Painter p, Corner c1, Corner c2, Center center)
+	@VisibleForTesting
+	public static void drawTriangleElevation(Painter p, Corner c1, Corner c2, Center center)
 	{
 		Vector3D v1 = new Vector3D(c1.loc.x, c1.loc.y, c1.elevation);
 		Vector3D v2 = new Vector3D(c2.loc.x, c2.loc.y, c2.elevation);
@@ -254,8 +242,7 @@ public abstract class VoronoiGraph
 		// Gradient of x and y with respect to z.
 		Vector3D G = new Vector3D(-N.getX() / N.getZ(), -N.getY() / N.getZ(), 0);
 
-		if ((Math.abs(G.getX()) < verySmall || Double.isInfinite(G.getX()) || Double.isNaN(G.getX())) && Math.abs(G.getY()) < verySmall
-				|| Double.isInfinite(G.getY()) || Double.isNaN(G.getY()))
+		if ((Math.abs(G.getX()) < verySmall || Double.isInfinite(G.getX()) || Double.isNaN(G.getX())) && Math.abs(G.getY()) < verySmall || Double.isInfinite(G.getY()) || Double.isNaN(G.getY()))
 		{
 			// The triangle is either flat or vertical.
 			int grayLevel = (int) (255 * center.elevation);
@@ -266,8 +253,7 @@ public abstract class VoronoiGraph
 
 		Vector3D zIntercept = findZIntersectionWithXYPlain(highestPoint, G);
 
-		p.setGradient((float) highestPoint.getX(), (float) highestPoint.getY(), highestPointColor, (float) zIntercept.getX(),
-				(float) zIntercept.getY(), Color.black);
+		p.setGradient((float) highestPoint.getX(), (float) highestPoint.getY(), highestPointColor, (float) zIntercept.getX(), (float) zIntercept.getY(), Color.black);
 		drawTriangle(p, c1, c2, center);
 	}
 
@@ -289,7 +275,8 @@ public abstract class VoronoiGraph
 		return new Vector3D(point.getX() + xChange, point.getY() + yChange, 0.0);
 	}
 
-	private static Vector3D findHighestZ(Vector3D v1, Vector3D v2, Vector3D v3)
+	@VisibleForTesting
+	public static Vector3D findHighestZ(Vector3D v1, Vector3D v2, Vector3D v3)
 	{
 		if (v1.getZ() > v2.getZ())
 		{
@@ -307,84 +294,6 @@ public abstract class VoronoiGraph
 			}
 			return v3;
 		}
-	}
-
-	public static void runPrivateUnitTests()
-	{
-		findHighestZTest();
-		drawTriangleElevationZeroXGradientTest();
-		drawTriangleElevationZeroYGradientTest();
-		drawTriangleElevationWithXAndYGradientTest();
-	}
-
-	private static void drawTriangleElevationWithXAndYGradientTest()
-	{
-		Image image = Image.create(101, 101, ImageType.RGB);
-		Corner corner1 = new Corner();
-		corner1.loc = new Point(0, 0);
-		corner1.elevation = 0.0;
-		Corner corner2 = new Corner();
-		corner2.elevation = 0.5;
-		corner2.loc = new Point(100, 0);
-		Center center = new Center(new Point(100, 100));
-		center.elevation = 1.0;
-		Painter p = image.createPainter();
-		drawTriangleElevation(p, corner1, corner2, center);
-		assertEquals(0, Color.create(image.getRGB((int) corner1.loc.x, (int) corner1.loc.y)).getBlue());
-		assertEquals(125, Color.create(image.getRGB((int) corner2.loc.x - 1, (int) corner2.loc.y)).getBlue());
-		assertEquals(251, Color.create(image.getRGB((int) center.loc.x - 1, (int) center.loc.y - 2)).getBlue());
-	}
-
-	private static void drawTriangleElevationZeroXGradientTest()
-	{
-		Image image = Image.create(101, 101, ImageType.RGB);
-		Corner corner1 = new Corner();
-		corner1.loc = new Point(0, 0);
-		corner1.elevation = 0.5;
-		Corner corner2 = new Corner();
-		corner2.elevation = 0.5;
-		corner2.loc = new Point(50, 0);
-		Center center = new Center(new Point(50, 100));
-		center.elevation = 1.0;
-		Painter p = image.createPainter();
-		drawTriangleElevation(p, corner1, corner2, center);
-		assertEquals((int) (corner1.elevation * 255), Color.create(image.getRGB((int) corner1.loc.x, (int) corner1.loc.y)).getBlue());
-		assertEquals((int) (corner2.elevation * 255), Color.create(image.getRGB((int) corner2.loc.x - 1, (int) corner2.loc.y)).getBlue());
-		assertEquals((int) (center.elevation * 253), Color.create(image.getRGB((int) center.loc.x - 1, (int) center.loc.y - 2)).getBlue());
-	}
-
-	private static void drawTriangleElevationZeroYGradientTest()
-	{
-		Image image = Image.create(101, 101, ImageType.RGB);
-		Corner corner1 = new Corner();
-		corner1.loc = new Point(0, 0);
-		corner1.elevation = 0.0;
-		Corner corner2 = new Corner();
-		corner2.elevation = 0.0;
-		corner2.loc = new Point(0, 100);
-		Center center = new Center(new Point(50, 100));
-		center.elevation = 1.0;
-		Painter p = image.createPainter();
-		drawTriangleElevation(p, corner1, corner2, center);
-		assertEquals((int) (corner1.elevation * 255), Color.create(image.getRGB((int) corner1.loc.x, (int) corner1.loc.y)).getBlue());
-		assertEquals((int) (corner2.elevation * 255), Color.create(image.getRGB((int) corner2.loc.x, (int) corner2.loc.y)).getBlue());
-		assertEquals((int) (center.elevation * 249), Color.create(image.getRGB((int) center.loc.x - 1, (int) center.loc.y - 1)).getBlue());
-	}
-
-	/**
-	 * Unit test for findHighestZ.
-	 */
-	private static void findHighestZTest()
-	{
-		Vector3D v1 = new Vector3D(0, 0, -3);
-		Vector3D v2 = new Vector3D(0, 0, 1);
-		Vector3D v3 = new Vector3D(0, 0, 2);
-
-		List<Vector3D> list = Arrays.asList(v1, v2, v3);
-
-		Collections.shuffle(list);
-
-		assertEquals(v3, findHighestZ(list.get(0), list.get(1), list.get(2)));
 	}
 
 	private boolean closeEnough(double d1, double d2, double diff)
@@ -420,7 +329,7 @@ public abstract class VoronoiGraph
 			g.drawLine((int) e.d0.loc.x, (int) e.d0.loc.y, (int) e.d1.loc.x, (int) e.d1.loc.y);
 		}
 	}
-	
+
 	public void drawEdgeDeluanay(Painter g, Edge e)
 	{
 		if (e.d0 == null || e.d1 == null)
@@ -428,35 +337,6 @@ public abstract class VoronoiGraph
 			return;
 		}
 		g.drawLine((int) e.d0.loc.x, (int) e.d0.loc.y, (int) e.d1.loc.x, (int) e.d1.loc.y);
-	}
-
-	/**
-	 * For debugging
-	 */
-	public void drawVoronoi(Painter g, Collection<Center> centersToDraw, Rectangle drawBounds)
-	{
-		Transform orig = null;
-		if (drawBounds != null)
-		{
-			orig = g.getTransform();
-			g.translate(-drawBounds.x, -drawBounds.y);
-		}
-
-		g.setColor(Color.white);
-
-		Collection<Corner> cornersToDraw = centersToDraw == null ? corners : getCornersFromCenters(centersToDraw);
-		for (Corner c : cornersToDraw)
-		{
-			for (Corner adjacent : c.adjacent)
-			{
-				g.drawLine((int) c.loc.x, (int) c.loc.y, (int) adjacent.loc.x, (int) adjacent.loc.y);
-			}
-		}
-
-		if (drawBounds != null)
-		{
-			g.setTransform(orig);
-		}
 	}
 
 	protected Set<Corner> getCornersFromCenters(Collection<Center> centers)
@@ -483,8 +363,7 @@ public abstract class VoronoiGraph
 		{
 			g.setColor(Color.pink);
 
-			g.fillOval((int) (c.loc.x - 5 * resolutionScale), (int) (c.loc.y - 5 * resolutionScale), (int) (10 * resolutionScale),
-					(int) (10 * resolutionScale));
+			g.fillOval((int) (c.loc.x - 5 * resolutionScale), (int) (c.loc.y - 5 * resolutionScale), (int) (10 * resolutionScale), (int) (10 * resolutionScale));
 		}
 
 		if (drawBounds != null)
@@ -511,8 +390,7 @@ public abstract class VoronoiGraph
 		});
 	}
 
-	public void drawRivers(Painter p, Collection<Edge> edgesToDraw, Rectangle drawBounds, Color riverColor,
-			boolean areRegionBoundariesVisible, Color regionBoundaryColor)
+	public void drawRivers(Painter p, Collection<Edge> edgesToDraw, Rectangle drawBounds, Color riverColor)
 	{
 		if (edgesToDraw == null)
 		{
@@ -530,16 +408,7 @@ public abstract class VoronoiGraph
 		{
 			if (e.isRiver() && !e.isOceanOrLakeOrShore())
 			{
-				// If a river is also a region boundary, and region boundaries are visible, then draw the river with the region boundary
-				// color.
-				if (areRegionBoundariesVisible && e.isRegionBoundary())
-				{
-					p.setColor(regionBoundaryColor);
-				}
-				else
-				{
-					p.setColor(riverColor);
-				}
+				p.setColor(riverColor);
 
 				float currentWidth = calcRiverStrokeWidth(e);
 
@@ -548,14 +417,14 @@ public abstract class VoronoiGraph
 				{
 					fromEdge = noisyEdges.findEdgeToFollow(e.v0, e);
 				}
-				float fromWidth = (fromEdge == null || !fromEdge.isRiver()) ? currentWidth : calcRiverStrokeWidth(fromEdge);
+				float fromWidth = (fromEdge == null || !fromEdge.isRiver() || noisyEdges.hasLargerProtrodudingRiverEdge(e.v0, e, fromEdge)) ? currentWidth : calcRiverStrokeWidth(fromEdge);
 
 				Edge toEdge = null;
 				if (e.v1 != null)
 				{
 					toEdge = noisyEdges.findEdgeToFollow(e.v1, e);
 				}
-				float toWidth = (toEdge == null || !toEdge.isRiver()) ? currentWidth : calcRiverStrokeWidth(toEdge);
+				float toWidth = (toEdge == null || !toEdge.isRiver() || noisyEdges.hasLargerProtrodudingRiverEdge(e.v1, e, toEdge)) ? currentWidth : calcRiverStrokeWidth(toEdge);
 
 				drawPathWithSmoothLineTransitions(p, noisyEdges.getNoisyEdge(e.index), fromWidth, currentWidth, toWidth);
 
@@ -635,8 +504,7 @@ public abstract class VoronoiGraph
 				drawTriangle(g, e.v0, e.v1, c);
 			}
 
-			c.area += Math.abs(
-					c.loc.x * (e.v0.loc.y - e.v1.loc.y) + e.v0.loc.x * (e.v1.loc.y - c.loc.y) + e.v1.loc.x * (c.loc.y - e.v0.loc.y)) / 2;
+			c.area += Math.abs(c.loc.x * (e.v0.loc.y - e.v1.loc.y) + e.v0.loc.x * (e.v1.loc.y - c.loc.y) + e.v1.loc.x * (c.loc.y - e.v0.loc.y)) / 2;
 		}
 
 		// Handle the missing triangles along borders.
@@ -706,8 +574,7 @@ public abstract class VoronoiGraph
 
 						// One of the corners of the graph is the next point. Determine which corner that is.
 						x[2] = (int) (Math.abs(c.loc.x - bounds.x) < Math.abs(bounds.getRight() - c.loc.x) ? bounds.x : bounds.getRight());
-						y[2] = (int) (Math.abs(c.loc.y - bounds.y) < Math.abs(bounds.getBottom() - c.loc.y) ? bounds.y
-								: bounds.getBottom());
+						y[2] = (int) (Math.abs(c.loc.y - bounds.y) < Math.abs(bounds.getBottom() - c.loc.y) ? bounds.y : bounds.getBottom());
 
 						x[3] = (int) edgeCorner2.loc.x;
 						y[3] = (int) edgeCorner2.loc.y;
@@ -729,8 +596,7 @@ public abstract class VoronoiGraph
 
 	}
 
-	private void drawPathWithSmoothLineTransitions(Painter p, List<Point> path, float previousEdgeWidth, float currentEdgeWidth,
-			float nextEdgeWidth)
+	private void drawPathWithSmoothLineTransitions(Painter p, List<Point> path, float previousEdgeWidth, float currentEdgeWidth, float nextEdgeWidth)
 	{
 		if (path == null)
 		{
@@ -849,8 +715,7 @@ public abstract class VoronoiGraph
 		return edges;
 	}
 
-	protected void drawSpecifiedEdges(Painter g, double strokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds,
-			Function<Edge, Boolean> shouldDraw)
+	protected void drawSpecifiedEdges(Painter g, double strokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds, Predicate<Edge> shouldDraw)
 	{
 		if (centersToDraw == null)
 		{
@@ -872,7 +737,7 @@ public abstract class VoronoiGraph
 		{
 			for (final Edge edge : p.borders)
 			{
-				if (!shouldDraw.apply(edge))
+				if (!shouldDraw.test(edge))
 					continue;
 
 				if (!drawn.contains(edge))
@@ -1045,7 +910,7 @@ public abstract class VoronoiGraph
 		List<Point> vertices = edgeListToDrawPoints(edges, false, 0.0);
 		p.fillPolygonDouble(vertices);
 	}
-	
+
 	public List<Point> edgeListToDrawPoints(List<Edge> edges)
 	{
 		return edgeListToDrawPoints(edges, false, 0);
@@ -1201,7 +1066,7 @@ public abstract class VoronoiGraph
 			addPointIfNotSameAsLast(points, edge.d1.loc);
 		}
 	}
-	
+
 	private void addPointIfNotSameAsLast(List<Point> points, Point toAdd)
 	{
 		if (points.isEmpty())
@@ -1371,8 +1236,7 @@ public abstract class VoronoiGraph
 		// but is still necessary for backwards compatibility with older maps.
 		final double scaleForBackwardsCompatibility = (8.0 / 3.0);
 
-		Point key = new Point((int) (p.x / scaleForBackwardsCompatibility) * pointPrecision,
-				(int) (p.y / scaleForBackwardsCompatibility) * pointPrecision);
+		Point key = new Point((int) (p.x / scaleForBackwardsCompatibility) * pointPrecision, (int) (p.y / scaleForBackwardsCompatibility) * pointPrecision);
 		Corner c = pointCornerMap.get(key);
 		if (c == null)
 		{
@@ -1387,14 +1251,6 @@ public abstract class VoronoiGraph
 	}
 
 	protected abstract void assignCornerElevations();
-
-	double[][] noise;
-	double ISLAND_FACTOR = 1.07; // 1.0 means no small islands; 2.0 leads to a
-									// lot
-	final int bumps;
-	final double startAngle;
-	final double dipAngle;
-	final double dipWidth;
 
 	protected abstract void assignOceanCoastAndLand();
 

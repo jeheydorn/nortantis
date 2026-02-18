@@ -4,20 +4,11 @@
 
 package nortantis.graph.voronoi;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Random;
-import java.util.TreeMap;
-
-//import graph.*;
-//import de.polygonal.math.PM_PRNG;
 import nortantis.CurveCreator;
 import nortantis.MapSettings.LineStyle;
 import nortantis.geom.Point;
+
+import java.util.*;
 
 public class NoisyEdges
 {
@@ -32,12 +23,12 @@ public class NoisyEdges
 	// but with curves
 	private Map<Integer, List<Point>> curves;
 
-	private double scaleMultiplyer;
+	private double scaleMultiplier;
 	private boolean isForFrayedBorder;
 
-	public NoisyEdges(double scaleMultiplyer, LineStyle style, boolean isForFrayedBorder)
+	public NoisyEdges(double scaleMultiplier, LineStyle style, boolean isForFrayedBorder)
 	{
-		this.scaleMultiplyer = scaleMultiplyer;
+		this.scaleMultiplier = scaleMultiplier;
 		paths = new TreeMap<>();
 		curves = new TreeMap<>();
 		lineStyle = style;
@@ -139,7 +130,7 @@ public class NoisyEdges
 
 	private void subdivide(Point A, Point B, Point C, Point D, double minLength, Random random, List<Point> points)
 	{
-		if (A.subtract(C).length() < minLength * scaleMultiplyer || B.subtract(D).length() < minLength * scaleMultiplyer)
+		if (A.subtract(C).length() < minLength * scaleMultiplier || B.subtract(D).length() < minLength * scaleMultiplier)
 		{
 			return;
 		}
@@ -176,8 +167,7 @@ public class NoisyEdges
 	{
 		for (Edge edge : center.borders)
 		{
-			if (edge.d0 != null && edge.d1 != null && edge.v0 != null && edge.v1 != null
-					&& (forceRebuild || curves.get(edge.index) == null))
+			if (edge.d0 != null && edge.d1 != null && edge.v0 != null && edge.v1 != null && (forceRebuild || curves.get(edge.index) == null))
 			{
 				if (!shouldDrawEdge(edge))
 				{
@@ -189,7 +179,7 @@ public class NoisyEdges
 				Point p1 = edge.v0.loc;
 				Point p2 = edge.v1.loc;
 				Point p3 = findPrevOrNextPointOnCurve(edge, edge.v1);
-				
+
 				List<Point> curve = new LinkedList<>();
 				curve.addAll(CurveCreator.createCurve(p0, p1, p2, p3, CurveCreator.defaultDistanceBetweenPoints));
 				if (curve.isEmpty() || !curve.get(0).equals(edge.v0.loc))
@@ -211,7 +201,6 @@ public class NoisyEdges
 	 * needed to maintain C1 continuity at corners in the voronoi graph.
 	 * 
 	 * @param edge
-	 * @param firstPointOnCurve
 	 * @param corner
 	 *            This must be either edge.v0 or edge.v1. Whichever is the first point in the curve.
 	 * @return
@@ -291,8 +280,7 @@ public class NoisyEdges
 			// Follow the largest river other than the one we came from. That
 			// way small rivers branch off of large ones, instead of the other
 			// way round.
-			Optional<Edge> optional = corner.protrudes.stream().filter((other) -> other != edge && other != prev
-					&& !other.sharesCornerWith(prev) && getEdgeDrawType(other) == EdgeDrawType.River)
+			Optional<Edge> optional = corner.protrudes.stream().filter((other) -> other != edge && other != prev && !other.sharesCornerWith(prev) && getEdgeDrawType(other) == EdgeDrawType.River)
 					.max((e1, e2) -> Integer.compare(e1.river, e2.river));
 			if (optional.isPresent())
 			{
@@ -315,6 +303,24 @@ public class NoisyEdges
 
 		assert false;
 		return null;
+	}
+
+	public boolean hasLargerProtrodudingRiverEdge(Corner corner, Edge source, Edge follow)
+	{
+		assert source.isRiver();
+		assert follow.isRiver();
+
+		// The river continues to nextRiverEdge, but the curve should only follow that edge if the river doesn't have a larger
+		// branch another direction. That way small branches off a river don't widen or cause the main river to curve that
+		// direction.
+		Optional<Edge> optionalLargerRiver = corner.protrudes.stream()
+				.filter((other) -> other != source && other != follow && getEdgeDrawType(other) == EdgeDrawType.River && other.river > source.river && other.river >= follow.river).findFirst();
+		if (optionalLargerRiver.isPresent())
+		{
+			return true;
+		}
+
+		return false;
 	}
 
 	/**

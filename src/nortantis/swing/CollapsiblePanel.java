@@ -1,19 +1,12 @@
 package nortantis.swing;
 
-import java.awt.BorderLayout;
-import java.awt.Font;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-
 import nortantis.editor.UserPreferences;
 import nortantis.platform.awt.AwtFactory;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 @SuppressWarnings("serial")
 public class CollapsiblePanel extends JPanel
@@ -41,6 +34,7 @@ public class CollapsiblePanel extends JPanel
 		this.name = name;
 		this.contentPanel = contentPanel;
 		setLayout(new BorderLayout());
+		contentPanel.setBorder(new DynamicLineBorder("controlShadow", 1));
 
 		// Create the button with an arrow icon (you can customize this)
 		toggleButton = new JButton(); // Downward arrow initially
@@ -76,7 +70,7 @@ public class CollapsiblePanel extends JPanel
 
 		add(contentPanel, BorderLayout.CENTER);
 	}
-	
+
 	public void toggleCollapsed()
 	{
 		isCollapsed = !isCollapsed;

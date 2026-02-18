@@ -40,7 +40,7 @@ public class FloatPoint implements Comparable<FloatPoint>
 	{
 		return new FloatPoint(x + other.x, y + other.y);
 	}
-	
+
 	public FloatPoint add(IntPoint other)
 	{
 		return new FloatPoint(x + other.x, y + other.y);
@@ -65,7 +65,7 @@ public class FloatPoint implements Comparable<FloatPoint>
 	{
 		return new IntPoint((int) x, (int) y);
 	}
-	
+
 	public IntPoint toIntPointRounded()
 	{
 		return new IntPoint((int) Math.round(x), (int) Math.round(y));
@@ -157,6 +157,5 @@ public class FloatPoint implements Comparable<FloatPoint>
 		FloatPoint other = (FloatPoint) obj;
 		return Float.floatToIntBits(x) == Float.floatToIntBits(other.x) && Float.floatToIntBits(y) == Float.floatToIntBits(other.y);
 	}
-
 
 }

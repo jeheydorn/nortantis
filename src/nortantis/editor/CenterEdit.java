@@ -39,7 +39,7 @@ public class CenterEdit implements Serializable
 	{
 		return new CenterEdit(index, isWater, isLake, regionId, icon, trees);
 	}
-	
+
 	public CenterEdit copyWithRegionId(Integer regionId)
 	{
 		return new CenterEdit(index, isWater, isLake, regionId, icon, trees);
@@ -61,7 +61,7 @@ public class CenterEdit implements Serializable
 		if (getClass() != obj.getClass())
 			return false;
 		CenterEdit other = (CenterEdit) obj;
-		return Objects.equals(icon, other.icon) && index == other.index && isLake == other.isLake && isWater == other.isWater
-				&& Objects.equals(regionId, other.regionId) && Objects.equals(trees, other.trees);
+		return Objects.equals(icon, other.icon) && index == other.index && isLake == other.isLake && isWater == other.isWater && Objects.equals(regionId, other.regionId)
+				&& Objects.equals(trees, other.trees);
 	}
 }

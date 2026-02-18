@@ -1,13 +1,12 @@
 package nortantis.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
-import org.junit.Test;
-
 import nortantis.PolarCoordinate;
 import nortantis.WorldGraph;
 import nortantis.geom.Point;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class WorldGraphTest
 {

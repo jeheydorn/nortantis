@@ -61,8 +61,8 @@ public class CenterTrees
 			return false;
 		}
 		CenterTrees other = (CenterTrees) obj;
-		return Objects.equals(artPack, other.artPack) && Double.doubleToLongBits(density) == Double.doubleToLongBits(other.density)
-				&& isDormant == other.isDormant && randomSeed == other.randomSeed && Objects.equals(treeType, other.treeType);
+		return Objects.equals(artPack, other.artPack) && Double.doubleToLongBits(density) == Double.doubleToLongBits(other.density) && isDormant == other.isDormant && randomSeed == other.randomSeed
+				&& Objects.equals(treeType, other.treeType);
 	}
 
 }

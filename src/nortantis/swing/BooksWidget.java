@@ -1,19 +1,14 @@
 package nortantis.swing;
 
-import java.awt.Component;
-import java.awt.FlowLayout;
+import nortantis.SettingsGenerator;
+import nortantis.swing.translation.Translation;
+
+import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Set;
 import java.util.TreeSet;
-
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-
-import nortantis.SettingsGenerator;
 
 public class BooksWidget
 {
@@ -33,25 +28,31 @@ public class BooksWidget
 
 		JPanel buttonsPanel = new JPanel();
 		buttonsPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-		JButton checkAll = new JButton("Check All");
+		JButton checkAll = new JButton(Translation.get("books.checkAll"));
 		checkAll.addActionListener(new ActionListener()
 		{
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
 				checkOrUncheckAllBooks(true);
-				actionToRunWhenSelectionChanges.run();
+				if (actionToRunWhenSelectionChanges != null)
+				{
+					actionToRunWhenSelectionChanges.run();
+				}
 			}
 		});
 
-		JButton uncheckAll = new JButton("Uncheck All");
+		JButton uncheckAll = new JButton(Translation.get("books.uncheckAll"));
 		uncheckAll.addActionListener(new ActionListener()
 		{
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
 				checkOrUncheckAllBooks(false);
-				actionToRunWhenSelectionChanges.run();
+				if (actionToRunWhenSelectionChanges != null)
+				{
+					actionToRunWhenSelectionChanges.run();
+				}
 			}
 		});
 		buttonsPanel.add(checkAll);

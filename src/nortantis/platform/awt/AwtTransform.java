@@ -1,9 +1,9 @@
 package nortantis.platform.awt;
 
+import nortantis.platform.Transform;
+
 import java.awt.geom.AffineTransform;
 import java.util.Objects;
-
-import nortantis.platform.Transform;
 
 public class AwtTransform extends Transform
 {
@@ -12,12 +12,6 @@ public class AwtTransform extends Transform
 	public AwtTransform(AffineTransform transform)
 	{
 		this.transform = transform;
-	}
-
-	@Override
-	public Transform copy()
-	{
-		return new AwtTransform(new AffineTransform(((AwtTransform) this).transform));
 	}
 
 	@Override

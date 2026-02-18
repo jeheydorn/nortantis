@@ -6,7 +6,7 @@ For more information and examples of generated maps, see the project page <a hre
 If you wish to build Nortantis from source rather than use the installers, do the following:
 <ol>
 	<li>Checkout the source code.</li>
-	<li>Install Java JDK 25 or later. How to do that will depend on your OS. A good internet search should tell you how.</li>
+	<li>Install Java JDK 21 or later. How to do that will depend on your OS. A good internet search should tell you how.</li>
 	<li>In a command prompt, navigate to the top 'nortantis' folder in the source code, then run this command: ./gradlew :run
 </ol>
 

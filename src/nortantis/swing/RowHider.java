@@ -1,6 +1,6 @@
 package nortantis.swing;
 
-import java.awt.Component;
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -23,7 +23,7 @@ public class RowHider
 		this.components.addAll(other2.components);
 		isVisible = true;
 	}
-	
+
 	public void add(RowHider other)
 	{
 		components.addAll(other.components);

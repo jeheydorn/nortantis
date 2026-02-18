@@ -30,6 +30,9 @@ jpackage ^
 --vendor "Joseph Heydorn" ^
 --app-version "%nortantis_version%" ^
 --java-options -XX:MaxRAMPercentage=50.0 ^
+--java-options -XX:MaxHeapFreeRatio=40 ^
+--java-options -XX:MinHeapFreeRatio=20 ^
+--java-options -XX:G1PeriodicGCInterval=15000 ^
 --java-options -Dsun.java2d.d3d=false ^
 --license-file end_user_license_agreement.txt ^
 --java-options -Dfile.encoding=UTF-8

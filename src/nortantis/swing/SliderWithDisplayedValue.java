@@ -1,17 +1,14 @@
 package nortantis.swing;
 
-import java.awt.Component;
-import java.awt.Dimension;
-import java.util.Arrays;
-import java.util.function.Function;
-
-import javax.swing.JLabel;
-import javax.swing.JSlider;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-
 import nortantis.editor.UserPreferences;
 import nortantis.util.OSHelper;
+
+import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import java.awt.*;
+import java.util.Arrays;
+import java.util.function.Function;
 
 public class SliderWithDisplayedValue
 {
@@ -28,12 +25,15 @@ public class SliderWithDisplayedValue
 		this(slider, valueFormatter, changeListener, 24);
 	}
 
-	public SliderWithDisplayedValue(JSlider slider, Function<Integer, String> valueFormatter, Runnable changeListener, int preferredWidth)
+	public SliderWithDisplayedValue(JSlider slider, Function<Integer, String> valueFormatter, Runnable changeListener, Integer preferredWidth)
 	{
 		this.slider = slider;
 
 		valueDisplay = new JLabel(getDisplayValue(valueFormatter));
-		valueDisplay.setPreferredSize(new Dimension(preferredWidth, valueDisplay.getPreferredSize().height));
+		if (preferredWidth != null)
+		{
+			valueDisplay.setPreferredSize(new Dimension(preferredWidth, valueDisplay.getPreferredSize().height));
+		}
 		slider.addChangeListener(new ChangeListener()
 		{
 			@Override
@@ -47,9 +47,9 @@ public class SliderWithDisplayedValue
 				}
 			}
 		});
-		
-		// I can't seem to shut off the default displayed value in Ubuntu with the System look and feel, so 
-		// hide my displayed value to avoid redundancy. 
+
+		// I can't seem to shut off the default displayed value in Ubuntu with the System look and feel, so
+		// hide my displayed value to avoid redundancy.
 		if (OSHelper.isLinux() && UserPreferences.getInstance().lookAndFeel == LookAndFeel.System)
 		{
 			valueDisplay.setVisible(false);
@@ -73,11 +73,9 @@ public class SliderWithDisplayedValue
 		return organizer.addLabelAndComponentsHorizontal(label, toolTip, Arrays.asList(slider, valueDisplay));
 	}
 
-	public RowHider addToOrganizer(GridBagOrganizer organizer, String label, String toolTip, Component additionalComponent,
-			int componentLeftPadding, int horizontalSpaceBetweenComponents)
+	public RowHider addToOrganizer(GridBagOrganizer organizer, String label, String toolTip, Component additionalComponent, int componentLeftPadding, int horizontalSpaceBetweenComponents)
 	{
-		return organizer.addLabelAndComponentsHorizontal(label, toolTip, Arrays.asList(slider, valueDisplay, additionalComponent),
-				componentLeftPadding, horizontalSpaceBetweenComponents);
+		return organizer.addLabelAndComponentsHorizontal(label, toolTip, Arrays.asList(slider, valueDisplay, additionalComponent), componentLeftPadding, horizontalSpaceBetweenComponents);
 	}
 
 	public RowHider addToOrganizer(GridBagOrganizer organizer, JLabel label)

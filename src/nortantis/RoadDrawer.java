@@ -1,18 +1,5 @@
 package nortantis;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
-import java.util.Set;
-import java.util.Stack;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.stream.Collectors;
-
 import nortantis.editor.Road;
 import nortantis.geom.IntPoint;
 import nortantis.geom.Point;
@@ -25,6 +12,10 @@ import nortantis.platform.Image;
 import nortantis.platform.Painter;
 import nortantis.util.OrderlessPair;
 import nortantis.util.Range;
+
+import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
 public class RoadDrawer
 {
@@ -113,8 +104,7 @@ public class RoadDrawer
 		}
 	}
 
-	private void addRandomRoadsToNearbyNeighbors(Set<Center> connectedCities, Set<OrderlessPair<Center>> roadsAdded,
-			Set<Edge> edgesAddedRoadsFor)
+	private void addRandomRoadsToNearbyNeighbors(Set<Center> connectedCities, Set<OrderlessPair<Center>> roadsAdded, Set<Edge> edgesAddedRoadsFor)
 	{
 		// Determine which cities will have roads between them
 		for (Center city : connectedCities)
@@ -127,8 +117,7 @@ public class RoadDrawer
 			for (@SuppressWarnings("unused")
 			int number : new Range(roadsToAddCount))
 			{
-				Optional<Center> promise = potentialNeighbors.stream()
-						.min((c1, c2) -> Double.compare(city.loc.distanceTo(c1.loc), city.loc.distanceTo(c2.loc)));
+				Optional<Center> promise = potentialNeighbors.stream().min((c1, c2) -> Double.compare(city.loc.distanceTo(c1.loc), city.loc.distanceTo(c2.loc)));
 				if (promise.isPresent())
 				{
 					Center closestCity = promise.get();
@@ -227,27 +216,27 @@ public class RoadDrawer
 			// If there's already a road here, favor it so we don't make redundant roads that almost follow the same course.
 			boolean alreadyHasRoad = edgesAddedRoadsFor.contains(edge);
 
-			double terrianPenalty;
+			double terrainPenalty;
 			if (center.isMountain)
 			{
-				terrianPenalty = mountainWeight;
+				terrainPenalty = mountainWeight;
 			}
 			else if (center.isHill)
 			{
-				terrianPenalty = hillWeight;
+				terrainPenalty = hillWeight;
 			}
 			else if (center.biome == IconDrawer.sandDunesBiome)
 			{
-				terrianPenalty = dunesWeight;
+				terrainPenalty = dunesWeight;
 			}
 			else
 			{
-				terrianPenalty = 1.0;
+				terrainPenalty = 1.0;
 			}
 
 			double distanceNormalized = Center.distanceBetween(edge.d0, edge.d1) * (1.0 / resolutionScale);
 
-			return (distanceNormalized * terrianPenalty + distanceToEnd) * (alreadyHasRoad ? existingRoadWeight : 1.0);
+			return (distanceNormalized * terrainPenalty + distanceToEnd) * (alreadyHasRoad ? existingRoadWeight : 1.0);
 		});
 
 		if (edges.isEmpty())
@@ -422,7 +411,7 @@ public class RoadDrawer
 		roads.add(newRoad);
 		return newRoad;
 	}
-	
+
 	private static Road tryConnectingRoadToExistingRoad(Road roadToAdd, List<Road> roads)
 	{
 		for (Road road : roads)
@@ -437,7 +426,7 @@ public class RoadDrawer
 				// Ignore same object.
 				continue;
 			}
-			
+
 			if (road.path.get(0).isCloseEnough(roadToAdd.path.get(0)))
 			{
 				roadToAdd.path.remove(0);
@@ -465,7 +454,7 @@ public class RoadDrawer
 				return road;
 			}
 		}
-		
+
 		return null;
 	}
 
@@ -490,30 +479,32 @@ public class RoadDrawer
 	 */
 	public void drawRoads(Image map, Rectangle drawBounds)
 	{
-		Painter p = map.createPainter(DrawQuality.High);
-
-		if (drawBounds != null)
+		try (Painter p = map.createPainter(DrawQuality.High))
 		{
-			p.translate(-drawBounds.x, -drawBounds.y);
-		}
-
-		Rectangle drawBoundsResolutionInvariant = drawBounds == null ? null
-				: new Rectangle(drawBounds.x * (1.0 / resolutionScale), drawBounds.y * (1.0 / resolutionScale),
-						drawBounds.width * (1.0 / resolutionScale), drawBounds.height * (1.0 / resolutionScale));
-		for (Road road : roads)
-		{
-			if (drawBounds == null || roadOverlapsRectangle(road, drawBoundsResolutionInvariant))
+			if (drawBounds != null)
 			{
-				p.setColor(roadColor);
-				p.setStroke(roadStyle, resolutionScale);
-				// Copy the road's path as an extra precaution to be thread safe because CurveCreator.createCurve accesses the path using
-				// list indexes, so if the list changed size in that method, it could cause an error.
-				List<Point> roadPathCopy = Arrays.asList(road.path.toArray(new Point[] {}));
-				List<Point> path = CurveCreator.createCurve(roadPathCopy);
-				List<IntPoint> pathScaled = path.stream().map(point -> point.mult(resolutionScale).toIntPoint()).toList();
-				p.drawPolyline(pathScaled);
+				p.translate(-drawBounds.x, -drawBounds.y);
 			}
 
+			Rectangle drawBoundsResolutionInvariant = drawBounds == null ? null
+					: new Rectangle(drawBounds.x * (1.0 / resolutionScale), drawBounds.y * (1.0 / resolutionScale), drawBounds.width * (1.0 / resolutionScale),
+							drawBounds.height * (1.0 / resolutionScale));
+			for (Road road : roads)
+			{
+				if (drawBounds == null || roadOverlapsRectangle(road, drawBoundsResolutionInvariant))
+				{
+					p.setColor(roadColor);
+					p.setStroke(roadStyle, resolutionScale);
+					// Copy the road's path as an extra precaution to be thread safe because CurveCreator.createCurve accesses the path
+					// using
+					// list indexes, so if the list changed size in that method, it could cause an error.
+					List<Point> roadPathCopy = Arrays.asList(road.path.toArray(new Point[] {}));
+					List<Point> path = CurveCreator.createCurve(roadPathCopy);
+					List<IntPoint> pathScaled = path.stream().map(point -> point.mult(resolutionScale).toIntPoint()).toList();
+					p.drawPolyline(pathScaled);
+				}
+
+			}
 		}
 	}
 
@@ -521,30 +512,32 @@ public class RoadDrawer
 	{
 		return road.path.stream().anyMatch(p -> drawBoundsResolutionInvariant.contains(p));
 	}
-	
+
 	public void drawRoadDebugInfo(Image map)
 	{
-		Painter p = map.createPainter();
-		p.setColor(Color.create(0, 150, 0));
-		for (Road road : roads)
+		try (Painter p = map.createPainter())
 		{
-			if (road.path.size() == 0)
+			p.setColor(Color.create(0, 150, 0));
+			for (Road road : roads)
 			{
-				throw new IllegalArgumentException();
-			}
-			if (road.path.size() == 1)
-			{
-				throw new IllegalArgumentException();
-			}
-			
-			for (int i = 0; i < road.path.size(); i++)
-			{
-				Point point = road.path.get(i).mult(resolutionScale);
-				int diameter = (int) Math.max(1, 3 * resolutionScale);
-				p.drawOval((int) point.x, (int) point.y, diameter, diameter);
-				
-				double yOffset = -9 * resolutionScale;
-				p.drawString(i + "", point.x, point.y + yOffset);
+				if (road.path.size() == 0)
+				{
+					throw new IllegalArgumentException();
+				}
+				if (road.path.size() == 1)
+				{
+					throw new IllegalArgumentException();
+				}
+
+				for (int i = 0; i < road.path.size(); i++)
+				{
+					Point point = road.path.get(i).mult(resolutionScale);
+					int diameter = (int) Math.max(1, 3 * resolutionScale);
+					p.drawOval((int) point.x, (int) point.y, diameter, diameter);
+
+					double yOffset = -9 * resolutionScale;
+					p.drawString(i + "", point.x, point.y + yOffset);
+				}
 			}
 		}
 	}

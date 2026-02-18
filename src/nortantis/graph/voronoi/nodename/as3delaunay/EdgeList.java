@@ -1,10 +1,10 @@
 package nortantis.graph.voronoi.nodename.as3delaunay;
 
-import java.util.ArrayList;
-
 import nortantis.geom.Point;
 
-public final class EdgeList implements IDisposable
+import java.util.ArrayList;
+
+public final class EdgeList
 {
 
 	private double _deltax;
@@ -14,7 +14,6 @@ public final class EdgeList implements IDisposable
 	public Halfedge leftEnd;
 	public Halfedge rightEnd;
 
-	@Override
 	public void dispose()
 	{
 		Halfedge halfEdge = leftEnd;
@@ -126,7 +125,8 @@ public final class EdgeList implements IDisposable
 			do
 			{
 				halfEdge = halfEdge.edgeListRightNeighbor;
-			} while (halfEdge != rightEnd && halfEdge.isLeftOf(p));
+			}
+			while (halfEdge != rightEnd && halfEdge.isLeftOf(p));
 			halfEdge = halfEdge.edgeListLeftNeighbor;
 		}
 		else
@@ -134,7 +134,8 @@ public final class EdgeList implements IDisposable
 			do
 			{
 				halfEdge = halfEdge.edgeListLeftNeighbor;
-			} while (halfEdge != leftEnd && !halfEdge.isLeftOf(p));
+			}
+			while (halfEdge != leftEnd && !halfEdge.isLeftOf(p));
 		}
 
 		/* Update hash table and reference counts */

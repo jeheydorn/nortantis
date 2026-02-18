@@ -15,8 +15,8 @@ public class DebugFlags
 	private static boolean printIncrementalUpdateTimes = false;
 
 	/**
-	 * Causes the indexes of edges to be be printed to standard out when adding rivers in the Land and Water tool. This is useful when
-	 * you're debugging a need to find the index of an edge for setting a conditional breakpoint.
+	 * Causes the indexes of edges to be printed to standard out when adding rivers in the Land and Water tool. This is useful when you're
+	 * debugging a need to find the index of an edge for setting a conditional breakpoint.
 	 */
 	private static boolean printRiverEdgeIndexes = false;
 
@@ -30,18 +30,16 @@ public class DebugFlags
 
 	private static boolean writeBeforeAndAfterJsonWhenSavePromptShows = false;
 
-	private static int[] indexesOfCentersToHighlight = new int[]
-	{};
+	private static int[] indexesOfCentersToHighlight = new int[] {};
 
-	private static int[] indexesOfEdgesToHighlight = new int[]
-	{};
+	private static int[] indexesOfEdgesToHighlight = new int[] {};
 
 	private static boolean drawRegionBoundaryPathJoins = false;
 
 	private static boolean drawCorners = false;
 
 	private static boolean drawVoronoi = false;
-	
+
 	private static boolean drawRoadDebugInfo = false;
 
 	public static boolean showIncrementalUpdateBounds()
@@ -68,8 +66,7 @@ public class DebugFlags
 	{
 		if (Assets.isRunningFromJar())
 		{
-			return new int[]
-			{};
+			return new int[] {};
 		}
 		return indexesOfCentersToHighlight;
 	}
@@ -78,8 +75,7 @@ public class DebugFlags
 	{
 		if (Assets.isRunningFromJar())
 		{
-			return new int[]
-			{};
+			return new int[] {};
 		}
 		return indexesOfEdgesToHighlight;
 	}

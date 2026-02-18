@@ -4,7 +4,7 @@ import java.util.Objects;
 
 public class Rectangle
 {
-	final public double x, y, width, height;
+	public final double x, y, width, height;
 
 	public Rectangle(double x, double y, double width, double height)
 	{
@@ -14,10 +14,17 @@ public class Rectangle
 		this.height = height;
 	}
 
+	public Rectangle(Point location, double width, double height)
+	{
+		this.x = location.x;
+		this.y = location.y;
+		this.width = width;
+		this.height = height;
+	}
+
 	public boolean liesOnAxes(Point p, double closeEnoughDistance)
 	{
-		return GenUtils.closeEnough(p.x, x, closeEnoughDistance) || GenUtils.closeEnough(p.y, y, closeEnoughDistance)
-				|| GenUtils.closeEnough(p.x, getRight(), closeEnoughDistance)
+		return GenUtils.closeEnough(p.x, x, closeEnoughDistance) || GenUtils.closeEnough(p.y, y, closeEnoughDistance) || GenUtils.closeEnough(p.x, getRight(), closeEnoughDistance)
 				|| GenUtils.closeEnough(p.y, getBottom(), closeEnoughDistance);
 	}
 
@@ -122,8 +129,7 @@ public class Rectangle
 		{
 			return this;
 		}
-		return add(other.x, other.y).add(other.x, other.y + other.height).add(other.x + other.width, other.y).add(other.x + other.width,
-				other.y + other.height);
+		return add(other.x, other.y).add(other.x, other.y + other.height).add(other.x + other.width, other.y).add(other.x + other.width, other.y + other.height);
 	}
 
 	public Rectangle addCircle(Point loc, Double radius)
@@ -190,6 +196,24 @@ public class Rectangle
 		}
 	}
 
+	/**
+	 * Creates the minimum IntRectangle that encloses this Rectangle.
+	 * 
+	 * @return
+	 */
+	public IntRectangle toEnclosingIntRectangle()
+	{
+		double xRemainder = x - (int) x;
+		double yRemainder = y - (int) y;
+
+		return new IntRectangle((int) x, (int) y, (int) Math.ceil(width + xRemainder), (int) Math.ceil(height + yRemainder));
+	}
+
+	/**
+	 * Creates an IntRectangle by simply truncating the values in this rectangle.
+	 * 
+	 * @return
+	 */
 	public IntRectangle toIntRectangle()
 	{
 		return new IntRectangle((int) x, (int) y, (int) width, (int) height);
@@ -224,7 +248,7 @@ public class Rectangle
 	{
 		return y;
 	}
-	
+
 	public Dimension size()
 	{
 		return new Dimension(width, height);
@@ -258,9 +282,7 @@ public class Rectangle
 			return false;
 		}
 		Rectangle other = (Rectangle) obj;
-		return Double.doubleToLongBits(height) == Double.doubleToLongBits(other.height)
-				&& Double.doubleToLongBits(width) == Double.doubleToLongBits(other.width)
-				&& Double.doubleToLongBits(x) == Double.doubleToLongBits(other.x)
-				&& Double.doubleToLongBits(y) == Double.doubleToLongBits(other.y);
+		return Double.doubleToLongBits(height) == Double.doubleToLongBits(other.height) && Double.doubleToLongBits(width) == Double.doubleToLongBits(other.width)
+				&& Double.doubleToLongBits(x) == Double.doubleToLongBits(other.x) && Double.doubleToLongBits(y) == Double.doubleToLongBits(other.y);
 	}
 }

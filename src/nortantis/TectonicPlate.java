@@ -1,11 +1,11 @@
 package nortantis;
 
+import nortantis.geom.Point;
+import nortantis.graph.voronoi.Center;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import nortantis.geom.Point;
-import nortantis.graph.voronoi.Center;
 
 public class TectonicPlate
 {
@@ -25,7 +25,7 @@ public class TectonicPlate
 		nextID = 0;
 	}
 
-	public TectonicPlate(double growthProbability, List<Center> allCenters)
+	public TectonicPlate(double growthProbability)
 	{
 		this.growthProbability = growthProbability;
 		this.id = nextID++;

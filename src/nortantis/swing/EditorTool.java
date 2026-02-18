@@ -1,17 +1,5 @@
 package nortantis.swing;
 
-import java.awt.event.MouseEvent;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import javax.swing.BorderFactory;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JToggleButton;
-
 import nortantis.MapSettings;
 import nortantis.editor.EdgeType;
 import nortantis.editor.MapUpdater;
@@ -20,6 +8,15 @@ import nortantis.geom.RotatedRectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Corner;
 import nortantis.graph.voronoi.Edge;
+import nortantis.platform.Font;
+import nortantis.platform.FontStyle;
+import nortantis.platform.Image;
+import nortantis.swing.translation.Translation;
+import nortantis.util.OSHelper;
+
+import javax.swing.*;
+import java.awt.event.MouseEvent;
+import java.util.*;
 
 public abstract class EditorTool
 {
@@ -51,9 +48,7 @@ public abstract class EditorTool
 
 	public abstract String getKeyboardShortcutText();
 
-	public abstract String getImageIconFilePath();
-
-	public abstract void onBeforeSaving();
+	public abstract Image getToolIcon();
 
 	public void onSwitchingTo()
 	{
@@ -66,12 +61,12 @@ public abstract class EditorTool
 	public abstract void onSwitchingAway();
 
 	protected abstract JPanel createToolOptionsPanel();
-	
+
 	public JPanel getToolOptionsPanel()
 	{
 		return toolOptionsPanel;
 	}
-	
+
 	public JScrollPane getToolOptionsPane()
 	{
 		return toolsOptionsPanelContainer;
@@ -100,13 +95,13 @@ public abstract class EditorTool
 	public void updateBorder()
 	{
 		final int width = 4;
-		
+
 		if (UserPreferences.getInstance().lookAndFeel == LookAndFeel.System)
 		{
 			toggleButton.setBorder(BorderFactory.createEmptyBorder(width, width, width, width));
 			return;
 		}
-		
+
 		if (toggleButton.isSelected())
 		{
 			toggleButton.setBorder(BorderFactory.createLineBorder(ToolsPanel.getColorForToggledButtons(), width));
@@ -132,7 +127,7 @@ public abstract class EditorTool
 		{
 			return null;
 		}
-		
+
 		int borderWidth = updater.mapParts.background.getBorderPaddingScaledByResolution();
 		double zoom = mainWindow.zoom;
 		double osScale = mapEditingPanel.osScale;
@@ -143,6 +138,13 @@ public abstract class EditorTool
 	protected Set<Center> getSelectedCenters(java.awt.Point pointFromMouse, int brushDiameter)
 	{
 		Set<Center> selected = new HashSet<Center>();
+
+		if (updater.mapParts == null || updater.mapParts.graph == null)
+		{
+			assert false;
+			return selected;
+		}
+
 		int brushRadius = (int) ((double) ((brushDiameter / mainWindow.zoom)) * mapEditingPanel.osScale) / 2;
 
 		if (!new RotatedRectangle(updater.mapParts.graph.bounds).overlapsCircle(getPointOnGraph(pointFromMouse), brushRadius))
@@ -166,8 +168,7 @@ public abstract class EditorTool
 			return selected;
 		}
 
-		return updater.mapParts.graph.breadthFirstSearch((c) -> isCenterOverlappingCircle(c, getPointOnGraph(pointFromMouse), brushRadius),
-				center);
+		return updater.mapParts.graph.breadthFirstSearch((c) -> isCenterOverlappingCircle(c, getPointOnGraph(pointFromMouse), brushRadius), center);
 	}
 
 	protected Set<Edge> getSelectedEdges(java.awt.Point pointFromMouse, int brushDiameter, EdgeType edgeType)
@@ -180,8 +181,7 @@ public abstract class EditorTool
 		{
 			nortantis.geom.Point graphPoint = getPointOnGraph(pointFromMouse);
 			Center closestCenter = updater.mapParts.graph.findClosestCenter(graphPoint);
-			Set<Center> overlapping = updater.mapParts.graph
-					.breadthFirstSearch((c) -> isCenterOverlappingCircle(c, graphPoint, brushDiameter / mainWindow.zoom), closestCenter);
+			Set<Center> overlapping = updater.mapParts.graph.breadthFirstSearch((c) -> isCenterOverlappingCircle(c, graphPoint, brushDiameter / mainWindow.zoom), closestCenter);
 			Set<Edge> selected = new HashSet<>();
 			int brushRadius = (int) ((double) ((brushDiameter / mainWindow.zoom) * mapEditingPanel.osScale)) / 2;
 			for (Center center : overlapping)
@@ -190,21 +190,19 @@ public abstract class EditorTool
 				{
 					if (edgeType == EdgeType.Delaunay)
 					{
-						if ((edge.d0 != null && edge.d0.loc.distanceTo(graphPoint) <= brushRadius)
-								|| edge.d1 != null && edge.d1.loc.distanceTo(graphPoint) <= brushRadius)
+						if ((edge.d0 != null && edge.d0.loc.distanceTo(graphPoint) <= brushRadius) || edge.d1 != null && edge.d1.loc.distanceTo(graphPoint) <= brushRadius)
 						{
 							selected.add(edge);
 						}
 					}
 					else
 					{
-						if ((edge.v0 != null && edge.v0.loc.distanceTo(graphPoint) <= brushRadius)
-								|| edge.v1 != null && edge.v1.loc.distanceTo(graphPoint) <= brushRadius)
+						if ((edge.v0 != null && edge.v0.loc.distanceTo(graphPoint) <= brushRadius) || edge.v1 != null && edge.v1.loc.distanceTo(graphPoint) <= brushRadius)
 						{
 							selected.add(edge);
 						}
 					}
-					
+
 				}
 			}
 			return selected;
@@ -291,8 +289,7 @@ public abstract class EditorTool
 		return Math.sqrt((deltaX * deltaX) + (deltaY * deltaY)) <= radius;
 	}
 
-	public abstract void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange,
-			boolean changeEffectsBackgroundImages, boolean willDoImagesRefresh);
+	public abstract void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean refreshImagePreviews);
 
 	public abstract void getSettingsFromGUI(MapSettings settings);
 
@@ -312,7 +309,50 @@ public abstract class EditorTool
 	{
 
 	}
-	
+
+	protected static Font createToolIconFont(int baseFontSize, String text)
+	{
+		String language = Translation.getEffectiveLocale().getLanguage();
+		double scale = switch (language)
+		{
+			case "es" -> 0.9;
+			case "fr" -> 0.97;
+			case "pt" -> 0.91;
+			case "ru" -> 0.8;
+			case "zh" -> 0.85;
+			default -> 1.0;
+		};
+		
+		double osScale;
+		if (OSHelper.isLinux())
+		{
+			osScale = switch (language)
+					{
+						case "en" -> 0.9;
+						case "de" -> 0.9;
+						case "es" -> 0.85;
+						case "fr" -> 0.8;
+						case "pt" -> 0.85;
+						case "ru" -> 0.65;
+						default -> 1.0;
+					};
+		}
+		else
+		{
+			osScale = 1.0;
+		}
+		
+		int fontSize = (int) (baseFontSize * scale * osScale);
+		String fontFamily = OSHelper.isLinux() ? "Gurajada" : OSHelper.isMac() ? "Apple Chancery" : "Gabriola";
+		Font font = Font.create(fontFamily, FontStyle.Plain, fontSize);
+		if (font.canDisplayUpTo(text) != -1)
+		{
+			// The font cannot display the text
+			font = Font.create("SansSerif", FontStyle.Plain, fontSize);
+		}
+		return font;
+	}
+
 	protected boolean isSelected()
 	{
 		return toggleButton.isSelected();

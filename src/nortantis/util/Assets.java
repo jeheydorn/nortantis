@@ -1,50 +1,46 @@
 package nortantis.util;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.JarURLConnection;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Properties;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-import java.util.stream.Collectors;
-
+import nortantis.NamedResource;
+import nortantis.platform.Image;
+import nortantis.platform.PlatformFactory;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import nortantis.NamedResource;
-import nortantis.platform.Image;
-import nortantis.platform.PlatformFactory;
+import java.io.*;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 public class Assets
 {
-	private final static String assetsPath = "assets";
-	public final static String customArtPack = "custom";
-	private final static String artPacksFolder = "art packs";
-	public final static String installedArtPack = "nortantis";
-	public final static List<String> reservedArtPacks = Collections.unmodifiableList(Arrays.asList(installedArtPack, customArtPack, "all"));
+	/**
+	 * Interface for providing InputStreams on platforms where filesystem access doesn't work for bundled assets (e.g., Android, which
+	 * requires AssetManager).
+	 */
+	public interface AssetInputStreamProvider
+	{
+		InputStream open(String assetPath) throws IOException;
+	}
+
+	private static AssetInputStreamProvider assetInputStreamProvider;
+
+	public static void setAssetInputStreamProvider(AssetInputStreamProvider provider)
+	{
+		assetInputStreamProvider = provider;
+	}
+
+	private static final String assetsPath = "assets";
+	public static final String customArtPack = "custom";
+	private static final String artPacksFolder = "art packs";
+	public static final String installedArtPack = "nortantis";
+	public static final List<String> reservedArtPacks = Collections.unmodifiableList(Arrays.asList(installedArtPack, customArtPack, "all"));
 	private static boolean disableAddedArtPacksForUnitTests;
 	private static List<CachedEntry> cachedEntries;
 	/**
@@ -118,8 +114,7 @@ public class Assets
 	{
 		List<String> result = new ArrayList<>();
 		// Add installed art packs.
-		result.addAll(Assets.listNonEmptySubFolders(getArtPacksFolder().toString()).stream()
-				.filter(name -> !reservedArtPacks.contains(name.toLowerCase())).toList());
+		result.addAll(Assets.listNonEmptySubFolders(getArtPacksFolder().toString()).stream().filter(name -> !reservedArtPacks.contains(name.toLowerCase())).toList());
 
 		result.sort(String::compareTo);
 		return result;
@@ -129,7 +124,7 @@ public class Assets
 	{
 		ArtPacksFromArtPacksFolderCache.clearCache();
 		artPackPathCache.clear();
-		// Don't clear cachedEntires because it's values never change while the program is running.
+		// Don't clear cachedEntries because it's values never change while the program is running.
 	}
 
 	public static List<NamedResource> listBackgroundTexturesForAllArtPacks(String customImagesFolder)
@@ -137,8 +132,7 @@ public class Assets
 		List<NamedResource> result = new ArrayList<>();
 		for (String artPack : listArtPacks(StringUtils.isNotEmpty(customImagesFolder)))
 		{
-			for (NamedResource textureResource : listBackgroundTexturesForArtPack(artPack,
-					FileHelper.replaceHomeFolderPlaceholder(customImagesFolder)))
+			for (NamedResource textureResource : listBackgroundTexturesForArtPack(artPack, FileHelper.replaceHomeFolderPlaceholder(customImagesFolder)))
 			{
 				result.add(textureResource);
 			}
@@ -155,7 +149,7 @@ public class Assets
 		textureFiles = listFileNames(Paths.get(artPackPath.toString(), "background textures").toString(), allowedImageExtensions);
 		return textureFiles.stream().map(fileName -> new NamedResource(artPack, fileName)).toList();
 	}
-	
+
 	/**
 	 * Gets the path to the assets of an art pack.
 	 * 
@@ -163,7 +157,7 @@ public class Assets
 	 *            Art pack name
 	 * @param customImagesFolder
 	 *            The map's custom images folder. Only required if art pack is "custom".
-	 * @return A path to a the art pack assets, which may be in the jar file the program is running from.
+	 * @return A path to the art pack assets, which may be in the jar file the program is running from.
 	 */
 	public static Path getArtPackPath(String artPack, String customImagesFolder)
 	{
@@ -173,12 +167,12 @@ public class Assets
 		{
 			return inMap;
 		}
-		
+
 		Path result = getArtPackPathNoCache(artPack, customImagesFolder);
 		artPackPathCache.put(key, result);
 		return result;
 	}
-	
+
 	private static Path getArtPackPathNoCache(String artPack, String customImagesFolder)
 	{
 		if (artPack.equals(customArtPack))
@@ -248,20 +242,18 @@ public class Assets
 
 	public static List<String> listFileNames(String path, String containsText, String endingText, Set<String> allowedExtensions)
 	{
-		return listFiles(path, containsText, endingText, allowedExtensions).stream()
-				.map(filePath -> FilenameUtils.getName(filePath.toString())).collect(Collectors.toList());
+		return listFiles(path, containsText, endingText, allowedExtensions).stream().map(filePath -> FilenameUtils.getName(filePath.toString())).collect(Collectors.toList());
 	}
 
 	public static List<Path> listFiles(String folderPath, String containsText, String endingText, Set<String> allowedExtensions)
 	{
-		if (isJarAsset(folderPath))
+		if (isPackagedAsset(folderPath))
 		{
 			return listFilesFromJar(folderPath, containsText, endingText);
 		}
 
-		File[] files = new File(folderPath.toString())
-				.listFiles(file -> !file.isDirectory() && (StringUtils.isEmpty(containsText) || file.getName().contains(containsText))
-						&& (StringUtils.isEmpty(endingText) || file.getName().endsWith(endingText))
+		File[] files = new File(folderPath).listFiles(
+				file -> !file.isDirectory() && (StringUtils.isEmpty(containsText) || file.getName().contains(containsText)) && (StringUtils.isEmpty(endingText) || file.getName().endsWith(endingText))
 						&& (allowedExtensions == null || allowedExtensions.contains(FilenameUtils.getExtension(file.getName()).toLowerCase())));
 		if (files == null)
 		{
@@ -280,6 +272,15 @@ public class Assets
 		return StringUtils.isNotEmpty(path) && isRunningFromJar() && path.startsWith(getAssetsPath());
 	}
 
+	/**
+	 * Returns true if the given path refers to a packaged asset — either in a JAR file or accessible via an AssetInputStreamProvider (e.g.,
+	 * Android's AssetManager).
+	 */
+	private static boolean isPackagedAsset(String path)
+	{
+		return StringUtils.isNotEmpty(path) && path.startsWith(getAssetsPath()) && (isRunningFromJar() || assetInputStreamProvider != null);
+	}
+
 	public static List<Path> listFilesFromJar(String folderPath, String containsText, String endingText)
 	{
 		List<Path> fileNames = new ArrayList<>();
@@ -290,8 +291,7 @@ public class Assets
 		cachedEntries.stream().forEach(entry ->
 		{
 			String entryName = entry.name;
-			if (!entry.isDirectory && entryName.startsWith(assetPathInEntryFormat)
-					&& ((StringUtils.isEmpty(containsText) || entryName.contains(containsText)))
+			if (!entry.isDirectory && entryName.startsWith(assetPathInEntryFormat) && ((StringUtils.isEmpty(containsText) || entryName.contains(containsText)))
 					&& (StringUtils.isEmpty(endingText) || entryName.endsWith(endingText)))
 			{
 				fileNames.add(Paths.get(folderPath, FilenameUtils.getName(entryName)));
@@ -310,8 +310,7 @@ public class Assets
 		List<String> result = new ArrayList<>();
 		for (CachedEntry entry : cachedEntries)
 		{
-			if (entry.isDirectory && entry.name.startsWith(assetPathInEntryFormat)
-					&& !addTrailingSlash(entry.name).equals(assetPathInEntryFormat))
+			if (entry.isDirectory && entry.name.startsWith(assetPathInEntryFormat) && !addTrailingSlash(entry.name).equals(assetPathInEntryFormat))
 			{
 				result.add(FilenameUtils.getName(removeTrailingSlash(entry.name)));
 			}
@@ -328,31 +327,39 @@ public class Assets
 		}
 
 		cachedEntries = new ArrayList<>();
-		String assetPathInEntryFormat = addTrailingSlash(assetsPath);
 
-		URL jarUrl = Assets.class.getResource("/" + assetsPath);
-		if (jarUrl == null)
+		// Try to read the manifest generated at build time (works in JAR and on Android).
+		try (InputStream manifestStream = Assets.class.getResourceAsStream("/assets/manifest.txt"))
 		{
-			throw new RuntimeException(
-					"Unable to check installed assets" + " because the URL for the jar file was null. assetsPath: " + assetsPath);
-		}
-
-		try
-		{
-			JarURLConnection jarConnection = (JarURLConnection) jarUrl.openConnection();
-			try (JarFile jarFile = jarConnection.getJarFile())
+			if (manifestStream != null)
 			{
-				jarFile.stream()
-						.filter(entry -> entry.getName().startsWith(assetPathInEntryFormat)
-								&& !addTrailingSlash(entry.getName()).equals(assetPathInEntryFormat))
-						.forEach(entry -> cachedEntries.add(new CachedEntry(entry.getName(), entry.isDirectory())));
+				try (BufferedReader reader = new BufferedReader(new InputStreamReader(manifestStream, StandardCharsets.UTF_8)))
+				{
+					String line;
+					while ((line = reader.readLine()) != null)
+					{
+						if (line.isEmpty())
+						{
+							continue;
+						}
+						String[] parts = line.split("\t");
+						if (parts.length >= 2)
+						{
+							boolean isDirectory = "D".equals(parts[1]);
+							String name = isDirectory ? addTrailingSlash(parts[0]) : parts[0];
+							cachedEntries.add(new CachedEntry(name, isDirectory));
+						}
+					}
+				}
+				return;
 			}
 		}
 		catch (IOException e)
 		{
-			e.printStackTrace();
+			// Fall through to filesystem-based approach
 		}
 
+		// No manifest found (running from IDE / source). The filesystem paths will be used.
 	}
 
 	/**
@@ -363,35 +370,29 @@ public class Assets
 	 */
 	public static void copyDirectoryToDirectory(Path sourceDir, Path destDir) throws IOException
 	{
-		if (isJarAsset(sourceDir.toString()))
+		if (isPackagedAsset(sourceDir.toString()))
 		{
 			String sourceDirParentInEntryFormat = addTrailingSlash(convertToAssetPath(sourceDir.getParent().toString()).substring(1));
 			String sourceDirInEntryFormat = addTrailingSlash(convertToAssetPath(sourceDir.toString()).substring(1));
 
-			// Copy from jar file
-			URL resource = Assets.class.getResource(convertToAssetPath(sourceDir.toString()));
-			JarURLConnection jarConnection = (JarURLConnection) resource.openConnection();
-			try (JarFile jarFile = jarConnection.getJarFile())
+			// Copy from cached entries using getResourceAsStream
+			for (CachedEntry entry : cachedEntries)
 			{
-				Enumeration<JarEntry> entries = jarFile.entries();
-				while (entries.hasMoreElements())
+				if (entry.name.startsWith(sourceDirInEntryFormat) && !addTrailingSlash(entry.name).equals(sourceDirInEntryFormat))
 				{
-					JarEntry entry = entries.nextElement();
-					if (entry.getName().startsWith(sourceDirInEntryFormat)
-							&& !addTrailingSlash(entry.getName()).equals(sourceDirInEntryFormat))
-					{
-						String entryPathInParentFolder = entry.getName()
-								.substring((addTrailingSlash(sourceDirParentInEntryFormat)).length());
+					String entryPathInParentFolder = entry.name.substring((addTrailingSlash(sourceDirParentInEntryFormat)).length());
 
-						Path destPath = Paths.get(destDir.toString(), entryPathInParentFolder);
-						if (entry.isDirectory())
+					Path destPath = Paths.get(destDir.toString(), entryPathInParentFolder);
+					if (entry.isDirectory)
+					{
+						Files.createDirectories(destPath);
+					}
+					else
+					{
+						Files.createDirectories(destPath.getParent());
+						try (InputStream inputStream = createInputStream(entry.name))
 						{
-							Files.createDirectories(destPath);
-						}
-						else
-						{
-							Files.createDirectories(destPath.getParent());
-							try (InputStream inputStream = jarFile.getInputStream(entry))
+							if (inputStream != null)
 							{
 								Files.copy(inputStream, destPath);
 							}
@@ -442,7 +443,7 @@ public class Assets
 	 */
 	public static List<String> listNonEmptySubFolders(String path)
 	{
-		if (isJarAsset(path))
+		if (isPackagedAsset(path))
 		{
 			return listSubFoldersInJar(path);
 		}
@@ -473,13 +474,17 @@ public class Assets
 	public static boolean isRunningFromJar()
 	{
 		String className = Assets.class.getName().replace('.', '/');
-		String classJar = Assets.class.getResource("/" + className + ".class").toString();
-		return classJar.startsWith("jar:");
+		java.net.URL classUrl = Assets.class.getResource("/" + className + ".class");
+		if (classUrl == null)
+		{
+			return false;
+		}
+		return classUrl.toString().startsWith("jar:");
 	}
 
 	public static String convertToAssetPath(String filePath)
 	{
-		if (!isRunningFromJar())
+		if (!isRunningFromJar() && assetInputStreamProvider == null)
 		{
 			return filePath;
 		}
@@ -515,7 +520,7 @@ public class Assets
 
 	private static BufferedReader createBufferedReader(String filePath) throws FileNotFoundException
 	{
-		if (isJarAsset(filePath))
+		if (isPackagedAsset(filePath))
 		{
 			return new BufferedReader(new InputStreamReader(createInputStream(filePath), StandardCharsets.UTF_8));
 		}
@@ -527,7 +532,7 @@ public class Assets
 
 	public static List<String> readAllLines(String filePath) throws IOException
 	{
-		if (isJarAsset(filePath))
+		if (isPackagedAsset(filePath))
 		{
 			return readAllLinesFromFileInJar(filePath);
 		}
@@ -555,8 +560,19 @@ public class Assets
 
 	private static InputStream createInputStream(String filePath)
 	{
-		if (isJarAsset(filePath))
+		if (isPackagedAsset(filePath))
 		{
+			if (assetInputStreamProvider != null)
+			{
+				try
+				{
+					return assetInputStreamProvider.open(filePath);
+				}
+				catch (IOException e)
+				{
+					throw new RuntimeException("Can't read the file '" + filePath + "'", e);
+				}
+			}
 			try
 			{
 				return createInputStreamFromFileInJar(filePath);
@@ -587,14 +603,45 @@ public class Assets
 
 	public static boolean exists(String filePath)
 	{
-		if (isJarAsset(filePath))
+		if (isPackagedAsset(filePath))
 		{
+			if (assetInputStreamProvider != null)
+			{
+				try (InputStream is = assetInputStreamProvider.open(filePath))
+				{
+					return is != null;
+				}
+				catch (IOException e)
+				{
+					// AssetManager.open() fails for directories. Fall back to the manifest cache.
+					return existsInManifestCache(filePath);
+				}
+			}
 			return existsInJar(filePath);
 		}
 		else
 		{
 			return Files.exists(Paths.get(filePath));
 		}
+	}
+
+	private static boolean existsInManifestCache(String filePath)
+	{
+		if (cachedEntries == null)
+		{
+			return false;
+		}
+		String assetPath = convertToAssetPath(filePath);
+		String entryFormat = assetPath.substring(1);
+		String entryFormatDir = addTrailingSlash(entryFormat);
+		for (CachedEntry entry : cachedEntries)
+		{
+			if (entry.name.equals(entryFormat) || entry.name.equals(entryFormatDir))
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public static boolean existsInJar(String filePath)
@@ -611,9 +658,27 @@ public class Assets
 
 	public static Image readImage(String filePath)
 	{
-		if (isJarAsset(filePath))
+		if (isPackagedAsset(filePath))
 		{
-			return readImageFromJar(filePath);
+			try (InputStream inputStream = createInputStream(filePath))
+			{
+				if (inputStream == null)
+				{
+					throw new RuntimeException("Can't read the image resource '" + filePath + "' because either it doesn't exist or it's an unsupported format or corrupted.");
+				}
+
+				Image image = PlatformFactory.getInstance().readImage(inputStream);
+				if (image == null)
+				{
+					throw new RuntimeException("Can't read the image resource " + filePath + ". It might be in an unsupported format or corrupted.");
+				}
+
+				return image;
+			}
+			catch (IOException e)
+			{
+				throw new RuntimeException("Error while reading image from resource " + filePath, e);
+			}
 		}
 		else
 		{
@@ -628,15 +693,13 @@ public class Assets
 		{
 			if (inputStream == null)
 			{
-				throw new RuntimeException("Can't read the image resource '" + filePath
-						+ "' because either it doesn't or it's an unsupported format or corrupted.");
+				throw new RuntimeException("Can't read the image resource '" + filePath + "' because either it doesn't or it's an unsupported format or corrupted.");
 			}
 
 			Image image = PlatformFactory.getInstance().readImage(inputStream);
 			if (image == null)
 			{
-				throw new RuntimeException(
-						"Can't read the image resource " + filePath + ". It might be in an unsupported format or corrupted.");
+				throw new RuntimeException("Can't read the image resource " + filePath + ". It might be in an unsupported format or corrupted.");
 			}
 
 			return image;

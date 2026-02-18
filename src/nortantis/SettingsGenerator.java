@@ -1,22 +1,15 @@
 package nortantis;
 
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
-
-import org.apache.commons.lang3.StringUtils;
-
 import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanWaves;
 import nortantis.geom.IntDimension;
 import nortantis.platform.Color;
-import nortantis.util.Assets;
-import nortantis.util.ProbabilityHelper;
-import nortantis.util.Range;
-import nortantis.util.Tuple2;
+import nortantis.swing.MapEdits;
+import nortantis.util.*;
+import org.apache.commons.lang3.StringUtils;
+
+import java.nio.file.Paths;
+import java.util.*;
 
 /**
  * For randomly generating settings with which to generate a map.
@@ -31,7 +24,7 @@ public class SettingsGenerator
 	public static int minWorldSizeForRandomSettings = minWorldSize + 2000;
 	public static int maxWorldSize = 32000; // This must not be more than 2^16 or centerLookupTable in WorldGraph will not work.
 	public static int worldSizePrecision = 1000;
-	public static double maxCityProbabillity = 1.0 / 40.0;
+	public static double maxCityProbability = 1.0 / 40.0;
 	public static int maxFrayedEdgeSizeForUI = 15;
 	public static final int maxConcentricWaveCountInEditor = 5;
 	public static final int maxConcentricWaveCountToGenerate = 3;
@@ -69,26 +62,13 @@ public class SettingsGenerator
 		settings.artPack = artPack;
 		settings.customImagesPath = customImagesFolder;
 
-		List<Tuple2<Double, OceanWaves>> oceanWaveOptions = new ArrayList<>(
-				Arrays.asList(new Tuple2<Double, OceanWaves>(1.0, OceanWaves.None), new Tuple2<Double, OceanWaves>(1.0, OceanWaves.Ripples),
-						new Tuple2<Double, OceanWaves>(2.0, OceanWaves.ConcentricWaves)));
+		List<Tuple2<Double, OceanWaves>> oceanWaveOptions = new ArrayList<>(Arrays.asList(new Tuple2<Double, OceanWaves>(1.0, OceanWaves.None), new Tuple2<Double, OceanWaves>(1.0, OceanWaves.Ripples),
+				new Tuple2<Double, OceanWaves>(2.0, OceanWaves.ConcentricWaves)));
 
 		settings.oceanWavesType = ProbabilityHelper.sampleCategorical(rand, oceanWaveOptions);
 
 		Color landColor = rand.nextInt(2) == 1 ? settings.landColor : settings.oceanColor;
-		Color oceanColor;
-		if (settings.oceanWavesType == OceanWaves.Ripples)
-		{
-			oceanColor = settings.oceanColor;
-		}
-		else if (landColor == settings.landColor)
-		{
-			oceanColor = settings.oceanColor;
-		}
-		else
-		{
-			oceanColor = rand.nextInt(2) == 1 ? settings.landColor : settings.oceanColor;
-		}
+		Color oceanColor = settings.oceanColor;
 
 		settings.drawOceanEffectsInLakes = true;
 		settings.oceanWavesLevel = 15 + Math.abs(rand.nextInt(35));
@@ -99,13 +79,12 @@ public class SettingsGenerator
 			settings.jitterToConcentricWaves = rand.nextBoolean();
 			settings.brokenLinesForConcentricWaves = rand.nextBoolean();
 		}
-		settings.concentricWaveCount = Math.max(minConcentricWaveCountToGenerate,
-				Math.min(maxConcentricWaveCountToGenerate, Math.abs((rand.nextInt() % maxConcentricWaveCountInEditor)) + 1));
+		settings.concentricWaveCount = Math.max(minConcentricWaveCountToGenerate, Math.min(maxConcentricWaveCountToGenerate, Math.abs((rand.nextInt() % maxConcentricWaveCountInEditor)) + 1));
 		settings.coastShadingLevel = 15 + Math.abs(rand.nextInt(35));
 
 		int hueRange = 16;
-		int saturationRange = 25;
-		int brightnessRange = 25;
+		int saturationRange = 10;
+		int brightnessRange = 10;
 		settings.landColor = MapCreator.generateColorFromBaseColor(rand, landColor, hueRange, saturationRange, brightnessRange);
 		settings.regionBaseColor = settings.landColor;
 		settings.borderColor = settings.landColor;
@@ -113,14 +92,12 @@ public class SettingsGenerator
 		settings.oceanColor = MapCreator.generateColorFromBaseColor(rand, oceanColor, hueRange, saturationRange, brightnessRange);
 
 		double landBlurColorScale = 0.5;
-		settings.coastShadingColor = Color.create((int) (settings.landColor.getRed() * landBlurColorScale),
-				(int) (settings.landColor.getGreen() * landBlurColorScale), (int) (settings.landColor.getBlue() * landBlurColorScale),
-				defaultCoastShadingAlpha);
+		settings.coastShadingColor = Color.create((int) (settings.landColor.getRed() * landBlurColorScale), (int) (settings.landColor.getGreen() * landBlurColorScale),
+				(int) (settings.landColor.getBlue() * landBlurColorScale), defaultCoastShadingAlpha);
 
 		{
 			double oceanShadingColorScale = 0.3;
-			settings.oceanShadingColor = Color.create((int) (settings.oceanColor.getRed() * oceanShadingColorScale),
-					(int) (settings.oceanColor.getGreen() * oceanShadingColorScale),
+			settings.oceanShadingColor = Color.create((int) (settings.oceanColor.getRed() * oceanShadingColorScale), (int) (settings.oceanColor.getGreen() * oceanShadingColorScale),
 					(int) (settings.oceanColor.getBlue() * oceanShadingColorScale), defaultOceanShadingAlpha);
 		}
 
@@ -135,26 +112,22 @@ public class SettingsGenerator
 		if (settings.oceanWavesType == OceanWaves.Ripples)
 		{
 			double ripplesColorScale = 0.3;
-			settings.oceanWavesColor = Color.create((int) (settings.oceanColor.getRed() * ripplesColorScale),
-					(int) (settings.oceanColor.getGreen() * ripplesColorScale), (int) (settings.oceanColor.getBlue() * ripplesColorScale),
-					defaultOceanRipplesAlpha);
+			settings.oceanWavesColor = Color.create((int) (settings.oceanColor.getRed() * ripplesColorScale), (int) (settings.oceanColor.getGreen() * ripplesColorScale),
+					(int) (settings.oceanColor.getBlue() * ripplesColorScale), defaultOceanRipplesAlpha);
 		}
 		else
 		{
 			// Concentric waves
 			double wavesColorScale = 0.5;
 			int alpha = 255;
-			settings.oceanWavesColor = Color.create((int) (settings.oceanColor.getRed() * wavesColorScale),
-					(int) (settings.oceanColor.getGreen() * wavesColorScale), (int) (settings.oceanColor.getBlue() * wavesColorScale),
-					alpha);
+			settings.oceanWavesColor = Color.create((int) (settings.oceanColor.getRed() * wavesColorScale), (int) (settings.oceanColor.getGreen() * wavesColorScale),
+					(int) (settings.oceanColor.getBlue() * wavesColorScale), alpha);
 
 		}
 		settings.riverColor = MapCreator.generateColorFromBaseColor(rand, settings.riverColor, hueRange, saturationRange, brightnessRange);
-		settings.frayedBorderColor = MapCreator.generateColorFromBaseColor(rand, settings.frayedBorderColor, hueRange, saturationRange,
-				brightnessRange);
+		settings.frayedBorderColor = MapCreator.generateColorFromBaseColor(rand, settings.frayedBorderColor, hueRange, saturationRange, brightnessRange);
 
-		settings.worldSize = (rand.nextInt((maxWorldSize - minWorldSizeForRandomSettings) / worldSizePrecision)
-				+ minWorldSizeForRandomSettings / worldSizePrecision) * worldSizePrecision;
+		settings.worldSize = (rand.nextInt((maxWorldSize - minWorldSizeForRandomSettings) / worldSizePrecision) + minWorldSizeForRandomSettings / worldSizePrecision) * worldSizePrecision;
 
 		settings.grungeWidth = 100 + rand.nextInt(1400);
 
@@ -207,11 +180,11 @@ public class SettingsGenerator
 			settings.frayedBorder = true;
 		}
 		settings.frayedBorderBlurLevel = Math.abs(rand.nextInt(150));
-		// Fray size is stored inverted with respect the the UI.
+		// Fray size is stored inverted with respect to the UI.
 		final int maxFraySize = 6;
 		settings.frayedBorderSize = maxFrayedEdgeSizeForUI - Math.abs(rand.nextInt(maxFraySize));
 
-		settings.cityProbability = 0.25 * maxCityProbabillity;
+		settings.cityProbability = 0.25 * maxCityProbability;
 
 		List<String> cityIconTypes = ImageCache.getInstance(settings.artPack, settings.customImagesPath).getIconGroupNames(IconType.cities);
 		if (cityIconTypes.size() > 0)
@@ -221,8 +194,7 @@ public class SettingsGenerator
 
 		settings.drawRegionBoundaries = rand.nextDouble() > 0.25;
 		settings.drawRegionColors = rand.nextDouble() > 0.25;
-		settings.regionBoundaryStyle = new Stroke(ProbabilityHelper.sampleEnumUniform(rand, StrokeType.class),
-				settings.regionBoundaryStyle.width);
+		settings.regionBoundaryStyle = new Stroke(ProbabilityHelper.sampleEnumUniform(rand, StrokeType.class), settings.regionBoundaryStyle.width);
 
 		if (rand.nextDouble() > 0.75)
 		{
@@ -248,8 +220,7 @@ public class SettingsGenerator
 		settings.backgroundTextureSource = TextureSource.Assets;
 
 		settings.drawBoldBackground = rand.nextDouble() > 0.5;
-		settings.boldBackgroundColor = MapCreator.generateColorFromBaseColor(rand, settings.boldBackgroundColor, hueRange, saturationRange,
-				brightnessRange);
+		settings.boldBackgroundColor = MapCreator.generateColorFromBaseColor(rand, settings.boldBackgroundColor, hueRange, saturationRange, brightnessRange);
 
 		// This threshold prevents large maps from having land on the edge, because such maps should be the entire world/continent.
 		int noOceanOnEdgeThreshold = 15000;
@@ -268,8 +239,7 @@ public class SettingsGenerator
 		settings.edgeLandToWaterProbability = Math.round(settings.edgeLandToWaterProbability * 100.0) / 100.0;
 		settings.centerLandToWaterProbability = Math.round(settings.centerLandToWaterProbability * 100.0) / 100.0;
 
-		IntDimension dimension = parseGeneratedBackgroundDimensionsFromDropdown(
-				ProbabilityHelper.sampleUniform(rand, getAllowedDimmensions()));
+		IntDimension dimension = parseGeneratedBackgroundDimensionsFromDropdown(ProbabilityHelper.sampleUniform(rand, getAllowedDimensions()));
 		settings.generatedWidth = dimension.width;
 		settings.generatedHeight = dimension.height;
 
@@ -302,15 +272,11 @@ public class SettingsGenerator
 		}
 		else if (settings.regionBoundaryStyle.type == StrokeType.Dots)
 		{
-			settings.roadStyle = new Stroke(
-					ProbabilityHelper.sampleUniform(rand, Arrays.asList(StrokeType.Dashes, StrokeType.Rounded_Dashes)),
-					settings.roadStyle.width);
+			settings.roadStyle = new Stroke(ProbabilityHelper.sampleUniform(rand, Arrays.asList(StrokeType.Dashes, StrokeType.Rounded_Dashes)), settings.roadStyle.width);
 		}
 		else
 		{
-			settings.roadStyle = new Stroke(
-					ProbabilityHelper.sampleUniform(rand, Arrays.asList(StrokeType.Dashes, StrokeType.Rounded_Dashes, StrokeType.Dots)),
-					settings.roadStyle.width);
+			settings.roadStyle = new Stroke(ProbabilityHelper.sampleUniform(rand, Arrays.asList(StrokeType.Dashes, StrokeType.Rounded_Dashes, StrokeType.Dots)), settings.roadStyle.width);
 		}
 
 		return settings;
@@ -318,7 +284,7 @@ public class SettingsGenerator
 
 	private static void setRandomSeeds(MapSettings settings, Random rand)
 	{
-		long seed = Math.abs(rand.nextInt());
+		long seed = Helper.safeAbs(rand.nextInt());
 		settings.randomSeed = seed;
 		settings.regionsRandomSeed = seed;
 		settings.backgroundRandomSeed = seed;
@@ -326,7 +292,7 @@ public class SettingsGenerator
 		settings.textRandomSeed = seed;
 	}
 
-	public static List<String> getAllowedDimmensions()
+	public static List<String> getAllowedDimensions()
 	{
 		List<String> result = new ArrayList<>();
 		result.add("4096 x 4096 (square)");
@@ -337,15 +303,14 @@ public class SettingsGenerator
 
 	public static IntDimension parseGeneratedBackgroundDimensionsFromDropdown(String selected)
 	{
-		selected = selected.substring(0, selected.indexOf("("));
+		selected = selected.substring(0, selected.indexOf('('));
 		String[] parts = selected.split("x");
 		return new IntDimension(Integer.parseInt(parts[0].trim()), Integer.parseInt(parts[1].trim()));
 	}
 
 	public static List<String> getAllBooks()
 	{
-		List<String> filenames = Assets.listFileNames(Paths.get(Assets.getAssetsPath(), "books").toString(), null, "_place_names.txt",
-				null);
+		List<String> filenames = Assets.listFileNames(Paths.get(Assets.getAssetsPath(), "books").toString(), null, "_place_names.txt", null);
 
 		List<String> result = new ArrayList<>();
 		for (String filename : filenames)
@@ -355,4 +320,98 @@ public class SettingsGenerator
 		Collections.sort(result);
 		return result;
 	}
+
+	/**
+	 * Creates new map settings that keep the theme (colors, fonts, border, background, etc.) from the given settings but generate a new
+	 * world layout and text names.
+	 */
+	public static MapSettings newMapWithSameTheme(MapSettings currentSettings)
+	{
+		MapSettings settings = currentSettings.deepCopy();
+		settings.edits = new MapEdits();
+		settings.imageExportPath = null;
+		settings.heightmapExportPath = null;
+		// Randomize only land seed
+		settings.randomSeed = Helper.safeAbs(new Random().nextInt());
+		// Separately randomize text seed for new names
+		settings.textRandomSeed = Helper.safeAbs(new Random().nextInt());
+		// Randomize city icon type
+		try
+		{
+			List<String> cityIconTypes = ImageCache.getInstance(settings.artPack, currentSettings.customImagesPath).getIconGroupNames(IconType.cities);
+			if (cityIconTypes != null && !cityIconTypes.isEmpty())
+			{
+				settings.cityIconTypeName = ProbabilityHelper.sampleUniform(new Random(), new ArrayList<>(cityIconTypes));
+			}
+		}
+		catch (Exception e)
+		{
+			// ignore
+		}
+		return settings;
+	}
+
+	/**
+	 * Randomizes only the theme (visual appearance) fields of the given settings, keeping the world layout (land seed, world size,
+	 * probabilities, etc.) unchanged.
+	 */
+	public static void randomizeTheme(MapSettings settings, String artPack, String customImagesPath)
+	{
+		MapSettings randomSettings = generate(new Random(), artPack, customImagesPath);
+		settings.oceanShadingLevel = randomSettings.oceanShadingLevel;
+		settings.oceanWavesLevel = randomSettings.oceanWavesLevel;
+		settings.concentricWaveCount = randomSettings.concentricWaveCount;
+		settings.oceanWavesType = randomSettings.oceanWavesType;
+		settings.riverColor = randomSettings.riverColor;
+		settings.roadColor = randomSettings.roadColor;
+		settings.coastShadingLevel = randomSettings.coastShadingLevel;
+		settings.coastShadingColor = randomSettings.coastShadingColor;
+		settings.oceanWavesColor = randomSettings.oceanWavesColor;
+		settings.coastlineColor = randomSettings.coastlineColor;
+		settings.frayedBorder = randomSettings.frayedBorder;
+		settings.frayedBorderSize = randomSettings.frayedBorderSize;
+		settings.frayedBorderColor = randomSettings.frayedBorderColor;
+		settings.frayedBorderBlurLevel = randomSettings.frayedBorderBlurLevel;
+		settings.frayedBorderSeed = randomSettings.frayedBorderSeed;
+		settings.grungeWidth = randomSettings.grungeWidth;
+		settings.generateBackground = randomSettings.generateBackground;
+		settings.generateBackgroundFromTexture = randomSettings.generateBackgroundFromTexture;
+		settings.solidColorBackground = randomSettings.solidColorBackground;
+		settings.colorizeOcean = randomSettings.colorizeOcean;
+		settings.colorizeLand = randomSettings.colorizeLand;
+		settings.backgroundTextureResource = randomSettings.backgroundTextureResource;
+		settings.backgroundTextureImage = randomSettings.backgroundTextureImage;
+		settings.backgroundRandomSeed = randomSettings.backgroundRandomSeed;
+		settings.oceanColor = randomSettings.oceanColor;
+		settings.borderColorOption = randomSettings.borderColorOption;
+		settings.borderColor = randomSettings.borderColor;
+		settings.landColor = randomSettings.landColor;
+		settings.regionBaseColor = randomSettings.regionBaseColor;
+		settings.hueRange = randomSettings.hueRange;
+		settings.saturationRange = randomSettings.saturationRange;
+		settings.brightnessRange = randomSettings.brightnessRange;
+		settings.titleFont = randomSettings.titleFont;
+		settings.regionFont = randomSettings.regionFont;
+		settings.mountainRangeFont = randomSettings.mountainRangeFont;
+		settings.otherMountainsFont = randomSettings.otherMountainsFont;
+		settings.riverFont = randomSettings.riverFont;
+		settings.boldBackgroundColor = randomSettings.boldBackgroundColor;
+		settings.textColor = randomSettings.textColor;
+		settings.drawBoldBackground = randomSettings.drawBoldBackground;
+		settings.drawRegionBoundaries = randomSettings.drawRegionBoundaries;
+		settings.regionBoundaryStyle = randomSettings.regionBoundaryStyle;
+		settings.drawRegionColors = randomSettings.drawRegionColors;
+		settings.regionsRandomSeed = randomSettings.regionsRandomSeed;
+		settings.drawBorder = randomSettings.drawBorder;
+		settings.borderResource = randomSettings.borderResource;
+		settings.borderWidth = randomSettings.borderWidth;
+		settings.lineStyle = randomSettings.lineStyle;
+	}
+
+	public static void randomizeLand(MapSettings settings)
+	{
+		MapSettings randomSettings = SettingsGenerator.generate(null);
+		settings.randomSeed = randomSettings.randomSeed;
+	}
+
 }

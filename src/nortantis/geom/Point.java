@@ -47,7 +47,7 @@ public class Point implements Comparable<Point>, Serializable
 	{
 		return new Point(x + other.x, y + other.y);
 	}
-	
+
 	public Point add(IntPoint other)
 	{
 		return new Point(x + other.x, y + other.y);
@@ -72,7 +72,7 @@ public class Point implements Comparable<Point>, Serializable
 	{
 		return new IntPoint((int) x, (int) y);
 	}
-	
+
 	public IntPoint toIntPointRounded()
 	{
 		return new IntPoint((int) Math.round(x), (int) Math.round(y));

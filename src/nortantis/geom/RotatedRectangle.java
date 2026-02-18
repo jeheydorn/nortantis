@@ -6,7 +6,7 @@ import java.util.Objects;
 
 public class RotatedRectangle
 {
-	final public double x, y, width, height, angle, pivotX, pivotY;
+	public final double x, y, width, height, angle, pivotX, pivotY;
 
 	/**
 	 * 
@@ -57,7 +57,7 @@ public class RotatedRectangle
 		// given translation vector (p.x, p.y). The width, height, and angle remain the same.
 		return new RotatedRectangle(this.x + t.x, this.y + t.y, this.width, this.height, this.angle, this.pivotX + t.x, this.pivotY + t.y);
 	}
-	
+
 	public RotatedRectangle rotateTo(double angle)
 	{
 		return new RotatedRectangle(x, y, width, height, angle, pivotX, pivotY);
@@ -143,8 +143,7 @@ public class RotatedRectangle
 	{
 		Polygon thisPolygon = new Polygon(Arrays.asList(upperLeftCorner(), upperRightCorner(), lowerRightCorner(), lowerLeftCorner()));
 
-		Polygon otherPolygon = new Polygon(
-				Arrays.asList(rect.upperLeftCorner(), rect.upperRightCorner(), rect.lowerRightCorner(), rect.lowerLeftCorner()));
+		Polygon otherPolygon = new Polygon(Arrays.asList(rect.upperLeftCorner(), rect.upperRightCorner(), rect.lowerRightCorner(), rect.lowerLeftCorner()));
 
 		return isPolygonsIntersecting(thisPolygon, otherPolygon);
 	}
@@ -255,12 +254,17 @@ public class RotatedRectangle
 		// and the difference between the maximum and minimum x and y values as the width and height, respectively.
 		return new Rectangle(minX, minY, maxX - minX, maxY - minY);
 	}
-	
+
+	public Rectangle toUnrotatedRectangle()
+	{
+		return new Rectangle(x, y, width, height);
+	}
+
 	public Point getPivot()
 	{
 		return new Point(pivotX, pivotY);
 	}
-	
+
 	public RotatedRectangle addRotatedRectangleThatHasTheSameAngleAndPivot(RotatedRectangle other)
 	{
 		if (other == null)
@@ -272,8 +276,7 @@ public class RotatedRectangle
 		assert other.pivotX == pivotX;
 		assert other.pivotY == pivotY;
 
-		nortantis.geom.Rectangle boundsNotRotated = new Rectangle(x, y, width,
-				height).add(new Rectangle(other.x, other.y, other.width, other.height));
+		nortantis.geom.Rectangle boundsNotRotated = new Rectangle(x, y, width, height).add(new Rectangle(other.x, other.y, other.width, other.height));
 		return new RotatedRectangle(boundsNotRotated, angle, new Point(pivotX, pivotY));
 	}
 
@@ -299,20 +302,16 @@ public class RotatedRectangle
 			return false;
 		}
 		RotatedRectangle other = (RotatedRectangle) obj;
-		return Double.doubleToLongBits(angle) == Double.doubleToLongBits(other.angle)
-				&& Double.doubleToLongBits(height) == Double.doubleToLongBits(other.height)
-				&& Double.doubleToLongBits(pivotX) == Double.doubleToLongBits(other.pivotX)
-				&& Double.doubleToLongBits(pivotY) == Double.doubleToLongBits(other.pivotY)
-				&& Double.doubleToLongBits(width) == Double.doubleToLongBits(other.width)
-				&& Double.doubleToLongBits(x) == Double.doubleToLongBits(other.x)
+		return Double.doubleToLongBits(angle) == Double.doubleToLongBits(other.angle) && Double.doubleToLongBits(height) == Double.doubleToLongBits(other.height)
+				&& Double.doubleToLongBits(pivotX) == Double.doubleToLongBits(other.pivotX) && Double.doubleToLongBits(pivotY) == Double.doubleToLongBits(other.pivotY)
+				&& Double.doubleToLongBits(width) == Double.doubleToLongBits(other.width) && Double.doubleToLongBits(x) == Double.doubleToLongBits(other.x)
 				&& Double.doubleToLongBits(y) == Double.doubleToLongBits(other.y);
 	}
 
 	@Override
 	public String toString()
 	{
-		return "RotatedRectangle [x=" + x + ", y=" + y + ", width=" + width + ", height=" + height + ", angle=" + angle + ", pivotX="
-				+ pivotX + ", pivotY=" + pivotY + "]";
+		return "RotatedRectangle [x=" + x + ", y=" + y + ", width=" + width + ", height=" + height + ", angle=" + angle + ", pivotX=" + pivotX + ", pivotY=" + pivotY + "]";
 	}
 
 }

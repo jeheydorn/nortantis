@@ -1,16 +1,21 @@
 package nortantis.swing;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Container;
-import java.awt.Cursor;
-import java.awt.Desktop;
-import java.awt.Dialog;
-import java.awt.Dimension;
-import java.awt.GraphicsConfiguration;
-import java.awt.GraphicsDevice;
-import java.awt.GraphicsEnvironment;
+import nortantis.editor.UserPreferences;
+import nortantis.swing.translation.Translation;
+import nortantis.util.Logger;
+import nortantis.util.OSHelper;
+import org.apache.commons.io.FilenameUtils;
+
+import javax.swing.*;
+import javax.swing.colorchooser.AbstractColorChooserPanel;
+import javax.swing.colorchooser.ColorSelectionModel;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.filechooser.FileFilter;
+import javax.swing.text.JTextComponent;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -24,47 +29,16 @@ import java.util.Collection;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
-import javax.swing.AbstractButton;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.Icon;
-import javax.swing.JCheckBox;
-import javax.swing.JColorChooser;
-import javax.swing.JComboBox;
-import javax.swing.JComponent;
-import javax.swing.JFileChooser;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JSlider;
-import javax.swing.colorchooser.AbstractColorChooserPanel;
-import javax.swing.colorchooser.ColorSelectionModel;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-import javax.swing.filechooser.FileFilter;
-import javax.swing.text.JTextComponent;
-
-import org.apache.commons.io.FilenameUtils;
-
-import nortantis.editor.UserPreferences;
-import nortantis.util.Logger;
-import nortantis.util.OSHelper;
-
 public class SwingHelper
 {
-	public static final int spaceBetweenRowsOfComponents = 8;
 	public static final int borderWidthBetweenComponents = 4;
 	// Fonts in Linux are a little bigger, so make the side panels a little wider.
 	public static final int sidePanelPreferredWidth = OSHelper.isLinux() ? 340 : 314;
 	public static final int sidePanelMinimumWidth = sidePanelPreferredWidth;
-	private static final int sliderWidth = 160;
 	public static final int colorPickerLeftPadding = 2;
 	public static final int sidePanelScrollSpeed = 30;
 
-	public static void initializeComboBoxItems(JComboBox<String> comboBox, Collection<String> items, String selectedItem,
-			boolean forceAddSelectedItem)
+	public static void initializeComboBoxItems(JComboBox<String> comboBox, Collection<String> items, String selectedItem, boolean forceAddSelectedItem)
 	{
 		String selectedBefore = (String) comboBox.getSelectedItem();
 
@@ -167,9 +141,11 @@ public class SwingHelper
 		}
 	}
 
-	public static void setSliderWidthForSidePanel(JSlider slider)
+	public static void reduceHorizontalMargin(AbstractButton button)
 	{
-		slider.setPreferredSize(new Dimension(sliderWidth, slider.getPreferredSize().height));
+		Insets m = button.getMargin();
+		final int amountToReduce = 3;
+		button.setMargin(new Insets(m.top, m.left - amountToReduce, m.bottom, m.right - amountToReduce));
 	}
 
 	public static JPanel createColorPickerPreviewPanel()
@@ -187,7 +163,6 @@ public class SwingHelper
 		{
 		});
 	}
-
 
 	public static JColorChooser createColorChooserWithOnlyGoodPanels(Color initialColor)
 	{
@@ -212,7 +187,6 @@ public class SwingHelper
 		return colorChooser;
 	}
 
-
 	@SuppressWarnings("serial")
 	private static class AlphaChooserPanel extends AbstractColorChooserPanel
 	{
@@ -226,7 +200,7 @@ public class SwingHelper
 			transparencySlider.setMajorTickSpacing(64);
 			transparencySlider.setPaintTicks(true);
 			transparencySlider.setPaintLabels(true);
-			transparencySlider.addChangeListener(_ ->
+			transparencySlider.addChangeListener(ignored ->
 			{
 				transparency = transparencySlider.getValue();
 				ColorSelectionModel model = getColorSelectionModel();
@@ -254,7 +228,6 @@ public class SwingHelper
 
 			add(centerPanel, BorderLayout.CENTER);
 		}
-
 
 		@Override
 		public void updateChooser()
@@ -387,7 +360,7 @@ public class SwingHelper
 		}
 	}
 
-	public static void handleBackgroundThreadException(Exception ex, Component parent, boolean isExport)
+	public static void handleException(Exception ex, Component parent, boolean isExport)
 	{
 		if (ex instanceof ExecutionException)
 		{
@@ -396,34 +369,32 @@ public class SwingHelper
 				ex.getCause().printStackTrace();
 				if (isCausedByOutOfMemoryError(ex))
 				{
-					String message = isExport
-							? "Out of memory. Try exporting at a lower resolution, or decreasing the Display Quality before exporting."
-							: "Out of memory. Try decreasing the Display Quality.";
+					String message = isExport ? Translation.get("common.outOfMemoryExport") : Translation.get("common.outOfMemory");
 					Logger.printError(message, ex);
-					JOptionPane.showMessageDialog(parent, message, "Error", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(parent, message, Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
 				}
 				else
 				{
-					String message = "Error while creating map:";
+					String message = Translation.get("common.errorCreatingMap");
 					Logger.printError(message, ex.getCause());
-					JOptionPane.showMessageDialog(parent, message + " " + ex.getCause().getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(parent, message + " " + ex.getCause().getMessage(), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
 				}
 			}
 			else
 			{
 				// Should never happen.
 				ex.printStackTrace();
-				String message = "An ExecutionException error occured with no cause: ";
+				String message = Translation.get("common.executionError");
 				Logger.printError(message, ex);
-				JOptionPane.showMessageDialog(parent, message + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(parent, message + ex.getMessage(), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
 			}
 		}
 		else
 		{
 			ex.printStackTrace();
-			String message = "An unexpected error occured: ";
+			String message = Translation.get("common.unexpectedError");
 			Logger.printError(message, ex);
-			JOptionPane.showMessageDialog(parent, message + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(parent, message + ex.getMessage(), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
 		}
 	}
 
@@ -442,13 +413,6 @@ public class SwingHelper
 		return isCausedByOutOfMemoryError(ex.getCause());
 	}
 
-	public static java.awt.Point transform(java.awt.Point point, AffineTransform transform)
-	{
-		java.awt.Point result = new java.awt.Point();
-		transform.transform(point, result);
-		return result;
-	}
-
 	/**
 	 * Shows a message with the option to hide it in the future.
 	 * 
@@ -456,8 +420,8 @@ public class SwingHelper
 	 */
 	public static boolean showDismissibleMessage(String title, String message, Dimension popupSize, int JOptionPaneMessageType, Component parentComponent)
 	{
-		JCheckBox checkBox = new JCheckBox("Don't show this message again.");
-		Object[] options = { "OK" };
+		JCheckBox checkBox = new JCheckBox(Translation.get("common.dontShowAgain"));
+		Object[] options = { Translation.get("common.ok") };
 		JPanel panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 		JLabel label = new JLabel("<html>" + message + "</html>");
@@ -466,8 +430,7 @@ public class SwingHelper
 		panel.add(Box.createVerticalGlue());
 		panel.add(checkBox);
 		panel.setPreferredSize(popupSize);
-		int result = JOptionPane.showOptionDialog(parentComponent, panel, title, JOptionPane.YES_NO_OPTION, JOptionPaneMessageType, null,
-				options, options[0]);
+		int result = JOptionPane.showOptionDialog(parentComponent, panel, title, JOptionPane.YES_NO_OPTION, JOptionPaneMessageType, null, options, options[0]);
 		if (result == JOptionPane.YES_OPTION)
 		{
 			if (checkBox.isSelected())
@@ -492,26 +455,6 @@ public class SwingHelper
 		stackPanel.add(component);
 
 		return stackPanel;
-	}
-
-	public static JPanel placeLabelToLeftOfComponents(JLabel label, Component... components)
-	{
-		JPanel panel = new JPanel();
-		panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
-		panel.add(label);
-		panel.add(Box.createRigidArea(new Dimension(5, 2)));
-		panel.add(Box.createHorizontalGlue());
-		panel.add(Box.createRigidArea(new Dimension(5, 2)));
-		for (int i = 0; i < components.length; i++)
-		{
-			panel.add(components[i]);
-			if (i < components.length - 1)
-			{
-				panel.add(Box.createRigidArea(new Dimension(5, 2)));
-			}
-		}
-
-		return panel;
 	}
 
 	public static JLabel createHyperlink(String text, String URL)

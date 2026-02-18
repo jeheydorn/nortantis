@@ -1,8 +1,8 @@
 package nortantis.platform;
 
-import java.io.IOException;
-
 import nortantis.CancelledException;
+
+import java.io.IOException;
 
 public interface BackgroundTask<T>
 {

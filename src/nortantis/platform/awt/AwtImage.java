@@ -1,51 +1,120 @@
 package nortantis.platform.awt;
 
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
-import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferInt;
-import java.awt.image.Raster;
-import java.awt.image.WritableRaster;
-
+import nortantis.geom.IntRectangle;
+import nortantis.platform.*;
+import nortantis.platform.Image;
+import nortantis.platform.ImageHelper;
 import org.imgscalr.Scalr;
 import org.imgscalr.Scalr.Method;
 
-import nortantis.geom.IntRectangle;
-import nortantis.platform.Color;
-import nortantis.platform.DrawQuality;
-import nortantis.platform.Image;
-import nortantis.platform.ImageType;
-import nortantis.platform.Painter;
-import nortantis.util.ImageHelper;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.awt.image.WritableRaster;
 
 class AwtImage extends Image
 {
 	public BufferedImage image;
-	WritableRaster raster;
-	Raster alphaRaster;
+	private boolean isClosed;
 
 	public AwtImage(int width, int height, ImageType type)
 	{
 		super(type);
 		image = new BufferedImage(width, height, toBufferedImageType(type));
-		createRastersIfNeeded();
 	}
 
 	public AwtImage(BufferedImage bufferedImage)
 	{
 		super(toImageType(bufferedImage.getType()));
 		image = bufferedImage;
-		createRastersIfNeeded();
 	}
 
-	private void createRastersIfNeeded()
+	@Override
+	public void close()
 	{
-		raster = image.getRaster();
+		isClosed = true;
+	}
 
-		if (hasAlpha())
+	private void assertNotClosed()
+	{
+		assert !isClosed : "Image used after close";
+	}
+
+	/**
+	 * Returns true if the BufferedImage uses an int-based format that is compatible with our expected ARGB/RGB pixel interpretation.
+	 * TYPE_INT_BGR is excluded because it has reversed byte order.
+	 */
+	boolean isCompatibleIntFormat()
+	{
+		assertNotClosed();
+		int type = image.getType();
+		return type == BufferedImage.TYPE_INT_RGB || type == BufferedImage.TYPE_INT_ARGB;
+	}
+
+	boolean isCompatibleByteFormat()
+	{
+		assertNotClosed();
+		int type = image.getType();
+		return type == BufferedImage.TYPE_BYTE_GRAY || type == BufferedImage.TYPE_BYTE_BINARY || type == BufferedImage.TYPE_USHORT_GRAY;
+	}
+
+	@Override
+	public PixelReader createPixelReader()
+	{
+		assertNotClosed();
+		return createPixelReader(null);
+	}
+
+	@Override
+	public PixelReaderWriter createPixelReaderWriter()
+	{
+		assertNotClosed();
+		return createPixelReaderWriter(null);
+	}
+
+	@Override
+	public PixelReader innerCreateNewPixelReader(IntRectangle bounds)
+	{
+		assertNotClosed();
+		if (isCompatibleIntFormat())
 		{
-			alphaRaster = image.getAlphaRaster();
+			return new AwtIntPixelReader(this, bounds);
 		}
+		if (isCompatibleByteFormat())
+		{
+			return new AwtGrayscalePixelReader(this, bounds);
+		}
+		return new AwtPixelReader(this, bounds);
+	}
+
+	@Override
+	public PixelReaderWriter innerCreateNewPixelReaderWriter(IntRectangle bounds)
+	{
+		assertNotClosed();
+		if (isCompatibleIntFormat())
+		{
+			return new AwtIntPixelReaderWriter(this, bounds);
+		}
+		if (isCompatibleByteFormat())
+		{
+			return new AwtGrayscalePixelReaderWriter(this, bounds);
+		}
+		return new AwtPixelReaderWriter(this, bounds);
+	}
+
+	@Override
+	protected PixelWriter innerCreateNewPixelWriter(IntRectangle bounds)
+	{
+		assertNotClosed();
+		// AWT uses a backing array reference, so no initial read is needed anyway
+		if (isCompatibleIntFormat())
+		{
+			return new AwtIntPixelReaderWriter(this, bounds);
+		}
+		if (isCompatibleByteFormat())
+		{
+			return new AwtGrayscalePixelReaderWriter(this, bounds);
+		}
+		return new AwtPixelReaderWriter(this, bounds);
 	}
 
 	private int toBufferedImageType(ImageType type)
@@ -72,24 +141,19 @@ class AwtImage extends Image
 		}
 		else
 		{
-			throw new IllegalArgumentException("Unimplemented image type: " + type);
+			throw new IllegalArgumentException("Unimplemented BufferedImage type: " + type);
 		}
 	}
 
 	private static ImageType toImageType(int bufferedImageType)
 	{
-		if (bufferedImageType == BufferedImage.TYPE_INT_ARGB || bufferedImageType == BufferedImage.TYPE_INT_ARGB_PRE
-				|| bufferedImageType == BufferedImage.TYPE_4BYTE_ABGR || bufferedImageType == BufferedImage.TYPE_4BYTE_ABGR_PRE)
+		if (bufferedImageType == BufferedImage.TYPE_INT_ARGB || bufferedImageType == BufferedImage.TYPE_INT_ARGB_PRE || bufferedImageType == BufferedImage.TYPE_4BYTE_ABGR
+				|| bufferedImageType == BufferedImage.TYPE_4BYTE_ABGR_PRE)
 		{
 			return ImageType.ARGB;
 		}
-		if (bufferedImageType == BufferedImage.TYPE_INT_RGB || bufferedImageType == BufferedImage.TYPE_INT_BGR
-				|| bufferedImageType == BufferedImage.TYPE_3BYTE_BGR || bufferedImageType == BufferedImage.TYPE_USHORT_565_RGB
-				|| bufferedImageType == BufferedImage.TYPE_USHORT_555_RGB || bufferedImageType == BufferedImage.TYPE_BYTE_INDEXED)
-		{
-			return ImageType.RGB;
-		}
-		if (bufferedImageType == BufferedImage.TYPE_3BYTE_BGR)
+		if (bufferedImageType == BufferedImage.TYPE_INT_RGB || bufferedImageType == BufferedImage.TYPE_INT_BGR || bufferedImageType == BufferedImage.TYPE_3BYTE_BGR
+				|| bufferedImageType == BufferedImage.TYPE_USHORT_565_RGB || bufferedImageType == BufferedImage.TYPE_USHORT_555_RGB || bufferedImageType == BufferedImage.TYPE_BYTE_INDEXED)
 		{
 			return ImageType.RGB;
 		}
@@ -112,99 +176,23 @@ class AwtImage extends Image
 	}
 
 	@Override
-	public void setPixelColor(int x, int y, Color color)
-	{
-		image.setRGB(x, y, color.getRGB());
-	}
-
-	@Override
-	public int getRGB(int x, int y)
-	{
-		return image.getRGB(x, y);
-	}
-
-	@Override
-	public int getRGB(int[] data, int x, int y)
-	{
-		return data[(y * image.getWidth()) + x];
-	}
-
-	@Override
-	public void setRGB(int x, int y, int rgb)
-	{
-		image.setRGB(x, y, rgb);
-	}
-
-	@Override
-	public void setRGB(int x, int y, int red, int green, int blue)
-	{
-		setRGB(x, y, (red << 16) | (green << 8) | blue);
-	}
-
-	@Override
-	public void setRGB(int[] data, int x, int y, int red, int green, int blue)
-	{
-		// setRGB(x, y, red, green, blue);
-		data[(y * image.getWidth()) + x] = (red << 16) | (green << 8) | blue;
-	}
-
-	@Override
-	public void setRGB(int[] data, int x, int y, int red, int green, int blue, int alpha)
-	{
-		// setRGB(x, y, red, green, blue, alpha);
-		data[(y * image.getWidth()) + x] = (alpha << 24) | (red << 16) | (green << 8) | blue;
-	}
-
-	@Override
-	public void setRGB(int x, int y, int red, int green, int blue, int alpha)
-	{
-		setRGB(x, y, (alpha << 24) | (red << 16) | (green << 8) | blue);
-	}
-
-	@Override
-	public int getBandLevel(int x, int y, int band)
-	{
-		return raster.getSample(x, y, band);
-	}
-
-	@Override
-	public void setBandLevel(int x, int y, int band, int level)
-	{
-		raster.setSample(x, y, band, level);
-	}
-
-	@Override
-	public int getAlpha(int x, int y)
-	{
-		if (hasAlpha())
-		{
-			return alphaRaster.getSample(x, y, 0);
-		}
-
-		return 0;
-	}
-
-	@Override
-	public Color getPixelColor(int x, int y)
-	{
-		return new AwtColor(image.getRGB(x, y), hasAlpha());
-	}
-
-	@Override
 	public int getWidth()
 	{
+		assertNotClosed();
 		return image.getWidth();
 	}
 
 	@Override
 	public int getHeight()
 	{
+		assertNotClosed();
 		return image.getHeight();
 	}
 
 	@Override
 	public Painter createPainter(DrawQuality quality)
 	{
+		assertNotClosed();
 		java.awt.Graphics2D g = image.createGraphics();
 		if (quality == DrawQuality.High)
 		{
@@ -250,13 +238,14 @@ class AwtImage extends Image
 	@Override
 	public Image scale(Method method, int width, int height)
 	{
+		assertNotClosed();
 		// This library is described at
 		// http://stackoverflow.com/questions/1087236/java-2d-image-resize-ignoring-bicubic-bilinear-interpolation-rendering-hints-os
-		Image scaled = new AwtImage(Scalr.resize(image, method, width, height));
+		Image scaled = new AwtImage(Scalr.resize(image, method, Scalr.Mode.FIT_EXACT, width, height));
 
 		if (isGrayscaleOrBinary() && !scaled.isGrayscaleOrBinary())
 		{
-			scaled = ImageHelper.convertImageToType(scaled, getType());
+			scaled = ImageHelper.getInstance().convertImageToType(scaled, getType());
 		}
 
 		return scaled;
@@ -265,6 +254,7 @@ class AwtImage extends Image
 	@Override
 	public Image deepCopy()
 	{
+		assertNotClosed();
 		java.awt.image.ColorModel cm = image.getColorModel();
 		boolean isAlphaPremultiplied = cm.isAlphaPremultiplied();
 		WritableRaster raster = image.copyData(null);
@@ -274,56 +264,47 @@ class AwtImage extends Image
 	@Override
 	public Image getSubImage(IntRectangle bounds)
 	{
+		assertNotClosed();
 		return new AwtImage(image.getSubimage(bounds.x, bounds.y, bounds.width, bounds.height));
 	}
-	
+
 	@Override
 	public Image copySubImage(IntRectangle bounds, boolean addAlphaChanel)
 	{
-		Image sub = getSubImage(bounds);
-		Image result = Image.create(bounds.width, bounds.height, addAlphaChanel ? ImageType.ARGB : getType());
-		result.createPainter().drawImage(sub, 0, 0);
+		assertNotClosed();
+		IntRectangle imageBounds = new IntRectangle(0, 0, getWidth(), getHeight());
+		IntRectangle clipped = bounds.findIntersection(imageBounds);
+
+		ImageType resultType = addAlphaChanel ? ImageType.ARGB : getType();
+		Image result = Image.create(bounds.width, bounds.height, resultType);
+		if (clipped == null || clipped.width <= 0 || clipped.height <= 0)
+		{
+			return result;
+		}
+
+		Image sub = getSubImage(clipped);
+		try (Painter p = result.createPainter())
+		{
+			p.drawImage(sub, clipped.x - bounds.x, clipped.y - bounds.y);
+		}
 		return result;
-	}
-
-	@Override
-	public void setAlpha(int x, int y, int alpha)
-	{
-		int newColor = (image.getRGB(x, y) & 0x00FFFFFF) | (alpha << 24);
-		setRGB(x, y, newColor);
-	}
-
-	@Override
-	public int[] getDataIntBased()
-	{
-		return ((DataBufferInt) raster.getDataBuffer()).getData();
-	}
-
-	@Override
-	public boolean isIntBased()
-	{
-		return raster.getDataBuffer() instanceof DataBufferInt;
 	}
 
 	@Override
 	public Image copyAndAddAlphaChanel()
 	{
+		assertNotClosed();
 		if (hasAlpha())
 		{
 			return deepCopy();
 		}
-		
-        BufferedImage copy = new BufferedImage(
-        		image.getWidth(),
-        		image.getHeight(),
-                BufferedImage.TYPE_INT_ARGB
-            );
 
-            // Draw the original image onto the new image
-            Graphics2D g2d = copy.createGraphics();
-            g2d.drawImage(image, 0, 0, null);
-            g2d.dispose();
-            
+		BufferedImage copy = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_ARGB);
+
+		// Draw the original image onto the new image
+		Graphics2D g2d = copy.createGraphics();
+		g2d.drawImage(image, 0, 0, null);
+
 		return new AwtImage(copy);
 	}
 }

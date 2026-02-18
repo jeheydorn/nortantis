@@ -1,46 +1,22 @@
 package nortantis;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.PriorityQueue;
-import java.util.Random;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-
+import nortantis.MapSettings.LineStyle;
+import nortantis.geom.IntRectangle;
+import nortantis.geom.Point;
+import nortantis.geom.Rectangle;
+import nortantis.graph.voronoi.*;
+import nortantis.graph.voronoi.nodename.as3delaunay.Voronoi;
+import nortantis.platform.*;
+import nortantis.util.Helper;
+import nortantis.util.Range;
 import org.apache.commons.lang3.function.TriFunction;
 import org.apache.commons.math3.distribution.BetaDistribution;
 import org.apache.commons.math3.random.JDKRandomGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
 
-import nortantis.MapSettings.LineStyle;
-import nortantis.geom.Point;
-import nortantis.geom.Rectangle;
-import nortantis.graph.voronoi.Center;
-import nortantis.graph.voronoi.Corner;
-import nortantis.graph.voronoi.Edge;
-import nortantis.graph.voronoi.EdgeDrawType;
-import nortantis.graph.voronoi.NoisyEdges;
-import nortantis.graph.voronoi.VoronoiGraph;
-import nortantis.graph.voronoi.nodename.as3delaunay.Voronoi;
-import nortantis.platform.Color;
-import nortantis.platform.Image;
-import nortantis.platform.ImageType;
-import nortantis.platform.Painter;
-import nortantis.platform.Transform;
-import nortantis.util.Helper;
-import nortantis.util.Range;
+import java.util.*;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /**
  * TestGraphImpl.java
@@ -54,6 +30,35 @@ import nortantis.util.Range;
  */
 public class WorldGraph extends VoronoiGraph
 {
+	/**
+	 * Controls which algorithm is used for center lookup.
+	 */
+	public enum CenterLookupMode
+	{
+		/** Create a new PixelReader for each lookup (slowest, but no caching issues) */
+		PIXEL_UNCACHED,
+		/** Use a cached PixelReader for lookups (fast, but has caching/update issues with Skia) */
+		PIXEL_CACHED,
+		/** Use spatial grid with geometric tests (fast, no pixel reading, but uses straight edges) */
+		GRID_BASED
+	}
+
+	/**
+	 * Controls which algorithm is used for findClosestCenter.
+	 */
+	public static CenterLookupMode centerLookupMode = CenterLookupMode.PIXEL_CACHED;
+
+	// Debug counters for grid-based lookup
+	public static long gridLookupDirectHits = 0;
+	public static long gridLookupNeighborHits = 0;
+	public static long gridLookupBfsFallbacks = 0;
+
+	public static void resetGridLookupCounters()
+	{
+		gridLookupDirectHits = 0;
+		gridLookupNeighborHits = 0;
+		gridLookupBfsFallbacks = 0;
+	}
 
 	// Modify seeFloorLevel to change the number of islands in the ocean.
 	public static final float oceanPlateLevel = 0.2f;
@@ -81,7 +86,6 @@ public class WorldGraph extends VoronoiGraph
 	// smaller of the two is less than this size, stop.
 	// Prevents small maps from containing only one tectonic plate.
 	final int minNinthtoLastPlateSize = 100;
-	public boolean isForFrayedBorder;
 	private Double meanCenterWidth;
 	private Double meanCenterWidthBetweenNeighbors;
 	private List<Set<Center>> lakes;
@@ -90,16 +94,14 @@ public class WorldGraph extends VoronoiGraph
 	Set<TectonicPlate> plates;
 	public Map<Integer, Region> regions;
 
-	public WorldGraph(Voronoi v, double lloydRelaxationsScale, Random r, double nonBorderPlateContinentalProbability,
-			double borderPlateContinentalProbability, double sizeMultiplyer, LineStyle lineStyle, double pointPrecision,
-			boolean createElevationBiomesLakesAndRegions, boolean areRegionBoundariesVisible)
+	public WorldGraph(Voronoi v, double lloydRelaxationsScale, Random r, double nonBorderPlateContinentalProbability, double borderPlateContinentalProbability, double sizeMultiplier,
+			LineStyle lineStyle, double pointPrecision, boolean createElevationBiomesLakesAndRegions, boolean areRegionBoundariesVisible)
 	{
-		super(r, sizeMultiplyer, pointPrecision);
+		super(r, sizeMultiplier, pointPrecision);
 		this.nonBorderPlateContinentalProbability = nonBorderPlateContinentalProbability;
 		this.borderPlateContinentalProbability = borderPlateContinentalProbability;
 		TectonicPlate.resetIds();
 		initVoronoiGraph(v, numLloydRelaxations, lloydRelaxationsScale, createElevationBiomesLakesAndRegions);
-		setupColors();
 		regions = new TreeMap<>();
 
 		// Switch the center locations the Voronoi centroids of each center
@@ -116,14 +118,12 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * This constructor doens't create tectonic plates or elevation.
+	 * This constructor doesn't create tectonic plates or elevation.
 	 */
-	public WorldGraph(Voronoi v, double lloydRelaxationsScale, Random r, double resolutionScale, double pointPrecision,
-			boolean isForFrayedBorder)
+	public WorldGraph(Voronoi v, double lloydRelaxationsScale, Random r, double resolutionScale, double pointPrecision)
 	{
 		super(r, resolutionScale, pointPrecision);
 		initVoronoiGraph(v, numLloydRelaxations, lloydRelaxationsScale, false);
-		setupColors();
 	}
 
 	private void updateCenterLocationsToCentroids()
@@ -134,8 +134,7 @@ public class WorldGraph extends VoronoiGraph
 		}
 	}
 
-	public Set<Center> smoothCoastlinesAndRegionBoundariesIfNeeded(Collection<Center> centersToUpdate, LineStyle lineStyle,
-			boolean areRegionBoundariesVisible)
+	public Set<Center> smoothCoastlinesAndRegionBoundariesIfNeeded(Collection<Center> centersToUpdate, LineStyle lineStyle, boolean areRegionBoundariesVisible)
 	{
 		if (centersToUpdate != centers)
 		{
@@ -256,8 +255,7 @@ public class WorldGraph extends VoronoiGraph
 			// Smooth the edge
 			Corner otherCorner0 = edgesToSmooth.get(0).v0 == corner ? edgesToSmooth.get(0).v1 : edgesToSmooth.get(0).v0;
 			Corner otherCorner1 = edgesToSmooth.get(1).v0 == corner ? edgesToSmooth.get(1).v1 : edgesToSmooth.get(1).v0;
-			Point smoothedLoc = new Point((otherCorner0.originalLoc.x + otherCorner1.originalLoc.x) / 2,
-					(otherCorner0.originalLoc.y + otherCorner1.originalLoc.y) / 2);
+			Point smoothedLoc = new Point((otherCorner0.originalLoc.x + otherCorner1.originalLoc.x) / 2, (otherCorner0.originalLoc.y + otherCorner1.originalLoc.y) / 2);
 
 			corner.loc = smoothedLoc;
 
@@ -290,15 +288,6 @@ public class WorldGraph extends VoronoiGraph
 		}
 	}
 
-	private void setupColors()
-	{
-		OCEAN = Biome.OCEAN.color;
-		LAKE = Biome.LAKE.color;
-		BEACH = Biome.BEACH.color;
-		RIVER = Color.create(22, 55, 88);
-
-	}
-
 	public void rebuildNoisyEdgesForCenter(Center center)
 	{
 		rebuildNoisyEdgesForCenter(center, null);
@@ -306,7 +295,7 @@ public class WorldGraph extends VoronoiGraph
 
 	/**
 	 * Rebuilds noisy edges for a center.
-	 * 
+	 *
 	 * @param center
 	 *            The center to rebuild noisy edges for.
 	 * @param centersInLoop
@@ -331,7 +320,7 @@ public class WorldGraph extends VoronoiGraph
 
 	public void buildNoisyEdges(LineStyle lineStyle, boolean isForFrayedBorder)
 	{
-		noisyEdges = new NoisyEdges(MapCreator.calcSizeMultipilerFromResolutionScale(resolutionScale), lineStyle, isForFrayedBorder);
+		noisyEdges = new NoisyEdges(MapCreator.calcSizeMultiplierFromResolutionScale(resolutionScale), lineStyle, isForFrayedBorder);
 		noisyEdges.buildNoisyEdges(this);
 	}
 
@@ -365,8 +354,7 @@ public class WorldGraph extends VoronoiGraph
 				assert regions.values().stream().filter(reg -> reg.contains(c)).count() == 1;
 			}
 		}
-		assert regions.values().stream().mapToInt(reg -> reg.size()).sum()
-				+ centers.stream().filter(c -> c.region == null).count() == centers.size();
+		assert regions.values().stream().mapToInt(reg -> reg.size()).sum() + centers.stream().filter(c -> c.region == null).count() == centers.size();
 	}
 
 	public void drawRegionIndexes(Painter p, Set<Center> centersToDraw, Rectangle drawBounds)
@@ -420,7 +408,7 @@ public class WorldGraph extends VoronoiGraph
 
 	private Center findClosestLand(Center center, int maxDistanceInPolygons)
 	{
-		return breadthFirstSearchForGoal((_, _, distanceFromStart) ->
+		return breadthFirstSearchForGoal((ignored1, ignored2, distanceFromStart) ->
 		{
 			return distanceFromStart < maxDistanceInPolygons;
 		}, (c) ->
@@ -478,9 +466,9 @@ public class WorldGraph extends VoronoiGraph
 
 		// Add to smallLandMasses any land which is not in a region.
 		List<Set<Center>> smallLandMasses = new ArrayList<>(); // stores small
-																// pieces of
-																// land not in a
-																// region.
+		// pieces of
+		// land not in a
+		// region.
 		for (Center center : centers)
 		{
 			if (!center.isWater && center.region == null)
@@ -506,7 +494,7 @@ public class WorldGraph extends VoronoiGraph
 		for (int i : toRemove)
 		{
 			regionList.get(i).clear(); // This updates the region pointers in
-										// the Centers.
+			// the Centers.
 			regionList.remove(i);
 		}
 
@@ -543,8 +531,7 @@ public class WorldGraph extends VoronoiGraph
 	 */
 	private Region findClosestRegion(Point point)
 	{
-		Optional<Center> opt = centers.stream().filter(c -> c.region != null)
-				.min((c1, c2) -> Double.compare(c1.loc.distanceTo(point), c2.loc.distanceTo(point)));
+		Optional<Center> opt = centers.stream().filter(c -> c.region != null).min((c1, c2) -> Double.compare(c1.loc.distanceTo(point), c2.loc.distanceTo(point)));
 
 		if (opt.isPresent())
 		{
@@ -559,8 +546,7 @@ public class WorldGraph extends VoronoiGraph
 	public Corner findClosestCorner(Point point)
 	{
 		Center closestCenter = findClosestCenter(point);
-		Optional<Corner> optional = closestCenter.corners.stream()
-				.min((c1, c2) -> Double.compare(c1.loc.distanceTo(point), c2.loc.distanceTo(point)));
+		Optional<Corner> optional = closestCenter.corners.stream().min((c1, c2) -> Double.compare(c1.loc.distanceTo(point), c2.loc.distanceTo(point)));
 		return optional.get();
 	}
 
@@ -571,84 +557,708 @@ public class WorldGraph extends VoronoiGraph
 
 	public Center findClosestCenter(Point point, boolean returnNullIfNotOnMap)
 	{
+		switch (centerLookupMode)
+		{
+			case PIXEL_UNCACHED:
+				return findClosestCenterUsingPixelsUncached(point, returnNullIfNotOnMap);
+			case PIXEL_CACHED:
+				return findClosestCenterUsingPixelsCached(point, returnNullIfNotOnMap);
+			case GRID_BASED:
+				return findClosestCenterUsingGrid(point, returnNullIfNotOnMap);
+			default:
+				return findClosestCenterUsingGrid(point, returnNullIfNotOnMap);
+		}
+	}
+
+	private Center findClosestCenterUsingPixelsUncached(Point point, boolean returnNullIfNotOnMap)
+	{
 		if (point.x < getWidth() && point.y < getHeight() && point.x >= 0 && point.y >= 0)
 		{
 			buildCenterLookupTableIfNeeded();
+			int x = (int) point.x;
+			int y = (int) point.y;
 			Color color;
-			try
+
+			// Create a new PixelReader for each lookup (no caching)
+			try (PixelReader reader = centerLookupTable.createPixelReader(new IntRectangle(x, y, 1, 1)))
 			{
-				color = Color.create(centerLookupTable.getRGB((int) point.x, (int) point.y));
+				color = Color.create(reader.getRGB(x, y));
 			}
-			catch (IndexOutOfBoundsException e)
-			{
-				color = null;
-			}
+
 			int index = color.getRed() | (color.getGreen() << 8) | (color.getBlue() << 16);
 			return centers.get(index);
 		}
 		else if (!returnNullIfNotOnMap)
 		{
-			Optional<Center> opt = centers.stream().filter(c -> c.isBorder)
-					.min((c1, c2) -> Double.compare(c1.loc.distanceTo(point), c2.loc.distanceTo(point)));
+			Optional<Center> opt = centers.stream().filter(c -> c.isBorder).min((c1, c2) -> Double.compare(c1.loc.distanceTo(point), c2.loc.distanceTo(point)));
 			return opt.get();
-
 		}
 		return null;
 	}
 
+	private Center findClosestCenterUsingPixelsCached(Point point, boolean returnNullIfNotOnMap)
+	{
+		if (returnNullIfNotOnMap && (point.x >= getWidth() || point.y >= getHeight() || point.x < 0 || point.y < 0))
+		{
+			return null;
+		}
+
+		if (point.x < getWidth() && point.y < getHeight() && point.x >= 0 && point.y >= 0)
+		{
+			buildCenterLookupTableIfNeeded();
+			int x = (int) point.x;
+			int y = (int) point.y;
+			Color color;
+
+			synchronized (centerLookupLock)
+			{
+				color = Color.create(cachedCenterLookupReader.getRGB(x, y));
+			}
+
+			int index = color.getRed() | (color.getGreen() << 8) | (color.getBlue() << 16);
+			return centers.get(index);
+		}
+		else if (!returnNullIfNotOnMap)
+		{
+			Optional<Center> opt = centers.stream().filter(c -> c.isBorder).min((c1, c2) -> Double.compare(c1.loc.distanceTo(point), c2.loc.distanceTo(point)));
+			return opt.get();
+		}
+		return null;
+	}
+
+	private Center findClosestCenterUsingGrid(Point point, boolean returnNullIfNotOnMap)
+	{
+		buildCenterLookupGridIfNeeded();
+
+		if (returnNullIfNotOnMap && (point.x >= getWidth() || point.y >= getHeight() || point.x < 0 || point.y < 0))
+		{
+			return null;
+		}
+
+		// Get starting center from grid
+		Center candidate = centerLookupGrid.getRepresentative(point);
+		if (candidate == null)
+		{
+			assert false;
+			// This shouldn't happen with a properly built grid, but use distance-based fallback
+			return centers.stream().min((c1, c2) -> Double.compare(c1.loc.distanceTo(point), c2.loc.distanceTo(point))).orElse(null);
+		}
+
+		// Fast path: find which edge sector contains the point and check that edge
+		Center result = findCenterFromEdgeSector(point, candidate);
+		if (result != null)
+		{
+			if (result == candidate)
+			{
+				gridLookupDirectHits++;
+			}
+			else
+			{
+				gridLookupNeighborHits++;
+			}
+			return result;
+		}
+
+		// Fallback - walk to a new candidate and try exhaustive search again
+		gridLookupBfsFallbacks++;
+		Center walkResult = walkToClosestCenter(point, candidate);
+
+		// Try exhaustive search on the walk result
+		if (walkResult != candidate)
+		{
+			result = findCenterFromEdgeSector(point, walkResult);
+			if (result != null)
+			{
+				return result;
+			}
+		}
+
+		// Last resort: return the closest center by distance
+		return walkResult;
+	}
+
+	/**
+	 * Find which center contains the point by checking pie slices. Uses angular sector as a hint to try the likely edge first, then falls
+	 * back to exhaustive search.
+	 */
+	private Center findCenterFromEdgeSector(Point point, Center candidate)
+	{
+		// Fast path: use angular sector to find the likely edge and test it first
+		int hintEdgePos = findAngularSectorEdgePosition(point, candidate);
+		if (hintEdgePos >= 0)
+		{
+			Edge hintEdge = candidate.borders.get(hintEdgePos);
+			if (isPointInPieSlice(point, candidate, hintEdgePos))
+			{
+				return candidate;
+			}
+			// Try the neighbor across this edge
+			Center neighbor = (hintEdge.d0 == candidate) ? hintEdge.d1 : hintEdge.d0;
+			if (neighbor != null)
+			{
+				int neighborEdgePos = findEdgePosition(neighbor, hintEdge);
+				if (neighborEdgePos >= 0 && isPointInPieSlice(point, neighbor, neighborEdgePos))
+				{
+					return neighbor;
+				}
+			}
+		}
+
+		// Exhaustive search: check all pie slices of candidate (skip hint edge already tested)
+		for (int i = 0; i < candidate.borders.size(); i++)
+		{
+			if (i == hintEdgePos)
+			{
+				continue;
+			}
+			Edge edge = candidate.borders.get(i);
+			if (edge.v0 == null || edge.v1 == null)
+			{
+				continue;
+			}
+			if (isPointInPieSlice(point, candidate, i))
+			{
+				return candidate;
+			}
+		}
+
+		// Check immediate neighbors (skip hint edge already tested)
+		for (Center neighbor : candidate.neighbors)
+		{
+			for (int i = 0; i < neighbor.borders.size(); i++)
+			{
+				Edge edge = neighbor.borders.get(i);
+				if (edge.v0 == null || edge.v1 == null)
+				{
+					continue;
+				}
+				// Skip if this is the hint edge we already tested
+				if (hintEdgePos >= 0 && edge == candidate.borders.get(hintEdgePos))
+				{
+					continue;
+				}
+				if (isPointInPieSlice(point, neighbor, i))
+				{
+					return neighbor;
+				}
+			}
+		}
+
+		return null; // Need walk fallback
+	}
+
+	/**
+	 * Find which edge's angular sector contains the point (fast test using straight lines). Returns the edge position in center.borders, or
+	 * -1 if no sector contains the point.
+	 */
+	private int findAngularSectorEdgePosition(Point point, Center center)
+	{
+		double qx = point.x - center.loc.x;
+		double qy = point.y - center.loc.y;
+
+		for (int i = 0; i < center.borders.size(); i++)
+		{
+			Edge edge = center.borders.get(i);
+			if (edge.v0 == null || edge.v1 == null)
+			{
+				continue;
+			}
+
+			double v0x = edge.v0.loc.x - center.loc.x;
+			double v0y = edge.v0.loc.y - center.loc.y;
+			double v1x = edge.v1.loc.x - center.loc.x;
+			double v1y = edge.v1.loc.y - center.loc.y;
+
+			double crossV0 = v0x * qy - v0y * qx;
+			double crossV1 = v1x * qy - v1y * qx;
+			double crossEdge = v0x * v1y - v0y * v1x;
+
+			boolean inSector = (crossEdge >= 0) ? (crossV0 >= 0 && crossV1 <= 0) : (crossV0 <= 0 && crossV1 >= 0);
+
+			if (inSector)
+			{
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	/**
+	 * Find the position of an edge in a center's borders list.
+	 */
+	private int findEdgePosition(Center center, Edge edge)
+	{
+		for (int i = 0; i < center.borders.size(); i++)
+		{
+			if (center.borders.get(i) == edge)
+			{
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	/**
+	 * Walk from the starting center to the center whose loc is closest to the query point. This is faster than BFS and converges quickly
+	 * since Voronoi diagrams are well-structured.
+	 */
+	private Center walkToClosestCenter(Point query, Center start)
+	{
+		Center current = start;
+		double currentDist = current.loc.distanceTo(query);
+
+		// Walk until no neighbor is closer
+		while (true)
+		{
+			Center closest = current;
+			double closestDist = currentDist;
+
+			for (Center neighbor : current.neighbors)
+			{
+				double d = neighbor.loc.distanceTo(query);
+				if (d < closestDist)
+				{
+					closest = neighbor;
+					closestDist = d;
+				}
+			}
+
+			if (closest == current)
+			{
+				// No neighbor is closer - we've found it
+				return current;
+			}
+			current = closest;
+			currentDist = closestDist;
+		}
+	}
+
+	private boolean isPointInPieSlice(Point query, Center center, int edgePosition)
+	{
+		// Get the cached slice polygon using array lookup (faster than HashMap)
+		CachedSlicePolygon cached = getSlicePolygon(center, edgePosition);
+		if (cached == null)
+		{
+			return false;
+		}
+
+		// Quick bounding box rejection
+		if (query.x < cached.minX || query.x > cached.maxX || query.y < cached.minY || query.y > cached.maxY)
+		{
+			return false;
+		}
+
+		// Full polygon containment test
+		return isPointInPolygonArray(query.x, query.y, cached.xCoords, cached.yCoords);
+	}
+
+	/**
+	 * Cached slice polygon for fast point-in-polygon tests.
+	 */
+	private static class CachedSlicePolygon
+	{
+		final double[] xCoords;
+		final double[] yCoords;
+		final double minX, maxX, minY, maxY;
+
+		CachedSlicePolygon(double[] xCoords, double[] yCoords)
+		{
+			this.xCoords = xCoords;
+			this.yCoords = yCoords;
+
+			// Compute bounding box
+			double minX = Double.MAX_VALUE, maxX = -Double.MAX_VALUE;
+			double minY = Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
+			for (int i = 0; i < xCoords.length; i++)
+			{
+				if (xCoords[i] < minX)
+					minX = xCoords[i];
+				if (xCoords[i] > maxX)
+					maxX = xCoords[i];
+				if (yCoords[i] < minY)
+					minY = yCoords[i];
+				if (yCoords[i] > maxY)
+					maxY = yCoords[i];
+			}
+			this.minX = minX;
+			this.maxX = maxX;
+			this.minY = minY;
+			this.maxY = maxY;
+		}
+	}
+
+	// Array-based cache for slice polygons: [centerIndex][edgePositionInBorders]
+	// This is faster than HashMap because it avoids hash computation and lookup
+	private CachedSlicePolygon[][] slicePolygonsByCenter;
+
+	private CachedSlicePolygon getSlicePolygon(Center center, int edgePosition)
+	{
+		if (slicePolygonsByCenter == null || slicePolygonsByCenter[center.index] == null)
+		{
+			return null;
+		}
+		return slicePolygonsByCenter[center.index][edgePosition];
+	}
+
+	private CachedSlicePolygon buildSlicePolygon(Center center, Edge edge)
+	{
+		// Build the slice polygon: center.loc + noisy edge path
+		List<Point> noisyPath = noisyEdges != null ? noisyEdges.getNoisyEdge(edge.index) : null;
+
+		int size;
+		double[] xCoords;
+		double[] yCoords;
+
+		if (noisyPath != null && !noisyPath.isEmpty())
+		{
+			size = 1 + noisyPath.size();
+			xCoords = new double[size];
+			yCoords = new double[size];
+			xCoords[0] = center.loc.x;
+			yCoords[0] = center.loc.y;
+			for (int i = 0; i < noisyPath.size(); i++)
+			{
+				Point p = noisyPath.get(i);
+				xCoords[i + 1] = p.x;
+				yCoords[i + 1] = p.y;
+			}
+		}
+		else
+		{
+			// Fallback to straight edge triangle
+			size = 3;
+			xCoords = new double[size];
+			yCoords = new double[size];
+			xCoords[0] = center.loc.x;
+			yCoords[0] = center.loc.y;
+			if (edge.v0 != null && edge.v1 != null)
+			{
+				xCoords[1] = edge.v0.loc.x;
+				yCoords[1] = edge.v0.loc.y;
+				xCoords[2] = edge.v1.loc.x;
+				yCoords[2] = edge.v1.loc.y;
+			}
+		}
+
+		return new CachedSlicePolygon(xCoords, yCoords);
+	}
+
+	/**
+	 * Clears the slice polygon cache for the specified centers and their neighbors. Call this when centers' noisy edges have been rebuilt.
+	 */
+	private void clearSlicePolygonCache(Collection<Center> centers)
+	{
+		if (slicePolygonsByCenter == null)
+		{
+			return;
+		}
+
+		Set<Center> centersWithNeighbors = new HashSet<>();
+		for (Center c : centers)
+		{
+			centersWithNeighbors.add(c);
+			for (Center neighbor : c.neighbors)
+			{
+				centersWithNeighbors.add(neighbor);
+			}
+		}
+
+		for (Center c : centersWithNeighbors)
+		{
+			// Clear the array for this center so it will be rebuilt
+			if (c.index < slicePolygonsByCenter.length && slicePolygonsByCenter[c.index] != null)
+			{
+				for (int i = 0; i < slicePolygonsByCenter[c.index].length; i++)
+				{
+					slicePolygonsByCenter[c.index][i] = null;
+				}
+			}
+		}
+	}
+
+	/**
+	 * Fast point-in-polygon test using ray casting with array coordinates.
+	 */
+	private boolean isPointInPolygonArray(double px, double py, double[] xCoords, double[] yCoords)
+	{
+		int n = xCoords.length;
+		if (n < 3)
+		{
+			return false;
+		}
+
+		boolean inside = false;
+		for (int i = 0, j = n - 1; i < n; j = i++)
+		{
+			double xi = xCoords[i], yi = yCoords[i];
+			double xj = xCoords[j], yj = yCoords[j];
+
+			if ((yi > py) != (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi)
+			{
+				inside = !inside;
+			}
+		}
+		return inside;
+	}
+
 	private Image centerLookupTable;
+
+	// Cached pixel reader for findClosestCenter optimization - covers the entire map
+	private final Object centerLookupLock = new Object();
+	private PixelReader cachedCenterLookupReader;
+
+	// Grid-based center lookup
+	private CenterLookupGrid centerLookupGrid;
+
+	private void buildCenterLookupGridIfNeeded()
+	{
+		if (centerLookupGrid == null)
+		{
+			centerLookupGrid = new CenterLookupGrid();
+			centerLookupGrid.build(centers, getWidth(), getHeight());
+
+			// Precompute all slice polygons for faster lookups
+			precomputeSlicePolygons();
+		}
+	}
+
+	/**
+	 * Precomputes all slice polygons for all centers and their edges using array-based storage.
+	 */
+	private void precomputeSlicePolygons()
+	{
+		// Initialize the 2D array
+		slicePolygonsByCenter = new CachedSlicePolygon[centers.size()][];
+
+		for (Center center : centers)
+		{
+			slicePolygonsByCenter[center.index] = new CachedSlicePolygon[center.borders.size()];
+			for (int i = 0; i < center.borders.size(); i++)
+			{
+				Edge edge = center.borders.get(i);
+				if (edge.v0 != null && edge.v1 != null)
+				{
+					slicePolygonsByCenter[center.index][i] = buildSlicePolygon(center, edge);
+				}
+			}
+		}
+	}
+
+	/**
+	 * Rebuilds slice polygons for the specified centers and their neighbors.
+	 */
+	private void precomputeSlicePolygonsForCenters(Collection<Center> centersToUpdate)
+	{
+		if (slicePolygonsByCenter == null)
+		{
+			// Initialize full array if not yet done
+			precomputeSlicePolygons();
+			return;
+		}
+
+		Set<Center> centersWithNeighbors = new HashSet<>();
+		for (Center c : centersToUpdate)
+		{
+			centersWithNeighbors.add(c);
+			for (Center neighbor : c.neighbors)
+			{
+				centersWithNeighbors.add(neighbor);
+			}
+		}
+
+		for (Center center : centersWithNeighbors)
+		{
+			// Rebuild the slice polygons array for this center
+			if (slicePolygonsByCenter[center.index] == null)
+			{
+				slicePolygonsByCenter[center.index] = new CachedSlicePolygon[center.borders.size()];
+			}
+			for (int i = 0; i < center.borders.size(); i++)
+			{
+				Edge edge = center.borders.get(i);
+				if (edge.v0 != null && edge.v1 != null)
+				{
+					slicePolygonsByCenter[center.index][i] = buildSlicePolygon(center, edge);
+				}
+			}
+		}
+	}
+
+	/**
+	 * Spatial grid for efficient center lookup. Each cell stores a representative center that is close to that cell's center point.
+	 */
+	private class CenterLookupGrid
+	{
+		private Center[][] grid;
+		private int cellWidth;
+		private int cellHeight;
+		private int gridCols;
+		private int gridRows;
+
+		void build(List<Center> centers, int mapWidth, int mapHeight)
+		{
+			// Calculate cell size based on center density
+			double avgSpacing = Math.sqrt((double) (mapWidth * mapHeight) / centers.size());
+			cellWidth = Math.max(1, (int) (avgSpacing * 2));
+			cellHeight = Math.max(1, (int) (avgSpacing * 2));
+			gridCols = (mapWidth / cellWidth) + 1;
+			gridRows = (mapHeight / cellHeight) + 1;
+
+			// Step 1: Create temp grid holding ALL centers per cell (O(n))
+			@SuppressWarnings("unchecked")
+			List<Center>[][] tempGrid = new ArrayList[gridRows][gridCols];
+			for (int r = 0; r < gridRows; r++)
+			{
+				for (int c = 0; c < gridCols; c++)
+				{
+					tempGrid[r][c] = new ArrayList<>();
+				}
+			}
+
+			// Add each center to the cell containing its loc
+			for (Center center : centers)
+			{
+				int col = clamp((int) (center.loc.x / cellWidth), 0, gridCols - 1);
+				int row = clamp((int) (center.loc.y / cellHeight), 0, gridRows - 1);
+				tempGrid[row][col].add(center);
+			}
+
+			// Step 2: For each cell, pick the center closest to cell's center
+			grid = new Center[gridRows][gridCols];
+			for (int row = 0; row < gridRows; row++)
+			{
+				for (int col = 0; col < gridCols; col++)
+				{
+					Point cellCenter = new Point(col * cellWidth + cellWidth / 2.0, row * cellHeight + cellHeight / 2.0);
+					grid[row][col] = findClosestFromCandidates(tempGrid, row, col, cellCenter);
+				}
+			}
+		}
+
+		private Center findClosestFromCandidates(List<Center>[][] tempGrid, int row, int col, Point target)
+		{
+			Center closest = null;
+			double closestDist = Double.MAX_VALUE;
+
+			// Check 3x3 neighborhood around (row, col)
+			for (int dr = -1; dr <= 1; dr++)
+			{
+				for (int dc = -1; dc <= 1; dc++)
+				{
+					int r = row + dr;
+					int c = col + dc;
+					if (r >= 0 && r < gridRows && c >= 0 && c < gridCols)
+					{
+						for (Center center : tempGrid[r][c])
+						{
+							double d = center.loc.distanceTo(target);
+							if (d < closestDist)
+							{
+								closestDist = d;
+								closest = center;
+							}
+						}
+					}
+				}
+			}
+			return closest;
+		}
+
+		Center getRepresentative(Point query)
+		{
+			int col = clamp((int) (query.x / cellWidth), 0, gridCols - 1);
+			int row = clamp((int) (query.y / cellHeight), 0, gridRows - 1);
+			return grid[row][col];
+		}
+
+		private int clamp(int value, int min, int max)
+		{
+			return Math.max(min, Math.min(max, value));
+		}
+	}
 
 	public void buildCenterLookupTableIfNeeded()
 	{
-		if (centerLookupTable == null)
+		synchronized (centerLookupLock)
 		{
-			centerLookupTable = Image.create((int) bounds.width, (int) bounds.height, ImageType.RGB);
-			Painter p = centerLookupTable.createPainter();
-			drawPolygons(p, new Function<Center, Color>()
+			if (centerLookupTable == null)
 			{
-				public Color apply(Center c)
+				// Force CPU mode to avoid expensive GPU-to-CPU sync during incremental updates, although that only really matters in
+				// RenderingMode.HYBRID mode.
+				centerLookupTable = Image.create((int) bounds.width, (int) bounds.height, ImageType.RGB, true);
+				try (Painter p = centerLookupTable.createPainter())
 				{
-					return convertCenterIdToColor(c);
+					drawPolygons(p, new Function<Center, Color>()
+					{
+						public Color apply(Center c)
+						{
+							return convertCenterIdToColor(c);
+						}
+					});
 				}
-			});
+				// Create cached reader for the entire map
+				cachedCenterLookupReader = centerLookupTable.createPixelReader();
+			}
 		}
 	}
 
 	/**
 	 * Updates the center lookup table, which is used to lookup which center draws at a given point. This needs to be done when a center
 	 * potentially changed its noisy edges, such as when it switched from inland to coast.
-	 * 
+	 *
 	 * @param centersToUpdate
 	 *            Centers to update
 	 */
 	public void updateCenterLookupTable(Collection<Center> centersToUpdate)
 	{
-		if (centerLookupTable == null)
+		// Clear and rebuild slice polygon cache for affected centers (used by grid-based lookup)
+		clearSlicePolygonCache(centersToUpdate);
+		precomputeSlicePolygonsForCenters(centersToUpdate);
+
+		if (centerLookupMode == CenterLookupMode.PIXEL_CACHED || centerLookupMode == CenterLookupMode.PIXEL_UNCACHED)
 		{
-			buildCenterLookupTableIfNeeded();
-		}
-		else
-		{
-			// Include neighbors of each center because if a center changed,
-			// that will affect its neighbors as well.
-			Set<Center> centersWithNeighbors = new HashSet<>();
-			for (Center c : centersToUpdate)
+			synchronized (centerLookupLock)
 			{
-				centersWithNeighbors.add(c);
-				for (Center neighbor : c.neighbors)
+				if (centerLookupTable == null)
 				{
-					centersWithNeighbors.add(neighbor);
+					buildCenterLookupTableIfNeeded();
+				}
+				else
+				{
+					// Include neighbors of each center because if a center changed,
+					// that will affect its neighbors as well.
+					Set<Center> centersWithNeighbors = new HashSet<>();
+					for (Center c : centersToUpdate)
+					{
+						centersWithNeighbors.add(c);
+						for (Center neighbor : c.neighbors)
+						{
+							centersWithNeighbors.add(neighbor);
+						}
+					}
+
+					try (Painter p = centerLookupTable.createPainter())
+					{
+						drawPolygons(p, centersWithNeighbors, new Function<Center, Color>()
+						{
+							public Color apply(Center c)
+							{
+								return convertCenterIdToColor(c);
+							}
+						});
+					}
+
+					if (centerLookupMode == CenterLookupMode.PIXEL_CACHED)
+					{
+						// Refresh the cached reader with the changed region
+						Rectangle changedBounds = getBoundingBox(centersWithNeighbors);
+						if (changedBounds != null)
+						{
+							cachedCenterLookupReader.refreshRegion(changedBounds.toEnclosingIntRectangle());
+						}
+					}
 				}
 			}
-
-			Painter p = centerLookupTable.createPainter();
-			drawPolygons(p, centersWithNeighbors, new Function<Center, Color>()
-			{
-				public Color apply(Center c)
-				{
-					return convertCenterIdToColor(c);
-				}
-			});
 		}
 	}
 
@@ -659,7 +1269,7 @@ public class WorldGraph extends VoronoiGraph
 
 	/**
 	 * Searches for any region touching and polygon in landMass and returns it if found. Otherwise returns null.
-	 * 
+	 *
 	 * Assumes all Centers in landMass either all have the same region, or are all null.
 	 */
 	private Region findRegionTouching(Set<Center> landMass)
@@ -679,7 +1289,7 @@ public class WorldGraph extends VoronoiGraph
 
 	/**
 	 * Splits apart a region by parts connect by land (not including land from another region).
-	 * 
+	 *
 	 * @param region
 	 * @return
 	 */
@@ -701,6 +1311,16 @@ public class WorldGraph extends VoronoiGraph
 		return dividedRegion;
 	}
 
+	/**
+	 * Performs a breadth-first search starting from the given center, exploring all connected centers that satisfy the accept predicate.
+	 *
+	 * @param accept
+	 *            A predicate that determines whether a neighboring center should be included in the search. Returns true if the center
+	 *            should be explored, false otherwise.
+	 * @param start
+	 *            The center to begin the search from. This center is always included in the result, regardless of the accept predicate.
+	 * @return A set containing the start center and all connected centers that satisfy the accept predicate.
+	 */
 	public Set<Center> breadthFirstSearch(Function<Center, Boolean> accept, Center start)
 	{
 		Set<Center> explored = new HashSet<>();
@@ -728,8 +1348,21 @@ public class WorldGraph extends VoronoiGraph
 		return explored;
 	}
 
-	public Center breadthFirstSearchForGoal(TriFunction<Center, Center, Integer, Boolean> accept, Function<Center, Boolean> isGoal,
-			Center start)
+	/**
+	 * Performs a breadth-first search to find the first center that satisfies the goal predicate.
+	 *
+	 * @param accept
+	 *            A predicate that determines whether to explore a neighboring center. Takes three arguments: the current center being
+	 *            expanded, the neighbor being considered, and the distance from the start (in number of hops). Returns true if the neighbor
+	 *            should be added to the search frontier, false otherwise.
+	 * @param isGoal
+	 *            A predicate that determines whether a center is the goal. Returns true if the center satisfies the search criteria.
+	 * @param start
+	 *            The center to begin the search from.
+	 * @return The first center found that satisfies the isGoal predicate, or null if no such center is reachable within the constraints of
+	 *         the accept predicate.
+	 */
+	public Center breadthFirstSearchForGoal(TriFunction<Center, Center, Integer, Boolean> accept, Function<Center, Boolean> isGoal, Center start)
 	{
 		if (isGoal.apply(start))
 		{
@@ -768,7 +1401,7 @@ public class WorldGraph extends VoronoiGraph
 		return null;
 	}
 
-	public void paintElevationUsingTrianges(Painter p)
+	public void paintElevationUsingTriangles(Painter p)
 	{
 		super.drawElevation(p);
 
@@ -801,25 +1434,6 @@ public class WorldGraph extends VoronoiGraph
 				return c.isWater ? Color.black : Color.white;
 			}
 		});
-
-		// Code useful for debugging
-		// g.setColor(Color.WHITE);
-		// for (Corner c : corners)
-		// {
-		// for (Corner adjacent : c.adjacent)
-		// {
-		// g.drawLine((int)c.loc.x, (int)c.loc.y, (int) adjacent.loc.x,
-		// (int)adjacent.loc.y);
-		// }
-		// }
-		//
-		// for (Edge e : edges)
-		// {
-		// g.setStroke(new BasicStroke(1));
-		// g.setColor(Color.YELLOW);
-		// g.drawLine((int) e.d0.loc.x, (int) e.d0.loc.y, (int) e.d1.loc.x,
-		// (int) e.d1.loc.y);
-		// }
 	}
 
 	public void drawLandAndLakesBlackAndOceanWhite(Painter p, Collection<Center> centersToRender, Rectangle drawBounds)
@@ -1036,10 +1650,10 @@ public class WorldGraph extends VoronoiGraph
 		createTectonicPlates();
 		assignOceanAndContinentalPlates();
 		lowerOceanPlates();
-		assignPlateCornerElivations();
+		assignPlateCornerElevations();
 	}
 
-	private void assignPlateCornerElivations()
+	private void assignPlateCornerElevations()
 	{
 		// long startTime = System.currentTimeMillis();
 
@@ -1066,16 +1680,14 @@ public class WorldGraph extends VoronoiGraph
 			{
 				if (e.d0.tectonicPlate == plate && e.d0.tectonicPlate != e.d1.tectonicPlate && e.v0 != null && e.v1 != null)
 				{
-					double d0ConvergeLevel = calcLevelOfConvergence(e.d0.tectonicPlate.findCentroid(), e.d0.tectonicPlate.velocity,
-							e.d1.tectonicPlate.findCentroid(), e.d1.tectonicPlate.velocity);
+					double d0ConvergeLevel = calcLevelOfConvergence(e.d0.tectonicPlate.findCentroid(), e.d0.tectonicPlate.velocity, e.d1.tectonicPlate.findCentroid(), e.d1.tectonicPlate.velocity);
 
 					// If the plates are converging, rough them up a bit by
 					// calculating divergence per
 					// polygon. This brakes up long snake like islands.
 					if (d0ConvergeLevel > 0)
 					{
-						d0ConvergeLevel = calcLevelOfConvergence(e.d0.loc, e.d0.tectonicPlate.velocity, e.d1.loc,
-								e.d1.tectonicPlate.velocity);
+						d0ConvergeLevel = calcLevelOfConvergence(e.d0.loc, e.d0.tectonicPlate.velocity, e.d1.loc, e.d1.tectonicPlate.velocity);
 					}
 
 					e.v0.elevation += d0ConvergeLevel * collisionScale;
@@ -1091,8 +1703,7 @@ public class WorldGraph extends VoronoiGraph
 
 					// Handle subduction of an ocean plate under a continental
 					// one.
-					if (d0ConvergeLevel > 0 && e.d0.tectonicPlate.type == PlateType.Oceanic
-							&& e.d1.tectonicPlate.type == PlateType.Continental)
+					if (d0ConvergeLevel > 0 && e.d0.tectonicPlate.type == PlateType.Oceanic && e.d1.tectonicPlate.type == PlateType.Continental)
 					{
 						for (Corner corner : e.d0.corners)
 						{
@@ -1239,7 +1850,6 @@ public class WorldGraph extends VoronoiGraph
 
 	private void createTectonicPlates()
 	{
-		// long startTime = System.currentTimeMillis();
 		// First, assign a unique plate id and a random growth probability to
 		// each center.
 		RandomGenerator randomData = new JDKRandomGenerator();
@@ -1257,7 +1867,7 @@ public class WorldGraph extends VoronoiGraph
 		BetaDistribution betaDist = new BetaDistribution(randomData, 1, 3, BetaDistribution.DEFAULT_INVERSE_ABSOLUTE_ACCURACY);
 		for (Center c : centers)
 		{
-			c.tectonicPlate = new TectonicPlate(betaDist.sample(), centers);
+			c.tectonicPlate = new TectonicPlate(betaDist.sample());
 			plateCounts.put(c.tectonicPlate, 1);
 		}
 
@@ -1298,13 +1908,7 @@ public class WorldGraph extends VoronoiGraph
 			{
 				// Choose a center at random.
 				// Choose one of it's neighbors not in the same plate.
-				List<Center> neighborsNotInSamePlate = Helper.filter(c.neighbors, new nortantis.util.Function<Center, Boolean>()
-				{
-					public Boolean apply(Center otherC)
-					{
-						return c.tectonicPlate != otherC.tectonicPlate;
-					}
-				});
+				List<Center> neighborsNotInSamePlate = Helper.filter(c.neighbors, otherC -> c.tectonicPlate != otherC.tectonicPlate);
 				Center neighbor = neighborsNotInSamePlate.get(rand.nextInt(neighborsNotInSamePlate.size()));
 
 				plateCounts.put(c.tectonicPlate, plateCounts.get(c.tectonicPlate) + 1);
@@ -1355,26 +1959,23 @@ public class WorldGraph extends VoronoiGraph
 		{
 			c.tectonicPlate.centers.add(c);
 		}
-
-		// Logger.println("Plate time: " + (System.currentTimeMillis() -
-		// startTime)/1000.0);
 	}
 
 	/**
-	 * Returns the amount c1 and c2 are converging. This is between -1 and 1.
-	 * 
-	 * @param c1
-	 *            A center along a tectonic plate border.
-	 * @param c1Velocity
-	 *            The velocity of the plate c1 is on.
-	 * @param c2
-	 *            A center along a tectonic plate border: not the same tectonic plate as c1
-	 * @param c2Velocity
-	 *            The velocity of the plate c2 is on.
+	 * Returns the amount the centers p1 and p2 are from are converging. This is between -1 and 1.
+	 *
+	 * @param p1
+	 *            Location of a center along a tectonic plate border.
+	 * @param p1Velocity
+	 *            The velocity of the plate p1 is on.
+	 * @param p2
+	 *            Location of a center along a tectonic plate border: not the same tectonic plate as p1
+	 * @param p2Velocity
+	 *            The velocity of the plate p2 is on.
 	 */
-	private double calcLevelOfConvergence(Point p1, PolarCoordinate p1Velocity, Point p2, PolarCoordinate c2Velocity)
+	private double calcLevelOfConvergence(Point p1, PolarCoordinate p1Velocity, Point p2, PolarCoordinate p2Velocity)
 	{
-		return 0.5 * calcUnilateralLevelOfConvergence(p1, p1Velocity, p2) + 0.5 * calcUnilateralLevelOfConvergence(p2, c2Velocity, p1);
+		return 0.5 * calcUnilateralLevelOfConvergence(p1, p1Velocity, p2) + 0.5 * calcUnilateralLevelOfConvergence(p2, p2Velocity, p1);
 	}
 
 	/**
@@ -1397,7 +1998,7 @@ public class WorldGraph extends VoronoiGraph
 
 	/**
 	 * Calculates the minimum distance (in radians) from angle a1 to angle a2. The result will be in the range [0, pi].
-	 * 
+	 *
 	 * @param a1
 	 *            An angle in radians. This must be between 0 and 2*pi.
 	 * @param a2
@@ -1562,11 +2163,9 @@ public class WorldGraph extends VoronoiGraph
 
 	/**
 	 * Create path using back pointers in search does for Voronoi edges.
-	 * 
+	 *
 	 * @param end
 	 *            The end of the search
-	 * @param edgeType
-	 *            The type of edge to return
 	 * @return A path
 	 */
 	private Set<Edge> createPathFromBackPointers(CornerSearchNode end)
@@ -1619,7 +2218,7 @@ public class WorldGraph extends VoronoiGraph
 
 	/**
 	 * Uses A* search to find the shortest path between the 2 given centers using Delaunay edges.
-	 * 
+	 *
 	 * @param start
 	 *            Where to begin the search
 	 * @param end
@@ -1653,14 +2252,11 @@ public class WorldGraph extends VoronoiGraph
 				Center neighbor = current.center.equals(edge.d0) ? edge.d1 : edge.d0;
 				if (neighbor != null)
 				{
-					double scoreFromStartToNeighbor = current.scoreSoFar
-							+ calculateWeight.apply(edge, neighbor, Center.distanceBetween(current.center, end));
-					double neighborCurrentScore = centerNodeMap.containsKey(neighbor) ? centerNodeMap.get(neighbor).scoreSoFar
-							: Float.POSITIVE_INFINITY;
+					double scoreFromStartToNeighbor = current.scoreSoFar + calculateWeight.apply(edge, neighbor, Center.distanceBetween(current.center, end));
+					double neighborCurrentScore = centerNodeMap.containsKey(neighbor) ? centerNodeMap.get(neighbor).scoreSoFar : Float.POSITIVE_INFINITY;
 					if (scoreFromStartToNeighbor < neighborCurrentScore)
 					{
-						CenterSearchNode neighborNode = new CenterSearchNode(neighbor, current, scoreFromStartToNeighbor,
-								scoreFromStartToNeighbor);
+						CenterSearchNode neighborNode = new CenterSearchNode(neighbor, current, scoreFromStartToNeighbor, scoreFromStartToNeighbor);
 
 						centerNodeMap.put(neighbor, neighborNode);
 						explored.add(neighborNode);
@@ -1671,6 +2267,35 @@ public class WorldGraph extends VoronoiGraph
 
 		// The end is not reachable from the start
 		return null;
+	}
+
+	public void drawVoronoi(Painter p, Collection<Center> centersToDraw, Rectangle drawBounds, boolean onlyLand)
+	{
+		Transform orig = null;
+		if (drawBounds != null)
+		{
+			orig = p.getTransform();
+			p.translate(-drawBounds.x, -drawBounds.y);
+		}
+
+		Collection<Corner> cornersToDraw = centersToDraw == null ? corners : getCornersFromCenters(centersToDraw);
+		for (Corner c : cornersToDraw)
+		{
+			for (Corner adjacent : c.adjacent)
+			{
+				Edge e = findConnectingEdge(c, adjacent);
+				if (onlyLand && (e.isWater() || e.isCoastOrLakeShore()))
+				{
+					continue;
+				}
+				p.drawLine((int) c.loc.x, (int) c.loc.y, (int) adjacent.loc.x, (int) adjacent.loc.y);
+			}
+		}
+
+		if (drawBounds != null)
+		{
+			p.setTransform(orig);
+		}
 	}
 
 	public Edge findConnectingEdge(Center c1, Center c2)
@@ -1691,11 +2316,9 @@ public class WorldGraph extends VoronoiGraph
 
 	/**
 	 * Create path using back pointers in search does for Voronoi edges.
-	 * 
+	 *
 	 * @param end
 	 *            The end of the search
-	 * @param edgeType
-	 *            The type of edge to return
 	 * @return A path
 	 */
 	private List<Edge> createPathFromBackPointers(CenterSearchNode end)
@@ -1753,8 +2376,7 @@ public class WorldGraph extends VoronoiGraph
 	/**
 	 * Scales, rotates, and flips the graph and everything in it.
 	 */
-	public void scaleFlipAndRotate(double targetWidth, double targetHeight, int rightRotationCount, boolean flipHorizontally,
-			boolean flipVertically)
+	public void scaleFlipAndRotate(double targetWidth, double targetHeight, int rightRotationCount, boolean flipHorizontally, boolean flipVertically)
 	{
 		double widthScale = targetWidth / bounds.width;
 		double heightScale = targetHeight / bounds.height;
@@ -1763,7 +2385,7 @@ public class WorldGraph extends VoronoiGraph
 		Point newOriginOffset;
 		assert rightRotationCount <= 3;
 		assert rightRotationCount >= 0;
-		
+
 		if (rightRotationCount == 0)
 		{
 			newOriginOffset = new Point(0, 0);
@@ -1778,7 +2400,7 @@ public class WorldGraph extends VoronoiGraph
 			// The lower-right corner will become the new origin.
 			newOriginOffset = new Point(targetWidth, targetHeight).rotate(mapCenter, angle);
 		}
-		else 
+		else
 		{
 			// The upper-right corner will become the new origin.
 			newOriginOffset = new Point(targetWidth, 0).rotate(mapCenter, angle);
@@ -1792,8 +2414,7 @@ public class WorldGraph extends VoronoiGraph
 		{
 			if (edge.midpoint != null)
 			{
-				edge.midpoint = scaleFlipAndRotatePoint(edge.midpoint, widthScale, heightScale, angle, mapCenter, newOriginOffset, flipHorizontally,
-						flipVertically);
+				edge.midpoint = scaleFlipAndRotatePoint(edge.midpoint, widthScale, heightScale, angle, mapCenter, newOriginOffset, flipHorizontally, flipVertically);
 			}
 		}
 		for (Corner corner : corners)
@@ -1801,8 +2422,7 @@ public class WorldGraph extends VoronoiGraph
 			corner.loc = scaleFlipAndRotatePoint(corner.loc, widthScale, heightScale, angle, mapCenter, newOriginOffset, flipHorizontally, flipVertically);
 			if (corner.originalLoc != null)
 			{
-				corner.originalLoc = scaleFlipAndRotatePoint(corner.originalLoc, widthScale, heightScale, angle, mapCenter, newOriginOffset,
-						flipHorizontally, flipVertically);
+				corner.originalLoc = scaleFlipAndRotatePoint(corner.originalLoc, widthScale, heightScale, angle, mapCenter, newOriginOffset, flipHorizontally, flipVertically);
 			}
 		}
 
@@ -1820,8 +2440,7 @@ public class WorldGraph extends VoronoiGraph
 		getMeanCenterWidthBetweenNeighbors();
 	}
 
-	private Point scaleFlipAndRotatePoint(Point point, double widthScale, double heightScale, double angle, Point mapCenter,
-			Point newOriginOffset, boolean flipHorizontally, boolean flipVertically)
+	private Point scaleFlipAndRotatePoint(Point point, double widthScale, double heightScale, double angle, Point mapCenter, Point newOriginOffset, boolean flipHorizontally, boolean flipVertically)
 	{
 		Point result = point.mult(widthScale, heightScale);
 
@@ -1896,7 +2515,7 @@ public class WorldGraph extends VoronoiGraph
 			// I hit a crash somehow where c.neighbors was empty, so I'm being extra safe and handling it here.
 			return 0.0;
 		}
-		
+
 		Center eastMostNeighbor = Collections.max(c.neighbors, new Comparator<Center>()
 		{
 			public int compare(Center c1, Center c2)
@@ -1915,8 +2534,7 @@ public class WorldGraph extends VoronoiGraph
 		return cSize;
 	}
 
-	public void drawCoastlineWithVariation(Painter p, long randomSeed, double variationRange, double widthBetweenWaves,
-			boolean addRandomBreaks, Collection<Center> centersToDraw, Rectangle drawBounds,
+	public void drawCoastlineWithVariation(Painter p, long randomSeed, double variationRange, double widthBetweenWaves, boolean addRandomBreaks, Rectangle drawBounds,
 			BiFunction<Boolean, Random, Double> getNewSkipDistance, List<List<Edge>> shoreEdges)
 	{
 		Transform orig = null;
@@ -1974,8 +2592,7 @@ public class WorldGraph extends VoronoiGraph
 			// When drawing concentric waves with random variation, we need more
 			// points in the curve at lower resolutions to make it look
 			// good.
-			double distanceBetweenPoints = Math.max(1.0,
-					Math.min(CurveCreator.defaultDistanceBetweenPoints, CurveCreator.defaultDistanceBetweenPoints * resolutionScale));
+			double distanceBetweenPoints = Math.max(1.0, Math.min(CurveCreator.defaultDistanceBetweenPoints, CurveCreator.defaultDistanceBetweenPoints * resolutionScale));
 			drawPoints = CurveCreator.createCurve(drawPoints, distanceBetweenPoints);
 
 			if (drawPoints == null || drawPoints.size() <= 1)
@@ -2126,30 +2743,6 @@ public class WorldGraph extends VoronoiGraph
 		return result;
 	}
 
-	public List<List<Edge>> findCoastlines(Collection<Center> centersToDraw)
-	{
-		List<List<Edge>> result = new ArrayList<>();
-		Set<Edge> explored = new HashSet<>();
-		for (Center center : (centersToDraw == null ? centers : centersToDraw))
-		{
-			for (Edge edge : center.borders)
-			{
-				if (explored.contains(edge))
-				{
-					continue;
-				}
-
-				List<Edge> coastline = findPath(explored, edge, (e) -> noisyEdges.getEdgeDrawType(e) == EdgeDrawType.Coast);
-				if (coastline != null && !coastline.isEmpty())
-				{
-					result.add(coastline);
-				}
-			}
-		}
-
-		return result;
-	}
-
 	public void drawCoastline(Painter p, double strokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
 		drawSpecifiedEdges(p, strokeWidth, centersToDraw, drawBounds, edge -> edge.isCoast());
@@ -2160,8 +2753,7 @@ public class WorldGraph extends VoronoiGraph
 		drawSpecifiedEdges(p, strokeWidth, centersToDraw, drawBounds, edge -> edge.isCoastOrLakeShore());
 	}
 
-	public void drawRegionBoundariesSolid(Painter g, double strokeWidth, boolean ignoreRiverEdges, Collection<Center> centersToDraw,
-			Rectangle drawBounds)
+	public void drawRegionBoundariesSolid(Painter g, double strokeWidth, boolean ignoreRiverEdges, Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
 		drawSpecifiedEdges(g, strokeWidth, centersToDraw, drawBounds, edge ->
 		{
@@ -2216,8 +2808,7 @@ public class WorldGraph extends VoronoiGraph
 
 				diameter = (int) (10.0 * resolutionScale);
 				p.setColor(Color.blue);
-				p.drawOval((int) (drawPoints.get(drawPoints.size() - 1).x) - diameter / 2,
-						(int) (drawPoints.get(drawPoints.size() - 1).y) - diameter / 2, diameter, diameter);
+				p.drawOval((int) (drawPoints.get(drawPoints.size() - 1).x) - diameter / 2, (int) (drawPoints.get(drawPoints.size() - 1).y) - diameter / 2, diameter, diameter);
 
 				p.setColor(color);
 				p.setStroke(stroke, resolutionScale);
@@ -2252,9 +2843,9 @@ public class WorldGraph extends VoronoiGraph
 	/**
 	 * Finds all edges that the 'accept' function accepts which are touching centersToDraw or are connected to an edge that touches those
 	 * centers.
-	 * 
+	 *
 	 * @param centersToDraw
-	 *            Only edges either in/touching this collection or connected to edges that are will be returned.
+	 *            Only edges either in/touching this collection or connected to edges that are in it will be returned.
 	 * @param accept
 	 *            Function to determine what edge is to include in results.
 	 * @param searchEntireGraph
@@ -2282,8 +2873,7 @@ public class WorldGraph extends VoronoiGraph
 				{
 					if (searchEntireGraph && centersToDraw != null)
 					{
-						if (edgePath.stream().anyMatch(
-								e -> e.d0 != null && centersToDraw.contains(e.d0) || e.d1 != null && centersToDraw.contains(e.d1)))
+						if (edgePath.stream().anyMatch(e -> e.d0 != null && centersToDraw.contains(e.d0) || e.d1 != null && centersToDraw.contains(e.d1)))
 						{
 							result.add(edgePath);
 						}
@@ -2301,7 +2891,7 @@ public class WorldGraph extends VoronoiGraph
 
 	/**
 	 * Given an edge to start at, this returns an ordered sequence of edges in the path that edge is included in.
-	 * 
+	 *
 	 * @param found
 	 *            Edges that have already been searched, and so will not be searched again.
 	 * @param start

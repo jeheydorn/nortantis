@@ -1,9 +1,9 @@
 package nortantis;
 
+import nortantis.util.Logger;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import nortantis.util.Logger;
 
 public class LoggerWarningLogger implements WarningLogger
 {

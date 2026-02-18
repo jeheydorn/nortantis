@@ -3,8 +3,8 @@ package nortantis.graph.voronoi.nodename.as3delaunay;
 public final class LR
 {
 
-	final public static LR LEFT = new LR("left");
-	final public static LR RIGHT = new LR("right");
+	public static final LR LEFT = new LR("left");
+	public static final LR RIGHT = new LR("right");
 	private String _name;
 
 	public LR(String name)

@@ -1,21 +1,13 @@
 package nortantis;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Supplier;
-
 import nortantis.editor.FreeIcon;
 import nortantis.util.ConcurrentHashMapF;
 import nortantis.util.Helper;
+
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Supplier;
 
 /**
  * Allows fast lookup of FreeIcons.
@@ -73,6 +65,17 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		return true;
 	}
 
+	public synchronized int calcSize()
+	{
+		int size = anchoredNonTreeIcons.size();
+		for (CopyOnWriteArrayList<FreeIcon> trees : anchoredTreeIcons.values())
+		{
+			size += trees.size();
+		}
+		size += nonAnchoredIcons.size();
+		return size;
+	}
+
 	public synchronized void addOrReplace(FreeIcon icon)
 	{
 		if (icon.centerIndex != null)
@@ -94,8 +97,7 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 
 	public synchronized void replace(FreeIcon before, FreeIcon after)
 	{
-		if ((before.type != IconType.trees && after.type != IconType.trees)
-				&& (before.centerIndex != null && before.centerIndex == after.centerIndex))
+		if ((before.type != IconType.trees && after.type != IconType.trees) && (before.centerIndex != null && before.centerIndex == after.centerIndex))
 		{
 			anchoredNonTreeIcons.put(after.centerIndex, after);
 		}
@@ -109,26 +111,6 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 	public synchronized FreeIcon getNonTree(int centerIndex)
 	{
 		return anchoredNonTreeIcons.get(centerIndex);
-	}
-
-	public synchronized boolean hasAnchoredIcons(int centerIndex)
-	{
-		if (anchoredNonTreeIcons.get(centerIndex) != null)
-		{
-			return true;
-		}
-
-		return hasTrees(centerIndex);
-	}
-
-	public synchronized List<FreeIcon> getAnchoredIcons(int centerIndex)
-	{
-		List<FreeIcon> result = new ArrayList<FreeIcon>(getTrees(centerIndex));
-		if (getNonTree(centerIndex) != null)
-		{
-			result.add(getNonTree(centerIndex));
-		}
-		return result;
 	}
 
 	public synchronized void clearTrees(int centerIndex)
@@ -317,7 +299,7 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		}
 
 		Set<FreeIcon> diff;
-		// To avoid a potential deadlock, always compare this object with the one passed in in the same order no matter what direction this
+		// To avoid a potential deadlock, always compare this object with the one passed in the same order no matter what direction this
 		// method is called. That way the locks are always acquired and released in the same order, so we cannot have a circular hold and
 		// wait.
 		if (this.hashCode() > other.hashCode())

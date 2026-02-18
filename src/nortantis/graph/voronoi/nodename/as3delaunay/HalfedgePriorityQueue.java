@@ -1,8 +1,8 @@
 package nortantis.graph.voronoi.nodename.as3delaunay;
 
-import java.util.ArrayList;
-
 import nortantis.geom.Point;
+
+import java.util.ArrayList;
 
 public final class HalfedgePriorityQueue // also known as heap
 {
@@ -53,8 +53,7 @@ public final class HalfedgePriorityQueue // also known as heap
 			_minBucket = insertionBucket;
 		}
 		previous = _hash.get(insertionBucket);
-		while ((next = previous.nextInPriorityQueue) != null
-				&& (halfEdge.ystar > next.ystar || (halfEdge.ystar == next.ystar && halfEdge.vertex.get_x() > next.vertex.get_x())))
+		while ((next = previous.nextInPriorityQueue) != null && (halfEdge.ystar > next.ystar || (halfEdge.ystar == next.ystar && halfEdge.vertex.get_x() > next.vertex.get_x())))
 		{
 			previous = next;
 		}

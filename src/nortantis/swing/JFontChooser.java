@@ -3,38 +3,7 @@
  ************************************************************/
 package nortantis.swing;
 
-import java.awt.BorderLayout;
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.Frame;
-import java.awt.GraphicsEnvironment;
-import java.awt.GridLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-
-import javax.swing.AbstractAction;
-import javax.swing.Action;
-import javax.swing.ActionMap;
-import javax.swing.BorderFactory;
-import javax.swing.BoxLayout;
-import javax.swing.InputMap;
-import javax.swing.JButton;
-import javax.swing.JComponent;
-import javax.swing.JDialog;
-import javax.swing.JLabel;
-import javax.swing.JList;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTextField;
-import javax.swing.KeyStroke;
-import javax.swing.ListSelectionModel;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -44,6 +13,8 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import javax.swing.text.JTextComponent;
 import javax.swing.text.Position;
+import java.awt.*;
+import java.awt.event.*;
 
 /**
  * The <code>JFontChooser</code> class is a swing component for font selection. This class has <code>JFileChooser</code> like APIs. The
@@ -79,15 +50,9 @@ public class JFontChooser extends JComponent
 	public static final int ERROR_OPTION = -1;
 	private static final Font DEFAULT_SELECTED_FONT = new Font("Serif", Font.PLAIN, 12);
 	private static final Font DEFAULT_FONT = new Font("Dialog", Font.PLAIN, 10);
-	private static final int[] FONT_STYLE_CODES =
-	{
-			Font.PLAIN, Font.BOLD, Font.ITALIC, Font.BOLD | Font.ITALIC
-	};
-	private static final String[] DEFAULT_FONT_SIZE_STRINGS =
-	{
-			"8", "9", "10", "11", "12", "14", "16", "18", "20", "22", "24", "26", "28", "36", "48", "72", "96", "120", "144", "168", "192",
-			"216", "240",
-	};
+	private static final int[] FONT_STYLE_CODES = { Font.PLAIN, Font.BOLD, Font.ITALIC, Font.BOLD | Font.ITALIC };
+	private static final String[] DEFAULT_FONT_SIZE_STRINGS = { "8", "9", "10", "11", "12", "14", "16", "18", "20", "22", "24", "26", "28", "36", "48", "72", "96", "120", "144", "168", "192", "216",
+			"240", };
 
 	// instance variables
 	protected int dialogResultValue = ERROR_OPTION;
@@ -305,8 +270,6 @@ public class JFontChooser extends JComponent
 	 * 
 	 * @param name
 	 *            the family name of the selected font.
-	 *
-	 * @see getSelectedFontFamily
 	 **/
 	public void setSelectedFontFamily(String name)
 	{
@@ -384,11 +347,6 @@ public class JFontChooser extends JComponent
 		setSelectedFontFamily(font.getFamily());
 		setSelectedFontStyle(font.getStyle());
 		setSelectedFontSize(font.getSize());
-	}
-
-	public String getVersionString()
-	{
-		return ("Version");
 	}
 
 	/**
@@ -485,25 +443,25 @@ public class JFontChooser extends JComponent
 			int i = targetList.getSelectedIndex();
 			switch (e.getKeyCode())
 			{
-			case KeyEvent.VK_UP:
-				i = targetList.getSelectedIndex() - 1;
-				if (i < 0)
-				{
-					i = 0;
-				}
-				targetList.setSelectedIndex(i);
-				break;
-			case KeyEvent.VK_DOWN:
-				int listSize = targetList.getModel().getSize();
-				i = targetList.getSelectedIndex() + 1;
-				if (i >= listSize)
-				{
-					i = listSize - 1;
-				}
-				targetList.setSelectedIndex(i);
-				break;
-			default:
-				break;
+				case KeyEvent.VK_UP:
+					i = targetList.getSelectedIndex() - 1;
+					if (i < 0)
+					{
+						i = 0;
+					}
+					targetList.setSelectedIndex(i);
+					break;
+				case KeyEvent.VK_DOWN:
+					int listSize = targetList.getModel().getSize();
+					i = targetList.getSelectedIndex() + 1;
+					if (i >= listSize)
+					{
+						i = listSize - 1;
+					}
+					targetList.setSelectedIndex(i);
+					break;
+				default:
+					break;
 			}
 		}
 	}

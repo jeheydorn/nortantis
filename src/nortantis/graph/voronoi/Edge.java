@@ -1,8 +1,8 @@
 package nortantis.graph.voronoi;
 
-import java.util.Objects;
-
 import nortantis.geom.Point;
+
+import java.util.Objects;
 
 /**
  * Edge.java
@@ -84,6 +84,25 @@ public class Edge implements Comparable<Edge>
 		return !d1.isLake;
 	}
 
+	public boolean isWater()
+	{
+		if (d0 == null)
+		{
+			if (d1 == null)
+			{
+				return false;
+			}
+			return d1.isWater;
+		}
+
+		if (d1 == null)
+		{
+			return d0.isWater;
+		}
+
+		return d0.isWater && d1.isWater;
+	}
+
 	public boolean isCoastOrLakeShore()
 	{
 		if (d0 == null || d1 == null)
@@ -159,32 +178,6 @@ public class Edge implements Comparable<Edge>
 		return v0;
 	}
 
-	public Corner findCornerSharedWithEdge(Edge other)
-	{
-		if (v0 != null && v0.protrudesContains(other))
-		{
-			return v0;
-		}
-		if (v1 != null && v1.protrudesContains(other))
-		{
-			return v1;
-		}
-		return null;
-	}
-
-	public Corner findCornerNotSharedWithEdge(Edge other)
-	{
-		if (v0 != null && !v0.protrudesContains(other))
-		{
-			return v0;
-		}
-		if (v1 != null && !v1.protrudesContains(other))
-		{
-			return v1;
-		}
-		return null;
-	}
-
 	public boolean sharesCornerWith(Edge other)
 	{
 		if (other == null)
@@ -209,7 +202,7 @@ public class Edge implements Comparable<Edge>
 	public String toString()
 	{
 		StringBuilder b = new StringBuilder();
-		b.append("Edge: { v0: ");
+		b.append("Edge: index: " + index + " { v0: ");
 		b.append(v0);
 		b.append(", v1: ");
 		b.append(v1);

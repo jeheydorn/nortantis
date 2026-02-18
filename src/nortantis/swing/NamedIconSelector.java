@@ -1,22 +1,14 @@
 package nortantis.swing;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-
-import javax.swing.BorderFactory;
-import javax.swing.BoxLayout;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-
 import nortantis.IconType;
 import nortantis.ImageCache;
 import nortantis.editor.UserPreferences;
 import nortantis.util.Tuple2;
+
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.*;
 
 public class NamedIconSelector
 {
@@ -24,6 +16,7 @@ public class NamedIconSelector
 	private Map<String, List<Tuple2<String, UnscaledImageToggleButton>>> buttons;
 	private JPanel container;
 	public final IconType type;
+	public String artPack;
 
 	public NamedIconSelector(IconType type)
 	{
@@ -35,6 +28,7 @@ public class NamedIconSelector
 
 	public void updateButtonList(String artPack, String customImagesPath)
 	{
+		this.artPack = artPack;
 		Tuple2<String, String> selectedButton = getSelectedButton();
 		clearButtons();
 
@@ -43,9 +37,7 @@ public class NamedIconSelector
 		{
 			JPanel buttonsPanel = new JPanel();
 			buttonsPanel.setLayout(new WrapLayout());
-			buttonsPanel.setBorder(new DynamicLineBorder("controlShadow", 1));
-			for (String fileNameWithoutWidthOrExtension : ImageCache.getInstance(artPack, customImagesPath)
-					.getIconGroupFileNamesWithoutWidthOrExtensionAsSet(type, groupId))
+			for (String fileNameWithoutWidthOrExtension : ImageCache.getInstance(artPack, customImagesPath).getIconGroupFileNamesWithoutWidthOrExtensionAsSet(type, groupId))
 			{
 				UnscaledImageToggleButton toggleButton = new UnscaledImageToggleButton();
 				toggleButton.setToolTipText(fileNameWithoutWidthOrExtension);
@@ -72,11 +64,11 @@ public class NamedIconSelector
 
 			// If at least one button was added for this group
 			if (getTypes().contains(groupId))
-			{	
+			{
 				CollapsiblePanel collapsiblePanel = new CollapsiblePanel(type.toString() + "Type", groupId, buttonsPanel);
 				container.add(collapsiblePanel);
 			}
-			
+
 		}
 
 		if (hasAtLeastOneImage)

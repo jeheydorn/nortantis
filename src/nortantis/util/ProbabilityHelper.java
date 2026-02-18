@@ -1,12 +1,6 @@
 package nortantis.util;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 public class ProbabilityHelper
 {
@@ -51,7 +45,7 @@ public class ProbabilityHelper
 	 */
 	public static <T> T sampleUniform(Random rand, Collection<T> items)
 	{
-		if (items.size() == 0)
+		if (items.isEmpty())
 		{
 			throw new IllegalArgumentException("The distribution must have at least one value");
 		}
@@ -106,8 +100,7 @@ public class ProbabilityHelper
 		for (@SuppressWarnings("unused")
 		int i : new Range(10000))
 		{
-			String value = sampleCategorical(new Random(),
-					Arrays.asList(new Tuple2<>(0.1, "first"), new Tuple2<>(0.5, "second"), new Tuple2<>(0.4, "third")));
+			String value = sampleCategorical(new Random(), Arrays.asList(new Tuple2<>(0.1, "first"), new Tuple2<>(0.5, "second"), new Tuple2<>(0.4, "third")));
 			if (!counts.containsKey(value))
 			{
 				counts.put(value, 0);

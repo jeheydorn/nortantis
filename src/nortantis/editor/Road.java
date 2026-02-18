@@ -1,10 +1,10 @@
 package nortantis.editor;
 
+import nortantis.geom.Point;
+
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
-
-import nortantis.geom.Point;
 
 public class Road
 {
@@ -18,7 +18,7 @@ public class Road
 	{
 		this.path = new CopyOnWriteArrayList<Point>(path);
 	}
-	
+
 	public Road(Road other)
 	{
 		this(other.path);

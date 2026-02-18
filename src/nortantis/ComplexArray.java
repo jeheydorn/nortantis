@@ -2,6 +2,8 @@ package nortantis;
 
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
+import nortantis.platform.PixelWriter;
+import nortantis.util.Tuple2;
 
 /**
  * Stores a 2D array of complex numbers in JTransform's format.
@@ -32,7 +34,7 @@ public class ComplexArray
 	{
 		assert height == other.height;
 		assert width == other.width;
-		
+
 		float[][] otherArray = other.array;
 
 		for (int r = 0; r < height; r++)
@@ -50,7 +52,7 @@ public class ComplexArray
 				array[r][colR + 1] = imaginary;
 			}
 	}
-	
+
 	public void moveRealToLeftSide()
 	{
 		for (int r = 0; r < height; r++)
@@ -88,7 +90,7 @@ public class ComplexArray
 			}
 		}
 	}
-	
+
 	/*
 	 * Scales values in the given array such that the minimum is targetMin, and the maximum is targetMax.
 	 */
@@ -96,8 +98,32 @@ public class ComplexArray
 	{
 		setContrast(targetMin, targetMax, 0, height, 0, width);
 	}
-	
+
 	public void setContrast(float targetMin, float targetMax, int rowStart, int rows, int colStart, int cols)
+	{
+		Tuple2<Float, Float> contrastTuple = getContrast(rowStart, rows, colStart, cols);
+		float min = contrastTuple.getFirst();
+		float max = contrastTuple.getSecond();
+
+		float range = max - min;
+		float targetRange = targetMax - targetMin;
+
+		for (int r = rowStart; r < rowStart + rows; r++)
+		{
+			for (int c = colStart; c < colStart + cols; c++)
+			{
+				float value = array[r][c];
+				array[r][c] = (((value - min) / (range))) * (targetRange) + targetMin;
+			}
+		}
+	}
+
+	public Tuple2<Float, Float> getContrast()
+	{
+		return getContrast(0, height, 0, width);
+	}
+
+	private Tuple2<Float, Float> getContrast(int rowStart, int rows, int colStart, int cols)
 	{
 		float min = Float.POSITIVE_INFINITY;
 		float max = Float.NEGATIVE_INFINITY;
@@ -112,20 +138,9 @@ public class ComplexArray
 					max = value;
 			}
 		}
-
-		float range = max - min;
-		float targetRange = targetMax - targetMin;
-
-		for (int r = rowStart; r < rowStart + rows; r++)
-		{
-			for (int c = colStart; c < colStart + cols; c++)
-			{
-				float value = array[r][c];
-				array[r][c] = (((value - min) / (range))) * (targetRange) + targetMin;
-			}
-		}
+		return new Tuple2<>(min, max);
 	}
-	
+
 	public void scale(float scale, int rowStart, int rows, int colStart, int cols)
 	{
 		for (int r = rowStart; r < rowStart + rows; r++)
@@ -154,12 +169,15 @@ public class ComplexArray
 	{
 		Image image = Image.create(cols, rows, imageType);
 		int maxPixelValue = Image.getMaxPixelLevelForType(imageType);
-		for (int r = rowStart; r < rowStart + rows; r++)
+		try (PixelWriter imagePixels = image.createPixelWriter())
 		{
-			for (int c = colStart; c < colStart + cols; c++)
+			for (int r = rowStart; r < rowStart + rows; r++)
 			{
-				int value = Math.min(maxPixelValue, (int) (array[r][c] * maxPixelValue));
-				image.setGrayLevel(c - colStart, r - rowStart, value);
+				for (int c = colStart; c < colStart + cols; c++)
+				{
+					int value = Math.min(maxPixelValue, (int) (array[r][c] * maxPixelValue));
+					imagePixels.setGrayLevel(c - colStart, r - rowStart, value);
+				}
 			}
 		}
 		return image;
@@ -196,7 +214,7 @@ public class ComplexArray
 
 	public float[][] getArrayJTransformsFormat()
 	{
-		return array; 
+		return array;
 	}
 
 	public int getWidth()

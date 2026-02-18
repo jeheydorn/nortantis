@@ -1,9 +1,11 @@
 package nortantis.geom;
 
+import java.util.Objects;
+
 public class IntRectangle
 {
 
-	final public int x, y, width, height;
+	public final int x, y, width, height;
 
 	public IntRectangle(int x, int y, int width, int height)
 	{
@@ -16,6 +18,16 @@ public class IntRectangle
 	public IntRectangle(IntPoint location, IntDimension size)
 	{
 		this(location.x, location.y, size.width, size.height);
+	}
+
+	public IntRectangle(IntPoint location, int width, int height)
+	{
+		this(location.x, location.y, width, height);
+	}
+
+	public IntDimension size()
+	{
+		return new IntDimension(width, height);
 	}
 
 	public boolean contains(int x0, int y0)
@@ -36,7 +48,7 @@ public class IntRectangle
 	{
 		return contains(other.x, other.y) && contains(other.x + other.width, other.y + other.height);
 	}
-	
+
 	public IntPoint upperLeftCorner()
 	{
 		return new IntPoint(x, y);
@@ -91,10 +103,9 @@ public class IntRectangle
 		{
 			return this;
 		}
-		return add(other.x, other.y).add(other.x, other.y + other.height).add(other.x + other.width, other.y).add(other.x + other.width,
-				other.y + other.height);
+		return add(other.x, other.y).add(other.x, other.y + other.height).add(other.x + other.width, other.y).add(other.x + other.width, other.y + other.height);
 	}
-	
+
 	public IntRectangle findIntersection(IntRectangle r2)
 	{
 		int x1 = Math.max(this.x, r2.x);
@@ -112,8 +123,45 @@ public class IntRectangle
 		}
 	}
 
+	public boolean isEmpty()
+	{
+		return width <= 0 || height <= 0;
+	}
+
+
 	public Rectangle toRectangle()
 	{
 		return new Rectangle(x, y, width, height);
+	}
+
+	@Override
+	public int hashCode()
+	{
+		return Objects.hash(height, width, x, y);
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj)
+		{
+			return true;
+		}
+		if (obj == null)
+		{
+			return false;
+		}
+		if (getClass() != obj.getClass())
+		{
+			return false;
+		}
+		IntRectangle other = (IntRectangle) obj;
+		return height == other.height && width == other.width && x == other.x && y == other.y;
+	}
+
+	@Override
+	public String toString()
+	{
+		return "IntRectangle [x=" + x + ", y=" + y + ", width=" + width + ", height=" + height + "]";
 	}
 }

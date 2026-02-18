@@ -1,8 +1,8 @@
 package nortantis.graph.voronoi;
 
-import java.util.ArrayList;
-
 import nortantis.geom.Point;
+
+import java.util.ArrayList;
 
 public class Corner
 {
@@ -38,8 +38,7 @@ public class Corner
 			{
 				// I am not sure how, but it seems possible that one of my
 				// adjacents is me!
-				if (!neighbor.findingRivers && (neighbor != this)
-						&& ((lowestNeighbor == null) || (lowestNeighbor.elevation > neighbor.elevation)))
+				if (!neighbor.findingRivers && (neighbor != this) && ((lowestNeighbor == null) || (lowestNeighbor.elevation > neighbor.elevation)))
 				{
 					lowestNeighbor = neighbor;
 				}

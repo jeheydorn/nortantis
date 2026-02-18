@@ -1,16 +1,16 @@
 package nortantis.util;
 
-import java.awt.Desktop;
+import javax.swing.*;
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import javax.swing.JOptionPane;
-
 public class OSHelper
 {
 	private static Boolean isLinuxCache;
+
 	public static boolean isLinux()
 	{
 		if (isLinuxCache == null)
@@ -24,6 +24,7 @@ public class OSHelper
 	}
 
 	private static Boolean isWindowsCache;
+
 	public static boolean isWindows()
 	{
 		if (isWindowsCache == null)
@@ -36,8 +37,9 @@ public class OSHelper
 		}
 		return isWindowsCache;
 	}
-	
+
 	private static Boolean isMacCache;
+
 	public static boolean isMac()
 	{
 		if (isMacCache == null)
@@ -83,9 +85,7 @@ public class OSHelper
 		}
 		else
 		{
-			JOptionPane.showMessageDialog(null,
-					"Unable to open the folder '" + folder + "'. Opening folders is not supported on your system.", "Error",
-					JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(null, "Unable to open the folder '" + folder + "'. Opening folders is not supported on your system.", "Error", JOptionPane.ERROR_MESSAGE);
 		}
 	}
 }

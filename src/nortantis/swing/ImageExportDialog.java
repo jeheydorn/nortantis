@@ -1,43 +1,5 @@
 package nortantis.swing;
 
-import java.awt.BorderLayout;
-import java.awt.Component;
-import java.awt.Dialog;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
-import java.io.File;
-import java.nio.file.InvalidPathException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Hashtable;
-import java.util.List;
-
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.ButtonGroup;
-import javax.swing.JButton;
-import javax.swing.JDialog;
-import javax.swing.JFileChooser;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JProgressBar;
-import javax.swing.JRadioButton;
-import javax.swing.JSlider;
-import javax.swing.JTextField;
-import javax.swing.SwingWorker;
-import javax.swing.filechooser.FileFilter;
-import javax.swing.filechooser.FileSystemView;
-
-import org.apache.commons.io.FilenameUtils;
-
 import nortantis.CancelledException;
 import nortantis.ImageCache;
 import nortantis.MapCreator;
@@ -45,8 +7,23 @@ import nortantis.MapSettings;
 import nortantis.editor.ExportAction;
 import nortantis.platform.Image;
 import nortantis.util.FileHelper;
-import nortantis.util.ImageHelper;
+import nortantis.platform.ImageHelper;
+import nortantis.swing.translation.Translation;
 import nortantis.util.Logger;
+import org.apache.commons.io.FilenameUtils;
+
+import javax.swing.*;
+import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileSystemView;
+import java.awt.*;
+import java.awt.event.*;
+import java.io.File;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Hashtable;
+import java.util.List;
 
 @SuppressWarnings("serial")
 public class ImageExportDialog extends JDialog
@@ -65,7 +42,7 @@ public class ImageExportDialog extends JDialog
 
 	public ImageExportDialog(MainWindow mainWindow, ImageExportType type)
 	{
-		super(mainWindow, type == ImageExportType.Map ? "Export as Image" : "Export Heightmap", Dialog.ModalityType.APPLICATION_MODAL);
+		super(mainWindow, type == ImageExportType.Map ? Translation.get("imageExport.title.map") : Translation.get("imageExport.title.heightmap"), Dialog.ModalityType.APPLICATION_MODAL);
 		this.type = type;
 
 		setSize(new Dimension(460, type == ImageExportType.Map ? 293 : 380));
@@ -79,11 +56,7 @@ public class ImageExportDialog extends JDialog
 
 		if (type == ImageExportType.Heightmap)
 		{
-			organizer.addLeftAlignedComponent(
-					new JLabel("<html>This option exports a map's height data as a 16-bit grayscale image for use in"
-							+ " other applications such as creating a videogame world. Note that the heightmap will not"
-							+ " reflect changes made by editing brushes, such as adding or removing land or changing mountain placement.</html>"),
-					false);
+			organizer.addLeftAlignedComponent(new JLabel("<html>" + Translation.get("imageExport.heightmapDescription") + "</html>"), false);
 		}
 
 		resolutionSlider = new JSlider();
@@ -107,14 +80,9 @@ public class ImageExportDialog extends JDialog
 			}
 			resolutionSlider.setLabelTable(labelTable);
 		}
-		String tooltip = type == ImageExportType.Map
-				? "This percentage is multiplied by the size of the map to determine "
-						+ "the resolution to draw at. The maximum allowed resolution is determined by the amount of memory on this device."
-				: "This percentage is multiplied by the dimensions of the map to determine the resolution to draw at. Higher resolutions"
-						+ " will give more detailed terrain.";
-		resolutionSlider
-				.setValue((int) ((type == ImageExportType.Map ? mainWindow.exportResolution : mainWindow.heightmapExportResolution) * 100));
-		organizer.addLabelAndComponent("Resolution:", tooltip, resolutionSlider);
+		String tooltip = Translation.get("imageExport.resolution.help");
+		resolutionSlider.setValue((int) ((type == ImageExportType.Map ? mainWindow.exportResolution : mainWindow.heightmapExportResolution) * 100));
+		organizer.addLabelAndComponent(Translation.get("imageExport.resolution.label"), tooltip, resolutionSlider);
 
 		ActionListener radioButtonListener = new ActionListener()
 		{
@@ -126,17 +94,17 @@ public class ImageExportDialog extends JDialog
 			}
 		};
 
-		fileRadioButton = new JRadioButton("Save to file");
+		fileRadioButton = new JRadioButton(Translation.get("imageExport.saveToFile"));
 		fileRadioButton.addActionListener(radioButtonListener);
 
-		openInViewerRadioButton = new JRadioButton("Open with this device's default image viewer");
+		openInViewerRadioButton = new JRadioButton(Translation.get("imageExport.openInViewer"));
 		openInViewerRadioButton.addActionListener(radioButtonListener);
 
 		ButtonGroup buttonGroup = new ButtonGroup();
 		buttonGroup.add(fileRadioButton);
 		buttonGroup.add(openInViewerRadioButton);
 
-		organizer.addLabelAndComponentsVertical("Export action:", "Select what to do with the generated image.",
+		organizer.addLabelAndComponentsVertical(Translation.get("imageExport.exportAction.label"), Translation.get("imageExport.exportAction.help"),
 				Arrays.asList(fileRadioButton, openInViewerRadioButton));
 
 		JTextField pathField = new JTextField();
@@ -144,12 +112,10 @@ public class ImageExportDialog extends JDialog
 			// Determine the default path to save to.
 			try
 			{
-				String curPath = FileHelper.replaceHomeFolderPlaceholder(
-						type == ImageExportType.Map ? mainWindow.imageExportPath : mainWindow.heightmapExportPath);
+				String curPath = FileHelper.replaceHomeFolderPlaceholder(type == ImageExportType.Map ? mainWindow.imageExportPath : mainWindow.heightmapExportPath);
 				if (curPath == null || curPath.isEmpty())
 				{
-					curPath = mainWindow.getOpenSettingsFilePath() == null
-							? Paths.get(FileSystemView.getFileSystemView().getDefaultDirectory().toPath().toString(), "unnamed").toString()
+					curPath = mainWindow.getOpenSettingsFilePath() == null ? Paths.get(FileSystemView.getFileSystemView().getDefaultDirectory().toPath().toString(), "unnamed").toString()
 							: mainWindow.getOpenSettingsFilePath().toString();
 					String folder = new File(curPath).getParent();
 					String fileBaseName = FilenameUtils.getBaseName(curPath);
@@ -157,8 +123,7 @@ public class ImageExportDialog extends JDialog
 					{
 						fileBaseName = type == ImageExportType.Map ? "map" : "heightmap";
 					}
-					Path fileSavePath = Paths.get(folder, fileBaseName + (type == ImageExportType.Map ? "" : " heightmap") + ".png")
-							.toAbsolutePath();
+					Path fileSavePath = Paths.get(folder, fileBaseName + (type == ImageExportType.Map ? "" : " heightmap") + ".png").toAbsolutePath();
 					pathField.setText(fileSavePath.toString());
 				}
 				else
@@ -172,7 +137,7 @@ public class ImageExportDialog extends JDialog
 			}
 		}
 
-		JButton browseSavePathButton = new JButton("Browse");
+		JButton browseSavePathButton = new JButton(Translation.get("theme.browse"));
 		browseSavePathButton.addActionListener(new ActionListener()
 		{
 			public void actionPerformed(ActionEvent e)
@@ -190,12 +155,11 @@ public class ImageExportDialog extends JDialog
 		pathPanel.add(browseSavePathButton);
 		pathPanel.add(Box.createHorizontalGlue());
 
-		pathChooserHider = organizer.addLabelAndComponentsVertical("Export file path:", "",
-				Arrays.asList(pathField, Box.createVerticalStrut(5), pathPanel));
+		pathChooserHider = organizer.addLabelAndComponentsVertical(Translation.get("imageExport.exportFilePath.label"), "", Arrays.asList(pathField, Box.createVerticalStrut(5), pathPanel));
 
 		progressBar = new JProgressBar();
 		progressBar.setStringPainted(true);
-		progressBar.setString("Exporting...");
+		progressBar.setString(Translation.get("imageExport.exporting"));
 		progressBar.setIndeterminate(true);
 		progressBar.setVisible(false);
 		organizer.addVerticalFillerRow();
@@ -228,7 +192,7 @@ public class ImageExportDialog extends JDialog
 
 		JPanel bottomButtonsPanel = new JPanel();
 		bottomButtonsPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
-		exportButton = new JButton("<html><u>E</u>xport</html>");
+		exportButton = new JButton(Translation.get("imageExport.export"));
 		exportButton.setMnemonic(KeyEvent.VK_E);
 		exportButton.addActionListener(new ActionListener()
 		{
@@ -245,8 +209,7 @@ public class ImageExportDialog extends JDialog
 					{
 						if (pathField.getText() == null || pathField.getText().isEmpty())
 						{
-							JOptionPane.showMessageDialog(getContentPane(), "Export file path is required.", "Error",
-									JOptionPane.ERROR_MESSAGE);
+							JOptionPane.showMessageDialog(getContentPane(), Translation.get("imageExport.pathRequired"), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
 							return;
 						}
 
@@ -260,30 +223,25 @@ public class ImageExportDialog extends JDialog
 						}
 						else if (!allowedExtension.contains(extension.toLowerCase()))
 						{
-							JOptionPane.showMessageDialog(getContentPane(), "The export file must be a png or jpeg image.", "Error",
-									JOptionPane.ERROR_MESSAGE);
+							JOptionPane.showMessageDialog(getContentPane(), Translation.get("imageExport.mustBePngOrJpeg"), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
 							return;
 						}
 
 						if (new File(exportPath).isDirectory())
 						{
-							JOptionPane.showMessageDialog(getContentPane(),
-									"There is a directory with the same name as the export file, in the same folder.", "Error",
-									JOptionPane.ERROR_MESSAGE);
+							JOptionPane.showMessageDialog(getContentPane(), Translation.get("imageExport.directoryConflict"), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
 							return;
 						}
 
 						if (!new File(new File(exportPath).getParent()).exists())
 						{
-							JOptionPane.showMessageDialog(getContentPane(), "The export file folder does not exist.", "Error",
-									JOptionPane.ERROR_MESSAGE);
+							JOptionPane.showMessageDialog(getContentPane(), Translation.get("imageExport.folderDoesNotExist"), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
 							return;
 						}
 					}
 					catch (InvalidPathException ex)
 					{
-						JOptionPane.showMessageDialog(getContentPane(), "The export file path is invalid.", "Error",
-								JOptionPane.ERROR_MESSAGE);
+						JOptionPane.showMessageDialog(getContentPane(), Translation.get("imageExport.pathInvalid"), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
 						return;
 					}
 
@@ -319,13 +277,12 @@ public class ImageExportDialog extends JDialog
 				// that we don't risk running out of memory
 				// or end up clearing the image cache while a draw is still
 				// going.
-				mainWindow.updater.dowWhenMapIsNotDrawing(
-						() -> exportMapAndCloseDialog(mainWindow, resolutionSlider.getValue() / 100.0, exportAction, exportPathFinal));
+				mainWindow.updater.dowWhenMapIsNotDrawing(() -> exportMapAndCloseDialog(mainWindow, resolutionSlider.getValue() / 100.0, exportAction, exportPathFinal));
 			}
 		});
 		bottomButtonsPanel.add(exportButton);
 
-		cancelButton = new JButton("<html><u>C</u>ancel</html>");
+		cancelButton = new JButton(Translation.get("imageExport.cancel"));
 		cancelButton.setMnemonic(KeyEvent.VK_C);
 		cancelButton.addActionListener(new ActionListener()
 		{
@@ -438,14 +395,13 @@ public class ImageExportDialog extends JDialog
 				String fileName;
 				if (exportAction == ExportAction.OpenInDefaultImageViewer)
 				{
-					Logger.println("Opening the " + (type == ImageExportType.Map ? "map" : "heightmap")
-							+ " in your system's default image editor.");
-					fileName = ImageHelper.openImageInSystemDefaultEditor(result, "map_" + settings.randomSeed);
+					Logger.println("Opening the " + (type == ImageExportType.Map ? "map" : "heightmap") + " in your system's default image editor.");
+					fileName = ImageHelper.getInstance().openImageInSystemDefaultEditor(result, "map_" + settings.randomSeed);
 				}
 				else
 				{
 					fileName = pathToSaveTo;
-					ImageHelper.write(result, fileName);
+					ImageHelper.getInstance().write(result, fileName);
 				}
 				Logger.println("Map written to " + fileName);
 				ImageCache.clear();
@@ -462,16 +418,15 @@ public class ImageExportDialog extends JDialog
 				}
 				catch (Exception ex)
 				{
-					SwingHelper.handleBackgroundThreadException(ex, getContentPane(), true);
+					SwingHelper.handleException(ex, getContentPane(), true);
 					isError = true;
 				}
 
 				if (exportAction == ExportAction.SaveToFile && !isError && !isCanceled)
 				{
 					progressBar.setVisible(false);
-					JOptionPane.showMessageDialog(getContentPane(),
-							(type == ImageExportType.Map ? "Map" : "Heightmap") + " successfully exported.", "Success",
-							JOptionPane.INFORMATION_MESSAGE);
+					JOptionPane.showMessageDialog(getContentPane(), type == ImageExportType.Map ? Translation.get("imageExport.mapExported") : Translation.get("imageExport.heightmapExported"),
+							"Success", JOptionPane.INFORMATION_MESSAGE);
 				}
 
 				dispose();
@@ -505,7 +460,7 @@ public class ImageExportDialog extends JDialog
 			fileChooser.setSelectedFile(new File(filePath));
 		}
 
-		int status = fileChooser.showDialog(parent, "Select");
+		int status = fileChooser.showDialog(parent, Translation.get("imageExport.select"));
 		if (status == JFileChooser.APPROVE_OPTION)
 		{
 			return fileChooser.getSelectedFile().toString();

@@ -1,25 +1,39 @@
 package nortantis.swing;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.EventQueue;
-import java.awt.FlowLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
-import java.awt.event.MouseWheelEvent;
-import java.awt.event.MouseWheelListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import com.formdev.flatlaf.FlatDarkLaf;
+import com.formdev.flatlaf.FlatLightLaf;
+import nortantis.CancelledException;
+import nortantis.DebugFlags;
+import nortantis.ImageCache;
+import nortantis.MapSettings;
+import nortantis.editor.*;
+import nortantis.geom.IntRectangle;
+import nortantis.graph.voronoi.Center;
+import nortantis.graph.voronoi.Edge;
+import nortantis.platform.BackgroundTask;
+import nortantis.platform.Image;
+import nortantis.platform.ImageHelper;
+import nortantis.platform.PlatformFactory;
+import nortantis.platform.awt.AwtBridge;
+import nortantis.platform.awt.AwtFactory;
+import nortantis.swing.translation.Translation;
+import nortantis.util.*;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.imgscalr.Scalr.Method;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+
+import javax.swing.*;
+import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileSystemView;
+import java.awt.*;
+import java.awt.event.*;
+import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
@@ -30,68 +44,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
-
-import javax.swing.BorderFactory;
-import javax.swing.BoxLayout;
-import javax.swing.ButtonGroup;
-import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JRadioButtonMenuItem;
-import javax.swing.JScrollPane;
-import javax.swing.JSplitPane;
-import javax.swing.JTextArea;
-import javax.swing.KeyStroke;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
-import javax.swing.filechooser.FileFilter;
-import javax.swing.filechooser.FileSystemView;
-
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.imgscalr.Scalr.Method;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-
-import com.formdev.flatlaf.FlatDarkLaf;
-import com.formdev.flatlaf.FlatLightLaf;
-
-import nortantis.CancelledException;
-import nortantis.DebugFlags;
-import nortantis.ImageCache;
-import nortantis.MapSettings;
-import nortantis.editor.CenterEdit;
-import nortantis.editor.DisplayQuality;
-import nortantis.editor.EdgeEdit;
-import nortantis.editor.ExportAction;
-import nortantis.editor.MapUpdater;
-import nortantis.editor.UserPreferences;
-import nortantis.geom.Rectangle;
-import nortantis.graph.voronoi.Center;
-import nortantis.graph.voronoi.Edge;
-import nortantis.platform.BackgroundTask;
-import nortantis.platform.Image;
-import nortantis.platform.PlatformFactory;
-import nortantis.platform.awt.AwtFactory;
-import nortantis.util.Assets;
-import nortantis.util.FileHelper;
-import nortantis.util.ILoggerTarget;
-import nortantis.util.ImageHelper;
-import nortantis.util.Logger;
-import nortantis.util.OSHelper;
 
 @SuppressWarnings("serial")
 public class MainWindow extends JFrame implements ILoggerTarget
@@ -103,7 +57,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	boolean hasDrawnCurrentMapAtLeastOnce;
 	static final String frameTitleBase = "Nortantis";
 	public MapEdits edits;
-	public JMenuItem clearEditsMenuItem;
 
 	JScrollPane mapEditingScrollPane;
 	// Controls how large 100% zoom is, in pixels.
@@ -162,10 +115,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		{
 			try
 			{
-				JOptionPane.showMessageDialog(null,
-						"Unnable to create GUI because of error: " + ex.getMessage() + "\nVersion: " + MapSettings.currentVersion
-								+ "\nOS Name: " + System.getProperty("os.name") + "\nStack trace: " + ExceptionUtils.getStackTrace(ex),
-						"Error", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(null, "Unable to create GUI because of error: " + ex.getMessage() + "\nVersion: " + MapSettings.currentVersion + "\nOS Name: "
+						+ System.getProperty("os.name") + "\nStack trace: " + ExceptionUtils.getStackTrace(ex), "Error", JOptionPane.ERROR_MESSAGE);
 			}
 			catch (Exception inner)
 			{
@@ -177,8 +128,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		boolean isMapOpen = false;
 		try
 		{
-			if (fileToOpen != null && !fileToOpen.isEmpty() && fileToOpen.endsWith(MapSettings.fileExtensionWithDot)
-					&& new File(fileToOpen).exists())
+			if (fileToOpen != null && !fileToOpen.isEmpty() && fileToOpen.endsWith(MapSettings.fileExtensionWithDot) && new File(fileToOpen).exists())
 			{
 				openMap(new File(fileToOpen).getAbsolutePath());
 				isMapOpen = true;
@@ -192,7 +142,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		if (!isMapOpen)
 		{
-			setPlaceholderImage(new String[] { "Welcome to Nortantis. To create or open a map,", "use the File menu." });
+			setPlaceholderImage(new String[] { Translation.get("mainWindow.welcome"), Translation.get("mainWindow.welcome.line2") });
 			enableOrDisableFieldsThatRequireMap(false, null);
 		}
 
@@ -226,13 +176,12 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 						String lastCheckedVersion = UserPreferences.getInstance().lastVersionFromCheck;
 
-						if (MapSettings.isVersionGreatherThanCurrent(latestVersion) && (StringUtils.isEmpty(lastCheckedVersion)
-								|| MapSettings.isVersionGreaterThan(latestVersion, lastCheckedVersion)))
+						if (MapSettings.isVersionGreaterThanCurrent(latestVersion) && (StringUtils.isEmpty(lastCheckedVersion) || MapSettings.isVersionGreaterThan(latestVersion, lastCheckedVersion)))
 						{
 							UserPreferences.getInstance().lastVersionFromCheck = latestVersion;
 							UserPreferences.getInstance().lastVersionCheckTime = currentTime;
 
-							String message = "Version " + latestVersion + " is now available. You can download it at";
+							String message = Translation.get("mainWindow.updateAvailableMessage", latestVersion);
 							String url = "https://jandjheydorn.com/nortantis";
 
 							JPanel messagePanel = new JPanel();
@@ -244,8 +193,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 							JLabel hyperlink = SwingHelper.createHyperlink(url, url);
 							messagePanel.add(hyperlink);
 
-							JOptionPane.showMessageDialog(MainWindow.this, messagePanel, "Update Available",
-									JOptionPane.INFORMATION_MESSAGE);
+							JOptionPane.showMessageDialog(MainWindow.this, messagePanel, Translation.get("mainWindow.updateAvailable"), JOptionPane.INFORMATION_MESSAGE);
 						}
 					}
 					catch (Exception e)
@@ -329,7 +277,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		getContentPane().setPreferredSize(new Dimension(1400, 780));
 		getContentPane().setLayout(new BorderLayout());
 
-		setIconImage(AwtFactory.unwrap(Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal/taskbar icon.png").toString())));
+		setIconImage(AwtBridge.toBufferedImage(Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal/taskbar icon.png").toString())));
 		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 
 		addWindowListener(new WindowAdapter()
@@ -370,10 +318,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		themePanel = new ThemePanel(this);
 		createMapEditingPanel();
 		createMapUpdater();
-		toolsPanel = new ToolsPanel(this, mapEditingPanel, updater);
-		int toolsPanelWidth = UserPreferences.getInstance().toolsPanelWidth > SwingHelper.sidePanelMinimumWidth
-				? UserPreferences.getInstance().toolsPanelWidth
-				: SwingHelper.sidePanelPreferredWidth;
+		toolsPanel = new ToolsPanel(this, updater);
+		int toolsPanelWidth = UserPreferences.getInstance().toolsPanelWidth > SwingHelper.sidePanelMinimumWidth ? UserPreferences.getInstance().toolsPanelWidth : SwingHelper.sidePanelPreferredWidth;
 		toolsPanel.setPreferredSize(new Dimension(toolsPanelWidth, toolsPanel.getPreferredSize().height));
 		toolsPanel.setMinimumSize(new Dimension(SwingHelper.sidePanelMinimumWidth, toolsPanel.getMinimumSize().height));
 
@@ -471,10 +417,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					{
 						int deltaX = mouseLocationForMiddleButtonDrag.x - e.getX();
 						int deltaY = mouseLocationForMiddleButtonDrag.y - e.getY();
-						mapEditingScrollPane.getVerticalScrollBar()
-								.setValue(mapEditingScrollPane.getVerticalScrollBar().getValue() + deltaY);
-						mapEditingScrollPane.getHorizontalScrollBar()
-								.setValue(mapEditingScrollPane.getHorizontalScrollBar().getValue() + deltaX);
+						mapEditingScrollPane.getVerticalScrollBar().setValue(mapEditingScrollPane.getVerticalScrollBar().getValue() + deltaY);
+						mapEditingScrollPane.getHorizontalScrollBar().setValue(mapEditingScrollPane.getHorizontalScrollBar().getValue() + deltaX);
 					}
 				}
 				else if (SwingUtilities.isLeftMouseButton(e))
@@ -562,10 +506,26 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 
 			@Override
-			protected void onFinishedDrawing(Image map, boolean anotherDrawIsQueued, int borderPaddingAsDrawn,
-					Rectangle incrementalChangeArea, List<String> warningMessages)
+			protected void onFinishedDrawingFull(Image map, boolean anotherDrawIsQueued, int borderPaddingAsDrawn, List<String> warningMessages)
 			{
-				mapEditingPanel.mapFromMapCreator = AwtFactory.unwrap(map);
+				if (mapEditingPanel.mapFromMapCreator != null && mapEditingPanel.mapFromMapCreator != map)
+				{
+					mapEditingPanel.mapFromMapCreator.close();
+				}
+				mapEditingPanel.mapFromMapCreator = map;
+				onFinishedDrawingCommon(anotherDrawIsQueued, borderPaddingAsDrawn, null, warningMessages);
+			}
+
+			@Override
+			protected void onFinishedDrawingIncremental(boolean anotherDrawIsQueued, int borderPaddingAsDrawn, IntRectangle incrementalChangeArea, List<String> warningMessages)
+			{
+				// Map was already updated in-place by MapCreator on background thread.
+				// Just update the zoomed display for the changed region.
+				onFinishedDrawingCommon(anotherDrawIsQueued, borderPaddingAsDrawn, incrementalChangeArea, warningMessages);
+			}
+
+			private void onFinishedDrawingCommon(boolean anotherDrawIsQueued, int borderPaddingAsDrawn, IntRectangle incrementalChangeArea, List<String> warningMessages)
+			{
 				mapEditingPanel.setBorderPadding(borderPaddingAsDrawn);
 				mapEditingPanel.setGraph(mapParts.graph);
 				mapEditingPanel.setFreeIcons(edits == null ? null : edits.freeIcons);
@@ -617,7 +577,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					JScrollPane scrollPane = new JScrollPane(textArea);
 					scrollPane.setPreferredSize(new Dimension(500, 150));
 
-					JOptionPane.showMessageDialog(MainWindow.this, scrollPane, "Map Drew With Warnings", JOptionPane.WARNING_MESSAGE);
+					JOptionPane.showMessageDialog(MainWindow.this, scrollPane, Translation.get("mainWindow.mapDrewWithWarnings"), JOptionPane.WARNING_MESSAGE);
 
 				}
 
@@ -630,8 +590,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				showAsDrawing(false);
 				mapEditingPanel.clearAllSelectionsAndHighlights();
-				setPlaceholderImage(new String[] { "Map failed to draw due to an error.",
-						"To retry, use " + fileMenu.getText() + " -> " + refreshMenuItem.getText() + "." });
+				setPlaceholderImage(new String[] { Translation.get("mainWindow.mapFailedToDraw"), Translation.get("mainWindow.mapFailedRetry", fileMenu.getText(), refreshMenuItem.getText()) });
 
 				// In theory, enabling fields now could lead to the undoer not
 				// working quite right since edits might not have been created.
@@ -649,7 +608,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			protected Image getCurrentMapForIncrementalUpdate()
 			{
-				return AwtFactory.wrap(mapEditingPanel.mapFromMapCreator);
+				return mapEditingPanel.mapFromMapCreator;
 			}
 
 			@Override
@@ -674,10 +633,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		JMenuBar menuBar = new JMenuBar();
 		setJMenuBar(menuBar);
 
-		fileMenu = new JMenu("File");
+		fileMenu = new JMenu(Translation.get("menu.file"));
 		menuBar.add(fileMenu);
 
-		final JMenuItem newRandomMapMenuItem = new JMenuItem("New Random Map");
+		final JMenuItem newRandomMapMenuItem = new JMenuItem(Translation.get("menu.file.newRandomMap"));
 		newRandomMapMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, KeyEvent.CTRL_DOWN_MASK));
 		fileMenu.add(newRandomMapMenuItem);
 		newRandomMapMenuItem.addActionListener(new ActionListener()
@@ -693,7 +652,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 
-		newMapWithSameThemeMenuItem = new JMenuItem("New Map With Same Theme");
+		newMapWithSameThemeMenuItem = new JMenuItem(Translation.get("menu.file.newMapWithSameTheme"));
 		fileMenu.add(newMapWithSameThemeMenuItem);
 		newMapWithSameThemeMenuItem.addActionListener(new ActionListener()
 		{
@@ -706,17 +665,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					MapSettings settingsToKeepThemeFrom = getSettingsFromGUI(false);
 					settingsToKeepThemeFrom.edits = new MapEdits();
 
-					if (settingsToKeepThemeFrom.drawRegionColors
-							&& !UserPreferences.getInstance().hideNewMapWithSameThemeRegionColorsMessage)
+					if (settingsToKeepThemeFrom.drawRegionColors && !UserPreferences.getInstance().hideNewMapWithSameThemeRegionColorsMessage)
 					{
-						UserPreferences.getInstance().hideNewMapWithSameThemeRegionColorsMessage = SwingHelper.showDismissibleMessage(
-								"Region Colors",
-								"New region colors will be generated based on the " + LandWaterTool.colorGeneratorSettingsName + " in the "
-										+ LandWaterTool.toolbarName + " tool"
-										+ ", not the actual colors used in your current map. This means that if you chose your region colors"
-										+ " by hand rather than generating them, the region colors in your new map may look substantially different"
-										+ " than those in your current map.",
-								new Dimension(400, 133), JOptionPane.PLAIN_MESSAGE, MainWindow.this);
+						UserPreferences.getInstance().hideNewMapWithSameThemeRegionColorsMessage = SwingHelper.showDismissibleMessage(Translation.get("regionColors.title"),
+								Translation.get("regionColors.message", LandWaterTool.getColorGeneratorSettingsName(), LandWaterTool.getToolbarNameStatic()), new Dimension(400, 133),
+								JOptionPane.PLAIN_MESSAGE, MainWindow.this);
 					}
 
 					launchNewSettingsDialog(settingsToKeepThemeFrom);
@@ -724,7 +677,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 
-		final JMenuItem loadSettingsMenuItem = new JMenuItem("Open");
+		final JMenuItem loadSettingsMenuItem = new JMenuItem(Translation.get("menu.file.open"));
 		loadSettingsMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, KeyEvent.CTRL_DOWN_MASK));
 		fileMenu.add(loadSettingsMenuItem);
 		loadSettingsMenuItem.addActionListener(new ActionListener()
@@ -736,8 +689,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				if (cancelPressed)
 					return;
 
-				Path curPath = openSettingsFilePath == null ? FileSystemView.getFileSystemView().getDefaultDirectory().toPath()
-						: openSettingsFilePath;
+				Path curPath = openSettingsFilePath == null ? FileSystemView.getFileSystemView().getDefaultDirectory().toPath() : openSettingsFilePath;
 				File currentFolder = new File(curPath.toString());
 				JFileChooser fileChooser = new JFileChooser();
 				fileChooser.setCurrentDirectory(currentFolder);
@@ -752,8 +704,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					@Override
 					public boolean accept(File f)
 					{
-						return f.isDirectory() || f.getName().toLowerCase().endsWith(".properties")
-								|| f.getName().toLowerCase().endsWith(MapSettings.fileExtensionWithDot);
+						return f.isDirectory() || f.getName().toLowerCase().endsWith(".properties") || f.getName().toLowerCase().endsWith(MapSettings.fileExtensionWithDot);
 					}
 				});
 				int status = fileChooser.showOpenDialog(MainWindow.this);
@@ -763,9 +714,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 					if (openSettingsFilePath != null && MapSettings.isOldPropertiesFile(openSettingsFilePath.toString()))
 					{
-						JOptionPane.showMessageDialog(MainWindow.this, FilenameUtils.getName(openSettingsFilePath.toString())
-								+ " is an older format '.properties' file. When you save, it will be converted to the newer format, a '"
-								+ MapSettings.fileExtensionWithDot + "' file.", "File Converted", JOptionPane.INFORMATION_MESSAGE);
+						JOptionPane.showMessageDialog(MainWindow.this,
+								Translation.get("mainWindow.fileConvertedMessage", FilenameUtils.getName(openSettingsFilePath.toString()), MapSettings.fileExtensionWithDot),
+								Translation.get("mainWindow.fileConverted"), JOptionPane.INFORMATION_MESSAGE);
 						openSettingsFilePath = Paths.get(FilenameUtils.getFullPath(openSettingsFilePath.toString()),
 								FilenameUtils.getBaseName(openSettingsFilePath.toString()) + MapSettings.fileExtensionWithDot);
 						forceSaveAs = true;
@@ -776,11 +727,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 
-		recentSettingsMenuItem = new JMenu("Open Recent");
+		recentSettingsMenuItem = new JMenu(Translation.get("menu.file.openRecent"));
 		fileMenu.add(recentSettingsMenuItem);
 		createOrUpdateRecentMapMenuButtons();
 
-		saveMenuItem = new JMenuItem("Save");
+		saveMenuItem = new JMenuItem(Translation.get("menu.file.save"));
 		saveMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK));
 		fileMenu.add(saveMenuItem);
 		saveMenuItem.addActionListener(new ActionListener()
@@ -792,7 +743,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 
-		saveAsMenItem = new JMenuItem("Save As...");
+		saveAsMenItem = new JMenuItem(Translation.get("menu.file.saveAs"));
 		fileMenu.add(saveAsMenItem);
 		saveAsMenItem.addActionListener(new ActionListener()
 		{
@@ -803,7 +754,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 
-		exportMapAsImageMenuItem = new JMenuItem("Export as Image");
+		exportMapAsImageMenuItem = new JMenuItem(Translation.get("menu.file.exportAsImage"));
 		fileMenu.add(exportMapAsImageMenuItem);
 		exportMapAsImageMenuItem.addActionListener(new ActionListener()
 		{
@@ -814,7 +765,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 
-		exportHeightmapMenuItem = new JMenuItem("Export Heightmap");
+		exportHeightmapMenuItem = new JMenuItem(Translation.get("menu.file.exportHeightmap"));
 		fileMenu.add(exportHeightmapMenuItem);
 		exportHeightmapMenuItem.addActionListener(new ActionListener()
 		{
@@ -825,7 +776,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 
-		refreshMenuItem = new JMenuItem("Refresh Images and Redraw");
+		refreshMenuItem = new JMenuItem(Translation.get("menu.file.refreshImagesAndRedraw"));
 		refreshMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, KeyEvent.CTRL_DOWN_MASK));
 		fileMenu.add(refreshMenuItem);
 		refreshMenuItem.addActionListener(new ActionListener()
@@ -838,10 +789,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 
-		editMenu = new JMenu("Edit");
+		editMenu = new JMenu(Translation.get("menu.edit"));
 		menuBar.add(editMenu);
 
-		undoButton = new JMenuItem("Undo");
+		undoButton = new JMenuItem(Translation.get("menu.edit.undo"));
 		undoButton.setEnabled(false);
 		editMenu.add(undoButton);
 		undoButton.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Z, KeyEvent.CTRL_DOWN_MASK));
@@ -860,7 +811,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 
-		redoButton = new JMenuItem("Redo");
+		redoButton = new JMenuItem(Translation.get("menu.edit.redo"));
 		redoButton.setEnabled(false);
 		editMenu.add(redoButton);
 		redoButton.setAccelerator(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_Z, ActionEvent.CTRL_MASK | ActionEvent.SHIFT_MASK));
@@ -879,7 +830,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 
-		clearEntireMapButton = new JMenuItem("Clear Entire Map");
+		clearEntireMapButton = new JMenuItem(Translation.get("menu.edit.clearEntireMap"));
 		editMenu.add(clearEntireMapButton);
 		clearEntireMapButton.addActionListener(new ActionListener()
 		{
@@ -891,7 +842,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		});
 		clearEntireMapButton.setEnabled(false);
 
-		customImagesMenuItem = new JMenuItem("Custom Images Folder");
+		customImagesMenuItem = new JMenuItem(Translation.get("menu.edit.customImagesFolder"));
 		editMenu.add(customImagesMenuItem);
 		customImagesMenuItem.addActionListener(new ActionListener()
 		{
@@ -902,11 +853,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 
-		viewMenu = new JMenu("View");
+		viewMenu = new JMenu(Translation.get("menu.view"));
 		menuBar.add(viewMenu);
 
-		highlightLakesButton = new JCheckBoxMenuItem("Highlight Lakes");
-		highlightLakesButton.setToolTipText("Highlight lakes to make them easier to see.");
+		highlightLakesButton = new JCheckBoxMenuItem(Translation.get("menu.view.highlightLakes"));
+		highlightLakesButton.setToolTipText(Translation.get("menu.view.highlightLakes.tooltip"));
 		highlightLakesButton.addActionListener(new ActionListener()
 		{
 			@Override
@@ -918,8 +869,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		});
 		viewMenu.add(highlightLakesButton);
 
-		highlightRiversButton = new JCheckBoxMenuItem("Highlight Rivers");
-		highlightRiversButton.setToolTipText("Highlight rivers to make them easier to see.");
+		highlightRiversButton = new JCheckBoxMenuItem(Translation.get("menu.view.highlightRivers"));
+		highlightRiversButton.setToolTipText(Translation.get("menu.view.highlightRivers.tooltip"));
 		highlightRiversButton.addActionListener(new ActionListener()
 		{
 			@Override
@@ -933,11 +884,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		{
 			// Create the theme menu
-			JMenu themeMenu = new JMenu("Theme");
+			JMenu themeMenu = new JMenu(Translation.get("menu.view.theme"));
 
-			JRadioButtonMenuItem darkTheme = new JRadioButtonMenuItem("Dark");
-			JRadioButtonMenuItem lightTheme = new JRadioButtonMenuItem("Light");
-			JRadioButtonMenuItem systemTheme = new JRadioButtonMenuItem("System");
+			JRadioButtonMenuItem darkTheme = new JRadioButtonMenuItem(Translation.enumDisplayName(LookAndFeel.Dark));
+			JRadioButtonMenuItem lightTheme = new JRadioButtonMenuItem(Translation.enumDisplayName(LookAndFeel.Light));
+			JRadioButtonMenuItem systemTheme = new JRadioButtonMenuItem(Translation.enumDisplayName(LookAndFeel.System));
 
 			ButtonGroup themeGroup = new ButtonGroup();
 			themeGroup.add(darkTheme);
@@ -995,10 +946,38 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			viewMenu.add(themeMenu);
 		}
 
-		toolsMenu = new JMenu("Tools");
+		{
+			JMenu languageMenu = new JMenu(Translation.get("menu.view.language"));
+			ButtonGroup languageGroup = new ButtonGroup();
+
+			String currentLanguage = UserPreferences.getInstance().language;
+
+			JRadioButtonMenuItem systemDefaultItem = new JRadioButtonMenuItem(Translation.get("language.systemDefault"));
+			systemDefaultItem.setSelected(currentLanguage == null || currentLanguage.isEmpty());
+			languageGroup.add(systemDefaultItem);
+			languageMenu.add(systemDefaultItem);
+			systemDefaultItem.addActionListener(e -> handleLanguageChange(null));
+
+			String[][] languages = { { "en", "English" }, { "de", "Deutsch" }, { "es", "Espa\u00F1ol" }, { "fr", "Fran\u00E7ais" }, { "pt", "Portugu\u00EAs" },
+					{ "ru", "\u0420\u0443\u0441\u0441\u043A\u0438\u0439" }, { "zh", "\u4E2D\u6587" } };
+
+			for (String[] lang : languages)
+			{
+				JRadioButtonMenuItem item = new JRadioButtonMenuItem(lang[1]);
+				item.setSelected(lang[0].equals(currentLanguage));
+				languageGroup.add(item);
+				languageMenu.add(item);
+				final String langCode = lang[0];
+				item.addActionListener(e -> handleLanguageChange(langCode));
+			}
+
+			viewMenu.add(languageMenu);
+		}
+
+		toolsMenu = new JMenu(Translation.get("menu.tools"));
 		menuBar.add(toolsMenu);
 
-		nameGeneratorMenuItem = new JMenuItem("Name Generator");
+		nameGeneratorMenuItem = new JMenuItem(Translation.get("menu.tools.nameGenerator"));
 		toolsMenu.add(nameGeneratorMenuItem);
 		nameGeneratorMenuItem.addActionListener(new ActionListener()
 		{
@@ -1009,7 +988,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 
-		searchTextMenuItem = new JMenuItem("Search Text");
+		searchTextMenuItem = new JMenuItem(Translation.get("menu.tools.searchText"));
 		searchTextMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F, KeyEvent.CTRL_DOWN_MASK));
 		toolsMenu.add(searchTextMenuItem);
 		searchTextMenuItem.addActionListener(new ActionListener()
@@ -1021,10 +1000,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 
-		JMenu artPacksMenu = new JMenu("Art Packs");
+		JMenu artPacksMenu = new JMenu(Translation.get("menu.tools.artPacks"));
 		toolsMenu.add(artPacksMenu);
 
-		JMenuItem addArtPackItem = new JMenuItem("Add Art Pack");
+		JMenuItem addArtPackItem = new JMenuItem(Translation.get("menu.tools.addArtPack"));
 		artPacksMenu.add(addArtPackItem);
 		addArtPackItem.addActionListener(new ActionListener()
 		{
@@ -1036,7 +1015,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 
-		JMenuItem openArtPacksFolderItem = new JMenuItem("Open Art Packs Folder");
+		JMenuItem openArtPacksFolderItem = new JMenuItem(Translation.get("menu.tools.openArtPacksFolder"));
 		artPacksMenu.add(openArtPacksFolderItem);
 		openArtPacksFolderItem.addActionListener(new ActionListener()
 		{
@@ -1048,29 +1027,25 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		});
 
 		artPacksToHighlight = new ArrayList<>();
-		highlightIconsInArtPackMenu = new JMenu("Highlight Icons in Art Packs");
+		highlightIconsInArtPackMenu = new JMenu(Translation.get("menu.tools.highlightIconsInArtPacks"));
 		artPacksMenu.add(highlightIconsInArtPackMenu);
 		updateArtPackHighlightOptions();
 
-		helpMenu = new JMenu("Help");
+		helpMenu = new JMenu(Translation.get("menu.help"));
 		menuBar.add(helpMenu);
 
-		JMenuItem keyboardShortcutsItem = new JMenuItem("Keyboard Shortcuts");
+		JMenuItem keyboardShortcutsItem = new JMenuItem(Translation.get("menu.help.keyboardShortcuts"));
 		helpMenu.add(keyboardShortcutsItem);
 		keyboardShortcutsItem.addActionListener(new ActionListener()
 		{
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				JOptionPane.showMessageDialog(MainWindow.this, "<html>Keyboard shortcuts for navigating the map:" + "<ul>"
-						+ "<li>Zoom: Mouse wheel</li>" + "<li>Pan: Hold mouse middle button, or Shift and mouse left click, then drag</li>"
-						+ "</ul>"
-						+ "<br>Each editor tool has a keyboard shortcut for switching to it. Hover over the tool's icon to see the shortcut."
-						+ "</html>", "Keyboard Shortcuts", JOptionPane.INFORMATION_MESSAGE);
+				JOptionPane.showMessageDialog(MainWindow.this, Translation.get("keyboardShortcuts.message"), Translation.get("keyboardShortcuts.title"), JOptionPane.INFORMATION_MESSAGE);
 			}
 		});
 
-		JMenuItem aboutNortantisItem = new JMenuItem("About Nortantis");
+		JMenuItem aboutNortantisItem = new JMenuItem(Translation.get("menu.help.aboutNortantis"));
 		helpMenu.add(aboutNortantisItem);
 		aboutNortantisItem.addActionListener(new ActionListener()
 		{
@@ -1082,12 +1057,19 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		});
 	}
 
+	private void handleLanguageChange(String languageCode)
+	{
+		UserPreferences.getInstance().language = languageCode;
+		UserPreferences.getInstance().save();
+		JOptionPane.showMessageDialog(this, Translation.get("language.changed"), Translation.get("language.changed.title"), JOptionPane.INFORMATION_MESSAGE);
+	}
+
 	private void handleLookAndFeelChange(LookAndFeel lookAndFeel)
 	{
 		setLookAndFeel(lookAndFeel);
 		UserPreferences.getInstance().lookAndFeel = lookAndFeel;
 		SwingUtilities.updateComponentTreeUI(this);
-		toolsPanel.handleLookAndFeelChange(lookAndFeel);
+		toolsPanel.handleLookAndFeelChange();
 		if (textSearchDialog != null)
 		{
 			textSearchDialog.handleLookAndFeelChange();
@@ -1184,9 +1166,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 			catch (IOException ex)
 			{
-				String message = "An error occurred while creating the folder: " + ex.getMessage();
+				String message = Translation.get("artPack.errorCreatingFolder", ex.getMessage());
 				Logger.printError(message, ex);
-				JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(this, message, Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
 				return;
 			}
 		}
@@ -1198,13 +1180,13 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	{
 		JFileChooser fileChooser = new JFileChooser();
 		fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-		fileChooser.setDialogTitle("Select Art Pack (ZIP File)");
+		fileChooser.setDialogTitle(Translation.get("artPack.selectZip"));
 		fileChooser.setFileFilter(new FileFilter()
 		{
 			@Override
 			public String getDescription()
 			{
-				return "Art Pack (ZIP File)";
+				return Translation.get("artPack.zipFileFilter");
 			}
 
 			@Override
@@ -1236,27 +1218,61 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 			if (subfolderNames.isEmpty())
 			{
-				JOptionPane.showMessageDialog(this,
-						"Invalid art pack. It's empty. It should have exactly one top-level folder, the name of which is the name of the art pack.",
-						"Error", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(this, Translation.get("artPack.invalidEmpty"), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
 				return;
 			}
 
 			if (subfolderNames.size() > 1)
 			{
-				JOptionPane.showMessageDialog(this,
-						"Invalid art pack. It should have exactly one top-level folder, the name of which will be the name of the art pack. It has "
-								+ subfolderNames.size() + " top-level folders.",
-						"Error", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(this, Translation.get("artPack.invalidMultipleFolders", subfolderNames.size()), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
 				return;
+			}
+
+			try
+			{
+				String settingsPath = subfolderNames.get(0) + "/" + "settings.txt";
+				Properties settingsProps = FileHelper.readPropertiesFromZipFile(selectedFile.toPath(), settingsPath);
+				final String requiredVersionKey = "requiredVersion";
+				if (settingsProps.containsKey(requiredVersionKey))
+				{
+					String requiredVersion = settingsProps.getProperty(requiredVersionKey);
+					if (!StringUtils.isBlank(requiredVersion))
+					{
+						try
+						{
+							if (MapSettings.isVersionGreaterThanCurrent(requiredVersion))
+							{
+								JOptionPane.showMessageDialog(this, Translation.get("artPack.requiresVersion", requiredVersion, MapSettings.currentVersion), Translation.get("common.error"),
+										JOptionPane.ERROR_MESSAGE);
+								return;
+							}
+						}
+						catch (NumberFormatException e)
+						{
+							String message = "Number format error while reading " + requiredVersionKey + " from '" + settingsPath + "' in '" + selectedFile.toPath() + "': " + e.getMessage();
+							Logger.printError(message, e);
+							JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
+							return;
+						}
+					}
+				}
+			}
+			catch (FileNotFoundException e)
+			{
+				// Do nothing. This means the art pack doesn't have a settings file. It's optional.
+			}
+			catch (IOException e)
+			{
+				final String message = "Error while trying to read art pack version file: " + e.getMessage();
+				Logger.printError(message, e);
+				JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
 			}
 
 			String artPackName = subfolderNames.get(0);
 
 			if (Assets.reservedArtPacks.contains(artPackName.toLowerCase()))
 			{
-				JOptionPane.showMessageDialog(this, "The art pack name '" + artPackName + "' is not allowed.", "Invalid Art Pack Name",
-						JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(this, Translation.get("artPack.nameNotAllowed", artPackName), Translation.get("artPack.invalidName"), JOptionPane.ERROR_MESSAGE);
 				return;
 			}
 
@@ -1264,9 +1280,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			if (artPackFolderAsFile.exists() && artPackFolderAsFile.isDirectory())
 			{
 				// Show the dialog
-				int response = JOptionPane.showOptionDialog(this,
-						"The art pack '" + artPackName + "' already exists. Do you wish to overwrite it?", "Overwrite Art Pack",
-						JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE, null, new Object[] { "Overwrite", "Cancel" }, "Cancel");
+				int response = JOptionPane.showOptionDialog(this, Translation.get("artPack.alreadyExists", artPackName), Translation.get("artPack.overwriteTitle"), JOptionPane.DEFAULT_OPTION,
+						JOptionPane.WARNING_MESSAGE, null, new Object[] { Translation.get("artPack.overwrite"), Translation.get("common.cancel") }, Translation.get("common.cancel"));
 
 				if (response == 0)
 				{
@@ -1293,12 +1308,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			try
 			{
 				FileHelper.unzip(selectedFile, artPacksFolder, true);
-				JOptionPane.showMessageDialog(MainWindow.this, "Art pack added successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
+				JOptionPane.showMessageDialog(MainWindow.this, Translation.get("artPack.addedSuccessfully"), Translation.get("artPack.success"), JOptionPane.INFORMATION_MESSAGE);
 			}
 			catch (IOException ex)
 			{
-				JOptionPane.showMessageDialog(MainWindow.this, "Error uncompressing the zip file: " + ex.getMessage(), "Error",
-						JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(MainWindow.this, Translation.get("artPack.errorUncompressing", ex.getMessage()), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
 			}
 			handleImagesRefresh();
 		}
@@ -1309,6 +1323,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		updater.setEnabled(false);
 		undoer.setEnabled(false);
 		ImageCache.clear();
+		ThemePanel.clearBackgroundImageCache();
 		MapSettings settings = getSettingsFromGUI(false);
 		themePanel.handleImagesRefresh(settings);
 		// Tell Icons tool to refresh image previews
@@ -1360,8 +1375,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	{
 		if (!(new File(absolutePath).exists()))
 		{
-			JOptionPane.showMessageDialog(null, "The map '" + absolutePath + "' cannot be opened because it does not exist.",
-					"Unable to Open Map", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(null, Translation.get("mainWindow.mapDoesNotExist", absolutePath), Translation.get("mainWindow.unableToOpenMap"), JOptionPane.ERROR_MESSAGE);
 			return;
 		}
 
@@ -1387,8 +1401,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		catch (Exception e)
 		{
 			e.printStackTrace();
-			JOptionPane.showMessageDialog(null, "Error while opening '" + absolutePath + "': " + e.getMessage(), "Error While Opening Map",
-					JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(null, "Error while opening '" + absolutePath + "': " + e.getMessage(), Translation.get("mainWindow.errorWhileOpeningMap"), JOptionPane.ERROR_MESSAGE);
 			Logger.printError("Unable to open '" + absolutePath + "' due to an error:", e);
 		}
 	}
@@ -1401,13 +1414,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				MapSettings.convertOldCustomImagesFolder(settings.customImagesPath);
 
-				JOptionPane.showMessageDialog(null, "Your custom images folder has been automatically converted to the new structure.",
-						"Custom Images Folder Converted", JOptionPane.INFORMATION_MESSAGE);
+				JOptionPane.showMessageDialog(null, Translation.get("customImages.folderConvertedMessage"), Translation.get("customImages.folderConverted"), JOptionPane.INFORMATION_MESSAGE);
 			}
 			catch (IOException ex)
 			{
-				String errorMessage = "Error while restructuring custom images folder for " + settings.customImagesPath + ": "
-						+ ex.getMessage();
+				String errorMessage = "Error while restructuring custom images folder for " + settings.customImagesPath + ": " + ex.getMessage();
 				Logger.printError(errorMessage, ex);
 				JOptionPane.showMessageDialog(null, errorMessage, "Error", JOptionPane.ERROR_MESSAGE);
 			}
@@ -1436,8 +1447,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		}
 	}
 
-	public void updateDisplayedMapFromGeneratedMap(boolean updateScrollLocationIfZoomChanged, Rectangle incrementalChangeArea,
-			boolean isOnlyZoomChange)
+	public void updateDisplayedMapFromGeneratedMap(boolean updateScrollLocationIfZoomChanged, IntRectangle incrementalChangeArea, boolean isOnlyZoomChange)
 	{
 		double oldZoom = zoom;
 		zoom = translateZoomLevel((String) toolsPanel.zoomComboBox.getSelectedItem());
@@ -1455,18 +1465,16 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				{
 					// Zoom toward the mouse's position, keeping the point
 					// currently under the mouse the same if possible.
-					scrollTo = new java.awt.Rectangle((int) (mousePosition.x * scale) - mousePosition.x + visible.x,
-							(int) (mousePosition.y * scale) - mousePosition.y + visible.y, visible.width, visible.height);
+					scrollTo = new java.awt.Rectangle((int) (mousePosition.x * scale) - mousePosition.x + visible.x, (int) (mousePosition.y * scale) - mousePosition.y + visible.y, visible.width,
+							visible.height);
 				}
 				else
 				{
 					// Zoom toward or away from the current center of the
 					// screen.
 					java.awt.Point currentCentroid = new java.awt.Point(visible.x + (visible.width / 2), visible.y + (visible.height / 2));
-					java.awt.Point targetCentroid = new java.awt.Point((int) (currentCentroid.x * scale),
-							(int) (currentCentroid.y * scale));
-					scrollTo = new java.awt.Rectangle(targetCentroid.x - visible.width / 2, targetCentroid.y - visible.height / 2,
-							visible.width, visible.height);
+					java.awt.Point targetCentroid = new java.awt.Point((int) (currentCentroid.x * scale), (int) (currentCentroid.y * scale));
+					scrollTo = new java.awt.Rectangle(targetCentroid.x - visible.width / 2, targetCentroid.y - visible.height / 2, visible.width, visible.height);
 				}
 			}
 
@@ -1488,8 +1496,23 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			if (method == Method.QUALITY)
 			{
 				// Can't incrementally zoom. Zoom the whole thing.
-				mapEditingPanel.setImage(AwtFactory
-						.unwrap(ImageHelper.scaleByWidth(AwtFactory.wrap(mapEditingPanel.mapFromMapCreator), zoomedWidth, method)));
+				if (zoomedWidth > mapEditingPanel.mapFromMapCreator.getWidth())
+				{
+					// Zooming in: convert smaller source first, then scale up.
+					BufferedImage sourceBI = AwtBridge.toBufferedImage(mapEditingPanel.mapFromMapCreator);
+					try (Image source = AwtBridge.wrapBufferedImage(sourceBI); Image scaled = ImageHelper.getInstance().scaleByWidth(source, zoomedWidth, method))
+					{
+						mapEditingPanel.setImage(AwtBridge.toBufferedImage(scaled));
+					}
+				}
+				else
+				{
+					// Zooming out (or 1:1): scale down first, then convert smaller result.
+					try (Image scaled = ImageHelper.getInstance().scaleByWidth(mapEditingPanel.mapFromMapCreator, zoomedWidth, method))
+					{
+						mapEditingPanel.setImage(AwtBridge.toBufferedImage(scaled));
+					}
+				}
 			}
 			else
 			{
@@ -1505,26 +1528,38 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					// I don't use ImageHelper.scaleInto for the full image case
 					// because it's 5x slower than the below
 					// method, which uses ImgScalr.
-					mapEditingPanel.setImage(AwtFactory
-							.unwrap(ImageHelper.scaleByWidth(AwtFactory.wrap(mapEditingPanel.mapFromMapCreator), zoomedWidth, method)));
+					if (zoomedWidth > mapEditingPanel.mapFromMapCreator.getWidth())
+					{
+						// Zooming in: convert smaller source first, then scale up.
+						BufferedImage sourceBI = AwtBridge.toBufferedImage(mapEditingPanel.mapFromMapCreator);
+						try (Image source = AwtBridge.wrapBufferedImage(sourceBI); Image scaled = ImageHelper.getInstance().scaleByWidth(source, zoomedWidth, method))
+						{
+							mapEditingPanel.setImage(AwtBridge.toBufferedImage(scaled));
+						}
+					}
+					else
+					{
+						// Zooming out (or 1:1): scale down first, then convert smaller result.
+						try (Image scaled = ImageHelper.getInstance().scaleByWidth(mapEditingPanel.mapFromMapCreator, zoomedWidth, method))
+						{
+							mapEditingPanel.setImage(AwtBridge.toBufferedImage(scaled));
+						}
+					}
 				}
 				else
 				{
-					// These two images will be the same if the zoom and display
-					// quality are the same, in which case
-					// ImageHelper.scaleByWidth called above returns the input
-					// image.
-					if (mapEditingPanel.mapFromMapCreator != mapEditingPanel.getImage())
+					if (mapEditingPanel.getImage() != null)
 					{
-						ImageHelper.scaleInto(AwtFactory.wrap(mapEditingPanel.mapFromMapCreator),
-								AwtFactory.wrap(mapEditingPanel.getImage()), incrementalChangeArea);
+						// Use wrapBufferedImage for the target so changes write back to the display BufferedImage.
+						// fromBufferedImage would create a copy when using SkiaFactory, losing the changes.
+						ImageHelper.getInstance().scaleInto(mapEditingPanel.mapFromMapCreator, AwtBridge.wrapBufferedImage(mapEditingPanel.getImage()), incrementalChangeArea);
 					}
 				}
 			}
 
 			if (scrollTo != null)
 			{
-				// For some reason I have to do a whole bunch of revalidation or
+				// For some reason I have to do a bunch of revalidation or
 				// else scrollRectToVisible doesn't realize the map has changed
 				// size.
 				mapEditingPanel.revalidate();
@@ -1534,11 +1569,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				mapEditingPanel.scrollRectToVisible(scrollTo);
 			}
 
-			updater.doWhenMapIsReadyForInteractions(() -> 
+			updater.doWhenMapIsReadyForInteractions(() ->
 			{
 				toolsPanel.currentTool.onAfterShowMap();
 			});
-	
+
 			mapEditingPanel.revalidate();
 			mapEditingScrollPane.revalidate();
 			mapEditingPanel.repaint();
@@ -1571,13 +1606,12 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		{
 			if (mapEditingPanel.mapFromMapCreator != null)
 			{
-				final int additionalWidthToRemoveIDontKnowWhereItsCommingFrom = 2;
-				nortantis.geom.Dimension size = new nortantis.geom.Dimension(
-						mapEditingScrollPane.getSize().width - additionalWidthToRemoveIDontKnowWhereItsCommingFrom,
-						mapEditingScrollPane.getSize().height - additionalWidthToRemoveIDontKnowWhereItsCommingFrom);
+				final int additionalWidthToRemoveIDontKnowWhereItsComingFrom = 2;
+				nortantis.geom.Dimension size = new nortantis.geom.Dimension(mapEditingScrollPane.getSize().width - additionalWidthToRemoveIDontKnowWhereItsComingFrom,
+						mapEditingScrollPane.getSize().height - additionalWidthToRemoveIDontKnowWhereItsComingFrom);
 
-				nortantis.geom.Dimension fitted = ImageHelper.fitDimensionsWithinBoundingBox(size,
-						mapEditingPanel.mapFromMapCreator.getWidth(), mapEditingPanel.mapFromMapCreator.getHeight());
+				nortantis.geom.Dimension fitted = ImageHelper.getInstance().fitDimensionsWithinBoundingBox(size, mapEditingPanel.mapFromMapCreator.getWidth(),
+						mapEditingPanel.mapFromMapCreator.getHeight());
 				return (fitted.width / mapEditingPanel.mapFromMapCreator.getWidth()) * mapEditingPanel.osScale;
 			}
 			else
@@ -1678,7 +1712,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			for (Edge edge : updater.mapParts.graph.edges)
 			{
 				EdgeEdit eEdit = edits.edgeEdits.get(edge.index);
-				eEdit.riverLevel = 0;
+				if (eEdit != null)
+				{
+					eEdit.riverLevel = 0;
+				}
 			}
 
 			// Erase free icons
@@ -1688,7 +1725,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			edits.roads.clear();
 
 			undoer.setUndoPoint(UpdateType.Full, null);
-			updater.createAndShowMapTerrainChange();
+			updater.createAndShowMapFull();
 		});
 	}
 
@@ -1711,7 +1748,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		CustomImagesDialog dialog = new CustomImagesDialog(this, customImagesPath, (value) ->
 		{
 			customImagesPath = value;
-			loadSettingsAndEditsIntoThemeAndToolsPanels(getSettingsFromGUI(false), false, true);
+			loadSettingsAndEditsIntoThemeAndToolsPanels(getSettingsFromGUI(false), false, false);
 			toolsPanel.handleCustomImagesPathChanged(customImagesPath);
 			undoer.setUndoPoint(UpdateType.Full, null, () -> handleImagesRefresh());
 			updater.createAndShowMapFull(() -> handleImagesRefresh());
@@ -1739,8 +1776,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			Dimension parentSize = getSize();
 			Dimension dialogSize = textSearchDialog.getSize();
 
-			textSearchDialog.setLocation(parentLocation.x + parentSize.width / 2 - dialogSize.width / 2,
-					parentLocation.y + parentSize.height - dialogSize.height - 18);
+			textSearchDialog.setLocation(parentLocation.x + parentSize.width / 2 - dialogSize.width / 2, parentLocation.y + parentSize.height - dialogSize.height - 18);
 
 			textSearchDialog.setVisible(true);
 		}
@@ -1759,7 +1795,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		if (settingsHaveUnsavedChanges())
 		{
-			int n = JOptionPane.showConfirmDialog(this, "Settings have been modfied. Save changes?", "", JOptionPane.YES_NO_CANCEL_OPTION);
+			int n = JOptionPane.showConfirmDialog(this, Translation.get("mainWindow.settingsModified"), "", JOptionPane.YES_NO_CANCEL_OPTION);
 			if (n == JOptionPane.YES_OPTION)
 			{
 				saveSettings(this);
@@ -1829,7 +1865,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				e.printStackTrace();
 				Logger.printError("Error while saving map.", e);
-				JOptionPane.showMessageDialog(null, e.getMessage(), "Unable to save settings.", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(null, e.getMessage(), Translation.get("mainWindow.unableToSaveSettings"), JOptionPane.ERROR_MESSAGE);
 			}
 			updateFrameTitle(false, true);
 		}
@@ -1837,8 +1873,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	public void saveSettingsAs(Component parent)
 	{
-		Path curPath = openSettingsFilePath == null ? FileSystemView.getFileSystemView().getDefaultDirectory().toPath()
-				: openSettingsFilePath;
+		Path curPath = openSettingsFilePath == null ? FileSystemView.getFileSystemView().getDefaultDirectory().toPath() : openSettingsFilePath;
 		File currentFolder = openSettingsFilePath == null ? curPath.toFile() : new File(FilenameUtils.getFullPath(curPath.toString()));
 		JFileChooser fileChooser = new JFileChooser();
 		fileChooser.setCurrentDirectory(currentFolder);
@@ -1889,8 +1924,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			catch (IOException e)
 			{
 				e.printStackTrace();
-				Logger.printError("Erorr while saving settings to a new file:", e);
-				JOptionPane.showMessageDialog(null, e.getMessage(), "Unable to save settings.", JOptionPane.ERROR_MESSAGE);
+				Logger.printError("Error while saving settings to a new file:", e);
+				JOptionPane.showMessageDialog(null, e.getMessage(), Translation.get("mainWindow.unableToSaveSettings"), JOptionPane.ERROR_MESSAGE);
 			}
 
 			updateFrameTitle(false, true);
@@ -1922,8 +1957,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		String title;
 		if (openSettingsFilePath != null)
 		{
-			title = (showUnsavedChangesSymbol ? "✎ " : "") + FilenameUtils.getName(openSettingsFilePath.toString()) + " - "
-					+ frameTitleBase;
+			title = (showUnsavedChangesSymbol ? "✎ " : "") + FilenameUtils.getName(openSettingsFilePath.toString()) + " - " + frameTitleBase;
 		}
 		else
 		{
@@ -1944,14 +1978,14 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		updateLastSettingsLoadedOrSaved(settings);
 		toolsPanel.resetToolsForNewMap();
-		loadSettingsAndEditsIntoThemeAndToolsPanels(settings, false, true);
+		loadSettingsAndEditsIntoThemeAndToolsPanels(settings, false, false);
 
 		exportResolution = settings.resolution;
 		imageExportPath = settings.imageExportPath;
 		heightmapExportResolution = settings.heightmapResolution;
 		heightmapExportPath = settings.heightmapExportPath;
 
-		setPlaceholderImage(new String[] { "Drawing map..." });
+		setPlaceholderImage(new String[] { Translation.get("mainWindow.drawingMap") });
 
 		undoer.reset();
 
@@ -1967,27 +2001,28 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			// Note - this call needs to come after everything that calls into
 			// loadSettingsAndEditsIntoThemeAndToolsPanels because the text
 			// tool
-			// might enable fields when when loading settings, which will cause
+			// might enable fields when loading settings, which will cause
 			// fields to be enabled before the map is ready.
 			enableOrDisableFieldsThatRequireMap(false, settings);
 		}
 
 		toolsPanel.resetZoomToDefault();
-		updater.createAndShowMapFull();
-		updateFrameTitle(false, true);
 
 		defaultMapExportAction = settings.defaultMapExportAction;
 		defaultHeightmapExportAction = settings.defaultHeightmapExportAction;
+
+		updater.createAndShowMapFull();
+		updateFrameTitle(false, true);
 	}
 
-	void loadSettingsAndEditsIntoThemeAndToolsPanels(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean willDoImagesRefresh)
+	void loadSettingsAndEditsIntoThemeAndToolsPanels(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean refreshImagePreviews)
 	{
 		updater.setEnabled(false);
 		undoer.setEnabled(false);
 		customImagesPath = settings.customImagesPath;
 		edits = settings.edits;
-		boolean changeEffectsBackgroundImages = themePanel.loadSettingsIntoGUI(settings);
-		toolsPanel.loadSettingsIntoGUI(settings, isUndoRedoOrAutomaticChange, changeEffectsBackgroundImages, willDoImagesRefresh);
+		themePanel.loadSettingsIntoGUI(settings, refreshImagePreviews);
+		toolsPanel.loadSettingsIntoGUI(settings, isUndoRedoOrAutomaticChange, refreshImagePreviews);
 		undoer.setEnabled(true);
 		updater.setEnabled(true);
 	}
@@ -2054,8 +2089,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	private void setPlaceholderImage(String[] message)
 	{
-		mapEditingPanel.setImage(AwtFactory
-				.unwrap(ImageHelper.createPlaceholderImage(message, AwtFactory.wrap(SwingHelper.getTextColorForPlaceholderImages()))));
+		mapEditingPanel.setImage(AwtBridge.toBufferedImage(ImageHelper.getInstance().createPlaceholderImage(message, AwtBridge.fromAwtColor(SwingHelper.getTextColorForPlaceholderImages()))));
 
 		// Clear out the map from map creator so that causing the window to
 		// re-zoom while the placeholder image
@@ -2072,7 +2106,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		repaint();
 	}
 
-	void handleThemeChange(boolean changeEffectsBackgroundImages)
+	void handleThemeChange(boolean refreshImagePreviews)
 	{
 		// This check is to filter out automatic changes caused by
 		// loadSettingsIntoGUI.
@@ -2080,7 +2114,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		{
 			// Allow editor tools to update based on changes in the themes
 			// panel.
-			toolsPanel.loadSettingsIntoGUI(getSettingsFromGUI(false), true, changeEffectsBackgroundImages, false);
+			toolsPanel.loadSettingsIntoGUI(getSettingsFromGUI(false), true, refreshImagePreviews);
 		}
 	}
 
@@ -2128,8 +2162,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	 */
 	public static void main(String[] args)
 	{
-		// Tell drawing code to use AWT.
 		PlatformFactory.setInstance(new AwtFactory());
+
+		Translation.initialize();
 
 		setLookAndFeel(UserPreferences.getInstance().lookAndFeel);
 

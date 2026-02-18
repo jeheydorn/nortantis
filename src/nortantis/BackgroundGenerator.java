@@ -1,18 +1,17 @@
 package nortantis;
 
-import static java.lang.System.out;
+import nortantis.geom.IntRectangle;
+import nortantis.platform.*;
+import nortantis.platform.awt.AwtFactory;
+import nortantis.platform.ImageHelper;
+import nortantis.util.Range;
+import nortantis.util.Stopwatch;
+import org.imgscalr.Scalr.Method;
 
 import java.io.IOException;
 import java.util.Random;
 
-import org.imgscalr.Scalr.Method;
-
-import nortantis.platform.Image;
-import nortantis.platform.ImageType;
-import nortantis.platform.PlatformFactory;
-import nortantis.platform.awt.AwtFactory;
-import nortantis.util.ImageHelper;
-import nortantis.util.Range;
+import static java.lang.System.out;
 
 public class BackgroundGenerator
 {
@@ -45,8 +44,7 @@ public class BackgroundGenerator
 	 *            If true, then if the texture is less than 1/4th the target height or width, then it will be scaled so that it is not.
 	 * @return A randomly generated texture.
 	 */
-	public static Image generateUsingWhiteNoiseConvolution(Random rand, Image texture, int targetRows, int targetCols,
-			boolean allowScalingTextureLarger)
+	public static Image generateUsingWhiteNoiseConvolution(Random rand, Image texture, int targetRows, int targetCols, boolean allowScalingTextureLarger)
 	{
 		// The conditions under which the two calls below change the texture are mutually exclusive.
 		texture = cropTextureSmallerIfNeeded(texture, targetRows, targetCols);
@@ -55,8 +53,8 @@ public class BackgroundGenerator
 			texture = scaleTextureLargerIfNeeded(texture, targetRows, targetCols);
 		}
 
-		int rows = ImageHelper.getPowerOf2EqualOrLargerThan(Math.max(texture.getHeight(), targetRows));
-		int cols = ImageHelper.getPowerOf2EqualOrLargerThan(Math.max(texture.getWidth(), targetCols));
+		int rows = ImageHelper.getInstance().getJTransformsMixedRadixSizeEqualOrLargerThan(Math.max(texture.getHeight(), targetRows));
+		int cols = ImageHelper.getInstance().getJTransformsMixedRadixSizeEqualOrLargerThan(Math.max(texture.getWidth(), targetCols));
 
 		float alpha = 0.5f;
 		float textureArea = texture.getHeight() * texture.getHeight();
@@ -72,71 +70,74 @@ public class BackgroundGenerator
 		{
 			numberOfColorChannels = 1;
 			allChannels = null;
-			means = new float[]
-			{
-					ImageHelper.calcMeanOfGrayscaleImage(texture) / maxPixelValue
-			};
+			means = new float[] { ImageHelper.getInstance().calcMeanOfGrayscaleImage(texture) / maxPixelValue };
 		}
 		else
 		{
 			numberOfColorChannels = 3;
 			allChannels = Image.create(cols, rows, ImageType.RGB);
-			means = ImageHelper.calcMeanOfEachColor(texture);
+			means = ImageHelper.getInstance().calcMeanOfEachColor(texture);
 		}
 
 		ImageType randomImageType = texture.getType() == ImageType.Grayscale16Bit ? ImageType.Grayscale16Bit : ImageType.Grayscale8Bit;
-		Image randomImage = ImageHelper.genWhiteNoise(rand, rows, cols, randomImageType);
+		Image randomImage = ImageHelper.getInstance().genWhiteNoise(rand, rows, cols, randomImageType);
 
-		for (int channel : new Range(numberOfColorChannels))
+		try (PixelReader texturePixels = texture.createPixelReader())
 		{
-			float[][] kernel = new float[rows][cols];
-			for (int r = 0; r < rows; r++)
+			for (int channel : new Range(numberOfColorChannels))
 			{
-				for (int c = 0; c < cols; c++)
+				float[][] kernel = new float[rows][cols];
+				for (int r = 0; r < rows; r++)
 				{
-					int textureR = r - (rows - texture.getHeight()) / 2;
-					int textureC = c - (cols - texture.getWidth()) / 2;
-					if (textureR >= 0 && textureR < texture.getHeight() && textureC >= 0 && textureC < texture.getWidth())
+					for (int c = 0; c < cols; c++)
 					{
-						float level;
-						if (texture.isGrayscaleOrBinary())
+						int textureR = r - (rows - texture.getHeight()) / 2;
+						int textureC = c - (cols - texture.getWidth()) / 2;
+						if (textureR >= 0 && textureR < texture.getHeight() && textureC >= 0 && textureC < texture.getWidth())
 						{
-							level = texture.getNormalizedPixelLevel(textureC, textureR);
+							float level;
+							if (texture.isGrayscaleOrBinary())
+							{
+								level = texturePixels.getNormalizedPixelLevel(textureC, textureR);
+							}
+							else
+							{
+								// Color image
+								level = texturePixels.getBandLevel(textureC, textureR, channel);
+							}
+
+							float ar = calcSmoothParameter(textureR, alphaRows, alpha, texture.getHeight());
+							float ac = calcSmoothParameter(textureC, alphaCols, alpha, texture.getWidth());
+
+							kernel[r][c] = means[channel] + varianceScaler * (level - means[channel]) * ar * ac;
 						}
 						else
 						{
-							// Color image
-							level = texture.getBandLevel(textureC, textureR, channel);
+							kernel[r][c] = means[channel];
 						}
-
-						float ar = calcSmoothParamether(textureR, alphaRows, alpha, texture.getHeight());
-						float ac = calcSmoothParamether(textureC, alphaCols, alpha, texture.getWidth());
-
-						kernel[r][c] = means[channel] + varianceScaler * (level - means[channel]) * ar * ac;
-					}
-					else
-					{
-						kernel[r][c] = means[channel];
 					}
 				}
-			}
 
-			Image grayImage = ImageHelper.convolveGrayscale(randomImage, kernel, true, false);
-			kernel = null;
+				Image grayImage = ImageHelper.getInstance().convolveGrayscale(randomImage, kernel, true, false);
+				kernel = null;
 
-			if (numberOfColorChannels == 1)
-			{
-				allChannels = grayImage;
-			}
-			else
-			{
-				// Copy grayImage to a color channel in allChanels.
-				for (int y = 0; y < allChannels.getHeight(); y++)
+				if (numberOfColorChannels == 1)
 				{
-					for (int x = 0; x < allChannels.getWidth(); x++)
+					allChannels = grayImage;
+				}
+				else
+				{
+					// Copy grayImage to a color channel in allChannels.
+					try (PixelReader grayImagePixels = grayImage.createPixelReader(); PixelReaderWriter allChannelsPixels = allChannels.createPixelReaderWriter())
 					{
-						int level = grayImage.getGrayLevel(x, y);
-						allChannels.setBandLevel(x, y, channel, level);
+						for (int y = 0; y < allChannels.getHeight(); y++)
+						{
+							for (int x = 0; x < allChannels.getWidth(); x++)
+							{
+								int level = grayImagePixels.getGrayLevel(x, y);
+								allChannelsPixels.setBandLevel(x, y, channel, level);
+							}
+						}
 					}
 				}
 			}
@@ -149,21 +150,20 @@ public class BackgroundGenerator
 		Image colorsForHistogramMatching;
 		if (texture.getWidth() < targetCols || texture.getHeight() < targetRows)
 		{
-			colorsForHistogramMatching = ImageHelper.scale(texture, Math.max(texture.getWidth(), targetCols),
-					Math.max(texture.getHeight(), targetRows), Method.BALANCED);
+			colorsForHistogramMatching = ImageHelper.getInstance().scale(texture, Math.max(texture.getWidth(), targetCols), Math.max(texture.getHeight(), targetRows), Method.BALANCED);
 		}
 		else
 		{
 			colorsForHistogramMatching = texture;
 		}
 
-		Image result = ImageHelper.matchHistogram(allChannels, colorsForHistogramMatching);
-		result = ImageHelper.copySnippet(result, 0, 0, targetCols, targetRows);
+		Image result = ImageHelper.getInstance().matchHistogram(allChannels, colorsForHistogramMatching);
+		result = result.copySubImage(new IntRectangle(0, 0, targetCols, targetRows));
 
 		return result;
 	}
 
-	private static float calcSmoothParamether(int textureR, int alphaPixels, float alpha, int imageLength)
+	private static float calcSmoothParameter(int textureR, int alphaPixels, float alpha, int imageLength)
 	{
 		if (textureR <= alphaPixels / 2)
 		{
@@ -194,7 +194,7 @@ public class BackgroundGenerator
 		}
 
 		// The texture is wider and taller than we need it to be. Return a piece cropped out of the middle.
-		return ImageHelper.copySnippet(texture, (texture.getWidth() - cols) / 2, (texture.getHeight() - rows) / 2, cols, rows);
+		return texture.copySubImage(new IntRectangle((texture.getWidth() - cols) / 2, (texture.getHeight() - rows) / 2, cols, rows));
 	}
 
 	private static Image scaleTextureLargerIfNeeded(Image texture, int rows, int cols)
@@ -204,14 +204,14 @@ public class BackgroundGenerator
 		{
 			if (texture.getWidth() * scaleThreshold < cols)
 			{
-				return ImageHelper.scaleByWidth(texture, cols / scaleThreshold);
+				return ImageHelper.getInstance().scaleByWidth(texture, cols / scaleThreshold);
 			}
 		}
 		else
 		{
 			if (texture.getHeight() * scaleThreshold < rows)
 			{
-				return ImageHelper.scaleByHeight(texture, rows / scaleThreshold);
+				return ImageHelper.getInstance().scaleByHeight(texture, rows / scaleThreshold);
 			}
 		}
 		return texture;
@@ -230,7 +230,7 @@ public class BackgroundGenerator
 			out.print("Unable to load image.");
 		}
 		Image result = generateUsingWhiteNoiseConvolution(new Random(), image, 3072, 3072, false);
-		ImageHelper.openImageInSystemDefaultEditor(result, "result");
+		ImageHelper.getInstance().openImageInSystemDefaultEditor(result, "result");
 
 		sw.printElapsedTime();
 		System.out.println("Done.");

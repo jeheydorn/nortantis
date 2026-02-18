@@ -1,132 +1,184 @@
 package nortantis.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import nortantis.ImageCache;
-import nortantis.ImageCache.WhichDimension;
-import nortantis.util.Tuple2;
+import nortantis.ImageCache.ParsedFilename;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ImageCacheTest
 {
-
-	@BeforeClass
-	public static void setUpBeforeClass() throws Exception
-	{
-	}
-
-	@AfterClass
-	public static void tearDownAfterClass() throws Exception
-	{
-	}
-
 	@Test
-	public void testParseBaseNameAndWidth_withWidth()
+	public void testParseWidth()
 	{
-		String fileName = "large castle w2.png";
-		Tuple2<String, Double> result = ImageCache.parseBaseNameAndSize(fileName, WhichDimension.Width);
-		assertEquals("large castle", result.getFirst());
-		assertEquals(2, (double) result.getSecond(), 0);
-	}
-	
-	@Test
-	public void testParseBaseNameAndWidth_withHeight()
-	{
-		String fileName = "large castle h2.png";
-		Tuple2<String, Double> result = ImageCache.parseBaseNameAndSize(fileName, WhichDimension.Height);
-		assertEquals("large castle", result.getFirst());
-		assertEquals(2, (double) result.getSecond(), 0);
-	}
-	
-	@Test
-	public void testParseBaseNameAndWidth_withHeightSearchingByWidth()
-	{
-		String fileName = "large castle h2.png";
-		Tuple2<String, Double> result = ImageCache.parseBaseNameAndSize(fileName, WhichDimension.Width);
-		assertEquals("large castle h2", result.getFirst());
-		assertNull(result.getSecond());
+		ParsedFilename result = ImageCache.parseFilenameParams("large castle w2.png");
+		assertEquals("large castle", result.baseName());
+		assertEquals(2, result.width(), 0);
+		assertNull(result.height());
+		assertNull(result.alpha());
 	}
 
 	@Test
-	public void testParseBaseNameAndWidth_withWidthAndUnderscore()
+	public void testParseHeight()
 	{
-		String fileName = "large_castle_width=10.png";
-		Tuple2<String, Double> result = ImageCache.parseBaseNameAndSize(fileName, WhichDimension.Width);
-		assertEquals("large_castle", result.getFirst());
-		assertEquals(10, (double) result.getSecond(), 0);
-	}
-	
-	@Test
-	public void testParseBaseNameAndWidth_withHeightAndUnderscore()
-	{
-		String fileName = "large_castle_height=10.png";
-		Tuple2<String, Double> result = ImageCache.parseBaseNameAndSize(fileName, WhichDimension.Height);
-		assertEquals("large_castle", result.getFirst());
-		assertEquals(10, (double) result.getSecond(), 0);
+		ParsedFilename result = ImageCache.parseFilenameParams("large castle h2.png");
+		assertEquals("large castle", result.baseName());
+		assertNull(result.width());
+		assertEquals(2, result.height(), 0);
+		assertNull(result.alpha());
 	}
 
 	@Test
-	public void testParseBaseNameAndWidth_withoutWidth()
+	public void testParseHeightDoesNotMatchWidth()
 	{
-		String fileName = "large castle.png";
-		Tuple2<String, Double> result = ImageCache.parseBaseNameAndSize(fileName, WhichDimension.Width);
-		assertEquals("large castle", result.getFirst());
-		assertNull(result.getSecond());
+		ParsedFilename result = ImageCache.parseFilenameParams("large castle h2.png");
+		assertNull(result.width());
+		assertEquals(2, result.height(), 0);
 	}
 
 	@Test
-	public void testParseBaseNameAndWidth_withDifferentExtension()
+	public void testParseWidthWithUnderscore()
 	{
-		String fileName = "large castle w5.jpg";
-		Tuple2<String, Double> result = ImageCache.parseBaseNameAndSize(fileName, WhichDimension.Width);
-		assertEquals("large castle", result.getFirst());
-		assertEquals(5, (double) result.getSecond(), 0);
+		ParsedFilename result = ImageCache.parseFilenameParams("large_castle_width=10.png");
+		assertEquals("large_castle", result.baseName());
+		assertEquals(10, result.width(), 0);
 	}
 
 	@Test
-	public void testParseBaseNameAndWidth_withNoExtension()
+	public void testParseHeightWithUnderscore()
 	{
-		String fileName = "large castle w3";
-		Tuple2<String, Double> result = ImageCache.parseBaseNameAndSize(fileName, WhichDimension.Width);
-		assertEquals("large castle", result.getFirst());
-		assertEquals(3, (double) result.getSecond(), 0);
+		ParsedFilename result = ImageCache.parseFilenameParams("large_castle_height=10.png");
+		assertEquals("large_castle", result.baseName());
+		assertEquals(10, result.height(), 0);
 	}
 
 	@Test
-	public void testParseBaseNameAndWidth_withDoubleSpaces()
+	public void testParseWithoutEncodedParams()
 	{
-		String fileName = "large castle  w100.png";
-		Tuple2<String, Double> result = ImageCache.parseBaseNameAndSize(fileName, WhichDimension.Width);
-		assertEquals("large castle", result.getFirst());
-		assertEquals(100, (double) result.getSecond(), 0);
-	}
-	
-	@Test
-	public void testParseBaseNameAndWidth_withTrailingSpace()
-	{
-		String fileName = "large castle w100 .png";
-		Tuple2<String, Double> result = ImageCache.parseBaseNameAndSize(fileName, WhichDimension.Width);
-		assertEquals("large castle", result.getFirst());
-		assertEquals(100, (double) result.getSecond(), 0);
+		ParsedFilename result = ImageCache.parseFilenameParams("large castle.png");
+		assertEquals("large castle", result.baseName());
+		assertNull(result.width());
+		assertNull(result.height());
+		assertNull(result.alpha());
 	}
 
 	@Test
-	public void testParseBaseNameAndWidth_withNullInput()
+	public void testParseWithDifferentExtension()
 	{
-		Tuple2<String, Double> result = ImageCache.parseBaseNameAndSize(null, WhichDimension.Width);
-		assertNull(result.getFirst());
-		assertNull(result.getSecond());
+		ParsedFilename result = ImageCache.parseFilenameParams("large castle w5.jpg");
+		assertEquals("large castle", result.baseName());
+		assertEquals(5, result.width(), 0);
 	}
 
 	@Test
-	public void testParseBaseNameAndWidth_withEmptyString()
+	public void testParseWithNoExtension()
 	{
-		Tuple2<String, Double> result = ImageCache.parseBaseNameAndSize("", WhichDimension.Height);
-		assertNull(result.getFirst());
-		assertNull(result.getSecond());
+		ParsedFilename result = ImageCache.parseFilenameParams("large castle w3");
+		assertEquals("large castle", result.baseName());
+		assertEquals(3, result.width(), 0);
+	}
+
+	@Test
+	public void testParseWithDoubleSpaces()
+	{
+		ParsedFilename result = ImageCache.parseFilenameParams("large castle  w100.png");
+		assertEquals("large castle", result.baseName());
+		assertEquals(100, result.width(), 0);
+	}
+
+	@Test
+	public void testParseWithTrailingSpace()
+	{
+		ParsedFilename result = ImageCache.parseFilenameParams("large castle w100 .png");
+		assertEquals("large castle", result.baseName());
+		assertEquals(100, result.width(), 0);
+	}
+
+	@Test
+	public void testParseWithNullInput()
+	{
+		ParsedFilename result = ImageCache.parseFilenameParams(null);
+		assertNull(result.baseName());
+		assertNull(result.width());
+		assertNull(result.height());
+		assertNull(result.alpha());
+	}
+
+	@Test
+	public void testParseWithEmptyString()
+	{
+		ParsedFilename result = ImageCache.parseFilenameParams("");
+		assertNull(result.baseName());
+		assertNull(result.width());
+		assertNull(result.height());
+		assertNull(result.alpha());
+	}
+
+	@Test
+	public void testParseAlpha()
+	{
+		ParsedFilename result = ImageCache.parseFilenameParams("castle a128.png");
+		assertEquals("castle", result.baseName());
+		assertNull(result.width());
+		assertEquals(128, result.alpha());
+	}
+
+	@Test
+	public void testParseAlphaWithLongForm()
+	{
+		ParsedFilename result = ImageCache.parseFilenameParams("castle_alpha=200.png");
+		assertEquals("castle", result.baseName());
+		assertEquals(200, result.alpha());
+	}
+
+	@Test
+	public void testParseWidthAndAlpha()
+	{
+		ParsedFilename result = ImageCache.parseFilenameParams("castle w20 a50.png");
+		assertEquals("castle", result.baseName());
+		assertEquals(20, result.width(), 0);
+		assertEquals(50, result.alpha());
+	}
+
+	@Test
+	public void testParseAlphaBeforeWidth()
+	{
+		ParsedFilename result = ImageCache.parseFilenameParams("castle a50 w20.png");
+		assertEquals("castle", result.baseName());
+		assertEquals(20, result.width(), 0);
+		assertEquals(50, result.alpha());
+	}
+
+	@Test
+	public void testParseHeightAndAlpha()
+	{
+		ParsedFilename result = ImageCache.parseFilenameParams("tower h15 a128.png");
+		assertEquals("tower", result.baseName());
+		assertEquals(15, result.height(), 0);
+		assertEquals(128, result.alpha());
+	}
+
+	@Test
+	public void testParseWidthAndHeightThrows()
+	{
+		assertThrows(RuntimeException.class, () -> ImageCache.parseFilenameParams("castle w20 h15.png"));
+	}
+
+	@Test
+	public void testParseAlphaGreaterThan255Throws()
+	{
+		assertThrows(RuntimeException.class, () -> ImageCache.parseFilenameParams("castle a256.png"));
+	}
+
+	@Test
+	public void testParseWidthZeroThrows()
+	{
+		assertThrows(RuntimeException.class, () -> ImageCache.parseFilenameParams("castle w0.png"));
+	}
+
+	@Test
+	public void testParseHeightZeroThrows()
+	{
+		assertThrows(RuntimeException.class, () -> ImageCache.parseFilenameParams("castle h0.png"));
 	}
 }

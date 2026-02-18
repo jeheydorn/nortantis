@@ -2,7 +2,6 @@ package nortantis.util;
 
 import java.util.Random;
 
-
 public interface Counter<T>
 {
 

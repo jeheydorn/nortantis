@@ -1,12 +1,8 @@
 package nortantis.swing;
 
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Graphics;
-import java.awt.Insets;
-
-import javax.swing.UIManager;
+import javax.swing.*;
 import javax.swing.border.AbstractBorder;
+import java.awt.*;
 
 @SuppressWarnings("serial")
 public class DynamicLineBorder extends AbstractBorder

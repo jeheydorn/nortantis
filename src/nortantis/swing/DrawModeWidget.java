@@ -1,18 +1,12 @@
 package nortantis.swing;
 
-import java.awt.Dimension;
-import java.awt.event.ActionEvent;
+import nortantis.swing.translation.Translation;
+
+import javax.swing.*;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-
-import javax.swing.BorderFactory;
-import javax.swing.JPanel;
-import javax.swing.JToggleButton;
-
-import nortantis.util.OSHelper;
 
 public class DrawModeWidget
 {
@@ -20,149 +14,61 @@ public class DrawModeWidget
 	private JToggleButton eraseModeButton;
 	private JToggleButton replaceModeButton;
 	private JToggleButton editModeButton;
-	private boolean includeReplaceButton;
-	private boolean includeEditModeButton;
-	private JPanel container;
+	private SegmentedButtonWidget segmentedWidget;
 
-	public DrawModeWidget(String drawTooltipWithoutKeyboardShortcut, String eraseTooltipWithoutKeyboardShortcut,
-			boolean includeReplaceButton, String replaceTooltipWithoutKeyboardShortcut, boolean includeEditModeButton,
-			String editTooltipWithoutKeyboardShortcut, Runnable changeListener)
+	public DrawModeWidget(String drawTooltipWithoutKeyboardShortcut, String eraseTooltipWithoutKeyboardShortcut, boolean includeReplaceButton, String replaceTooltipWithoutKeyboardShortcut,
+			boolean includeEditModeButton, String editTooltipWithoutKeyboardShortcut, Runnable changeListener)
 	{
-		this.includeReplaceButton = includeReplaceButton;
-		this.includeEditModeButton = includeEditModeButton;
-
-		ActionListener modeListener = new ActionListener()
+		ActionListener modeListener = e ->
 		{
-			@Override
-			public void actionPerformed(ActionEvent e)
+			JToggleButton source = (JToggleButton) e.getSource();
+			if (!source.isSelected())
 			{
-				if (e != null && e.getSource() == eraseModeButton)
-				{
-					drawModeButton.setSelected(false);
-					replaceModeButton.setSelected(false);
-					editModeButton.setSelected(false);
-					if (!eraseModeButton.isSelected())
-					{
-						eraseModeButton.setSelected(true);
-					}
-					eraseModeButton.grabFocus();
-				}
-				else if (e != null && e.getSource() == replaceModeButton)
-				{
-					drawModeButton.setSelected(false);
-					eraseModeButton.setSelected(false);
-					editModeButton.setSelected(false);
-					if (!replaceModeButton.isSelected())
-					{
-						replaceModeButton.setSelected(true);
-					}
-					replaceModeButton.grabFocus();
-				}
-				else if (e != null && e.getSource() == editModeButton)
-				{
-					drawModeButton.setSelected(false);
-					eraseModeButton.setSelected(false);
-					replaceModeButton.setSelected(false);
-					if (!editModeButton.isSelected())
-					{
-						editModeButton.setSelected(true);
-					}
-					editModeButton.grabFocus();
-				}
-				else
-				{
-					// Draw button
-					eraseModeButton.setSelected(false);
-					replaceModeButton.setSelected(false);
-					editModeButton.setSelected(false);
-					if (!drawModeButton.isSelected())
-					{
-						drawModeButton.setSelected(true);
-					}
-					drawModeButton.grabFocus();
-				}
-				changeListener.run();
+				source.setSelected(true);
 			}
+			source.grabFocus();
+			changeListener.run();
 		};
 
-		boolean isWindows = OSHelper.isWindows();
-		drawModeButton = new JToggleButton("<html><u>D</u>raw</html>");
-		drawModeButton.setToolTipText(drawTooltipWithoutKeyboardShortcut + " (Alt+D)");
+		drawModeButton = new JToggleButton(Translation.get("drawMode.draw"));
+		drawModeButton.setToolTipText(drawTooltipWithoutKeyboardShortcut + " (" + Translation.get("drawMode.draw.shortcut") + ")");
 		drawModeButton.setSelected(true);
 		drawModeButton.addActionListener(modeListener);
 		drawModeButton.setMnemonic(KeyEvent.VK_D);
-		drawModeButton.setPreferredSize(new Dimension(isWindows ? 51 : 57, drawModeButton.getPreferredSize().height));
 
-		replaceModeButton = new JToggleButton("<html><u>R</u>eplace</html>");
-		replaceModeButton.setToolTipText(replaceTooltipWithoutKeyboardShortcut + " (Alt+R)");
+		replaceModeButton = new JToggleButton(Translation.get("drawMode.replace"));
+		replaceModeButton.setToolTipText(replaceTooltipWithoutKeyboardShortcut + " (" + Translation.get("drawMode.replace.shortcut") + ")");
 		replaceModeButton.addActionListener(modeListener);
 		replaceModeButton.setMnemonic(KeyEvent.VK_R);
-		replaceModeButton.setPreferredSize(new Dimension(isWindows ? 65 : 75, replaceModeButton.getPreferredSize().height));
 
-		editModeButton = new JToggleButton("<html>Edi<u>t</u></html>");
-		editModeButton.setToolTipText(editTooltipWithoutKeyboardShortcut + " (Alt+T)");
+		editModeButton = new JToggleButton(Translation.get("drawMode.edit"));
+		editModeButton.setToolTipText(editTooltipWithoutKeyboardShortcut + " (" + Translation.get("drawMode.edit.shortcut") + ")");
 		editModeButton.addActionListener(modeListener);
 		editModeButton.setMnemonic(KeyEvent.VK_T);
-		editModeButton.setPreferredSize(new Dimension(isWindows ? 51 : 53, editModeButton.getPreferredSize().height));
 
-		eraseModeButton = new JToggleButton("<html><u>E</u>rase</html>");
-		eraseModeButton.setToolTipText(eraseTooltipWithoutKeyboardShortcut + " (Alt+E)");
+		eraseModeButton = new JToggleButton(Translation.get("drawMode.erase"));
+		eraseModeButton.setToolTipText(eraseTooltipWithoutKeyboardShortcut + " (" + Translation.get("drawMode.erase.shortcut") + ")");
 		eraseModeButton.addActionListener(modeListener);
 		eraseModeButton.setMnemonic(KeyEvent.VK_E);
-		eraseModeButton.setPreferredSize(new Dimension(isWindows ? 51 : 61, eraseModeButton.getPreferredSize().height));
+
+		List<JToggleButton> buttons = new ArrayList<>();
+		buttons.add(drawModeButton);
+		if (includeReplaceButton)
+		{
+			buttons.add(replaceModeButton);
+		}
+		if (includeEditModeButton)
+		{
+			buttons.add(editModeButton);
+		}
+		buttons.add(eraseModeButton);
+
+		segmentedWidget = new SegmentedButtonWidget(buttons);
 	}
 
 	public RowHider addToOrganizer(GridBagOrganizer organizer, String labelTooltip)
 	{
-		container = new JPanel();
-		container.setLayout(new WrapLayout(WrapLayout.LEFT));
-		// Remove the horizontal and vertical gaps from the border around the elements.
-		container.setBorder(BorderFactory.createEmptyBorder(-5, -5, -5, -5));
-		addOptionsToContainer(true, true, includeReplaceButton, includeEditModeButton);
-
-		return organizer.addLabelAndComponent("Mode:", labelTooltip, container);
-	}
-
-	private void addOptionsToContainer(boolean showDrawMode, boolean showEraseMode, boolean showReplaceMode, boolean showEditMode)
-	{
-		List<JToggleButton> visibleButtons = new ArrayList<>();
-
-		if (showDrawMode)
-		{
-			visibleButtons.add(drawModeButton);
-		}
-		if (showReplaceMode)
-		{
-			visibleButtons.add(replaceModeButton);
-		}
-		if (showEditMode)
-		{
-			visibleButtons.add(editModeButton);
-		}
-		if (showEraseMode)
-		{
-			visibleButtons.add(eraseModeButton);
-		}
-
-		for (JToggleButton button : visibleButtons)
-		{
-			container.add(button);
-		}
-
-		if (visibleButtons.size() > 0)
-		{
-			Optional<JToggleButton> optional = visibleButtons.stream().filter((button) -> button.isSelected()).findFirst();
-			if (!optional.isPresent())
-			{
-				visibleButtons.get(0).doClick();
-			}
-		}
-	}
-
-	public void showOrHideOptions(boolean showDrawMode, boolean showEraseMode, boolean showReplaceMode, boolean showEditMode)
-	{
-		container.removeAll();
-		addOptionsToContainer(showDrawMode, showEraseMode, showReplaceMode, showEditMode);
+		return segmentedWidget.addToOrganizer(organizer, Translation.get("drawMode.mode.label"), labelTooltip);
 	}
 
 	public boolean isDrawMode()
@@ -183,5 +89,18 @@ public class DrawModeWidget
 	public boolean isEditMode()
 	{
 		return editModeButton.isSelected();
+	}
+
+	public void configureDrawButton(String translatedHtml, String tooltipWithoutShortcut, int mnemonic, String translatedShortcutText)
+	{
+		drawModeButton.setText(translatedHtml);
+		drawModeButton.setToolTipText(tooltipWithoutShortcut + " (" + translatedShortcutText + ")");
+		drawModeButton.setMnemonic(mnemonic);
+		SwingHelper.reduceHorizontalMargin(drawModeButton);
+	}
+
+	public void selectEditMode()
+	{
+		editModeButton.doClick();
 	}
 }

@@ -1,13 +1,12 @@
 package nortantis.platform.awt;
 
-import java.io.Serializable;
-import java.util.Objects;
-
 import nortantis.platform.Font;
 import nortantis.platform.FontStyle;
 
+import java.util.Objects;
+
 @SuppressWarnings("serial")
-public class AwtFont extends Font implements Serializable
+public class AwtFont extends Font
 {
 	public java.awt.Font font;
 
@@ -44,12 +43,6 @@ public class AwtFont extends Font implements Serializable
 	}
 
 	@Override
-	public String getFontName()
-	{
-		return font.getFontName();
-	}
-
-	@Override
 	public float getSize()
 	{
 		return font.getSize();
@@ -83,6 +76,12 @@ public class AwtFont extends Font implements Serializable
 			return FontStyle.Italic;
 		}
 		return FontStyle.Plain;
+	}
+
+	@Override
+	public int canDisplayUpTo(String str)
+	{
+		return font.canDisplayUpTo(str);
 	}
 
 	@Override

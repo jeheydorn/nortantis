@@ -1,25 +1,12 @@
 package nortantis.util;
 
-import static java.lang.System.out;
-
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
+import java.io.*;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Function;
+import java.util.function.Predicate;
+
+import static java.lang.System.out;
 
 public class Helper
 {
@@ -32,26 +19,13 @@ public class Helper
 	}
 
 	/**
-	 * Combines 2 lists of the same length by applying the given function to each pair of items in the 2 lists.
-	 */
-	public static <I, R> List<R> combineLists(List<I> l1, List<I> l2, Function2<I, R> fun)
-	{
-		if (l1.size() != l2.size())
-			throw new IllegalArgumentException("Lists must be the same size. List 1 size: " + l1.size() + ", list 2 size: " + l2.size());
-		List<R> result = new ArrayList<R>();
-		for (int i = 0; i < l1.size(); i++)
-			result.add(fun.apply(l1.get(i), l2.get(i)));
-		return result;
-	}
-
-	/**
 	 * Applies the given function to each item in the given list and returns only those for which the function returned true.
 	 */
-	public static <T> List<T> filter(List<T> list, Function<T, Boolean> fun)
+	public static <T> List<T> filter(List<T> list, Predicate<T> fun)
 	{
 		List<T> result = new ArrayList<>();
 		for (T item : list)
-			if (fun.apply(item))
+			if (fun.test(item))
 				result.add(item);
 		return result;
 	}
@@ -97,7 +71,7 @@ public class Helper
 		}
 		return maxEntry.getKey();
 	}
-	
+
 	public static <K, V extends Comparable<V>> V maxElement(Map<K, V> map)
 	{
 		Map.Entry<K, V> maxEntry = null;
@@ -108,7 +82,7 @@ public class Helper
 			{
 				continue;
 			}
-			
+
 			if (maxEntry == null || entry.getValue().compareTo(maxEntry.getValue()) > 0)
 			{
 				maxEntry = entry;
@@ -145,7 +119,7 @@ public class Helper
 		return maxEntry.getValue();
 	}
 
-	public static <T> T maxItem(List<T> list, Comparator<T> comparator)
+	public static <T> T maxItem(Collection<T> list, Comparator<T> comparator)
 	{
 		T maxItem = null;
 
@@ -159,41 +133,18 @@ public class Helper
 		return maxItem;
 	}
 
-	private static DecimalFormat decimalFormat = new DecimalFormat("#.#####");
-
-	public static String formatFloat(float d)
+	public static <T extends Comparable<? super T>> T maxItem(Collection<T> list)
 	{
-		return decimalFormat.format(d);
-	}
+		T maxItem = null;
 
-	public static void printMultiLine(Collection<?> c)
-	{
-		for (Object o : c)
+		for (T item : list)
 		{
-			out.println(o);
-		}
-	}
-
-	public static String toStringWithSeparator(Collection<?> collection, String separator)
-	{
-		if (collection.isEmpty())
-			return "";
-
-		StringBuilder b = new StringBuilder();
-		Iterator<?> it = collection.iterator();
-		while (true)
-		{
-			b.append(it.next());
-			if (it.hasNext())
+			if (maxItem == null || maxItem.compareTo(item) < 0)
 			{
-				b.append(separator);
-			}
-			else
-			{
-				break;
+				maxItem = item;
 			}
 		}
-		return b.toString();
+		return maxItem;
 	}
 
 	/**
@@ -224,16 +175,6 @@ public class Helper
 		return (T) toReturn;
 	}
 
-	/**
-	 * WARNING: This isn't tested.
-	 */
-	public static <T extends Serializable> boolean areEqual(T object1, T object2)
-	{
-		byte[] array1 = serializableToByteArray(object1);
-		byte[] array2 = serializableToByteArray(object1);
-		return Arrays.equals(array1, array2); // I think this line doesn't work.
-	}
-
 	private static <T extends Serializable> byte[] serializableToByteArray(T object)
 	{
 		ByteArrayOutputStream ostream = new ByteArrayOutputStream();
@@ -251,14 +192,6 @@ public class Helper
 			storedObjectArray = ostream.toByteArray();
 		}
 		return storedObjectArray;
-	}
-
-	public static <T> List<T> iteratorToList(Iterator<T> iter)
-	{
-		ArrayList<T> result = new ArrayList<>();
-		while (iter.hasNext())
-			result.add(iter.next());
-		return result;
 	}
 
 	public static float[] array2DTo1D(float[][] input)
@@ -304,32 +237,7 @@ public class Helper
 		}
 		return result;
 	}
-	
-	public static void copyArray1DTo2D(float[][] array2D, float[] array1D)
-	{
-		if (array2D == null)
-		{
-			return;
-		}
-		if (array2D.length == 0)
-		{
-			return;
-		}
-		
-		if (array1D.length != array2D.length * array2D[0].length)
-		{
-			throw new IllegalArgumentException("Invalid input array2D length");
-		}
-		
-		for (int r = 0; r < array2D.length; r++)
-		{
-			for (int c = 0; c < array2D[0].length; c++)
-			{
-				array2D[r][c] = array1D[r * array2D[0].length + c];
-			}
-		}
-	}
-	
+
 	public static void copyArray2DTo1D(float[] array1D, float[][] array2D)
 	{
 		if (array2D == null)
@@ -340,12 +248,12 @@ public class Helper
 		{
 			return;
 		}
-		
+
 		if (array1D.length != array2D.length * array2D[0].length)
 		{
 			throw new IllegalArgumentException("Invalid input array2D length");
 		}
-		
+
 		for (int r = 0; r < array2D.length; r++)
 		{
 			for (int c = 0; c < array2D[0].length; c++)
@@ -369,14 +277,37 @@ public class Helper
 		result.removeAll(intersection);
 		return result;
 	}
-	
+
 	public static double linearCombo(double weight, double value1, double value2)
 	{
 		return (weight * value1) + ((1.0 - weight) * value2);
 	}
-	
+
+	/**
+	 * Returns the absolute value of the given integer, safe from overflow. Unlike Math.abs, this handles Integer.MIN_VALUE correctly by
+	 * masking off the sign bit.
+	 */
+	public static int safeAbs(int value)
+	{
+		return Math.abs(value) & 0x7FFFFFFF;
+	}
+
+	/**
+	 * Returns the absolute value of the given long, safe from overflow. Unlike Math.abs, this handles Long.MIN_VALUE correctly by masking
+	 * off the sign bit.
+	 */
+	public static long safeAbs(long value)
+	{
+		return Math.abs(value) & 0x7FFFFFFFFFFFFFFFL;
+	}
+
 	public static int linearComboBase255(int weightFrom0To255, int value1From0To255, int value2From0To255)
 	{
 		return ((weightFrom0To255 * value1From0To255) + ((255 - weightFrom0To255) * value2From0To255)) / 255;
+	}
+
+	public static float clamp(float value, float min, float max)
+	{
+		return Math.min(Math.max(value, min), max);
 	}
 }

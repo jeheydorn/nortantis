@@ -1,45 +1,47 @@
 package nortantis.platform.awt;
 
-import java.awt.Graphics2D;
-import java.awt.GraphicsEnvironment;
-import java.awt.geom.AffineTransform;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.Iterator;
+import nortantis.geom.IntRectangle;
+import nortantis.geom.Rectangle;
+import nortantis.geom.RotatedRectangle;
+import nortantis.platform.*;
+import nortantis.platform.Color;
+import nortantis.platform.Font;
+import nortantis.platform.Image;
+import nortantis.platform.Painter;
+import nortantis.swing.SwingHelper;
+import org.apache.commons.io.FilenameUtils;
 
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageOutputStream;
-import javax.swing.SwingUtilities;
-import javax.swing.SwingWorker;
-
-import org.apache.commons.io.FilenameUtils;
-
-import nortantis.geom.IntRectangle;
-import nortantis.geom.Rectangle;
-import nortantis.geom.RotatedRectangle;
-import nortantis.platform.BackgroundTask;
-import nortantis.platform.Color;
-import nortantis.platform.Font;
-import nortantis.platform.FontStyle;
-import nortantis.platform.Image;
-import nortantis.platform.ImageType;
-import nortantis.platform.Painter;
-import nortantis.platform.PlatformFactory;
-import nortantis.swing.SwingHelper;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
+import java.io.*;
+import java.util.Iterator;
 
 public class AwtFactory extends PlatformFactory
 {
 
 	@Override
+	protected nortantis.platform.ImageHelper createImageHelper()
+	{
+		return new AwtImageHelper();
+	}
+
+	@Override
 	public Image createImage(int width, int height, ImageType type)
 	{
+		return new AwtImage(width, height, type);
+	}
+
+	@Override
+	public Image createImage(int width, int height, ImageType type, boolean forceCPU)
+	{
+		// AWT is always CPU-based, so forceCPU is ignored
 		return new AwtImage(width, height, type);
 	}
 
@@ -51,9 +53,8 @@ public class AwtFactory extends PlatformFactory
 			BufferedImage image = ImageIO.read(new File(filePath));
 			if (image == null)
 			{
-				throw new RuntimeException(
-						"Can't read the file " + filePath + ". This can happen if the file is an unsupported format or is corrupted, "
-								+ "such as if you saved it with a file extension that doesn't match its actual format.");
+				throw new RuntimeException("Can't read the file " + filePath + ". This can happen if the file is an unsupported format or is corrupted, "
+						+ "such as if you saved it with a file extension that doesn't match its actual format.");
 			}
 
 			return new AwtImage(image);
@@ -148,23 +149,27 @@ public class AwtFactory extends PlatformFactory
 	public static Image convertARGBToRGB(Image image)
 	{
 		Image newImage = Image.create(image.getWidth(), image.getHeight(), ImageType.RGB);
-		Painter p = newImage.createPainter();
-		p.drawImage(image, 0, 0);
-		p.dispose();
-		for (int i = 0; i < newImage.getWidth(); i++)
+		try (Painter p = newImage.createPainter())
 		{
-			for (int j = 0; j < newImage.getHeight(); j++)
+			p.drawImage(image, 0, 0);
+		}
+		try (PixelReaderWriter pixels = newImage.createPixelReaderWriter())
+		{
+			for (int i = 0; i < newImage.getWidth(); i++)
 			{
-				int argb = newImage.getRGB(i, j);
-				int alpha = (argb >> 24) & 0xff;
-				int rgb = argb & 0x00ffffff;
-				if (alpha != 0)
+				for (int j = 0; j < newImage.getHeight(); j++)
 				{
-					newImage.setRGB(i, j, rgb);
-				}
-				else
-				{
-					newImage.setRGB(i, j, 0x000000);
+					int argb = pixels.getRGB(i, j);
+					int alpha = (argb >> 24) & 0xff;
+					int rgb = argb & 0x00ffffff;
+					if (alpha != 0)
+					{
+						pixels.setRGB(i, j, rgb);
+					}
+					else
+					{
+						pixels.setRGB(i, j, 0x000000);
+					}
 				}
 			}
 		}
@@ -272,7 +277,8 @@ public class AwtFactory extends PlatformFactory
 
 	public static java.awt.Rectangle toAwtRectangle(Rectangle rect)
 	{
-		return new java.awt.Rectangle((int) rect.x, (int) rect.y, (int) rect.width, (int) rect.height);
+		IntRectangle rectInt = rect.toEnclosingIntRectangle();
+		return new java.awt.Rectangle(rectInt.x, rectInt.y, rectInt.width, rectInt.height);
 	}
 
 	public static java.awt.Rectangle toAwtRectangle(IntRectangle rect)
@@ -284,14 +290,15 @@ public class AwtFactory extends PlatformFactory
 	{
 		AffineTransform transform = new AffineTransform();
 		transform.rotate(rect.angle, rect.pivotX, rect.pivotY);
-		java.awt.Shape rotatedRect = transform
-				.createTransformedShape(new java.awt.Rectangle((int) rect.x, (int) rect.y, (int) rect.width, (int) rect.height));
+		IntRectangle rectInt = rect.toUnrotatedRectangle().toEnclosingIntRectangle();
+		java.awt.Shape rotatedRect = transform.createTransformedShape(new java.awt.Rectangle(rectInt.x, rectInt.y, rectInt.width, rectInt.height));
 		return new java.awt.geom.Area(rotatedRect);
 	}
 
 	public static java.awt.geom.Area toAwtArea(Rectangle rect)
 	{
-		return new java.awt.geom.Area(new java.awt.Rectangle((int) rect.x, (int) rect.y, (int) rect.width, (int) rect.height));
+		IntRectangle rectInt = rect.toEnclosingIntRectangle();
+		return new java.awt.geom.Area(new java.awt.Rectangle(rectInt.x, rectInt.y, rectInt.width, rectInt.height));
 	}
 
 	public static Painter wrap(java.awt.Graphics2D g)
@@ -342,7 +349,7 @@ public class AwtFactory extends PlatformFactory
 				}
 				catch (Exception ex)
 				{
-					SwingHelper.handleBackgroundThreadException(ex, null, false);
+					SwingHelper.handleException(ex, null, false);
 				}
 
 				task.done(result);

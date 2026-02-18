@@ -1,33 +1,21 @@
 package nortantis.swing;
 
-import java.awt.Color;
-import java.awt.Dialog;
-import java.awt.Dimension;
+import nortantis.MapText;
+import nortantis.editor.UserPreferences;
+import nortantis.geom.Rectangle;
+import nortantis.platform.awt.AwtFactory;
+import nortantis.swing.translation.Translation;
+import nortantis.util.OSHelper;
+
+import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JComponent;
-import javax.swing.JDialog;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JTextField;
-import javax.swing.KeyStroke;
-import javax.swing.SwingUtilities;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-
-import nortantis.MapText;
-import nortantis.editor.UserPreferences;
-import nortantis.geom.Rectangle;
-import nortantis.platform.awt.AwtFactory;
-import nortantis.util.OSHelper;
 
 @SuppressWarnings("serial")
 public class TextSearchDialog extends JDialog
@@ -40,7 +28,7 @@ public class TextSearchDialog extends JDialog
 
 	public TextSearchDialog(MainWindow mainWindow)
 	{
-		super(mainWindow, "Search Text", Dialog.ModalityType.MODELESS);
+		super(mainWindow, Translation.get("textSearch.title"), Dialog.ModalityType.MODELESS);
 		setSize(450, 70);
 		setResizable(false);
 
@@ -52,7 +40,7 @@ public class TextSearchDialog extends JDialog
 		final int padding = 4;
 		container.setBorder(BorderFactory.createEmptyBorder(padding, padding, padding, padding));
 
-		notFoundLabel = new JLabel("Not found");
+		notFoundLabel = new JLabel(Translation.get("textSearch.notFound"));
 		notFoundLabel.setForeground(getColorForNotFoundMessage());
 		notFoundLabel.setVisible(false);
 
@@ -110,8 +98,8 @@ public class TextSearchDialog extends JDialog
 
 		boolean needsSpecialHandling = OSHelper.isLinux() && UserPreferences.getInstance().lookAndFeel == LookAndFeel.System;
 		final int fontSize = 24;
-		searchForward = new JButton(needsSpecialHandling ? "Next" : "→");
-		searchForward.setToolTipText("Search forward (enter key)");
+		searchForward = new JButton(needsSpecialHandling ? Translation.get("textSearch.next") : Translation.get("textSearch.nextArrow"));
+		searchForward.setToolTipText(Translation.get("textSearch.next.tooltip"));
 		if (!needsSpecialHandling)
 		{
 			searchForward.setFont(new java.awt.Font(searchForward.getFont().getName(), searchForward.getFont().getStyle(), fontSize));
@@ -128,8 +116,8 @@ public class TextSearchDialog extends JDialog
 			}
 		});
 
-		searchBackward = new JButton(needsSpecialHandling ? "Prev" : "←");
-		searchBackward.setToolTipText("Search backward");
+		searchBackward = new JButton(needsSpecialHandling ? Translation.get("textSearch.prev") : Translation.get("textSearch.prevArrow"));
+		searchBackward.setToolTipText(Translation.get("textSearch.prev.tooltip"));
 		if (!needsSpecialHandling)
 		{
 			searchBackward.setFont(new java.awt.Font(searchBackward.getFont().getName(), searchBackward.getFont().getStyle(), fontSize));
@@ -144,7 +132,7 @@ public class TextSearchDialog extends JDialog
 			}
 		});
 	}
-	
+
 	private Color getColorForNotFoundMessage()
 	{
 		if (UserPreferences.getInstance().lookAndFeel == LookAndFeel.Dark)
@@ -209,8 +197,7 @@ public class TextSearchDialog extends JDialog
 
 	private MapText findNext(MapText start, String query, boolean isForward)
 	{
-		List<MapText> sorted = new ArrayList<>(
-				mainWindow.edits.text.stream().filter(t -> t.value != null && !t.value.isEmpty()).collect(Collectors.toList()));
+		List<MapText> sorted = new ArrayList<>(mainWindow.edits.text.stream().filter(t -> t.value != null && !t.value.isEmpty()).collect(Collectors.toList()));
 		sorted.sort((text1, text2) ->
 		{
 			if (text1.location == null && text2.location == null)
@@ -283,7 +270,7 @@ public class TextSearchDialog extends JDialog
 		searchField.requestFocus();
 		searchField.selectAll();
 	}
-	
+
 	public void handleLookAndFeelChange()
 	{
 		notFoundLabel.setForeground(getColorForNotFoundMessage());

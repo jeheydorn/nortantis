@@ -1,10 +1,5 @@
 package nortantis.graph.voronoi;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import nortantis.Biome;
 import nortantis.Region;
 import nortantis.TectonicPlate;
@@ -13,6 +8,11 @@ import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
 import nortantis.util.ComparableCounter;
 import nortantis.util.Counter;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class Center implements Comparable<Center>
 {
@@ -30,7 +30,6 @@ public class Center implements Comparable<Center>
 	public boolean isMountain;
 	public boolean isHill;
 	public boolean isCity;
-	public boolean isSandDunes;
 	public double elevation;
 	public double moisture;
 	public Biome biome;
@@ -203,7 +202,7 @@ public class Center implements Comparable<Center>
 				return true;
 			}
 		}
-		
+
 		// Noisy edges can extend in theory as far as the center of neighboring centers.
 		for (Center neighbor : neighbors)
 		{
@@ -212,7 +211,7 @@ public class Center implements Comparable<Center>
 				return true;
 			}
 		}
-		
+
 		return false;
 	}
 
@@ -252,7 +251,8 @@ public class Center implements Comparable<Center>
 			{
 				currentEdge = next;
 			}
-		} while (!remaining.isEmpty() && currentEdge != null);
+		}
+		while (!remaining.isEmpty() && currentEdge != null);
 
 		return result;
 	}
@@ -261,8 +261,7 @@ public class Center implements Comparable<Center>
 	{
 		for (Edge edge : remaining)
 		{
-			if (current.v1 != null && (edge.v0 == current.v1 || edge.v1 == current.v1)
-					|| current.v0 != null && (edge.v1 == current.v0 || edge.v0 == current.v0))
+			if (current.v1 != null && (edge.v0 == current.v1 || edge.v1 == current.v1) || current.v0 != null && (edge.v1 == current.v0 || edge.v0 == current.v0))
 			{
 				return edge;
 			}

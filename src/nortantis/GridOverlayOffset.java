@@ -66,7 +66,7 @@ public enum GridOverlayOffset
 		{
 			return 0.75f;
 		}
-		
+
 		throw new UnsupportedOperationException("Unimplemented scale: " + this);
 	}
 }

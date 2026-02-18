@@ -48,7 +48,7 @@ public class ConcurrentHashMapF<K, V> extends ConcurrentHashMap<K, V>
 	 */
 	public V getOrCreateWithLock(K key, Supplier<V> createFun)
 	{
-		// Lock on the key while we'ere working so multiple simultaneous calls don't repeat work
+		// Lock on the key while we're working so multiple simultaneous calls don't repeat work
 		synchronized (key)
 		{
 			V value = get(key);

@@ -1,11 +1,9 @@
 package nortantis.util;
 
+import nortantis.platform.*;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import nortantis.platform.Color;
-import nortantis.platform.Image;
-import nortantis.platform.ImageType;
 
 /**
  * Performs histogram equalization on images.
@@ -21,7 +19,7 @@ public class HistogramEqualizer
 	 */
 	List<int[]> lookupTables;
 	List<int[]> inverses;
-	ImageType imageType;
+	public ImageType imageType;
 
 	public HistogramEqualizer(Image image)
 	{
@@ -82,8 +80,7 @@ public class HistogramEqualizer
 				else
 				{
 					// Do a running average of all levels that map to the save value in the inverse.
-					inverse[lookupTable[i]] = (inverse[lookupTable[i]] * inverseCounts[lookupTable[i]] + i)
-							/ (inverseCounts[lookupTable[i]] + 1);
+					inverse[lookupTable[i]] = (inverse[lookupTable[i]] * inverseCounts[lookupTable[i]] + i) / (inverseCounts[lookupTable[i]] + 1);
 				}
 				inverseCounts[lookupTable[i]]++;
 			}
@@ -191,51 +188,58 @@ public class HistogramEqualizer
 		int height = inImage.getHeight();
 		Image outImage = Image.create(width, height, imageType);
 
-		for (int y = 0; y < height; y++)
+		// Use createPixelReader for input (read-only) and createPixelWriter for output (write-only to new image)
+		try (PixelReader inPixels = inImage.createPixelReader(); PixelWriter outPixels = outImage.createPixelWriter())
 		{
-			for (int x = 0; x < width; x++)
+			for (int y = 0; y < height; y++)
 			{
-				if (lookupTables.size() == 1)
+				for (int x = 0; x < width; x++)
 				{
-					int grayLevel = inImage.getGrayLevel(x, y);
-					outImage.setGrayLevel(x, y, lookupTables.get(0)[grayLevel]);
-				}
-				else
-				{
-					Color inColor;
-					if (inImage.isGrayscaleOrBinary())
+					if (lookupTables.size() == 1)
 					{
-						int grayLevel = inImage.getGrayLevel(x, y);
-						inColor = Color.create(grayLevel, grayLevel, grayLevel, 255);
+						int grayLevel = inPixels.getGrayLevel(x, y);
+						outPixels.setGrayLevel(x, y, lookupTables.get(0)[grayLevel]);
 					}
 					else
 					{
-						inColor = Color.create(inImage.getRGB(x, y));
+						Color inColor;
+						if (inImage.isGrayscaleOrBinary())
+						{
+							int grayLevel = inPixels.getGrayLevel(x, y);
+							inColor = Color.create(grayLevel, grayLevel, grayLevel, 255);
+						}
+						else
+						{
+							inColor = Color.create(inPixels.getRGB(x, y));
+						}
+						int r = lookupTables.get(0)[inColor.getRed()];
+						int g = lookupTables.get(1)[inColor.getGreen()];
+						int b = lookupTables.get(2)[inColor.getBlue()];
+						Color outColor = Color.create(r, g, b, 255);
+						outPixels.setRGB(x, y, outColor.getRGB());
 					}
-					int r = lookupTables.get(0)[inColor.getRed()];
-					int g = lookupTables.get(1)[inColor.getGreen()];
-					int b = lookupTables.get(2)[inColor.getBlue()];
-					Color outColor = Color.create(r, g, b, 255);
-					outImage.setRGB(x, y, outColor.getRGB());
 				}
 			}
 		}
 
 		return outImage;
-
 	}
 
 	private static int[] countPixelLevels(Image image, int band)
 	{
-
 		// Create the list of pixels to use with the histogram.
 		int[] counts = new int[image.getMaxPixelLevel() + 1];
-		for (int y = 0; y < image.getHeight(); y++)
+
+		// Use createPixelReader since this is a pure read operation
+		try (PixelReader pixels = image.createPixelReader())
 		{
-			for (int x = 0; x < image.getWidth(); x++)
+			for (int y = 0; y < image.getHeight(); y++)
 			{
-				int pixelValue = image.getBandLevel(x, y, band);
-				counts[pixelValue]++;
+				for (int x = 0; x < image.getWidth(); x++)
+				{
+					int pixelValue = pixels.getBandLevel(x, y, band);
+					counts[pixelValue]++;
+				}
 			}
 		}
 

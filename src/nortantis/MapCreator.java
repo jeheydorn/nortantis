@@ -1,53 +1,22 @@
 package nortantis;
 
+import nortantis.MapSettings.GridOverlayLayer;
+import nortantis.editor.*;
+import nortantis.geom.*;
+import nortantis.graph.voronoi.Center;
+import nortantis.graph.voronoi.Edge;
+import nortantis.graph.voronoi.EdgeDrawType;
+import nortantis.platform.*;
+import nortantis.swing.MapEdits;
+import nortantis.util.*;
+import org.apache.commons.lang3.StringUtils;
+
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
-
-import org.apache.commons.lang3.StringUtils;
-
-import nortantis.MapSettings.GridOverlayLayer;
-import nortantis.editor.CenterEdit;
-import nortantis.editor.EdgeEdit;
-import nortantis.editor.FreeIcon;
-import nortantis.editor.MapParts;
-import nortantis.editor.RegionEdit;
-import nortantis.geom.Dimension;
-import nortantis.geom.IntDimension;
-import nortantis.geom.IntPoint;
-import nortantis.geom.IntRectangle;
-import nortantis.geom.Point;
-import nortantis.geom.Rectangle;
-import nortantis.graph.voronoi.Center;
-import nortantis.graph.voronoi.Edge;
-import nortantis.graph.voronoi.EdgeDrawType;
-import nortantis.platform.AlphaComposite;
-import nortantis.platform.Color;
-import nortantis.platform.DrawQuality;
-import nortantis.platform.Image;
-import nortantis.platform.ImageType;
-import nortantis.platform.Painter;
-import nortantis.swing.MapEdits;
-import nortantis.util.Assets;
-import nortantis.util.FileHelper;
-import nortantis.util.ImageHelper;
-import nortantis.util.Logger;
-import nortantis.util.Range;
-import nortantis.util.ThreadHelper;
-import nortantis.util.Tuple2;
-import nortantis.util.Tuple4;
 
 public class MapCreator implements WarningLogger
 {
@@ -62,8 +31,17 @@ public class MapCreator implements WarningLogger
 	private static final double concentricWaveWidthBetweenWaves = 11;
 	private static final double concentricWaveLineWidth = 1.8;
 	private boolean isCanceled;
-	private List<String> warningMessages;
+	private final List<String> warningMessages;
 	public ConcurrentHashMap<Integer, Center> centersToRedrawLowPriority;
+	private static Boolean memoryModeOverride;
+
+	/**
+	 * Override the memory mode for testing. Pass null to clear the override and resume normal behavior.
+	 */
+	public static void overrideMemoryMode(Boolean isLowMemory)
+	{
+		memoryModeOverride = isLowMemory;
+	}
 
 	public MapCreator()
 	{
@@ -90,13 +68,17 @@ public class MapCreator implements WarningLogger
 		return incrementalUpdateMultipleBounds(settings, mapParts, fullSizeMap, changeBounds, true);
 	}
 
-	public IntRectangle incrementalUpdateIcons(final MapSettings settings, MapParts mapParts, Image fullSizeMap,
-			List<FreeIcon> iconsChanged)
+	public IntRectangle incrementalUpdateIcons(final MapSettings settings, MapParts mapParts, Image fullSizeMap, List<FreeIcon> iconsChanged)
 	{
 		Rectangle changeBounds = null;
 		for (FreeIcon icon : iconsChanged)
 		{
-			IconDrawTask task = mapParts.iconDrawer.toIconDrawTask(icon);
+			FreeIcon updated = mapParts.iconDrawer.adjustForMissingAssetsIfNeeded(icon, new LoggerWarningLogger());
+			if (updated == null)
+			{
+				continue;
+			}
+			IconDrawTask task = mapParts.iconDrawer.toIconDrawTask(updated);
 			if (task == null)
 			{
 				continue;
@@ -124,8 +106,7 @@ public class MapCreator implements WarningLogger
 		return incrementalUpdateMultipleBounds(settings, mapParts, fullSizeMap, Arrays.asList(changeBounds), false);
 	}
 
-	private IntRectangle incrementalUpdateMultipleBounds(final MapSettings settings, MapParts mapParts, Image fullSizeMap,
-			List<Rectangle> changeBounds, boolean onlyTextChanged)
+	private IntRectangle incrementalUpdateMultipleBounds(final MapSettings settings, MapParts mapParts, Image fullSizeMap, List<Rectangle> changeBounds, boolean onlyTextChanged)
 	{
 		TextDrawer textDrawer = new TextDrawer(settings);
 		textDrawer.setMapTexts(settings.edits.text);
@@ -135,17 +116,20 @@ public class MapCreator implements WarningLogger
 		final int paddingToAccountForIntegerTruncation = 4;
 		IntRectangle bounds = null;
 
+		// Compute the union of all change bounds for the hint
 		HashSet<Rectangle> noDuplicates = new HashSet<>(changeBounds);
+
 		for (Rectangle change : noDuplicates)
 		{
 			if (change == null)
 			{
 				continue;
 			}
+
 			Rectangle padded = change.pad(paddingToAccountForIntegerTruncation, paddingToAccountForIntegerTruncation);
-			mapParts.iconDrawer.addOrUpdateIconsFromEdits(settings.edits, Collections.emptySet(), this);
-			IntRectangle updateBounds = incrementalUpdateBounds(settings, mapParts, fullSizeMap, padded, effectsPadding, textDrawer,
-					onlyTextChanged);
+			IntRectangle updateBounds;
+			mapParts.iconDrawer.addOrUpdateIconsFromEdits(settings.edits, Collections.emptySet(), padded, this);
+			updateBounds = incrementalUpdateBounds(settings, mapParts, fullSizeMap, padded, effectsPadding, textDrawer, onlyTextChanged);
 			if (bounds == null)
 			{
 				bounds = updateBounds;
@@ -165,30 +149,29 @@ public class MapCreator implements WarningLogger
 
 	/**
 	 * Updates a piece of a map, given a list of centers that changed. Also updates things in mapParts.
-	 * 
+	 *
 	 * @param settings
 	 *            Map settings for drawing
 	 * @param mapParts
 	 *            Assumed to be populated by createMap the last time the map was generated at full size
-	 * @param map
+	 * @param fullSizedMap
 	 *            The full sized map to update
-	 * @param centerChanges
-	 *            Edits for centers that need to be re-drawn
-	 * @param edgeChanges
-	 *            If edges changed, this is the list of edge edits that changed
+	 * @param centersChangedIds
+	 *            Ids of the edits for centers that need to be re-drawn
+	 * @param edgesChangedIds
+	 *            If edges changed, this is the list of ids for edge edits that changed
 	 * @param isLowPriorityChange
 	 *            Tells whether this update was submitted as a low priority change. In theory the drawing code doesn't need to know this
 	 *            because low priority changes should never change something that then requires submitting more low priority changes, but
 	 *            since my code for detecting when coastlines need to be smoothed is imperfect, I added this flag.
 	 */
-	public IntRectangle incrementalUpdateForCentersAndEdges(final MapSettings settings, MapParts mapParts, Image fullSizedMap,
-			Set<Integer> centersChangedIds, Set<Integer> edgesChangedIds, boolean isLowPriorityChange)
+	public IntRectangle incrementalUpdateForCentersAndEdges(final MapSettings settings, MapParts mapParts, Image fullSizedMap, Set<Integer> centersChangedIds, Set<Integer> edgesChangedIds,
+			boolean isLowPriorityChange)
 	{
 		Set<Center> centersChanged;
 		if (centersChangedIds != null)
 		{
-			centersChanged = new HashSet<>(
-					centersChangedIds.stream().map(id -> mapParts.graph.centers.get(id)).collect(Collectors.toSet()));
+			centersChanged = new HashSet<>(centersChangedIds.stream().map(id -> mapParts.graph.centers.get(id)).collect(Collectors.toSet()));
 		}
 		else
 		{
@@ -213,14 +196,11 @@ public class MapCreator implements WarningLogger
 			{
 				edgeEdits = new HashSet<EdgeEdit>();
 			}
-			if (centersChanged != null)
-			{
-				edgeEdits.addAll(getEdgeEditsForCenters(settings.edits, centersChanged));
-			}
+			edgeEdits.addAll(getEdgeEditsForCenters(settings.edits, centersChanged));
 			applyEdgeEdits(mapParts.graph, settings.edits, edgeEdits);
 		}
-		Set<Center> centersChangedThatAffectedLandOrRegionBoundaries = applyCenterEdits(mapParts.graph, settings.edits,
-				getCenterEditsForCenters(settings.edits, centersChanged), settings.drawRegionBoundaries || settings.drawRegionColors);
+		Set<Center> centersChangedThatAffectedLandOrRegionBoundaries = applyCenterEdits(mapParts.graph, settings.edits, getCenterEditsForCenters(settings.edits, centersChanged),
+				settings.drawRegionBoundaries || settings.drawRegionColors);
 
 		Rectangle centersChangedBounds = WorldGraph.getBoundingBox(centersChanged);
 
@@ -293,14 +273,13 @@ public class MapCreator implements WarningLogger
 			// to two or vice versa.
 			if (settings.drawText)
 			{
-				Rectangle textChangeBounds = textDrawer.expandBoundsToIncludeText(settings.edits.text, mapParts.graph, centersChangedBounds,
-						settings);
+				Rectangle textChangeBounds = textDrawer.expandBoundsToIncludeText(settings.edits.text, mapParts.graph, centersChangedBounds, settings);
 				replaceBounds = replaceBounds.add(textChangeBounds);
 			}
 		}
 
 		mapParts.iconDrawer = new IconDrawer(mapParts.graph, new Random(), settings);
-		Rectangle iconChangeBounds = mapParts.iconDrawer.addOrUpdateIconsFromEdits(settings.edits, centersChanged, this);
+		Rectangle iconChangeBounds = mapParts.iconDrawer.addOrUpdateIconsFromEdits(settings.edits, centersChanged, replaceBounds, this);
 		replaceBounds = Rectangle.add(replaceBounds, iconChangeBounds);
 
 		replaceBounds = replaceBounds.floor();
@@ -316,8 +295,8 @@ public class MapCreator implements WarningLogger
 		}
 	}
 
-	private IntRectangle incrementalUpdateBounds(final MapSettings settings, MapParts mapParts, Image fullSizedMap, Rectangle replaceBounds,
-			double effectsPadding, TextDrawer textDrawer, boolean onlyTextChanged)
+	private IntRectangle incrementalUpdateBounds(final MapSettings settings, MapParts mapParts, Image fullSizedMap, Rectangle replaceBounds, double effectsPadding, TextDrawer textDrawer,
+			boolean onlyTextChanged)
 	{
 		// The bounds of the snippet to draw. This is larger than the snippet to
 		// replace because ocean/land effects expand beyond the edges
@@ -325,14 +304,14 @@ public class MapCreator implements WarningLogger
 		// replace.
 		Rectangle drawBounds = replaceBounds.pad(effectsPadding, effectsPadding).floor();
 
-		IntRectangle boundsInSourceToCopyFrom = new IntRectangle((int) replaceBounds.x - (int) drawBounds.x,
-				(int) replaceBounds.y - (int) drawBounds.y, (int) replaceBounds.width, (int) replaceBounds.height);
+		IntRectangle boundsInSourceToCopyFrom = new IntRectangle((int) replaceBounds.x - (int) drawBounds.x, (int) replaceBounds.y - (int) drawBounds.y, (int) replaceBounds.width,
+				(int) replaceBounds.height);
 		Image mapSnippet;
 		Image textBackground;
-		double sizeMultiplierRounded = calcSizeMultipilerFromResolutionScaleRounded(settings.resolution);
+		double sizeMultiplierRounded = calcSizeMultiplierFromResolutionScaleRounded(settings.resolution);
 
 		Set<Center> centersToDraw = null;
-		if (!onlyTextChanged)
+		if (!onlyTextChanged || mapParts.mapBeforeAddingText == null)
 		{
 			Center searchStart = mapParts.graph.findClosestCenter(drawBounds.getCenter());
 			centersToDraw = mapParts.graph.breadthFirstSearch(c -> c.isInBoundsIncludingNoisyEdges(drawBounds), searchStart);
@@ -340,54 +319,62 @@ public class MapCreator implements WarningLogger
 			checkForCancel();
 
 			List<IconDrawTask> iconsToDraw = mapParts.iconDrawer.getTasksInDrawBoundsSortedAndScaled(drawBounds);
-			mapParts.background.doSetupThatNeedsGraphAndIcons(settings, mapParts.graph, iconsToDraw, centersToDraw, drawBounds,
-					replaceBounds);
+			mapParts.background.doSetupThatNeedsGraphAndIcons(settings, mapParts.graph, iconsToDraw, centersToDraw, drawBounds, replaceBounds);
 
 			checkForCancel();
 
 			// Draw mask for land vs ocean.
 			Image landMask = Image.create((int) drawBounds.width, (int) drawBounds.height, ImageType.Binary);
+			try (Painter p = landMask.createPainter())
 			{
-				Painter p = landMask.createPainter();
 				mapParts.graph.drawLandAndOceanBlackAndWhite(p, centersToDraw, drawBounds);
 			}
 
 			checkForCancel();
 
-			Image landTextureSnippet = ImageHelper.copySnippet(mapParts.background.land, drawBounds.toIntRectangle());
-			mapSnippet = ImageHelper.maskWithColor(landTextureSnippet, Color.black, landMask, false);
-
-			checkForCancel();
-
-			Image coastShading;
-			Image landBackgroundColoredBeforeAddingIconColorsWithShading = null;
+			Image landTextureSnippet;
+			if (settings.landColor.hasTransparency())
 			{
-				Tuple2<Image, Image> tuple = darkenLandNearCoastlinesAndRegionBorders(settings, mapParts.graph, settings.resolution,
-						mapSnippet, landMask, mapParts.background, null, centersToDraw, drawBounds, false);
-				mapSnippet = tuple.getFirst();
-				coastShading = tuple.getSecond();
-
-				if (settings.drawRegionColors)
-				{
-					Image landColoredBeforeAddingIconColors = ImageHelper.copySnippet(mapParts.background.landColoredBeforeAddingIconColors,
-							drawBounds.toIntRectangle());
-					landBackgroundColoredBeforeAddingIconColorsWithShading = darkenLandNearCoastlinesAndRegionBorders(settings,
-							mapParts.graph, settings.resolution, landColoredBeforeAddingIconColors, landMask, mapParts.background,
-							coastShading, centersToDraw, drawBounds, false).getFirst();
-				}
-
+				landTextureSnippet = ImageHelper.getInstance().copySnippetPreservingAlphaOfTransparentPixels(mapParts.background.land, drawBounds.toIntRectangle());
+			}
+			else
+			{
+				landTextureSnippet = mapParts.background.land.copySubImage(drawBounds.toIntRectangle());
 			}
 
 			checkForCancel();
 
-			// Store the current version of mapSnippet for a background when drawing icons later.
-			Image landBackground = mapSnippet.deepCopy();
+			Image coastShading;
+			Image landColoredBeforeAddingIconColors = null;
+			Image landBackground = null;
+			{
+				Tuple2<Image, Image> tuple = darkenLandNearCoastlinesAndRegionBorders(settings, mapParts.graph, settings.resolution, landTextureSnippet, mapParts.background, null, centersToDraw,
+						drawBounds, false);
+				Image landBackgroundWithLandInOcean = tuple.getFirst();
+				coastShading = tuple.getSecond();
+				mapSnippet = ImageHelper.getInstance().maskWithColor(landBackgroundWithLandInOcean, Color.black, landMask, false);
+
+				if (settings.drawRegionColors)
+				{
+					landColoredBeforeAddingIconColors = mapParts.background.landColoredBeforeAddingIconColors.copySubImage(drawBounds.toIntRectangle());
+					landBackground = darkenLandNearCoastlinesAndRegionBorders(settings, mapParts.graph, settings.resolution, landColoredBeforeAddingIconColors, mapParts.background, coastShading,
+							centersToDraw, drawBounds, false).getFirst();
+				}
+				else
+				{
+					landBackground = landBackgroundWithLandInOcean;
+				}
+			}
+
+			checkForCancel();
 
 			if (settings.drawRegionBoundaries)
 			{
-				Painter p = mapSnippet.createPainter(DrawQuality.High);
-				p.setColor(settings.regionBoundaryColor);
-				mapParts.graph.drawRegionBoundaries(p, settings.regionBoundaryStyle, centersToDraw, drawBounds);
+				try (Painter p = mapSnippet.createPainter(DrawQuality.High))
+				{
+					p.setColor(settings.regionBoundaryColor);
+					mapParts.graph.drawRegionBoundaries(p, settings.regionBoundaryStyle, centersToDraw, drawBounds);
+				}
 			}
 
 			checkForCancel();
@@ -401,7 +388,7 @@ public class MapCreator implements WarningLogger
 			Image oceanTextureSnippet;
 			{
 				oceanTextureSnippet = mapParts.background.createOceanSnippet(drawBounds);
-				mapSnippet = ImageHelper.maskWithImage(mapSnippet, oceanTextureSnippet, landMask);
+				mapSnippet = ImageHelper.getInstance().maskWithImage(mapSnippet, oceanTextureSnippet, landMask);
 			}
 
 			checkForCancel();
@@ -411,21 +398,18 @@ public class MapCreator implements WarningLogger
 			Image oceanShading;
 			Image oceanWithWavesAndShading = oceanTextureSnippet;
 			{
-				Tuple2<Image, Image> oceanTuple = createOceanWavesAndShading(settings, mapParts.graph, settings.resolution, landMask,
-						centersToDraw, drawBounds);
+				Tuple2<Image, Image> oceanTuple = createOceanWavesAndShading(settings, mapParts.graph, settings.resolution, landMask, centersToDraw, drawBounds);
 				oceanWaves = oceanTuple.getFirst();
 				oceanShading = oceanTuple.getSecond();
 				if (oceanShading != null)
 				{
-					mapSnippet = ImageHelper.maskWithColor(mapSnippet, settings.oceanShadingColor, oceanShading, true);
-					oceanWithWavesAndShading = ImageHelper.maskWithColor(oceanWithWavesAndShading, settings.oceanShadingColor, oceanShading,
-							true);
+					mapSnippet = ImageHelper.getInstance().maskWithColor(mapSnippet, settings.oceanShadingColor, oceanShading, true);
+					oceanWithWavesAndShading = ImageHelper.getInstance().maskWithColor(oceanWithWavesAndShading, settings.oceanShadingColor, oceanShading, true);
 				}
 				if (oceanWaves != null)
 				{
-					mapSnippet = ImageHelper.maskWithColor(mapSnippet, settings.oceanWavesColor, oceanWaves, true);
-					oceanWithWavesAndShading = ImageHelper.maskWithColor(oceanWithWavesAndShading, settings.oceanWavesColor, oceanWaves,
-							true);
+					mapSnippet = ImageHelper.getInstance().maskWithColor(mapSnippet, settings.oceanWavesColor, oceanWaves, true);
+					oceanWithWavesAndShading = ImageHelper.getInstance().maskWithColor(oceanWithWavesAndShading, settings.oceanWavesColor, oceanWaves, true);
 				}
 			}
 
@@ -433,9 +417,11 @@ public class MapCreator implements WarningLogger
 
 			// Draw coastlines.
 			{
-				Painter p = mapSnippet.createPainter(DrawQuality.High);
-				p.setColor(settings.coastlineColor);
-				mapParts.graph.drawCoastlineWithLakeShores(p, settings.coastlineWidth * settings.resolution, centersToDraw, drawBounds);
+				try (Painter p = mapSnippet.createPainter(DrawQuality.High))
+				{
+					p.setColor(settings.coastlineColor);
+					mapParts.graph.drawCoastlineWithLakeShores(p, settings.coastlineWidth * settings.resolution, centersToDraw, drawBounds);
+				}
 			}
 
 			checkForCancel();
@@ -448,48 +434,44 @@ public class MapCreator implements WarningLogger
 			}
 
 			checkForCancel();
-			
+
 			if (settings.drawGridOverlay && settings.gridOverlayLayer == GridOverlayLayer.Under_icons)
 			{
-				GridDrawer.drawGrid(mapSnippet, settings, drawBounds, mapParts.background.mapBounds.toIntDimension());
+				GridDrawer.drawGrid(mapSnippet, settings, drawBounds, mapParts.background.mapBounds.toIntDimension(), mapParts.graph, centersToDraw);
 			}
 
 			checkForCancel();
 
 			// Draw icons
-			mapParts.iconDrawer.drawIcons(iconsToDraw, mapSnippet, landBackgroundColoredBeforeAddingIconColorsWithShading, landBackground,
-					landTextureSnippet, oceanWithWavesAndShading, drawBounds);
-			
+			mapParts.iconDrawer.drawIcons(iconsToDraw, mapSnippet, landBackground, landTextureSnippet, oceanWithWavesAndShading, drawBounds);
+
 			checkForCancel();
 
 			if (settings.drawGridOverlay && settings.gridOverlayLayer == GridOverlayLayer.Over_icons)
 			{
-				GridDrawer.drawGrid(mapSnippet, settings, drawBounds, mapParts.background.mapBounds.toIntDimension());
+				GridDrawer.drawGrid(mapSnippet, settings, drawBounds, mapParts.background.mapBounds.toIntDimension(), mapParts.graph, centersToDraw);
 			}
 
 			checkForCancel();
 
-			textBackground = updateLandMaskAndCreateTextBackground(settings, mapParts.graph, landMask, iconsToDraw, landTextureSnippet,
-					oceanTextureSnippet, mapParts.background, oceanWaves, oceanShading, coastShading, mapParts.iconDrawer, centersToDraw,
-					drawBounds);
+			textBackground = updateLandMaskAndCreateTextBackground(settings, mapParts.graph, landMask, iconsToDraw, settings.drawRegionColors ? landColoredBeforeAddingIconColors : landTextureSnippet,
+					oceanTextureSnippet, mapParts.background, oceanWaves, oceanShading, coastShading, mapParts.iconDrawer, centersToDraw, drawBounds);
 
 			checkForCancel();
 
-			// Update the snippet in textBackground because the Fonts tab uses that as part of speeding up text re-drawing.
-			ImageHelper.copySnippetFromSourceAndPasteIntoTarget(mapParts.textBackground, textBackground,
-					replaceBounds.upperLeftCorner().toIntPoint(), boundsInSourceToCopyFrom, 0);
+			// Update the snippet in mapParts.textBackground because the Fonts tab uses that as part of speeding up text re-drawing.
+			ImageHelper.getInstance().copySnippetFromSourceAndPasteIntoTarget(mapParts.textBackground, textBackground, replaceBounds.upperLeftCorner().toIntPoint(), boundsInSourceToCopyFrom, 0);
 
 			// If present, also update the cached version of the map before adding text so that the Fonts tab can draw the map faster.
 			if (mapParts.mapBeforeAddingText != null)
 			{
-				ImageHelper.copySnippetFromSourceAndPasteIntoTarget(mapParts.mapBeforeAddingText, mapSnippet,
-						replaceBounds.upperLeftCorner().toIntPoint(), boundsInSourceToCopyFrom, 0);
+				ImageHelper.getInstance().copySnippetFromSourceAndPasteIntoTarget(mapParts.mapBeforeAddingText, mapSnippet, replaceBounds.upperLeftCorner().toIntPoint(), boundsInSourceToCopyFrom, 0);
 			}
 		}
 		else
 		{
-			mapSnippet = ImageHelper.copySnippet(mapParts.mapBeforeAddingText, drawBounds.toIntRectangle());
-			textBackground = ImageHelper.copySnippet(mapParts.textBackground, drawBounds.toIntRectangle());
+			mapSnippet = mapParts.mapBeforeAddingText.copySubImage(drawBounds.toIntRectangle());
+			textBackground = mapParts.textBackground.copySubImage(drawBounds.toIntRectangle());
 		}
 
 		if (settings.drawText)
@@ -498,8 +480,7 @@ public class MapCreator implements WarningLogger
 		}
 		textDrawer.updateTextBoundsIfNeeded(mapParts.graph);
 
-		IntPoint drawBoundsUpperLeftCornerAdjustedForBorder = new IntPoint(
-				drawBounds.upperLeftCorner().toIntPoint().x + mapParts.background.getBorderPaddingScaledByResolution(),
+		IntPoint drawBoundsUpperLeftCornerAdjustedForBorder = new IntPoint(drawBounds.upperLeftCorner().toIntPoint().x + mapParts.background.getBorderPaddingScaledByResolution(),
 				drawBounds.upperLeftCorner().toIntPoint().y + mapParts.background.getBorderPaddingScaledByResolution());
 
 		mapParts.background.drawEdgesIfBoundsTouchesThem(mapSnippet, drawBounds);
@@ -508,21 +489,26 @@ public class MapCreator implements WarningLogger
 		// Add grunge
 		if (settings.drawGrunge && settings.grungeWidth > 0)
 		{
-			mapSnippet = ImageHelper.maskWithColorInRegion(mapSnippet, settings.frayedBorderColor, mapParts.grunge, true,
-					drawBoundsUpperLeftCornerAdjustedForBorder);
+			mapSnippet = ImageHelper.getInstance().maskWithColorInRegion(mapSnippet, settings.frayedBorderColor, mapParts.grunge, true, drawBoundsUpperLeftCornerAdjustedForBorder);
 		}
 
 		if (DebugFlags.drawCorners())
 		{
-			mapParts.graph.drawCorners(mapSnippet.createPainter(), centersToDraw, drawBounds);
+			try (Painter p = mapSnippet.createPainter())
+			{
+				mapParts.graph.drawCorners(p, centersToDraw, drawBounds);
+			}
 		}
 		if (DebugFlags.drawVoronoi())
 		{
-			mapParts.graph.drawVoronoi(mapSnippet.createPainter(), centersToDraw, drawBounds);
+			try (Painter p = mapSnippet.createPainter())
+			{
+				p.setColor(Color.white);
+				mapParts.graph.drawVoronoi(p, centersToDraw, drawBounds, false);
+			}
 		}
 
-		IntPoint replaceBoundsUpperLeftCornerAdjustedForBorder = new IntPoint(
-				replaceBounds.upperLeftCorner().toIntPoint().x + mapParts.background.getBorderPaddingScaledByResolution(),
+		IntPoint replaceBoundsUpperLeftCornerAdjustedForBorder = new IntPoint(replaceBounds.upperLeftCorner().toIntPoint().x + mapParts.background.getBorderPaddingScaledByResolution(),
 				replaceBounds.upperLeftCorner().toIntPoint().y + mapParts.background.getBorderPaddingScaledByResolution());
 
 		if (settings.drawOverlayImage)
@@ -536,45 +522,43 @@ public class MapCreator implements WarningLogger
 			int blurLevel = (int) (settings.frayedBorderBlurLevel * sizeMultiplierRounded);
 			if (blurLevel > 0)
 			{
-				mapSnippet = ImageHelper.maskWithColorInRegion(mapSnippet, settings.frayedBorderColor, mapParts.frayedBorderBlur, true,
-						drawBoundsUpperLeftCornerAdjustedForBorder);
+				mapSnippet = ImageHelper.getInstance().maskWithColorInRegion(mapSnippet, settings.frayedBorderColor, mapParts.frayedBorderBlur, true, drawBoundsUpperLeftCornerAdjustedForBorder);
 			}
-			mapSnippet = ImageHelper.setAlphaFromMaskInRegion(mapSnippet, mapParts.frayedBorderMask, true,
-					drawBoundsUpperLeftCornerAdjustedForBorder);
+			mapSnippet = ImageHelper.getInstance().setAlphaFromMaskInRegion(mapSnippet, mapParts.frayedBorderMask, true, drawBoundsUpperLeftCornerAdjustedForBorder);
 		}
 
 		// Update the snippet in the main map.
-		ImageHelper.copySnippetFromSourceAndPasteIntoTarget(fullSizedMap, mapSnippet, replaceBoundsUpperLeftCornerAdjustedForBorder,
-				boundsInSourceToCopyFrom, mapParts.background.getBorderPaddingScaledByResolution());
+		ImageHelper.getInstance().copySnippetFromSourceAndPasteIntoTarget(fullSizedMap, mapSnippet, replaceBoundsUpperLeftCornerAdjustedForBorder, boundsInSourceToCopyFrom,
+				mapParts.background.getBorderPaddingScaledByResolution());
 
 		if (DebugFlags.showIncrementalUpdateBounds())
 		{
-			Painter p = fullSizedMap.createPainter();
-			int scaledBorderWidth = settings.drawBorder && settings.borderPosition == BorderPosition.Outside_map
-					? (int) (settings.borderWidth * settings.resolution)
-					: 0;
-			p.setBasicStroke(4f);
-			p.setColor(Color.red);
+			try (Painter p = fullSizedMap.createPainter())
 			{
-				IntRectangle rect = new Rectangle(replaceBounds.x + scaledBorderWidth, replaceBounds.y + scaledBorderWidth,
-						replaceBounds.width, replaceBounds.height).toIntRectangle();
-				p.drawRect(rect.x, rect.y, rect.width, rect.height);
-			}
-			p.setBasicStroke(4f);
-			p.setColor(Color.white);
-			{
-				IntRectangle rect = new Rectangle(drawBounds.x + scaledBorderWidth, drawBounds.y + scaledBorderWidth, drawBounds.width,
-						drawBounds.height).toIntRectangle();
-				p.drawRect(rect.x, rect.y, rect.width, rect.height);
+				int scaledBorderWidth = settings.drawBorder && settings.borderPosition == BorderPosition.Outside_map ? (int) (settings.borderWidth * settings.resolution) : 0;
+				p.setBasicStroke(4f);
+				p.setColor(Color.red);
+				{
+					IntRectangle rect = new Rectangle(replaceBounds.x + scaledBorderWidth, replaceBounds.y + scaledBorderWidth, replaceBounds.width, replaceBounds.height).toIntRectangle();
+					p.drawRect(rect.x, rect.y, rect.width, rect.height);
+				}
+				p.setBasicStroke(4f);
+				p.setColor(Color.white);
+				{
+					IntRectangle rect = new Rectangle(drawBounds.x + scaledBorderWidth, drawBounds.y + scaledBorderWidth, drawBounds.width, drawBounds.height).toIntRectangle();
+					p.drawRect(rect.x, rect.y, rect.width, rect.height);
+				}
 			}
 		}
 
-		return replaceBounds.toIntRectangle();
+		int scaledBorderWidth = settings.drawBorder && settings.borderPosition == BorderPosition.Outside_map ? (int) (settings.borderWidth * settings.resolution) : 0;
+		IntRectangle bounds = replaceBounds.toIntRectangle();
+		return new IntRectangle(bounds.x + scaledBorderWidth, bounds.y + scaledBorderWidth, bounds.width, bounds.height);
 	}
 
 	private double calcEffectsPadding(final MapSettings settings)
 	{
-		double sizeMultiplier = calcSizeMultipilerFromResolutionScaleRounded(settings.resolution);
+		double sizeMultiplier = calcSizeMultiplierFromResolutionScaleRounded(settings.resolution);
 
 		// To handle edge/effects changes outside centersChangedBounds box
 		// caused by centers in centersChanged, pad the bounds of the
@@ -583,34 +567,33 @@ public class MapCreator implements WarningLogger
 		// whichever is largest.
 
 		double concentricWaveWidth = settings.hasConcentricWaves()
-				? settings.concentricWaveCount
-						* (concentricWaveLineWidth * sizeMultiplier + concentricWaveWidthBetweenWaves * sizeMultiplier)
+				? settings.concentricWaveCount * (concentricWaveLineWidth * sizeMultiplier + concentricWaveWidthBetweenWaves * sizeMultiplier)
 						+ (settings.jitterToConcentricWaves ? calcJitterVarianceRange(settings.resolution) : 0)
 				: 0;
-		// In theory I shouldn't multiply by 0.75 below, but realistically there doesn't seem to be any visual difference and it helps a lot
+		// In theory, I shouldn't multiply by 0.75 below, but realistically there doesn't seem to be any visual difference and it helps a
+		// lot
 		// with performance.
 		double rippleWaveWidth = settings.hasRippleWaves(settings.resolution) ? (settings.oceanWavesLevel * sizeMultiplier) * 0.75 : 0;
-		// There shading from gaussian blur isn't visible all the way out, so save performance by reducing the width
+		// The shading from Gaussian blur isn't visible all the way out, so save performance by reducing the width
 		// contributed by it.
 		double oceanShadingWidth = 0.9 * (settings.oceanShadingLevel * sizeMultiplier);
 		double coastShadingWidth = 0.9 * (settings.coastShadingLevel * sizeMultiplier);
 
-		double effectsPadding = Math
-				.ceil(Math.max(concentricWaveWidth, Math.max(rippleWaveWidth, Math.max(oceanShadingWidth, coastShadingWidth))));
+		double effectsPadding = Math.ceil(Math.max(concentricWaveWidth, Math.max(rippleWaveWidth, Math.max(oceanShadingWidth, coastShadingWidth))));
 
 		// Make sure effectsPadding is at least half the width of the maximum with any line can be drawn, which would probably be a very
 		// wide river. Since there is no easy way to know what that will be, just guess.
 		double buffer = 10;
-		effectsPadding = Math.max(effectsPadding,
-				Math.max((buffer / 2.0) * settings.resolution, (SettingsGenerator.maxLineWidthInEditor / 2.0) * settings.resolution));
+		effectsPadding = Math.max(effectsPadding, Math.max((buffer / 2.0) * settings.resolution, (SettingsGenerator.maxLineWidthInEditor / 2.0) * settings.resolution));
 
 		return effectsPadding;
 	}
 
 	/**
 	 * Draws a map.
-	 * 
+	 *
 	 * @param settings
+	 *            Setting for the map to create
 	 * @param maxDimensions
 	 *            The maximum width and height (in pixels) at which to draw the map. This is needed for creating previews. null means draw
 	 *            at normal resolution. Warning: If maxDimensions is specified, then settings.resolution will be modified to fit that size.
@@ -624,10 +607,10 @@ public class MapCreator implements WarningLogger
 
 		double startTime = System.currentTimeMillis();
 
-		// If we're within resolution buffer of our estimated maximum resolution, then be conservative about memory usage.
+		// If we're within resolutionBuffer of our estimated maximum resolution, then be conservative about memory usage.
 		// My tests showed that running frayed edge and grunge calculation inline with other stuff gave a 22% speedup.
 		final double resolutionBuffer = 0.5;
-		boolean isLowMemoryMode = settings.resolution >= calcMaxResolutionScale() - resolutionBuffer;
+		boolean isLowMemoryMode = memoryModeOverride != null ? memoryModeOverride : settings.resolution >= calcMaxResolutionScale() - resolutionBuffer;
 		Logger.println("Using " + (isLowMemoryMode ? "low" : "high") + " memory mode.");
 
 		if (StringUtils.isNotEmpty(settings.customImagesPath))
@@ -642,17 +625,16 @@ public class MapCreator implements WarningLogger
 
 		r = new Random(settings.randomSeed);
 		Dimension mapBounds = Background.calcMapBoundsAndAdjustResolutionIfNeeded(settings, maxDimensions);
-		double sizeMultiplier = calcSizeMultipilerFromResolutionScale(settings.resolution);
+		double sizeMultiplier = calcSizeMultiplierFromResolutionScale(settings.resolution);
 
-		Image map;
 		// Kick of a job to create the graph while the background is being created.
 		Future<WorldGraph> graphTask = ThreadHelper.getInstance().submit(() ->
 		{
 			if (mapParts == null || mapParts.graph == null)
 			{
 				Logger.println("Creating the graph.");
-				WorldGraph graphCreated = createGraph(settings, mapBounds.width, mapBounds.height, r, settings.resolution,
-						!settings.edits.isInitialized());
+				WorldGraph graphCreated = createGraph(settings, mapBounds.width, mapBounds.height, r, settings.resolution, !settings.edits.isInitialized());
+
 				if (mapParts != null)
 				{
 					mapParts.graph = graphCreated;
@@ -686,6 +668,7 @@ public class MapCreator implements WarningLogger
 		WorldGraph graph;
 		graph = ThreadHelper.getInstance().getResult(graphTask);
 
+		Image map;
 		checkForCancel();
 
 		// Kick off frayed border creation. This is started after the graph is created because of previous bugs I've found
@@ -698,12 +681,19 @@ public class MapCreator implements WarningLogger
 			frayedBorderTask = startFrayedBorderCreation(settings, mapDimensions, sizeMultiplier, mapParts);
 		}
 
+		// Create the NameCreator regardless of whether we're going to use it here because the text tools needs it to be in mapParts.
+		Future<NameCreator> nameCreatorTask = null;
+		if (mapParts == null || mapParts.nameCreator == null)
+		{
+			nameCreatorTask = startNameCreatorCreation(settings);
+		}
+
 		Image textBackground;
 		List<Set<Center>> mountainGroups;
 		List<IconDrawTask> cities;
 		if (mapParts == null || mapParts.mapBeforeAddingText == null || !settings.edits.isInitialized())
 		{
-			Tuple4<Image, Image, List<Set<Center>>, List<IconDrawTask>> tuple = drawTerrainAndIcons(settings, mapParts, graph, background);
+			Tuple4<Image, Image, List<Set<Center>>, List<IconDrawTask>> tuple = drawTerrainAndIcons(settings, mapParts, graph, background, isLowMemoryMode);
 
 			checkForCancel();
 
@@ -722,6 +712,10 @@ public class MapCreator implements WarningLogger
 
 		if (mapParts == null)
 		{
+			if (background.landColoredBeforeAddingIconColors != null)
+			{
+				background.landColoredBeforeAddingIconColors.close();
+			}
 			background.landColoredBeforeAddingIconColors = null;
 		}
 
@@ -741,13 +735,6 @@ public class MapCreator implements WarningLogger
 		else
 		{
 			Logger.println("Creating text but not drawing it.");
-		}
-
-		// Create the NameCreator regardless of whether we're going to use it here because the text tools needs it to be in mapParts.
-		Future<NameCreator> nameCreatorTask = null;
-		if (mapParts == null || mapParts.nameCreator == null)
-		{
-			nameCreatorTask = startNameCreatorCreation(settings);
 		}
 
 		TextDrawer textDrawer = new TextDrawer(settings);
@@ -781,62 +768,86 @@ public class MapCreator implements WarningLogger
 			textDrawer.generateText(graph, map, nameCreator, textBackground, mountainGroups, cities, graph.getGeneratedLakes());
 		}
 
+		if (mapParts == null && textBackground != null)
+		{
+			textBackground.close();
+		}
 		textBackground = null;
 
 		if (DebugFlags.drawCorners())
 		{
-			graph.drawCorners(map.createPainter(), null, null);
+			try (Painter p = map.createPainter())
+			{
+				graph.drawCorners(p, null, null);
+			}
 		}
 		if (DebugFlags.drawVoronoi())
 		{
-			graph.drawVoronoi(map.createPainter(), null, null);
+			try (Painter p = map.createPainter())
+			{
+				p.setColor(Color.white);
+				graph.drawVoronoi(p, null, null, false);
+			}
 		}
 
 		if (DebugFlags.getIndexesOfCentersToHighlight().length > 0)
 		{
-			Painter p = map.createPainter();
-			Set<Center> toRender = new HashSet<>();
-			for (Integer index : DebugFlags.getIndexesOfCentersToHighlight())
+			try (Painter p = map.createPainter())
 			{
-				toRender.add(graph.centers.get(index));
+				Set<Center> toRender = new HashSet<>();
+				for (Integer index : DebugFlags.getIndexesOfCentersToHighlight())
+				{
+					toRender.add(graph.centers.get(index));
+				}
+				graph.drawPolygons(p, toRender, (ignored) -> Color.green);
 			}
-			graph.drawPolygons(p, toRender, (_) -> Color.green);
 		}
 
 		if (DebugFlags.getIndexesOfEdgesToHighlight().length > 0)
 		{
-			Painter p = map.createPainter();
-			for (Integer index : DebugFlags.getIndexesOfEdgesToHighlight())
+			try (Painter p = map.createPainter())
 			{
-				Edge e = graph.edges.get(index);
-
-				p.setColor(Color.blue);
-				p.setBasicStroke(1f * (float) settings.resolution);
-				final int diameter = (int) (6.0 * settings.resolution);
-
-				if (e.v0 != null)
+				for (Integer index : DebugFlags.getIndexesOfEdgesToHighlight())
 				{
-					p.drawOval((int) (e.v0.loc.x) - diameter / 2, (int) (e.v0.loc.y) - diameter / 2, diameter, diameter);
-				}
+					Edge e = graph.edges.get(index);
 
-				if (e.v1 != null)
-				{
-					p.drawOval((int) (e.v1.loc.x) - diameter / 2, (int) (e.v1.loc.y) - diameter / 2, diameter, diameter);
-				}
+					p.setColor(Color.blue);
+					p.setBasicStroke((float) settings.resolution);
+					final int diameter = (int) (6.0 * settings.resolution);
 
-				p.setColor(Color.cyan);
-				graph.drawEdge(p, e);
+					if (e.v0 != null)
+					{
+						p.drawOval((int) (e.v0.loc.x) - diameter / 2, (int) (e.v0.loc.y) - diameter / 2, diameter, diameter);
+					}
+
+					if (e.v1 != null)
+					{
+						p.drawOval((int) (e.v1.loc.x) - diameter / 2, (int) (e.v1.loc.y) - diameter / 2, diameter, diameter);
+					}
+
+					p.setColor(Color.cyan);
+					graph.drawEdge(p, e);
+				}
 			}
 		}
 
 		if (settings.drawBorder)
 		{
 			Logger.println("Adding border.");
+			Image mapOld = map;
 			map = background.addBorder(map);
+			if (map != mapOld)
+			{
+				mapOld.close();
+			}
 			if (mapParts == null)
 			{
 				background.borderBackground = null;
 			}
+		}
+		if (mapParts == null)
+		{
+			background.closeImages();
 		}
 		background = null;
 
@@ -872,10 +883,10 @@ public class MapCreator implements WarningLogger
 			}
 
 			// Add the grunge to the map.
-			map = ImageHelper.maskWithColor(map, settings.frayedBorderColor, grunge, true);
+			map = ImageHelper.getInstance().maskWithColor(map, settings.frayedBorderColor, grunge, true);
 		}
 
-		drawOverlayImageIfNeededAndUpdateMapParts(map, settings, mapParts);
+		drawOverlayImageIfNeededAndUpdateMapParts(map, settings);
 
 		checkForCancel();
 
@@ -916,11 +927,10 @@ public class MapCreator implements WarningLogger
 
 			if (frayedBorderBlur != null)
 			{
-				map = ImageHelper.maskWithColor(map, settings.frayedBorderColor, frayedBorderBlur, true);
+				map = ImageHelper.getInstance().maskWithColor(map, settings.frayedBorderColor, frayedBorderBlur, true);
 			}
-			map = ImageHelper.setAlphaFromMask(map, frayedBorderMask, true);
+			map = ImageHelper.getInstance().setAlphaFromMask(map, frayedBorderMask, true);
 		}
-
 
 		if (nameCreatorTask != null)
 		{
@@ -938,11 +948,11 @@ public class MapCreator implements WarningLogger
 
 		Logger.println("Done creating map.");
 
+		System.gc();
 		return map;
 	}
 
-	private Future<Tuple2<Image, Image>> startFrayedBorderCreation(MapSettings settings, Dimension mapDimensions, double sizeMultiplier,
-			MapParts mapParts)
+	private Future<Tuple2<Image, Image>> startFrayedBorderCreation(MapSettings settings, Dimension mapDimensions, double sizeMultiplier, MapParts mapParts)
 	{
 		// Use the random number generator the same whether or not we draw a frayed border.
 		if (settings.frayedBorder)
@@ -971,15 +981,16 @@ public class MapCreator implements WarningLogger
 					widthToUse = mapDimensions.width;
 					heightToUse = mapDimensions.height;
 				}
-				WorldGraph frayGraph = GraphCreator.createSimpleGraph(widthToUse, heightToUse, polygonCount,
-						new Random(settings.frayedBorderSeed), settings.resolution, true, settings.rightRotationCount,
-						settings.flipHorizontally, settings.flipVertically);
+				WorldGraph frayGraph = GraphCreator.createSimpleGraph(widthToUse, heightToUse, polygonCount, new Random(settings.frayedBorderSeed), settings.resolution, true,
+						settings.rightRotationCount, settings.flipHorizontally, settings.flipVertically);
 				frayedBorderMask = Image.create(frayGraph.getWidth(), frayGraph.getHeight(), ImageType.Grayscale8Bit);
-				frayGraph.drawBorderWhite(frayedBorderMask.createPainter());
+				try (Painter p = frayedBorderMask.createPainter())
+				{
+					frayGraph.drawBorderWhite(p);
+				}
 				if (blurLevel > 0)
 				{
-					float[][] kernel = ImageHelper.createGaussianKernel(blurLevel);
-					frayedBorderBlur = ImageHelper.convolveGrayscale(frayedBorderMask, kernel, true, true);
+					frayedBorderBlur = ImageHelper.getInstance().blur(frayedBorderMask, blurLevel, true, true);
 				}
 				else
 				{
@@ -1019,13 +1030,12 @@ public class MapCreator implements WarningLogger
 				// same pattern as
 				// the background.
 				final float fractalPower = 1.3f;
-				grunge = FractalBGGenerator.generate(new Random(settings.backgroundRandomSeed + 104567), fractalPower,
-						((int) mapDimensions.width), ((int) mapDimensions.height), 0.75f);
+				grunge = FractalBGGenerator.generate(new Random(settings.backgroundRandomSeed + 104567), fractalPower, ((int) mapDimensions.width), ((int) mapDimensions.height), 0.75f);
 
 				checkForCancel();
 
 				// Whiten the middle of clouds.
-				darkenMiddleOfImage(settings.resolution, grunge, settings.grungeWidth);
+				ImageHelper.getInstance().darkenMiddleOfImage(grunge, settings.grungeWidth, settings.resolution, false);
 
 				return grunge;
 			});
@@ -1036,20 +1046,14 @@ public class MapCreator implements WarningLogger
 		}
 	}
 
-	private Tuple4<Image, Image, List<Set<Center>>, List<IconDrawTask>> drawTerrainAndIcons(MapSettings settings, MapParts mapParts,
-			WorldGraph graph, Background background)
+	private Tuple4<Image, Image, List<Set<Center>>, List<IconDrawTask>> drawTerrainAndIcons(MapSettings settings, MapParts mapParts, WorldGraph graph, Background background, boolean isLowMemoryMode)
 	{
-		applyRegionEdits(graph, settings.edits);
-		// Apply edge edits before center edits because applying center edits smoothes region boundaries, which depends on rivers, which are
-		// edge edits.
-		applyEdgeEdits(graph, settings.edits, null);
-		applyCenterEdits(graph, settings.edits, null, settings.drawRegionBoundaries || settings.drawRegionColors);
-
 		checkForCancel();
 
 		IconDrawer iconDrawer;
 		boolean needToAddIcons;
 		iconDrawer = new IconDrawer(graph, new Random(r.nextLong()), settings);
+		iconDrawer.setLowMemoryMode(isLowMemoryMode);
 		if (mapParts != null)
 		{
 			mapParts.iconDrawer = iconDrawer;
@@ -1073,7 +1077,7 @@ public class MapCreator implements WarningLogger
 		else
 		{
 			Logger.println("Adding icons from edits.");
-			iconDrawer.addOrUpdateIconsFromEdits(settings.edits, graph.centers, this);
+			iconDrawer.addOrUpdateIconsFromEdits(settings.edits, graph.centers, null, this);
 		}
 
 		checkForCancel();
@@ -1082,6 +1086,10 @@ public class MapCreator implements WarningLogger
 		background.doSetupThatNeedsGraphAndIcons(settings, graph, iconsToDraw, null, null, null);
 		if (mapParts == null)
 		{
+			if (background.landBeforeRegionColoring != null && background.landBeforeRegionColoring != background.land)
+			{
+				background.landBeforeRegionColoring.close();
+			}
 			background.landBeforeRegionColoring = null;
 		}
 
@@ -1091,41 +1099,38 @@ public class MapCreator implements WarningLogger
 		Logger.println("Adding land.");
 		Image landMask = Image.create(graph.getWidth(), graph.getHeight(), ImageType.Binary);
 		{
-			Painter g = landMask.createPainter();
-			graph.drawLandAndOceanBlackAndWhite(g, graph.centers, null);
+			try (Painter g = landMask.createPainter())
+			{
+				graph.drawLandAndOceanBlackAndWhite(g, graph.centers, null);
+			}
 		}
-
-		// Combine land and ocean images.
-		Image map = ImageHelper.maskWithColor(background.land, Color.black, landMask, false);
 
 		Image coastShading;
-		Image landColoredBeforeAddingIconColorsWithShading = null;
+		Image landBackground = null;
+		Image map;
 		{
-			{
-				Tuple2<Image, Image> tuple = darkenLandNearCoastlinesAndRegionBorders(settings, graph, settings.resolution, map, landMask,
-						background, null, null, null, true);
-				map = tuple.getFirst();
-				coastShading = tuple.getSecond();
-			}
+			Tuple2<Image, Image> tuple = darkenLandNearCoastlinesAndRegionBorders(settings, graph, settings.resolution, background.land, background, null, null, null, true);
+			Image landBackgroundWithLandAndOcean = tuple.getFirst();
+			coastShading = tuple.getSecond();
+			map = ImageHelper.getInstance().maskWithColor(landBackgroundWithLandAndOcean, Color.black, landMask, false);
+
 			if (settings.drawRegionColors)
 			{
-				landColoredBeforeAddingIconColorsWithShading = darkenLandNearCoastlinesAndRegionBorders(settings, graph,
-						settings.resolution, background.landColoredBeforeAddingIconColors, landMask, background, coastShading, null, null,
+				landBackground = darkenLandNearCoastlinesAndRegionBorders(settings, graph, settings.resolution, background.landColoredBeforeAddingIconColors, background, coastShading, null, null,
 						true).getFirst();
 			}
+			else
+			{
+				landBackground = landBackgroundWithLandAndOcean;
+			}
 		}
-
-		checkForCancel();
-
-		// Store the current version of the map for a background when drawing icons later.
-		Image landBackground = map.deepCopy();
 
 		checkForCancel();
 
 		if (settings.drawRegionBoundaries)
 		{
+			try (Painter g = map.createPainter(DrawQuality.High))
 			{
-				Painter g = map.createPainter(DrawQuality.High);
 				g.setColor(settings.regionBoundaryColor);
 				graph.drawRegionBoundaries(g, settings.regionBoundaryStyle, null, null);
 			}
@@ -1143,11 +1148,10 @@ public class MapCreator implements WarningLogger
 		{
 			if (background.ocean.getWidth() != graph.getWidth() || background.ocean.getHeight() != graph.getHeight())
 			{
-				throw new IllegalArgumentException(
-						"The given ocean background image does not" + " have the same aspect ratio as the given land background image.");
+				throw new IllegalArgumentException("The given ocean background image does not" + " have the same aspect ratio as the given land background image.");
 			}
 
-			map = ImageHelper.maskWithImage(map, background.ocean, landMask);
+			map = ImageHelper.getInstance().maskWithImage(map, background.ocean, landMask);
 		}
 
 		checkForCancel();
@@ -1159,24 +1163,26 @@ public class MapCreator implements WarningLogger
 		if (oceanShading != null)
 		{
 			Logger.println("Adding shading to ocean along coastlines.");
-			map = ImageHelper.maskWithColor(map, settings.oceanShadingColor, oceanShading, true);
-			oceanWithWavesAndShading = ImageHelper.maskWithColor(oceanWithWavesAndShading, settings.oceanShadingColor, oceanShading, true);
+			map = ImageHelper.getInstance().maskWithColor(map, settings.oceanShadingColor, oceanShading, true);
+			oceanWithWavesAndShading = ImageHelper.getInstance().maskWithColor(oceanWithWavesAndShading, settings.oceanShadingColor, oceanShading, true);
 		}
 
 		if (oceanWaves != null)
 		{
 			Logger.println("Adding waves to ocean along coastlines.");
-			map = ImageHelper.maskWithColor(map, settings.oceanWavesColor, oceanWaves, true);
-			oceanWithWavesAndShading = ImageHelper.maskWithColor(oceanWithWavesAndShading, settings.oceanWavesColor, oceanWaves, true);
+			map = ImageHelper.getInstance().maskWithColor(map, settings.oceanWavesColor, oceanWaves, true);
+			oceanWithWavesAndShading = ImageHelper.getInstance().maskWithColor(oceanWithWavesAndShading, settings.oceanWavesColor, oceanWaves, true);
 		}
 
 		checkForCancel();
 
 		// Draw coastlines.
 		{
-			Painter p = map.createPainter(DrawQuality.High);
-			p.setColor(settings.coastlineColor);
-			graph.drawCoastlineWithLakeShores(p, settings.coastlineWidth * settings.resolution, null, null);
+			try (Painter p = map.createPainter(DrawQuality.High))
+			{
+				p.setColor(settings.coastlineColor);
+				graph.drawCoastlineWithLakeShores(p, settings.coastlineWidth * settings.resolution, null, null);
+			}
 		}
 
 		checkForCancel();
@@ -1203,74 +1209,75 @@ public class MapCreator implements WarningLogger
 		}
 
 		checkForCancel();
-		
+
 		if (settings.drawGridOverlay && settings.gridOverlayLayer == GridOverlayLayer.Under_icons)
 		{
-			GridDrawer.drawGrid(map, settings, null, map.size());
+			GridDrawer.drawGrid(map, settings, null, map.size(), graph, null);
 		}
 
 		checkForCancel();
 
 		Logger.println("Drawing all icons.");
-		iconDrawer.drawIcons(iconsToDraw, map, landColoredBeforeAddingIconColorsWithShading, landBackground, background.land,
-				oceanWithWavesAndShading, null);
+		iconDrawer.drawIcons(iconsToDraw, map, landBackground, background.land, oceanWithWavesAndShading, null);
 		landBackground = null;
-		landColoredBeforeAddingIconColorsWithShading = null;
 
 		checkForCancel();
-		
+
 		if (settings.drawGridOverlay && settings.gridOverlayLayer == GridOverlayLayer.Over_icons)
 		{
-			GridDrawer.drawGrid(map, settings, null, map.size());
+			GridDrawer.drawGrid(map, settings, null, map.size(), graph, graph.centers);
 		}
 
 		checkForCancel();
 
 		// Needed for drawing text
-		Image textBackground = updateLandMaskAndCreateTextBackground(settings, graph, landMask, iconsToDraw,
-				settings.drawRegionColors ? background.landColoredBeforeAddingIconColors : background.land, background.ocean, background,
-				oceanWaves, oceanShading, coastShading, iconDrawer, null, null);
+		Image textBackground = updateLandMaskAndCreateTextBackground(settings, graph, landMask, iconsToDraw, settings.drawRegionColors ? background.landColoredBeforeAddingIconColors : background.land,
+				background.ocean, background, oceanWaves, oceanShading, coastShading, iconDrawer, null, null);
 
 		if (mapParts != null)
 		{
-			mapParts.mapBeforeAddingText = map.deepCopy();
+			if (!isLowMemoryMode)
+			{
+				mapParts.mapBeforeAddingText = map.deepCopy();
+			}
 			mapParts.textBackground = textBackground;
 		}
 
 		if (mapParts == null)
 		{
+			if (background.land != null)
+			{
+				background.land.close();
+			}
 			background.land = null;
 		}
-		landMask = null;
 
 		checkForCancel();
 
 		return new Tuple4<>(map, textBackground, mountainGroups, cities);
 	}
 
-	private Image updateLandMaskAndCreateTextBackground(MapSettings settings, WorldGraph graph, Image landMask,
-			List<IconDrawTask> iconsThatDrew, Image landTexture, Image oceanTexture, Background background, Image oceanWaves,
-			Image oceanShading, Image coastShading, IconDrawer iconDrawer, Collection<Center> centersToDraw, Rectangle drawBounds)
+	private Image updateLandMaskAndCreateTextBackground(MapSettings settings, WorldGraph graph, Image landMask, List<IconDrawTask> iconsThatDrew, Image landTexture, Image oceanTexture,
+			Background background, Image oceanWaves, Image oceanShading, Image coastShading, IconDrawer iconDrawer, Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
 		iconDrawer.drawNondecorationContentMasksOntoLandMask(landMask, iconsThatDrew, drawBounds);
 
-		Image textBackground = ImageHelper.maskWithColor(landTexture, Color.black, landMask, false);
-		textBackground = darkenLandNearCoastlinesAndRegionBorders(settings, graph, settings.resolution, textBackground, landMask,
-				background, coastShading, centersToDraw, drawBounds, false).getFirst();
-		textBackground = ImageHelper.maskWithImage(textBackground, oceanTexture, landMask);
+		Image textBackground = ImageHelper.getInstance().maskWithColor(landTexture, Color.black, landMask, false);
+		textBackground = darkenLandNearCoastlinesAndRegionBorders(settings, graph, settings.resolution, textBackground, background, coastShading, centersToDraw, drawBounds, false).getFirst();
+		textBackground = ImageHelper.getInstance().maskWithImage(textBackground, oceanTexture, landMask);
 		if (oceanShading != null)
 		{
-			textBackground = ImageHelper.maskWithColor(textBackground, settings.oceanShadingColor, oceanShading, true);
+			textBackground = ImageHelper.getInstance().maskWithColor(textBackground, settings.oceanShadingColor, oceanShading, true);
 		}
 		if (oceanWaves != null)
 		{
-			textBackground = ImageHelper.maskWithColor(textBackground, settings.oceanWavesColor, oceanWaves, true);
+			textBackground = ImageHelper.getInstance().maskWithColor(textBackground, settings.oceanWavesColor, oceanWaves, true);
 		}
 		if (settings.drawGridOverlay)
 		{
-			GridDrawer.drawGrid(textBackground, settings, drawBounds, background.mapBounds.toIntDimension());
+			GridDrawer.drawGrid(textBackground, settings, drawBounds, background.mapBounds.toIntDimension(), graph, centersToDraw);
 		}
-		
+
 		return textBackground;
 	}
 
@@ -1287,11 +1294,10 @@ public class MapCreator implements WarningLogger
 	 * Otherwise, it returns mapOrSnippet in the first piece of the tuple unchanged. The second piece is the coast shading mask, which can
 	 * be re-used for performance.
 	 */
-	private Tuple2<Image, Image> darkenLandNearCoastlinesAndRegionBorders(MapSettings settings, WorldGraph graph, double resolutionScaled,
-			Image mapOrSnippet, Image landMask, Background background, Image coastShading, Collection<Center> centersToDraw,
-			Rectangle drawBounds, boolean addLoggingEntry)
+	private Tuple2<Image, Image> darkenLandNearCoastlinesAndRegionBorders(MapSettings settings, WorldGraph graph, double resolutionScaled, Image mapOrSnippet, Background background,
+			Image coastShading, Collection<Center> centersToDraw, Rectangle drawBounds, boolean addLoggingEntry)
 	{
-		double sizeMultiplier = calcSizeMultipilerFromResolutionScale(resolutionScaled);
+		double sizeMultiplier = calcSizeMultiplierFromResolutionScale(resolutionScaled);
 		int blurLevel = (int) (settings.coastShadingLevel * sizeMultiplier);
 
 		final float scaleForDarkening = coastlineShadingScale;
@@ -1316,31 +1322,35 @@ public class MapCreator implements WarningLogger
 			}
 			else
 			{
-				scale = scaleForDarkening
-						* calcScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(settings.coastShadingLevel, sizeMultiplier)
+				scale = scaleForDarkening * calcScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(settings.coastShadingLevel, sizeMultiplier)
 						* calcScaleCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
 			}
 
 			// coastShading can be passed in to save time when calling this method a second time for the text background image.
 			if (coastShading == null)
 			{
-				float[][] kernel = ImageHelper.createGaussianKernel(blurLevel);
-
-				Image coastlineAndLakeShoreMask = Image.create(mapOrSnippet.getWidth(), mapOrSnippet.getHeight(), ImageType.Binary);
-				Painter p = coastlineAndLakeShoreMask.createPainter(DrawQuality.High);
-				p.setColor(Color.white);
-				graph.drawCoastlineWithLakeShores(p, targetStrokeWidth, centersToDraw, drawBounds);
-
-				if (settings.drawRegionBoundaries)
+				try (Image coastlineAndLakeShoreMask = Image.create(mapOrSnippet.getWidth(), mapOrSnippet.getHeight(), ImageType.Binary))
 				{
-					p.setColor(Color.white);
-					graph.drawRegionBoundariesSolid(p, sizeMultiplier, false, centersToDraw, drawBounds);
-					coastShading = ImageHelper.convolveGrayscaleThenScale(coastlineAndLakeShoreMask, kernel, scale, true);
+					try (Painter p = coastlineAndLakeShoreMask.createPainter(DrawQuality.High))
+					{
+						p.setColor(Color.white);
+						graph.drawCoastlineWithLakeShores(p, targetStrokeWidth, centersToDraw, drawBounds);
 
-				}
-				else
-				{
-					coastShading = ImageHelper.convolveGrayscaleThenScale(coastlineAndLakeShoreMask, kernel, scale, true);
+						if (settings.drawRegionBoundaries)
+						{
+							p.setColor(Color.white);
+							graph.drawRegionBoundariesSolid(p, sizeMultiplier, false, centersToDraw, drawBounds);
+						}
+					}
+
+					if (settings.drawRegionBoundaries)
+					{
+						coastShading = ImageHelper.getInstance().blurAndScale(coastlineAndLakeShoreMask, blurLevel, scale, true);
+					}
+					else
+					{
+						coastShading = ImageHelper.getInstance().blurAndScale(coastlineAndLakeShoreMask, blurLevel, scale, true);
+					}
 				}
 			}
 
@@ -1353,8 +1363,7 @@ public class MapCreator implements WarningLogger
 					for (Map.Entry<Integer, Region> regionEntry : graph.regions.entrySet())
 					{
 						Region reg = regionEntry.getValue();
-						Color color = Color.create((int) (reg.backgroundColor.getRed() * regionBlurColorScale),
-								(int) (reg.backgroundColor.getGreen() * regionBlurColorScale),
+						Color color = Color.create((int) (reg.backgroundColor.getRed() * regionBlurColorScale), (int) (reg.backgroundColor.getGreen() * regionBlurColorScale),
 								(int) (reg.backgroundColor.getBlue() * regionBlurColorScale));
 						colors.put(reg.id, color);
 					}
@@ -1363,25 +1372,23 @@ public class MapCreator implements WarningLogger
 				{
 					colors.put(0, settings.landColor);
 				}
-				return new Tuple2<>(ImageHelper.maskWithMultipleColors(mapOrSnippet, colors, background.regionIndexes, coastShading, true),
-						coastShading);
+				return new Tuple2<>(ImageHelper.getInstance().maskWithMultipleColors(mapOrSnippet, colors, background.regionIndexes, coastShading, true), coastShading);
 			}
 			else
 			{
-				return new Tuple2<>(ImageHelper.maskWithColor(mapOrSnippet, settings.coastShadingColor, coastShading, true), coastShading);
+				return new Tuple2<>(ImageHelper.getInstance().maskWithColor(mapOrSnippet, settings.coastShadingColor, coastShading, true), coastShading);
 			}
 		}
 		return new Tuple2<>(mapOrSnippet, null);
 	}
 
-	private Tuple2<Image, Image> createOceanWavesAndShading(MapSettings settings, WorldGraph graph, double resolutionScale, Image landMask,
-			Collection<Center> centersToDraw, Rectangle drawBounds)
+	private Tuple2<Image, Image> createOceanWavesAndShading(MapSettings settings, WorldGraph graph, double resolutionScale, Image landMask, Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
 		if (drawBounds == null)
 		{
 			drawBounds = graph.bounds;
 		}
-		double sizeMultiplier = calcSizeMultipilerFromResolutionScaleRounded(resolutionScale);
+		double sizeMultiplier = calcSizeMultiplierFromResolutionScaleRounded(resolutionScale);
 
 		Image oceanWaves = null;
 		Image oceanShading = null;
@@ -1391,18 +1398,16 @@ public class MapCreator implements WarningLogger
 
 			if (settings.hasRippleWaves(resolutionScale))
 			{
-				Image coastlineMask = createCoastlineMask(settings, graph, targetStrokeWidth, false, 0, centersToDraw, drawBounds);
-				float[][] kernel = ImageHelper.createPositiveSincKernel((int) (settings.oceanWavesLevel * sizeMultiplier),
-						1.0 / sizeMultiplier);
+				Image coastlineMask = createCoastlineMask(settings, graph, targetStrokeWidth, centersToDraw, drawBounds);
+				float[][] kernel = ImageHelper.getInstance().createPositiveSincKernel((int) (settings.oceanWavesLevel * sizeMultiplier), 1.0 / sizeMultiplier);
 
 				final float scaleForDarkening = coastlineShadingScale;
-				float scale = scaleForDarkening
-						* calcScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(settings.oceanWavesLevel, sizeMultiplier)
+				float scale = scaleForDarkening * calcScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(settings.oceanWavesLevel, sizeMultiplier)
 						* calcScaleCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
-				oceanWaves = ImageHelper.convolveGrayscaleThenScale(coastlineMask, kernel, scale, true);
+				oceanWaves = ImageHelper.getInstance().convolveGrayscaleThenScale(coastlineMask, kernel, scale, true);
 				if (settings.drawOceanEffectsInLakes)
 				{
-					oceanWaves = removeOceanEffectsFromLand(graph, oceanWaves, landMask, centersToDraw, drawBounds);
+					oceanWaves = removeOceanEffectsFromLand(oceanWaves, landMask);
 				}
 				else
 				{
@@ -1416,17 +1421,15 @@ public class MapCreator implements WarningLogger
 
 			if (settings.hasOceanShading(resolutionScale))
 			{
-				Image coastlineMask = createCoastlineMask(settings, graph, targetStrokeWidth, false, 0, centersToDraw, drawBounds);
-				float[][] kernel = ImageHelper.createGaussianKernel((int) (settings.oceanShadingLevel * sizeMultiplier));
+				Image coastlineMask = createCoastlineMask(settings, graph, targetStrokeWidth, centersToDraw, drawBounds);
 
 				final float scaleForDarkening = coastlineShadingScale;
-				float scale = scaleForDarkening
-						* calcScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(settings.oceanShadingLevel, sizeMultiplier)
+				float scale = scaleForDarkening * calcScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(settings.oceanShadingLevel, sizeMultiplier)
 						* calcScaleCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
-				oceanShading = ImageHelper.convolveGrayscaleThenScale(coastlineMask, kernel, scale, true);
+				oceanShading = ImageHelper.getInstance().blurAndScale(coastlineMask, (int) (settings.oceanShadingLevel * sizeMultiplier), scale, true);
 				if (settings.drawOceanEffectsInLakes)
 				{
-					oceanShading = removeOceanEffectsFromLand(graph, oceanShading, landMask, centersToDraw, drawBounds);
+					oceanShading = removeOceanEffectsFromLand(oceanShading, landMask);
 				}
 				else
 				{
@@ -1437,31 +1440,30 @@ public class MapCreator implements WarningLogger
 		return new Tuple2<>(oceanWaves, oceanShading);
 	}
 
-	private Image createCoastlineMask(MapSettings settings, WorldGraph graph, double targetStrokeWidth,
-			boolean forceUseCurvesWithinThreshold, double widthBetweenWaves, Collection<Center> centersToDraw, Rectangle drawBounds)
+	private Image createCoastlineMask(MapSettings settings, WorldGraph graph, double targetStrokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
 		Image coastlineMask = Image.create((int) drawBounds.width, (int) drawBounds.height, ImageType.Binary);
-		Painter g = coastlineMask.createPainter();
-		g.setColor(Color.white);
-
-
-		if (settings.drawOceanEffectsInLakes)
+		try (Painter g = coastlineMask.createPainter())
 		{
-			graph.drawCoastlineWithLakeShores(g, targetStrokeWidth, centersToDraw, drawBounds);
-		}
-		else
-		{
-			graph.drawCoastline(g, targetStrokeWidth, centersToDraw, drawBounds);
+			g.setColor(Color.white);
+
+			if (settings.drawOceanEffectsInLakes)
+			{
+				graph.drawCoastlineWithLakeShores(g, targetStrokeWidth, centersToDraw, drawBounds);
+			}
+			else
+			{
+				graph.drawCoastline(g, targetStrokeWidth, centersToDraw, drawBounds);
+			}
 		}
 
 		return coastlineMask;
 	}
 
-	private Image createConcentricWavesMask(MapSettings settings, WorldGraph graph, double resolutionScaled, Image landMask,
-			Collection<Center> centersToDraw, Rectangle drawBounds)
+	private Image createConcentricWavesMask(MapSettings settings, WorldGraph graph, double resolutionScaled, Image landMask, Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
 		Image oceanEffects = Image.create((int) drawBounds.width, (int) drawBounds.height, ImageType.Grayscale8Bit);
-		double sizeMultiplier = calcSizeMultipilerFromResolutionScaleRounded(resolutionScaled);
+		double sizeMultiplier = calcSizeMultiplierFromResolutionScaleRounded(resolutionScaled);
 
 		double widthBetweenWaves = concentricWaveWidthBetweenWaves * sizeMultiplier;
 		double waveWidth = concentricWaveLineWidth * sizeMultiplier;
@@ -1492,64 +1494,62 @@ public class MapCreator implements WarningLogger
 			opacityOfLastWave = 1.0;
 		}
 
-		List<List<Edge>> shoreEdges = graph.findShoreEdges(centersToDraw, settings.drawOceanEffectsInLakes,
-				settings.brokenLinesForConcentricWaves);
-		Painter p = oceanEffects.createPainter(DrawQuality.High);
-		for (int i : new Range(0, settings.concentricWaveCount))
+		List<List<Edge>> shoreEdges = graph.findShoreEdges(centersToDraw, settings.drawOceanEffectsInLakes, settings.brokenLinesForConcentricWaves);
+		try (Painter p = oceanEffects.createPainter(DrawQuality.High))
 		{
-			double whiteWidth = largestLineWidth - (i * (widthBetweenWaves + waveWidth));
-			if (whiteWidth <= 0)
+			for (int i : new Range(0, settings.concentricWaveCount))
 			{
-				continue;
+				double whiteWidth = largestLineWidth - (i * (widthBetweenWaves + waveWidth));
+				if (whiteWidth <= 0)
+				{
+					continue;
+				}
+
+				double waveOpacity;
+				if (settings.concentricWaveCount == 1)
+				{
+					waveOpacity = 1.0;
+				}
+				else
+				{
+					double percentDone = ((double) (settings.concentricWaveCount - 1 - i)) / (settings.concentricWaveCount - 1);
+					waveOpacity = (percentDone * opacityOfLastWave + (1.0 - percentDone));
+				}
+				assert waveOpacity <= 1.0;
+				assert waveOpacity >= 0.0;
+
+				BiFunction<Boolean, Random, Double> getNewSkipDistance = (isDrawing, rand) ->
+				{
+					int waveNumber = settings.concentricWaveCount - i;
+					double scaleToMakeFartherOutWavesShorter = ((((((double) SettingsGenerator.maxConcentricWaveCountInEditor - 1) - (waveNumber - 1)))
+							/ ((double) SettingsGenerator.maxConcentricWaveCountInEditor - 1)));
+					final double scaleAtLastWave = 0.5;
+					scaleToMakeFartherOutWavesShorter = 1.0 - ((1.0 - scaleToMakeFartherOutWavesShorter) * (1.0 - scaleAtLastWave));
+
+					final double scaleForAll = 4 * settings.resolution * scaleToMakeFartherOutWavesShorter;
+					final double maxNotDrawLength = 3 * scaleForAll;
+					final double minNotDrawLength = 2 * scaleForAll;
+					final double maxDrawLength = 24 * scaleForAll;
+					final double minDrawLength = 19 * scaleForAll;
+					return isDrawing ? rand.nextDouble(minDrawLength, maxDrawLength + 1) : rand.nextDouble(minNotDrawLength, maxNotDrawLength + 1);
+				};
+
+				int level = (int) (oceanEffects.getMaxPixelLevel() * waveOpacity);
+				p.setColor(Color.create(level, level, level));
+				double varianceRange = settings.jitterToConcentricWaves ? calcJitterVarianceRange(resolutionScaled) : 0.0;
+				p.setStrokeToSolidLineWithNoEndDecorations((float) whiteWidth);
+				graph.drawCoastlineWithVariation(p, settings.backgroundRandomSeed + i, varianceRange, widthBetweenWaves, settings.brokenLinesForConcentricWaves, drawBounds, getNewSkipDistance,
+						shoreEdges);
+
+				p.setColor(Color.black);
+				p.setBasicStroke((float) (whiteWidth - waveWidth));
+				graph.drawCoastlineWithVariation(p, settings.backgroundRandomSeed + i, varianceRange, widthBetweenWaves, false, drawBounds, getNewSkipDistance, shoreEdges);
 			}
-
-			double waveOpacity;
-			if (settings.concentricWaveCount == 1)
-			{
-				waveOpacity = 1.0;
-			}
-			else
-			{
-				double percentDone = ((double) (settings.concentricWaveCount - 1 - i)) / (settings.concentricWaveCount - 1);
-				waveOpacity = (percentDone * opacityOfLastWave + (1.0 - percentDone));
-			}
-			assert waveOpacity <= 1.0;
-			assert waveOpacity >= 0.0;
-
-			BiFunction<Boolean, Random, Double> getNewSkipDistance = (isDrawing, rand) ->
-			{
-				int waveNumber = settings.concentricWaveCount - i;
-				double scaleToMakeFartherOutWavesShorter = ((((((double) SettingsGenerator.maxConcentricWaveCountInEditor - 1)
-						- (waveNumber - 1))) / ((double) SettingsGenerator.maxConcentricWaveCountInEditor - 1)));
-				final double scaleAtLastWave = 0.5;
-				scaleToMakeFartherOutWavesShorter = 1.0 - ((1.0 - scaleToMakeFartherOutWavesShorter) * (1.0 - scaleAtLastWave));
-
-				final double scaleForAll = 4 * settings.resolution * scaleToMakeFartherOutWavesShorter;
-				final double maxNotDrawLength = 3 * scaleForAll;
-				final double minNotDrawLength = 2 * scaleForAll;
-				final double maxDrawLength = 24 * scaleForAll;
-				final double minDrawLength = 19 * scaleForAll;
-				return isDrawing ? rand.nextDouble(minDrawLength, maxDrawLength + 1)
-						: rand.nextDouble(minNotDrawLength, maxNotDrawLength + 1);
-			};
-
-
-			int level = (int) (oceanEffects.getMaxPixelLevel() * waveOpacity);
-			p.setColor(Color.create(level, level, level));
-			double varianceRange = settings.jitterToConcentricWaves ? calcJitterVarianceRange(resolutionScaled) : 0.0;
-			p.setStrokeToSolidLineWithNoEndDecorations((float) whiteWidth);
-			graph.drawCoastlineWithVariation(p, settings.backgroundRandomSeed + i, varianceRange, widthBetweenWaves,
-					settings.brokenLinesForConcentricWaves, centersToDraw, drawBounds, getNewSkipDistance, shoreEdges);
-
-			p.setColor(Color.black);
-			p.setBasicStroke((float) (whiteWidth - waveWidth));
-			graph.drawCoastlineWithVariation(p, settings.backgroundRandomSeed + i, varianceRange, widthBetweenWaves, false, centersToDraw,
-					drawBounds, getNewSkipDistance, shoreEdges);
 		}
 
 		if (settings.drawOceanEffectsInLakes)
 		{
-			oceanEffects = removeOceanEffectsFromLand(graph, oceanEffects, landMask, centersToDraw, drawBounds);
+			oceanEffects = removeOceanEffectsFromLand(oceanEffects, landMask);
 		}
 		else
 		{
@@ -1561,7 +1561,7 @@ public class MapCreator implements WarningLogger
 
 	private double calcJitterVarianceRange(double resolutionScaled)
 	{
-		double sizeMultiplier = calcSizeMultipilerFromResolutionScaleRounded(resolutionScaled);
+		double sizeMultiplier = calcSizeMultiplierFromResolutionScaleRounded(resolutionScaled);
 		double widthBetweenWaves = concentricWaveWidthBetweenWaves * sizeMultiplier;
 		return 0.25 * widthBetweenWaves;
 	}
@@ -1569,12 +1569,11 @@ public class MapCreator implements WarningLogger
 	private static float calcScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(int kernelSize, double sizeMultiplier)
 	{
 		int lightnessBasedOnKernelSizesBeforeIAddedFixToMakeShadingNotGetLighterWhenItGotWider = (int) (15 * sizeMultiplier);
-		return ImageHelper.getGuassianMode(lightnessBasedOnKernelSizesBeforeIAddedFixToMakeShadingNotGetLighterWhenItGotWider)
-				/ ImageHelper.getGuassianMode((int) (kernelSize * sizeMultiplier));
+		return ImageHelper.getInstance().getGaussianMode(lightnessBasedOnKernelSizesBeforeIAddedFixToMakeShadingNotGetLighterWhenItGotWider)
+				/ ImageHelper.getInstance().getGaussianMode((int) (kernelSize * sizeMultiplier));
 	}
 
-	private static Image removeOceanEffectsFromLandAndLandLockedLakes(WorldGraph graph, Image oceanEffects,
-			Collection<Center> centersToDraw, Rectangle drawBounds)
+	private static Image removeOceanEffectsFromLandAndLandLockedLakes(WorldGraph graph, Image oceanEffects, Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
 		// One might wonder why I'm creating a mask to black out lakes and land, when in theory I could just draw them as black into
 		// oceanEffects to save CPU and memory. The reason is because the Voronoi graph has a weakness that it doesn't contain edges or
@@ -1582,14 +1581,16 @@ public class MapCreator implements WarningLogger
 		// centers with noisy edges over them. Thus I must draw both the land and lakes, and their ocean neighbors, so I need to do the
 		// drawing as a mask and then apply it onto oceanEffects.
 		Image landAndLakeMask = Image.create(oceanEffects.getWidth(), oceanEffects.getHeight(), ImageType.Grayscale8Bit);
-		graph.drawLandAndLakesBlackAndOceanWhite(landAndLakeMask.createPainter(), centersToDraw, drawBounds);
-		return ImageHelper.maskWithColor(oceanEffects, Color.black, landAndLakeMask, false);
+		try (Painter p = landAndLakeMask.createPainter())
+		{
+			graph.drawLandAndLakesBlackAndOceanWhite(p, centersToDraw, drawBounds);
+		}
+		return ImageHelper.getInstance().maskWithColor(oceanEffects, Color.black, landAndLakeMask, false);
 	}
 
-	private static Image removeOceanEffectsFromLand(WorldGraph graph, Image oceanEffects, Image landMask, Collection<Center> centersToDraw,
-			Rectangle drawBounds)
+	private static Image removeOceanEffectsFromLand(Image oceanEffects, Image landMask)
 	{
-		return ImageHelper.maskWithColor(oceanEffects, Color.black, landMask, true);
+		return ImageHelper.getInstance().maskWithColor(oceanEffects, Color.black, landMask, true);
 	}
 
 	private static float calcScaleCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(double targetStrokeWidth)
@@ -1614,8 +1615,7 @@ public class MapCreator implements WarningLogger
 		for (@SuppressWarnings("unused")
 		int i : new Range(graph.regions.size()))
 		{
-			regionColorOptions
-					.add(generateRegionColor(rand, landHsb, settings.hueRange, settings.saturationRange, settings.brightnessRange));
+			regionColorOptions.add(generateRegionColor(rand, landHsb, settings.hueRange, settings.saturationRange, settings.brightnessRange));
 		}
 
 		assignRegionColors(graph, regionColorOptions);
@@ -1635,9 +1635,9 @@ public class MapCreator implements WarningLogger
 	private static Color generateRegionColor(Random rand, float[] landHsb, float hueRange, float saturationRange, float brightnessRange)
 	{
 		float hue = (float) (landHsb[0] * 360 + (rand.nextDouble() - 0.5) * hueRange);
-		float saturation = ImageHelper.bound((int) (landHsb[1] * 255 + (rand.nextDouble() - 0.5) * saturationRange));
-		float brightness = ImageHelper.bound((int) (landHsb[2] * 255 + (rand.nextDouble() - 0.5) * brightnessRange));
-		return Color.createFromHSB(hue / 360f, saturation / 255f, brightness / 255f);
+		float saturation = ImageHelper.getInstance().bound((int) (landHsb[1] * 100 + (rand.nextDouble() - 0.5) * saturationRange));
+		float brightness = ImageHelper.getInstance().bound((int) (landHsb[2] * 100 + (rand.nextDouble() - 0.5) * brightnessRange));
+		return Color.createFromHSB(hue / 360f, saturation / 100f, brightness / 100f);
 	}
 
 	public static Color generateColorFromBaseColor(Random rand, Color base, float hueRange, float saturationRange, float brightnessRange)
@@ -1646,8 +1646,14 @@ public class MapCreator implements WarningLogger
 		return generateRegionColor(rand, hsb, hueRange, saturationRange, brightnessRange);
 	}
 
-	private static WorldGraph createGraph(MapSettings settings, double width, double height, Random r, double resolutionScale,
-			boolean createElevationBiomesLakesAndRegions)
+	public static WorldGraph createGraphForUnitTests(MapSettings settings)
+	{
+		Dimension mapBounds = Background.calcMapBoundsAndAdjustResolutionIfNeeded(settings, null);
+		Random r = new Random(settings.randomSeed);
+		return MapCreator.createGraph(settings, mapBounds.width, mapBounds.height, r, settings.resolution, !settings.edits.isInitialized());
+	}
+
+	private static WorldGraph createGraph(MapSettings settings, double width, double height, Random r, double resolutionScale, boolean createElevationBiomesLakesAndRegions)
 	{
 		double widthToUse, heightToUse;
 		if (settings.rightRotationCount == 1 || settings.rightRotationCount == 3)
@@ -1661,16 +1667,20 @@ public class MapCreator implements WarningLogger
 			heightToUse = height;
 		}
 
-		WorldGraph graph = GraphCreator.createGraph(widthToUse, heightToUse, settings.worldSize, settings.edgeLandToWaterProbability,
-				settings.centerLandToWaterProbability, new Random(r.nextLong()), resolutionScale, settings.lineStyle,
-				settings.pointPrecision, createElevationBiomesLakesAndRegions, settings.lloydRelaxationsScale,
-				settings.drawRegionBoundaries || settings.drawRegionColors, settings.rightRotationCount, settings.flipHorizontally,
-				settings.flipVertically);
+		WorldGraph graph = GraphCreator.createGraph(widthToUse, heightToUse, settings.worldSize, settings.edgeLandToWaterProbability, settings.centerLandToWaterProbability, new Random(r.nextLong()),
+				resolutionScale, settings.lineStyle, settings.pointPrecision, createElevationBiomesLakesAndRegions, settings.lloydRelaxationsScale,
+				settings.drawRegionBoundaries || settings.drawRegionColors, settings.rightRotationCount, settings.flipHorizontally, settings.flipVertically);
 
 		// Setup region colors even if settings.drawRegionColors = false because
 		// edits need them in case someone edits a map without region colors,
 		// then later enables region colors.
 		assignRandomRegionColors(graph, settings);
+
+		applyRegionEdits(graph, settings.edits);
+		// Apply edge edits before center edits because applying center edits smoothes region boundaries, which depends on rivers, which are
+		// edge edits.
+		applyEdgeEdits(graph, settings.edits, null);
+		applyCenterEdits(graph, settings.edits, null, settings.drawRegionBoundaries || settings.drawRegionColors);
 
 		return graph;
 	}
@@ -1678,18 +1688,18 @@ public class MapCreator implements WarningLogger
 	/*
 	 * A constant based on the resolution for determining how large things should draw.
 	 */
-	public static double calcSizeMultipilerFromResolutionScale(double resoutionScale)
+	public static double calcSizeMultiplierFromResolutionScale(double resolutionScale)
 	{
-		return (8.0 / 3.0) * resoutionScale;
+		return (8.0 / 3.0) * resolutionScale;
 	}
 
 	/**
-	 * Like calcSizeMultipilerFromResolutionScale, but rounds to the nearest tenth for use with components that have that limit on numeric
+	 * Like calcSizeMultiplierFromResolutionScale, but rounds to the nearest tenth for use with components that have that limit on numeric
 	 * precision.
 	 */
-	public static double calcSizeMultipilerFromResolutionScaleRounded(double resolutionScale)
+	public static double calcSizeMultiplierFromResolutionScaleRounded(double resolutionScale)
 	{
-		return Math.round(10.0 * calcSizeMultipilerFromResolutionScale(resolutionScale)) / 10.0;
+		return Math.round(10.0 * calcSizeMultiplierFromResolutionScale(resolutionScale)) / 10.0;
 	}
 
 	private static void applyRegionEdits(WorldGraph graph, MapEdits edits)
@@ -1718,7 +1728,7 @@ public class MapCreator implements WarningLogger
 
 	/**
 	 * Applies changes to Centers from user edits to the Center objects in the graph.
-	 * 
+	 *
 	 * @param graph
 	 *            The graph being drawn
 	 * @param edits
@@ -1731,8 +1741,7 @@ public class MapCreator implements WarningLogger
 	 * @return A set of centers whose noisy edges have been recalculated, meaning something about their terrain or region boundaries
 	 *         changed.
 	 */
-	private static Set<Center> applyCenterEdits(WorldGraph graph, MapEdits edits, Collection<CenterEdit> centerEditChanges,
-			boolean areRegionBoundariesVisible)
+	private static Set<Center> applyCenterEdits(WorldGraph graph, MapEdits edits, Collection<CenterEdit> centerEditChanges, boolean areRegionBoundariesVisible)
 	{
 		if (edits == null || edits.centerEdits.isEmpty())
 		{
@@ -1741,8 +1750,7 @@ public class MapCreator implements WarningLogger
 
 		if (edits.centerEdits.size() != graph.centers.size())
 		{
-			throw new IllegalArgumentException(
-					"The map edits have " + edits.centerEdits.size() + " polygons, but the world size is " + graph.centers.size());
+			throw new IllegalArgumentException("The map edits have " + edits.centerEdits.size() + " polygons, but the world size is " + graph.centers.size());
 		}
 
 		if (centerEditChanges == null)
@@ -1800,8 +1808,7 @@ public class MapCreator implements WarningLogger
 			}
 		}
 
-		needsRebuildNoisyEdges.addAll(graph.smoothCoastlinesAndRegionBoundariesIfNeeded(centersChanged, graph.noisyEdges.getLineStyle(),
-				areRegionBoundariesVisible));
+		needsRebuildNoisyEdges.addAll(graph.smoothCoastlinesAndRegionBoundariesIfNeeded(centersChanged, graph.noisyEdges.getLineStyle(), areRegionBoundariesVisible));
 
 		for (Center center : needsRebuildNoisyEdges)
 		{
@@ -1817,25 +1824,16 @@ public class MapCreator implements WarningLogger
 		{
 			return;
 		}
-		if (edits.edgeEdits.size() != graph.edges.size())
-		{
-			throw new IllegalArgumentException(
-					"The map edits have " + edits.edgeEdits.size() + " edges, but graph has " + graph.edges.size() + " edges.");
-		}
 
 		if (edgeChanges == null)
 		{
-			edgeChanges = edits.edgeEdits;
+			edgeChanges = edits.edgeEdits.values();
 		}
 
 		for (EdgeEdit eEdit : edgeChanges)
 		{
 			Edge edge = graph.edges.get(eEdit.index);
-			boolean needsRebuild = false;
-			if (eEdit.riverLevel != edge.river && edge.d0 != null)
-			{
-				needsRebuild = true;
-			}
+			boolean needsRebuild = eEdit.riverLevel != edge.river && edge.d0 != null;
 			graph.edges.get(eEdit.index).river = eEdit.riverLevel;
 			if (needsRebuild)
 			{
@@ -1844,147 +1842,12 @@ public class MapCreator implements WarningLogger
 		}
 	}
 
-	/**
-	 * Makes the middle area of a gray scale image darker following a Gaussian blur drop off.
-	 */
-	private void darkenMiddleOfImage(double resolutionScale, Image image, int grungeWidth)
-	{
-		// Draw a white box.
-
-		int blurLevel = (int) (grungeWidth * resolutionScale);
-		if (blurLevel == 0)
-			blurLevel = 1; // Avoid an exception later.
-
-		// Create a white non-filled in rectangle, then blur it. To be much more
-		// efficient, I only create
-		// the upper left corner plus 1 pixel in both directions since the
-		// corners and edges are all the
-		// same except rotated and the edges are all the same except their
-		// length.
-
-		int lineWidth = (int) (resolutionScale);
-		if (lineWidth == 0)
-		{
-			lineWidth = 1;
-		}
-		int blurBoxWidth = blurLevel * 2 + lineWidth + 1;
-		Image blurBox = Image.create(blurBoxWidth, blurBoxWidth, ImageType.Binary);
-		Painter p = blurBox.createPainter();
-
-		// Fill the image with white.
-		p.setColor(Color.white);
-		p.fillRect(0, 0, blurBoxWidth, blurBoxWidth);
-
-		// Remove the white from everywhere except a lineWidth wide line along
-		// the top and left sides.
-		p.setColor(Color.black);
-		p.fillRect(lineWidth, lineWidth, blurBoxWidth, blurBoxWidth);
-
-		// Use Gaussian blur on the box.
-		blurBox = ImageHelper.convolveGrayscale(blurBox, ImageHelper.createGaussianKernel(blurLevel), true, true);
-
-		// Remove what was the white lines from the top and left, so we're
-		// keeping only the blur that came off the white lines.
-		blurBox = ImageHelper.copySnippet(blurBox, new IntRectangle(lineWidth, lineWidth, blurLevel + 1, blurLevel + 1));
-
-		// Multiply the image by blurBox. Also remove the padded edges off of blurBox.
-		assert image.getType() == ImageType.Grayscale8Bit;
-		for (int y = 0; y < image.getHeight(); y++)
-			for (int x = 0; x < image.getWidth(); x++)
-			{
-				float imageLevel = image.getNormalizedPixelLevel(x, y);
-
-				// Retrieve the blur level as though blurBox has all 4 quadrants
-				// and middle created, even though it only only has the upper
-				// left corner + 1 pixel.
-				int blurBoxX1;
-				if (x > blurLevel)
-				{
-					if (x < image.getWidth() - blurLevel)
-					{
-						// x is between the corners.
-						blurBoxX1 = blurBox.getWidth() - 1;
-					}
-					else
-					{
-						// x is under the right corner.
-						blurBoxX1 = image.getWidth() - x;
-					}
-				}
-				else
-				{
-					// x is under the left corner.
-					blurBoxX1 = x;
-				}
-
-				int blurBoxX2;
-				int x2 = image.getWidth() - x - 1;
-				if (x2 > blurLevel)
-				{
-					if (x2 < image.getWidth() - blurLevel)
-					{
-						// x2 is between the corners.
-						blurBoxX2 = blurBox.getWidth() - 1;
-					}
-					else
-					{
-						// x2 is under the right corner.
-						blurBoxX2 = image.getWidth() - x2;
-					}
-				}
-				else
-				{
-					// x2 is under the left corner.
-					blurBoxX2 = x2;
-				}
-
-				int blurBoxY1;
-				if (y > blurLevel)
-				{
-					if (y < image.getHeight() - blurLevel)
-					{
-						blurBoxY1 = blurBox.getHeight() - 1;
-					}
-					else
-					{
-						blurBoxY1 = image.getHeight() - y;
-					}
-				}
-				else
-				{
-					blurBoxY1 = y;
-				}
-
-				int blurBoxY2;
-				int y2 = image.getHeight() - y - 1;
-				if (y2 > blurLevel)
-				{
-					if (y2 < image.getHeight() - blurLevel)
-					{
-						blurBoxY2 = blurBox.getHeight() - 1;
-					}
-					else
-					{
-						blurBoxY2 = image.getHeight() - y2;
-					}
-				}
-				else
-				{
-					blurBoxY2 = y2;
-				}
-
-				float blurBoxLevel = Math.max(blurBox.getGrayLevel(blurBoxX1, blurBoxY1),
-						Math.max(blurBox.getGrayLevel(blurBoxX2, blurBoxY1),
-								Math.max(blurBox.getGrayLevel(blurBoxX1, blurBoxY2), blurBox.getGrayLevel(blurBoxX2, blurBoxY2))));
-
-				image.setGrayLevel(x, y, (int) (imageLevel * blurBoxLevel));
-			}
-	}
-
 	public static void drawRivers(MapSettings settings, WorldGraph graph, Image map, Collection<Edge> edgesToDraw, Rectangle drawBounds)
 	{
-		Painter p = map.createPainter(DrawQuality.High);
-		graph.drawRivers(p, edgesToDraw, drawBounds, settings.riverColor, settings.drawRegionBoundaries, settings.regionBoundaryColor);
+		try (Painter p = map.createPainter(DrawQuality.High))
+		{
+			graph.drawRivers(p, edgesToDraw, drawBounds, settings.riverColor);
+		}
 	}
 
 	public Image createHeightMap(MapSettings settings)
@@ -1993,13 +1856,11 @@ public class MapCreator implements WarningLogger
 		Dimension mapBounds;
 		if (settings.rightRotationCount == 1 || settings.rightRotationCount == 3)
 		{
-			mapBounds = new Dimension(settings.generatedHeight * settings.heightmapResolution,
-					settings.generatedWidth * settings.heightmapResolution);
+			mapBounds = new Dimension(settings.generatedHeight * settings.heightmapResolution, settings.generatedWidth * settings.heightmapResolution);
 		}
 		else
 		{
-			mapBounds = new Dimension(settings.generatedWidth * settings.heightmapResolution,
-					settings.generatedHeight * settings.heightmapResolution);
+			mapBounds = new Dimension(settings.generatedWidth * settings.heightmapResolution, settings.generatedHeight * settings.heightmapResolution);
 		}
 		WorldGraph graph = createGraph(settings, mapBounds.width, mapBounds.height, r, settings.resolution, true);
 		return GraphCreator.createHeightMap(graph, new Random(settings.randomSeed));
@@ -2012,7 +1873,7 @@ public class MapCreator implements WarningLogger
 
 	private Set<EdgeEdit> getEdgeEditsForEdgeIds(MapEdits edits, Collection<Integer> edgeIds)
 	{
-		return edgeIds.stream().map(id -> edits.edgeEdits.get(id)).collect(Collectors.toSet());
+		return edgeIds.stream().map(id -> edits.edgeEdits.containsKey(id) ? edits.edgeEdits.get(id) : new EdgeEdit(id, 0)).collect(Collectors.toSet());
 	}
 
 	private Set<EdgeEdit> getEdgeEditsForCenters(MapEdits edits, Collection<Center> centers)
@@ -2055,7 +1916,7 @@ public class MapCreator implements WarningLogger
 		int maxResolution = (int) Math.sqrt(maxBytes / 148468L);
 
 		// The FFT-based code will create arrays in powers of 2.
-		int nextPowerOf2 = ImageHelper.getPowerOf2EqualOrLargerThan(maxResolution / 100.0);
+		int nextPowerOf2 = ImageHelper.getInstance().getJTransformsMixedRadixSizeEqualOrLargerThan((int) (maxResolution / 100.0));
 		int resolutionAtNextPowerOf2 = nextPowerOf2 * 100;
 		// Average with the original prediction because not all code is
 		// FFT-based.
@@ -2095,7 +1956,7 @@ public class MapCreator implements WarningLogger
 		return warningMessages;
 	}
 
-	private static void drawOverlayImageIfNeededAndUpdateMapParts(Image map, MapSettings settings, MapParts mapParts)
+	private static void drawOverlayImageIfNeededAndUpdateMapParts(Image map, MapSettings settings)
 	{
 		if (settings.drawOverlayImage)
 		{
@@ -2105,7 +1966,7 @@ public class MapCreator implements WarningLogger
 
 	/**
 	 * Draws an overlay image on top of mapOrSnippet, scaled to the maximum size it can be and still fit into the center of mapOrSnippet.
-	 * 
+	 *
 	 * @param mapOrSnippet
 	 *            Either the entire map, or a snippet out of the map whose bounds is drawBounds.
 	 * @param settings
@@ -2118,8 +1979,7 @@ public class MapCreator implements WarningLogger
 	 */
 	public static void drawOverlayImage(Image mapOrSnippet, MapSettings settings, Rectangle drawBounds, IntDimension mapSize)
 	{
-		Tuple2<IntRectangle, Image> tuple = getOverlayPositionAndImage(settings.overlayImagePath, settings.overlayScale,
-				settings.overlayOffsetResolutionInvariant, settings.resolution, mapSize);
+		Tuple2<IntRectangle, Image> tuple = getOverlayPositionAndImage(settings.overlayImagePath, settings.overlayScale, settings.overlayOffsetResolutionInvariant, settings.resolution, mapSize);
 		if (tuple == null)
 		{
 			return;
@@ -2130,17 +1990,14 @@ public class MapCreator implements WarningLogger
 
 		int borderWidthScaledByResolution = Background.calcBorderWidthScaledByResolution(settings);
 
-		Painter p = mapOrSnippet.createPainter(DrawQuality.High);
-		try
+		try (Painter p = mapOrSnippet.createPainter(DrawQuality.High))
 		{
 			int x = overlayPosition.x;
 			int y = overlayPosition.y;
 			if (drawBounds != null)
 			{
-				IntRectangle drawBoundsAdjustedForBorder = new IntRectangle(
-						drawBounds.upperLeftCorner().toIntPoint().x + borderWidthScaledByResolution,
-						drawBounds.upperLeftCorner().toIntPoint().y + borderWidthScaledByResolution, (int) drawBounds.width,
-						(int) drawBounds.height);
+				IntRectangle drawBoundsAdjustedForBorder = new IntRectangle(drawBounds.upperLeftCorner().toIntPoint().x + borderWidthScaledByResolution,
+						drawBounds.upperLeftCorner().toIntPoint().y + borderWidthScaledByResolution, (int) drawBounds.width, (int) drawBounds.height);
 
 				x -= drawBoundsAdjustedForBorder.x;
 				y -= drawBoundsAdjustedForBorder.y;
@@ -2152,14 +2009,10 @@ public class MapCreator implements WarningLogger
 
 			p.drawImage(overlayImage, x, y, overlayPosition.width, overlayPosition.height);
 		}
-		finally
-		{
-			p.dispose();
-		}
 	}
 
-	public static Tuple2<IntRectangle, Image> getOverlayPositionAndImage(String overlayImagePath, double overlayScale,
-			Point overlayOffsetResolutionInvariant, double resolutionScale, IntDimension mapSize)
+	public static Tuple2<IntRectangle, Image> getOverlayPositionAndImage(String overlayImagePath, double overlayScale, Point overlayOffsetResolutionInvariant, double resolutionScale,
+			IntDimension mapSize)
 	{
 		if (StringUtils.isEmpty(overlayImagePath))
 		{

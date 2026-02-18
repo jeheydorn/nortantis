@@ -1,16 +1,16 @@
 package nortantis;
 
-import java.io.IOException;
-import java.util.Random;
-
-import org.jtransforms.fft.FloatFFT_2D;
-
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.PlatformFactory;
 import nortantis.platform.awt.AwtFactory;
-import nortantis.util.ImageHelper;
+import nortantis.platform.ImageHelper;
+import nortantis.util.Stopwatch;
 import nortantis.util.ThreadHelper;
+import org.jtransforms.fft.FloatFFT_2D;
+
+import java.io.IOException;
+import java.util.Random;
 
 public class FractalBGGenerator
 {
@@ -27,9 +27,9 @@ public class FractalBGGenerator
 	 */
 	public static Image generate(Random rand, float p, int width, int height, float contrast)
 	{
-		int cols = ImageHelper.getPowerOf2EqualOrLargerThan(width);
-		int rows = ImageHelper.getPowerOf2EqualOrLargerThan(height);
-		// For some reason this algorithm only works for creating a square result.
+		int cols = ImageHelper.getInstance().getJTransformsMixedRadixSizeEqualOrLargerThan(width);
+		int rows = ImageHelper.getInstance().getJTransformsMixedRadixSizeEqualOrLargerThan(height);
+		// For some reason this algorithm only getJTransformsMixedRadixSizeEqualOrLargerThan for creating a square result.
 		if (cols < rows)
 			cols = rows;
 		else if (rows < cols)
@@ -106,7 +106,7 @@ public class FractalBGGenerator
 
 		sw.printElapsedTime();
 
-		ImageHelper.openImageInSystemDefaultEditor(background, "cloud");
+		ImageHelper.getInstance().openImageInSystemDefaultEditor(background, "cloud");
 		System.out.println("Done.");
 	}
 

@@ -1,22 +1,18 @@
 package nortantis.platform.awt;
 
-import java.awt.AlphaComposite;
-import java.awt.BasicStroke;
-import java.awt.Graphics2D;
-import java.awt.Stroke;
-import java.awt.geom.Line2D;
-import java.awt.geom.Path2D;
-import java.util.List;
-
-import org.apache.commons.lang3.NotImplementedException;
-
 import nortantis.StrokeType;
 import nortantis.geom.FloatPoint;
+import nortantis.platform.*;
 import nortantis.platform.Color;
 import nortantis.platform.Font;
 import nortantis.platform.Image;
-import nortantis.platform.Painter;
-import nortantis.platform.Transform;
+import org.apache.commons.lang3.NotImplementedException;
+
+import java.awt.*;
+import java.awt.AlphaComposite;
+import java.awt.geom.Line2D;
+import java.awt.geom.Path2D;
+import java.util.List;
 
 class AwtPainter extends Painter
 {
@@ -30,12 +26,20 @@ class AwtPainter extends Painter
 	@Override
 	public void drawImage(Image image, int x, int y)
 	{
+		if (!(image instanceof AwtImage))
+		{
+			image = AwtBridge.toAwtImage(image);
+		}
 		g.drawImage(((AwtImage) image).image, x, y, null);
 	}
-	
+
 	@Override
 	public void drawImage(Image image, int x, int y, int width, int height)
 	{
+		if (!(image instanceof AwtImage))
+		{
+			throw new IllegalArgumentException("AwtPainter.drawImage requires AwtImage, got " + image.getClass().getName());
+		}
 		g.drawImage(((AwtImage) image).image, x, y, width, height, null);
 	}
 
@@ -54,6 +58,10 @@ class AwtPainter extends Painter
 	@Override
 	public void setColor(Color color)
 	{
+		if (!(color instanceof AwtColor))
+		{
+			throw new IllegalArgumentException("AwtPainter.setColor requires AwtColor, got " + color.getClass().getName());
+		}
 		g.setColor(((AwtColor) color).color);
 	}
 
@@ -72,9 +80,13 @@ class AwtPainter extends Painter
 	@Override
 	public void setFont(Font font)
 	{
+		if (!(font instanceof AwtFont))
+		{
+			throw new IllegalArgumentException("AwtPainter.setFont requires AwtFont, got " + font.getClass().getName());
+		}
 		g.setFont(((AwtFont) font).font);
 	}
-	
+
 	@Override
 	public void drawString(String string, double x, double y)
 	{
@@ -84,6 +96,10 @@ class AwtPainter extends Painter
 	@Override
 	public void setTransform(Transform transform)
 	{
+		if (!(transform instanceof AwtTransform))
+		{
+			throw new IllegalArgumentException("AwtPainter.setTransform requires AwtTransform, got " + transform.getClass().getName());
+		}
 		g.setTransform(((AwtTransform) transform).transform);
 	}
 
@@ -120,6 +136,14 @@ class AwtPainter extends Painter
 	@Override
 	public void setGradient(float x1, float y1, Color color1, float x2, float y2, Color color2)
 	{
+		if (!(color1 instanceof AwtColor))
+		{
+			throw new IllegalArgumentException("AwtPainter.setGradient requires AwtColor, got " + color1.getClass().getName());
+		}
+		if (!(color2 instanceof AwtColor))
+		{
+			throw new IllegalArgumentException("AwtPainter.setGradient requires AwtColor, got " + color2.getClass().getName());
+		}
 		g.setPaint(new java.awt.GradientPaint(x1, y1, ((AwtColor) color1).color, x2, y2, ((AwtColor) color2).color));
 	}
 
@@ -128,13 +152,12 @@ class AwtPainter extends Painter
 	{
 		g.drawLine(x1, y1, x2, y2);
 	}
-	
+
 	@Override
 	public void drawLine(float x1, float y1, float x2, float y2)
 	{
 		g.draw(new Line2D.Float(x1, y1, x2, y2));
 	}
-
 
 	@Override
 	public void fillOval(int x, int y, int width, int height)
@@ -147,7 +170,7 @@ class AwtPainter extends Painter
 	{
 		g.drawPolyline(xPoints, yPoints, xPoints.length);
 	}
-	
+
 	@Override
 	public void drawPolygonFloat(List<FloatPoint> points)
 	{
@@ -180,7 +203,7 @@ class AwtPainter extends Painter
 		// Use CAP_ROUND to avoid corners sticking out of the sides of thick lines (like rivers) when drawn piecewise.
 		g.setStroke(new BasicStroke(width, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1f, null, 0f));
 	}
-	
+
 	@Override
 	public void setStrokeToSolidLineWithNoEndDecorations(float width)
 	{
@@ -199,31 +222,19 @@ class AwtPainter extends Painter
 			float scale = ((float) resolutionScale) * stroke.width;
 			if (stroke.type == StrokeType.Dashes)
 			{
-				Stroke dashed = new BasicStroke(stroke.width * (float) resolutionScale, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 1f,
-						new float[]
-						{
-								6f * (float) scale, 3f * (float) scale
-						}, 0f);
+				Stroke dashed = new BasicStroke(stroke.width * (float) resolutionScale, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 1f, new float[] { 6f * (float) scale, 3f * (float) scale }, 0f);
 				g.setStroke(dashed);
 			}
 			else if (stroke.type == StrokeType.Rounded_Dashes)
 			{
-				Stroke dashed = new BasicStroke(stroke.width * (float) resolutionScale, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1f,
-						new float[]
-						{
-								6f * (float) scale, 4f * (float) scale
-						}, 0f);
+				Stroke dashed = new BasicStroke(stroke.width * (float) resolutionScale, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1f, new float[] { 6f * (float) scale, 4f * (float) scale }, 0f);
 				g.setStroke(dashed);
 			}
 			else if (stroke.type == StrokeType.Dots)
 			{
 				final float scaleBecauseDotsLookSmallerThanDashes = (3.9f / 2.7f);
-				Stroke dashed = new BasicStroke(stroke.width * (float) resolutionScale * scaleBecauseDotsLookSmallerThanDashes,
-						BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1f, new float[]
-						{
-								0f * (float) scale * scaleBecauseDotsLookSmallerThanDashes,
-								2.0f * (float) scale * scaleBecauseDotsLookSmallerThanDashes
-						}, 0f);
+				Stroke dashed = new BasicStroke(stroke.width * (float) resolutionScale * scaleBecauseDotsLookSmallerThanDashes, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1f,
+						new float[] { 0f * (float) scale * scaleBecauseDotsLookSmallerThanDashes, 2.0f * (float) scale * scaleBecauseDotsLookSmallerThanDashes }, 0f);
 				g.setStroke(dashed);
 			}
 			else
@@ -244,7 +255,7 @@ class AwtPainter extends Painter
 	{
 		return g.getFontMetrics().stringWidth(string);
 	}
-	
+
 	@Override
 	public int charWidth(char c)
 	{
@@ -336,11 +347,11 @@ class AwtPainter extends Painter
 			throw new UnsupportedOperationException("Unimplemented alpha composite method with alpha parameter. Composite method: " + composite);
 		}
 	}
-	
+
 	@Override
 	public void setClip(int x, int y, int width, int height)
 	{
 		g.setClip(x, y, width, height);
-		
+
 	}
 }

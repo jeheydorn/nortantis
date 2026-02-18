@@ -2,5 +2,5 @@ package nortantis;
 
 public enum TreeType
 {
-	None, Deciduous, Pine, Cacti,
+	Deciduous, Pine, Cacti,
 }

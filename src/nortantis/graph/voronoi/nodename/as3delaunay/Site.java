@@ -1,11 +1,11 @@
 package nortantis.graph.voronoi.nodename.as3delaunay;
 
+import nortantis.geom.Point;
+import nortantis.geom.Rectangle;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-
-import nortantis.geom.Point;
-import nortantis.geom.Rectangle;
 
 public final class Site implements ICoord
 {
@@ -63,7 +63,7 @@ public final class Site implements ICoord
 		return returnValue;
 	}
 
-	final private static double EPSILON = .005;
+	private static final double EPSILON = .005;
 
 	private static boolean closeEnough(Point p0, Point p1)
 	{
@@ -78,7 +78,6 @@ public final class Site implements ICoord
 		return _coord;
 	}
 
-	public double weight;
 	private int _siteIndex;
 	// the edges that define this Site's Voronoi region:
 	public ArrayList<Edge> _edges;
@@ -89,14 +88,13 @@ public final class Site implements ICoord
 
 	public Site(Point p, int index, double weight)
 	{
-		init(p, index, weight);
+		init(p, index);
 	}
 
-	private Site init(Point p, int index, double weight)
+	private Site init(Point p, int index)
 	{
 		_coord = p;
 		_siteIndex = index;
-		this.weight = weight;
 		_edges = new ArrayList<Edge>();
 		_region = null;
 		return this;
@@ -411,10 +409,10 @@ public final class Site implements ICoord
 final class BoundsCheck
 {
 
-	final public static int TOP = 1;
-	final public static int BOTTOM = 2;
-	final public static int LEFT = 4;
-	final public static int RIGHT = 8;
+	public static final int TOP = 1;
+	public static final int BOTTOM = 2;
+	public static final int LEFT = 4;
+	public static final int RIGHT = 8;
 
 	/**
 	 *

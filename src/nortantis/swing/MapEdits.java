@@ -1,14 +1,5 @@
 package nortantis.swing;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-
 import nortantis.FreeIconCollection;
 import nortantis.MapText;
 import nortantis.Region;
@@ -20,6 +11,11 @@ import nortantis.geom.Point;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
 import nortantis.util.Range;
+
+import java.io.Serializable;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Stores edits made by a user to a map. This is initialized from the generated map the first time the map is drawn, and then afterwards the
@@ -41,7 +37,7 @@ public class MapEdits implements Serializable
 	public ConcurrentHashMap<Integer, CenterEdit> centerEdits;
 	public ConcurrentHashMap<Integer, RegionEdit> regionEdits;
 	public boolean hasIconEdits;
-	public List<EdgeEdit> edgeEdits;
+	public Map<Integer, EdgeEdit> edgeEdits;
 	public FreeIconCollection freeIcons;
 	public CopyOnWriteArrayList<Road> roads;
 
@@ -60,7 +56,7 @@ public class MapEdits implements Serializable
 		text = new CopyOnWriteArrayList<>();
 		centerEdits = new ConcurrentHashMap<>();
 		regionEdits = new ConcurrentHashMap<>();
-		edgeEdits = new ArrayList<>();
+		edgeEdits = new TreeMap<>();
 		freeIcons = new FreeIconCollection();
 		roads = new CopyOnWriteArrayList<Road>();
 	}
@@ -84,10 +80,13 @@ public class MapEdits implements Serializable
 
 	public void initializeEdgeEdits(List<Edge> edges)
 	{
-		edgeEdits = new ArrayList<>(edges.size());
+		edgeEdits = new TreeMap<Integer, EdgeEdit>();
 		for (Edge edge : edges)
 		{
-			edgeEdits.add(new EdgeEdit(edge.index, edge.river));
+			if (edge.river > 0)
+			{
+				edgeEdits.put(edge.index, new EdgeEdit(edge.index, edge.river));
+			}
 		}
 	}
 
@@ -111,8 +110,8 @@ public class MapEdits implements Serializable
 			return null;
 		}
 
-		return textAtPoint.stream().max((t1, t2) -> Double.compare(t1.line1Bounds == null ? Double.POSITIVE_INFINITY : t1.line1Bounds.y,
-				t2.line1Bounds == null ? Double.POSITIVE_INFINITY : t2.line1Bounds.y)).get();
+		return textAtPoint.stream()
+				.max((t1, t2) -> Double.compare(t1.line1Bounds == null ? Double.POSITIVE_INFINITY : t1.line1Bounds.y, t2.line1Bounds == null ? Double.POSITIVE_INFINITY : t2.line1Bounds.y)).get();
 	}
 
 	public List<MapText> findAllTextAtPoint(Point point)
@@ -140,8 +139,7 @@ public class MapEdits implements Serializable
 		{
 			if (mp.value.length() > 0)
 			{
-				if (mp.line1Bounds != null && mp.line1Bounds.overlapsCircle(point, brushDiameter / 2.0)
-						|| mp.line2Bounds != null && mp.line2Bounds.overlapsCircle(point, brushDiameter / 2.0))
+				if (mp.line1Bounds != null && mp.line1Bounds.overlapsCircle(point, brushDiameter / 2.0) || mp.line2Bounds != null && mp.line2Bounds.overlapsCircle(point, brushDiameter / 2.0))
 				{
 					result.add(mp);
 				}
@@ -178,9 +176,9 @@ public class MapEdits implements Serializable
 
 		copy.hasIconEdits = hasIconEdits;
 
-		for (EdgeEdit eEdit : edgeEdits)
+		for (EdgeEdit eEdit : edgeEdits.values())
 		{
-			copy.edgeEdits.add(eEdit.deepCopy());
+			copy.edgeEdits.put(eEdit.index, eEdit.deepCopy());
 		}
 
 		copy.freeIcons = new FreeIconCollection(freeIcons);
@@ -214,9 +212,8 @@ public class MapEdits implements Serializable
 			return false;
 		}
 		MapEdits other = (MapEdits) obj;
-		return bakeGeneratedTextAsEdits == other.bakeGeneratedTextAsEdits && Objects.equals(centerEdits, other.centerEdits)
-				&& Objects.equals(edgeEdits, other.edgeEdits) && Objects.equals(freeIcons, other.freeIcons)
-				&& hasIconEdits == other.hasIconEdits && Objects.equals(regionEdits, other.regionEdits) && Objects.equals(text, other.text)
+		return bakeGeneratedTextAsEdits == other.bakeGeneratedTextAsEdits && Objects.equals(centerEdits, other.centerEdits) && Objects.equals(edgeEdits, other.edgeEdits)
+				&& Objects.equals(freeIcons, other.freeIcons) && hasIconEdits == other.hasIconEdits && Objects.equals(regionEdits, other.regionEdits) && Objects.equals(text, other.text)
 				&& Objects.equals(roads, other.roads);
 	}
 
