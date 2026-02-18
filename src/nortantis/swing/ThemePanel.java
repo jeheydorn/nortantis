@@ -2185,6 +2185,10 @@ public class ThemePanel extends JTabbedPane
 	private void handleFullRedraw()
 	{
 		boolean refreshImagePreviews = mainWindow.undoer.setUndoPoint(UpdateType.Full, null);
+		if (refreshImagePreviews)
+		{
+			clearBackgroundImageCache();
+		}
 		mainWindow.handleThemeChange(refreshImagePreviews);
 		mainWindow.updater.createAndShowMapFull();
 	}

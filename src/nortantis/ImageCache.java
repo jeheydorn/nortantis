@@ -359,7 +359,7 @@ public class ImageCache
 			if (baseNamesToParams.containsKey(parsed.baseName()))
 			{
 				throw new RuntimeException("There are multiple images for " + iconType + " named '" + parsed.baseName()
-						+ "' whose file names only differ by their encoded width or height or extension." + " Rename one of them.");
+						+ "' whose file names only differ by their encoded width, height, alpha, or extension." + " Rename one of them.");
 			}
 
 			baseNamesToParams.put(parsed.baseName(), new FilenameParams(fileName, parsed.baseName(), width, parsed.alpha()));
