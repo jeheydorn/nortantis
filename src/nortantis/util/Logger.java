@@ -98,7 +98,6 @@ public class Logger
 
 	private synchronized void clearTarget()
 	{
-		// TODO put back later
 		getInstance().target.clearLoggerMessages();
 	}
 

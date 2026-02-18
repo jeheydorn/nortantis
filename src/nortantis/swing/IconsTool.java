@@ -1148,8 +1148,6 @@ public class IconsTool extends EditorTool
 							+ selector.artPack + "'");
 		}
 
-		System.out.println("Creating icon preview at " + System.currentTimeMillis()); // TODO remove
-
 		for (String groupId : ImageCache.getInstance(settings.artPack, settings.customImagesPath).getIconGroupNames(selector.type))
 		{
 			final List<Tuple2<String, UnscaledImageToggleButton>> namesAndButtons = selector.getIconNamesAndButtons(groupId);
