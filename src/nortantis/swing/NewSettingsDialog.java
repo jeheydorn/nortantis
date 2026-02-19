@@ -2,6 +2,7 @@ package nortantis.swing;
 
 import nortantis.IconType;
 import nortantis.ImageCache;
+import nortantis.LandShape;
 import nortantis.MapSettings;
 import nortantis.SettingsGenerator;
 import nortantis.editor.MapUpdater;
@@ -28,8 +29,8 @@ import java.util.List;
 public class NewSettingsDialog extends JDialog
 {
 	JSlider worldSizeSlider;
-	JSlider edgeLandToWaterProbSlider;
-	JSlider centerLandToWaterProbSlider;
+	private JComboBox<LandShape> landShapeComboBox;
+	private JSlider regionCountSlider;
 	private JComboBox<String> dimensionsComboBox;
 	BooksWidget booksWidget;
 	MapSettings settings;
@@ -305,39 +306,36 @@ public class NewSettingsDialog extends JDialog
 		createMapChangeListener(worldSizeSlider);
 		organizer.addLabelAndComponent(Translation.get("newSettingsDialog.worldSize.label"), Translation.get("newSettingsDialog.worldSize.help"), worldSizeSlider);
 
-		edgeLandToWaterProbSlider = new JSlider();
-		edgeLandToWaterProbSlider.setValue(70);
-		edgeLandToWaterProbSlider.setPaintTicks(true);
-		edgeLandToWaterProbSlider.setPaintLabels(true);
-		edgeLandToWaterProbSlider.setMinorTickSpacing(25);
-		edgeLandToWaterProbSlider.setMajorTickSpacing(25);
+		landShapeComboBox = new JComboBox<LandShape>();
+		for (LandShape shape : LandShape.values())
 		{
-			Hashtable<Integer, JLabel> labelTable = new Hashtable<Integer, JLabel>();
-			for (int i = edgeLandToWaterProbSlider.getMinimum(); i < edgeLandToWaterProbSlider.getMaximum() + 1; i += edgeLandToWaterProbSlider.getMajorTickSpacing())
-			{
-				labelTable.put(i, new JLabel(Double.toString(i / 100.0)));
-			}
-			edgeLandToWaterProbSlider.setLabelTable(labelTable);
+			landShapeComboBox.addItem(shape);
 		}
-		createMapChangeListener(edgeLandToWaterProbSlider);
-		organizer.addLabelAndComponent(Translation.get("newSettingsDialog.edgeLandProbability.label"), Translation.get("newSettingsDialog.edgeLandProbability.help"), edgeLandToWaterProbSlider);
+		landShapeComboBox.setRenderer(new TranslatedEnumRenderer());
+		createMapChangeListener(landShapeComboBox);
+		organizer.addLabelAndComponent(Translation.get("newSettingsDialog.landShape.label"), Translation.get("newSettingsDialog.landShape.help"), landShapeComboBox);
 
-		centerLandToWaterProbSlider = new JSlider();
-		centerLandToWaterProbSlider.setValue(70);
-		centerLandToWaterProbSlider.setPaintTicks(true);
-		centerLandToWaterProbSlider.setPaintLabels(true);
-		centerLandToWaterProbSlider.setMinorTickSpacing(25);
-		centerLandToWaterProbSlider.setMajorTickSpacing(25);
+		regionCountSlider = new JSlider();
+		regionCountSlider.setMinimum(2);
+		regionCountSlider.setMaximum(MapSettings.maxRegionCount(SettingsGenerator.maxWorldSize));
+		regionCountSlider.setValue(3);
+		regionCountSlider.setPaintLabels(true);
+		regionCountSlider.setPaintTicks(true);
+		regionCountSlider.setMajorTickSpacing(1);
+		regionCountSlider.setSnapToTicks(true);
+		createMapChangeListener(regionCountSlider);
+		organizer.addLabelAndComponent(Translation.get("newSettingsDialog.regionCount.label"), Translation.get("newSettingsDialog.regionCount.help"), regionCountSlider);
+
+		// Update region count slider max when world size changes.
+		worldSizeSlider.addChangeListener(e ->
 		{
-			Hashtable<Integer, JLabel> labelTable = new Hashtable<Integer, JLabel>();
-			for (int i = centerLandToWaterProbSlider.getMinimum(); i < centerLandToWaterProbSlider.getMaximum() + 1; i += centerLandToWaterProbSlider.getMajorTickSpacing())
+			int maxRegions = MapSettings.maxRegionCount(worldSizeSlider.getValue());
+			regionCountSlider.setMaximum(maxRegions);
+			if (regionCountSlider.getValue() > maxRegions)
 			{
-				labelTable.put(i, new JLabel(Double.toString(i / 100.0)));
+				regionCountSlider.setValue(maxRegions);
 			}
-			centerLandToWaterProbSlider.setLabelTable(labelTable);
-		}
-		createMapChangeListener(centerLandToWaterProbSlider);
-		organizer.addLabelAndComponent(Translation.get("newSettingsDialog.centerLandProbability.label"), Translation.get("newSettingsDialog.centerLandProbability.help"), centerLandToWaterProbSlider);
+		});
 
 		landColoringMethodComboBox = new JComboBox<LandColoringMethod>();
 		for (LandColoringMethod method : LandColoringMethod.values())
@@ -498,6 +496,7 @@ public class NewSettingsDialog extends JDialog
 	private void randomizeLand()
 	{
 		SettingsGenerator.randomizeLand(settings);
+		loadSettingsIntoGUI(settings);
 		handleMapChange();
 	}
 
@@ -598,8 +597,16 @@ public class NewSettingsDialog extends JDialog
 	{
 		dimensionsComboBox.setSelectedIndex(getDimensionIndexFromDimensions(settings.generatedWidth, settings.generatedHeight));
 		worldSizeSlider.setValue(settings.worldSize);
-		edgeLandToWaterProbSlider.setValue((int) (settings.edgeLandToWaterProbability * 100));
-		centerLandToWaterProbSlider.setValue((int) (settings.centerLandToWaterProbability * 100));
+		if (settings.landShape != null)
+		{
+			landShapeComboBox.setSelectedItem(settings.landShape);
+		}
+		else
+		{
+			landShapeComboBox.setSelectedItem(LandShape.Continents);
+		}
+		regionCountSlider.setMaximum(MapSettings.maxRegionCount(settings.worldSize));
+		regionCountSlider.setValue(Math.min(settings.regionCount > 0 ? settings.regionCount : 3, regionCountSlider.getMaximum()));
 		if (settings.drawRegionColors)
 		{
 			landColoringMethodComboBox.setSelectedItem(LandColoringMethod.ColorPoliticalRegions);
@@ -622,8 +629,24 @@ public class NewSettingsDialog extends JDialog
 	{
 		MapSettings resultSettings = settings.deepCopy();
 		resultSettings.worldSize = worldSizeSlider.getValue();
-		resultSettings.edgeLandToWaterProbability = edgeLandToWaterProbSlider.getValue() / 100.0;
-		resultSettings.centerLandToWaterProbability = centerLandToWaterProbSlider.getValue() / 100.0;
+		resultSettings.landShape = (LandShape) landShapeComboBox.getSelectedItem();
+		resultSettings.regionCount = regionCountSlider.getValue();
+		// Derive old probability fields for backwards compatibility.
+		switch (resultSettings.landShape)
+		{
+			case Continents:
+				resultSettings.edgeLandToWaterProbability = 0.1;
+				resultSettings.centerLandToWaterProbability = 0.75;
+				break;
+			case Inland_Sea:
+				resultSettings.edgeLandToWaterProbability = 0.75;
+				resultSettings.centerLandToWaterProbability = 0.1;
+				break;
+			case Scattered:
+				resultSettings.edgeLandToWaterProbability = 0.5;
+				resultSettings.centerLandToWaterProbability = 0.5;
+				break;
+		}
 
 		Dimension generatedDimensions = getGeneratedBackgroundDimensionsFromGUI();
 		resultSettings.generatedWidth = (int) generatedDimensions.getWidth();

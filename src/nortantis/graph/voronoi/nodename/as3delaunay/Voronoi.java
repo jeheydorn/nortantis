@@ -60,8 +60,7 @@ public final class Voronoi
 
 	private void addSite(Point p, int index)
 	{
-		double weight = Math.random() * 100;
-		Site site = Site.create(p, index, weight);
+		Site site = Site.create(p, index, 0);
 		_sites.push(site);
 		_sitesIndexedByLocation.put(p, site);
 	}

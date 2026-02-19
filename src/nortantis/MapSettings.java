@@ -78,6 +78,8 @@ public class MapSettings implements Serializable
 	public double coastlineWidth;
 	public double centerLandToWaterProbability;
 	public double edgeLandToWaterProbability;
+	public LandShape landShape;
+	public int regionCount;
 	public boolean frayedBorder;
 	public int frayedBorderSize;
 	public Color frayedBorderColor;
@@ -356,6 +358,14 @@ public class MapSettings implements Serializable
 		root.put("coastlineWidth", coastlineWidth);
 		root.put("edgeLandToWaterProbability", edgeLandToWaterProbability);
 		root.put("centerLandToWaterProbability", centerLandToWaterProbability);
+		if (landShape != null)
+		{
+			root.put("landShape", landShape.name());
+		}
+		if (regionCount > 0)
+		{
+			root.put("regionCount", regionCount);
+		}
 		root.put("frayedBorder", frayedBorder);
 		root.put("frayedBorderColor", colorToString(frayedBorderColor));
 		root.put("frayedBorderBlurLevel", frayedBorderBlurLevel);
@@ -882,6 +892,14 @@ public class MapSettings implements Serializable
 		drawOceanEffectsInLakes = root.containsKey("drawOceanEffectsInLakes") ? (boolean) root.get("drawOceanEffectsInLakes") : false;
 		centerLandToWaterProbability = (double) root.get("centerLandToWaterProbability");
 		edgeLandToWaterProbability = (double) root.get("edgeLandToWaterProbability");
+		if (root.containsKey("landShape"))
+		{
+			landShape = LandShape.valueOf((String) root.get("landShape"));
+		}
+		if (root.containsKey("regionCount"))
+		{
+			regionCount = (int) (long) root.get("regionCount");
+		}
 		frayedBorder = (boolean) root.get("frayedBorder");
 		if (root.containsKey("frayedBorderColor"))
 		{
@@ -2248,6 +2266,11 @@ public class MapSettings implements Serializable
 		}
 	}
 
+	public static int maxRegionCount(int worldSize)
+	{
+		return Math.min(30, Math.max(2, worldSize / 500));
+	}
+
 	@Override
 	public String toString()
 	{
@@ -2265,10 +2288,10 @@ public class MapSettings implements Serializable
 				edgeLandToWaterProbability, edits, fadeConcentricWaves, fillWithColorByType, flipHorizontally, flipVertically, frayedBorder, frayedBorderBlurLevel, frayedBorderColor, frayedBorderSeed,
 				frayedBorderSize, generateBackground, generateBackgroundFromTexture, generatedHeight, generatedWidth, gridOverlayColor, gridOverlayLayer, gridOverlayLineWidth,
 				gridOverlayRowOrColCount, gridOverlayShape, gridOverlayXOffset, gridOverlayYOffset, grungeWidth, heightmapExportPath, heightmapResolution, hillScale, hueRange, iconFillColorsByType,
-				iconFilterColorsByType, imageExportPath, jitterToConcentricWaves, landColor, lineStyle, lloydRelaxationsScale, maximizeOpacityByType, mountainRangeFont, mountainScale, oceanColor,
+				iconFilterColorsByType, imageExportPath, jitterToConcentricWaves, landColor, landShape, lineStyle, lloydRelaxationsScale, maximizeOpacityByType, mountainRangeFont, mountainScale, oceanColor,
 				oceanEffectsColor, oceanEffectsLevel, oceanShadingColor, oceanShadingLevel, oceanWavesColor, oceanWavesLevel, oceanWavesType, otherMountainsFont, overlayImageDefaultScale,
 				overlayImageDefaultTransparency, overlayImagePath, overlayImageTransparency, overlayOffsetResolutionInvariant, overlayScale, pointPrecision, randomSeed, regionBaseColor,
-				regionBoundaryColor, regionBoundaryStyle, regionFont, regionsRandomSeed, resolution, rightRotationCount, riverColor, riverFont, roadColor, roadStyle, saturationRange,
+				regionBoundaryColor, regionBoundaryStyle, regionCount, regionFont, regionsRandomSeed, resolution, rightRotationCount, riverColor, riverFont, roadColor, roadStyle, saturationRange,
 				solidColorBackground, textColor, textRandomSeed, titleFont, treeHeightScale, version, worldSize);
 	}
 
@@ -2319,7 +2342,7 @@ public class MapSettings implements Serializable
 				&& Objects.equals(heightmapExportPath, other.heightmapExportPath) && Double.doubleToLongBits(heightmapResolution) == Double.doubleToLongBits(other.heightmapResolution)
 				&& Double.doubleToLongBits(hillScale) == Double.doubleToLongBits(other.hillScale) && hueRange == other.hueRange && Objects.equals(iconFillColorsByType, other.iconFillColorsByType)
 				&& Objects.equals(iconFilterColorsByType, other.iconFilterColorsByType) && Objects.equals(imageExportPath, other.imageExportPath)
-				&& jitterToConcentricWaves == other.jitterToConcentricWaves && Objects.equals(landColor, other.landColor) && lineStyle == other.lineStyle
+				&& jitterToConcentricWaves == other.jitterToConcentricWaves && Objects.equals(landColor, other.landColor) && landShape == other.landShape && lineStyle == other.lineStyle
 				&& Double.doubleToLongBits(lloydRelaxationsScale) == Double.doubleToLongBits(other.lloydRelaxationsScale) && Objects.equals(maximizeOpacityByType, other.maximizeOpacityByType)
 				&& Objects.equals(mountainRangeFont, other.mountainRangeFont) && Double.doubleToLongBits(mountainScale) == Double.doubleToLongBits(other.mountainScale)
 				&& Objects.equals(oceanColor, other.oceanColor) && Objects.equals(oceanEffectsColor, other.oceanEffectsColor) && oceanEffectsLevel == other.oceanEffectsLevel
@@ -2330,7 +2353,7 @@ public class MapSettings implements Serializable
 				&& overlayImageTransparency == other.overlayImageTransparency && Objects.equals(overlayOffsetResolutionInvariant, other.overlayOffsetResolutionInvariant)
 				&& Double.doubleToLongBits(overlayScale) == Double.doubleToLongBits(other.overlayScale) && Double.doubleToLongBits(pointPrecision) == Double.doubleToLongBits(other.pointPrecision)
 				&& randomSeed == other.randomSeed && Objects.equals(regionBaseColor, other.regionBaseColor) && Objects.equals(regionBoundaryColor, other.regionBoundaryColor)
-				&& Objects.equals(regionBoundaryStyle, other.regionBoundaryStyle) && Objects.equals(regionFont, other.regionFont) && regionsRandomSeed == other.regionsRandomSeed
+				&& Objects.equals(regionBoundaryStyle, other.regionBoundaryStyle) && regionCount == other.regionCount && Objects.equals(regionFont, other.regionFont) && regionsRandomSeed == other.regionsRandomSeed
 				&& Double.doubleToLongBits(resolution) == Double.doubleToLongBits(other.resolution) && rightRotationCount == other.rightRotationCount && Objects.equals(riverColor, other.riverColor)
 				&& Objects.equals(riverFont, other.riverFont) && Objects.equals(roadColor, other.roadColor) && Objects.equals(roadStyle, other.roadStyle) && saturationRange == other.saturationRange
 				&& solidColorBackground == other.solidColorBackground && Objects.equals(textColor, other.textColor) && textRandomSeed == other.textRandomSeed

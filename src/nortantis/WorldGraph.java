@@ -93,13 +93,17 @@ public class WorldGraph extends VoronoiGraph
 	// Maps plate ids to plates.
 	Set<TectonicPlate> plates;
 	public Map<Integer, Region> regions;
+	LandShape landShape;
+	int regionCount;
 
 	public WorldGraph(Voronoi v, double lloydRelaxationsScale, Random r, double nonBorderPlateContinentalProbability, double borderPlateContinentalProbability, double sizeMultiplier,
-			LineStyle lineStyle, double pointPrecision, boolean createElevationBiomesLakesAndRegions, boolean areRegionBoundariesVisible)
+			LineStyle lineStyle, double pointPrecision, boolean createElevationBiomesLakesAndRegions, boolean areRegionBoundariesVisible, LandShape landShape, int regionCount)
 	{
 		super(r, sizeMultiplier, pointPrecision);
 		this.nonBorderPlateContinentalProbability = nonBorderPlateContinentalProbability;
 		this.borderPlateContinentalProbability = borderPlateContinentalProbability;
+		this.landShape = landShape;
+		this.regionCount = regionCount;
 		TectonicPlate.resetIds();
 		initVoronoiGraph(v, numLloydRelaxations, lloydRelaxationsScale, createElevationBiomesLakesAndRegions);
 		regions = new TreeMap<>();
@@ -518,6 +522,184 @@ public class WorldGraph extends VoronoiGraph
 			}
 		}
 
+		// Phase 5: Enforce exact region count when regionCount > 0.
+		if (regionCount > 0)
+		{
+			// If too many regions, merge the smallest ones.
+			while (regionList.size() > regionCount)
+			{
+				// Find the smallest region.
+				Region smallest = null;
+				for (Region r : regionList)
+				{
+					if (smallest == null || r.size() < smallest.size())
+					{
+						smallest = r;
+					}
+				}
+
+				// Find a neighboring region to merge into.
+				Region mergeTarget = findNeighboringRegion(smallest, regionList);
+				if (mergeTarget == null)
+				{
+					// No land neighbor found; merge into the closest by centroid.
+					Point centroid = WorldGraph.findCentroid(smallest.getCenters());
+					for (Region r : regionList)
+					{
+						if (r == smallest)
+						{
+							continue;
+						}
+						if (mergeTarget == null)
+						{
+							mergeTarget = r;
+						}
+						else
+						{
+							Point rc = WorldGraph.findCentroid(r.getCenters());
+							Point mc = WorldGraph.findCentroid(mergeTarget.getCenters());
+							if (centroid.distanceTo(rc) < centroid.distanceTo(mc))
+							{
+								mergeTarget = r;
+							}
+						}
+					}
+				}
+
+				if (mergeTarget != null)
+				{
+					mergeTarget.addAll(new HashSet<>(smallest.getCenters()));
+					smallest.clear();
+					regionList.remove(smallest);
+				}
+				else
+				{
+					break;
+				}
+			}
+
+			// If too few regions, split the largest ones.
+			while (regionList.size() < regionCount)
+			{
+				// Find the largest region.
+				Region largest = null;
+				for (Region r : regionList)
+				{
+					if (largest == null || r.size() > largest.size())
+					{
+						largest = r;
+					}
+				}
+
+				if (largest == null || largest.size() < 2)
+				{
+					break;
+				}
+
+				// Split the largest region using two-pole BFS.
+				Set<Center> regionCenters = largest.getCenters();
+				Point centroid = WorldGraph.findCentroid(regionCenters);
+
+				// Find pole A: farthest from centroid.
+				Center poleA = null;
+				double maxDist = -1;
+				for (Center c : regionCenters)
+				{
+					double d = c.loc.distanceTo(centroid);
+					if (d > maxDist)
+					{
+						maxDist = d;
+						poleA = c;
+					}
+				}
+
+				// Find pole B: farthest from pole A.
+				Center poleB = null;
+				maxDist = -1;
+				for (Center c : regionCenters)
+				{
+					if (c == poleA)
+					{
+						continue;
+					}
+					double d = c.loc.distanceTo(poleA.loc);
+					if (d > maxDist)
+					{
+						maxDist = d;
+						poleB = c;
+					}
+				}
+
+				if (poleB == null)
+				{
+					break;
+				}
+
+				// Simultaneous BFS from A and B within the region.
+				Set<Center> groupA = new HashSet<>();
+				Set<Center> groupB = new HashSet<>();
+				Queue<Center> queueA = new LinkedList<>();
+				Queue<Center> queueB = new LinkedList<>();
+				Set<Center> visited = new HashSet<>();
+
+				groupA.add(poleA);
+				queueA.add(poleA);
+				visited.add(poleA);
+				groupB.add(poleB);
+				queueB.add(poleB);
+				visited.add(poleB);
+
+				while (!queueA.isEmpty() || !queueB.isEmpty())
+				{
+					// Expand A by one level
+					int sizeA = queueA.size();
+					for (int step = 0; step < sizeA; step++)
+					{
+						Center c = queueA.poll();
+						for (Center n : c.neighbors)
+						{
+							if (regionCenters.contains(n) && !visited.contains(n))
+							{
+								visited.add(n);
+								groupA.add(n);
+								queueA.add(n);
+							}
+						}
+					}
+					// Expand B by one level
+					int sizeB = queueB.size();
+					for (int step = 0; step < sizeB; step++)
+					{
+						Center c = queueB.poll();
+						for (Center n : c.neighbors)
+						{
+							if (regionCenters.contains(n) && !visited.contains(n))
+							{
+								visited.add(n);
+								groupB.add(n);
+								queueB.add(n);
+							}
+						}
+					}
+				}
+
+				// Create new regions from the two groups.
+				largest.clear();
+				regionList.remove(largest);
+
+				Region regionA = new Region();
+				regionA.addAll(groupA);
+				regionList.add(regionA);
+
+				if (!groupB.isEmpty())
+				{
+					Region regionB = new Region();
+					regionB.addAll(groupB);
+					regionList.add(regionB);
+				}
+			}
+		}
+
 		// Set the id of each region and add it to the regions map.
 		for (int i : new Range(regionList.size()))
 		{
@@ -541,6 +723,29 @@ public class WorldGraph extends VoronoiGraph
 
 		// This could only happen if there are no regions on the graph.
 		return null;
+	}
+
+	/**
+	 * Finds the smallest neighboring region of the given region. Two regions are neighbors if any center in one is a neighbor of a center
+	 * in the other.
+	 */
+	private Region findNeighboringRegion(Region region, List<Region> allRegions)
+	{
+		Region smallestNeighbor = null;
+		for (Center c : region.getCenters())
+		{
+			for (Center n : c.neighbors)
+			{
+				if (n.region != null && n.region != region)
+				{
+					if (smallestNeighbor == null || n.region.size() < smallestNeighbor.size())
+					{
+						smallestNeighbor = n.region;
+					}
+				}
+			}
+		}
+		return smallestNeighbor;
 	}
 
 	public Corner findClosestCorner(Point point)
@@ -1647,8 +1852,15 @@ public class WorldGraph extends VoronoiGraph
 	@Override
 	protected void assignCornerElevations()
 	{
-		createTectonicPlates();
-		assignOceanAndContinentalPlates();
+		if (regionCount > 0)
+		{
+			createTectonicPlatesForRegionCount();
+		}
+		else
+		{
+			createTectonicPlates();
+			assignOceanAndContinentalPlates();
+		}
 		lowerOceanPlates();
 		assignPlateCornerElevations();
 	}
@@ -1845,6 +2057,169 @@ public class WorldGraph extends VoronoiGraph
 				plate.type = PlateType.Continental;
 			else
 				plate.type = PlateType.Oceanic;
+		}
+	}
+
+	private void createTectonicPlatesForRegionCount()
+	{
+		int oceanicPlateCount = Math.max(regionCount, 4);
+		int totalPlates = regionCount + oceanicPlateCount;
+
+		// Step 1: Generate well-spaced seed points using Mitchell's best-candidate algorithm.
+		// This is deterministic given the same Random instance.
+		ArrayList<Point> seedPoints = new ArrayList<>();
+		int candidatesPerPoint = 20;
+		for (int i = 0; i < totalPlates; i++)
+		{
+			Point best = null;
+			double bestDist = -1;
+			for (int c = 0; c < candidatesPerPoint; c++)
+			{
+				Point candidate = new Point(rand.nextDouble() * bounds.width, rand.nextDouble() * bounds.height);
+				double minDist = Double.MAX_VALUE;
+				for (Point existing : seedPoints)
+				{
+					minDist = Math.min(minDist, candidate.distanceTo(existing));
+				}
+				if (seedPoints.isEmpty() || minDist > bestDist)
+				{
+					bestDist = minDist;
+					best = candidate;
+				}
+			}
+			seedPoints.add(best);
+		}
+
+		// Step 2: Assign continental vs oceanic based on LandShape.
+		double centerX = bounds.width / 2.0;
+		double centerY = bounds.height / 2.0;
+
+		// Create index list sorted by distance from center
+		Integer[] indices = new Integer[totalPlates];
+		for (int i = 0; i < totalPlates; i++)
+		{
+			indices[i] = i;
+		}
+		final ArrayList<Point> finalSeedPoints = seedPoints;
+		Arrays.sort(indices, (a, b) ->
+		{
+			double da = finalSeedPoints.get(a).distanceTo(new Point(centerX, centerY));
+			double db = finalSeedPoints.get(b).distanceTo(new Point(centerX, centerY));
+			return Double.compare(da, db);
+		});
+
+		boolean[] isContinental = new boolean[totalPlates];
+		if (landShape == null || landShape == LandShape.Continents)
+		{
+			// Closest to center are continental
+			for (int i = 0; i < regionCount; i++)
+			{
+				isContinental[indices[i]] = true;
+			}
+		}
+		else if (landShape == LandShape.Inland_Sea)
+		{
+			// Farthest from center are continental
+			for (int i = totalPlates - regionCount; i < totalPlates; i++)
+			{
+				isContinental[indices[i]] = true;
+			}
+		}
+		else
+		{
+			// Scattered: randomly choose regionCount to be continental
+			List<Integer> allIndices = new ArrayList<>();
+			for (int i = 0; i < totalPlates; i++)
+			{
+				allIndices.add(i);
+			}
+			Collections.shuffle(allIndices, rand);
+			for (int i = 0; i < regionCount; i++)
+			{
+				isContinental[allIndices.get(i)] = true;
+			}
+		}
+
+		// Step 3: Create TectonicPlates and assign growth weights.
+		List<TectonicPlate> plateList = new ArrayList<>();
+		for (int i = 0; i < totalPlates; i++)
+		{
+			double growthWeight = 0.7 + rand.nextDouble() * 0.6;
+			TectonicPlate plate = new TectonicPlate(growthWeight);
+			plate.type = isContinental[i] ? PlateType.Continental : PlateType.Oceanic;
+			plateList.add(plate);
+		}
+
+		// Step 4: Map seed points to closest Centers in main graph.
+		Center[] seedCenters = new Center[totalPlates];
+		Set<Center> usedCenters = new HashSet<>();
+		for (int i = 0; i < totalPlates; i++)
+		{
+			Point seed = seedPoints.get(i);
+			Center closest = null;
+			double closestDist = Double.MAX_VALUE;
+			for (Center c : centers)
+			{
+				if (usedCenters.contains(c))
+				{
+					continue;
+				}
+				double dist = c.loc.distanceTo(seed);
+				if (dist < closestDist)
+				{
+					closestDist = dist;
+					closest = c;
+				}
+			}
+			seedCenters[i] = closest;
+			usedCenters.add(closest);
+			closest.tectonicPlate = plateList.get(i);
+			plateList.get(i).centers.add(closest);
+		}
+
+		// Step 5: BFS expansion using priority queue (Dijkstra-like).
+		PriorityQueue<double[]> frontier = new PriorityQueue<>((a, b) -> Double.compare(a[0], b[0]));
+		for (int i = 0; i < totalPlates; i++)
+		{
+			// [cost, centerIndex, plateIndex]
+			frontier.add(new double[] { 0, seedCenters[i].index, i });
+		}
+
+		while (!frontier.isEmpty())
+		{
+			double[] entry = frontier.poll();
+			double cost = entry[0];
+			int centerIdx = (int) entry[1];
+			int plateIdx = (int) entry[2];
+
+			Center center = centers.get(centerIdx);
+			if (center.tectonicPlate != null && center != seedCenters[plateIdx])
+			{
+				continue; // Already assigned
+			}
+
+			if (center.tectonicPlate == null)
+			{
+				center.tectonicPlate = plateList.get(plateIdx);
+				plateList.get(plateIdx).centers.add(center);
+			}
+
+			for (Center neighbor : center.neighbors)
+			{
+				if (neighbor.tectonicPlate == null)
+				{
+					double newCost = cost + 1.0 / plateList.get(plateIdx).growthProbability;
+					frontier.add(new double[] { newCost, neighbor.index, plateIdx });
+				}
+			}
+		}
+
+		// Step 6: Set plate velocities and store plates.
+		plates = new HashSet<>();
+		for (TectonicPlate plate : plateList)
+		{
+			plate.velocity = new PolarCoordinate(rand.nextDouble() * 2 * Math.PI, rand.nextDouble());
+			plates.add(plate);
 		}
 	}
 
