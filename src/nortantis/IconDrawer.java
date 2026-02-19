@@ -1285,7 +1285,6 @@ public class IconDrawer
 			return;
 		}
 
-		Stopwatch sw = new Stopwatch("drawIcons");
 		int xToSubtract = drawBounds == null ? 0 : (int) drawBounds.x;
 		int yToSubtract = drawBounds == null ? 0 : (int) drawBounds.y;
 
@@ -1312,7 +1311,6 @@ public class IconDrawer
 						((int) task.centerLoc.y) - yToSubtract, (int) task.centerLoc.x, (int) task.centerLoc.y, null, null, null);
 			}
 		}
-		sw.printElapsedTime();
 	}
 
 	/**
