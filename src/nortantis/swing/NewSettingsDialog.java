@@ -317,8 +317,8 @@ public class NewSettingsDialog extends JDialog
 		organizer.addLabelAndComponent(Translation.get("newSettingsDialog.landShape.label"), Translation.get("newSettingsDialog.landShape.help"), landShapeComboBox);
 
 		regionCountSlider = new JSlider();
-		regionCountSlider.setMinimum(2);
-		regionCountSlider.setMaximum(MapSettings.maxRegionCount(SettingsGenerator.maxWorldSize));
+		regionCountSlider.setMinimum(SettingsGenerator.minRegionCount);
+		regionCountSlider.setMaximum(SettingsGenerator.maxRegionCount(SettingsGenerator.maxWorldSize));
 		regionCountSlider.setValue(3);
 		regionCountSlider.setSnapToTicks(true);
 		regionCountSlider.setMajorTickSpacing(1);
@@ -329,7 +329,7 @@ public class NewSettingsDialog extends JDialog
 		// Update region count slider max when world size changes.
 		worldSizeSlider.addChangeListener(e ->
 		{
-			int maxRegions = MapSettings.maxRegionCount(worldSizeSlider.getValue());
+			int maxRegions = SettingsGenerator.maxRegionCount(worldSizeSlider.getValue());
 			regionCountSlider.setMaximum(maxRegions);
 			if (regionCountSlider.getValue() > maxRegions)
 			{
@@ -435,7 +435,7 @@ public class NewSettingsDialog extends JDialog
 
 		JPanel rowPanel = new JPanel();
 		rowPanel.setLayout(new BoxLayout(rowPanel, BoxLayout.X_AXIS));
-		organizer.addLeftAlignedComponent(rowPanel);
+		organizer.addLeftAlignedComponent(rowPanel, false);
 		rowPanel.add(artPackLabel);
 		rowPanel.add(Box.createHorizontalStrut(5));
 		rowPanel.add(artPackComboBox);
@@ -496,7 +496,6 @@ public class NewSettingsDialog extends JDialog
 	private void randomizeLand()
 	{
 		SettingsGenerator.randomizeLand(settings);
-		loadSettingsIntoGUI(settings);
 		handleMapChange();
 	}
 
@@ -605,7 +604,7 @@ public class NewSettingsDialog extends JDialog
 		{
 			landShapeComboBox.setSelectedItem(LandShape.Continents);
 		}
-		regionCountSlider.setMaximum(MapSettings.maxRegionCount(settings.worldSize));
+		regionCountSlider.setMaximum(SettingsGenerator.maxRegionCount(settings.worldSize));
 		regionCountSlider.setValue(Math.min(settings.regionCount > 0 ? settings.regionCount : 3, regionCountSlider.getMaximum()));
 		if (settings.drawRegionColors)
 		{
