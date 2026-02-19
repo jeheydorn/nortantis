@@ -2060,6 +2060,15 @@ public class WorldGraph extends VoronoiGraph
 		}
 	}
 
+	private double distFromNearestEdge(Point p)
+	{
+		double distLeft = p.x;
+		double distRight = bounds.width - p.x;
+		double distTop = p.y;
+		double distBottom = bounds.height - p.y;
+		return Math.min(Math.min(distLeft, distRight), Math.min(distTop, distBottom));
+	}
+
 	private void createTectonicPlatesForRegionCount()
 	{
 		int oceanicPlateCount = Math.max(regionCount, 4);
@@ -2091,38 +2100,35 @@ public class WorldGraph extends VoronoiGraph
 		}
 
 		// Step 2: Assign continental vs oceanic based on LandShape.
-		double centerX = bounds.width / 2.0;
-		double centerY = bounds.height / 2.0;
-
-		// Create index list sorted by distance from center
-		Integer[] indices = new Integer[totalPlates];
+		// Sort by distance from nearest edge (ascending).
+		Integer[] indicesByEdgeDist = new Integer[totalPlates];
 		for (int i = 0; i < totalPlates; i++)
 		{
-			indices[i] = i;
+			indicesByEdgeDist[i] = i;
 		}
 		final ArrayList<Point> finalSeedPoints = seedPoints;
-		Arrays.sort(indices, (a, b) ->
+		Arrays.sort(indicesByEdgeDist, (a, b) ->
 		{
-			double da = finalSeedPoints.get(a).distanceTo(new Point(centerX, centerY));
-			double db = finalSeedPoints.get(b).distanceTo(new Point(centerX, centerY));
+			double da = distFromNearestEdge(finalSeedPoints.get(a));
+			double db = distFromNearestEdge(finalSeedPoints.get(b));
 			return Double.compare(da, db);
 		});
 
 		boolean[] isContinental = new boolean[totalPlates];
 		if (landShape == null || landShape == LandShape.Continents)
 		{
-			// Closest to center are continental
-			for (int i = 0; i < regionCount; i++)
+			// Farthest from edges are continental
+			for (int i = totalPlates - regionCount; i < totalPlates; i++)
 			{
-				isContinental[indices[i]] = true;
+				isContinental[indicesByEdgeDist[i]] = true;
 			}
 		}
 		else if (landShape == LandShape.Inland_Sea)
 		{
-			// Farthest from center are continental
-			for (int i = totalPlates - regionCount; i < totalPlates; i++)
+			// Closest to edges are continental
+			for (int i = 0; i < regionCount; i++)
 			{
-				isContinental[indices[i]] = true;
+				isContinental[indicesByEdgeDist[i]] = true;
 			}
 		}
 		else
@@ -2178,6 +2184,11 @@ public class WorldGraph extends VoronoiGraph
 		}
 
 		// Step 5: BFS expansion using priority queue (Dijkstra-like).
+		// For Continents mode, continental plates pay an extra cost to grow near map edges,
+		// which naturally shapes them away from borders.
+		boolean biasAwayFromEdges = landShape == null || landShape == LandShape.Continents;
+		double edgeBiasDistance = Math.min(bounds.width, bounds.height) * 0.15;
+
 		PriorityQueue<double[]> frontier = new PriorityQueue<>((a, b) -> Double.compare(a[0], b[0]));
 		for (int i = 0; i < totalPlates; i++)
 		{
@@ -2208,7 +2219,22 @@ public class WorldGraph extends VoronoiGraph
 			{
 				if (neighbor.tectonicPlate == null)
 				{
-					double newCost = cost + 1.0 / plateList.get(plateIdx).growthProbability;
+					double baseCost = 1.0 / plateList.get(plateIdx).growthProbability;
+
+					// In Continents mode, make continental plates reluctant to grow near edges.
+					if (biasAwayFromEdges && plateList.get(plateIdx).type == PlateType.Continental)
+					{
+						double edgeDist = distFromNearestEdge(neighbor.loc);
+						if (edgeDist < edgeBiasDistance)
+						{
+							// The closer to the edge, the higher the penalty. Ranges from 1x (at the
+							// threshold) to 5x (at the edge itself).
+							double edgeFraction = 1.0 - edgeDist / edgeBiasDistance;
+							baseCost *= 1.0 + 4.0 * edgeFraction;
+						}
+					}
+
+					double newCost = cost + baseCost;
 					frontier.add(new double[] { newCost, neighbor.index, plateIdx });
 				}
 			}

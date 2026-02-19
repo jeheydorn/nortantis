@@ -31,6 +31,7 @@ public class NewSettingsDialog extends JDialog
 	JSlider worldSizeSlider;
 	private JComboBox<LandShape> landShapeComboBox;
 	private JSlider regionCountSlider;
+	private SliderWithDisplayedValue regionCountSliderWithDisplay;
 	private JComboBox<String> dimensionsComboBox;
 	BooksWidget booksWidget;
 	MapSettings settings;
@@ -319,12 +320,11 @@ public class NewSettingsDialog extends JDialog
 		regionCountSlider.setMinimum(2);
 		regionCountSlider.setMaximum(MapSettings.maxRegionCount(SettingsGenerator.maxWorldSize));
 		regionCountSlider.setValue(3);
-		regionCountSlider.setPaintLabels(true);
-		regionCountSlider.setPaintTicks(true);
-		regionCountSlider.setMajorTickSpacing(1);
 		regionCountSlider.setSnapToTicks(true);
+		regionCountSlider.setMajorTickSpacing(1);
 		createMapChangeListener(regionCountSlider);
-		organizer.addLabelAndComponent(Translation.get("newSettingsDialog.regionCount.label"), Translation.get("newSettingsDialog.regionCount.help"), regionCountSlider);
+		regionCountSliderWithDisplay = new SliderWithDisplayedValue(regionCountSlider);
+		regionCountSliderWithDisplay.addToOrganizer(organizer, Translation.get("newSettingsDialog.regionCount.label"), Translation.get("newSettingsDialog.regionCount.help"));
 
 		// Update region count slider max when world size changes.
 		worldSizeSlider.addChangeListener(e ->
