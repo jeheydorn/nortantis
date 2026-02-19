@@ -2266,11 +2266,6 @@ public class MapSettings implements Serializable
 		}
 	}
 
-	public static int maxRegionCount(int worldSize)
-	{
-		return Math.min(30, Math.max(2, worldSize / 200));
-	}
-
 	@Override
 	public String toString()
 	{
