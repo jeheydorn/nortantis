@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="Gradle: com.github.wendykierp:JTransforms:with-dependencies:3.2" type="java-imported" external-system-id="GRADLE">
+    <properties groupId="com.github.wendykierp" artifactId="JTransforms" version="3.2" baseVersion="3.2" />
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.github.wendykierp/JTransforms/3.2/3684bcf232624d5f604e8436c30864bd323c8cca/JTransforms-3.2-with-dependencies.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
