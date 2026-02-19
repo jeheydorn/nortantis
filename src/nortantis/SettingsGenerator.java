@@ -28,6 +28,11 @@ public class SettingsGenerator
 	public static int maxFrayedEdgeSizeForUI = 15;
 	public static final int maxConcentricWaveCountInEditor = 5;
 	public static final int maxConcentricWaveCountToGenerate = 3;
+	public static final int minRegionCount = 2;
+	public static int maxRegionCount(int worldSize)
+	{
+		return Math.min(30, Math.max(minRegionCount, worldSize / 200));
+	}
 	public static final int minConcentricWaveCountToGenerate = 2;
 	public static final int defaultCoastShadingAlpha = 87;
 	public static final int defaultOceanShadingAlpha = 87;
@@ -128,6 +133,22 @@ public class SettingsGenerator
 		settings.frayedBorderColor = MapCreator.generateColorFromBaseColor(rand, settings.frayedBorderColor, hueRange, saturationRange, brightnessRange);
 
 		settings.worldSize = (rand.nextInt((maxWorldSize - minWorldSizeForRandomSettings) / worldSizePrecision) + minWorldSizeForRandomSettings / worldSizePrecision) * worldSizePrecision;
+
+
+		if (settings.worldSize > (maxWorldSize - minWorldSize) / 2)
+		{
+			settings.landShape = LandShape.Continents;
+		}
+		else
+		{
+			settings.landShape = ProbabilityHelper.sampleUniform(rand, Arrays.asList(LandShape.Continents, LandShape.Scattered));
+		}
+
+		int maxRegions = maxRegionCount(settings.worldSize);
+		int rangeSize = maxRegions - minRegionCount;
+		int low = minRegionCount + rangeSize / 4;
+		int high = minRegionCount + (3 * rangeSize) / 4;
+		settings.regionCount = low + rand.nextInt(Math.max(1, high - low + 1));
 
 		settings.grungeWidth = 100 + rand.nextInt(1400);
 
