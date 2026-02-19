@@ -1669,7 +1669,8 @@ public class MapCreator implements WarningLogger
 
 		WorldGraph graph = GraphCreator.createGraph(widthToUse, heightToUse, settings.worldSize, settings.edgeLandToWaterProbability, settings.centerLandToWaterProbability, new Random(r.nextLong()),
 				resolutionScale, settings.lineStyle, settings.pointPrecision, createElevationBiomesLakesAndRegions, settings.lloydRelaxationsScale,
-				settings.drawRegionBoundaries || settings.drawRegionColors, settings.rightRotationCount, settings.flipHorizontally, settings.flipVertically);
+				settings.drawRegionBoundaries || settings.drawRegionColors, settings.rightRotationCount, settings.flipHorizontally, settings.flipVertically,
+				settings.landShape, settings.regionCount);
 
 		// Setup region colors even if settings.drawRegionColors = false because
 		// edits need them in case someone edits a map without region colors,

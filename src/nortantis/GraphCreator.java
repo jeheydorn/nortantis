@@ -15,7 +15,7 @@ public class GraphCreator
 {
 	public static WorldGraph createGraph(double width, double height, int numSites, double borderPlateContinentalProbability, double nonBorderPlateContinentalProbability, Random r,
 			double resolutionScale, LineStyle lineStyle, double pointPrecision, boolean createElevationBiomesLakesAndRegions, double lloydRelaxationsScale, boolean areRegionBoundariesVisible,
-			int rightRotationCount, boolean flipHorizontally, boolean flipVertically)
+			int rightRotationCount, boolean flipHorizontally, boolean flipVertically, LandShape landShape, int regionCount)
 	{
 		Dimension graphSize = getGraphDimensionsWithStandardWidth(new Dimension(width, height));
 		// make the initial underlying voronoi structure
@@ -23,7 +23,7 @@ public class GraphCreator
 
 		// assemble the voronoi structure into a usable graph object representing a map
 		final WorldGraph graph = new WorldGraph(v, lloydRelaxationsScale, r, nonBorderPlateContinentalProbability, borderPlateContinentalProbability, resolutionScale, lineStyle, pointPrecision,
-				createElevationBiomesLakesAndRegions, areRegionBoundariesVisible);
+				createElevationBiomesLakesAndRegions, areRegionBoundariesVisible, landShape, regionCount);
 		graph.scaleFlipAndRotate(width, height, rightRotationCount, flipHorizontally, flipVertically);
 		graph.buildNoisyEdges(lineStyle, false);
 
