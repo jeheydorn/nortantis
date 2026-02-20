@@ -2093,9 +2093,10 @@ public class WorldGraph extends VoronoiGraph
 					: 0;
 			double factor = Math.max(worldSizeFactor, regionFactor);
 
-			final double maxExtraOceanicRatio = 0.4;
+			final double maxExtraOceanicRatio = 0.9;
 			int maxExtraOceanic = Math.max(1, (int) Math.round((regionCount * maxExtraOceanicRatio) * factor));
-			extraOceanicPlates = rand.nextInt(maxExtraOceanic + 1);
+			// Sample from a distribution skewed toward maxExtraOceanic. The exponent controls the skew.
+			extraOceanicPlates = (int) Math.round((1.0 - Math.pow(rand.nextDouble(), 5)) * maxExtraOceanic);
 		}
 
 		oceanicPlateCount += extraOceanicPlates;
@@ -2127,9 +2128,11 @@ public class WorldGraph extends VoronoiGraph
 		}
 
 		// Step 2: Assign continental vs oceanic based on LandShape.
-		// Sort by distance from nearest edge (ascending).
-		Integer[] indicesByEdgeDist = new Integer[totalPlates];
-		for (int i = 0; i < totalPlates; i++)
+		// Only consider the base plates (excluding extra oceanic) for continental assignment.
+		// Extra oceanic plates always remain oceanic.
+		int basePlateCount = totalPlates - extraOceanicPlates;
+		Integer[] indicesByEdgeDist = new Integer[basePlateCount];
+		for (int i = 0; i < basePlateCount; i++)
 		{
 			indicesByEdgeDist[i] = i;
 		}
@@ -2145,7 +2148,7 @@ public class WorldGraph extends VoronoiGraph
 		if (landShape == null || landShape == LandShape.Continents)
 		{
 			// Farthest from edges are continental
-			for (int i = totalPlates - regionCount; i < totalPlates; i++)
+			for (int i = basePlateCount - regionCount; i < basePlateCount; i++)
 			{
 				isContinental[indicesByEdgeDist[i]] = true;
 			}
@@ -2160,16 +2163,16 @@ public class WorldGraph extends VoronoiGraph
 		}
 		else
 		{
-			// Scattered: randomly choose regionCount to be continental
-			List<Integer> allIndices = new ArrayList<>();
-			for (int i = 0; i < totalPlates; i++)
+			// Scattered: randomly choose regionCount from base plates to be continental
+			List<Integer> baseIndices = new ArrayList<>();
+			for (int i = 0; i < basePlateCount; i++)
 			{
-				allIndices.add(i);
+				baseIndices.add(i);
 			}
-			Collections.shuffle(allIndices, rand);
+			Collections.shuffle(baseIndices, rand);
 			for (int i = 0; i < regionCount; i++)
 			{
-				isContinental[allIndices.get(i)] = true;
+				isContinental[baseIndices.get(i)] = true;
 			}
 		}
 
