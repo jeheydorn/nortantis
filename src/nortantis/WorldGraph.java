@@ -2072,6 +2072,33 @@ public class WorldGraph extends VoronoiGraph
 	private void createTectonicPlatesForRegionCount()
 	{
 		int oceanicPlateCount = Math.max(regionCount, 4);
+
+		// For Continents/Scattered with high world size or region count, add extra oceanic
+		// plates to break up maze-like land patterns. The continental plate count stays the same.
+		int extraOceanicPlates = 0;
+		int worldSize = centers.size();
+		int worldSizeThreshold = 5000;
+		int regionCountThreshold = 10;
+		if ((landShape == null || landShape == LandShape.Continents || landShape == LandShape.Scattered)
+				&& (worldSize >= worldSizeThreshold || regionCount >= regionCountThreshold))
+		{
+			int maxPossibleRegions = Math.min(SettingsGenerator.maxRegionCount(worldSize), Math.max(2, worldSize / 200));
+
+			// Each factor scales from 0 to 1. Use the max so that either being high is sufficient.
+			double worldSizeFactor = worldSize >= worldSizeThreshold
+					? Math.min(1.0, (worldSize - worldSizeThreshold) / (double) (SettingsGenerator.maxWorldSize - worldSizeThreshold))
+					: 0;
+			double regionFactor = regionCount >= regionCountThreshold
+					? Math.min(1.0, (regionCount - regionCountThreshold) / (double) Math.max(1, maxPossibleRegions - regionCountThreshold))
+					: 0;
+			double factor = Math.max(worldSizeFactor, regionFactor);
+
+			final double maxExtraOceanicRatio = 0.4;
+			int maxExtraOceanic = Math.max(1, (int) Math.round((regionCount * maxExtraOceanicRatio) * factor));
+			extraOceanicPlates = rand.nextInt(maxExtraOceanic + 1);
+		}
+
+		oceanicPlateCount += extraOceanicPlates;
 		int totalPlates = regionCount + oceanicPlateCount;
 
 		// Step 1: Generate well-spaced seed points using Mitchell's best-candidate algorithm.
