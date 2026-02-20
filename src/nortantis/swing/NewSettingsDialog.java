@@ -435,7 +435,7 @@ public class NewSettingsDialog extends JDialog
 
 		JPanel rowPanel = new JPanel();
 		rowPanel.setLayout(new BoxLayout(rowPanel, BoxLayout.X_AXIS));
-		organizer.addLeftAlignedComponent(rowPanel, false);
+		organizer.addLeftAlignedComponent(rowPanel);
 		rowPanel.add(artPackLabel);
 		rowPanel.add(Box.createHorizontalStrut(5));
 		rowPanel.add(artPackComboBox);
@@ -586,7 +586,7 @@ public class NewSettingsDialog extends JDialog
 
 	private nortantis.geom.Dimension getMapDrawingAreaSize()
 	{
-		final int additionalWidthToRemoveIDontKnowWhereItsComingFrom = 4;
+		final int additionalWidthToRemoveIDontKnowWhereItsComingFrom = 10;
 		return new nortantis.geom.Dimension((mapEditingPanelContainer.getSize().width - additionalWidthToRemoveIDontKnowWhereItsComingFrom) * mapEditingPanel.osScale,
 				(mapEditingPanelContainer.getSize().height - additionalWidthToRemoveIDontKnowWhereItsComingFrom) * mapEditingPanel.osScale);
 
