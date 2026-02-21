@@ -507,7 +507,7 @@ public class TextTool extends EditorTool
 	@Override
 	public nortantis.platform.Image getToolIcon()
 	{
-		nortantis.platform.Image icons = nortantis.platform.Image.read(Paths.get(Assets.getAssetsPath(), "internal/Text tool.png").toString());
+		nortantis.platform.Image icons = Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal/Text tool.png").toString());
 		try (nortantis.platform.Painter p = icons.createPainter(DrawQuality.High))
 		{
 			String text = Translation.get("textTool.toolIcon");

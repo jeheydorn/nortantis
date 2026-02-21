@@ -106,7 +106,7 @@ public class LandWaterTool extends EditorTool
 	@Override
 	public Image getToolIcon()
 	{
-		Image icon = Image.read(Paths.get(Assets.getAssetsPath(), "internal/Land Water tool.png").toString());
+		Image icon = Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal/Land Water tool.png").toString());
 		try (nortantis.platform.Painter p = icon.createPainter(DrawQuality.High))
 		{
 			String land = Translation.get("landWaterTool.toolIcon.land");

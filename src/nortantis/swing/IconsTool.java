@@ -124,7 +124,7 @@ public class IconsTool extends EditorTool
 	@Override
 	public Image getToolIcon()
 	{
-		Image icon = Image.read(Paths.get(Assets.getAssetsPath(), "internal/Icon tool.png").toString());
+		Image icon = Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal/Icon tool.png").toString());
 		try (nortantis.platform.Painter p = icon.createPainter(DrawQuality.High))
 		{
 			String text = Translation.get("iconsTool.toolIcon");

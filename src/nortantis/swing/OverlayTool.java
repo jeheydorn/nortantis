@@ -78,7 +78,7 @@ public class OverlayTool extends EditorTool
 	@Override
 	public Image getToolIcon()
 	{
-		Image icon = Image.read(Paths.get(Assets.getAssetsPath(), "internal/Overlay tool.png").toString());
+		Image icon = Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal/Overlay tool.png").toString());
 		try (nortantis.platform.Painter p = icon.createPainter(DrawQuality.High))
 		{
 			String text = Translation.get("overlayTool.toolIcon");
