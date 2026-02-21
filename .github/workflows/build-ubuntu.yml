@@ -39,5 +39,5 @@ jobs:
     - name: Upload Linux Installer
       uses: actions/upload-artifact@v4
       with:
-        name: nortantis_${{ env.VERSION }}_amd64.deb
+        name: linux-installer.zip
         path: installers/nortantis_${{ env.VERSION }}_amd64.deb
