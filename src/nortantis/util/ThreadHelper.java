@@ -222,6 +222,11 @@ public class ThreadHelper
 		}
 	}
 
+	public void shutdown()
+	{
+		cachedThreadPool.shutdownNow();
+	}
+
 	public int getThreadCount()
 	{
 		return threadCount;
