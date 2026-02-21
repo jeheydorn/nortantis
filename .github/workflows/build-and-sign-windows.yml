@@ -35,7 +35,7 @@ jobs:
       name: Upload Windows Installer
       uses: actions/upload-artifact@v4
       with:
-        name: windows-installer
+        name: Nortantis-${{ env.VERSION }}.msi
         path: installers/Nortantis-${{ env.VERSION }}.msi
     
     - name: Submit Signing Request for Windows Installer
@@ -53,7 +53,7 @@ jobs:
     - name: Upload Signed Windows Installer
       uses: actions/upload-artifact@v4
       with:
-        name: signed-windows-installer
+        name: Nortantis-${{ env.VERSION }}-signed.msi
         path: ./installers/signed/Nortantis-${{ env.VERSION }}.msi
 
 
