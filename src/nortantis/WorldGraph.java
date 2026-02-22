@@ -527,7 +527,7 @@ public class WorldGraph extends VoronoiGraph
 				}
 
 				// Find a neighboring region to merge into.
-				Region mergeTarget = findNeighboringRegion(smallest, regionList);
+				Region mergeTarget = findNeighboringRegion(smallest);
 				if (mergeTarget == null)
 				{
 					// No land neighbor found; merge into the closest by centroid.
@@ -717,7 +717,7 @@ public class WorldGraph extends VoronoiGraph
 	 * Finds the smallest neighboring region of the given region. Two regions are neighbors if any center in one is a neighbor of a center
 	 * in the other.
 	 */
-	private Region findNeighboringRegion(Region region, List<Region> allRegions)
+	private Region findNeighboringRegion(Region region)
 	{
 		Region smallestNeighbor = null;
 		for (Center c : region.getCenters())
@@ -2192,7 +2192,11 @@ public class WorldGraph extends VoronoiGraph
 			plateList.get(i).centers.add(closest);
 		}
 
-		// Step 5: BFS expansion using priority queue (Dijkstra-like).
+		// Step 5: Stochastic expansion using a priority queue (Johnson-Mehl tessellation).
+		// Each growth step draws an exponentially-distributed random cost instead of a fixed one,
+		// which makes plates grow at stochastic rates in each direction. This produces organic,
+		// irregular plate shapes rather than smooth Voronoi blobs, while still guaranteeing
+		// every center is claimed and no plate ends up tiny.
 		// For Continents mode, continental plates pay an extra cost to grow near map edges,
 		// which naturally shapes them away from borders.
 		boolean biasAwayFromEdges = landShape == null || landShape == LandShape.Continents;
@@ -2228,7 +2232,10 @@ public class WorldGraph extends VoronoiGraph
 			{
 				if (neighbor.tectonicPlate == null)
 				{
-					double baseCost = 1.0 / plateList.get(plateIdx).growthProbability;
+					// Draw an exponentially-distributed random cost. This simulates a Poisson
+					// process where plates fire growth events at rate growthProbability, making
+					// expansion stochastic in every direction rather than a smooth wavefront.
+					double baseCost = -Math.log(rand.nextDouble()) / plateList.get(plateIdx).growthProbability;
 
 					// In Continents mode, make continental plates reluctant to grow near edges.
 					if (biasAwayFromEdges && plateList.get(plateIdx).type == PlateType.Continental)
@@ -2242,6 +2249,22 @@ public class WorldGraph extends VoronoiGraph
 							baseCost *= 1.0 + 4.0 * edgeFraction;
 						}
 					}
+
+					// Boundary smoothing: count how many of the neighbor's neighbors are already
+					// in this plate. A cell enclosed on multiple sides is cheap to absorb (filling
+					// gaps), while a finger-tip cell with only one plate-neighbor gets no reduction.
+					// This mirrors the old algorithm's preference for low neighborsNotInSamePlateRatio.
+					int alreadyInPlate = 0;
+					for (Center nn : neighbor.neighbors)
+					{
+						if (nn.tectonicPlate == plateList.get(plateIdx))
+						{
+							alreadyInPlate++;
+						}
+					}
+					// alreadyInPlate is at least 1 (center is in the plate).
+					// Dividing by it makes progressively more-enclosed cells cheaper.
+					baseCost /= alreadyInPlate;
 
 					double newCost = cost + baseCost;
 					frontier.add(new double[] { newCost, neighbor.index, plateIdx });
