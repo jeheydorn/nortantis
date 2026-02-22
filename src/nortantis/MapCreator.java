@@ -33,12 +33,12 @@ public class MapCreator implements WarningLogger
 	private boolean isCanceled;
 	private final List<String> warningMessages;
 	public ConcurrentHashMap<Integer, Center> centersToRedrawLowPriority;
-	private static Boolean memoryModeOverride;
+	private Boolean memoryModeOverride;
 
 	/**
 	 * Override the memory mode for testing. Pass null to clear the override and resume normal behavior.
 	 */
-	public static void overrideMemoryMode(Boolean isLowMemory)
+	public void overrideMemoryMode(Boolean isLowMemory)
 	{
 		memoryModeOverride = isLowMemory;
 	}

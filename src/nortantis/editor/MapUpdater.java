@@ -1052,7 +1052,7 @@ public abstract class MapUpdater
 		}
 	}
 
-	public void dowWhenMapIsNotDrawing(Runnable action)
+	public void doWhenMapIsNotDrawing(Runnable action)
 	{
 		if (!isMapBeingDrawn)
 		{

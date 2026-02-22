@@ -48,18 +48,6 @@ public class WorldGraph extends VoronoiGraph
 	 */
 	public static CenterLookupMode centerLookupMode = CenterLookupMode.PIXEL_CACHED;
 
-	// Debug counters for grid-based lookup
-	public static long gridLookupDirectHits = 0;
-	public static long gridLookupNeighborHits = 0;
-	public static long gridLookupBfsFallbacks = 0;
-
-	public static void resetGridLookupCounters()
-	{
-		gridLookupDirectHits = 0;
-		gridLookupNeighborHits = 0;
-		gridLookupBfsFallbacks = 0;
-	}
-
 	// Modify seeFloorLevel to change the number of islands in the ocean.
 	public static final float oceanPlateLevel = 0.2f;
 	final double continentalPlateLevel = 0.45;
@@ -853,19 +841,10 @@ public class WorldGraph extends VoronoiGraph
 		Center result = findCenterFromEdgeSector(point, candidate);
 		if (result != null)
 		{
-			if (result == candidate)
-			{
-				gridLookupDirectHits++;
-			}
-			else
-			{
-				gridLookupNeighborHits++;
-			}
 			return result;
 		}
 
 		// Fallback - walk to a new candidate and try exhaustive search again
-		gridLookupBfsFallbacks++;
 		Center walkResult = walkToClosestCenter(point, candidate);
 
 		// Try exhaustive search on the walk result
@@ -2180,7 +2159,7 @@ public class WorldGraph extends VoronoiGraph
 		List<TectonicPlate> plateList = new ArrayList<>();
 		for (int i = 0; i < totalPlates; i++)
 		{
-			double growthWeight = 0.7 + rand.nextDouble() * 0.6;
+			double growthWeight = 0.3 + rand.nextDouble() * 0.6;
 			TectonicPlate plate = new TectonicPlate(growthWeight);
 			plate.type = isContinental[i] ? PlateType.Continental : PlateType.Oceanic;
 			plateList.add(plate);

@@ -68,12 +68,12 @@ public class MapCreatorTest
 
 		// Force high memory mode so that mapBeforeAddingText is created. The low memory fallback path
 		// re-renders terrain for text-only changes, which can have tiny convolution edge differences.
-		MapCreator.overrideMemoryMode(false);
+		MapCreator mapCreator = new MapCreator();
+		mapCreator.overrideMemoryMode(false);
 		try
 		{
 
 			// Create the full map first (baseline)
-			MapCreator mapCreator = new MapCreator();
 			MapParts mapParts = new MapParts();
 			Image fullMap = mapCreator.createMap(settings, null, mapParts);
 			final int diffThreshold = 10;
@@ -198,7 +198,7 @@ public class MapCreatorTest
 		}
 		finally
 		{
-			MapCreator.overrideMemoryMode(null);
+			mapCreator.overrideMemoryMode(null);
 		}
 	}
 
@@ -719,7 +719,7 @@ public class MapCreatorTest
 		doneTuple.set(false);
 		mapTuple.set(null);
 		updater.createAndShowMapFull();
-		updater.dowWhenMapIsNotDrawing(() ->
+		updater.doWhenMapIsNotDrawing(() ->
 		{
 			doneTuple.set(true);
 		});

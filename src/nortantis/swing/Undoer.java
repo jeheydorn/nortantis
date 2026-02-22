@@ -151,7 +151,7 @@ public class Undoer
 			changeToUndo.preRun.run();
 		}
 		mainWindow.updater.createAndShowMapFromChange(changeToUndo);
-		mainWindow.updater.dowWhenMapIsNotDrawing(() -> mainWindow.updater.createAndShowLowPriorityChanges());
+		mainWindow.updater.doWhenMapIsNotDrawing(() -> mainWindow.updater.createAndShowLowPriorityChanges());
 		updateUndoRedoEnabled();
 	}
 
@@ -199,7 +199,7 @@ public class Undoer
 			changeToRedo.preRun.run();
 		}
 		mainWindow.updater.createAndShowMapFromChange(changeWithPrevSettings);
-		mainWindow.updater.dowWhenMapIsNotDrawing(() -> mainWindow.updater.createAndShowLowPriorityChanges());
+		mainWindow.updater.doWhenMapIsNotDrawing(() -> mainWindow.updater.createAndShowLowPriorityChanges());
 		updateUndoRedoEnabled();
 	}
 

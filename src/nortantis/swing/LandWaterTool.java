@@ -8,8 +8,6 @@ import nortantis.graph.voronoi.Corner;
 import nortantis.graph.voronoi.Edge;
 import nortantis.graph.voronoi.VoronoiGraph;
 import nortantis.platform.DrawQuality;
-import nortantis.platform.Font;
-import nortantis.platform.FontStyle;
 import nortantis.platform.Image;
 import nortantis.platform.awt.AwtBridge;
 import nortantis.swing.translation.Translation;
@@ -918,7 +916,7 @@ public class LandWaterTool extends EditorTool
 
 		}
 
-		updater.dowWhenMapIsNotDrawing(() -> updater.createAndShowLowPriorityChanges());
+		updater.doWhenMapIsNotDrawing(() -> updater.createAndShowLowPriorityChanges());
 
 		undoer.setUndoPoint(UpdateType.Incremental, this);
 	}

@@ -803,7 +803,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				if (toolsPanel.currentTool != null)
 				{
-					updater.dowWhenMapIsNotDrawing(() ->
+					updater.doWhenMapIsNotDrawing(() ->
 					{
 						undoer.undo();
 					});
@@ -822,7 +822,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				if (toolsPanel.currentTool != null)
 				{
-					updater.dowWhenMapIsNotDrawing(() ->
+					updater.doWhenMapIsNotDrawing(() ->
 					{
 						undoer.redo();
 					});
@@ -1391,7 +1391,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			convertCustomImagesFolderIfNeeded(settings);
 
 			updater.cancel();
-			updater.dowWhenMapIsNotDrawing(() ->
+			updater.doWhenMapIsNotDrawing(() ->
 			{
 				loadSettingsIntoGUI(settings);
 			});

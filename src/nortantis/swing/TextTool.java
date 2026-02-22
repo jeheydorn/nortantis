@@ -9,7 +9,6 @@ import nortantis.geom.RotatedRectangle;
 import nortantis.platform.Color;
 import nortantis.platform.DrawQuality;
 import nortantis.platform.Font;
-import nortantis.platform.FontStyle;
 import nortantis.platform.awt.AwtBridge;
 import nortantis.swing.translation.TranslatedEnumRenderer;
 import nortantis.swing.translation.Translation;
@@ -565,7 +564,7 @@ public class TextTool extends EditorTool
 		{
 			// This is differed if the map is currently drawing so that we don't try to generate text while the text drawer is reprocessing
 			// books after a book checkbox was checked.
-			updater.dowWhenMapIsNotDrawing(() ->
+			updater.doWhenMapIsNotDrawing(() ->
 			{
 				if (modeWidget.isDrawMode())
 				{
@@ -866,7 +865,7 @@ public class TextTool extends EditorTool
 	{
 		if (updater != null)
 		{
-			updater.dowWhenMapIsNotDrawing(() ->
+			updater.doWhenMapIsNotDrawing(() ->
 			{
 				if (mainWindow.edits != null && mainWindow.edits.isInitialized())
 				{
