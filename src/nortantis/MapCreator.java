@@ -626,7 +626,6 @@ public class MapCreator implements WarningLogger
 		r = new Random(settings.randomSeed);
 		Dimension mapBounds = Background.calcMapBoundsAndAdjustResolutionIfNeeded(settings, maxDimensions);
 		double sizeMultiplier = calcSizeMultiplierFromResolutionScale(settings.resolution);
-
 		// Kick of a job to create the graph while the background is being created.
 		Future<WorldGraph> graphTask = ThreadHelper.getInstance().submit(() ->
 		{
@@ -850,6 +849,8 @@ public class MapCreator implements WarningLogger
 			background.closeImages();
 		}
 		background = null;
+
+		Logger.println("Map dimensions: " + map.getWidth() + "x" + map.getHeight() + ", resolution scale: " + settings.resolution);
 
 		checkForCancel();
 
