@@ -2283,8 +2283,8 @@ public class MapSettings implements Serializable
 				edgeLandToWaterProbability, edits, fadeConcentricWaves, fillWithColorByType, flipHorizontally, flipVertically, frayedBorder, frayedBorderBlurLevel, frayedBorderColor, frayedBorderSeed,
 				frayedBorderSize, generateBackground, generateBackgroundFromTexture, generatedHeight, generatedWidth, gridOverlayColor, gridOverlayLayer, gridOverlayLineWidth,
 				gridOverlayRowOrColCount, gridOverlayShape, gridOverlayXOffset, gridOverlayYOffset, grungeWidth, heightmapExportPath, heightmapResolution, hillScale, hueRange, iconFillColorsByType,
-				iconFilterColorsByType, imageExportPath, jitterToConcentricWaves, landColor, landShape, lineStyle, lloydRelaxationsScale, maximizeOpacityByType, mountainRangeFont, mountainScale, oceanColor,
-				oceanEffectsColor, oceanEffectsLevel, oceanShadingColor, oceanShadingLevel, oceanWavesColor, oceanWavesLevel, oceanWavesType, otherMountainsFont, overlayImageDefaultScale,
+				iconFilterColorsByType, imageExportPath, jitterToConcentricWaves, landColor, landShape, lineStyle, lloydRelaxationsScale, maximizeOpacityByType, mountainRangeFont, mountainScale,
+				oceanColor, oceanEffectsColor, oceanEffectsLevel, oceanShadingColor, oceanShadingLevel, oceanWavesColor, oceanWavesLevel, oceanWavesType, otherMountainsFont, overlayImageDefaultScale,
 				overlayImageDefaultTransparency, overlayImagePath, overlayImageTransparency, overlayOffsetResolutionInvariant, overlayScale, pointPrecision, randomSeed, regionBaseColor,
 				regionBoundaryColor, regionBoundaryStyle, regionCount, regionFont, regionsRandomSeed, resolution, rightRotationCount, riverColor, riverFont, roadColor, roadStyle, saturationRange,
 				solidColorBackground, textColor, textRandomSeed, titleFont, treeHeightScale, version, worldSize);
@@ -2348,12 +2348,12 @@ public class MapSettings implements Serializable
 				&& overlayImageTransparency == other.overlayImageTransparency && Objects.equals(overlayOffsetResolutionInvariant, other.overlayOffsetResolutionInvariant)
 				&& Double.doubleToLongBits(overlayScale) == Double.doubleToLongBits(other.overlayScale) && Double.doubleToLongBits(pointPrecision) == Double.doubleToLongBits(other.pointPrecision)
 				&& randomSeed == other.randomSeed && Objects.equals(regionBaseColor, other.regionBaseColor) && Objects.equals(regionBoundaryColor, other.regionBoundaryColor)
-				&& Objects.equals(regionBoundaryStyle, other.regionBoundaryStyle) && regionCount == other.regionCount && Objects.equals(regionFont, other.regionFont) && regionsRandomSeed == other.regionsRandomSeed
-				&& Double.doubleToLongBits(resolution) == Double.doubleToLongBits(other.resolution) && rightRotationCount == other.rightRotationCount && Objects.equals(riverColor, other.riverColor)
-				&& Objects.equals(riverFont, other.riverFont) && Objects.equals(roadColor, other.roadColor) && Objects.equals(roadStyle, other.roadStyle) && saturationRange == other.saturationRange
-				&& solidColorBackground == other.solidColorBackground && Objects.equals(textColor, other.textColor) && textRandomSeed == other.textRandomSeed
-				&& Objects.equals(titleFont, other.titleFont) && Double.doubleToLongBits(treeHeightScale) == Double.doubleToLongBits(other.treeHeightScale) && Objects.equals(version, other.version)
-				&& worldSize == other.worldSize;
+				&& Objects.equals(regionBoundaryStyle, other.regionBoundaryStyle) && regionCount == other.regionCount && Objects.equals(regionFont, other.regionFont)
+				&& regionsRandomSeed == other.regionsRandomSeed && Double.doubleToLongBits(resolution) == Double.doubleToLongBits(other.resolution) && rightRotationCount == other.rightRotationCount
+				&& Objects.equals(riverColor, other.riverColor) && Objects.equals(riverFont, other.riverFont) && Objects.equals(roadColor, other.roadColor)
+				&& Objects.equals(roadStyle, other.roadStyle) && saturationRange == other.saturationRange && solidColorBackground == other.solidColorBackground
+				&& Objects.equals(textColor, other.textColor) && textRandomSeed == other.textRandomSeed && Objects.equals(titleFont, other.titleFont)
+				&& Double.doubleToLongBits(treeHeightScale) == Double.doubleToLongBits(other.treeHeightScale) && Objects.equals(version, other.version) && worldSize == other.worldSize;
 	}
 
 }

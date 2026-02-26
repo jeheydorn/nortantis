@@ -412,7 +412,7 @@ public class WorldGraph extends VoronoiGraph
 	/**
 	 * Creates political regions. When done, all non-ocean centers will have a political region assigned.
 	 */
-	private void createPoliticalRegions()
+	public void createPoliticalRegions()
 	{
 		List<Region> regionList = new ArrayList<>();
 
@@ -1640,7 +1640,7 @@ public class WorldGraph extends VoronoiGraph
 		});
 	}
 
-	private void markLakes()
+	public void markLakes()
 	{
 		// This threshold allows me to distinguish between lakes and oceans.
 		final int maxLakeSize = 120;
@@ -2058,18 +2058,13 @@ public class WorldGraph extends VoronoiGraph
 		int worldSize = centers.size();
 		int worldSizeThreshold = 5000;
 		int regionCountThreshold = 10;
-		if ((landShape == null || landShape == LandShape.Continents || landShape == LandShape.Scattered)
-				&& (worldSize >= worldSizeThreshold || regionCount >= regionCountThreshold))
+		if ((landShape == null || landShape == LandShape.Continents || landShape == LandShape.Scattered) && (worldSize >= worldSizeThreshold || regionCount >= regionCountThreshold))
 		{
 			int maxPossibleRegions = Math.min(SettingsGenerator.maxRegionCount(worldSize), Math.max(2, worldSize / 200));
 
 			// Each factor scales from 0 to 1. Use the max so that either being high is sufficient.
-			double worldSizeFactor = worldSize >= worldSizeThreshold
-					? Math.min(1.0, (worldSize - worldSizeThreshold) / (double) (SettingsGenerator.maxWorldSize - worldSizeThreshold))
-					: 0;
-			double regionFactor = regionCount >= regionCountThreshold
-					? Math.min(1.0, (regionCount - regionCountThreshold) / (double) Math.max(1, maxPossibleRegions - regionCountThreshold))
-					: 0;
+			double worldSizeFactor = worldSize >= worldSizeThreshold ? Math.min(1.0, (worldSize - worldSizeThreshold) / (double) (SettingsGenerator.maxWorldSize - worldSizeThreshold)) : 0;
+			double regionFactor = regionCount >= regionCountThreshold ? Math.min(1.0, (regionCount - regionCountThreshold) / (double) Math.max(1, maxPossibleRegions - regionCountThreshold)) : 0;
 			double factor = Math.max(worldSizeFactor, regionFactor);
 
 			final double maxExtraOceanicRatio = 0.9;
@@ -3390,5 +3385,31 @@ public class WorldGraph extends VoronoiGraph
 		}
 
 		return new ArrayList<>(deque);
+	}
+
+	/**
+	 * Propagates coast and corner water/ocean flags based on center.isWater flags. Call this after setting center.isWater and center.isLake
+	 * manually (i.e., without going through the elevation-based assignOceanCoastAndLand).
+	 */
+	public void propagateCoastAndCornerFlags()
+	{
+		for (Center c : centers)
+		{
+			c.updateCoast();
+		}
+
+		for (Corner c : corners)
+		{
+			int numOcean = 0;
+			int numLand = 0;
+			for (Center center : c.touches)
+			{
+				numOcean += (center.isWater && !center.isLake) ? 1 : 0;
+				numLand += !center.isWater ? 1 : 0;
+			}
+			c.isOcean = numOcean == c.touches.size();
+			c.isCoast = numOcean > 0 && numLand > 0;
+			c.isWater = (numLand != c.touches.size()) && !c.isCoast;
+		}
 	}
 }

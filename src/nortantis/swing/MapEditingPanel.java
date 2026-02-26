@@ -3,6 +3,7 @@ package nortantis.swing;
 import nortantis.*;
 import nortantis.editor.EdgeType;
 import nortantis.editor.FreeIcon;
+import nortantis.geom.IntRectangle;
 import nortantis.geom.Point;
 import nortantis.geom.RotatedRectangle;
 import nortantis.graph.voronoi.Center;
@@ -18,6 +19,9 @@ import org.imgscalr.Scalr.Method;
 
 import java.awt.*;
 import java.awt.Stroke;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionListener;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.Ellipse2D;
@@ -29,6 +33,7 @@ import java.util.List;
 @SuppressWarnings("serial")
 public class MapEditingPanel extends UnscaledImagePanel
 {
+
 	private final Color highlightEditColor = new Color(255, 227, 74);
 	private final Color waterHighlightColor = new Color(0, 193, 245);
 	private final Color artPackHighlightColor = Color.CYAN;
@@ -79,6 +84,12 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private final double smallIconScale = 0.2;
 	private final double mediumIconScale = 0.4;
 	private final double largeIconScale = 0.6;
+	private SelectionBoxHandler selectionBoxHandler;
+	/**
+	 * The rectangular selection box if currently shown, resolution invariant.
+	 */
+	private nortantis.geom.Rectangle selectionBoxRI;
+	private MouseMotionListener selectionBoxMotionListener;
 
 	public MapEditingPanel(BufferedImage image)
 	{
@@ -389,11 +400,6 @@ public class MapEditingPanel extends UnscaledImagePanel
 		processingAreas.clear();
 	}
 
-	public void addHighlightedCenter(Center c)
-	{
-		highlightedCenters.add(c);
-	}
-
 	public void addHighlightedCenters(Collection<Center> centers)
 	{
 		highlightedCenters.addAll(centers);
@@ -403,11 +409,6 @@ public class MapEditingPanel extends UnscaledImagePanel
 	{
 		if (highlightedCenters != null)
 			highlightedCenters.clear();
-	}
-
-	public void addSelectedCenter(Center c)
-	{
-		selectedCenters.add(c);
 	}
 
 	public void addSelectedCenters(Collection<Center> centers)
@@ -525,6 +526,8 @@ public class MapEditingPanel extends UnscaledImagePanel
 			g.setColor(selectColor);
 			drawCenterOutlines(g, selectedCenters);
 		}
+
+		drawSelectionBox((Graphics2D) g);
 	}
 
 	private void highlightArtPacksIfNeeded(Graphics2D g)
@@ -946,6 +949,210 @@ public class MapEditingPanel extends UnscaledImagePanel
 		return borderPadding;
 	}
 
+	/**
+	 * Converts a mouse screen point to resolution-invariant coordinates.
+	 */
+	public nortantis.geom.Point screenToRI(java.awt.Point screenPoint)
+	{
+		double graphX = screenPoint.x * osScale / zoom - borderPadding;
+		double graphY = screenPoint.y * osScale / zoom - borderPadding;
+		double res = resolution > 0 ? resolution : 1.0;
+		return new nortantis.geom.Point(graphX / res, graphY / res);
+	}
+
+	public void setSelectionBoxHandler(SelectionBoxHandler handler)
+	{
+		this.selectionBoxHandler = handler;
+	}
+
+	public void clearSelectionBoxHandler()
+	{
+		this.selectionBoxHandler = null;
+		this.selectionBoxRI = null;
+		if (selectionBoxMotionListener != null)
+		{
+			removeMouseMotionListener(selectionBoxMotionListener);
+			selectionBoxMotionListener = null;
+		}
+		repaint();
+	}
+
+	public SelectionBoxHandler getSelectionBoxHandler()
+	{
+		return selectionBoxHandler;
+	}
+
+	public void setSelectionBoxRI(nortantis.geom.Rectangle rect)
+	{
+		if (this.selectionBoxRI == null && rect != null)
+		{
+			selectionBoxMotionListener = new MouseAdapter()
+			{
+				@Override
+				public void mouseMoved(MouseEvent e)
+				{
+					repaint();
+				}
+			};
+			addMouseMotionListener(selectionBoxMotionListener);
+		}
+		this.selectionBoxRI = rect;
+		repaint();
+	}
+
+	public nortantis.geom.Rectangle getSelectionBoxRI()
+	{
+		return selectionBoxRI;
+	}
+
+	final double boxSelectHandleSizePercent = 0.2;
+	private void drawSelectionBox(Graphics2D g2)
+	{
+		if (selectionBoxRI == null)
+		{
+			return;
+		}
+		IntRectangle selectionBoxScaled = getSelectionBoxScaledByResolution();
+		int x = selectionBoxScaled.x;
+		int y = selectionBoxScaled.y;
+		int width = selectionBoxScaled.width;
+		int height = selectionBoxScaled.height;
+
+		// Draw corner handles for dragging.
+		g2.setColor(processingColor);
+		g2.setStroke(new BasicStroke(1.5f));
+		BoxSelectHandle boxHandle = getSelectionBoxHandleMouseIsIn();
+		if (boxHandle != null && (boxHandle == BoxSelectHandle.NONE || boxHandle.isCorner()))
+		{
+			for (BoxSelectHandle handle : new BoxSelectHandle[] { BoxSelectHandle.UPPER_LEFT, BoxSelectHandle.UPPER_RIGHT, BoxSelectHandle.LOWER_LEFT, BoxSelectHandle.LOWER_RIGHT })
+			{
+				Rectangle loc = getSelectionBoxHandleLocation(handle);
+				g2.drawRect(loc.x, loc.y, loc.width, loc.height);
+			}
+		}
+		else
+		{
+			if (boxHandle != null && boxHandle != BoxSelectHandle.NONE)
+			{
+				// For top, button, and sides, just highlight the area the handle is in.
+				Rectangle rect = getSelectionBoxHandleLocation(boxHandle);
+				if (rect != null)
+				{
+					g2.drawRect(rect.x, rect.y, rect.width, rect.height);
+				}
+			}
+		}
+
+		// Semi-transparent blue fill
+		g2.setColor(new Color(0, 120, 255, 50));
+		g2.fillRect(x, y, width, height);
+
+		// Yellow border
+		Stroke prevStroke = g2.getStroke();
+		g2.setStroke(new BasicStroke(2.0f));
+		g2.setColor(highlightEditColor);
+		g2.drawRect(x, y, width, height);
+		g2.setStroke(prevStroke);
+	}
+
+	private IntRectangle getSelectionBoxScaledByResolution()
+	{
+		int x = (int) (selectionBoxRI.x * resolution);
+		int y = (int) (selectionBoxRI.y * resolution);
+		int width = (int) (selectionBoxRI.width * resolution);
+		int height = (int) (selectionBoxRI.height * resolution);
+		return new IntRectangle(x, y, width, height);
+	}
+
+	public BoxSelectHandle getSelectionBoxHandleMouseIsIn()
+	{
+		if (selectionBoxRI == null)
+		{
+			return BoxSelectHandle.NONE;
+		}
+
+		java.awt.Point screenPosition = getMousePosition();
+		if (screenPosition == null)
+		{
+			return BoxSelectHandle.NONE;
+		}
+		// Convert screen/component coords to map-pixel coords (RI * resolution),
+		// which is what getSelectionBoxHandleLocation returns.
+		nortantis.geom.Point riPoint = screenToRI(screenPosition);
+		double res = resolution > 0 ? resolution : 1.0;
+		java.awt.Point mousePosition = new java.awt.Point((int) (riPoint.x * res), (int) (riPoint.y * res));
+
+		for (BoxSelectHandle handle : BoxSelectHandle.values())
+		{
+			Rectangle location = getSelectionBoxHandleLocation(handle);
+			if (location != null && location.contains(mousePosition))
+			{
+				return handle;
+			}
+		}
+		return BoxSelectHandle.NONE;
+	}
+
+	private Rectangle getSelectionBoxHandleLocation(BoxSelectHandle boxHandle)
+	{
+		if (boxHandle == null || boxHandle == BoxSelectHandle.NONE)
+		{
+			return null;
+		}
+		IntRectangle selectionBoxScaled = getSelectionBoxScaledByResolution();
+		int x = selectionBoxScaled.x;
+		int y = selectionBoxScaled.y;
+		int width = selectionBoxScaled.width;
+		int height = selectionBoxScaled.height;
+		final int handleWidth = (int) (width * boxSelectHandleSizePercent);
+		final int handleHeight = (int) (height * boxSelectHandleSizePercent);
+
+		if (boxHandle == BoxSelectHandle.UPPER_LEFT)
+		{
+			return new Rectangle(x, y, handleWidth, handleHeight);
+		}
+		if (boxHandle == BoxSelectHandle.UPPER_RIGHT)
+		{
+			return new Rectangle(x + (width - handleWidth), y, handleWidth, handleHeight);
+		}
+		if (boxHandle == BoxSelectHandle.LOWER_LEFT)
+		{
+			return new Rectangle(x, y + (height - handleHeight), handleWidth, handleHeight);
+		}
+		if (boxHandle == BoxSelectHandle.LOWER_RIGHT)
+		{
+			return new Rectangle(x + (width - handleWidth), y + (height - handleHeight), handleWidth, handleHeight);
+		}
+		if (boxHandle == BoxSelectHandle.TOP)
+		{
+			return new Rectangle(x + handleWidth, y, width - handleWidth * 2, handleHeight);
+		}
+		if (boxHandle == BoxSelectHandle.LEFT)
+		{
+			return new Rectangle(x, y + handleHeight, handleWidth, height - handleHeight * 2);
+		}
+		if (boxHandle == BoxSelectHandle.RIGHT)
+		{
+			return new Rectangle(x + (width - handleWidth), y + handleHeight, handleWidth, height - handleHeight * 2);
+		}
+		if (boxHandle == BoxSelectHandle.BOTTOM)
+		{
+			return new Rectangle(x + handleWidth, y + (height - handleHeight), width - handleWidth * 2, handleHeight);
+		}
+		return null;
+	}
+
+
+	public enum BoxSelectHandle
+	{
+		NONE, LEFT, RIGHT, TOP, BOTTOM, UPPER_LEFT, UPPER_RIGHT, LOWER_LEFT, LOWER_RIGHT;
+
+		public boolean isCorner()
+		{
+			return this == BoxSelectHandle.UPPER_LEFT || this == BoxSelectHandle.UPPER_RIGHT ||  this == BoxSelectHandle.LOWER_LEFT || this == BoxSelectHandle.LOWER_RIGHT;
+		}
+	}
+
 	public void clearAllSelectionsAndHighlights()
 	{
 		clearAllToolSpecificSelectionsAndHighlights();
@@ -967,6 +1174,20 @@ public class MapEditingPanel extends UnscaledImagePanel
 		clearHighlightedAreas();
 		clearProcessingAreas();
 		repaint();
+	}
+
+	/**
+	 * Callback interface for handling mouse events when a selection box is being drawn on the map.
+	 */
+	public interface SelectionBoxHandler
+	{
+		void onMousePressed(java.awt.Point screenPoint);
+
+		void onMouseDragged(java.awt.Point screenPoint);
+
+		void onMouseReleased(java.awt.Point screenPoint);
+
+		void onMouseMoved(java.awt.Point screenPoint);
 	}
 
 }

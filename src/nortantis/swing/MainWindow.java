@@ -96,6 +96,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	protected String customImagesPath;
 	private JMenu fileMenu;
 	private JMenuItem newMapWithSameThemeMenuItem;
+	private JMenuItem createSubMapMenuItem;
 	private JMenuItem searchTextMenuItem;
 	private TextSearchDialog textSearchDialog;
 	private JMenu highlightIconsInArtPackMenu;
@@ -243,6 +244,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	void enableOrDisableFieldsThatRequireMap(boolean enable, MapSettings settings)
 	{
 		newMapWithSameThemeMenuItem.setEnabled(enable);
+		createSubMapMenuItem.setEnabled(enable);
 		saveMenuItem.setEnabled(enable);
 		saveAsMenItem.setEnabled(enable);
 		exportMapAsImageMenuItem.setEnabled(enable);
@@ -379,6 +381,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			public void mousePressed(MouseEvent e)
 			{
+				if (mapEditingPanel.getSelectionBoxHandler() != null && SwingUtilities.isLeftMouseButton(e))
+				{
+					mapEditingPanel.getSelectionBoxHandler().onMousePressed(e.getPoint());
+					return;
+				}
 				if (e.isShiftDown() && SwingUtilities.isLeftMouseButton(e) || SwingUtilities.isMiddleMouseButton(e))
 				{
 					mouseLocationForMiddleButtonDrag = e.getPoint();
@@ -392,6 +399,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			public void mouseReleased(MouseEvent e)
 			{
+				if (mapEditingPanel.getSelectionBoxHandler() != null && SwingUtilities.isLeftMouseButton(e))
+				{
+					mapEditingPanel.getSelectionBoxHandler().onMouseReleased(e.getPoint());
+					return;
+				}
 				if (SwingUtilities.isLeftMouseButton(e))
 				{
 					updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMouseReleasedOnMap(e));
@@ -405,12 +417,22 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			public void mouseMoved(MouseEvent e)
 			{
+				if (mapEditingPanel.getSelectionBoxHandler() != null)
+				{
+					mapEditingPanel.getSelectionBoxHandler().onMouseMoved(e.getPoint());
+					return;
+				}
 				updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMouseMovedOnMap(e));
 			}
 
 			@Override
 			public void mouseDragged(MouseEvent e)
 			{
+				if (mapEditingPanel.getSelectionBoxHandler() != null && SwingUtilities.isLeftMouseButton(e))
+				{
+					mapEditingPanel.getSelectionBoxHandler().onMouseDragged(e.getPoint());
+					return;
+				}
 				if (e.isShiftDown() && SwingUtilities.isLeftMouseButton(e) || SwingUtilities.isMiddleMouseButton(e))
 				{
 					if (mouseLocationForMiddleButtonDrag != null)
@@ -674,6 +696,17 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 					launchNewSettingsDialog(settingsToKeepThemeFrom);
 				}
+			}
+		});
+
+		createSubMapMenuItem = new JMenuItem("Create Sub-Map...");
+		fileMenu.add(createSubMapMenuItem);
+		createSubMapMenuItem.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent arg0)
+			{
+				handleCreateSubMap();
 			}
 		});
 
@@ -1639,6 +1672,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	public void showAsDrawing(boolean isDrawing)
 	{
 		clearEntireMapButton.setEnabled(!isDrawing);
+		createSubMapMenuItem.setEnabled(!isDrawing);
 		toolsPanel.showAsDrawing(isDrawing);
 		if (textSearchDialog != null)
 		{
@@ -1784,6 +1818,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		{
 			textSearchDialog.requestFocusAndSelectAll();
 		}
+	}
+
+	private void handleCreateSubMap()
+	{
+		updater.doIfMapIsReadyForInteractions(() -> new SubMapDialog(this).showStep1());
 	}
 
 	public boolean checkForUnsavedChanges()

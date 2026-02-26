@@ -29,10 +29,12 @@ public class SettingsGenerator
 	public static final int maxConcentricWaveCountInEditor = 5;
 	public static final int maxConcentricWaveCountToGenerate = 3;
 	public static final int minRegionCount = 2;
+
 	public static int maxRegionCount(int worldSize)
 	{
 		return Math.min(20, Math.max(minRegionCount, worldSize / 200));
 	}
+
 	public static final int minConcentricWaveCountToGenerate = 2;
 	public static final int defaultCoastShadingAlpha = 87;
 	public static final int defaultOceanShadingAlpha = 87;

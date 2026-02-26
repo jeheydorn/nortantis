@@ -322,26 +322,26 @@ public abstract class EditorTool
 			case "zh" -> 0.85;
 			default -> 1.0;
 		};
-		
+
 		double osScale;
 		if (OSHelper.isLinux())
 		{
 			osScale = switch (language)
-					{
-						case "en" -> 0.9;
-						case "de" -> 0.9;
-						case "es" -> 0.85;
-						case "fr" -> 0.8;
-						case "pt" -> 0.85;
-						case "ru" -> 0.65;
-						default -> 1.0;
-					};
+			{
+				case "en" -> 0.9;
+				case "de" -> 0.9;
+				case "es" -> 0.85;
+				case "fr" -> 0.8;
+				case "pt" -> 0.85;
+				case "ru" -> 0.65;
+				default -> 1.0;
+			};
 		}
 		else
 		{
 			osScale = 1.0;
 		}
-		
+
 		int fontSize = (int) (baseFontSize * scale * osScale);
 		String fontFamily = OSHelper.isLinux() ? "Gurajada" : OSHelper.isMac() ? "Apple Chancery" : "Gabriola";
 		Font font = Font.create(fontFamily, FontStyle.Plain, fontSize);
