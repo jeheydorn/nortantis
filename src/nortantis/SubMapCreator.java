@@ -178,7 +178,7 @@ public class SubMapCreator
 		newEdits.text = new CopyOnWriteArrayList<>();
 		for (MapText text : origEdits.text)
 		{
-			if (isInsideOrOverlapping(text.location, selBoundsRI))
+			if (selBoundsRI.containsOrOverlaps(text.location))
 			{
 				MapText newText = text.deepCopy();
 				newText.location = transformRIPoint(text.location, selBoundsRI, newGenWidth, newGenHeight);
@@ -192,7 +192,7 @@ public class SubMapCreator
 		// 6f: FreeIcons — copy icons whose location falls inside selBoundsRI.
 		for (FreeIcon icon : origEdits.freeIcons)
 		{
-			if (isInsideOrOverlapping(icon.locationResolutionInvariant, selBoundsRI))
+			if (selBoundsRI.containsOrOverlaps(icon.locationResolutionInvariant))
 			{
 				Point newLoc = transformRIPoint(icon.locationResolutionInvariant, selBoundsRI, newGenWidth, newGenHeight);
 
@@ -221,7 +221,7 @@ public class SubMapCreator
 			List<Point> newPath = new ArrayList<>();
 			for (Point pt : road.path)
 			{
-				if (isInsideOrOverlapping(pt, selBoundsRI))
+				if (selBoundsRI.containsOrOverlaps(pt))
 				{
 					newPath.add(transformRIPoint(pt, selBoundsRI, newGenWidth, newGenHeight));
 				}
@@ -313,39 +313,12 @@ public class SubMapCreator
 			}
 
 			// Find the shared edge between newCenter0 and newCenter1 (or their neighbors).
-			Edge sharedEdge = findSharedEdge(newCenter0, newCenter1);
+			Edge sharedEdge = newCenter0.findSharedEdge(newCenter1);
 			if (sharedEdge != null)
 			{
 				newEdits.edgeEdits.put(sharedEdge.index, new EdgeEdit(sharedEdge.index, riverLevel));
 			}
 		}
-	}
-
-	/**
-	 * Finds the edge shared between two centers, or null if not found.
-	 */
-	private static Edge findSharedEdge(Center c0, Center c1)
-	{
-		for (Edge e : c0.borders)
-		{
-			if ((e.d0 == c0 && e.d1 == c1) || (e.d0 == c1 && e.d1 == c0))
-			{
-				return e;
-			}
-		}
-		return null;
-	}
-
-	/**
-	 * Checks if a point in RI space is inside or on the boundary of a selection rectangle.
-	 */
-	private static boolean isInsideOrOverlapping(Point riPoint, Rectangle selBoundsRI)
-	{
-		if (riPoint == null)
-		{
-			return false;
-		}
-		return riPoint.x >= selBoundsRI.x && riPoint.x <= selBoundsRI.x + selBoundsRI.width && riPoint.y >= selBoundsRI.y && riPoint.y <= selBoundsRI.y + selBoundsRI.height;
 	}
 
 	/**

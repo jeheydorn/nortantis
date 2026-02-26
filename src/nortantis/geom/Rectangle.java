@@ -68,6 +68,15 @@ public class Rectangle
 		return true;
 	}
 
+	public boolean containsOrOverlaps(Point p)
+	{
+		if (p == null)
+		{
+			return false;
+		}
+		return contains(p);
+	}
+
 	public boolean overlaps(Rectangle other)
 	{
 		return new RotatedRectangle(this).overlaps(new RotatedRectangle(other));
