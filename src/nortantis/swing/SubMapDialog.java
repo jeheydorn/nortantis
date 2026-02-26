@@ -1,5 +1,6 @@
 package nortantis.swing;
 
+import nortantis.GeneratedDimension;
 import nortantis.MapSettings;
 import nortantis.SettingsGenerator;
 import nortantis.SubMapCreator;
@@ -11,6 +12,7 @@ import nortantis.platform.Image;
 import nortantis.platform.awt.AwtBridge;
 
 import javax.swing.*;
+import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
@@ -37,6 +39,13 @@ public class SubMapDialog
 
 	// Step 1 dialog state.
 	private JDialog step1Dialog;
+	private JSpinner xSpinner, ySpinner, widthSpinner, heightSpinner;
+	private JLabel step1ErrorLabel;
+	private JButton step1NextButton;
+	/** Guards against infinite update loops between spinners and the selection box. */
+	private boolean updatingSpinnersFromBox = false;
+	/** Currently selected aspect ratio (width / height). 0 = no lock. */
+	private double selectedAspectRatio = 0.0;
 
 	// Step 2 dialog / preview state.
 	private JDialog step2Dialog;
@@ -70,23 +79,101 @@ public class SubMapDialog
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 		panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
+		// Instructions
 		JLabel instrLabel = new JLabel("<html>Drag on the map to select the region for the sub-map.<br>"
 				+ "When done, click <b>Next</b> to choose the detail level.</html>");
 		instrLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 		panel.add(instrLabel);
-		panel.add(Box.createVerticalStrut(12));
+		panel.add(Box.createVerticalStrut(8));
 
+		// Aspect ratio buttons
+		JPanel ratioPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+		ratioPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+		ratioPanel.add(new JLabel("Aspect ratio:"));
+
+		GeneratedDimension[] dims = GeneratedDimension.values();
+		int numButtons = dims.length + 1; // +1 for "Any"
+		double[] ratios = new double[numButtons];
+		String[] ratioLabels = new String[numButtons];
+		ratios[0] = 0.0;
+		ratioLabels[0] = "Any";
+		for (int i = 0; i < dims.length; i++)
+		{
+			ratios[i + 1] = dims[i].aspectRatio();
+			ratioLabels[i + 1] = dims[i].displayName();
+		}
+
+		ButtonGroup ratioGroup = new ButtonGroup();
+		for (int i = 0; i < numButtons; i++)
+		{
+			final double ratio = ratios[i];
+			JToggleButton btn = new JToggleButton(ratioLabels[i]);
+			btn.setSelected(Math.abs(ratio - selectedAspectRatio) < 0.001);
+			btn.addActionListener(e ->
+			{
+				selectedAspectRatio = ratio;
+				mainWindow.mapEditingPanel.setSelectionBoxLockedAspectRatio(ratio);
+				if (ratio > 0 && selBoundsRI != null)
+				{
+					selBoundsRI = adjustSelectionBoxToAspectRatio(selBoundsRI, ratio);
+					mainWindow.mapEditingPanel.setSelectionBoxRI(selBoundsRI);
+					updateStep1SpinnersFromBox();
+				}
+			});
+			ratioGroup.add(btn);
+			ratioPanel.add(btn);
+		}
+		panel.add(ratioPanel);
+		panel.add(Box.createVerticalStrut(6));
+
+		// Position and size spinners
+		JPanel coordPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+		coordPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+		xSpinner = new JSpinner(new SpinnerNumberModel(0, 0, origSettings.generatedWidth, 1));
+		ySpinner = new JSpinner(new SpinnerNumberModel(0, 0, origSettings.generatedHeight, 1));
+		widthSpinner = new JSpinner(new SpinnerNumberModel(Math.min(100, origSettings.generatedWidth), 1, origSettings.generatedWidth, 1));
+		heightSpinner = new JSpinner(new SpinnerNumberModel(Math.min(100, origSettings.generatedHeight), 1, origSettings.generatedHeight, 1));
+
+		Dimension spinnerSize = new Dimension(75, xSpinner.getPreferredSize().height);
+		xSpinner.setPreferredSize(spinnerSize);
+		ySpinner.setPreferredSize(spinnerSize);
+		widthSpinner.setPreferredSize(spinnerSize);
+		heightSpinner.setPreferredSize(spinnerSize);
+
+		coordPanel.add(new JLabel("X:"));
+		coordPanel.add(xSpinner);
+		coordPanel.add(new JLabel("Y:"));
+		coordPanel.add(ySpinner);
+		coordPanel.add(new JLabel("Width:"));
+		coordPanel.add(widthSpinner);
+		coordPanel.add(new JLabel("Height:"));
+		coordPanel.add(heightSpinner);
+		panel.add(coordPanel);
+		panel.add(Box.createVerticalStrut(4));
+
+		// Inline error label for spinner validation
+		step1ErrorLabel = new JLabel(" ");
+		step1ErrorLabel.setForeground(java.awt.Color.RED);
+		step1ErrorLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+		JPanel errorRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+		errorRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+		errorRow.add(step1ErrorLabel);
+		panel.add(errorRow);
+		panel.add(Box.createVerticalStrut(4));
+
+		// Buttons row
 		JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
 		buttonsPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
 		JButton cancelButton = new JButton("Cancel");
 		cancelButton.addActionListener(e -> cancelStep1());
 
-		JButton nextButton = new JButton("Next →");
-		nextButton.setEnabled(false);
-		nextButton.addActionListener(e ->
+		step1NextButton = new JButton("Next →");
+		step1NextButton.setEnabled(false);
+		step1NextButton.addActionListener(e ->
 		{
-			if (selBoundsRI != null)
+			if (selBoundsRI != null && validateStep1Spinners() == null)
 			{
 				disposeStep1();
 				showStep2();
@@ -94,7 +181,7 @@ public class SubMapDialog
 		});
 
 		buttonsPanel.add(cancelButton);
-		buttonsPanel.add(nextButton);
+		buttonsPanel.add(step1NextButton);
 		panel.add(buttonsPanel);
 
 		step1Dialog.add(panel);
@@ -106,12 +193,30 @@ public class SubMapDialog
 		step1Dialog.setLocation(parentLocation.x + parentSize.width / 2 - dialogSize.width / 2,
 				parentLocation.y + parentSize.height - dialogSize.height - 18);
 
+		// Constrain the selection box to the map bounds.
+		mainWindow.mapEditingPanel.setSelectionBoxConstraints(new Rectangle(0, 0, origSettings.generatedWidth, origSettings.generatedHeight));
+		mainWindow.mapEditingPanel.setSelectionBoxLockedAspectRatio(selectedAspectRatio);
+
 		// Register the selection box handler on the main map panel.
 		mainWindow.mapEditingPanel.enableSelectionBox(() ->
 		{
 			selBoundsRI = mainWindow.mapEditingPanel.getSelectionBoxRI();
-			nextButton.setEnabled(selBoundsRI != null);
+			updateStep1SpinnersFromBox();
+			updateStep1NextButton();
 		});
+
+		// Wire spinners: when edited by user, update the selection box.
+		ChangeListener spinnerListener = e ->
+		{
+			if (!updatingSpinnersFromBox)
+			{
+				applySpinnersToSelectionBox();
+			}
+		};
+		xSpinner.addChangeListener(spinnerListener);
+		ySpinner.addChangeListener(spinnerListener);
+		widthSpinner.addChangeListener(spinnerListener);
+		heightSpinner.addChangeListener(spinnerListener);
 
 		step1Dialog.addWindowListener(new WindowAdapter()
 		{
@@ -122,7 +227,119 @@ public class SubMapDialog
 			}
 		});
 
+		// If we already have a selection (e.g. when going Back from step 2), sync the spinners.
+		if (selBoundsRI != null)
+		{
+			updateStep1SpinnersFromBox();
+			updateStep1NextButton();
+		}
+
 		step1Dialog.setVisible(true);
+	}
+
+	/**
+	 * Applies the current spinner values as the selection box, validates, and updates the Next button and error label.
+	 */
+	private void applySpinnersToSelectionBox()
+	{
+		int x = ((Number) xSpinner.getValue()).intValue();
+		int y = ((Number) ySpinner.getValue()).intValue();
+		int w = ((Number) widthSpinner.getValue()).intValue();
+		int h = ((Number) heightSpinner.getValue()).intValue();
+
+		String error = validateSpinnerValues(x, y, w, h);
+		step1ErrorLabel.setText(error != null ? error : " ");
+
+		if (error == null)
+		{
+			selBoundsRI = new Rectangle(x, y, w, h);
+			mainWindow.mapEditingPanel.setSelectionBoxRI(selBoundsRI);
+		}
+		updateStep1NextButton();
+	}
+
+	/**
+	 * Validates spinner values. Returns an error message string, or null if valid.
+	 */
+	private String validateSpinnerValues(int x, int y, int w, int h)
+	{
+		if (w <= 0 || h <= 0)
+		{
+			return "Width and height must be at least 1.";
+		}
+		if (x < 0 || y < 0)
+		{
+			return "X and Y must be at least 0.";
+		}
+		if (x + w > origSettings.generatedWidth)
+		{
+			return "X + Width exceeds the map width (" + origSettings.generatedWidth + ").";
+		}
+		if (y + h > origSettings.generatedHeight)
+		{
+			return "Y + Height exceeds the map height (" + origSettings.generatedHeight + ").";
+		}
+		return null;
+	}
+
+	/**
+	 * Returns the current validation error for the spinners, or null if valid.
+	 */
+	private String validateStep1Spinners()
+	{
+		return validateSpinnerValues(((Number) xSpinner.getValue()).intValue(), ((Number) ySpinner.getValue()).intValue(),
+				((Number) widthSpinner.getValue()).intValue(), ((Number) heightSpinner.getValue()).intValue());
+	}
+
+	/**
+	 * Updates the spinner values to reflect the current selBoundsRI. Guards against recursive updates.
+	 */
+	private void updateStep1SpinnersFromBox()
+	{
+		if (xSpinner == null || selBoundsRI == null)
+		{
+			return;
+		}
+		updatingSpinnersFromBox = true;
+		try
+		{
+			xSpinner.setValue((int) Math.round(selBoundsRI.x));
+			ySpinner.setValue((int) Math.round(selBoundsRI.y));
+			widthSpinner.setValue(Math.max(1, (int) Math.round(selBoundsRI.width)));
+			heightSpinner.setValue(Math.max(1, (int) Math.round(selBoundsRI.height)));
+			step1ErrorLabel.setText(" ");
+		}
+		finally
+		{
+			updatingSpinnersFromBox = false;
+		}
+		updateStep1NextButton();
+	}
+
+	private void updateStep1NextButton()
+	{
+		if (step1NextButton == null)
+		{
+			return;
+		}
+		step1NextButton.setEnabled(selBoundsRI != null && validateStep1Spinners() == null);
+	}
+
+	/**
+	 * Adjusts the selection box to match the given aspect ratio (width / height), keeping the top-left corner fixed and clamping to the map
+	 * bounds.
+	 */
+	private Rectangle adjustSelectionBoxToAspectRatio(Rectangle box, double ratio)
+	{
+		double newHeight = box.width / ratio;
+		// Clamp height to map bounds.
+		newHeight = Math.min(newHeight, origSettings.generatedHeight - box.y);
+		newHeight = Math.max(1, newHeight);
+		// If height was clamped, back-compute width to maintain ratio.
+		double newWidth = newHeight * ratio;
+		newWidth = Math.min(newWidth, origSettings.generatedWidth - box.x);
+		newWidth = Math.max(1, newWidth);
+		return new Rectangle(box.x, box.y, newWidth, newHeight);
 	}
 
 	private void cancelStep1()
@@ -190,6 +407,12 @@ public class SubMapDialog
 		mainPanel.add(controlPanel, BorderLayout.NORTH);
 
 		// -- Preview area --
+		JPanel previewWrapper = new JPanel(new BorderLayout(0, 4));
+
+		JLabel previewLabel = new JLabel("Preview:");
+		previewLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 2, 0));
+		previewWrapper.add(previewLabel, BorderLayout.NORTH);
+
 		BufferedImage placeholder = AwtBridge.toBufferedImage(nortantis.platform.ImageHelper.getInstance().createPlaceholderImage(new String[] { "Drawing sub-map preview..." },
 				AwtBridge.fromAwtColor(SwingHelper.getTextColorForPlaceholderImages())));
 		previewPanel = new MapEditingPanel(placeholder);
@@ -198,7 +421,9 @@ public class SubMapDialog
 		previewContainer.add(previewPanel, BorderLayout.CENTER);
 
 		JScrollPane previewScroll = new JScrollPane(previewContainer);
-		mainPanel.add(previewScroll, BorderLayout.CENTER);
+		previewWrapper.add(previewScroll, BorderLayout.CENTER);
+
+		mainPanel.add(previewWrapper, BorderLayout.CENTER);
 
 		// -- Bottom buttons --
 		JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 2));
@@ -209,6 +434,9 @@ public class SubMapDialog
 			stopPreviewUpdater();
 			step2Dialog.dispose();
 			step2Dialog = null;
+			// Restore constraints and aspect ratio when going back.
+			mainWindow.mapEditingPanel.setSelectionBoxConstraints(new Rectangle(0, 0, origSettings.generatedWidth, origSettings.generatedHeight));
+			mainWindow.mapEditingPanel.setSelectionBoxLockedAspectRatio(selectedAspectRatio);
 			mainWindow.mapEditingPanel.setSelectionBoxRI(selBoundsRI);
 			showStep1();
 		});

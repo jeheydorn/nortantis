@@ -2,7 +2,6 @@ package nortantis;
 
 import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanWaves;
-import nortantis.geom.IntDimension;
 import nortantis.platform.Color;
 import nortantis.swing.MapEdits;
 import nortantis.util.*;
@@ -262,7 +261,7 @@ public class SettingsGenerator
 		settings.edgeLandToWaterProbability = Math.round(settings.edgeLandToWaterProbability * 100.0) / 100.0;
 		settings.centerLandToWaterProbability = Math.round(settings.centerLandToWaterProbability * 100.0) / 100.0;
 
-		IntDimension dimension = parseGeneratedBackgroundDimensionsFromDropdown(ProbabilityHelper.sampleUniform(rand, getAllowedDimensions()));
+		GeneratedDimension dimension = ProbabilityHelper.sampleUniform(rand, Arrays.asList(GeneratedDimension.values()));
 		settings.generatedWidth = dimension.width;
 		settings.generatedHeight = dimension.height;
 
@@ -315,20 +314,9 @@ public class SettingsGenerator
 		settings.textRandomSeed = seed;
 	}
 
-	public static List<String> getAllowedDimensions()
+	public static List<GeneratedDimension> getAllowedDimensions()
 	{
-		List<String> result = new ArrayList<>();
-		result.add("4096 x 4096 (square)");
-		result.add("4096 x 2304 (16 by 9)");
-		result.add("4096 x 2531 (golden ratio)");
-		return result;
-	}
-
-	public static IntDimension parseGeneratedBackgroundDimensionsFromDropdown(String selected)
-	{
-		selected = selected.substring(0, selected.indexOf('('));
-		String[] parts = selected.split("x");
-		return new IntDimension(Integer.parseInt(parts[0].trim()), Integer.parseInt(parts[1].trim()));
+		return Arrays.asList(GeneratedDimension.values());
 	}
 
 	public static List<String> getAllBooks()

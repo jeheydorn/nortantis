@@ -95,6 +95,14 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private nortantis.geom.Point selectionBoxDragStartRI;
 	private nortantis.geom.Point selectionBoxDragOffset;
 	private nortantis.geom.Rectangle selectionBoxRIAtDragStart;
+	/**
+	 * Optional bounding rectangle (RI coords) that constrains the selection box. Null means no constraint.
+	 */
+	private nortantis.geom.Rectangle selectionBoxConstraintsRI;
+	/**
+	 * Locked aspect ratio for the selection box (width / height). 0 means no lock.
+	 */
+	private double selectionBoxLockedAspectRatio;
 
 	public MapEditingPanel(BufferedImage image)
 	{
@@ -1018,7 +1026,25 @@ public class MapEditingPanel extends UnscaledImagePanel
 		this.selectionBoxDragStartRI = null;
 		this.selectionBoxRIAtDragStart = null;
 		this.selectionBoxDragOffset = null;
+		this.selectionBoxConstraintsRI = null;
+		this.selectionBoxLockedAspectRatio = 0;
 		repaint();
+	}
+
+	/**
+	 * Sets an optional bounding rectangle (in RI coordinates) that the selection box is clamped to. Pass null to remove the constraint.
+	 */
+	public void setSelectionBoxConstraints(nortantis.geom.Rectangle constraints)
+	{
+		this.selectionBoxConstraintsRI = constraints;
+	}
+
+	/**
+	 * Locks the selection box to a specific aspect ratio (width / height). Pass 0 to unlock.
+	 */
+	public void setSelectionBoxLockedAspectRatio(double ratio)
+	{
+		this.selectionBoxLockedAspectRatio = ratio;
 	}
 
 	public void setSelectionBoxRI(nortantis.geom.Rectangle rect)
@@ -1075,7 +1101,8 @@ public class MapEditingPanel extends UnscaledImagePanel
 		nortantis.geom.Rectangle newBox = computeNewSelectionBox(selectionBoxDraggedHandle, currentRI);
 		if (newBox != null && newBox.width > 0 && newBox.height > 0)
 		{
-			setSelectionBoxRI(newBox);
+			selectionBoxRI = newBox;
+			repaint();
 			selectionBoxChangeListener.run();
 		}
 	}
@@ -1093,51 +1120,158 @@ public class MapEditingPanel extends UnscaledImagePanel
 	}
 
 	/**
-	 * Computes the new selection box rectangle given the handle being dragged and the current mouse position in RI coordinates.
-	 * Returns null if the handle is unrecognized.
+	 * Computes the new selection box rectangle given the handle being dragged and the current mouse position in RI coordinates. Applies aspect
+	 * ratio and bounds constraints. Returns null if the resulting box is degenerate.
 	 */
 	private nortantis.geom.Rectangle computeNewSelectionBox(BoxSelectHandle handle, nortantis.geom.Point currentRI)
 	{
+		// When aspect ratio is locked, edge handles act like CENTER (move the whole box).
+		if (selectionBoxLockedAspectRatio > 0 && handle != null && handle != BoxSelectHandle.NONE && handle != BoxSelectHandle.CENTER
+				&& !handle.isCorner())
+		{
+			handle = BoxSelectHandle.CENTER;
+		}
+
 		if (handle == null || handle == BoxSelectHandle.NONE)
 		{
 			// Draw a new box from scratch.
-			return nortantis.geom.Rectangle.fromCorners(selectionBoxDragStartRI.x, selectionBoxDragStartRI.y, currentRI.x, currentRI.y);
+			nortantis.geom.Rectangle box;
+			if (selectionBoxLockedAspectRatio > 0)
+			{
+				box = applyAspectRatioConstraint(selectionBoxDragStartRI.x, selectionBoxDragStartRI.y, currentRI.x, currentRI.y);
+			}
+			else
+			{
+				box = nortantis.geom.Rectangle.fromCorners(selectionBoxDragStartRI.x, selectionBoxDragStartRI.y, currentRI.x, currentRI.y);
+			}
+			return clampResizeToConstraints(box);
 		}
 
 		if (handle == BoxSelectHandle.CENTER)
 		{
-			// Translate the whole box.
+			// Translate the whole box; keep it fully inside the constraints.
 			double dx = currentRI.x - selectionBoxDragStartRI.x;
 			double dy = currentRI.y - selectionBoxDragStartRI.y;
-			return new nortantis.geom.Rectangle(selectionBoxRIAtDragStart.x + dx, selectionBoxRIAtDragStart.y + dy,
+			nortantis.geom.Rectangle moved = new nortantis.geom.Rectangle(selectionBoxRIAtDragStart.x + dx, selectionBoxRIAtDragStart.y + dy,
 					selectionBoxRIAtDragStart.width, selectionBoxRIAtDragStart.height);
+			return clampMoveToConstraints(moved);
 		}
 
-		// For edge and corner handles, compute fixed and moving edges from the box at drag start.
+		// Edge and corner handles: resize.
 		double left = selectionBoxRIAtDragStart.x;
 		double top = selectionBoxRIAtDragStart.y;
 		double right = left + selectionBoxRIAtDragStart.width;
 		double bottom = top + selectionBoxRIAtDragStart.height;
 
-		if (handle == BoxSelectHandle.UPPER_LEFT || handle == BoxSelectHandle.LEFT || handle == BoxSelectHandle.LOWER_LEFT)
+		nortantis.geom.Rectangle result;
+		if (selectionBoxLockedAspectRatio > 0)
 		{
-			left = currentRI.x + selectionBoxDragOffset.x;
+			// Aspect-ratio-constrained corner resize.
+			double movingX = currentRI.x + selectionBoxDragOffset.x;
+			double movingY = currentRI.y + selectionBoxDragOffset.y;
+			double fixedX, fixedY;
+			if (handle == BoxSelectHandle.UPPER_LEFT)
+			{
+				fixedX = right;
+				fixedY = bottom;
+			}
+			else if (handle == BoxSelectHandle.UPPER_RIGHT)
+			{
+				fixedX = left;
+				fixedY = bottom;
+			}
+			else if (handle == BoxSelectHandle.LOWER_LEFT)
+			{
+				fixedX = right;
+				fixedY = top;
+			}
+			else if (handle == BoxSelectHandle.LOWER_RIGHT)
+			{
+				fixedX = left;
+				fixedY = top;
+			}
+			else
+			{
+				return null;
+			}
+			result = applyAspectRatioConstraint(fixedX, fixedY, movingX, movingY);
 		}
-		if (handle == BoxSelectHandle.UPPER_RIGHT || handle == BoxSelectHandle.RIGHT || handle == BoxSelectHandle.LOWER_RIGHT)
+		else
 		{
-			right = currentRI.x + selectionBoxDragOffset.x;
-		}
-		if (handle == BoxSelectHandle.UPPER_LEFT || handle == BoxSelectHandle.TOP || handle == BoxSelectHandle.UPPER_RIGHT)
-		{
-			top = currentRI.y + selectionBoxDragOffset.y;
-		}
-		if (handle == BoxSelectHandle.LOWER_LEFT || handle == BoxSelectHandle.BOTTOM || handle == BoxSelectHandle.LOWER_RIGHT)
-		{
-			bottom = currentRI.y + selectionBoxDragOffset.y;
+			if (handle == BoxSelectHandle.UPPER_LEFT || handle == BoxSelectHandle.LEFT || handle == BoxSelectHandle.LOWER_LEFT)
+				left = currentRI.x + selectionBoxDragOffset.x;
+			if (handle == BoxSelectHandle.UPPER_RIGHT || handle == BoxSelectHandle.RIGHT || handle == BoxSelectHandle.LOWER_RIGHT)
+				right = currentRI.x + selectionBoxDragOffset.x;
+			if (handle == BoxSelectHandle.UPPER_LEFT || handle == BoxSelectHandle.TOP || handle == BoxSelectHandle.UPPER_RIGHT)
+				top = currentRI.y + selectionBoxDragOffset.y;
+			if (handle == BoxSelectHandle.LOWER_LEFT || handle == BoxSelectHandle.BOTTOM || handle == BoxSelectHandle.LOWER_RIGHT)
+				bottom = currentRI.y + selectionBoxDragOffset.y;
+			result = nortantis.geom.Rectangle.fromCorners(left, top, right, bottom);
 		}
 
-		// Normalize so width/height stay positive if the user drags past the opposite edge.
-		return nortantis.geom.Rectangle.fromCorners(left, top, right, bottom);
+		return clampResizeToConstraints(result);
+	}
+
+	/**
+	 * Returns a new rectangle with corners at (fixedX, fixedY) and (movingX, movingY) adjusted so that width/height equals
+	 * selectionBoxLockedAspectRatio. Uses whichever axis has the larger displacement.
+	 */
+	private nortantis.geom.Rectangle applyAspectRatioConstraint(double fixedX, double fixedY, double movingX, double movingY)
+	{
+		double dx = movingX - fixedX;
+		double dy = movingY - fixedY;
+		double ratio = selectionBoxLockedAspectRatio;
+		double signX = dx >= 0 ? 1 : -1;
+		double signY = dy >= 0 ? 1 : -1;
+		double absDx = Math.abs(dx);
+		double absDy = Math.abs(dy);
+		if (absDx > absDy * ratio)
+		{
+			// X-axis dominates: derive height from width.
+			movingY = fixedY + signY * (absDx / ratio);
+		}
+		else
+		{
+			// Y-axis dominates: derive width from height.
+			movingX = fixedX + signX * (absDy * ratio);
+		}
+		return nortantis.geom.Rectangle.fromCorners(fixedX, fixedY, movingX, movingY);
+	}
+
+	/**
+	 * Clips a resized/newly-drawn selection box to selectionBoxConstraintsRI. Returns null if the intersection is empty.
+	 */
+	private nortantis.geom.Rectangle clampResizeToConstraints(nortantis.geom.Rectangle box)
+	{
+		if (selectionBoxConstraintsRI == null || box == null)
+		{
+			return box;
+		}
+		nortantis.geom.Rectangle c = selectionBoxConstraintsRI;
+		double left = Math.max(c.x, box.x);
+		double top = Math.max(c.y, box.y);
+		double right = Math.min(c.x + c.width, box.x + box.width);
+		double bottom = Math.min(c.y + c.height, box.y + box.height);
+		if (right > left && bottom > top)
+		{
+			return new nortantis.geom.Rectangle(left, top, right - left, bottom - top);
+		}
+		return null;
+	}
+
+	/**
+	 * Translates a moved selection box so it stays fully inside selectionBoxConstraintsRI, without changing its size.
+	 */
+	private nortantis.geom.Rectangle clampMoveToConstraints(nortantis.geom.Rectangle box)
+	{
+		if (selectionBoxConstraintsRI == null || box == null)
+		{
+			return box;
+		}
+		nortantis.geom.Rectangle c = selectionBoxConstraintsRI;
+		double x = Math.max(c.x, Math.min(c.x + c.width - box.width, box.x));
+		double y = Math.max(c.y, Math.min(c.y + c.height - box.height, box.y));
+		return new nortantis.geom.Rectangle(x, y, box.width, box.height);
 	}
 
 	final double boxSelectHandleSizePercent = 0.2;
@@ -1153,11 +1287,21 @@ public class MapEditingPanel extends UnscaledImagePanel
 		int width = selectionBoxScaled.width;
 		int height = selectionBoxScaled.height;
 
-		// Draw corner handles for dragging.
+		// Draw corner/edge handles.
 		g2.setColor(processingColor);
 		g2.setStroke(new BasicStroke(1.5f));
 		BoxSelectHandle boxHandle = getSelectionBoxHandleMouseIsIn();
-		if (boxHandle != null && (boxHandle == BoxSelectHandle.NONE || boxHandle == BoxSelectHandle.CENTER || boxHandle.isCorner()))
+
+		// When the aspect ratio is locked, edge handles are disabled: treat them as CENTER for highlight purposes.
+		boolean aspectRatioLocked = selectionBoxLockedAspectRatio > 0;
+		BoxSelectHandle effectiveHandle = boxHandle;
+		if (aspectRatioLocked && effectiveHandle != null && !effectiveHandle.isCorner()
+				&& effectiveHandle != BoxSelectHandle.NONE && effectiveHandle != BoxSelectHandle.CENTER)
+		{
+			effectiveHandle = BoxSelectHandle.CENTER;
+		}
+
+		if (effectiveHandle != null && (effectiveHandle == BoxSelectHandle.NONE || effectiveHandle == BoxSelectHandle.CENTER || effectiveHandle.isCorner()))
 		{
 			for (BoxSelectHandle handle : new BoxSelectHandle[] { BoxSelectHandle.UPPER_LEFT, BoxSelectHandle.UPPER_RIGHT, BoxSelectHandle.LOWER_LEFT, BoxSelectHandle.LOWER_RIGHT })
 			{
@@ -1167,10 +1311,10 @@ public class MapEditingPanel extends UnscaledImagePanel
 		}
 		else
 		{
-			if (boxHandle != null && boxHandle != BoxSelectHandle.NONE)
+			if (effectiveHandle != null && effectiveHandle != BoxSelectHandle.NONE)
 			{
-				// For top, button, and sides, just highlight the area the handle is in.
-				Rectangle rect = getSelectionBoxHandleLocation(boxHandle);
+				// For top, bottom, and sides, just highlight the area the handle is in.
+				Rectangle rect = getSelectionBoxHandleLocation(effectiveHandle);
 				if (rect != null)
 				{
 					g2.drawRect(rect.x, rect.y, rect.width, rect.height);

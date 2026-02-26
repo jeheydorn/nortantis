@@ -1,5 +1,6 @@
 package nortantis.swing;
 
+import nortantis.GeneratedDimension;
 import nortantis.IconType;
 import nortantis.ImageCache;
 import nortantis.LandShape;
@@ -32,7 +33,7 @@ public class NewSettingsDialog extends JDialog
 	private JComboBox<LandShape> landShapeComboBox;
 	private JSlider regionCountSlider;
 	private SliderWithDisplayedValue regionCountSliderWithDisplay;
-	private JComboBox<String> dimensionsComboBox;
+	private JComboBox<GeneratedDimension> dimensionsComboBox;
 	BooksWidget booksWidget;
 	MapSettings settings;
 	private JProgressBar progressBar;
@@ -288,11 +289,12 @@ public class NewSettingsDialog extends JDialog
 		JPanel leftPanel = organizer.panel;
 		generatorSettingsPanel.add(leftPanel);
 
-		dimensionsComboBox = new JComboBox<>();
-		for (String dimension : SettingsGenerator.getAllowedDimensions())
+		dimensionsComboBox = new JComboBox<GeneratedDimension>();
+		for (GeneratedDimension dimension : GeneratedDimension.values())
 		{
 			dimensionsComboBox.addItem(dimension);
 		}
+		dimensionsComboBox.setRenderer(new TranslatedEnumRenderer());
 		createMapChangeListener(dimensionsComboBox);
 		organizer.addLabelAndComponent(Translation.get("newSettingsDialog.dimensions.label"), Translation.get("newSettingsDialog.dimensions.help"), dimensionsComboBox);
 
@@ -664,23 +666,16 @@ public class NewSettingsDialog extends JDialog
 
 	private Dimension getGeneratedBackgroundDimensionsFromGUI()
 	{
-		String selected = (String) dimensionsComboBox.getSelectedItem();
-		return parseGenerateBackgroundDimensionsFromDropdown(selected);
-	}
-
-	public static Dimension parseGenerateBackgroundDimensionsFromDropdown(String selected)
-	{
-		selected = selected.substring(0, selected.indexOf('('));
-		String[] parts = selected.split("x");
-		return new Dimension(Integer.parseInt(parts[0].trim()), Integer.parseInt(parts[1].trim()));
+		GeneratedDimension selected = (GeneratedDimension) dimensionsComboBox.getSelectedItem();
+		return new Dimension(selected.width, selected.height);
 	}
 
 	private int getDimensionIndexFromDimensions(int generatedWidth, int generatedHeight)
 	{
 		for (int i : new Range(dimensionsComboBox.getItemCount()))
 		{
-			Dimension dim = parseGenerateBackgroundDimensionsFromDropdown(dimensionsComboBox.getItemAt(i));
-			if (dim.getWidth() == generatedWidth && dim.getHeight() == generatedHeight)
+			GeneratedDimension dim = dimensionsComboBox.getItemAt(i);
+			if (dim.width == generatedWidth && dim.height == generatedHeight)
 			{
 				return i;
 			}
