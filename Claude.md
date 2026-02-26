@@ -119,7 +119,7 @@ The benchmark creates maps using settings from `unit test files/map settings/sim
 - **Custom Functional Interfaces:** `Function<T, R>`, `Function0<R>`, `Function2<T1, T2, R>`
 - **Tuple Classes:** `Tuple2`, `Tuple3`, `Tuple4`, `Pair`, `OrderlessPair`
 - **Helper class for timing:** nortantis.util.Stopwatch
-- **Rectangle classes:** Use `nortantis.geom.Rectangle`, `IntRectangle`, and `RotatedRectangle` for rectangular bounds calculations, including intersections. These classes have methods for intersection, union, containment checks, etc.
+- **Rectangle and dimension classes:** Use `nortantis.geom.Rectangle`, `IntRectangle`, `RotatedRectangle`, `Dimension`, and `IntDimension` for anything bounding-box or size related. These classes have methods for intersection, union, containment checks, `fromCorners`, etc. Prefer these over recreating bounding-box logic inline.
 
 ## Map Generation Pipeline
 

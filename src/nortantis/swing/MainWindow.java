@@ -381,9 +381,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			public void mousePressed(MouseEvent e)
 			{
-				if (mapEditingPanel.getSelectionBoxHandler() != null && SwingUtilities.isLeftMouseButton(e))
+				if (mapEditingPanel.isSelectionBoxActive() && SwingUtilities.isLeftMouseButton(e))
 				{
-					mapEditingPanel.getSelectionBoxHandler().onMousePressed(e.getPoint());
 					return;
 				}
 				if (e.isShiftDown() && SwingUtilities.isLeftMouseButton(e) || SwingUtilities.isMiddleMouseButton(e))
@@ -399,9 +398,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			public void mouseReleased(MouseEvent e)
 			{
-				if (mapEditingPanel.getSelectionBoxHandler() != null && SwingUtilities.isLeftMouseButton(e))
+				if (mapEditingPanel.isSelectionBoxActive() && SwingUtilities.isLeftMouseButton(e))
 				{
-					mapEditingPanel.getSelectionBoxHandler().onMouseReleased(e.getPoint());
 					return;
 				}
 				if (SwingUtilities.isLeftMouseButton(e))
@@ -417,9 +415,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			public void mouseMoved(MouseEvent e)
 			{
-				if (mapEditingPanel.getSelectionBoxHandler() != null)
+				if (mapEditingPanel.isSelectionBoxActive())
 				{
-					mapEditingPanel.getSelectionBoxHandler().onMouseMoved(e.getPoint());
 					return;
 				}
 				updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMouseMovedOnMap(e));
@@ -428,9 +425,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			public void mouseDragged(MouseEvent e)
 			{
-				if (mapEditingPanel.getSelectionBoxHandler() != null && SwingUtilities.isLeftMouseButton(e))
+				if (mapEditingPanel.isSelectionBoxActive() && SwingUtilities.isLeftMouseButton(e))
 				{
-					mapEditingPanel.getSelectionBoxHandler().onMouseDragged(e.getPoint());
 					return;
 				}
 				if (e.isShiftDown() && SwingUtilities.isLeftMouseButton(e) || SwingUtilities.isMiddleMouseButton(e))

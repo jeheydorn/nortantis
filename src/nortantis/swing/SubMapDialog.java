@@ -6,7 +6,6 @@ import nortantis.SubMapCreator;
 import nortantis.WorldGraph;
 import nortantis.editor.MapUpdater;
 import nortantis.geom.IntRectangle;
-import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
 import nortantis.platform.Image;
 import nortantis.platform.awt.AwtBridge;
@@ -38,8 +37,6 @@ public class SubMapDialog
 
 	// Step 1 dialog state.
 	private JDialog step1Dialog;
-	private Point dragStartRI;
-	private boolean isDragging;
 
 	// Step 2 dialog / preview state.
 	private JDialog step2Dialog;
@@ -73,7 +70,7 @@ public class SubMapDialog
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 		panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-		JLabel instrLabel = new JLabel("<html>Drag on the map to select the region for the sub-map.<br>" + "The selection box will be shown in yellow.<br>"
+		JLabel instrLabel = new JLabel("<html>Drag on the map to select the region for the sub-map.<br>"
 				+ "When done, click <b>Next</b> to choose the detail level.</html>");
 		instrLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 		panel.add(instrLabel);
@@ -103,47 +100,17 @@ public class SubMapDialog
 		step1Dialog.add(panel);
 		step1Dialog.pack();
 		step1Dialog.setMinimumSize(step1Dialog.getSize());
-		step1Dialog.setLocationRelativeTo(mainWindow);
+		java.awt.Point parentLocation = mainWindow.getLocation();
+		Dimension parentSize = mainWindow.getSize();
+		Dimension dialogSize = step1Dialog.getSize();
+		step1Dialog.setLocation(parentLocation.x + parentSize.width / 2 - dialogSize.width / 2,
+				parentLocation.y + parentSize.height - dialogSize.height - 18);
 
 		// Register the selection box handler on the main map panel.
-		mainWindow.mapEditingPanel.setSelectionBoxHandler(new MapEditingPanel.SelectionBoxHandler()
+		mainWindow.mapEditingPanel.enableSelectionBox(() ->
 		{
-			@Override
-			public void onMousePressed(java.awt.Point screenPoint)
-			{
-				dragStartRI = mainWindow.mapEditingPanel.screenToRI(screenPoint);
-				isDragging = true;
-			}
-
-			@Override
-			public void onMouseDragged(java.awt.Point screenPoint)
-			{
-				if (isDragging && dragStartRI != null)
-				{
-					Point currentRI = mainWindow.mapEditingPanel.screenToRI(screenPoint);
-					double x = Math.min(dragStartRI.x, currentRI.x);
-					double y = Math.min(dragStartRI.y, currentRI.y);
-					double w = Math.abs(currentRI.x - dragStartRI.x);
-					double h = Math.abs(currentRI.y - dragStartRI.y);
-					if (w > 0 && h > 0)
-					{
-						selBoundsRI = new Rectangle(x, y, w, h);
-						mainWindow.mapEditingPanel.setSelectionBoxRI(selBoundsRI);
-						nextButton.setEnabled(true);
-					}
-				}
-			}
-
-			@Override
-			public void onMouseReleased(java.awt.Point screenPoint)
-			{
-				isDragging = false;
-			}
-
-			@Override
-			public void onMouseMoved(java.awt.Point screenPoint)
-			{
-			}
+			selBoundsRI = mainWindow.mapEditingPanel.getSelectionBoxRI();
+			nextButton.setEnabled(selBoundsRI != null);
 		});
 
 		step1Dialog.addWindowListener(new WindowAdapter()
@@ -160,7 +127,7 @@ public class SubMapDialog
 
 	private void cancelStep1()
 	{
-		mainWindow.mapEditingPanel.clearSelectionBoxHandler();
+		mainWindow.mapEditingPanel.clearSelectionBox();
 		if (step1Dialog != null)
 		{
 			step1Dialog.dispose();
@@ -250,7 +217,7 @@ public class SubMapDialog
 		cancelButton.addActionListener(e ->
 		{
 			stopPreviewUpdater();
-			mainWindow.mapEditingPanel.clearSelectionBoxHandler();
+			mainWindow.mapEditingPanel.clearSelectionBox();
 			step2Dialog.dispose();
 			step2Dialog = null;
 		});
@@ -301,7 +268,7 @@ public class SubMapDialog
 			public void windowClosing(WindowEvent e)
 			{
 				stopPreviewUpdater();
-				mainWindow.mapEditingPanel.clearSelectionBoxHandler();
+				mainWindow.mapEditingPanel.clearSelectionBox();
 				step2Dialog.dispose();
 				step2Dialog = null;
 			}
@@ -455,7 +422,7 @@ public class SubMapDialog
 			return;
 		}
 		stopPreviewUpdater();
-		mainWindow.mapEditingPanel.clearSelectionBoxHandler();
+		mainWindow.mapEditingPanel.clearSelectionBox();
 		step2Dialog.dispose();
 		step2Dialog = null;
 		mainWindow.loadSettingsIntoGUI(settings);

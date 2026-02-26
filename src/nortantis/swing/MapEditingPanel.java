@@ -17,6 +17,7 @@ import nortantis.platform.ImageHelper.ColorizeAlgorithm;
 import nortantis.util.Range;
 import org.imgscalr.Scalr.Method;
 
+import javax.swing.SwingUtilities;
 import java.awt.*;
 import java.awt.Stroke;
 import java.awt.event.MouseAdapter;
@@ -84,12 +85,16 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private final double smallIconScale = 0.2;
 	private final double mediumIconScale = 0.4;
 	private final double largeIconScale = 0.6;
-	private SelectionBoxHandler selectionBoxHandler;
+	private Runnable selectionBoxChangeListener;
 	/**
 	 * The rectangular selection box if currently shown, resolution invariant.
 	 */
 	private nortantis.geom.Rectangle selectionBoxRI;
-	private MouseMotionListener selectionBoxMotionListener;
+	// Selection box drag state
+	private BoxSelectHandle selectionBoxDraggedHandle;
+	private nortantis.geom.Point selectionBoxDragStartRI;
+	private nortantis.geom.Point selectionBoxDragOffset;
+	private nortantis.geom.Rectangle selectionBoxRIAtDragStart;
 
 	public MapEditingPanel(BufferedImage image)
 	{
@@ -104,6 +109,38 @@ public class MapEditingPanel extends UnscaledImagePanel
 		zoom = 1.0;
 		resolution = 0.0;
 		polylinesToHighlight = new ArrayList<>();
+
+		addMouseListener(new MouseAdapter()
+		{
+			@Override
+			public void mousePressed(MouseEvent e)
+			{
+				onSelectionBoxMousePressed(e);
+			}
+
+			@Override
+			public void mouseReleased(MouseEvent e)
+			{
+				onSelectionBoxMouseReleased(e);
+			}
+		});
+		addMouseMotionListener(new MouseAdapter()
+		{
+			@Override
+			public void mouseMoved(MouseEvent e)
+			{
+				if (selectionBoxRI != null)
+				{
+					repaint();
+				}
+			}
+
+			@Override
+			public void mouseDragged(MouseEvent e)
+			{
+				onSelectionBoxMouseDragged(e);
+			}
+		});
 	}
 
 	public void showBrush(java.awt.Point location, int brushDiameter)
@@ -960,42 +997,32 @@ public class MapEditingPanel extends UnscaledImagePanel
 		return new nortantis.geom.Point(graphX / res, graphY / res);
 	}
 
-	public void setSelectionBoxHandler(SelectionBoxHandler handler)
+	/**
+	 * Enables selection box mode. The listener is called whenever the selection box is created or modified by the user.
+	 */
+	public void enableSelectionBox(Runnable onChange)
 	{
-		this.selectionBoxHandler = handler;
+		this.selectionBoxChangeListener = onChange;
 	}
 
-	public void clearSelectionBoxHandler()
+	public boolean isSelectionBoxActive()
 	{
-		this.selectionBoxHandler = null;
+		return selectionBoxChangeListener != null;
+	}
+
+	public void clearSelectionBox()
+	{
+		this.selectionBoxChangeListener = null;
 		this.selectionBoxRI = null;
-		if (selectionBoxMotionListener != null)
-		{
-			removeMouseMotionListener(selectionBoxMotionListener);
-			selectionBoxMotionListener = null;
-		}
+		this.selectionBoxDraggedHandle = null;
+		this.selectionBoxDragStartRI = null;
+		this.selectionBoxRIAtDragStart = null;
+		this.selectionBoxDragOffset = null;
 		repaint();
-	}
-
-	public SelectionBoxHandler getSelectionBoxHandler()
-	{
-		return selectionBoxHandler;
 	}
 
 	public void setSelectionBoxRI(nortantis.geom.Rectangle rect)
 	{
-		if (this.selectionBoxRI == null && rect != null)
-		{
-			selectionBoxMotionListener = new MouseAdapter()
-			{
-				@Override
-				public void mouseMoved(MouseEvent e)
-				{
-					repaint();
-				}
-			};
-			addMouseMotionListener(selectionBoxMotionListener);
-		}
 		this.selectionBoxRI = rect;
 		repaint();
 	}
@@ -1003,6 +1030,114 @@ public class MapEditingPanel extends UnscaledImagePanel
 	public nortantis.geom.Rectangle getSelectionBoxRI()
 	{
 		return selectionBoxRI;
+	}
+
+	private void onSelectionBoxMousePressed(MouseEvent e)
+	{
+		if (selectionBoxChangeListener == null || !SwingUtilities.isLeftMouseButton(e))
+		{
+			return;
+		}
+		selectionBoxDragStartRI = screenToRI(e.getPoint());
+		selectionBoxRIAtDragStart = selectionBoxRI;
+		selectionBoxDraggedHandle = selectionBoxRI != null ? getSelectionBoxHandleMouseIsIn() : BoxSelectHandle.NONE;
+
+		// Compute the offset from the click point to the edge(s) being moved,
+		// so dragging doesn't snap the edge to the cursor on the first move event.
+		double offsetX = 0, offsetY = 0;
+		if (selectionBoxRIAtDragStart != null && selectionBoxDraggedHandle != BoxSelectHandle.NONE
+				&& selectionBoxDraggedHandle != BoxSelectHandle.CENTER)
+		{
+			double left = selectionBoxRIAtDragStart.x;
+			double top = selectionBoxRIAtDragStart.y;
+			double right = left + selectionBoxRIAtDragStart.width;
+			double bottom = top + selectionBoxRIAtDragStart.height;
+			BoxSelectHandle h = selectionBoxDraggedHandle;
+			if (h == BoxSelectHandle.LEFT || h == BoxSelectHandle.UPPER_LEFT || h == BoxSelectHandle.LOWER_LEFT)
+				offsetX = left - selectionBoxDragStartRI.x;
+			if (h == BoxSelectHandle.RIGHT || h == BoxSelectHandle.UPPER_RIGHT || h == BoxSelectHandle.LOWER_RIGHT)
+				offsetX = right - selectionBoxDragStartRI.x;
+			if (h == BoxSelectHandle.TOP || h == BoxSelectHandle.UPPER_LEFT || h == BoxSelectHandle.UPPER_RIGHT)
+				offsetY = top - selectionBoxDragStartRI.y;
+			if (h == BoxSelectHandle.BOTTOM || h == BoxSelectHandle.LOWER_LEFT || h == BoxSelectHandle.LOWER_RIGHT)
+				offsetY = bottom - selectionBoxDragStartRI.y;
+		}
+		selectionBoxDragOffset = new nortantis.geom.Point(offsetX, offsetY);
+	}
+
+	private void onSelectionBoxMouseDragged(MouseEvent e)
+	{
+		if (selectionBoxChangeListener == null || selectionBoxDragStartRI == null || !SwingUtilities.isLeftMouseButton(e))
+		{
+			return;
+		}
+		nortantis.geom.Point currentRI = screenToRI(e.getPoint());
+		nortantis.geom.Rectangle newBox = computeNewSelectionBox(selectionBoxDraggedHandle, currentRI);
+		if (newBox != null && newBox.width > 0 && newBox.height > 0)
+		{
+			setSelectionBoxRI(newBox);
+			selectionBoxChangeListener.run();
+		}
+	}
+
+	private void onSelectionBoxMouseReleased(MouseEvent e)
+	{
+		if (!SwingUtilities.isLeftMouseButton(e))
+		{
+			return;
+		}
+		selectionBoxDraggedHandle = null;
+		selectionBoxDragStartRI = null;
+		selectionBoxRIAtDragStart = null;
+		selectionBoxDragOffset = null;
+	}
+
+	/**
+	 * Computes the new selection box rectangle given the handle being dragged and the current mouse position in RI coordinates.
+	 * Returns null if the handle is unrecognized.
+	 */
+	private nortantis.geom.Rectangle computeNewSelectionBox(BoxSelectHandle handle, nortantis.geom.Point currentRI)
+	{
+		if (handle == null || handle == BoxSelectHandle.NONE)
+		{
+			// Draw a new box from scratch.
+			return nortantis.geom.Rectangle.fromCorners(selectionBoxDragStartRI.x, selectionBoxDragStartRI.y, currentRI.x, currentRI.y);
+		}
+
+		if (handle == BoxSelectHandle.CENTER)
+		{
+			// Translate the whole box.
+			double dx = currentRI.x - selectionBoxDragStartRI.x;
+			double dy = currentRI.y - selectionBoxDragStartRI.y;
+			return new nortantis.geom.Rectangle(selectionBoxRIAtDragStart.x + dx, selectionBoxRIAtDragStart.y + dy,
+					selectionBoxRIAtDragStart.width, selectionBoxRIAtDragStart.height);
+		}
+
+		// For edge and corner handles, compute fixed and moving edges from the box at drag start.
+		double left = selectionBoxRIAtDragStart.x;
+		double top = selectionBoxRIAtDragStart.y;
+		double right = left + selectionBoxRIAtDragStart.width;
+		double bottom = top + selectionBoxRIAtDragStart.height;
+
+		if (handle == BoxSelectHandle.UPPER_LEFT || handle == BoxSelectHandle.LEFT || handle == BoxSelectHandle.LOWER_LEFT)
+		{
+			left = currentRI.x + selectionBoxDragOffset.x;
+		}
+		if (handle == BoxSelectHandle.UPPER_RIGHT || handle == BoxSelectHandle.RIGHT || handle == BoxSelectHandle.LOWER_RIGHT)
+		{
+			right = currentRI.x + selectionBoxDragOffset.x;
+		}
+		if (handle == BoxSelectHandle.UPPER_LEFT || handle == BoxSelectHandle.TOP || handle == BoxSelectHandle.UPPER_RIGHT)
+		{
+			top = currentRI.y + selectionBoxDragOffset.y;
+		}
+		if (handle == BoxSelectHandle.LOWER_LEFT || handle == BoxSelectHandle.BOTTOM || handle == BoxSelectHandle.LOWER_RIGHT)
+		{
+			bottom = currentRI.y + selectionBoxDragOffset.y;
+		}
+
+		// Normalize so width/height stay positive if the user drags past the opposite edge.
+		return nortantis.geom.Rectangle.fromCorners(left, top, right, bottom);
 	}
 
 	final double boxSelectHandleSizePercent = 0.2;
@@ -1022,7 +1157,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		g2.setColor(processingColor);
 		g2.setStroke(new BasicStroke(1.5f));
 		BoxSelectHandle boxHandle = getSelectionBoxHandleMouseIsIn();
-		if (boxHandle != null && (boxHandle == BoxSelectHandle.NONE || boxHandle.isCorner()))
+		if (boxHandle != null && (boxHandle == BoxSelectHandle.NONE || boxHandle == BoxSelectHandle.CENTER || boxHandle.isCorner()))
 		{
 			for (BoxSelectHandle handle : new BoxSelectHandle[] { BoxSelectHandle.UPPER_LEFT, BoxSelectHandle.UPPER_RIGHT, BoxSelectHandle.LOWER_LEFT, BoxSelectHandle.LOWER_RIGHT })
 			{
@@ -1053,6 +1188,17 @@ public class MapEditingPanel extends UnscaledImagePanel
 		g2.setColor(highlightEditColor);
 		g2.drawRect(x, y, width, height);
 		g2.setStroke(prevStroke);
+
+		// Move icon centered in the box, only if it fits within the CENTER handle area
+		Rectangle centerHandle = getSelectionBoxHandleLocation(BoxSelectHandle.CENTER);
+		if (moveIconScaledSmall != null && centerHandle != null
+				&& moveIconScaledSmall.getWidth() <= centerHandle.width
+				&& moveIconScaledSmall.getHeight() <= centerHandle.height)
+		{
+			int iconX = centerHandle.x + (int) Math.round(centerHandle.width / 2.0) - (int) Math.round(moveIconScaledSmall.getWidth() / 2.0);
+			int iconY = centerHandle.y + (int) Math.round(centerHandle.height / 2.0) - (int) Math.round(moveIconScaledSmall.getHeight() / 2.0);
+			g2.drawImage(moveIconScaledSmall, iconX, iconY, null);
+		}
 	}
 
 	private IntRectangle getSelectionBoxScaledByResolution()
@@ -1139,13 +1285,17 @@ public class MapEditingPanel extends UnscaledImagePanel
 		{
 			return new Rectangle(x + handleWidth, y + (height - handleHeight), width - handleWidth * 2, handleHeight);
 		}
+		if (boxHandle == BoxSelectHandle.CENTER)
+		{
+			return new Rectangle(x + handleWidth, y + handleHeight, width - handleWidth * 2, height - handleHeight * 2);
+		}
 		return null;
 	}
 
 
 	public enum BoxSelectHandle
 	{
-		NONE, LEFT, RIGHT, TOP, BOTTOM, UPPER_LEFT, UPPER_RIGHT, LOWER_LEFT, LOWER_RIGHT;
+		NONE, LEFT, RIGHT, TOP, BOTTOM, UPPER_LEFT, UPPER_RIGHT, LOWER_LEFT, LOWER_RIGHT, CENTER;
 
 		public boolean isCorner()
 		{
@@ -1174,20 +1324,6 @@ public class MapEditingPanel extends UnscaledImagePanel
 		clearHighlightedAreas();
 		clearProcessingAreas();
 		repaint();
-	}
-
-	/**
-	 * Callback interface for handling mouse events when a selection box is being drawn on the map.
-	 */
-	public interface SelectionBoxHandler
-	{
-		void onMousePressed(java.awt.Point screenPoint);
-
-		void onMouseDragged(java.awt.Point screenPoint);
-
-		void onMouseReleased(java.awt.Point screenPoint);
-
-		void onMouseMoved(java.awt.Point screenPoint);
 	}
 
 }
