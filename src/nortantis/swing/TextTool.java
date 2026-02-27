@@ -10,7 +10,6 @@ import nortantis.platform.Color;
 import nortantis.platform.DrawQuality;
 import nortantis.platform.Font;
 import nortantis.platform.awt.AwtBridge;
-import nortantis.swing.translation.TranslatedEnumRenderer;
 import nortantis.swing.translation.Translation;
 import nortantis.util.Assets;
 import nortantis.util.OSHelper;
@@ -134,7 +133,6 @@ public class TextTool extends EditorTool
 				}
 			}
 		});
-		textTypeComboBox.setRenderer(new TranslatedEnumRenderer());
 		textTypeHider = organizer.addLabelAndComponent(Translation.get("textTool.textType.label"), "", textTypeComboBox);
 		textTypeForAdds = TextType.City;
 
@@ -144,7 +142,6 @@ public class TextTool extends EditorTool
 		}
 
 		lineBreakComboBox = new JComboBoxFixed<>();
-		lineBreakComboBox.setRenderer(new TranslatedEnumRenderer());
 		lineBreakHider = organizer.addLabelAndComponent(Translation.get("textTool.lineBreak.label"), "", lineBreakComboBox);
 		for (LineBreak type : LineBreak.values())
 		{

@@ -6,6 +6,7 @@ import nortantis.platform.Color;
 import nortantis.platform.Font;
 import nortantis.platform.FontStyle;
 import nortantis.swing.MapEdits;
+import nortantis.swing.translation.Translation;
 import nortantis.util.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -344,7 +345,7 @@ public class MapSettings implements Serializable
 		root.put("fadeConcentricWaves", fadeConcentricWaves);
 		root.put("brokenLinesForConcentricWaves", brokenLinesForConcentricWaves);
 		root.put("jitterToConcentricWaves", jitterToConcentricWaves);
-		root.put("oceanEffect", oceanWavesType.toString());
+		root.put("oceanEffect", enumToJson(oceanWavesType));
 		root.put("drawOceanEffectsInLakes", drawOceanEffectsInLakes);
 		root.put("worldSize", worldSize);
 		root.put("riverColor", colorToString(riverColor));
@@ -372,7 +373,7 @@ public class MapSettings implements Serializable
 		root.put("grungeWidth", grungeWidth);
 		root.put("drawGrunge", drawGrunge);
 		root.put("cityProbability", cityProbability);
-		root.put("lineStyle", lineStyle.toString());
+		root.put("lineStyle", enumToJson(lineStyle));
 		root.put("pointPrecision", pointPrecision);
 		root.put("lloydRelaxationsScale", lloydRelaxationsScale);
 
@@ -385,7 +386,7 @@ public class MapSettings implements Serializable
 		{
 			root.put("backgroundTextureResource", backgroundTextureResource.toJSon());
 		}
-		root.put("backgroundTextureSource", backgroundTextureSource == null ? TextureSource.Assets.toString() : backgroundTextureSource.toString());
+		root.put("backgroundTextureSource", enumToJson(backgroundTextureSource == null ? TextureSource.Assets : backgroundTextureSource));
 		root.put("generateBackgroundFromTexture", generateBackgroundFromTexture);
 		root.put("solidColorBackground", solidColorBackground);
 		root.put("colorizeOcean", colorizeOcean);
@@ -435,8 +436,8 @@ public class MapSettings implements Serializable
 			root.put("borderResource", borderResource.toJSon());
 		}
 		root.put("borderWidth", borderWidth);
-		root.put("borderPosition", borderPosition.toString());
-		root.put("borderColorOption", borderColorOption.toString());
+		root.put("borderPosition", enumToJson(borderPosition));
+		root.put("borderColorOption", enumToJson(borderColorOption));
 		root.put("borderColor", colorToString(borderColor));
 		root.put("frayedBorderSize", frayedBorderSize);
 		root.put("drawRoads", drawRoads);
@@ -451,8 +452,8 @@ public class MapSettings implements Serializable
 		root.put("hillScale", hillScale);
 		root.put("duneScale", duneScale);
 		root.put("cityScale", cityScale);
-		root.put("defaultMapExportAction", defaultMapExportAction != null ? defaultMapExportAction.toString() : defaultDefaultExportAction.toString());
-		root.put("defaultHeightmapExportAction", defaultHeightmapExportAction != null ? defaultHeightmapExportAction.toString() : defaultDefaultExportAction.toString());
+		root.put("defaultMapExportAction", enumToJson(defaultMapExportAction != null ? defaultMapExportAction : defaultDefaultExportAction));
+		root.put("defaultHeightmapExportAction", enumToJson(defaultHeightmapExportAction != null ? defaultHeightmapExportAction : defaultDefaultExportAction));
 
 		root.put("drawOverlayImage", drawOverlayImage);
 		root.put("overlayImagePath", overlayImagePath);
@@ -514,13 +515,13 @@ public class MapSettings implements Serializable
 
 
 		root.put("drawGridOverlay", drawGridOverlay);
-		root.put("gridOverlayShape", gridOverlayShape.toString());
+		root.put("gridOverlayShape", enumToJson(gridOverlayShape));
 		root.put("gridOverlayRowOrColCount", gridOverlayRowOrColCount);
 		root.put("gridOverlayColor", colorToString(gridOverlayColor));
 		root.put("gridOverlayXOffset", gridOverlayXOffset.toString());
 		root.put("gridOverlayYOffset", gridOverlayYOffset.toString());
 		root.put("gridOverlayLineWidth", gridOverlayLineWidth);
-		root.put("gridOverlayLayer", gridOverlayLayer.toString());
+		root.put("gridOverlayLayer", enumToJson(gridOverlayLayer));
 		root.put("drawVoronoiGridOverlayOnlyOnLand", drawVoronoiGridOverlayOnlyOnLand);
 
 		// User edits.
@@ -554,10 +555,10 @@ public class MapSettings implements Serializable
 			{
 				mpObj.put("angle", text.angle);
 			}
-			mpObj.put("type", text.type.toString());
+			mpObj.put("type", enumToJson(text.type));
 			if (text.lineBreak != LineBreak.Auto)
 			{
-				mpObj.put("lineBreak", text.lineBreak.toString());
+				mpObj.put("lineBreak", enumToJson(text.lineBreak));
 			}
 			if (text.colorOverride != null)
 			{
@@ -723,11 +724,16 @@ public class MapSettings implements Serializable
 		return strokeToJson(regionBoundaryStyle);
 	}
 
+	private static <E extends Enum<E>> String enumToJson(E value)
+	{
+		return value.name().replace("_", " ");
+	}
+
 	@SuppressWarnings("unchecked")
 	private JSONObject strokeToJson(Stroke stroke)
 	{
 		JSONObject obj = new JSONObject();
-		obj.put("type", stroke.type.toString());
+		obj.put("type", enumToJson(stroke.type));
 		obj.put("width", stroke.width);
 		return obj;
 	}
@@ -2262,7 +2268,7 @@ public class MapSettings implements Serializable
 
 		public String toString()
 		{
-			return name().replace("_", " ");
+			return Translation.get("GridOverlayLayer." + name());
 		}
 	}
 

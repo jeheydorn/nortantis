@@ -159,7 +159,7 @@ public class UserPreferences
 	public void save()
 	{
 		Properties props = new Properties();
-		props.setProperty("editorImageQuality", editorImageQuality.toString());
+		props.setProperty("editorImageQuality", editorImageQuality.name().replace("_", " "));
 		props.setProperty("recentMapFilePaths", String.join("\t", recentMapFilePaths));
 		props.setProperty("defaultCustomImagesPath", defaultCustomImagesPath == null ? "" : defaultCustomImagesPath);
 		props.setProperty("showNewMapWithSameThemeRegionColorsMessage", hideNewMapWithSameThemeRegionColorsMessage + "");

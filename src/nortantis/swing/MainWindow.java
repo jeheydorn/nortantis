@@ -915,9 +915,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			// Create the theme menu
 			JMenu themeMenu = new JMenu(Translation.get("menu.view.theme"));
 
-			JRadioButtonMenuItem darkTheme = new JRadioButtonMenuItem(Translation.enumDisplayName(LookAndFeel.Dark));
-			JRadioButtonMenuItem lightTheme = new JRadioButtonMenuItem(Translation.enumDisplayName(LookAndFeel.Light));
-			JRadioButtonMenuItem systemTheme = new JRadioButtonMenuItem(Translation.enumDisplayName(LookAndFeel.System));
+			JRadioButtonMenuItem darkTheme = new JRadioButtonMenuItem(LookAndFeel.Dark.toString());
+			JRadioButtonMenuItem lightTheme = new JRadioButtonMenuItem(LookAndFeel.Light.toString());
+			JRadioButtonMenuItem systemTheme = new JRadioButtonMenuItem(LookAndFeel.System.toString());
 
 			ButtonGroup themeGroup = new ButtonGroup();
 			themeGroup.add(darkTheme);

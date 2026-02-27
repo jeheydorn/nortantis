@@ -18,7 +18,6 @@ import nortantis.platform.Image;
 import nortantis.platform.ImageHelper;
 import nortantis.platform.ImageType;
 import nortantis.platform.awt.AwtBridge;
-import nortantis.swing.translation.TranslatedEnumRenderer;
 import nortantis.swing.translation.Translation;
 import nortantis.util.*;
 import org.apache.commons.io.FilenameUtils;
@@ -349,7 +348,6 @@ public class ThemePanel extends JTabbedPane
 		organizer.addLeftAlignedComponent(drawRegionBoundariesCheckbox);
 
 		regionBoundaryTypeComboBox = new JComboBox<>(StrokeType.values());
-		regionBoundaryTypeComboBox.setRenderer(new TranslatedEnumRenderer());
 		regionBoundaryTypeComboBoxHider = organizer.addLabelAndComponent(Translation.get("theme.style.label"), Translation.get("theme.regionBoundaryStyle.help"), regionBoundaryTypeComboBox);
 		createMapChangeListenerForTerrainChange(regionBoundaryTypeComboBox);
 
@@ -384,7 +382,6 @@ public class ThemePanel extends JTabbedPane
 		colorizeLandCheckboxHider = organizer.addLeftAlignedComponent(colorizeLandCheckbox);
 
 		landColoringMethodComboBox = new JComboBox<LandColoringMethod>();
-		landColoringMethodComboBox.setRenderer(new TranslatedEnumRenderer());
 		for (LandColoringMethod method : LandColoringMethod.values())
 		{
 			landColoringMethodComboBox.addItem(method);
@@ -523,7 +520,6 @@ public class ThemePanel extends JTabbedPane
 
 			{
 				gridOverlayShapeComboBox = new JComboBox<GridOverlayShape>();
-				gridOverlayShapeComboBox.setRenderer(new TranslatedEnumRenderer());
 				for (GridOverlayShape option : GridOverlayShape.values())
 				{
 					gridOverlayShapeComboBox.addItem(option);
@@ -593,7 +589,15 @@ public class ThemePanel extends JTabbedPane
 
 			{
 				gridOverlayXOffsetComboBox = new JComboBox<GridOverlayOffset>();
-				gridOverlayXOffsetComboBox.setRenderer(new TranslatedEnumRenderer());
+				gridOverlayXOffsetComboBox.setRenderer(new DefaultListCellRenderer()
+				{
+					public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus)
+					{
+						super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+						if (value instanceof GridOverlayOffset o) setText(o.displayName());
+						return this;
+					}
+				});
 				for (GridOverlayOffset option : GridOverlayOffset.values())
 				{
 					gridOverlayXOffsetComboBox.addItem(option);
@@ -604,7 +608,15 @@ public class ThemePanel extends JTabbedPane
 
 			{
 				gridOverlayYOffsetComboBox = new JComboBox<GridOverlayOffset>();
-				gridOverlayYOffsetComboBox.setRenderer(new TranslatedEnumRenderer());
+				gridOverlayYOffsetComboBox.setRenderer(new DefaultListCellRenderer()
+				{
+					public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus)
+					{
+						super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+						if (value instanceof GridOverlayOffset o) setText(o.displayName());
+						return this;
+					}
+				});
 				for (GridOverlayOffset option : GridOverlayOffset.values())
 				{
 					gridOverlayYOffsetComboBox.addItem(option);
@@ -615,7 +627,6 @@ public class ThemePanel extends JTabbedPane
 
 			{
 				gridOverlayLayerComboBox = new JComboBox<GridOverlayLayer>();
-				gridOverlayLayerComboBox.setRenderer(new TranslatedEnumRenderer());
 				for (GridOverlayLayer option : GridOverlayLayer.values())
 				{
 					gridOverlayLayerComboBox.addItem(option);
@@ -671,7 +682,6 @@ public class ThemePanel extends JTabbedPane
 
 		{
 			borderPositionComboBox = new JComboBox<BorderPosition>();
-			borderPositionComboBox.setRenderer(new TranslatedEnumRenderer());
 			for (BorderPosition option : BorderPosition.values())
 			{
 				borderPositionComboBox.addItem(option);
@@ -681,7 +691,6 @@ public class ThemePanel extends JTabbedPane
 		}
 
 		borderColorOptionComboBox = new JComboBox<BorderColorOption>();
-		borderColorOptionComboBox.setRenderer(new TranslatedEnumRenderer());
 		borderColorOptionComboBox.addActionListener(new ActionListener()
 		{
 			@Override
@@ -913,7 +922,7 @@ public class ThemePanel extends JTabbedPane
 			coastShadingColorHider = organizer.addLabelAndComponentsHorizontal(coastShadingColorLabelText, Translation.get("theme.coastShadingColor.help"),
 					Arrays.asList(coastShadingColorDisplay, btnChooseCoastShadingColor), SwingHelper.colorPickerLeftPadding);
 
-			final String message = Translation.get("theme.coastShadingColor.disabled", Translation.enumDisplayName(LandColoringMethod.ColorPoliticalRegions));
+			final String message = Translation.get("theme.coastShadingColor.disabled", LandColoringMethod.ColorPoliticalRegions.toString());
 			coastShadingColorDisabledMessageHider = organizer.addLabelAndComponent(coastShadingColorLabelText, "", new JLabel(message));
 			coastShadingColorDisabledMessageHider.setVisible(false);
 		}
@@ -1060,7 +1069,6 @@ public class ThemePanel extends JTabbedPane
 			organizer.addLeftAlignedComponent(drawRoadsCheckbox);
 
 			roadStyleComboBox = new JComboBox<>(StrokeType.values());
-			roadStyleComboBox.setRenderer(new TranslatedEnumRenderer());
 			roadStyleComboBoxHider = organizer.addLabelAndComponent(Translation.get("theme.roadStyle.label"), Translation.get("theme.roadStyle.help"), roadStyleComboBox);
 			createMapChangeListenerForTerrainChange(roadStyleComboBox);
 
@@ -2123,19 +2131,12 @@ public class ThemePanel extends JTabbedPane
 
 	public enum LandColoringMethod
 	{
-		SingleColor("Single Color"), ColorPoliticalRegions("Color Political Regions");
-
-		private final String name;
-
-		private LandColoringMethod(String name)
-		{
-			this.name = name;
-		}
+		SingleColor, ColorPoliticalRegions;
 
 		@Override
 		public String toString()
 		{
-			return name;
+			return Translation.get("LandColoringMethod." + name());
 		}
 	}
 

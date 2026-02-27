@@ -1,5 +1,7 @@
 package nortantis;
 
+import nortantis.swing.translation.Translation;
+
 public enum StrokeType
 {
 	Solid, Dashes, Rounded_Dashes, Dots;
@@ -7,6 +9,6 @@ public enum StrokeType
 	@Override
 	public String toString()
 	{
-		return name().replace('_', ' ');
+		return Translation.get("StrokeType." + name());
 	}
 }

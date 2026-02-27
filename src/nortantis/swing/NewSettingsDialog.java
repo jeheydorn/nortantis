@@ -13,7 +13,6 @@ import nortantis.platform.Image;
 import nortantis.platform.ImageHelper;
 import nortantis.platform.awt.AwtBridge;
 import nortantis.swing.ThemePanel.LandColoringMethod;
-import nortantis.swing.translation.TranslatedEnumRenderer;
 import nortantis.swing.translation.Translation;
 import nortantis.util.*;
 import org.apache.commons.lang3.StringUtils;
@@ -294,7 +293,6 @@ public class NewSettingsDialog extends JDialog
 		{
 			dimensionsComboBox.addItem(dimension);
 		}
-		dimensionsComboBox.setRenderer(new TranslatedEnumRenderer());
 		createMapChangeListener(dimensionsComboBox);
 		organizer.addLabelAndComponent(Translation.get("newSettingsDialog.dimensions.label"), Translation.get("newSettingsDialog.dimensions.help"), dimensionsComboBox);
 
@@ -314,7 +312,6 @@ public class NewSettingsDialog extends JDialog
 		{
 			landShapeComboBox.addItem(shape);
 		}
-		landShapeComboBox.setRenderer(new TranslatedEnumRenderer());
 		createMapChangeListener(landShapeComboBox);
 		organizer.addLabelAndComponent(Translation.get("newSettingsDialog.landShape.label"), Translation.get("newSettingsDialog.landShape.help"), landShapeComboBox);
 
@@ -345,7 +342,6 @@ public class NewSettingsDialog extends JDialog
 			landColoringMethodComboBox.addItem(method);
 		}
 
-		landColoringMethodComboBox.setRenderer(new TranslatedEnumRenderer());
 		createMapChangeListener(landColoringMethodComboBox);
 		organizer.addLabelAndComponent(Translation.get("theme.landColoringMethod.label"), Translation.get("theme.landColoringMethod.help"), landColoringMethodComboBox);
 

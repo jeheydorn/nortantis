@@ -1,5 +1,7 @@
 package nortantis;
 
+import nortantis.swing.translation.Translation;
+
 import org.apache.commons.lang3.StringUtils;
 
 public enum GridOverlayOffset
@@ -46,6 +48,11 @@ public enum GridOverlayOffset
 			return threeQuarters;
 		}
 		throw new IllegalArgumentException("Invalid GridOverlayPosition string: " + string);
+	}
+
+	public String displayName()
+	{
+		return Translation.get("GridOverlayOffset." + name());
 	}
 
 	public float getScale()

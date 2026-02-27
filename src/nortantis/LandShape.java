@@ -1,11 +1,13 @@
 package nortantis;
 
+import nortantis.swing.translation.Translation;
+
 public enum LandShape
 {
 	Continents, Inland_Sea, Scattered;
 
 	public String toString()
 	{
-		return name().replace("_", " ");
+		return Translation.get("LandShape." + name());
 	}
 }

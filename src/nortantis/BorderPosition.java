@@ -1,11 +1,13 @@
 package nortantis;
 
+import nortantis.swing.translation.Translation;
+
 public enum BorderPosition
 {
 	Outside_map, Over_map;
 
 	public String toString()
 	{
-		return name().replace("_", " ");
+		return Translation.get("BorderPosition." + name());
 	}
 }

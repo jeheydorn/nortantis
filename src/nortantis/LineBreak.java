@@ -1,11 +1,13 @@
 package nortantis;
 
+import nortantis.swing.translation.Translation;
+
 public enum LineBreak
 {
 	Auto, One_line, Two_lines;
 
 	public String toString()
 	{
-		return name().replace("_", " ");
+		return Translation.get("LineBreak." + name());
 	}
 }

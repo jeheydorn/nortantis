@@ -20,7 +20,7 @@ public enum GeneratedDimension
 
 	public String displayName()
 	{
-		return Translation.enumDisplayName(this);
+		return Translation.get("GeneratedDimension." + name());
 	}
 
 	public double aspectRatio()

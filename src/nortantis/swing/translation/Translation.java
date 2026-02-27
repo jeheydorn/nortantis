@@ -70,19 +70,6 @@ public class Translation
 		}
 	}
 
-	public static <E extends Enum<E>> String enumDisplayName(E value)
-	{
-		String key = value.getClass().getSimpleName() + "." + value.name();
-		try
-		{
-			return bundle.getString(key);
-		}
-		catch (MissingResourceException e)
-		{
-			return value.toString();
-		}
-	}
-
 	public static List<Locale> getSupportedLocales()
 	{
 		return supportedLocales;
