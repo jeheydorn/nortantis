@@ -3,6 +3,7 @@ package nortantis.swing;
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import nortantis.swing.translation.Translation;
 
 public class ControlClickBehaviorWidget
 {
@@ -37,11 +38,11 @@ public class ControlClickBehaviorWidget
 			}
 		};
 
-		selectModeButton = new JToggleButton("Select");
+		selectModeButton = new JToggleButton(Translation.get("iconsTool.ctrlClickBehavior.select"));
 		selectModeButton.setSelected(true);
 		selectModeButton.addActionListener(modeListener);
 
-		unselectModeButton = new JToggleButton("Unselect");
+		unselectModeButton = new JToggleButton(Translation.get("iconsTool.ctrlClickBehavior.unselect"));
 		unselectModeButton.addActionListener(modeListener);
 	}
 
@@ -54,7 +55,7 @@ public class ControlClickBehaviorWidget
 		container.add(selectModeButton);
 		container.add(unselectModeButton);
 
-		return organizer.addLabelAndComponent("Ctrl-click behavior:", "Whether to add or remove icons from the selection when Ctrl is held while clicking or dragging the mouse.", container);
+		return organizer.addLabelAndComponent(Translation.get("iconsTool.ctrlClickBehavior.label"), Translation.get("iconsTool.ctrlClickBehavior.help"), container);
 	}
 
 	public boolean isSelectMode()

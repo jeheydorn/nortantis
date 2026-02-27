@@ -15,6 +15,7 @@ import javax.swing.text.JTextComponent;
 import javax.swing.text.Position;
 import java.awt.*;
 import java.awt.event.*;
+import nortantis.swing.translation.Translation;
 
 /**
  * The <code>JFontChooser</code> class is a swing component for font selection. This class has <code>JFileChooser</code> like APIs. The
@@ -549,7 +550,7 @@ public class JFontChooser extends JComponent
 			this.dialog = dialog;
 			putValue(Action.DEFAULT, ACTION_NAME);
 			putValue(Action.ACTION_COMMAND_KEY, ACTION_NAME);
-			putValue(Action.NAME, (ACTION_NAME));
+			putValue(Action.NAME, Translation.get("common.ok"));
 		}
 
 		public void actionPerformed(ActionEvent e)
@@ -569,7 +570,7 @@ public class JFontChooser extends JComponent
 			this.dialog = dialog;
 			putValue(Action.DEFAULT, ACTION_NAME);
 			putValue(Action.ACTION_COMMAND_KEY, ACTION_NAME);
-			putValue(Action.NAME, (ACTION_NAME));
+			putValue(Action.NAME, Translation.get("common.cancel"));
 		}
 
 		public void actionPerformed(ActionEvent e)
@@ -582,7 +583,7 @@ public class JFontChooser extends JComponent
 	protected JDialog createDialog(Component parent)
 	{
 		Frame frame = parent instanceof Frame ? (Frame) parent : (Frame) SwingUtilities.getAncestorOfClass(Frame.class, parent);
-		JDialog dialog = new JDialog(frame, ("Select Font"), true);
+		JDialog dialog = new JDialog(frame, Translation.get("fontChooser.title"), true);
 
 		Action okAction = new DialogOKAction(dialog);
 		Action cancelAction = new DialogCancelAction(dialog);
@@ -640,7 +641,7 @@ public class JFontChooser extends JComponent
 			p.add(getFontFamilyTextField(), BorderLayout.NORTH);
 			p.add(scrollPane, BorderLayout.CENTER);
 
-			JLabel label = new JLabel(("Font Name"));
+			JLabel label = new JLabel(Translation.get("fontChooser.fontName"));
 			label.setHorizontalAlignment(JLabel.LEFT);
 			label.setHorizontalTextPosition(JLabel.LEFT);
 			label.setLabelFor(getFontFamilyTextField());
@@ -671,7 +672,7 @@ public class JFontChooser extends JComponent
 			p.add(getFontStyleTextField(), BorderLayout.NORTH);
 			p.add(scrollPane, BorderLayout.CENTER);
 
-			JLabel label = new JLabel(("Font Style"));
+			JLabel label = new JLabel(Translation.get("fontChooser.fontStyle"));
 			label.setHorizontalAlignment(JLabel.LEFT);
 			label.setHorizontalTextPosition(JLabel.LEFT);
 			label.setLabelFor(getFontStyleTextField());
@@ -701,7 +702,7 @@ public class JFontChooser extends JComponent
 			p.add(getFontSizeTextField(), BorderLayout.NORTH);
 			p.add(scrollPane, BorderLayout.CENTER);
 
-			JLabel label = new JLabel(("Font Size"));
+			JLabel label = new JLabel(Translation.get("fontChooser.fontSize"));
 			label.setHorizontalAlignment(JLabel.LEFT);
 			label.setHorizontalTextPosition(JLabel.LEFT);
 			label.setLabelFor(getFontSizeTextField());
@@ -717,7 +718,7 @@ public class JFontChooser extends JComponent
 	{
 		if (samplePanel == null)
 		{
-			Border titledBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), ("Sample"));
+			Border titledBorder = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), Translation.get("fontChooser.sample"));
 			Border empty = BorderFactory.createEmptyBorder(5, 10, 10, 10);
 			Border border = BorderFactory.createCompoundBorder(titledBorder, empty);
 
@@ -736,7 +737,7 @@ public class JFontChooser extends JComponent
 		{
 			Border lowered = BorderFactory.createLoweredBevelBorder();
 
-			sampleText = new JTextField(("AaBbYyZz"));
+			sampleText = new JTextField(Translation.get("fontChooser.sampleText"));
 			sampleText.setBorder(lowered);
 			sampleText.setPreferredSize(new Dimension(300, 100));
 		}
@@ -759,10 +760,10 @@ public class JFontChooser extends JComponent
 		{
 			int i = 0;
 			fontStyleNames = new String[4];
-			fontStyleNames[i++] = ("Plain");
-			fontStyleNames[i++] = ("Bold");
-			fontStyleNames[i++] = ("Italic");
-			fontStyleNames[i++] = ("BoldItalic");
+			fontStyleNames[i++] = Translation.get("fontChooser.plain");
+			fontStyleNames[i++] = Translation.get("fontChooser.bold");
+			fontStyleNames[i++] = Translation.get("fontChooser.italic");
+			fontStyleNames[i++] = Translation.get("fontChooser.boldItalic");
 		}
 		return fontStyleNames;
 	}

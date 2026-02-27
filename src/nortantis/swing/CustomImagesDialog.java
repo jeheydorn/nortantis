@@ -45,28 +45,36 @@ public class CustomImagesDialog extends JDialog
 		organizer.addLeftAlignedComponent(new JLabel("<html>" + Translation.get("customImages.description") + "</html>"), space, space, false);
 
 		int spaceBetweenPaths = 2;
-		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "background textures" + File.separator + "<background texture images>"), space, spaceBetweenPaths,
-				false);
-		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "borders" + File.separator + "<border type>" + File.separator + "<border images>"), space,
+		String cif = Translation.get("customImages.placeholder.customImagesFolder");
+		organizer.addLeftAlignedComponent(new JLabel(cif + File.separator + "background textures" + File.separator + Translation.get("customImages.placeholder.backgroundTextureImages")), space,
 				spaceBetweenPaths, false);
-		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "cities" + File.separator + "<city type>" + File.separator + "<city images>"), spaceBetweenPaths,
-				spaceBetweenPaths, false);
-		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "decorations" + File.separator + "<decoration type>" + File.separator + "<decoration images>"),
+		organizer.addLeftAlignedComponent(
+				new JLabel(cif + File.separator + "borders" + File.separator + Translation.get("customImages.placeholder.borderType") + File.separator + Translation.get("customImages.placeholder.borderImages")),
+				space, spaceBetweenPaths, false);
+		organizer.addLeftAlignedComponent(
+				new JLabel(cif + File.separator + "cities" + File.separator + Translation.get("customImages.placeholder.cityType") + File.separator + Translation.get("customImages.placeholder.cityImages")),
 				spaceBetweenPaths, spaceBetweenPaths, false);
-		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "hills" + File.separator + "<hill type>" + File.separator + "<hill images>"), spaceBetweenPaths,
-				spaceBetweenPaths, false);
-		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "mountains" + File.separator + "<mountain type>" + File.separator + "<mountain images>"),
+		organizer.addLeftAlignedComponent(
+				new JLabel(cif + File.separator + "decorations" + File.separator + Translation.get("customImages.placeholder.decorationType") + File.separator + Translation.get("customImages.placeholder.decorationImages")),
 				spaceBetweenPaths, spaceBetweenPaths, false);
-		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "sand" + File.separator + "<dune type>" + File.separator + "<sand dune images>"), spaceBetweenPaths,
-				spaceBetweenPaths, false);
-		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "trees" + File.separator + "<tree type>" + File.separator + "<tree images>"), spaceBetweenPaths,
-				spaceBetweenPaths, false);
+		organizer.addLeftAlignedComponent(
+				new JLabel(cif + File.separator + "hills" + File.separator + Translation.get("customImages.placeholder.hillType") + File.separator + Translation.get("customImages.placeholder.hillImages")),
+				spaceBetweenPaths, spaceBetweenPaths, false);
+		organizer.addLeftAlignedComponent(
+				new JLabel(cif + File.separator + "mountains" + File.separator + Translation.get("customImages.placeholder.mountainType") + File.separator + Translation.get("customImages.placeholder.mountainImages")),
+				spaceBetweenPaths, spaceBetweenPaths, false);
+		organizer.addLeftAlignedComponent(
+				new JLabel(cif + File.separator + "sand" + File.separator + Translation.get("customImages.placeholder.duneType") + File.separator + Translation.get("customImages.placeholder.sandDuneImages")),
+				spaceBetweenPaths, spaceBetweenPaths, false);
+		organizer.addLeftAlignedComponent(
+				new JLabel(cif + File.separator + "trees" + File.separator + Translation.get("customImages.placeholder.treeType") + File.separator + Translation.get("customImages.placeholder.treeImages")),
+				spaceBetweenPaths, spaceBetweenPaths, false);
 
 		organizer.addLeftAlignedComponent(new JLabel("<html>" + Translation.get("customImages.folderStructureNote") + "</html>"), space, space, false);
 		organizer.addLeftAlignedComponent(new JLabel("<html>" + Translation.get("customImages.iconSizing") + "</html>"), space, space, false);
 		organizer.addLeftAlignedComponent(new JLabel("<html>" + Translation.get("customImages.borderImageNames") + "</html>"), space, space, false);
 
-		organizer.addLeftAlignedComponent(new JLabel("<html>" + Translation.get("customImages.treeTypes") + "</html>"), space, space, false);
+		organizer.addLeftAlignedComponent(new JLabel("<html>" + Translation.get("customImages.treeTypes", Translation.get("customImages.placeholder.treeType")) + "</html>"), space, space, false);
 
 		organizer.addLeftAlignedComponent(new JLabel("<html>" + Translation.get("customImages.hillMountainPairing") + "</html>"), space, space, false);
 

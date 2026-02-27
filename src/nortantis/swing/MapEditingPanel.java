@@ -607,7 +607,6 @@ public class MapEditingPanel extends UnscaledImagePanel
 		}
 		Rectangle editBounds = AwtFactory.toAwtRectangle(iconToEditBounds.scaleAboutOrigin(resolution));
 
-		int padding = (int) (9 * resolution);
 		if (showEditBox)
 		{
 			if (highlightedAreas != null && highlightedAreas.size() != 1)
@@ -649,6 +648,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 			}
 		}
 
+		int padding = (int) (9 * resolution);
 		// Place the image for the scale tool.
 		{
 			BufferedImage scaleIcon;
