@@ -57,7 +57,7 @@ public class SubMapDialog
 	private MapEditingPanel previewPanel;
 	private JPanel previewContainer;
 	private volatile MapSettings lastSubMapSettings;
-	private JLabel polygonCountLabel;
+	private SliderWithDisplayedValue detailSliderWithValue;
 	private JLabel errorLabel;
 	private JButton createButton;
 	private JSlider detailSlider;
@@ -391,16 +391,33 @@ public class SubMapDialog
 		JPanel sliderRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
 		sliderRow.add(new JLabel("Detail level:"));
 
-		detailSlider = new JSlider(1, 16, detailMultiplier);
-		detailSlider.setMajorTickSpacing(4);
-		detailSlider.setMinorTickSpacing(1);
-		detailSlider.setPaintTicks(true);
-		detailSlider.setPaintLabels(true);
-		detailSlider.setSnapToTicks(true);
-		sliderRow.add(detailSlider);
+		JSlider rawSlider = new JSlider(1, 16, detailMultiplier);
+		rawSlider.setMajorTickSpacing(4);
+		rawSlider.setMinorTickSpacing(1);
+		rawSlider.setPaintTicks(true);
+		rawSlider.setPaintLabels(true);
+		rawSlider.setSnapToTicks(true);
 
-		polygonCountLabel = new JLabel("≈ ? polygons");
-		sliderRow.add(polygonCountLabel);
+		detailSliderWithValue = new SliderWithDisplayedValue(rawSlider,
+				value ->
+				{
+					int unclamped = calculateUnclampedWorldSizeForMultiplier(value);
+					int display = Math.min(unclamped, SettingsGenerator.maxWorldSize);
+					return value + "x, \u2248" + display + " polygons";
+				},
+				() ->
+				{
+					detailMultiplier = detailSlider.getValue();
+					updateDetailLevelState();
+					if (!isTooDetailed())
+					{
+						triggerPreviewRedraw();
+					}
+				},
+				null);
+		detailSlider = detailSliderWithValue.slider;
+		sliderRow.add(detailSlider);
+		sliderRow.add(detailSliderWithValue.valueDisplay);
 		controlPanel.add(sliderRow);
 
 		// Error label row
@@ -486,20 +503,6 @@ public class SubMapDialog
 		// Build the preview MapUpdater.
 		createPreviewUpdater();
 
-		// Wire slider changes.
-		detailSlider.addChangeListener(e ->
-		{
-			if (!detailSlider.getValueIsAdjusting())
-			{
-				detailMultiplier = detailSlider.getValue();
-				updatePolygonCountLabel();
-				if (!isTooDetailed())
-				{
-					triggerPreviewRedraw();
-				}
-			}
-		});
-
 		// Wire dialog resize to re-trigger preview.
 		step2Dialog.addComponentListener(new ComponentAdapter()
 		{
@@ -516,6 +519,16 @@ public class SubMapDialog
 		step2Dialog.addWindowListener(new WindowAdapter()
 		{
 			@Override
+			public void windowOpened(WindowEvent e)
+			{
+				// Trigger the first draw here, after the dialog is visible and its container is sized.
+				if (!isTooDetailed())
+				{
+					triggerPreviewRedraw();
+				}
+			}
+
+			@Override
 			public void windowClosing(WindowEvent e)
 			{
 				stopPreviewUpdater();
@@ -527,12 +540,8 @@ public class SubMapDialog
 
 		step2Dialog.setLocationRelativeTo(mainWindow);
 
-		// Initial label update and first preview draw.
-		updatePolygonCountLabel();
-		if (!isTooDetailed())
-		{
-			triggerPreviewRedraw();
-		}
+		// Initialize error/button state.
+		updateDetailLevelState();
 
 		step2Dialog.setVisible(true);
 	}
@@ -617,10 +626,11 @@ public class SubMapDialog
 			return;
 		}
 		nortantis.geom.Dimension size = getPreviewContainerSize();
-		if (size != null && size.width > 0 && size.height > 0)
+		if (size == null)
 		{
-			previewUpdater.setMaxMapSize(size);
+			return;
 		}
+		previewUpdater.setMaxMapSize(size);
 		enableOrDisableProgressBar(true);
 		previewUpdater.createAndShowMapFull();
 	}
@@ -646,13 +656,13 @@ public class SubMapDialog
 	{
 		if (previewContainer == null || previewContainer.getWidth() <= 0 || previewContainer.getHeight() <= 0)
 		{
-			return new nortantis.geom.Dimension(500, 400);
+			return null;
 		}
 		double scale = previewPanel != null ? previewPanel.osScale : 1.0;
 		return new nortantis.geom.Dimension(previewContainer.getWidth() * scale, previewContainer.getHeight() * scale);
 	}
 
-	private int calculateUnclampedWorldSize()
+	private int calculateUnclampedWorldSizeForMultiplier(int multiplier)
 	{
 		if (selBoundsRI == null || selBoundsRI.width <= 0 || selBoundsRI.height <= 0)
 		{
@@ -660,7 +670,12 @@ public class SubMapDialog
 		}
 		double origMapArea = origSettings.generatedWidth * (double) origSettings.generatedHeight;
 		double selArea = selBoundsRI.width * selBoundsRI.height;
-		return (int) Math.round((double) detailMultiplier * origSettings.worldSize * selArea / origMapArea);
+		return (int) Math.round((double) multiplier * origSettings.worldSize * selArea / origMapArea);
+	}
+
+	private int calculateUnclampedWorldSize()
+	{
+		return calculateUnclampedWorldSizeForMultiplier(detailMultiplier);
 	}
 
 	private boolean isTooDetailed()
@@ -668,16 +683,9 @@ public class SubMapDialog
 		return calculateUnclampedWorldSize() > SettingsGenerator.maxWorldSize;
 	}
 
-	private void updatePolygonCountLabel()
+	private void updateDetailLevelState()
 	{
-		int unclamped = calculateUnclampedWorldSize();
-		int display = Math.min(unclamped, SettingsGenerator.maxWorldSize);
-		boolean tooDetailed = unclamped > SettingsGenerator.maxWorldSize;
-
-		if (polygonCountLabel != null)
-		{
-			polygonCountLabel.setText("≈ " + display + " polygons");
-		}
+		boolean tooDetailed = isTooDetailed();
 		if (errorLabel != null)
 		{
 			errorLabel.setVisible(tooDetailed);

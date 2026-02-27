@@ -1312,7 +1312,7 @@ public class MapSettings implements Serializable
 		}
 
 		edits = new MapEdits();
-		// hiddenTextIds is a comma delimited list.
+		// hiddenTextIds is a comma-delimited list.
 
 		boolean hasCustomImagesPath = !StringUtils.isEmpty(customImagesPath);
 		JSONObject editsJson = (JSONObject) root.get("edits");

@@ -8,6 +8,7 @@ import nortantis.editor.Road;
 import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
+import nortantis.graph.voronoi.Corner;
 import nortantis.graph.voronoi.Edge;
 import nortantis.swing.MapEdits;
 
@@ -271,7 +272,10 @@ public class SubMapCreator
 			return;
 		}
 
-		// For each river edge in the original, map its corner positions to new graph space and set river levels.
+		// For each original river edge, map its Voronoi corners (v0, v1) to the closest new-graph corners,
+		// then trace the Voronoi-edge path between them. One original edge may span several new edges
+		// (because the new graph is more detailed), so findPathGreedy gives the full chain. Adjacent
+		// original edges share a corner; they map to the same new corner, so their paths connect.
 		for (Map.Entry<Integer, Integer> entry : origRiverLevels.entrySet())
 		{
 			int origEdgeIndex = entry.getKey();
@@ -283,42 +287,35 @@ public class SubMapCreator
 				continue;
 			}
 
-			// Convert orig edge's corner positions to RI space.
+			// Convert corner positions to RI space and check selection bounds.
 			double origRI_v0x = origEdge.v0.loc.x / origResolution;
 			double origRI_v0y = origEdge.v0.loc.y / origResolution;
 			double origRI_v1x = origEdge.v1.loc.x / origResolution;
 			double origRI_v1y = origEdge.v1.loc.y / origResolution;
-
-			// Check if this edge is (at least partially) within the selection bounds.
-			boolean v0Inside = selBoundsRI.contains(origRI_v0x, origRI_v0y);
-			boolean v1Inside = selBoundsRI.contains(origRI_v1x, origRI_v1y);
-			if (!v0Inside && !v1Inside)
+			if (!selBoundsRI.contains(origRI_v0x, origRI_v0y) && !selBoundsRI.contains(origRI_v1x, origRI_v1y))
 			{
 				continue;
 			}
 
-			// Transform both corners to new RI space and find the closest edge in the new graph.
-			double newRI_v0x = (origRI_v0x - selBoundsRI.x) / selBoundsRI.width * newGraph.getWidth();
-			double newRI_v0y = (origRI_v0y - selBoundsRI.y) / selBoundsRI.height * newGraph.getHeight();
-			double newRI_v1x = (origRI_v1x - selBoundsRI.x) / selBoundsRI.width * newGraph.getWidth();
-			double newRI_v1y = (origRI_v1y - selBoundsRI.y) / selBoundsRI.height * newGraph.getHeight();
+			// Map each original corner to new-graph pixel space and find the closest new-graph corner.
+			double newV0x = (origRI_v0x - selBoundsRI.x) / selBoundsRI.width * newGraph.getWidth();
+			double newV0y = (origRI_v0y - selBoundsRI.y) / selBoundsRI.height * newGraph.getHeight();
+			double newV1x = (origRI_v1x - selBoundsRI.x) / selBoundsRI.width * newGraph.getWidth();
+			double newV1y = (origRI_v1y - selBoundsRI.y) / selBoundsRI.height * newGraph.getHeight();
 
-			// Find the closest edge in the new graph by looking up both endpoint centers.
-			Point newGraphPt0 = new Point(newRI_v0x, newRI_v0y);
-			Point newGraphPt1 = new Point(newRI_v1x, newRI_v1y);
-			Center newCenter0 = newGraph.findClosestCenter(newGraphPt0, false);
-			Center newCenter1 = newGraph.findClosestCenter(newGraphPt1, false);
-
-			if (newCenter0 == null || newCenter1 == null)
+			Corner newCorner0 = newGraph.findClosestCorner(new Point(newV0x, newV0y));
+			Corner newCorner1 = newGraph.findClosestCorner(new Point(newV1x, newV1y));
+			if (newCorner0 == null || newCorner1 == null || newCorner0.equals(newCorner1))
 			{
 				continue;
 			}
 
-			// Find the shared edge between newCenter0 and newCenter1 (or their neighbors).
-			Edge sharedEdge = newCenter0.findSharedEdge(newCenter1);
-			if (sharedEdge != null)
+			// Trace the Voronoi-edge path between the two new corners and mark every edge on the path
+			// as a river at the original river level.
+			Set<Edge> pathEdges = newGraph.findPathGreedy(newCorner0, newCorner1);
+			for (Edge pathEdge : pathEdges)
 			{
-				newEdits.edgeEdits.put(sharedEdge.index, new EdgeEdit(sharedEdge.index, riverLevel));
+				newEdits.edgeEdits.put(pathEdge.index, new EdgeEdit(pathEdge.index, riverLevel));
 			}
 		}
 	}
