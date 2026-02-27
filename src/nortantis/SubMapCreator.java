@@ -36,7 +36,12 @@ public class SubMapCreator
 	 *            How many times more detail the sub-map should have compared to the original (1–16).
 	 * @return New MapSettings for the sub-map, with pre-populated edits.
 	 */
-	public static MapSettings createSubMapSettings(MapSettings origSettings, WorldGraph origGraph, MapEdits origEdits, Rectangle selBoundsRI, int detailMultiplier)
+	/**
+	 * @param origResolution
+	 *            The resolution at which origGraph was created (i.e. the display quality scale), used to convert resolution-invariant
+	 *            coordinates to origGraph pixel coordinates.
+	 */
+	public static MapSettings createSubMapSettings(MapSettings origSettings, WorldGraph origGraph, MapEdits origEdits, Rectangle selBoundsRI, int detailMultiplier, double origResolution)
 	{
 		// Step 1: Compute new dimensions and world size.
 		int newGenWidth = origSettings.generatedWidth;
@@ -67,9 +72,6 @@ public class SubMapCreator
 		// We create the graph BEFORE setting edits, so createGraphForUnitTests uses createElevation=true.
 		// This gives us the same Voronoi structure MapCreator will use when rendering (same seed, same params).
 		WorldGraph newGraph = MapCreator.createGraphForUnitTests(newSettings);
-
-		// Step 4: Set center.isWater/isLake on each new center by looking up the original graph.
-		double origResolution = origSettings.resolution;
 		for (Center newCenter : newGraph.centers)
 		{
 			// Map new center loc → orig graph coords.

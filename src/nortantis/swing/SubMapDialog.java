@@ -18,6 +18,8 @@ import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.util.List;
 
+import nortantis.swing.translation.Translation;
+
 /**
  * A two-step dialog for creating a higher-detail sub-map from a region of the current map.
  *
@@ -32,6 +34,8 @@ public class SubMapDialog
 	private final MapSettings origSettings;
 	private final WorldGraph origGraph;
 	private final MapEdits origEdits;
+	/** The display-quality resolution scale at which origGraph was created. */
+	private final double origResolution;
 
 	// Shared state between steps.
 	private Rectangle selBoundsRI;
@@ -57,6 +61,8 @@ public class SubMapDialog
 	private JLabel errorLabel;
 	private JButton createButton;
 	private JSlider detailSlider;
+	private JProgressBar previewProgressBar;
+	private Timer progressBarTimer;
 
 	public SubMapDialog(MainWindow mainWindow)
 	{
@@ -64,6 +70,7 @@ public class SubMapDialog
 		this.origSettings = mainWindow.getSettingsFromGUI(false);
 		this.origGraph = mainWindow.updater.mapParts.graph;
 		this.origEdits = mainWindow.edits.deepCopy();
+		this.origResolution = mainWindow.displayQualityScale;
 	}
 
 	// -------------------------------------------------------------------------
@@ -425,8 +432,23 @@ public class SubMapDialog
 
 		mainPanel.add(previewWrapper, BorderLayout.CENTER);
 
-		// -- Bottom buttons --
-		JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 2));
+		// -- Bottom: progress bar + buttons --
+		JPanel bottomPanel = new JPanel();
+		bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.X_AXIS));
+
+		previewProgressBar = new JProgressBar();
+		previewProgressBar.setStringPainted(true);
+		previewProgressBar.setString(Translation.get("newSettingsDialog.drawing"));
+		previewProgressBar.setIndeterminate(true);
+		previewProgressBar.setVisible(false);
+		bottomPanel.add(previewProgressBar);
+
+		progressBarTimer = new Timer(50, e -> previewProgressBar.setVisible(previewUpdater != null && previewUpdater.isMapBeingDrawn()));
+		progressBarTimer.setInitialDelay(500);
+
+		bottomPanel.add(Box.createHorizontalGlue());
+
+		JPanel buttonRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 2));
 
 		JButton backButton = new JButton("← Back");
 		backButton.addActionListener(e ->
@@ -453,9 +475,10 @@ public class SubMapDialog
 		createButton = new JButton("Create");
 		createButton.addActionListener(e -> handleCreate());
 
-		bottomPanel.add(backButton);
-		bottomPanel.add(cancelButton);
-		bottomPanel.add(createButton);
+		buttonRow.add(backButton);
+		buttonRow.add(cancelButton);
+		buttonRow.add(createButton);
+		bottomPanel.add(buttonRow);
 		mainPanel.add(bottomPanel, BorderLayout.SOUTH);
 
 		step2Dialog.add(mainPanel);
@@ -527,7 +550,7 @@ public class SubMapDialog
 			public MapSettings getSettingsFromGUI()
 			{
 				// Called on background thread by MapUpdater.
-				MapSettings settings = SubMapCreator.createSubMapSettings(origSettings, origGraph, origEdits, selBoundsRI, detailMultiplier);
+				MapSettings settings = SubMapCreator.createSubMapSettings(origSettings, origGraph, origEdits, selBoundsRI, detailMultiplier, origResolution);
 				settings.resolution = 1.0;
 				lastSubMapSettings = settings;
 				return settings;
@@ -546,6 +569,11 @@ public class SubMapDialog
 					previewPanel.setImage(AwtBridge.toBufferedImage(map));
 					previewPanel.setBorderPadding(borderPaddingAsDrawn);
 
+					if (!anotherDrawIsQueued)
+					{
+						enableOrDisableProgressBar(false);
+					}
+
 					if (step2Dialog != null)
 					{
 						step2Dialog.revalidate();
@@ -563,6 +591,7 @@ public class SubMapDialog
 			@Override
 			protected void onFailedToDraw()
 			{
+				SwingUtilities.invokeLater(() -> enableOrDisableProgressBar(false));
 			}
 
 			@Override
@@ -592,7 +621,25 @@ public class SubMapDialog
 		{
 			previewUpdater.setMaxMapSize(size);
 		}
+		enableOrDisableProgressBar(true);
 		previewUpdater.createAndShowMapFull();
+	}
+
+	private void enableOrDisableProgressBar(boolean enable)
+	{
+		if (progressBarTimer == null || previewProgressBar == null)
+		{
+			return;
+		}
+		if (enable)
+		{
+			progressBarTimer.start();
+		}
+		else
+		{
+			progressBarTimer.stop();
+			previewProgressBar.setVisible(false);
+		}
 	}
 
 	private nortantis.geom.Dimension getPreviewContainerSize()
@@ -658,6 +705,7 @@ public class SubMapDialog
 
 	private void stopPreviewUpdater()
 	{
+		enableOrDisableProgressBar(false);
 		if (previewUpdater != null)
 		{
 			previewUpdater.cancel();
