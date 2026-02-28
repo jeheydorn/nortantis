@@ -142,15 +142,14 @@ public class SubMapDialog
 
 		organizer.addLabelAndComponentsHorizontalWithTopInset("Position:", "", Arrays.asList(new JLabel("X:"), xSpinner, new JLabel("Y:"), ySpinner, new JLabel("Width:"), widthSpinner, new JLabel("Height:"), heightSpinner), topInset);
 
+		organizer.addVerticalFillerRow();
+
 		// Inline error label for spinner validation
 		step1ErrorLabel = new JLabel(" ");
 		step1ErrorLabel.setForeground(java.awt.Color.RED);
-		step1ErrorLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-		organizer.addLeftAlignedComponent(step1ErrorLabel, 0, 0);
 
 		// Buttons row
 		JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
-		buttonsPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
 		JButton cancelButton = new JButton("Cancel");
 		cancelButton.addActionListener(e -> cancelStep1());
@@ -168,7 +167,11 @@ public class SubMapDialog
 
 		buttonsPanel.add(cancelButton);
 		buttonsPanel.add(step1NextButton);
-		organizer.addLeftAlignedComponent(buttonsPanel, topInset) ;
+
+		JPanel bottomRow = new JPanel(new BorderLayout());
+		bottomRow.add(step1ErrorLabel, BorderLayout.LINE_START);
+		bottomRow.add(buttonsPanel, BorderLayout.LINE_END);
+		organizer.addLeftAlignedComponent(bottomRow, topInset, GridBagOrganizer.rowVerticalInset, false);
 
 		step1Dialog.add(organizer.panel);
 		step1Dialog.pack();
