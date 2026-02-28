@@ -17,8 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * Creates a new MapSettings for a zoomed-in sub-map of an existing map. The sub-map inherits the original map's land/water shape, region
- * colors, text, icons, and roads within the selected area.
+ * Creates a new MapSettings for a zoomed-in sub-map of an existing map. The sub-map inherits the original map's land/water shape, region colors, text, icons, and roads within the selected area.
  */
 public class SubMapCreator
 {
@@ -33,26 +32,22 @@ public class SubMapCreator
 	 *            The original map edits (used for land/water, region, text, icons, roads).
 	 * @param selBoundsRI
 	 *            The selection bounds in resolution-invariant (RI) coordinates.
-	 * @param detailMultiplier
-	 *            How many times more detail the sub-map should have compared to the original (1–16).
+	 * @param subMapWorldSize
+	 *            The number of Voronoi polygons for the sub-map.
 	 * @return New MapSettings for the sub-map, with pre-populated edits.
 	 */
 	/**
 	 * @param origResolution
-	 *            The resolution at which origGraph was created (i.e. the display quality scale), used to convert resolution-invariant
-	 *            coordinates to origGraph pixel coordinates.
+	 * 		The resolution at which origGraph was created (i.e. the display quality scale), used to convert resolution-invariant coordinates to origGraph pixel coordinates.
 	 */
-	public static MapSettings createSubMapSettings(MapSettings origSettings, WorldGraph origGraph, MapEdits origEdits, Rectangle selBoundsRI, int detailMultiplier, double origResolution, long seed)
+	public static MapSettings createSubMapSettings(MapSettings origSettings, WorldGraph origGraph, MapEdits origEdits, Rectangle selBoundsRI, int subMapWorldSize, double origResolution, long seed)
 	{
 		// Step 1: Compute new dimensions and world size.
 		int newGenWidth = origSettings.generatedWidth;
 		double aspectRatio = selBoundsRI.height / selBoundsRI.width;
 		int newGenHeight = (int) (newGenWidth * aspectRatio);
 
-		double origMapArea = origSettings.generatedWidth * (double) origSettings.generatedHeight;
-		double selArea = selBoundsRI.width * selBoundsRI.height;
-		int newWorldSize = (int) Math.round(detailMultiplier * origSettings.worldSize * selArea / origMapArea);
-		newWorldSize = Math.max(SettingsGenerator.minWorldSize, Math.min(SettingsGenerator.maxWorldSize, newWorldSize));
+		int newWorldSize = Math.max(1, Math.min(SettingsGenerator.maxWorldSize, subMapWorldSize));
 
 		// Step 2: Deep-copy original settings, override key fields.
 		MapSettings newSettings = origSettings.deepCopyExceptEdits();
@@ -70,12 +65,13 @@ public class SubMapCreator
 		newSettings.edits = new MapEdits();
 
 		// Step 3: Build the WorldGraph for the sub-map (to get center positions and count).
-		// We create the graph BEFORE setting edits, so createGraphForUnitTests uses createElevation=true.
+		// We call this with createElevationBiomesLakesAndRegions=false because land/water and icon placement will be determined by the source map, not by a new, generated world.
 		// This gives us the same Voronoi structure MapCreator will use when rendering (same seed, same params).
-		WorldGraph newGraph = MapCreator.createGraphForUnitTests(newSettings);
+		WorldGraph newGraph = MapCreator.createGraph(newSettings, false);
+
 		for (Center newCenter : newGraph.centers)
 		{
-			// Map new center loc → orig graph coords.
+			// Map new center loc → orig graph coordinates.
 			double origGraphX = (newCenter.loc.x / newGraph.bounds.width * selBoundsRI.width + selBoundsRI.x) * origResolution;
 			double origGraphY = (newCenter.loc.y / newGraph.bounds.height * selBoundsRI.height + selBoundsRI.y) * origResolution;
 			Point origGraphPt = new Point(origGraphX, origGraphY);

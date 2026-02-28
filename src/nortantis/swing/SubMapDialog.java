@@ -44,7 +44,8 @@ public class SubMapDialog
 
 	// Shared state between steps.
 	private Rectangle selBoundsRI;
-	private int detailMultiplier = 4;
+	/** The polygon count for the sub-map; 0 = uninitialized (will default to 1× on first step-2 entry). */
+	private int subMapWorldSize = 0;
 
 	// Step 1 dialog state.
 	private JDialog step1Dialog;
@@ -101,7 +102,7 @@ public class SubMapDialog
 		organizer.addLeftAlignedComponent(instructionsLabel);
 
 		// Aspect ratio buttons
-		GeneratedDimension[] dims = GeneratedDimension.values();
+		GeneratedDimension[] dims = GeneratedDimension.presets();
 		int numButtons = dims.length + 1; // +1 for "Any"
 		double[] ratios = new double[numButtons];
 		String[] ratioLabels = new String[numButtons];
@@ -137,11 +138,13 @@ public class SubMapDialog
 		SegmentedButtonWidget segmentedButtonWidget = new SegmentedButtonWidget(aspectRatioButtons);
 		segmentedButtonWidget.addToOrganizer(organizer, "Aspect ratio:","Constrain the aspect ratio of the selection.", topInset);
 
-		// Position and size spinners
-		xSpinner = new JSpinner(new SpinnerNumberModel(0, 0, origSettings.generatedWidth, 1));
-		ySpinner = new JSpinner(new SpinnerNumberModel(0, 0, origSettings.generatedHeight, 1));
-		widthSpinner = new JSpinner(new SpinnerNumberModel(Math.min(100, origSettings.generatedWidth), 1, origSettings.generatedWidth, 1));
-		heightSpinner = new JSpinner(new SpinnerNumberModel(Math.min(100, origSettings.generatedHeight), 1, origSettings.generatedHeight, 1));
+		// Position and size spinners (use display dimensions, which are rotated relative to generatedWidth/Height for 90°/270°)
+		int mapDisplayW = getMapDisplayWidth();
+		int mapDisplayH = getMapDisplayHeight();
+		xSpinner = new JSpinner(new SpinnerNumberModel(0, 0, mapDisplayW, 1));
+		ySpinner = new JSpinner(new SpinnerNumberModel(0, 0, mapDisplayH, 1));
+		widthSpinner = new JSpinner(new SpinnerNumberModel(Math.min(100, mapDisplayW), 1, mapDisplayW, 1));
+		heightSpinner = new JSpinner(new SpinnerNumberModel(Math.min(100, mapDisplayH), 1, mapDisplayH, 1));
 
 		// TODO See if I need to set the preferred sizes of the spinners like the code had here before.
 		Dimension spinnerSize = new Dimension(75, xSpinner.getPreferredSize().height);
@@ -194,8 +197,8 @@ public class SubMapDialog
 		step1Dialog.setLocation(parentLocation.x + parentSize.width / 2 - dialogSize.width / 2,
 				parentLocation.y + parentSize.height - dialogSize.height - 18);
 
-		// Constrain the selection box to the map bounds.
-		mainWindow.mapEditingPanel.setSelectionBoxConstraints(new Rectangle(0, 0, origSettings.generatedWidth, origSettings.generatedHeight));
+		// Constrain the selection box to the displayed map bounds (accounts for rotation).
+		mainWindow.mapEditingPanel.setSelectionBoxConstraints(new Rectangle(0, 0, getMapDisplayWidth(), getMapDisplayHeight()));
 		mainWindow.mapEditingPanel.setSelectionBoxLockedAspectRatio(selectedAspectRatio);
 
 		// Register the selection box handler on the main map panel.
@@ -272,13 +275,13 @@ public class SubMapDialog
 		{
 			return "X and Y must be at least 0.";
 		}
-		if (x + w > origSettings.generatedWidth)
+		if (x + w > getMapDisplayWidth())
 		{
-			return "X + Width exceeds the map width (" + origSettings.generatedWidth + ").";
+			return "X + Width exceeds the map width (" + getMapDisplayWidth() + ").";
 		}
-		if (y + h > origSettings.generatedHeight)
+		if (y + h > getMapDisplayHeight())
 		{
-			return "Y + Height exceeds the map height (" + origSettings.generatedHeight + ").";
+			return "Y + Height exceeds the map height (" + getMapDisplayHeight() + ").";
 		}
 		return null;
 	}
@@ -334,11 +337,11 @@ public class SubMapDialog
 	{
 		double newHeight = box.width / ratio;
 		// Clamp height to map bounds.
-		newHeight = Math.min(newHeight, origSettings.generatedHeight - box.y);
+		newHeight = Math.min(newHeight, getMapDisplayHeight() - box.y);
 		newHeight = Math.max(1, newHeight);
 		// If height was clamped, back-compute width to maintain ratio.
 		double newWidth = newHeight * ratio;
-		newWidth = Math.min(newWidth, origSettings.generatedWidth - box.x);
+		newWidth = Math.min(newWidth, getMapDisplayWidth() - box.x);
 		newWidth = Math.max(1, newWidth);
 		return new Rectangle(box.x, box.y, newWidth, newHeight);
 	}
@@ -385,13 +388,30 @@ public class SubMapDialog
 		JPanel controlPanel = new JPanel();
 		controlPanel.setLayout(new BoxLayout(controlPanel, BoxLayout.Y_AXIS));
 
+		// Compute the 1× polygon count for this selection to use as the default slider value.
+		double origMapAreaForDefault = origSettings.generatedWidth * (double) origSettings.generatedHeight;
+		double selAreaForDefault = selBoundsRI.width * selBoundsRI.height;
+		double oneXWorldSize = origSettings.worldSize * selAreaForDefault / origMapAreaForDefault;
+		if (subMapWorldSize == 0)
+		{
+			subMapWorldSize = (int) Math.round(Math.max(1000, Math.min(SettingsGenerator.maxWorldSize, oneXWorldSize)));
+		}
+		else
+		{
+			subMapWorldSize = Math.max(1000, Math.min(SettingsGenerator.maxWorldSize, subMapWorldSize));
+		}
+
 		// Detail slider row
 		JPanel sliderRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
-		sliderRow.add(new JLabel("Detail level:"));
+		JLabel polygonsLabel = new JLabel("Number of polygons:");
+		polygonsLabel.setToolTipText("<html>The number of Voronoi polygons in the sub-map, which controls its level of detail.<br>"
+				+ "The multiplier shows how many times more polygons the sub-map has relative<br>"
+				+ "to the equivalent area of the source map. Values below 1× mean less detail.</html>");
+		sliderRow.add(polygonsLabel);
 
-		JSlider rawSlider = new JSlider(1, 16, detailMultiplier);
-		rawSlider.setMajorTickSpacing(4);
-		rawSlider.setMinorTickSpacing(1);
+		JSlider rawSlider = new JSlider(1000, SettingsGenerator.maxWorldSize, subMapWorldSize);
+		rawSlider.setMajorTickSpacing(8000);
+		rawSlider.setMinorTickSpacing(1000);
 		rawSlider.setPaintTicks(true);
 		rawSlider.setPaintLabels(true);
 		rawSlider.setSnapToTicks(true);
@@ -399,13 +419,15 @@ public class SubMapDialog
 		detailSliderWithValue = new SliderWithDisplayedValue(rawSlider,
 				value ->
 				{
-					int unclamped = calculateUnclampedWorldSizeForMultiplier(value);
-					int display = Math.min(unclamped, SettingsGenerator.maxWorldSize);
-					return value + "x, \u2248" + display + " polygons";
+					double origMapArea = origSettings.generatedWidth * (double) origSettings.generatedHeight;
+					double selArea = selBoundsRI.width * selBoundsRI.height;
+					double oneX = origSettings.worldSize * selArea / origMapArea;
+					double ratio = (oneX > 0) ? value / oneX : 1.0;
+					return String.format("%.1fx, \u2248%d polygons", ratio, value);
 				},
 				() ->
 				{
-					detailMultiplier = detailSlider.getValue();
+					subMapWorldSize = detailSlider.getValue();
 					updateDetailLevelState();
 					if (!isTooDetailed())
 					{
@@ -522,7 +544,7 @@ public class SubMapDialog
 			step2Dialog.dispose();
 			step2Dialog = null;
 			// Restore constraints and aspect ratio when going back.
-			mainWindow.mapEditingPanel.setSelectionBoxConstraints(new Rectangle(0, 0, origSettings.generatedWidth, origSettings.generatedHeight));
+			mainWindow.mapEditingPanel.setSelectionBoxConstraints(new Rectangle(0, 0, getMapDisplayWidth(), getMapDisplayHeight()));
 			mainWindow.mapEditingPanel.setSelectionBoxLockedAspectRatio(selectedAspectRatio);
 			mainWindow.mapEditingPanel.setSelectionBoxRI(selBoundsRI);
 			showStep1();
@@ -616,7 +638,7 @@ public class SubMapDialog
 			public MapSettings getSettingsFromGUI()
 			{
 				// Called on background thread by MapUpdater.
-				MapSettings settings = SubMapCreator.createSubMapSettings(origSettings, origGraph, origEdits, selBoundsRI, detailMultiplier, origResolution, subMapSeed);
+				MapSettings settings = SubMapCreator.createSubMapSettings(origSettings, origGraph, origEdits, selBoundsRI, subMapWorldSize, origResolution, subMapSeed);
 				settings.resolution = 1.0;
 				lastSubMapSettings = settings;
 				return settings;
@@ -719,25 +741,25 @@ public class SubMapDialog
 		return new nortantis.geom.Dimension(previewContainer.getWidth() * scale, previewContainer.getHeight() * scale);
 	}
 
-	private int calculateUnclampedWorldSizeForMultiplier(int multiplier)
-	{
-		if (selBoundsRI == null || selBoundsRI.width <= 0 || selBoundsRI.height <= 0)
-		{
-			return 0;
-		}
-		double origMapArea = origSettings.generatedWidth * (double) origSettings.generatedHeight;
-		double selArea = selBoundsRI.width * selBoundsRI.height;
-		return (int) Math.round((double) multiplier * origSettings.worldSize * selArea / origMapArea);
-	}
-
-	private int calculateUnclampedWorldSize()
-	{
-		return calculateUnclampedWorldSizeForMultiplier(detailMultiplier);
-	}
-
 	private boolean isTooDetailed()
 	{
-		return calculateUnclampedWorldSize() > SettingsGenerator.maxWorldSize;
+		return subMapWorldSize > SettingsGenerator.maxWorldSize;
+	}
+
+	/**
+	 * Returns the displayed map width in RI units, accounting for rotation (90°/270° swaps generatedWidth and generatedHeight).
+	 */
+	private int getMapDisplayWidth()
+	{
+		return (origSettings.rightRotationCount == 1 || origSettings.rightRotationCount == 3) ? origSettings.generatedHeight : origSettings.generatedWidth;
+	}
+
+	/**
+	 * Returns the displayed map height in RI units, accounting for rotation (90°/270° swaps generatedWidth and generatedHeight).
+	 */
+	private int getMapDisplayHeight()
+	{
+		return (origSettings.rightRotationCount == 1 || origSettings.rightRotationCount == 3) ? origSettings.generatedWidth : origSettings.generatedHeight;
 	}
 
 	private void updateDetailLevelState()

@@ -7,7 +7,7 @@ import nortantis.swing.translation.Translation;
  */
 public enum GeneratedDimension
 {
-	Square(4096, 4096), Sixteen_by_9(4096, 2304), Golden_Ratio(4096, 2531);
+	Square(4096, 4096), Sixteen_by_9(4096, 2304), Golden_Ratio(4096, 2531), Any(0, 0);
 
 	public final int width;
 	public final int height;
@@ -25,12 +25,20 @@ public enum GeneratedDimension
 
 	public double aspectRatio()
 	{
+		if (height == 0)
+		{
+			return 0;
+		}
 		return (double) width / height;
 	}
 
 	@Override
 	public String toString()
 	{
+		if (this == Any)
+		{
+			return displayName();
+		}
 		return width + " \u00d7 " + height + " (" + displayName() + ")";
 	}
 
@@ -38,11 +46,33 @@ public enum GeneratedDimension
 	{
 		for (GeneratedDimension d : values())
 		{
+			if (d == Any)
+			{
+				continue;
+			}
 			if (d.width == w && d.height == h)
 			{
 				return d;
 			}
 		}
-		return null;
+		return Any;
+	}
+
+	/**
+	 * Returns all preset dimensions — all values except {@link #Any}.
+	 */
+	public static GeneratedDimension[] presets()
+	{
+		GeneratedDimension[] all = values();
+		GeneratedDimension[] result = new GeneratedDimension[all.length - 1];
+		int j = 0;
+		for (GeneratedDimension d : all)
+		{
+			if (d != Any)
+			{
+				result[j++] = d;
+			}
+		}
+		return result;
 	}
 }

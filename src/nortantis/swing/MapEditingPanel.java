@@ -131,6 +131,12 @@ public class MapEditingPanel extends UnscaledImagePanel
 			{
 				onSelectionBoxMouseReleased(e);
 			}
+
+			@Override
+			public void mouseClicked(MouseEvent e)
+			{
+				onSelectionBoxMouseClicked(e);
+			}
 		});
 		addMouseMotionListener(new MouseAdapter()
 		{
@@ -1117,6 +1123,21 @@ public class MapEditingPanel extends UnscaledImagePanel
 		selectionBoxDragStartRI = null;
 		selectionBoxRIAtDragStart = null;
 		selectionBoxDragOffset = null;
+	}
+
+	private void onSelectionBoxMouseClicked(MouseEvent e)
+	{
+		if (selectionBoxChangeListener == null || !SwingUtilities.isLeftMouseButton(e) || selectionBoxRI == null)
+		{
+			return;
+		}
+		nortantis.geom.Point clickRI = screenToRI(e.getPoint());
+		if (!selectionBoxRI.contains(clickRI.x, clickRI.y))
+		{
+			selectionBoxRI = null;
+			repaint();
+			selectionBoxChangeListener.run();
+		}
 	}
 
 	/**

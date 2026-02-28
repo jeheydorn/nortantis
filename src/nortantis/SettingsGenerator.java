@@ -261,7 +261,7 @@ public class SettingsGenerator
 		settings.edgeLandToWaterProbability = Math.round(settings.edgeLandToWaterProbability * 100.0) / 100.0;
 		settings.centerLandToWaterProbability = Math.round(settings.centerLandToWaterProbability * 100.0) / 100.0;
 
-		GeneratedDimension dimension = ProbabilityHelper.sampleUniform(rand, Arrays.asList(GeneratedDimension.values()));
+		GeneratedDimension dimension = ProbabilityHelper.sampleUniform(rand, Arrays.asList(GeneratedDimension.presets()));
 		settings.generatedWidth = dimension.width;
 		settings.generatedHeight = dimension.height;
 
@@ -316,7 +316,7 @@ public class SettingsGenerator
 
 	public static List<GeneratedDimension> getAllowedDimensions()
 	{
-		return Arrays.asList(GeneratedDimension.values());
+		return Arrays.asList(GeneratedDimension.presets());
 	}
 
 	public static List<String> getAllBooks()

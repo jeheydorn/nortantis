@@ -1647,11 +1647,11 @@ public class MapCreator implements WarningLogger
 		return generateRegionColor(rand, hsb, hueRange, saturationRange, brightnessRange);
 	}
 
-	public static WorldGraph createGraphForUnitTests(MapSettings settings)
+	public static WorldGraph createGraph(MapSettings settings, boolean createElevationBiomesLakesAndRegions)
 	{
 		Dimension mapBounds = Background.calcMapBoundsAndAdjustResolutionIfNeeded(settings, null);
 		Random r = new Random(settings.randomSeed);
-		return MapCreator.createGraph(settings, mapBounds.width, mapBounds.height, r, settings.resolution, !settings.edits.isInitialized());
+		return MapCreator.createGraph(settings, mapBounds.width, mapBounds.height, r, settings.resolution, createElevationBiomesLakesAndRegions);
 	}
 
 	private static WorldGraph createGraph(MapSettings settings, double width, double height, Random r, double resolutionScale, boolean createElevationBiomesLakesAndRegions)
