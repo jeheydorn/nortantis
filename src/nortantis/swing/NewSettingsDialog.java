@@ -31,6 +31,7 @@ public class NewSettingsDialog extends JDialog
 	JSlider worldSizeSlider;
 	private JSpinner customWidthSpinner;
 	private JSpinner customHeightSpinner;
+	private JLabel customDimPreviewLabel;
 	private RowHider customDimensionsHider;
 	private JComboBox<LandShape> landShapeComboBox;
 	private JSlider regionCountSlider;
@@ -298,22 +299,22 @@ public class NewSettingsDialog extends JDialog
 		}
 		organizer.addLabelAndComponent(Translation.get("newSettingsDialog.dimensions.label"), Translation.get("newSettingsDialog.dimensions.help"), dimensionsComboBox);
 
-		customWidthSpinner = new JSpinner(new SpinnerNumberModel(4096, 64, 8192, 1));
-		customHeightSpinner = new JSpinner(new SpinnerNumberModel(2304, 64, 8192, 1));
+		customWidthSpinner = new JSpinner(new SpinnerNumberModel(16, 1, 32768, 1));
+		customHeightSpinner = new JSpinner(new SpinnerNumberModel(9, 1, 32768, 1));
 		createMapChangeListener(customWidthSpinner);
 		createMapChangeListener(customHeightSpinner);
-		customDimensionsHider = organizer.addLabelAndComponentsHorizontal(Translation.get("newSettingsDialog.customDimensions.label"), "",
-				Arrays.asList(customWidthSpinner, new JLabel("\u00d7"), customHeightSpinner));
+		customDimPreviewLabel = new JLabel();
+		customWidthSpinner.addChangeListener(e -> updateCustomDimPreview());
+		customHeightSpinner.addChangeListener(e -> updateCustomDimPreview());
+		updateCustomDimPreview();
+		customDimensionsHider = organizer.addLabelAndComponentsHorizontalWithTopInset("", "",
+				Arrays.asList(customWidthSpinner, new JLabel(" \u00d7 "), customHeightSpinner,
+						Box.createHorizontalStrut(8), customDimPreviewLabel), 0);
 		customDimensionsHider.setVisible(false);
 
 		dimensionsComboBox.addActionListener(e ->
 		{
 			boolean isCustom = dimensionsComboBox.getSelectedItem() == GeneratedDimension.Any;
-			if (isCustom)
-			{
-				customWidthSpinner.setValue(settings.generatedWidth);
-				customHeightSpinner.setValue(settings.generatedHeight);
-			}
 			customDimensionsHider.setVisible(isCustom);
 			handleMapChange();
 		});
@@ -620,6 +621,7 @@ public class NewSettingsDialog extends JDialog
 		{
 			customWidthSpinner.setValue(settings.generatedWidth);
 			customHeightSpinner.setValue(settings.generatedHeight);
+			updateCustomDimPreview();
 		}
 		customDimensionsHider.setVisible(dim == GeneratedDimension.Any);
 		worldSizeSlider.setValue(settings.worldSize);
@@ -694,9 +696,30 @@ public class NewSettingsDialog extends JDialog
 		GeneratedDimension selected = (GeneratedDimension) dimensionsComboBox.getSelectedItem();
 		if (selected == GeneratedDimension.Any)
 		{
-			return new Dimension(((Number) customWidthSpinner.getValue()).intValue(), ((Number) customHeightSpinner.getValue()).intValue());
+			return normalizeCustomDimensions(((Number) customWidthSpinner.getValue()).intValue(),
+					((Number) customHeightSpinner.getValue()).intValue());
 		}
 		return new Dimension(selected.width, selected.height);
+	}
+
+	private static Dimension normalizeCustomDimensions(int w, int h)
+	{
+		if (w >= h)
+		{
+			return new Dimension(4096, Math.max(1, (int) Math.round(4096.0 * h / w)));
+		}
+		else
+		{
+			return new Dimension(Math.max(1, (int) Math.round(4096.0 * w / h)), 4096);
+		}
+	}
+
+	private void updateCustomDimPreview()
+	{
+		int w = ((Number) customWidthSpinner.getValue()).intValue();
+		int h = ((Number) customHeightSpinner.getValue()).intValue();
+		Dimension norm = normalizeCustomDimensions(w, h);
+		customDimPreviewLabel.setText("(" + (int) norm.getWidth() + " \u00d7 " + (int) norm.getHeight() + ")");
 	}
 
 	private void enableOrDisableProgressBar(boolean enable)

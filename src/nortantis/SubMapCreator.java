@@ -43,9 +43,23 @@ public class SubMapCreator
 	public static MapSettings createSubMapSettings(MapSettings origSettings, WorldGraph origGraph, MapEdits origEdits, Rectangle selBoundsRI, int subMapWorldSize, double origResolution, long seed)
 	{
 		// Step 1: Compute new dimensions and world size.
-		int newGenWidth = origSettings.generatedWidth;
-		double aspectRatio = selBoundsRI.height / selBoundsRI.width;
-		int newGenHeight = (int) (newGenWidth * aspectRatio);
+		// The largest dimension of the sub-map matches the largest dimension of the original map.
+		// Whichever axis of the selection box is larger gets that max value; the other is scaled proportionally.
+		int maxOrigDim = Math.max(origSettings.generatedWidth, origSettings.generatedHeight);
+		int newGenWidth;
+		int newGenHeight;
+		if (selBoundsRI.width >= selBoundsRI.height)
+		{
+			newGenWidth = maxOrigDim;
+			newGenHeight = (int) Math.round((double) maxOrigDim * selBoundsRI.height / selBoundsRI.width);
+		}
+		else
+		{
+			newGenHeight = maxOrigDim;
+			newGenWidth = (int) Math.round((double) maxOrigDim * selBoundsRI.width / selBoundsRI.height);
+		}
+		newGenWidth = Math.max(1, newGenWidth);
+		newGenHeight = Math.max(1, newGenHeight);
 
 		int newWorldSize = Math.max(1, Math.min(SettingsGenerator.maxWorldSize, subMapWorldSize));
 
