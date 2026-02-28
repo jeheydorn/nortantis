@@ -33,6 +33,7 @@ public class NewSettingsDialog extends JDialog
 	private JSpinner customHeightSpinner;
 	private JLabel customDimPreviewLabel;
 	private JPanel customSpinnersPanel;
+	private RowHider customDimPreviewHider;
 	private JComboBox<LandShape> landShapeComboBox;
 	private JSlider regionCountSlider;
 	private SliderWithDisplayedValue regionCountSliderWithDisplay;
@@ -297,9 +298,32 @@ public class NewSettingsDialog extends JDialog
 		{
 			dimensionsComboBox.addItem(dimension);
 		}
+		// Show just the short name (e.g. "16 by 9") rather than "4096 × 2304 (16 by 9)" so the
+		// combo box stays narrow and leaves room for the custom-ratio spinners without squashing
+		// the rest of the left panel.
+		dimensionsComboBox.setRenderer(new DefaultListCellRenderer()
+		{
+			@Override
+			public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus)
+			{
+				super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+				if (value instanceof GeneratedDimension)
+				{
+					setText(((GeneratedDimension) value).displayName());
+				}
+				return this;
+			}
+		});
+		dimensionsComboBox.setMaximumSize(new Dimension(dimensionsComboBox.getPreferredSize().width, dimensionsComboBox.getPreferredSize().height));
 
 		customWidthSpinner = new JSpinner(new SpinnerNumberModel(16, 1, 32768, 1));
 		customHeightSpinner = new JSpinner(new SpinnerNumberModel(9, 1, 32768, 1));
+		Dimension spinnerDim = new Dimension(60, customWidthSpinner.getPreferredSize().height);
+		customWidthSpinner.setPreferredSize(spinnerDim);
+		customWidthSpinner.setMaximumSize(spinnerDim);
+		customHeightSpinner.setPreferredSize(spinnerDim);
+		customHeightSpinner.setMaximumSize(spinnerDim);
+
 		customDimPreviewLabel = new JLabel();
 		customWidthSpinner.addChangeListener(e -> clearMapPreview());
 		customHeightSpinner.addChangeListener(e -> clearMapPreview());
@@ -309,17 +333,12 @@ public class NewSettingsDialog extends JDialog
 		customHeightSpinner.addChangeListener(e -> updateCustomDimPreview());
 		updateCustomDimPreview();
 
-		JPanel spinnersRow = new JPanel();
-		spinnersRow.setLayout(new BoxLayout(spinnersRow, BoxLayout.X_AXIS));
-		spinnersRow.add(Box.createHorizontalStrut(5));
-		spinnersRow.add(customWidthSpinner);
-		spinnersRow.add(new JLabel(" \u00d7 "));
-		spinnersRow.add(customHeightSpinner);
-
 		customSpinnersPanel = new JPanel();
-		customSpinnersPanel.setLayout(new BoxLayout(customSpinnersPanel, BoxLayout.Y_AXIS));
-		customSpinnersPanel.add(spinnersRow);
-		customSpinnersPanel.add(customDimPreviewLabel);
+		customSpinnersPanel.setLayout(new BoxLayout(customSpinnersPanel, BoxLayout.X_AXIS));
+		customSpinnersPanel.add(Box.createHorizontalStrut(5));
+		customSpinnersPanel.add(customWidthSpinner);
+		customSpinnersPanel.add(new JLabel(" \u00d7 "));
+		customSpinnersPanel.add(customHeightSpinner);
 		customSpinnersPanel.setVisible(false);
 
 		JPanel dimensionsRowPanel = new JPanel();
@@ -328,10 +347,16 @@ public class NewSettingsDialog extends JDialog
 		dimensionsRowPanel.add(customSpinnersPanel);
 		organizer.addLabelAndComponent(Translation.get("newSettingsDialog.dimensions.label"), Translation.get("newSettingsDialog.dimensions.help"), dimensionsRowPanel);
 
+		// Preview label showing the normalized pixel dimensions — lives in a compact row
+		// directly below the dimensions row so it doesn't add width to the inline spinner row.
+		customDimPreviewHider = organizer.addLabelAndComponent("", "", customDimPreviewLabel, 2);
+		customDimPreviewHider.setVisible(false);
+
 		dimensionsComboBox.addActionListener(e ->
 		{
 			boolean isCustom = dimensionsComboBox.getSelectedItem() == GeneratedDimension.Any;
 			customSpinnersPanel.setVisible(isCustom);
+			customDimPreviewHider.setVisible(isCustom);
 			clearMapPreview();
 			handleMapChange();
 		});
@@ -641,6 +666,7 @@ public class NewSettingsDialog extends JDialog
 			updateCustomDimPreview();
 		}
 		customSpinnersPanel.setVisible(dim == GeneratedDimension.Any);
+		customDimPreviewHider.setVisible(dim == GeneratedDimension.Any);
 		worldSizeSlider.setValue(settings.worldSize);
 		if (settings.landShape != null)
 		{
