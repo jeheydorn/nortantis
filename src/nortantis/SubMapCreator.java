@@ -42,7 +42,7 @@ public class SubMapCreator
 	 *            The resolution at which origGraph was created (i.e. the display quality scale), used to convert resolution-invariant
 	 *            coordinates to origGraph pixel coordinates.
 	 */
-	public static MapSettings createSubMapSettings(MapSettings origSettings, WorldGraph origGraph, MapEdits origEdits, Rectangle selBoundsRI, int detailMultiplier, double origResolution)
+	public static MapSettings createSubMapSettings(MapSettings origSettings, WorldGraph origGraph, MapEdits origEdits, Rectangle selBoundsRI, int detailMultiplier, double origResolution, long seed)
 	{
 		// Step 1: Compute new dimensions and world size.
 		int newGenWidth = origSettings.generatedWidth;
@@ -56,7 +56,7 @@ public class SubMapCreator
 
 		// Step 2: Deep-copy original settings, override key fields.
 		MapSettings newSettings = origSettings.deepCopyExceptEdits();
-		newSettings.randomSeed = new Random().nextLong();
+		newSettings.randomSeed = seed;
 		newSettings.generatedWidth = newGenWidth;
 		newSettings.generatedHeight = newGenHeight;
 		newSettings.worldSize = newWorldSize;

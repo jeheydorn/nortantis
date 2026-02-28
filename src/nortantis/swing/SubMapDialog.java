@@ -8,8 +8,12 @@ import nortantis.platform.Image;
 import nortantis.platform.awt.AwtBridge;
 import nortantis.swing.translation.Translation;
 
+import nortantis.util.Helper;
+
 import javax.swing.*;
 import javax.swing.event.ChangeListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
@@ -19,6 +23,7 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 /**
  * A two-step dialog for creating a higher-detail sub-map from a region of the current map.
@@ -63,6 +68,11 @@ public class SubMapDialog
 	private JSlider detailSlider;
 	private JProgressBar previewProgressBar;
 	private Timer progressBarTimer;
+	/** Stable seed for the sub-map graph; generated once per step-2 session so re-draws produce the same Voronoi layout. */
+	private long subMapSeed;
+	private JTextField seedTextField;
+	/** Set to true in windowOpened; guards componentResized from firing the first preview draw before the dialog is fully shown. */
+	private boolean step2DialogOpened = false;
 
 	public SubMapDialog(MainWindow mainWindow)
 	{
@@ -165,8 +175,9 @@ public class SubMapDialog
 			}
 		});
 
-		buttonsPanel.add(cancelButton);
 		buttonsPanel.add(step1NextButton);
+		buttonsPanel.add(Box.createHorizontalStrut(5));
+		buttonsPanel.add(cancelButton);
 
 		JPanel bottomRow = new JPanel(new BorderLayout());
 		bottomRow.add(step1ErrorLabel, BorderLayout.LINE_START);
@@ -357,6 +368,10 @@ public class SubMapDialog
 
 	private void showStep2()
 	{
+		// Generate a stable seed for this step-2 session so repeated redraws produce the same Voronoi graph.
+		// Use nextInt so the seed fits in an integer and displays as a readable value in the seed field.
+		subMapSeed = Helper.safeAbs(new Random().nextInt());
+
 		step2Dialog = new JDialog(mainWindow, "Create Sub-Map – Detail Level", true);
 		step2Dialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
 		step2Dialog.setResizable(true);
@@ -402,6 +417,56 @@ public class SubMapDialog
 		sliderRow.add(detailSlider);
 		sliderRow.add(detailSliderWithValue.valueDisplay);
 		controlPanel.add(sliderRow);
+
+		// Seed row
+		JPanel seedRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
+		seedRow.add(new JLabel("Random seed:"));
+		seedTextField = new JTextField(String.valueOf(subMapSeed), 10);
+		seedTextField.getDocument().addDocumentListener(new DocumentListener()
+		{
+			private void handleChange()
+			{
+				try
+				{
+					subMapSeed = Long.parseLong(seedTextField.getText());
+					if (!isTooDetailed())
+					{
+						triggerPreviewRedraw();
+					}
+				}
+				catch (NumberFormatException ex)
+				{
+					// Ignore invalid input; don't redraw.
+				}
+			}
+
+			@Override
+			public void insertUpdate(DocumentEvent e)
+			{
+				handleChange();
+			}
+
+			@Override
+			public void removeUpdate(DocumentEvent e)
+			{
+				if (!seedTextField.getText().isEmpty())
+				{
+					handleChange();
+				}
+			}
+
+			@Override
+			public void changedUpdate(DocumentEvent e)
+			{
+				handleChange();
+			}
+		});
+		seedRow.add(seedTextField);
+		JButton newSeedButton = new JButton("New Seed");
+		newSeedButton.setToolTipText(Translation.get("theme.newSeed.tooltip"));
+		newSeedButton.addActionListener(e -> seedTextField.setText(String.valueOf(Helper.safeAbs(new Random().nextInt()))));
+		seedRow.add(newSeedButton);
+		controlPanel.add(seedRow);
 
 		// Error label row
 		errorLabel = new JLabel("Detail level too high – maximum is 32,000 polygons. Reduce the selected area or lower the detail level.");
@@ -476,22 +541,30 @@ public class SubMapDialog
 		createButton.addActionListener(e -> handleCreate());
 
 		buttonRow.add(backButton);
-		buttonRow.add(cancelButton);
 		buttonRow.add(createButton);
+		buttonRow.add(Box.createHorizontalStrut(5));
+		buttonRow.add(cancelButton);
 		bottomPanel.add(buttonRow);
 		mainPanel.add(bottomPanel, BorderLayout.SOUTH);
 
 		step2Dialog.add(mainPanel);
 
+		step2DialogOpened = false;
+
 		// Build the preview MapUpdater.
 		createPreviewUpdater();
 
 		// Wire dialog resize to re-trigger preview.
+		// Guard against the spurious componentResized that fires during initial layout (before windowOpened).
 		step2Dialog.addComponentListener(new ComponentAdapter()
 		{
 			@Override
 			public void componentResized(ComponentEvent e)
 			{
+				if (!step2DialogOpened)
+				{
+					return;
+				}
 				if (!isTooDetailed())
 				{
 					triggerPreviewRedraw();
@@ -504,6 +577,7 @@ public class SubMapDialog
 			@Override
 			public void windowOpened(WindowEvent e)
 			{
+				step2DialogOpened = true;
 				// Trigger the first draw here, after the dialog is visible and its container is sized.
 				if (!isTooDetailed())
 				{
@@ -542,7 +616,7 @@ public class SubMapDialog
 			public MapSettings getSettingsFromGUI()
 			{
 				// Called on background thread by MapUpdater.
-				MapSettings settings = SubMapCreator.createSubMapSettings(origSettings, origGraph, origEdits, selBoundsRI, detailMultiplier, origResolution);
+				MapSettings settings = SubMapCreator.createSubMapSettings(origSettings, origGraph, origEdits, selBoundsRI, detailMultiplier, origResolution, subMapSeed);
 				settings.resolution = 1.0;
 				lastSubMapSettings = settings;
 				return settings;
