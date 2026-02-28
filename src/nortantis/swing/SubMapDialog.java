@@ -1,24 +1,24 @@
 package nortantis.swing;
 
-import nortantis.GeneratedDimension;
-import nortantis.MapSettings;
-import nortantis.SettingsGenerator;
-import nortantis.SubMapCreator;
-import nortantis.WorldGraph;
+import nortantis.*;
 import nortantis.editor.MapUpdater;
 import nortantis.geom.IntRectangle;
 import nortantis.geom.Rectangle;
 import nortantis.platform.Image;
 import nortantis.platform.awt.AwtBridge;
+import nortantis.swing.translation.Translation;
 
 import javax.swing.*;
 import javax.swing.event.ChangeListener;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-
-import nortantis.swing.translation.Translation;
 
 /**
  * A two-step dialog for creating a higher-detail sub-map from a region of the current map.
@@ -82,22 +82,15 @@ public class SubMapDialog
 		step1Dialog = new JDialog(mainWindow, "Create Sub-Map – Select Region", false);
 		step1Dialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
 
-		JPanel panel = new JPanel();
-		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-		panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+		GridBagOrganizer organizer = new GridBagOrganizer();
+		final int topInset = 2;
 
 		// Instructions
-		JLabel instrLabel = new JLabel("<html>Drag on the map to select the region for the sub-map.<br>"
+		JLabel instructionsLabel = new JLabel("<html>Drag on the map to select the region for the sub-map.<br>"
 				+ "When done, click <b>Next</b> to choose the detail level.</html>");
-		instrLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-		panel.add(instrLabel);
-		panel.add(Box.createVerticalStrut(8));
+		organizer.addLeftAlignedComponent(instructionsLabel);
 
 		// Aspect ratio buttons
-		JPanel ratioPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
-		ratioPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-		ratioPanel.add(new JLabel("Aspect ratio:"));
-
 		GeneratedDimension[] dims = GeneratedDimension.values();
 		int numButtons = dims.length + 1; // +1 for "Any"
 		double[] ratios = new double[numButtons];
@@ -111,6 +104,7 @@ public class SubMapDialog
 		}
 
 		ButtonGroup ratioGroup = new ButtonGroup();
+		List<JToggleButton> aspectRatioButtons = new ArrayList<>();
 		for (int i = 0; i < numButtons; i++)
 		{
 			final double ratio = ratios[i];
@@ -128,46 +122,31 @@ public class SubMapDialog
 				}
 			});
 			ratioGroup.add(btn);
-			ratioPanel.add(btn);
+			aspectRatioButtons.add(btn);
 		}
-		panel.add(ratioPanel);
-		panel.add(Box.createVerticalStrut(6));
+		SegmentedButtonWidget segmentedButtonWidget = new SegmentedButtonWidget(aspectRatioButtons);
+		segmentedButtonWidget.addToOrganizer(organizer, "Aspect ratio:","Constrain the aspect ratio of the selection.", topInset);
 
 		// Position and size spinners
-		JPanel coordPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
-		coordPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-
 		xSpinner = new JSpinner(new SpinnerNumberModel(0, 0, origSettings.generatedWidth, 1));
 		ySpinner = new JSpinner(new SpinnerNumberModel(0, 0, origSettings.generatedHeight, 1));
 		widthSpinner = new JSpinner(new SpinnerNumberModel(Math.min(100, origSettings.generatedWidth), 1, origSettings.generatedWidth, 1));
 		heightSpinner = new JSpinner(new SpinnerNumberModel(Math.min(100, origSettings.generatedHeight), 1, origSettings.generatedHeight, 1));
 
+		// TODO See if I need to set the preferred sizes of the spinners like the code had here before.
 		Dimension spinnerSize = new Dimension(75, xSpinner.getPreferredSize().height);
 		xSpinner.setPreferredSize(spinnerSize);
 		ySpinner.setPreferredSize(spinnerSize);
 		widthSpinner.setPreferredSize(spinnerSize);
 		heightSpinner.setPreferredSize(spinnerSize);
 
-		coordPanel.add(new JLabel("X:"));
-		coordPanel.add(xSpinner);
-		coordPanel.add(new JLabel("Y:"));
-		coordPanel.add(ySpinner);
-		coordPanel.add(new JLabel("Width:"));
-		coordPanel.add(widthSpinner);
-		coordPanel.add(new JLabel("Height:"));
-		coordPanel.add(heightSpinner);
-		panel.add(coordPanel);
-		panel.add(Box.createVerticalStrut(4));
+		organizer.addLabelAndComponentsHorizontalWithTopInset("Position:", "", Arrays.asList(new JLabel("X:"), xSpinner, new JLabel("Y:"), ySpinner, new JLabel("Width:"), widthSpinner, new JLabel("Height:"), heightSpinner), topInset);
 
 		// Inline error label for spinner validation
 		step1ErrorLabel = new JLabel(" ");
 		step1ErrorLabel.setForeground(java.awt.Color.RED);
 		step1ErrorLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-		JPanel errorRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
-		errorRow.setAlignmentX(Component.LEFT_ALIGNMENT);
-		errorRow.add(step1ErrorLabel);
-		panel.add(errorRow);
-		panel.add(Box.createVerticalStrut(4));
+		organizer.addLeftAlignedComponent(step1ErrorLabel, 0, 0);
 
 		// Buttons row
 		JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
@@ -189,9 +168,9 @@ public class SubMapDialog
 
 		buttonsPanel.add(cancelButton);
 		buttonsPanel.add(step1NextButton);
-		panel.add(buttonsPanel);
+		organizer.addLeftAlignedComponent(buttonsPanel, topInset) ;
 
-		step1Dialog.add(panel);
+		step1Dialog.add(organizer.panel);
 		step1Dialog.pack();
 		step1Dialog.setMinimumSize(step1Dialog.getSize());
 		java.awt.Point parentLocation = mainWindow.getLocation();

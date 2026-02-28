@@ -109,6 +109,36 @@ public class GridBagOrganizer
 		return addLabelAndComponents(label, BoxLayout.X_AXIS, components, componentLeftPadding, horizontalSpaceBetweenComponents, null);
 	}
 
+	public <T extends Component> RowHider addLabelAndComponentsHorizontal(String labelText, String tooltip, List<T> components, int componentLeftPadding, int horizontalSpaceBetweenComponents,
+			int topInset)
+	{
+		JLabel label = createWrappingLabel(labelText, tooltip);
+		return addLabelAndComponents(label, BoxLayout.X_AXIS, components, componentLeftPadding, horizontalSpaceBetweenComponents, null, topInset);
+	}
+
+	public <T extends Component> RowHider addLabelAndComponentsHorizontalWithTopInset(String labelText, String tooltip, List<T> components, int topInset)
+	{
+		JLabel label = createWrappingLabel(labelText, tooltip);
+		return addLabelAndComponents(label, BoxLayout.X_AXIS, components, 0, defaultHorizontalSpaceBetweenComponentsAddAsList, null, topInset);
+	}
+
+	public <T extends Component> RowHider addComponentsHorizontal(List<T> components)
+	{
+		return addComponentsHorizontal(components, 0);
+	}
+
+	public <T extends Component> RowHider addComponentsHorizontal(List<T> components, int componentLeftPadding)
+	{
+		return addComponentsHorizontal(components, componentLeftPadding, defaultHorizontalSpaceBetweenComponentsAddAsList);
+	}
+
+	public <T extends Component> RowHider addComponentsHorizontal(List<T> components, int componentLeftPadding, int horizontalSpaceBetweenComponents)
+	{
+		JPanel compPanel = new JPanel();
+		updateComponentsPanel(BoxLayout.X_AXIS, components, componentLeftPadding, horizontalSpaceBetweenComponents, compPanel);
+		return addLeftAlignedComponent(compPanel, rowVerticalInset, rowVerticalInset, false);
+	}
+
 	public static <T extends Component> void updateComponentsPanelVertical(List<T> components, JPanel compPanel)
 	{
 		updateComponentsPanel(BoxLayout.Y_AXIS, components, 0, 0, compPanel);
@@ -133,6 +163,12 @@ public class GridBagOrganizer
 	private <T extends Component> RowHider addLabelAndComponents(JLabel label, int boxLayoutDirection, List<T> components, int componentLeftPadding, int horizontalSpaceBetweenComponents,
 			JPanel compPanel)
 	{
+		return addLabelAndComponents(label, boxLayoutDirection, components, componentLeftPadding, horizontalSpaceBetweenComponents, compPanel, rowVerticalInset);
+	}
+
+	private <T extends Component> RowHider addLabelAndComponents(JLabel label, int boxLayoutDirection, List<T> components, int componentLeftPadding, int horizontalSpaceBetweenComponents,
+			JPanel compPanel, int topInset)
+	{
 		if (compPanel == null)
 		{
 			compPanel = new JPanel();
@@ -140,7 +176,7 @@ public class GridBagOrganizer
 
 		updateComponentsPanel(boxLayoutDirection, components, componentLeftPadding, horizontalSpaceBetweenComponents, compPanel);
 
-		return addLabelAndComponent(label, compPanel, rowVerticalInset);
+		return addLabelAndComponent(label, compPanel, topInset);
 	}
 
 	public void resetGridY()
@@ -208,6 +244,11 @@ public class GridBagOrganizer
 	public RowHider addLeftAlignedComponent(Component component)
 	{
 		return addLeftAlignedComponent(component, rowVerticalInset, rowVerticalInset);
+	}
+
+	public RowHider addLeftAlignedComponent(Component component, int topInset)
+	{
+		return addLeftAlignedComponent(component, topInset, rowVerticalInset);
 	}
 
 	public RowHider addLeftAlignedComponents(List<Component> components)

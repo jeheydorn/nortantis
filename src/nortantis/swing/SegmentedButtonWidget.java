@@ -138,4 +138,9 @@ public class SegmentedButtonWidget
 	{
 		return organizer.addLabelAndComponent(label, tooltip, container);
 	}
+
+	public RowHider addToOrganizer(GridBagOrganizer organizer, String label, String tooltip, int topInset)
+	{
+		return organizer.addLabelAndComponent(label, tooltip, container, topInset);
+	}
 }
