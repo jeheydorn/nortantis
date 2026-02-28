@@ -140,7 +140,7 @@ public class SubMapDialog
 		widthSpinner.setPreferredSize(spinnerSize);
 		heightSpinner.setPreferredSize(spinnerSize);
 
-		organizer.addLabelAndComponentsHorizontalWithTopInset("Position:", "", Arrays.asList(new JLabel("X:"), xSpinner, new JLabel("Y:"), ySpinner, new JLabel("Width:"), widthSpinner, new JLabel("Height:"), heightSpinner), topInset);
+		organizer.addLabelAndComponentsHorizontalWithTopInset( "Position:", "", Arrays.asList(new JLabel("X:"), xSpinner, new JLabel("Y:"), ySpinner, new JLabel("Width:"), widthSpinner, new JLabel("Height:"), heightSpinner), topInset);
 
 		organizer.addVerticalFillerRow();
 
@@ -174,6 +174,7 @@ public class SubMapDialog
 		organizer.addLeftAlignedComponent(bottomRow, topInset, GridBagOrganizer.rowVerticalInset, false);
 
 		step1Dialog.add(organizer.panel);
+		step1Dialog.setPreferredSize(new Dimension(step1Dialog.getPreferredSize().width + 35, step1Dialog.getPreferredSize().height + 15));
 		step1Dialog.pack();
 		step1Dialog.setMinimumSize(step1Dialog.getSize());
 		java.awt.Point parentLocation = mainWindow.getLocation();
