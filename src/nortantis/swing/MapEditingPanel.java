@@ -1273,7 +1273,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 	}
 
 	/**
-	 * Clamps a selection box so neither dimension exceeds selectionBoxMaxAspectRatio times the other. Anchors from the top-left corner.
+	 * Returns box unchanged if it is within selectionBoxMaxAspectRatio, or returns the current selectionBoxRI (no-op) if it would exceed it.
 	 */
 	private nortantis.geom.Rectangle clampToMaxAspectRatio(nortantis.geom.Rectangle box)
 	{
@@ -1281,17 +1281,11 @@ public class MapEditingPanel extends UnscaledImagePanel
 		{
 			return box;
 		}
-		double w = box.width;
-		double h = box.height;
-		if (w / h > selectionBoxMaxAspectRatio)
+		if (box.width / box.height > selectionBoxMaxAspectRatio || box.height / box.width > selectionBoxMaxAspectRatio)
 		{
-			w = h * selectionBoxMaxAspectRatio;
+			return selectionBoxRI;
 		}
-		else if (h / w > selectionBoxMaxAspectRatio)
-		{
-			h = w * selectionBoxMaxAspectRatio;
-		}
-		return new nortantis.geom.Rectangle(box.x, box.y, w, h);
+		return box;
 	}
 
 	/**
