@@ -610,6 +610,7 @@ public class NewSettingsDialog extends JDialog
 					mapEditingPanel.setImage(AwtBridge.toBufferedImage(ImageHelper.getInstance().createPlaceholderImage(
 							new String[] { Translation.get("newSettingsDialog.previewFailedToDraw") },
 							AwtBridge.fromAwtColor(SwingHelper.getTextColorForPlaceholderImages()))));
+					SwingHelper.handleException(exception, NewSettingsDialog.this, false);
 				}
 			}
 

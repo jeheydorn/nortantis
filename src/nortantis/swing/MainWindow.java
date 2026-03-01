@@ -617,7 +617,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				enableOrDisableFieldsThatRequireMap(true, MainWindow.this.getSettingsFromGUI(false));
 				if (exception != null)
 				{
-					SwingHelper.handleException(exception, null, false);
+					SwingHelper.handleException(exception, MainWindow.this, false);
 				}
 			}
 

@@ -684,7 +684,7 @@ public class SubMapDialog
 				SwingUtilities.invokeLater(() -> enableOrDisableProgressBar(false));
 				if (exception != null)
 				{
-					SwingHelper.handleException(exception, null, false);
+					SwingHelper.handleException(exception, step2Dialog, false);
 				}
 			}
 

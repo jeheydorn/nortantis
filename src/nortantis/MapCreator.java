@@ -8,6 +8,7 @@ import nortantis.graph.voronoi.Edge;
 import nortantis.graph.voronoi.EdgeDrawType;
 import nortantis.platform.*;
 import nortantis.swing.MapEdits;
+import nortantis.swing.translation.Translation;
 import nortantis.util.*;
 import org.apache.commons.lang3.StringUtils;
 
@@ -625,8 +626,7 @@ public class MapCreator implements WarningLogger
 
 		if ((double) settings.generatedWidth / settings.generatedHeight > 10.0 || (double) settings.generatedHeight / settings.generatedWidth > 10.0)
 		{
-			throw new RuntimeException("The aspect ratio " + settings.generatedWidth + "x" + settings.generatedHeight
-					+ " is too extreme. The width-to-height ratio must be between 1:10 and 10:1.");
+			throw new RuntimeException(Translation.get("mapCreator.aspectRatioTooExtreme", settings.generatedWidth, settings.generatedHeight));
 		}
 
 		r = new Random(settings.randomSeed);
