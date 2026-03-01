@@ -298,27 +298,11 @@ public class NewSettingsDialog extends JDialog
 		{
 			dimensionsComboBox.addItem(dimension);
 		}
-		// Show just the short name (e.g. "16 by 9") rather than "4096 × 2304 (16 by 9)" so the
-		// combo box stays narrow and leaves room for the custom-ratio spinners without squashing
-		// the rest of the left panel.
-		dimensionsComboBox.setRenderer(new DefaultListCellRenderer()
-		{
-			@Override
-			public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus)
-			{
-				super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-				if (value instanceof GeneratedDimension)
-				{
-					setText(((GeneratedDimension) value).displayName());
-				}
-				return this;
-			}
-		});
-		dimensionsComboBox.setMaximumSize(new Dimension(dimensionsComboBox.getPreferredSize().width, dimensionsComboBox.getPreferredSize().height));
+		organizer.addLabelAndComponent(Translation.get("newSettingsDialog.dimensions.label"), Translation.get("newSettingsDialog.dimensions.help"), dimensionsComboBox);
 
 		customWidthSpinner = new JSpinner(new SpinnerNumberModel(16, 1, 32768, 1));
 		customHeightSpinner = new JSpinner(new SpinnerNumberModel(9, 1, 32768, 1));
-		Dimension spinnerDim = new Dimension(60, customWidthSpinner.getPreferredSize().height);
+		Dimension spinnerDim = new Dimension(70, customWidthSpinner.getPreferredSize().height);
 		customWidthSpinner.setPreferredSize(spinnerDim);
 		customWidthSpinner.setMaximumSize(spinnerDim);
 		customHeightSpinner.setPreferredSize(spinnerDim);
@@ -333,29 +317,21 @@ public class NewSettingsDialog extends JDialog
 		customHeightSpinner.addChangeListener(e -> updateCustomDimPreview());
 		updateCustomDimPreview();
 
+		// Spinners and preview label share a row that appears only when Custom is selected.
 		customSpinnersPanel = new JPanel();
 		customSpinnersPanel.setLayout(new BoxLayout(customSpinnersPanel, BoxLayout.X_AXIS));
-		customSpinnersPanel.add(Box.createHorizontalStrut(5));
 		customSpinnersPanel.add(customWidthSpinner);
 		customSpinnersPanel.add(new JLabel(" \u00d7 "));
 		customSpinnersPanel.add(customHeightSpinner);
-		customSpinnersPanel.setVisible(false);
+		customSpinnersPanel.add(Box.createHorizontalStrut(8));
+		customSpinnersPanel.add(customDimPreviewLabel);
 
-		JPanel dimensionsRowPanel = new JPanel();
-		dimensionsRowPanel.setLayout(new BoxLayout(dimensionsRowPanel, BoxLayout.X_AXIS));
-		dimensionsRowPanel.add(dimensionsComboBox);
-		dimensionsRowPanel.add(customSpinnersPanel);
-		organizer.addLabelAndComponent(Translation.get("newSettingsDialog.dimensions.label"), Translation.get("newSettingsDialog.dimensions.help"), dimensionsRowPanel);
-
-		// Preview label showing the normalized pixel dimensions — lives in a compact row
-		// directly below the dimensions row so it doesn't add width to the inline spinner row.
-		customDimPreviewHider = organizer.addLabelAndComponent("", "", customDimPreviewLabel, 2);
+		customDimPreviewHider = organizer.addLabelAndComponent("", "", customSpinnersPanel, 2);
 		customDimPreviewHider.setVisible(false);
 
 		dimensionsComboBox.addActionListener(e ->
 		{
 			boolean isCustom = dimensionsComboBox.getSelectedItem() == GeneratedDimension.Any;
-			customSpinnersPanel.setVisible(isCustom);
 			customDimPreviewHider.setVisible(isCustom);
 			clearMapPreview();
 			handleMapChange();
@@ -626,9 +602,15 @@ public class NewSettingsDialog extends JDialog
 			}
 
 			@Override
-			protected void onFailedToDraw()
+			protected void onFailedToDraw(Exception exception)
 			{
 				enableOrDisableProgressBar(false);
+				if (exception != null)
+				{
+					mapEditingPanel.setImage(AwtBridge.toBufferedImage(ImageHelper.getInstance().createPlaceholderImage(
+							new String[] { Translation.get("newSettingsDialog.previewFailedToDraw") },
+							AwtBridge.fromAwtColor(SwingHelper.getTextColorForPlaceholderImages()))));
+				}
 			}
 
 			@Override
@@ -665,7 +647,6 @@ public class NewSettingsDialog extends JDialog
 			customHeightSpinner.setValue(settings.generatedHeight);
 			updateCustomDimPreview();
 		}
-		customSpinnersPanel.setVisible(dim == GeneratedDimension.Any);
 		customDimPreviewHider.setVisible(dim == GeneratedDimension.Any);
 		worldSizeSlider.setValue(settings.worldSize);
 		if (settings.landShape != null)

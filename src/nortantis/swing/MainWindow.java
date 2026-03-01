@@ -604,7 +604,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 
 			@Override
-			protected void onFailedToDraw()
+			protected void onFailedToDraw(Exception exception)
 			{
 				showAsDrawing(false);
 				mapEditingPanel.clearAllSelectionsAndHighlights();
@@ -615,6 +615,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				// But leaving fields disabled makes the user unable to fix the
 				// error.
 				enableOrDisableFieldsThatRequireMap(true, MainWindow.this.getSettingsFromGUI(false));
+				if (exception != null)
+				{
+					SwingHelper.handleException(exception, null, false);
+				}
 			}
 
 			@Override

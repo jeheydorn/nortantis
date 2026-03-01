@@ -230,7 +230,7 @@ public class MapCreatorTest
 			}
 
 			@Override
-			protected void onFailedToDraw()
+			protected void onFailedToDraw(Exception exception)
 			{
 				fail("Updater failed to draw.");
 			}

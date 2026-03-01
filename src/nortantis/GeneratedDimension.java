@@ -39,7 +39,7 @@ public enum GeneratedDimension
 		{
 			return displayName();
 		}
-		return width + " \u00d7 " + height + " (" + displayName() + ")";
+		return displayName() + " (" + width + " \u00d7 " + height + ")";
 	}
 
 	public static GeneratedDimension fromDimensions(int w, int h)

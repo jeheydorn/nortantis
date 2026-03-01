@@ -671,7 +671,8 @@ public abstract class MapUpdater
 
 						if (updateType != UpdateType.ReprocessBooks && !isCanceled)
 						{
-							onFailedToDraw();
+							Exception exception = result != null ? result.exception : null;
+							onFailedToDraw(exception);
 						}
 						currentMapCreator = null;
 						currentUpdate = null;
@@ -729,6 +730,11 @@ public abstract class MapUpdater
 			Logger.println("Map creation cancelled.");
 			return new UpdateResult(null, null, new ArrayList<>());
 		}
+		catch (RuntimeException e)
+		{
+			Logger.printError("Map creation failed.", e);
+			return new UpdateResult(null, null, new ArrayList<>(), e);
+		}
 
 		System.gc();
 		return new UpdateResult(map, null, currentMapCreator.getWarningMessages());
@@ -747,12 +753,21 @@ public abstract class MapUpdater
 		public Image map;
 		public IntRectangle replaceBounds;
 		public List<String> warningMessages;
+		public Exception exception;
 
 		public UpdateResult(Image map, IntRectangle replaceBounds, List<String> warningMessages)
 		{
 			this.map = map;
 			this.replaceBounds = replaceBounds;
 			this.warningMessages = warningMessages;
+		}
+
+		public UpdateResult(Image map, IntRectangle replaceBounds, List<String> warningMessages, Exception exception)
+		{
+			this.map = map;
+			this.replaceBounds = replaceBounds;
+			this.warningMessages = warningMessages;
+			this.exception = exception;
 		}
 	}
 
@@ -768,7 +783,7 @@ public abstract class MapUpdater
 
 	protected abstract void onFinishedDrawingIncremental(boolean anotherDrawIsQueued, int borderPaddingAsDrawn, IntRectangle incrementalChangeArea, List<String> warningMessages);
 
-	protected abstract void onFailedToDraw();
+	protected abstract void onFailedToDraw(Exception exception);
 
 	protected abstract MapEdits getEdits();
 

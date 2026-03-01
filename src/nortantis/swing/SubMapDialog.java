@@ -392,13 +392,14 @@ public class SubMapDialog
 		double origMapAreaForDefault = origSettings.generatedWidth * (double) origSettings.generatedHeight;
 		double selAreaForDefault = selBoundsRI.width * selBoundsRI.height;
 		double oneXWorldSize = origSettings.worldSize * selAreaForDefault / origMapAreaForDefault;
+		final int minPolygonsInSubMap = 1000;
 		if (subMapWorldSize == 0)
 		{
-			subMapWorldSize = (int) Math.round(Math.max(1000, Math.min(SettingsGenerator.maxWorldSize, oneXWorldSize)));
+			subMapWorldSize = (int) Math.round(Math.max(minPolygonsInSubMap, Math.min(SettingsGenerator.maxWorldSize, oneXWorldSize)));
 		}
 		else
 		{
-			subMapWorldSize = Math.max(1000, Math.min(SettingsGenerator.maxWorldSize, subMapWorldSize));
+			subMapWorldSize = Math.max(minPolygonsInSubMap, Math.min(SettingsGenerator.maxWorldSize, subMapWorldSize));
 		}
 
 		// Detail slider row
@@ -406,7 +407,8 @@ public class SubMapDialog
 		JLabel polygonsLabel = new JLabel("Number of polygons:");
 		polygonsLabel.setToolTipText("<html>The number of Voronoi polygons in the sub-map, which controls its level of detail.<br>"
 				+ "The multiplier shows how many times more polygons the sub-map has relative<br>"
-				+ "to the equivalent area of the source map. Values below 1× mean less detail.</html>");
+				+ "to the equivalent area of the source map. Values below 1× mean less detail. "
+				+ "Values <br>above 1× mean more detail. The number of polygons is must be between " + minPolygonsInSubMap + " <br>and " + SettingsGenerator.maxWorldSize + ".</html>");
 		sliderRow.add(polygonsLabel);
 
 		JSlider rawSlider = new JSlider(1000, SettingsGenerator.maxWorldSize, subMapWorldSize);
@@ -677,9 +679,13 @@ public class SubMapDialog
 			}
 
 			@Override
-			protected void onFailedToDraw()
+			protected void onFailedToDraw(Exception exception)
 			{
 				SwingUtilities.invokeLater(() -> enableOrDisableProgressBar(false));
+				if (exception != null)
+				{
+					SwingHelper.handleException(exception, null, false);
+				}
 			}
 
 			@Override

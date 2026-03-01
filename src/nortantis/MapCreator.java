@@ -623,6 +623,12 @@ public class MapCreator implements WarningLogger
 			Logger.println("Using custom images folder: " + settings.customImagesPath);
 		}
 
+		if ((double) settings.generatedWidth / settings.generatedHeight > 10.0 || (double) settings.generatedHeight / settings.generatedWidth > 10.0)
+		{
+			throw new RuntimeException("The aspect ratio " + settings.generatedWidth + "x" + settings.generatedHeight
+					+ " is too extreme. The width-to-height ratio must be between 1:10 and 10:1.");
+		}
+
 		r = new Random(settings.randomSeed);
 		Dimension mapBounds = Background.calcMapBoundsAndAdjustResolutionIfNeeded(settings, maxDimensions);
 		double sizeMultiplier = calcSizeMultiplierFromResolutionScale(settings.resolution);

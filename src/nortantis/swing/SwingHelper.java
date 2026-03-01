@@ -333,6 +333,18 @@ public class SwingHelper
 				}
 			});
 		}
+		else if (component instanceof JSpinner)
+		{
+			((JSpinner) component).addChangeListener(new ChangeListener()
+			{
+
+				@Override
+				public void stateChanged(ChangeEvent e)
+				{
+					action.run();
+				}
+			});
+		}
 		else if (component instanceof JTextComponent)
 		{
 			((JTextComponent) component).getDocument().addDocumentListener(new DocumentListener()
