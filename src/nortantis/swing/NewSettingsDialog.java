@@ -331,7 +331,7 @@ public class NewSettingsDialog extends JDialog
 
 		dimensionsComboBox.addActionListener(e ->
 		{
-			boolean isCustom = dimensionsComboBox.getSelectedItem() == GeneratedDimension.Any;
+			boolean isCustom = dimensionsComboBox.getSelectedItem() == GeneratedDimension.Custom;
 			customDimPreviewHider.setVisible(isCustom);
 			clearMapPreview();
 			handleMapChange();
@@ -642,13 +642,13 @@ public class NewSettingsDialog extends JDialog
 	{
 		GeneratedDimension dim = GeneratedDimension.fromDimensions(settings.generatedWidth, settings.generatedHeight);
 		dimensionsComboBox.setSelectedItem(dim);
-		if (dim == GeneratedDimension.Any)
+		if (dim == GeneratedDimension.Custom)
 		{
 			customWidthSpinner.setValue(settings.generatedWidth);
 			customHeightSpinner.setValue(settings.generatedHeight);
 			updateCustomDimPreview();
 		}
-		customDimPreviewHider.setVisible(dim == GeneratedDimension.Any);
+		customDimPreviewHider.setVisible(dim == GeneratedDimension.Custom);
 		worldSizeSlider.setValue(settings.worldSize);
 		if (settings.landShape != null)
 		{
@@ -719,7 +719,7 @@ public class NewSettingsDialog extends JDialog
 	private Dimension getGeneratedBackgroundDimensionsFromGUI()
 	{
 		GeneratedDimension selected = (GeneratedDimension) dimensionsComboBox.getSelectedItem();
-		if (selected == GeneratedDimension.Any)
+		if (selected == GeneratedDimension.Custom)
 		{
 			return normalizeCustomDimensions(((Number) customWidthSpinner.getValue()).intValue(),
 					((Number) customHeightSpinner.getValue()).intValue());

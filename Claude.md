@@ -114,7 +114,7 @@ The benchmark creates maps using settings from `unit test files/map settings/sim
 
 ## Editing Files
 
-Always use the Read, Edit, and Write tools to read and modify files. Never use Python scripts, shell commands like `sed` or `awk`, or PowerShell to read or write file content.
+Whenever possible, use the Read, Edit, and Write tools to read and modify files. Try to never use Python scripts, shell commands like `sed` or `awk`, or PowerShell to read or write file content.
 
 If the Edit tool fails with "String to replace not found", the most likely cause is that the file uses Windows CRLF line endings and the tool is having trouble matching. To work around this without resorting to scripts:
 - Try using a slightly different (larger) context string — include one or two extra lines above or below the target text. The Edit tool often succeeds once there is enough unique surrounding context.

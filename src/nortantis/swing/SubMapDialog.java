@@ -103,11 +103,11 @@ public class SubMapDialog
 
 		// Aspect ratio buttons
 		GeneratedDimension[] dims = GeneratedDimension.presets();
-		int numButtons = dims.length + 1; // +1 for "Any"
+		int numButtons = dims.length + 1; // +1 for Custom
 		double[] ratios = new double[numButtons];
 		String[] ratioLabels = new String[numButtons];
 		ratios[0] = 0.0;
-		ratioLabels[0] = "Any";
+		ratioLabels[0] = GeneratedDimension.Custom.displayName();
 		for (int i = 0; i < dims.length; i++)
 		{
 			ratios[i + 1] = dims[i].aspectRatio();
@@ -125,6 +125,7 @@ public class SubMapDialog
 			{
 				selectedAspectRatio = ratio;
 				mainWindow.mapEditingPanel.setSelectionBoxLockedAspectRatio(ratio);
+				mainWindow.mapEditingPanel.setSelectionBoxMaxAspectRatio(ratio == 0.0 ? GeneratedDimension.MAX_ASPECT_RATIO : 0.0);
 				if (ratio > 0 && selBoundsRI != null)
 				{
 					selBoundsRI = adjustSelectionBoxToAspectRatio(selBoundsRI, ratio);
@@ -200,6 +201,7 @@ public class SubMapDialog
 		// Constrain the selection box to the displayed map bounds (accounts for rotation).
 		mainWindow.mapEditingPanel.setSelectionBoxConstraints(new Rectangle(0, 0, getMapDisplayWidth(), getMapDisplayHeight()));
 		mainWindow.mapEditingPanel.setSelectionBoxLockedAspectRatio(selectedAspectRatio);
+		mainWindow.mapEditingPanel.setSelectionBoxMaxAspectRatio(selectedAspectRatio == 0.0 ? GeneratedDimension.MAX_ASPECT_RATIO : 0.0);
 
 		// Register the selection box handler on the main map panel.
 		mainWindow.mapEditingPanel.enableSelectionBox(() ->

@@ -7,10 +7,15 @@ import nortantis.swing.translation.Translation;
  */
 public enum GeneratedDimension
 {
-	Square(4096, 4096), Sixteen_by_9(4096, 2304), Golden_Ratio(4096, 2531), Any(0, 0);
+	Square(4096, 4096), Sixteen_by_9(4096, 2304), Golden_Ratio(4096, 2531), Custom(0, 0);
 
 	public final int width;
 	public final int height;
+
+	/**
+	 * Maximum allowed aspect ratio (width:height or height:width). Aspect ratios more extreme than this are rejected by map generation.
+	 */
+	public static final int MAX_ASPECT_RATIO = 10;
 
 	GeneratedDimension(int width, int height)
 	{
@@ -35,7 +40,7 @@ public enum GeneratedDimension
 	@Override
 	public String toString()
 	{
-		if (this == Any)
+		if (this == Custom)
 		{
 			return displayName();
 		}
@@ -46,7 +51,7 @@ public enum GeneratedDimension
 	{
 		for (GeneratedDimension d : values())
 		{
-			if (d == Any)
+			if (d == Custom)
 			{
 				continue;
 			}
@@ -55,11 +60,11 @@ public enum GeneratedDimension
 				return d;
 			}
 		}
-		return Any;
+		return Custom;
 	}
 
 	/**
-	 * Returns all preset dimensions — all values except {@link #Any}.
+	 * Returns all preset dimensions — all values except {@link #Custom}.
 	 */
 	public static GeneratedDimension[] presets()
 	{
@@ -68,7 +73,7 @@ public enum GeneratedDimension
 		int j = 0;
 		for (GeneratedDimension d : all)
 		{
-			if (d != Any)
+			if (d != Custom)
 			{
 				result[j++] = d;
 			}

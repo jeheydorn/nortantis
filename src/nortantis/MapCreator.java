@@ -624,9 +624,10 @@ public class MapCreator implements WarningLogger
 			Logger.println("Using custom images folder: " + settings.customImagesPath);
 		}
 
-		if ((double) settings.generatedWidth / settings.generatedHeight > 10.0 || (double) settings.generatedHeight / settings.generatedWidth > 10.0)
+		if ((double) settings.generatedWidth / settings.generatedHeight > GeneratedDimension.MAX_ASPECT_RATIO
+				|| (double) settings.generatedHeight / settings.generatedWidth > GeneratedDimension.MAX_ASPECT_RATIO)
 		{
-			throw new RuntimeException(Translation.get("mapCreator.aspectRatioTooExtreme", settings.generatedWidth, settings.generatedHeight));
+			throw new RuntimeException(Translation.get("mapCreator.aspectRatioTooExtreme", settings.generatedWidth, settings.generatedHeight, GeneratedDimension.MAX_ASPECT_RATIO));
 		}
 
 		r = new Random(settings.randomSeed);
