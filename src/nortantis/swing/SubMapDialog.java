@@ -28,8 +28,7 @@ import java.util.Random;
 /**
  * A two-step dialog for creating a higher-detail sub-map from a region of the current map.
  *
- * Step 1 (non-modal): User drags on the map to select a region. Step 2 (modal): User chooses detail level and previews the sub-map before
- * creating it.
+ * Step 1 (non-modal): User drags on the map to select a region. Step 2 (modal): User chooses detail level and previews the sub-map before creating it.
  */
 public class SubMapDialog
 {
@@ -97,8 +96,7 @@ public class SubMapDialog
 		final int topInset = 2;
 
 		// Instructions
-		JLabel instructionsLabel = new JLabel("<html>Drag on the map to select the region for the sub-map.<br>"
-				+ "When done, click <b>Next</b> to choose the detail level.</html>");
+		JLabel instructionsLabel = new JLabel("<html>Drag on the map to select the region for the sub-map.<br>" + "When done, click <b>Next</b> to choose the detail level.</html>");
 		organizer.addLeftAlignedComponent(instructionsLabel);
 
 		// Aspect ratio buttons
@@ -137,7 +135,9 @@ public class SubMapDialog
 			aspectRatioButtons.add(btn);
 		}
 		SegmentedButtonWidget segmentedButtonWidget = new SegmentedButtonWidget(aspectRatioButtons);
-		segmentedButtonWidget.addToOrganizer(organizer, "Aspect ratio:","Constrain the aspect ratio of the selection.", topInset);
+		segmentedButtonWidget.addToOrganizer(organizer, "Aspect ratio:",
+				"Constrain the aspect ratio of the selection. Even when using " + GeneratedDimension.Custom + ", the aspect ratio must be between 1:" + GeneratedDimension.MAX_ASPECT_RATIO + " and "
+						+ GeneratedDimension.MAX_ASPECT_RATIO + ":1.", topInset);
 
 		// Position and size spinners (use display dimensions, which are rotated relative to generatedWidth/Height for 90°/270°)
 		int mapDisplayW = getMapDisplayWidth();
@@ -154,7 +154,8 @@ public class SubMapDialog
 		widthSpinner.setPreferredSize(spinnerSize);
 		heightSpinner.setPreferredSize(spinnerSize);
 
-		organizer.addLabelAndComponentsHorizontalWithTopInset( "Position:", "", Arrays.asList(new JLabel("X:"), xSpinner, new JLabel("Y:"), ySpinner, new JLabel("Width:"), widthSpinner, new JLabel("Height:"), heightSpinner), topInset);
+		organizer.addLabelAndComponentsHorizontalWithTopInset("Position:", "",
+				Arrays.asList(new JLabel("X:"), xSpinner, new JLabel("Y:"), ySpinner, new JLabel("Width:"), widthSpinner, new JLabel("Height:"), heightSpinner), topInset);
 
 		organizer.addVerticalFillerRow();
 
@@ -195,8 +196,7 @@ public class SubMapDialog
 		java.awt.Point parentLocation = mainWindow.getLocation();
 		Dimension parentSize = mainWindow.getSize();
 		Dimension dialogSize = step1Dialog.getSize();
-		step1Dialog.setLocation(parentLocation.x + parentSize.width / 2 - dialogSize.width / 2,
-				parentLocation.y + parentSize.height - dialogSize.height - 18);
+		step1Dialog.setLocation(parentLocation.x + parentSize.width / 2 - dialogSize.width / 2, parentLocation.y + parentSize.height - dialogSize.height - 18);
 
 		// Constrain the selection box to the displayed map bounds (accounts for rotation).
 		mainWindow.mapEditingPanel.setSelectionBoxConstraints(new Rectangle(0, 0, getMapDisplayWidth(), getMapDisplayHeight()));
@@ -293,8 +293,8 @@ public class SubMapDialog
 	 */
 	private String validateStep1Spinners()
 	{
-		return validateSpinnerValues(((Number) xSpinner.getValue()).intValue(), ((Number) ySpinner.getValue()).intValue(),
-				((Number) widthSpinner.getValue()).intValue(), ((Number) heightSpinner.getValue()).intValue());
+		return validateSpinnerValues(((Number) xSpinner.getValue()).intValue(), ((Number) ySpinner.getValue()).intValue(), ((Number) widthSpinner.getValue()).intValue(),
+				((Number) heightSpinner.getValue()).intValue());
 	}
 
 	/**
@@ -332,8 +332,7 @@ public class SubMapDialog
 	}
 
 	/**
-	 * Adjusts the selection box to match the given aspect ratio (width / height), keeping the top-left corner fixed and clamping to the map
-	 * bounds.
+	 * Adjusts the selection box to match the given aspect ratio (width / height), keeping the top-left corner fixed and clamping to the map bounds.
 	 */
 	private Rectangle adjustSelectionBoxToAspectRatio(Rectangle box, double ratio)
 	{
@@ -407,10 +406,10 @@ public class SubMapDialog
 		// Detail slider row
 		JPanel sliderRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
 		JLabel polygonsLabel = new JLabel("Number of polygons:");
-		polygonsLabel.setToolTipText("<html>The number of Voronoi polygons in the sub-map, which controls its level of detail.<br>"
-				+ "The multiplier shows how many times more polygons the sub-map has relative<br>"
-				+ "to the equivalent area of the source map. Values below 1× mean less detail. "
-				+ "Values <br>above 1× mean more detail. The number of polygons is must be between " + minPolygonsInSubMap + " <br>and " + SettingsGenerator.maxWorldSize + ".</html>");
+		polygonsLabel.setToolTipText(
+				"<html>The number of Voronoi polygons in the sub-map, which controls its level of detail.<br>" + "The multiplier shows how many times more polygons the sub-map has relative<br>"
+						+ "to the equivalent area of the source map. Values below 1× mean less detail. " + "Values <br>above 1× mean more detail. The number of polygons is must be between "
+						+ minPolygonsInSubMap + " <br>and " + SettingsGenerator.maxWorldSize + ".</html>");
 		sliderRow.add(polygonsLabel);
 
 		JSlider rawSlider = new JSlider(1000, SettingsGenerator.maxWorldSize, subMapWorldSize);
@@ -420,25 +419,22 @@ public class SubMapDialog
 		rawSlider.setPaintLabels(true);
 		rawSlider.setSnapToTicks(true);
 
-		detailSliderWithValue = new SliderWithDisplayedValue(rawSlider,
-				value ->
-				{
-					double origMapArea = origSettings.generatedWidth * (double) origSettings.generatedHeight;
-					double selArea = selBoundsRI.width * selBoundsRI.height;
-					double oneX = origSettings.worldSize * selArea / origMapArea;
-					double ratio = (oneX > 0) ? value / oneX : 1.0;
-					return String.format("%.1fx, \u2248%d polygons", ratio, value);
-				},
-				() ->
-				{
-					subMapWorldSize = detailSlider.getValue();
-					updateDetailLevelState();
-					if (!isTooDetailed())
-					{
-						triggerPreviewRedraw();
-					}
-				},
-				null);
+		detailSliderWithValue = new SliderWithDisplayedValue(rawSlider, value ->
+		{
+			double origMapArea = origSettings.generatedWidth * (double) origSettings.generatedHeight;
+			double selArea = selBoundsRI.width * selBoundsRI.height;
+			double oneX = origSettings.worldSize * selArea / origMapArea;
+			double ratio = (oneX > 0) ? value / oneX : 1.0;
+			return String.format("%.1fx, \u2248%d polygons", ratio, value);
+		}, () ->
+		{
+			subMapWorldSize = detailSlider.getValue();
+			updateDetailLevelState();
+			if (!isTooDetailed())
+			{
+				triggerPreviewRedraw();
+			}
+		}, null);
 		detailSlider = detailSliderWithValue.slider;
 		sliderRow.add(detailSlider);
 		sliderRow.add(detailSliderWithValue.valueDisplay);
@@ -511,8 +507,8 @@ public class SubMapDialog
 		previewLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 2, 0));
 		previewWrapper.add(previewLabel, BorderLayout.NORTH);
 
-		BufferedImage placeholder = AwtBridge.toBufferedImage(nortantis.platform.ImageHelper.getInstance().createPlaceholderImage(new String[] { "Drawing sub-map preview..." },
-				AwtBridge.fromAwtColor(SwingHelper.getTextColorForPlaceholderImages())));
+		BufferedImage placeholder = AwtBridge.toBufferedImage(nortantis.platform.ImageHelper.getInstance()
+				.createPlaceholderImage(new String[] { "Drawing sub-map preview..." }, AwtBridge.fromAwtColor(SwingHelper.getTextColorForPlaceholderImages())));
 		previewPanel = new MapEditingPanel(placeholder);
 
 		previewContainer = new JPanel(new BorderLayout());
