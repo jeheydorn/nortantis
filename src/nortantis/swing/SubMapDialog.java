@@ -379,7 +379,7 @@ public class SubMapDialog
 		step2Dialog = new JDialog(mainWindow, "Create Sub-Map – Detail Level", true);
 		step2Dialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
 		step2Dialog.setResizable(true);
-		step2Dialog.setSize(900, 700);
+		step2Dialog.setSize(810, 675);
 		step2Dialog.setMinimumSize(new Dimension(600, 500));
 
 		JPanel mainPanel = new JPanel(new BorderLayout(5, 5));
