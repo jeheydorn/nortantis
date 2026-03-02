@@ -13,7 +13,6 @@ import nortantis.graph.voronoi.Edge;
 import nortantis.swing.MapEdits;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -83,82 +82,87 @@ public class SubMapCreator
 		// This gives us the same Voronoi structure MapCreator will use when rendering (same seed, same params).
 		WorldGraph newGraph = MapCreator.createGraph(newSettings, false);
 
+		// Step 5+6a: For each new center, sample its loc and all Voronoi corners in orig-graph space
+		// and use majority/plurality voting to assign water/lake/region.
+		MapEdits newEdits = new MapEdits();
+		Map<Integer, List<Integer>> origRegionToNewCenters = new HashMap<>();
+
 		for (Center newCenter : newGraph.centers)
 		{
-			// Map new center loc → orig graph coordinates.
-			double origGraphX = (newCenter.loc.x / newGraph.bounds.width * selBoundsRI.width + selBoundsRI.x) * origResolution;
-			double origGraphY = (newCenter.loc.y / newGraph.bounds.height * selBoundsRI.height + selBoundsRI.y) * origResolution;
-			Point origGraphPt = new Point(origGraphX, origGraphY);
-
-			Center origCenter = origGraph.findClosestCenter(origGraphPt, false);
-
-			boolean isWater;
-			boolean isLake;
-			if (origCenter != null && origEdits.centerEdits.containsKey(origCenter.index))
+			// Build sample points: center loc + all Voronoi corners, mapped to orig-graph pixel space.
+			List<Point> samplePts = new ArrayList<>(newCenter.corners.size() + 1);
+			samplePts.add(mapToOrigGraphPoint(newCenter.loc, newGraph, selBoundsRI, origResolution));
+			for (Corner corner : newCenter.corners)
 			{
-				CenterEdit origEdit = origEdits.centerEdits.get(origCenter.index);
-				isWater = origEdit.isWater;
-				isLake = origEdit.isLake;
-			}
-			else if (origCenter != null)
-			{
-				isWater = origCenter.isWater;
-				isLake = origCenter.isLake;
-			}
-			else
-			{
-				isWater = true;
-				isLake = false;
+				samplePts.add(mapToOrigGraphPoint(corner.loc, newGraph, selBoundsRI, origResolution));
 			}
 
+			// Tally votes from the original map for each sample point.
+			int waterVotes = 0;
+			int lakeVotes = 0;
+			Map<Integer, Integer> regionVotes = new HashMap<>();
+			for (Point samplePt : samplePts)
+			{
+				Center origCenter = origGraph.findClosestCenter(samplePt, false);
+				boolean sIsWater, sIsLake;
+				Integer sRegionId;
+				if (origCenter != null && origEdits.centerEdits.containsKey(origCenter.index))
+				{
+					CenterEdit oe = origEdits.centerEdits.get(origCenter.index);
+					sIsWater = oe.isWater;
+					sIsLake = oe.isLake;
+					sRegionId = oe.regionId;
+				}
+				else if (origCenter != null)
+				{
+					sIsWater = origCenter.isWater;
+					sIsLake = origCenter.isLake;
+					sRegionId = origCenter.region != null ? origCenter.region.id : null;
+				}
+				else
+				{
+					sIsWater = true;
+					sIsLake = false;
+					sRegionId = null;
+				}
+				if (sIsWater) waterVotes++;
+				if (sIsLake) lakeVotes++;
+				if (sRegionId != null) regionVotes.merge(sRegionId, 1, Integer::sum);
+			}
+
+			// Majority vote: ≥50% water samples → water; ≥50% of water samples are lake → lake.
+			boolean isWater = waterVotes * 2 >= samplePts.size();
+			boolean isLake = isWater && waterVotes > 0 && lakeVotes * 2 >= waterVotes;
+			// Plurality vote for region: the region with the most sample-point votes wins.
+			Integer regionId = null;
+			int maxVotes = 0;
+			for (Map.Entry<Integer, Integer> e : regionVotes.entrySet())
+			{
+				if (e.getValue() > maxVotes)
+				{
+					maxVotes = e.getValue();
+					regionId = e.getKey();
+				}
+			}
+
+			// Apply to the new center (required before propagateCoastAndCornerFlags).
 			newCenter.isWater = isWater;
 			newCenter.isLake = isLake;
-		}
-
-		// Step 5: Propagate coast/corner flags.
-		newGraph.propagateCoastAndCornerFlags();
-		newGraph.markLakes();
-
-		// Step 6: Build new MapEdits.
-		MapEdits newEdits = new MapEdits();
-
-		// 6a: CenterEdits — transfer isWater/isLake and map regionId.
-		// Build a mapping from origRegionId → set of new centerIndices for majority vote later.
-		Map<Integer, List<Integer>> origRegionToNewCenters = new HashMap<>();
-		Map<Integer, Integer> newCenterToOrigRegion = new HashMap<>();
-
-		for (Center newCenter : newGraph.centers)
-		{
-			double origGraphX = (newCenter.loc.x / newGraph.bounds.width * selBoundsRI.width + selBoundsRI.x) * origResolution;
-			double origGraphY = (newCenter.loc.y / newGraph.bounds.height * selBoundsRI.height + selBoundsRI.y) * origResolution;
-			Point origGraphPt = new Point(origGraphX, origGraphY);
-
-			Center origCenter = origGraph.findClosestCenter(origGraphPt, false);
-
-			boolean isWater = newCenter.isWater;
-			boolean isLake = newCenter.isLake;
-			Integer regionId = null;
-
-			if (origCenter != null && origEdits.centerEdits.containsKey(origCenter.index))
-			{
-				CenterEdit origEdit = origEdits.centerEdits.get(origCenter.index);
-				regionId = origEdit.regionId;
-			}
-			else if (origCenter != null && origCenter.region != null)
-			{
-				regionId = origCenter.region.id;
-			}
 
 			if (regionId != null)
 			{
 				origRegionToNewCenters.computeIfAbsent(regionId, k -> new ArrayList<>()).add(newCenter.index);
-				newCenterToOrigRegion.put(newCenter.index, regionId);
 			}
-
 			newEdits.centerEdits.put(newCenter.index, new CenterEdit(newCenter.index, isWater, isLake, regionId, null, null));
 		}
 
-		// 6b: RegionEdits — copy colors for all referenced original regionIds.
+		// Propagate coast/corner flags now that isWater/isLake are set on all centers.
+		newGraph.propagateCoastAndCornerFlags();
+		newGraph.markLakes();
+
+		// Step 6: Build remaining MapEdits.
+
+		// RegionEdits — copy colors for all referenced original regionIds.
 		for (Integer origRegionId : origRegionToNewCenters.keySet())
 		{
 			RegionEdit origRegionEdit = origEdits.regionEdits.get(origRegionId);
@@ -249,6 +253,16 @@ public class SubMapCreator
 		newSettings.edits = newEdits;
 
 		return newSettings;
+	}
+
+	/**
+	 * Maps a point from new-graph pixel space to orig-graph pixel space.
+	 */
+	private static Point mapToOrigGraphPoint(Point newGraphPt, WorldGraph newGraph, Rectangle selBoundsRI, double origResolution)
+	{
+		double origX = (newGraphPt.x / newGraph.bounds.width * selBoundsRI.width + selBoundsRI.x) * origResolution;
+		double origY = (newGraphPt.y / newGraph.bounds.height * selBoundsRI.height + selBoundsRI.y) * origResolution;
+		return new Point(origX, origY);
 	}
 
 	/**
