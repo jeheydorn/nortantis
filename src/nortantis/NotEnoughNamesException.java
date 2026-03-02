@@ -1,5 +1,7 @@
 package nortantis;
 
+import nortantis.swing.translation.Translation;
+
 @SuppressWarnings("serial")
 public class NotEnoughNamesException extends RuntimeException
 {
@@ -10,6 +12,6 @@ public class NotEnoughNamesException extends RuntimeException
 	@Override
 	public String getMessage()
 	{
-		return "The selected books do not have enough names to generate new names. Try selecting more books.";
+		return Translation.get("error.notEnoughNames");
 	}
 }

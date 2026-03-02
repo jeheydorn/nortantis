@@ -1,5 +1,6 @@
 package nortantis;
 
+import nortantis.swing.translation.Translation;
 import nortantis.util.ComparableList;
 import nortantis.util.Range;
 import nortantis.util.StringCounterMap;
@@ -91,7 +92,7 @@ public class CharacterNGram
 	private String generateName(String requiredPrefix)
 	{
 		if (scMap.size() == 0)
-			throw new IllegalStateException("At least one book must be selected to generate text.");
+			throw new IllegalStateException(Translation.get("error.noBookSelected"));
 		List<Character> lastChars = new ComparableList<>();
 		for (@SuppressWarnings("unused")
 		int i : new Range(n - 1))
