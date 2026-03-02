@@ -594,7 +594,7 @@ public class JFontChooser extends JComponent
 		cancelButton.setFont(DEFAULT_FONT);
 
 		JPanel buttonsPanel = new JPanel();
-		buttonsPanel.setLayout(new GridLayout(2, 1));
+		buttonsPanel.setLayout(new GridLayout(2, 1, 0, 5));
 		buttonsPanel.add(okButton);
 		buttonsPanel.add(cancelButton);
 		buttonsPanel.setBorder(BorderFactory.createEmptyBorder(25, 0, 10, 10));
