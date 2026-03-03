@@ -412,7 +412,7 @@ public class RoadDrawer
 		return newRoad;
 	}
 
-	private static Road tryConnectingRoadToExistingRoad(Road roadToAdd, List<Road> roads)
+	static Road tryConnectingRoadToExistingRoad(Road roadToAdd, List<Road> roads)
 	{
 		for (Road road : roads)
 		{
@@ -456,6 +456,37 @@ public class RoadDrawer
 		}
 
 		return null;
+	}
+
+	/**
+	 * Creates a Road from a list of RI-coordinate points and adds it to roads, merging with any existing road whose endpoint is close to the
+	 * new road's endpoint.
+	 *
+	 * @return The new or modified road (for incremental redraw), or null if the path is too short.
+	 */
+	public static Road addFreeHandRoadFromPoints(List<Point> pathRI, List<Road> roads)
+	{
+		if (pathRI == null || pathRI.size() < 2)
+		{
+			return null;
+		}
+
+		Road newRoad = new Road(pathRI);
+
+		Road joined = tryConnectingRoadToExistingRoad(newRoad, roads);
+		if (joined != null)
+		{
+			Road joined2 = tryConnectingRoadToExistingRoad(joined, roads);
+			if (joined2 != null)
+			{
+				roads.remove(joined);
+				return joined2;
+			}
+			return joined;
+		}
+
+		roads.add(newRoad);
+		return newRoad;
 	}
 
 	public static void removeEmptyOrSinglePointRoads(List<Road> roadList)

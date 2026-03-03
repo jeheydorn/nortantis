@@ -47,6 +47,9 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private Collection<Edge> highlightedEdges;
 	private List<List<Point>> polylinesToHighlight;
 	private EdgeType edgeTypeToHighlight;
+	private List<Point> roadControlPointCircles = null;
+	private Point hoveredRoadControlPoint = null;
+	private List<Point> freeHandPreviewPath = null;
 	private boolean highlightLakes;
 	private boolean highlightRivers;
 	public Image mapFromMapCreator;
@@ -198,6 +201,36 @@ public class MapEditingPanel extends UnscaledImagePanel
 	public void clearHighlightedPolylines()
 	{
 		polylinesToHighlight.clear();
+	}
+
+	public void setRoadControlPointCircles(List<Point> circles)
+	{
+		this.roadControlPointCircles = circles;
+	}
+
+	public void clearRoadControlPointCircles()
+	{
+		this.roadControlPointCircles = null;
+	}
+
+	public void setHoveredRoadControlPoint(Point point)
+	{
+		this.hoveredRoadControlPoint = point;
+	}
+
+	public void clearHoveredRoadControlPoint()
+	{
+		this.hoveredRoadControlPoint = null;
+	}
+
+	public void setFreeHandPreviewPath(List<Point> path)
+	{
+		this.freeHandPreviewPath = path;
+	}
+
+	public void clearFreeHandPreviewPath()
+	{
+		this.freeHandPreviewPath = null;
 	}
 
 	public void setTextBoxToDraw(nortantis.geom.RotatedRectangle line1Bounds, nortantis.geom.RotatedRectangle line2Bounds)
@@ -577,6 +610,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 			g.setColor(getHighlightColor());
 			drawEdges(g, highlightedEdges);
 			drawPolylines(g);
+			drawRoadControlPoints((Graphics2D) g);
 
 			g.setColor(selectColor);
 			drawCenterOutlines(g, selectedCenters);
@@ -888,6 +922,47 @@ public class MapEditingPanel extends UnscaledImagePanel
 		{
 			drawPolyline(g, line);
 		}
+	}
+
+	private void drawRoadControlPoints(Graphics2D g2)
+	{
+		if ((roadControlPointCircles == null || roadControlPointCircles.isEmpty()) && hoveredRoadControlPoint == null && freeHandPreviewPath == null)
+		{
+			return;
+		}
+
+		RenderingHints prevHints = g2.getRenderingHints();
+		Stroke prevStroke = g2.getStroke();
+		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		// Fixed size in graph-pixel space so the circles scale with zoom just like the map content.
+		int r = 10;
+		g2.setStroke(new BasicStroke(3f));
+
+		if (roadControlPointCircles != null)
+		{
+			g2.setColor(processingColor);
+			for (Point p : roadControlPointCircles)
+			{
+				g2.drawOval((int) p.x - r, (int) p.y - r, r * 2, r * 2);
+			}
+		}
+
+		if (hoveredRoadControlPoint != null)
+		{
+			g2.setColor(highlightEditColor);
+			int hr = r + 2;
+			g2.drawOval((int) hoveredRoadControlPoint.x - hr, (int) hoveredRoadControlPoint.y - hr, hr * 2, hr * 2);
+		}
+
+		if (freeHandPreviewPath != null && freeHandPreviewPath.size() >= 2)
+		{
+			g2.setColor(processingColor);
+			g2.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1f, new float[] { 6f, 4f }, 0f));
+			drawPolyline(g2, freeHandPreviewPath);
+		}
+
+		g2.setStroke(prevStroke);
+		g2.setRenderingHints(prevHints);
 	}
 
 	private void drawPolyline(Graphics g, List<Point> points)
@@ -1514,6 +1589,9 @@ public class MapEditingPanel extends UnscaledImagePanel
 		clearHighlightedCenters();
 		clearHighlightedEdges();
 		clearHighlightedPolylines();
+		clearRoadControlPointCircles();
+		clearHoveredRoadControlPoint();
+		clearFreeHandPreviewPath();
 		hideBrush();
 		clearHighlightedAreas();
 		clearProcessingAreas();
