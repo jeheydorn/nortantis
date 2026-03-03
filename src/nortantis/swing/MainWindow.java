@@ -116,8 +116,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		{
 			try
 			{
-				JOptionPane.showMessageDialog(null, "Unable to create GUI because of error: " + ex.getMessage() + "\nVersion: " + MapSettings.currentVersion + "\nOS Name: "
-						+ System.getProperty("os.name") + "\nStack trace: " + ExceptionUtils.getStackTrace(ex), "Error", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(null,
+						"Unable to create GUI because of error: " + ex.getMessage() + "\nVersion: " + MapSettings.currentVersion + "\nOS Name: " + System.getProperty("os.name") + "\nStack trace: "
+								+ ExceptionUtils.getStackTrace(ex), "Error", JOptionPane.ERROR_MESSAGE);
 			}
 			catch (Exception inner)
 			{
@@ -144,7 +145,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		if (!isMapOpen)
 		{
 			setPlaceholderImage(new String[] { Translation.get("mainWindow.welcome"), Translation.get("mainWindow.welcome.line2") });
-			enableOrDisableFieldsThatRequireMap(false, null);
+			enableOrDisableFieldsThatRequireMap(false, null, false);
 		}
 
 		launchNewVersionCheck();
@@ -241,7 +242,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		}
 	}
 
-	void enableOrDisableFieldsThatRequireMap(boolean enable, MapSettings settings)
+	void enableOrDisableFieldsThatRequireMap(boolean enable, MapSettings settings, boolean forceEnableZoom)
 	{
 		newMapWithSameThemeMenuItem.setEnabled(enable);
 		createSubMapMenuItem.setEnabled(enable);
@@ -271,7 +272,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		refreshMenuItem.setEnabled(enable);
 
 		themePanel.enableOrDisableEverything(enable);
-		toolsPanel.enableOrDisableEverything(enable, settings);
+		toolsPanel.enableOrDisableEverything(enable, settings, forceEnableZoom);
 	}
 
 	private void createGUI()
@@ -374,7 +375,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				if (SwingUtilities.isLeftMouseButton(e))
 				{
-					updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMouseClickOnMap(e));
+					if (!mapEditingPanel.isSelectionBoxActive())
+					{
+						updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMouseClickOnMap(e));
+					}
 				}
 			}
 
@@ -461,7 +465,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			public void mouseExited(MouseEvent e)
 			{
-				updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMouseExitedMap(e));
+				if (!mapEditingPanel.isSelectionBoxActive())
+				{
+					updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMouseExitedMap(e));
+				}
 			}
 
 			@Override
@@ -556,7 +563,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					// the first time the map is drawn is when the edits are
 					// created.
 					undoer.initialize(MainWindow.this.getSettingsFromGUI(true));
-					enableOrDisableFieldsThatRequireMap(true, MainWindow.this.getSettingsFromGUI(false));
+					enableOrDisableFieldsThatRequireMap(true, MainWindow.this.getSettingsFromGUI(false), false);
 				}
 
 				if (!hasDrawnCurrentMapAtLeastOnce)
@@ -614,7 +621,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				// working quite right since edits might not have been created.
 				// But leaving fields disabled makes the user unable to fix the
 				// error.
-				enableOrDisableFieldsThatRequireMap(true, MainWindow.this.getSettingsFromGUI(false));
+				enableOrDisableFieldsThatRequireMap(true, MainWindow.this.getSettingsFromGUI(false), false);
 				if (exception != null)
 				{
 					SwingHelper.handleException(exception, MainWindow.this, false);
@@ -1604,7 +1611,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 			updater.doWhenMapIsReadyForInteractions(() ->
 			{
-				toolsPanel.currentTool.onAfterShowMap();
+				if (!mapEditingPanel.isSelectionBoxActive())
+				{
+					toolsPanel.currentTool.onAfterShowMap();
+				}
 			});
 
 			mapEditingPanel.revalidate();
@@ -1643,8 +1653,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				nortantis.geom.Dimension size = new nortantis.geom.Dimension(mapEditingScrollPane.getSize().width - additionalWidthToRemoveIDontKnowWhereItsComingFrom,
 						mapEditingScrollPane.getSize().height - additionalWidthToRemoveIDontKnowWhereItsComingFrom);
 
-				nortantis.geom.Dimension fitted = ImageHelper.getInstance().fitDimensionsWithinBoundingBox(size, mapEditingPanel.mapFromMapCreator.getWidth(),
-						mapEditingPanel.mapFromMapCreator.getHeight());
+				nortantis.geom.Dimension fitted = ImageHelper.getInstance()
+						.fitDimensionsWithinBoundingBox(size, mapEditingPanel.mapFromMapCreator.getWidth(), mapEditingPanel.mapFromMapCreator.getHeight());
 				return (fitted.width / mapEditingPanel.mapFromMapCreator.getWidth()) * mapEditingPanel.osScale;
 			}
 			else
@@ -2033,7 +2043,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		if (settings.edits != null && settings.edits.isInitialized())
 		{
 			undoer.initialize(settings);
-			enableOrDisableFieldsThatRequireMap(true, settings);
+			enableOrDisableFieldsThatRequireMap(true, settings, false);
 		}
 		else
 		{
@@ -2042,7 +2052,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			// tool
 			// might enable fields when loading settings, which will cause
 			// fields to be enabled before the map is ready.
-			enableOrDisableFieldsThatRequireMap(false, settings);
+			enableOrDisableFieldsThatRequireMap(false, settings, false);
 		}
 
 		toolsPanel.resetZoomToDefault();

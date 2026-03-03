@@ -307,7 +307,7 @@ public class ToolsPanel extends JPanel
 
 	}
 
-	void enableOrDisableEverything(boolean enable, MapSettings settings)
+	void enableOrDisableEverything(boolean enable, MapSettings settings, boolean forceEnableZoom)
 	{
 		SwingHelper.setEnabled(this, enable);
 
@@ -327,6 +327,10 @@ public class ToolsPanel extends JPanel
 		{
 			// Always enabled
 			displayQualityComboBox.setEnabled(true);
+			if (forceEnableZoom)
+			{
+				zoomComboBox.setEnabled(true);
+			}
 		}
 	}
 

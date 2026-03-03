@@ -73,6 +73,8 @@ public class SubMapDialog
 	private JTextField seedTextField;
 	/** Set to true in windowOpened; guards componentResized from firing the first preview draw before the dialog is fully shown. */
 	private boolean step2DialogOpened = false;
+	/** Whether to redistribute terrain icons per-center when creating the sub-map; persists between step 1 and step 2. */
+	private boolean redistributeIcons = true;
 
 	public SubMapDialog(MainWindow mainWindow)
 	{
@@ -89,6 +91,13 @@ public class SubMapDialog
 
 	public void showStep1()
 	{
+		// Disable editing tools and theme controls for the duration of the sub-map workflow.
+		// Call onSwitchingAway() first so each tool clears its internal selection state
+		// (e.g. selected icon in IconsTool, selected text in TextTool) before we clear visuals.
+		mainWindow.toolsPanel.currentTool.onSwitchingAway();
+		mainWindow.mapEditingPanel.clearAllToolSpecificSelectionsAndHighlights();
+		mainWindow.enableOrDisableFieldsThatRequireMap(false, null, true);
+
 		step1Dialog = new JDialog(mainWindow, "Create Sub-Map – Select Region", false);
 		step1Dialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
 
@@ -355,6 +364,7 @@ public class SubMapDialog
 			step1Dialog.dispose();
 			step1Dialog = null;
 		}
+		mainWindow.enableOrDisableFieldsThatRequireMap(true, mainWindow.getSettingsFromGUI(false), true);
 	}
 
 	private void disposeStep1()
@@ -385,9 +395,9 @@ public class SubMapDialog
 		JPanel mainPanel = new JPanel(new BorderLayout(5, 5));
 		mainPanel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
-		// -- Top control area --
-		JPanel controlPanel = new JPanel();
-		controlPanel.setLayout(new BoxLayout(controlPanel, BoxLayout.Y_AXIS));
+		// -- Top control area (GridBagOrganizer for aligned labels and fields) --
+		GridBagOrganizer controlOrganizer = new GridBagOrganizer();
+		final int topInset = 2;
 
 		// Compute the 1× polygon count for this selection to use as the default slider value.
 		double origMapAreaForDefault = origSettings.generatedWidth * (double) origSettings.generatedHeight;
@@ -403,15 +413,7 @@ public class SubMapDialog
 			subMapWorldSize = Math.max(minPolygonsInSubMap, Math.min(SettingsGenerator.maxWorldSize, subMapWorldSize));
 		}
 
-		// Detail slider row
-		JPanel sliderRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
-		JLabel polygonsLabel = new JLabel("Number of polygons:");
-		polygonsLabel.setToolTipText(
-				"<html>The number of Voronoi polygons in the sub-map, which controls its level of detail.<br>" + "The multiplier shows how many times more polygons the sub-map has relative<br>"
-						+ "to the equivalent area of the source map. Values below 1× mean less detail. " + "Values <br>above 1× mean more detail. The number of polygons is must be between "
-						+ minPolygonsInSubMap + " <br>and " + SettingsGenerator.maxWorldSize + ".</html>");
-		sliderRow.add(polygonsLabel);
-
+		// Number of polygons: slider + multiplier display.
 		JSlider rawSlider = new JSlider(1000, SettingsGenerator.maxWorldSize, subMapWorldSize);
 		rawSlider.setMajorTickSpacing(8000);
 		rawSlider.setMinorTickSpacing(1000);
@@ -425,7 +427,7 @@ public class SubMapDialog
 			double selArea = selBoundsRI.width * selBoundsRI.height;
 			double oneX = origSettings.worldSize * selArea / origMapArea;
 			double ratio = (oneX > 0) ? value / oneX : 1.0;
-			return String.format("%.1fx, \u2248%d polygons", ratio, value);
+			return String.format("%.1f\u00d7, \u2248%d polygons", ratio, value);
 		}, () ->
 		{
 			subMapWorldSize = detailSlider.getValue();
@@ -436,14 +438,15 @@ public class SubMapDialog
 			}
 		}, null);
 		detailSlider = detailSliderWithValue.slider;
-		sliderRow.add(detailSlider);
-		sliderRow.add(detailSliderWithValue.valueDisplay);
-		controlPanel.add(sliderRow);
+		String polygonsTooltip = "<html>The number of Voronoi polygons in the sub-map, which controls its level of detail.<br>"
+				+ "The multiplier shows how many times more polygons the sub-map has relative<br>"
+				+ "to the equivalent area of the source map. Values below 1\u00d7 mean less detail.<br>"
+				+ "Values above 1\u00d7 mean more detail. The number of polygons must be between " + minPolygonsInSubMap + "<br>and " + SettingsGenerator.maxWorldSize + ".</html>";
+		controlOrganizer.addLabelAndComponentsHorizontalWithTopInset("Number of polygons:", polygonsTooltip, Arrays.asList(detailSlider, detailSliderWithValue.valueDisplay), topInset);
 
-		// Seed row
-		JPanel seedRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
-		seedRow.add(new JLabel("Random seed:"));
+		// Random seed.
 		seedTextField = new JTextField(String.valueOf(subMapSeed), 10);
+		seedTextField.setMaximumSize(new Dimension(seedTextField.getPreferredSize().width, seedTextField.getPreferredSize().height));
 		seedTextField.getDocument().addDocumentListener(new DocumentListener()
 		{
 			private void handleChange()
@@ -483,22 +486,28 @@ public class SubMapDialog
 				handleChange();
 			}
 		});
-		seedRow.add(seedTextField);
 		JButton newSeedButton = new JButton("New Seed");
 		newSeedButton.setToolTipText(Translation.get("theme.newSeed.tooltip"));
 		newSeedButton.addActionListener(e -> seedTextField.setText(String.valueOf(Helper.safeAbs(new Random().nextInt()))));
-		seedRow.add(newSeedButton);
-		controlPanel.add(seedRow);
+		controlOrganizer.addLabelAndComponentsHorizontalWithTopInset("Random seed:", "", Arrays.asList(seedTextField, newSeedButton), topInset);
 
-		// Error label row
+		// Redistribute icons checkbox.
+		JCheckBox redistributeCheckBox = new JCheckBox();
+		redistributeCheckBox.setSelected(redistributeIcons);
+		redistributeCheckBox.addActionListener(e -> redistributeIcons = redistributeCheckBox.isSelected());
+		controlOrganizer.addLabelAndComponent("Redistribute icons:",
+				"<html>When enabled, redistributes mountains, hills, dunes, and trees across<br>"
+						+ "the sub-map based on each polygon's coverage in the source map.<br>"
+						+ "More-detailed sub-maps receive more icons; less-detailed ones receive fewer.<br>" + "Disable to simply copy icons as-is.</html>",
+				redistributeCheckBox, topInset);
+
+		// Error label (shown only when the detail level is too high).
 		errorLabel = new JLabel("Detail level too high – maximum is 32,000 polygons. Reduce the selected area or lower the detail level.");
 		errorLabel.setForeground(java.awt.Color.RED);
 		errorLabel.setVisible(false);
-		JPanel errorRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
-		errorRow.add(errorLabel);
-		controlPanel.add(errorRow);
+		controlOrganizer.addLeftAlignedComponent(errorLabel, topInset, 0, false);
 
-		mainPanel.add(controlPanel, BorderLayout.NORTH);
+		mainPanel.add(controlOrganizer.panel, BorderLayout.NORTH);
 
 		// -- Preview area --
 		JPanel previewWrapper = new JPanel(new BorderLayout(0, 4));
@@ -557,6 +566,7 @@ public class SubMapDialog
 			mainWindow.mapEditingPanel.clearSelectionBox();
 			step2Dialog.dispose();
 			step2Dialog = null;
+			mainWindow.enableOrDisableFieldsThatRequireMap(true, mainWindow.getSettingsFromGUI(false), true);
 		});
 
 		createButton = new JButton("Create");
@@ -614,6 +624,7 @@ public class SubMapDialog
 				mainWindow.mapEditingPanel.clearSelectionBox();
 				step2Dialog.dispose();
 				step2Dialog = null;
+				mainWindow.enableOrDisableFieldsThatRequireMap(true, mainWindow.getSettingsFromGUI(false), true);
 			}
 		});
 
@@ -638,7 +649,7 @@ public class SubMapDialog
 			public MapSettings getSettingsFromGUI()
 			{
 				// Called on background thread by MapUpdater.
-				MapSettings settings = SubMapCreator.createSubMapSettings(origSettings, origGraph, origEdits, selBoundsRI, subMapWorldSize, origResolution, subMapSeed);
+				MapSettings settings = SubMapCreator.createSubMapSettings(origSettings, origGraph, origEdits, selBoundsRI, subMapWorldSize, origResolution, subMapSeed, redistributeIcons);
 				settings.resolution = 1.0;
 				lastSubMapSettings = settings;
 				return settings;
@@ -791,6 +802,7 @@ public class SubMapDialog
 		mainWindow.mapEditingPanel.clearSelectionBox();
 		step2Dialog.dispose();
 		step2Dialog = null;
+		mainWindow.enableOrDisableFieldsThatRequireMap(true, settings, true);
 		mainWindow.loadSettingsIntoGUI(settings);
 	}
 
