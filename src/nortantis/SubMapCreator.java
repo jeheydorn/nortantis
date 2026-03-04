@@ -43,7 +43,7 @@ public class SubMapCreator
 	 */
 	public static MapSettings createSubMapSettings(MapSettings origSettings, WorldGraph origGraph, MapEdits origEdits, Rectangle selBoundsRI, int subMapWorldSize, double origResolution, long seed, boolean redistributeIcons)
 	{
-		// Step 1: Compute new dimensions and world size.
+		// Compute new dimensions and world size.
 		// The largest dimension of the sub-map matches the largest dimension of the original map.
 		// Whichever axis of the selection box is larger gets that max value; the other is scaled proportionally.
 		int maxOrigDim = Math.max(origSettings.generatedWidth, origSettings.generatedHeight);
@@ -64,7 +64,7 @@ public class SubMapCreator
 
 		int newWorldSize = Math.max(1, Math.min(SettingsGenerator.maxWorldSize, subMapWorldSize));
 
-		// Step 2: Deep-copy original settings, override key fields.
+		// Deep-copy original settings, override key fields.
 		MapSettings newSettings = origSettings.deepCopyExceptEdits();
 		newSettings.randomSeed = seed;
 		newSettings.generatedWidth = newGenWidth;
@@ -79,14 +79,96 @@ public class SubMapCreator
 		// Initialize fresh empty edits so createGraphForUnitTests will create elevation (isInitialized=false).
 		newSettings.edits = new MapEdits();
 
-		// Step 3: Build the WorldGraph for the sub-map (to get center positions and count).
+		// Build the WorldGraph for the sub-map (to get center positions and count).
 		// We call this with createElevationBiomesLakesAndRegions=false because land/water and icon placement will be determined by the source map, not by a new, generated world.
 		// This gives us the same Voronoi structure MapCreator will use when rendering (same seed, same params).
 		WorldGraph newGraph = MapCreator.createGraph(newSettings, false);
 
-		// Step 5+6a: For each new center, sample its loc and all Voronoi corners in orig-graph space
-		// and use majority/plurality voting to assign water/lake/region.
+		// For each new center, use majority/plurality voting to assign water/lake/region.
 		MapEdits newEdits = new MapEdits();
+		Map<Integer, List<Integer>> origRegionToNewCenters = buildCenterEdits(newGraph, origGraph, origEdits, selBoundsRI, origResolution, newEdits);
+
+		// Propagate coast/corner flags now that isWater/isLake are set on all centers.
+		newGraph.propagateCoastAndCornerFlags();
+		newGraph.markLakes();
+
+		// Build remaining MapEdits.
+
+		transferRegionEdits(origGraph, origEdits, origRegionToNewCenters, newEdits);
+
+		transferRivers(origGraph, origEdits, newGraph, selBoundsRI, newEdits, origResolution);
+
+		transferText(origEdits, selBoundsRI, newEdits, newGenWidth, newGenHeight);
+
+		transferFreeIcons(origEdits, origGraph, newGraph, selBoundsRI, origResolution, newEdits, newGenWidth, newGenHeight, redistributeIcons, seed);
+		newEdits.hasIconEdits = true;
+
+		transferRoads(origEdits, selBoundsRI, newGenWidth, newGenHeight, newEdits);
+
+		// Step 7: Attach the new edits to the new settings.
+		newSettings.edits = newEdits;
+
+		return newSettings;
+	}
+
+	private static void transferRegionEdits(WorldGraph origGraph, MapEdits origEdits, Map<Integer, List<Integer>> origRegionToNewCenters, MapEdits newEdits)
+	{
+		// Copy colors for all referenced original regionIds.
+		for (Integer origRegionId : origRegionToNewCenters.keySet())
+		{
+			RegionEdit origRegionEdit = origEdits.regionEdits.get(origRegionId);
+			if (origRegionEdit != null)
+			{
+				newEdits.regionEdits.put(origRegionId, new RegionEdit(origRegionId, origRegionEdit.color));
+			}
+			else if (origGraph.regions.containsKey(origRegionId))
+			{
+				nortantis.platform.Color color = origGraph.regions.get(origRegionId).backgroundColor;
+				newEdits.regionEdits.put(origRegionId, new RegionEdit(origRegionId, color));
+			}
+		}
+	}
+
+	private static void transferText(MapEdits origEdits, Rectangle selBoundsRI, MapEdits newEdits, int newGenWidth, int newGenHeight)
+	{
+		// Copy MapText entries whose location falls inside selBoundsRI.
+		newEdits.text = new CopyOnWriteArrayList<>();
+		for (MapText text : origEdits.text)
+		{
+			if (selBoundsRI.containsOrOverlaps(text.location))
+			{
+				MapText newText = text.deepCopy();
+				newText.location = transformRIPoint(text.location, selBoundsRI, newGenWidth, newGenHeight);
+				// Clear bounds since they'll be recomputed at the new resolution.
+				newText.line1Bounds = null;
+				newText.line2Bounds = null;
+				newEdits.text.add(newText);
+			}
+		}
+	}
+
+	private static void transferRoads(MapEdits origEdits, Rectangle selBoundsRI, int newGenWidth, int newGenHeight, MapEdits newEdits)
+	{
+		// Clip each road to the selection boundary, inserting intersection points where
+		// segments cross the edge so roads reach the map border instead of stopping short.
+		for (Road road : origEdits.roads)
+		{
+			for (List<Point> clippedPath : clipRoadPath(road.path, selBoundsRI, newGenWidth, newGenHeight))
+			{
+				newEdits.roads.add(new Road(clippedPath));
+			}
+		}
+	}
+
+	/**
+	 * For each center in {@code newGraph}, samples its loc and all Voronoi corners in original-graph space and uses majority/plurality
+	 * voting to assign water, lake, and region. Populates {@code newEdits.centerEdits} and mutates {@code newCenter.isWater} /
+	 * {@code newCenter.isLake} (required before {@code propagateCoastAndCornerFlags}).
+	 *
+	 * @return A map from original region ID to the list of new center indices assigned to that region.
+	 */
+	private static Map<Integer, List<Integer>> buildCenterEdits(WorldGraph newGraph, WorldGraph origGraph, MapEdits origEdits, Rectangle selBoundsRI, double origResolution, MapEdits newEdits)
+	{
 		Map<Integer, List<Integer>> origRegionToNewCenters = new HashMap<>();
 
 		for (Center newCenter : newGraph.centers)
@@ -158,57 +240,16 @@ public class SubMapCreator
 			newEdits.centerEdits.put(newCenter.index, new CenterEdit(newCenter.index, isWater, isLake, regionId, null, null));
 		}
 
-		// Propagate coast/corner flags now that isWater/isLake are set on all centers.
-		newGraph.propagateCoastAndCornerFlags();
-		newGraph.markLakes();
+		return origRegionToNewCenters;
+	}
 
-		// Step 6: Build remaining MapEdits.
-
-		// RegionEdits — copy colors for all referenced original regionIds.
-		for (Integer origRegionId : origRegionToNewCenters.keySet())
-		{
-			RegionEdit origRegionEdit = origEdits.regionEdits.get(origRegionId);
-			if (origRegionEdit != null)
-			{
-				newEdits.regionEdits.put(origRegionId, new RegionEdit(origRegionId, origRegionEdit.color));
-			}
-			else if (origGraph.regions.containsKey(origRegionId))
-			{
-				nortantis.platform.Color color = origGraph.regions.get(origRegionId).backgroundColor;
-				newEdits.regionEdits.put(origRegionId, new RegionEdit(origRegionId, color));
-			}
-		}
-
-		// 6c: EdgeEdits — suppress all auto-generated rivers on the new graph (since we're inheriting land/water manually).
-		// Any edge with river > 0 in the new graph gets a riverLevel=0 edit.
-		for (Edge edge : newGraph.edges)
-		{
-			if (edge.river > 0)
-			{
-				newEdits.edgeEdits.put(edge.index, new EdgeEdit(edge.index, 0));
-			}
-		}
-
-		// 6d: Transfer original river edges to the new graph.
-		// Build set of river edges in the original (from edgeEdits overrides or edge.river).
-		transferRivers(origGraph, origEdits, newGraph, selBoundsRI, newEdits, origResolution);
-
-		// 6e: Text — copy MapText entries whose location falls inside selBoundsRI.
-		newEdits.text = new CopyOnWriteArrayList<>();
-		for (MapText text : origEdits.text)
-		{
-			if (selBoundsRI.containsOrOverlaps(text.location))
-			{
-				MapText newText = text.deepCopy();
-				newText.location = transformRIPoint(text.location, selBoundsRI, newGenWidth, newGenHeight);
-				// Clear bounds since they'll be recomputed at the new resolution.
-				newText.line1Bounds = null;
-				newText.line2Bounds = null;
-				newEdits.text.add(newText);
-			}
-		}
-
-		// 6f: FreeIcons.
+	/**
+	 * Transfers free icons from the original edits into {@code newEdits}. Cities and decorations are always copied by position.
+	 * Mountains, hills, sand, and trees are either redistributed by center (if {@code redistributeIcons}) or copied by position.
+	 */
+	private static void transferFreeIcons(MapEdits origEdits, WorldGraph origGraph, WorldGraph newGraph, Rectangle selBoundsRI, double origResolution, MapEdits newEdits, int newGenWidth,
+			int newGenHeight, boolean redistributeIcons, long seed)
+	{
 		// Cities and decorations always copy by position, regardless of redistributeIcons.
 		// They must be copied before redistribution so that redistribution can skip their centers.
 		for (FreeIcon icon : origEdits.freeIcons)
@@ -267,22 +308,6 @@ public class SubMapCreator
 				}
 			}
 		}
-		newEdits.hasIconEdits = true;
-
-		// 6g: Roads — clip each road to the selection boundary, inserting intersection points where
-		// segments cross the edge so roads reach the map border instead of stopping short.
-		for (Road road : origEdits.roads)
-		{
-			for (List<Point> clippedPath : clipRoadPath(road.path, selBoundsRI, newGenWidth, newGenHeight))
-			{
-				newEdits.roads.add(new Road(clippedPath));
-			}
-		}
-
-		// Step 7: Attach the new edits to the new settings.
-		newSettings.edits = newEdits;
-
-		return newSettings;
 	}
 
 	/**
@@ -487,6 +512,9 @@ public class SubMapCreator
 	 */
 	private static void transferRivers(WorldGraph origGraph, MapEdits origEdits, WorldGraph newGraph, Rectangle selBoundsRI, MapEdits newEdits, double origResolution)
 	{
+		// Transfer original river edges to the new graph.
+		// Build set of river edges in the original (from edgeEdits overrides or edge.river).
+
 		// Determine effective river level per edge in the original graph.
 		Map<Integer, Integer> origRiverLevels = new HashMap<>();
 		for (Edge edge : origGraph.edges)

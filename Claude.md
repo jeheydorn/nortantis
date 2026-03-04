@@ -10,6 +10,10 @@ Fantasy map generator and editor that uses tectonic plate simulation to create i
 - **Graphics:** AWT (CPU-based rendering)
 - **Testing:** JUnit 5
 
+## Shell and Paths
+
+The shell is Windows bash (Git Bash / MSYS2). Use Windows-style paths like `C:/Users/...`, not WSL-style `/mnt/c/...` paths — the latter do not exist in this environment.
+
 ## Build and Run
 
 ```bash

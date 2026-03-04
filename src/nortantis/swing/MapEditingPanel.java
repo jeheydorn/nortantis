@@ -924,6 +924,16 @@ public class MapEditingPanel extends UnscaledImagePanel
 		}
 	}
 
+	/**
+	 * Returns the road control-point highlight radius in graph pixels. Used by both drawing and hit-testing so they stay in sync.
+	 */
+	int getRoadControlPointRadiusGraphPx()
+	{
+		// Scale by resolution so the circles appear the same screen size regardless of display quality
+		// (zoom already accounts for resolution, so fixed graph-pixel sizes would shrink at higher quality).
+		return (int) Math.round(13 * resolution);
+	}
+
 	private void drawRoadControlPoints(Graphics2D g2)
 	{
 		if ((roadControlPointCircles == null || roadControlPointCircles.isEmpty()) && hoveredRoadControlPoint == null && freeHandPreviewPath == null)
@@ -934,9 +944,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		RenderingHints prevHints = g2.getRenderingHints();
 		Stroke prevStroke = g2.getStroke();
 		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-		// Scale by resolution so the circles appear the same screen size regardless of display quality
-		// (zoom already accounts for resolution, so fixed graph-pixel sizes would shrink at higher quality).
-		int r = (int) Math.round(13 * resolution);
+		int r = getRoadControlPointRadiusGraphPx();
 		g2.setStroke(new BasicStroke((float) (3 * resolution)));
 
 		if (roadControlPointCircles != null)

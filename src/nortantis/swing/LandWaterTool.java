@@ -327,8 +327,8 @@ public class LandWaterTool extends EditorTool
 
 	private double getSnapRadiusRI()
 	{
-		// Fixed map-space radius (10 graph pixels), so snap circles scale with zoom just like the road control-point circles.
-		return 10.0 / mainWindow.displayQualityScale;
+		// Match the drawn highlight radius so the snap area equals what the user sees.
+		return mapEditingPanel.getRoadControlPointRadiusGraphPx() / mainWindow.displayQualityScale;
 	}
 
 	/**
