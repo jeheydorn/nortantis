@@ -1,6 +1,5 @@
 package nortantis;
 
-import nortantis.IconType;
 import nortantis.editor.CenterEdit;
 import nortantis.editor.CenterTrees;
 import nortantis.editor.EdgeEdit;
@@ -25,39 +24,37 @@ public class SubMapCreator
 	/**
 	 * Creates a new MapSettings for a sub-map of the given original map.
 	 *
-	 * @param origSettings
+	 * @param originalSettings
 	 *            The original map settings.
-	 * @param origGraph
+	 * @param originalGraph
 	 *            The original world graph (used for land/water lookup).
-	 * @param origEdits
+	 * @param originalEdits
 	 *            The original map edits (used for land/water, region, text, icons, roads).
-	 * @param selBoundsRI
+	 * @param selectionBoundsRI
 	 *            The selection bounds in resolution-invariant (RI) coordinates.
 	 * @param subMapWorldSize
 	 *            The number of Voronoi polygons for the sub-map.
+	 * @param originalResolution
+	 *            The resolution at which originalGraph was created (i.e. the display quality scale), used to convert resolution-invariant coordinates to originalGraph pixel coordinates.
 	 * @return New MapSettings for the sub-map, with pre-populated edits.
 	 */
-	/**
-	 * @param origResolution
-	 * 		The resolution at which origGraph was created (i.e. the display quality scale), used to convert resolution-invariant coordinates to origGraph pixel coordinates.
-	 */
-	public static MapSettings createSubMapSettings(MapSettings origSettings, WorldGraph origGraph, MapEdits origEdits, Rectangle selBoundsRI, int subMapWorldSize, double origResolution, long seed, boolean redistributeIcons)
+	public static MapSettings createSubMapSettings(MapSettings originalSettings, WorldGraph originalGraph, MapEdits originalEdits, Rectangle selectionBoundsRI, int subMapWorldSize, double originalResolution, long seed, boolean redistributeIcons)
 	{
 		// Compute new dimensions and world size.
 		// The largest dimension of the sub-map matches the largest dimension of the original map.
 		// Whichever axis of the selection box is larger gets that max value; the other is scaled proportionally.
-		int maxOrigDim = Math.max(origSettings.generatedWidth, origSettings.generatedHeight);
+		int maxOriginalDimension = Math.max(originalSettings.generatedWidth, originalSettings.generatedHeight);
 		int newGenWidth;
 		int newGenHeight;
-		if (selBoundsRI.width >= selBoundsRI.height)
+		if (selectionBoundsRI.width >= selectionBoundsRI.height)
 		{
-			newGenWidth = maxOrigDim;
-			newGenHeight = (int) Math.round((double) maxOrigDim * selBoundsRI.height / selBoundsRI.width);
+			newGenWidth = maxOriginalDimension;
+			newGenHeight = (int) Math.round((double) maxOriginalDimension * selectionBoundsRI.height / selectionBoundsRI.width);
 		}
 		else
 		{
-			newGenHeight = maxOrigDim;
-			newGenWidth = (int) Math.round((double) maxOrigDim * selBoundsRI.width / selBoundsRI.height);
+			newGenHeight = maxOriginalDimension;
+			newGenWidth = (int) Math.round((double) maxOriginalDimension * selectionBoundsRI.width / selectionBoundsRI.height);
 		}
 		newGenWidth = Math.max(1, newGenWidth);
 		newGenHeight = Math.max(1, newGenHeight);
@@ -65,7 +62,7 @@ public class SubMapCreator
 		int newWorldSize = Math.max(1, Math.min(SettingsGenerator.maxWorldSize, subMapWorldSize));
 
 		// Deep-copy original settings, override key fields.
-		MapSettings newSettings = origSettings.deepCopyExceptEdits();
+		MapSettings newSettings = originalSettings.deepCopyExceptEdits();
 		newSettings.randomSeed = seed;
 		newSettings.generatedWidth = newGenWidth;
 		newSettings.generatedHeight = newGenHeight;
@@ -86,59 +83,59 @@ public class SubMapCreator
 
 		// For each new center, use majority/plurality voting to assign water/lake/region.
 		MapEdits newEdits = new MapEdits();
-		Map<Integer, List<Integer>> origRegionToNewCenters = buildCenterEdits(newGraph, origGraph, origEdits, selBoundsRI, origResolution, newEdits);
+		Map<Integer, List<Integer>> originalRegionToNewCenters = buildCenterEdits(newGraph, originalGraph, originalEdits, selectionBoundsRI, originalResolution, newEdits);
 
 		// Propagate coast/corner flags now that isWater/isLake are set on all centers.
-		newGraph.propagateCoastAndCornerFlags();
+		newGraph.updateCoastAndCornerFlags();
 		newGraph.markLakes();
 
 		// Build remaining MapEdits.
 
-		transferRegionEdits(origGraph, origEdits, origRegionToNewCenters, newEdits);
+		transferRegionEdits(originalGraph, originalEdits, originalRegionToNewCenters, newEdits);
 
-		transferRivers(origGraph, origEdits, newGraph, selBoundsRI, newEdits, origResolution);
+		transferRivers(originalGraph, originalEdits, newGraph, selectionBoundsRI, newEdits, originalResolution);
 
-		transferText(origEdits, selBoundsRI, newEdits, newGenWidth, newGenHeight);
+		transferText(originalEdits, selectionBoundsRI, newEdits, newGenWidth, newGenHeight);
 
-		transferFreeIcons(origEdits, origGraph, newGraph, selBoundsRI, origResolution, newEdits, newGenWidth, newGenHeight, redistributeIcons, seed);
+		transferFreeIcons(originalEdits, originalGraph, newGraph, selectionBoundsRI, originalResolution, newEdits, newGenWidth, newGenHeight, redistributeIcons, seed);
 		newEdits.hasIconEdits = true;
 
-		transferRoads(origEdits, selBoundsRI, newGenWidth, newGenHeight, newEdits);
+		transferRoads(originalEdits, selectionBoundsRI, newGenWidth, newGenHeight, newEdits);
 
-		// Step 7: Attach the new edits to the new settings.
+		// Attach the new edits to the new settings.
 		newSettings.edits = newEdits;
 
 		return newSettings;
 	}
 
-	private static void transferRegionEdits(WorldGraph origGraph, MapEdits origEdits, Map<Integer, List<Integer>> origRegionToNewCenters, MapEdits newEdits)
+	private static void transferRegionEdits(WorldGraph originalGraph, MapEdits originalEdits, Map<Integer, List<Integer>> originalRegionToNewCenters, MapEdits newEdits)
 	{
 		// Copy colors for all referenced original regionIds.
-		for (Integer origRegionId : origRegionToNewCenters.keySet())
+		for (Integer originalRegionId : originalRegionToNewCenters.keySet())
 		{
-			RegionEdit origRegionEdit = origEdits.regionEdits.get(origRegionId);
-			if (origRegionEdit != null)
+			RegionEdit originalRegionEdit = originalEdits.regionEdits.get(originalRegionId);
+			if (originalRegionEdit != null)
 			{
-				newEdits.regionEdits.put(origRegionId, new RegionEdit(origRegionId, origRegionEdit.color));
+				newEdits.regionEdits.put(originalRegionId, new RegionEdit(originalRegionId, originalRegionEdit.color));
 			}
-			else if (origGraph.regions.containsKey(origRegionId))
+			else if (originalGraph.regions.containsKey(originalRegionId))
 			{
-				nortantis.platform.Color color = origGraph.regions.get(origRegionId).backgroundColor;
-				newEdits.regionEdits.put(origRegionId, new RegionEdit(origRegionId, color));
+				nortantis.platform.Color color = originalGraph.regions.get(originalRegionId).backgroundColor;
+				newEdits.regionEdits.put(originalRegionId, new RegionEdit(originalRegionId, color));
 			}
 		}
 	}
 
-	private static void transferText(MapEdits origEdits, Rectangle selBoundsRI, MapEdits newEdits, int newGenWidth, int newGenHeight)
+	private static void transferText(MapEdits originalEdits, Rectangle selectionBoundsRI, MapEdits newEdits, int newGenWidth, int newGenHeight)
 	{
-		// Copy MapText entries whose location falls inside selBoundsRI.
+		// Copy MapText entries whose location falls inside selectionBoundsRI.
 		newEdits.text = new CopyOnWriteArrayList<>();
-		for (MapText text : origEdits.text)
+		for (MapText text : originalEdits.text)
 		{
-			if (selBoundsRI.containsOrOverlaps(text.location))
+			if (selectionBoundsRI.containsOrOverlaps(text.location))
 			{
 				MapText newText = text.deepCopy();
-				newText.location = transformRIPoint(text.location, selBoundsRI, newGenWidth, newGenHeight);
+				newText.location = transformRIPoint(text.location, selectionBoundsRI, newGenWidth, newGenHeight);
 				// Clear bounds since they'll be recomputed at the new resolution.
 				newText.line1Bounds = null;
 				newText.line2Bounds = null;
@@ -147,13 +144,13 @@ public class SubMapCreator
 		}
 	}
 
-	private static void transferRoads(MapEdits origEdits, Rectangle selBoundsRI, int newGenWidth, int newGenHeight, MapEdits newEdits)
+	private static void transferRoads(MapEdits originalEdits, Rectangle selectionBoundsRI, int newGenWidth, int newGenHeight, MapEdits newEdits)
 	{
 		// Clip each road to the selection boundary, inserting intersection points where
 		// segments cross the edge so roads reach the map border instead of stopping short.
-		for (Road road : origEdits.roads)
+		for (Road road : originalEdits.roads)
 		{
-			for (List<Point> clippedPath : clipRoadPath(road.path, selBoundsRI, newGenWidth, newGenHeight))
+			for (List<Point> clippedPath : clipRoadPath(road.path, selectionBoundsRI, newGenWidth, newGenHeight))
 			{
 				newEdits.roads.add(new Road(clippedPath));
 			}
@@ -163,59 +160,59 @@ public class SubMapCreator
 	/**
 	 * For each center in {@code newGraph}, samples its loc and all Voronoi corners in original-graph space and uses majority/plurality
 	 * voting to assign water, lake, and region. Populates {@code newEdits.centerEdits} and mutates {@code newCenter.isWater} /
-	 * {@code newCenter.isLake} (required before {@code propagateCoastAndCornerFlags}).
+	 * {@code newCenter.isLake} (required before {@code updateCoastAndCornerFlags}).
 	 *
 	 * @return A map from original region ID to the list of new center indices assigned to that region.
 	 */
-	private static Map<Integer, List<Integer>> buildCenterEdits(WorldGraph newGraph, WorldGraph origGraph, MapEdits origEdits, Rectangle selBoundsRI, double origResolution, MapEdits newEdits)
+	private static Map<Integer, List<Integer>> buildCenterEdits(WorldGraph newGraph, WorldGraph originalGraph, MapEdits originalEdits, Rectangle selectionBoundsRI, double originalResolution, MapEdits newEdits)
 	{
-		Map<Integer, List<Integer>> origRegionToNewCenters = new HashMap<>();
+		Map<Integer, List<Integer>> originalRegionToNewCenters = new HashMap<>();
 
 		for (Center newCenter : newGraph.centers)
 		{
-			// Build sample points: center loc + all Voronoi corners, mapped to orig-graph pixel space.
-			List<Point> samplePts = new ArrayList<>(newCenter.corners.size() + 1);
-			samplePts.add(mapToOrigGraphPoint(newCenter.loc, newGraph, selBoundsRI, origResolution));
+			// Build sample points: center loc + all Voronoi corners, mapped to original-graph pixel space.
+			List<Point> samplePoints = new ArrayList<>(newCenter.corners.size() + 1);
+			samplePoints.add(mapToOriginalGraphPoint(newCenter.loc, newGraph, selectionBoundsRI, originalResolution));
 			for (Corner corner : newCenter.corners)
 			{
-				samplePts.add(mapToOrigGraphPoint(corner.loc, newGraph, selBoundsRI, origResolution));
+				samplePoints.add(mapToOriginalGraphPoint(corner.loc, newGraph, selectionBoundsRI, originalResolution));
 			}
 
 			// Tally votes from the original map for each sample point.
 			int waterVotes = 0;
 			int lakeVotes = 0;
 			Map<Integer, Integer> regionVotes = new HashMap<>();
-			for (Point samplePt : samplePts)
+			for (Point samplePoint : samplePoints)
 			{
-				Center origCenter = origGraph.findClosestCenter(samplePt, false);
-				boolean sIsWater, sIsLake;
-				Integer sRegionId;
-				if (origCenter != null && origEdits.centerEdits.containsKey(origCenter.index))
+				Center originalCenter = originalGraph.findClosestCenter(samplePoint, false);
+				boolean sampleIsWater, sampleIsLake;
+				Integer sampleRegionId;
+				if (originalCenter != null && originalEdits.centerEdits.containsKey(originalCenter.index))
 				{
-					CenterEdit oe = origEdits.centerEdits.get(origCenter.index);
-					sIsWater = oe.isWater;
-					sIsLake = oe.isLake;
-					sRegionId = oe.regionId;
+					CenterEdit originalCenterEdit = originalEdits.centerEdits.get(originalCenter.index);
+					sampleIsWater = originalCenterEdit.isWater;
+					sampleIsLake = originalCenterEdit.isLake;
+					sampleRegionId = originalCenterEdit.regionId;
 				}
-				else if (origCenter != null)
+				else if (originalCenter != null)
 				{
-					sIsWater = origCenter.isWater;
-					sIsLake = origCenter.isLake;
-					sRegionId = origCenter.region != null ? origCenter.region.id : null;
+					sampleIsWater = originalCenter.isWater;
+					sampleIsLake = originalCenter.isLake;
+					sampleRegionId = originalCenter.region != null ? originalCenter.region.id : null;
 				}
 				else
 				{
-					sIsWater = true;
-					sIsLake = false;
-					sRegionId = null;
+					sampleIsWater = true;
+					sampleIsLake = false;
+					sampleRegionId = null;
 				}
-				if (sIsWater) waterVotes++;
-				if (sIsLake) lakeVotes++;
-				if (sRegionId != null) regionVotes.merge(sRegionId, 1, Integer::sum);
+				if (sampleIsWater) waterVotes++;
+				if (sampleIsLake) lakeVotes++;
+				if (sampleRegionId != null) regionVotes.merge(sampleRegionId, 1, Integer::sum);
 			}
 
 			// Majority vote: ≥50% water samples → water; ≥50% of water samples are lake → lake.
-			boolean isWater = waterVotes * 2 >= samplePts.size();
+			boolean isWater = waterVotes * 2 >= samplePoints.size();
 			boolean isLake = isWater && waterVotes > 0 && lakeVotes * 2 >= waterVotes;
 			// Plurality vote for region: the region with the most sample-point votes wins.
 			Integer regionId = null;
@@ -229,43 +226,43 @@ public class SubMapCreator
 				}
 			}
 
-			// Apply to the new center (required before propagateCoastAndCornerFlags).
+			// Apply to the new center (required before updateCoastAndCornerFlags).
 			newCenter.isWater = isWater;
 			newCenter.isLake = isLake;
 
 			if (regionId != null)
 			{
-				origRegionToNewCenters.computeIfAbsent(regionId, k -> new ArrayList<>()).add(newCenter.index);
+				originalRegionToNewCenters.computeIfAbsent(regionId, k -> new ArrayList<>()).add(newCenter.index);
 			}
 			newEdits.centerEdits.put(newCenter.index, new CenterEdit(newCenter.index, isWater, isLake, regionId, null, null));
 		}
 
-		return origRegionToNewCenters;
+		return originalRegionToNewCenters;
 	}
 
 	/**
 	 * Transfers free icons from the original edits into {@code newEdits}. Cities and decorations are always copied by position.
 	 * Mountains, hills, sand, and trees are either redistributed by center (if {@code redistributeIcons}) or copied by position.
 	 */
-	private static void transferFreeIcons(MapEdits origEdits, WorldGraph origGraph, WorldGraph newGraph, Rectangle selBoundsRI, double origResolution, MapEdits newEdits, int newGenWidth,
-			int newGenHeight, boolean redistributeIcons, long seed)
+	private static void transferFreeIcons(MapEdits originalEdits, WorldGraph originalGraph, WorldGraph newGraph, Rectangle selectionBoundsRI, double originalResolution, MapEdits newEdits,
+			int newGenWidth, int newGenHeight, boolean redistributeIcons, long seed)
 	{
 		// Cities and decorations always copy by position, regardless of redistributeIcons.
 		// They must be copied before redistribution so that redistribution can skip their centers.
-		for (FreeIcon icon : origEdits.freeIcons)
+		for (FreeIcon icon : originalEdits.freeIcons)
 		{
 			if (icon.type != IconType.cities && icon.type != IconType.decorations)
 			{
 				continue;
 			}
-			if (selBoundsRI.containsOrOverlaps(icon.locationResolutionInvariant))
+			if (selectionBoundsRI.containsOrOverlaps(icon.locationResolutionInvariant))
 			{
-				Point newLoc = transformRIPoint(icon.locationResolutionInvariant, selBoundsRI, newGenWidth, newGenHeight);
+				Point newLoc = transformRIPoint(icon.locationResolutionInvariant, selectionBoundsRI, newGenWidth, newGenHeight);
 				Integer newCenterIndex = null;
 				if (icon.centerIndex != null)
 				{
-					Point newGraphPt = new Point(newLoc.x * origResolution, newLoc.y * origResolution);
-					Center nearestNewCenter = newGraph.findClosestCenter(newGraphPt, false);
+					Point newGraphPoint = new Point(newLoc.x * originalResolution, newLoc.y * originalResolution);
+					Center nearestNewCenter = newGraph.findClosestCenter(newGraphPoint, false);
 					if (nearestNewCenter != null)
 					{
 						newCenterIndex = nearestNewCenter.index;
@@ -279,25 +276,25 @@ public class SubMapCreator
 		if (redistributeIcons)
 		{
 			// Redistribute mountains, hills, sand, and trees based on per-center mapping.
-			redistributeIconsByCenter(origGraph, origEdits, newGraph, selBoundsRI, origResolution, newEdits, seed, newGenWidth, newGenHeight);
+			redistributeIconsByCenter(originalGraph, originalEdits, newGraph, selectionBoundsRI, originalResolution, newEdits, seed, newGenWidth, newGenHeight);
 		}
 		else
 		{
 			// Copy mountains, hills, sand, and trees by position (original behavior).
-			for (FreeIcon icon : origEdits.freeIcons)
+			for (FreeIcon icon : originalEdits.freeIcons)
 			{
 				if (icon.type == IconType.cities || icon.type == IconType.decorations)
 				{
 					continue;
 				}
-				if (selBoundsRI.containsOrOverlaps(icon.locationResolutionInvariant))
+				if (selectionBoundsRI.containsOrOverlaps(icon.locationResolutionInvariant))
 				{
-					Point newLoc = transformRIPoint(icon.locationResolutionInvariant, selBoundsRI, newGenWidth, newGenHeight);
+					Point newLoc = transformRIPoint(icon.locationResolutionInvariant, selectionBoundsRI, newGenWidth, newGenHeight);
 					Integer newCenterIndex = null;
 					if (icon.centerIndex != null)
 					{
-						Point newGraphPt = new Point(newLoc.x * origResolution, newLoc.y * origResolution);
-						Center nearestNewCenter = newGraph.findClosestCenter(newGraphPt, false);
+						Point newGraphPoint = new Point(newLoc.x * originalResolution, newLoc.y * originalResolution);
+						Center nearestNewCenter = newGraph.findClosestCenter(newGraphPoint, false);
 						if (nearestNewCenter != null)
 						{
 							newCenterIndex = nearestNewCenter.index;
@@ -328,26 +325,26 @@ public class SubMapCreator
 	 * adjacent polygons share the same tree type), the majority vote reliably transfers forest coverage across zoom levels.
 	 * </p>
 	 */
-	private static void redistributeIconsByCenter(WorldGraph origGraph, MapEdits origEdits, WorldGraph newGraph, Rectangle selBoundsRI, double origResolution, MapEdits newEdits, long seed,
-			int newGenWidth, int newGenHeight)
+	private static void redistributeIconsByCenter(WorldGraph originalGraph, MapEdits originalEdits, WorldGraph newGraph, Rectangle selectionBoundsRI, double originalResolution, MapEdits newEdits,
+			long seed, int newGenWidth, int newGenHeight)
 	{
 		// --- Non-tree icons: Step 1 — direct position mapping. ---
 		// For each original mountain/hill/sand icon within the selection, transform its position to new RI
 		// space and place it at the nearest new center. Same approach as the non-redistribute path, so this
-		// is guaranteed to work whenever origEdits.freeIcons has icons.
-		for (FreeIcon icon : origEdits.freeIcons)
+		// is guaranteed to work whenever originalEdits.freeIcons has icons.
+		for (FreeIcon icon : originalEdits.freeIcons)
 		{
 			if (icon.type == IconType.trees || icon.type == IconType.cities || icon.type == IconType.decorations)
 			{
 				continue;
 			}
-			if (!selBoundsRI.containsOrOverlaps(icon.locationResolutionInvariant))
+			if (!selectionBoundsRI.containsOrOverlaps(icon.locationResolutionInvariant))
 			{
 				continue;
 			}
-			Point newLoc = transformRIPoint(icon.locationResolutionInvariant, selBoundsRI, newGenWidth, newGenHeight);
-			Point newGraphPt = new Point(newLoc.x * origResolution, newLoc.y * origResolution);
-			Center nearestNew = newGraph.findClosestCenter(newGraphPt, false);
+			Point newLoc = transformRIPoint(icon.locationResolutionInvariant, selectionBoundsRI, newGenWidth, newGenHeight);
+			Point newGraphPoint = new Point(newLoc.x * originalResolution, newLoc.y * originalResolution);
+			Center nearestNew = newGraph.findClosestCenter(newGraphPoint, false);
 			if (nearestNew == null)
 			{
 				continue;
@@ -366,31 +363,31 @@ public class SubMapCreator
 		}
 
 		// Build lookup for step 2 and tree redistribution: original center index → icons.
-		Map<Integer, List<FreeIcon>> origCenterToIcons = new HashMap<>();
+		Map<Integer, List<FreeIcon>> originalCenterToIcons = new HashMap<>();
 		// Also build a pool of non-tree icons grouped by (artPack, groupId) for random selection in step 2.
 		Map<String, List<FreeIcon>> iconPoolByGroup = new HashMap<>();
-		for (FreeIcon icon : origEdits.freeIcons)
+		for (FreeIcon icon : originalEdits.freeIcons)
 		{
 			if (icon.type == IconType.cities || icon.type == IconType.decorations)
 			{
 				continue;
 			}
-			int centerIdx;
+			int originalCenterIndex;
 			if (icon.centerIndex != null)
 			{
-				centerIdx = icon.centerIndex;
+				originalCenterIndex = icon.centerIndex;
 			}
 			else
 			{
-				Point scaledPt = new Point(icon.locationResolutionInvariant.x * origResolution, icon.locationResolutionInvariant.y * origResolution);
-				Center nearest = origGraph.findClosestCenter(scaledPt, false);
+				Point scaledPoint = new Point(icon.locationResolutionInvariant.x * originalResolution, icon.locationResolutionInvariant.y * originalResolution);
+				Center nearest = originalGraph.findClosestCenter(scaledPoint, false);
 				if (nearest == null)
 				{
 					continue;
 				}
-				centerIdx = nearest.index;
+				originalCenterIndex = nearest.index;
 			}
-			origCenterToIcons.computeIfAbsent(centerIdx, k -> new ArrayList<>()).add(icon);
+			originalCenterToIcons.computeIfAbsent(originalCenterIndex, k -> new ArrayList<>()).add(icon);
 			if (icon.type != IconType.trees)
 			{
 				String groupKey = icon.artPack + "\t" + icon.groupId;
@@ -406,19 +403,19 @@ public class SubMapCreator
 				continue;
 			}
 
-			Point locInOrigSpace = mapToOrigGraphPoint(newCenter.loc, newGraph, selBoundsRI, origResolution);
-			Center origCenterForLoc = origCenterToIcons.isEmpty() ? null : origGraph.findClosestCenter(locInOrigSpace, false);
+			Point locationInOriginalSpace = mapToOriginalGraphPoint(newCenter.loc, newGraph, selectionBoundsRI, originalResolution);
+			Center originalCenterAtLocation = originalCenterToIcons.isEmpty() ? null : originalGraph.findClosestCenter(locationInOriginalSpace, false);
 
 			// --- Non-tree icons: Step 2 — zoom-in expansion. ---
 			// For new centers not yet assigned by step 1, check whether their loc maps to an original
 			// center that had an icon. If so, place a random icon from the same group (handles zoom-in
 			// density scaling while adding variety rather than duplicating the exact same variant).
-			if (!origCenterToIcons.isEmpty() && newEdits.freeIcons.getNonTree(newCenter.index) == null && origCenterForLoc != null)
+			if (!originalCenterToIcons.isEmpty() && newEdits.freeIcons.getNonTree(newCenter.index) == null && originalCenterAtLocation != null)
 			{
-				List<FreeIcon> iconsAtLoc = origCenterToIcons.get(origCenterForLoc.index);
-				if (iconsAtLoc != null)
+				List<FreeIcon> iconsAtLocation = originalCenterToIcons.get(originalCenterAtLocation.index);
+				if (iconsAtLocation != null)
 				{
-					for (FreeIcon icon : iconsAtLoc)
+					for (FreeIcon icon : iconsAtLocation)
 					{
 						if (icon.type != IconType.trees)
 						{
@@ -437,25 +434,25 @@ public class SubMapCreator
 			}
 
 			// --- Trees: majority vote over loc + all Voronoi corners. ---
-			List<Point> samplePts = new ArrayList<>(newCenter.corners.size() + 1);
-			samplePts.add(locInOrigSpace != null ? locInOrigSpace : mapToOrigGraphPoint(newCenter.loc, newGraph, selBoundsRI, origResolution));
+			List<Point> samplePoints = new ArrayList<>(newCenter.corners.size() + 1);
+			samplePoints.add(locationInOriginalSpace != null ? locationInOriginalSpace : mapToOriginalGraphPoint(newCenter.loc, newGraph, selectionBoundsRI, originalResolution));
 			for (Corner corner : newCenter.corners)
 			{
-				samplePts.add(mapToOrigGraphPoint(corner.loc, newGraph, selBoundsRI, origResolution));
+				samplePoints.add(mapToOriginalGraphPoint(corner.loc, newGraph, selectionBoundsRI, originalResolution));
 			}
 
 			Map<String, Integer> treeVotes = new HashMap<>();
 			Map<String, FreeIcon> treeRepresentative = new HashMap<>();
 			Map<String, List<Double>> treeDensities = new HashMap<>();
 
-			for (Point samplePt : samplePts)
+			for (Point samplePoint : samplePoints)
 			{
-				Center origCenter = origGraph.findClosestCenter(samplePt, false);
-				if (origCenter == null)
+				Center originalCenter = originalGraph.findClosestCenter(samplePoint, false);
+				if (originalCenter == null)
 				{
 					continue;
 				}
-				List<FreeIcon> iconsAtCenter = origCenterToIcons.get(origCenter.index);
+				List<FreeIcon> iconsAtCenter = originalCenterToIcons.get(originalCenter.index);
 				if (iconsAtCenter == null)
 				{
 					continue;
@@ -480,7 +477,7 @@ public class SubMapCreator
 
 			for (Map.Entry<String, Integer> e : treeVotes.entrySet())
 			{
-				if (e.getValue() * 2 < samplePts.size())
+				if (e.getValue() * 2 < samplePoints.size())
 				{
 					continue;
 				}
@@ -498,45 +495,45 @@ public class SubMapCreator
 	}
 
 	/**
-	 * Maps a point from new-graph pixel space to orig-graph pixel space.
+	 * Maps a point from new-graph pixel space to original-graph pixel space.
 	 */
-	private static Point mapToOrigGraphPoint(Point newGraphPt, WorldGraph newGraph, Rectangle selBoundsRI, double origResolution)
+	private static Point mapToOriginalGraphPoint(Point newGraphPoint, WorldGraph newGraph, Rectangle selectionBoundsRI, double originalResolution)
 	{
-		double origX = (newGraphPt.x / newGraph.bounds.width * selBoundsRI.width + selBoundsRI.x) * origResolution;
-		double origY = (newGraphPt.y / newGraph.bounds.height * selBoundsRI.height + selBoundsRI.y) * origResolution;
-		return new Point(origX, origY);
+		double originalX = (newGraphPoint.x / newGraph.bounds.width * selectionBoundsRI.width + selectionBoundsRI.x) * originalResolution;
+		double originalY = (newGraphPoint.y / newGraph.bounds.height * selectionBoundsRI.height + selectionBoundsRI.y) * originalResolution;
+		return new Point(originalX, originalY);
 	}
 
 	/**
 	 * Transfers rivers from the original graph into the new graph's edge edits.
 	 */
-	private static void transferRivers(WorldGraph origGraph, MapEdits origEdits, WorldGraph newGraph, Rectangle selBoundsRI, MapEdits newEdits, double origResolution)
+	private static void transferRivers(WorldGraph originalGraph, MapEdits originalEdits, WorldGraph newGraph, Rectangle selectionBoundsRI, MapEdits newEdits, double originalResolution)
 	{
 		// Transfer original river edges to the new graph.
 		// Build set of river edges in the original (from edgeEdits overrides or edge.river).
 
 		// Determine effective river level per edge in the original graph.
-		Map<Integer, Integer> origRiverLevels = new HashMap<>();
-		for (Edge edge : origGraph.edges)
+		Map<Integer, Integer> originalRiverLevels = new HashMap<>();
+		for (Edge edge : originalGraph.edges)
 		{
 			if (edge.river > 0)
 			{
-				origRiverLevels.put(edge.index, edge.river);
+				originalRiverLevels.put(edge.index, edge.river);
 			}
 		}
-		for (EdgeEdit ee : origEdits.edgeEdits.values())
+		for (EdgeEdit ee : originalEdits.edgeEdits.values())
 		{
 			if (ee.riverLevel > 0)
 			{
-				origRiverLevels.put(ee.index, ee.riverLevel);
+				originalRiverLevels.put(ee.index, ee.riverLevel);
 			}
 			else if (ee.riverLevel == 0)
 			{
-				origRiverLevels.remove(ee.index);
+				originalRiverLevels.remove(ee.index);
 			}
 		}
 
-		if (origRiverLevels.isEmpty())
+		if (originalRiverLevels.isEmpty())
 		{
 			return;
 		}
@@ -545,32 +542,32 @@ public class SubMapCreator
 		// then trace the Voronoi-edge path between them. One original edge may span several new edges
 		// (because the new graph is more detailed), so findPathGreedy gives the full chain. Adjacent
 		// original edges share a corner; they map to the same new corner, so their paths connect.
-		for (Map.Entry<Integer, Integer> entry : origRiverLevels.entrySet())
+		for (Map.Entry<Integer, Integer> entry : originalRiverLevels.entrySet())
 		{
-			int origEdgeIndex = entry.getKey();
+			int originalEdgeIndex = entry.getKey();
 			int riverLevel = entry.getValue();
 
-			Edge origEdge = origGraph.edges.get(origEdgeIndex);
-			if (origEdge == null || origEdge.v0 == null || origEdge.v1 == null)
+			Edge originalEdge = originalGraph.edges.get(originalEdgeIndex);
+			if (originalEdge == null || originalEdge.v0 == null || originalEdge.v1 == null)
 			{
 				continue;
 			}
 
 			// Convert corner positions to RI space and check selection bounds.
-			double origRI_v0x = origEdge.v0.loc.x / origResolution;
-			double origRI_v0y = origEdge.v0.loc.y / origResolution;
-			double origRI_v1x = origEdge.v1.loc.x / origResolution;
-			double origRI_v1y = origEdge.v1.loc.y / origResolution;
-			if (!selBoundsRI.contains(origRI_v0x, origRI_v0y) && !selBoundsRI.contains(origRI_v1x, origRI_v1y))
+			double corner0RIx = originalEdge.v0.loc.x / originalResolution;
+			double corner0RIy = originalEdge.v0.loc.y / originalResolution;
+			double corner1RIx = originalEdge.v1.loc.x / originalResolution;
+			double corner1RIy = originalEdge.v1.loc.y / originalResolution;
+			if (!selectionBoundsRI.contains(corner0RIx, corner0RIy) && !selectionBoundsRI.contains(corner1RIx, corner1RIy))
 			{
 				continue;
 			}
 
 			// Map each original corner to new-graph pixel space and find the closest new-graph corner.
-			double newV0x = (origRI_v0x - selBoundsRI.x) / selBoundsRI.width * newGraph.getWidth();
-			double newV0y = (origRI_v0y - selBoundsRI.y) / selBoundsRI.height * newGraph.getHeight();
-			double newV1x = (origRI_v1x - selBoundsRI.x) / selBoundsRI.width * newGraph.getWidth();
-			double newV1y = (origRI_v1y - selBoundsRI.y) / selBoundsRI.height * newGraph.getHeight();
+			double newV0x = (corner0RIx - selectionBoundsRI.x) / selectionBoundsRI.width * newGraph.getWidth();
+			double newV0y = (corner0RIy - selectionBoundsRI.y) / selectionBoundsRI.height * newGraph.getHeight();
+			double newV1x = (corner1RIx - selectionBoundsRI.x) / selectionBoundsRI.width * newGraph.getWidth();
+			double newV1y = (corner1RIy - selectionBoundsRI.y) / selectionBoundsRI.height * newGraph.getHeight();
 
 			Corner newCorner0 = newGraph.findClosestCorner(new Point(newV0x, newV0y));
 			Corner newCorner1 = newGraph.findClosestCorner(new Point(newV1x, newV1y));
@@ -592,10 +589,10 @@ public class SubMapCreator
 	/**
 	 * Transforms a point from original RI space to new RI space.
 	 */
-	private static Point transformRIPoint(Point origRI, Rectangle selBoundsRI, int newGenWidth, int newGenHeight)
+	private static Point transformRIPoint(Point sourcePointRI, Rectangle selectionBoundsRI, int newGenWidth, int newGenHeight)
 	{
-		double newX = (origRI.x - selBoundsRI.x) / selBoundsRI.width * newGenWidth;
-		double newY = (origRI.y - selBoundsRI.y) / selBoundsRI.height * newGenHeight;
+		double newX = (sourcePointRI.x - selectionBoundsRI.x) / selectionBoundsRI.width * newGenWidth;
+		double newY = (sourcePointRI.y - selectionBoundsRI.y) / selectionBoundsRI.height * newGenHeight;
 		return new Point(newX, newY);
 	}
 
@@ -603,7 +600,7 @@ public class SubMapCreator
 	 * Clips a road's RI-coordinate path to the selection rectangle, inserting intersection points at the boundary where segments cross
 	 * it. Returns a list of sub-paths (each with >= 2 points) in new-map RI coordinates, ready to become Road objects.
 	 */
-	private static List<List<Point>> clipRoadPath(List<Point> path, Rectangle sel, int newW, int newH)
+	private static List<List<Point>> clipRoadPath(List<Point> path, Rectangle selectionBounds, int newWidth, int newHeight)
 	{
 		List<List<Point>> result = new ArrayList<>();
 		if (path.isEmpty())
@@ -612,29 +609,29 @@ public class SubMapCreator
 		}
 
 		List<Point> current = new ArrayList<>();
-		boolean prevInside = sel.contains(path.get(0));
+		boolean prevInside = selectionBounds.contains(path.get(0));
 		if (prevInside)
 		{
-			current.add(transformRIPoint(path.get(0), sel, newW, newH));
+			current.add(transformRIPoint(path.get(0), selectionBounds, newWidth, newHeight));
 		}
 
 		for (int i = 1; i < path.size(); i++)
 		{
 			Point prev = path.get(i - 1);
 			Point curr = path.get(i);
-			boolean currInside = sel.contains(curr);
+			boolean currInside = selectionBounds.contains(curr);
 
 			if (prevInside && currInside)
 			{
-				current.add(transformRIPoint(curr, sel, newW, newH));
+				current.add(transformRIPoint(curr, selectionBounds, newWidth, newHeight));
 			}
 			else if (prevInside && !currInside)
 			{
 				// Exiting: add exit intersection at the boundary, then close current sub-path.
-				Point exit = segmentBoundaryIntersection(prev, curr, sel);
+				Point exit = segmentBoundaryIntersection(prev, curr, selectionBounds);
 				if (exit != null)
 				{
-					current.add(transformRIPoint(exit, sel, newW, newH));
+					current.add(transformRIPoint(exit, selectionBounds, newWidth, newHeight));
 				}
 				if (current.size() >= 2)
 				{
@@ -645,12 +642,12 @@ public class SubMapCreator
 			else if (!prevInside && currInside)
 			{
 				// Entering: start a new sub-path from the entry intersection.
-				Point entry = segmentBoundaryIntersection(prev, curr, sel);
+				Point entry = segmentBoundaryIntersection(prev, curr, selectionBounds);
 				if (entry != null)
 				{
-					current.add(transformRIPoint(entry, sel, newW, newH));
+					current.add(transformRIPoint(entry, selectionBounds, newWidth, newHeight));
 				}
-				current.add(transformRIPoint(curr, sel, newW, newH));
+				current.add(transformRIPoint(curr, selectionBounds, newWidth, newHeight));
 			}
 			// else both outside: skip.
 

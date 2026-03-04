@@ -1987,21 +1987,7 @@ public class WorldGraph extends VoronoiGraph
 			c.updateCoast();
 		}
 
-		// Copied from super.assignOceanCoastAndLand()
-		// Determine if each corner is ocean, coast, or water.
-		for (Corner c : corners)
-		{
-			int numOcean = 0;
-			int numLand = 0;
-			for (Center center : c.touches)
-			{
-				numOcean += (center.isWater && !center.isLake) ? 1 : 0;
-				numLand += !center.isWater ? 1 : 0;
-			}
-			c.isOcean = numOcean == c.touches.size();
-			c.isCoast = numOcean > 0 && numLand > 0;
-			c.isWater = (numLand != c.touches.size()) && !c.isCoast;
-		}
+		updateCoastAndCornerFlags();
 	}
 
 	private void assignOceanAndContinentalPlates()
@@ -3388,10 +3374,10 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Propagates coast and corner water/ocean flags based on center.isWater flags. Call this after setting center.isWater and center.isLake
+	 * Updates coast and corner water/ocean flags based on center.isWater flags. Call this after setting center.isWater and center.isLake
 	 * manually (i.e., without going through the elevation-based assignOceanCoastAndLand).
 	 */
-	public void propagateCoastAndCornerFlags()
+	public void updateCoastAndCornerFlags()
 	{
 		for (Center c : centers)
 		{

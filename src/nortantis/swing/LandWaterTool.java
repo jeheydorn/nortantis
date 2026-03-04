@@ -220,12 +220,14 @@ public class LandWaterTool extends EditorTool
 		{
 			polygonDrawStyleButton = new JToggleButton(Translation.get("landWaterTool.roadStyle.polygon"));
 			polygonDrawStyleButton.setSelected(true);
+			polygonDrawStyleButton.setToolTipText(Translation.get("landWaterTool.roadStyle.polygon.tooltip"));
 			polygonDrawStyleButton.addActionListener(e ->
 			{
 				cancelFreeHandDrawing();
 				brushActionListener.actionPerformed(null);
 			});
 			freeHandDrawStyleButton = new JToggleButton(Translation.get("landWaterTool.roadStyle.freeHand"));
+			freeHandDrawStyleButton.setToolTipText(Translation.get("landWaterTool.roadStyle.freeHand.tooltip"));
 			freeHandDrawStyleButton.addActionListener(e ->
 			{
 				cancelFreeHandDrawing();
@@ -371,15 +373,15 @@ public class LandWaterTool extends EditorTool
 
 		freeHandSnapPoint = mouseLocation != null ? computeSnapPoint(mouseLocation) : null;
 
-		List<Point> circlesGraphPx = new ArrayList<>();
+		List<Point> circlesGraphPixels = new ArrayList<>();
 		for (Road road : mainWindow.edits.roads)
 		{
-			for (Point riPt : road.path)
+			for (Point riPoint : road.path)
 			{
-				circlesGraphPx.add(riPt.mult(mainWindow.displayQualityScale));
+				circlesGraphPixels.add(riPoint.mult(mainWindow.displayQualityScale));
 			}
 		}
-		mapEditingPanel.setRoadControlPointCircles(circlesGraphPx);
+		mapEditingPanel.setRoadControlPointCircles(circlesGraphPixels);
 
 		if (freeHandSnapPoint != null)
 		{
@@ -394,13 +396,13 @@ public class LandWaterTool extends EditorTool
 		{
 			Point currentRI = freeHandSnapPoint != null ? freeHandSnapPoint
 					: getPointOnGraph(mouseLocation).mult(1.0 / mainWindow.displayQualityScale);
-			List<Point> previewGraphPx = new ArrayList<>();
-			for (Point riPt : freeHandPathRI)
+			List<Point> previewGraphPixels = new ArrayList<>();
+			for (Point riPoint : freeHandPathRI)
 			{
-				previewGraphPx.add(riPt.mult(mainWindow.displayQualityScale));
+				previewGraphPixels.add(riPoint.mult(mainWindow.displayQualityScale));
 			}
-			previewGraphPx.add(currentRI.mult(mainWindow.displayQualityScale));
-			mapEditingPanel.setFreeHandPreviewPath(previewGraphPx);
+			previewGraphPixels.add(currentRI.mult(mainWindow.displayQualityScale));
+			mapEditingPanel.setFreeHandPreviewPath(previewGraphPixels);
 		}
 	}
 
