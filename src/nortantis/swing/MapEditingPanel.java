@@ -928,9 +928,14 @@ public class MapEditingPanel extends UnscaledImagePanel
 	 */
 	int getRoadControlPointRadiusInGraphPixels()
 	{
-		// Scale by resolution so the circles appear the same screen size regardless of display quality
-		// (zoom already accounts for resolution, so fixed graph-pixel sizes would shrink at higher quality).
-		return (int) Math.round(13 * resolution);
+		if (graph == null)
+		{
+			return (int) Math.round(13 * resolution);
+		}
+		// Scale with mean polygon width so circles stay proportional to polygon size as world size
+		// increases, matching the way icons scale. getMeanCenterWidth() is in graph pixels and already
+		// incorporates resolution, so no separate resolution factor is needed.
+		return (int) Math.round(graph.getMeanCenterWidth() * 0.25);
 	}
 
 	private void drawRoadControlPoints(Graphics2D g2)
@@ -944,7 +949,11 @@ public class MapEditingPanel extends UnscaledImagePanel
 		Stroke prevStroke = g2.getStroke();
 		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		int r = getRoadControlPointRadiusInGraphPixels();
-		g2.setStroke(new BasicStroke((float) (3 * resolution)));
+		// Scale stroke width with mean polygon width like the radius, so it thins out at higher world
+		// sizes. The constant 0.065 is calibrated so the stroke is half of its original fixed value
+		// (3 * resolution) at maximum world size.
+		float strokeWidth = (float) (graph.getMeanCenterWidth() * 0.065);
+		g2.setStroke(new BasicStroke(strokeWidth));
 
 		if (roadControlPointCircles != null)
 		{
@@ -958,7 +967,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		if (hoveredRoadControlPoint != null)
 		{
 			g2.setColor(highlightEditColor);
-			int hr = r + (int) Math.round(2 * resolution);
+			int hr = r + Math.max(1, r / 6);
 			g2.drawOval((int) hoveredRoadControlPoint.x - hr, (int) hoveredRoadControlPoint.y - hr, hr * 2, hr * 2);
 		}
 
