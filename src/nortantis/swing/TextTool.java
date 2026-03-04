@@ -529,6 +529,18 @@ public class TextTool extends EditorTool
 	@Override
 	protected void onAfterShowMap()
 	{
+		updateHighlightsForMousePosition();
+	}
+
+	@Override
+	public void onSwitchingTo()
+	{
+		super.onSwitchingTo();
+		updater.doWhenMapIsReadyForInteractions(this::updateHighlightsForMousePosition);
+	}
+
+	private void updateHighlightsForMousePosition()
+	{
 		if (lastSelected == null)
 		{
 			mapEditingPanel.clearTextBox();

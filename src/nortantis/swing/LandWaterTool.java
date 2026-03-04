@@ -365,7 +365,7 @@ public class LandWaterTool extends EditorTool
 			return;
 		}
 
-		freeHandSnapPoint = computeSnapPoint(mouseLocation);
+		freeHandSnapPoint = mouseLocation != null ? computeSnapPoint(mouseLocation) : null;
 
 		List<Point> circlesGraphPx = new ArrayList<>();
 		for (Road road : mainWindow.edits.roads)
@@ -386,7 +386,7 @@ public class LandWaterTool extends EditorTool
 			mapEditingPanel.clearHoveredRoadControlPoint();
 		}
 
-		if (isFreeHandDrawMode() && freeHandPathRI != null)
+		if (mouseLocation != null && isFreeHandDrawMode() && freeHandPathRI != null)
 		{
 			Point currentRI = freeHandSnapPoint != null ? freeHandSnapPoint
 					: getPointOnGraph(mouseLocation).mult(1.0 / mainWindow.displayQualityScale);
@@ -1365,8 +1365,38 @@ public class LandWaterTool extends EditorTool
 	@Override
 	protected void onAfterShowMap()
 	{
-		highlightHoverCentersOrEdgesAndBrush(mapEditingPanel.getMousePosition());
+		java.awt.Point mousePosition = mapEditingPanel.getMousePosition();
+		updateHighlightsForMousePosition(mousePosition);
 	}
+
+	@Override
+	public void onSwitchingTo()
+	{
+		super.onSwitchingTo();
+		updater.doWhenMapIsReadyForInteractions(() ->
+		{
+			updateHighlightsForMousePosition(mapEditingPanel.getMousePosition());
+		});
+	}
+
+	private void updateHighlightsForMousePosition(java.awt.Point mousePosition)
+	{
+		if (mousePosition == null)
+		{
+			return;
+		}
+
+		if (roadsButton.isSelected() && modeWidget.isDrawMode())
+		{
+			updateRoadControlPointDisplay(mousePosition);
+			mapEditingPanel.repaint();
+		}
+		else
+		{
+			highlightHoverCentersOrEdgesAndBrush(mousePosition);
+		}
+	}
+
 
 	@Override
 	public void onSwitchingAway()

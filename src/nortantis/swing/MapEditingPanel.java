@@ -934,9 +934,10 @@ public class MapEditingPanel extends UnscaledImagePanel
 		RenderingHints prevHints = g2.getRenderingHints();
 		Stroke prevStroke = g2.getStroke();
 		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-		// Fixed size in graph-pixel space so the circles scale with zoom just like the map content.
-		int r = 15;
-		g2.setStroke(new BasicStroke(3f));
+		// Scale by resolution so the circles appear the same screen size regardless of display quality
+		// (zoom already accounts for resolution, so fixed graph-pixel sizes would shrink at higher quality).
+		int r = (int) Math.round(15 * resolution);
+		g2.setStroke(new BasicStroke((float) (3 * resolution)));
 
 		if (roadControlPointCircles != null)
 		{
@@ -950,14 +951,15 @@ public class MapEditingPanel extends UnscaledImagePanel
 		if (hoveredRoadControlPoint != null)
 		{
 			g2.setColor(highlightEditColor);
-			int hr = r + 2;
+			int hr = r + (int) Math.round(2 * resolution);
 			g2.drawOval((int) hoveredRoadControlPoint.x - hr, (int) hoveredRoadControlPoint.y - hr, hr * 2, hr * 2);
 		}
 
 		if (freeHandPreviewPath != null && freeHandPreviewPath.size() >= 2)
 		{
 			g2.setColor(processingColor);
-			g2.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1f, new float[] { 6f, 4f }, 0f));
+			float d = (float) resolution * 2f;
+			g2.setStroke(new BasicStroke(1.5f * d, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1f, new float[] { 6f * d, 4f * d }, 0f));
 			drawPolyline(g2, freeHandPreviewPath);
 		}
 

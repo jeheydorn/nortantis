@@ -2138,6 +2138,18 @@ public class IconsTool extends EditorTool
 	@Override
 	protected void onAfterShowMap()
 	{
+		updateHighlightsForMousePosition();
+	}
+
+	@Override
+	public void onSwitchingTo()
+	{
+		super.onSwitchingTo();
+		updater.doWhenMapIsReadyForInteractions(this::updateHighlightsForMousePosition);
+	}
+
+	private void updateHighlightsForMousePosition()
+	{
 		innerHandleMouseMovedOnMap(mapEditingPanel.getMousePosition(), false);
 
 		if (modeWidget.isEditMode() && iconsToEdit != null && !iconsToEdit.isEmpty())
