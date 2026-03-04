@@ -164,8 +164,9 @@ public class LandWaterTool extends EditorTool
 
 				if (brushSizeComboBox != null)
 				{
-					brushSizeHider.setVisible(oceanButton.isSelected() || lakesButton.isSelected() || landButton.isSelected() || (riversButton.isSelected() && modeWidget.isEraseMode())
-							|| (roadsButton.isSelected() && modeWidget.isEraseMode()));
+					brushSizeHider.setVisible(
+							oceanButton.isSelected() || lakesButton.isSelected() || landButton.isSelected() || (riversButton.isSelected() && modeWidget.isEraseMode()) || (roadsButton.isSelected()
+									&& modeWidget.isEraseMode()));
 				}
 
 				showOrHideRoadAndRiverOptions();
@@ -234,8 +235,7 @@ public class LandWaterTool extends EditorTool
 				brushActionListener.actionPerformed(null);
 			});
 			SegmentedButtonWidget drawStyleWidget = new SegmentedButtonWidget(List.of(polygonDrawStyleButton, freeHandDrawStyleButton));
-			drawStyleHider = drawStyleWidget.addToOrganizer(organizer, Translation.get("landWaterTool.roadStyle.label"),
-					Translation.get("landWaterTool.roadStyle.help"));
+			drawStyleHider = drawStyleWidget.addToOrganizer(organizer, Translation.get("landWaterTool.roadStyle.label"), Translation.get("landWaterTool.roadStyle.help"));
 
 			// Register Escape (cancel) and Enter (commit) key bindings for free-hand drawing
 			mapEditingPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "cancelFreeHandRoad");
@@ -285,8 +285,9 @@ public class LandWaterTool extends EditorTool
 			public void actionPerformed(ActionEvent e)
 			{
 				cancelSelectColorFromMap();
-				Color newColor = AwtBridge.toAwtColor(MapCreator.generateColorFromBaseColor(new Random(), AwtBridge.fromAwtColor(baseColorPanel.getBackground()), hueSlider.getValue(),
-						saturationSlider.getValue(), brightnessSlider.getValue()));
+				Color newColor = AwtBridge.toAwtColor(
+						MapCreator.generateColorFromBaseColor(new Random(), AwtBridge.fromAwtColor(baseColorPanel.getBackground()), hueSlider.getValue(), saturationSlider.getValue(),
+								brightnessSlider.getValue()));
 				colorDisplay.setBackground(newColor);
 			}
 		});
@@ -314,16 +315,25 @@ public class LandWaterTool extends EditorTool
 		modeHider.setVisible(riversButton.isSelected() || roadsButton.isSelected());
 		riverOptionHider.setVisible(riversButton.isSelected() && modeWidget.isDrawMode());
 		drawStyleHider.setVisible(roadsButton.isSelected() && modeWidget.isDrawMode());
-		if (!roadsButton.isSelected() || !modeWidget.isDrawMode())
+		if (updater != null)
 		{
-			cancelFreeHandDrawing();
-			clearRoadControlPointDisplay();
-			mapEditingPanel.repaint();
-		}
-		else
-		{
-			updateRoadControlPointDisplay(null);
-			mapEditingPanel.repaint();
+			updater.doWhenMapIsReadyForInteractions(() ->
+			{
+				if (isSelected())
+				{
+					if (!roadsButton.isSelected() || !modeWidget.isDrawMode())
+					{
+						cancelFreeHandDrawing();
+						clearRoadControlPointDisplay();
+						mapEditingPanel.repaint();
+					}
+					else
+					{
+						updateRoadControlPointDisplay(null);
+						mapEditingPanel.repaint();
+					}
+				}
+			});
 		}
 	}
 
@@ -335,7 +345,7 @@ public class LandWaterTool extends EditorTool
 	private double getSnapRadiusRI()
 	{
 		// Match the drawn highlight radius so the snap area equals what the user sees.
-		return mapEditingPanel.getRoadControlPointRadiusGraphPx() / mainWindow.displayQualityScale;
+		return mapEditingPanel.getRoadControlPointRadiusInGraphPixels() / mainWindow.displayQualityScale;
 	}
 
 	/**
@@ -399,8 +409,7 @@ public class LandWaterTool extends EditorTool
 
 		if (mouseLocation != null && isFreeHandDrawMode() && freeHandPathRI != null)
 		{
-			Point currentRI = freeHandSnapPoint != null ? freeHandSnapPoint
-					: getPointOnGraph(mouseLocation).mult(1.0 / mainWindow.displayQualityScale);
+			Point currentRI = freeHandSnapPoint != null ? freeHandSnapPoint : getPointOnGraph(mouseLocation).mult(1.0 / mainWindow.displayQualityScale);
 			List<Point> previewGraphPixels = new ArrayList<>();
 			for (Point riPoint : freeHandPathRI)
 			{
@@ -622,8 +631,9 @@ public class LandWaterTool extends EditorTool
 					{
 						// Find the nearest political region when drawing in water.
 						nortantis.geom.Point graphPoint = getPointOnGraph(e.getPoint());
-						Optional<CenterEdit> nearest = mainWindow.edits.centerEdits.values().stream().filter(cEdit -> cEdit.regionId != null).min((c1, c2) -> Double
-								.compare(updater.mapParts.graph.centers.get(c1.index).loc.distanceTo(graphPoint), updater.mapParts.graph.centers.get(c2.index).loc.distanceTo(graphPoint)));
+						Optional<CenterEdit> nearest = mainWindow.edits.centerEdits.values().stream().filter(cEdit -> cEdit.regionId != null)
+								.min((c1, c2) -> Double.compare(updater.mapParts.graph.centers.get(c1.index).loc.distanceTo(graphPoint),
+										updater.mapParts.graph.centers.get(c2.index).loc.distanceTo(graphPoint)));
 						regionIdToExpand = nearest.map(edit -> edit.regionId).orElse(null);
 					}
 					else
@@ -779,7 +789,7 @@ public class LandWaterTool extends EditorTool
 
 	/**
 	 * Removes the given set of roadPointsToRemove from the roads in roadList.
-	 * 
+	 *
 	 * @return Roads that have changed.
 	 */
 	public static List<Road> removeSegmentsAndSplitRoads(List<Road> roadList, List<List<Point>> segmentsToRemove)
@@ -1008,8 +1018,9 @@ public class LandWaterTool extends EditorTool
 		}
 
 		// Find the closest center with a region.
-		Optional<CenterEdit> opt = mainWindow.edits.centerEdits.values().stream().filter(cEdit1 -> cEdit1.regionId != null).min((cEdit1, cEdit2) -> Double
-				.compare(updater.mapParts.graph.centers.get(cEdit1.index).loc.distanceTo(center.loc), updater.mapParts.graph.centers.get(cEdit2.index).loc.distanceTo(center.loc)));
+		Optional<CenterEdit> opt = mainWindow.edits.centerEdits.values().stream().filter(cEdit1 -> cEdit1.regionId != null)
+				.min((cEdit1, cEdit2) -> Double.compare(updater.mapParts.graph.centers.get(cEdit1.index).loc.distanceTo(center.loc),
+						updater.mapParts.graph.centers.get(cEdit2.index).loc.distanceTo(center.loc)));
 		if (opt.isPresent())
 		{
 			return opt.get().regionId;
@@ -1064,12 +1075,10 @@ public class LandWaterTool extends EditorTool
 			updateRoadControlPointDisplay(e.getPoint());
 			mapEditingPanel.repaint();
 		}
-		else if (roadsButton.isSelected() && modeWidget.isDrawMode() && isFreeHandDrawMode() && SwingUtilities.isLeftMouseButton(e)
-				&& updater.mapParts != null && updater.mapParts.graph != null)
+		else if (roadsButton.isSelected() && modeWidget.isDrawMode() && isFreeHandDrawMode() && SwingUtilities.isLeftMouseButton(e) && updater.mapParts != null && updater.mapParts.graph != null)
 		{
 			// Use press (not click) so moving the mouse between press and release still registers the control point.
-			Point riPoint = freeHandSnapPoint != null ? freeHandSnapPoint
-					: getPointOnGraph(e.getPoint()).mult(1.0 / mainWindow.displayQualityScale);
+			Point riPoint = freeHandSnapPoint != null ? freeHandSnapPoint : getPointOnGraph(e.getPoint()).mult(1.0 / mainWindow.displayQualityScale);
 			if (e.getClickCount() == 1)
 			{
 				if (freeHandPathRI == null)
@@ -1145,8 +1154,7 @@ public class LandWaterTool extends EditorTool
 			clearRoadControlPointDisplay();
 			mapEditingPanel.repaint();
 
-			List<Road> changed = RoadDrawer.addRoadsFromEdgesInEditor(edges, updater.mapParts.graph, mainWindow.edits.roads,
-					mainWindow.displayQualityScale);
+			List<Road> changed = RoadDrawer.addRoadsFromEdgesInEditor(edges, updater.mapParts.graph, mainWindow.edits.roads, mainWindow.displayQualityScale);
 
 			// If snap points are set, extend the road's endpoints to connect to those exact control-point locations.
 			// Skip if the snap point already equals the center location (already the natural start/end of the Delaunay road).

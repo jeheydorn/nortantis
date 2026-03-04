@@ -22,7 +22,6 @@ import java.awt.*;
 import java.awt.Stroke;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionListener;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.Ellipse2D;
@@ -927,7 +926,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 	/**
 	 * Returns the road control-point highlight radius in graph pixels. Used by both drawing and hit-testing so they stay in sync.
 	 */
-	int getRoadControlPointRadiusGraphPx()
+	int getRoadControlPointRadiusInGraphPixels()
 	{
 		// Scale by resolution so the circles appear the same screen size regardless of display quality
 		// (zoom already accounts for resolution, so fixed graph-pixel sizes would shrink at higher quality).
@@ -944,7 +943,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		RenderingHints prevHints = g2.getRenderingHints();
 		Stroke prevStroke = g2.getStroke();
 		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-		int r = getRoadControlPointRadiusGraphPx();
+		int r = getRoadControlPointRadiusInGraphPixels();
 		g2.setStroke(new BasicStroke((float) (3 * resolution)));
 
 		if (roadControlPointCircles != null)

@@ -156,7 +156,6 @@ public class OverlayTool extends EditorTool
 			overlayScale = overlayScaleBeforeEdit;
 		}
 
-		mapEditingPanel.clearAllToolSpecificSelectionsAndHighlights();
 		clearEditFields();
 		mapEditingPanel.repaint();
 	}
@@ -528,7 +527,6 @@ public class OverlayTool extends EditorTool
 	@Override
 	public void onBeforeLoadingNewMap()
 	{
-		onSwitchingAway();
 	}
 
 	private void handleOverlayImageChange()

@@ -649,7 +649,18 @@ public class SubMapCreator
 				}
 				current.add(transformRIPoint(curr, selectionBounds, newWidth, newHeight));
 			}
-			// else both outside: skip.
+			else
+			{
+				// Both outside: the segment may still pass through the rectangle.
+				List<Point> throughPoints = segmentThroughIntersections(prev, curr, selectionBounds);
+				if (throughPoints.size() == 2)
+				{
+					List<Point> subPath = new ArrayList<>();
+					subPath.add(transformRIPoint(throughPoints.get(0), selectionBounds, newWidth, newHeight));
+					subPath.add(transformRIPoint(throughPoints.get(1), selectionBounds, newWidth, newHeight));
+					result.add(subPath);
+				}
+			}
 
 			prevInside = currInside;
 		}
@@ -659,6 +670,82 @@ public class SubMapCreator
 			result.add(current);
 		}
 		return result;
+	}
+
+	/**
+	 * When both endpoints of segment P1→P2 are outside {@code rect}, finds the two boundary intersection points (ordered from P1 to
+	 * P2) if the segment passes through the rectangle. Returns an empty list if there are fewer than two distinct intersections.
+	 */
+	private static List<Point> segmentThroughIntersections(Point p1, Point p2, Rectangle rect)
+	{
+		double dx = p2.x - p1.x;
+		double dy = p2.y - p1.y;
+		List<double[]> hits = new ArrayList<>(); // each entry: { t, x, y }
+
+		// Left edge
+		if (dx != 0)
+		{
+			double t = (rect.x - p1.x) / dx;
+			if (t > 0 && t < 1)
+			{
+				double y = p1.y + t * dy;
+				if (y >= rect.y && y <= rect.getBottom())
+				{
+					hits.add(new double[] { t, rect.x, y });
+				}
+			}
+		}
+
+		// Right edge
+		if (dx != 0)
+		{
+			double t = (rect.getRight() - p1.x) / dx;
+			if (t > 0 && t < 1)
+			{
+				double y = p1.y + t * dy;
+				if (y >= rect.y && y <= rect.getBottom())
+				{
+					hits.add(new double[] { t, rect.getRight(), y });
+				}
+			}
+		}
+
+		// Top edge
+		if (dy != 0)
+		{
+			double t = (rect.y - p1.y) / dy;
+			if (t > 0 && t < 1)
+			{
+				double x = p1.x + t * dx;
+				if (x >= rect.x && x <= rect.getRight())
+				{
+					hits.add(new double[] { t, x, rect.y });
+				}
+			}
+		}
+
+		// Bottom edge
+		if (dy != 0)
+		{
+			double t = (rect.getBottom() - p1.y) / dy;
+			if (t > 0 && t < 1)
+			{
+				double x = p1.x + t * dx;
+				if (x >= rect.x && x <= rect.getRight())
+				{
+					hits.add(new double[] { t, x, rect.getBottom() });
+				}
+			}
+		}
+
+		hits.sort((a, b) -> Double.compare(a[0], b[0]));
+		if (hits.size() >= 2)
+		{
+			double[] first = hits.get(0);
+			double[] last = hits.get(hits.size() - 1);
+			return List.of(new Point(first[1], first[2]), new Point(last[1], last[2]));
+		}
+		return List.of();
 	}
 
 	/**
