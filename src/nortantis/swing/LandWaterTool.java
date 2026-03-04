@@ -355,7 +355,7 @@ public class LandWaterTool extends EditorTool
 	 */
 	private Point computeSnapPoint(java.awt.Point mouseLocation)
 	{
-		if (updater.mapParts == null || mainWindow.edits.roads.isEmpty())
+		if (updater.mapParts == null)
 		{
 			return null;
 		}
@@ -373,6 +373,16 @@ public class LandWaterTool extends EditorTool
 					minDist = d;
 					nearest = riPt;
 				}
+			}
+		}
+		// Also snap to the start of the road currently being drawn so the user can close the loop.
+		if (freeHandPathRI != null && freeHandPathRI.size() >= 2)
+		{
+			Point startRI = freeHandPathRI.get(0);
+			double d = startRI.distanceTo(mouseRI);
+			if (d < minDist)
+			{
+				nearest = startRI;
 			}
 		}
 		return nearest;
@@ -397,6 +407,11 @@ public class LandWaterTool extends EditorTool
 			{
 				circlesGraphPixels.add(riPoint.mult(mainWindow.displayQualityScale));
 			}
+		}
+		// Show the start of the road being drawn so the user can snap to it and close the loop.
+		if (freeHandPathRI != null && freeHandPathRI.size() >= 2)
+		{
+			circlesGraphPixels.add(freeHandPathRI.get(0).mult(mainWindow.displayQualityScale));
 		}
 		mapEditingPanel.setRoadControlPointCircles(circlesGraphPixels);
 
