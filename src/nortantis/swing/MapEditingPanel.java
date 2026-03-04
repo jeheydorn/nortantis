@@ -936,7 +936,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		// Scale by resolution so the circles appear the same screen size regardless of display quality
 		// (zoom already accounts for resolution, so fixed graph-pixel sizes would shrink at higher quality).
-		int r = (int) Math.round(15 * resolution);
+		int r = (int) Math.round(13 * resolution);
 		g2.setStroke(new BasicStroke((float) (3 * resolution)));
 
 		if (roadControlPointCircles != null)

@@ -220,7 +220,11 @@ public class LandWaterTool extends EditorTool
 		{
 			polygonDrawStyleButton = new JToggleButton(Translation.get("landWaterTool.roadStyle.polygon"));
 			polygonDrawStyleButton.setSelected(true);
-			polygonDrawStyleButton.addActionListener(e -> brushActionListener.actionPerformed(null));
+			polygonDrawStyleButton.addActionListener(e ->
+			{
+				cancelFreeHandDrawing();
+				brushActionListener.actionPerformed(null);
+			});
 			freeHandDrawStyleButton = new JToggleButton(Translation.get("landWaterTool.roadStyle.freeHand"));
 			freeHandDrawStyleButton.addActionListener(e ->
 			{

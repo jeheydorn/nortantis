@@ -269,20 +269,13 @@ public class SubMapCreator
 		}
 		newEdits.hasIconEdits = true;
 
-		// 6g: Roads — keep roads that have at least 2 points inside selBoundsRI; transform coordinates.
+		// 6g: Roads — clip each road to the selection boundary, inserting intersection points where
+		// segments cross the edge so roads reach the map border instead of stopping short.
 		for (Road road : origEdits.roads)
 		{
-			List<Point> newPath = new ArrayList<>();
-			for (Point pt : road.path)
+			for (List<Point> clippedPath : clipRoadPath(road.path, selBoundsRI, newGenWidth, newGenHeight))
 			{
-				if (selBoundsRI.containsOrOverlaps(pt))
-				{
-					newPath.add(transformRIPoint(pt, selBoundsRI, newGenWidth, newGenHeight));
-				}
-			}
-			if (newPath.size() >= 2)
-			{
-				newEdits.roads.add(new Road(newPath));
+				newEdits.roads.add(new Road(clippedPath));
 			}
 		}
 
@@ -576,5 +569,144 @@ public class SubMapCreator
 		double newX = (origRI.x - selBoundsRI.x) / selBoundsRI.width * newGenWidth;
 		double newY = (origRI.y - selBoundsRI.y) / selBoundsRI.height * newGenHeight;
 		return new Point(newX, newY);
+	}
+
+	/**
+	 * Clips a road's RI-coordinate path to the selection rectangle, inserting intersection points at the boundary where segments cross
+	 * it. Returns a list of sub-paths (each with >= 2 points) in new-map RI coordinates, ready to become Road objects.
+	 */
+	private static List<List<Point>> clipRoadPath(List<Point> path, Rectangle sel, int newW, int newH)
+	{
+		List<List<Point>> result = new ArrayList<>();
+		if (path.isEmpty())
+		{
+			return result;
+		}
+
+		List<Point> current = new ArrayList<>();
+		boolean prevInside = sel.contains(path.get(0));
+		if (prevInside)
+		{
+			current.add(transformRIPoint(path.get(0), sel, newW, newH));
+		}
+
+		for (int i = 1; i < path.size(); i++)
+		{
+			Point prev = path.get(i - 1);
+			Point curr = path.get(i);
+			boolean currInside = sel.contains(curr);
+
+			if (prevInside && currInside)
+			{
+				current.add(transformRIPoint(curr, sel, newW, newH));
+			}
+			else if (prevInside && !currInside)
+			{
+				// Exiting: add exit intersection at the boundary, then close current sub-path.
+				Point exit = segmentBoundaryIntersection(prev, curr, sel);
+				if (exit != null)
+				{
+					current.add(transformRIPoint(exit, sel, newW, newH));
+				}
+				if (current.size() >= 2)
+				{
+					result.add(new ArrayList<>(current));
+				}
+				current.clear();
+			}
+			else if (!prevInside && currInside)
+			{
+				// Entering: start a new sub-path from the entry intersection.
+				Point entry = segmentBoundaryIntersection(prev, curr, sel);
+				if (entry != null)
+				{
+					current.add(transformRIPoint(entry, sel, newW, newH));
+				}
+				current.add(transformRIPoint(curr, sel, newW, newH));
+			}
+			// else both outside: skip.
+
+			prevInside = currInside;
+		}
+
+		if (current.size() >= 2)
+		{
+			result.add(current);
+		}
+		return result;
+	}
+
+	/**
+	 * Returns the intersection point of segment P1→P2 with the boundary of {@code rect}. P1 and P2 should be on opposite sides (one
+	 * inside, one outside). Returns null if no valid intersection is found.
+	 */
+	private static Point segmentBoundaryIntersection(Point p1, Point p2, Rectangle rect)
+	{
+		double dx = p2.x - p1.x;
+		double dy = p2.y - p1.y;
+		double bestT = Double.MAX_VALUE;
+		Point bestPt = null;
+
+		// Left edge: x = rect.x
+		if (dx != 0)
+		{
+			double t = (rect.x - p1.x) / dx;
+			if (t > 0 && t < 1)
+			{
+				double y = p1.y + t * dy;
+				if (y >= rect.y && y <= rect.getBottom() && t < bestT)
+				{
+					bestT = t;
+					bestPt = new Point(rect.x, y);
+				}
+			}
+		}
+
+		// Right edge: x = rect.getRight()
+		if (dx != 0)
+		{
+			double t = (rect.getRight() - p1.x) / dx;
+			if (t > 0 && t < 1)
+			{
+				double y = p1.y + t * dy;
+				if (y >= rect.y && y <= rect.getBottom() && t < bestT)
+				{
+					bestT = t;
+					bestPt = new Point(rect.getRight(), y);
+				}
+			}
+		}
+
+		// Top edge: y = rect.y
+		if (dy != 0)
+		{
+			double t = (rect.y - p1.y) / dy;
+			if (t > 0 && t < 1)
+			{
+				double x = p1.x + t * dx;
+				if (x >= rect.x && x <= rect.getRight() && t < bestT)
+				{
+					bestT = t;
+					bestPt = new Point(x, rect.y);
+				}
+			}
+		}
+
+		// Bottom edge: y = rect.getBottom()
+		if (dy != 0)
+		{
+			double t = (rect.getBottom() - p1.y) / dy;
+			if (t > 0 && t < 1)
+			{
+				double x = p1.x + t * dx;
+				if (x >= rect.x && x <= rect.getRight() && t < bestT)
+				{
+					bestT = t;
+					bestPt = new Point(x, rect.getBottom());
+				}
+			}
+		}
+
+		return bestPt;
 	}
 }
