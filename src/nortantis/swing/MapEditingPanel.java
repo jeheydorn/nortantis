@@ -965,7 +965,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 		if (freeHandPreviewPath != null && freeHandPreviewPath.size() >= 2)
 		{
-			g2.setColor(processingColor);
+			g2.setColor(highlightEditColor);
 			float d = (float) resolution * 2f;
 			g2.setStroke(new BasicStroke(1.5f * d, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1f, new float[] { 6f * d, 4f * d }, 0f));
 			drawPolyline(g2, freeHandPreviewPath);

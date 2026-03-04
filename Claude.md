@@ -128,10 +128,12 @@ If the Edit tool fails with "String to replace not found", the most likely cause
 
 - **Formatting:** Eclipse formatter config in `eclipse-formatter-config.xml`, enforced by Spotless
 - **Naming:** PascalCase for classes, camelCase for methods/variables
+- **Abbreviations:** Use full words in variable and method names. Single-letter names are fine when used consistently in the existing code (e.g. `p` for Point or Painter, `c` for Center, `e` for a map entry). Established acronyms are fine (e.g. `RI` for resolution-invariant). Do not use partial-word abbreviations that drop vowels or truncate words (e.g. write `samplePoints` not `samplePts`, `selectionBounds` not `selBounds`, `originalCenter` not `origCenter`). Do not use opaque prefixed names where the prefix is not self-evident (e.g. avoid `sIsWater`, `oe`, `sRegionId`).
 - **Custom Functional Interfaces:** `Function<T, R>`, `Function0<R>`, `Function2<T1, T2, R>`
 - **Tuple Classes:** `Tuple2`, `Tuple3`, `Tuple4`, `Pair`, `OrderlessPair`
 - **Helper class for timing:** nortantis.util.Stopwatch
 - **Rectangle and dimension classes:** Use `nortantis.geom.Rectangle`, `IntRectangle`, `RotatedRectangle`, `Dimension`, and `IntDimension` for anything bounding-box or size related. These classes have methods for intersection, union, containment checks, `fromCorners`, etc. Prefer these over recreating bounding-box logic inline.
+- **Translations:** Whenever you add or modify a string key accessed via `Translation.get(...)`, update the English file (`messages.properties`) and all language files (`messages_de.properties`, `messages_es.properties`, `messages_fr.properties`, `messages_pt.properties`, `messages_ru.properties`, `messages_zh.properties`) in `src/nortantis/swing/translation/`.
 
 ## Map Generation Pipeline
 

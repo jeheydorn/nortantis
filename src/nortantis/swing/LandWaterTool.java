@@ -320,6 +320,11 @@ public class LandWaterTool extends EditorTool
 			clearRoadControlPointDisplay();
 			mapEditingPanel.repaint();
 		}
+		else
+		{
+			updateRoadControlPointDisplay(null);
+			mapEditingPanel.repaint();
+		}
 	}
 
 	private boolean isFreeHandDrawMode()
@@ -1360,9 +1365,8 @@ public class LandWaterTool extends EditorTool
 		if (roadsButton.isSelected() && modeWidget.isDrawMode())
 		{
 			freeHandSnapPoint = null;
-			mapEditingPanel.clearRoadControlPointCircles();
 			mapEditingPanel.clearHoveredRoadControlPoint();
-			// Keep the preview path visible so the user can see the in-progress road even when the mouse exits.
+			// Keep circles and preview path visible so the user can see them even when the mouse exits.
 		}
 		mapEditingPanel.hideBrush();
 		mapEditingPanel.repaint();
