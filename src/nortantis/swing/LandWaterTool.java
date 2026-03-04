@@ -1174,10 +1174,23 @@ public class LandWaterTool extends EditorTool
 					{
 						if (first.isCloseEnough(roadStartRI))
 						{
+							// Prepend the snap point and remove the roadStart center that immediately follows it.
+							// Keeping the center would create an unwanted jog away from the snap point before
+							// the road corrects toward the intended direction.
 							road.path.add(0, polygonSnapStart);
+							if (road.path.size() > 2)
+							{
+								road.path.remove(1);
+							}
 						}
 						else if (last.isCloseEnough(roadStartRI))
 						{
+							// Append the snap point and remove the roadStart center that immediately precedes it.
+							// Keeping the center would create an unwanted jog away from the snap point.
+							if (road.path.size() > 2)
+							{
+								road.path.remove(road.path.size() - 1);
+							}
 							road.path.add(polygonSnapStart);
 						}
 					}
@@ -1193,6 +1206,29 @@ public class LandWaterTool extends EditorTool
 						{
 							road.path.add(0, polygonSnapEnd);
 						}
+					}
+				}
+			}
+
+			// After snap points are prepended/appended, try to merge each changed road with any existing
+			// road whose endpoint now matches the snap point. This handles continuing a freehand road
+			// using polygon mode: the snap prepend puts the freehand road's endpoint at the start of
+			// the new road, but addRoadsFromEdgesInEditor ran before that prepend and could not see
+			// the connection.
+			if (polygonSnapStart != null || polygonSnapEnd != null)
+			{
+				for (int i = 0; i < changed.size(); i++)
+				{
+					Road road = changed.get(i);
+					if (road == null || road.path.isEmpty())
+					{
+						continue;
+					}
+					Road joined = RoadDrawer.tryConnectingRoadToExistingRoad(road, mainWindow.edits.roads);
+					if (joined != null)
+					{
+						mainWindow.edits.roads.remove(road);
+						changed.set(i, joined);
 					}
 				}
 			}
@@ -1350,7 +1386,26 @@ public class LandWaterTool extends EditorTool
 				mapEditingPanel.clearHighlightedEdges();
 				Center end = updater.mapParts.graph.findClosestCenter(getPointOnGraph(e.getPoint()));
 				List<Edge> edges = updater.mapParts.graph.findShortestPath(roadStart, end, (ignored1, ignored2, distance) -> distance);
-				mapEditingPanel.addHighlightedEdges(edges, EdgeType.Delaunay);
+				Point roadStartRI = roadStart.loc.mult(1.0 / mainWindow.displayQualityScale);
+				if (polygonSnapStart != null && !polygonSnapStart.isCloseEnough(roadStartRI) && edges != null && !edges.isEmpty())
+				{
+					// Strip the edge that connects to roadStart so the preview matches the final road,
+					// which skips roadStart when a snap point is active. The path from findShortestPath
+					// is in end→start order, so the last edge in the list is the one touching roadStart.
+					Edge roadStartEdge = edges.get(edges.size() - 1);
+					Center snapNeighbor = roadStartEdge.d0 == roadStart ? roadStartEdge.d1 : roadStartEdge.d0;
+					mapEditingPanel.addHighlightedEdges(edges.subList(0, edges.size() - 1), EdgeType.Delaunay);
+					if (snapNeighbor != null)
+					{
+						mapEditingPanel.addPolylinesToHighlight(List.of(
+								polygonSnapStart.mult(mainWindow.displayQualityScale),
+								snapNeighbor.loc));
+					}
+				}
+				else
+				{
+					mapEditingPanel.addHighlightedEdges(edges, EdgeType.Delaunay);
+				}
 				updateRoadControlPointDisplay(e.getPoint());
 				mapEditingPanel.repaint();
 			}

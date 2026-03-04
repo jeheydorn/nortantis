@@ -412,7 +412,7 @@ public class RoadDrawer
 		return newRoad;
 	}
 
-	static Road tryConnectingRoadToExistingRoad(Road roadToAdd, List<Road> roads)
+	public static Road tryConnectingRoadToExistingRoad(Road roadToAdd, List<Road> roads)
 	{
 		for (Road road : roads)
 		{
