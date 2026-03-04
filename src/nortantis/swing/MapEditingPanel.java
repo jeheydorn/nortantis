@@ -935,7 +935,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		Stroke prevStroke = g2.getStroke();
 		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		// Fixed size in graph-pixel space so the circles scale with zoom just like the map content.
-		int r = 10;
+		int r = 15;
 		g2.setStroke(new BasicStroke(3f));
 
 		if (roadControlPointCircles != null)

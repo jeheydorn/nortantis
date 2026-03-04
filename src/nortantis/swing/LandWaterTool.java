@@ -308,6 +308,12 @@ public class LandWaterTool extends EditorTool
 		modeHider.setVisible(riversButton.isSelected() || roadsButton.isSelected());
 		riverOptionHider.setVisible(riversButton.isSelected() && modeWidget.isDrawMode());
 		drawStyleHider.setVisible(roadsButton.isSelected() && modeWidget.isDrawMode());
+		if (!roadsButton.isSelected() || !modeWidget.isDrawMode())
+		{
+			cancelFreeHandDrawing();
+			clearRoadControlPointDisplay();
+			mapEditingPanel.repaint();
+		}
 	}
 
 	private boolean isFreeHandDrawMode()
@@ -523,38 +529,18 @@ public class LandWaterTool extends EditorTool
 	@Override
 	protected void handleMouseClickOnMap(MouseEvent e)
 	{
-		if (!roadsButton.isSelected() || !modeWidget.isDrawMode() || !isFreeHandDrawMode())
-		{
-			return;
-		}
-
-		if (updater.mapParts == null || updater.mapParts.graph == null)
-		{
-			return;
-		}
-
-		Point riPoint = freeHandSnapPoint != null ? freeHandSnapPoint
-				: getPointOnGraph(e.getPoint()).mult(1.0 / mainWindow.displayQualityScale);
-
-		if (e.getClickCount() == 1)
-		{
-			if (freeHandPathRI == null)
-			{
-				freeHandPathRI = new ArrayList<>();
-			}
-			freeHandPathRI.add(riPoint);
-		}
-		else if (e.getClickCount() == 2)
-		{
-			// The count=1 event that fired just before this already added the final point, so just finalize.
-			finalizeFreeHandRoad();
-		}
+		// Free-hand control-point placement and double-click finalization are handled in handleMousePressedOnMap
+		// so that moving the mouse between press and release still registers the action.
 	}
 
 	private Integer regionIdToExpand;
 
 	private void handleMousePressOrDrag(MouseEvent e, boolean isMouseDrag)
 	{
+		if (!SwingUtilities.isLeftMouseButton(e))
+		{
+			return;
+		}
 
 		if (mergeRegionsButton.isSelected() && isMouseDrag)
 		{
@@ -1057,6 +1043,38 @@ public class LandWaterTool extends EditorTool
 		{
 			riverStart = updater.mapParts.graph.findClosestCorner(getPointOnGraph(e.getPoint()));
 		}
+		else if (roadsButton.isSelected() && modeWidget.isDrawMode() && isFreeHandDrawMode() && SwingUtilities.isRightMouseButton(e) && freeHandPathRI != null)
+		{
+			// Remove the last control point (like Krita), keeping at least the first point.
+			if (freeHandPathRI.size() > 1)
+			{
+				freeHandPathRI.remove(freeHandPathRI.size() - 1);
+			}
+			updateRoadControlPointDisplay(e.getPoint());
+			mapEditingPanel.repaint();
+		}
+		else if (roadsButton.isSelected() && modeWidget.isDrawMode() && isFreeHandDrawMode() && SwingUtilities.isLeftMouseButton(e)
+				&& updater.mapParts != null && updater.mapParts.graph != null)
+		{
+			// Use press (not click) so moving the mouse between press and release still registers the control point.
+			Point riPoint = freeHandSnapPoint != null ? freeHandSnapPoint
+					: getPointOnGraph(e.getPoint()).mult(1.0 / mainWindow.displayQualityScale);
+			if (e.getClickCount() == 1)
+			{
+				if (freeHandPathRI == null)
+				{
+					freeHandPathRI = new ArrayList<>();
+				}
+				freeHandPathRI.add(riPoint);
+				updateRoadControlPointDisplay(e.getPoint());
+				mapEditingPanel.repaint();
+			}
+			else if (e.getClickCount() == 2)
+			{
+				// Double-click: the first press already added the final point; finalize now.
+				finalizeFreeHandRoad();
+			}
+		}
 		else if (roadsButton.isSelected() && modeWidget.isDrawMode() && !isFreeHandDrawMode())
 		{
 			polygonSnapStart = computeSnapPoint(e.getPoint());
@@ -1068,16 +1086,6 @@ public class LandWaterTool extends EditorTool
 	protected void handleMouseReleasedOnMap(MouseEvent e)
 	{
 		regionIdToExpand = null;
-
-		if (roadsButton.isSelected() && modeWidget.isDrawMode() && isFreeHandDrawMode() && SwingUtilities.isRightMouseButton(e) && freeHandPathRI != null
-				&& updater.mapParts != null && updater.mapParts.graph != null)
-		{
-			Point riPoint = freeHandSnapPoint != null ? freeHandSnapPoint
-					: getPointOnGraph(e.getPoint()).mult(1.0 / mainWindow.displayQualityScale);
-			freeHandPathRI.add(riPoint);
-			finalizeFreeHandRoad();
-			return;
-		}
 
 		if (riversButton.isSelected() && modeWidget.isDrawMode() && riverStart != null)
 		{
@@ -1137,7 +1145,7 @@ public class LandWaterTool extends EditorTool
 				Point endRI = end.loc.mult(1.0 / mainWindow.displayQualityScale);
 				for (Road road : changed)
 				{
-					if (road.path.isEmpty())
+					if (road == null || road.path.isEmpty())
 					{
 						continue;
 					}

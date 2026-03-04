@@ -393,7 +393,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				{
 					mouseLocationForMiddleButtonDrag = e.getPoint();
 				}
-				else if (SwingUtilities.isLeftMouseButton(e))
+				else if (SwingUtilities.isLeftMouseButton(e) || SwingUtilities.isRightMouseButton(e))
 				{
 					updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMousePressedOnMap(e));
 				}
