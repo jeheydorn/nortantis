@@ -37,6 +37,11 @@ public class RoadDrawer
 	private final double existingRoadWeight = 0.3;
 
 	private final int numberOfRandomRoadsToPerCity = 3;
+	/**
+	 * Distance between sampled points when checking whether a road overlaps a draw bounds rectangle. Coarser than the drawing resolution
+	 * but fine enough to detect curves that bulge into the bounds.
+	 */
+	private static final double boundsCheckDistanceBetweenPoints = 20.0;
 
 	private WorldGraph graph;
 	private Random rand;
@@ -539,9 +544,25 @@ public class RoadDrawer
 		}
 	}
 
-	private boolean roadOverlapsRectangle(Road road, Rectangle drawBoundsResolutionInvariant)
+	private boolean roadOverlapsRectangle(Road road, Rectangle bounds)
 	{
-		return road.path.stream().anyMatch(p -> drawBoundsResolutionInvariant.contains(p));
+		// Sample the actual curve at a coarser resolution than drawing uses so that curves which bulge into the
+		// bounds are detected even when no control point lies inside it. Check segment bounding boxes between
+		// consecutive sampled points rather than point containment, so that roads passing through the bounds
+		// between samples are not missed (this also correctly handles 2-point straight-line roads).
+		List<Point> curve = CurveCreator.createCurve(road.path, boundsCheckDistanceBetweenPoints);
+		for (int i = 0; i < curve.size() - 1; i++)
+		{
+			Point p1 = curve.get(i);
+			Point p2 = curve.get(i + 1);
+			Rectangle segmentBounds = Rectangle.fromCorners(Math.min(p1.x, p2.x), Math.min(p1.y, p2.y),
+					Math.max(p1.x, p2.x), Math.max(p1.y, p2.y));
+			if (bounds.overlaps(segmentBounds))
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public void drawRoadDebugInfo(Image map)

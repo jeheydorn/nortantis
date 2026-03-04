@@ -2,6 +2,7 @@ package nortantis.editor;
 
 import nortantis.geom.Point;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -16,7 +17,20 @@ public class Road
 
 	public Road(List<Point> path)
 	{
-		this.path = new CopyOnWriteArrayList<Point>(path);
+		this.path = new CopyOnWriteArrayList<Point>(deduplicateConsecutive(path));
+	}
+
+	private static List<Point> deduplicateConsecutive(List<Point> path)
+	{
+		List<Point> result = new ArrayList<>(path.size());
+		for (Point point : path)
+		{
+			if (result.isEmpty() || !result.get(result.size() - 1).isCloseEnough(point))
+			{
+				result.add(point);
+			}
+		}
+		return result;
 	}
 
 	public Road(Road other)

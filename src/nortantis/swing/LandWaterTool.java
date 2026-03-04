@@ -64,6 +64,7 @@ public class LandWaterTool extends EditorTool
 	private ActionListener brushActionListener;
 	private DrawModeWidget modeWidget;
 	private JToggleButton newRegionButton;
+	private JLabel newRegionButtonLabel;
 	private RowHider newRegionButtonHider;
 	private JToggleButton roadsButton;
 	private SegmentedButtonWidget brushTypeWidget;
@@ -197,13 +198,6 @@ public class LandWaterTool extends EditorTool
 		brushTypeWidget = new SegmentedButtonWidget(List.of(oceanButton, lakesButton, riversButton, landButton, fillRegionColorButton, mergeRegionsButton, roadsButton));
 		brushTypeWidget.addToOrganizer(organizer, Translation.get("landWaterTool.brush.label"), "");
 
-		// Create new region button
-		{
-			newRegionButton = new JToggleButton(Translation.get("landWaterTool.createNewRegion"));
-			newRegionButton.addActionListener(e -> updateColorControlVisibility());
-			newRegionButtonHider = organizer.addLabelAndComponent("", Translation.get("landWaterTool.createNewRegion.help"), newRegionButton);
-		}
-
 		// River options
 		{
 			modeWidget = new DrawModeWidget(Translation.get("landWaterTool.drawRivers"), Translation.get("landWaterTool.eraseRivers"), false, "", false, "",
@@ -258,6 +252,18 @@ public class LandWaterTool extends EditorTool
 			});
 		}
 
+		Tuple2<JComboBox<ImageIcon>, RowHider> brushSizeTuple = organizer.addBrushSizeComboBox(brushSizes);
+		brushSizeComboBox = brushSizeTuple.getFirst();
+		brushSizeHider = brushSizeTuple.getSecond();
+
+		// Create new region button
+		{
+			newRegionButton = new JToggleButton(Translation.get("landWaterTool.createNewRegion"));
+			newRegionButton.addActionListener(e -> updateColorControlVisibility());
+			newRegionButtonLabel = GridBagOrganizer.createWrappingLabel("", Translation.get("landWaterTool.createNewRegion.help"));
+			newRegionButtonHider = organizer.addLabelAndComponent(newRegionButtonLabel, newRegionButton, GridBagOrganizer.rowVerticalInset);
+		}
+
 		// Color chooser
 		colorDisplay = SwingHelper.createColorPickerPreviewPanel();
 		colorDisplay.setBackground(Color.black);
@@ -292,10 +298,6 @@ public class LandWaterTool extends EditorTool
 			}
 		});
 		generateColorButtonHider = organizer.addLabelAndComponent("", "", generateColorButton, 2);
-
-		Tuple2<JComboBox<ImageIcon>, RowHider> brushSizeTuple = organizer.addBrushSizeComboBox(brushSizes);
-		brushSizeComboBox = brushSizeTuple.getFirst();
-		brushSizeHider = brushSizeTuple.getSecond();
 
 		onlyUpdateLandCheckbox = new JCheckBox(Translation.get("landWaterTool.onlyUpdateExistingLand"));
 		onlyUpdateLandCheckbox.setToolTipText(Translation.get("landWaterTool.onlyUpdateExistingLand.tooltip"));
@@ -535,6 +537,10 @@ public class LandWaterTool extends EditorTool
 	private void showOrHideNewRegionButton()
 	{
 		newRegionButtonHider.setVisible((areRegionBoundariesVisible || areRegionColorsVisible) && landButton.isSelected());
+		String labelKey = areRegionColorsVisible ? "landWaterTool.createNewRegion" : "landWaterTool.createNewRegion.singleColor";
+		newRegionButton.setText(Translation.get(labelKey));
+		String helpKey = areRegionColorsVisible ? "landWaterTool.createNewRegion.help" : "landWaterTool.createNewRegion.singleColor.help";
+		newRegionButtonLabel.setToolTipText(Translation.get(helpKey));
 	}
 
 	private void updateColorControlVisibility()
@@ -1200,10 +1206,20 @@ public class LandWaterTool extends EditorTool
 						last = road.path.get(road.path.size() - 1);
 						if (last.isCloseEnough(endRI))
 						{
+							// Remove the end center and replace with snap point to avoid an unwanted jog.
+							if (road.path.size() > 2)
+							{
+								road.path.remove(road.path.size() - 1);
+							}
 							road.path.add(polygonSnapEnd);
 						}
 						else if (first.isCloseEnough(endRI))
 						{
+							// Remove the end center and replace with snap point.
+							if (road.path.size() > 2)
+							{
+								road.path.remove(0);
+							}
 							road.path.add(0, polygonSnapEnd);
 						}
 					}
@@ -1384,22 +1400,41 @@ public class LandWaterTool extends EditorTool
 			if (roadStart != null)
 			{
 				mapEditingPanel.clearHighlightedEdges();
+				mapEditingPanel.clearHighlightedPolylines();
 				Center end = updater.mapParts.graph.findClosestCenter(getPointOnGraph(e.getPoint()));
 				List<Edge> edges = updater.mapParts.graph.findShortestPath(roadStart, end, (ignored1, ignored2, distance) -> distance);
 				Point roadStartRI = roadStart.loc.mult(1.0 / mainWindow.displayQualityScale);
-				if (polygonSnapStart != null && !polygonSnapStart.isCloseEnough(roadStartRI) && edges != null && !edges.isEmpty())
+				Point currentEndSnapPoint = computeSnapPoint(e.getPoint());
+				Point endRI = end.loc.mult(1.0 / mainWindow.displayQualityScale);
+				boolean snapStartActive = polygonSnapStart != null && !polygonSnapStart.isCloseEnough(roadStartRI);
+				boolean snapEndActive = currentEndSnapPoint != null && !currentEndSnapPoint.isCloseEnough(endRI);
+				if (edges != null && !edges.isEmpty())
 				{
-					// Strip the edge that connects to roadStart so the preview matches the final road,
-					// which skips roadStart when a snap point is active. The path from findShortestPath
-					// is in end→start order, so the last edge in the list is the one touching roadStart.
-					Edge roadStartEdge = edges.get(edges.size() - 1);
-					Center snapNeighbor = roadStartEdge.d0 == roadStart ? roadStartEdge.d1 : roadStartEdge.d0;
-					mapEditingPanel.addHighlightedEdges(edges.subList(0, edges.size() - 1), EdgeType.Delaunay);
-					if (snapNeighbor != null)
+					int startTrim = snapEndActive ? 1 : 0;
+					int endTrim = snapStartActive ? edges.size() - 1 : edges.size();
+					List<Edge> edgesToHighlight = (startTrim < endTrim) ? edges.subList(startTrim, endTrim) : List.of();
+					mapEditingPanel.addHighlightedEdges(edgesToHighlight, EdgeType.Delaunay);
+					if (snapEndActive)
 					{
-						mapEditingPanel.addPolylinesToHighlight(List.of(
-								polygonSnapStart.mult(mainWindow.displayQualityScale),
-								snapNeighbor.loc));
+						Edge endEdge = edges.get(0);
+						Center endNeighbor = endEdge.d0 == end ? endEdge.d1 : endEdge.d0;
+						if (endNeighbor != null)
+						{
+							mapEditingPanel.addPolylinesToHighlight(List.of(
+									endNeighbor.loc,
+									currentEndSnapPoint.mult(mainWindow.displayQualityScale)));
+						}
+					}
+					if (snapStartActive)
+					{
+						Edge roadStartEdge = edges.get(edges.size() - 1);
+						Center snapNeighbor = roadStartEdge.d0 == roadStart ? roadStartEdge.d1 : roadStartEdge.d0;
+						if (snapNeighbor != null)
+						{
+							mapEditingPanel.addPolylinesToHighlight(List.of(
+									polygonSnapStart.mult(mainWindow.displayQualityScale),
+									snapNeighbor.loc));
+						}
 					}
 				}
 				else
