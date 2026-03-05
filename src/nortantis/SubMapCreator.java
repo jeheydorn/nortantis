@@ -88,14 +88,15 @@ public class SubMapCreator
 		// sub-map has twice as many polygons (more detail) so features are more finely divided and
 		// text should be smaller relative to them.
 		//
-		// Combining both: fontScale = zoomFactor / detailRatio, clamped to [1.0, …] so fonts never
+		// Combining both: fontScale = zoomFactor / pow(detailRatio, 0.25), clamped to [1.0, …] so fonts never
 		// shrink below the source map's sizes, and capped at maxFontSize to prevent illegibly huge text.
+		// The 0.25 exponent reduces the suppression effect so fonts stay larger at high polygon counts.
 		double zoomFactor = (double) newGenWidth / selectionBoundsRI.width;
 		double selectionArea = selectionBoundsRI.width * selectionBoundsRI.height;
 		double originalMapArea = originalSettings.generatedWidth * (double) originalSettings.generatedHeight;
 		double oneXWorldSize = originalSettings.worldSize * selectionArea / originalMapArea;
 		double detailRatio = oneXWorldSize > 0 ? newWorldSize / oneXWorldSize : 1.0;
-		double fontScale = Math.max(1.0, zoomFactor / Math.max(1.0, detailRatio));
+		double fontScale = Math.max(1.0, zoomFactor / Math.max(1.0, Math.pow(detailRatio, 0.25)));
 		newSettings.titleFont = scaleFontSize(newSettings.titleFont, fontScale);
 		newSettings.regionFont = scaleFontSize(newSettings.regionFont, fontScale);
 		newSettings.mountainRangeFont = scaleFontSize(newSettings.mountainRangeFont, fontScale);
