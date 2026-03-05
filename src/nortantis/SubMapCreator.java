@@ -13,6 +13,7 @@ import nortantis.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Corner;
 import nortantis.graph.voronoi.Edge;
+import nortantis.platform.Font;
 import nortantis.swing.MapEdits;
 
 import java.util.*;
@@ -75,6 +76,32 @@ public class SubMapCreator
 		newSettings.rightRotationCount = 0;
 		newSettings.flipHorizontally = false;
 		newSettings.flipVertically = false;
+
+		// Scale font sizes to keep text proportional to the visible features.
+		//
+		// zoomFactor: how much the selection is magnified relative to the original map — equals 1.0
+		// when the sub-map covers the entire original, and grows as the selection shrinks.
+		//
+		// detailRatio: how many times more (or fewer) polygons the sub-map has compared to the
+		// 1× equivalent (same polygon density as the source), matching the multiplier shown in the
+		// SubMapDialog detail slider. At ratio=1 the polygon density is unchanged; at ratio=2 the
+		// sub-map has twice as many polygons (more detail) so features are more finely divided and
+		// text should be smaller relative to them.
+		//
+		// Combining both: fontScale = zoomFactor / detailRatio, clamped to [1.0, …] so fonts never
+		// shrink below the source map's sizes, and capped at maxFontSize to prevent illegibly huge text.
+		double zoomFactor = (double) newGenWidth / selectionBoundsRI.width;
+		double selectionArea = selectionBoundsRI.width * selectionBoundsRI.height;
+		double originalMapArea = originalSettings.generatedWidth * (double) originalSettings.generatedHeight;
+		double oneXWorldSize = originalSettings.worldSize * selectionArea / originalMapArea;
+		double detailRatio = oneXWorldSize > 0 ? newWorldSize / oneXWorldSize : 1.0;
+		double fontScale = Math.max(1.0, zoomFactor / Math.max(1.0, detailRatio));
+		newSettings.titleFont = scaleFontSize(newSettings.titleFont, fontScale);
+		newSettings.regionFont = scaleFontSize(newSettings.regionFont, fontScale);
+		newSettings.mountainRangeFont = scaleFontSize(newSettings.mountainRangeFont, fontScale);
+		newSettings.otherMountainsFont = scaleFontSize(newSettings.otherMountainsFont, fontScale);
+		newSettings.citiesFont = scaleFontSize(newSettings.citiesFont, fontScale);
+		newSettings.riverFont = scaleFontSize(newSettings.riverFont, fontScale);
 		// Initialize fresh empty edits so createGraphForUnitTests will create elevation (isInitialized=false).
 		newSettings.edits = new MapEdits();
 
@@ -97,7 +124,7 @@ public class SubMapCreator
 
 		transferRivers(originalGraph, originalEdits, newGraph, selectionBoundsRI, newEdits, originalResolution);
 
-		transferText(originalEdits, selectionBoundsRI, newEdits, newGenWidth, newGenHeight);
+		transferText(originalEdits, selectionBoundsRI, newEdits, newGenWidth, newGenHeight, fontScale);
 
 		transferFreeIcons(originalEdits, originalGraph, newGraph, selectionBoundsRI, originalResolution, newEdits, newGenWidth, newGenHeight, redistributeIcons, seed);
 		newEdits.hasIconEdits = true;
@@ -128,7 +155,7 @@ public class SubMapCreator
 		}
 	}
 
-	private static void transferText(MapEdits originalEdits, Rectangle selectionBoundsRI, MapEdits newEdits, int newGenWidth, int newGenHeight)
+	private static void transferText(MapEdits originalEdits, Rectangle selectionBoundsRI, MapEdits newEdits, int newGenWidth, int newGenHeight, double zoomFactor)
 	{
 		// Copy MapText entries whose location falls inside selectionBoundsRI.
 		newEdits.text = new CopyOnWriteArrayList<>();
@@ -141,6 +168,10 @@ public class SubMapCreator
 				// Clear bounds since they'll be recomputed at the new resolution.
 				newText.line1Bounds = null;
 				newText.line2Bounds = null;
+				if (newText.fontOverride != null)
+				{
+					newText.fontOverride = scaleFontSize(newText.fontOverride, zoomFactor);
+				}
 				newEdits.text.add(newText);
 			}
 		}
@@ -609,6 +640,17 @@ public class SubMapCreator
 				newEdits.edgeEdits.put(pathEdge.index, new EdgeEdit(pathEdge.index, riverLevel));
 			}
 		}
+	}
+
+	private static final float maxFontSize = 240f;
+
+	/**
+	 * Returns a copy of the given font with its size multiplied by {@code factor}, capped at {@link #maxFontSize}.
+	 */
+	private static Font scaleFontSize(Font font, double factor)
+	{
+		float newSize = Math.min(maxFontSize, (float) (font.getSize() * factor));
+		return font.deriveFont(font.getStyle(), newSize);
 	}
 
 	/**

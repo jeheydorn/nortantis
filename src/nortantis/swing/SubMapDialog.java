@@ -414,7 +414,7 @@ public class SubMapDialog
 		}
 
 		// Number of polygons: slider + multiplier display.
-		JSlider rawSlider = new JSlider(1000, SettingsGenerator.maxWorldSize, subMapWorldSize);
+		JSlider rawSlider = new JSlider(minPolygonsInSubMap, SettingsGenerator.maxWorldSize, subMapWorldSize);
 		rawSlider.setMajorTickSpacing(8000);
 		rawSlider.setMinorTickSpacing(1000);
 		rawSlider.setPaintTicks(true);
