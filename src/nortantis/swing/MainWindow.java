@@ -1832,7 +1832,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	private void handleCreateSubMap()
 	{
-		updater.doIfMapIsReadyForInteractions(() -> new SubMapDialog(this).showStep1());
+		boolean cancelPressed = checkForUnsavedChanges();
+		if (!cancelPressed)
+		{
+			updater.doIfMapIsReadyForInteractions(() -> new SubMapDialog(this).showStep1());
+		}
 	}
 
 	public boolean checkForUnsavedChanges()

@@ -803,6 +803,7 @@ public class SubMapDialog
 		step2Dialog.dispose();
 		step2Dialog = null;
 		mainWindow.enableOrDisableFieldsThatRequireMap(true, settings, true);
+		mainWindow.clearOpenSettingsFilePath();
 		mainWindow.loadSettingsIntoGUI(settings);
 	}
 
