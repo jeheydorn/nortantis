@@ -8,11 +8,13 @@ import java.util.*;
 
 public class River implements Iterable<Edge>
 {
+	public static final int RIVERS_THIS_SIZE_OR_SMALLER_WILL_NOT_BE_DRAWN = 2;
 	/**
 	 * Maximum river level, corresponding to the maximum drawable width in LandWaterTool's river width slider. Used to cap scaled river
 	 * levels in sub-maps.
 	 */
-	public static final int MAX_RIVER_LEVEL = (14 * 14 * 2) + VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn + 1;
+	public static final int MAX_RIVER_LEVEL = (14 * 14 * 2) + RIVERS_THIS_SIZE_OR_SMALLER_WILL_NOT_BE_DRAWN + 1;
+
 
 	private List<Edge> edges;
 	private int width;

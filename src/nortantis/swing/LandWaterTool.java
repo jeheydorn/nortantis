@@ -204,7 +204,7 @@ public class LandWaterTool extends EditorTool
 					() -> brushActionListener.actionPerformed(null));
 			modeHider = modeWidget.addToOrganizer(organizer, Translation.get("landWaterTool.riverMode.help"));
 
- 			int maxSliderValue = 1 + (int) Math.round(Math.sqrt((River.MAX_RIVER_LEVEL - VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn - 1) / 2.0));
+ 			int maxSliderValue = 1 + (int) Math.round(Math.sqrt((River.MAX_RIVER_LEVEL - River.RIVERS_THIS_SIZE_OR_SMALLER_WILL_NOT_BE_DRAWN - 1) / 2.0));
 		riverWidthSlider = new JSlider(1, maxSliderValue);
 			final int initialValue = 1;
 			riverWidthSlider.setValue(initialValue);
@@ -601,7 +601,7 @@ public class LandWaterTool extends EditorTool
 				for (Edge edge : center.borders)
 				{
 					EdgeEdit eEdit = mainWindow.edits.edgeEdits.get(edge.index);
-					if (eEdit != null && eEdit.riverLevel > VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn)
+					if (eEdit != null && eEdit.riverLevel > River.RIVERS_THIS_SIZE_OR_SMALLER_WILL_NOT_BE_DRAWN)
 					{
 						eEdit.riverLevel = 0;
 					}
@@ -1136,7 +1136,7 @@ public class LandWaterTool extends EditorTool
 			for (Edge edge : river)
 			{
 				int base = (riverWidthSlider.getValue() - 1);
-				int riverLevel = (base * base * 2) + VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn + 1;
+				int riverLevel = (base * base * 2) + River.RIVERS_THIS_SIZE_OR_SMALLER_WILL_NOT_BE_DRAWN + 1;
 				if (mainWindow.edits.edgeEdits.containsKey(edge.index))
 				{
 					mainWindow.edits.edgeEdits.get(edge.index).riverLevel = riverLevel;
@@ -1345,7 +1345,7 @@ public class LandWaterTool extends EditorTool
 			for (Edge edge : candidates)
 			{
 				EdgeEdit eEdit = mainWindow.edits.edgeEdits.get(edge.index);
-				if (eEdit != null && eEdit.riverLevel > VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn)
+				if (eEdit != null && eEdit.riverLevel > River.RIVERS_THIS_SIZE_OR_SMALLER_WILL_NOT_BE_DRAWN)
 				{
 					mapEditingPanel.addHighlightedEdge(edge, EdgeType.Voronoi);
 				}

@@ -745,7 +745,7 @@ public class MapSettings implements Serializable
 		for (EdgeEdit eEdit : edits.edgeEdits.values())
 		{
 			JSONObject mpObj = new JSONObject();
-			if (eEdit.riverLevel > 0)
+			if (eEdit.riverLevel > River.RIVERS_THIS_SIZE_OR_SMALLER_WILL_NOT_BE_DRAWN)
 			{
 				mpObj.put("riverLevel", eEdit.riverLevel);
 				mpObj.put("index", eEdit.index);

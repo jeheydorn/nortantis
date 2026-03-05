@@ -595,7 +595,7 @@ public class TextDrawer
 		Set<Corner> riversAlreadyFound = new HashSet<>();
 		for (Corner corner : graph.corners)
 		{
-			if (corner.river > VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn && !riversAlreadyFound.contains(corner))
+			if (corner.river > River.RIVERS_THIS_SIZE_OR_SMALLER_WILL_NOT_BE_DRAWN && !riversAlreadyFound.contains(corner))
 			{
 				River river = findRiver(riversAlreadyFound, corner);
 
@@ -614,7 +614,7 @@ public class TextDrawer
 		List<Edge> options = new ArrayList<>();
 		for (Edge e : start.protrudes)
 		{
-			if (e.river > VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn && e.v0 != null && e.v1 != null)
+			if (e.river > River.RIVERS_THIS_SIZE_OR_SMALLER_WILL_NOT_BE_DRAWN && e.v0 != null && e.v1 != null)
 			{
 				options.add(e);
 			}

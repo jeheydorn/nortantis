@@ -2,6 +2,7 @@ package nortantis.graph.voronoi;
 
 import nortantis.Biome;
 import nortantis.MapSettings.LineStyle;
+import nortantis.River;
 import nortantis.geom.IntPoint;
 import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
@@ -37,7 +38,6 @@ public abstract class VoronoiGraph
 	 */
 	private double riverDensity = 1.0 / 14.0;
 	protected double resolutionScale;
-	public static final int riversThisSizeOrSmallerWillNotBeDrawn = 2;
 
 	static final double verySmall = 0.0000001;
 	double pointPrecision;
@@ -1301,9 +1301,9 @@ public abstract class VoronoiGraph
 		LinkedList<Corner> queue = new LinkedList<>();
 		for (Corner c : corners)
 		{
-			if ((c.isWater || c.river > 2) && !c.isOcean)
+			if ((c.isWater || c.river > River.RIVERS_THIS_SIZE_OR_SMALLER_WILL_NOT_BE_DRAWN) && !c.isOcean)
 			{
-				c.moisture = c.river > 2 ? Math.min(3.0, (0.05 * c.river)) : 1.0;
+				c.moisture = c.river > River.RIVERS_THIS_SIZE_OR_SMALLER_WILL_NOT_BE_DRAWN ? Math.min(3.0, (0.05 * c.river)) : 1.0;
 				queue.push(c);
 			}
 			else

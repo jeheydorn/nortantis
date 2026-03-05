@@ -13,6 +13,7 @@ import nortantis.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Corner;
 import nortantis.graph.voronoi.Edge;
+import nortantis.graph.voronoi.VoronoiGraph;
 import nortantis.platform.Font;
 import nortantis.swing.MapEdits;
 
@@ -28,20 +29,21 @@ public class SubMapCreator
 	 * Creates a new MapSettings for a sub-map of the given original map.
 	 *
 	 * @param originalSettings
-	 *            The original map settings.
+	 * 		The original map settings.
 	 * @param originalGraph
-	 *            The original world graph (used for land/water lookup).
+	 * 		The original world graph (used for land/water lookup).
 	 * @param originalEdits
-	 *            The original map edits (used for land/water, region, text, icons, roads).
+	 * 		The original map edits (used for land/water, region, text, icons, roads).
 	 * @param selectionBoundsRI
-	 *            The selection bounds in resolution-invariant (RI) coordinates.
+	 * 		The selection bounds in resolution-invariant (RI) coordinates.
 	 * @param subMapWorldSize
-	 *            The number of Voronoi polygons for the sub-map.
+	 * 		The number of Voronoi polygons for the sub-map.
 	 * @param originalResolution
-	 *            The resolution at which originalGraph was created (i.e. the display quality scale), used to convert resolution-invariant coordinates to originalGraph pixel coordinates.
+	 * 		The resolution at which originalGraph was created (i.e. the display quality scale), used to convert resolution-invariant coordinates to originalGraph pixel coordinates.
 	 * @return New MapSettings for the sub-map, with pre-populated edits.
 	 */
-	public static MapSettings createSubMapSettings(MapSettings originalSettings, WorldGraph originalGraph, MapEdits originalEdits, Rectangle selectionBoundsRI, int subMapWorldSize, double originalResolution, long seed, boolean redistributeIcons)
+	public static MapSettings createSubMapSettings(MapSettings originalSettings, WorldGraph originalGraph, MapEdits originalEdits, Rectangle selectionBoundsRI, int subMapWorldSize,
+			double originalResolution, long seed, boolean redistributeIcons)
 	{
 		// Compute new dimensions and world size.
 		// The largest dimension of the sub-map matches the largest dimension of the original map.
@@ -192,13 +194,13 @@ public class SubMapCreator
 	}
 
 	/**
-	 * For each center in {@code newGraph}, samples its loc and all Voronoi corners in original-graph space and uses majority/plurality
-	 * voting to assign water, lake, and region. Populates {@code newEdits.centerEdits} and mutates {@code newCenter.isWater} /
-	 * {@code newCenter.isLake} (required before {@code updateCoastAndCornerFlags}).
+	 * For each center in {@code newGraph}, samples its loc and all Voronoi corners in original-graph space and uses majority/plurality voting to assign water, lake, and region. Populates
+	 * {@code newEdits.centerEdits} and mutates {@code newCenter.isWater} / {@code newCenter.isLake} (required before {@code updateCoastAndCornerFlags}).
 	 *
 	 * @return A map from original region ID to the list of new center indices assigned to that region.
 	 */
-	private static Map<Integer, List<Integer>> buildCenterEdits(WorldGraph newGraph, WorldGraph originalGraph, MapEdits originalEdits, Rectangle selectionBoundsRI, double originalResolution, MapEdits newEdits)
+	private static Map<Integer, List<Integer>> buildCenterEdits(WorldGraph newGraph, WorldGraph originalGraph, MapEdits originalEdits, Rectangle selectionBoundsRI, double originalResolution,
+			MapEdits newEdits)
 	{
 		Map<Integer, List<Integer>> originalRegionToNewCenters = new HashMap<>();
 
@@ -240,9 +242,12 @@ public class SubMapCreator
 					sampleIsLake = false;
 					sampleRegionId = null;
 				}
-				if (sampleIsWater) waterVotes++;
-				if (sampleIsLake) lakeVotes++;
-				if (sampleRegionId != null) regionVotes.merge(sampleRegionId, 1, Integer::sum);
+				if (sampleIsWater)
+					waterVotes++;
+				if (sampleIsLake)
+					lakeVotes++;
+				if (sampleRegionId != null)
+					regionVotes.merge(sampleRegionId, 1, Integer::sum);
 			}
 
 			// Majority vote: ≥50% water samples → water; ≥50% of water samples are lake → lake.
@@ -275,8 +280,8 @@ public class SubMapCreator
 	}
 
 	/**
-	 * Transfers free icons from the original edits into {@code newEdits}. Cities and decorations are always copied by position.
-	 * Mountains, hills, sand, and trees are either redistributed by center (if {@code redistributeIcons}) or copied by position.
+	 * Transfers free icons from the original edits into {@code newEdits}. Cities and decorations are always copied by position. Mountains, hills, sand, and trees are either redistributed by center
+	 * (if {@code redistributeIcons}) or copied by position.
 	 */
 	private static void transferFreeIcons(MapEdits originalEdits, WorldGraph originalGraph, WorldGraph newGraph, Rectangle selectionBoundsRI, double originalResolution, MapEdits newEdits,
 			int newGenWidth, int newGenHeight, boolean redistributeIcons, long seed)
@@ -302,8 +307,9 @@ public class SubMapCreator
 						newCenterIndex = nearestNewCenter.index;
 					}
 				}
-				newEdits.freeIcons.addOrReplace(new FreeIcon(newLoc, icon.scale, icon.type, icon.artPack, icon.groupId, icon.iconIndex, icon.iconName, newCenterIndex, icon.density,
-						icon.fillColor, icon.filterColor, icon.maximizeOpacity, icon.fillWithColor, icon.originalScale));
+				newEdits.freeIcons.addOrReplace(
+						new FreeIcon(newLoc, icon.scale, icon.type, icon.artPack, icon.groupId, icon.iconIndex, icon.iconName, newCenterIndex, icon.density, icon.fillColor, icon.filterColor,
+								icon.maximizeOpacity, icon.fillWithColor, icon.originalScale));
 			}
 		}
 
@@ -334,8 +340,9 @@ public class SubMapCreator
 							newCenterIndex = nearestNewCenter.index;
 						}
 					}
-					newEdits.freeIcons.addOrReplace(new FreeIcon(newLoc, icon.scale, icon.type, icon.artPack, icon.groupId, icon.iconIndex, icon.iconName, newCenterIndex, icon.density,
-							icon.fillColor, icon.filterColor, icon.maximizeOpacity, icon.fillWithColor, icon.originalScale));
+					newEdits.freeIcons.addOrReplace(
+							new FreeIcon(newLoc, icon.scale, icon.type, icon.artPack, icon.groupId, icon.iconIndex, icon.iconName, newCenterIndex, icon.density, icon.fillColor, icon.filterColor,
+									icon.maximizeOpacity, icon.fillWithColor, icon.originalScale));
 				}
 			}
 		}
@@ -493,15 +500,13 @@ public class SubMapCreator
 			}
 
 			Point locationInOriginalSpace = mapToOriginalGraphPoint(newCenter.loc, newGraph, selectionBoundsRI, originalResolution);
-			Center originalCenterAtLocation = (hasNonTreeData || hasTreeData)
-					? originalGraph.findClosestCenter(locationInOriginalSpace, false) : null;
+			Center originalCenterAtLocation = (hasNonTreeData || hasTreeData) ? originalGraph.findClosestCenter(locationInOriginalSpace, false) : null;
 
 			// --- Non-tree icons: Step 2 — zoom-in expansion. ---
 			// For new centers not yet assigned by step 1, check whether their loc maps to an original
 			// center that had an icon. If so, place a CenterIcon with a random iconIndex from the same
 			// group, letting IconDrawer handle positioning and scaling during rendering.
-			if (hasNonTreeData && newEdits.freeIcons.getNonTree(newCenter.index) == null
-					&& (existingEdit == null || existingEdit.icon == null) && originalCenterAtLocation != null)
+			if (hasNonTreeData && newEdits.freeIcons.getNonTree(newCenter.index) == null && (existingEdit == null || existingEdit.icon == null) && originalCenterAtLocation != null)
 			{
 				List<FreeIcon> iconsAtLocation = originalCenterToIcons.get(originalCenterAtLocation.index);
 				if (iconsAtLocation != null)
@@ -564,10 +569,9 @@ public class SubMapCreator
 	/**
 	 * Transfers rivers from the original graph into the new graph's edge edits.
 	 * <p>
-	 * Original river edges are grouped into connected segments (maximal chains between degree-1 and degree-3+ corners). Each segment is
-	 * transferred with a single {@code findPathGreedy} call from its start corner to its end corner, avoiding the finger artifacts that
-	 * arise when per-edge calls share interior corners. River levels are scaled up by the zoom factor so rivers remain proportionally
-	 * wide after zooming in, and are capped at {@link River#MAX_RIVER_LEVEL}.
+	 * Original river edges are grouped into connected segments (maximal chains between degree-1 and degree-3+ corners). Each segment is transferred with a single {@code findPathGreedy} call from its
+	 * start corner to its end corner, avoiding the finger artifacts that arise when per-edge calls share interior corners. River levels are scaled up by the zoom factor so rivers remain
+	 * proportionally wide after zooming in, and are capped at {@link River#MAX_RIVER_LEVEL}.
 	 * </p>
 	 */
 	private static void transferRivers(WorldGraph originalGraph, MapEdits originalEdits, WorldGraph newGraph, Rectangle selectionBoundsRI, MapEdits newEdits, double originalResolution)
@@ -576,13 +580,10 @@ public class SubMapCreator
 		Map<Integer, Integer> originalRiverLevels = new HashMap<>();
 		for (EdgeEdit ee : originalEdits.edgeEdits.values())
 		{
-			if (ee.riverLevel > 0)
+			// I would check against 0, but previous versions of MapSettings stored all rivers with > 0, so such invisible rivers could get pulled into sub maps if an old map were opened and the sub-map tool ran on it without saving and loading first.
+			if (ee.riverLevel > River.RIVERS_THIS_SIZE_OR_SMALLER_WILL_NOT_BE_DRAWN)
 			{
 				originalRiverLevels.put(ee.index, ee.riverLevel);
-			}
-			else if (ee.riverLevel == 0)
-			{
-				originalRiverLevels.remove(ee.index);
 			}
 		}
 
@@ -798,8 +799,8 @@ public class SubMapCreator
 	}
 
 	/**
-	 * Maps an original-graph corner (given in RI coordinates) to the closest corner in the new graph, clamping to the selection bounds
-	 * first so that corners outside the selection snap to the map edge rather than wrapping to a distant corner.
+	 * Maps an original-graph corner (given in RI coordinates) to the closest corner in the new graph, clamping to the selection bounds first so that corners outside the selection snap to the map edge
+	 * rather than wrapping to a distant corner.
 	 */
 	private static Corner mapCornerToNewGraph(double cornerRIx, double cornerRIy, Rectangle selectionBoundsRI, WorldGraph newGraph)
 	{
@@ -832,8 +833,8 @@ public class SubMapCreator
 	}
 
 	/**
-	 * Clips a road's RI-coordinate path to the selection rectangle, inserting intersection points at the boundary where segments cross
-	 * it. Returns a list of sub-paths (each with >= 2 points) in new-map RI coordinates, ready to become Road objects.
+	 * Clips a road's RI-coordinate path to the selection rectangle, inserting intersection points at the boundary where segments cross it. Returns a list of sub-paths (each with >= 2 points) in
+	 * new-map RI coordinates, ready to become Road objects.
 	 */
 	private static List<List<Point>> clipRoadPath(List<Point> path, Rectangle selectionBounds, int newWidth, int newHeight)
 	{
@@ -908,8 +909,8 @@ public class SubMapCreator
 	}
 
 	/**
-	 * When both endpoints of segment P1→P2 are outside {@code rect}, finds the two boundary intersection points (ordered from P1 to
-	 * P2) if the segment passes through the rectangle. Returns an empty list if there are fewer than two distinct intersections.
+	 * When both endpoints of segment P1→P2 are outside {@code rect}, finds the two boundary intersection points (ordered from P1 to P2) if the segment passes through the rectangle. Returns an empty
+	 * list if there are fewer than two distinct intersections.
 	 */
 	private static List<Point> segmentThroughIntersections(Point p1, Point p2, Rectangle rect)
 	{
@@ -984,8 +985,8 @@ public class SubMapCreator
 	}
 
 	/**
-	 * Returns the intersection point of segment P1→P2 with the boundary of {@code rect}. P1 and P2 should be on opposite sides (one
-	 * inside, one outside). Returns null if no valid intersection is found.
+	 * Returns the intersection point of segment P1→P2 with the boundary of {@code rect}. P1 and P2 should be on opposite sides (one inside, one outside). Returns null if no valid intersection is
+	 * found.
 	 */
 	private static Point segmentBoundaryIntersection(Point p1, Point p2, Rectangle rect)
 	{
