@@ -347,10 +347,23 @@ public class SubMapCreator
 			{
 				continue;
 			}
-			// Compute the new-graph pixel coordinate as the inverse of mapToOriginalGraphPoint,
-			// using newGraph.bounds directly so the scale matches findClosestCenter's coordinate space.
-			double newGraphX = (icon.locationResolutionInvariant.x - selectionBoundsRI.x) / selectionBoundsRI.width * newGraph.bounds.width;
-			double newGraphY = (icon.locationResolutionInvariant.y - selectionBoundsRI.y) / selectionBoundsRI.height * newGraph.bounds.height;
+			// Use the original center's loc as the reference point rather than the icon's drawn position.
+			// Mountain icons are offset upward from the polygon base by getAnchoredMountainDrawPoint, so
+			// icon.locationResolutionInvariant is above the polygon centroid. Using it would select a new
+			// center that is higher than the ones step 2 assigns, causing the step 1 mountain to appear
+			// noticeably higher. Using the original center's centroid aligns step 1 with step 2's mapping.
+			Point referenceRI;
+			if (icon.centerIndex != null && icon.centerIndex < originalGraph.centers.size())
+			{
+				Center originalCenter = originalGraph.centers.get(icon.centerIndex);
+				referenceRI = new Point(originalCenter.loc.x / originalResolution, originalCenter.loc.y / originalResolution);
+			}
+			else
+			{
+				referenceRI = icon.locationResolutionInvariant;
+			}
+			double newGraphX = (referenceRI.x - selectionBoundsRI.x) / selectionBoundsRI.width * newGraph.bounds.width;
+			double newGraphY = (referenceRI.y - selectionBoundsRI.y) / selectionBoundsRI.height * newGraph.bounds.height;
 			Center nearestNew = newGraph.findClosestCenter(new Point(newGraphX, newGraphY), false);
 			if (nearestNew == null)
 			{
