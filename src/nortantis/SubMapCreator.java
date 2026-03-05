@@ -714,11 +714,20 @@ public class SubMapCreator
 
 	/**
 	 * Transfers each edge of an ordered river polyline to the sub-map. Each edge is processed individually: its RI-space corners are clipped to the selection boundary via actual line intersection
-	 * (for accuracy), then mapped to sub-map corners for a findPathGreedy call. Stops as soon as an edge exits the selection boundary.
+	 * (for accuracy), then mapped to sub-map corners for a findPathGreedy call. All edges are collected first, finger branches are pruned, then the result is written to newEdits.
+	 * <p>
+	 * Finger branches arise when findPathGreedy from corner S_B steps back toward the previous corner (because it is momentarily closer to S_C in Euclidean distance) before heading forward. This
+	 * creates a degree-3 junction and a short dead-end branch. Iterative leaf pruning removes any degree-1 corner that is not the polyline's start or end, eliminating these artifacts.
+	 * </p>
 	 */
 	private static void transferPolylineToSubMap(List<Corner> polylineCorners, List<Edge> polylineEdges, Map<Integer, Integer> riverLevels, double riverLevelScale, Rectangle selectionBoundsRI,
 			WorldGraph newGraph, MapEdits newEdits, double originalResolution)
 	{
+		// Collect all sub-map edges for this polyline before writing so that fingers can be pruned.
+		Map<Integer, Integer> polylineEdgeLevels = new HashMap<>();
+		Corner firstCorner = null;
+		Corner lastCorner = null;
+
 		for (int i = 0; i < polylineEdges.size(); i++)
 		{
 			int edgeLevel = riverLevels.getOrDefault(polylineEdges.get(i).index, 0);
@@ -742,7 +751,15 @@ public class SubMapCreator
 				if (through.size() == 2)
 				{
 					int scaledLevel = Math.min(River.MAX_RIVER_LEVEL, (int) Math.round(edgeLevel * riverLevelScale));
-					transferRiverEdgeToSubMap(through.get(0), through.get(1), scaledLevel, selectionBoundsRI, newGraph, newEdits);
+					Corner c0 = riToNewCorner(through.get(0), selectionBoundsRI, newGraph);
+					Corner c1 = riToNewCorner(through.get(1), selectionBoundsRI, newGraph);
+					if (c0 != null && c1 != null && !c0.equals(c1))
+					{
+						collectGreedyPathEdges(c0, c1, scaledLevel, newGraph, polylineEdgeLevels);
+						if (firstCorner == null)
+							firstCorner = c0;
+						lastCorner = c1;
+					}
 				}
 				continue;
 			}
@@ -771,11 +788,83 @@ public class SubMapCreator
 				effectiveV1 = new Point(v1RIx, v1RIy);
 			}
 
-			int scaledLevel = Math.min(River.MAX_RIVER_LEVEL, (int) Math.round(edgeLevel * riverLevelScale));
-			transferRiverEdgeToSubMap(effectiveV0, effectiveV1, scaledLevel, selectionBoundsRI, newGraph, newEdits);
+			Corner c0 = riToNewCorner(effectiveV0, selectionBoundsRI, newGraph);
+			Corner c1 = riToNewCorner(effectiveV1, selectionBoundsRI, newGraph);
+			if (c0 != null && c1 != null && !c0.equals(c1))
+			{
+				int scaledLevel = Math.min(River.MAX_RIVER_LEVEL, (int) Math.round(edgeLevel * riverLevelScale));
+				collectGreedyPathEdges(c0, c1, scaledLevel, newGraph, polylineEdgeLevels);
+				if (firstCorner == null)
+					firstCorner = c0;
+				lastCorner = c1;
+			}
 			if (stopAfter)
 			{
 				break;
+			}
+		}
+
+		// Prune finger branches caused by findPathGreedy backtracking.
+		// Skip when start == end (isolated loop) to avoid over-pruning.
+		if (firstCorner != null && lastCorner != null && !firstCorner.equals(lastCorner))
+		{
+			pruneFingers(polylineEdgeLevels, firstCorner, lastCorner, newGraph);
+		}
+
+		for (Map.Entry<Integer, Integer> entry : polylineEdgeLevels.entrySet())
+		{
+			newEdits.edgeEdits.put(entry.getKey(), new EdgeEdit(entry.getKey(), entry.getValue()));
+		}
+	}
+
+	/**
+	 * Runs findPathGreedy between c0 and c1, merging all result edges into edgeLevels (keeping the max level if an edge is already present).
+	 */
+	private static void collectGreedyPathEdges(Corner c0, Corner c1, int scaledLevel, WorldGraph newGraph, Map<Integer, Integer> edgeLevels)
+	{
+		Set<Edge> pathEdges = newGraph.findPathGreedy(c0, c1);
+		for (Edge e : pathEdges)
+		{
+			edgeLevels.merge(e.index, scaledLevel, Math::max);
+		}
+	}
+
+	/**
+	 * Iteratively removes edges whose one endpoint has degree 1 in edgeLevels and is not startCorner or endCorner. This prunes finger branches without touching valid river endpoints or loops.
+	 */
+	private static void pruneFingers(Map<Integer, Integer> edgeLevels, Corner startCorner, Corner endCorner, WorldGraph newGraph)
+	{
+		boolean changed = true;
+		while (changed)
+		{
+			changed = false;
+			Map<Integer, Integer> cornerDegree = new HashMap<>();
+			for (int edgeIdx : edgeLevels.keySet())
+			{
+				Edge e = newGraph.edges.get(edgeIdx);
+				if (e.v0 != null)
+					cornerDegree.merge(e.v0.index, 1, Integer::sum);
+				if (e.v1 != null)
+					cornerDegree.merge(e.v1.index, 1, Integer::sum);
+			}
+			for (Map.Entry<Integer, Integer> entry : cornerDegree.entrySet())
+			{
+				if (entry.getValue() == 1 && entry.getKey() != startCorner.index && entry.getKey() != endCorner.index)
+				{
+					for (Iterator<Integer> it = edgeLevels.keySet().iterator(); it.hasNext();)
+					{
+						int edgeIdx = it.next();
+						Edge e = newGraph.edges.get(edgeIdx);
+						if ((e.v0 != null && e.v0.index == entry.getKey()) || (e.v1 != null && e.v1.index == entry.getKey()))
+						{
+							it.remove();
+							changed = true;
+							break;
+						}
+					}
+					if (changed)
+						break;
+				}
 			}
 		}
 	}
