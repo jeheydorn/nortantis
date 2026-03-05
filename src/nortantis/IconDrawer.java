@@ -1973,8 +1973,8 @@ public class IconDrawer
 			int index = Helper.safeAbs(rand.nextInt());
 
 			// Draw the image such that it is centered in the center of c.
-			int x = (int) (loc.x);
-			int y = (int) (loc.y);
+			double x = loc.x;
+			double y = loc.y;
 
 			final double scale = ((meanPolygonWidth * 2.0) / 10.0);
 			x += rand.nextGaussian() * scale;
