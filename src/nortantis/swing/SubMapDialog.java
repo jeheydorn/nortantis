@@ -649,10 +649,20 @@ public class SubMapDialog
 			public MapSettings getSettingsFromGUI()
 			{
 				// Called on background thread by MapUpdater.
-				MapSettings settings = SubMapCreator.createSubMapSettings(origSettings, origGraph, origEdits, selBoundsRI, subMapWorldSize, origResolution, subMapSeed, redistributeIcons);
-				settings.resolution = 1.0;
-				lastSubMapSettings = settings;
-				return settings;
+				try
+				{
+					MapSettings settings = SubMapCreator.createSubMapSettings(origSettings, origGraph, origEdits, selBoundsRI, subMapWorldSize, origResolution, subMapSeed, redistributeIcons);
+					// Set resolution to 1.0 as a baseline; MapCreator.createMap will override it via
+					// Background.calcMapBoundsAndAdjustResolutionIfNeeded to fit the maxMapSize passed to the updater.
+					settings.resolution = 1.0;
+					lastSubMapSettings = settings;
+					return settings;
+				}
+				catch (Exception e)
+				{
+					SwingHelper.handleException(e, step2Dialog, false);
+					throw e;
+				}
 			}
 
 			@Override

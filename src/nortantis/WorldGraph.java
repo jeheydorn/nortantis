@@ -2526,7 +2526,7 @@ public class WorldGraph extends VoronoiGraph
 		expandFrontier(startNode, frontier, explored);
 
 		CornerSearchNode endNode = null;
-		while (true)
+		while (!frontier.isEmpty())
 		{
 			CornerSearchNode closest = frontier.first();
 			frontier.remove(closest);

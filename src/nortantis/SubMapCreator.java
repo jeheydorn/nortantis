@@ -563,21 +563,17 @@ public class SubMapCreator
 
 	/**
 	 * Transfers rivers from the original graph into the new graph's edge edits.
+	 * <p>
+	 * Original river edges are grouped into connected segments (maximal chains between degree-1 and degree-3+ corners). Each segment is
+	 * transferred with a single {@code findPathGreedy} call from its start corner to its end corner, avoiding the finger artifacts that
+	 * arise when per-edge calls share interior corners. River levels are scaled up by the zoom factor so rivers remain proportionally
+	 * wide after zooming in, and are capped at {@link River#MAX_RIVER_LEVEL}.
+	 * </p>
 	 */
 	private static void transferRivers(WorldGraph originalGraph, MapEdits originalEdits, WorldGraph newGraph, Rectangle selectionBoundsRI, MapEdits newEdits, double originalResolution)
 	{
-		// Transfer original river edges to the new graph.
-		// Build set of river edges in the original (from edgeEdits overrides or edge.river).
-
-		// Determine effective river level per edge in the original graph.
+		// Determine effective river level per edge in the original graph (edgeEdits override edge.river).
 		Map<Integer, Integer> originalRiverLevels = new HashMap<>();
-		for (Edge edge : originalGraph.edges)
-		{
-			if (edge.river > 0)
-			{
-				originalRiverLevels.put(edge.index, edge.river);
-			}
-		}
 		for (EdgeEdit ee : originalEdits.edgeEdits.values())
 		{
 			if (ee.riverLevel > 0)
@@ -595,22 +591,189 @@ public class SubMapCreator
 			return;
 		}
 
-		// For each original river edge, map its Voronoi corners (v0, v1) to the closest new-graph corners,
-		// then trace the Voronoi-edge path between them. One original edge may span several new edges
-		// (because the new graph is more detailed), so findPathGreedy gives the full chain. Adjacent
-		// original edges share a corner; they map to the same new corner, so their paths connect.
+		// Build corner → river-edge adjacency and collect Corner objects for later lookup.
+		Map<Integer, List<Edge>> cornerToRiverEdges = new HashMap<>();
+		Map<Integer, Corner> cornerByIndex = new HashMap<>();
 		for (Map.Entry<Integer, Integer> entry : originalRiverLevels.entrySet())
 		{
-			int originalEdgeIndex = entry.getKey();
-			int riverLevel = entry.getValue();
+			Edge edge = originalGraph.edges.get(entry.getKey());
+			if (edge == null || edge.v0 == null || edge.v1 == null)
+			{
+				continue;
+			}
+			cornerToRiverEdges.computeIfAbsent(edge.v0.index, k -> new ArrayList<>()).add(edge);
+			cornerToRiverEdges.computeIfAbsent(edge.v1.index, k -> new ArrayList<>()).add(edge);
+			cornerByIndex.put(edge.v0.index, edge.v0);
+			cornerByIndex.put(edge.v1.index, edge.v1);
+		}
 
-			Edge originalEdge = originalGraph.edges.get(originalEdgeIndex);
-			if (originalEdge == null || originalEdge.v0 == null || originalEdge.v1 == null)
+		// Segment endpoints: corners with degree ≠ 2 in the river graph (heads, mouths, confluences).
+		Set<Integer> segmentEndpointIndices = new HashSet<>();
+		for (Map.Entry<Integer, List<Edge>> entry : cornerToRiverEdges.entrySet())
+		{
+			if (entry.getValue().size() != 2)
+			{
+				segmentEndpointIndices.add(entry.getKey());
+			}
+		}
+
+		// Compute the river-level scale: sub-maps zoom in, so rivers should appear proportionally wider.
+		// Width ∝ sqrt(riverLevel), so scaling width by zoomFactor requires scaling riverLevel by zoomFactor².
+		double originalRIWidth = originalGraph.getWidth() / originalResolution;
+		double originalRIHeight = originalGraph.getHeight() / originalResolution;
+		double maxOriginalDim = Math.max(originalRIWidth, originalRIHeight);
+		double maxSelectionDim = Math.max(selectionBoundsRI.width, selectionBoundsRI.height);
+		double zoomFactor = maxSelectionDim > 0 ? maxOriginalDim / maxSelectionDim : 1.0;
+		double riverLevelScale = zoomFactor * zoomFactor;
+
+		// Trace each river segment starting from an endpoint and mark it with one findPathGreedy call.
+		// Using one call per segment (rather than per-edge) prevents finger artifacts caused by adjacent
+		// per-edge path calls sharing interior corners.
+		Set<Integer> processedEdgeIndices = new HashSet<>();
+		for (int endpointIdx : segmentEndpointIndices)
+		{
+			Corner startCorner = cornerByIndex.get(endpointIdx);
+			if (startCorner == null)
+			{
+				continue;
+			}
+			List<Edge> startEdges = cornerToRiverEdges.get(endpointIdx);
+			if (startEdges == null)
 			{
 				continue;
 			}
 
-			// Convert corner positions to RI space and check selection bounds.
+			for (Edge startEdge : startEdges)
+			{
+				if (processedEdgeIndices.contains(startEdge.index))
+				{
+					continue;
+				}
+
+				// Walk the degree-2 chain from startCorner until another endpoint corner is reached.
+				List<Edge> segment = new ArrayList<>();
+				Corner currentCorner = startCorner;
+				Edge currentEdge = startEdge;
+				Corner segEnd = null;
+				Set<Integer> visitedCorners = new HashSet<>();
+				visitedCorners.add(currentCorner.index);
+
+				while (true)
+				{
+					segment.add(currentEdge);
+					processedEdgeIndices.add(currentEdge.index);
+					Corner nextCorner = currentEdge.v0.index == currentCorner.index ? currentEdge.v1 : currentEdge.v0;
+
+					if (segmentEndpointIndices.contains(nextCorner.index) || visitedCorners.contains(nextCorner.index))
+					{
+						segEnd = nextCorner;
+						break;
+					}
+					visitedCorners.add(nextCorner.index);
+
+					List<Edge> nextEdges = cornerToRiverEdges.get(nextCorner.index);
+					if (nextEdges == null)
+					{
+						segEnd = nextCorner;
+						break;
+					}
+					Edge nextEdge = null;
+					for (Edge e : nextEdges)
+					{
+						if (e.index != currentEdge.index)
+						{
+							nextEdge = e;
+							break;
+						}
+					}
+					if (nextEdge == null)
+					{
+						segEnd = nextCorner;
+						break;
+					}
+					currentEdge = nextEdge;
+					currentCorner = nextCorner;
+				}
+
+				if (segment.isEmpty() || segEnd == null)
+				{
+					continue;
+				}
+
+				// Convert segment endpoints to RI space.
+				double startRIx = startCorner.loc.x / originalResolution;
+				double startRIy = startCorner.loc.y / originalResolution;
+				double endRIx = segEnd.loc.x / originalResolution;
+				double endRIy = segEnd.loc.y / originalResolution;
+
+				// Skip segments entirely outside the selection bounds.
+				if (!selectionBoundsRI.contains(startRIx, startRIy) && !selectionBoundsRI.contains(endRIx, endRIy))
+				{
+					continue;
+				}
+
+				// Map endpoints to new-graph corners, clamping out-of-bounds corners to the selection boundary.
+				Corner newCorner0 = mapCornerToNewGraph(startRIx, startRIy, selectionBoundsRI, newGraph);
+				Corner newCorner1 = mapCornerToNewGraph(endRIx, endRIy, selectionBoundsRI, newGraph);
+				if (newCorner0 == null || newCorner1 == null || newCorner0.equals(newCorner1))
+				{
+					continue;
+				}
+
+				Set<Edge> pathEdges = newGraph.findPathGreedy(newCorner0, newCorner1);
+
+				// Assign each new path edge a river level based on the closest original segment edge,
+				// then scale it by the zoom factor and cap at River.MAX_RIVER_LEVEL.
+				for (Edge pathEdge : pathEdges)
+				{
+					if (pathEdge.v0 == null || pathEdge.v1 == null)
+					{
+						continue;
+					}
+					double newMidX = (pathEdge.v0.loc.x + pathEdge.v1.loc.x) / 2.0;
+					double newMidY = (pathEdge.v0.loc.y + pathEdge.v1.loc.y) / 2.0;
+					Point origMidPt = mapToOriginalGraphPoint(new Point(newMidX, newMidY), newGraph, selectionBoundsRI, originalResolution);
+
+					int closestLevel = 0;
+					double closestDist = Double.MAX_VALUE;
+					for (Edge origEdge : segment)
+					{
+						if (origEdge.v0 == null || origEdge.v1 == null)
+						{
+							continue;
+						}
+						double origMidX = (origEdge.v0.loc.x + origEdge.v1.loc.x) / 2.0;
+						double origMidY = (origEdge.v0.loc.y + origEdge.v1.loc.y) / 2.0;
+						double dist = origMidPt.distanceTo(new Point(origMidX, origMidY));
+						if (dist < closestDist)
+						{
+							closestDist = dist;
+							closestLevel = originalRiverLevels.getOrDefault(origEdge.index, 0);
+						}
+					}
+
+					if (closestLevel <= 0)
+					{
+						continue;
+					}
+					int scaledLevel = Math.min(River.MAX_RIVER_LEVEL, (int) Math.round(closestLevel * riverLevelScale));
+					newEdits.edgeEdits.put(pathEdge.index, new EdgeEdit(pathEdge.index, scaledLevel));
+				}
+			}
+		}
+
+		// Fallback: process any edges not covered by segment tracing (e.g. isolated loops with no degree-1/3+ corners).
+		for (Map.Entry<Integer, Integer> entry : originalRiverLevels.entrySet())
+		{
+			if (processedEdgeIndices.contains(entry.getKey()))
+			{
+				continue;
+			}
+			Edge originalEdge = originalGraph.edges.get(entry.getKey());
+			if (originalEdge == null || originalEdge.v0 == null || originalEdge.v1 == null)
+			{
+				continue;
+			}
 			double corner0RIx = originalEdge.v0.loc.x / originalResolution;
 			double corner0RIy = originalEdge.v0.loc.y / originalResolution;
 			double corner1RIx = originalEdge.v1.loc.x / originalResolution;
@@ -619,28 +782,32 @@ public class SubMapCreator
 			{
 				continue;
 			}
-
-			// Map each original corner to new-graph pixel space and find the closest new-graph corner.
-			double newV0x = (corner0RIx - selectionBoundsRI.x) / selectionBoundsRI.width * newGraph.getWidth();
-			double newV0y = (corner0RIy - selectionBoundsRI.y) / selectionBoundsRI.height * newGraph.getHeight();
-			double newV1x = (corner1RIx - selectionBoundsRI.x) / selectionBoundsRI.width * newGraph.getWidth();
-			double newV1y = (corner1RIy - selectionBoundsRI.y) / selectionBoundsRI.height * newGraph.getHeight();
-
-			Corner newCorner0 = newGraph.findClosestCorner(new Point(newV0x, newV0y));
-			Corner newCorner1 = newGraph.findClosestCorner(new Point(newV1x, newV1y));
+			Corner newCorner0 = mapCornerToNewGraph(corner0RIx, corner0RIy, selectionBoundsRI, newGraph);
+			Corner newCorner1 = mapCornerToNewGraph(corner1RIx, corner1RIy, selectionBoundsRI, newGraph);
 			if (newCorner0 == null || newCorner1 == null || newCorner0.equals(newCorner1))
 			{
 				continue;
 			}
-
-			// Trace the Voronoi-edge path between the two new corners and mark every edge on the path
-			// as a river at the original river level.
 			Set<Edge> pathEdges = newGraph.findPathGreedy(newCorner0, newCorner1);
+			int scaledLevel = Math.min(River.MAX_RIVER_LEVEL, (int) Math.round(entry.getValue() * riverLevelScale));
 			for (Edge pathEdge : pathEdges)
 			{
-				newEdits.edgeEdits.put(pathEdge.index, new EdgeEdit(pathEdge.index, riverLevel));
+				newEdits.edgeEdits.put(pathEdge.index, new EdgeEdit(pathEdge.index, scaledLevel));
 			}
 		}
+	}
+
+	/**
+	 * Maps an original-graph corner (given in RI coordinates) to the closest corner in the new graph, clamping to the selection bounds
+	 * first so that corners outside the selection snap to the map edge rather than wrapping to a distant corner.
+	 */
+	private static Corner mapCornerToNewGraph(double cornerRIx, double cornerRIy, Rectangle selectionBoundsRI, WorldGraph newGraph)
+	{
+		double clampedX = Math.max(selectionBoundsRI.x, Math.min(selectionBoundsRI.x + selectionBoundsRI.width, cornerRIx));
+		double clampedY = Math.max(selectionBoundsRI.y, Math.min(selectionBoundsRI.y + selectionBoundsRI.height, cornerRIy));
+		double newX = (clampedX - selectionBoundsRI.x) / selectionBoundsRI.width * newGraph.getWidth();
+		double newY = (clampedY - selectionBoundsRI.y) / selectionBoundsRI.height * newGraph.getHeight();
+		return newGraph.findClosestCorner(new Point(newX, newY));
 	}
 
 	private static final float maxFontSize = 240f;

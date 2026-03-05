@@ -2,11 +2,18 @@ package nortantis;
 
 import nortantis.graph.voronoi.Corner;
 import nortantis.graph.voronoi.Edge;
+import nortantis.graph.voronoi.VoronoiGraph;
 
 import java.util.*;
 
 public class River implements Iterable<Edge>
 {
+	/**
+	 * Maximum river level, corresponding to the maximum drawable width in LandWaterTool's river width slider. Used to cap scaled river
+	 * levels in sub-maps.
+	 */
+	public static final int MAX_RIVER_LEVEL = (14 * 14 * 2) + VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn + 1;
+
 	private List<Edge> edges;
 	private int width;
 

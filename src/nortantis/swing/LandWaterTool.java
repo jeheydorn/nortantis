@@ -204,7 +204,8 @@ public class LandWaterTool extends EditorTool
 					() -> brushActionListener.actionPerformed(null));
 			modeHider = modeWidget.addToOrganizer(organizer, Translation.get("landWaterTool.riverMode.help"));
 
-			riverWidthSlider = new JSlider(1, 15);
+ 			int maxSliderValue = 1 + (int) Math.round(Math.sqrt((River.MAX_RIVER_LEVEL - VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn - 1) / 2.0));
+		riverWidthSlider = new JSlider(1, maxSliderValue);
 			final int initialValue = 1;
 			riverWidthSlider.setValue(initialValue);
 			SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(riverWidthSlider);
