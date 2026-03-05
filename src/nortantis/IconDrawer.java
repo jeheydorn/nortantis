@@ -737,7 +737,7 @@ public class IconDrawer
 		return groupId;
 	}
 
-	private IconType centerIconTypeToIconType(CenterIconType type)
+	public static IconType centerIconTypeToIconType(CenterIconType type)
 	{
 		if (type == CenterIconType.City)
 		{
@@ -759,6 +759,14 @@ public class IconDrawer
 		{
 			throw new IllegalArgumentException("Unable to convert CenterIconType '" + type + "' to an IconType.");
 		}
+	}
+
+	public static CenterIconType iconTypeToCenterIconType(IconType type)
+	{
+		if (type == IconType.mountains) return CenterIconType.Mountain;
+		if (type == IconType.hills) return CenterIconType.Hill;
+		if (type == IconType.sand) return CenterIconType.Dune;
+		throw new IllegalArgumentException("Cannot convert IconType '" + type + "' to a CenterIconType.");
 	}
 
 	public static String chooseNewCityIconName(Set<String> cityNamesToChooseFrom, String oldIconName)

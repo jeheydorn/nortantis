@@ -1,6 +1,8 @@
 package nortantis;
 
 import nortantis.editor.CenterEdit;
+import nortantis.editor.CenterIcon;
+import nortantis.editor.CenterIconType;
 import nortantis.editor.CenterTrees;
 import nortantis.editor.EdgeEdit;
 import nortantis.editor.FreeIcon;
@@ -276,7 +278,7 @@ public class SubMapCreator
 		if (redistributeIcons)
 		{
 			// Redistribute mountains, hills, sand, and trees based on per-center mapping.
-			redistributeIconsByCenter(originalGraph, originalEdits, newGraph, selectionBoundsRI, originalResolution, newEdits, seed, newGenWidth, newGenHeight);
+			redistributeIconsByCenter(originalGraph, originalEdits, newGraph, selectionBoundsRI, originalResolution, newEdits, seed);
 		}
 		else
 		{
@@ -312,26 +314,29 @@ public class SubMapCreator
 	 * <p>
 	 * <b>Non-tree icons (mountains, hills, sand)</b> use a two-step approach:
 	 * <ol>
-	 * <li>Direct mapping: each original icon within the selection is placed at the nearest new center. This is the primary path and
-	 * guarantees icons appear at the correct locations.</li>
+	 * <li>Direct mapping: each original icon within the selection is placed at the nearest new center as a CenterIcon, so that
+	 * IconDrawer will correctly compute position and scale for the new graph during rendering.</li>
 	 * <li>Zoom-in expansion: for new centers that still have no icon after step 1, the new center's loc is mapped back to the original
-	 * graph to check if that original center had an icon. If so, a random icon from the same group is placed. This adds extra icons
+	 * graph to check if that original center had an icon. If so, a CenterIcon with a random iconIndex is placed. This adds extra icons
 	 * when the sub-map has more polygons than the original segment, preserving per-polygon density.</li>
 	 * </ol>
 	 * Centers that already have a non-tree icon (e.g. a city placed earlier) are always skipped.
 	 * </p>
 	 * <p>
-	 * <b>Trees</b>: determined by majority vote over the new center's loc and all its Voronoi corners. Because trees are dense (many
-	 * adjacent polygons share the same tree type), the majority vote reliably transfers forest coverage across zoom levels.
+	 * <b>Trees</b>: for each new center, the original center at its loc is found. If that original center has a {@code CenterTrees}
+	 * (including dormant ones), it is copied to the new center with a fresh random seed. If there is no {@code CenterTrees} but the
+	 * original center has visible tree FreeIcons, a {@code CenterTrees} is derived from those icons. Direct loc mapping naturally
+	 * preserves density at any zoom level: many new centers that map to the same original tree center each receive their own
+	 * {@code CenterTrees}, and IconDrawer handles per-polygon placement during rendering.
 	 * </p>
 	 */
 	private static void redistributeIconsByCenter(WorldGraph originalGraph, MapEdits originalEdits, WorldGraph newGraph, Rectangle selectionBoundsRI, double originalResolution, MapEdits newEdits,
-			long seed, int newGenWidth, int newGenHeight)
+			long seed)
 	{
 		// --- Non-tree icons: Step 1 — direct position mapping. ---
-		// For each original mountain/hill/sand icon within the selection, transform its position to new RI
-		// space and place it at the nearest new center. Same approach as the non-redistribute path, so this
-		// is guaranteed to work whenever originalEdits.freeIcons has icons.
+		// For each original mountain/hill/sand icon within the selection, find the nearest new center and
+		// place a CenterIcon there. Using CenterIcon (rather than FreeIcon) lets IconDrawer correctly
+		// compute position (including the mountain Y offset) and scale for the new graph during rendering.
 		for (FreeIcon icon : originalEdits.freeIcons)
 		{
 			if (icon.type == IconType.trees || icon.type == IconType.cities || icon.type == IconType.decorations)
@@ -342,9 +347,11 @@ public class SubMapCreator
 			{
 				continue;
 			}
-			Point newLoc = transformRIPoint(icon.locationResolutionInvariant, selectionBoundsRI, newGenWidth, newGenHeight);
-			Point newGraphPoint = new Point(newLoc.x * originalResolution, newLoc.y * originalResolution);
-			Center nearestNew = newGraph.findClosestCenter(newGraphPoint, false);
+			// Compute the new-graph pixel coordinate as the inverse of mapToOriginalGraphPoint,
+			// using newGraph.bounds directly so the scale matches findClosestCenter's coordinate space.
+			double newGraphX = (icon.locationResolutionInvariant.x - selectionBoundsRI.x) / selectionBoundsRI.width * newGraph.bounds.width;
+			double newGraphY = (icon.locationResolutionInvariant.y - selectionBoundsRI.y) / selectionBoundsRI.height * newGraph.bounds.height;
+			Center nearestNew = newGraph.findClosestCenter(new Point(newGraphX, newGraphY), false);
 			if (nearestNew == null)
 			{
 				continue;
@@ -353,22 +360,20 @@ public class SubMapCreator
 			{
 				continue; // city already there
 			}
-			CenterEdit edit = newEdits.centerEdits.get(nearestNew.index);
-			if (edit != null && edit.isWater)
+			CenterEdit nearestCenterEdit = newEdits.centerEdits.get(nearestNew.index);
+			if (nearestCenterEdit == null || nearestCenterEdit.isWater || nearestCenterEdit.icon != null)
 			{
 				continue;
 			}
-			newEdits.freeIcons.addOrReplace(new FreeIcon(newLoc, icon.scale, icon.type, icon.artPack, icon.groupId, icon.iconIndex, icon.iconName, nearestNew.index, 0.0, icon.fillColor,
-					icon.filterColor, icon.maximizeOpacity, icon.fillWithColor, icon.originalScale));
+			CenterIcon centerIcon = new CenterIcon(IconDrawer.iconTypeToCenterIconType(icon.type), icon.artPack, icon.groupId, icon.iconIndex);
+			newEdits.centerEdits.put(nearestNew.index, nearestCenterEdit.copyWithIcon(centerIcon));
 		}
 
-		// Build lookup for step 2 and tree redistribution: original center index → icons.
+		// Build lookup for step 2: original center index → non-tree FreeIcons (mountains, hills, sand).
 		Map<Integer, List<FreeIcon>> originalCenterToIcons = new HashMap<>();
-		// Also build a pool of non-tree icons grouped by (artPack, groupId) for random selection in step 2.
-		Map<String, List<FreeIcon>> iconPoolByGroup = new HashMap<>();
 		for (FreeIcon icon : originalEdits.freeIcons)
 		{
-			if (icon.type == IconType.cities || icon.type == IconType.decorations)
+			if (icon.type == IconType.cities || icon.type == IconType.decorations || icon.type == IconType.trees)
 			{
 				continue;
 			}
@@ -388,12 +393,51 @@ public class SubMapCreator
 				originalCenterIndex = nearest.index;
 			}
 			originalCenterToIcons.computeIfAbsent(originalCenterIndex, k -> new ArrayList<>()).add(icon);
-			if (icon.type != IconType.trees)
+		}
+
+		// Build lookup for tree redistribution: original center index → CenterTrees (includes dormant trees).
+		// This is the primary source; visible tree FreeIcons are the fallback for centers whose CenterTrees
+		// was cleared after being converted to FreeIcons.
+		Map<Integer, CenterTrees> originalCenterToCenterTrees = new HashMap<>();
+		for (Map.Entry<Integer, CenterEdit> entry : originalEdits.centerEdits.entrySet())
+		{
+			if (entry.getValue().trees != null)
 			{
-				String groupKey = icon.artPack + "\t" + icon.groupId;
-				iconPoolByGroup.computeIfAbsent(groupKey, k -> new ArrayList<>()).add(icon);
+				originalCenterToCenterTrees.put(entry.getKey(), entry.getValue().trees);
 			}
 		}
+
+		// Fallback: build lookup for visible tree FreeIcons on centers with no CenterTrees.
+		Map<Integer, List<FreeIcon>> originalCenterToTreeIcons = new HashMap<>();
+		for (FreeIcon icon : originalEdits.freeIcons)
+		{
+			if (icon.type != IconType.trees)
+			{
+				continue;
+			}
+			int originalCenterIndex;
+			if (icon.centerIndex != null)
+			{
+				originalCenterIndex = icon.centerIndex;
+			}
+			else
+			{
+				Point scaledPoint = new Point(icon.locationResolutionInvariant.x * originalResolution, icon.locationResolutionInvariant.y * originalResolution);
+				Center nearest = originalGraph.findClosestCenter(scaledPoint, false);
+				if (nearest == null)
+				{
+					continue;
+				}
+				originalCenterIndex = nearest.index;
+			}
+			if (!originalCenterToCenterTrees.containsKey(originalCenterIndex))
+			{
+				originalCenterToTreeIcons.computeIfAbsent(originalCenterIndex, k -> new ArrayList<>()).add(icon);
+			}
+		}
+
+		boolean hasNonTreeData = !originalCenterToIcons.isEmpty();
+		boolean hasTreeData = !originalCenterToCenterTrees.isEmpty() || !originalCenterToTreeIcons.isEmpty();
 
 		for (Center newCenter : newGraph.centers)
 		{
@@ -404,91 +448,59 @@ public class SubMapCreator
 			}
 
 			Point locationInOriginalSpace = mapToOriginalGraphPoint(newCenter.loc, newGraph, selectionBoundsRI, originalResolution);
-			Center originalCenterAtLocation = originalCenterToIcons.isEmpty() ? null : originalGraph.findClosestCenter(locationInOriginalSpace, false);
+			Center originalCenterAtLocation = (hasNonTreeData || hasTreeData)
+					? originalGraph.findClosestCenter(locationInOriginalSpace, false) : null;
 
 			// --- Non-tree icons: Step 2 — zoom-in expansion. ---
 			// For new centers not yet assigned by step 1, check whether their loc maps to an original
-			// center that had an icon. If so, place a random icon from the same group (handles zoom-in
-			// density scaling while adding variety rather than duplicating the exact same variant).
-			if (!originalCenterToIcons.isEmpty() && newEdits.freeIcons.getNonTree(newCenter.index) == null && originalCenterAtLocation != null)
+			// center that had an icon. If so, place a CenterIcon with a random iconIndex from the same
+			// group, letting IconDrawer handle positioning and scaling during rendering.
+			if (hasNonTreeData && newEdits.freeIcons.getNonTree(newCenter.index) == null
+					&& (existingEdit == null || existingEdit.icon == null) && originalCenterAtLocation != null)
 			{
 				List<FreeIcon> iconsAtLocation = originalCenterToIcons.get(originalCenterAtLocation.index);
 				if (iconsAtLocation != null)
 				{
-					for (FreeIcon icon : iconsAtLocation)
+					FreeIcon icon = iconsAtLocation.get(0);
+					int randomIconIndex = new Random(seed + newCenter.index).nextInt(Integer.MAX_VALUE);
+					CenterIcon centerIcon = new CenterIcon(IconDrawer.iconTypeToCenterIconType(icon.type), icon.artPack, icon.groupId, randomIconIndex);
+					newEdits.centerEdits.put(newCenter.index, existingEdit != null ? existingEdit.copyWithIcon(centerIcon) : new CenterEdit(newCenter.index, false, false, null, centerIcon, null));
+					existingEdit = newEdits.centerEdits.get(newCenter.index);
+				}
+			}
+
+			// --- Trees: direct mapping from original center. ---
+			// Copy CenterTrees (including dormant) from the original center at this location. IconDrawer
+			// naturally places trees at the right density for the new polygon sizes during rendering.
+			// Fallback: if the original center has visible tree FreeIcons but no CenterTrees, derive
+			// CenterTrees from those icons.
+			if (hasTreeData && originalCenterAtLocation != null)
+			{
+				CenterTrees originalTrees = originalCenterToCenterTrees.get(originalCenterAtLocation.index);
+				if (originalTrees != null)
+				{
+					CenterTrees newTrees = new CenterTrees(originalTrees.artPack, originalTrees.treeType, originalTrees.density, seed + newCenter.index, originalTrees.isDormant);
+					CenterEdit current = newEdits.centerEdits.get(newCenter.index);
+					if (current != null)
 					{
-						if (icon.type != IconType.trees)
+						newEdits.centerEdits.put(newCenter.index, current.copyWithTrees(newTrees));
+					}
+				}
+				else
+				{
+					List<FreeIcon> treeFreeIcons = originalCenterToTreeIcons.get(originalCenterAtLocation.index);
+					if (treeFreeIcons != null && !treeFreeIcons.isEmpty())
+					{
+						String artPack = treeFreeIcons.get(0).artPack;
+						String treeType = treeFreeIcons.get(0).groupId;
+						double avgDensity = treeFreeIcons.stream().mapToDouble(t -> t.density).average().getAsDouble();
+						CenterTrees newTrees = new CenterTrees(artPack, treeType, avgDensity, seed + newCenter.index);
+						CenterEdit current = newEdits.centerEdits.get(newCenter.index);
+						if (current != null)
 						{
-							// Pick a random icon variant from the same group for variety.
-							String groupKey = icon.artPack + "\t" + icon.groupId;
-							List<FreeIcon> pool = iconPoolByGroup.getOrDefault(groupKey, Collections.singletonList(icon));
-							FreeIcon toPlace = pool.get(new Random(seed + newCenter.index).nextInt(pool.size()));
-							// Use the new center's RI position as the icon location.
-							Point newLoc = new Point(newCenter.loc.x / newGraph.bounds.width * newGenWidth, newCenter.loc.y / newGraph.bounds.height * newGenHeight);
-							newEdits.freeIcons.addOrReplace(new FreeIcon(newLoc, toPlace.scale, toPlace.type, toPlace.artPack, toPlace.groupId, toPlace.iconIndex, toPlace.iconName,
-									newCenter.index, 0.0, toPlace.fillColor, toPlace.filterColor, toPlace.maximizeOpacity, toPlace.fillWithColor, toPlace.originalScale));
-							break;
+							newEdits.centerEdits.put(newCenter.index, current.copyWithTrees(newTrees));
 						}
 					}
-				}
-			}
-
-			// --- Trees: majority vote over loc + all Voronoi corners. ---
-			List<Point> samplePoints = new ArrayList<>(newCenter.corners.size() + 1);
-			samplePoints.add(locationInOriginalSpace != null ? locationInOriginalSpace : mapToOriginalGraphPoint(newCenter.loc, newGraph, selectionBoundsRI, originalResolution));
-			for (Corner corner : newCenter.corners)
-			{
-				samplePoints.add(mapToOriginalGraphPoint(corner.loc, newGraph, selectionBoundsRI, originalResolution));
-			}
-
-			Map<String, Integer> treeVotes = new HashMap<>();
-			Map<String, FreeIcon> treeRepresentative = new HashMap<>();
-			Map<String, List<Double>> treeDensities = new HashMap<>();
-
-			for (Point samplePoint : samplePoints)
-			{
-				Center originalCenter = originalGraph.findClosestCenter(samplePoint, false);
-				if (originalCenter == null)
-				{
-					continue;
-				}
-				List<FreeIcon> iconsAtCenter = originalCenterToIcons.get(originalCenter.index);
-				if (iconsAtCenter == null)
-				{
-					continue;
-				}
-
-				Set<String> seenInThisSample = new HashSet<>();
-				for (FreeIcon icon : iconsAtCenter)
-				{
-					if (icon.type != IconType.trees)
-					{
-						continue;
-					}
-					String key = icon.artPack + "\t" + icon.groupId;
-					if (seenInThisSample.add(key))
-					{
-						treeVotes.merge(key, 1, Integer::sum);
-						treeRepresentative.putIfAbsent(key, icon);
-						treeDensities.computeIfAbsent(key, k -> new ArrayList<>()).add(icon.density);
-					}
-				}
-			}
-
-			for (Map.Entry<String, Integer> e : treeVotes.entrySet())
-			{
-				if (e.getValue() * 2 < samplePoints.size())
-				{
-					continue;
-				}
-				FreeIcon rep = treeRepresentative.get(e.getKey());
-				List<Double> densities = treeDensities.getOrDefault(e.getKey(), Collections.emptyList());
-				double avgDensity = densities.isEmpty() ? 1.0 : densities.stream().mapToDouble(d -> d).average().getAsDouble();
-				CenterTrees trees = new CenterTrees(rep.artPack, rep.groupId, avgDensity, seed + newCenter.index);
-				CenterEdit current = newEdits.centerEdits.get(newCenter.index);
-				if (current != null)
-				{
-					newEdits.centerEdits.put(newCenter.index, current.copyWithTrees(trees));
 				}
 			}
 		}
