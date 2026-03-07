@@ -43,8 +43,6 @@ public class SubMapDialog
 
 	// Shared state between steps.
 	private Rectangle selBoundsRI;
-	/** The polygon count for the sub-map; 0 = uninitialized (will default to 1× on first step-2 entry). */
-	private int subMapWorldSize = 0;
 
 	// Step 1 dialog state.
 	private JDialog step1Dialog;
@@ -63,7 +61,6 @@ public class SubMapDialog
 	private JPanel previewContainer;
 	private volatile MapSettings lastSubMapSettings;
 	private SliderWithDisplayedValue detailSliderWithValue;
-	private JLabel errorLabel;
 	private JButton createButton;
 	private JSlider detailSlider;
 	private JProgressBar previewProgressBar;
@@ -81,6 +78,7 @@ public class SubMapDialog
 	private RowHider customWarningRowHider;
 	/** Radio button for custom polygon count; instance field so createPreviewUpdater can read its state. */
 	private JRadioButton customRadio;
+	private int clampedOneXWorldSize;
 
 	public SubMapDialog(MainWindow mainWindow)
 	{
@@ -410,41 +408,26 @@ public class SubMapDialog
 		double selAreaForDefault = selBoundsRI.width * selBoundsRI.height;
 		oneXWorldSize = origSettings.worldSize * selAreaForDefault / origMapAreaForDefault;
 		final int minPolygonsInSubMap = 1000;
-		if (subMapWorldSize == 0)
-		{
-			subMapWorldSize = (int) Math.round(Math.max(minPolygonsInSubMap, Math.min(SettingsGenerator.maxWorldSize, oneXWorldSize)));
-		}
-		else
-		{
-			subMapWorldSize = Math.max(minPolygonsInSubMap, Math.min(SettingsGenerator.maxWorldSize, subMapWorldSize));
-		}
+		clampedOneXWorldSize = (int) Math.round(Math.clamp(oneXWorldSize, oneXWorldSize, SettingsGenerator.maxWorldSize));
 
 		// Advice label explaining key sub-map limitations.
-		JLabel adviceLabel = new JLabel("<html>"
-				+ "Sub-map land shapes are approximate: each sub-map uses a new random polygon grid, "
-				+ "so coastlines will differ slightly from the original. "
-				+ "After creating a sub-map, check that any cities or icons near shores haven't shifted onto water, "
-				+ "and that rivers follow the expected paths."
-				+ "</html>");
+		JLabel adviceLabel = new JLabel("<html>" + "Sub-map land shapes are approximate: each sub-map uses a new random polygon grid, " + "so coastlines will differ slightly from the original. "
+				+ "After creating a sub-map, check that any cities or icons near shores haven't shifted onto water, " + "and that rivers follow the expected paths." + "</html>");
 		controlOrganizer.addLeftAlignedComponent(adviceLabel, 0, 8, false);
 
 		// Number of polygons: radio buttons to choose between matching source detail or a custom level.
-		final int exactOneXSize = (int) Math.round(Math.max(minPolygonsInSubMap, oneXWorldSize));
-		JRadioButton matchSourceRadio = new JRadioButton(
-				String.format("Match source detail (\u2248%d polygons)", exactOneXSize));
+		JRadioButton matchSourceRadio = new JRadioButton(String.format("Match source detail (\u2248%d polygons)", clampedOneXWorldSize));
 		customRadio = new JRadioButton("Custom:");
 		ButtonGroup detailModeGroup = new ButtonGroup();
 		detailModeGroup.add(matchSourceRadio);
 		detailModeGroup.add(customRadio);
 		// Default: match source detail.
 		matchSourceRadio.setSelected(true);
-		subMapWorldSize = exactOneXSize;
 
-		controlOrganizer.addLabelAndComponentsHorizontalWithTopInset(
-				"Number of polygons:", "", Arrays.asList(matchSourceRadio, customRadio), topInset);
+		controlOrganizer.addLabelAndComponentsHorizontalWithTopInset("Number of polygons:", "", Arrays.asList(matchSourceRadio, customRadio), topInset);
 
 		// Slider row (shown only in Custom mode).
-		JSlider rawSlider = new JSlider(minPolygonsInSubMap, SettingsGenerator.maxWorldSize, subMapWorldSize);
+		JSlider rawSlider = new JSlider(minPolygonsInSubMap, SettingsGenerator.maxWorldSize, clampedOneXWorldSize);
 		rawSlider.setMajorTickSpacing(8000);
 		rawSlider.setMinorTickSpacing(1000);
 		rawSlider.setPaintTicks(true);
@@ -460,23 +443,16 @@ public class SubMapDialog
 			return String.format("%.1f\u00d7, \u2248%d polygons", ratio, value);
 		}, () ->
 		{
-			subMapWorldSize = detailSlider.getValue();
-			updateDetailLevelState();
-			if (!isTooDetailed())
-			{
-				triggerPreviewRedraw();
-			}
+			triggerPreviewRedraw();
 		}, null);
 		detailSlider = detailSliderWithValue.slider;
 		sliderRowHider = controlOrganizer.addComponentsHorizontal(Arrays.asList(detailSlider, detailSliderWithValue.valueDisplay));
 		sliderRowHider.setVisible(false);
 
 		// Warning shown when Custom mode is selected.
-		JLabel customWarningLabel = new JLabel("<html>"
-				+ "At custom detail levels, icons are redistributed across the new polygon grid. "
-				+ "At higher than source detail, icons appear smaller and may drift away from "
-				+ "coastlines and mountain ranges. At lower detail, they appear larger and sparser."
-				+ "</html>");
+		JLabel customWarningLabel = new JLabel(
+				"<html>" + "At custom detail levels, icons are redistributed across the new polygon grid. " + "At higher than source detail, icons appear smaller and may drift away from "
+						+ "coastlines and mountain ranges. At lower detail, they appear larger and sparser." + "</html>");
 		customWarningLabel.setForeground(new java.awt.Color(160, 90, 0));
 		customWarningRowHider = controlOrganizer.addLeftAlignedComponent(customWarningLabel, 2, 8, false);
 		customWarningRowHider.setVisible(false);
@@ -484,7 +460,6 @@ public class SubMapDialog
 		// Wire radio button listeners.
 		matchSourceRadio.addActionListener(e ->
 		{
-			subMapWorldSize = exactOneXSize;
 			sliderRowHider.setVisible(false);
 			customWarningRowHider.setVisible(false);
 			step2Dialog.revalidate();
@@ -492,15 +467,10 @@ public class SubMapDialog
 		});
 		customRadio.addActionListener(e ->
 		{
-			subMapWorldSize = detailSlider.getValue();
 			sliderRowHider.setVisible(true);
 			customWarningRowHider.setVisible(true);
 			step2Dialog.revalidate();
-			updateDetailLevelState();
-			if (!isTooDetailed())
-			{
 				triggerPreviewRedraw();
-			}
 		});
 
 		// Random seed.
@@ -513,10 +483,7 @@ public class SubMapDialog
 				try
 				{
 					subMapSeed = Long.parseLong(seedTextField.getText());
-					if (!isTooDetailed())
-					{
 						triggerPreviewRedraw();
-					}
 				}
 				catch (NumberFormatException ex)
 				{
@@ -549,12 +516,6 @@ public class SubMapDialog
 		newSeedButton.setToolTipText(Translation.get("theme.newSeed.tooltip"));
 		newSeedButton.addActionListener(e -> seedTextField.setText(String.valueOf(Helper.safeAbs(new Random().nextInt()))));
 		controlOrganizer.addLabelAndComponentsHorizontalWithTopInset("Random seed:", "", Arrays.asList(seedTextField, newSeedButton), topInset);
-
-		// Error label (shown only when the detail level is too high).
-		errorLabel = new JLabel("Detail level too high – maximum is 32,000 polygons. Reduce the selected area or lower the detail level.");
-		errorLabel.setForeground(java.awt.Color.RED);
-		errorLabel.setVisible(false);
-		controlOrganizer.addLeftAlignedComponent(errorLabel, topInset, 0, false);
 
 		mainPanel.add(controlOrganizer.panel, BorderLayout.NORTH);
 
@@ -646,10 +607,7 @@ public class SubMapDialog
 				{
 					return;
 				}
-				if (!isTooDetailed())
-				{
 					triggerPreviewRedraw();
-				}
 			}
 		});
 
@@ -660,10 +618,7 @@ public class SubMapDialog
 			{
 				step2DialogOpened = true;
 				// Trigger the first draw here, after the dialog is visible and its container is sized.
-				if (!isTooDetailed())
-				{
 					triggerPreviewRedraw();
-				}
 			}
 
 			@Override
@@ -678,9 +633,6 @@ public class SubMapDialog
 		});
 
 		step2Dialog.setLocationRelativeTo(mainWindow);
-
-		// Initialize error/button state.
-		updateDetailLevelState();
 
 		step2Dialog.setVisible(true);
 	}
@@ -701,7 +653,7 @@ public class SubMapDialog
 				try
 				{
 					boolean redistributeIcons = customRadio != null && customRadio.isSelected();
-				MapSettings settings = SubMapCreator.createSubMapSettings(origSettings, origGraph, origEdits, selBoundsRI, subMapWorldSize, origResolution, subMapSeed, redistributeIcons);
+					MapSettings settings = SubMapCreator.createSubMapSettings(origSettings, origGraph, origEdits, selBoundsRI, getSubmapWorldSize(), origResolution, subMapSeed, redistributeIcons);
 					// Set resolution to 1.0 as a baseline; MapCreator.createMap will override it via
 					// Background.calcMapBoundsAndAdjustResolutionIfNeeded to fit the maxMapSize passed to the updater.
 					settings.resolution = 1.0;
@@ -816,9 +768,13 @@ public class SubMapDialog
 		return new nortantis.geom.Dimension(previewContainer.getWidth() * scale, previewContainer.getHeight() * scale);
 	}
 
-	private boolean isTooDetailed()
+	private int getSubmapWorldSize()
 	{
-		return subMapWorldSize > SettingsGenerator.maxWorldSize;
+		if (customRadio.isSelected())
+		{
+			return detailSlider.getValue();
+		}
+		return clampedOneXWorldSize;
 	}
 
 	/**
@@ -835,19 +791,6 @@ public class SubMapDialog
 	private int getMapDisplayHeight()
 	{
 		return (origSettings.rightRotationCount == 1 || origSettings.rightRotationCount == 3) ? origSettings.generatedWidth : origSettings.generatedHeight;
-	}
-
-	private void updateDetailLevelState()
-	{
-		boolean tooDetailed = isTooDetailed();
-		if (errorLabel != null)
-		{
-			errorLabel.setVisible(tooDetailed);
-		}
-		if (createButton != null)
-		{
-			createButton.setEnabled(!tooDetailed);
-		}
 	}
 
 	private void handleCreate()

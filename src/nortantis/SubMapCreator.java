@@ -98,7 +98,7 @@ public class SubMapCreator
 		double originalMapArea = originalSettings.generatedWidth * (double) originalSettings.generatedHeight;
 		double oneXWorldSize = originalSettings.worldSize * selectionArea / originalMapArea;
 		double detailRatio = oneXWorldSize > 0 ? newWorldSize / oneXWorldSize : 1.0;
-		double fontScale = Math.max(1.0, zoomFactor / Math.max(1.0, Math.pow(detailRatio, 0.25)));
+ 		double fontScale = Math.max(1.0, zoomFactor / Math.max(1.0, Math.pow(detailRatio, 0.25)));
 		newSettings.titleFont = scaleFontSize(newSettings.titleFont, fontScale);
 		newSettings.regionFont = scaleFontSize(newSettings.regionFont, fontScale);
 		newSettings.mountainRangeFont = scaleFontSize(newSettings.mountainRangeFont, fontScale);
@@ -330,18 +330,8 @@ public class SubMapCreator
 				if (selectionBoundsRI.containsOrOverlaps(icon.locationResolutionInvariant))
 				{
 					Point newLoc = transformRIPoint(icon.locationResolutionInvariant, selectionBoundsRI, newGenWidth, newGenHeight);
-					Integer newCenterIndex = null;
-					if (icon.centerIndex != null)
-					{
-						Point newGraphPoint = new Point(newLoc.x * originalResolution, newLoc.y * originalResolution);
-						Center nearestNewCenter = newGraph.findClosestCenter(newGraphPoint, false);
-						if (nearestNewCenter != null)
-						{
-							newCenterIndex = nearestNewCenter.index;
-						}
-					}
 					newEdits.freeIcons.addOrReplace(
-							new FreeIcon(newLoc, icon.scale, icon.type, icon.artPack, icon.groupId, icon.iconIndex, icon.iconName, newCenterIndex, icon.density, icon.fillColor, icon.filterColor,
+							new FreeIcon(newLoc, icon.scale, icon.type, icon.artPack, icon.groupId, icon.iconIndex, icon.iconName, null, icon.density, icon.fillColor, icon.filterColor,
 									icon.maximizeOpacity, icon.fillWithColor, icon.originalScale));
 				}
 			}
