@@ -731,7 +731,13 @@ public class SubMapCreator
 	private static void transferPolylineToSubMap(List<Corner> polylineCorners, List<Edge> polylineEdges, Map<Integer, Integer> riverLevels, double riverLevelScale, Rectangle selectionBoundsRI,
 			WorldGraph newGraph, MapEdits originalEdits, MapEdits newEdits, double originalResolution)
 	{
+		// Collect all sub-map edges for this polyline, pruning fingers per source-map segment so that
+		// fingers introduced by findPathGreedy within one segment are removed before the segments are
+		// combined. This prevents per-segment fingers from masking legitimate branches of adjacent
+		// segments when the final overall prune runs.
 		Map<Integer, Integer> polylineEdgeLevels = new HashMap<>();
+		Corner firstCorner = null;
+		Corner lastCorner = null;
 
 		for (int i = 0; i < polylineEdges.size(); i++)
 		{
@@ -764,6 +770,9 @@ public class SubMapCreator
 						collectGreedyPathEdges(c0, c1, scaledLevel, newGraph, segmentEdgeLevels);
 						pruneFingers(segmentEdgeLevels, c0, c1, newGraph);
 						segmentEdgeLevels.forEach((k, v) -> polylineEdgeLevels.merge(k, v, Math::max));
+						if (firstCorner == null)
+							firstCorner = c0;
+						lastCorner = c1;
 					}
 				}
 				continue;
@@ -815,11 +824,23 @@ public class SubMapCreator
 				collectGreedyPathEdges(c0, c1, scaledLevel, newGraph, segmentEdgeLevels);
 				pruneFingers(segmentEdgeLevels, c0, c1, newGraph);
 				segmentEdgeLevels.forEach((k, v) -> polylineEdgeLevels.merge(k, v, Math::max));
+				if (firstCorner == null)
+					firstCorner = c0;
+				lastCorner = c1;
 			}
 			if (stopAfter)
 			{
 				break;
 			}
+		}
+
+		// Final overall prune to remove any residual fingers that emerge from interactions between
+		// consecutive source-edge paths. Per-segment pruning above ensures that individual paths
+		// are already clean, so this pass has far less to do and is much less likely to
+		// over-prune compared to running only the overall prune without per-segment pruning.
+		if (firstCorner != null && lastCorner != null && !firstCorner.equals(lastCorner))
+		{
+			pruneFingers(polylineEdgeLevels, firstCorner, lastCorner, newGraph);
 		}
 
 		for (Map.Entry<Integer, Integer> entry : polylineEdgeLevels.entrySet())
