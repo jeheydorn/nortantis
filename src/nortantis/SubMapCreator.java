@@ -620,12 +620,19 @@ public class SubMapCreator
 
 		// Compute zoom-based river level scale: rivers should appear proportionally wider when zoomed in.
 		// Width ∝ sqrt(riverLevel), so scaling width by zoomFactor requires scaling level by zoomFactor².
+		// When the sub-map has higher polygon density than a 1× equivalent (detailRatio > 1), rivers
+		// are widened less, matching the same attenuation used for font scaling in transferText.
+		// The floor of 1.0 ensures rivers are never narrower in the sub-map than in the source.
 		double originalRIWidth = originalGraph.getWidth() / originalResolution;
 		double originalRIHeight = originalGraph.getHeight() / originalResolution;
 		double maxOriginalDim = Math.max(originalRIWidth, originalRIHeight);
 		double maxSelectionDim = Math.max(selectionBoundsRI.width, selectionBoundsRI.height);
 		double zoomFactor = maxSelectionDim > 0 ? maxOriginalDim / maxSelectionDim : 1.0;
-		double riverLevelScale = zoomFactor * zoomFactor;
+		double originalMapArea = originalRIWidth * originalRIHeight;
+		double selectionArea = selectionBoundsRI.width * selectionBoundsRI.height;
+		double oneXWorldSize = originalMapArea > 0 ? originalGraph.centers.size() * selectionArea / originalMapArea : 1.0;
+		double detailRatio = oneXWorldSize > 0 ? newGraph.centers.size() / oneXWorldSize : 1.0;
+		double riverLevelScale = Math.max(1.0, zoomFactor * zoomFactor / Math.max(1.0, Math.pow(detailRatio, 0.5)));
 
 		// Trace ordered polylines from each endpoint corner and transfer each edge individually.
 		Set<Integer> processedEdgeIndices = new HashSet<>();
@@ -689,7 +696,7 @@ public class SubMapCreator
 					currentCorner = nextCorner;
 				}
 
-				transferPolylineToSubMap(polylineCorners, polylineEdges, riverLevels, riverLevelScale, selectionBoundsRI, newGraph, newEdits, originalResolution);
+				transferPolylineToSubMap(polylineCorners, polylineEdges, riverLevels, riverLevelScale, selectionBoundsRI, newGraph, originalEdits, newEdits, originalResolution);
 			}
 		}
 
@@ -713,20 +720,18 @@ public class SubMapCreator
 	}
 
 	/**
-	 * Transfers each edge of an ordered river polyline to the sub-map. Each edge is processed individually: its RI-space corners are clipped to the selection boundary via actual line intersection
-	 * (for accuracy), then mapped to sub-map corners for a findPathGreedy call. All edges are collected first, finger branches are pruned, then the result is written to newEdits.
+	 * Transfers each edge of an ordered river polyline to the sub-map. Each source-map edge is processed individually: its RI-space corners are clipped to the selection boundary via actual line
+	 * intersection (for accuracy), then mapped to sub-map corners for a findPathGreedy call. Finger pruning is applied per source-map edge (not to the entire combined polyline) so that
+	 * fingers introduced by findPathGreedy are removed without accidentally pruning legitimate subsidiary rivers that share corners with adjacent segments.
 	 * <p>
-	 * Finger branches arise when findPathGreedy from corner S_B steps back toward the previous corner (because it is momentarily closer to S_C in Euclidean distance) before heading forward. This
-	 * creates a degree-3 junction and a short dead-end branch. Iterative leaf pruning removes any degree-1 corner that is not the polyline's start or end, eliminating these artifacts.
+	 * For the terminal source edge whose endpoint is adjacent to water in the source map (lake or ocean mouth), the new-graph corner is chosen as the closest water-adjacent corner near the
+	 * mapped position, so that the river reliably terminates at a lake or ocean in the sub-map.
 	 * </p>
 	 */
 	private static void transferPolylineToSubMap(List<Corner> polylineCorners, List<Edge> polylineEdges, Map<Integer, Integer> riverLevels, double riverLevelScale, Rectangle selectionBoundsRI,
-			WorldGraph newGraph, MapEdits newEdits, double originalResolution)
+			WorldGraph newGraph, MapEdits originalEdits, MapEdits newEdits, double originalResolution)
 	{
-		// Collect all sub-map edges for this polyline before writing so that fingers can be pruned.
 		Map<Integer, Integer> polylineEdgeLevels = new HashMap<>();
-		Corner firstCorner = null;
-		Corner lastCorner = null;
 
 		for (int i = 0; i < polylineEdges.size(); i++)
 		{
@@ -755,10 +760,10 @@ public class SubMapCreator
 					Corner c1 = riToNewCorner(through.get(1), selectionBoundsRI, newGraph);
 					if (c0 != null && c1 != null && !c0.equals(c1))
 					{
-						collectGreedyPathEdges(c0, c1, scaledLevel, newGraph, polylineEdgeLevels);
-						if (firstCorner == null)
-							firstCorner = c0;
-						lastCorner = c1;
+						Map<Integer, Integer> segmentEdgeLevels = new HashMap<>();
+						collectGreedyPathEdges(c0, c1, scaledLevel, newGraph, segmentEdgeLevels);
+						pruneFingers(segmentEdgeLevels, c0, c1, newGraph);
+						segmentEdgeLevels.forEach((k, v) -> polylineEdgeLevels.merge(k, v, Math::max));
 					}
 				}
 				continue;
@@ -789,26 +794,32 @@ public class SubMapCreator
 			}
 
 			Corner c0 = riToNewCorner(effectiveV0, selectionBoundsRI, newGraph);
-			Corner c1 = riToNewCorner(effectiveV1, selectionBoundsRI, newGraph);
+			// For the terminal edge of the polyline (last edge, not clipped at the selection boundary),
+			// if the source terminal corner is adjacent to water, seek the closest water-adjacent corner
+			// in the new graph so the river reliably terminates at a lake or ocean.
+			boolean isTerminalEdge = !stopAfter && i == polylineEdges.size() - 1;
+			Corner c1;
+			if (isTerminalEdge && isSourceCornerAdjacentToWater(v1, originalEdits))
+			{
+				c1 = riToNewCornerAdjacentToWater(effectiveV1, selectionBoundsRI, newGraph, newEdits);
+			}
+			else
+			{
+				c1 = riToNewCorner(effectiveV1, selectionBoundsRI, newGraph);
+			}
+
 			if (c0 != null && c1 != null && !c0.equals(c1))
 			{
 				int scaledLevel = Math.min(River.MAX_RIVER_LEVEL, (int) Math.round(edgeLevel * riverLevelScale));
-				collectGreedyPathEdges(c0, c1, scaledLevel, newGraph, polylineEdgeLevels);
-				if (firstCorner == null)
-					firstCorner = c0;
-				lastCorner = c1;
+				Map<Integer, Integer> segmentEdgeLevels = new HashMap<>();
+				collectGreedyPathEdges(c0, c1, scaledLevel, newGraph, segmentEdgeLevels);
+				pruneFingers(segmentEdgeLevels, c0, c1, newGraph);
+				segmentEdgeLevels.forEach((k, v) -> polylineEdgeLevels.merge(k, v, Math::max));
 			}
 			if (stopAfter)
 			{
 				break;
 			}
-		}
-
-		// Prune finger branches caused by findPathGreedy backtracking.
-		// Skip when start == end (isolated loop) to avoid over-pruning.
-		if (firstCorner != null && lastCorner != null && !firstCorner.equals(lastCorner))
-		{
-			pruneFingers(polylineEdgeLevels, firstCorner, lastCorner, newGraph);
 		}
 
 		for (Map.Entry<Integer, Integer> entry : polylineEdgeLevels.entrySet())
@@ -885,6 +896,74 @@ public class SubMapCreator
 		{
 			newEdits.edgeEdits.put(pathEdge.index, new EdgeEdit(pathEdge.index, scaledLevel));
 		}
+	}
+
+	/**
+	 * Returns true if any center adjacent to {@code sourceCorner} is water (using originalEdits where present, otherwise the center's own flag).
+	 */
+	private static boolean isSourceCornerAdjacentToWater(Corner sourceCorner, MapEdits originalEdits)
+	{
+		for (Center c : sourceCorner.touches)
+		{
+			CenterEdit ce = originalEdits.centerEdits.get(c.index);
+			boolean isWater = ce != null ? ce.isWater : c.isWater;
+			if (isWater)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Returns true if any center adjacent to {@code newCorner} is water according to newEdits (falling back to the center's own flag).
+	 */
+	private static boolean isNewCornerAdjacentToWater(Corner newCorner, MapEdits newEdits)
+	{
+		for (Center c : newCorner.touches)
+		{
+			CenterEdit ce = newEdits.centerEdits.get(c.index);
+			boolean isWater = ce != null ? ce.isWater : c.isWater;
+			if (isWater)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Like {@link #riToNewCorner}, but if the closest corner is not adjacent to water, searches all new-graph corners for the closest one that is adjacent to water (according to newEdits).
+	 * Falls back to the plain closest corner if no water-adjacent corner exists.
+	 */
+	private static Corner riToNewCornerAdjacentToWater(Point riPoint, Rectangle selectionBoundsRI, WorldGraph newGraph, MapEdits newEdits)
+	{
+		Corner closest = riToNewCorner(riPoint, selectionBoundsRI, newGraph);
+		if (closest == null || isNewCornerAdjacentToWater(closest, newEdits))
+		{
+			return closest;
+		}
+		double clampedX = Math.max(selectionBoundsRI.x, Math.min(selectionBoundsRI.x + selectionBoundsRI.width, riPoint.x));
+		double clampedY = Math.max(selectionBoundsRI.y, Math.min(selectionBoundsRI.y + selectionBoundsRI.height, riPoint.y));
+		double newX = (clampedX - selectionBoundsRI.x) / selectionBoundsRI.width * newGraph.getWidth();
+		double newY = (clampedY - selectionBoundsRI.y) / selectionBoundsRI.height * newGraph.getHeight();
+		double bestDist = Double.MAX_VALUE;
+		Corner bestCorner = closest;
+		for (Corner corner : newGraph.corners)
+		{
+			if (isNewCornerAdjacentToWater(corner, newEdits))
+			{
+				double dx = corner.loc.x - newX;
+				double dy = corner.loc.y - newY;
+				double dist = dx * dx + dy * dy;
+				if (dist < bestDist)
+				{
+					bestDist = dist;
+					bestCorner = corner;
+				}
+			}
+		}
+		return bestCorner;
 	}
 
 	/**

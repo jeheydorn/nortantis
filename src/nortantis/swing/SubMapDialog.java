@@ -520,8 +520,8 @@ public class SubMapDialog
 				.createPlaceholderImage(new String[] { "Drawing sub-map preview..." }, AwtBridge.fromAwtColor(SwingHelper.getTextColorForPlaceholderImages())));
 		previewPanel = new MapEditingPanel(placeholder);
 
-		previewContainer = new JPanel(new BorderLayout());
-		previewContainer.add(previewPanel, BorderLayout.CENTER);
+		previewContainer = new JPanel(new GridBagLayout());
+		previewContainer.add(previewPanel, new GridBagConstraints());
 
 		JScrollPane previewScroll = new JScrollPane(previewContainer);
 		previewWrapper.add(previewScroll, BorderLayout.CENTER);
