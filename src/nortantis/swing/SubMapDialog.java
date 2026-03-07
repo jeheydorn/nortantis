@@ -73,8 +73,14 @@ public class SubMapDialog
 	private JTextField seedTextField;
 	/** Set to true in windowOpened; guards componentResized from firing the first preview draw before the dialog is fully shown. */
 	private boolean step2DialogOpened = false;
-	/** Whether to redistribute terrain icons per-center when creating the sub-map; persists between step 1 and step 2. */
-	private boolean redistributeIcons = true;
+	/** The 1× polygon count for the current selection (computed when step 2 opens). */
+	private double oneXWorldSize;
+	/** Hides/shows the custom polygon count slider row. */
+	private RowHider sliderRowHider;
+	/** Hides/shows the amber warning shown in Custom detail mode. */
+	private RowHider customWarningRowHider;
+	/** Radio button for custom polygon count; instance field so createPreviewUpdater can read its state. */
+	private JRadioButton customRadio;
 
 	public SubMapDialog(MainWindow mainWindow)
 	{
@@ -402,7 +408,7 @@ public class SubMapDialog
 		// Compute the 1× polygon count for this selection to use as the default slider value.
 		double origMapAreaForDefault = origSettings.generatedWidth * (double) origSettings.generatedHeight;
 		double selAreaForDefault = selBoundsRI.width * selBoundsRI.height;
-		double oneXWorldSize = origSettings.worldSize * selAreaForDefault / origMapAreaForDefault;
+		oneXWorldSize = origSettings.worldSize * selAreaForDefault / origMapAreaForDefault;
 		final int minPolygonsInSubMap = 1000;
 		if (subMapWorldSize == 0)
 		{
@@ -413,7 +419,31 @@ public class SubMapDialog
 			subMapWorldSize = Math.max(minPolygonsInSubMap, Math.min(SettingsGenerator.maxWorldSize, subMapWorldSize));
 		}
 
-		// Number of polygons: slider + multiplier display.
+		// Advice label explaining key sub-map limitations.
+		JLabel adviceLabel = new JLabel("<html>"
+				+ "Sub-map land shapes are approximate: each sub-map uses a new random polygon grid, "
+				+ "so coastlines will differ slightly from the original. "
+				+ "After creating a sub-map, check that any cities or icons near shores haven't shifted onto water, "
+				+ "and that rivers follow the expected paths."
+				+ "</html>");
+		controlOrganizer.addLeftAlignedComponent(adviceLabel, 0, 8, false);
+
+		// Number of polygons: radio buttons to choose between matching source detail or a custom level.
+		final int exactOneXSize = (int) Math.round(Math.max(minPolygonsInSubMap, oneXWorldSize));
+		JRadioButton matchSourceRadio = new JRadioButton(
+				String.format("Match source detail (\u2248%d polygons)", exactOneXSize));
+		customRadio = new JRadioButton("Custom:");
+		ButtonGroup detailModeGroup = new ButtonGroup();
+		detailModeGroup.add(matchSourceRadio);
+		detailModeGroup.add(customRadio);
+		// Default: match source detail.
+		matchSourceRadio.setSelected(true);
+		subMapWorldSize = exactOneXSize;
+
+		controlOrganizer.addLabelAndComponentsHorizontalWithTopInset(
+				"Number of polygons:", "", Arrays.asList(matchSourceRadio, customRadio), topInset);
+
+		// Slider row (shown only in Custom mode).
 		JSlider rawSlider = new JSlider(minPolygonsInSubMap, SettingsGenerator.maxWorldSize, subMapWorldSize);
 		rawSlider.setMajorTickSpacing(8000);
 		rawSlider.setMinorTickSpacing(1000);
@@ -438,11 +468,40 @@ public class SubMapDialog
 			}
 		}, null);
 		detailSlider = detailSliderWithValue.slider;
-		String polygonsTooltip = "<html>The number of Voronoi polygons in the sub-map, which controls its level of detail.<br>"
-				+ "The multiplier shows how many times more polygons the sub-map has relative<br>"
-				+ "to the equivalent area of the source map. Values below 1\u00d7 mean less detail.<br>"
-				+ "Values above 1\u00d7 mean more detail. The number of polygons must be between " + minPolygonsInSubMap + "<br>and " + SettingsGenerator.maxWorldSize + ".</html>";
-		controlOrganizer.addLabelAndComponentsHorizontalWithTopInset("Number of polygons:", polygonsTooltip, Arrays.asList(detailSlider, detailSliderWithValue.valueDisplay), topInset);
+		sliderRowHider = controlOrganizer.addComponentsHorizontal(Arrays.asList(detailSlider, detailSliderWithValue.valueDisplay));
+		sliderRowHider.setVisible(false);
+
+		// Warning shown when Custom mode is selected.
+		JLabel customWarningLabel = new JLabel("<html>"
+				+ "At custom detail levels, icons are redistributed across the new polygon grid. "
+				+ "At higher than source detail, icons appear smaller and may drift away from "
+				+ "coastlines and mountain ranges. At lower detail, they appear larger and sparser."
+				+ "</html>");
+		customWarningLabel.setForeground(new java.awt.Color(160, 90, 0));
+		customWarningRowHider = controlOrganizer.addLeftAlignedComponent(customWarningLabel, 2, 8, false);
+		customWarningRowHider.setVisible(false);
+
+		// Wire radio button listeners.
+		matchSourceRadio.addActionListener(e ->
+		{
+			subMapWorldSize = exactOneXSize;
+			sliderRowHider.setVisible(false);
+			customWarningRowHider.setVisible(false);
+			step2Dialog.revalidate();
+			triggerPreviewRedraw();
+		});
+		customRadio.addActionListener(e ->
+		{
+			subMapWorldSize = detailSlider.getValue();
+			sliderRowHider.setVisible(true);
+			customWarningRowHider.setVisible(true);
+			step2Dialog.revalidate();
+			updateDetailLevelState();
+			if (!isTooDetailed())
+			{
+				triggerPreviewRedraw();
+			}
+		});
 
 		// Random seed.
 		seedTextField = new JTextField(String.valueOf(subMapSeed), 10);
@@ -490,16 +549,6 @@ public class SubMapDialog
 		newSeedButton.setToolTipText(Translation.get("theme.newSeed.tooltip"));
 		newSeedButton.addActionListener(e -> seedTextField.setText(String.valueOf(Helper.safeAbs(new Random().nextInt()))));
 		controlOrganizer.addLabelAndComponentsHorizontalWithTopInset("Random seed:", "", Arrays.asList(seedTextField, newSeedButton), topInset);
-
-		// Redistribute icons checkbox.
-		JCheckBox redistributeCheckBox = new JCheckBox();
-		redistributeCheckBox.setSelected(redistributeIcons);
-		redistributeCheckBox.addActionListener(e -> redistributeIcons = redistributeCheckBox.isSelected());
-		controlOrganizer.addLabelAndComponent("Redistribute icons:",
-				"<html>When enabled, redistributes mountains, hills, dunes, and trees across<br>"
-						+ "the sub-map based on each polygon's coverage in the source map.<br>"
-						+ "More-detailed sub-maps receive more icons; less-detailed ones receive fewer.<br>" + "Disable to simply copy icons as-is.</html>",
-				redistributeCheckBox, topInset);
 
 		// Error label (shown only when the detail level is too high).
 		errorLabel = new JLabel("Detail level too high – maximum is 32,000 polygons. Reduce the selected area or lower the detail level.");
@@ -651,7 +700,8 @@ public class SubMapDialog
 				// Called on background thread by MapUpdater.
 				try
 				{
-					MapSettings settings = SubMapCreator.createSubMapSettings(origSettings, origGraph, origEdits, selBoundsRI, subMapWorldSize, origResolution, subMapSeed, redistributeIcons);
+					boolean redistributeIcons = customRadio != null && customRadio.isSelected();
+				MapSettings settings = SubMapCreator.createSubMapSettings(origSettings, origGraph, origEdits, selBoundsRI, subMapWorldSize, origResolution, subMapSeed, redistributeIcons);
 					// Set resolution to 1.0 as a baseline; MapCreator.createMap will override it via
 					// Background.calcMapBoundsAndAdjustResolutionIfNeeded to fit the maxMapSize passed to the updater.
 					settings.resolution = 1.0;

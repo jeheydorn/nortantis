@@ -738,6 +738,7 @@ public class SubMapCreator
 		Map<Integer, Integer> polylineEdgeLevels = new HashMap<>();
 		Corner firstCorner = null;
 		Corner lastCorner = null;
+		boolean lastEdgeWasStopAfter = false;
 
 		for (int i = 0; i < polylineEdges.size(); i++)
 		{
@@ -803,13 +804,17 @@ public class SubMapCreator
 			}
 
 			Corner c0 = riToNewCorner(effectiveV0, selectionBoundsRI, newGraph);
-			// For the terminal edge of the polyline (last edge, not clipped at the selection boundary),
-			// if the source terminal corner is adjacent to water, seek the closest water-adjacent corner
-			// in the new graph so the river reliably terminates at a lake or ocean.
-			boolean isTerminalEdge = !stopAfter && i == polylineEdges.size() - 1;
 			Corner c1;
-			if (isTerminalEdge && isSourceCornerAdjacentToWater(v1, originalEdits))
+			if (stopAfter)
 			{
+				// River exits the selection: snap to the closest border corner so the river reliably
+				// reaches the map edge rather than stopping at the nearest interior corner.
+				c1 = riToNewBorderCorner(effectiveV1, selectionBoundsRI, newGraph);
+			}
+			else if (i == polylineEdges.size() - 1 && isSourceCornerAdjacentToWater(v1, originalEdits))
+			{
+				// Terminal edge whose source endpoint is adjacent to water: seek the closest
+				// water-adjacent corner so the river reliably terminates at a lake or ocean.
 				c1 = riToNewCornerAdjacentToWater(effectiveV1, selectionBoundsRI, newGraph, newEdits);
 			}
 			else
@@ -830,6 +835,7 @@ public class SubMapCreator
 			}
 			if (stopAfter)
 			{
+				lastEdgeWasStopAfter = true;
 				break;
 			}
 		}
@@ -841,6 +847,28 @@ public class SubMapCreator
 		if (firstCorner != null && lastCorner != null && !firstCorner.equals(lastCorner))
 		{
 			pruneFingers(polylineEdgeLevels, firstCorner, lastCorner, newGraph);
+		}
+
+		// If the source polyline's terminal corner is adjacent to water but the last new-graph corner
+		// is not, the sub-map Voronoi may have placed the lake/ocean slightly farther than the
+		// source RI position. Extend the river by up to 2 hops via BFS to reach a water-adjacent
+		// corner. This is skipped for rivers that exit the selection (stopAfter), which are already
+		// handled by snapping to the border.
+		if (!lastEdgeWasStopAfter && lastCorner != null && !polylineEdgeLevels.isEmpty())
+		{
+			Corner sourceTerminal = polylineCorners.get(polylineCorners.size() - 1);
+			if (isSourceCornerAdjacentToWater(sourceTerminal, originalEdits) && !isNewCornerAdjacentToWater(lastCorner, newEdits))
+			{
+				Corner nearbyWater = findNearbyWaterCorner(lastCorner, newEdits, 2);
+				if (nearbyWater != null)
+				{
+					int extensionLevel = polylineEdgeLevels.values().stream().mapToInt(Integer::intValue).max().getAsInt();
+					Map<Integer, Integer> extensionEdges = new HashMap<>();
+					collectGreedyPathEdges(lastCorner, nearbyWater, extensionLevel, newGraph, extensionEdges);
+					extensionEdges.forEach((k, v) -> polylineEdgeLevels.merge(k, v, Math::max));
+					lastCorner = nearbyWater;
+				}
+			}
 		}
 
 		for (Map.Entry<Integer, Integer> entry : polylineEdgeLevels.entrySet())
@@ -917,6 +945,70 @@ public class SubMapCreator
 		{
 			newEdits.edgeEdits.put(pathEdge.index, new EdgeEdit(pathEdge.index, scaledLevel));
 		}
+	}
+
+	/**
+	 * Like {@link #riToNewCorner}, but searches for the closest border corner ({@code isBorder == true}) instead of the closest corner overall. Used when a river exits the selection boundary
+	 * so that the river reliably reaches the sub-map edge rather than stopping at an interior corner that happens to be nearest to the boundary intersection point.
+	 */
+	private static Corner riToNewBorderCorner(Point riPoint, Rectangle selectionBoundsRI, WorldGraph newGraph)
+	{
+		double clampedX = Math.max(selectionBoundsRI.x, Math.min(selectionBoundsRI.x + selectionBoundsRI.width, riPoint.x));
+		double clampedY = Math.max(selectionBoundsRI.y, Math.min(selectionBoundsRI.y + selectionBoundsRI.height, riPoint.y));
+		double newX = (clampedX - selectionBoundsRI.x) / selectionBoundsRI.width * newGraph.getWidth();
+		double newY = (clampedY - selectionBoundsRI.y) / selectionBoundsRI.height * newGraph.getHeight();
+		double bestDist = Double.MAX_VALUE;
+		Corner bestCorner = null;
+		for (Corner corner : newGraph.corners)
+		{
+			if (corner.isBorder)
+			{
+				double dx = corner.loc.x - newX;
+				double dy = corner.loc.y - newY;
+				double dist = dx * dx + dy * dy;
+				if (dist < bestDist)
+				{
+					bestDist = dist;
+					bestCorner = corner;
+				}
+			}
+		}
+		// Fall back to the plain closest corner if no border corner is found (shouldn't normally happen).
+		return bestCorner != null ? bestCorner : riToNewCorner(riPoint, selectionBoundsRI, newGraph);
+	}
+
+	/**
+	 * BFS outward from {@code from} in the new graph's corner adjacency graph, searching up to {@code maxHops} hops for a corner adjacent to water. Returns the first water-adjacent corner found,
+	 * or {@code null} if none is reachable within the hop limit.
+	 */
+	private static Corner findNearbyWaterCorner(Corner from, MapEdits newEdits, int maxHops)
+	{
+		Set<Integer> visited = new HashSet<>();
+		Queue<Corner> queue = new LinkedList<>();
+		visited.add(from.index);
+		queue.add(from);
+		for (int hop = 0; hop < maxHops && !queue.isEmpty(); hop++)
+		{
+			int levelSize = queue.size();
+			for (int j = 0; j < levelSize; j++)
+			{
+				Corner current = queue.poll();
+				for (Corner neighbor : current.adjacent)
+				{
+					if (visited.contains(neighbor.index))
+					{
+						continue;
+					}
+					visited.add(neighbor.index);
+					if (isNewCornerAdjacentToWater(neighbor, newEdits))
+					{
+						return neighbor;
+					}
+					queue.add(neighbor);
+				}
+			}
+		}
+		return null;
 	}
 
 	/**
