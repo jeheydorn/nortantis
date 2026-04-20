@@ -33,6 +33,9 @@ public class MapApiServer
 	private final HttpServer server;
 	private static final int DEFAULT_PORT = 8080;
 
+	private static final String TOKEN_ENV_VAR = "NORTANTIS_API_TOKEN";
+	private final String apiToken;
+
 	private static final int MIN_CUSTOM_SIZE = 256;
 	private static final int MAX_CUSTOM_SIZE = 8192;
 	private static final double MAX_RESOLUTION = 2.0;
@@ -67,8 +70,9 @@ public class MapApiServer
 		TEXTURE_SLUG_TO_NAME.put("declaration", "declaration of independence back.png");
 	}
 
-	public MapApiServer(int port) throws IOException
+	public MapApiServer(int port, String apiToken) throws IOException
 	{
+		this.apiToken = apiToken;
 		server = HttpServer.create(new InetSocketAddress(port), 0);
 		server.setExecutor(Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors()));
 
@@ -274,6 +278,8 @@ public class MapApiServer
 	{
 		if (!requireMethod(exchange, "POST"))
 			return;
+		if (!requireAuth(exchange))
+			return;
 
 		try
 		{
@@ -312,6 +318,8 @@ public class MapApiServer
 	private void handleGenerateFromSettings(HttpExchange exchange) throws IOException
 	{
 		if (!requireMethod(exchange, "POST"))
+			return;
+		if (!requireAuth(exchange))
 			return;
 
 		try
@@ -852,6 +860,26 @@ public class MapApiServer
 		return true;
 	}
 
+	private boolean requireAuth(HttpExchange exchange) throws IOException
+	{
+		if (apiToken == null || apiToken.isBlank())
+			return true;
+
+		String authHeader = exchange.getRequestHeaders().getFirst("Authorization");
+		if (authHeader == null || authHeader.isBlank())
+		{
+			sendJson(exchange, 401, "{\"error\":\"Missing Authorization header. Use: Authorization: Bearer <token>\"}");
+			return false;
+		}
+		String prefix = "Bearer ";
+		if (!authHeader.startsWith(prefix) || !authHeader.substring(prefix.length()).equals(apiToken))
+		{
+			sendJson(exchange, 403, "{\"error\":\"Invalid token\"}");
+			return false;
+		}
+		return true;
+	}
+
 	private static void sendImage(HttpExchange exchange, byte[] data, String format, long seed) throws IOException
 	{
 		String contentType = format.equals("jpg") ? "image/jpeg" : "image/png";
@@ -902,9 +930,20 @@ public class MapApiServer
 			}
 		}
 
-		MapApiServer apiServer = new MapApiServer(port);
+		String token = System.getenv(TOKEN_ENV_VAR);
+		MapApiServer apiServer = new MapApiServer(port, token);
 		apiServer.start();
 		System.out.println("Nortantis Map API running at http://localhost:" + port);
+		if (token != null && !token.isBlank())
+		{
+			System.out.println("Authentication: ENABLED (token set via " + TOKEN_ENV_VAR + ")");
+			System.out.println("  Protected: /api/maps/*");
+			System.out.println("  Public:    /api/health, /api/options/*");
+		}
+		else
+		{
+			System.out.println("Authentication: DISABLED (set " + TOKEN_ENV_VAR + " to enable)");
+		}
 		System.out.println();
 		System.out.println("Endpoints:");
 		System.out.println("  GET  /api/health                      - Health check");

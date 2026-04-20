@@ -52,6 +52,8 @@ tasks.register<JavaExec>("runApi") {
         "-Djava.awt.headless=true",
         "-Xmx4g",
     )
+    // Pass NORTANTIS_API_TOKEN env var through to the server process
+    environment("NORTANTIS_API_TOKEN", System.getenv("NORTANTIS_API_TOKEN") ?: "")
     // Pass command line args, e.g., ./gradlew runApi --args="9090"
     if (project.hasProperty("apiPort")) {
         args = listOf(project.property("apiPort").toString())
