@@ -772,6 +772,11 @@ public class MapSettings implements Serializable
 		return font.getName() + "\t" + font.getStyle().value + "\t" + (int) font.getSize();
 	}
 
+	public void parseJsonForApi(String json)
+	{
+		parseFromJson(json);
+	}
+
 	private void parseFromJson(String fileContents)
 	{
 		JSONObject root = null;
