@@ -2385,21 +2385,17 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	}
 
 	/**
-	 * Shows the welcome message plus, unless the user has hidden it (see the About dialog's checkbox), a support panel asking for
-	 * donations/book purchases. Shown once at launch when no map is passed in on the command line, and never shown again until the app is
-	 * relaunched.
+	 * Shows the welcome message plus a support panel with the website/blog/source links and, unless the user has hidden it via its own
+	 * checkbox, an ask for donations/book purchases. Shown once at launch when no map is passed in on the command line, and never shown
+	 * again until the app is relaunched.
 	 */
 	private void showStartupScreen()
 	{
 		// mainWindow.welcome and mainWindow.welcome.line2 were split into two lines for the old, narrow placeholder-image rendering;
 		// the overlay has plenty of width, so join them back into a single sentence here rather than adding new translation keys.
 		showCanvasMessage(Translation.get("mainWindow.welcome") + " " + Translation.get("mainWindow.welcome.line2"));
-		if (!UserPreferences.getInstance().hideStartupSupportPanel)
-		{
-			// includeHideOnStartupCheckbox is false here: that checkbox only lives in the About dialog, since this panel is only ever
-			// shown when the preference already says to show it.
-			mapCanvasOverlay.setSupportPanel(new SupportPanel(SupportPanel.defaultContentWidth, false));
-		}
+		boolean showAskCard = !UserPreferences.getInstance().hideStartupSupportPanel;
+		mapCanvasOverlay.setSupportPanel(new SupportPanel(SupportPanel.defaultContentWidth, showAskCard));
 	}
 
 	void handleThemeChange(boolean refreshImagePreviews)

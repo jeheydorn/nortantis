@@ -62,8 +62,7 @@ public class MapCanvasOverlay extends JPanel
 			add(messagePanel, 0);
 		}
 
-		revalidate();
-		repaint();
+		relayoutAndRepaint();
 	}
 
 	/**
@@ -81,7 +80,18 @@ public class MapCanvasOverlay extends JPanel
 		{
 			add(supportPanel, 0);
 		}
-		revalidate();
+		relayoutAndRepaint();
+	}
+
+	/**
+	 * Repositions children and repaints immediately, rather than via revalidate() (which defers layout to a later pass). A child's size
+	 * changing here - e.g. the support panel growing when its checkbox is added - moves where other children need to be repainted, so
+	 * layout must be resolved before repaint() runs, or repaint() targets the stale (pre-layout) bounds and part of the changed area is
+	 * never redrawn until something else (e.g. a window resize) forces a full repaint.
+	 */
+	private void relayoutAndRepaint()
+	{
+		doLayout();
 		repaint();
 	}
 

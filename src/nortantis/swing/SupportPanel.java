@@ -29,13 +29,13 @@ public class SupportPanel extends JPanel
 	private static final int rowGap = 14;
 	private static final int cardPadding = 14;
 	private static final int cardArc = 18;
-	private static final int checkboxGap = 10;
+	private static final int checkboxGap = 4;
 
 	/** A warm rose-red for the heart accent, rather than an alarming pure red, to keep the tone friendly rather than urgent. */
 	private static final Color heartColor = new Color(214, 64, 90);
 
 	private static final String websiteUrl = "https://jandjheydorn.com/nortantis";
-	private static final String blogUrl = "https://jandjheydorn.com/";
+	private static final String blogUrl = "https://jandjheydorn.com/blog";
 	private static final String sourceCodeUrl = "https://github.com/jeheydorn/nortantis";
 	private static final String bookUrl = "https://jandjheydorn.com/";
 	private static final String donateUrl = "https://jandjheydorn.com/donate";
@@ -47,12 +47,12 @@ public class SupportPanel extends JPanel
 	/**
 	 * @param contentWidth
 	 *            The fixed width, in pixels, to wrap this panel's rows to.
-	 * @param includeHideOnStartupCheckbox
-	 *            Whether to include a checkbox, at the bottom of the ask card, for {@link UserPreferences#hideStartupSupportPanel}. This
-	 *            should be true only for the About dialog's instance - the startup screen's own instance only exists when that
-	 *            preference already says to show it, so a checkbox there would be redundant.
+	 * @param showAskCard
+	 *            Whether to show the ask card (with its "hide this on startup" checkbox) above the website/blog/source links. Pass false
+	 *            when {@link UserPreferences#hideStartupSupportPanel} says to hide it - the utility links still show either way, so this
+	 *            only ever hides the ask itself, never this whole panel.
 	 */
-	public SupportPanel(int contentWidth, boolean includeHideOnStartupCheckbox)
+	public SupportPanel(int contentWidth, boolean showAskCard)
 	{
 		setOpaque(false);
 		setLayout(null);
@@ -69,26 +69,26 @@ public class SupportPanel extends JPanel
 
 		// The ask comes first, in its own highlighted card, since it's the point of this panel; the utility links follow below at the
 		// normal text size.
-		JPanel askRow = createFlowRow(4, 4);
-		buildAskRow(askRow);
-
-		JCheckBox hideOnStartupCheckbox = null;
-		if (includeHideOnStartupCheckbox)
+		if (showAskCard)
 		{
-			hideOnStartupCheckbox = new JCheckBox(Translation.get("startup.supportPanel.hideCheckbox"));
+			JPanel askRow = createFlowRow(4, 4);
+			buildAskRow(askRow);
+
+			JCheckBox hideOnStartupCheckbox = new JCheckBox(Translation.get("startup.supportPanel.hideCheckbox"));
 			hideOnStartupCheckbox.setOpaque(false);
+			// Kept small so it doesn't compete with the ask for attention.
+			hideOnStartupCheckbox.setFont(hideOnStartupCheckbox.getFont().deriveFont(hideOnStartupCheckbox.getFont().getSize2D() - 2f));
 			hideOnStartupCheckbox.setSelected(UserPreferences.getInstance().hideStartupSupportPanel);
-			JCheckBox checkboxRef = hideOnStartupCheckbox;
 			hideOnStartupCheckbox.addActionListener(event ->
 			{
-				UserPreferences.getInstance().hideStartupSupportPanel = checkboxRef.isSelected();
+				UserPreferences.getInstance().hideStartupSupportPanel = hideOnStartupCheckbox.isSelected();
 				UserPreferences.getInstance().save();
 			});
-		}
 
-		JComponent askCard = wrapInCard(askRow, hideOnStartupCheckbox, contentWidth);
-		y = addComponent(askCard, contentWidth, y);
-		y += rowGap;
+			JComponent askCard = wrapInCard(askRow, hideOnStartupCheckbox, contentWidth);
+			y = addComponent(askCard, contentWidth, y);
+			y += rowGap;
+		}
 
 		JPanel linksRow = createFlowRow(4, 2);
 		linksRow.add(SwingHelper.createHyperlink(Translation.get("startup.linkWebsite"), websiteUrl));
@@ -96,6 +96,8 @@ public class SupportPanel extends JPanel
 		linksRow.add(SwingHelper.createHyperlink(Translation.get("startup.linkBlog"), blogUrl));
 		linksRow.add(createLinkSeparator());
 		linksRow.add(SwingHelper.createHyperlink(Translation.get("startup.linkSourceCode"), sourceCodeUrl));
+		linksRow.add(createLinkSeparator());
+		linksRow.add(SwingHelper.createHyperlink(Translation.get("startup.linkDonate"), donateUrl));
 		y = addComponent(linksRow, contentWidth, y);
 
 		fixedPreferredSize = new Dimension(contentWidth, y);
@@ -109,8 +111,8 @@ public class SupportPanel extends JPanel
 	}
 
 	/**
-	 * Wraps content (and, if given, a checkbox below it) in a softly rounded card tinted with the current look and feel's own colors, so
-	 * the ask reads as a deliberate callout without introducing an unrelated accent color.
+	 * Wraps content, plus a checkbox below it, in a softly rounded card tinted with the current look and feel's own colors, so the ask
+	 * reads as a deliberate callout without introducing an unrelated accent color.
 	 */
 	private JComponent wrapInCard(JPanel content, JCheckBox checkbox, int width)
 	{
@@ -131,10 +133,13 @@ public class SupportPanel extends JPanel
 			{
 				Graphics2D g2 = (Graphics2D) g.create();
 				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+				// drawRoundRect's 1px stroke is centered on the path, so at inset 0 (the top/left edges) half the stroke would fall
+				// outside this component's paintable area and get clipped. Insetting by 1 on all sides gives the stroke room to render
+				// fully everywhere, not just at the bottom/right (which already had margin from the -1 on width/height).
 				g2.setColor(cardBackgroundColor);
-				g2.fillRoundRect(0, 0, getWidth() - 1, getHeight() - 1, cardArc, cardArc);
+				g2.fillRoundRect(1, 1, getWidth() - 2, getHeight() - 2, cardArc, cardArc);
 				g2.setColor(cardBorderColor);
-				g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, cardArc, cardArc);
+				g2.drawRoundRect(1, 1, getWidth() - 2, getHeight() - 2, cardArc, cardArc);
 				g2.dispose();
 				super.paintComponent(g);
 			}
@@ -142,19 +147,31 @@ public class SupportPanel extends JPanel
 		card.setOpaque(false);
 		card.add(content);
 
-		int cardHeight = cardPadding + contentSize.height;
-		if (checkbox != null)
-		{
-			Dimension checkboxSize = checkbox.getPreferredSize();
-			int checkboxY = cardPadding + contentSize.height + checkboxGap;
-			checkbox.setBounds((width - checkboxSize.width) / 2, checkboxY, checkboxSize.width, checkboxSize.height);
-			card.add(checkbox);
-			cardHeight = checkboxY + checkboxSize.height;
-		}
-		cardHeight += cardPadding;
+		Dimension checkboxSize = measureCheckboxSize(checkbox);
+		int checkboxY = cardPadding + contentSize.height + checkboxGap;
+		checkbox.setBounds((width - checkboxSize.width) / 2, checkboxY, checkboxSize.width, checkboxSize.height);
+		card.add(checkbox);
+		int cardHeight = checkboxY + checkboxSize.height + cardPadding;
 
 		card.setPreferredSize(new Dimension(width, cardHeight));
 		return card;
+	}
+
+	/**
+	 * {@link JCheckBox#getPreferredSize()} under-measures the text width here (likely a stale metric cached from before this checkbox's
+	 * font was shrunk after construction), which clipped the checkbox's text. Measuring directly from font metrics, with a generous
+	 * allowance for the checkbox icon and its gap from the text, avoids that.
+	 */
+	private static Dimension measureCheckboxSize(JCheckBox checkbox)
+	{
+		FontMetrics metrics = checkbox.getFontMetrics(checkbox.getFont());
+		int textWidth = metrics.stringWidth(checkbox.getText());
+		int iconSize = 16;
+		// The icon allowance is deliberately more generous than iconSize alone (28 vs. 16): FlatLaf's checkbox icon reserves extra
+		// horizontal space beyond the visible glyph (e.g. for its hover/focus highlight), and under-allowing here clips the text.
+		int width = textWidth + 28 + checkbox.getIconTextGap() + 12;
+		int height = Math.max(metrics.getHeight(), iconSize) + 4;
+		return new Dimension(width, height);
 	}
 
 	private int addComponent(JComponent component, int width, int y)
@@ -194,10 +211,11 @@ public class SupportPanel extends JPanel
 		heart.setFont(askFont.deriveFont(askFont.getSize2D() + 2f));
 		askRow.add(heart);
 
-		addWords(askRow, Translation.get("startup.supportAsk.full"));
+		addWords(askRow, Translation.get("startup.supportAsk.beforeDonateLink"));
+		askRow.add(createBoldAskLink(Translation.get("startup.supportAsk.donateLinkText"), donateUrl));
+		addWords(askRow, Translation.get("startup.supportAsk.betweenLinks"));
 		askRow.add(createBoldAskLink(Translation.get("startup.supportAsk.bookLinkText"), bookUrl));
-		addWords(askRow, Translation.get("startup.supportAsk.fullMiddle"));
-		askRow.add(createBoldAskLink(Translation.get("startup.supportAsk.donationLinkTextWithPeriod"), donateUrl));
+		addWords(askRow, Translation.get("startup.supportAsk.afterBookLink"));
 	}
 
 	/**
