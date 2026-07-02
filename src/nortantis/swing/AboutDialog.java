@@ -12,10 +12,19 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
 @SuppressWarnings("serial")
 public class AboutDialog extends JDialog
 {
+	/**
+	 * Width to wrap the bug-report line and the support panel to. Chosen to keep the dialog close to its original overall size (image
+	 * width + a modest text column), rather than the much wider {@link SupportPanel#defaultContentWidth} used for the roomier map canvas
+	 * overlay.
+	 */
+	private static final int textColumnWidth = 320;
+
 	public AboutDialog(MainWindow mainWindow)
 	{
 		super(mainWindow, Translation.get("about.title"), Dialog.ModalityType.APPLICATION_MODAL);
@@ -43,18 +52,16 @@ public class AboutDialog extends JDialog
 
 		JPanel rightPanel = new JPanel();
 		rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
-		rightPanel.setPreferredSize(new Dimension(nortantisImage.getWidth(), nortantisImage.getHeight()));
 		JLabel text = new JLabel("<html>" + Translation.get("about.version", MapSettings.currentVersion) + "<html>");
 		rightPanel.add(text);
 
 		rightPanel.add(new JLabel(" "));
 
-		rightPanel.add(new JLabel("<html>" + Translation.get("about.bugReport") + " </html>"));
-		rightPanel.add(SwingHelper.createHyperlink("github.com/jeheydorn/nortantis/issues", "https://github.com/jeheydorn/nortantis/issues"));
+		// The bug-report line comes before the support panel, since reporting a problem is a more immediate need than the support ask.
+		rightPanel.add(createBugReportRow());
 
 		rightPanel.add(new JLabel(" "));
-		rightPanel.add(new JLabel("<html>" + Translation.get("about.support") + "</html>"));
-		rightPanel.add(SwingHelper.createHyperlink("jandjheydorn.com/", "https://jandjheydorn.com/"));
+		rightPanel.add(new SupportPanel(textColumnWidth, true));
 
 		rightPanel.add(Box.createVerticalGlue());
 
@@ -78,4 +85,62 @@ public class AboutDialog extends JDialog
 		pack();
 	}
 
+	/**
+	 * A centered, word-wrapped line ending in an inline "here" hyperlink (with the URL shown on hover, like other links), rather than a
+	 * separate raw-URL label below plain text.
+	 */
+	private static JComponent createBugReportRow()
+	{
+		List<JComponent> items = new ArrayList<>();
+		for (String word : Translation.get("about.bugReport").trim().split("\\s+"))
+		{
+			if (!word.isEmpty())
+			{
+				items.add(new JLabel(word));
+			}
+		}
+		items.add(SwingHelper.createHyperlink(Translation.get("about.bugReportLinkText"), "https://github.com/jeheydorn/nortantis/issues"));
+		return new WrappedTextRow(textColumnWidth, 4, 4, items);
+	}
+
+	/**
+	 * A centered {@link WrapLayout} flow of words/links wrapped to a fixed width, with fixed preferred/minimum/maximum size so it behaves
+	 * correctly as a direct child of a BoxLayout container. Without the fixed maximum size, a null-layout JPanel defaults to
+	 * (Integer.MAX_VALUE, Integer.MAX_VALUE), which breaks BoxLayout's size calculations (see SupportPanel.getMaximumSize for the same
+	 * fix, needed there for the same reason).
+	 */
+	private static class WrappedTextRow extends JPanel
+	{
+		private final Dimension fixedPreferredSize;
+
+		WrappedTextRow(int width, int hgap, int vgap, List<JComponent> items)
+		{
+			setOpaque(false);
+			setLayout(new WrapLayout(FlowLayout.CENTER, hgap, vgap));
+			for (JComponent item : items)
+			{
+				add(item);
+			}
+			setSize(width, 1);
+			fixedPreferredSize = new Dimension(width, super.getPreferredSize().height);
+		}
+
+		@Override
+		public Dimension getPreferredSize()
+		{
+			return fixedPreferredSize;
+		}
+
+		@Override
+		public Dimension getMinimumSize()
+		{
+			return fixedPreferredSize;
+		}
+
+		@Override
+		public Dimension getMaximumSize()
+		{
+			return fixedPreferredSize;
+		}
+	}
 }

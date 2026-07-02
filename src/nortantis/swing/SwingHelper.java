@@ -561,6 +561,7 @@ public class SwingHelper
 		JLabel link = new JLabel(text);
 		link.setForeground(new Color(26, 113, 228));
 		link.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		link.setToolTipText(URL);
 		link.addMouseListener(new MouseAdapter()
 		{
 			@Override

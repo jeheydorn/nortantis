@@ -80,6 +80,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	public MapEdits edits;
 
 	JScrollPane mapEditingScrollPane;
+	private MapCanvasOverlay mapCanvasOverlay;
 	// Controls how large 100% zoom is, in pixels.
 	final double oneHundredPercentMapWidth = 4096;
 	public MapEditingPanel mapEditingPanel;
@@ -167,7 +168,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		if (!isMapOpen)
 		{
-			setPlaceholderImage(new String[] { Translation.get("mainWindow.welcome"), Translation.get("mainWindow.welcome.line2") });
+			showStartupScreen();
 			enableOrDisableFieldsThatRequireMap(false, null, false);
 		}
 
@@ -396,7 +397,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		splitPane0.setDividerLocation(9999999);
 		splitPane0.setResizeWeight(1.0);
 
-		JSplitPane splitPane1 = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, splitPane0, mapEditingScrollPane);
+		JSplitPane splitPane1 = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, splitPane0, mapCanvasOverlay);
 		splitPane1.setOneTouchExpandable(true);
 		JSplitPane splitPane2 = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, splitPane1, toolsPanel);
 		splitPane2.setResizeWeight(1.0);
@@ -558,6 +559,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		mapEditingScrollPane = new JScrollPane(mapEditingPanel);
 		mapEditingScrollPane.setMinimumSize(new Dimension(500, themePanel.getMinimumSize().height));
+		mapCanvasOverlay = new MapCanvasOverlay(mapEditingScrollPane);
 
 		mapEditingScrollPane.addComponentListener(new ComponentAdapter()
 		{
@@ -682,7 +684,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				showAsDrawing(false);
 				mapEditingPanel.clearAllSelectionsAndHighlights();
-				setPlaceholderImage(new String[] { Translation.get("mainWindow.mapFailedToDraw"), Translation.get("mainWindow.mapFailedRetry", fileMenu.getText(), refreshMenuItem.getText()) });
+				showCanvasMessage(Translation.get("mainWindow.mapFailedToDraw"), Translation.get("mainWindow.mapFailedRetry", fileMenu.getText(), refreshMenuItem.getText()));
 
 				// In theory, enabling fields now could lead to the undoer not
 				// working quite right since edits might not have been created.
@@ -1667,6 +1669,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		if (mapEditingPanel.mapFromMapCreator != null)
 		{
+			// A real map is being shown; clear any leftover canvas message/support panel from before it was drawn.
+			mapCanvasOverlay.setMessage();
+			mapCanvasOverlay.setSupportPanel(null);
+
 			java.awt.Rectangle scrollTo = null;
 
 			if (updateScrollLocationIfZoomChanged && zoom != oldZoom)
@@ -2251,7 +2257,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		heightmapExportResolution = settings.heightmapResolution;
 		heightmapExportPath = settings.heightmapExportPath;
 
-		setPlaceholderImage(new String[] { Translation.get("mainWindow.drawingMap") });
+		showCanvasMessage(Translation.get("mainWindow.drawingMap"));
 
 		undoer.reset();
 
@@ -2353,23 +2359,47 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		return themePanel.getLandColor();
 	}
 
-	private void setPlaceholderImage(String[] message)
+	/**
+	 * Shows a message (e.g. "drawing map...", a draw-failure message) centered near the top of the map canvas instead of a map, clearing
+	 * any startup support panel. Use {@link #showStartupScreen()} instead when there is no map open yet, so the support panel is included.
+	 */
+	private void showCanvasMessage(String... message)
 	{
-		mapEditingPanel.setImage(AwtBridge.toBufferedImage(ImageHelper.getInstance().createPlaceholderImage(message, AwtBridge.fromAwtColor(SwingHelper.getTextColorForPlaceholderImages()))));
+		mapEditingPanel.setImage(null);
 
 		// Clear out the map from map creator so that causing the window to
-		// re-zoom while the placeholder image
-		// is displayed doesn't show the previous map. This can happen when the
+		// re-zoom while no map is displayed doesn't show the previous map. This can happen when the
 		// zoom is fit to window, you create
 		// a new map, then resize the window while the new map is drawing for
 		// the first time.
 		mapEditingPanel.mapFromMapCreator = null;
+
+		mapCanvasOverlay.setSupportPanel(null);
+		mapCanvasOverlay.setMessage(message);
 
 		mapEditingPanel.repaint();
 
 		// Prevent a single-pixel column on the right side of the map from remaining. Not sure why that happens.
 		revalidate();
 		repaint();
+	}
+
+	/**
+	 * Shows the welcome message plus, unless the user has hidden it (see the About dialog's checkbox), a support panel asking for
+	 * donations/book purchases. Shown once at launch when no map is passed in on the command line, and never shown again until the app is
+	 * relaunched.
+	 */
+	private void showStartupScreen()
+	{
+		// mainWindow.welcome and mainWindow.welcome.line2 were split into two lines for the old, narrow placeholder-image rendering;
+		// the overlay has plenty of width, so join them back into a single sentence here rather than adding new translation keys.
+		showCanvasMessage(Translation.get("mainWindow.welcome") + " " + Translation.get("mainWindow.welcome.line2"));
+		if (!UserPreferences.getInstance().hideStartupSupportPanel)
+		{
+			// includeHideOnStartupCheckbox is false here: that checkbox only lives in the About dialog, since this panel is only ever
+			// shown when the preference already says to show it.
+			mapCanvasOverlay.setSupportPanel(new SupportPanel(SupportPanel.defaultContentWidth, false));
+		}
 	}
 
 	void handleThemeChange(boolean refreshImagePreviews)

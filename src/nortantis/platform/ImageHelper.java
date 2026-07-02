@@ -1758,7 +1758,7 @@ public abstract class ImageHelper
 			return Image.create(1, 1, ImageType.ARGB);
 		}
 
-		Font font = Font.create(OSHelper.isLinux() ? "Z003" : OSHelper.isMac() ? "Apple Chancery" : "Gabriola", FontStyle.Plain, 30);
+		Font font = Font.create(OSHelper.getDecorativeFontFamilyName(), FontStyle.Plain, 30);
 		if (font.canDisplayUpTo(String.join("", message)) != -1)
 		{
 			font = Font.create("Serif", FontStyle.Plain, 30);

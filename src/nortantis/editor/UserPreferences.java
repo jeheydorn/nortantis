@@ -29,6 +29,7 @@ public class UserPreferences
 	public boolean hideNewMapWithSameThemeRegionColorsMessage;
 	public boolean hideGridOverlaySeizureWarning;
 	public boolean hideThemeChangedMessage;
+	public boolean hideStartupSupportPanel;
 	public Set<String> collapsedPanels = new TreeSet<>();
 	public String lastVersionFromCheck;
 	public LocalDateTime lastVersionCheckTime;
@@ -169,6 +170,11 @@ public class UserPreferences
 			tryLoad(props, "hideThemeChangedMessage", () -> hideThemeChangedMessage = Boolean.parseBoolean(props.getProperty("hideThemeChangedMessage")));
 		}
 
+		if (props.containsKey("hideStartupSupportPanel"))
+		{
+			tryLoad(props, "hideStartupSupportPanel", () -> hideStartupSupportPanel = Boolean.parseBoolean(props.getProperty("hideStartupSupportPanel")));
+		}
+
 		// If anything failed to load, preserve a copy of the original file so the user can recover values that we are about to overwrite
 		// the
 		// next time preferences are saved.
@@ -274,6 +280,7 @@ public class UserPreferences
 		props.setProperty("themePanelWidth", themePanelWidth + "");
 		props.setProperty("language", language == null ? "" : language);
 		props.setProperty("hideThemeChangedMessage", hideThemeChangedMessage + "");
+		props.setProperty("hideStartupSupportPanel", hideStartupSupportPanel + "");
 
 		try
 		{

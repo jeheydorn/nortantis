@@ -52,6 +52,16 @@ public class OSHelper
 		return isMacCache;
 	}
 
+	/**
+	 * The font family used for decorative, hand-lettered-looking headline text (e.g. the map canvas's welcome message). Different OSes
+	 * ship different fonts, so the family is chosen per-OS; callers are still responsible for falling back to a font that can display the
+	 * text (e.g. via Font.canDisplayUpTo), since none of these fonts support non-Latin scripts.
+	 */
+	public static String getDecorativeFontFamilyName()
+	{
+		return isLinux() ? "Z003" : isMac() ? "Apple Chancery" : "Gabriola";
+	}
+
 	public static Path getAppDataPath()
 	{
 		if (isWindows())

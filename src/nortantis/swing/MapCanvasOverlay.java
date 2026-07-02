@@ -1,0 +1,133 @@
+package nortantis.swing;
+
+import nortantis.util.OSHelper;
+
+import javax.swing.*;
+import java.awt.*;
+
+/**
+ * Wraps the map editing scroll pane and layers transparent, click-through panels on top of it: a message strip near the top (welcome
+ * text, "drawing map...", error messages) and, only at startup, a support panel near the bottom (donation/book links). Neither strip
+ * spans the full canvas, so mouse events for the map itself fall through the empty space between them to the scroll pane underneath -
+ * the scroll pane is a sibling that fills the whole container and sits behind the strips in z-order, so clicks outside the strips'
+ * bounds simply hit it instead.
+ */
+@SuppressWarnings("serial")
+public class MapCanvasOverlay extends JPanel
+{
+	private static final int topMargin = 24;
+	private static final int bottomMargin = 24;
+	private static final int sideMargin = 20;
+	private static final int messageFontSize = 26;
+
+	private final JScrollPane scrollPane;
+	private JPanel messagePanel;
+	private SupportPanel supportPanel;
+
+	public MapCanvasOverlay(JScrollPane scrollPane)
+	{
+		this.scrollPane = scrollPane;
+		setOpaque(false);
+		setLayout(null);
+		add(scrollPane);
+	}
+
+	/**
+	 * Shows a centered, multi-line message near the top of the canvas (e.g. the welcome text, "drawing map...", or a draw-failure
+	 * message), replacing any message currently shown. Pass no lines to clear the message.
+	 */
+	public void setMessage(String... lines)
+	{
+		if (messagePanel != null)
+		{
+			remove(messagePanel);
+			messagePanel = null;
+		}
+
+		if (lines != null && lines.length > 0)
+		{
+			messagePanel = new JPanel();
+			messagePanel.setOpaque(false);
+			messagePanel.setLayout(new BoxLayout(messagePanel, BoxLayout.Y_AXIS));
+			Color textColor = SwingHelper.getTextColorForPlaceholderImages();
+			Font font = chooseMessageFont(lines);
+			for (String line : lines)
+			{
+				JLabel label = new JLabel(line);
+				label.setForeground(textColor);
+				label.setFont(font);
+				label.setAlignmentX(CENTER_ALIGNMENT);
+				messagePanel.add(label);
+			}
+			add(messagePanel, 0);
+		}
+
+		revalidate();
+		repaint();
+	}
+
+	/**
+	 * Shows (or, if null, hides) the support panel near the bottom of the canvas. Only intended to be shown at startup, before a map is
+	 * open.
+	 */
+	public void setSupportPanel(SupportPanel panel)
+	{
+		if (supportPanel != null)
+		{
+			remove(supportPanel);
+		}
+		supportPanel = panel;
+		if (supportPanel != null)
+		{
+			add(supportPanel, 0);
+		}
+		revalidate();
+		repaint();
+	}
+
+	private static Font chooseMessageFont(String[] lines)
+	{
+		Font font = new Font(OSHelper.getDecorativeFontFamilyName(), Font.PLAIN, messageFontSize);
+		if (font.canDisplayUpTo(String.join("", lines)) != -1)
+		{
+			font = new Font(Font.SERIF, Font.PLAIN, messageFontSize);
+		}
+		return font;
+	}
+
+	@Override
+	public void doLayout()
+	{
+		Dimension size = getSize();
+		scrollPane.setBounds(0, 0, size.width, size.height);
+
+		int messageBottom = topMargin;
+		if (messagePanel != null)
+		{
+			Dimension preferred = messagePanel.getPreferredSize();
+			int x = Math.max(sideMargin, (size.width - preferred.width) / 2);
+			messagePanel.setBounds(x, topMargin, preferred.width, preferred.height);
+			messageBottom = topMargin + preferred.height;
+		}
+
+		if (supportPanel != null)
+		{
+			Dimension preferred = supportPanel.getPreferredSize();
+			int x = Math.max(sideMargin, (size.width - preferred.width) / 2);
+			int y = Math.max(messageBottom, size.height - preferred.height - bottomMargin);
+			supportPanel.setBounds(x, y, preferred.width, preferred.height);
+		}
+	}
+
+	@Override
+	public Dimension getPreferredSize()
+	{
+		return scrollPane.getPreferredSize();
+	}
+
+	@Override
+	public Dimension getMinimumSize()
+	{
+		return scrollPane.getMinimumSize();
+	}
+}
