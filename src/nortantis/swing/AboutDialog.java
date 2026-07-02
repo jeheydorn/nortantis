@@ -126,8 +126,8 @@ public class AboutDialog extends JDialog
 	}
 
 	/**
-	 * A centered, word-wrapped line ending in an inline "here" hyperlink (with the URL shown on hover, like other links), rather than a
-	 * separate raw-URL label below plain text.
+	 * A left-aligned, word-wrapped line ending in an inline "here" hyperlink (with the URL shown on hover, like other links), rather than
+	 * a separate raw-URL label below plain text.
 	 */
 	private static JComponent createBugReportRow()
 	{
@@ -140,21 +140,21 @@ public class AboutDialog extends JDialog
 			}
 		}
 		items.add(SwingHelper.createHyperlink(Translation.get("about.bugReportLinkText"), "https://github.com/jeheydorn/nortantis/issues"));
-		return new WrappedTextRow(textColumnWidth, 4, 4, items);
+		return new WrappedTextRow(textColumnWidth, FlowLayout.LEFT, 4, 4, items);
 	}
 
 	/**
-	 * A centered {@link WrapLayout} flow of words/links wrapped to a fixed width, with fixed preferred/minimum/maximum size so its wrapped
-	 * height can be measured once, up front, by the caller (see addWords-style usage in SupportPanel for the same pattern).
+	 * A {@link WrapLayout} flow of words/links wrapped to a fixed width, with fixed preferred/minimum/maximum size so its wrapped height
+	 * can be measured once, up front, by the caller (see addWords-style usage in SupportPanel for the same pattern).
 	 */
 	private static class WrappedTextRow extends JPanel
 	{
 		private final Dimension fixedPreferredSize;
 
-		WrappedTextRow(int width, int hgap, int vgap, List<JComponent> items)
+		WrappedTextRow(int width, int align, int hgap, int vgap, List<JComponent> items)
 		{
 			setOpaque(false);
-			setLayout(new WrapLayout(FlowLayout.CENTER, hgap, vgap));
+			setLayout(new WrapLayout(align, hgap, vgap));
 			for (JComponent item : items)
 			{
 				add(item);
