@@ -23,6 +23,9 @@ public class MapCanvasOverlay extends JPanel
 	private final JScrollPane scrollPane;
 	private JPanel messagePanel;
 	private SupportPanel supportPanel;
+	private String[] currentMessageLines;
+	private int supportPanelContentWidth;
+	private boolean supportPanelShowAskCard;
 
 	public MapCanvasOverlay(JScrollPane scrollPane)
 	{
@@ -38,6 +41,8 @@ public class MapCanvasOverlay extends JPanel
 	 */
 	public void setMessage(String... lines)
 	{
+		currentMessageLines = lines;
+
 		if (messagePanel != null)
 		{
 			remove(messagePanel);
@@ -66,21 +71,44 @@ public class MapCanvasOverlay extends JPanel
 	}
 
 	/**
-	 * Shows (or, if null, hides) the support panel near the bottom of the canvas. Only intended to be shown at startup, before a map is
-	 * open.
+	 * Shows (or, if false, hides) the support panel near the bottom of the canvas. Only intended to be shown at startup, before a map is
+	 * open. Takes the panel's constructor parameters, rather than a pre-built panel, so {@link #handleLookAndFeelChange()} can rebuild it
+	 * with the same parameters later.
 	 */
-	public void setSupportPanel(SupportPanel panel)
+	public void setSupportPanel(boolean show, int contentWidth, boolean showAskCard)
 	{
 		if (supportPanel != null)
 		{
 			remove(supportPanel);
+			supportPanel = null;
 		}
-		supportPanel = panel;
-		if (supportPanel != null)
+
+		if (show)
 		{
+			supportPanelContentWidth = contentWidth;
+			supportPanelShowAskCard = showAskCard;
+			supportPanel = new SupportPanel(contentWidth, showAskCard);
 			add(supportPanel, 0);
 		}
+
 		relayoutAndRepaint();
+	}
+
+	/**
+	 * Rebuilds the message and/or support panel so their colors (baked in at construction time, e.g. the support panel's card
+	 * background/border, which are computed from the current look and feel but not re-read on every paint) pick up a look-and-feel change
+	 * made while they're already showing. Without this, they'd keep the old theme's colors until the app is relaunched.
+	 */
+	public void handleLookAndFeelChange()
+	{
+		if (messagePanel != null)
+		{
+			setMessage(currentMessageLines);
+		}
+		if (supportPanel != null)
+		{
+			setSupportPanel(true, supportPanelContentWidth, supportPanelShowAskCard);
+		}
 	}
 
 	/**

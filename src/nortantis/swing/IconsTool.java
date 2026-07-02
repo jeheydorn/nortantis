@@ -945,8 +945,14 @@ public class IconsTool extends EditorTool
 		String customImagesPath = settings == null ? null : settings.customImagesPath;
 		updateIconPreviewButtons(artPack, customImagesPath);
 
-		// Trigger re-creation of image previews
-		loadSettingsIntoGUI(settings, false, true);
+		// When no map is open (e.g. a look-and-feel change on the startup screen) there are no settings to load into the GUI, and
+		// loadSettingsIntoGUI dereferences settings unconditionally. Guarding here keeps the refresh from throwing and aborting the rest
+		// of the caller's work - notably MainWindow.handleLookAndFeelChange, which rebuilds the support card right after this.
+		if (settings != null)
+		{
+			// Trigger re-creation of image previews
+			loadSettingsIntoGUI(settings, false, true);
+		}
 		unselectAnyIconsBeingEdited();
 	}
 

@@ -1193,6 +1193,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		UserPreferences.getInstance().lookAndFeel = lookAndFeel;
 		SwingUtilities.updateComponentTreeUI(this);
 		toolsPanel.handleLookAndFeelChange();
+		mapCanvasOverlay.handleLookAndFeelChange();
 		if (textSearchDialog != null)
 		{
 			textSearchDialog.handleLookAndFeelChange();
@@ -1671,7 +1672,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		{
 			// A real map is being shown; clear any leftover canvas message/support panel from before it was drawn.
 			mapCanvasOverlay.setMessage();
-			mapCanvasOverlay.setSupportPanel(null);
+			mapCanvasOverlay.setSupportPanel(false, 0, false);
 
 			java.awt.Rectangle scrollTo = null;
 
@@ -2374,7 +2375,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		// the first time.
 		mapEditingPanel.mapFromMapCreator = null;
 
-		mapCanvasOverlay.setSupportPanel(null);
+		mapCanvasOverlay.setSupportPanel(false, 0, false);
 		mapCanvasOverlay.setMessage(message);
 
 		mapEditingPanel.repaint();
@@ -2395,7 +2396,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		// the overlay has plenty of width, so join them back into a single sentence here rather than adding new translation keys.
 		showCanvasMessage(Translation.get("mainWindow.welcome") + " " + Translation.get("mainWindow.welcome.line2"));
 		boolean showAskCard = !UserPreferences.getInstance().hideStartupSupportPanel;
-		mapCanvasOverlay.setSupportPanel(new SupportPanel(SupportPanel.defaultContentWidth, showAskCard));
+		mapCanvasOverlay.setSupportPanel(true, SupportPanel.defaultContentWidth, showAskCard);
 	}
 
 	void handleThemeChange(boolean refreshImagePreviews)

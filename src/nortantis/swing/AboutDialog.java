@@ -55,6 +55,8 @@ public class AboutDialog extends JDialog
 		JPanel bottomPanel = new JPanel();
 		content.add(bottomPanel, BorderLayout.SOUTH);
 		bottomPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
+		// Extra breathing room above the Close button so the support panel's links above it don't crowd the button.
+		bottomPanel.setBorder(BorderFactory.createEmptyBorder(14, 0, 0, 0));
 		JButton closeButton = new JButton(Translation.get("about.close"));
 		closeButton.setMnemonic(KeyEvent.VK_C);
 		closeButton.addActionListener(new ActionListener()

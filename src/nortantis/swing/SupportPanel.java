@@ -40,6 +40,10 @@ public class SupportPanel extends JPanel
 	private static final String bookUrl = "https://jandjheydorn.com/";
 	private static final String donateUrl = "https://jandjheydorn.com/donate";
 
+	// Google Analytics campaign (UTM) tag for links that point at our own site. utm_content is filled in per link (see withCampaign) so
+	// individual links in this panel can be compared in Analytics.
+	private static final String campaignParameters = "utm_source=nortantis&utm_medium=app&utm_campaign=support_panel&utm_content=";
+
 	private final Dimension fixedPreferredSize;
 	private final Font askFont;
 	private final Font askFontBold;
@@ -91,13 +95,14 @@ public class SupportPanel extends JPanel
 		}
 
 		JPanel linksRow = createFlowRow(4, 2);
-		linksRow.add(SwingHelper.createHyperlink(Translation.get("startup.linkWebsite"), websiteUrl));
+		linksRow.add(SwingHelper.createHyperlink(Translation.get("startup.linkWebsite"), withCampaign(websiteUrl, "footer_website")));
 		linksRow.add(createLinkSeparator());
-		linksRow.add(SwingHelper.createHyperlink(Translation.get("startup.linkBlog"), blogUrl));
+		linksRow.add(SwingHelper.createHyperlink(Translation.get("startup.linkBlog"), withCampaign(blogUrl, "footer_blog")));
 		linksRow.add(createLinkSeparator());
+		// The source code link goes to GitHub, whose analytics we can't see, so it is left untagged.
 		linksRow.add(SwingHelper.createHyperlink(Translation.get("startup.linkSourceCode"), sourceCodeUrl));
 		linksRow.add(createLinkSeparator());
-		linksRow.add(SwingHelper.createHyperlink(Translation.get("startup.linkDonate"), donateUrl));
+		linksRow.add(SwingHelper.createHyperlink(Translation.get("startup.linkDonate"), withCampaign(donateUrl, "footer_donate")));
 		y = addComponent(linksRow, contentWidth, y);
 
 		fixedPreferredSize = new Dimension(contentWidth, y);
@@ -212,15 +217,30 @@ public class SupportPanel extends JPanel
 		askRow.add(heart);
 
 		addWords(askRow, Translation.get("startup.supportAsk.beforeDonateLink"));
-		askRow.add(createBoldAskLink(Translation.get("startup.supportAsk.donateLinkText"), donateUrl));
+		askRow.add(createBoldAskLink(Translation.get("startup.supportAsk.donateLinkText"), withCampaign(donateUrl, "ask_donate")));
 		addWords(askRow, Translation.get("startup.supportAsk.betweenLinks"));
-		askRow.add(createBoldAskLink(Translation.get("startup.supportAsk.bookLinkText"), bookUrl));
+		askRow.add(createBoldAskLink(Translation.get("startup.supportAsk.bookLinkText"), withCampaign(bookUrl, "ask_book")));
 		addWords(askRow, Translation.get("startup.supportAsk.afterBookLink"));
 	}
 
 	/**
 	 * Adds each word of text as its own label so the enclosing WrapLayout row can wrap the sentence naturally around embedded hyperlinks.
 	 */
+	/**
+	 * Appends Google Analytics campaign (UTM) parameters to a link that points at our own site (jandjheydorn.com), so clicks originating
+	 * from this in-app panel can be attributed in Analytics. These go to pages we control that carry the Analytics tag, so the parameters
+	 * are read there; it's user-initiated navigation only, with no personal data. External links (e.g. the GitHub source) are left
+	 * untagged since we can't see their analytics anyway.
+	 *
+	 * @param content
+	 *            Identifies which link within this panel was clicked (utm_content), so individual links can be compared.
+	 */
+	private static String withCampaign(String url, String content)
+	{
+		String separator = url.contains("?") ? "&" : "?";
+		return url + separator + campaignParameters + content;
+	}
+
 	private void addWords(JPanel row, String text)
 	{
 		for (String word : text.trim().split("\\s+"))
