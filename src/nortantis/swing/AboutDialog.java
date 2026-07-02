@@ -50,22 +50,7 @@ public class AboutDialog extends JDialog
 
 		content.add(nortantisImagePanel, BorderLayout.WEST);
 
-		JPanel rightPanel = new JPanel();
-		rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
-		JLabel text = new JLabel("<html>" + Translation.get("about.version", MapSettings.currentVersion) + "<html>");
-		rightPanel.add(text);
-
-		rightPanel.add(new JLabel(" "));
-
-		// The bug-report line comes before the support panel, since reporting a problem is a more immediate need than the support ask.
-		rightPanel.add(createBugReportRow());
-
-		rightPanel.add(new JLabel(" "));
-		rightPanel.add(new SupportPanel(textColumnWidth, true));
-
-		rightPanel.add(Box.createVerticalGlue());
-
-		content.add(rightPanel, BorderLayout.EAST);
+		content.add(createRightPanel(textColumnWidth), BorderLayout.EAST);
 
 		JPanel bottomPanel = new JPanel();
 		content.add(bottomPanel, BorderLayout.SOUTH);
@@ -83,6 +68,61 @@ public class AboutDialog extends JDialog
 		bottomPanel.add(closeButton);
 
 		pack();
+	}
+
+	/**
+	 * Builds the version/bug-report/support-panel column at a fixed width, with each row's vertical position computed and set directly
+	 * (absolute positioning, no layout manager) rather than via BoxLayout. BoxLayout's alignmentX - tried multiple ways, including
+	 * wrapping the version label in its own fixed-size, explicitly left-anchored sub-panel - never actually left-aligned the version
+	 * label; it kept centering. Positioning everything explicitly sidesteps whatever was causing that.
+	 */
+	private static JComponent createRightPanel(int width)
+	{
+		int rowSpacing = 10;
+		int y = 0;
+
+		JLabel versionLabel = new JLabel(Translation.get("about.version", MapSettings.currentVersion));
+		Dimension versionSize = versionLabel.getPreferredSize();
+		versionLabel.setBounds(0, y, versionSize.width, versionSize.height);
+		y += versionSize.height + rowSpacing;
+
+		JComponent bugReportRow = createBugReportRow();
+		Dimension bugReportSize = bugReportRow.getPreferredSize();
+		bugReportRow.setBounds(0, y, width, bugReportSize.height);
+		y += bugReportSize.height + rowSpacing;
+
+		// The bug-report line comes before the support panel, since reporting a problem is a more immediate need than the support ask.
+		SupportPanel supportPanel = new SupportPanel(width, true);
+		Dimension supportPanelSize = supportPanel.getPreferredSize();
+		supportPanel.setBounds(0, y, width, supportPanelSize.height);
+		y += supportPanelSize.height;
+
+		Dimension fixedSize = new Dimension(width, y);
+		JPanel rightPanel = new JPanel(null)
+		{
+			@Override
+			public Dimension getPreferredSize()
+			{
+				return fixedSize;
+			}
+
+			@Override
+			public Dimension getMinimumSize()
+			{
+				return fixedSize;
+			}
+
+			@Override
+			public Dimension getMaximumSize()
+			{
+				return fixedSize;
+			}
+		};
+		rightPanel.setOpaque(false);
+		rightPanel.add(versionLabel);
+		rightPanel.add(bugReportRow);
+		rightPanel.add(supportPanel);
+		return rightPanel;
 	}
 
 	/**
@@ -104,10 +144,8 @@ public class AboutDialog extends JDialog
 	}
 
 	/**
-	 * A centered {@link WrapLayout} flow of words/links wrapped to a fixed width, with fixed preferred/minimum/maximum size so it behaves
-	 * correctly as a direct child of a BoxLayout container. Without the fixed maximum size, a null-layout JPanel defaults to
-	 * (Integer.MAX_VALUE, Integer.MAX_VALUE), which breaks BoxLayout's size calculations (see SupportPanel.getMaximumSize for the same
-	 * fix, needed there for the same reason).
+	 * A centered {@link WrapLayout} flow of words/links wrapped to a fixed width, with fixed preferred/minimum/maximum size so its wrapped
+	 * height can be measured once, up front, by the caller (see addWords-style usage in SupportPanel for the same pattern).
 	 */
 	private static class WrappedTextRow extends JPanel
 	{
