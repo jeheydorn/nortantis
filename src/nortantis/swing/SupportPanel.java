@@ -31,7 +31,6 @@ public class SupportPanel extends JPanel
 	private static final int cardArc = 18;
 	private static final int checkboxGap = 4;
 
-	/** A warm rose-red for the heart accent, rather than an alarming pure red, to keep the tone friendly rather than urgent. */
 	private static final Color heartColor = new Color(214, 64, 90);
 
 	private static final String websiteUrl = "https://jandjheydorn.com/nortantis";
@@ -71,8 +70,7 @@ public class SupportPanel extends JPanel
 
 		int y = 0;
 
-		// The ask comes first, in its own highlighted card, since it's the point of this panel; the utility links follow below at the
-		// normal text size.
+		// The ask comes first, in its own highlighted card
 		if (showAskCard)
 		{
 			JPanel askRow = createFlowRow(4, 4);
