@@ -656,7 +656,6 @@ public class MapCreator implements WarningLogger
 			}
 		});
 
-		final long phaseStart = System.currentTimeMillis();
 		Background background;
 		if (mapParts != null && mapParts.background != null)
 		{
@@ -667,7 +666,6 @@ public class MapCreator implements WarningLogger
 			Logger.println("Generating the background image.");
 			background = new Background(settings, mapBounds, this);
 		}
-		Logger.println("[PHASE timing] background: " + (System.currentTimeMillis() - phaseStart) + "ms");
 
 		if (mapParts != null)
 		{
@@ -702,7 +700,6 @@ public class MapCreator implements WarningLogger
 		Image textBackground;
 		List<Set<Center>> mountainGroups;
 		List<IconDrawTask> cities;
-		long terrainStart = System.currentTimeMillis();
 		if (mapParts == null || mapParts.mapBeforeAddingText == null || !settings.edits.isInitialized())
 		{
 			Tuple4<Image, Image, List<Set<Center>>, List<IconDrawTask>> tuple = drawTerrainAndIcons(settings, mapParts, graph, background, isLowMemoryMode);
@@ -721,8 +718,6 @@ public class MapCreator implements WarningLogger
 			mountainGroups = null;
 			cities = null;
 		}
-		Logger.println("[PHASE timing] terrain+icons: " + (System.currentTimeMillis() - terrainStart) + "ms");
-
 		if (mapParts == null)
 		{
 			if (background.landColoredBeforeAddingIconColors != null)
@@ -741,7 +736,6 @@ public class MapCreator implements WarningLogger
 			grungeTask = startGrungeCreation(settings, mapParts, mapDimensions);
 		}
 
-		long textStart = System.currentTimeMillis();
 		if (settings.drawText)
 		{
 			Logger.println("Adding text.");
@@ -793,7 +787,6 @@ public class MapCreator implements WarningLogger
 			textDrawer.generateText(graph, map, nameCreator, textBackground, mountainGroups, cities, graph.getGeneratedLakes(), rivers);
 		}
 
-		Logger.println("[PHASE timing] text: " + (System.currentTimeMillis() - textStart) + "ms");
 		if (mapParts == null && textBackground != null)
 		{
 			textBackground.close();

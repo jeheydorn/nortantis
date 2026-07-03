@@ -1788,8 +1788,6 @@ public class WorldGraph extends VoronoiGraph
 
 	private void assignPlateCornerElevations()
 	{
-		// long startTime = System.currentTimeMillis();
-
 		for (final TectonicPlate plate : plates)
 		{
 
