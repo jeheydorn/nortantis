@@ -127,6 +127,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private JMenu viewMenu;
 	private JMenu recentSettingsMenuItem;
 	java.awt.Point mouseLocationForMiddleButtonDrag;
+	// Fractional scroll accumulators so a touchpad's high-frequency, small-delta wheel events don't advance a full zoom step (or jump
+	// the map) per event. Whole units are consumed as zoom steps / pan pixels and the remainder is carried to the next event.
+	private double accumulatedZoomScroll;
+	private double accumulatedPanScroll;
 	private JMenu helpMenu;
 	private JMenuItem mapInfoMenuItem;
 	private JMenuItem refreshMenuItem;
@@ -423,8 +427,49 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		getContentPane().add(splitPane2, BorderLayout.CENTER);
 
+		registerZoomKeyboardShortcuts();
+
 		pack();
 
+	}
+
+	/**
+	 * Registers the command-key zoom shortcuts (Ctrl on Windows/Linux, Cmd on Mac). Both the main-row and numpad plus/minus keys are
+	 * bound, and '=' is treated as zoom-in since '+' is Shift+'=' on most keyboards.
+	 */
+	private void registerZoomKeyboardShortcuts()
+	{
+		JComponent rootPane = getRootPane();
+		InputMap inputMap = rootPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+		ActionMap actionMap = rootPane.getActionMap();
+		int commandMask = SwingHelper.getMenuShortcutKeyMask();
+
+		Action zoomInAction = new AbstractAction()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				changeZoomByOffset(1);
+			}
+		};
+		Action zoomOutAction = new AbstractAction()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				changeZoomByOffset(-1);
+			}
+		};
+
+		inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, commandMask), "zoomIn");
+		// '+' is Shift+'=' on most layouts, so accept the shifted form too.
+		inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, commandMask | InputEvent.SHIFT_DOWN_MASK), "zoomIn");
+		inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_PLUS, commandMask), "zoomIn");
+		inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ADD, commandMask), "zoomIn");
+		inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, commandMask), "zoomOut");
+		inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_SUBTRACT, commandMask), "zoomOut");
+		actionMap.put("zoomIn", zoomInAction);
+		actionMap.put("zoomOut", zoomOutAction);
 	}
 
 	private void launchNewSettingsDialog(MapSettings settingsToKeepThemeFrom)
@@ -570,7 +615,14 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			public void mouseWheelMoved(MouseWheelEvent e)
 			{
-				MainWindow.this.handleMouseWheelChangingZoom(e);
+				if (e.isShiftDown())
+				{
+					MainWindow.this.handleMouseWheelPanning(e);
+				}
+				else
+				{
+					MainWindow.this.handleMouseWheelChangingZoom(e);
+				}
 			}
 
 		});
@@ -1661,23 +1713,70 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	public void handleMouseWheelChangingZoom(MouseWheelEvent e)
 	{
-		if (toolsPanel.zoomComboBox.isEnabled())
+		if (!toolsPanel.zoomComboBox.isEnabled())
 		{
-			int scrollDirection = e.getUnitsToScroll() > 0 ? -1 : 1;
-			int newIndex = toolsPanel.zoomComboBox.getSelectedIndex() + scrollDirection;
-			if (newIndex < 0)
-			{
-				newIndex = 0;
-			}
-			else if (newIndex > toolsPanel.zoomComboBox.getItemCount() - 1)
-			{
-				newIndex = toolsPanel.zoomComboBox.getItemCount() - 1;
-			}
-			if (newIndex != toolsPanel.zoomComboBox.getSelectedIndex())
-			{
-				// The action listener on toolsPanel.zoomComboBox will update the map.
-				toolsPanel.zoomComboBox.setSelectedIndex(newIndex);
-			}
+			return;
+		}
+
+		// Accumulate the precise (possibly fractional) rotation and only advance a zoom step once a whole unit is reached. A notched
+		// mouse wheel reports ~1.0 per notch, so it still zooms one step per notch. A touchpad reports many small fractions, so it
+		// zooms smoothly instead of racing through the levels. Reset the accumulator when the scroll direction reverses so a flick the
+		// other way doesn't immediately step from a nearly-full accumulator.
+		double rotation = e.getPreciseWheelRotation();
+		if (Math.signum(rotation) != Math.signum(accumulatedZoomScroll))
+		{
+			accumulatedZoomScroll = 0;
+		}
+		accumulatedZoomScroll += rotation;
+		int steps = (int) accumulatedZoomScroll;
+		if (steps == 0)
+		{
+			return;
+		}
+		accumulatedZoomScroll -= steps;
+
+		// Positive wheel rotation (scrolling toward the user) zooms out, which is a lower zoom-combo-box index.
+		changeZoomByOffset(-steps);
+	}
+
+	/**
+	 * Pans the map by translating vertical wheel motion into scrolling. Fractional touchpad deltas are accumulated so small scroll
+	 * events aren't lost to integer truncation.
+	 */
+	public void handleMouseWheelPanning(MouseWheelEvent e)
+	{
+		JScrollBar verticalScrollBar = mapEditingScrollPane.getVerticalScrollBar();
+		double rotation = e.getPreciseWheelRotation();
+		if (Math.signum(rotation) != Math.signum(accumulatedPanScroll))
+		{
+			accumulatedPanScroll = 0;
+		}
+		accumulatedPanScroll += rotation * verticalScrollBar.getUnitIncrement();
+		int pixels = (int) accumulatedPanScroll;
+		if (pixels == 0)
+		{
+			return;
+		}
+		accumulatedPanScroll -= pixels;
+		verticalScrollBar.setValue(verticalScrollBar.getValue() + pixels);
+	}
+
+	/**
+	 * Changes the current zoom level by offset positions in the zoom combo box (positive zooms in, negative zooms out), clamped to the
+	 * available levels. Used by both wheel zooming and the keyboard zoom shortcuts.
+	 */
+	private void changeZoomByOffset(int offset)
+	{
+		if (!toolsPanel.zoomComboBox.isEnabled())
+		{
+			return;
+		}
+		int newIndex = toolsPanel.zoomComboBox.getSelectedIndex() + offset;
+		newIndex = Math.max(0, Math.min(newIndex, toolsPanel.zoomComboBox.getItemCount() - 1));
+		if (newIndex != toolsPanel.zoomComboBox.getSelectedIndex())
+		{
+			// The action listener on toolsPanel.zoomComboBox will update the map.
+			toolsPanel.zoomComboBox.setSelectedIndex(newIndex);
 		}
 	}
 
