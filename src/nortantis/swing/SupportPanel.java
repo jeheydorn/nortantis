@@ -24,7 +24,7 @@ import java.awt.*;
 @SuppressWarnings("serial")
 public class SupportPanel extends JPanel
 {
-	public static final int defaultContentWidth = 460;
+	public static final int defaultContentWidth = 480;
 
 	private static final int rowGap = 14;
 	private static final int cardPadding = 14;

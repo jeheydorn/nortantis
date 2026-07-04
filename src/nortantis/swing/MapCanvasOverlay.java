@@ -54,7 +54,7 @@ public class MapCanvasOverlay extends JPanel
 			messagePanel = new JPanel();
 			messagePanel.setOpaque(false);
 			messagePanel.setLayout(new BoxLayout(messagePanel, BoxLayout.Y_AXIS));
-			Color textColor = SwingHelper.getTextColorForPlaceholderImages();
+			Color textColor = UIManager.getColor("Label.foreground");
 			Font font = chooseMessageFont(lines);
 			for (String line : lines)
 			{
