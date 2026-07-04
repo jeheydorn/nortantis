@@ -21,7 +21,10 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
 public abstract class MapUpdater
@@ -29,6 +32,15 @@ public abstract class MapUpdater
 	private boolean isMapBeingDrawn;
 	private ReentrantLock drawLock;
 	private ReentrantLock interactionsLock;
+	/**
+	 * Guards the shared live map buffer returned by {@link #getCurrentMapForIncrementalUpdate()} against a torn read. An incremental
+	 * update takes the write lock only for the brief final blit that writes its finished snippet into the buffer (via
+	 * {@link MapCreator#setIncrementalMapWriteLock}), NOT for the expensive snippet computation - so that computation runs in parallel
+	 * with an in-flight display rescale. Display code that reads the buffer's pixels off the EDT (e.g. a background rescale) holds the
+	 * read lock via {@link #getMapReadLock()} while it does so. Full draws build a brand new {@link Image} instead of mutating the live
+	 * one, so they don't need this lock.
+	 */
+	private final ReadWriteLock mapBufferLock = new ReentrantReadWriteLock();
 	public MapParts mapParts;
 	private boolean createEditsIfNotPresentAndUseMapParts;
 	private Dimension maxMapSize;
@@ -567,11 +579,16 @@ public abstract class MapUpdater
 						{
 							Image map = getCurrentMapForIncrementalUpdate();
 							IntRectangle combinedReplaceBounds = null;
-							// Incremental update
+							// The expensive part of an incremental update builds a self-contained snippet that never touches the shared
+							// map buffer; only the brief final blit of that snippet into the buffer does. So rather than locking the whole
+							// update against a concurrent display reader (which would serialize the slow snippet computation with an
+							// in-flight rescale), hand each MapCreator the write lock and let it lock only around that blit. The
+							// computation then runs in parallel with the rescale, and only the pixel handoff serializes.
 							if (centersChangedIds != null && centersChangedIds.size() > 0 || edgesChangedIds != null && edgesChangedIds.size() > 0)
 							{
 								Stopwatch incrementalUpdateTimer = new Stopwatch("do incremental update for centers and edges");
 								currentMapCreator = new MapCreator();
+								currentMapCreator.setIncrementalMapWriteLock(mapBufferLock.writeLock());
 								IntRectangle replaceBounds = currentMapCreator.incrementalUpdateForCentersAndEdges(settings, mapParts, map, centersChangedIds, edgesChangedIds, isLowPriorityChange);
 								combinedReplaceBounds = combinedReplaceBounds == null ? replaceBounds : combinedReplaceBounds.add(replaceBounds);
 								if (DebugFlags.printIncrementalUpdateTimes())
@@ -584,6 +601,7 @@ public abstract class MapUpdater
 							{
 								Stopwatch incrementalUpdateTimer = new Stopwatch("do incremental update for text");
 								currentMapCreator = new MapCreator();
+								currentMapCreator.setIncrementalMapWriteLock(mapBufferLock.writeLock());
 								IntRectangle replaceBounds = currentMapCreator.incrementalUpdateText(settings, mapParts, map, textChanged);
 								combinedReplaceBounds = combinedReplaceBounds == null ? replaceBounds : combinedReplaceBounds.add(replaceBounds);
 								if (DebugFlags.printIncrementalUpdateTimes())
@@ -596,6 +614,7 @@ public abstract class MapUpdater
 							{
 								Stopwatch incrementalUpdateTimer = new Stopwatch("do incremental update for icons");
 								currentMapCreator = new MapCreator();
+								currentMapCreator.setIncrementalMapWriteLock(mapBufferLock.writeLock());
 								IntRectangle replaceBounds = currentMapCreator.incrementalUpdateIcons(settings, mapParts, map, iconsChanged);
 								combinedReplaceBounds = combinedReplaceBounds == null ? replaceBounds : combinedReplaceBounds.add(replaceBounds);
 								if (DebugFlags.printIncrementalUpdateTimes())
@@ -923,6 +942,16 @@ public abstract class MapUpdater
 	public void setMaxMapSize(Dimension dimension)
 	{
 		maxMapSize = dimension;
+	}
+
+	/**
+	 * Lock to hold while reading pixels from the buffer returned by {@link #getCurrentMapForIncrementalUpdate()} from a thread other than
+	 * the one running incremental updates (e.g. a background display rescale), so that read doesn't race with an in-place incremental
+	 * mutation of the same buffer. Full draws don't mutate that buffer, so they don't contend for this lock.
+	 */
+	public Lock getMapReadLock()
+	{
+		return mapBufferLock.readLock();
 	}
 
 	private class MapUpdate

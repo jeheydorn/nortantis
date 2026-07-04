@@ -23,6 +23,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.commons.lang3.time.StopWatch;
 import org.imgscalr.Scalr.Method;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -48,6 +49,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.locks.Lock;
 
 @SuppressWarnings("serial")
 public class MainWindow extends JFrame implements ILoggerTarget
@@ -88,8 +90,23 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	JMenuItem redoButton;
 	private JMenuItem clearEntireMapButton;
 	public Undoer undoer;
+	// The zoom level currently reflected by mapEditingPanel's displayed image. Only updated when a rescaled image is actually
+	// committed to the panel (see commitBackgroundRescale), so it always matches what's on screen, even while a background rescale
+	// for a newer zoom is still in flight.
 	double zoom;
 	double displayQualityScale;
+	// Single background thread that produces full-map rescaled images for display (used whenever the display needs a full rescale
+	// rather than a fast in-place patch of the existing displayed image), so that a slow QUALITY downscale never blocks the EDT.
+	// Coalescing/superseding is handled with displayScaleGeneration: each request captures the generation counter at submit time, and
+	// bails out (before and after the potentially slow scale) if a newer request has since been submitted, so bursts of requests don't
+	// back up doing stale work, and a result is only committed to the display if it's still the latest request.
+	private final java.util.concurrent.ExecutorService displayScaleExecutor = java.util.concurrent.Executors.newSingleThreadExecutor(runnable ->
+	{
+		Thread thread = new Thread(runnable, "display-scale");
+		thread.setDaemon(true);
+		return thread;
+	});
+	private final java.util.concurrent.atomic.AtomicLong displayScaleGeneration = new java.util.concurrent.atomic.AtomicLong();
 	ThemePanel themePanel;
 	ToolsPanel toolsPanel;
 	MapUpdater updater;
@@ -1665,143 +1682,201 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	public void updateDisplayedMapFromGeneratedMap(boolean updateScrollLocationIfZoomChanged, IntRectangle incrementalChangeArea, boolean isOnlyZoomChange)
 	{
-		double oldZoom = zoom;
-		zoom = translateZoomLevel((String) toolsPanel.zoomComboBox.getSelectedItem());
+		// The zoom the current combo-box selection maps to, given the current map's size. Fit-to-window depends on the map's
+		// dimensions, so this must be recomputed on every call - in particular on the first draw of a newly sized map, where the
+		// stale zoom field wouldn't yet reflect the fit. translateZoomLevel returns 1.0 when there's no map.
+		double targetZoom = translateZoomLevel((String) toolsPanel.zoomComboBox.getSelectedItem());
 
-		if (mapEditingPanel.mapFromMapCreator != null)
+		if (mapEditingPanel.mapFromMapCreator == null)
 		{
-			// A real map is being shown; clear any leftover canvas message/support panel from before it was drawn.
-			mapCanvasOverlay.setMessage();
-			mapCanvasOverlay.setSupportPanel(false, 0, false);
+			// No map to show yet. Keep the zoom field current (it's read by other code) but there's nothing to rescale.
+			zoom = targetZoom;
+			return;
+		}
 
-			java.awt.Rectangle scrollTo = null;
+		// A real map is being shown; clear any leftover canvas message/support panel from before it was drawn.
+		mapCanvasOverlay.setMessage();
+		mapCanvasOverlay.setSupportPanel(false, 0, false);
 
-			if (updateScrollLocationIfZoomChanged && zoom != oldZoom)
+		if (isOnlyZoomChange)
+		{
+			// A zoom change always needs a full rescale (there's no existing region to patch), and the target zoom can differ from
+			// what's currently displayed, so do it in the background and only commit it once it's ready. The display quality
+			// (setResolution) is intentionally left untouched here, matching the old behavior of skipping it for zoom-only changes.
+			submitBackgroundFullRescale(targetZoom, updateScrollLocationIfZoomChanged);
+			return;
+		}
+
+		// A draw just finished.
+		mapEditingPanel.setResolution(displayQualityScale);
+		Method method = targetZoom < 0.34 ? Method.QUALITY : Method.BALANCED;
+		if (method == Method.BALANCED && incrementalChangeArea != null && targetZoom == zoom && mapEditingPanel.getImage() != null)
+		{
+			// Fast path: the displayed image is already at this zoom, so patch just the changed region directly into it, synchronously
+			// on the EDT (a small-region scale is only a couple ms).
+			// Use wrapBufferedImage for the target so changes write back to the display BufferedImage.
+			// fromBufferedImage would create a copy when using SkiaFactory, losing the changes.
+			ImageHelper.getInstance().scaleInto(mapEditingPanel.mapFromMapCreator, AwtBridge.wrapBufferedImage(mapEditingPanel.getImage()), incrementalChangeArea);
+			finishDisplayUpdate();
+		}
+		else
+		{
+			// Either a QUALITY downscale (which can't be patched incrementally - the whole image must be re-rendered every time), a
+			// full draw with no region to patch, or the displayed zoom doesn't match the target yet (e.g. the first draw at
+			// fit-to-window). Do the (possibly slow) rescale on a background thread so it never blocks the EDT.
+			submitBackgroundFullRescale(targetZoom, false);
+		}
+	}
+
+	/**
+	 * Submits a request to produce a fresh full rescale of mapEditingPanel.mapFromMapCreator at targetZoom on a background thread, so a
+	 * slow QUALITY downscale never blocks the EDT. Requests are coalesced via displayScaleGeneration: a request bails out (before doing
+	 * any scaling, and again right after acquiring the map read lock) if a newer request has since been submitted, and its result is
+	 * only committed to the display (on the EDT, via commitBackgroundRescale) if it's still the latest request when the scale
+	 * finishes. This lets zoom changes and full-rescale draw completions run fully in parallel with the next map draw.
+	 */
+	private void submitBackgroundFullRescale(double targetZoom, boolean updateScrollLocationIfZoomChanged)
+	{
+		Image sourceMap = mapEditingPanel.mapFromMapCreator;
+		long generation = displayScaleGeneration.incrementAndGet();
+		displayScaleExecutor.submit(() -> runBackgroundRescale(generation, sourceMap, targetZoom, updateScrollLocationIfZoomChanged));
+	}
+
+	private void runBackgroundRescale(long generation, Image sourceMap, double targetZoom, boolean updateScrollLocationIfZoomChanged)
+	{
+		if (sourceMap == null || generation != displayScaleGeneration.get())
+		{
+			// Superseded by a newer request before we even started.
+			return;
+		}
+
+		Method method = targetZoom < 0.34 ? Method.QUALITY : Method.BALANCED;
+		int zoomedWidth = (int) (sourceMap.getWidth() * targetZoom);
+		if (zoomedWidth <= 0)
+		{
+			// Prevents a crash if someone collapses the map editing panel.
+			zoomedWidth = 600;
+		}
+
+		BufferedImage scaledImage;
+		Lock mapReadLock = updater.getMapReadLock();
+		mapReadLock.lock();
+		try
+		{
+			if (generation != displayScaleGeneration.get())
 			{
-				java.awt.Rectangle visible = mapEditingPanel.getVisibleRect();
-				double scale = zoom / oldZoom;
-				java.awt.Point mousePosition = mapEditingPanel.getMousePosition();
-				if (mousePosition != null && (zoom > oldZoom))
-				{
-					// Zoom toward the mouse's position, keeping the point
-					// currently under the mouse the same if possible.
-					scrollTo = new java.awt.Rectangle((int) (mousePosition.x * scale) - mousePosition.x + visible.x, (int) (mousePosition.y * scale) - mousePosition.y + visible.y, visible.width,
-							visible.height);
-				}
-				else
-				{
-					// Zoom toward or away from the current center of the
-					// screen.
-					java.awt.Point currentCentroid = new java.awt.Point(visible.x + (visible.width / 2), visible.y + (visible.height / 2));
-					java.awt.Point targetCentroid = new java.awt.Point((int) (currentCentroid.x * scale), (int) (currentCentroid.y * scale));
-					scrollTo = new java.awt.Rectangle(targetCentroid.x - visible.width / 2, targetCentroid.y - visible.height / 2, visible.width, visible.height);
-				}
+				// Superseded while waiting for an in-flight incremental update to finish mutating the map buffer.
+				return;
 			}
+			scaledImage = scaleFullMap(sourceMap, zoomedWidth, method);
+		}
+		finally
+		{
+			mapReadLock.unlock();
+		}
 
-			mapEditingPanel.setZoom(zoom);
-			// Don't update the display quality when zoom is the only thing that changed because otherwise changing the zoom while the map
-			// is redrawing at a new display quality can cause tool highlights to draw in the wrong position temporarily.
-			if (!isOnlyZoomChange)
-			{
-				mapEditingPanel.setResolution(displayQualityScale);
-			}
-			Method method = zoom < 0.34 ? Method.QUALITY : Method.BALANCED;
-			int zoomedWidth = (int) (mapEditingPanel.mapFromMapCreator.getWidth() * zoom);
-			if (zoomedWidth <= 0)
-			{
-				// Prevents a crash if someone collapses the map editing panel.
-				zoomedWidth = 600;
-			}
+		SwingUtilities.invokeLater(() -> commitBackgroundRescale(generation, scaledImage, targetZoom, updateScrollLocationIfZoomChanged));
+	}
 
-			if (method == Method.QUALITY)
+	/**
+	 * Scales the full generated map to zoomedWidth using method. It's important that this produces the same result as the fast
+	 * incremental patch path (ImageHelper.scaleInto, used above in updateDisplayedMapFromGeneratedMap), or at least close enough that
+	 * people can't tell the difference, because that path updates pieces of an image created here.
+	 */
+	private BufferedImage scaleFullMap(Image sourceMap, int zoomedWidth, Method method)
+	{
+		if (zoomedWidth > sourceMap.getWidth())
+		{
+			// Zooming in: convert smaller source first, then scale up.
+			BufferedImage sourceBI = AwtBridge.toBufferedImage(sourceMap);
+			try (Image source = AwtBridge.wrapBufferedImage(sourceBI); Image scaled = ImageHelper.getInstance().scaleByWidth(source, zoomedWidth, method))
 			{
-				// Can't incrementally zoom. Zoom the whole thing.
-				if (zoomedWidth > mapEditingPanel.mapFromMapCreator.getWidth())
-				{
-					// Zooming in: convert smaller source first, then scale up.
-					BufferedImage sourceBI = AwtBridge.toBufferedImage(mapEditingPanel.mapFromMapCreator);
-					try (Image source = AwtBridge.wrapBufferedImage(sourceBI); Image scaled = ImageHelper.getInstance().scaleByWidth(source, zoomedWidth, method))
-					{
-						mapEditingPanel.setImage(AwtBridge.toBufferedImage(scaled));
-					}
-				}
-				else
-				{
-					// Zooming out (or 1:1): scale down first, then convert smaller result.
-					try (Image scaled = ImageHelper.getInstance().scaleByWidth(mapEditingPanel.mapFromMapCreator, zoomedWidth, method))
-					{
-						mapEditingPanel.setImage(AwtBridge.toBufferedImage(scaled));
-					}
-				}
+				return AwtBridge.toBufferedImage(scaled);
+			}
+		}
+		else
+		{
+			// Zooming out (or 1:1): scale down first, then convert smaller result.
+			try (Image scaled = ImageHelper.getInstance().scaleByWidth(sourceMap, zoomedWidth, method))
+			{
+				return AwtBridge.toBufferedImage(scaled);
+			}
+		}
+	}
+
+	/**
+	 * Runs on the EDT once a background rescale finishes. Commits the zoom and the rescaled image to mapEditingPanel together, in one
+	 * frame, rather than applying the new zoom as soon as it's requested - otherwise overlays (which read the panel's zoom) would sit
+	 * at the new zoom over a base image still at the old one for as long as the rescale takes, and visibly float off the map. While the
+	 * rescale runs, the panel stays at the previously committed zoom, so overlays and the displayed image stay consistent; then
+	 * everything snaps to the new zoom at once.
+	 */
+	private void commitBackgroundRescale(long generation, BufferedImage scaledImage, double targetZoom, boolean updateScrollLocationIfZoomChanged)
+	{
+		if (generation != displayScaleGeneration.get() || mapEditingPanel.mapFromMapCreator == null)
+		{
+			// Superseded by a newer request, or the canvas was cleared (e.g. to show a message) before this finished.
+			return;
+		}
+
+		double oldZoom = zoom;
+		zoom = targetZoom;
+
+		java.awt.Rectangle scrollTo = null;
+		if (updateScrollLocationIfZoomChanged && zoom != oldZoom)
+		{
+			java.awt.Rectangle visible = mapEditingPanel.getVisibleRect();
+			double scale = zoom / oldZoom;
+			java.awt.Point mousePosition = mapEditingPanel.getMousePosition();
+			if (mousePosition != null && (zoom > oldZoom))
+			{
+				// Zoom toward the mouse's position, keeping the point
+				// currently under the mouse the same if possible.
+				scrollTo = new java.awt.Rectangle((int) (mousePosition.x * scale) - mousePosition.x + visible.x, (int) (mousePosition.y * scale) - mousePosition.y + visible.y, visible.width,
+						visible.height);
 			}
 			else
 			{
-
-				if (incrementalChangeArea == null)
-				{
-					// It's important that this image scaling is done using the
-					// same method as the incremental case below
-					// (when incrementalChangeArea != null), or at least close
-					// enough that people can't tell the difference.
-					// The reason is that the incremental case will update
-					// pieces of the image created below.
-					// I don't use ImageHelper.scaleInto for the full image case
-					// because it's 5x slower than the below
-					// method, which uses ImgScalr.
-					if (zoomedWidth > mapEditingPanel.mapFromMapCreator.getWidth())
-					{
-						// Zooming in: convert smaller source first, then scale up.
-						BufferedImage sourceBI = AwtBridge.toBufferedImage(mapEditingPanel.mapFromMapCreator);
-						try (Image source = AwtBridge.wrapBufferedImage(sourceBI); Image scaled = ImageHelper.getInstance().scaleByWidth(source, zoomedWidth, method))
-						{
-							mapEditingPanel.setImage(AwtBridge.toBufferedImage(scaled));
-						}
-					}
-					else
-					{
-						// Zooming out (or 1:1): scale down first, then convert smaller result.
-						try (Image scaled = ImageHelper.getInstance().scaleByWidth(mapEditingPanel.mapFromMapCreator, zoomedWidth, method))
-						{
-							mapEditingPanel.setImage(AwtBridge.toBufferedImage(scaled));
-						}
-					}
-				}
-				else
-				{
-					if (mapEditingPanel.getImage() != null)
-					{
-						// Use wrapBufferedImage for the target so changes write back to the display BufferedImage.
-						// fromBufferedImage would create a copy when using SkiaFactory, losing the changes.
-						ImageHelper.getInstance().scaleInto(mapEditingPanel.mapFromMapCreator, AwtBridge.wrapBufferedImage(mapEditingPanel.getImage()), incrementalChangeArea);
-					}
-				}
+				// Zoom toward or away from the current center of the
+				// screen.
+				java.awt.Point currentCentroid = new java.awt.Point(visible.x + (visible.width / 2), visible.y + (visible.height / 2));
+				java.awt.Point targetCentroid = new java.awt.Point((int) (currentCentroid.x * scale), (int) (currentCentroid.y * scale));
+				scrollTo = new java.awt.Rectangle(targetCentroid.x - visible.width / 2, targetCentroid.y - visible.height / 2, visible.width, visible.height);
 			}
+		}
 
-			if (scrollTo != null)
-			{
-				// For some reason I have to do a bunch of revalidation or
-				// else scrollRectToVisible doesn't realize the map has changed
-				// size.
-				mapEditingPanel.revalidate();
-				mapEditingScrollPane.revalidate();
-				this.revalidate();
+		mapEditingPanel.setZoom(zoom);
+		mapEditingPanel.setImage(scaledImage);
 
-				mapEditingPanel.scrollRectToVisible(scrollTo);
-			}
-
-			updater.doWhenMapIsReadyForInteractions(() ->
-			{
-				if (!mapEditingPanel.isSelectionBoxActive())
-				{
-					toolsPanel.currentTool.onAfterShowMap();
-				}
-			});
-
+		if (scrollTo != null)
+		{
+			// For some reason I have to do a bunch of revalidation or
+			// else scrollRectToVisible doesn't realize the map has changed
+			// size.
 			mapEditingPanel.revalidate();
 			mapEditingScrollPane.revalidate();
-			mapEditingPanel.repaint();
-			mapEditingScrollPane.repaint();
+			this.revalidate();
+
+			mapEditingPanel.scrollRectToVisible(scrollTo);
 		}
+
+		finishDisplayUpdate();
+	}
+
+	private void finishDisplayUpdate()
+	{
+		updater.doWhenMapIsReadyForInteractions(() ->
+		{
+			if (!mapEditingPanel.isSelectionBoxActive())
+			{
+				toolsPanel.currentTool.onAfterShowMap();
+			}
+		});
+
+		mapEditingPanel.revalidate();
+		mapEditingScrollPane.revalidate();
+		mapEditingPanel.repaint();
+		mapEditingScrollPane.repaint();
 	}
 
 	private void updateZoomOptionsBasedOnWindowSize()

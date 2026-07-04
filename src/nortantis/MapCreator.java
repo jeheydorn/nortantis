@@ -17,6 +17,7 @@ import java.io.File;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
+import java.util.concurrent.locks.Lock;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
@@ -42,6 +43,23 @@ public class MapCreator implements WarningLogger
 	private List<IconDrawer.CityIconRemovedForWater> citiesRemovedForTouchingWater = new ArrayList<>();
 	public ConcurrentHashMap<Integer, Center> centersToRedrawLowPriority;
 	private Boolean memoryModeOverride;
+	/**
+	 * Optional lock held only while an incremental update writes its finished snippet into the shared full-sized display map (see
+	 * {@link #incrementalUpdateBounds}). The editor sets this so a background display rescale, which reads the same buffer, doesn't
+	 * observe a half-written region. It is intentionally NOT held during the (much longer) snippet computation, so that computation can
+	 * run in parallel with an in-flight rescale. Null (the default) means no locking - used for full draws, tests, and the Android app,
+	 * where nothing reads the buffer concurrently.
+	 */
+	private Lock incrementalMapWriteLock;
+
+	/**
+	 * See {@link #incrementalMapWriteLock}. Set before an incremental update when another thread may read the full-sized map buffer
+	 * concurrently; leave unset (null) otherwise.
+	 */
+	public void setIncrementalMapWriteLock(Lock lock)
+	{
+		this.incrementalMapWriteLock = lock;
+	}
 
 	/**
 	 * Override the memory mode for testing. Pass null to clear the override and resume normal behavior.
@@ -531,27 +549,44 @@ public class MapCreator implements WarningLogger
 			mapSnippet = ImageHelper.getInstance().setAlphaFromMaskInRegion(mapSnippet, mapParts.frayedBorderMask, true, drawBoundsUpperLeftCornerAdjustedForBorder);
 		}
 
-		// Update the snippet in the main map.
-		ImageHelper.getInstance().copySnippetFromSourceAndPasteIntoTarget(fullSizedMap, mapSnippet, replaceBoundsUpperLeftCornerAdjustedForBorder, boundsInSourceToCopyFrom,
-				mapParts.background.getBorderPaddingScaledByResolution());
-
-		if (DebugFlags.showIncrementalUpdateBounds())
+		// Write the finished snippet into the shared full-sized map. This is the only place this method touches fullSizedMap's pixels,
+		// so it's the only part that must be guarded against a concurrent reader (e.g. a background display rescale). Everything above
+		// built a self-contained snippet and can run in parallel with such a reader; only this brief blit needs the lock.
+		if (incrementalMapWriteLock != null)
 		{
-			try (Painter p = fullSizedMap.createPainter())
+			incrementalMapWriteLock.lock();
+		}
+		try
+		{
+			// Update the snippet in the main map.
+			ImageHelper.getInstance().copySnippetFromSourceAndPasteIntoTarget(fullSizedMap, mapSnippet, replaceBoundsUpperLeftCornerAdjustedForBorder, boundsInSourceToCopyFrom,
+					mapParts.background.getBorderPaddingScaledByResolution());
+
+			if (DebugFlags.showIncrementalUpdateBounds())
 			{
-				int scaledBorderWidth = settings.drawBorder && settings.borderPosition == BorderPosition.Outside_map ? (int) (settings.borderWidth * settings.resolution) : 0;
-				p.setBasicStroke(4f);
-				p.setColor(Color.red);
+				try (Painter p = fullSizedMap.createPainter())
 				{
-					IntRectangle rect = new Rectangle(replaceBounds.x + scaledBorderWidth, replaceBounds.y + scaledBorderWidth, replaceBounds.width, replaceBounds.height).toIntRectangle();
-					p.drawRect(rect.x, rect.y, rect.width, rect.height);
+					int scaledBorderWidth = settings.drawBorder && settings.borderPosition == BorderPosition.Outside_map ? (int) (settings.borderWidth * settings.resolution) : 0;
+					p.setBasicStroke(4f);
+					p.setColor(Color.red);
+					{
+						IntRectangle rect = new Rectangle(replaceBounds.x + scaledBorderWidth, replaceBounds.y + scaledBorderWidth, replaceBounds.width, replaceBounds.height).toIntRectangle();
+						p.drawRect(rect.x, rect.y, rect.width, rect.height);
+					}
+					p.setBasicStroke(4f);
+					p.setColor(Color.white);
+					{
+						IntRectangle rect = new Rectangle(drawBounds.x + scaledBorderWidth, drawBounds.y + scaledBorderWidth, drawBounds.width, drawBounds.height).toIntRectangle();
+						p.drawRect(rect.x, rect.y, rect.width, rect.height);
+					}
 				}
-				p.setBasicStroke(4f);
-				p.setColor(Color.white);
-				{
-					IntRectangle rect = new Rectangle(drawBounds.x + scaledBorderWidth, drawBounds.y + scaledBorderWidth, drawBounds.width, drawBounds.height).toIntRectangle();
-					p.drawRect(rect.x, rect.y, rect.width, rect.height);
-				}
+			}
+		}
+		finally
+		{
+			if (incrementalMapWriteLock != null)
+			{
+				incrementalMapWriteLock.unlock();
 			}
 		}
 
