@@ -577,6 +577,14 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					mapEditingScrollPane.getVerticalScrollBar().setValue(mapEditingScrollPane.getVerticalScrollBar().getValue() + deltaY);
 					mapEditingScrollPane.getHorizontalScrollBar().setValue(mapEditingScrollPane.getHorizontalScrollBar().getValue() + deltaX);
 				}
+				else if (SwingUtilities.isLeftMouseButton(e) && e.isShiftDown())
+				{
+					// Shift was pressed partway through a left-drag. End the tool's in-progress interaction as if the mouse were
+					// released, then switch to panning for the rest of the drag (latched, so it keeps panning even if Shift is
+					// released before the mouse). No tool-specific code is needed - the release contract finalizes the stroke.
+					updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMouseReleasedOnMap(e));
+					mouseLocationForMiddleButtonDrag = e.getPoint();
+				}
 				else if (SwingUtilities.isLeftMouseButton(e))
 				{
 					updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMouseDraggedOnMap(e));
