@@ -10,7 +10,7 @@ public class Translation
 	private static ResourceBundle bundle;
 	private static Locale effectiveLocale;
 
-	private static final List<Locale> supportedLocales = List.of(Locale.ENGLISH, Locale.of("ru"), Locale.FRENCH, Locale.GERMAN, Locale.SIMPLIFIED_CHINESE, Locale.of("es"), Locale.of("pt"));
+	private static final List<Locale> supportedLocales = List.of(Locale.ENGLISH, new Locale("ru"), Locale.FRENCH, Locale.GERMAN, Locale.SIMPLIFIED_CHINESE, new Locale("es"), new Locale("pt"));
 
 	public static void initialize()
 	{
@@ -23,7 +23,7 @@ public class Translation
 		String language = UserPreferences.getInstance().language;
 		if (language != null && !language.isEmpty())
 		{
-			Locale override = Locale.of(language);
+			Locale override = new Locale(language);
 			for (Locale supported : supportedLocales)
 			{
 				if (supported.getLanguage().equals(override.getLanguage()))

@@ -2264,7 +2264,7 @@ public class MapSettings implements Serializable
 			}
 			else
 			{
-				// Generic fallback (e.g. Android) - use Serif logical font name, which
+				// Generic fallback - use Serif logical font name, which
 				// each platform maps to an available serif font.
 				font = Font.create("Serif", FontStyle.fromNumber(Integer.parseInt(parts[1])), Integer.parseInt(parts[2]));
 			}

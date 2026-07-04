@@ -30,9 +30,9 @@ public class ThreadHelper
 
 	/**
 	 * Returns the shared cached thread pool, recreating it if it has somehow been shut down. This class never intentionally shuts down the
-	 * cached pool, so a shut-down pool only ever indicates a torn-down state - e.g. on Android, where the host process can be reused across
-	 * activity instances and a stale, finalized executor can leave the pool shut down. Recreating it here keeps map generation from failing
-	 * with RejectedExecutionException after the app has been backgrounded and resumed.
+	 * cached pool, so a shut-down pool only ever indicates a torn-down state - e.g. where the host process is reused across app restarts
+	 * and a stale, finalized executor can leave the pool shut down. Recreating it here keeps map generation from failing with
+	 * RejectedExecutionException after the app has been backgrounded and resumed.
 	 */
 	private synchronized ExecutorService getCachedThreadPool()
 	{

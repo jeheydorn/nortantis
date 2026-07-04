@@ -17,10 +17,8 @@ import java.nio.file.Paths;
  * ./gradlew test --tests "nortantis.AwtMapCreatorBenchmark" -DrunBenchmarks=true
  * (or via the dedicated JFR-profiling task: ./gradlew benchmark)
  *
- * <p>The {@code profile*} tests are the AWT counterpart of {@code LibGdxMapCreatorProfile} in the GoalTracker project: they render the exact
- * same two fixtures ({@code highResTest.nort} @1.25 and {@code allTypesOfEdits.nort} @0.75) that {@code LibGdxMapCreatorTest.highResTest} /
- * {@code .allTypesOfEdits} use, and print a per-operation {@link AwtImageHelper#getTimingReport() ImageHelper timing report}. Comparing the
- * two reports shows which image operations are slower on the LibGDX backend than on AWT.
+ * <p>The {@code profile*} tests render two fixtures ({@code highResTest.nort} @1.25 and {@code allTypesOfEdits.nort} @0.75) and print the
+ * per-iteration plus min and median {@code createMap} wall-clock times, so overall render cost can be compared across runs.
  */
 @EnabledIfSystemProperty(named = "runBenchmarks", matches = "true")
 public class AwtMapCreatorBenchmark
@@ -51,14 +49,14 @@ public class AwtMapCreatorBenchmark
 		MapTestUtil.runIncrementalDrawingBenchmark("AWT CPU", 0, 1);
 	}
 
-	/** Per-operation profile of highResTest.nort @ 1.25 - mirrors LibGdxMapCreatorTest.highResTest. */
+	/** Per-operation profile of highResTest.nort @ 1.25. */
 	@Test
 	public void profileHighResTest() throws Exception
 	{
 		profile("highResTest.nort", 1.25);
 	}
 
-	/** Per-operation profile of allTypesOfEdits.nort @ 0.75 - mirrors LibGdxMapCreatorTest.allTypesOfEdits. */
+	/** Per-operation profile of allTypesOfEdits.nort @ 0.75. */
 	@Test
 	public void profileAllTypesOfEdits() throws Exception
 	{
@@ -72,9 +70,8 @@ public class AwtMapCreatorBenchmark
 
 	/**
 	 * Renders the given fixture {@link #WARMUP_ITERATIONS} times (discarded) then {@link #TIMED_ITERATIONS} times (timed), in a single warm
-	 * JVM. Prints every sample plus the min and median wall-clock. Mirrors {@code LibGdxMapCreatorProfile} so the AWT and LibGDX numbers are
-	 * produced the same way (min-of-N in one warm JVM removes most of the run-to-run variance a single measurement has). Run via the plain
-	 * {@code test} task (NOT {@code benchmark}) to avoid JFR overhead.
+	 * JVM. Prints every sample plus the min and median wall-clock (min-of-N in one warm JVM removes most of the run-to-run variance a
+	 * single measurement has). Run via the plain {@code test} task (NOT {@code benchmark}) to avoid JFR overhead.
 	 */
 	private void profile(String settingsFileName, double resolution) throws Exception
 	{

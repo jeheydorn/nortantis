@@ -1040,7 +1040,7 @@ public class MapCreatorTest
 		// The Choose slider snaps to multiples of 1000 (SubMapDialog's minor tick spacing, with a minimum of 1000), so simulate the dialog
 		// by
 		// rounding the source-detail world size to the nearest 1000. This is the "approximately source detail" Choose-mode case.
-		int worldSize = (int) Math.clamp(Math.round(matchWorldSize / 1000.0) * 1000, 1000, SettingsGenerator.maxWorldSize);
+		int worldSize = (int) Math.min(SettingsGenerator.maxWorldSize, Math.max(1000, Math.round(matchWorldSize / 1000.0) * 1000));
 
 		long seed = 987654321L;
 		// redistributeIconsAndRivers = true: Choose mode redistributes icons/rivers/text across the new polygon grid.

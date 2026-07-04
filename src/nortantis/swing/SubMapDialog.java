@@ -114,7 +114,7 @@ public class SubMapDialog
 		double origMapArea = origSettings.generatedWidth * (double) origSettings.generatedHeight;
 		double selArea = selectionBoundsRI.width * selectionBoundsRI.height;
 		double oneXWorldSize = origSettings.worldSize * selArea / origMapArea;
-		return (int) Math.round(Math.clamp(oneXWorldSize, minPolygonsInSubMap, SettingsGenerator.maxWorldSize));
+		return (int) Math.round(Math.min(SettingsGenerator.maxWorldSize, Math.max(minPolygonsInSubMap, oneXWorldSize)));
 	}
 
 	public SubMapDialog(MainWindow mainWindow)

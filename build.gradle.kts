@@ -39,13 +39,16 @@ application {
     )
 }
 
-java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
-}
-
 tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
+    // Compile against Java 17 (rather than the runtime's 21) to keep a possible mobile / libGDX
+    // port viable - such toolchains target older Java levels. No such drawing layer exists today; this
+    // just preserves the option. Using options.release (rather than source/targetCompatibility) also
+    // blocks calls to JDK APIs newer than 17 at compile time, so any accidental newer-API usage fails
+    // here in the build instead of somewhere harder to diagnose later. This only constrains what we
+    // compile against - it does not affect the runtime JVM (run on 21+ for full JIT/GC performance) or
+    // graphics/driver capability.
+    options.release.set(17)
     options.compilerArgs.addAll(listOf("-Xlint:deprecation", "-Xlint:unchecked"))
 }
 
@@ -152,7 +155,7 @@ sourceSets {
 }
 
 // Generate an asset manifest listing all files under assets/ so that code
-// running from a JAR or on Android can enumerate assets without JAR introspection.
+// running from a JAR or a context without JAR introspection (like Android) can enumerate assets.
 tasks.register("generateAssetManifest") {
     val assetsDir = file("assets")
     val outputDir = file("${layout.buildDirectory.get()}/generated-resources/assets")

@@ -47,7 +47,7 @@ public class MapCreator implements WarningLogger
 	 * Optional lock held only while an incremental update writes its finished snippet into the shared full-sized display map (see
 	 * {@link #incrementalUpdateBounds}). The editor sets this so a background display rescale, which reads the same buffer, doesn't
 	 * observe a half-written region. It is intentionally NOT held during the (much longer) snippet computation, so that computation can
-	 * run in parallel with an in-flight rescale. Null (the default) means no locking - used for full draws, tests, and the Android app,
+	 * run in parallel with an in-flight rescale. Null (the default) means no locking - used for full draws, tests, and other contexts
 	 * where nothing reads the buffer concurrently.
 	 */
 	private Lock incrementalMapWriteLock;

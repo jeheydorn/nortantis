@@ -270,8 +270,7 @@ public class Assets
 	}
 
 	/**
-	 * Returns true if the given path refers to a packaged asset — either in a JAR file or accessible via an AssetInputStreamProvider (e.g.,
-	 * Android's AssetManager).
+	 * Returns true if the given path refers to a packaged asset — either in a JAR file or accessible via an AssetInputStreamProvider.
 	 */
 	private static boolean isPackagedAsset(String path)
 	{
