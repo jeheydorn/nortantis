@@ -292,11 +292,11 @@ public class MapCreator implements WarningLogger
 				}
 			}
 
-			// Expand the replace bounds to include text that touches the centers that changed because that text could switch from one line
-			// to two or vice versa.
+			// Expand the replace bounds to include Auto-line-break text near the change whose line count the change would actually flip
+			// between one line and two (only that requires redrawing the text outside the change region). See expandBoundsToIncludeText.
 			if (settings.drawText)
 			{
-				Rectangle textChangeBounds = textDrawer.expandBoundsToIncludeText(settings.edits.text, centersChangedBounds, settings);
+				Rectangle textChangeBounds = textDrawer.expandBoundsToIncludeText(settings.edits.text, centersChangedBounds, mapParts.graph, settings);
 				replaceBounds = replaceBounds.add(textChangeBounds);
 			}
 		}

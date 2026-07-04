@@ -3,7 +3,9 @@ package nortantis;
 import nortantis.editor.*;
 import nortantis.geom.IntPoint;
 import nortantis.geom.IntRectangle;
+import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
+import nortantis.geom.RotatedRectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.platform.Color;
 import nortantis.platform.Image;
@@ -209,6 +211,106 @@ public class MapCreatorTest
 		{
 			mapCreator.overrideMemoryMode(null);
 		}
+	}
+
+	/**
+	 * Guards the optimization in {@link TextDrawer#expandBoundsToIncludeText} that only expands an incremental land/water/region redraw to
+	 * include a {@link LineBreak#Auto} text when the change would actually flip that text between one line and two.
+	 *
+	 * <p>
+	 * The optimization recomputes the one-vs-two-line decision (via the same check the drawing code uses) and compares it to what is
+	 * currently drawn (line2Bounds != null). This test exercises both directions cheaply, without any redraws:
+	 * <ul>
+	 * <li>Negative: on the <em>unchanged</em> graph that produced the current text layout, the recomputed line count must equal what was
+	 * drawn for every text, so a probe overlapping a text must NOT be expanded. (The old always-expand code would fail this.) This also
+	 * catches any drift between the recompute and the real draw decision - e.g. a font-metric or location mismatch would show up as a
+	 * spurious expansion here.</li>
+	 * <li>Positive: if the stored line count is made to disagree with the recomputed one (simulating a change that flips the layout), the
+	 * probe MUST be expanded to include the text's full bounds, so the stale layout gets erased.</li>
+	 * </ul>
+	 */
+	@Test
+	public void expandBoundsToIncludeTextOnlyExpandsWhenLineCountChanges()
+	{
+		String settingsPath = Paths.get("unit test files", "map settings", "allTypesOfEdits.nort").toString();
+		MapSettings settings = new MapSettings(settingsPath);
+		settings.resolution = 0.5;
+
+		MapCreator mapCreator = new MapCreator();
+		MapParts mapParts = new MapParts();
+		// A full draw populates line1Bounds/line2Bounds on the edits' text at this resolution, which is the "currently drawn" state the
+		// optimization compares against.
+		mapCreator.createMap(settings, null, mapParts);
+
+		TextDrawer textDrawer = new TextDrawer(settings);
+		textDrawer.setMapTexts(settings.edits.text);
+
+		int testedNegative = 0;
+		boolean testedPositive = false;
+		for (MapText text : settings.edits.text)
+		{
+			// Only Auto multi-word text can switch line count, and only if it was actually drawn (so its layout is known).
+			if (text.lineBreak != LineBreak.Auto || text.value == null || text.value.trim().split(" ").length <= 1 || text.line1Bounds == null)
+			{
+				continue;
+			}
+
+			// A tiny probe over the text's center, so any expansion is caused by this (or a neighboring) text, not the probe itself.
+			Point textLocation = new Point(text.location.x * settings.resolution, text.location.y * settings.resolution);
+			Rectangle probe = new Rectangle(textLocation.x - 1, textLocation.y - 1, 2, 2);
+
+			// Negative: unchanged graph -> recomputed line count matches what's drawn -> no expansion.
+			Rectangle unchanged = textDrawer.expandBoundsToIncludeText(settings.edits.text, probe, mapParts.graph, settings);
+			assertEquals(probe, unchanged, "Unchanged graph should not expand bounds for text: '" + text.value + "'");
+			testedNegative++;
+
+			// Positive: flip only THIS text's stored line count so it disagrees with the recompute, and confirm it now gets expanded.
+			// Use a probe centered on this text but with no other text overlapping it, so the expansion is unambiguously from this text.
+			if (!testedPositive && isOnlyAutoTextOverlapping(textDrawer, settings, text, probe))
+			{
+				RotatedRectangle originalLine2Bounds = text.line2Bounds;
+				// Toggle the stored line count: pretend a one-line text is now two-line, or vice versa.
+				text.line2Bounds = originalLine2Bounds == null ? text.line1Bounds : null;
+				try
+				{
+					Rectangle flipped = textDrawer.expandBoundsToIncludeText(settings.edits.text, probe, mapParts.graph, settings);
+					assertNotEquals(probe, flipped, "A flipped line count should expand bounds to include the text: '" + text.value + "'");
+				}
+				finally
+				{
+					text.line2Bounds = originalLine2Bounds;
+				}
+				testedPositive = true;
+			}
+		}
+
+		assertTrue(testedNegative > 0, "Expected to find at least one Auto multi-word text to test");
+		assertTrue(testedPositive, "Expected to find at least one isolated Auto multi-word text for the positive case");
+	}
+
+	/**
+	 * Returns true if {@code target} is the only Auto multi-word text whose bounds overlap {@code probe}, so a positive-case expansion can
+	 * be attributed to it alone.
+	 */
+	private boolean isOnlyAutoTextOverlapping(TextDrawer textDrawer, MapSettings settings, MapText target, Rectangle probe)
+	{
+		Tuple1<Boolean> foundTarget = new Tuple1<>(false);
+		Tuple1<Boolean> foundOther = new Tuple1<>(false);
+		textDrawer.doForEachTextInBounds(settings.edits.text, probe, (text, area) ->
+		{
+			if (text.lineBreak == LineBreak.Auto && text.value != null && text.value.trim().split(" ").length > 1)
+			{
+				if (text == target)
+				{
+					foundTarget.set(true);
+				}
+				else
+				{
+					foundOther.set(true);
+				}
+			}
+		});
+		return foundTarget.get() && !foundOther.get();
 	}
 
 	/**

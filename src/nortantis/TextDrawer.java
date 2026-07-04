@@ -10,6 +10,7 @@ import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Corner;
 import nortantis.graph.voronoi.Edge;
 import nortantis.platform.*;
+import nortantis.swing.MapEdits;
 import nortantis.util.*;
 import org.apache.commons.math3.exception.NoDataException;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
@@ -369,7 +370,14 @@ public class TextDrawer
 		}
 	}
 
-	public Rectangle expandBoundsToIncludeText(List<MapText> mapTexts, Rectangle bounds, MapSettings settings)
+	/**
+	 * Expands {@code bounds} (the region an incremental land/water/region-boundary change is going to redraw) to also include any
+	 * {@link LineBreak#Auto} text whose line count the change could flip between one line and two. Only such a flip requires redrawing a
+	 * text outside the change region (to erase the old layout); if the line count won't change, the text's pixels outside the change
+	 * region are identical before and after, so leaving them out keeps the incremental redraw small - which matters a lot around large
+	 * text like titles.
+	 */
+	public Rectangle expandBoundsToIncludeText(List<MapText> mapTexts, Rectangle bounds, WorldGraph graph, MapSettings settings)
 	{
 		if (!settings.drawText)
 		{
@@ -378,14 +386,57 @@ public class TextDrawer
 
 		Tuple1<Rectangle> wrapperToMakeCompilerHappy = new Tuple1<>(bounds);
 
-		doForEachTextInBounds(mapTexts, bounds, (text, area) ->
+		// One scratch painter (for font metrics), shared across the texts checked below.
+		try (Painter p = Image.create(1, 1, ImageType.ARGB).createPainter())
 		{
-			if (text.lineBreak == LineBreak.Auto)
+			doForEachTextInBounds(mapTexts, bounds, (text, area) ->
 			{
-				wrapperToMakeCompilerHappy.set(wrapperToMakeCompilerHappy.get().add(area.getBounds()));
-			}
-		});
+				if (text.lineBreak == LineBreak.Auto && willAutoTextLineCountChange(text, graph, p))
+				{
+					wrapperToMakeCompilerHappy.set(wrapperToMakeCompilerHappy.get().add(area.getBounds()));
+				}
+			});
+		}
 		return wrapperToMakeCompilerHappy.get();
+	}
+
+	/**
+	 * Returns whether redrawing with the current graph would flip this {@link LineBreak#Auto} text between one line and two, compared to
+	 * what is currently drawn on the map. This mirrors the line-count decision made in {@link #drawNameSplitIfNeeded} (using the same
+	 * {@link #overlapsBoundaryThatShouldCauseLineSplit} check with {@code riseOffset} 0, as editor redraws use), so it can't drift from
+	 * what the draw actually does. Returns true conservatively when the text's current layout is unknown or untrustworthy (it has never
+	 * been drawn, or its bounds may be stale - see {@link MapEdits#textBoundsNeedRefresh}).
+	 *
+	 * @param p
+	 *            A scratch painter used only for font metrics.
+	 */
+	private boolean willAutoTextLineCountChange(MapText text, WorldGraph graph, Painter p)
+	{
+		boolean hasMultipleWords = text.value.trim().split(" ").length > 1;
+		if (!hasMultipleWords)
+		{
+			// Single-word text is always drawn on one line; it never splits, so a boundary change can't flip its line count.
+			return false;
+		}
+
+		if (settings.edits.textBoundsNeedRefresh || text.line1Bounds == null)
+		{
+			// The stored bounds may not reflect what's actually on the map: the text was never drawn (line1Bounds == null), or the
+			// bounds were just restored by undo/redo or loaded from disk and not yet redrawn at this resolution (textBoundsNeedRefresh).
+			// Either way we can't trust line2Bounds as the current layout, so be conservative. The next draw refreshes every text's
+			// bounds (updateTextBoundsIfNeeded) and clears the flag, so subsequent edits use the fast path.
+			return true;
+		}
+
+		setFontForText(p, text);
+		Point oneLineLocation = getTextLocationWithRiseOffset(text, text.value, null, 0.0, p);
+		Rectangle oneLineBounds = getLine1BoundsWithoutCurvatureOrSpacing(text.value, oneLineLocation, p, false);
+		oneLineBounds = expandBoundsToIncludeCurvatureAndSpacing(oneLineBounds, text, text.value, p);
+
+		boolean willBeTwoLines = overlapsBoundaryThatShouldCauseLineSplit(oneLineBounds, oneLineLocation, text.angle, text.type, graph);
+		// line2Bounds is non-null exactly when the last draw rendered this text on two lines.
+		boolean isCurrentlyTwoLines = text.line2Bounds != null;
+		return willBeTwoLines != isCurrentlyTwoLines;
 	}
 
 	private void drawText(Image map, WorldGraph graph, List<MapText> textToDraw, Rectangle drawBounds)
@@ -1343,7 +1394,7 @@ public class TextDrawer
 
 	/**
 	 * Recomputes the bounds on every MapText in {@link MapEdits#text} if {@link MapEdits#textBoundsNeedRefresh} is true. Called at the end
-	 * of every incremental draw (see {@link MapCreator#incrementalUpdateBounds}) so that: - texts on an edits-from-disk MapEdits get bounds
+	 * of every incremental draw (see {@code MapCreator#incrementalUpdateBounds}) so that: - texts on an edits-from-disk MapEdits get bounds
 	 * before the first interactive click, - undo/redo restorations get fresh bounds at the current resolution (the just-restored bounds may
 	 * have been computed at a different displayQualityScale, or may be null for a text that was pasted into a snapshot before its bounds
 	 * were ever drawn).
