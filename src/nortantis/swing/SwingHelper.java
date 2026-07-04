@@ -303,7 +303,7 @@ public class SwingHelper
 
 			JPanel labelPanel = new JPanel();
 			labelPanel.setLayout(new BoxLayout(labelPanel, BoxLayout.X_AXIS));
-			labelPanel.add(new JLabel("Alpha:"));
+			labelPanel.add(new JLabel(Translation.get("colorChooser.alpha")));
 			labelPanel.add(Box.createRigidArea(new Dimension(10, 0))); // Adds 10px horizontal space
 
 			JPanel centerPanel = new JPanel(new BorderLayout());
@@ -326,7 +326,7 @@ public class SwingHelper
 		@Override
 		public String getDisplayName()
 		{
-			return "Transparency";
+			return Translation.get("colorChooser.transparency");
 		}
 
 		@Override

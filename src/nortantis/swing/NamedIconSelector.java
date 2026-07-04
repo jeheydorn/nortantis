@@ -3,6 +3,7 @@ package nortantis.swing;
 import nortantis.IconType;
 import nortantis.ImageCache;
 import nortantis.editor.UserPreferences;
+import nortantis.swing.translation.Translation;
 import nortantis.util.Tuple2;
 
 import javax.swing.*;
@@ -88,11 +89,11 @@ public class NamedIconSelector
 		}
 		else
 		{
-			container.add(new JLabel("<html>The art pack '" + artPack + "' has no " + type + ".</html>"));
+			container.add(new JLabel("<html>" + Translation.get("iconsTool.artPackHasNoType", artPack, type.getNameForGUI()) + "</html>"));
 		}
 	}
 
-	public void addtoOrganizer(GridBagOrganizer organizer, String labelText)
+	public void addToOrganizer(GridBagOrganizer organizer, String labelText)
 	{
 		hider = organizer.addLeftAlignedComponentWithStackedLabel(labelText, "", container);
 	}

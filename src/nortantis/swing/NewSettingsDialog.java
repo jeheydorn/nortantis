@@ -780,7 +780,7 @@ public class NewSettingsDialog extends JDialog
 		if (settings != null && settings.rightRotationCount != 0 && !dimensionsComboBox.getSelectedItem().equals(GeneratedDimension.Square))
 		{
 			int degrees = settings.rightRotationCount * 90;
-			rotationWarningLabel.setText("The map is rotated " + degrees + " degrees.");
+			rotationWarningLabel.setText(Translation.get("newSettingsDialog.rotationWarning", String.valueOf(degrees)));
 			rotationWarningHider.setVisible(true);
 		}
 		else

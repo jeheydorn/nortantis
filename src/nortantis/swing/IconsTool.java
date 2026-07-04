@@ -9,7 +9,6 @@ import nortantis.geom.RotatedRectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.platform.*;
 import nortantis.platform.Color;
-import nortantis.platform.Font;
 import nortantis.platform.Image;
 import nortantis.platform.Painter;
 import nortantis.platform.awt.AwtBridge;
@@ -1156,7 +1155,7 @@ public class IconsTool extends EditorTool
 		{
 			// This is the first time to create the city buttons.
 			cityButtons = new NamedIconSelector(IconType.cities);
-			cityButtons.addtoOrganizer(organizer, Translation.get("iconsTool.cities.label"));
+			cityButtons.addToOrganizer(organizer, Translation.get("iconsTool.cities.label"));
 		}
 
 		cityButtons.updateButtonList(artPack, customImagesPath);
@@ -1168,7 +1167,7 @@ public class IconsTool extends EditorTool
 		{
 			// This is the first time to create the city buttons.
 			decorationButtons = new NamedIconSelector(IconType.decorations);
-			decorationButtons.addtoOrganizer(organizer, Translation.get("iconsTool.decorations.label"));
+			decorationButtons.addToOrganizer(organizer, Translation.get("iconsTool.decorations.label"));
 		}
 
 		decorationButtons.updateButtonList(artPack, customImagesPath);
