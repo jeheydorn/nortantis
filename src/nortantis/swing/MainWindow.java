@@ -127,6 +127,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private JMenu viewMenu;
 	private JMenu recentSettingsMenuItem;
 	java.awt.Point mouseLocationForMiddleButtonDrag;
+	// True while the current tool has an open press (mouse is down and the tool was given handleMousePressedOnMap but not yet a
+	// matching release). Panning with Shift mid-drag suspends the interaction rather than finalizing it, so this stays true through
+	// the pan and the tool's release is deferred to the real mouse-up.
+	private boolean toolInteractionInProgress;
 	// Fractional zoom-scroll accumulator so a touchpad's high-frequency, small-delta wheel events don't advance a full zoom step per
 	// event. Whole units are consumed as zoom steps and the remainder is carried to the next event.
 	private double accumulatedZoomScroll;
@@ -515,6 +519,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				}
 				else if (SwingUtilities.isLeftMouseButton(e))
 				{
+					toolInteractionInProgress = true;
 					updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMousePressedOnMap(e));
 				}
 				else if (SwingUtilities.isRightMouseButton(e))
@@ -533,15 +538,13 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				{
 					return;
 				}
-				if (mouseLocationForMiddleButtonDrag != null)
+				// End any pan in progress.
+				mouseLocationForMiddleButtonDrag = null;
+				if (toolInteractionInProgress && SwingUtilities.isLeftMouseButton(e))
 				{
-					// The mouse is being released while panning. End the pan without forwarding to the tool; the tool never received
-					// a matching press for this pan, so there is nothing to finalize.
-					mouseLocationForMiddleButtonDrag = null;
-					return;
-				}
-				if (SwingUtilities.isLeftMouseButton(e))
-				{
+					// Always finalize an open tool interaction, even if Shift is still held from a mid-drag pan. Otherwise the tool
+					// would never receive its release and would be left mid-operation (e.g. still dragging a control point).
+					toolInteractionInProgress = false;
 					updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMouseReleasedOnMap(e));
 				}
 			}
@@ -567,34 +570,50 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				{
 					return;
 				}
-				// The drag switches live between panning and drawing based on the Shift key (or middle button) so the user can go back
-				// and forth without releasing the mouse. When switching, the tool's press/release contract starts or finalizes a
-				// stroke, so no tool-specific code is needed. mouseLocationForMiddleButtonDrag being non-null means a pan is in progress.
+				// The drag switches live between panning and interacting with the tool based on the Shift key (or middle button), so the
+				// user can pan mid-gesture without releasing the mouse. Pressing Shift SUSPENDS an in-progress tool interaction (it is
+				// not finalized - the tool's release is deferred to the real mouse-up); releasing Shift RESUMES it. mouseLocationFor-
+				// MiddleButtonDrag being non-null means a pan is currently in progress.
 				boolean isPanning = mouseLocationForMiddleButtonDrag != null;
 				boolean shouldPan = SwingUtilities.isMiddleMouseButton(e) || (SwingUtilities.isLeftMouseButton(e) && e.isShiftDown());
 
-				if (isPanning && !shouldPan)
+				if (shouldPan)
 				{
-					// Shift was released partway through a pan. Stop panning and begin a drawing interaction at the current point.
-					mouseLocationForMiddleButtonDrag = null;
-					updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMousePressedOnMap(e));
-				}
-				else if (!isPanning && shouldPan && SwingUtilities.isLeftMouseButton(e))
-				{
-					// Shift was pressed partway through a left-drag. Finalize the tool's in-progress stroke and begin panning.
-					updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMouseReleasedOnMap(e));
-					mouseLocationForMiddleButtonDrag = e.getPoint();
-				}
-				else if (isPanning)
-				{
-					int deltaX = mouseLocationForMiddleButtonDrag.x - e.getX();
-					int deltaY = mouseLocationForMiddleButtonDrag.y - e.getY();
-					mapEditingScrollPane.getVerticalScrollBar().setValue(mapEditingScrollPane.getVerticalScrollBar().getValue() + deltaY);
-					mapEditingScrollPane.getHorizontalScrollBar().setValue(mapEditingScrollPane.getHorizontalScrollBar().getValue() + deltaX);
+					if (isPanning)
+					{
+						int deltaX = mouseLocationForMiddleButtonDrag.x - e.getX();
+						int deltaY = mouseLocationForMiddleButtonDrag.y - e.getY();
+						mapEditingScrollPane.getVerticalScrollBar().setValue(mapEditingScrollPane.getVerticalScrollBar().getValue() + deltaY);
+						mapEditingScrollPane.getHorizontalScrollBar().setValue(mapEditingScrollPane.getHorizontalScrollBar().getValue() + deltaX);
+					}
+					else
+					{
+						// Start panning. Any open tool interaction is left suspended, not finalized.
+						mouseLocationForMiddleButtonDrag = e.getPoint();
+					}
 				}
 				else if (SwingUtilities.isLeftMouseButton(e))
 				{
-					updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMouseDraggedOnMap(e));
+					if (isPanning)
+					{
+						// Shift was released partway through a pan.
+						mouseLocationForMiddleButtonDrag = null;
+						if (toolInteractionInProgress)
+						{
+							// Resume the suspended tool interaction at the current point.
+							updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMouseDraggedOnMap(e));
+						}
+						else
+						{
+							// The gesture began as a pan (Shift held at press), so there is no interaction to resume. Begin one now.
+							toolInteractionInProgress = true;
+							updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMousePressedOnMap(e));
+						}
+					}
+					else
+					{
+						updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMouseDraggedOnMap(e));
+					}
 				}
 			}
 		});
