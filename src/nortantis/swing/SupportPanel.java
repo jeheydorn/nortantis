@@ -26,6 +26,10 @@ public class SupportPanel extends JPanel
 {
 	public static final int defaultContentWidth = 480;
 
+	// Temporary flag for comparing the highlighted-card treatment of the ask against plain text with no card background/border. Flip to
+	// false to see the plain-text version.
+	private static final boolean useAskCard = false;
+
 	private static final int rowGap = 14;
 	private static final int cardPadding = 14;
 	private static final int cardArc = 18;
@@ -87,8 +91,8 @@ public class SupportPanel extends JPanel
 				UserPreferences.getInstance().save();
 			});
 
-			JComponent askCard = wrapInCard(askRow, hideOnStartupCheckbox, contentWidth);
-			y = addComponent(askCard, contentWidth, y);
+			JComponent askContainer = wrapAskContent(askRow, hideOnStartupCheckbox, contentWidth);
+			y = addComponent(askContainer, contentWidth, y);
 			y += rowGap;
 		}
 
@@ -114,50 +118,60 @@ public class SupportPanel extends JPanel
 	}
 
 	/**
-	 * Wraps content, plus a checkbox below it, in a softly rounded card tinted with the current look and feel's own colors, so the ask
-	 * reads as a deliberate callout without introducing an unrelated accent color.
+	 * Wraps content, plus a checkbox below it, either in a softly rounded card tinted with the current look and feel's own colors (so the
+	 * ask reads as a deliberate callout without introducing an unrelated accent color), or, per {@link #useAskCard}, as plain text with no
+	 * card background/border, for comparing the two treatments.
 	 */
-	private JComponent wrapInCard(JPanel content, JCheckBox checkbox, int width)
+	private JComponent wrapAskContent(JPanel content, JCheckBox checkbox, int width)
 	{
-		int innerWidth = width - 2 * cardPadding;
+		int padding = useAskCard ? cardPadding : 0;
+		int innerWidth = width - 2 * padding;
 		// See addComponent: pin the row's width before measuring its wrapped preferred height.
 		content.setSize(innerWidth, 1);
 		Dimension contentSize = content.getPreferredSize();
-		content.setBounds(cardPadding, cardPadding, innerWidth, contentSize.height);
+		content.setBounds(padding, padding, innerWidth, contentSize.height);
 
-		boolean isDarkTheme = UserPreferences.getInstance().lookAndFeel == LookAndFeel.Dark;
-		Color cardBackgroundColor = isDarkTheme ? new Color(255, 255, 255, 20) : new Color(0, 0, 0, 16);
-		Color cardBorderColor = isDarkTheme ? new Color(255, 255, 255, 45) : new Color(0, 0, 0, 40);
-
-		JPanel card = new JPanel(null)
+		JPanel container;
+		if (useAskCard)
 		{
-			@Override
-			protected void paintComponent(Graphics g)
+			boolean isDarkTheme = UserPreferences.getInstance().lookAndFeel == LookAndFeel.Dark;
+			Color cardBackgroundColor = isDarkTheme ? new Color(255, 255, 255, 20) : new Color(0, 0, 0, 16);
+			Color cardBorderColor = isDarkTheme ? new Color(255, 255, 255, 45) : new Color(0, 0, 0, 40);
+
+			container = new JPanel(null)
 			{
-				Graphics2D g2 = (Graphics2D) g.create();
-				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-				// drawRoundRect's 1px stroke is centered on the path, so at inset 0 (the top/left edges) half the stroke would fall
-				// outside this component's paintable area and get clipped. Insetting by 1 on all sides gives the stroke room to render
-				// fully everywhere, not just at the bottom/right (which already had margin from the -1 on width/height).
-				g2.setColor(cardBackgroundColor);
-				g2.fillRoundRect(1, 1, getWidth() - 2, getHeight() - 2, cardArc, cardArc);
-				g2.setColor(cardBorderColor);
-				g2.drawRoundRect(1, 1, getWidth() - 2, getHeight() - 2, cardArc, cardArc);
-				g2.dispose();
-				super.paintComponent(g);
-			}
-		};
-		card.setOpaque(false);
-		card.add(content);
+				@Override
+				protected void paintComponent(Graphics g)
+				{
+					Graphics2D g2 = (Graphics2D) g.create();
+					g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+					// drawRoundRect's 1px stroke is centered on the path, so at inset 0 (the top/left edges) half the stroke would fall
+					// outside this component's paintable area and get clipped. Insetting by 1 on all sides gives the stroke room to
+					// render fully everywhere, not just at the bottom/right (which already had margin from the -1 on width/height).
+					g2.setColor(cardBackgroundColor);
+					g2.fillRoundRect(1, 1, getWidth() - 2, getHeight() - 2, cardArc, cardArc);
+					g2.setColor(cardBorderColor);
+					g2.drawRoundRect(1, 1, getWidth() - 2, getHeight() - 2, cardArc, cardArc);
+					g2.dispose();
+					super.paintComponent(g);
+				}
+			};
+		}
+		else
+		{
+			container = new JPanel(null);
+		}
+		container.setOpaque(false);
+		container.add(content);
 
 		Dimension checkboxSize = measureCheckboxSize(checkbox);
-		int checkboxY = cardPadding + contentSize.height + checkboxGap;
+		int checkboxY = padding + contentSize.height + checkboxGap;
 		checkbox.setBounds((width - checkboxSize.width) / 2, checkboxY, checkboxSize.width, checkboxSize.height);
-		card.add(checkbox);
-		int cardHeight = checkboxY + checkboxSize.height + cardPadding;
+		container.add(checkbox);
+		int containerHeight = checkboxY + checkboxSize.height + padding;
 
-		card.setPreferredSize(new Dimension(width, cardHeight));
-		return card;
+		container.setPreferredSize(new Dimension(width, containerHeight));
+		return container;
 	}
 
 	/**
