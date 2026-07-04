@@ -534,6 +534,13 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				{
 					return;
 				}
+				if (mouseLocationForMiddleButtonDrag != null)
+				{
+					// The gesture was a pan (latched at press). End it without forwarding to the tool, even if Shift was released
+					// or the middle button was used.
+					mouseLocationForMiddleButtonDrag = null;
+					return;
+				}
 				if (SwingUtilities.isLeftMouseButton(e))
 				{
 					updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMouseReleasedOnMap(e));
@@ -561,15 +568,15 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				{
 					return;
 				}
-				if (e.isShiftDown() && SwingUtilities.isLeftMouseButton(e) || SwingUtilities.isMiddleMouseButton(e))
+				// Whether this drag pans is latched when the mouse is pressed (mouseLocationForMiddleButtonDrag becomes non-null), not
+				// re-evaluated from the live modifier state. Otherwise releasing Shift mid-pan would flip the drag into a drawing
+				// interaction while the button is still held.
+				if (mouseLocationForMiddleButtonDrag != null)
 				{
-					if (mouseLocationForMiddleButtonDrag != null)
-					{
-						int deltaX = mouseLocationForMiddleButtonDrag.x - e.getX();
-						int deltaY = mouseLocationForMiddleButtonDrag.y - e.getY();
-						mapEditingScrollPane.getVerticalScrollBar().setValue(mapEditingScrollPane.getVerticalScrollBar().getValue() + deltaY);
-						mapEditingScrollPane.getHorizontalScrollBar().setValue(mapEditingScrollPane.getHorizontalScrollBar().getValue() + deltaX);
-					}
+					int deltaX = mouseLocationForMiddleButtonDrag.x - e.getX();
+					int deltaY = mouseLocationForMiddleButtonDrag.y - e.getY();
+					mapEditingScrollPane.getVerticalScrollBar().setValue(mapEditingScrollPane.getVerticalScrollBar().getValue() + deltaY);
+					mapEditingScrollPane.getHorizontalScrollBar().setValue(mapEditingScrollPane.getHorizontalScrollBar().getValue() + deltaX);
 				}
 				else if (SwingUtilities.isLeftMouseButton(e))
 				{
