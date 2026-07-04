@@ -127,10 +127,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private JMenu viewMenu;
 	private JMenu recentSettingsMenuItem;
 	java.awt.Point mouseLocationForMiddleButtonDrag;
-	// Fractional scroll accumulators so a touchpad's high-frequency, small-delta wheel events don't advance a full zoom step (or jump
-	// the map) per event. Whole units are consumed as zoom steps / pan pixels and the remainder is carried to the next event.
+	// Fractional zoom-scroll accumulator so a touchpad's high-frequency, small-delta wheel events don't advance a full zoom step per
+	// event. Whole units are consumed as zoom steps and the remainder is carried to the next event.
 	private double accumulatedZoomScroll;
-	private double accumulatedPanScroll;
 	private JMenu helpMenu;
 	private JMenuItem mapInfoMenuItem;
 	private JMenuItem refreshMenuItem;
@@ -624,12 +623,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				if (e.isShiftDown())
 				{
-					MainWindow.this.handleMouseWheelPanning(e);
+					// A sideways two-finger trackpad swipe arrives as a Shift-modified wheel event. Ignore it so the map doesn't
+					// zoom on horizontal scrolling; the map zooms on vertical scrolling only.
+					return;
 				}
-				else
-				{
-					MainWindow.this.handleMouseWheelChangingZoom(e);
-				}
+				MainWindow.this.handleMouseWheelChangingZoom(e);
 			}
 
 		});
@@ -650,9 +648,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 
-		// Speed up the scroll speed. The horizontal increment also sets the two-finger sideways pan speed (see handleMouseWheelPanning).
+		// Speed up the scroll speed.
 		mapEditingScrollPane.getVerticalScrollBar().setUnitIncrement(16);
-		mapEditingScrollPane.getHorizontalScrollBar().setUnitIncrement(16);
 	}
 
 	private void createMapUpdater()
@@ -1743,33 +1740,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		}
 		accumulatedZoomScroll -= steps;
 
-		// AWT can't tell a mouse wheel from a touchpad, but a notched mouse wheel always reports whole-number rotations while a
-		// touchpad reports fractional ones. The two need opposite zoom directions: on a mouse wheel, scrolling toward the user
-		// (positive rotation) zooms out; on a touchpad the same gesture should zoom in.
-		boolean isNotchedMouseWheel = rotation == Math.rint(rotation);
-		changeZoomByOffset(isNotchedMouseWheel ? -steps : steps);
-	}
-
-	/**
-	 * Pans the map horizontally. A two-finger sideways trackpad swipe arrives as a Shift-modified wheel event, so it scrolls the map
-	 * left and right. Fractional touchpad deltas are accumulated so small scroll events aren't lost to integer truncation.
-	 */
-	public void handleMouseWheelPanning(MouseWheelEvent e)
-	{
-		JScrollBar horizontalScrollBar = mapEditingScrollPane.getHorizontalScrollBar();
-		double rotation = e.getPreciseWheelRotation();
-		if (Math.signum(rotation) != Math.signum(accumulatedPanScroll))
-		{
-			accumulatedPanScroll = 0;
-		}
-		accumulatedPanScroll += rotation * horizontalScrollBar.getUnitIncrement();
-		int pixels = (int) accumulatedPanScroll;
-		if (pixels == 0)
-		{
-			return;
-		}
-		accumulatedPanScroll -= pixels;
-		horizontalScrollBar.setValue(horizontalScrollBar.getValue() + pixels);
+		// Positive wheel rotation (scrolling toward the user) zooms out, which is a lower zoom-combo-box index.
+		changeZoomByOffset(-steps);
 	}
 
 	/**
