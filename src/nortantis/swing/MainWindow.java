@@ -643,8 +643,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 
-		// Speed up the scroll speed.
+		// Speed up the scroll speed. The horizontal increment also sets the two-finger sideways pan speed (see handleMouseWheelPanning).
 		mapEditingScrollPane.getVerticalScrollBar().setUnitIncrement(16);
+		mapEditingScrollPane.getHorizontalScrollBar().setUnitIncrement(16);
 	}
 
 	private void createMapUpdater()
