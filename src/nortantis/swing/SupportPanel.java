@@ -7,12 +7,10 @@ import javax.swing.*;
 import java.awt.*;
 
 /**
- * Shows a support ask (buy a book / donate) in a highlighted card, followed by smaller links to the Nortantis website, blog, and source
- * code. Used both as the bottom overlay on the map canvas at startup (see {@link MapCanvasOverlay}) and inside the About Nortantis dialog.
+ * Shows a support ask (buy a book / donate) as plain text, followed by smaller links to the Nortantis website, blog, and source code. Used
+ * both as the bottom overlay on the map canvas at startup (see {@link MapCanvasOverlay}) and inside the About Nortantis dialog.
  * <p>
- * The ask is deliberately the most visually prominent thing here (larger type, a card background, a heart accent) since it's the actual
- * point of this panel. The card is tinted using a translucent overlay of the current look and feel's own colors (rather than an
- * unrelated accent color), so it reads as a gentle highlight consistent with the rest of the UI instead of a garish banner.
+ * The ask is deliberately the most visually prominent thing here (larger type, a heart accent) since it's the actual point of this panel.
  * <p>
  * The book-purchase and donation asks are both shown for every locale (with the same content, only translated) - the book being only sold
  * in English doesn't stop this from linking to it everywhere.
@@ -26,13 +24,7 @@ public class SupportPanel extends JPanel
 {
 	public static final int defaultContentWidth = 480;
 
-	// Temporary flag for comparing the highlighted-card treatment of the ask against plain text with no card background/border. Flip to
-	// false to see the plain-text version.
-	private static final boolean useAskCard = false;
-
 	private static final int rowGap = 14;
-	private static final int cardPadding = 14;
-	private static final int cardArc = 18;
 	private static final int checkboxGap = 4;
 
 	private static final Color heartColor = new Color(214, 64, 90);
@@ -55,9 +47,9 @@ public class SupportPanel extends JPanel
 	 * @param contentWidth
 	 *            The fixed width, in pixels, to wrap this panel's rows to.
 	 * @param showAskCard
-	 *            Whether to show the ask card (with its "hide this on startup" checkbox) above the website/blog/source links. Pass false
-	 *            when {@link UserPreferences#hideStartupSupportPanel} says to hide it - the utility links still show either way, so this
-	 *            only ever hides the ask itself, never this whole panel.
+	 *            Whether to show the ask (with its "hide this on startup" checkbox) above the website/blog/source links. Pass false when
+	 *            {@link UserPreferences#hideStartupSupportPanel} says to hide it - the utility links still show either way, so this only
+	 *            ever hides the ask itself, never this whole panel.
 	 */
 	public SupportPanel(int contentWidth, boolean showAskCard)
 	{
@@ -74,11 +66,13 @@ public class SupportPanel extends JPanel
 
 		int y = 0;
 
-		// The ask comes first, in its own highlighted card
+		// The ask comes first
 		if (showAskCard)
 		{
 			JPanel askRow = createFlowRow(4, 4);
 			buildAskRow(askRow);
+			y = addComponent(askRow, contentWidth, y);
+			y += checkboxGap;
 
 			JCheckBox hideOnStartupCheckbox = new JCheckBox(Translation.get("startup.supportPanel.hideCheckbox"));
 			hideOnStartupCheckbox.setOpaque(false);
@@ -91,8 +85,10 @@ public class SupportPanel extends JPanel
 				UserPreferences.getInstance().save();
 			});
 
-			JComponent askContainer = wrapAskContent(askRow, hideOnStartupCheckbox, contentWidth);
-			y = addComponent(askContainer, contentWidth, y);
+			Dimension checkboxSize = measureCheckboxSize(hideOnStartupCheckbox);
+			hideOnStartupCheckbox.setBounds((contentWidth - checkboxSize.width) / 2, y, checkboxSize.width, checkboxSize.height);
+			add(hideOnStartupCheckbox);
+			y += checkboxSize.height;
 			y += rowGap;
 		}
 
@@ -115,63 +111,6 @@ public class SupportPanel extends JPanel
 		JPanel row = new JPanel(new WrapLayout(FlowLayout.CENTER, hgap, vgap));
 		row.setOpaque(false);
 		return row;
-	}
-
-	/**
-	 * Wraps content, plus a checkbox below it, either in a softly rounded card tinted with the current look and feel's own colors (so the
-	 * ask reads as a deliberate callout without introducing an unrelated accent color), or, per {@link #useAskCard}, as plain text with no
-	 * card background/border, for comparing the two treatments.
-	 */
-	private JComponent wrapAskContent(JPanel content, JCheckBox checkbox, int width)
-	{
-		int padding = useAskCard ? cardPadding : 0;
-		int innerWidth = width - 2 * padding;
-		// See addComponent: pin the row's width before measuring its wrapped preferred height.
-		content.setSize(innerWidth, 1);
-		Dimension contentSize = content.getPreferredSize();
-		content.setBounds(padding, padding, innerWidth, contentSize.height);
-
-		JPanel container;
-		if (useAskCard)
-		{
-			boolean isDarkTheme = UserPreferences.getInstance().lookAndFeel == LookAndFeel.Dark;
-			Color cardBackgroundColor = isDarkTheme ? new Color(255, 255, 255, 20) : new Color(0, 0, 0, 16);
-			Color cardBorderColor = isDarkTheme ? new Color(255, 255, 255, 45) : new Color(0, 0, 0, 40);
-
-			container = new JPanel(null)
-			{
-				@Override
-				protected void paintComponent(Graphics g)
-				{
-					Graphics2D g2 = (Graphics2D) g.create();
-					g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-					// drawRoundRect's 1px stroke is centered on the path, so at inset 0 (the top/left edges) half the stroke would fall
-					// outside this component's paintable area and get clipped. Insetting by 1 on all sides gives the stroke room to
-					// render fully everywhere, not just at the bottom/right (which already had margin from the -1 on width/height).
-					g2.setColor(cardBackgroundColor);
-					g2.fillRoundRect(1, 1, getWidth() - 2, getHeight() - 2, cardArc, cardArc);
-					g2.setColor(cardBorderColor);
-					g2.drawRoundRect(1, 1, getWidth() - 2, getHeight() - 2, cardArc, cardArc);
-					g2.dispose();
-					super.paintComponent(g);
-				}
-			};
-		}
-		else
-		{
-			container = new JPanel(null);
-		}
-		container.setOpaque(false);
-		container.add(content);
-
-		Dimension checkboxSize = measureCheckboxSize(checkbox);
-		int checkboxY = padding + contentSize.height + checkboxGap;
-		checkbox.setBounds((width - checkboxSize.width) / 2, checkboxY, checkboxSize.width, checkboxSize.height);
-		container.add(checkbox);
-		int containerHeight = checkboxY + checkboxSize.height + padding;
-
-		container.setPreferredSize(new Dimension(width, containerHeight));
-		return container;
 	}
 
 	/**
