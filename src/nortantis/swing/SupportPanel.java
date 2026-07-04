@@ -7,17 +7,8 @@ import javax.swing.*;
 import java.awt.*;
 
 /**
- * Shows a support ask (buy a book / donate) as plain text, followed by smaller links to the Nortantis website, blog, and source code. Used
- * both as the bottom overlay on the map canvas at startup (see {@link MapCanvasOverlay}) and inside the About Nortantis dialog.
- * <p>
- * The ask is deliberately the most visually prominent thing here (larger type, a heart accent) since it's the actual point of this panel.
- * <p>
- * The book-purchase and donation asks are both shown for every locale (with the same content, only translated) - the book being only sold
- * in English doesn't stop this from linking to it everywhere.
- * <p>
- * Content is laid out once, at construction, wrapped to a fixed width. This avoids the chicken-and-egg problem of a wrapping
- * {@link WrapLayout} row needing a width before it can report a preferred height: since the width never changes after construction, there
- * is no need to relayout later.
+ * Shows a support ask (buy a book / donate), followed by smaller links to the Nortantis website, blog, and source code. Used both as the
+ * bottom overlay on the map canvas at startup (see {@link MapCanvasOverlay}) and inside the About Nortantis dialog.
  */
 @SuppressWarnings("serial")
 public class SupportPanel extends JPanel
@@ -25,6 +16,8 @@ public class SupportPanel extends JPanel
 	public static final int defaultContentWidth = 480;
 
 	private static final int rowGap = 14;
+	private static final int cardPadding = 14;
+	private static final int cardArc = 18;
 	private static final int checkboxGap = 4;
 
 	private static final Color heartColor = new Color(214, 64, 90);
@@ -35,8 +28,7 @@ public class SupportPanel extends JPanel
 	private static final String bookUrl = "https://jandjheydorn.com/";
 	private static final String donateUrl = "https://jandjheydorn.com/donate";
 
-	// Google Analytics campaign (UTM) tag for links that point at our own site. utm_content is filled in per link (see withCampaign) so
-	// individual links in this panel can be compared in Analytics.
+	// utm_content is appended per link by withCampaign().
 	private static final String campaignParameters = "utm_source=nortantis&utm_medium=app&utm_campaign=support_panel&utm_content=";
 
 	private final Dimension fixedPreferredSize;
@@ -50,8 +42,11 @@ public class SupportPanel extends JPanel
 	 *            Whether to show the ask (with its "hide this on startup" checkbox) above the website/blog/source links. Pass false when
 	 *            {@link UserPreferences#hideStartupSupportPanel} says to hide it - the utility links still show either way, so this only
 	 *            ever hides the ask itself, never this whole panel.
+	 * @param useCard
+	 *            Whether to set the ask off in a highlighted card background/border, rather than as plain text. Ignored if
+	 *            {@code showAskCard} is false.
 	 */
-	public SupportPanel(int contentWidth, boolean showAskCard)
+	public SupportPanel(int contentWidth, boolean showAskCard, boolean useCard)
 	{
 		setOpaque(false);
 		setLayout(null);
@@ -66,17 +61,13 @@ public class SupportPanel extends JPanel
 
 		int y = 0;
 
-		// The ask comes first
 		if (showAskCard)
 		{
 			JPanel askRow = createFlowRow(4, 4);
 			buildAskRow(askRow);
-			y = addComponent(askRow, contentWidth, y);
-			y += checkboxGap;
 
 			JCheckBox hideOnStartupCheckbox = new JCheckBox(Translation.get("startup.supportPanel.hideCheckbox"));
 			hideOnStartupCheckbox.setOpaque(false);
-			// Kept small so it doesn't compete with the ask for attention.
 			hideOnStartupCheckbox.setFont(hideOnStartupCheckbox.getFont().deriveFont(hideOnStartupCheckbox.getFont().getSize2D() - 2f));
 			hideOnStartupCheckbox.setSelected(UserPreferences.getInstance().hideStartupSupportPanel);
 			hideOnStartupCheckbox.addActionListener(event ->
@@ -85,10 +76,8 @@ public class SupportPanel extends JPanel
 				UserPreferences.getInstance().save();
 			});
 
-			Dimension checkboxSize = measureCheckboxSize(hideOnStartupCheckbox);
-			hideOnStartupCheckbox.setBounds((contentWidth - checkboxSize.width) / 2, y, checkboxSize.width, checkboxSize.height);
-			add(hideOnStartupCheckbox);
-			y += checkboxSize.height;
+			JComponent askContainer = wrapAskContent(askRow, hideOnStartupCheckbox, contentWidth, useCard);
+			y = addComponent(askContainer, contentWidth, y);
 			y += rowGap;
 		}
 
@@ -111,6 +100,62 @@ public class SupportPanel extends JPanel
 		JPanel row = new JPanel(new WrapLayout(FlowLayout.CENTER, hgap, vgap));
 		row.setOpaque(false);
 		return row;
+	}
+
+	/**
+	 * Wraps content, plus a checkbox below it, in a rounded card tinted with the current look and feel's colors, or, if {@code useCard} is
+	 * false, in plain text with no card background/border.
+	 */
+	private JComponent wrapAskContent(JPanel content, JCheckBox checkbox, int width, boolean useCard)
+	{
+		int padding = useCard ? cardPadding : 0;
+		int innerWidth = width - 2 * padding;
+		// See addComponent: pin the row's width before measuring its wrapped preferred height.
+		content.setSize(innerWidth, 1);
+		Dimension contentSize = content.getPreferredSize();
+		content.setBounds(padding, padding, innerWidth, contentSize.height);
+
+		JPanel container;
+		if (useCard)
+		{
+			boolean isDarkTheme = UserPreferences.getInstance().lookAndFeel == LookAndFeel.Dark;
+			Color cardBackgroundColor = isDarkTheme ? new Color(255, 255, 255, 20) : new Color(0, 0, 0, 16);
+			Color cardBorderColor = isDarkTheme ? new Color(255, 255, 255, 45) : new Color(0, 0, 0, 40);
+
+			container = new JPanel(null)
+			{
+				@Override
+				protected void paintComponent(Graphics g)
+				{
+					Graphics2D g2 = (Graphics2D) g.create();
+					g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+					// drawRoundRect's 1px stroke is centered on the path, so at inset 0 (the top/left edges) half the stroke would fall
+					// outside this component's paintable area and get clipped. Insetting by 1 on all sides gives the stroke room to
+					// render fully everywhere, not just at the bottom/right (which already had margin from the -1 on width/height).
+					g2.setColor(cardBackgroundColor);
+					g2.fillRoundRect(1, 1, getWidth() - 2, getHeight() - 2, cardArc, cardArc);
+					g2.setColor(cardBorderColor);
+					g2.drawRoundRect(1, 1, getWidth() - 2, getHeight() - 2, cardArc, cardArc);
+					g2.dispose();
+					super.paintComponent(g);
+				}
+			};
+		}
+		else
+		{
+			container = new JPanel(null);
+		}
+		container.setOpaque(false);
+		container.add(content);
+
+		Dimension checkboxSize = measureCheckboxSize(checkbox);
+		int checkboxY = padding + contentSize.height + checkboxGap;
+		checkbox.setBounds((width - checkboxSize.width) / 2, checkboxY, checkboxSize.width, checkboxSize.height);
+		container.add(checkbox);
+		int containerHeight = checkboxY + checkboxSize.height + padding;
+
+		container.setPreferredSize(new Dimension(width, containerHeight));
+		return container;
 	}
 
 	/**
@@ -146,10 +191,6 @@ public class SupportPanel extends JPanel
 		return link;
 	}
 
-	/**
-	 * A small "|" separator between the header links, so adjacent hyperlinks (which are otherwise the same color with only a small gap
-	 * between them) read as distinct clickable items rather than running together.
-	 */
 	private static JLabel createLinkSeparator()
 	{
 		JLabel separator = new JLabel("|");
@@ -160,8 +201,6 @@ public class SupportPanel extends JPanel
 
 	private void buildAskRow(JPanel askRow)
 	{
-		// The book and donation asks are shown identically in every locale (content-wise; only the translated wording differs) - the
-		// book being English-only, and the donation system's country support, don't change what's offered here.
 		JLabel heart = new JLabel("♥");
 		heart.setForeground(heartColor);
 		heart.setFont(askFont.deriveFont(askFont.getSize2D() + 2f));
@@ -175,16 +214,7 @@ public class SupportPanel extends JPanel
 	}
 
 	/**
-	 * Adds each word of text as its own label so the enclosing WrapLayout row can wrap the sentence naturally around embedded hyperlinks.
-	 */
-	/**
-	 * Appends Google Analytics campaign (UTM) parameters to a link that points at our own site (jandjheydorn.com), so clicks originating
-	 * from this in-app panel can be attributed in Analytics. These go to pages we control that carry the Analytics tag, so the parameters
-	 * are read there; it's user-initiated navigation only, with no personal data. External links (e.g. the GitHub source) are left
-	 * untagged since we can't see their analytics anyway.
-	 *
-	 * @param content
-	 *            Identifies which link within this panel was clicked (utm_content), so individual links can be compared.
+	 * Appends UTM query parameters identifying which link was clicked, so clicks can be compared in Analytics.
 	 */
 	private static String withCampaign(String url, String content)
 	{
@@ -192,6 +222,9 @@ public class SupportPanel extends JPanel
 		return url + separator + campaignParameters + content;
 	}
 
+	/**
+	 * Adds each word of text as its own label so the enclosing WrapLayout row can wrap the sentence naturally around embedded hyperlinks.
+	 */
 	private void addWords(JPanel row, String text)
 	{
 		for (String word : text.trim().split("\\s+"))

@@ -87,7 +87,7 @@ public class MapCanvasOverlay extends JPanel
 		{
 			supportPanelContentWidth = contentWidth;
 			supportPanelShowAskCard = showAskCard;
-			supportPanel = new SupportPanel(contentWidth, showAskCard);
+			supportPanel = new SupportPanel(contentWidth, showAskCard, false);
 			add(supportPanel, 0);
 		}
 

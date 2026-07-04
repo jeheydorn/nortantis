@@ -320,6 +320,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		saveAsMenItem.setEnabled(enable);
 		exportMapAsImageMenuItem.setEnabled(enable);
 		exportHeightmapMenuItem.setEnabled(enable);
+		mapInfoMenuItem.setEnabled(enable);
 
 		if (!enable || undoer == null)
 		{

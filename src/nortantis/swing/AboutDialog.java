@@ -94,7 +94,7 @@ public class AboutDialog extends JDialog
 		y += bugReportSize.height + rowSpacing;
 
 		// The bug-report line comes before the support panel, since reporting a problem is a more immediate need than the support ask.
-		SupportPanel supportPanel = new SupportPanel(width, true);
+		SupportPanel supportPanel = new SupportPanel(width, true, true);
 		Dimension supportPanelSize = supportPanel.getPreferredSize();
 		supportPanel.setBounds(0, y, width, supportPanelSize.height);
 		y += supportPanelSize.height;
