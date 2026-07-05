@@ -49,12 +49,20 @@ public class IconsTool extends EditorTool
 	private SegmentedButtonWidget iconTypeWidget;
 	private DrawModeWidget modeWidget;
 	/**
-	 * Center indices whose icons have already been drawn or replaced during the current mouse-drag stroke (in Draw and Replace modes).
-	 * Dragging the brush back over the same polygon re-selects it, but re-generating its icon would reshuffle it to a different random image
-	 * on every mouse move, which looks bad. Tracking which polygons the current stroke has already touched lets us skip them until the mouse
-	 * is released, while a fresh press starts a new stroke and clears this, so clicking the same spot again does intentionally reshuffle.
+	 * Center indices that were under the brush during the previous mouse event of the current drag stroke (Draw and Replace modes). A polygon
+	 * is drawn or replaced when it first comes under the brush, then skipped while it stays under the brush, so dragging in place doesn't
+	 * reshuffle its icon to a different random image on every mouse move. Once a polygon leaves the brush and comes back it is drawn again.
+	 * Replaced with the current selection on each event, and cleared at the start of each press. Used in Draw mode, where whole polygons are
+	 * drawn.
 	 */
-	private final Set<Integer> centerIndicesModifiedDuringStroke = new HashSet<>();
+	private final Set<Integer> centerIndicesUnderBrushInPreviousDragEvent = new HashSet<>();
+	/**
+	 * Icons (by identity) that were under the brush during the previous mouse event of the current Replace-mode drag stroke. Replace mode
+	 * tracks individual icons rather than whole polygons, because a single polygon can hold several tree icons that slide under the brush at
+	 * different moments and must each be replaced once. Since replacing swaps the icon object, the new (replacement) icon is what gets
+	 * recorded, so it is recognized and skipped on the next event while it stays under the brush. Cleared at the start of each press.
+	 */
+	private final Set<FreeIcon> iconsUnderBrushInPreviousDragEvent = Collections.newSetFromMap(new IdentityHashMap<>());
 	private Set<FreeIcon> iconsToEdit;
 	private java.awt.Point editStart;
 	private boolean isMoving;
@@ -1335,20 +1343,28 @@ public class IconsTool extends EditorTool
 	}
 
 	/**
-	 * Returns the subset of the given centers that the current mouse-drag stroke has not already drawn or replaced, and records them as now
-	 * touched. Used so dragging the brush back over an already-drawn polygon doesn't reshuffle its icon. See
-	 * {@link #centerIndicesModifiedDuringStroke}.
+	 * Given the centers currently under the brush, returns those that were not under the brush during the previous mouse event of this drag
+	 * stroke (the ones to draw now), and records the current selection as the new previous-event set. So a polygon is drawn when it first
+	 * comes under the brush and skipped while it stays under it, but drawn again if it leaves and returns. See
+	 * {@link #centerIndicesUnderBrushInPreviousDragEvent}.
 	 */
-	private Set<Center> retainAndMarkCentersNotYetModifiedThisStroke(Set<Center> centers)
+	private Set<Center> retainCentersNotUnderBrushLastEvent(Set<Center> currentlyUnderBrush)
 	{
 		Set<Center> result = new LinkedHashSet<>();
-		for (Center center : centers)
+		for (Center center : currentlyUnderBrush)
 		{
-			if (centerIndicesModifiedDuringStroke.add(center.index))
+			if (!centerIndicesUnderBrushInPreviousDragEvent.contains(center.index))
 			{
 				result.add(center);
 			}
 		}
+
+		centerIndicesUnderBrushInPreviousDragEvent.clear();
+		for (Center center : currentlyUnderBrush)
+		{
+			centerIndicesUnderBrushInPreviousDragEvent.add(center.index);
+		}
+
 		return result;
 	}
 
@@ -1365,7 +1381,7 @@ public class IconsTool extends EditorTool
 			String groupId = mountainTypes.getSelectedOption();
 			if (!StringUtils.isEmpty(groupId))
 			{
-				selected = retainAndMarkCentersNotYetModifiedThisStroke(selected);
+				selected = retainCentersNotUnderBrushLastEvent(selected);
 				if (!selected.isEmpty())
 				{
 					for (Center center : selected)
@@ -1384,7 +1400,7 @@ public class IconsTool extends EditorTool
 			String rangeId = hillTypes.getSelectedOption();
 			if (!StringUtils.isEmpty(rangeId))
 			{
-				selected = retainAndMarkCentersNotYetModifiedThisStroke(selected);
+				selected = retainCentersNotUnderBrushLastEvent(selected);
 				if (!selected.isEmpty())
 				{
 					for (Center center : selected)
@@ -1403,7 +1419,7 @@ public class IconsTool extends EditorTool
 			String groupId = duneTypes.getSelectedOption();
 			if (!StringUtils.isEmpty(groupId))
 			{
-				selected = retainAndMarkCentersNotYetModifiedThisStroke(selected);
+				selected = retainCentersNotUnderBrushLastEvent(selected);
 				if (!selected.isEmpty())
 				{
 					for (Center center : selected)
@@ -1422,7 +1438,7 @@ public class IconsTool extends EditorTool
 			String treeType = treeTypes.getSelectedOption();
 			if (!StringUtils.isEmpty(treeType))
 			{
-				selected = retainAndMarkCentersNotYetModifiedThisStroke(selected);
+				selected = retainCentersNotUnderBrushLastEvent(selected);
 				if (!selected.isEmpty())
 				{
 					for (Center center : selected)
@@ -1446,7 +1462,7 @@ public class IconsTool extends EditorTool
 
 			String cityType = selectedCity.getFirst();
 			String cityName = selectedCity.getSecond();
-			selected = retainAndMarkCentersNotYetModifiedThisStroke(selected);
+			selected = retainCentersNotUnderBrushLastEvent(selected);
 			if (!selected.isEmpty())
 			{
 				for (Center center : selected)
@@ -1536,17 +1552,21 @@ public class IconsTool extends EditorTool
 			List<FreeIcon> icons = getSelectedIcons(e.getPoint());
 			if (icons.isEmpty())
 			{
+				// Nothing under the brush, so anything re-entering it next event should be replaced again.
+				iconsUnderBrushInPreviousDragEvent.clear();
 				return icons;
 			}
 
 			List<FreeIcon> iconsBeforeAndAfter = new ArrayList<>();
+			Set<FreeIcon> iconsUnderBrushThisEvent = Collections.newSetFromMap(new IdentityHashMap<>());
 
 			for (FreeIcon before : icons)
 			{
-				// Skip replacing polygons this drag stroke has already replaced, so dragging back over them doesn't reshuffle their icons.
-				// Still highlight the icon while it's under the brush, so it doesn't flash out as the mouse passes back over it.
-				if (before.centerIndex != null && centerIndicesModifiedDuringStroke.contains(before.centerIndex))
+				// Skip replacing an icon that was already under the brush in the previous event, so dragging in place doesn't reshuffle it.
+				// Still highlight the icon while it's under the brush, so it doesn't flash out as the mouse passes over it.
+				if (iconsUnderBrushInPreviousDragEvent.contains(before))
 				{
+					iconsUnderBrushThisEvent.add(before);
 					if (isSelected(e.getPoint(), before))
 					{
 						iconsSelectedAfter.add(before);
@@ -1555,6 +1575,9 @@ public class IconsTool extends EditorTool
 				}
 
 				iconsBeforeAndAfter.add(before);
+				// Remember this icon as under the brush this event. If it gets replaced below, the replacement is remembered instead, since
+				// that is the object that will be under the brush next event.
+				iconsUnderBrushThisEvent.add(before);
 
 				FreeIcon after = null;
 				if (mountainsButton.isSelected())
@@ -1629,16 +1652,18 @@ public class IconsTool extends EditorTool
 				{
 					mainWindow.edits.freeIcons.replace(before, after);
 					iconsBeforeAndAfter.add(after);
-					if (before.centerIndex != null)
-					{
-						centerIndicesModifiedDuringStroke.add(before.centerIndex);
-					}
+					iconsUnderBrushThisEvent.remove(before);
+					iconsUnderBrushThisEvent.add(after);
 					if (isSelected(e.getPoint(), after))
 					{
 						iconsSelectedAfter.add(after);
 					}
 				}
 			}
+
+			// Record what was under the brush this event so those icons are skipped next event while they stay under it.
+			iconsUnderBrushInPreviousDragEvent.clear();
+			iconsUnderBrushInPreviousDragEvent.addAll(iconsUnderBrushThisEvent);
 
 			return iconsBeforeAndAfter;
 		});
@@ -1942,8 +1967,9 @@ public class IconsTool extends EditorTool
 	@Override
 	protected void handleMousePressedOnMap(MouseEvent e)
 	{
-		// A new press starts a new stroke, so previously-touched polygons may be drawn again (intentionally reshuffling them).
-		centerIndicesModifiedDuringStroke.clear();
+		// A new press starts a new stroke with no previous-event selection, so the pressed polygons/icons are drawn or replaced (reshuffled).
+		centerIndicesUnderBrushInPreviousDragEvent.clear();
+		iconsUnderBrushInPreviousDragEvent.clear();
 		handleMousePressOrDrag(e, true);
 	}
 
