@@ -407,12 +407,13 @@ public class SwingHelper
 
 	}
 
+	private static final String progressPulseTimerKey = "nortantis.progressPulseTimer";
+
 	/**
-	 * Shows or hides an indeterminate progress bar, restarting its animation each time it becomes visible. Some look-and-feels (notably the
-	 * native macOS one) start the indeterminate "barber pole" animation only when {@code setIndeterminate} transitions to true while the bar
-	 * is showing; a bar that was made indeterminate at construction while hidden never animates once shown. Making the bar visible and then
-	 * toggling indeterminate off and back on restarts the animation. Does nothing if the visibility is unchanged, to avoid restarting the
-	 * animation on every timer tick.
+	 * Shows or hides a progress bar that indicates ongoing, unmeasured work. On most look-and-feels this is a standard indeterminate
+	 * ("barber pole") bar. The native macOS look-and-feel does not reliably animate an indeterminate bar (it shows an empty, motionless bar),
+	 * so there the bar is made determinate and its value is pulsed by a timer to give visible motion. Does nothing if the visibility is
+	 * unchanged, to avoid restarting the animation on every timer tick.
 	 */
 	public static void setIndeterminateProgressBarVisible(JProgressBar progressBar, boolean visible)
 	{
@@ -424,12 +425,50 @@ public class SwingHelper
 		if (visible)
 		{
 			progressBar.setVisible(true);
-			progressBar.setIndeterminate(false);
-			progressBar.setIndeterminate(true);
+			if (OSHelper.isMac())
+			{
+				startProgressPulse(progressBar);
+			}
+			else
+			{
+				// Toggle indeterminate off then on so the look-and-feel (re)starts the animation now that the bar is showing.
+				progressBar.setIndeterminate(false);
+				progressBar.setIndeterminate(true);
+			}
 		}
 		else
 		{
+			if (OSHelper.isMac())
+			{
+				stopProgressPulse(progressBar);
+			}
 			progressBar.setVisible(false);
+		}
+	}
+
+	private static void startProgressPulse(JProgressBar progressBar)
+	{
+		stopProgressPulse(progressBar);
+		progressBar.setIndeterminate(false);
+		progressBar.setMinimum(0);
+		progressBar.setMaximum(100);
+		progressBar.setValue(0);
+		Timer timer = new Timer(30, e ->
+		{
+			int next = progressBar.getValue() + 3;
+			progressBar.setValue(next > 100 ? 0 : next);
+		});
+		progressBar.putClientProperty(progressPulseTimerKey, timer);
+		timer.start();
+	}
+
+	private static void stopProgressPulse(JProgressBar progressBar)
+	{
+		Object existing = progressBar.getClientProperty(progressPulseTimerKey);
+		if (existing instanceof Timer)
+		{
+			((Timer) existing).stop();
+			progressBar.putClientProperty(progressPulseTimerKey, null);
 		}
 	}
 

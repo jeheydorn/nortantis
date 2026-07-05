@@ -9,7 +9,6 @@ import nortantis.platform.awt.AwtBridge;
 import nortantis.swing.translation.Translation;
 
 import nortantis.util.Helper;
-import nortantis.util.OSHelper;
 
 import javax.swing.*;
 import javax.swing.event.ChangeListener;
@@ -885,8 +884,6 @@ public class SubMapDialog
 		// the spinners and seed text field.
 		createButton = new JButton(Translation.get("newSettingsDialog.create"));
 		SwingHelper.bindAltMnemonic(createButton, KeyEvent.VK_C);
-		String createShortcut = OSHelper.isMac() ? "Option+C" : "Alt+C";
-		createButton.setToolTipText(Translation.get("subMapDialog.step2.create.tooltip", createShortcut));
 		createButton.addActionListener(e -> handleCreate());
 
 		buttonRow.add(backButton);

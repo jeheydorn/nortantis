@@ -70,6 +70,8 @@ public class ThemePanel extends JTabbedPane
 	private JButton btnChooseLandColor;
 	private JButton btnChooseOceanColor;
 	private JButton btnNewBackgroundSeed;
+	/** The plain (non-HTML) tab titles, captured so they can be greyed out and restored when tabs are disabled/enabled. */
+	private String[] baseTabTitles;
 	private ItemListener colorizeCheckboxListener;
 	private JComboBox<NamedResource> borderTypeComboBox;
 	private JSlider borderWidthSlider;
@@ -179,6 +181,12 @@ public class ThemePanel extends JTabbedPane
 		addTab(Translation.get("theme.tab.border"), createBorderPanel());
 		addTab(Translation.get("theme.tab.effects"), createEffectsPanel());
 		addTab(Translation.get("theme.tab.fonts"), createFontsPanel());
+
+		baseTabTitles = new String[getTabCount()];
+		for (int i = 0; i < getTabCount(); i++)
+		{
+			baseTabTitles[i] = getTitleAt(i);
+		}
 	}
 
 	private Component createBackgroundPanel(MainWindow mainWindow)
@@ -2161,10 +2169,16 @@ public class ThemePanel extends JTabbedPane
 
 		// Explicitly toggle each tab's enabled state. Disabling the tabbed pane alone greys the selected tab's title on some
 		// look-and-feels (notably the native macOS one) but leaves the other tab titles looking enabled, even though they can't be
-		// selected. Toggling each tab keeps all tab titles greyed out consistently while disabled.
+		// selected. Toggling each tab keeps all tab titles greyed out consistently while disabled. The native macOS look-and-feel still
+		// doesn't grey a disabled tab's title, so there we also swap the title to grey HTML (honored by every look-and-feel) and restore
+		// the plain title when re-enabled.
 		for (int i = 0; i < getTabCount(); i++)
 		{
 			setEnabledAt(i, enable);
+			if (OSHelper.isMac() && baseTabTitles != null)
+			{
+				setTitleAt(i, enable ? baseTabTitles[i] : "<html><font color='#808080'>" + baseTabTitles[i] + "</font></html>");
+			}
 		}
 
 		if (enable)
