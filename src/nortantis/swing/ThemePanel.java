@@ -2175,7 +2175,7 @@ public class ThemePanel extends JTabbedPane
 		for (int i = 0; i < getTabCount(); i++)
 		{
 			setEnabledAt(i, enable);
-			if (OSHelper.isMac() && baseTabTitles != null)
+			if (SwingHelper.isMacSystemLookAndFeel() && baseTabTitles != null)
 			{
 				setTitleAt(i, enable ? baseTabTitles[i] : "<html><font color='#808080'>" + baseTabTitles[i] + "</font></html>");
 			}

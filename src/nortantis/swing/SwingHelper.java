@@ -407,13 +407,19 @@ public class SwingHelper
 
 	}
 
-	private static final String progressPulseTimerKey = "nortantis.progressPulseTimer";
+	/**
+	 * True when running on macOS with the System theme (the native Aqua look-and-feel) active, as opposed to the Dark/Light FlatLaf themes.
+	 */
+	public static boolean isMacSystemLookAndFeel()
+	{
+		return OSHelper.isMac() && UIManager.getLookAndFeel().getClass().getName().equals(UIManager.getSystemLookAndFeelClassName());
+	}
 
 	/**
-	 * Shows or hides a progress bar that indicates ongoing, unmeasured work. On most look-and-feels this is a standard indeterminate
-	 * ("barber pole") bar. The native macOS look-and-feel does not reliably animate an indeterminate bar (it shows an empty, motionless bar),
-	 * so there the bar is made determinate and its value is pulsed by a timer to give visible motion. Does nothing if the visibility is
-	 * unchanged, to avoid restarting the animation on every timer tick.
+	 * Shows or hides a progress bar that indicates ongoing, unmeasured work, animating it as an indeterminate ("barber pole") bar. The native
+	 * macOS look-and-feel does not animate an indeterminate bar while its string is painted - it shows a static, empty bar - so with the
+	 * System theme the painted string is turned off, letting Aqua animate its own indeterminate bar. Other look-and-feels keep the string.
+	 * Does nothing if the visibility is unchanged, to avoid restarting the animation on every timer tick.
 	 */
 	public static void setIndeterminateProgressBarVisible(JProgressBar progressBar, boolean visible)
 	{
@@ -424,51 +430,15 @@ public class SwingHelper
 
 		if (visible)
 		{
+			progressBar.setStringPainted(!isMacSystemLookAndFeel());
 			progressBar.setVisible(true);
-			if (OSHelper.isMac())
-			{
-				startProgressPulse(progressBar);
-			}
-			else
-			{
-				// Toggle indeterminate off then on so the look-and-feel (re)starts the animation now that the bar is showing.
-				progressBar.setIndeterminate(false);
-				progressBar.setIndeterminate(true);
-			}
+			// Toggle indeterminate off then on so the look-and-feel (re)starts the animation now that the bar is showing.
+			progressBar.setIndeterminate(false);
+			progressBar.setIndeterminate(true);
 		}
 		else
 		{
-			if (OSHelper.isMac())
-			{
-				stopProgressPulse(progressBar);
-			}
 			progressBar.setVisible(false);
-		}
-	}
-
-	private static void startProgressPulse(JProgressBar progressBar)
-	{
-		stopProgressPulse(progressBar);
-		progressBar.setIndeterminate(false);
-		progressBar.setMinimum(0);
-		progressBar.setMaximum(100);
-		progressBar.setValue(0);
-		Timer timer = new Timer(30, e ->
-		{
-			int next = progressBar.getValue() + 3;
-			progressBar.setValue(next > 100 ? 0 : next);
-		});
-		progressBar.putClientProperty(progressPulseTimerKey, timer);
-		timer.start();
-	}
-
-	private static void stopProgressPulse(JProgressBar progressBar)
-	{
-		Object existing = progressBar.getClientProperty(progressPulseTimerKey);
-		if (existing instanceof Timer)
-		{
-			((Timer) existing).stop();
-			progressBar.putClientProperty(progressPulseTimerKey, null);
 		}
 	}
 
