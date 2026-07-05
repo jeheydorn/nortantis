@@ -360,7 +360,7 @@ public class ImageExportDialog extends JDialog
 
 	private void exportMapAndCloseDialog(MainWindow mainWindow, double resolution, ExportAction exportAction, String pathToSaveTo)
 	{
-		SwingHelper.setIndeterminateProgressBarVisible(progressBar, true);
+		progressBar.setVisible(true);
 		if (type == ImageExportType.Map)
 		{
 			mainWindow.exportResolution = resolution;
@@ -438,7 +438,7 @@ public class ImageExportDialog extends JDialog
 
 				if (exportAction == ExportAction.SaveToFile && !isError && !isCanceled)
 				{
-					SwingHelper.setIndeterminateProgressBarVisible(progressBar, false);
+					progressBar.setVisible(false);
 					SwingHelper.showMessageDialog(getContentPane(), type == ImageExportType.Map ? Translation.get("imageExport.mapExported") : Translation.get("imageExport.heightmapExported"),
 							"Success", JOptionPane.INFORMATION_MESSAGE);
 				}

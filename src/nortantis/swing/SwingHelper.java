@@ -415,66 +415,6 @@ public class SwingHelper
 		return OSHelper.isMac() && UIManager.getLookAndFeel().getClass().getName().equals(UIManager.getSystemLookAndFeelClassName());
 	}
 
-	/**
-	 * Shows or hides an indeterminate ("barber pole") progress bar that indicates ongoing, unmeasured work. The native macOS look-and-feel
-	 * (System theme) starts the indeterminate animation from its {@code AncestorListener} when the bar is added to a showing hierarchy, not
-	 * when {@code setVisible} is called - so under an open JDK bug (JDK-8260507) a bar that is only shown/hidden via {@code setVisible} never
-	 * animates. Working around it there by removing and re-adding the bar to its parent re-fires {@code ancestorAdded} and starts the
-	 * animation. Does nothing if the visibility is unchanged, to avoid restarting the animation on every timer tick.
-	 */
-	public static void setIndeterminateProgressBarVisible(JProgressBar progressBar, boolean visible)
-	{
-		if (progressBar.isVisible() == visible)
-		{
-			return;
-		}
-
-		if (visible)
-		{
-			progressBar.setVisible(true);
-			// Toggle indeterminate off then on so the look-and-feel (re)starts the animation now that the bar is showing.
-			progressBar.setIndeterminate(false);
-			progressBar.setIndeterminate(true);
-			if (isMacSystemLookAndFeel())
-			{
-				restartNativeIndeterminateAnimation(progressBar);
-			}
-		}
-		else
-		{
-			progressBar.setVisible(false);
-		}
-	}
-
-	/**
-	 * Re-adds the progress bar to its parent at the same position (preserving any layout constraints) so the native macOS look-and-feel's
-	 * {@code AncestorListener} fires {@code ancestorAdded} and starts the indeterminate animation. See
-	 * {@link #setIndeterminateProgressBarVisible(JProgressBar, boolean)}.
-	 */
-	private static void restartNativeIndeterminateAnimation(JProgressBar progressBar)
-	{
-		Container parent = progressBar.getParent();
-		if (parent == null)
-		{
-			return;
-		}
-
-		int index = parent.getComponentZOrder(progressBar);
-		Object constraints = parent.getLayout() instanceof GridBagLayout ? ((GridBagLayout) parent.getLayout()).getConstraints(progressBar) : null;
-
-		parent.remove(progressBar);
-		if (constraints != null)
-		{
-			parent.add(progressBar, constraints, index);
-		}
-		else
-		{
-			parent.add(progressBar, index);
-		}
-		parent.revalidate();
-		parent.repaint();
-	}
-
 	public static void setEnabled(Component component, boolean enabled)
 	{
 		component.setEnabled(enabled);

@@ -190,7 +190,7 @@ public class ToolsPanel extends JPanel
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				SwingHelper.setIndeterminateProgressBarVisible(progressBar, updater.isMapBeingDrawn());
+				progressBar.setVisible(updater.isMapBeingDrawn());
 			}
 		};
 		progressBarTimer = new Timer(50, listener);
@@ -308,7 +308,7 @@ public class ToolsPanel extends JPanel
 		else
 		{
 			progressBarTimer.stop();
-			SwingHelper.setIndeterminateProgressBarVisible(progressBar, false);
+			progressBar.setVisible(false);
 		}
 
 	}

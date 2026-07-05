@@ -105,7 +105,7 @@ public class NewSettingsDialog extends JDialog
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				SwingHelper.setIndeterminateProgressBarVisible(progressBar, updater.isMapBeingDrawn());
+				progressBar.setVisible(updater.isMapBeingDrawn());
 			}
 		};
 		progressBarTimer = new Timer(50, listener);
@@ -776,7 +776,7 @@ public class NewSettingsDialog extends JDialog
 		else
 		{
 			progressBarTimer.stop();
-			SwingHelper.setIndeterminateProgressBarVisible(progressBar, false);
+			progressBar.setVisible(false);
 		}
 	}
 
