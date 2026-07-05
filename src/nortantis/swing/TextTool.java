@@ -397,7 +397,8 @@ public class TextTool extends EditorTool
 
 			JButton deleteButton = new JButton(Translation.get("textTool.delete"));
 			deleteButton.setToolTipText(Translation.get("textTool.delete.tooltip"));
-			SwingHelper.bindButtonShortcut(deleteButton, KeyStroke.getKeyStroke("DELETE"), "textDeleteAction");
+			// Bind Backspace as well as Delete: the key labeled "delete" sends Backspace on most Mac keyboards.
+			SwingHelper.bindButtonShortcut(deleteButton, "textDeleteAction", KeyStroke.getKeyStroke("DELETE"), KeyStroke.getKeyStroke("BACK_SPACE"));
 			deleteButton.addActionListener(ev -> deleteSelectedText());
 
 			copyPasteDeleteButtonsHider = organizer.addLeftAlignedComponents(Arrays.asList(copyButton, pasteButton, deleteButton));

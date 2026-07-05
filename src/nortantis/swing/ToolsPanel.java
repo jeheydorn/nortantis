@@ -81,7 +81,7 @@ public class ToolsPanel extends JPanel
 				Logger.printError("Error while setting an image for a tool: ", e);
 			}
 			toolButton.setToolTipText(tool.getToolbarName() + " " + tool.getKeyboardShortcutText());
-			toolButton.setMnemonic(tool.getMnemonic());
+			SwingHelper.bindAltMnemonic(toolButton, tool.getMnemonic());
 			toolButton.setMaximumSize(new Dimension(50, 50));
 			tool.setToggleButton(toolButton);
 			toolButton.addActionListener(new ActionListener()
@@ -190,7 +190,7 @@ public class ToolsPanel extends JPanel
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				progressBar.setVisible(updater.isMapBeingDrawn());
+				SwingHelper.setIndeterminateProgressBarVisible(progressBar, updater.isMapBeingDrawn());
 			}
 		};
 		progressBarTimer = new Timer(50, listener);
@@ -308,7 +308,7 @@ public class ToolsPanel extends JPanel
 		else
 		{
 			progressBarTimer.stop();
-			progressBar.setVisible(false);
+			SwingHelper.setIndeterminateProgressBarVisible(progressBar, false);
 		}
 
 	}

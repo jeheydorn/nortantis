@@ -105,7 +105,7 @@ public class NewSettingsDialog extends JDialog
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				progressBar.setVisible(updater.isMapBeingDrawn());
+				SwingHelper.setIndeterminateProgressBarVisible(progressBar, updater.isMapBeingDrawn());
 			}
 		};
 		progressBarTimer = new Timer(50, listener);
@@ -243,8 +243,8 @@ public class NewSettingsDialog extends JDialog
 		JPanel bottomButtonsPanel = new JPanel();
 		bottomButtonsPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
 		JButton createMapButton = new JButton(Translation.get("newSettingsDialog.create"));
-		// The label underlines 'C' (see newSettingsDialog.create), so the mnemonic must be C for the advertised Alt+C to work.
-		createMapButton.setMnemonic(KeyEvent.VK_C);
+		// The label underlines 'C' (see newSettingsDialog.create), so the mnemonic must be C for the advertised Alt+C (Option+C on Mac) to work.
+		SwingHelper.bindAltMnemonic(createMapButton, KeyEvent.VK_C);
 		bottomButtonsPanel.add(createMapButton);
 		createMapButton.addActionListener(new ActionListener()
 		{
@@ -511,7 +511,12 @@ public class NewSettingsDialog extends JDialog
 		organizer.addLabelAndComponent(Translation.get("newSettingsDialog.cityFrequency.label"), Translation.get("newSettingsDialog.cityFrequency.help"), cityFrequencySlider);
 
 		booksWidget = new BooksWidget(true, () -> handleMapChange());
-		booksWidget.getContentPanel().setPreferredSize(new Dimension(360, 180));
+		Dimension booksSize = new Dimension(360, 180);
+		booksWidget.getContentPanel().setPreferredSize(booksSize);
+		// Give the books widget a firm minimum height so that when vertical space is tight, the enclosing GridBagLayout doesn't shrink it to
+		// its scroll pane's tiny minimum (collapsing it to about two rows). It keeps a usable height and its own scroll bar handles overflow,
+		// while still growing to use extra space when it is available.
+		booksWidget.getContentPanel().setMinimumSize(booksSize);
 		organizer.addLeftAlignedComponentWithStackedLabel(Translation.get("newSettingsDialog.booksForText.label"), Translation.get("newSettingsDialog.booksForText.help"),
 				booksWidget.getContentPanel());
 
@@ -771,7 +776,7 @@ public class NewSettingsDialog extends JDialog
 		else
 		{
 			progressBarTimer.stop();
-			progressBar.setVisible(false);
+			SwingHelper.setIndeterminateProgressBarVisible(progressBar, false);
 		}
 	}
 

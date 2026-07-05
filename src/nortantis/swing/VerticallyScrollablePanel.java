@@ -42,6 +42,14 @@ public class VerticallyScrollablePanel extends JPanel implements Scrollable
 	@Override
 	public boolean getScrollableTracksViewportHeight()
 	{
+		// When the content is shorter than the viewport, stretch to fill the viewport's height so the leftover space is painted with this
+		// panel's background rather than the viewport's own background, which is white under some look-and-feels (notably the native macOS
+		// one). Panels placed in a scroll pane end with a weighty filler row, so the real components stay top-aligned as the panel grows.
+		// When the content is taller than the viewport, report false so a vertical scroll bar appears instead.
+		if (getParent() instanceof JViewport)
+		{
+			return getParent().getHeight() > getPreferredSize().height;
+		}
 		return false;
 	}
 }

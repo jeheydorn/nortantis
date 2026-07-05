@@ -1,5 +1,6 @@
 package nortantis.util;
 
+import nortantis.swing.SwingHelper;
 import nortantis.swing.translation.Translation;
 
 import javax.swing.*;
@@ -97,7 +98,7 @@ public class OSHelper
 		}
 		else
 		{
-			JOptionPane.showMessageDialog(null, Translation.get("osHelper.unableToOpenFolder", folder), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
+			SwingHelper.showMessageDialog(null, Translation.get("osHelper.unableToOpenFolder", folder), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
 		}
 	}
 }

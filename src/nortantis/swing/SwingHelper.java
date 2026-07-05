@@ -102,6 +102,47 @@ public class SwingHelper
 	 */
 	public static void bindButtonShortcut(JButton button, KeyStroke keyStroke, String actionName)
 	{
+		bindButtonShortcut(button, actionName, keyStroke);
+	}
+
+	/**
+	 * Sets a button's mnemonic (the underlined letter) and, on macOS, also binds Option+letter to activate it. Windows and Linux
+	 * look-and-feels register the Alt+letter activation for a mnemonic automatically, but the macOS look-and-feel does not, so Option+letter
+	 * otherwise does nothing. Binding it explicitly makes the shortcut work on macOS. The binding is registered at
+	 * {@link JComponent#WHEN_IN_FOCUSED_WINDOW}, so it only fires while the button is showing (e.g. only the visible tool's mode buttons in a
+	 * card layout respond).
+	 */
+	public static void bindAltMnemonic(AbstractButton button, int keyCode)
+	{
+		button.setMnemonic(keyCode);
+
+		if (!OSHelper.isMac())
+		{
+			return;
+		}
+
+		String actionName = "altMnemonic";
+		button.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(keyCode, InputEvent.ALT_DOWN_MASK), actionName);
+		button.getActionMap().put(actionName, new AbstractAction()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				if (button.isEnabled() && button.isShowing())
+				{
+					button.doClick();
+				}
+			}
+		});
+	}
+
+	/**
+	 * Binds one or more keystrokes to a button, all firing the button's action. Use several keystrokes when a single logical shortcut has
+	 * different key codes across platforms - for example the key labeled "delete" sends {@code VK_DELETE} on Windows but {@code VK_BACK_SPACE}
+	 * on most Mac keyboards, so binding both makes the shortcut work everywhere.
+	 */
+	public static void bindButtonShortcut(JButton button, String actionName, KeyStroke... keyStrokes)
+	{
 		Action action = new AbstractAction(actionName)
 		{
 			@Override
@@ -117,7 +158,10 @@ public class SwingHelper
 				button.doClick();
 			}
 		};
-		button.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(keyStroke, actionName);
+		for (KeyStroke keyStroke : keyStrokes)
+		{
+			button.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(keyStroke, actionName);
+		}
 		button.getActionMap().put(actionName, action);
 	}
 
@@ -363,6 +407,32 @@ public class SwingHelper
 
 	}
 
+	/**
+	 * Shows or hides an indeterminate progress bar, restarting its animation each time it becomes visible. Some look-and-feels (notably the
+	 * native macOS one) start the indeterminate "barber pole" animation only when {@code setIndeterminate} transitions to true while the bar
+	 * is showing; a bar that was made indeterminate at construction while hidden never animates once shown. Making the bar visible and then
+	 * toggling indeterminate off and back on restarts the animation. Does nothing if the visibility is unchanged, to avoid restarting the
+	 * animation on every timer tick.
+	 */
+	public static void setIndeterminateProgressBarVisible(JProgressBar progressBar, boolean visible)
+	{
+		if (progressBar.isVisible() == visible)
+		{
+			return;
+		}
+
+		if (visible)
+		{
+			progressBar.setVisible(true);
+			progressBar.setIndeterminate(false);
+			progressBar.setIndeterminate(true);
+		}
+		else
+		{
+			progressBar.setVisible(false);
+		}
+	}
+
 	public static void setEnabled(Component component, boolean enabled)
 	{
 		component.setEnabled(enabled);
@@ -459,6 +529,78 @@ public class SwingHelper
 		}
 	}
 
+	/**
+	 * Width, in pixels, that long option-pane messages are wrapped to. See {@link #wrapDialogMessage(Object)}.
+	 */
+	private static final int dialogWrapWidthPixels = 400;
+
+	/**
+	 * Messages whose longest line is at most this many characters are shown at their natural width. Longer messages are wrapped. See
+	 * {@link #wrapDialogMessage(Object)}.
+	 */
+	private static final int dialogWrapThresholdChars = 60;
+
+	/**
+	 * Prepares an option-pane message so that long text wraps to a reasonable width. Some look-and-feels (notably the native macOS one) do
+	 * not word-wrap long plain-text option-pane messages, so a long message can render wider than the screen. This wraps a long plain
+	 * String in width-constrained HTML, which every look-and-feel wraps consistently. Non-String messages (e.g. a JPanel), messages the
+	 * caller already marked up as HTML, and short strings are returned unchanged.
+	 */
+	static Object wrapDialogMessage(Object message)
+	{
+		if (!(message instanceof String))
+		{
+			return message;
+		}
+
+		String text = (String) message;
+		if (text.toLowerCase().contains("<html"))
+		{
+			return message;
+		}
+
+		int longestLineLength = 0;
+		for (String line : text.split("\n", -1))
+		{
+			longestLineLength = Math.max(longestLineLength, line.length());
+		}
+		if (longestLineLength <= dialogWrapThresholdChars)
+		{
+			return message;
+		}
+
+		String escaped = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br>");
+		return "<html><body><div style='width:" + dialogWrapWidthPixels + "px'>" + escaped + "</div></body></html>";
+	}
+
+	/**
+	 * Drop-in replacement for {@link JOptionPane#showMessageDialog(Component, Object, String, int)} that wraps long messages via
+	 * {@link #wrapDialogMessage(Object)}.
+	 */
+	public static void showMessageDialog(Component parent, Object message, String title, int messageType)
+	{
+		JOptionPane.showMessageDialog(parent, wrapDialogMessage(message), title, messageType);
+	}
+
+	/**
+	 * Drop-in replacement for {@link JOptionPane#showConfirmDialog(Component, Object, String, int)} that wraps long messages via
+	 * {@link #wrapDialogMessage(Object)}.
+	 */
+	public static int showConfirmDialog(Component parent, Object message, String title, int optionType)
+	{
+		return JOptionPane.showConfirmDialog(parent, wrapDialogMessage(message), title, optionType);
+	}
+
+	/**
+	 * Drop-in replacement for {@link JOptionPane#showOptionDialog(Component, Object, String, int, int, Icon, Object[], Object)} that wraps
+	 * long messages via {@link #wrapDialogMessage(Object)}.
+	 */
+	public static int showOptionDialog(Component parent, Object message, String title, int optionType, int messageType, Icon icon, Object[] options,
+			Object initialValue)
+	{
+		return JOptionPane.showOptionDialog(parent, wrapDialogMessage(message), title, optionType, messageType, icon, options, initialValue);
+	}
+
 	public static void handleException(Exception ex, Component parent, boolean isExport)
 	{
 		if (ex instanceof ExecutionException)
@@ -470,13 +612,13 @@ public class SwingHelper
 				{
 					String message = isExport ? Translation.get("common.outOfMemoryExport") : Translation.get("common.outOfMemory");
 					Logger.printError(message, ex);
-					JOptionPane.showMessageDialog(parent, message, Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
+					showMessageDialog(parent, message, Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
 				}
 				else
 				{
 					String message = Translation.get("common.errorCreatingMap");
 					Logger.printError(message, ex.getCause());
-					JOptionPane.showMessageDialog(parent, message + " " + ex.getCause().getMessage(), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
+					showMessageDialog(parent, message + " " + ex.getCause().getMessage(), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
 				}
 			}
 			else
@@ -485,7 +627,7 @@ public class SwingHelper
 				ex.printStackTrace();
 				String message = Translation.get("common.executionError");
 				Logger.printError(message, ex);
-				JOptionPane.showMessageDialog(parent, message + ex.getMessage(), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
+				showMessageDialog(parent, message + ex.getMessage(), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
 			}
 		}
 		else
@@ -493,7 +635,7 @@ public class SwingHelper
 			ex.printStackTrace();
 			String message = Translation.get("common.unexpectedError");
 			Logger.printError(message, ex);
-			JOptionPane.showMessageDialog(parent, message + " " + ex.getMessage(), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
+			showMessageDialog(parent, message + " " + ex.getMessage(), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
 		}
 	}
 

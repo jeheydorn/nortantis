@@ -48,6 +48,13 @@ public class IconsTool extends EditorTool
 	private JToggleButton decorationsButton;
 	private SegmentedButtonWidget iconTypeWidget;
 	private DrawModeWidget modeWidget;
+	/**
+	 * Center indices whose icons have already been drawn or replaced during the current mouse-drag stroke (in Draw and Replace modes).
+	 * Dragging the brush back over the same polygon re-selects it, but re-generating its icon would reshuffle it to a different random image
+	 * on every mouse move, which looks bad. Tracking which polygons the current stroke has already touched lets us skip them until the mouse
+	 * is released, while a fresh press starts a new stroke and clears this, so clicking the same spot again does intentionally reshuffle.
+	 */
+	private final Set<Integer> centerIndicesModifiedDuringStroke = new HashSet<>();
 	private Set<FreeIcon> iconsToEdit;
 	private java.awt.Point editStart;
 	private boolean isMoving;
@@ -1023,7 +1030,7 @@ public class IconsTool extends EditorTool
 						String message = "Error while creating preview images for buttons: " + e.getMessage();
 						Logger.printError(message, e);
 						e.printStackTrace();
-						JOptionPane.showMessageDialog(IconsTool.this.mainWindow, message, "Error", JOptionPane.ERROR_MESSAGE);
+						SwingHelper.showMessageDialog(IconsTool.this.mainWindow, message, "Error", JOptionPane.ERROR_MESSAGE);
 						return;
 					}
 
@@ -1110,7 +1117,7 @@ public class IconsTool extends EditorTool
 							String message = "Error while creating preview images for buttons: " + e.getMessage();
 							Logger.printError(message, e);
 							e.printStackTrace();
-							JOptionPane.showMessageDialog(IconsTool.this.mainWindow, message, "Error", JOptionPane.ERROR_MESSAGE);
+							SwingHelper.showMessageDialog(IconsTool.this.mainWindow, message, "Error", JOptionPane.ERROR_MESSAGE);
 							return;
 						}
 
@@ -1327,6 +1334,24 @@ public class IconsTool extends EditorTool
 		}
 	}
 
+	/**
+	 * Returns the subset of the given centers that the current mouse-drag stroke has not already drawn or replaced, and records them as now
+	 * touched. Used so dragging the brush back over an already-drawn polygon doesn't reshuffle its icon. See
+	 * {@link #centerIndicesModifiedDuringStroke}.
+	 */
+	private Set<Center> retainAndMarkCentersNotYetModifiedThisStroke(Set<Center> centers)
+	{
+		Set<Center> result = new LinkedHashSet<>();
+		for (Center center : centers)
+		{
+			if (centerIndicesModifiedDuringStroke.add(center.index))
+			{
+				result.add(center);
+			}
+		}
+		return result;
+	}
+
 	private void handleDrawIcons(MouseEvent e, boolean isPress)
 	{
 		if (treesButton.isSelected())
@@ -1340,28 +1365,36 @@ public class IconsTool extends EditorTool
 			String groupId = mountainTypes.getSelectedOption();
 			if (!StringUtils.isEmpty(groupId))
 			{
-				for (Center center : selected)
+				selected = retainAndMarkCentersNotYetModifiedThisStroke(selected);
+				if (!selected.isEmpty())
 				{
-					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
-					CenterIcon newIcon = new CenterIcon(CenterIconType.Mountain, (String) artPackComboBox.getSelectedItem(), groupId, Helper.safeAbs(rand.nextInt()));
-					mainWindow.edits.centerEdits.put(center.index, cEdit.copyWithIcon(newIcon));
+					for (Center center : selected)
+					{
+						CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
+						CenterIcon newIcon = new CenterIcon(CenterIconType.Mountain, (String) artPackComboBox.getSelectedItem(), groupId, Helper.safeAbs(rand.nextInt()));
+						mainWindow.edits.centerEdits.put(center.index, cEdit.copyWithIcon(newIcon));
+					}
+					updater.createAndShowMapIncrementalUsingCenters(selected);
 				}
-				updater.createAndShowMapIncrementalUsingCenters(selected);
 			}
 		}
 		else if (hillsButton.isSelected())
 		{
-			Set<Center> groupId = getSelectedLandCenters(e.getPoint());
+			Set<Center> selected = getSelectedLandCenters(e.getPoint());
 			String rangeId = hillTypes.getSelectedOption();
 			if (!StringUtils.isEmpty(rangeId))
 			{
-				for (Center center : groupId)
+				selected = retainAndMarkCentersNotYetModifiedThisStroke(selected);
+				if (!selected.isEmpty())
 				{
-					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
-					CenterIcon newIcon = new CenterIcon(CenterIconType.Hill, (String) artPackComboBox.getSelectedItem(), rangeId, Helper.safeAbs(rand.nextInt()));
-					mainWindow.edits.centerEdits.put(center.index, cEdit.copyWithIcon(newIcon));
+					for (Center center : selected)
+					{
+						CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
+						CenterIcon newIcon = new CenterIcon(CenterIconType.Hill, (String) artPackComboBox.getSelectedItem(), rangeId, Helper.safeAbs(rand.nextInt()));
+						mainWindow.edits.centerEdits.put(center.index, cEdit.copyWithIcon(newIcon));
+					}
+					updater.createAndShowMapIncrementalUsingCenters(selected);
 				}
-				updater.createAndShowMapIncrementalUsingCenters(groupId);
 			}
 		}
 		else if (dunesButton.isSelected())
@@ -1370,13 +1403,17 @@ public class IconsTool extends EditorTool
 			String groupId = duneTypes.getSelectedOption();
 			if (!StringUtils.isEmpty(groupId))
 			{
-				for (Center center : selected)
+				selected = retainAndMarkCentersNotYetModifiedThisStroke(selected);
+				if (!selected.isEmpty())
 				{
-					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
-					CenterIcon newIcon = new CenterIcon(CenterIconType.Dune, (String) artPackComboBox.getSelectedItem(), groupId, Helper.safeAbs(rand.nextInt()));
-					mainWindow.edits.centerEdits.put(center.index, cEdit.copyWithIcon(newIcon));
+					for (Center center : selected)
+					{
+						CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
+						CenterIcon newIcon = new CenterIcon(CenterIconType.Dune, (String) artPackComboBox.getSelectedItem(), groupId, Helper.safeAbs(rand.nextInt()));
+						mainWindow.edits.centerEdits.put(center.index, cEdit.copyWithIcon(newIcon));
+					}
+					updater.createAndShowMapIncrementalUsingCenters(selected);
 				}
-				updater.createAndShowMapIncrementalUsingCenters(selected);
 			}
 		}
 		else if (treesButton.isSelected())
@@ -1385,13 +1422,17 @@ public class IconsTool extends EditorTool
 			String treeType = treeTypes.getSelectedOption();
 			if (!StringUtils.isEmpty(treeType))
 			{
-				for (Center center : selected)
+				selected = retainAndMarkCentersNotYetModifiedThisStroke(selected);
+				if (!selected.isEmpty())
 				{
-					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
-					CenterTrees newTrees = new CenterTrees((String) artPackComboBox.getSelectedItem(), treeType, densitySlider.getValue() / 10.0, Helper.safeAbs(rand.nextLong()));
-					mainWindow.edits.centerEdits.put(center.index, cEdit.copyWithTrees(newTrees));
+					for (Center center : selected)
+					{
+						CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
+						CenterTrees newTrees = new CenterTrees((String) artPackComboBox.getSelectedItem(), treeType, densitySlider.getValue() / 10.0, Helper.safeAbs(rand.nextLong()));
+						mainWindow.edits.centerEdits.put(center.index, cEdit.copyWithTrees(newTrees));
+					}
+					updater.createAndShowMapIncrementalUsingCenters(selected);
 				}
-				updater.createAndShowMapIncrementalUsingCenters(selected);
 			}
 		}
 		else if (citiesButton.isSelected())
@@ -1405,13 +1446,17 @@ public class IconsTool extends EditorTool
 
 			String cityType = selectedCity.getFirst();
 			String cityName = selectedCity.getSecond();
-			for (Center center : selected)
+			selected = retainAndMarkCentersNotYetModifiedThisStroke(selected);
+			if (!selected.isEmpty())
 			{
-				CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
-				CenterIcon cityIcon = new CenterIcon(CenterIconType.City, (String) artPackComboBox.getSelectedItem(), cityType, cityName);
-				mainWindow.edits.centerEdits.put(center.index, cEdit.copyWithIcon(cityIcon));
+				for (Center center : selected)
+				{
+					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
+					CenterIcon cityIcon = new CenterIcon(CenterIconType.City, (String) artPackComboBox.getSelectedItem(), cityType, cityName);
+					mainWindow.edits.centerEdits.put(center.index, cEdit.copyWithIcon(cityIcon));
+				}
+				updater.createAndShowMapIncrementalUsingCenters(selected);
 			}
-			updater.createAndShowMapIncrementalUsingCenters(selected);
 		}
 		else if (decorationsButton.isSelected())
 		{
@@ -1498,6 +1543,17 @@ public class IconsTool extends EditorTool
 
 			for (FreeIcon before : icons)
 			{
+				// Skip replacing polygons this drag stroke has already replaced, so dragging back over them doesn't reshuffle their icons.
+				// Still highlight the icon while it's under the brush, so it doesn't flash out as the mouse passes back over it.
+				if (before.centerIndex != null && centerIndicesModifiedDuringStroke.contains(before.centerIndex))
+				{
+					if (isSelected(e.getPoint(), before))
+					{
+						iconsSelectedAfter.add(before);
+					}
+					continue;
+				}
+
 				iconsBeforeAndAfter.add(before);
 
 				FreeIcon after = null;
@@ -1573,6 +1629,10 @@ public class IconsTool extends EditorTool
 				{
 					mainWindow.edits.freeIcons.replace(before, after);
 					iconsBeforeAndAfter.add(after);
+					if (before.centerIndex != null)
+					{
+						centerIndicesModifiedDuringStroke.add(before.centerIndex);
+					}
 					if (isSelected(e.getPoint(), after))
 					{
 						iconsSelectedAfter.add(after);
@@ -1882,6 +1942,8 @@ public class IconsTool extends EditorTool
 	@Override
 	protected void handleMousePressedOnMap(MouseEvent e)
 	{
+		// A new press starts a new stroke, so previously-touched polygons may be drawn again (intentionally reshuffling them).
+		centerIndicesModifiedDuringStroke.clear();
 		handleMousePressOrDrag(e, true);
 	}
 

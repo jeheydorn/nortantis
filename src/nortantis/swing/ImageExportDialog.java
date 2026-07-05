@@ -223,7 +223,7 @@ public class ImageExportDialog extends JDialog
 					{
 						if (pathField.getText() == null || pathField.getText().isEmpty())
 						{
-							JOptionPane.showMessageDialog(getContentPane(), Translation.get("imageExport.pathRequired"), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
+							SwingHelper.showMessageDialog(getContentPane(), Translation.get("imageExport.pathRequired"), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
 							return;
 						}
 
@@ -237,25 +237,25 @@ public class ImageExportDialog extends JDialog
 						}
 						else if (!allowedExtension.contains(extension.toLowerCase()))
 						{
-							JOptionPane.showMessageDialog(getContentPane(), Translation.get("imageExport.mustBePngOrJpeg"), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
+							SwingHelper.showMessageDialog(getContentPane(), Translation.get("imageExport.mustBePngOrJpeg"), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
 							return;
 						}
 
 						if (new File(exportPath).isDirectory())
 						{
-							JOptionPane.showMessageDialog(getContentPane(), Translation.get("imageExport.directoryConflict"), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
+							SwingHelper.showMessageDialog(getContentPane(), Translation.get("imageExport.directoryConflict"), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
 							return;
 						}
 
 						if (!new File(new File(exportPath).getParent()).exists())
 						{
-							JOptionPane.showMessageDialog(getContentPane(), Translation.get("imageExport.folderDoesNotExist"), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
+							SwingHelper.showMessageDialog(getContentPane(), Translation.get("imageExport.folderDoesNotExist"), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
 							return;
 						}
 					}
 					catch (InvalidPathException ex)
 					{
-						JOptionPane.showMessageDialog(getContentPane(), Translation.get("imageExport.pathInvalid"), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
+						SwingHelper.showMessageDialog(getContentPane(), Translation.get("imageExport.pathInvalid"), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
 						return;
 					}
 
@@ -360,7 +360,7 @@ public class ImageExportDialog extends JDialog
 
 	private void exportMapAndCloseDialog(MainWindow mainWindow, double resolution, ExportAction exportAction, String pathToSaveTo)
 	{
-		progressBar.setVisible(true);
+		SwingHelper.setIndeterminateProgressBarVisible(progressBar, true);
 		if (type == ImageExportType.Map)
 		{
 			mainWindow.exportResolution = resolution;
@@ -438,8 +438,8 @@ public class ImageExportDialog extends JDialog
 
 				if (exportAction == ExportAction.SaveToFile && !isError && !isCanceled)
 				{
-					progressBar.setVisible(false);
-					JOptionPane.showMessageDialog(getContentPane(), type == ImageExportType.Map ? Translation.get("imageExport.mapExported") : Translation.get("imageExport.heightmapExported"),
+					SwingHelper.setIndeterminateProgressBarVisible(progressBar, false);
+					SwingHelper.showMessageDialog(getContentPane(), type == ImageExportType.Map ? Translation.get("imageExport.mapExported") : Translation.get("imageExport.heightmapExported"),
 							"Success", JOptionPane.INFORMATION_MESSAGE);
 				}
 

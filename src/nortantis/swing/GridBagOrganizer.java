@@ -2,6 +2,7 @@ package nortantis.swing;
 
 import nortantis.geom.Point;
 import nortantis.swing.translation.Translation;
+import nortantis.util.OSHelper;
 import nortantis.util.Tuple2;
 
 import javax.swing.*;
@@ -427,7 +428,12 @@ public class GridBagOrganizer
 				drawCenteredString(g, text, new Point(sizeToDraw / 2.0, sizeToDraw / 2.0));
 			}
 		}
-		brushSizeComboBox.setPreferredSize(new Dimension(displaySize + 40, brushSizeComboBox.getPreferredSize().height));
+		// The native macOS look-and-feel gives combo boxes a fixed standard-control height that ignores the item icon size, clipping the
+		// largest brush, so there bump the height to fit the icon. Other look-and-feels already size the box to the icon, so leave their
+		// natural height alone (forcing it taller there overflows the row and clips the box).
+		int naturalHeight = brushSizeComboBox.getPreferredSize().height;
+		int brushSizeComboBoxHeight = OSHelper.isMac() ? Math.max(naturalHeight, displaySize + 8) : naturalHeight;
+		brushSizeComboBox.setPreferredSize(new Dimension(displaySize + 40, brushSizeComboBoxHeight));
 		JPanel brushSizeContainer = new JPanel();
 		brushSizeContainer.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
 		brushSizeContainer.add(brushSizeComboBox);

@@ -165,7 +165,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		{
 			try
 			{
-				JOptionPane.showMessageDialog(null, "Unable to create GUI because of error: " + ex.getMessage() + "\nVersion: " + MapSettings.currentVersion + "\nOS Name: "
+				SwingHelper.showMessageDialog(null, "Unable to create GUI because of error: " + ex.getMessage() + "\nVersion: " + MapSettings.currentVersion + "\nOS Name: "
 						+ System.getProperty("os.name") + "\nStack trace: " + ExceptionUtils.getStackTrace(ex), "Error", JOptionPane.ERROR_MESSAGE);
 			}
 			catch (Exception inner)
@@ -199,7 +199,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		String preferencesLoadError = UserPreferences.getInstance().getLoadErrorMessage();
 		if (preferencesLoadError != null)
 		{
-			JOptionPane.showMessageDialog(this, preferencesLoadError, "Error", JOptionPane.ERROR_MESSAGE);
+			SwingHelper.showMessageDialog(this, preferencesLoadError, "Error", JOptionPane.ERROR_MESSAGE);
 		}
 
 		launchNewVersionCheck();
@@ -249,7 +249,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 							JLabel hyperlink = SwingHelper.createHyperlink(url, url);
 							messagePanel.add(hyperlink);
 
-							JOptionPane.showMessageDialog(MainWindow.this, messagePanel, Translation.get("mainWindow.updateAvailable"), JOptionPane.INFORMATION_MESSAGE);
+							SwingHelper.showMessageDialog(MainWindow.this, messagePanel, Translation.get("mainWindow.updateAvailable"), JOptionPane.INFORMATION_MESSAGE);
 						}
 					}
 					catch (Exception e)
@@ -297,26 +297,60 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	}
 
 	/**
-	 * Enables or disables the entire menu bar (File, Edit, View, Tools, Help) as a group. Disabling at the menu level greys out and blocks
-	 * each menu rather than toggling individual items. Used to lock the menu bar while the sub-map dialog is open, since its first step is
-	 * non-modal and would otherwise leave commands like File -&gt; Open reachable.
+	 * Snapshot of every menu item's enabled state captured when the menu bar was locked, used to restore each item exactly on unlock. Null
+	 * when the menu bar is not locked.
+	 */
+	private Map<JMenuItem, Boolean> menuItemEnabledStatesBeforeLock;
+
+	/**
+	 * Locks or unlocks the entire menu bar (File, Edit, View, Tools, Help). Used to block all menu commands while the sub-map dialog is open,
+	 * since its first step is non-modal and would otherwise leave commands like File -&gt; Open reachable.
+	 * <p>
+	 * Locking disables the individual menu items rather than the top-level {@link JMenu}s. Toggling a top-level menu's enabled state on the
+	 * macOS screen menu bar and back leaves its items stuck disabled (a native peer refresh bug), so we avoid touching the top-level menus.
+	 * Disabling the items also suppresses their keyboard accelerators, which fire from the focused-window input map regardless of the parent
+	 * menu's state. The prior enabled state of every item is saved on lock and restored on unlock.
+	 * <p>
+	 * When unlocking, call this before any logic that recomputes item states (e.g. {@code enableOrDisableFieldsThatRequireMap}), so the
+	 * restored snapshot doesn't overwrite the freshly computed states.
 	 */
 	void setMenuBarEnabled(boolean enabled)
 	{
-		fileMenu.setEnabled(enabled);
-		editMenu.setEnabled(enabled);
-		viewMenu.setEnabled(enabled);
-		toolsMenu.setEnabled(enabled);
-		helpMenu.setEnabled(enabled);
+		if (!enabled)
+		{
+			menuItemEnabledStatesBeforeLock = new LinkedHashMap<>();
+			for (JMenu menu : Arrays.asList(fileMenu, editMenu, viewMenu, toolsMenu, helpMenu))
+			{
+				disableMenuItemsRecursively(menu, menuItemEnabledStatesBeforeLock);
+			}
+		}
+		else if (menuItemEnabledStatesBeforeLock != null)
+		{
+			for (Map.Entry<JMenuItem, Boolean> entry : menuItemEnabledStatesBeforeLock.entrySet())
+			{
+				entry.getKey().setEnabled(entry.getValue());
+			}
+			menuItemEnabledStatesBeforeLock = null;
+		}
+	}
 
-		// Disabling a JMenu greys it out but does not suppress its items' keyboard accelerators - those fire from the focused-window input
-		// map regardless of the parent menu's enabled state. Disable at the item level the two whose accelerators would load a different
-		// map,
-		// File -> New (Ctrl+N) and File -> Open (Ctrl+O), so they are fully blocked while the menu bar is locked. The other accelerator
-		// items
-		// (Save, Refresh, Undo, Redo, Search) are already disabled by enableOrDisableFieldsThatRequireMap during the sub-map dialog.
-		newRandomMapMenuItem.setEnabled(enabled);
-		loadSettingsMenuItem.setEnabled(enabled);
+	private static void disableMenuItemsRecursively(JMenu menu, Map<JMenuItem, Boolean> savedStates)
+	{
+		for (int i = 0; i < menu.getItemCount(); i++)
+		{
+			JMenuItem item = menu.getItem(i);
+			if (item == null)
+			{
+				// Separators return null.
+				continue;
+			}
+			savedStates.put(item, item.isEnabled());
+			item.setEnabled(false);
+			if (item instanceof JMenu)
+			{
+				disableMenuItemsRecursively((JMenu) item, savedStates);
+			}
+		}
 	}
 
 	void enableOrDisableFieldsThatRequireMap(boolean enable, MapSettings settings, boolean forceEnableZoom)
@@ -393,7 +427,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				catch (Exception ex)
 				{
 					ex.printStackTrace();
-					JOptionPane.showMessageDialog(null, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+					SwingHelper.showMessageDialog(null, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 					Logger.printError("Error while closing:", ex);
 				}
 			}
@@ -780,7 +814,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					JScrollPane scrollPane = new JScrollPane(textArea);
 					scrollPane.setPreferredSize(new Dimension(500, 150));
 
-					JOptionPane.showMessageDialog(MainWindow.this, scrollPane, Translation.get("mainWindow.mapDrewWithWarnings"), JOptionPane.WARNING_MESSAGE);
+					SwingHelper.showMessageDialog(MainWindow.this, scrollPane, Translation.get("mainWindow.mapDrewWithWarnings"), JOptionPane.WARNING_MESSAGE);
 
 				}
 
@@ -932,7 +966,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 					if (openSettingsFilePath != null && MapSettings.isOldPropertiesFile(openSettingsFilePath.toString()))
 					{
-						JOptionPane.showMessageDialog(MainWindow.this,
+						SwingHelper.showMessageDialog(MainWindow.this,
 								Translation.get("mainWindow.fileConvertedMessage", FilenameUtils.getName(openSettingsFilePath.toString()), MapSettings.fileExtensionWithDot),
 								Translation.get("mainWindow.fileConverted"), JOptionPane.INFORMATION_MESSAGE);
 						openSettingsFilePath = Paths.get(FilenameUtils.getFullPath(openSettingsFilePath.toString()),
@@ -1261,7 +1295,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				JOptionPane.showMessageDialog(MainWindow.this, Translation.get("keyboardShortcuts.message"), Translation.get("keyboardShortcuts.title"), JOptionPane.INFORMATION_MESSAGE);
+				SwingHelper.showMessageDialog(MainWindow.this, Translation.get("keyboardShortcuts.message"), Translation.get("keyboardShortcuts.title"), JOptionPane.INFORMATION_MESSAGE);
 			}
 		});
 
@@ -1293,7 +1327,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	{
 		UserPreferences.getInstance().language = languageCode;
 		UserPreferences.getInstance().save();
-		JOptionPane.showMessageDialog(this, Translation.get("language.changed"), Translation.get("language.changed.title"), JOptionPane.INFORMATION_MESSAGE);
+		SwingHelper.showMessageDialog(this, Translation.get("language.changed"), Translation.get("language.changed.title"), JOptionPane.INFORMATION_MESSAGE);
 	}
 
 	private void handleLookAndFeelChange(LookAndFeel lookAndFeel)
@@ -1338,7 +1372,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			System.out.println(message);
 			e.printStackTrace();
 			Logger.printError(message, e);
-			JOptionPane.showMessageDialog(null, message, "Error", JOptionPane.ERROR_MESSAGE);
+			SwingHelper.showMessageDialog(null, message, "Error", JOptionPane.ERROR_MESSAGE);
 			return;
 		}
 	}
@@ -1407,7 +1441,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				String message = Translation.get("artPack.errorCreatingFolder", ex.getMessage());
 				Logger.printError(message, ex);
-				JOptionPane.showMessageDialog(this, message, Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
+				SwingHelper.showMessageDialog(this, message, Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
 				return;
 			}
 		}
@@ -1451,19 +1485,19 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				String message = "Error while reading zip file '" + selectedFile + "': " + ex.getMessage();
 				Logger.printError(message, ex);
-				JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
+				SwingHelper.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
 				return;
 			}
 
 			if (subfolderNames.isEmpty())
 			{
-				JOptionPane.showMessageDialog(this, Translation.get("artPack.invalidEmpty"), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
+				SwingHelper.showMessageDialog(this, Translation.get("artPack.invalidEmpty"), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
 				return;
 			}
 
 			if (subfolderNames.size() > 1)
 			{
-				JOptionPane.showMessageDialog(this, Translation.get("artPack.invalidMultipleFolders", subfolderNames.size()), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
+				SwingHelper.showMessageDialog(this, Translation.get("artPack.invalidMultipleFolders", subfolderNames.size()), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
 				return;
 			}
 
@@ -1481,7 +1515,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 						{
 							if (MapSettings.isVersionGreaterThanCurrent(requiredVersion))
 							{
-								JOptionPane.showMessageDialog(this, Translation.get("artPack.requiresVersion", requiredVersion, MapSettings.currentVersion), Translation.get("common.error"),
+								SwingHelper.showMessageDialog(this, Translation.get("artPack.requiresVersion", requiredVersion, MapSettings.currentVersion), Translation.get("common.error"),
 										JOptionPane.ERROR_MESSAGE);
 								return;
 							}
@@ -1490,7 +1524,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 						{
 							String message = "Number format error while reading " + requiredVersionKey + " from '" + settingsPath + "' in '" + selectedFile.toPath() + "': " + e.getMessage();
 							Logger.printError(message, e);
-							JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
+							SwingHelper.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
 							return;
 						}
 					}
@@ -1504,14 +1538,14 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				final String message = "Error while trying to read art pack version file: " + e.getMessage();
 				Logger.printError(message, e);
-				JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
+				SwingHelper.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
 			}
 
 			String artPackName = subfolderNames.get(0);
 
 			if (Assets.reservedArtPacks.contains(artPackName.toLowerCase()))
 			{
-				JOptionPane.showMessageDialog(this, Translation.get("artPack.nameNotAllowed", artPackName), Translation.get("artPack.invalidName"), JOptionPane.ERROR_MESSAGE);
+				SwingHelper.showMessageDialog(this, Translation.get("artPack.nameNotAllowed", artPackName), Translation.get("artPack.invalidName"), JOptionPane.ERROR_MESSAGE);
 				return;
 			}
 
@@ -1519,7 +1553,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			if (artPackFolderAsFile.exists() && artPackFolderAsFile.isDirectory())
 			{
 				// Show the dialog
-				int response = JOptionPane.showOptionDialog(this, Translation.get("artPack.alreadyExists", artPackName), Translation.get("artPack.overwriteTitle"), JOptionPane.DEFAULT_OPTION,
+				int response = SwingHelper.showOptionDialog(this, Translation.get("artPack.alreadyExists", artPackName), Translation.get("artPack.overwriteTitle"), JOptionPane.DEFAULT_OPTION,
 						JOptionPane.WARNING_MESSAGE, null, new Object[] { Translation.get("artPack.overwrite"), Translation.get("common.cancel") }, Translation.get("common.cancel"));
 
 				if (response == 0)
@@ -1547,11 +1581,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			try
 			{
 				FileHelper.unzip(selectedFile, artPacksFolder, true);
-				JOptionPane.showMessageDialog(MainWindow.this, Translation.get("artPack.addedSuccessfully"), Translation.get("artPack.success"), JOptionPane.INFORMATION_MESSAGE);
+				SwingHelper.showMessageDialog(MainWindow.this, Translation.get("artPack.addedSuccessfully"), Translation.get("artPack.success"), JOptionPane.INFORMATION_MESSAGE);
 			}
 			catch (IOException ex)
 			{
-				JOptionPane.showMessageDialog(MainWindow.this, Translation.get("artPack.errorUncompressing", ex.getMessage()), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
+				SwingHelper.showMessageDialog(MainWindow.this, Translation.get("artPack.errorUncompressing", ex.getMessage()), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
 			}
 			handleImagesRefresh();
 		}
@@ -1700,7 +1734,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	{
 		if (!(new File(absolutePath).exists()))
 		{
-			JOptionPane.showMessageDialog(null, Translation.get("mainWindow.mapDoesNotExist", absolutePath), Translation.get("mainWindow.unableToOpenMap"), JOptionPane.ERROR_MESSAGE);
+			SwingHelper.showMessageDialog(null, Translation.get("mainWindow.mapDoesNotExist", absolutePath), Translation.get("mainWindow.unableToOpenMap"), JOptionPane.ERROR_MESSAGE);
 			return;
 		}
 
@@ -1726,7 +1760,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		catch (Exception e)
 		{
 			e.printStackTrace();
-			JOptionPane.showMessageDialog(null, "Error while opening '" + absolutePath + "': " + e.getMessage(), Translation.get("mainWindow.errorWhileOpeningMap"), JOptionPane.ERROR_MESSAGE);
+			SwingHelper.showMessageDialog(null, "Error while opening '" + absolutePath + "': " + e.getMessage(), Translation.get("mainWindow.errorWhileOpeningMap"), JOptionPane.ERROR_MESSAGE);
 			Logger.printError("Unable to open '" + absolutePath + "' due to an error:", e);
 		}
 	}
@@ -1739,13 +1773,13 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				MapSettings.convertOldCustomImagesFolder(settings.customImagesPath);
 
-				JOptionPane.showMessageDialog(null, Translation.get("customImages.folderConvertedMessage"), Translation.get("customImages.folderConverted"), JOptionPane.INFORMATION_MESSAGE);
+				SwingHelper.showMessageDialog(null, Translation.get("customImages.folderConvertedMessage"), Translation.get("customImages.folderConverted"), JOptionPane.INFORMATION_MESSAGE);
 			}
 			catch (IOException ex)
 			{
 				String errorMessage = "Error while restructuring custom images folder for " + settings.customImagesPath + ": " + ex.getMessage();
 				Logger.printError(errorMessage, ex);
-				JOptionPane.showMessageDialog(null, errorMessage, "Error", JOptionPane.ERROR_MESSAGE);
+				SwingHelper.showMessageDialog(null, errorMessage, "Error", JOptionPane.ERROR_MESSAGE);
 			}
 		}
 	}
@@ -2213,7 +2247,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		if (settingsHaveUnsavedChanges())
 		{
-			int n = JOptionPane.showConfirmDialog(this, Translation.get("mainWindow.settingsModified"), "", JOptionPane.YES_NO_CANCEL_OPTION);
+			int n = SwingHelper.showConfirmDialog(this, Translation.get("mainWindow.settingsModified"), "", JOptionPane.YES_NO_CANCEL_OPTION);
 			if (n == JOptionPane.YES_OPTION)
 			{
 				saveSettings(this);
@@ -2283,7 +2317,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				e.printStackTrace();
 				Logger.printError("Error while saving map.", e);
-				JOptionPane.showMessageDialog(null, e.getMessage(), Translation.get("mainWindow.unableToSaveSettings"), JOptionPane.ERROR_MESSAGE);
+				SwingHelper.showMessageDialog(null, e.getMessage(), Translation.get("mainWindow.unableToSaveSettings"), JOptionPane.ERROR_MESSAGE);
 			}
 			updateFrameTitle(false, true);
 		}
@@ -2343,7 +2377,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				e.printStackTrace();
 				Logger.printError("Error while saving settings to a new file:", e);
-				JOptionPane.showMessageDialog(null, e.getMessage(), Translation.get("mainWindow.unableToSaveSettings"), JOptionPane.ERROR_MESSAGE);
+				SwingHelper.showMessageDialog(null, e.getMessage(), Translation.get("mainWindow.unableToSaveSettings"), JOptionPane.ERROR_MESSAGE);
 			}
 
 			updateFrameTitle(false, true);
@@ -2421,7 +2455,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				message = citiesRemovedForWater.size() == 1 ? Translation.get("mainWindow.cityRemovedForWater", editMenuName, undoName)
 						: Translation.get("mainWindow.citiesRemovedForWater", String.valueOf(citiesRemovedForWater.size()), editMenuName, undoName);
 			}
-			JOptionPane.showMessageDialog(this, message, Translation.get("mainWindow.citiesRemovedForWater.title"), JOptionPane.WARNING_MESSAGE);
+			SwingHelper.showMessageDialog(this, message, Translation.get("mainWindow.citiesRemovedForWater.title"), JOptionPane.WARNING_MESSAGE);
 		}
 		hasEstablishedCityOnWaterBaseline = true;
 	}
@@ -2584,9 +2618,17 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	 */
 	private void showStartupScreen()
 	{
-		// mainWindow.welcome and mainWindow.welcome.line2 were split into two lines for the old, narrow placeholder-image rendering;
-		// the overlay has plenty of width, so join them back into a single sentence here rather than adding new translation keys.
-		showCanvasMessage(Translation.get("mainWindow.welcome") + " " + Translation.get("mainWindow.welcome.line2"));
+		// mainWindow.welcome and mainWindow.welcome.line2 are two lines. The overlay has plenty of width for most fonts, so join them into a
+		// single sentence. On macOS the default decorative font is wider and a single line runs past the default window width, so keep the
+		// two lines separate there to wrap sooner.
+		if (OSHelper.isMac())
+		{
+			showCanvasMessage(Translation.get("mainWindow.welcome"), Translation.get("mainWindow.welcome.line2"));
+		}
+		else
+		{
+			showCanvasMessage(Translation.get("mainWindow.welcome") + " " + Translation.get("mainWindow.welcome.line2"));
+		}
 		boolean showAskCard = !UserPreferences.getInstance().hideStartupSupportPanel;
 		mapCanvasOverlay.setSupportPanel(true, SupportPanel.defaultContentWidth, showAskCard);
 	}

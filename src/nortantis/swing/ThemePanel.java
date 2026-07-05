@@ -2159,6 +2159,14 @@ public class ThemePanel extends JTabbedPane
 	{
 		SwingHelper.setEnabled(this, enable);
 
+		// Explicitly toggle each tab's enabled state. Disabling the tabbed pane alone greys the selected tab's title on some
+		// look-and-feels (notably the native macOS one) but leaves the other tab titles looking enabled, even though they can't be
+		// selected. Toggling each tab keeps all tab titles greyed out consistently while disabled.
+		for (int i = 0; i < getTabCount(); i++)
+		{
+			setEnabledAt(i, enable);
+		}
+
 		if (enable)
 		{
 			// Call this to disable any fields that should be disabled.

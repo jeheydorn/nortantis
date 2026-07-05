@@ -9,6 +9,7 @@ import nortantis.platform.awt.AwtBridge;
 import nortantis.swing.translation.Translation;
 
 import nortantis.util.Helper;
+import nortantis.util.OSHelper;
 
 import javax.swing.*;
 import javax.swing.event.ChangeListener;
@@ -592,8 +593,9 @@ public class SubMapDialog
 			step1Dialog.dispose();
 			step1Dialog = null;
 		}
-		mainWindow.enableOrDisableFieldsThatRequireMap(true, mainWindow.getSettingsFromGUI(false), true);
+		// Restore the menu bar's locked snapshot first, then recompute field states, so the snapshot doesn't overwrite them.
 		mainWindow.setMenuBarEnabled(true);
+		mainWindow.enableOrDisableFieldsThatRequireMap(true, mainWindow.getSettingsFromGUI(false), true);
 	}
 
 	private void disposeStep1()
@@ -618,8 +620,9 @@ public class SubMapDialog
 			step2Dialog.dispose();
 			step2Dialog = null;
 		}
-		mainWindow.enableOrDisableFieldsThatRequireMap(true, mainWindow.getSettingsFromGUI(false), true);
+		// Restore the menu bar's locked snapshot first, then recompute field states, so the snapshot doesn't overwrite them.
 		mainWindow.setMenuBarEnabled(true);
+		mainWindow.enableOrDisableFieldsThatRequireMap(true, mainWindow.getSettingsFromGUI(false), true);
 	}
 
 	// -------------------------------------------------------------------------
@@ -853,7 +856,8 @@ public class SubMapDialog
 		previewProgressBar.setVisible(false);
 		bottomPanel.add(previewProgressBar);
 
-		progressBarTimer = new Timer(50, e -> previewProgressBar.setVisible(previewUpdater != null && previewUpdater.isMapBeingDrawn()));
+		progressBarTimer = new Timer(50,
+				e -> SwingHelper.setIndeterminateProgressBarVisible(previewProgressBar, previewUpdater != null && previewUpdater.isMapBeingDrawn()));
 		progressBarTimer.setInitialDelay(500);
 
 		bottomPanel.add(Box.createHorizontalGlue());
@@ -880,7 +884,9 @@ public class SubMapDialog
 		// mnemonic letter for each language. Alt+C triggers Create and, unlike Ctrl+C, does not collide with the Copy binding of
 		// the spinners and seed text field.
 		createButton = new JButton(Translation.get("newSettingsDialog.create"));
-		createButton.setMnemonic(KeyEvent.VK_C);
+		SwingHelper.bindAltMnemonic(createButton, KeyEvent.VK_C);
+		String createShortcut = OSHelper.isMac() ? "Option+C" : "Alt+C";
+		createButton.setToolTipText(Translation.get("subMapDialog.step2.create.tooltip", createShortcut));
 		createButton.addActionListener(e -> handleCreate());
 
 		buttonRow.add(backButton);
@@ -1084,7 +1090,7 @@ public class SubMapDialog
 		else
 		{
 			progressBarTimer.stop();
-			previewProgressBar.setVisible(false);
+			SwingHelper.setIndeterminateProgressBarVisible(previewProgressBar, false);
 		}
 	}
 
@@ -1190,7 +1196,7 @@ public class SubMapDialog
 		MapSettings settings = lastSubMapSettings;
 		if (settings == null)
 		{
-			JOptionPane.showMessageDialog(step2Dialog, Translation.get("subMapDialog.step2.notReady"), Translation.get("subMapDialog.step2.notReady.title"), JOptionPane.INFORMATION_MESSAGE);
+			SwingHelper.showMessageDialog(step2Dialog, Translation.get("subMapDialog.step2.notReady"), Translation.get("subMapDialog.step2.notReady.title"), JOptionPane.INFORMATION_MESSAGE);
 			return;
 		}
 		stopPreviewUpdater();

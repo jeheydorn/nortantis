@@ -45,7 +45,8 @@ public class EditClipboardButtonsWidget
 
 		deleteButton = new JButton(Translation.get("iconsTool.delete"));
 		deleteButton.setToolTipText(deleteTooltip);
-		SwingHelper.bindButtonShortcut(deleteButton, KeyStroke.getKeyStroke("DELETE"), "deleteAction");
+		// Bind Backspace as well as Delete: the key labeled "delete" sends Backspace on most Mac keyboards.
+		SwingHelper.bindButtonShortcut(deleteButton, "deleteAction", KeyStroke.getKeyStroke("DELETE"), KeyStroke.getKeyStroke("BACK_SPACE"));
 		deleteButton.addActionListener(e -> deleteAction.run());
 	}
 

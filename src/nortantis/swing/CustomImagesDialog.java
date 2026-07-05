@@ -135,12 +135,12 @@ public class CustomImagesDialog extends JDialog
 				File folder = new File(customImagesFolderField.getText());
 				if (!folder.exists())
 				{
-					JOptionPane.showMessageDialog(null, Translation.get("customImages.folderDoesNotExist", folder.getAbsolutePath()), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
+					SwingHelper.showMessageDialog(null, Translation.get("customImages.folderDoesNotExist", folder.getAbsolutePath()), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
 					return;
 				}
 				if (!folder.isDirectory())
 				{
-					JOptionPane.showMessageDialog(null, Translation.get("customImages.pathIsFile", folder.getAbsolutePath()), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
+					SwingHelper.showMessageDialog(null, Translation.get("customImages.pathIsFile", folder.getAbsolutePath()), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
 					return;
 				}
 
@@ -179,7 +179,7 @@ public class CustomImagesDialog extends JDialog
 				boolean isChanged = !Objects.equals(customImagesFolderField.getText(), FileHelper.replaceHomeFolderPlaceholder(currentCustomImagesPath));
 				if (mergeInstalledImagesIntoCustomFolderIfEmpty(customImagesFolderField.getText()))
 				{
-					JOptionPane.showMessageDialog(null, Translation.get("customImages.imagesCopied", Paths.get(customImagesFolderField.getText()).toAbsolutePath()), Translation.get("common.success"),
+					SwingHelper.showMessageDialog(null, Translation.get("customImages.imagesCopied", Paths.get(customImagesFolderField.getText()).toAbsolutePath()), Translation.get("common.success"),
 							JOptionPane.INFORMATION_MESSAGE);
 				}
 				else if (MapSettings.isOldCustomImagesFolderStructure(customImagesFolderField.getText()))
@@ -188,13 +188,13 @@ public class CustomImagesDialog extends JDialog
 					{
 						MapSettings.convertOldCustomImagesFolder(customImagesFolderField.getText());
 
-						JOptionPane.showMessageDialog(null, Translation.get("customImages.folderConvertedMessage"), Translation.get("customImages.folderConverted"), JOptionPane.INFORMATION_MESSAGE);
+						SwingHelper.showMessageDialog(null, Translation.get("customImages.folderConvertedMessage"), Translation.get("customImages.folderConverted"), JOptionPane.INFORMATION_MESSAGE);
 					}
 					catch (IOException ex)
 					{
 						String errorMessage = Translation.get("customImages.errorRestructuring", customImagesFolderField.getText(), ex.getMessage());
 						Logger.printError(errorMessage, ex);
-						JOptionPane.showMessageDialog(null, errorMessage, Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
+						SwingHelper.showMessageDialog(null, errorMessage, Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
 					}
 				}
 
@@ -237,12 +237,12 @@ public class CustomImagesDialog extends JDialog
 		File folder = new File(customImagesFolder);
 		if (!folder.exists())
 		{
-			JOptionPane.showMessageDialog(null, Translation.get("customImages.copyFolderDoesNotExist", folder.getAbsolutePath()), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
+			SwingHelper.showMessageDialog(null, Translation.get("customImages.copyFolderDoesNotExist", folder.getAbsolutePath()), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
 		else if (!folder.isDirectory())
 		{
-			JOptionPane.showMessageDialog(null, Translation.get("customImages.copyPathIsFile", folder.getAbsolutePath()), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
+			SwingHelper.showMessageDialog(null, Translation.get("customImages.copyPathIsFile", folder.getAbsolutePath()), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
 
@@ -253,7 +253,7 @@ public class CustomImagesDialog extends JDialog
 		}
 		catch (IOException ex)
 		{
-			JOptionPane.showMessageDialog(null, Translation.get("customImages.errorCheckingEmpty", folder.getAbsolutePath(), ex.getMessage()), Translation.get("common.error"),
+			SwingHelper.showMessageDialog(null, Translation.get("customImages.errorCheckingEmpty", folder.getAbsolutePath(), ex.getMessage()), Translation.get("common.error"),
 					JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
@@ -274,7 +274,7 @@ public class CustomImagesDialog extends JDialog
 		catch (IOException ex)
 		{
 			String message = Translation.get("customImages.errorCopyingImages", folder.getAbsolutePath(), ex.getMessage());
-			JOptionPane.showMessageDialog(this, message, Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
+			SwingHelper.showMessageDialog(this, message, Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
 			Logger.printError(message, ex);
 		}
 

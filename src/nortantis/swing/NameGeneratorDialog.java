@@ -67,7 +67,7 @@ public class NameGeneratorDialog extends JDialog
 				if (!beginsWith.getText().chars().allMatch(Character::isLetter) || !endsWith.getText().chars().allMatch(Character::isLetter))
 				{
 					String message = Translation.get("nameGenerator.lettersOnly", beginsWithLabel.replace(":", ""), endsWithLabel.replace(":", ""));
-					JOptionPane.showMessageDialog(NameGeneratorDialog.this, message, Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
+					SwingHelper.showMessageDialog(NameGeneratorDialog.this, message, Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
 					return;
 				}
 

@@ -34,22 +34,22 @@ public class DrawModeWidget
 		drawModeButton.setToolTipText(drawTooltipWithoutKeyboardShortcut + " (" + Translation.get("drawMode.draw.shortcut") + ")");
 		drawModeButton.setSelected(true);
 		drawModeButton.addActionListener(modeListener);
-		drawModeButton.setMnemonic(KeyEvent.VK_D);
+		SwingHelper.bindAltMnemonic(drawModeButton, KeyEvent.VK_D);
 
 		replaceModeButton = new JToggleButton(Translation.get("drawMode.replace"));
 		replaceModeButton.setToolTipText(replaceTooltipWithoutKeyboardShortcut + " (" + Translation.get("drawMode.replace.shortcut") + ")");
 		replaceModeButton.addActionListener(modeListener);
-		replaceModeButton.setMnemonic(KeyEvent.VK_R);
+		SwingHelper.bindAltMnemonic(replaceModeButton, KeyEvent.VK_R);
 
 		editModeButton = new JToggleButton(Translation.get("drawMode.edit"));
 		editModeButton.setToolTipText(editTooltipWithoutKeyboardShortcut + " (" + Translation.get("drawMode.edit.shortcut") + ")");
 		editModeButton.addActionListener(modeListener);
-		editModeButton.setMnemonic(KeyEvent.VK_T);
+		SwingHelper.bindAltMnemonic(editModeButton, KeyEvent.VK_T);
 
 		eraseModeButton = new JToggleButton(Translation.get("drawMode.erase"));
 		eraseModeButton.setToolTipText(eraseTooltipWithoutKeyboardShortcut + " (" + Translation.get("drawMode.erase.shortcut") + ")");
 		eraseModeButton.addActionListener(modeListener);
-		eraseModeButton.setMnemonic(KeyEvent.VK_E);
+		SwingHelper.bindAltMnemonic(eraseModeButton, KeyEvent.VK_E);
 
 		List<JToggleButton> buttons = new ArrayList<>();
 		buttons.add(drawModeButton);
@@ -95,7 +95,7 @@ public class DrawModeWidget
 	{
 		drawModeButton.setText(translatedHtml);
 		drawModeButton.setToolTipText(tooltipWithoutShortcut + " (" + translatedShortcutText + ")");
-		drawModeButton.setMnemonic(mnemonic);
+		SwingHelper.bindAltMnemonic(drawModeButton, mnemonic);
 		SwingHelper.reduceHorizontalMargin(drawModeButton);
 	}
 
