@@ -415,14 +415,12 @@ public class SwingHelper
 		return OSHelper.isMac() && UIManager.getLookAndFeel().getClass().getName().equals(UIManager.getSystemLookAndFeelClassName());
 	}
 
-	private static final String progressPulseTimerKey = "nortantis.progressPulseTimer";
-
 	/**
-	 * Shows or hides a progress bar that indicates ongoing, unmeasured work. On most look-and-feels this is a standard indeterminate
-	 * ("barber pole") bar. The native macOS look-and-feel does not animate an indeterminate bar at all here (it shows a static, empty bar),
-	 * so with the System theme the bar is made determinate and its value is smoothly pulsed up and down by a timer to give continuous motion
-	 * (and, being determinate, it also shows the status text there). Does nothing if the visibility is unchanged, to avoid restarting the
-	 * animation on every timer tick.
+	 * Shows or hides an indeterminate ("barber pole") progress bar that indicates ongoing, unmeasured work. The native macOS look-and-feel
+	 * (System theme) starts the indeterminate animation from its {@code AncestorListener} when the bar is added to a showing hierarchy, not
+	 * when {@code setVisible} is called - so under an open JDK bug (JDK-8260507) a bar that is only shown/hidden via {@code setVisible} never
+	 * animates. Working around it there by removing and re-adding the bar to its parent re-fires {@code ancestorAdded} and starts the
+	 * animation. Does nothing if the visibility is unchanged, to avoid restarting the animation on every timer tick.
 	 */
 	public static void setIndeterminateProgressBarVisible(JProgressBar progressBar, boolean visible)
 	{
@@ -434,59 +432,47 @@ public class SwingHelper
 		if (visible)
 		{
 			progressBar.setVisible(true);
+			// Toggle indeterminate off then on so the look-and-feel (re)starts the animation now that the bar is showing.
+			progressBar.setIndeterminate(false);
+			progressBar.setIndeterminate(true);
 			if (isMacSystemLookAndFeel())
 			{
-				startProgressPulse(progressBar);
-			}
-			else
-			{
-				// Toggle indeterminate off then on so the look-and-feel (re)starts the animation now that the bar is showing.
-				progressBar.setIndeterminate(false);
-				progressBar.setIndeterminate(true);
+				restartNativeIndeterminateAnimation(progressBar);
 			}
 		}
 		else
 		{
-			stopProgressPulse(progressBar);
 			progressBar.setVisible(false);
 		}
 	}
 
-	private static void startProgressPulse(JProgressBar progressBar)
+	/**
+	 * Re-adds the progress bar to its parent at the same position (preserving any layout constraints) so the native macOS look-and-feel's
+	 * {@code AncestorListener} fires {@code ancestorAdded} and starts the indeterminate animation. See
+	 * {@link #setIndeterminateProgressBarVisible(JProgressBar, boolean)}.
+	 */
+	private static void restartNativeIndeterminateAnimation(JProgressBar progressBar)
 	{
-		stopProgressPulse(progressBar);
-		progressBar.setIndeterminate(false);
-		progressBar.setMinimum(0);
-		progressBar.setMaximum(100);
-		progressBar.setValue(0);
-		int[] direction = { 1 };
-		Timer timer = new Timer(15, e ->
+		Container parent = progressBar.getParent();
+		if (parent == null)
 		{
-			int value = progressBar.getValue() + direction[0] * 2;
-			if (value >= 100)
-			{
-				value = 100;
-				direction[0] = -1;
-			}
-			else if (value <= 0)
-			{
-				value = 0;
-				direction[0] = 1;
-			}
-			progressBar.setValue(value);
-		});
-		progressBar.putClientProperty(progressPulseTimerKey, timer);
-		timer.start();
-	}
-
-	private static void stopProgressPulse(JProgressBar progressBar)
-	{
-		Object existing = progressBar.getClientProperty(progressPulseTimerKey);
-		if (existing instanceof Timer)
-		{
-			((Timer) existing).stop();
-			progressBar.putClientProperty(progressPulseTimerKey, null);
+			return;
 		}
+
+		int index = parent.getComponentZOrder(progressBar);
+		Object constraints = parent.getLayout() instanceof GridBagLayout ? ((GridBagLayout) parent.getLayout()).getConstraints(progressBar) : null;
+
+		parent.remove(progressBar);
+		if (constraints != null)
+		{
+			parent.add(progressBar, constraints, index);
+		}
+		else
+		{
+			parent.add(progressBar, index);
+		}
+		parent.revalidate();
+		parent.repaint();
 	}
 
 	public static void setEnabled(Component component, boolean enabled)
