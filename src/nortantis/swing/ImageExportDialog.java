@@ -258,27 +258,12 @@ public class ImageExportDialog extends JDialog
 						SwingHelper.showMessageDialog(getContentPane(), Translation.get("imageExport.pathInvalid"), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
 						return;
 					}
-
-					if (type == ImageExportType.Map)
-					{
-						mainWindow.imageExportPath = FileHelper.replaceHomeFolderWithPlaceholder(exportPath);
-					}
-					else
-					{
-						mainWindow.heightmapExportPath = FileHelper.replaceHomeFolderWithPlaceholder(exportPath);
-					}
 				}
 
 				final String exportPathFinal = exportPath;
 
-				if (type == ImageExportType.Map)
-				{
-					mainWindow.defaultMapExportAction = exportAction;
-				}
-				else
-				{
-					mainWindow.defaultHeightmapExportAction = exportAction;
-				}
+				rememberResolutionAndPath(mainWindow, resolutionSlider.getValue() / 100.0, exportPath);
+
 				exportButton.setEnabled(false);
 				resolutionSlider.setEnabled(false);
 				pathField.setEnabled(false);
@@ -291,7 +276,7 @@ public class ImageExportDialog extends JDialog
 				// that we don't risk running out of memory
 				// or end up clearing the image cache while a draw is still
 				// going.
-				mainWindow.updater.doWhenMapIsNotDrawing(() -> exportMapAndCloseDialog(mainWindow, resolutionSlider.getValue() / 100.0, exportAction, exportPathFinal));
+				mainWindow.updater.doWhenMapIsNotDrawing(() -> exportMapAndCloseDialog(mainWindow, exportAction, exportPathFinal));
 			}
 		});
 		bottomButtonsPanel.add(exportButton);
@@ -304,6 +289,7 @@ public class ImageExportDialog extends JDialog
 			public void actionPerformed(ActionEvent e)
 			{
 				isCanceled = true;
+				rememberResolutionAndPath(mainWindow, resolutionSlider.getValue() / 100.0, pathField.getText());
 				if (mapCreator != null)
 				{
 					mapCreator.cancel();
@@ -340,6 +326,7 @@ public class ImageExportDialog extends JDialog
 			@Override
 			public void windowClosing(WindowEvent e)
 			{
+				rememberResolutionAndPath(mainWindow, resolutionSlider.getValue() / 100.0, pathField.getText());
 				if (mapCreator != null)
 				{
 					mapCreator.cancel();
@@ -358,22 +345,40 @@ public class ImageExportDialog extends JDialog
 		});
 	}
 
-	private void exportMapAndCloseDialog(MainWindow mainWindow, double resolution, ExportAction exportAction, String pathToSaveTo)
+	private void rememberResolutionAndPath(MainWindow mainWindow, double resolution, String path)
+	{
+		boolean hasPath = path != null && !path.isEmpty();
+		ExportAction exportAction = fileRadioButton.isSelected() ? ExportAction.SaveToFile : ExportAction.OpenInDefaultImageViewer;
+		if (type == ImageExportType.Map)
+		{
+			mainWindow.exportResolution = resolution;
+			mainWindow.defaultMapExportAction = exportAction;
+			if (hasPath)
+			{
+				mainWindow.imageExportPath = FileHelper.replaceHomeFolderWithPlaceholder(path);
+			}
+		}
+		else
+		{
+			mainWindow.heightmapExportResolution = resolution;
+			mainWindow.defaultHeightmapExportAction = exportAction;
+			if (hasPath)
+			{
+				mainWindow.heightmapExportPath = FileHelper.replaceHomeFolderWithPlaceholder(path);
+			}
+		}
+	}
+
+	private void exportMapAndCloseDialog(MainWindow mainWindow, ExportAction exportAction, String pathToSaveTo)
 	{
 		progressBar.setVisible(true);
 		if (type == ImageExportType.Map)
 		{
-			mainWindow.exportResolution = resolution;
-
 			// Full map draws report progress, so show a determinate bar. It animates under the macOS System look and feel, where an
 			// indeterminate bar does not. Heightmap exports don't report progress, so they keep the indeterminate bar.
 			progressBar.setIndeterminate(false);
 			progressBar.setValue(0);
 			mapCreator.setProgressListener(fraction -> SwingUtilities.invokeLater(() -> progressBar.setValue((int) Math.round(fraction * 100))));
-		}
-		else
-		{
-			mainWindow.heightmapExportResolution = resolution;
 		}
 		final MapSettings settings = mainWindow.getSettingsFromGUI(false).deepCopy();
 

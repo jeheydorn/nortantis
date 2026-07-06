@@ -237,6 +237,7 @@ public class NewSettingsDialog extends JDialog
 		progressBar.setString(Translation.get("newSettingsDialog.drawing"));
 		progressBar.setIndeterminate(true);
 		progressBar.setVisible(false);
+		bottomPanel.add(Box.createHorizontalGlue());
 		bottomPanel.add(progressBar);
 		bottomPanel.add(Box.createHorizontalGlue());
 
