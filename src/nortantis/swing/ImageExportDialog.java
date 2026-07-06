@@ -30,7 +30,7 @@ import java.util.List;
 public class ImageExportDialog extends JDialog
 {
 	private JProgressBar progressBar;
-	private boolean isCanceled;
+	private volatile boolean isCanceled;
 	private JButton cancelButton;
 	private JButton exportButton;
 	private JSlider resolutionSlider;
@@ -326,6 +326,7 @@ public class ImageExportDialog extends JDialog
 			@Override
 			public void windowClosing(WindowEvent e)
 			{
+				isCanceled = true;
 				rememberResolutionAndPath(mainWindow, resolutionSlider.getValue() / 100.0, pathField.getText());
 				if (mapCreator != null)
 				{
