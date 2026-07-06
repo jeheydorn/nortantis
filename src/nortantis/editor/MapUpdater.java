@@ -1089,6 +1089,11 @@ public abstract class MapUpdater
 		this.enabled = enabled;
 	}
 
+	public boolean isEnabled()
+	{
+		return enabled;
+	}
+
 	public void doIfMapIsReadyForInteractions(Runnable action)
 	{
 		doIfMapIsReadyForInteractions(action, true);

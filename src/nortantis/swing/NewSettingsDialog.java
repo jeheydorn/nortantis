@@ -56,6 +56,11 @@ public class NewSettingsDialog extends JDialog
 	private JComboBox<String> artPackComboBox;
 	private JLabel rotationWarningLabel;
 	private RowHider rotationWarningHider;
+	/**
+	 * The map drawing area size the last preview draw was kicked off for, or null before the first draw. The resize handler uses it to skip
+	 * a redraw when the size has not actually changed, so the preview is not drawn twice while the dialog is first shown and laid out.
+	 */
+	private nortantis.geom.Dimension lastDrawnMapAreaSize;
 
 	public NewSettingsDialog(MainWindow mainWindow, MapSettings settingsToKeepThemeFrom)
 	{
@@ -264,7 +269,7 @@ public class NewSettingsDialog extends JDialog
 		{
 			public void componentResized(ComponentEvent componentEvent)
 			{
-				handleMapChange();
+				handleResize();
 			}
 		});
 
@@ -802,6 +807,15 @@ public class NewSettingsDialog extends JDialog
 
 	public void handleMapChange()
 	{
+		// Suppress redraws while the updater is disabled (e.g. during loadSettingsIntoGUI, which fires
+		// many field-change listeners as it populates the controls). Because the redraw is deferred to a
+		// later EDT cycle, checking enabled only inside the deferred body would be too late: the body runs
+		// after the constructor re-enables the updater, so every one of those load-time changes would draw.
+		// Checking synchronously here, the way MainWindow's synchronous listeners do, drops them.
+		if (!updater.isEnabled())
+		{
+			return;
+		}
 		// Defer to the next EDT cycle so that any row visibility changes (e.g. custom dimension
 		// spinners, rotation warning) have been laid out before we read the container size.
 		// Without this, getMapDrawingAreaSize() returns the stale pre-layout dimensions, causing
@@ -811,6 +825,26 @@ public class NewSettingsDialog extends JDialog
 			nortantis.geom.Dimension size = getMapDrawingAreaSize();
 			if (size != null && size.width > 0.0 && size.height > 0.0)
 			{
+				lastDrawnMapAreaSize = size;
+				updater.setMaxMapSize(size);
+				enableOrDisableProgressBar(true);
+				updater.createAndShowMapFull();
+			}
+		});
+	}
+
+	/**
+	 * Redraws the preview if the map drawing area has changed size since the last draw. Used by the resize handler, which fires several
+	 * times (including redundantly with an unchanged size) while the dialog is first shown and would otherwise draw the preview twice.
+	 */
+	private void handleResize()
+	{
+		SwingUtilities.invokeLater(() ->
+		{
+			nortantis.geom.Dimension size = getMapDrawingAreaSize();
+			if (size != null && size.width > 0.0 && size.height > 0.0 && !size.equals(lastDrawnMapAreaSize))
+			{
+				lastDrawnMapAreaSize = size;
 				updater.setMaxMapSize(size);
 				enableOrDisableProgressBar(true);
 				updater.createAndShowMapFull();

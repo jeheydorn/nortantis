@@ -93,6 +93,12 @@ public class SubMapDialog
 	private JTextField seedTextField;
 	/** Set to true in windowOpened; guards componentResized from firing the first preview draw before the dialog is fully shown. */
 	private boolean step2DialogOpened = false;
+	/**
+	 * The preview container size the last preview draw was kicked off for, or null before the first draw. The window-open and resize
+	 * handlers use it to skip a redraw when the size has not actually changed, so the preview is not drawn twice when the dialog fires a
+	 * redundant resize while it is first shown.
+	 */
+	private nortantis.geom.Dimension lastPreviewDrawSize;
 	/** The 1× polygon count for the current selection (computed when step 2 opens). */
 	private double oneXWorldSize;
 	/** Hides/shows the custom polygon count slider row. */
@@ -905,6 +911,7 @@ public class SubMapDialog
 		step2Dialog.add(mainPanel);
 
 		step2DialogOpened = false;
+		lastPreviewDrawSize = null;
 
 		// Build the preview MapUpdater.
 		createPreviewUpdater();
@@ -920,7 +927,7 @@ public class SubMapDialog
 				{
 					return;
 				}
-				triggerPreviewRedraw();
+				triggerPreviewRedrawIfSizeChanged();
 			}
 		});
 
@@ -931,7 +938,7 @@ public class SubMapDialog
 			{
 				step2DialogOpened = true;
 				// Trigger the first draw here, after the dialog is visible and its container is sized.
-				triggerPreviewRedraw();
+				triggerPreviewRedrawIfSizeChanged();
 			}
 
 			@Override
@@ -1054,6 +1061,20 @@ public class SubMapDialog
 
 	private void triggerPreviewRedraw()
 	{
+		triggerPreviewRedraw(false);
+	}
+
+	/**
+	 * Redraws the preview if the preview container has changed size since the last draw. Used by the window-open and resize handlers, which
+	 * can fire redundant events with an unchanged size and would otherwise draw the preview a second time on top of the first.
+	 */
+	private void triggerPreviewRedrawIfSizeChanged()
+	{
+		triggerPreviewRedraw(true);
+	}
+
+	private void triggerPreviewRedraw(boolean onlyIfSizeChanged)
+	{
 		if (previewUpdater == null)
 		{
 			return;
@@ -1077,6 +1098,11 @@ public class SubMapDialog
 			{
 				return;
 			}
+			if (onlyIfSizeChanged && size.equals(lastPreviewDrawSize))
+			{
+				return;
+			}
+			lastPreviewDrawSize = size;
 			previewUpdater.setMaxMapSize(size);
 			enableOrDisableProgressBar(true);
 			previewUpdater.createAndShowMapFull();
