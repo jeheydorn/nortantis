@@ -1295,7 +1295,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				SwingHelper.showMessageDialog(MainWindow.this, Translation.get("keyboardShortcuts.message"), Translation.get("keyboardShortcuts.title"), JOptionPane.INFORMATION_MESSAGE);
+				String zoomModifierKey = OSHelper.isMac() ? "Cmd" : "Ctrl";
+				SwingHelper.showMessageDialog(MainWindow.this, Translation.get("keyboardShortcuts.message", zoomModifierKey), Translation.get("keyboardShortcuts.title"), JOptionPane.INFORMATION_MESSAGE);
 			}
 		});
 

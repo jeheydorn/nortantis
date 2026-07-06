@@ -16,6 +16,8 @@ import javax.swing.filechooser.FileSystemView;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
@@ -102,6 +104,18 @@ public class CustomImagesDialog extends JDialog
 			public void changedUpdate(DocumentEvent e)
 			{
 				openButton.setEnabled(!customImagesFolderField.getText().isEmpty());
+			}
+		});
+		customImagesFolderField.addFocusListener(new FocusAdapter()
+		{
+			@Override
+			public void focusLost(FocusEvent e)
+			{
+				String trimmed = customImagesFolderField.getText().trim();
+				if (!trimmed.equals(customImagesFolderField.getText()))
+				{
+					customImagesFolderField.setText(trimmed);
+				}
 			}
 		});
 		customImagesFolderField.setText(FileHelper.replaceHomeFolderPlaceholder(currentCustomImagesPath));
