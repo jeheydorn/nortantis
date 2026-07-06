@@ -364,6 +364,12 @@ public class ImageExportDialog extends JDialog
 		if (type == ImageExportType.Map)
 		{
 			mainWindow.exportResolution = resolution;
+
+			// Full map draws report progress, so show a determinate bar. It animates under the macOS System look and feel, where an
+			// indeterminate bar does not. Heightmap exports don't report progress, so they keep the indeterminate bar.
+			progressBar.setIndeterminate(false);
+			progressBar.setValue(0);
+			mapCreator.setProgressListener(fraction -> SwingUtilities.invokeLater(() -> progressBar.setValue((int) Math.round(fraction * 100))));
 		}
 		else
 		{

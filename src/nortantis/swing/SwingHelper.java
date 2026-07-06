@@ -1,5 +1,6 @@
 package nortantis.swing;
 
+import nortantis.editor.MapUpdater;
 import nortantis.editor.UserPreferences;
 import nortantis.swing.translation.Translation;
 import nortantis.util.Logger;
@@ -562,6 +563,26 @@ public class SwingHelper
 	public static void showMessageDialog(Component parent, Object message, String title, int messageType)
 	{
 		JOptionPane.showMessageDialog(parent, wrapDialogMessage(message), title, messageType);
+	}
+
+	/**
+	 * Updates a map-drawing progress bar from the given updater's current draw state, and shows or hides it based on whether a draw is
+	 * running. Full draws report determinate progress; incremental draws (and the idle state) leave the bar indeterminate. Determinate is
+	 * preferred because an indeterminate bar does not animate under the macOS System look and feel. Call from the EDT.
+	 */
+	public static void updateMapDrawingProgressBar(JProgressBar progressBar, MapUpdater updater)
+	{
+		double progress = updater.getDrawProgress();
+		if (progress >= 0)
+		{
+			progressBar.setIndeterminate(false);
+			progressBar.setValue((int) Math.round(progress * 100));
+		}
+		else
+		{
+			progressBar.setIndeterminate(true);
+		}
+		progressBar.setVisible(updater.isMapBeingDrawn());
 	}
 
 	/**

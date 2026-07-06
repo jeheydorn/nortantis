@@ -30,6 +30,12 @@ import java.util.stream.Collectors;
 public abstract class MapUpdater
 {
 	private boolean isMapBeingDrawn;
+	/**
+	 * Progress of the current full draw as a fraction from 0 to 1, or -1 when no determinate progress is available (before a draw starts, or
+	 * during an incremental draw, which does not report progress). Written on the draw thread by the {@link MapCreator} progress listener and
+	 * read on the EDT by progress-bar timers, so it is volatile.
+	 */
+	private volatile double drawProgress = -1;
 	private ReentrantLock drawLock;
 	private ReentrantLock interactionsLock;
 	/**
@@ -530,6 +536,8 @@ public abstract class MapUpdater
 		}
 
 		isMapBeingDrawn = true;
+		// Clear any progress left over from a previous draw so the bar doesn't briefly show a stale value before this draw reports its own.
+		drawProgress = -1;
 		if (!isUpdateTypeThatAllowsInteractions(updateType))
 		{
 			isMapReadyForInteractions = false;
@@ -560,6 +568,9 @@ public abstract class MapUpdater
 			@Override
 			public UpdateResult doInBackground() throws IOException
 			{
+				// No determinate progress until fullDraw opts in; incremental draws leave this at -1 so the progress bar stays indeterminate.
+				drawProgress = -1;
+
 				if (!isUpdateTypeThatAllowsInteractions(updateType))
 				{
 					Logger.clear();
@@ -782,6 +793,8 @@ public abstract class MapUpdater
 		try
 		{
 			currentMapCreator = new MapCreator();
+			drawProgress = 0;
+			currentMapCreator.setProgressListener(fraction -> drawProgress = fraction);
 			map = currentMapCreator.createMap(settings, maxMapSize, mapParts);
 		}
 		catch (CancelledException e)
@@ -1182,6 +1195,15 @@ public abstract class MapUpdater
 	public boolean isMapBeingDrawn()
 	{
 		return isMapBeingDrawn;
+	}
+
+	/**
+	 * Returns the progress of the current full draw as a fraction from 0 to 1, or -1 when no determinate progress is available (during an
+	 * incremental draw, or when no draw is running). See {@link #drawProgress}.
+	 */
+	public double getDrawProgress()
+	{
+		return drawProgress;
 	}
 
 	public boolean isMapReadyForInteractions()

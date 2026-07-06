@@ -105,7 +105,7 @@ public class NewSettingsDialog extends JDialog
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				progressBar.setVisible(updater.isMapBeingDrawn());
+				SwingHelper.updateMapDrawingProgressBar(progressBar, updater);
 			}
 		};
 		progressBarTimer = new Timer(50, listener);

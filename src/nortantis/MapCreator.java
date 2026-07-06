@@ -19,6 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.Lock;
 import java.util.function.BiFunction;
+import java.util.function.DoubleConsumer;
 import java.util.stream.Collectors;
 
 public class MapCreator implements WarningLogger
@@ -34,6 +35,26 @@ public class MapCreator implements WarningLogger
 	private static final double concentricWaveWidthBetweenWaves = 11;
 	private static final double concentricWaveLineWidth = 1.8;
 	private boolean isCanceled;
+
+	/**
+	 * Optional callback invoked during a full draw ({@link #createMap}) to report progress as a fraction from 0 to 1. Set via
+	 * {@link #setProgressListener}. Null (the default) means no progress reporting. Only full draws report progress; incremental draws do
+	 * not, because their work is not linear enough to estimate a meaningful fraction. It is called on the draw thread at each point where the
+	 * draw also checks for cancellation.
+	 */
+	private DoubleConsumer progressListener;
+
+	/**
+	 * The number of progress-reporting points reached so far during the current full draw. Reset at the start of {@link #createMap}.
+	 */
+	private int progressStepsCompleted;
+
+	/**
+	 * The approximate total number of progress-reporting points in a full draw, used as the denominator when reporting progress. This is an
+	 * estimate: some points are skipped when parts of the map are cached, so the reported fraction is clamped to at most 1.
+	 */
+	private static final int fullDrawProgressStepCount = 21;
+
 	private final List<String> warningMessages;
 	/**
 	 * City icons dropped from this draw because they landed on water (see {@link IconDrawer#getCitiesRemovedForTouchingWater()}). Captured
@@ -646,6 +667,8 @@ public class MapCreator implements WarningLogger
 
 		double startTime = System.currentTimeMillis();
 
+		progressStepsCompleted = 0;
+
 		// If we're within resolutionBuffer of our estimated maximum resolution, then be conservative about memory usage.
 		// My tests showed that running frayed edge and grunge calculation inline with other stuff gave a 22% speedup.
 		final double resolutionBuffer = 0.5;
@@ -707,13 +730,13 @@ public class MapCreator implements WarningLogger
 			mapParts.background = background;
 		}
 
-		checkForCancel();
+		reportProgressAndCheckForCancel();
 
 		WorldGraph graph;
 		graph = ThreadHelper.getInstance().getResult(graphTask);
 
 		Image map;
-		checkForCancel();
+		reportProgressAndCheckForCancel();
 
 		// Kick off frayed border creation. This is started after the graph is created because of previous bugs I've found
 		// where VoronoiGraph was not thread safe. I think I've fixed those, but I'm still avoiding creating graphs in
@@ -739,7 +762,7 @@ public class MapCreator implements WarningLogger
 		{
 			Tuple4<Image, Image, List<Set<Center>>, List<IconDrawTask>> tuple = drawTerrainAndIcons(settings, mapParts, graph, background, isLowMemoryMode);
 
-			checkForCancel();
+			reportProgressAndCheckForCancel();
 
 			map = tuple.getFirst();
 			textBackground = tuple.getSecond();
@@ -762,7 +785,7 @@ public class MapCreator implements WarningLogger
 			background.landColoredBeforeAddingIconColors = null;
 		}
 
-		checkForCancel();
+		reportProgressAndCheckForCancel();
 
 		Future<Image> grungeTask = null;
 		if (!isLowMemoryMode)
@@ -951,7 +974,7 @@ public class MapCreator implements WarningLogger
 
 		Logger.println("Map dimensions: " + map.getWidth() + "x" + map.getHeight() + ", resolution scale: " + settings.resolution);
 
-		checkForCancel();
+		reportProgressAndCheckForCancel();
 
 		if (settings.drawGrunge && settings.grungeWidth > 0)
 		{
@@ -988,7 +1011,7 @@ public class MapCreator implements WarningLogger
 
 		drawOverlayImageIfNeededAndUpdateMapParts(map, settings);
 
-		checkForCancel();
+		reportProgressAndCheckForCancel();
 
 		if (settings.frayedBorder)
 		{
@@ -1040,7 +1063,7 @@ public class MapCreator implements WarningLogger
 			}
 		}
 
-		checkForCancel();
+		reportProgressAndCheckForCancel();
 
 		double elapsedTime = System.currentTimeMillis() - startTime;
 		Logger.println("Total time to generate map (in seconds): " + elapsedTime / 1000.0);
@@ -1147,7 +1170,7 @@ public class MapCreator implements WarningLogger
 
 	private Tuple4<Image, Image, List<Set<Center>>, List<IconDrawTask>> drawTerrainAndIcons(MapSettings settings, MapParts mapParts, WorldGraph graph, Background background, boolean isLowMemoryMode)
 	{
-		checkForCancel();
+		reportProgressAndCheckForCancel();
 
 		IconDrawer iconDrawer;
 		boolean needToAddIcons;
@@ -1183,7 +1206,7 @@ public class MapCreator implements WarningLogger
 		// disappeared. Read from the local iconDrawer rather than mapParts because the sub-map preview draws without mapParts.
 		citiesRemovedForTouchingWater = iconDrawer.getCitiesRemovedForTouchingWater();
 
-		checkForCancel();
+		reportProgressAndCheckForCancel();
 
 		List<IconDrawTask> iconsToDraw = iconDrawer.getTasksInDrawBoundsSortedAndScaled(null);
 		background.doSetupThatNeedsGraphAndIcons(graph, iconsToDraw, null, null, null);
@@ -1196,7 +1219,7 @@ public class MapCreator implements WarningLogger
 			background.landBeforeRegionColoring = null;
 		}
 
-		checkForCancel();
+		reportProgressAndCheckForCancel();
 
 		// Draw mask for land vs ocean.
 		Logger.println("Adding land.");
@@ -1228,7 +1251,7 @@ public class MapCreator implements WarningLogger
 			}
 		}
 
-		checkForCancel();
+		reportProgressAndCheckForCancel();
 
 		if (settings.drawRegionBoundaries)
 		{
@@ -1239,7 +1262,7 @@ public class MapCreator implements WarningLogger
 			}
 		}
 
-		checkForCancel();
+		reportProgressAndCheckForCancel();
 
 		// Add rivers.
 		Logger.println("Adding rivers.");
@@ -1249,7 +1272,7 @@ public class MapCreator implements WarningLogger
 		}
 		new RiverDrawer(settings, graph).drawRivers(map, null);
 
-		checkForCancel();
+		reportProgressAndCheckForCancel();
 
 		Logger.println("Drawing ocean.");
 		{
@@ -1261,7 +1284,7 @@ public class MapCreator implements WarningLogger
 			map = ImageHelper.getInstance().maskWithImage(map, background.ocean, landMask);
 		}
 
-		checkForCancel();
+		reportProgressAndCheckForCancel();
 
 		Tuple2<Image, Image> oceanTuple = createOceanWavesAndShading(settings, graph, settings.resolution, landMask, null, null);
 		Image oceanWaves = oceanTuple.getFirst();
@@ -1281,7 +1304,7 @@ public class MapCreator implements WarningLogger
 			oceanWithWavesAndShading = ImageHelper.getInstance().maskWithColor(oceanWithWavesAndShading, settings.oceanWavesColor, oceanWaves, true);
 		}
 
-		checkForCancel();
+		reportProgressAndCheckForCancel();
 
 		// Draw coastlines.
 		{
@@ -1292,7 +1315,7 @@ public class MapCreator implements WarningLogger
 			}
 		}
 
-		checkForCancel();
+		reportProgressAndCheckForCancel();
 
 		if (settings.drawRoads)
 		{
@@ -1315,27 +1338,27 @@ public class MapCreator implements WarningLogger
 			}
 		}
 
-		checkForCancel();
+		reportProgressAndCheckForCancel();
 
 		if (settings.drawGridOverlay && settings.gridOverlayLayer == GridOverlayLayer.Under_icons)
 		{
 			GridDrawer.drawGrid(map, settings, null, map.size(), graph, null);
 		}
 
-		checkForCancel();
+		reportProgressAndCheckForCancel();
 
 		Logger.println("Drawing all icons.");
 		iconDrawer.drawIcons(iconsToDraw, map, landBackground, background.land, oceanWithWavesAndShading, null);
 		landBackground = null;
 
-		checkForCancel();
+		reportProgressAndCheckForCancel();
 
 		if (settings.drawGridOverlay && settings.gridOverlayLayer == GridOverlayLayer.Over_icons)
 		{
 			GridDrawer.drawGrid(map, settings, null, map.size(), graph, graph.centers);
 		}
 
-		checkForCancel();
+		reportProgressAndCheckForCancel();
 
 		// Needed for drawing text
 		Image textBackground = updateLandMaskAndCreateTextBackground(settings, graph, landMask, iconsToDraw, settings.drawRegionColors ? background.landColoredBeforeAddingIconColors : background.land,
@@ -1359,7 +1382,7 @@ public class MapCreator implements WarningLogger
 			background.land = null;
 		}
 
-		checkForCancel();
+		reportProgressAndCheckForCancel();
 
 		return new Tuple4<>(map, textBackground, mountainGroups, cities);
 	}
@@ -1386,6 +1409,29 @@ public class MapCreator implements WarningLogger
 		}
 
 		return textBackground;
+	}
+
+	/**
+	 * Sets a callback to be notified of progress during full draws. See {@link #progressListener}.
+	 */
+	public void setProgressListener(DoubleConsumer progressListener)
+	{
+		this.progressListener = progressListener;
+	}
+
+	/**
+	 * Reports the next increment of full-draw progress to {@link #progressListener} (if set) and then checks for cancellation. Called from
+	 * the full-draw code path in place of {@link #checkForCancel} so that progress advances at the same points where the draw can be
+	 * cancelled.
+	 */
+	private void reportProgressAndCheckForCancel()
+	{
+		checkForCancel();
+		if (progressListener != null)
+		{
+			progressStepsCompleted++;
+			progressListener.accept(Math.min(1.0, (double) progressStepsCompleted / fullDrawProgressStepCount));
+		}
 	}
 
 	private void checkForCancel()

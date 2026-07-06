@@ -855,7 +855,17 @@ public class SubMapDialog
 		previewProgressBar.setVisible(false);
 		bottomPanel.add(previewProgressBar);
 
-		progressBarTimer = new Timer(50, e -> previewProgressBar.setVisible(previewUpdater != null && previewUpdater.isMapBeingDrawn()));
+		progressBarTimer = new Timer(50, e ->
+		{
+			if (previewUpdater != null)
+			{
+				SwingHelper.updateMapDrawingProgressBar(previewProgressBar, previewUpdater);
+			}
+			else
+			{
+				previewProgressBar.setVisible(false);
+			}
+		});
 		progressBarTimer.setInitialDelay(500);
 
 		bottomPanel.add(Box.createHorizontalGlue());
