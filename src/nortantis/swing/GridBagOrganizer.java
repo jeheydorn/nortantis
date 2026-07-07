@@ -427,13 +427,30 @@ public class GridBagOrganizer
 				drawCenteredString(g, text, new Point(sizeToDraw / 2.0, sizeToDraw / 2.0));
 			}
 		}
-		brushSizeComboBox.setPreferredSize(new Dimension(displaySize + 40, brushSizeComboBox.getPreferredSize().height));
+		Dimension brushSizeComboBoxSize = new Dimension(displaySize + 40, getBrushSizeComboBoxHeight(brushSizeComboBox));
+		brushSizeComboBox.setPreferredSize(brushSizeComboBoxSize);
+		brushSizeComboBox.setMinimumSize(brushSizeComboBoxSize);
 		JPanel brushSizeContainer = new JPanel();
 		brushSizeContainer.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
 		brushSizeContainer.add(brushSizeComboBox);
 		RowHider brushSizeHider = addLabelAndComponent(Translation.get("gridBagOrganizer.brushSize.label"), "", brushSizeContainer);
 
 		return new Tuple2<>(brushSizeComboBox, brushSizeHider);
+	}
+
+	private int getBrushSizeComboBoxHeight(JComboBox<ImageIcon> brushSizeComboBox)
+	{
+		if (!SwingHelper.isMacSystemLookAndFeel())
+		{
+			return brushSizeComboBox.getPreferredSize().height;
+		}
+
+		// The native macOS System theme combo box always paints its closed-box current-value icon cropped to a short, fixed height,
+		// regardless of the icon's real size, so sizing the row to the icon's own preferred height (as done above for other themes)
+		// just leaves blank space above and below the box. Measure a plain, icon-less combo box instead to get the height the
+		// look-and-feel will actually render.
+		JComboBox<String> reference = new JComboBox<>(new String[] { " " });
+		return reference.getPreferredSize().height;
 	}
 
 	private void drawCenteredString(Graphics2D g, String text, Point point)
