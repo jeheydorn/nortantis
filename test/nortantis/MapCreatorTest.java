@@ -68,6 +68,56 @@ public class MapCreatorTest
 		}
 	}
 
+	/**
+	 * An incremental redraw of an icon recomputes the land under the icon's bounds using the set of centers found by
+	 * {@link WorldGraph#breadthFirstSearch} with {@link Center#isInBoundsIncludingNoisyEdges}. If a center whose polygon overlaps those
+	 * bounds is not in that set, its land is not redrawn, leaving a hole (visible, for example, when erasing a tree that overlaps a
+	 * neighboring polygon). This map has two trees positioned to expose that gap, and it disables coastline shading and ocean waves so the
+	 * bounds are not padded by effects (padding would otherwise hide the gap). Every center covering a point inside an icon's draw bounds
+	 * must be in the redraw set.
+	 */
+	@Test
+	public void incrementalRedrawIncludesAllCentersOverlappingIconBounds()
+	{
+		String settingsPath = Paths.get("unit test files", "map settings", "erasingTreesErasesLandBackground.nort").toString();
+		MapSettings settings = new MapSettings(settingsPath);
+		MapCreator mapCreator = new MapCreator();
+		MapParts mapParts = new MapParts();
+		try (Image ignored = mapCreator.createMap(settings, null, mapParts))
+		{
+			WorldGraph graph = mapParts.graph;
+			for (FreeIcon icon : settings.edits.freeIcons)
+			{
+				IconDrawTask task = mapParts.iconDrawer.toIconDrawTask(icon);
+				if (task == null)
+				{
+					continue;
+				}
+				Rectangle changeBounds = task.createBounds();
+				if (changeBounds == null)
+				{
+					continue;
+				}
+				// Mirror the padding incrementalUpdateIcons/incrementalUpdateBounds apply before computing centersToDraw.
+				Rectangle drawBounds = changeBounds.pad(4, 4);
+
+				Center searchStart = graph.findClosestCenter(drawBounds.getCenter());
+				Set<Center> centersToDraw = graph.breadthFirstSearch(c -> c.isInBoundsIncludingNoisyEdges(drawBounds), searchStart);
+
+				// Ground truth: every center that contains a point inside drawBounds must be redrawn.
+				for (double sx = drawBounds.x; sx <= drawBounds.getRight(); sx += 1.0)
+				{
+					for (double sy = drawBounds.y; sy <= drawBounds.getBottom(); sy += 1.0)
+					{
+						Center containing = graph.findClosestCenter(new Point(sx, sy));
+						assertTrue(containing == null || centersToDraw.contains(containing), "Center " + (containing == null ? "null" : containing.index)
+								+ " covers point (" + sx + ", " + sy + ") inside icon draw bounds " + drawBounds + " but was not in the redraw set.");
+					}
+				}
+			}
+		}
+	}
+
 	@Test
 	public void incrementalUpdate_allTypesOfEdits()
 	{

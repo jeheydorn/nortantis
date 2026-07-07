@@ -190,6 +190,11 @@ public class Center implements Comparable<Center>
 
 	public boolean isInBoundsIncludingNoisyEdges(Rectangle bounds)
 	{
+		if (bounds.contains(loc))
+		{
+			return true;
+		}
+
 		for (Corner corner : corners)
 		{
 			if (bounds.contains(corner.loc))
@@ -202,6 +207,28 @@ public class Center implements Comparable<Center>
 		for (Center neighbor : neighbors)
 		{
 			if (bounds.contains(neighbor.loc))
+			{
+				return true;
+			}
+		}
+
+		// The polygon can overlap the bounds without any corner or neighbor center falling inside it - for example when an edge of
+		// the bounds slices across the polygon between two corners that both lie outside the bounds. Detect that case by testing
+		// whether any polygon edge crosses a side of the bounds rectangle.
+		Point topLeft = new Point(bounds.getLeft(), bounds.getTop());
+		Point topRight = new Point(bounds.getRight(), bounds.getTop());
+		Point bottomRight = new Point(bounds.getRight(), bounds.getBottom());
+		Point bottomLeft = new Point(bounds.getLeft(), bounds.getBottom());
+		for (Edge edge : borders)
+		{
+			if (edge.v0 == null || edge.v1 == null)
+			{
+				continue;
+			}
+			Point p0 = edge.v0.loc;
+			Point p1 = edge.v1.loc;
+			if (linesIntersect(p0, p1, topLeft, topRight) || linesIntersect(p0, p1, topRight, bottomRight) || linesIntersect(p0, p1, bottomRight, bottomLeft)
+					|| linesIntersect(p0, p1, bottomLeft, topLeft))
 			{
 				return true;
 			}
