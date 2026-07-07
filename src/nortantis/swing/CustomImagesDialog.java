@@ -184,7 +184,7 @@ public class CustomImagesDialog extends JDialog
 		content.add(bottomPanel, BorderLayout.SOUTH);
 		bottomPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
 		JButton okayButton = new JButton(Translation.get("customImages.ok"));
-		okayButton.setMnemonic(KeyEvent.VK_O);
+		SwingHelper.bindAltMnemonic(okayButton, KeyEvent.VK_O);
 		okayButton.addActionListener(new ActionListener()
 		{
 			@Override
@@ -229,7 +229,7 @@ public class CustomImagesDialog extends JDialog
 		bottomPanel.add(okayButton);
 
 		JButton cancelButton = new JButton(Translation.get("customImages.cancel"));
-		cancelButton.setMnemonic(KeyEvent.VK_C);
+		SwingHelper.bindAltMnemonic(cancelButton, KeyEvent.VK_C);
 		cancelButton.addActionListener(new ActionListener()
 		{
 			@Override

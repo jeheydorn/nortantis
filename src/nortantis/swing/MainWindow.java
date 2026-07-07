@@ -318,6 +318,13 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	{
 		if (!enabled)
 		{
+			// Locking while already locked would snapshot the current (all-disabled) states and later restore them as disabled, so treat a
+			// repeat lock as a no-op and keep the original snapshot. This happens when going Back from step 2 to step 1 of the sub-map dialog,
+			// which re-enters the lock.
+			if (menuItemEnabledStatesBeforeLock != null)
+			{
+				return;
+			}
 			menuItemEnabledStatesBeforeLock = new LinkedHashMap<>();
 			for (JMenu menu : Arrays.asList(fileMenu, editMenu, viewMenu, toolsMenu, helpMenu))
 			{

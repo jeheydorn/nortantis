@@ -132,7 +132,7 @@ public class IconsTool extends EditorTool
 	@Override
 	public String getKeyboardShortcutText()
 	{
-		return "(Alt+X)";
+		return "(" + SwingHelper.getAltKeyName() + "+X)";
 	}
 
 	@Override

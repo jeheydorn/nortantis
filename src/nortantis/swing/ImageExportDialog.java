@@ -207,7 +207,7 @@ public class ImageExportDialog extends JDialog
 		JPanel bottomButtonsPanel = new JPanel();
 		bottomButtonsPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
 		exportButton = new JButton(Translation.get("imageExport.export"));
-		exportButton.setMnemonic(KeyEvent.VK_E);
+		SwingHelper.bindAltMnemonic(exportButton, KeyEvent.VK_E);
 		exportButton.addActionListener(new ActionListener()
 		{
 			@Override
@@ -282,7 +282,7 @@ public class ImageExportDialog extends JDialog
 		bottomButtonsPanel.add(exportButton);
 
 		cancelButton = new JButton(Translation.get("imageExport.cancel"));
-		cancelButton.setMnemonic(KeyEvent.VK_C);
+		SwingHelper.bindAltMnemonic(cancelButton, KeyEvent.VK_C);
 		cancelButton.addActionListener(new ActionListener()
 		{
 			@Override

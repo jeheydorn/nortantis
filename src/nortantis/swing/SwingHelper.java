@@ -83,6 +83,15 @@ public class SwingHelper
 	}
 
 	/**
+	 * The display name of the key that triggers mnemonics (the underlined letters). This is the Alt key on Windows and Linux, but the Option
+	 * key (\u2325) on macOS, since {@link #bindAltMnemonic} binds Option+letter there.
+	 */
+	public static String getAltKeyName()
+	{
+		return OSHelper.isMac() ? "\u2325" : Translation.get("key.alt");
+	}
+
+	/**
 	 * Binds a keyboard shortcut to {@code button} so that pressing the shortcut anywhere in the editor window invokes the button's
 	 * {@code ActionListener} (via {@code doClick()}). When focus is on an editable {@link JTextComponent} the shortcut is suppressed so the
 	 * text component's built-in handler runs instead \u2014 this matters for {@code DELETE} in particular (which would otherwise delete a

@@ -13,6 +13,7 @@ import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -66,7 +67,7 @@ public class TextSearchDialog extends JDialog
 		});
 
 		{
-			// Request focus on the text field and select all when CTRL+F is pressed.
+			// Request focus on the text field and select all when the find shortcut is pressed.
 			javax.swing.Action ctrlFAction = new javax.swing.AbstractAction()
 			{
 				@Override
@@ -75,12 +76,12 @@ public class TextSearchDialog extends JDialog
 					requestFocusAndSelectAll();
 				}
 			};
-			getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control F"), "ctrlF");
+			getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_F, SwingHelper.getMenuShortcutKeyMask()), "ctrlF");
 			getRootPane().getActionMap().put("ctrlF", ctrlFAction);
 		}
 
 		{
-			// Save when CTRL+S is pressed.
+			// Save when the save shortcut is pressed.
 			javax.swing.Action ctrlSAction = new javax.swing.AbstractAction()
 			{
 				@Override
@@ -89,7 +90,7 @@ public class TextSearchDialog extends JDialog
 					mainWindow.saveSettings(mainWindow);
 				}
 			};
-			getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control S"), "ctrlS");
+			getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_S, SwingHelper.getMenuShortcutKeyMask()), "ctrlS");
 			getRootPane().getActionMap().put("ctrlS", ctrlSAction);
 		}
 
