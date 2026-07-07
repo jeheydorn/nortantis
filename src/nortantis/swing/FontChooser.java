@@ -34,6 +34,10 @@ public class FontChooser
 		displayHolder.setLayout(new BorderLayout());
 		displayHolder.add(fontDisplay);
 		displayHolder.setPreferredSize(new Dimension(displayHolder.getPreferredSize().width, height));
+		// A long font name rendered at the preview point size otherwise reports a very large minimum width, which makes GridBagLayout starve
+		// the label column until the left-side labels collapse to zero width and disappear. Letting the preview shrink keeps the labels
+		// visible; the name is simply clipped when it doesn't fit.
+		displayHolder.setMinimumSize(new Dimension(0, height));
 
 		chooseButton.addActionListener(new ActionListener()
 		{

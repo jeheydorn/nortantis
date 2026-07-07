@@ -72,7 +72,7 @@ public class OverlayTool extends EditorTool
 	@Override
 	public String getKeyboardShortcutText()
 	{
-		return "(Alt+V)";
+		return "(" + SwingHelper.getAltKeyName() + "+V)";
 	}
 
 	@Override

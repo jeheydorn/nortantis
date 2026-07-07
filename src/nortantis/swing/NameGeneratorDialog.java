@@ -57,7 +57,7 @@ public class NameGeneratorDialog extends JDialog
 		generatePanel.setLayout(new FlowLayout(FlowLayout.LEFT));
 		JButton generateButton = new JButton(Translation.get("nameGenerator.generateNames"));
 		generatePanel.add(generateButton);
-		generateButton.setMnemonic(KeyEvent.VK_G);
+		SwingHelper.bindAltMnemonic(generateButton, KeyEvent.VK_G);
 		organizer.addLeftAlignedComponent(generatePanel, 0, 0, false);
 		generateButton.addActionListener(new ActionListener()
 		{
@@ -91,7 +91,7 @@ public class NameGeneratorDialog extends JDialog
 		bottomButtonsPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
 
 		JButton doneButton = new JButton(Translation.get("nameGenerator.done"));
-		doneButton.setMnemonic(KeyEvent.VK_D);
+		SwingHelper.bindAltMnemonic(doneButton, KeyEvent.VK_D);
 		doneButton.addActionListener(new ActionListener()
 		{
 			@Override

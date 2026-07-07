@@ -365,7 +365,7 @@ public class GridBagOrganizer
 	{
 		final int minHeight = 2;
 
-		JSeparator sep1;
+		JComponent sep1 = createHorizontalSeparator(minHeight);
 		{
 			GridBagConstraints c = new GridBagConstraints();
 			c.fill = GridBagConstraints.HORIZONTAL;
@@ -374,12 +374,10 @@ public class GridBagOrganizer
 			c.weightx = 0.5;
 			c.anchor = GridBagConstraints.LINE_START;
 			c.insets = new Insets(0, 5, 0, 0);
-			sep1 = new JSeparator(JSeparator.HORIZONTAL);
-			sep1.setMinimumSize(new Dimension(0, minHeight));
 			panel.add(sep1, c);
 		}
 
-		JSeparator sep2;
+		JComponent sep2 = createHorizontalSeparator(minHeight);
 		{
 			GridBagConstraints c = new GridBagConstraints();
 			c.fill = GridBagConstraints.HORIZONTAL;
@@ -388,13 +386,45 @@ public class GridBagOrganizer
 			c.weightx = 0.5;
 			c.anchor = GridBagConstraints.LINE_START;
 			c.insets = new Insets(0, 0, 0, 5);
-			sep2 = new JSeparator(JSeparator.HORIZONTAL);
-			sep2.setMinimumSize(new Dimension(0, minHeight));
 			panel.add(sep2, c);
 		}
 
 		curY++;
 		return new RowHider(sep1, sep2);
+	}
+
+	/**
+	 * Creates a horizontal separator line. The macOS Aqua look-and-feel paints {@link JSeparator}s with a line that is effectively invisible
+	 * against the panel background, so under that theme we draw the line ourselves, matching the color of the line borders around the tool
+	 * panels (see {@code ToolsPanel.updateBordersThatHaveColors}).
+	 */
+	private static JComponent createHorizontalSeparator(int minHeight)
+	{
+		if (!SwingHelper.isMacSystemLookAndFeel())
+		{
+			JSeparator separator = new JSeparator(JSeparator.HORIZONTAL);
+			separator.setMinimumSize(new Dimension(0, minHeight));
+			return separator;
+		}
+
+		JComponent line = new JComponent()
+		{
+			@Override
+			protected void paintComponent(Graphics g)
+			{
+				Color color = UIManager.getColor("controlShadow");
+				if (color == null)
+				{
+					color = Color.gray;
+				}
+				g.setColor(color);
+				int y = getHeight() / 2;
+				g.drawLine(0, y, getWidth() - 1, y);
+			}
+		};
+		line.setMinimumSize(new Dimension(0, minHeight));
+		line.setPreferredSize(new Dimension(0, minHeight));
+		return line;
 	}
 
 	public Tuple2<JComboBox<ImageIcon>, RowHider> addBrushSizeComboBox(List<Integer> brushSizes)

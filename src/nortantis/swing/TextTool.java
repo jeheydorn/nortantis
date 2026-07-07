@@ -91,7 +91,7 @@ public class TextTool extends EditorTool
 		drawTextDisabledLabelHider.setVisible(false);
 
 		modeWidget = new DrawModeWidget(Translation.get("textTool.addMode"), Translation.get("textTool.eraseMode"), false, "", true, Translation.get("textTool.editMode"), () -> handleActionChanged());
-		modeWidget.configureDrawButton(Translation.get("textTool.add"), Translation.get("textTool.addMode"), KeyEvent.VK_A, Translation.get("textTool.add.shortcut"));
+		modeWidget.configureDrawButton(Translation.get("textTool.add"), Translation.get("textTool.addMode"), KeyEvent.VK_A, Translation.get("textTool.add.shortcut", SwingHelper.getAltKeyName()));
 		modeWidget.addToOrganizer(organizer, "");
 
 		actionsSeparatorHider = organizer.addSeparator();
@@ -515,7 +515,7 @@ public class TextTool extends EditorTool
 	@Override
 	public String getKeyboardShortcutText()
 	{
-		return "(Alt+C)";
+		return "(" + SwingHelper.getAltKeyName() + "+C)";
 	}
 
 	@Override

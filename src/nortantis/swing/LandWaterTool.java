@@ -200,7 +200,7 @@ public class LandWaterTool extends EditorTool
 	@Override
 	public String getKeyboardShortcutText()
 	{
-		return "(Alt+Z)";
+		return "(" + SwingHelper.getAltKeyName() + "+Z)";
 	}
 
 	@Override
