@@ -28,9 +28,6 @@ public class SupportPanel extends JPanel
 	private static final String bookUrl = "https://jandjheydorn.com/";
 	private static final String donateUrl = "https://jandjheydorn.com/donate";
 
-	// utm_content is appended per link by withCampaign().
-	private static final String campaignParameters = "utm_source=nortantis&utm_medium=app&utm_campaign=support_panel&utm_content=";
-
 	private final Dimension fixedPreferredSize;
 	private final Font askFont;
 	private final Font askFontBold;
@@ -82,14 +79,13 @@ public class SupportPanel extends JPanel
 		}
 
 		JPanel linksRow = createFlowRow(4, 2);
-		linksRow.add(SwingHelper.createHyperlink(Translation.get("startup.linkWebsite"), withCampaign(websiteUrl, "footer_website")));
+		linksRow.add(SwingHelper.createHyperlink(Translation.get("startup.linkWebsite"), websiteUrl));
 		linksRow.add(createLinkSeparator());
-		linksRow.add(SwingHelper.createHyperlink(Translation.get("startup.linkBlog"), withCampaign(blogUrl, "footer_blog")));
+		linksRow.add(SwingHelper.createHyperlink(Translation.get("startup.linkBlog"), blogUrl));
 		linksRow.add(createLinkSeparator());
-		// The source code link goes to GitHub, whose analytics we can't see, so it is left untagged.
 		linksRow.add(SwingHelper.createHyperlink(Translation.get("startup.linkSourceCode"), sourceCodeUrl));
 		linksRow.add(createLinkSeparator());
-		linksRow.add(SwingHelper.createHyperlink(Translation.get("startup.linkDonate"), withCampaign(donateUrl, "footer_donate")));
+		linksRow.add(SwingHelper.createHyperlink(Translation.get("startup.linkDonate"), donateUrl));
 		y = addComponent(linksRow, contentWidth, y);
 
 		fixedPreferredSize = new Dimension(contentWidth, y);
@@ -207,19 +203,10 @@ public class SupportPanel extends JPanel
 		askRow.add(heart);
 
 		addWords(askRow, Translation.get("startup.supportAsk.beforeDonateLink"));
-		askRow.add(createBoldAskLink(Translation.get("startup.supportAsk.donateLinkText"), withCampaign(donateUrl, "ask_donate")));
+		askRow.add(createBoldAskLink(Translation.get("startup.supportAsk.donateLinkText"), donateUrl));
 		addWords(askRow, Translation.get("startup.supportAsk.betweenLinks"));
-		askRow.add(createBoldAskLink(Translation.get("startup.supportAsk.bookLinkText"), withCampaign(bookUrl, "ask_book")));
+		askRow.add(createBoldAskLink(Translation.get("startup.supportAsk.bookLinkText"), bookUrl));
 		addWords(askRow, Translation.get("startup.supportAsk.afterBookLink"));
-	}
-
-	/**
-	 * Appends UTM query parameters identifying which link was clicked, so clicks can be compared in Analytics.
-	 */
-	private static String withCampaign(String url, String content)
-	{
-		String separator = url.contains("?") ? "&" : "?";
-		return url + separator + campaignParameters + content;
 	}
 
 	/**
