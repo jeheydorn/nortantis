@@ -104,7 +104,9 @@ public class TextTool extends EditorTool
 			{
 				if (lastSelected != null)
 				{
-					handleSelectingTextToEdit(lastSelected, false);
+					// Save any edits, but don't move focus. Grabbing focus here would yank it back from
+					// whatever component the user is Tabbing (or clicking) to, trapping keyboard focus.
+					handleSelectingTextToEdit(lastSelected, SelectionFocus.Leave);
 				}
 			}
 		});
@@ -113,7 +115,7 @@ public class TextTool extends EditorTool
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				handleSelectingTextToEdit(lastSelected, false);
+				handleSelectingTextToEdit(lastSelected, SelectionFocus.ModeWidget);
 			}
 		});
 		editTextFieldHider = organizer.addLeftAlignedComponent(editTextField);
@@ -448,7 +450,7 @@ public class TextTool extends EditorTool
 		{
 			// Keep any text edits that were being done, and hide the edit
 			// fields.
-			handleSelectingTextToEdit(null, false);
+			handleSelectingTextToEdit(null, SelectionFocus.Leave);
 		}
 
 		if (modeWidget.isDrawMode() || modeWidget.isEraseMode())
@@ -654,7 +656,7 @@ public class TextTool extends EditorTool
 				// icon), not the same as starting to edit it. This keeps ctrl+C / ctrl+V / DELETE shortcuts
 				// targeting the selected MapText object instead of being swallowed by the text-edit field.
 				// Users click into the text field to start typing.
-				handleSelectingTextToEdit(selectedText, false);
+				handleSelectingTextToEdit(selectedText, SelectionFocus.ModeWidget);
 			}
 		}
 	}
@@ -738,7 +740,7 @@ public class TextTool extends EditorTool
 
 		undoer.setUndoPoint(UpdateType.Incremental, this);
 		updater.createAndShowMapIncrementalUsingText(Arrays.asList(pasted));
-		handleSelectingTextToEdit(pasted, false);
+		handleSelectingTextToEdit(pasted, SelectionFocus.ModeWidget);
 	}
 
 	private void deleteSelectedText()
@@ -757,7 +759,7 @@ public class TextTool extends EditorTool
 		// the now-empty MapText.value) and writes the field's contents back into MapText.value,
 		// undoing the delete.
 		editTextField.setText("");
-		handleSelectingTextToEdit(null, false);
+		handleSelectingTextToEdit(null, SelectionFocus.Leave);
 		undoer.setUndoPoint(UpdateType.Incremental, this);
 		triggerPurgeEmptyText();
 		updater.createAndShowMapIncrementalUsingText(Arrays.asList(before, toDelete));
@@ -805,7 +807,7 @@ public class TextTool extends EditorTool
 			MapText underCursor = mainWindow.edits.findTextPicked(graphPoint);
 			if (underCursor != null && underCursor != lastSelected)
 			{
-				handleSelectingTextToEdit(underCursor, false);
+				handleSelectingTextToEdit(underCursor, SelectionFocus.ModeWidget);
 			}
 		}
 
@@ -957,10 +959,10 @@ public class TextTool extends EditorTool
 	public void changeToEditModeAndSelectText(MapText selectedText, boolean grabFocus)
 	{
 		modeWidget.selectEditMode();
-		handleSelectingTextToEdit(selectedText, grabFocus);
+		handleSelectingTextToEdit(selectedText, grabFocus ? SelectionFocus.EditField : SelectionFocus.ModeWidget);
 	}
 
-	private void handleSelectingTextToEdit(MapText selectedText, boolean grabFocus)
+	private void handleSelectingTextToEdit(MapText selectedText, SelectionFocus focusBehavior)
 	{
 		mapEditingPanel.clearHighlightedAreas();
 
@@ -998,17 +1000,18 @@ public class TextTool extends EditorTool
 			editTextField.setText(selectedText.value);
 			editTextFieldHider.setVisible(true);
 			clearRotationButtonHider.setVisible(true);
-			if (!editTextField.hasFocus() && grabFocus)
+			if (focusBehavior == SelectionFocus.EditField && !editTextField.hasFocus())
 			{
 				editTextField.grabFocus();
 			}
-			else if (!grabFocus)
+			else if (focusBehavior == SelectionFocus.ModeWidget)
 			{
 				// Don't auto-focus the edit field (would hijack Ctrl+C/V/Delete keyboard shortcuts).
 				// Place focus on the mode widget instead — keeps it on a predictable component near the
 				// edit fields, and a single Tab press from here reaches the text edit field.
 				modeWidget.grabFocusOnSelectedButton();
 			}
+			// SelectionFocus.Leave: don't move focus, so the user can Tab out of the edit field normally.
 			// Prevent textTypeComboBox's action listener from doing anything on
 			// the next line.
 			lastSelected = null;
@@ -1098,7 +1101,7 @@ public class TextTool extends EditorTool
 		// Keep any text edits being done and clear the selected text.
 		if (modeWidget.isEditMode())
 		{
-			handleSelectingTextToEdit(null, false);
+			handleSelectingTextToEdit(null, SelectionFocus.Leave);
 		}
 
 		mapEditingPanel.hideBrush();
@@ -1112,14 +1115,14 @@ public class TextTool extends EditorTool
 	protected void onBeforeUndoRedo()
 	{
 		// Create an undo point for any current changes.
-		handleSelectingTextToEdit(lastSelected, false);
+		handleSelectingTextToEdit(lastSelected, SelectionFocus.ModeWidget);
 	}
 
 	@Override
 	protected void onAfterUndoRedo()
 	{
 		lastSelected = null;
-		handleSelectingTextToEdit(null, false);
+		handleSelectingTextToEdit(null, SelectionFocus.Leave);
 		editTextField.setText("");
 
 		lastSelected = null;
@@ -1207,7 +1210,7 @@ public class TextTool extends EditorTool
 		areBoldBackgroundsVisible = settings.drawBoldBackground;
 		if (modeWidget.isEditMode() && lastSelected != null && boldBackgroundVisibleChanged)
 		{
-			handleSelectingTextToEdit(lastSelected, false);
+			handleSelectingTextToEdit(lastSelected, SelectionFocus.ModeWidget);
 		}
 
 		handleEnablingAndDisabling(settings);
@@ -1216,7 +1219,7 @@ public class TextTool extends EditorTool
 		{
 			if (modeWidget.isEditMode())
 			{
-				handleSelectingTextToEdit(null, false);
+				handleSelectingTextToEdit(null, SelectionFocus.Leave);
 			}
 
 			mapEditingPanel.clearAllToolSpecificSelectionsAndHighlights();
@@ -1247,4 +1250,16 @@ public class TextTool extends EditorTool
 		}
 	}
 
+	/**
+	 * Where keyboard focus should go after a text is selected for editing.
+	 */
+	private enum SelectionFocus
+	{
+		/** Move focus into the text-edit field so the user can start typing immediately. */
+		EditField,
+		/** Move focus to the selected mode button, keeping the Tab order predictable and the user one Tab from the edit fields. */
+		ModeWidget,
+		/** Leave focus wherever it is. Used when saving because focus is already moving elsewhere (e.g. the edit field is losing focus). */
+		Leave
+	}
 }
