@@ -1370,11 +1370,6 @@ public class IconsTool extends EditorTool
 
 	private void handleDrawIcons(MouseEvent e, boolean isPress)
 	{
-		if (treesButton.isSelected())
-		{
-			eraseTreesThatFailedToDrawDueToLowDensity(e);
-		}
-
 		if (mountainsButton.isSelected())
 		{
 			Set<Center> selected = getSelectedLandCenters(e.getPoint());
