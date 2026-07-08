@@ -236,7 +236,7 @@ public abstract class EditorTool
 		{
 			osScale = switch (language)
 			{
-				case "en" -> 0.9;
+				case "en" -> 0.73;
 				case "de" -> 0.9;
 				case "es" -> 0.85;
 				case "fr" -> 0.8;
