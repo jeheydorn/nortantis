@@ -43,7 +43,7 @@ public class NewSettingsDialog extends JDialog
 	private JProgressBar progressBar;
 	private MapUpdater updater;
 	private MapEditingPanel mapEditingPanel;
-	private Dimension defaultSize = new Dimension(955, 750);
+	private Dimension defaultSize = new Dimension(975, 750);
 	private int amountToSubtractFromLeftAndRightPanels = 40;
 	private Timer progressBarTimer;
 	public final double cityFrequencySliderScale = 100.0 / SettingsGenerator.maxCityProbability;
