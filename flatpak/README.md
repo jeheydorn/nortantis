@@ -17,8 +17,13 @@ If you ever decide on Flathub, that path needs an offline build and metainfo add
 ## Prerequisites (Linux build machine)
 
 ```sh
-# flatpak + flatpak-builder from your distro, then the runtime, SDK, and JDK extension:
-flatpak install flathub org.freedesktop.Platform//24.08 org.freedesktop.Sdk//24.08 \
+# flatpak + flatpak-builder from your distro, then add the Flathub remote (the runtime, SDK, and
+# JDK extension below are pulled from it - self-distributing the app doesn't avoid needing it,
+# since these build-time dependencies still have to come from somewhere):
+flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+
+# Then install the runtime, SDK, and JDK extension:
+flatpak install --user flathub org.freedesktop.Platform//24.08 org.freedesktop.Sdk//24.08 \
     org.freedesktop.Sdk.Extension.openjdk//24.08
 ```
 
