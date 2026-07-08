@@ -17,7 +17,8 @@ import java.nio.file.Paths;
  * ./gradlew test --tests "nortantis.AwtMapCreatorBenchmark" -DrunBenchmarks=true
  * (or via the dedicated JFR-profiling task: ./gradlew benchmark)
  *
- * <p>The {@code profile*} tests render two fixtures ({@code highResTest.nort} @1.25 and {@code allTypesOfEdits.nort} @0.75) and print the
+ * <p>
+ * The {@code profile*} tests render two fixtures ({@code highResTest.nort} @1.25 and {@code allTypesOfEdits.nort} @0.75) and print the
  * per-iteration plus min and median {@code createMap} wall-clock times, so overall render cost can be compared across runs.
  */
 @EnabledIfSystemProperty(named = "runBenchmarks", matches = "true")

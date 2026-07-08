@@ -13,8 +13,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class NoisyEdges
 {
-	final double NOISY_LINE_TRADEOFF = 0.5; // low: jagged v-edge; high: jagged
-											// d-edge
+	// low: jagged v-edge; high: jagged d-edge
+	final double NOISY_LINE_TRADEOFF = 0.5;
 
 	private LineStyle lineStyle;
 	// These maps are rebuilt incrementally by the background draw thread (via rebuildNoisyEdgesForCenter
@@ -109,37 +109,11 @@ public class NoisyEdges
 
 				double minLength = getNoisyEdgeMinLength(edge);
 
-				List<Point> path0 = buildNoisyLineSegments(rand, v0, t, midpoint, q, minLength); // List
-																												// of
-																												// points
-																												// in
-																												// that
-																												// edge
-																												// from
-																												// corner
-																												// v0
-																												// to
-																												// the
-																												// midpoint
-																												// of
-																												// the
-																												// edge
+				// List of points in that edge from corner v0 to the midpoint of the edge
+				List<Point> path0 = buildNoisyLineSegments(rand, v0, t, midpoint, q, minLength);
 				path0.add(midpoint);
-				List<Point> path1 = buildNoisyLineSegments(rand, v1, s, midpoint, r, minLength); // List
-																												// of
-																												// points
-																												// in
-																												// that
-																												// edge
-																												// from
-																												// corner
-																												// v1
-																												// to
-																												// the
-																												// midpoint
-																												// of
-																												// the
-																												// edge
+				// List of points in that edge from corner v1 to the midpoint of the edge
+				List<Point> path1 = buildNoisyLineSegments(rand, v1, s, midpoint, r, minLength);
 				// Ad path1 in reverse order.
 				for (int i = path1.size() - 1; i >= 0; i--)
 				{
@@ -168,10 +142,10 @@ public class NoisyEdges
 			return;
 		}
 		// Subdivide the quadrilateral
-		double p = nextDoubleRange(random, 0.2, 0.8); // vertical (along A-D and
-														// B-C)
-		double q = nextDoubleRange(random, 0.2, 0.8); // horizontal (along A-B
-														// and D-C)
+		// vertical (along A-D and B-C)
+		double p = nextDoubleRange(random, 0.2, 0.8);
+		// horizontal (along A-B and D-C)
+		double q = nextDoubleRange(random, 0.2, 0.8);
 
 		// Midpoints
 		Point E = Point.interpolate(A, D, p);

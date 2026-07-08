@@ -1439,7 +1439,8 @@ public class IconDrawer
 	 * icon. On a GPU backend that turns the per-icon glReadPixels/glTexSubImage2D round-trips into one readback + one upload for the entire
 	 * call (all per-icon writes accumulate in the reader/writer's CPU buffer until it closes).
 	 *
-	 * <p>The background blend is identical to the snippet/direct paths. The icon image itself is composited manually with
+	 * <p>
+	 * The background blend is identical to the snippet/direct paths. The icon image itself is composited manually with
 	 * {@link #compositeSourceOver} instead of via a {@link Painter}: a Painter would draw straight to the backing image (e.g. the GPU texture),
 	 * which the hoisted reader/writer's buffered flush would then clobber. {@link #compositeSourceOver} mirrors the platform painter's
 	 * non-premultiplied source-over exactly, so this path is byte-identical to the snippet path (verified by the high-vs-low-memory test).
