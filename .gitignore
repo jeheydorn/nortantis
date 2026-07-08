@@ -52,6 +52,3 @@ Nortantis.jar
 build
 .claude
 .DS_Store
-/Nortantis.flatpak
-/repo
-/flatpak/.flatpak-builder
