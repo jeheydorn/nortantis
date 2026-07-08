@@ -41,6 +41,7 @@ temp.nort
 *.msi
 *.exe
 *.deb
+*.rpm
 /installers/*.pkg
 /installers/*.pkg.tar.zst
 /installers/nortantis.jar

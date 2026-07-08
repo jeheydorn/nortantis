@@ -12,7 +12,7 @@ jobs:
 
     steps:
       - name: Install dependencies
-        run: dnf install -y java-latest-openjdk-devel rpm-build binutils findutils git
+        run: dnf install -y java-latest-openjdk-devel java-latest-openjdk-jmods rpm-build binutils findutils git
 
       - name: Verify Java
         run: java -version
