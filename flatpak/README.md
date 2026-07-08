@@ -30,16 +30,19 @@ flatpak install --user flathub org.freedesktop.Platform//24.08 org.freedesktop.S
 ## Build, bundle, publish
 
 ```sh
-# 1. Build and install locally to test it end to end.
+# One-step build: adds the flathub remote if missing, installs/updates the runtime, SDK, and JDK
+# extension, then builds and bundles into Nortantis.flatpak. Idempotent - safe in CI (e.g. a
+# GitHub Action) or locally.
+./flatpak/build.sh
+
+# Upload Nortantis.flatpak to your site (one file, roughly app-sized, like the .deb).
+```
+
+To test the build locally before publishing:
+
+```sh
 flatpak-builder --user --install --force-clean build-dir flatpak/com.jandjheydorn.Nortantis.yaml
 flatpak run com.jandjheydorn.Nortantis
-
-# 2. Export to a local repo, then package a single-file bundle.
-flatpak-builder --repo=repo --force-clean build-dir flatpak/com.jandjheydorn.Nortantis.yaml
-flatpak build-bundle repo Nortantis.flatpak com.jandjheydorn.Nortantis \
-    --runtime-repo=https://flathub.org/repo/flathub.flatpakrepo
-
-# 3. Upload Nortantis.flatpak to your site (one file, roughly app-sized, like the .deb).
 ```
 
 Users install with:

@@ -20,8 +20,10 @@ finish-args:
   # The app performs its own update check over HTTP (MainWindow.getLatestVersion). Opening links
   # (Desktop.browse) does NOT need this - it goes through the OpenURI portal.
   - --share=network
-  - --socket=wayland
-  - --socket=fallback-x11
+  # Java AWT/Swing has no native Wayland backend - it always needs real X11 (via XWayland), so
+  # this must be unconditional --socket=x11, not --socket=fallback-x11 (which only grants X11 when
+  # no Wayland socket is present and leaves pure-Wayland sessions headless).
+  - --socket=x11
   # Nortantis renders on the CPU (AWT), so DRI is not required for drawing; granting it just avoids
   # toolkit warnings. Remove if you prefer.
   - --device=dri
