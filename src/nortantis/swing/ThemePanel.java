@@ -1385,7 +1385,6 @@ public class ThemePanel extends JTabbedPane
 		enableTextCheckBox.addActionListener(enableTextCheckboxActionListener);
 
 		organizer.addVerticalFillerRow();
-		//organizer.addLeftAlignedComponent(Box.createHorizontalStrut(100));
 		return organizer.createScrollPane();
 	}
 
