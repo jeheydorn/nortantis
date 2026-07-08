@@ -34,7 +34,7 @@ public class CustomImagesDialog extends JDialog
 	public CustomImagesDialog(MainWindow mainWindow, String currentCustomImagesPath, Consumer<String> storeResult)
 	{
 		super(mainWindow, Translation.get("customImages.title"), Dialog.ModalityType.APPLICATION_MODAL);
-		setSize(OSHelper.isWindows() ? new Dimension(860, 770) : new Dimension(1020, 840));
+		setSize(OSHelper.isWindows() ? new Dimension(860, 790) : new Dimension(1020, 840));
 		JPanel content = new JPanel();
 		add(content);
 		content.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
