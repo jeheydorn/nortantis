@@ -1,0 +1,38 @@
+name: Build Fedora Installer
+
+on:
+  push:
+    branches:
+      - release
+
+jobs:
+  build-fedora:
+    runs-on: ubuntu-latest
+    container: fedora:latest
+
+    steps:
+      - name: Install dependencies
+        run: dnf install -y java-latest-openjdk-devel rpm-build binutils findutils git
+
+      - name: Verify Java
+        run: java -version
+
+      - name: Checkout code
+        uses: actions/checkout@v5.0.0
+
+      - name: Get Version
+        run: |
+          version=$(cat installers/version.txt)
+          echo "VERSION=$version" >> $GITHUB_ENV
+          echo "Installer version: $version"
+
+      - name: Build Fedora Installer
+        run: |
+          cd installers
+          bash create_fedora_installer.sh
+
+      - name: Upload Fedora Installer
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: fedora-installer.zip
+          path: installers/nortantis-${{ env.VERSION }}-1.x86_64.rpm
