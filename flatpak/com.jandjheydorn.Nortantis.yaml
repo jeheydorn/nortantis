@@ -1,0 +1,61 @@
+# Self-distributed Flatpak for Nortantis.
+#
+# Built locally and published as a single-file .flatpak bundle on jandjheydorn.com - the Linux
+# analog of the .deb / Arch files. This is deliberately NOT set up for Flathub: it builds WITH
+# network access, so there is no offline dependency vendoring, and it ships no AppStream metainfo.
+# Going to Flathub later would require an offline build (vendored Gradle + pre-fetched Maven deps)
+# and a metainfo file; none of that is here by design.
+
+app-id: com.jandjheydorn.Nortantis
+runtime: org.freedesktop.Platform
+runtime-version: '24.08'
+sdk: org.freedesktop.Sdk
+# Provides a JDK to build with and to copy into the app at /app/jre. On 24.08 this is JDK 21,
+# which runs the release-17 bytecode Nortantis compiles to.
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.openjdk
+command: nortantis
+
+finish-args:
+  # The app performs its own update check over HTTP (MainWindow.getLatestVersion). Opening links
+  # (Desktop.browse) does NOT need this - it goes through the OpenURI portal.
+  - --share=network
+  - --socket=wayland
+  - --socket=fallback-x11
+  # Nortantis renders on the CPU (AWT), so DRI is not required for drawing; granting it just avoids
+  # toolkit warnings. Remove if you prefer.
+  - --device=dri
+  # Load/save .nort files anywhere, plus live reads of the custom-images folder, overlay images,
+  # and File-source background textures - without any portal integration. GNOME Software shows a
+  # "Potentially unsafe" note at install for this; --filesystem=home is the same tier and enough
+  # unless users keep files on external mounts.
+  - --filesystem=host
+
+modules:
+  # Copy the JRE from the openjdk SDK extension into /app/jre so it ships inside the Flatpak.
+  - name: openjdk
+    buildsystem: simple
+    build-commands:
+      - /usr/lib/sdk/openjdk/install.sh
+
+  - name: nortantis
+    buildsystem: simple
+    # Local self-build: allow the build to reach the network so the Gradle wrapper and Maven
+    # dependencies download normally. (Flathub forbids build-time network - that is the only reason
+    # its Java manifests need the offline Gradle/Maven vendoring dance, which we skip here.)
+    build-options:
+      build-args:
+        - --share=network
+    build-commands:
+      - . /usr/lib/sdk/openjdk/enable.sh && ./gradlew --no-daemon jar
+      - install -Dm644 build/libs/Nortantis.jar /app/share/nortantis/Nortantis.jar
+      - install -Dm755 flatpak/nortantis.sh /app/bin/nortantis
+      - install -Dm644 flatpak/com.jandjheydorn.Nortantis.desktop
+        /app/share/applications/com.jandjheydorn.Nortantis.desktop
+      - install -Dm644 flatpak/com.jandjheydorn.Nortantis.mimetype.xml
+        /app/share/mime/packages/com.jandjheydorn.Nortantis.xml
+      - install -Dm644 "assets/internal/taskbar icon.png"
+        /app/share/icons/hicolor/256x256/apps/com.jandjheydorn.Nortantis.png
+    sources:
+      - type: dir
+        path: ..

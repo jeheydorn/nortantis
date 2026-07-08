@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Application
+Name=Nortantis
+GenericName=Fantasy Map Generator
+Comment=Generate and edit hand-drawn-style fantasy maps
+Exec=nortantis %f
+Icon=com.jandjheydorn.Nortantis
+Terminal=false
+Categories=Graphics;2DGraphics;
+MimeType=application/x-nortantis;
+# Java sets WM_CLASS from the toolkit, not the desktop file, so the running window may not match
+# this app-id and the taskbar icon can fall back to a generic Java icon. If that happens, set the
+# app name explicitly (e.g. -Dawt.appName / a Taskbar/Xtoolkit AWTAppClassName tweak in the launcher)
+# and make StartupWMClass below match what `xprop WM_CLASS` reports on the running window.
+StartupWMClass=com.jandjheydorn.Nortantis

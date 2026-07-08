@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-nortantis">
+    <comment>Nortantis map</comment>
+    <glob pattern="*.nort"/>
+    <icon name="com.jandjheydorn.Nortantis"/>
+  </mime-type>
+</mime-info>
