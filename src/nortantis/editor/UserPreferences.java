@@ -98,7 +98,7 @@ public class UserPreferences
 				String[] filePaths = props.getProperty("recentMapFilePaths").split("\t");
 				for (String path : filePaths)
 				{
-					if (new File(path).exists())
+					if (!path.isBlank() && new File(path).exists())
 					{
 						recentMapFilePaths.add(path);
 					}
