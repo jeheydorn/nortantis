@@ -23,6 +23,7 @@ jpackage \
 --type deb \
 --linux-shortcut \
 --icon "taskbar icon.png" \
+--resource-dir "linux_resources" \
 --file-associations file_associations_linux.txt \
 --vendor "Joseph Heydorn" \
 --app-version "$nortantis_version" \

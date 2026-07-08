@@ -37,6 +37,7 @@ Comment=Fantasy map generator and editor
 Exec=nortantis %f
 Icon=nortantis
 Type=Application
+StartupWMClass=nortantis-swing-MainWindow
 Categories=Graphics;
 MimeType=application/x-nortantis;
 EOF
