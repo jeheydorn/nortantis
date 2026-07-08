@@ -39,6 +39,24 @@ application {
     )
 }
 
+tasks.register<JavaExec>("runApi") {
+    description = "Run the Map API server"
+    group = "application"
+    mainClass.set("nortantis.api.MapApiServer")
+    classpath = sourceSets.main.get().runtimeClasspath
+    jvmArgs = listOf(
+        "--enable-native-access=ALL-UNNAMED",
+        "-Djava.awt.headless=true",
+        "-Xmx4g",
+    )
+    // Pass NORTANTIS_API_TOKEN env var through to the server process
+    environment("NORTANTIS_API_TOKEN", System.getenv("NORTANTIS_API_TOKEN") ?: "")
+    // Pass command line args, e.g., ./gradlew runApi --args="9090"
+    if (project.hasProperty("apiPort")) {
+        args = listOf(project.property("apiPort").toString())
+    }
+}
+
 java {
     sourceCompatibility = JavaVersion.VERSION_21
     targetCompatibility = JavaVersion.VERSION_21
