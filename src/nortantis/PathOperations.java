@@ -286,25 +286,27 @@ public final class PathOperations
 			Point addStart = pathToAdd.get(0).getLoc();
 			Point addEnd = pathToAdd.get(pathToAdd.size() - 1).getLoc();
 
+			// Normalize each merged result so a join that happens to stitch two reversed paths (which would place the same segment
+			// back-to-back) collapses to a single line instead of a double line.
 			if (otherStart.isCloseEnough(addStart))
 			{
 				List<T> merged = mergeReverseAndPrepend(other, pathToAdd, ops);
-				return new Match<>(merged);
+				return new Match<>(normalizePath(merged, ops));
 			}
 			if (otherStart.isCloseEnough(addEnd))
 			{
 				List<T> merged = mergePrepend(other, pathToAdd);
-				return new Match<>(merged);
+				return new Match<>(normalizePath(merged, ops));
 			}
 			if (otherEnd.isCloseEnough(addStart))
 			{
 				List<T> merged = mergeAppend(other, pathToAdd, ops);
-				return new Match<>(merged);
+				return new Match<>(normalizePath(merged, ops));
 			}
 			if (otherEnd.isCloseEnough(addEnd))
 			{
 				List<T> merged = mergeReverseAndAppend(other, pathToAdd, ops);
-				return new Match<>(merged);
+				return new Match<>(normalizePath(merged, ops));
 			}
 		}
 		return null;
@@ -474,6 +476,62 @@ public final class PathOperations
 				result.add(node);
 			}
 		}
+		return result;
+	}
+
+	/**
+	 * Cleans up the degeneracies that path edits (control-point deletion with stitching, or endpoint merges) can introduce when a path
+	 * revisits a location - most commonly around the closing control point of a loop that was drawn start-to-start, so its first and last
+	 * nodes share a location. Two things are removed:
+	 * <ul>
+	 * <li><b>Zero-length segments</b> - consecutive control points at the same location are collapsed to one. The later node's "to-next"
+	 * metadata is kept on the survivor, so the segment leaving the collapsed location stays width/seed-correct.</li>
+	 * <li><b>Backtrack spurs at either end</b> - a terminal triple {@code P, Q, P} (the path steps out to Q and immediately returns to the
+	 * location it left) draws the P-Q segment twice, so the returning endpoint is dropped, leaving a single {@code P, Q}. When a trailing
+	 * spur is dropped the new last node's "to-next" metadata is cleared (last-node convention). Interior triples are left alone, so a
+	 * genuine closed loop like {@code A, B, C, A} is preserved.</li>
+	 * </ul>
+	 * The result may have fewer than 2 nodes (for example a path that was entirely a zero-length segment); callers should drop any path that
+	 * no longer has at least 2 nodes, since a lone control point isn't a representable path.
+	 */
+	public static <T extends PathNode> List<T> normalizePath(List<T> path, NodeMetadataOps<T> ops)
+	{
+		if (path == null || path.isEmpty())
+		{
+			return Collections.emptyList();
+		}
+
+		// Collapse consecutive coincident nodes, keeping the metadata of the last node in each run (it describes the segment that
+		// actually leaves the collapsed location).
+		List<T> result = new ArrayList<>(path.size());
+		for (T node : path)
+		{
+			if (!result.isEmpty() && result.get(result.size() - 1).getLoc().isCloseEnough(node.getLoc()))
+			{
+				int last = result.size() - 1;
+				result.set(last, ops.withMetadataFrom(result.get(last), node));
+			}
+			else
+			{
+				result.add(node);
+			}
+		}
+
+		// Drop trailing backtrack spurs: the last three nodes form P, Q, P. The returning node is redundant (its segment retraces the
+		// previous one), so remove it and clear the new last node's "to-next" metadata.
+		while (result.size() >= 3 && result.get(result.size() - 1).getLoc().isCloseEnough(result.get(result.size() - 3).getLoc()))
+		{
+			result.remove(result.size() - 1);
+			int last = result.size() - 1;
+			result.set(last, ops.withClearedMetadata(result.get(last)));
+		}
+
+		// Drop leading backtrack spurs: the first three nodes form P, Q, P. Removing the redundant head leaves the rest's metadata intact.
+		while (result.size() >= 3 && result.get(0).getLoc().isCloseEnough(result.get(2).getLoc()))
+		{
+			result.remove(0);
+		}
+
 		return result;
 	}
 }

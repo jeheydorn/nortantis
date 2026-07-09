@@ -77,6 +77,86 @@ public class PathOperationsTest
 	}
 
 	@Test
+	public void normalizePath_collapsesEndpointBacktrackSpur()
+	{
+		// [A, B, A] is what deleting the interior CP of a loop drawn A -> B -> C -> A leaves after the stitch: it draws the A-B
+		// segment twice. It should collapse to a single A -> B line.
+		Point a = new Point(0, 0);
+		Point b = new Point(1, 0);
+		List<RoadPathNode> result = PathOperations.normalizePath(road(a, b, a), RoadDrawer.ROAD_OPS);
+		assertEquals(Arrays.asList(a, b), PathOperations.toLocationList(result));
+	}
+
+	@Test
+	public void normalizePath_dropsZeroLengthPathToBelowTwoNodes()
+	{
+		// [A, A] is a zero-length phantom (two coincident CPs, no visible segment). It must collapse to a single node so callers drop it.
+		Point a = new Point(5, 5);
+		List<RoadPathNode> result = PathOperations.normalizePath(road(a, a), RoadDrawer.ROAD_OPS);
+		assertTrue(result.size() < 2);
+	}
+
+	@Test
+	public void normalizePath_preservesGenuineClosedLoop()
+	{
+		// A -> B -> C -> A is a real triangle (distinct middle nodes), not a backtrack, so it is left untouched.
+		Point a = new Point(0, 0);
+		Point b = new Point(1, 0);
+		Point c = new Point(1, 1);
+		List<RoadPathNode> result = PathOperations.normalizePath(road(a, b, c, a), RoadDrawer.ROAD_OPS);
+		assertEquals(Arrays.asList(a, b, c, a), PathOperations.toLocationList(result));
+	}
+
+	@Test
+	public void normalizePath_collapsesTrailingSpurOnLongerPath()
+	{
+		// A -> B -> C -> B ends with a backtrack (C -> B retraces B -> C), so the returning B is dropped.
+		Point a = new Point(0, 0);
+		Point b = new Point(1, 0);
+		Point c = new Point(2, 0);
+		List<RoadPathNode> result = PathOperations.normalizePath(road(a, b, c, b), RoadDrawer.ROAD_OPS);
+		assertEquals(Arrays.asList(a, b, c), PathOperations.toLocationList(result));
+	}
+
+	@Test
+	public void normalizePath_leavesCleanPathUnchanged()
+	{
+		Point a = new Point(0, 0);
+		Point b = new Point(1, 0);
+		Point c = new Point(2, 0);
+		List<RoadPathNode> result = PathOperations.normalizePath(road(a, b, c), RoadDrawer.ROAD_OPS);
+		assertEquals(Arrays.asList(a, b, c), PathOperations.toLocationList(result));
+	}
+
+	@Test
+	public void normalizePath_fullyCollapsesBackAndForth()
+	{
+		// A -> B -> A -> B is entirely a doubled segment; it should reduce to a single A -> B.
+		Point a = new Point(0, 0);
+		Point b = new Point(1, 0);
+		List<RoadPathNode> result = PathOperations.normalizePath(road(a, b, a, b), RoadDrawer.ROAD_OPS);
+		assertEquals(Arrays.asList(a, b), PathOperations.toLocationList(result));
+	}
+
+	@Test
+	public void normalizePath_keepsRiverSegmentWidthWhenCollapsingSpur()
+	{
+		// Collapsing [A, B, A] to [A, B] must keep the surviving A->B segment's width (stored on A) and clear the new last node B's
+		// "to-next" metadata (last-node convention).
+		Point a = new Point(0, 0);
+		Point b = new Point(1, 0);
+		List<nortantis.editor.RiverPathNode> path = Arrays.asList(new nortantis.editor.RiverPathNode(a, 3, 100L), new nortantis.editor.RiverPathNode(b, 7, 200L),
+				new nortantis.editor.RiverPathNode(a, 0, 0L));
+		List<nortantis.editor.RiverPathNode> result = PathOperations.normalizePath(path, RiverDrawer.RIVER_OPS);
+		assertEquals(2, result.size());
+		assertEquals(a, result.get(0).getLoc());
+		assertEquals(3, result.get(0).getWidthLevelToNext());
+		assertEquals(100L, result.get(0).getSeedToNext());
+		assertEquals(b, result.get(1).getLoc());
+		assertEquals(0, result.get(1).getWidthLevelToNext());
+	}
+
+	@Test
 	public void pathOverlapsRectangle_segmentInsideBounds()
 	{
 		List<RoadPathNode> path = road(new Point(5, 5), new Point(15, 15));

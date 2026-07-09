@@ -915,16 +915,25 @@ public class LandWaterTool extends EditorTool
 	 */
 	private void applyRiverFragments(River river, List<List<RiverPathNode>> fragments, List<River> changed)
 	{
-		if (fragments.isEmpty())
+		List<List<RiverPathNode>> cleaned = new ArrayList<>(fragments.size());
+		for (List<RiverPathNode> fragment : fragments)
+		{
+			List<RiverPathNode> normalized = PathOperations.normalizePath(fragment, RiverDrawer.RIVER_OPS);
+			if (normalized.size() >= 2)
+			{
+				cleaned.add(normalized);
+			}
+		}
+		if (cleaned.isEmpty())
 		{
 			mainWindow.edits.rivers.remove(river);
 			return;
 		}
-		river.nodes = new java.util.concurrent.CopyOnWriteArrayList<>(fragments.get(0));
+		river.nodes = new java.util.concurrent.CopyOnWriteArrayList<>(cleaned.get(0));
 		changed.add(river);
-		for (int i = 1; i < fragments.size(); i++)
+		for (int i = 1; i < cleaned.size(); i++)
 		{
-			River newRiver = new River(fragments.get(i));
+			River newRiver = new River(cleaned.get(i));
 			mainWindow.edits.rivers.add(newRiver);
 			changed.add(newRiver);
 		}
@@ -933,16 +942,25 @@ public class LandWaterTool extends EditorTool
 	/** Road counterpart of {@link #applyRiverFragments}. */
 	private void applyRoadFragments(Road road, List<List<RoadPathNode>> fragments, List<Road> changed)
 	{
-		if (fragments.isEmpty())
+		List<List<RoadPathNode>> cleaned = new ArrayList<>(fragments.size());
+		for (List<RoadPathNode> fragment : fragments)
+		{
+			List<RoadPathNode> normalized = PathOperations.normalizePath(fragment, RoadDrawer.ROAD_OPS);
+			if (normalized.size() >= 2)
+			{
+				cleaned.add(normalized);
+			}
+		}
+		if (cleaned.isEmpty())
 		{
 			mainWindow.edits.roads.remove(road);
 			return;
 		}
-		road.nodes = new java.util.concurrent.CopyOnWriteArrayList<>(fragments.get(0));
+		road.nodes = new java.util.concurrent.CopyOnWriteArrayList<>(cleaned.get(0));
 		changed.add(road);
-		for (int i = 1; i < fragments.size(); i++)
+		for (int i = 1; i < cleaned.size(); i++)
 		{
-			Road newRoad = new Road(fragments.get(i));
+			Road newRoad = new Road(cleaned.get(i));
 			mainWindow.edits.roads.add(newRoad);
 			changed.add(newRoad);
 		}
