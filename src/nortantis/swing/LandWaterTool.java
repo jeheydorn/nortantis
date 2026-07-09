@@ -1599,12 +1599,11 @@ public class LandWaterTool extends EditorTool
 		double scale = mainWindow.displayQualityScale;
 		int brushDiameter = getEditBrushDiameter();
 
-		// selectedCirclesGraphPixels is the live selection (independent of where the cursor is). It seeds the orange outline list so each
-		// selected CP shows an orange ring under its yellow ring, matching how draw mode draws a clicked CP. The hover rings and hover
-		// polylines come from the press outcome — they preview exactly what would change if the press fires right now, so the visuals
-		// always match the actual click behavior.
+		// Filled circles: the live selection (independent of where the cursor is). Outlines, yellow rings, and hover polylines all
+		// come from the press outcome — they preview exactly what would change if the press fires right now, so the visuals always
+		// match the actual click behavior.
 		List<Point> selectedCirclesGraphPixels = collectCPGraphLocations(selectedRiverCPs, selectedRoadCPs, type, scale);
-		List<Point> outlinedCirclesGraphPixels = new ArrayList<>(selectedCirclesGraphPixels);
+		List<Point> outlinedCirclesGraphPixels = new ArrayList<>();
 		List<Point> hoverRingsGraphPixels = new ArrayList<>();
 		mapEditingPanel.clearHoverPolylines();
 
@@ -1634,8 +1633,7 @@ public class LandWaterTool extends EditorTool
 		mapEditingPanel.setSelectedControlPointCircles(selectedCirclesGraphPixels);
 		if (!hoverRingsGraphPixels.isEmpty())
 		{
-			// Would-be-added CPs already carry the orange outline; filled=false keeps this hover set as orange rings, leaving the yellow
-			// ring to mark an actually-selected CP.
+			// Edit mode hover = stroked yellow ring — kept visually distinct from the filled-yellow selected CP.
 			mapEditingPanel.setHoveredRoadControlPoints(hoverRingsGraphPixels, false);
 		}
 		else
@@ -3449,9 +3447,9 @@ public class LandWaterTool extends EditorTool
 			}
 		}
 
-		// Refresh visuals at the new cursor position. During a move-drag we deliberately skip the hover preview (would-be-added CP
-		// outlines, yellow hover rings, hover-color segment polylines) since nothing under the cursor is selectable while the drag is in
-		// flight — showing them would falsely suggest the user could pick something up. The selected CPs keep their own orange+yellow rings.
+		// Refresh visuals at the new cursor position. During a move-drag we deliberately skip the hover preview (orange CP outlines,
+		// yellow rings, hover-color segment polylines) since nothing under the cursor is selectable while the drag is in flight —
+		// showing them would falsely suggest the user could pick something up.
 		mapEditingPanel.clearHighlightedPolylines();
 		renderSelectionOnlyVisuals(activeType);
 		updater.createAndShowMapIncrementalUsingCenters(getCentersTouchingPoints(centersTouched));
@@ -3459,17 +3457,16 @@ public class LandWaterTool extends EditorTool
 	}
 
 	/**
-	 * Refreshes the live-selection visuals (each selected CP's orange ring + yellow ring, and selected-segment polylines) and clears the
-	 * hover-preview visuals (would-be-added CP outlines, yellow hover rings, hover-color segment polylines). Used during a move-drag, where
-	 * the hover preview is misleading because the user can't switch the selection mid-drag.
+	 * Refreshes the live-selection visuals (filled CP circles + selected-segment polylines) and clears every hover-preview visual (orange
+	 * CP outlines, yellow hover rings, hover-color segment polylines). Used during a move-drag, where the hover preview is misleading
+	 * because the user can't switch the selection mid-drag.
 	 */
 	private void renderSelectionOnlyVisuals(LineType activeType)
 	{
 		double scale = mainWindow.displayQualityScale;
 		List<Point> selectedCirclesGraphPixels = collectCPGraphLocations(selectedRiverCPs, selectedRoadCPs, activeType, scale);
 		mapEditingPanel.setSelectedControlPointCircles(selectedCirclesGraphPixels);
-		// Keep the orange ring under each selected CP's yellow ring while dragging; only the hover preview for would-be-added CPs is hidden.
-		mapEditingPanel.setControlPointCircles(new ArrayList<>(selectedCirclesGraphPixels));
+		mapEditingPanel.setControlPointCircles(new ArrayList<>());
 		mapEditingPanel.clearHoveredControlPoint();
 		mapEditingPanel.clearHoverPolylines();
 		applySelectedSegmentsHighlight();

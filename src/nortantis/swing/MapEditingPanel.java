@@ -52,7 +52,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private List<Point> roadControlPointCircles = null;
 	private List<Point> selectedRoadControlPointCircles = null;
 	private List<Point> hoveredRoadControlPoints = null;
-	// True when the hovered CPs are a decisive snap target (draw mode) and should be drawn with the yellow ring selection glyph.
+	// True when the hovered CPs are a decisive snap target (draw mode) and should be drawn with the yellow ring + dot selection glyph.
 	// False (default) draws them as orange rings (edit mode — a selection preview, distinct from the yellow selected/hovered glyph).
 	private boolean hoveredRoadControlPointsFilled = false;
 	private List<Point> freeHandPreviewPath = null;
@@ -245,7 +245,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 	}
 
 	/**
-	 * Marks a single CP as hovered. {@code filled} = true draws the yellow ring selection glyph (used in draw mode where hover is a
+	 * Marks a single CP as hovered. {@code filled} = true draws the yellow ring + dot selection glyph (used in draw mode where hover is a
 	 * single decisive snap target); false draws an orange ring (used in edit mode where hover is a selection preview, distinct from the
 	 * yellow glyph reserved for the decisive/selected state).
 	 */
@@ -1007,20 +1007,10 @@ public class MapEditingPanel extends UnscaledImagePanel
 	}
 
 	/**
-	 * Returns the radius, in graph pixels, of the yellow highlight ring drawn for a selected control point or the decisive draw-mode hover
-	 * target. It is drawn slightly larger than the orange {@link #getRoadControlPointRadiusInGraphPixels() base ring} so the highlighted CP
-	 * stands out, and the hit radius is derived from it so the clickable area matches what is drawn.
-	 */
-	int getSelectedRoadControlPointRingRadiusInGraphPixels()
-	{
-		int r = getRoadControlPointRadiusInGraphPixels();
-		return r + Math.max(1, r / 6);
-	}
-
-	/**
-	 * Returns the road control-point hit radius in graph pixels — the outer visible edge of the yellow highlight ring, i.e. its radius
-	 * ({@link #getSelectedRoadControlPointRingRadiusInGraphPixels()}) extended by half the stroke width. Using the highlight ring rather
-	 * than the smaller base ring keeps the clickable area aligned with what the user sees highlighted before grabbing a CP.
+	 * Returns the road control-point hit radius in graph pixels — the centerline radius extended by half the stroke width so the visible
+	 * circle outline is part of the clickable area. The stroke is drawn centered on the circle of radius
+	 * {@link #getRoadControlPointRadiusExact()}, so it extends outward by half its width; adding that here keeps the hit area exactly
+	 * aligned with the outer visible edge.
 	 */
 	int getRoadControlPointHitRadiusInGraphPixels()
 	{
@@ -1028,7 +1018,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		{
 			return getRoadControlPointRadiusInGraphPixels();
 		}
-		return (int) Math.round(getSelectedRoadControlPointRingRadiusInGraphPixels() + getRoadControlPointStrokeWidth() / 2.0);
+		return (int) Math.round(getRoadControlPointRadiusExact() + getRoadControlPointStrokeWidth() / 2.0);
 	}
 
 	private double getRoadControlPointRadiusExact()
@@ -1043,7 +1033,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 	 */
 	private float getRoadControlPointStrokeWidth()
 	{
-		return (float) (graph.getMeanCenterWidth() * 0.065);
+		return (float) (graph.getMeanCenterWidth() * 0.045);
 	}
 
 	private void drawRoadControlPoints(Graphics2D g2)
@@ -1066,9 +1056,9 @@ public class MapEditingPanel extends UnscaledImagePanel
 		// orange ring → CP is on a highlighted line, cursor not over it (and, in edit mode, also the hover indicator —
 		// would-be-added CPs already get this ring via setControlPointCircles, so the stroked hover variant
 		// simply re-draws in orange to keep the visual consistent)
-		// yellow ring → CP is selected, or is the decisive draw-mode hover target. Drawn as an open ring slightly larger than the
-		// orange ring so the river/road shows through the middle and the highlight stands out. The yellow color also keeps it
-		// distinct from the orange hover ring.
+		// yellow ring + dot → CP is selected, or is the decisive draw-mode hover target. Drawn as an open ring (so the river/road
+		// shows through the middle) with a small solid dot marking the exact point. The center dot keeps it
+		// distinct from the orange hover ring even without color.
 		// Drawn in that order so a hovered or selected CP's glyph covers the underlying orange ring.
 		if (roadControlPointCircles != null)
 		{
@@ -1083,7 +1073,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		{
 			if (hoveredRoadControlPointsFilled)
 			{
-				drawSelectedControlPointGlyphs(g2, hoveredRoadControlPoints);
+				drawSelectedControlPointGlyphs(g2, hoveredRoadControlPoints, r);
 			}
 			else
 			{
@@ -1097,7 +1087,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 		if (hasSelected)
 		{
-			drawSelectedControlPointGlyphs(g2, selectedRoadControlPointCircles);
+			drawSelectedControlPointGlyphs(g2, selectedRoadControlPointCircles, r);
 		}
 
 		if (freeHandPreviewPath != null && freeHandPreviewPath.size() >= 2)
@@ -1113,17 +1103,19 @@ public class MapEditingPanel extends UnscaledImagePanel
 	}
 
 	/**
-	 * Draws the "selected" control-point glyph for each point: a yellow open ring, slightly larger than the orange base ring, so the
-	 * river/road shows through the middle. Used both for selected CPs and for the decisive draw-mode hover so the two share one visual.
-	 * Assumes the caller has set the stroke to {@link #getRoadControlPointStrokeWidth()} and enabled antialiasing.
+	 * Draws the "selected" control-point glyph for each point: a yellow open ring (same radius and stroke as the orange hover ring) with a
+	 * small solid center dot. Used both for selected CPs and for the decisive draw-mode hover so the two share one visual. Assumes the
+	 * caller has set the stroke to {@link #getRoadControlPointStrokeWidth()} and enabled antialiasing.
 	 */
-	private void drawSelectedControlPointGlyphs(Graphics2D g2, List<Point> points)
+	private void drawSelectedControlPointGlyphs(Graphics2D g2, List<Point> points, int r)
 	{
-		int r = getSelectedRoadControlPointRingRadiusInGraphPixels();
+		// Center dot scales with the CP radius but stays well inside the open ring so the river/road still shows through.
+		int centerDotRadius = Math.max(1, Math.round(r * 0.3f));
 		g2.setColor(highlightEditColor);
 		for (Point p : points)
 		{
 			g2.drawOval((int) p.x - r, (int) p.y - r, r * 2, r * 2);
+			g2.fillOval((int) p.x - centerDotRadius, (int) p.y - centerDotRadius, centerDotRadius * 2, centerDotRadius * 2);
 		}
 	}
 
