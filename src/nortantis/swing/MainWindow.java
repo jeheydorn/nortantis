@@ -1430,6 +1430,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		for (String artPack : artPacks)
 		{
 			JCheckBoxMenuItem item = new JCheckBoxMenuItem(artPack);
+			// Keep the menu open when toggling a checkbox so multiple art packs can be highlighted without reopening it.
+			item.putClientProperty("CheckBoxMenuItem.doNotCloseOnMouseClick", Boolean.TRUE);
 			highlightIconsInArtPackMenu.add(item);
 			artPacksToHighlight.add(item);
 			if (highlightedArtPacks.contains(artPack))
@@ -1439,6 +1441,24 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			item.addActionListener(listener);
 		}
 
+		if (!artPacksToHighlight.isEmpty())
+		{
+			highlightIconsInArtPackMenu.addSeparator();
+			JMenuItem uncheckAllItem = new JMenuItem(Translation.get("menu.tools.uncheckAllArtPackHighlights"));
+			uncheckAllItem.addActionListener(new ActionListener()
+			{
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					for (JCheckBoxMenuItem item : artPacksToHighlight)
+					{
+						item.setSelected(false);
+					}
+					updateArtPackHighlights();
+				}
+			});
+			highlightIconsInArtPackMenu.add(uncheckAllItem);
+		}
 	}
 
 	private void updateArtPackHighlights()
