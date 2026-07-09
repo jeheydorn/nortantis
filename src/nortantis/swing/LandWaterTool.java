@@ -126,6 +126,12 @@ public class LandWaterTool extends EditorTool
 	{
 	}
 
+	// A/B test toggle for how a fresh (non-Ctrl) edit-mode press-drag over a CP or segment behaves, at every brush size:
+	//   false — the press selects/highlights and arms a paint-drag; moving the line takes a second press on the now-selected CP/segment.
+	//   true  — the press selects and immediately arms a move-drag, so the first drag moves the CP(s)/segment.
+	// A press on an already-selected CP/segment always arms a move-drag regardless of this flag.
+	private static final boolean moveLineOnFreshPress = false;
+
 	// UI widget that exposes "Select" vs "Unselect" behavior for Ctrl-click. Shared pattern with IconsTool.
 	private ControlClickBehaviorWidget controlClickBehavior;
 	private RowHider controlClickBehaviorHider;
@@ -2808,13 +2814,13 @@ public class LandWaterTool extends EditorTool
 	}
 
 	/**
-	 * Edit-mode press handler. Dispatches to one of three modes based on where the click landed and whether the modifier key is held:
+	 * Edit-mode press handler. Dispatches based on where the click landed and whether the modifier key is held:
 	 * <ul>
 	 * <li><b>Move-drag</b> — press on an already-selected CP (or in the brush radius of one) — preserves the selection and arms a move-drag
 	 * so any subsequent cursor motion translates every selected CP.</li>
-	 * <li><b>Paint-drag (from CP or segment)</b> — press on an unselected CP or a segment's centerline — selects it (the CP, or both
-	 * endpoint CPs of the segment), then arms a paint-drag so subsequent motion extends the selection with the brush. Does not move the
-	 * line on accidental drag; moving takes a second press on the now-selected CP.</li>
+	 * <li><b>Press on an unselected CP or a segment's centerline</b> — selects it (the CP, or both endpoint CPs of the segment). Whether
+	 * this then arms a paint-drag (highlight, extends the selection with the brush) or a move-drag (first drag translates the selection)
+	 * is controlled by {@link #moveLineOnFreshPress}.</li>
 	 * <li><b>Paint-drag (from empty)</b> — press in empty space — clears the selection (unless Ctrl is held), then arms a paint-drag.</li>
 	 * </ul>
 	 */
@@ -2992,10 +2998,15 @@ public class LandWaterTool extends EditorTool
 				}
 				return new PressOutcome(riverAfter, roadAfter, false, null, -1);
 			}
-			// Replace selection with the clicked CP and arm a paint-drag (highlight), consistent with segment clicks and larger brush
-			// sizes. Moving the CP takes a second press on the now-selected CP, which the priority grab path above turns into a move-drag.
+			// Replace selection with the clicked CP. With moveLineOnFreshPress the press immediately arms a move-drag on that CP;
+			// otherwise it arms a paint-drag (highlight), consistent with segment clicks and larger brush sizes, and moving takes a
+			// second press on the now-selected CP (which the priority grab path above turns into a move-drag).
 			clear.run();
 			addExpanded.accept(line, idx);
+			if (moveLineOnFreshPress)
+			{
+				return new PressOutcome(riverAfter, roadAfter, true, line, idx);
+			}
 			return new PressOutcome(riverAfter, roadAfter, false, null, -1);
 		}
 		if (brushIsSinglePoint && hit != null && hit.isSegment())
@@ -3016,6 +3027,12 @@ public class LandWaterTool extends EditorTool
 				addExpanded.accept(line, segIdx);
 				addExpanded.accept(line, segIdx + 1);
 			}
+			// With moveLineOnFreshPress a plain press on a segment immediately arms a move-drag on its two endpoint CPs, so the first
+			// drag translates the segment. Ctrl-presses stay in select/deselect (paint) mode.
+			if (!ctrlDown && moveLineOnFreshPress)
+			{
+				return new PressOutcome(riverAfter, roadAfter, true, line, segIdx);
+			}
 			return new PressOutcome(riverAfter, roadAfter, false, null, -1);
 		}
 
@@ -3025,6 +3042,9 @@ public class LandWaterTool extends EditorTool
 		{
 			clear.run();
 		}
+		// For moveLineOnFreshPress: the first CP added under the brush anchors a move-drag that translates the whole brush selection.
+		Object moveAnchorLine = null;
+		int moveAnchorIdx = -1;
 		for (LineHit bh : brushHits)
 		{
 			Object line = bh.river() != null ? bh.river() : bh.road();
@@ -3038,6 +3058,11 @@ public class LandWaterTool extends EditorTool
 				else
 				{
 					addExpanded.accept(line, bh.controlPointIndex());
+					if (moveAnchorLine == null)
+					{
+						moveAnchorLine = line;
+						moveAnchorIdx = bh.controlPointIndex();
+					}
 				}
 			}
 			else if (bh.isSegment())
@@ -3051,8 +3076,19 @@ public class LandWaterTool extends EditorTool
 				{
 					addExpanded.accept(line, bh.segmentIndex());
 					addExpanded.accept(line, bh.segmentIndex() + 1);
+					if (moveAnchorLine == null)
+					{
+						moveAnchorLine = line;
+						moveAnchorIdx = bh.segmentIndex();
+					}
 				}
 			}
+		}
+		// With moveLineOnFreshPress a plain press whose brush covered any CP/segment immediately arms a move-drag on the whole brush
+		// selection. Ctrl-presses stay in select/deselect (paint) mode.
+		if (!ctrlDown && moveLineOnFreshPress && moveAnchorLine != null)
+		{
+			return new PressOutcome(riverAfter, roadAfter, true, moveAnchorLine, moveAnchorIdx);
 		}
 		return new PressOutcome(riverAfter, roadAfter, false, null, -1);
 	}
