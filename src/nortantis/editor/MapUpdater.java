@@ -715,10 +715,7 @@ public abstract class MapUpdater
 
 						if (postRuns != null)
 						{
-							for (Runnable runnable : postRuns)
-							{
-								runnable.run();
-							}
+							runPostDrawActions(postRuns);
 						}
 
 						if (next != null)
@@ -865,6 +862,20 @@ public abstract class MapUpdater
 			List<IconDrawer.CityIconRemovedForWater> citiesRemovedForWater, boolean wasTriggeredByUndoRedo);
 
 	protected abstract void onFinishedDrawingIncremental(boolean anotherDrawIsQueued, int borderPaddingAsDrawn, IntRectangle incrementalChangeArea, List<String> warningMessages);
+
+	/**
+	 * Runs the post-draw actions registered for a draw, after that draw's completion callback (onFinishedDrawing*) has been invoked.
+	 * The default runs them immediately. Subclasses whose displayed map updates asynchronously can override this to defer the actions
+	 * until the display actually reflects the new map, so overlays tied to the draw (e.g. the processing-area highlights shown while an
+	 * icon or text is being erased) aren't removed a frame before the object visibly disappears.
+	 */
+	protected void runPostDrawActions(List<Runnable> postRuns)
+	{
+		for (Runnable runnable : postRuns)
+		{
+			runnable.run();
+		}
+	}
 
 	protected abstract void onFailedToDraw(Exception exception);
 

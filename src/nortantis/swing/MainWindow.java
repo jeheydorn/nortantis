@@ -107,6 +107,12 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		return thread;
 	});
 	private final java.util.concurrent.atomic.AtomicLong displayScaleGeneration = new java.util.concurrent.atomic.AtomicLong();
+	// True when the display update for the draw that just finished was handed off to a background rescale (rather than patched
+	// synchronously), so its post-draw actions must wait until the rescale commits instead of running immediately.
+	private boolean lastDisplayUpdateWasAsync;
+	// Post-draw actions deferred until the next display commit (finishDisplayUpdate), because their draw's display update was
+	// asynchronous. Runs the orange processing-area highlights' removal in sync with the map visibly updating.
+	private final List<Runnable> actionsToRunOnNextDisplayUpdate = new ArrayList<>();
 	ThemePanel themePanel;
 	ToolsPanel toolsPanel;
 	MapUpdater updater;
@@ -765,6 +771,23 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				// Map was already updated in-place by MapCreator on background thread.
 				// Just update the zoomed display for the changed region.
 				onFinishedDrawingCommon(anotherDrawIsQueued, borderPaddingAsDrawn, incrementalChangeArea, warningMessages);
+			}
+
+			@Override
+			protected void runPostDrawActions(List<Runnable> postRuns)
+			{
+				if (lastDisplayUpdateWasAsync)
+				{
+					// The displayed map is being rescaled on a background thread and hasn't been committed yet. Defer these until
+					// the rescale commits (finishDisplayUpdate), so overlays tied to this draw - like the orange processing-area
+					// highlights shown while erasing an icon or text - aren't removed before the object visibly disappears.
+					actionsToRunOnNextDisplayUpdate.addAll(postRuns);
+				}
+				else
+				{
+					// The display was already patched synchronously, so the map on screen already reflects this draw.
+					super.runPostDrawActions(postRuns);
+				}
 			}
 
 			private void onFinishedDrawingCommon(boolean anotherDrawIsQueued, int borderPaddingAsDrawn, IntRectangle incrementalChangeArea, List<String> warningMessages)
@@ -1846,6 +1869,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		// stale zoom field wouldn't yet reflect the fit. translateZoomLevel returns 1.0 when there's no map.
 		double targetZoom = translateZoomLevel((String) toolsPanel.zoomComboBox.getSelectedItem());
 
+		// Assume a synchronous display update; the branches below flip this to true when they hand the rescale to a background thread.
+		lastDisplayUpdateWasAsync = false;
+
 		if (mapEditingPanel.mapFromMapCreator == null)
 		{
 			// No map to show yet. Keep the zoom field current (it's read by other code) but there's nothing to rescale.
@@ -1862,6 +1888,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			// A zoom change always needs a full rescale (there's no existing region to patch), and the target zoom can differ from
 			// what's currently displayed, so do it in the background and only commit it once it's ready. The display quality
 			// (setResolution) is intentionally left untouched here, matching the old behavior of skipping it for zoom-only changes.
+			lastDisplayUpdateWasAsync = true;
 			submitBackgroundFullRescale(targetZoom, updateScrollLocationIfZoomChanged);
 			return;
 		}
@@ -1883,6 +1910,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			// Either a QUALITY downscale (which can't be patched incrementally - the whole image must be re-rendered every time), a
 			// full draw with no region to patch, or the displayed zoom doesn't match the target yet (e.g. the first draw at
 			// fit-to-window). Do the (possibly slow) rescale on a background thread so it never blocks the EDT.
+			lastDisplayUpdateWasAsync = true;
 			submitBackgroundFullRescale(targetZoom, false);
 		}
 	}
@@ -2024,6 +2052,18 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	private void finishDisplayUpdate()
 	{
+		// The map on screen now reflects the finished draw, so run any post-draw actions that were deferred while its display
+		// update was rescaling on a background thread (e.g. removing the orange processing-area highlights for erased icons/text).
+		if (!actionsToRunOnNextDisplayUpdate.isEmpty())
+		{
+			List<Runnable> actions = new ArrayList<>(actionsToRunOnNextDisplayUpdate);
+			actionsToRunOnNextDisplayUpdate.clear();
+			for (Runnable action : actions)
+			{
+				action.run();
+			}
+		}
+
 		updater.doWhenMapIsReadyForInteractions(() ->
 		{
 			if (!mapEditingPanel.isSelectionBoxActive())
