@@ -891,6 +891,12 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 	private void drawBrush(Graphics2D g)
 	{
+		// transformWithOsScaling is only established once an image has painted (see UnscaledImagePanel). While no map image is present
+		// (e.g. a "drawing map..." canvas message, or before the first draw) there is nothing for the brush to align to, so skip it.
+		if (transformWithOsScaling == null)
+		{
+			return;
+		}
 		AffineTransform t = g.getTransform();
 		g.setTransform(transformWithOsScaling);
 		g.drawOval(brushLocation.x - brushDiameter / 2, brushLocation.y - brushDiameter / 2, brushDiameter, brushDiameter);
