@@ -2810,10 +2810,11 @@ public class LandWaterTool extends EditorTool
 	/**
 	 * Edit-mode press handler. Dispatches to one of three modes based on where the click landed and whether the modifier key is held:
 	 * <ul>
-	 * <li><b>Move-drag</b> — press on a CP (with brush 1) or in the brush radius of a CP — replaces the selection with that CP (or extends
-	 * it when Ctrl is held), then arms a move-drag so any subsequent cursor motion translates every selected CP.</li>
-	 * <li><b>Paint-drag (from segment)</b> — press on a segment's centerline — selects both endpoint CPs of the segment, then arms a
-	 * paint-drag so subsequent motion extends the selection with the brush. Does not move the line on accidental drag.</li>
+	 * <li><b>Move-drag</b> — press on an already-selected CP (or in the brush radius of one) — preserves the selection and arms a move-drag
+	 * so any subsequent cursor motion translates every selected CP.</li>
+	 * <li><b>Paint-drag (from CP or segment)</b> — press on an unselected CP or a segment's centerline — selects it (the CP, or both
+	 * endpoint CPs of the segment), then arms a paint-drag so subsequent motion extends the selection with the brush. Does not move the
+	 * line on accidental drag; moving takes a second press on the now-selected CP.</li>
 	 * <li><b>Paint-drag (from empty)</b> — press in empty space — clears the selection (unless Ctrl is held), then arms a paint-drag.</li>
 	 * </ul>
 	 */
@@ -2991,10 +2992,11 @@ public class LandWaterTool extends EditorTool
 				}
 				return new PressOutcome(riverAfter, roadAfter, false, null, -1);
 			}
-			// Replace selection with the clicked CP, arm move-drag.
+			// Replace selection with the clicked CP and arm a paint-drag (highlight), consistent with segment clicks and larger brush
+			// sizes. Moving the CP takes a second press on the now-selected CP, which the priority grab path above turns into a move-drag.
 			clear.run();
 			addExpanded.accept(line, idx);
-			return new PressOutcome(riverAfter, roadAfter, true, line, idx);
+			return new PressOutcome(riverAfter, roadAfter, false, null, -1);
 		}
 		if (brushIsSinglePoint && hit != null && hit.isSegment())
 		{
