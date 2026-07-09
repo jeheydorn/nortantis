@@ -689,11 +689,11 @@ public class TextTool extends EditorTool
 			}
 
 			triggerPurgeEmptyText();
-			updater.createAndShowMapIncrementalUsingText(before, () ->
+			updater.createAndShowMapIncrementalUsingText(before, MapUpdater.afterMapDisplayed(() ->
 			{
 				mapEditingPanel.removeProcessingAreas(boundsToRemove);
 				mapEditingPanel.repaint();
-			});
+			}));
 		}
 	}
 

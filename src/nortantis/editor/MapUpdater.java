@@ -865,15 +865,53 @@ public abstract class MapUpdater
 
 	/**
 	 * Runs the post-draw actions registered for a draw, after that draw's completion callback (onFinishedDrawing*) has been invoked.
-	 * The default runs them immediately. Subclasses whose displayed map updates asynchronously can override this to defer the actions
-	 * until the display actually reflects the new map, so overlays tied to the draw (e.g. the processing-area highlights shown while an
-	 * icon or text is being erased) aren't removed a frame before the object visibly disappears.
+	 * The default runs them all immediately, which is correct when the displayed map updates synchronously with the completion
+	 * callback. Subclasses whose displayed map can update asynchronously should override this and defer the actions wrapped by
+	 * {@link #afterMapDisplayed(Runnable)} until the display actually reflects the new map (leaving plain actions immediate), so
+	 * overlays tied to the drawn pixels - e.g. the processing-area highlights shown while erasing an icon or text - aren't removed a
+	 * frame before the object visibly disappears. Whether a given action is display-tied is reported by {@link #runsAfterMapDisplayed}.
 	 */
 	protected void runPostDrawActions(List<Runnable> postRuns)
 	{
 		for (Runnable runnable : postRuns)
 		{
 			runnable.run();
+		}
+	}
+
+	/**
+	 * Wraps a post-draw action so it runs only after the drawn map is actually shown on screen, rather than as soon as the draw
+	 * finishes computing. Only meaningful for subclasses whose display updates asynchronously (see {@link #runPostDrawActions}); for
+	 * others it runs at the same time a plain action would. Used for actions tied to the displayed pixels, such as removing the
+	 * processing-area highlights shown while erasing.
+	 */
+	public static Runnable afterMapDisplayed(Runnable action)
+	{
+		return new AfterDisplayedAction(action);
+	}
+
+	/**
+	 * Whether the given post-draw action was wrapped by {@link #afterMapDisplayed(Runnable)}, i.e. it must wait until the drawn map is
+	 * shown on screen.
+	 */
+	protected static boolean runsAfterMapDisplayed(Runnable action)
+	{
+		return action instanceof AfterDisplayedAction;
+	}
+
+	private static final class AfterDisplayedAction implements Runnable
+	{
+		private final Runnable action;
+
+		AfterDisplayedAction(Runnable action)
+		{
+			this.action = action;
+		}
+
+		@Override
+		public void run()
+		{
+			action.run();
 		}
 	}
 

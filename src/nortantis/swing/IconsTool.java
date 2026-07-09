@@ -1699,11 +1699,11 @@ public class IconsTool extends EditorTool
 					.map(task -> new RotatedRectangle(task.getOrCreateContentBoundsPadded())).collect(Collectors.toSet());
 			mapEditingPanel.addProcessingAreas(processingAreas);
 			mapEditingPanel.repaint();
-			updater.createAndShowMapIncrementalUsingIcons(icons, () ->
+			updater.createAndShowMapIncrementalUsingIcons(icons, MapUpdater.afterMapDisplayed(() ->
 			{
 				mapEditingPanel.removeProcessingAreas(processingAreas);
 				mapEditingPanel.repaint();
-			});
+			}));
 		}
 	}
 

@@ -776,17 +776,22 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			protected void runPostDrawActions(List<Runnable> postRuns)
 			{
-				if (lastDisplayUpdateWasAsync)
+				for (Runnable postRun : postRuns)
 				{
-					// The displayed map is being rescaled on a background thread and hasn't been committed yet. Defer these until
-					// the rescale commits (finishDisplayUpdate), so overlays tied to this draw - like the orange processing-area
-					// highlights shown while erasing an icon or text - aren't removed before the object visibly disappears.
-					actionsToRunOnNextDisplayUpdate.addAll(postRuns);
-				}
-				else
-				{
-					// The display was already patched synchronously, so the map on screen already reflects this draw.
-					super.runPostDrawActions(postRuns);
+					if (runsAfterMapDisplayed(postRun) && lastDisplayUpdateWasAsync)
+					{
+						// A display-tied action whose map is still being rescaled on a background thread. Defer it until the rescale
+						// commits (finishDisplayUpdate), so overlays tied to this draw - like the orange processing-area highlights
+						// shown while erasing an icon or text - aren't removed before the object visibly disappears.
+						actionsToRunOnNextDisplayUpdate.add(postRun);
+					}
+					else
+					{
+						// Either a plain action, which keeps its original timing of running as soon as the draw finishes (before the
+						// next queued draw, so e.g. a cache clear never races an in-progress draw), or a display-tied action whose
+						// display was already patched synchronously (fast path), so the map on screen already reflects this draw.
+						postRun.run();
+					}
 				}
 			}
 
