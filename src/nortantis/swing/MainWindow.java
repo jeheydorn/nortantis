@@ -1444,7 +1444,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		if (!artPacksToHighlight.isEmpty())
 		{
 			highlightIconsInArtPackMenu.addSeparator();
-			JMenuItem uncheckAllItem = new JMenuItem(Translation.get("menu.tools.uncheckAllArtPackHighlights"));
+			// A checkbox item (never actually checked) so it can reuse the doNotCloseOnMouseClick behavior and leave the menu open.
+			JCheckBoxMenuItem uncheckAllItem = new JCheckBoxMenuItem(Translation.get("menu.tools.uncheckAllArtPackHighlights"));
+			uncheckAllItem.putClientProperty("CheckBoxMenuItem.doNotCloseOnMouseClick", Boolean.TRUE);
 			uncheckAllItem.addActionListener(new ActionListener()
 			{
 				@Override
@@ -1454,6 +1456,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					{
 						item.setSelected(false);
 					}
+					uncheckAllItem.setSelected(false);
 					updateArtPackHighlights();
 				}
 			});
