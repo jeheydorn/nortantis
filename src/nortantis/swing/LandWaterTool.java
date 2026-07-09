@@ -456,6 +456,32 @@ public class LandWaterTool extends EditorTool
 
 		showOrHideBrushOptions();
 
+		// Refresh the edit-mode hover preview when Ctrl is pressed or released without moving the mouse, so the highlighted CPs match what
+		// a click would do at the moment the modifier changes (e.g. in Unselect mode, pressing Ctrl over a CP drops the add-highlight
+		// immediately instead of waiting for the next mouse move). A KeyEventDispatcher catches the modifier even when focus is elsewhere.
+		KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(new KeyEventDispatcher()
+		{
+			@Override
+			public boolean dispatchKeyEvent(KeyEvent e)
+			{
+				if (isSelected() && modeWidget.isEditMode() && (riversButton.isSelected() || roadsButton.isSelected()) && !dragInProgress
+						&& SwingHelper.isCommandModifierKeyCode(e.getKeyCode()) && (e.getID() == KeyEvent.KEY_PRESSED || e.getID() == KeyEvent.KEY_RELEASED))
+				{
+					updater.doIfMapIsReadyForInteractions(() ->
+					{
+						boolean ctrlDown = e.getID() == KeyEvent.KEY_PRESSED;
+						LineType activeType = riversButton.isSelected() ? LineType.RIVER : LineType.ROAD;
+						updateEditModeHoverDisplay(mapEditingPanel.getMousePosition(), activeType, ctrlDown);
+						applySelectedSegmentsHighlight();
+						mapEditingPanel.repaint();
+					});
+				}
+
+				// Return false to allow other KeyEventDispatchers to process the event.
+				return false;
+			}
+		});
+
 		organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.66);
 		organizer.addVerticalFillerRow();
 		return toolOptionsPanel;
@@ -1574,16 +1600,6 @@ public class LandWaterTool extends EditorTool
 		boolean showSliderInDraw = riversButton.isSelected() && modeWidget.isDrawMode();
 		boolean showSliderInEdit = riversButton.isSelected() && modeWidget.isEditMode() && isAnyRiverSegmentSelected();
 		riverOptionHider.setVisible(showSliderInDraw || showSliderInEdit);
-	}
-
-	/**
-	 * Refreshes the edit-mode hover visuals: outlined circles for control points on any line near the cursor, filled circles for
-	 * currently-selected control points (which are always drawn regardless of cursor distance), and a narrow hover ring on the single CP
-	 * directly under the cursor (if any).
-	 */
-	private void updateEditModeHoverDisplay(java.awt.Point mouseLocation, LineType type)
-	{
-		updateEditModeHoverDisplay(mouseLocation, type, false);
 	}
 
 	/**
@@ -2818,7 +2834,7 @@ public class LandWaterTool extends EditorTool
 
 		PressOutcome outcome = computePressOutcome(e.getPoint(), ctrlDown, deselectMode, brushDiameter, activeType);
 		applyPressOutcome(outcome);
-		refreshSelectionVisuals(e.getPoint(), activeType);
+		refreshSelectionVisuals(e.getPoint(), activeType, ctrlDown);
 	}
 
 	/** Applies a press outcome to the live state: swaps the selection maps and arms either move-drag or paint-drag. */
@@ -3351,9 +3367,19 @@ public class LandWaterTool extends EditorTool
 	/** Refreshes the selection-related visuals: highlighted segments, control-point circles, and the slider value+visibility. */
 	private void refreshSelectionVisuals(java.awt.Point mouseLocation, LineType activeType)
 	{
+		refreshSelectionVisuals(mouseLocation, activeType, false);
+	}
+
+	/**
+	 * Refreshes the selection-related visuals: highlighted segments, control-point circles, and the slider value+visibility.
+	 * {@code ctrlDown} is the live modifier state so the hover preview reflects what a press would actually do (e.g. in Unselect mode a
+	 * held Ctrl over a CP shows no add-highlight, since the click would remove rather than select).
+	 */
+	private void refreshSelectionVisuals(java.awt.Point mouseLocation, LineType activeType, boolean ctrlDown)
+	{
 		mapEditingPanel.clearHighlightedPolylines();
 		applySelectedSegmentsHighlight();
-		updateEditModeHoverDisplay(mouseLocation, activeType);
+		updateEditModeHoverDisplay(mouseLocation, activeType, ctrlDown);
 		refreshRiverWidthSliderVisibility();
 		syncSliderToSelectedSegment();
 		mapEditingPanel.repaint();
@@ -3499,7 +3525,7 @@ public class LandWaterTool extends EditorTool
 		// circle's position was updated via showBrush in the caller and needs a repaint to keep following the cursor. Erase mode gets
 		// this for free because its drag path always runs highlightHoverCentersOrEdgesAndBrush, which repaints unconditionally; bailing
 		// out here without repainting was what froze the brush the moment it left a river/road.
-		refreshSelectionVisuals(e.getPoint(), activeType);
+		refreshSelectionVisuals(e.getPoint(), activeType, ctrlDown);
 	}
 
 	/**
