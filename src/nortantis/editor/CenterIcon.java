@@ -46,6 +46,11 @@ public class CenterIcon
 		this.colors = colors;
 	}
 
+	public CenterIcon copyWithArtPack(String artPack)
+	{
+		return new CenterIcon(iconType, artPack, iconGroupId, iconIndex, iconName, colors);
+	}
+
 	public CenterIcon copyWithIconGroupId(String iconGroupId)
 	{
 		return new CenterIcon(iconType, artPack, iconGroupId, iconIndex, iconName, colors);

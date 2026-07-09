@@ -2440,6 +2440,159 @@ public class MapSettings implements Serializable
 		}
 	}
 
+	/**
+	 * Result of {@link #findMissingArtPacks()}: which art packs referenced by this map are not installed, and what kinds of assets depend on
+	 * them.
+	 */
+	public static class MissingArtPackInfo
+	{
+		/** The distinct, sorted names of referenced art packs that are not installed. */
+		public final List<String> missingArtPacks;
+		public final boolean affectsBorder;
+		public final boolean affectsBackgroundTexture;
+		/**
+		 * The number of icons (free icons plus any not-yet-converted center icons and trees) that reference a missing art pack. Informational
+		 * only, to convey scale; it is not an exact count of what will be drawn.
+		 */
+		public final int iconCount;
+
+		public MissingArtPackInfo(List<String> missingArtPacks, boolean affectsBorder, boolean affectsBackgroundTexture, int iconCount)
+		{
+			this.missingArtPacks = missingArtPacks;
+			this.affectsBorder = affectsBorder;
+			this.affectsBackgroundTexture = affectsBackgroundTexture;
+			this.iconCount = iconCount;
+		}
+
+		public boolean isEmpty()
+		{
+			return missingArtPacks.isEmpty();
+		}
+	}
+
+	/**
+	 * Scans every art pack referenced by this map's icons, border, and background texture and reports which of those art packs are not
+	 * installed, along with the kinds of assets that depend on them. {@link #artPack} is intentionally ignored, since it only seeds the icon
+	 * tool's art pack selection for placing new icons and does not affect what is drawn.
+	 */
+	public MissingArtPackInfo findMissingArtPacks()
+	{
+		Set<String> installedArtPacks = new HashSet<>(Assets.listArtPacks(!StringUtils.isEmpty(customImagesPath)));
+
+		Set<String> missing = new TreeSet<>();
+		boolean affectsBorder = false;
+		boolean affectsBackgroundTexture = false;
+		int iconCount = 0;
+
+		if (drawBorder && borderResource != null && !installedArtPacks.contains(borderResource.artPack))
+		{
+			missing.add(borderResource.artPack);
+			affectsBorder = true;
+		}
+
+		if (backgroundTextureSource == TextureSource.Assets && backgroundTextureResource != null && !installedArtPacks.contains(backgroundTextureResource.artPack))
+		{
+			missing.add(backgroundTextureResource.artPack);
+			affectsBackgroundTexture = true;
+		}
+
+		if (edits != null)
+		{
+			if (edits.freeIcons != null)
+			{
+				for (FreeIcon icon : edits.freeIcons)
+				{
+					if (icon != null && !installedArtPacks.contains(icon.artPack))
+					{
+						missing.add(icon.artPack);
+						iconCount++;
+					}
+				}
+			}
+
+			if (edits.centerEdits != null)
+			{
+				for (CenterEdit cEdit : edits.centerEdits.values())
+				{
+					if (cEdit.icon != null && !installedArtPacks.contains(cEdit.icon.artPack))
+					{
+						missing.add(cEdit.icon.artPack);
+						iconCount++;
+					}
+					if (cEdit.trees != null && !installedArtPacks.contains(cEdit.trees.artPack))
+					{
+						missing.add(cEdit.trees.artPack);
+						// Count the trees anchor only when its center has no visible tree free icons, since those were already counted above.
+						if (edits.freeIcons == null || !edits.freeIcons.hasTrees(cEdit.index))
+						{
+							iconCount++;
+						}
+					}
+				}
+			}
+		}
+
+		return new MissingArtPackInfo(new ArrayList<>(missing), affectsBorder, affectsBackgroundTexture, iconCount);
+	}
+
+	/**
+	 * Rewrites every reference to an art pack in {@code missingArtPacks} (on icons, the border, and the background texture) to instead use
+	 * {@code chosenArtPack}. Used when the user chooses to substitute an installed art pack for one that is not installed while opening a map.
+	 */
+	public void replaceMissingArtPacks(Collection<String> missingArtPacks, String chosenArtPack)
+	{
+		Set<String> missing = new HashSet<>(missingArtPacks);
+
+		if (borderResource != null && missing.contains(borderResource.artPack))
+		{
+			borderResource = new NamedResource(chosenArtPack, borderResource.name);
+		}
+
+		if (backgroundTextureResource != null && missing.contains(backgroundTextureResource.artPack))
+		{
+			backgroundTextureResource = new NamedResource(chosenArtPack, backgroundTextureResource.name);
+		}
+
+		if (edits != null)
+		{
+			if (edits.freeIcons != null)
+			{
+				List<FreeIcon> toReplace = new ArrayList<>();
+				for (FreeIcon icon : edits.freeIcons)
+				{
+					if (icon != null && missing.contains(icon.artPack))
+					{
+						toReplace.add(icon);
+					}
+				}
+				for (FreeIcon icon : toReplace)
+				{
+					edits.freeIcons.replace(icon, icon.copyWithArtPack(chosenArtPack));
+				}
+			}
+
+			if (edits.centerEdits != null)
+			{
+				for (CenterEdit cEdit : edits.centerEdits.values())
+				{
+					CenterEdit updated = cEdit;
+					if (updated.icon != null && missing.contains(updated.icon.artPack))
+					{
+						updated = updated.copyWithIcon(updated.icon.copyWithArtPack(chosenArtPack));
+					}
+					if (updated.trees != null && missing.contains(updated.trees.artPack))
+					{
+						updated = updated.copyWithTrees(updated.trees.copyWithArtPack(chosenArtPack));
+					}
+					if (updated != cEdit)
+					{
+						edits.centerEdits.put(updated.index, updated);
+					}
+				}
+			}
+		}
+	}
+
 	public Color getIconFillColorForType(IconType iconType)
 	{
 		if (iconFillColorsByType.containsKey(iconType))

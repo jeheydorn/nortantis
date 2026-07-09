@@ -997,9 +997,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				int status = fileChooser.showOpenDialog(MainWindow.this);
 				if (status == JFileChooser.APPROVE_OPTION)
 				{
-					openMap(fileChooser.getSelectedFile().getAbsolutePath());
+					boolean opened = openMap(fileChooser.getSelectedFile().getAbsolutePath());
 
-					if (openSettingsFilePath != null && MapSettings.isOldPropertiesFile(openSettingsFilePath.toString()))
+					if (opened && openSettingsFilePath != null && MapSettings.isOldPropertiesFile(openSettingsFilePath.toString()))
 					{
 						SwingHelper.showMessageDialog(MainWindow.this,
 								Translation.get("mainWindow.fileConvertedMessage", FilenameUtils.getName(openSettingsFilePath.toString()), MapSettings.fileExtensionWithDot),
@@ -1789,23 +1789,46 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		recentSettingsMenuItem.setEnabled(hasRecents);
 	}
 
-	private void openMap(String absolutePath)
+	/**
+	 * Opens the map at the given path.
+	 *
+	 * @return True if a map was actually opened; false if opening was aborted (file missing, user cancelled the missing-art-pack prompt, or
+	 *         an error occurred). Callers that do post-open work keyed off {@link #openSettingsFilePath} should only do it when this returns
+	 *         true, since a false return leaves that field (and the rest of the window state) untouched.
+	 */
+	private boolean openMap(String absolutePath)
 	{
 		if (!(new File(absolutePath).exists()))
 		{
 			SwingHelper.showMessageDialog(null, Translation.get("mainWindow.mapDoesNotExist", absolutePath), Translation.get("mainWindow.unableToOpenMap"), JOptionPane.ERROR_MESSAGE);
-			return;
+			return false;
 		}
 
 		try
 		{
+			MapSettings settings = new MapSettings(absolutePath);
+
+			// Before drawing anything, make sure every art pack the map's icons, border, and background texture depend on is installed. If
+			// some are missing, let the user substitute an installed art pack or cancel opening the map, so the map isn't drawn with a large
+			// number of silent substitutions.
+			MapSettings.MissingArtPackInfo missingArtPacks = settings.findMissingArtPacks();
+			if (!missingArtPacks.isEmpty())
+			{
+				String mapName = FilenameUtils.getBaseName(absolutePath);
+				MissingArtPackDialog.Result response = MissingArtPackDialog.show(this, mapName, missingArtPacks, settings.customImagesPath);
+				if (response.cancelled)
+				{
+					return false;
+				}
+				settings.replaceMissingArtPacks(missingArtPacks.missingArtPacks, response.chosenArtPack);
+			}
+
 			openSettingsFilePath = Paths.get(absolutePath);
 			if (!MapSettings.isOldPropertiesFile(absolutePath))
 			{
 				UserPreferences.getInstance().addRecentMapFilePath(absolutePath);
 				createOrUpdateRecentMapMenuButtons();
 			}
-			MapSettings settings = new MapSettings(openSettingsFilePath.toString());
 			convertCustomImagesFolderIfNeeded(settings);
 
 			updater.cancel();
@@ -1815,12 +1838,14 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			});
 
 			updateFrameTitle(false, true);
+			return true;
 		}
 		catch (Exception e)
 		{
 			e.printStackTrace();
 			SwingHelper.showMessageDialog(null, "Error while opening '" + absolutePath + "': " + e.getMessage(), Translation.get("mainWindow.errorWhileOpeningMap"), JOptionPane.ERROR_MESSAGE);
 			Logger.printError("Unable to open '" + absolutePath + "' due to an error:", e);
+			return false;
 		}
 	}
 
