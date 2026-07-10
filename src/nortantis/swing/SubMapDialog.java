@@ -601,6 +601,9 @@ public class SubMapDialog
 		// Restore the menu bar's locked snapshot first, then recompute field states, so the snapshot doesn't overwrite them.
 		mainWindow.setMenuBarEnabled(true);
 		mainWindow.enableOrDisableFieldsThatRequireMap(true, mainWindow.getSettingsFromGUI(false), true);
+		// Re-activate the current tool so its editing visuals (such as the overlay tool's edit highlights), which showStep1 cleared via
+		// onSwitchingAway(), are restored.
+		mainWindow.toolsPanel.currentTool.onSwitchingTo();
 	}
 
 	private void disposeStep1()
@@ -628,6 +631,9 @@ public class SubMapDialog
 		// Restore the menu bar's locked snapshot first, then recompute field states, so the snapshot doesn't overwrite them.
 		mainWindow.setMenuBarEnabled(true);
 		mainWindow.enableOrDisableFieldsThatRequireMap(true, mainWindow.getSettingsFromGUI(false), true);
+		// Re-activate the current tool so its editing visuals (such as the overlay tool's edit highlights), which showStep1 cleared via
+		// onSwitchingAway(), are restored.
+		mainWindow.toolsPanel.currentTool.onSwitchingTo();
 	}
 
 	// -------------------------------------------------------------------------
