@@ -990,10 +990,6 @@ public class IconDrawer
 		List<String> allArtPacks = Assets.listArtPacks(!StringUtils.isEmpty(customImagesPath));
 		if (!allArtPacks.contains(oldArtPack))
 		{
-			// Prefer the custom art pack first, then ones in the art packs folder, then the installed one last.
-			allArtPacks = new ArrayList<>(allArtPacks);
-			Collections.reverse(allArtPacks);
-
 			// Prefer an art pack that has an image with the same name and group name in hopes that it is the same art pack but renamed.
 			for (String artPack : allArtPacks)
 			{
@@ -1030,10 +1026,6 @@ public class IconDrawer
 		}
 		else if (ImageCache.getInstance(oldArtPack, customImagesPath).getIconGroupNames(type).isEmpty())
 		{
-			// Prefer the custom art pack first, then ones in the art packs folder, then the installed one last.
-			allArtPacks = new ArrayList<>(allArtPacks);
-			Collections.reverse(allArtPacks);
-
 			// Prefer an art pack that has an image with the same name and group name in hopes that it is the same art pack but renamed.
 			for (String artPack : allArtPacks)
 			{
@@ -1055,7 +1047,22 @@ public class IconDrawer
 				}
 			}
 
-			// Try again but take the first art pack that has images of that type.
+			// Prefer the installed art pack for this fallback when it has images of this type (it normally has every type). This keeps the
+			// result stable and predictable rather than depending on the iteration order over the other packs.
+			if (!ImageCache.getInstance(Assets.installedArtPack, customImagesPath).getIconGroupNames(type).isEmpty())
+			{
+				if (StringUtils.isEmpty(oldIconName))
+				{
+					warningLogger.addWarningMessage(Translation.get("warning.artPackNoImages.hasType.group", oldArtPack, type.getSingularName(), oldGroupId, Assets.installedArtPack, dormantTreesMessage));
+				}
+				else
+				{
+					warningLogger.addWarningMessage(Translation.get("warning.artPackNoImages.hasType.icon", oldArtPack, type.getSingularName(), oldIconName, oldGroupId, Assets.installedArtPack));
+				}
+				return Assets.installedArtPack;
+			}
+
+			// Otherwise take the first other art pack that has images of that type.
 			for (String artPack : allArtPacks)
 			{
 				if (!ImageCache.getInstance(artPack, customImagesPath).getIconGroupNames(type).isEmpty())
