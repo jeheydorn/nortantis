@@ -120,6 +120,18 @@ public class MapCanvasOverlay extends JPanel
 	private void relayoutAndRepaint()
 	{
 		doLayout();
+		// doLayout only sets the bounds of our direct children; validate their subtrees so their descendants (the support panel's links and
+		// card, the message text) are laid out within those bounds too. Without this, when this runs while the window is already showing (for
+		// example returning to the startup screen after cancelling a command-line open), those descendants stay at zero size until the next
+		// full validation pass, such as a window resize.
+		if (messagePanel != null)
+		{
+			messagePanel.validate();
+		}
+		if (supportPanel != null)
+		{
+			supportPanel.validate();
+		}
 		repaint();
 	}
 

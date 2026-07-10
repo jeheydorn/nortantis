@@ -69,6 +69,20 @@ public class MapCreatorTest
 	}
 
 	/**
+	 * Dormant trees are not drawn when a map is opened (they only reappear if the user changes the tree height or the map is used as a
+	 * sub-map), so a missing art pack referenced only by dormant trees must not be reported by {@link MapSettings#findMissingArtPacks()},
+	 * which would otherwise pop up a missing-art-pack warning on open. This map's only references to the uninstalled "temp art pack" are its
+	 * (intentionally ignored) default art pack and 33 dormant trees, so nothing should be reported as missing.
+	 */
+	@Test
+	public void dormantTreesFromMissingArtPackAreNotReportedMissing()
+	{
+		MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", "dormant trees from non-existant art pack.nort").toString());
+		MapSettings.MissingArtPackInfo info = settings.findMissingArtPacks();
+		assertTrue(info.isEmpty(), "Expected no missing art packs (dormant trees should be ignored), but got: " + info.missingArtPacks);
+	}
+
+	/**
 	 * An incremental redraw of an icon recomputes the land under the icon's bounds using the set of centers found by
 	 * {@link WorldGraph#breadthFirstSearch} with {@link Center#isInBoundsIncludingNoisyEdges}. If a center whose polygon overlaps those
 	 * bounds is not in that set, its land is not redrawn, leaving a hole (visible, for example, when erasing a tree that overlaps a

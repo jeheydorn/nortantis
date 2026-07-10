@@ -402,7 +402,7 @@ public class IconsTool extends EditorTool
 					Arrays.asList(fillColorDisplay, chooseColorButton));
 		}
 
-		CollapsiblePanel colorPanel = new CollapsiblePanel("color_options", Translation.get("iconsTool.colorOptions"), colorOrganizer.panel);
+		CollapsiblePanel colorPanel = new CollapsiblePanel("color_options", Translation.get("iconsTool.colorOptions"), colorOrganizer.panel, true);
 		colorPickerHider = organizer.addLeftAlignedComponent(colorPanel);
 
 		brushAndEditOptionsSeparatorHider = organizer.addSeparator();

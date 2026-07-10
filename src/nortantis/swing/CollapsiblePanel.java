@@ -30,6 +30,16 @@ public class CollapsiblePanel extends JPanel
 	 */
 	public CollapsiblePanel(String namespace, String name, JPanel contentPanel)
 	{
+		this(namespace, name, contentPanel, false);
+	}
+
+	/**
+	 * @param defaultCollapsed
+	 *            Whether the panel starts collapsed for a new install. Only applies when there is no stored collapsed/expanded state for this
+	 *            panel and this is a first run (see {@link UserPreferences#isFirstRun}); existing users keep whatever state they have.
+	 */
+	public CollapsiblePanel(String namespace, String name, JPanel contentPanel, boolean defaultCollapsed)
+	{
 		this.namespace = namespace;
 		this.name = name;
 		this.contentPanel = contentPanel;
@@ -39,6 +49,12 @@ public class CollapsiblePanel extends JPanel
 		// Create the button with an arrow icon (you can customize this)
 		toggleButton = new JButton(); // Downward arrow initially
 		isCollapsed = UserPreferences.getInstance().collapsedPanels.contains(getNameKey());
+		if (!isCollapsed && defaultCollapsed && UserPreferences.getInstance().isFirstRun)
+		{
+			// New install: start collapsed and record it as the stored state so it persists and any later toggle by the user is remembered.
+			isCollapsed = true;
+			UserPreferences.getInstance().collapsedPanels.add(getNameKey());
+		}
 		toggleButton.addActionListener(new ActionListener()
 		{
 			@Override

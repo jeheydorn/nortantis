@@ -2519,7 +2519,9 @@ public class MapSettings implements Serializable
 						missing.add(cEdit.icon.artPack);
 						iconCount++;
 					}
-					if (cEdit.trees != null && !installedArtPacks.contains(cEdit.trees.artPack))
+					// Dormant trees are not drawn when the map is opened (they only reappear if the user changes the tree height or the map is
+					// used as a sub-map), so a missing art pack that only dormant trees reference should not warn the user on open.
+					if (cEdit.trees != null && !cEdit.trees.isDormant && !installedArtPacks.contains(cEdit.trees.artPack))
 					{
 						missing.add(cEdit.trees.artPack);
 						// Count the trees anchor only when its center has no visible tree free icons, since those were already counted above.

@@ -31,6 +31,11 @@ public class UserPreferences
 	public boolean hideThemeChangedMessage;
 	public boolean hideStartupSupportPanel;
 	public Set<String> collapsedPanels = new TreeSet<>();
+	/**
+	 * True when no preferences file existed at launch (a new install, or the user deleted the file to reset preferences). Used to apply
+	 * new-install-only defaults without changing existing users' choices.
+	 */
+	public final boolean isFirstRun;
 	public String lastVersionFromCheck;
 	public LocalDateTime lastVersionCheckTime;
 	public LookAndFeel lookAndFeel = LookAndFeel.Dark;
@@ -64,8 +69,10 @@ public class UserPreferences
 		final Properties props = new Properties();
 		Path filePath = Paths.get(getSavePath().toString(), userPrefsFileName);
 
+		isFirstRun = !Files.exists(filePath);
+
 		// A missing file is expected (first launch, or the user deliberately deleted it to reset their preferences), so it is not an error.
-		if (!Files.exists(filePath))
+		if (isFirstRun)
 		{
 			return;
 		}

@@ -181,25 +181,25 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			throw ex;
 		}
 
-		boolean isMapOpen = false;
-		try
-		{
-			if (fileToOpen != null && !fileToOpen.isEmpty() && fileToOpen.endsWith(MapSettings.fileExtensionWithDot) && new File(fileToOpen).exists())
-			{
-				openMap(new File(fileToOpen).getAbsolutePath());
-				isMapOpen = true;
-			}
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
-			Logger.printError("Error while opening map passed in on the command line:", e);
-		}
+		// Start in the no-map state (fields locked). If a map was passed on the command line, open it after the window is shown, via
+		// invokeLater, so a missing-art-pack prompt appears over the window instead of before it. The startup screen is shown while there is
+		// no map, and is restored if opening the command-line map is cancelled or fails.
+		enableOrDisableFieldsThatRequireMap(false, null, false);
 
-		if (!isMapOpen)
+		boolean hasCommandLineMap = fileToOpen != null && !fileToOpen.isEmpty() && fileToOpen.endsWith(MapSettings.fileExtensionWithDot) && new File(fileToOpen).exists();
+		if (hasCommandLineMap)
+		{
+			SwingUtilities.invokeLater(() ->
+			{
+				if (!openMap(new File(fileToOpen).getAbsolutePath()))
+				{
+					showStartupScreen();
+				}
+			});
+		}
+		else
 		{
 			showStartupScreen();
-			enableOrDisableFieldsThatRequireMap(false, null, false);
 		}
 
 		String preferencesLoadError = UserPreferences.getInstance().getLoadErrorMessage();
@@ -395,6 +395,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		highlightRiversButton.setEnabled(enable);
 
 		refreshMenuItem.setEnabled(enable);
+
+		// Highlighting icons by art pack only makes sense once a map is loaded, and behaves strangely otherwise.
+		highlightIconsInArtPackMenu.setEnabled(enable);
 
 		themePanel.enableOrDisableEverything(enable);
 		toolsPanel.enableOrDisableEverything(enable, settings, forceEnableZoom);
