@@ -1808,6 +1808,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		{
 			MapSettings settings = new MapSettings(absolutePath);
 
+			// Refresh the art pack list from disk so a pack the user just added (e.g. the one this map needs) is seen and not reported as
+			// missing.
+			Assets.clearArtPackCache();
+
 			// Before drawing anything, make sure every art pack the map's icons, border, and background texture depend on is installed. If
 			// some are missing, let the user substitute an installed art pack or cancel opening the map, so the map isn't drawn with a large
 			// number of silent substitutions.
@@ -1820,7 +1824,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				{
 					return false;
 				}
-				settings.replaceMissingArtPacks(missingArtPacks.missingArtPacks, response.chosenArtPack);
+				settings.applyMissingArtPackSubstitution(missingArtPacks.missingArtPacks, response.chosenArtPack);
 			}
 
 			openSettingsFilePath = Paths.get(absolutePath);

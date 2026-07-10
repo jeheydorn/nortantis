@@ -2490,7 +2490,7 @@ public class MapSettings implements Serializable
 			affectsBorder = true;
 		}
 
-		if (backgroundTextureSource == TextureSource.Assets && backgroundTextureResource != null && !installedArtPacks.contains(backgroundTextureResource.artPack))
+		if (isBackgroundTextureFromArtPack() && !installedArtPacks.contains(backgroundTextureResource.artPack))
 		{
 			missing.add(backgroundTextureResource.artPack);
 			affectsBackgroundTexture = true;
@@ -2536,61 +2536,129 @@ public class MapSettings implements Serializable
 	}
 
 	/**
-	 * Rewrites every reference to an art pack in {@code missingArtPacks} (on icons, the border, and the background texture) to instead use
-	 * {@code chosenArtPack}. Used when the user chooses to substitute an installed art pack for one that is not installed while opening a map.
+	 * True when this map draws its background from an art pack's texture (as opposed to a fractal or solid-color background, or a texture
+	 * loaded from a specific file), so that {@link #backgroundTextureResource}'s art pack actually affects what is drawn.
 	 */
-	public void replaceMissingArtPacks(Collection<String> missingArtPacks, String chosenArtPack)
+	private boolean isBackgroundTextureFromArtPack()
+	{
+		return generateBackgroundFromTexture && backgroundTextureSource == TextureSource.Assets && backgroundTextureResource != null;
+	}
+
+	/**
+	 * Applies the user's choice to substitute {@code chosenArtPack} for art packs in {@code missingArtPacks} that are not installed, when
+	 * opening a map. Icons that reference a missing pack are pointed at {@code chosenArtPack}; the draw then substitutes each icon's specific
+	 * group/image within that pack (warning about any that have no match) and commits the result. The border and background texture are
+	 * redirected only when they are actually in use (the border only when {@link #drawBorder}, the background texture only when it comes from
+	 * an art pack) and currently point at a missing pack; a field pointing at an installed pack is left alone. For the border and background,
+	 * the replacement resource is taken from {@code chosenArtPack} when that pack has one, otherwise from the built-in
+	 * {@link Assets#installedArtPack} pack, which always has borders and background textures, so the map can never fail to draw because the
+	 * border or background image is missing.
+	 */
+	public void applyMissingArtPackSubstitution(Collection<String> missingArtPacks, String chosenArtPack)
 	{
 		Set<String> missing = new HashSet<>(missingArtPacks);
 
-		if (borderResource != null && missing.contains(borderResource.artPack))
-		{
-			borderResource = new NamedResource(chosenArtPack, borderResource.name);
-		}
+		remapIconArtPacks(missing, chosenArtPack);
 
-		if (backgroundTextureResource != null && missing.contains(backgroundTextureResource.artPack))
+		if (drawBorder && borderResource != null && missing.contains(borderResource.artPack))
 		{
-			backgroundTextureResource = new NamedResource(chosenArtPack, backgroundTextureResource.name);
-		}
-
-		if (edits != null)
-		{
-			if (edits.freeIcons != null)
+			NamedResource replacement = chooseSubstituteResource(Assets.listBorderTypesForArtPack(chosenArtPack, customImagesPath),
+					Assets.listBorderTypesForArtPack(Assets.installedArtPack, customImagesPath), borderResource.name);
+			if (replacement != null)
 			{
-				List<FreeIcon> toReplace = new ArrayList<>();
-				for (FreeIcon icon : edits.freeIcons)
-				{
-					if (icon != null && missing.contains(icon.artPack))
-					{
-						toReplace.add(icon);
-					}
-				}
-				for (FreeIcon icon : toReplace)
-				{
-					edits.freeIcons.replace(icon, icon.copyWithArtPack(chosenArtPack));
-				}
-			}
-
-			if (edits.centerEdits != null)
-			{
-				for (CenterEdit cEdit : edits.centerEdits.values())
-				{
-					CenterEdit updated = cEdit;
-					if (updated.icon != null && missing.contains(updated.icon.artPack))
-					{
-						updated = updated.copyWithIcon(updated.icon.copyWithArtPack(chosenArtPack));
-					}
-					if (updated.trees != null && missing.contains(updated.trees.artPack))
-					{
-						updated = updated.copyWithTrees(updated.trees.copyWithArtPack(chosenArtPack));
-					}
-					if (updated != cEdit)
-					{
-						edits.centerEdits.put(updated.index, updated);
-					}
-				}
+				borderResource = replacement;
 			}
 		}
+
+		if (isBackgroundTextureFromArtPack() && missing.contains(backgroundTextureResource.artPack))
+		{
+			NamedResource replacement = chooseSubstituteResource(Assets.listBackgroundTexturesForArtPack(chosenArtPack, customImagesPath),
+					Assets.listBackgroundTexturesForArtPack(Assets.installedArtPack, customImagesPath), backgroundTextureResource.name);
+			if (replacement != null)
+			{
+				backgroundTextureResource = replacement;
+			}
+		}
+	}
+
+	/**
+	 * Points every icon that references a pack in {@code missing} at {@code chosenArtPack}. The draw then substitutes each icon's specific
+	 * group/image within the chosen pack (warning about any without a match), so the chosen pack is used for the whole map rather than the
+	 * icons falling back to the built-in pack. Icons referencing an installed pack are left alone.
+	 */
+	private void remapIconArtPacks(Set<String> missing, String chosenArtPack)
+	{
+		if (edits == null)
+		{
+			return;
+		}
+
+		if (edits.freeIcons != null)
+		{
+			List<FreeIcon> toRemap = new ArrayList<>();
+			for (FreeIcon icon : edits.freeIcons)
+			{
+				if (icon != null && missing.contains(icon.artPack))
+				{
+					toRemap.add(icon);
+				}
+			}
+			for (FreeIcon icon : toRemap)
+			{
+				edits.freeIcons.replace(icon, icon.copyWithArtPack(chosenArtPack));
+			}
+		}
+
+		if (edits.centerEdits != null)
+		{
+			for (CenterEdit cEdit : edits.centerEdits.values())
+			{
+				CenterEdit updated = cEdit;
+				if (updated.icon != null && missing.contains(updated.icon.artPack))
+				{
+					updated = updated.copyWithIcon(updated.icon.copyWithArtPack(chosenArtPack));
+				}
+				if (updated.trees != null && missing.contains(updated.trees.artPack))
+				{
+					updated = updated.copyWithTrees(updated.trees.copyWithArtPack(chosenArtPack));
+				}
+				if (updated != cEdit)
+				{
+					edits.centerEdits.put(updated.index, updated);
+				}
+			}
+		}
+	}
+
+	/**
+	 * Chooses a replacement resource, preferring the chosen art pack and falling back to the installed pack. Within a pack, the resource with
+	 * the same {@code desiredName} is preferred (so the same-named border/texture is kept when the chosen pack happens to have it), otherwise
+	 * the first available resource in the pack is used.
+	 */
+	private static NamedResource chooseSubstituteResource(List<NamedResource> chosenPackResources, List<NamedResource> installedPackResources, String desiredName)
+	{
+		NamedResource fromChosenPack = pickResource(chosenPackResources, desiredName);
+		if (fromChosenPack != null)
+		{
+			return fromChosenPack;
+		}
+		return pickResource(installedPackResources, desiredName);
+	}
+
+	private static NamedResource pickResource(List<NamedResource> resources, String desiredName)
+	{
+		if (resources == null || resources.isEmpty())
+		{
+			return null;
+		}
+		for (NamedResource resource : resources)
+		{
+			if (resource.name.equals(desiredName))
+			{
+				return resource;
+			}
+		}
+		return resources.get(0);
 	}
 
 	public Color getIconFillColorForType(IconType iconType)
