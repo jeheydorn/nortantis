@@ -480,11 +480,6 @@ public class TextTool extends EditorTool
 		fontHider.setVisible(false);
 		clearRotationButtonHider.setVisible(false);
 		copyPasteDeleteButtonsHider.setVisible(modeWidget.isEditMode());
-		if (modeWidget.isEditMode() && lastSelected != null)
-		{
-			editTextField.setText(lastSelected.value);
-			editTextField.requestFocus();
-		}
 		actionsSeparatorHider.setVisible((modeWidget.isEditMode() && lastSelected != null) || modeWidget.isDrawMode() || modeWidget.isEraseMode());
 		copyPasteDeleteButtonsSeparatorHider.setVisible((modeWidget.isEditMode()));
 
@@ -631,7 +626,7 @@ public class TextTool extends EditorTool
 
 					undoer.setUndoPoint(UpdateType.Incremental, this);
 
-					changeToEditModeAndSelectText(addedText, true);
+					changeToEditModeAndSelectText(addedText, SelectionFocus.EditField);
 
 					updater.createAndShowMapIncrementalUsingText(Arrays.asList(addedText));
 				}
@@ -956,10 +951,11 @@ public class TextTool extends EditorTool
 		}
 	}
 
-	public void changeToEditModeAndSelectText(MapText selectedText, boolean grabFocus)
+	public void changeToEditModeAndSelectText(MapText selectedText, SelectionFocus focusBehavior)
 	{
-		modeWidget.selectEditMode();
-		handleSelectingTextToEdit(selectedText, grabFocus ? SelectionFocus.EditField : SelectionFocus.ModeWidget);
+		// Only ModeWidget wants focus on the mode button; EditField overrides it below, and Leave keeps focus untouched.
+		modeWidget.selectEditMode(focusBehavior == SelectionFocus.ModeWidget);
+		handleSelectingTextToEdit(selectedText, focusBehavior);
 	}
 
 	private void handleSelectingTextToEdit(MapText selectedText, SelectionFocus focusBehavior)
@@ -1253,7 +1249,7 @@ public class TextTool extends EditorTool
 	/**
 	 * Where keyboard focus should go after a text is selected for editing.
 	 */
-	private enum SelectionFocus
+	enum SelectionFocus
 	{
 		/** Move focus into the text-edit field so the user can start typing immediately. */
 		EditField,

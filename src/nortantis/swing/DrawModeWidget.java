@@ -15,10 +15,13 @@ public class DrawModeWidget
 	private JToggleButton replaceModeButton;
 	private JToggleButton editModeButton;
 	private SegmentedButtonWidget segmentedWidget;
+	private final Runnable changeListener;
 
 	public DrawModeWidget(String drawTooltipWithoutKeyboardShortcut, String eraseTooltipWithoutKeyboardShortcut, boolean includeReplaceButton, String replaceTooltipWithoutKeyboardShortcut,
 			boolean includeEditModeButton, String editTooltipWithoutKeyboardShortcut, Runnable changeListener)
 	{
+		this.changeListener = changeListener;
+
 		ActionListener modeListener = e ->
 		{
 			JToggleButton source = (JToggleButton) e.getSource();
@@ -101,7 +104,24 @@ public class DrawModeWidget
 
 	public void selectEditMode()
 	{
-		editModeButton.doClick();
+		selectEditMode(true);
+	}
+
+	public void selectEditMode(boolean grabFocus)
+	{
+		if (grabFocus)
+		{
+			editModeButton.doClick();
+		}
+		else
+		{
+			// Select edit mode and refresh the tool's edit UI (as a click would), but without moving keyboard focus onto the mode button.
+			if (!editModeButton.isSelected())
+			{
+				editModeButton.setSelected(true);
+			}
+			changeListener.run();
+		}
 	}
 
 	/**

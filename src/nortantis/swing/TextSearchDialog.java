@@ -174,7 +174,7 @@ public class TextSearchDialog extends JDialog
 			{
 				mainWindow.toolsPanel.handleToolSelected(textTool);
 			}
-			textTool.changeToEditModeAndSelectText(searchResult, false);
+			textTool.changeToEditModeAndSelectText(searchResult, TextTool.SelectionFocus.Leave);
 
 			if (searchResult.line1Bounds != null)
 			{
