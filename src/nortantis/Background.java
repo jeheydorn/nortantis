@@ -60,6 +60,13 @@ public class Background
 
 		isBorderOutsideMap = settings.borderPosition == BorderPosition.Outside_map;
 
+		if (!isBorderOutsideMap)
+		{
+			// When the border is drawn over the map it insets from all four sides, so the border can be no wider than half the map's smaller
+			// dimension. Clamp here so a wide border over an extreme aspect ratio can't overlap itself in the middle of the map.
+			borderWidthScaled = Math.min(borderWidthScaled, maxOverMapBorderElementWidth());
+		}
+
 		if (settings.generateBackground)
 		{
 			// Fractal generated background images
@@ -332,6 +339,16 @@ public class Background
 		return mapBounds;
 	}
 
+	/**
+	 * When the border is drawn over the map, no border element (edge or corner) may be wider than this many scaled pixels, which is half the
+	 * map's smaller dimension. A wider element would make opposite sides of the border overlap in the middle of the map and can index outside
+	 * the map raster while drawing.
+	 */
+	private int maxOverMapBorderElementWidth()
+	{
+		return (int) (Math.min(mapBounds.width, mapBounds.height) / 2);
+	}
+
 	public Image removeBorderPadding(Image image)
 	{
 		if (!isBorderOutsideMap)
@@ -591,6 +608,13 @@ public class Background
 		{
 			hasInsetCorners = true;
 			cornerWidth = (int) (borderWidthScaled * (((double) cornerOriginalWidth) / ((double) edgeOriginalWidth)));
+		}
+
+		if (!isBorderOutsideMap)
+		{
+			// Inset corners are wider than the border width, so clamp them to the same over-the-map limit as borderWidthScaled to keep
+			// opposite corners from overlapping in the middle of the map.
+			cornerWidth = Math.min(cornerWidth, maxOverMapBorderElementWidth());
 		}
 
 		if (upperLeftCorner != null)

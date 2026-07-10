@@ -83,8 +83,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	JScrollPane mapEditingScrollPane;
 	private MapCanvasOverlay mapCanvasOverlay;
-	// Controls how large 100% zoom is, in pixels.
-	final double oneHundredPercentMapWidth = 4096;
+	// Controls how large 100% zoom is, in pixels: the map's longer side is displayed at this many pixels at 100%. Using the longer side
+	// (rather than always the width) keeps zoom well-behaved for extreme aspect ratios; otherwise a very tall, narrow map would render
+	// enormously oversized at 100% because its height is many times its width.
+	final double oneHundredPercentMapLongestSide = 4096;
 	public MapEditingPanel mapEditingPanel;
 	JMenuItem undoButton;
 	JMenuItem redoButton;
@@ -2181,10 +2183,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			double percentage = parsePercentage(zoomLevel);
 			if (mapEditingPanel.mapFromMapCreator != null)
 			{
-				// Divide by the size of the generated map because the map's
-				// displayed size should be the same
-				// no matter the resolution it generated at.
-				return (oneHundredPercentMapWidth * percentage) / mapEditingPanel.mapFromMapCreator.getWidth();
+				// Divide by the longer side of the generated map so the map's displayed size is the same no matter the resolution it
+				// generated at, and so extreme aspect ratios stay bounded (100% always makes the longer side
+				// oneHundredPercentMapLongestSide pixels, regardless of orientation).
+				double longestSide = Math.max(mapEditingPanel.mapFromMapCreator.getWidth(), mapEditingPanel.mapFromMapCreator.getHeight());
+				return (oneHundredPercentMapLongestSide * percentage) / longestSide;
 			}
 			else
 			{
