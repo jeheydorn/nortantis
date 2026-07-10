@@ -2553,10 +2553,19 @@ public class MapSettings implements Serializable
 	 * the replacement resource is taken from {@code chosenArtPack} when that pack has one, otherwise from the built-in
 	 * {@link Assets#installedArtPack} pack, which always has borders and background textures, so the map can never fail to draw because the
 	 * border or background image is missing.
+	 * <p>
+	 * Also, if the map's default art pack {@link #artPack} (which only seeds the icon tool's art pack selection for non-new maps) is itself not
+	 * installed, it is switched to {@code chosenArtPack} for convenience, so the icon tool does not default to an uninstalled pack. This is never
+	 * a reason to prompt the user on its own (see {@link #findMissingArtPacks()}), but it is fixed up here while we are already substituting.
 	 */
 	public void applyMissingArtPackSubstitution(Collection<String> missingArtPacks, String chosenArtPack)
 	{
 		Set<String> missing = new HashSet<>(missingArtPacks);
+
+		if (!StringUtils.isEmpty(artPack) && !Assets.artPackExists(artPack, customImagesPath))
+		{
+			artPack = chosenArtPack;
+		}
 
 		remapIconArtPacks(missing, chosenArtPack);
 
