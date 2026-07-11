@@ -2190,6 +2190,10 @@ public class ThemePanel extends JTabbedPane
 	void handleImagesRefresh(MapSettings settings)
 	{
 		initializeComboBoxItems(settings);
+		// Regenerate the land/ocean background previews. This is the theme-panel counterpart to the Icons tool refreshing its icon previews:
+		// the callers of this method (opening a map, "Refresh Images and Redraw", changing the custom images folder, adding an art pack) can
+		// change the background image or its coloring without firing any of the listeners that would otherwise refresh the previews.
+		updateBackgroundImageDisplays();
 	}
 
 	private static final Object bgCacheLock = new Object();
