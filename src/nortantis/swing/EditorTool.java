@@ -276,6 +276,8 @@ public abstract class EditorTool
 
 	protected boolean isSelected()
 	{
-		return toggleButton.isSelected();
+		// toggleButton is assigned after construction (via setToggleButton), so it can be null if this is called while a subclass's
+		// tool options panel is still being built. In that case the tool is not yet selected.
+		return toggleButton != null && toggleButton.isSelected();
 	}
 }

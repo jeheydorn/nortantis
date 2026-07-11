@@ -261,6 +261,14 @@ public class LandWaterTool extends EditorTool
 				}
 
 				showOrHideRoadAndRiverOptions();
+
+				// Refresh the hover highlight for the newly selected brush/mode at the current cursor position, matching what a mouse
+				// move would show, so switching modes (including via keyboard shortcut) updates the highlight immediately instead of
+				// waiting for the next mouse move.
+				if (isSelected() && updater.isMapReadyForInteractions())
+				{
+					highlightHoverCentersOrEdgesAndBrush(mapEditingPanel.getMousePosition());
+				}
 			}
 		};
 		oceanButton.addActionListener(brushActionListener);
