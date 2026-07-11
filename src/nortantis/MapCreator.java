@@ -1108,6 +1108,12 @@ public class MapCreator implements WarningLogger
 				frayedBorderMask = Image.create(frayGraph.getWidth(), frayGraph.getHeight(), ImageType.Grayscale8Bit);
 				try (Painter p = frayedBorderMask.createPainter())
 				{
+					// Default every pixel to the border color (white, which becomes transparent after the mask is inverted) before drawing
+					// the polygons. Otherwise any pixel along the outer edge that the border polygons don't quite cover - which happens when
+					// the mask dimensions land on exact integers - would keep the image's default black and show as an opaque line of the map
+					// beneath the frayed edge.
+					p.setColor(Color.white);
+					p.fillRect(0, 0, frayedBorderMask.getWidth(), frayedBorderMask.getHeight());
 					frayGraph.drawBorderWhite(p);
 				}
 				if (blurLevel > 0)

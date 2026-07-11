@@ -69,6 +69,7 @@ public class LandWaterTool extends EditorTool
 	private RowHider newRegionButtonHider;
 	private JToggleButton roadsButton;
 	private SegmentedButtonWidget brushTypeWidget;
+	// Placement style (polygon vs. free-hand) is shared by rivers and roads: whichever line type is active uses the same selection.
 	private JToggleButton polygonDrawStyleButton;
 	private JToggleButton freeHandDrawStyleButton;
 	private RowHider drawStyleHider;
@@ -82,9 +83,6 @@ public class LandWaterTool extends EditorTool
 	private List<Point> freeHandRiverPathRI = null;
 	private Point freeHandRiverSnapPoint = null;
 	private Point polygonRiverSnapStart = null;
-	private JToggleButton riverPolygonDrawStyleButton;
-	private JToggleButton riverFreeHandDrawStyleButton;
-	private RowHider riverDrawStyleHider;
 
 	// Multi-select edit state. The set of currently-selected control points, keyed by line. At most one of these maps is non-empty at a
 	// time — selection is per-active-type, and switching between Rivers and Roads clears it. A segment is implicitly "selected" iff
@@ -323,46 +321,27 @@ public class LandWaterTool extends EditorTool
 			riverWidthSliderWithSpinner.setSpinnerEditHooks(() -> sliderEditWidthsBeforeDrag = captureSelectedRiverSegmentWidths(), () -> commitSliderEditIfChanged());
 		}
 
-		// River draw style (graph vs. free-hand)
+		// Placement style (polygon vs. free-hand), shared by rivers and roads.
 		{
-			riverPolygonDrawStyleButton = new JToggleButton(Translation.get("landWaterTool.riverStyle.graph"));
-			riverPolygonDrawStyleButton.setSelected(true);
-			riverPolygonDrawStyleButton.setToolTipText(Translation.get("landWaterTool.riverStyle.graph.tooltip"));
-			riverPolygonDrawStyleButton.addActionListener(e ->
-			{
-				cancelFreeHandDrawing(LineType.RIVER);
-				brushActionListener.actionPerformed(null);
-			});
-			riverFreeHandDrawStyleButton = new JToggleButton(Translation.get("landWaterTool.riverStyle.freeHand"));
-			riverFreeHandDrawStyleButton.setToolTipText(Translation.get("landWaterTool.riverStyle.freeHand.tooltip"));
-			riverFreeHandDrawStyleButton.addActionListener(e ->
-			{
-				cancelFreeHandDrawing(LineType.RIVER);
-				brushActionListener.actionPerformed(null);
-			});
-			SegmentedButtonWidget riverDrawStyleWidget = new SegmentedButtonWidget(List.of(riverPolygonDrawStyleButton, riverFreeHandDrawStyleButton));
-			riverDrawStyleHider = riverDrawStyleWidget.addToOrganizer(organizer, Translation.get("landWaterTool.riverStyle.label"), Translation.get("landWaterTool.riverStyle.help"));
-		}
-
-		// Road draw style (polygon vs. free-hand)
-		{
-			polygonDrawStyleButton = new JToggleButton(Translation.get("landWaterTool.roadStyle.polygon"));
+			polygonDrawStyleButton = new JToggleButton(Translation.get("landWaterTool.lineStyle.polygon"));
 			polygonDrawStyleButton.setSelected(true);
-			polygonDrawStyleButton.setToolTipText(Translation.get("landWaterTool.roadStyle.polygon.tooltip"));
+			polygonDrawStyleButton.setToolTipText(Translation.get("landWaterTool.lineStyle.polygon.tooltip"));
 			polygonDrawStyleButton.addActionListener(e ->
 			{
+				cancelFreeHandDrawing(LineType.RIVER);
 				cancelFreeHandDrawing(LineType.ROAD);
 				brushActionListener.actionPerformed(null);
 			});
-			freeHandDrawStyleButton = new JToggleButton(Translation.get("landWaterTool.roadStyle.freeHand"));
-			freeHandDrawStyleButton.setToolTipText(Translation.get("landWaterTool.roadStyle.freeHand.tooltip"));
+			freeHandDrawStyleButton = new JToggleButton(Translation.get("landWaterTool.lineStyle.freeHand"));
+			freeHandDrawStyleButton.setToolTipText(Translation.get("landWaterTool.lineStyle.freeHand.tooltip"));
 			freeHandDrawStyleButton.addActionListener(e ->
 			{
+				cancelFreeHandDrawing(LineType.RIVER);
 				cancelFreeHandDrawing(LineType.ROAD);
 				brushActionListener.actionPerformed(null);
 			});
 			SegmentedButtonWidget drawStyleWidget = new SegmentedButtonWidget(List.of(polygonDrawStyleButton, freeHandDrawStyleButton));
-			drawStyleHider = drawStyleWidget.addToOrganizer(organizer, Translation.get("landWaterTool.roadStyle.label"), Translation.get("landWaterTool.roadStyle.help"));
+			drawStyleHider = drawStyleWidget.addToOrganizer(organizer, Translation.get("landWaterTool.lineStyle.label"), Translation.get("landWaterTool.lineStyle.help"));
 
 			// Register Escape (cancel) and Enter (commit) key bindings for free-hand drawing
 			mapEditingPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "cancelFreeHandRoad");
@@ -381,7 +360,7 @@ public class LandWaterTool extends EditorTool
 				@Override
 				public void actionPerformed(ActionEvent e)
 				{
-					if (riversButton.isSelected() && isFreeHandRiverDrawMode())
+					if (riversButton.isSelected() && isFreeHandDrawMode())
 					{
 						finalizeFreeHandLine(LineType.RIVER);
 					}
@@ -517,8 +496,7 @@ public class LandWaterTool extends EditorTool
 		boolean showSliderInDraw = riversButton.isSelected() && modeWidget.isDrawMode();
 		boolean showSliderInEdit = riversButton.isSelected() && modeWidget.isEditMode() && isAnyRiverSegmentSelected();
 		riverOptionHider.setVisible(showSliderInDraw || showSliderInEdit);
-		riverDrawStyleHider.setVisible(riversButton.isSelected() && modeWidget.isDrawMode());
-		drawStyleHider.setVisible(roadsButton.isSelected() && modeWidget.isDrawMode());
+		drawStyleHider.setVisible((riversButton.isSelected() || roadsButton.isSelected()) && modeWidget.isDrawMode());
 		boolean inLineEditMode = modeWidget.isEditMode() && (riversButton.isSelected() || roadsButton.isSelected());
 		if (controlClickBehaviorHider != null)
 		{
@@ -554,7 +532,7 @@ public class LandWaterTool extends EditorTool
 					}
 					else
 					{
-						if (!isFreeHandRiverDrawMode())
+						if (!isFreeHandDrawMode())
 						{
 							freeHandRiverPathRI = null;
 							freeHandRiverSnapPoint = null;
@@ -570,11 +548,6 @@ public class LandWaterTool extends EditorTool
 	private boolean isFreeHandDrawMode()
 	{
 		return freeHandDrawStyleButton != null && freeHandDrawStyleButton.isSelected();
-	}
-
-	private boolean isFreeHandRiverDrawMode()
-	{
-		return riverFreeHandDrawStyleButton != null && riverFreeHandDrawStyleButton.isSelected();
 	}
 
 	private double getSnapRadiusRI()
@@ -1300,7 +1273,7 @@ public class LandWaterTool extends EditorTool
 			mapEditingPanel.clearHoveredControlPoint();
 		}
 
-		if (mouseLocation != null && freeHandPath != null && (type == LineType.RIVER || isFreeHandDrawMode()))
+		if (mouseLocation != null && freeHandPath != null && isFreeHandDrawMode())
 		{
 			Point currentRI = snapPoint != null ? snapPoint : getPointOnGraph(mouseLocation).mult(1.0 / mainWindow.displayQualityScale);
 			List<Point> previewGraphPixels = new ArrayList<>();
@@ -2753,12 +2726,12 @@ public class LandWaterTool extends EditorTool
 
 		handleSharedPressAndDragActions(e, false);
 
-		if (riversButton.isSelected() && modeWidget.isDrawMode() && !isFreeHandRiverDrawMode())
+		if (riversButton.isSelected() && modeWidget.isDrawMode() && !isFreeHandDrawMode())
 		{
 			polygonRiverSnapStart = computeSnapPointForType(e.getPoint(), LineType.RIVER);
 			riverStart = updater.mapParts.graph.findClosestCorner(getPointOnGraph(e.getPoint()));
 		}
-		else if (riversButton.isSelected() && modeWidget.isDrawMode() && isFreeHandRiverDrawMode() && SwingUtilities.isLeftMouseButton(e) && updater.mapParts != null && updater.mapParts.graph != null)
+		else if (riversButton.isSelected() && modeWidget.isDrawMode() && isFreeHandDrawMode() && SwingUtilities.isLeftMouseButton(e) && updater.mapParts != null && updater.mapParts.graph != null)
 		{
 			Point riPoint = freeHandRiverSnapPoint != null ? freeHandRiverSnapPoint : getPointOnGraph(e.getPoint()).mult(1.0 / mainWindow.displayQualityScale);
 			if (e.getClickCount() == 1)
@@ -3600,7 +3573,7 @@ public class LandWaterTool extends EditorTool
 	@Override
 	protected void handleMouseRightPressedOnMap(MouseEvent e)
 	{
-		if (riversButton.isSelected() && modeWidget.isDrawMode() && isFreeHandRiverDrawMode() && freeHandRiverPathRI != null && !freeHandRiverPathRI.isEmpty())
+		if (riversButton.isSelected() && modeWidget.isDrawMode() && isFreeHandDrawMode() && freeHandRiverPathRI != null && !freeHandRiverPathRI.isEmpty())
 		{
 			if (freeHandRiverPathRI.size() > 1)
 			{
@@ -4182,7 +4155,7 @@ public class LandWaterTool extends EditorTool
 			return;
 		}
 
-		if (riversButton.isSelected() && modeWidget.isDrawMode() && !isFreeHandRiverDrawMode() && riverStart != null)
+		if (riversButton.isSelected() && modeWidget.isDrawMode() && !isFreeHandDrawMode() && riverStart != null)
 		{
 			Corner end = updater.mapParts.graph.findClosestCorner(getPointOnGraph(e.getPoint()));
 			Point polygonRiverSnapEnd = computeSnapPointForType(e.getPoint(), LineType.RIVER);
@@ -4638,11 +4611,11 @@ public class LandWaterTool extends EditorTool
 		{
 			handleEditModeControlPointDrag(e);
 		}
-		else if (riversButton.isSelected() && modeWidget.isDrawMode() && !isFreeHandRiverDrawMode())
+		else if (riversButton.isSelected() && modeWidget.isDrawMode() && !isFreeHandDrawMode())
 		{
 			previewPolygonRiverPath(e);
 		}
-		else if (riversButton.isSelected() && modeWidget.isDrawMode() && isFreeHandRiverDrawMode())
+		else if (riversButton.isSelected() && modeWidget.isDrawMode() && isFreeHandDrawMode())
 		{
 			previewFreeHandControlPoints(e, LineType.RIVER);
 		}
@@ -4781,7 +4754,7 @@ public class LandWaterTool extends EditorTool
 			mapEditingPanel.clearHoveredControlPoint();
 			// Keep circles and preview path visible so the user can see them even when the mouse exits.
 		}
-		if (riversButton.isSelected() && modeWidget.isDrawMode() && isFreeHandRiverDrawMode())
+		if (riversButton.isSelected() && modeWidget.isDrawMode() && isFreeHandDrawMode())
 		{
 			freeHandRiverSnapPoint = null;
 			mapEditingPanel.clearHoveredControlPoint();
