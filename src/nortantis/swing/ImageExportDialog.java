@@ -428,7 +428,16 @@ public class ImageExportDialog extends JDialog
 				else
 				{
 					fileName = pathToSaveTo;
-					ImageHelper.getInstance().write(result, fileName);
+					try
+					{
+						ImageHelper.getInstance().write(result, fileName);
+					}
+					catch (Exception writeException)
+					{
+						// ImageIO surfaces write failures (e.g. an unwritable location like a drive root) as an obscure
+						// "Can't create an ImageOutputStream!" message. Replace it with something the user can act on.
+						throw new UnableToSaveException(Translation.get("imageExport.unableToSave", fileName), writeException);
+					}
 				}
 				Logger.println("Map written to " + fileName);
 				ImageCache.clear();
@@ -445,7 +454,17 @@ public class ImageExportDialog extends JDialog
 				}
 				catch (Exception ex)
 				{
-					SwingHelper.handleException(ex, getContentPane(), true);
+					if (ex.getCause() instanceof UnableToSaveException)
+					{
+						// A save failure with a user-friendly, self-contained message. Show it as-is instead of the
+						// generic "error while creating map" wrapper handleException would apply.
+						Logger.printError(ex.getCause().getMessage(), ex.getCause());
+						SwingHelper.showMessageDialog(getContentPane(), ex.getCause().getMessage(), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
+					}
+					else
+					{
+						SwingHelper.handleException(ex, getContentPane(), true);
+					}
 					isError = true;
 				}
 
@@ -493,5 +512,15 @@ public class ImageExportDialog extends JDialog
 			return fileChooser.getSelectedFile().toString();
 		}
 		return null;
+	}
+
+	/** Thrown when writing the exported image to disk fails, carrying a user-friendly, already-translated message. */
+	@SuppressWarnings("serial")
+	private static class UnableToSaveException extends RuntimeException
+	{
+		UnableToSaveException(String message, Throwable cause)
+		{
+			super(message, cause);
+		}
 	}
 }
