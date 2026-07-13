@@ -2138,7 +2138,7 @@ public class MapCreator implements WarningLogger
 		{
 			mapBounds = new Dimension(settings.generatedWidth * settings.heightmapResolution, settings.generatedHeight * settings.heightmapResolution);
 		}
-		WorldGraph graph = createGraph(settings, mapBounds.width, mapBounds.height, r, settings.resolution, true);
+		WorldGraph graph = createGraph(settings, mapBounds.width, mapBounds.height, r, settings.heightmapResolution, true);
 		return GraphCreator.createHeightMap(graph, new Random(settings.randomSeed));
 	}
 

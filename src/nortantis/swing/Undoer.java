@@ -133,18 +133,11 @@ public class Undoer
 		boolean refreshImagePreviews = doesChangeEffectsBackgroundImages(changeToUndo.settings, settings);
 		mainWindow.loadSettingsAndEditsIntoThemeAndToolsPanels(settings, true, refreshImagePreviews);
 
-		if (changeToUndo.toolThatMadeChange != null)
-		{
-			if (mainWindow.toolsPanel.currentTool == changeToUndo.toolThatMadeChange)
-			{
-				changeToUndo.toolThatMadeChange.onAfterUndoRedo();
-			}
-		}
-		else
-		{
-			// This happens if you undo a change not associated with any particular tool, such as Clear Entire Map.
-			mainWindow.toolsPanel.currentTool.onAfterUndoRedo();
-		}
+		// Let the active tool clean up transient state (selection, hover, in-progress edits) that references edit objects
+		// the undo just replaced with deep copies. This must be the current tool, not necessarily the tool that made the
+		// change: undoing another tool's change while a different tool is active leaves the active tool's live state stale,
+		// and it's the active tool whose selection the user can still see and act on.
+		mainWindow.toolsPanel.currentTool.onAfterUndoRedo();
 
 		if (changeToUndo.preRun != null)
 		{
@@ -181,19 +174,9 @@ public class Undoer
 		boolean refreshImagePreviews = doesChangeEffectsBackgroundImages(currentSettings, newSettings);
 		mainWindow.loadSettingsAndEditsIntoThemeAndToolsPanels(newSettings, true, refreshImagePreviews);
 
-		if (changeToRedo.toolThatMadeChange != null)
-		{
-			// Switch to the tool that made the change.
-			if (mainWindow.toolsPanel.currentTool == changeToRedo.toolThatMadeChange)
-			{
-				changeToRedo.toolThatMadeChange.onAfterUndoRedo();
-			}
-		}
-		else
-		{
-			// This happens if you redo a change not associated with any particular tool, such as Clear Entire Map or the Theme panel.
-			mainWindow.toolsPanel.currentTool.onAfterUndoRedo();
-		}
+		// Let the active tool clean up transient state that references edit objects the redo just replaced with deep copies.
+		// This must be the current tool, not necessarily the tool that made the change (see the matching comment in undo()).
+		mainWindow.toolsPanel.currentTool.onAfterUndoRedo();
 
 		MapChange changeWithPrevSettings = new MapChange(currentSettings, changeToRedo.updateType, changeToRedo.toolThatMadeChange, changeToRedo.preRun);
 		if (changeToRedo.preRun != null)

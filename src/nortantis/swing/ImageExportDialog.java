@@ -247,7 +247,8 @@ public class ImageExportDialog extends JDialog
 							return;
 						}
 
-						if (!new File(new File(exportPath).getParent()).exists())
+						String parent = new File(exportPath).getParent();
+						if (parent == null || !new File(parent).exists())
 						{
 							SwingHelper.showMessageDialog(getContentPane(), Translation.get("imageExport.folderDoesNotExist"), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
 							return;

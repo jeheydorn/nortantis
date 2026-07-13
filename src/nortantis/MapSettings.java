@@ -787,15 +787,19 @@ public class MapSettings implements Serializable
 
 		for (Road road : edits.roads)
 		{
+			// A road needs at least 2 nodes to be a drawable path. Skip degenerate entries so a road that was fully erased
+			// can't be written out and reloaded as permanent garbage.
+			if (road.nodes == null || road.nodes.size() < 2)
+			{
+				continue;
+			}
+
 			JSONObject roadObj = new JSONObject();
 
 			JSONArray pathJson = new JSONArray();
-			if (road.nodes != null)
+			for (RoadPathNode node : road.nodes)
 			{
-				for (RoadPathNode node : road.nodes)
-				{
-					pathJson.add(node.getLoc().toJson());
-				}
+				pathJson.add(node.getLoc().toJson());
 			}
 			roadObj.put("path", pathJson);
 			roadsJson.add(roadObj);
@@ -815,9 +819,15 @@ public class MapSettings implements Serializable
 
 		for (River river : edits.rivers)
 		{
+			// A river needs at least 2 nodes to be a drawable path. Skip degenerate entries so a river that was fully
+			// erased can't be written out and reloaded as permanent garbage.
+			if (river.nodes == null || river.nodes.size() < 2)
+			{
+				continue;
+			}
+
 			JSONObject riverObj = new JSONObject();
 			JSONArray nodesJson = new JSONArray();
-			if (river.nodes != null)
 			{
 				for (RiverPathNode node : river.nodes)
 				{
@@ -2109,7 +2119,13 @@ public class MapSettings implements Serializable
 					path.add(Point.fromJSonValue(pointString));
 				}
 			}
-			roads.add(Road.fromLocations(path));
+			// Drop degenerate roads (fewer than 2 nodes after deduplication) so a stale entry from an older file can't
+			// linger. A road needs at least 2 nodes to be a drawable path.
+			Road road = Road.fromLocations(path);
+			if (road.nodes.size() >= 2)
+			{
+				roads.add(road);
+			}
 		}
 		return roads;
 	}
@@ -2141,7 +2157,13 @@ public class MapSettings implements Serializable
 					nodes.add(new RiverPathNode(loc, widthToNext, seedToNext, edgeIndexToNext, cornerIndexAnchor));
 				}
 			}
-			rivers.add(new River(nodes));
+			// Drop degenerate rivers (fewer than 2 nodes after deduplication) so a stale entry from an older file can't
+			// linger. A river needs at least 2 nodes to be a drawable path.
+			River river = new River(nodes);
+			if (river.nodes.size() >= 2)
+			{
+				rivers.add(river);
+			}
 		}
 		return rivers;
 	}
