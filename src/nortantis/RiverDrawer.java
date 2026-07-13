@@ -829,7 +829,11 @@ public class RiverDrawer
 				Point newStart = forward <= backward ? v0RI : v1RI;
 				Point newEnd = forward <= backward ? v1RI : v0RI;
 
-				if (!startNode.getLoc().equals(newStart))
+				// Only rewrite a node when it moves by a visible amount. Re-deriving a corner's location as corner.loc / resolutionScale
+				// at a different resolution yields the same point apart from floating-point rounding in the last bit; rewriting for that
+				// would change the stored node just enough to make the edits compare unequal (a spurious "unsaved changes" prompt) without
+				// moving the river. A real coastline shift moves corners by whole pixels, well past isCloseEnough's threshold.
+				if (!startNode.getLoc().isCloseEnough(newStart))
 				{
 					if (updated == null)
 					{
@@ -837,7 +841,7 @@ public class RiverDrawer
 					}
 					updated.set(i, new RiverPathNode(newStart, startNode.getWidthLevelToNext(), startNode.getSeedToNext(), startNode.getEdgeIndexToNext(), startNode.getCornerIndexAnchor()));
 				}
-				if (!endNode.getLoc().equals(newEnd))
+				if (!endNode.getLoc().isCloseEnough(newEnd))
 				{
 					if (updated == null)
 					{
@@ -877,7 +881,7 @@ public class RiverDrawer
 						continue;
 					}
 					Point cornerRI = corner.loc.mult(1.0 / resolutionScale);
-					if (!node.getLoc().equals(cornerRI))
+					if (!node.getLoc().isCloseEnough(cornerRI))
 					{
 						if (updated == null)
 						{
