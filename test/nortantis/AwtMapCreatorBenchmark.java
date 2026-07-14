@@ -1,5 +1,8 @@
 package nortantis;
 
+import nortantis.editor.MapParts;
+import nortantis.geom.Point;
+import nortantis.graph.voronoi.Center;
 import nortantis.platform.Image;
 import nortantis.platform.PlatformFactory;
 import nortantis.platform.awt.AwtFactory;
@@ -62,6 +65,70 @@ public class AwtMapCreatorBenchmark
 	public void profileAllTypesOfEdits() throws Exception
 	{
 		profile("allTypesOfEdits.nort", 0.75);
+	}
+
+	/**
+	 * Isolated micro-benchmark of {@link nortantis.WorldGraph#findClosestCenter(Point)} - the per-pixel point-location used during
+	 * rendering. Builds one graph, then times looking up every pixel of the map (matching real rendering usage, which exercises both the
+	 * O(1) fast path and the rarer fallback near coasts/large cells). The query Point is reused to keep allocation out of the measurement.
+	 */
+	@Test
+	public void profileFindClosestCenter() throws Exception
+	{
+		String settingsPath = Paths.get("unit test files", "map settings", "allTypesOfEdits.nort").toString();
+		MapSettings settings = new MapSettings(settingsPath);
+		settings.resolution = 1.0;
+
+		MapParts mapParts = new MapParts();
+		new MapCreator().createMap(settings, null, mapParts);
+		WorldGraph graph = mapParts.graph;
+
+		int width = (int) graph.getWidth();
+		int height = (int) graph.getHeight();
+		long numLookups = (long) width * height;
+		System.out.println("\n=== findClosestCenter profile: allTypesOfEdits @1.0, map " + width + "x" + height + " (" + numLookups + " lookups/pass) ===\n");
+
+		Point query = new Point(0, 0);
+
+		for (int warmup = 0; warmup < 2; warmup++)
+		{
+			runLookupPass(graph, query, width, height);
+		}
+
+		long[] samples = new long[TIMED_ITERATIONS];
+		for (int i = 0; i < TIMED_ITERATIONS; i++)
+		{
+			long start = System.nanoTime();
+			long checksum = runLookupPass(graph, query, width, height);
+			samples[i] = System.nanoTime() - start;
+			// Consume the checksum so the JIT cannot eliminate the lookups.
+			if (checksum == Long.MIN_VALUE)
+			{
+				System.out.println("(unreachable)");
+			}
+			System.out.println("  iteration " + (i + 1) + ": " + MapTestUtil.formatTime(samples[i]) + "  (" + (samples[i] / (double) numLookups) + " ns/lookup)");
+		}
+
+		long[] sorted = samples.clone();
+		java.util.Arrays.sort(sorted);
+		System.out.println("MIN    per-lookup: " + (sorted[0] / (double) numLookups) + " ns  (" + MapTestUtil.formatTime(sorted[0]) + " total)");
+		System.out.println("MEDIAN per-lookup: " + (sorted[sorted.length / 2] / (double) numLookups) + " ns  (" + MapTestUtil.formatTime(sorted[sorted.length / 2]) + " total)");
+	}
+
+	private static long runLookupPass(WorldGraph graph, Point query, int width, int height)
+	{
+		long checksum = 0;
+		for (int y = 0; y < height; y++)
+		{
+			for (int x = 0; x < width; x++)
+			{
+				query.x = x;
+				query.y = y;
+				Center center = graph.findClosestCenter(query);
+				checksum += center.index;
+			}
+		}
+		return checksum;
 	}
 
 	/** Warmup renders (not timed) before the timed loop, so JIT is warm and one-time asset loading is excluded. */

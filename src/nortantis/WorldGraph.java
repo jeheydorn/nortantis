@@ -744,8 +744,10 @@ public class WorldGraph extends VoronoiGraph
 		if (candidate == null)
 		{
 			assert false;
-			// This shouldn't happen with a properly built grid, but use distance-based fallback
-			return centers.stream().min((c1, c2) -> Double.compare(c1.loc.distanceTo(point), c2.loc.distanceTo(point))).orElse(null);
+			// getRepresentative is null only when a cell's whole 3x3 block held no centers. Cells are sized at ~2x the mean site spacing and
+			// sites are spread roughly evenly across the map, so an empty 3x3 block is effectively impossible - hence the assert. If it ever
+			// does happen, use the same location-based fallback relied on when the search below fails.
+			return findClosestCenterByLocationFallback(point, useWaterCheckResolution);
 		}
 
 		// Fast path: find which edge sector contains the point and check that edge
@@ -755,10 +757,10 @@ public class WorldGraph extends VoronoiGraph
 			return result;
 		}
 
-		// Fallback - walk to a new candidate and try exhaustive search again
+		// The grid representative's slices did not contain the point. Cheaply hop from it toward the point and retry the slice search there;
+		// this catches the common case where the representative is only a center or two away from the containing center, and is measurably
+		// faster than going straight to the location fallback below.
 		Center walkResult = walkToClosestCenter(point, candidate);
-
-		// Try exhaustive search on the walk result
 		if (walkResult != candidate)
 		{
 			result = findCenterFromEdgeSector(point, walkResult, useWaterCheckResolution);
@@ -768,8 +770,29 @@ public class WorldGraph extends VoronoiGraph
 			}
 		}
 
-		// Last resort: return the closest center by distance
-		return walkResult;
+		// Neither the representative nor the walk result contained the point. The greedy walk finds a local distance-minimum, which is not
+		// always the nearest center - it can stall on a large ocean polygon whose sparse neighbors are all farther from the point. Fall back
+		// to the center nearest the point by location.
+		return findClosestCenterByLocationFallback(point, useWaterCheckResolution);
+	}
+
+	/**
+	 * Fallback point location used when neither the grid representative nor the greedy walk finds a slice containing the point. Finds the
+	 * nearest center by location (a bounded grid scan, never all centers) and runs the noisy pie-slice search from there. Noisy edges and
+	 * coastline/region-boundary smoothing move the drawn boundaries off the straight Voronoi bisectors, so the center whose slice actually
+	 * contains the point is the nearest-by-location center or one of its immediate neighbors, which that search covers. Returns the raw
+	 * nearest-by-location center only if even that search finds no containing slice (the point sits in a sliver between slices or exactly on
+	 * a boundary).
+	 */
+	private Center findClosestCenterByLocationFallback(Point point, boolean useWaterCheckResolution)
+	{
+		Center nearest = centerLookupGrid.findNearestByLocation(point);
+		if (nearest == null)
+		{
+			return null;
+		}
+		Center containing = findCenterFromEdgeSector(point, nearest, useWaterCheckResolution);
+		return containing != null ? containing : nearest;
 	}
 
 	/**
@@ -894,8 +917,9 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Walk from the starting center to the center whose loc is closest to the query point. This is faster than BFS and converges quickly
-	 * since Voronoi diagrams are well-structured.
+	 * Greedy walk toward the query: repeatedly steps to the neighbor nearest the query and stops at a local distance-minimum. A cheap way to
+	 * move a starting candidate closer to the query, but the local minimum is not always the globally nearest center, so callers must handle
+	 * the case where the returned center does not contain the query.
 	 */
 	private Center walkToClosestCenter(Point query, Center start)
 	{
@@ -1292,6 +1316,9 @@ public class WorldGraph extends VoronoiGraph
 	private class CenterLookupGrid
 	{
 		private Center[][] grid;
+		// Every center bucketed by the cell containing its location. Retained (not just the per-cell representative in grid) so a query can
+		// find the actual nearest center in its neighborhood when the representative-plus-walk point location fails.
+		private List<Center>[][] cellCenters;
 		private int cellWidth;
 		private int cellHeight;
 		private int gridCols;
@@ -1306,7 +1333,7 @@ public class WorldGraph extends VoronoiGraph
 			gridCols = (mapWidth / cellWidth) + 1;
 			gridRows = (mapHeight / cellHeight) + 1;
 
-			// Step 1: Create temp grid holding ALL centers per cell (O(n))
+			// Step 1: Create grid holding ALL centers per cell (O(n))
 			@SuppressWarnings("unchecked")
 			List<Center>[][] tempGrid = new ArrayList[gridRows][gridCols];
 			for (int r = 0; r < gridRows; r++)
@@ -1324,6 +1351,7 @@ public class WorldGraph extends VoronoiGraph
 				int row = clamp((int) (center.loc.y / cellHeight), 0, gridRows - 1);
 				tempGrid[row][col].add(center);
 			}
+			cellCenters = tempGrid;
 
 			// Step 2: For each cell, pick the center closest to cell's center
 			grid = new Center[gridRows][gridCols];
@@ -1371,6 +1399,19 @@ public class WorldGraph extends VoronoiGraph
 			int col = clamp((int) (query.x / cellWidth), 0, gridCols - 1);
 			int row = clamp((int) (query.y / cellHeight), 0, gridRows - 1);
 			return grid[row][col];
+		}
+
+		/**
+		 * Returns the center whose location is nearest the query, searching the query's cell and its immediate neighbors. This is the true
+		 * nearest-by-location center (the Voronoi cell the point falls in) whenever the query is not deep inside an unusually large cell -
+		 * and when it is, the grid representative already contains the query, so this method is not called. Used as a fallback when the
+		 * representative point location fails to locate a containing slice. Bounded to a 3x3 block of cells - never scans all centers.
+		 */
+		Center findNearestByLocation(Point query)
+		{
+			int col = clamp((int) (query.x / cellWidth), 0, gridCols - 1);
+			int row = clamp((int) (query.y / cellHeight), 0, gridRows - 1);
+			return findClosestFromCandidates(cellCenters, row, col, query);
 		}
 
 		private int clamp(int value, int min, int max)
