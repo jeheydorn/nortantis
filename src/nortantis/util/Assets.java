@@ -464,18 +464,26 @@ public class Assets
 		return folderNames;
 	}
 
+	private static Boolean isRunningFromJarCached;
 	/**
 	 * Used to disable debug settings when not running from source.
 	 */
 	public static boolean isRunningFromJar()
 	{
-		String className = Assets.class.getName().replace('.', '/');
-		java.net.URL classUrl = Assets.class.getResource("/" + className + ".class");
-		if (classUrl == null)
+		if (isRunningFromJarCached == null)
 		{
-			return false;
+			String className = Assets.class.getName().replace('.', '/');
+			java.net.URL classUrl = Assets.class.getResource("/" + className + ".class");
+			if (classUrl == null)
+			{
+				isRunningFromJarCached = false;
+			}
+			else
+			{
+				isRunningFromJarCached = (boolean) classUrl.toString().startsWith("jar:");
+			}
 		}
-		return classUrl.toString().startsWith("jar:");
+		return isRunningFromJarCached;
 	}
 
 	public static String convertToAssetPath(String filePath)

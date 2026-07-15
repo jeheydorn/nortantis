@@ -771,8 +771,7 @@ public class WorldGraph extends VoronoiGraph
 		}
 
 		// Neither the representative nor the walk result contained the point. The greedy walk finds a local distance-minimum, which is not
-		// always the nearest center - it can stall on a large ocean polygon whose sparse neighbors are all farther from the point. Fall back
-		// to the center nearest the point by location.
+		// always the nearest center - it can stall on a large ocean polygon whose sparse neighbors are all farther from the point.
 		return findClosestCenterByLocationFallback(point, useWaterCheckResolution);
 	}
 
@@ -780,9 +779,8 @@ public class WorldGraph extends VoronoiGraph
 	 * Fallback point location used when neither the grid representative nor the greedy walk finds a slice containing the point. Finds the
 	 * nearest center by location (a bounded grid scan, never all centers) and runs the noisy pie-slice search from there. Noisy edges and
 	 * coastline/region-boundary smoothing move the drawn boundaries off the straight Voronoi bisectors, so the center whose slice actually
-	 * contains the point is the nearest-by-location center or one of its immediate neighbors, which that search covers. Returns the raw
-	 * nearest-by-location center only if even that search finds no containing slice (the point sits in a sliver between slices or exactly on
-	 * a boundary).
+	 * contains the point is the nearest-by-location center or one of its immediate neighbors, which that search covers. When even that does
+	 * not contain the point, escalates to a bounded best-first search that can reach a containing center several hops away.
 	 */
 	private Center findClosestCenterByLocationFallback(Point point, boolean useWaterCheckResolution)
 	{
@@ -792,7 +790,86 @@ public class WorldGraph extends VoronoiGraph
 			return null;
 		}
 		Center containing = findCenterFromEdgeSector(point, nearest, useWaterCheckResolution);
-		return containing != null ? containing : nearest;
+		if (containing != null)
+		{
+			return containing;
+		}
+		// The nearest center and its immediate neighbors did not contain the point, so the containing center is farther (a noisy slice
+		// reaching several hops from its site). Escalate to a bounded best-first search to reach it; this runs only for these rare cases,
+		// not every fallback.
+		return findContainingCenterByBestFirstSearch(point, nearest, useWaterCheckResolution);
+	}
+
+	/**
+	 * Expands outward from {@code start} over graph neighbors with a best-first search (always visiting the center nearest the point next),
+	 * and returns the first center whose noisy slices contain the point. Unlike the nearest-by-location fallback, which only checks the
+	 * nearest center and its immediate neighbors, this reaches a containing center several hops away. Bounded by a distance cutoff derived
+	 * from the grid cell size (a center whose site is farther than that cannot have a slice reaching the point), so it never scans all
+	 * centers. If nothing contains the point, returns the nearest center by location seen during the search.
+	 */
+	private Center findContainingCenterByBestFirstSearch(Point point, Center start, boolean useWaterCheckResolution)
+	{
+		double cutoffSquared = centerLookupGrid.getSearchCutoffSquared();
+		PriorityQueue<Center> frontier = new PriorityQueue<>(16, (a, b) -> Double.compare(distanceSquaredTo(a, point), distanceSquaredTo(b, point)));
+		Set<Center> visited = new HashSet<>();
+		frontier.add(start);
+		visited.add(start);
+
+		Center nearest = start;
+		double nearestDistSquared = distanceSquaredTo(start, point);
+		while (!frontier.isEmpty())
+		{
+			Center center = frontier.poll();
+			double distSquared = distanceSquaredTo(center, point);
+			if (distSquared < nearestDistSquared)
+			{
+				nearest = center;
+				nearestDistSquared = distSquared;
+			}
+			// A center this far away cannot have a slice reaching the point, but closer centers may still be queued (expanding a node can
+			// enqueue nearer ones), so keep draining rather than breaking.
+			if (distSquared > cutoffSquared)
+			{
+				continue;
+			}
+			if (doesCenterContainPoint(point, center, useWaterCheckResolution))
+			{
+				return center;
+			}
+			for (Center neighbor : center.neighbors)
+			{
+				if (visited.add(neighbor))
+				{
+					frontier.add(neighbor);
+				}
+			}
+		}
+		return nearest;
+	}
+
+	private static double distanceSquaredTo(Center center, Point point)
+	{
+		double dx = center.loc.x - point.x;
+		double dy = center.loc.y - point.y;
+		return dx * dx + dy * dy;
+	}
+
+	/** Returns true if any of the center's pie slices contain the point (i.e. this center draws the point). */
+	private boolean doesCenterContainPoint(Point point, Center center, boolean useWaterCheckResolution)
+	{
+		for (int i = 0; i < center.borders.size(); i++)
+		{
+			Edge edge = center.borders.get(i);
+			if (edge.v0 == null || edge.v1 == null)
+			{
+				continue;
+			}
+			if (isPointInPieSlice(point, center, i, useWaterCheckResolution))
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -916,6 +993,25 @@ public class WorldGraph extends VoronoiGraph
 		return -1;
 	}
 
+	private boolean isPointInPieSlice(Point query, Center center, int edgePosition, boolean useWaterCheckResolution)
+	{
+		// Get the cached slice polygon using array lookup (faster than HashMap)
+		CachedSlicePolygon cached = getSlicePolygon(center, edgePosition, useWaterCheckResolution);
+		if (cached == null)
+		{
+			return false;
+		}
+
+		// Quick bounding box rejection
+		if (query.x < cached.minX || query.x > cached.maxX || query.y < cached.minY || query.y > cached.maxY)
+		{
+			return false;
+		}
+
+		// Full polygon containment test
+		return isPointInPolygonArray(query.x, query.y, cached.xCoords, cached.yCoords);
+	}
+
 	/**
 	 * Greedy walk toward the query: repeatedly steps to the neighbor nearest the query and stops at a local distance-minimum. A cheap way to
 	 * move a starting candidate closer to the query, but the local minimum is not always the globally nearest center, so callers must handle
@@ -950,25 +1046,6 @@ public class WorldGraph extends VoronoiGraph
 			current = closest;
 			currentDist = closestDist;
 		}
-	}
-
-	private boolean isPointInPieSlice(Point query, Center center, int edgePosition, boolean useWaterCheckResolution)
-	{
-		// Get the cached slice polygon using array lookup (faster than HashMap)
-		CachedSlicePolygon cached = getSlicePolygon(center, edgePosition, useWaterCheckResolution);
-		if (cached == null)
-		{
-			return false;
-		}
-
-		// Quick bounding box rejection
-		if (query.x < cached.minX || query.x > cached.maxX || query.y < cached.minY || query.y > cached.maxY)
-		{
-			return false;
-		}
-
-		// Full polygon containment test
-		return isPointInPolygonArray(query.x, query.y, cached.xCoords, cached.yCoords);
 	}
 
 	/**
@@ -1412,6 +1489,17 @@ public class WorldGraph extends VoronoiGraph
 			int col = clamp((int) (query.x / cellWidth), 0, gridCols - 1);
 			int row = clamp((int) (query.y / cellHeight), 0, gridRows - 1);
 			return findClosestFromCandidates(cellCenters, row, col, query);
+		}
+
+		/**
+		 * Squared distance beyond which a center's site is too far from a point to possibly contain it, used to bound the best-first search.
+		 * A noisy slice reaches at most ~one cell from its site; three cells is a safe margin that also comfortably exceeds the distance from
+		 * any query to its cell's representative (the search's start point).
+		 */
+		double getSearchCutoffSquared()
+		{
+			double cutoff = 1.5 * Math.max(cellWidth, cellHeight);
+			return cutoff * cutoff;
 		}
 
 		private int clamp(int value, int min, int max)
