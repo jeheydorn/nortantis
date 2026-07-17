@@ -233,6 +233,130 @@ public class SubMapCreatorTest
 	}
 
 	/**
+	 * Regression test for a redistribute-mode sub-map whose re-routed river formed a loop that was not present in the source river. Rebuilt
+	 * from the provenance of {@code submapWhereRiverFormLoop.nort}: source {@code riversForSubMaps.nort}, selection and seed below.
+	 */
+	@Test
+	public void subMapRedistributedRiverFormsNoLoop() throws Exception
+	{
+		// Set to true to force this test to write its result map to the failed sub-maps folder, even when it passes.
+		boolean forceWrite = false;
+
+		String originalSettingsPath = Paths.get("unit test files", "map settings", "riversForSubMaps.nort").toString();
+		MapSettings originalSettings = new MapSettings(originalSettingsPath);
+		originalSettings.resolution = 0.5;
+
+		WorldGraph originalGraph = MapCreator.createGraphForUnitTests(originalSettings);
+
+		Rectangle selectionBoundsRI = new Rectangle(2527, 182, 964, 2216);
+		int worldSize = 1000;
+		long seed = 1804479318L;
+
+		MapSettings subMapSettings = SubMapCreator.createSubMapSettings(originalSettings, originalGraph, selectionBoundsRI, worldSize, originalSettings.resolution, seed, true);
+
+		List<River> rivers = subMapSettings.edits.rivers;
+
+		assertRiversHaveNoLoops(rivers, subMapSettings, "subMapRedistributedRiverFormsNoLoop");
+		assertRiversHaveNoSelfCrossings(rivers, subMapSettings, "subMapRedistributedRiverFormsNoLoop");
+		assertCombinedRiverNetworkHasNoLoop(rivers, subMapSettings, "subMapRedistributedRiverFormsNoLoop");
+		if (forceWrite || forceWriteAllMaps)
+		{
+			saveFailedMap(subMapSettings, "subMapRedistributedRiverFormsNoLoop");
+		}
+	}
+
+	/**
+	 * Regression test for a redistribute-mode sub-map whose re-routed river formed a loop within a single polygon at the edge of the map.
+	 * Rebuilt from the provenance of {@code submapWhereRiverFormLoopAtTheEdgeOfTheMap.nort}.
+	 */
+	@Test
+	public void subMapRedistributedRiverFormsNoLoopAtMapEdge() throws Exception
+	{
+		// Set to true to force this test to write its result map to the failed sub-maps folder, even when it passes.
+		boolean forceWrite = false;
+
+		String originalSettingsPath = Paths.get("unit test files", "map settings", "riversForSubMaps.nort").toString();
+		MapSettings originalSettings = new MapSettings(originalSettingsPath);
+		originalSettings.resolution = 0.5;
+
+		WorldGraph originalGraph = MapCreator.createGraphForUnitTests(originalSettings);
+
+		Rectangle selectionBoundsRI = new Rectangle(2588, 1139, 884, 1056);
+		int worldSize = 1000;
+		long seed = 2025862360L;
+
+		MapSettings subMapSettings = SubMapCreator.createSubMapSettings(originalSettings, originalGraph, selectionBoundsRI, worldSize, originalSettings.resolution, seed, true);
+
+		List<River> rivers = subMapSettings.edits.rivers;
+
+		assertRiversHaveNoLoops(rivers, subMapSettings, "subMapRedistributedRiverFormsNoLoopAtMapEdge");
+		assertRiversHaveNoSelfCrossings(rivers, subMapSettings, "subMapRedistributedRiverFormsNoLoopAtMapEdge");
+		assertCombinedRiverNetworkHasNoLoop(rivers, subMapSettings, "subMapRedistributedRiverFormsNoLoopAtMapEdge");
+		if (forceWrite || forceWriteAllMaps)
+		{
+			saveFailedMap(subMapSettings, "subMapRedistributedRiverFormsNoLoopAtMapEdge");
+		}
+	}
+
+	/**
+	 * Regression test for a redistribute-mode sub-map where a source river that passes through the edge of the selected region failed to
+	 * reach the edge of the sub-map. Rebuilt from the provenance of {@code submapWhereRiverDoesNotReachEdgeOfMap.nort}.
+	 */
+	@Test
+	public void subMapRedistributedRiverReachesMapEdge() throws Exception
+	{
+		// Set to true to force this test to write its result map to the failed sub-maps folder, even when it passes.
+		boolean forceWrite = false;
+
+		String originalSettingsPath = Paths.get("unit test files", "map settings", "riversForSubMaps.nort").toString();
+		MapSettings originalSettings = new MapSettings(originalSettingsPath);
+		originalSettings.resolution = 0.5;
+
+		WorldGraph originalGraph = MapCreator.createGraphForUnitTests(originalSettings);
+
+		Rectangle selectionBoundsRI = new Rectangle(2453, 212, 1056, 2124);
+		int worldSize = 1000;
+		long seed = 1502091017L;
+
+		MapSettings subMapSettings = SubMapCreator.createSubMapSettings(originalSettings, originalGraph, selectionBoundsRI, worldSize, originalSettings.resolution, seed, true);
+
+		assertRedistributedRiverReachesMapEdge(originalSettings, selectionBoundsRI, subMapSettings, "subMapRedistributedRiverReachesMapEdge");
+		if (forceWrite || forceWriteAllMaps)
+		{
+			saveFailedMap(subMapSettings, "subMapRedistributedRiverReachesMapEdge");
+		}
+	}
+
+	/**
+	 * Second regression test for a redistribute-mode sub-map where a source river that passes through the edge of the selected region
+	 * failed to reach the edge of the sub-map. Rebuilt from the provenance of {@code submapWhereRiverDoesNotReachEdgeOfMap2.nort}.
+	 */
+	@Test
+	public void subMapRedistributedRiverReachesMapEdge2() throws Exception
+	{
+		// Set to true to force this test to write its result map to the failed sub-maps folder, even when it passes.
+		boolean forceWrite = false;
+
+		String originalSettingsPath = Paths.get("unit test files", "map settings", "riversForSubMaps.nort").toString();
+		MapSettings originalSettings = new MapSettings(originalSettingsPath);
+		originalSettings.resolution = 0.5;
+
+		WorldGraph originalGraph = MapCreator.createGraphForUnitTests(originalSettings);
+
+		Rectangle selectionBoundsRI = new Rectangle(2496, 1127, 1062, 1099);
+		int worldSize = 1000;
+		long seed = 922176153L;
+
+		MapSettings subMapSettings = SubMapCreator.createSubMapSettings(originalSettings, originalGraph, selectionBoundsRI, worldSize, originalSettings.resolution, seed, true);
+
+		assertRedistributedRiverReachesMapEdge(originalSettings, selectionBoundsRI, subMapSettings, "subMapRedistributedRiverReachesMapEdge2");
+		if (forceWrite || forceWriteAllMaps)
+		{
+			saveFailedMap(subMapSettings, "subMapRedistributedRiverReachesMapEdge2");
+		}
+	}
+
+	/**
 	 * Verifies that a T-shaped river in a sub-map has 3 mouths where it meets the ocean. Sub-map rivers are stored as freehand
 	 * {@link River} polylines (not tied to the new graph's edges), so a mouth is counted as a river-path endpoint whose location is
 	 * adjacent to a coast or ocean corner in the sub-map graph. This is a regression test for a bug where one arm of the T was incorrectly
@@ -1005,6 +1129,195 @@ public class SubMapCreatorTest
 					String failedMapPath = saveFailedMap(subMapSettings, testName);
 					fail("River " + ri + " has a loop: path point " + p + " appears more than once.\nFailed map written to: " + failedMapPath);
 				}
+			}
+		}
+	}
+
+	/**
+	 * Asserts that the combined river network (all rivers together, sharing path points where they meet) contains no cycle. Sub-map rivers
+	 * are stored as separate {@link River} polylines, and {@link WorldGraph#findRivers} splits a network at junctions, so a loop can span two
+	 * {@link River} objects — two rivers that share both endpoints via different paths form a lens that no single-river check detects. This
+	 * builds one undirected graph from every river's segments and uses union-find: a segment whose endpoints are already connected (by a
+	 * distinct earlier segment) closes a cycle. A legitimate confluence (rivers sharing a single junction point) forms a tree, not a cycle,
+	 * so it is not flagged; a duplicated segment (the same endpoint pair twice) is a separate defect covered by
+	 * {@link #assertNoDuplicateRiverSegments} and is skipped here rather than counted as a cycle.
+	 */
+	private void assertCombinedRiverNetworkHasNoLoop(List<River> rivers, MapSettings subMapSettings, String testName) throws Exception
+	{
+		Map<Point, Integer> pointIds = new HashMap<>();
+		List<Integer> parent = new ArrayList<>();
+		Set<OrderlessPair<Point>> seenSegments = new HashSet<>();
+		for (River river : rivers)
+		{
+			List<Point> path = nortantis.PathOperations.toLocationList(river.nodes);
+			for (int i = 0; i + 1 < path.size(); i++)
+			{
+				Point a = path.get(i);
+				Point b = path.get(i + 1);
+				if (a.equals(b))
+					continue;
+				if (!seenSegments.add(new OrderlessPair<>(a, b)))
+					continue; // Duplicate segment: a separate defect, not a cycle.
+				int rootA = unionFindRoot(parent, pointId(pointIds, parent, a));
+				int rootB = unionFindRoot(parent, pointId(pointIds, parent, b));
+				if (rootA == rootB)
+				{
+					String failedMapPath = saveFailedMap(subMapSettings, testName);
+					fail("Rivers form a loop: segment between " + a + " and " + b + " closes a cycle in the combined river network.\nFailed map written to: " + failedMapPath);
+				}
+				parent.set(rootA, rootB);
+			}
+		}
+	}
+
+	private static int pointId(Map<Point, Integer> pointIds, List<Integer> parent, Point p)
+	{
+		Integer id = pointIds.get(p);
+		if (id == null)
+		{
+			id = parent.size();
+			pointIds.put(p, id);
+			parent.add(id);
+		}
+		return id;
+	}
+
+	private static int unionFindRoot(List<Integer> parent, int i)
+	{
+		while (parent.get(i) != i)
+		{
+			parent.set(i, parent.get(parent.get(i)));
+			i = parent.get(i);
+		}
+		return i;
+	}
+
+	/**
+	 * Asserts that no river's polyline crosses itself: no two non-adjacent segments of the same river geometrically intersect. This catches
+	 * a loop drawn as a self-crossing even when it uses no repeated path point (two distinct corners whose segments cross).
+	 */
+	private void assertRiversHaveNoSelfCrossings(List<River> rivers, MapSettings subMapSettings, String testName) throws Exception
+	{
+		for (int ri = 0; ri < rivers.size(); ri++)
+		{
+			List<Point> path = nortantis.PathOperations.toLocationList(rivers.get(ri).nodes);
+			for (int i = 0; i + 1 < path.size(); i++)
+			{
+				for (int j = i + 2; j + 1 < path.size(); j++)
+				{
+					// Skip segments that share an endpoint (adjacent segments, or the loop-closing pair for a legitimately closed path).
+					if (i == 0 && j + 1 == path.size() - 1 && path.get(0).equals(path.get(path.size() - 1)))
+						continue;
+					if (segmentsProperlyIntersect(path.get(i), path.get(i + 1), path.get(j), path.get(j + 1)))
+					{
+						String failedMapPath = saveFailedMap(subMapSettings, testName);
+						fail("River " + ri + " crosses itself: segment " + i + " (" + path.get(i) + "->" + path.get(i + 1) + ") intersects segment " + j + " ("
+								+ path.get(j) + "->" + path.get(j + 1) + ").\nFailed map written to: " + failedMapPath);
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * Returns true if segments a0-a1 and b0-b1 cross at an interior point (proper intersection), ignoring mere shared endpoints and
+	 * collinear touching.
+	 */
+	private static boolean segmentsProperlyIntersect(Point a0, Point a1, Point b0, Point b1)
+	{
+		double d1 = cross(b0, b1, a0);
+		double d2 = cross(b0, b1, a1);
+		double d3 = cross(a0, a1, b0);
+		double d4 = cross(a0, a1, b1);
+		return ((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0));
+	}
+
+	private static double cross(Point origin, Point end, Point p)
+	{
+		return (end.x - origin.x) * (p.y - origin.y) - (end.y - origin.y) * (p.x - origin.x);
+	}
+
+	/**
+	 * Asserts that every place a source river crosses the selection boundary produces a sub-map river endpoint that actually reaches the
+	 * corresponding edge of the sub-map. A source river segment that has one node inside the selection and one outside crosses the boundary;
+	 * that crossing maps (via the same RI→sub-map transform SubMapCreator uses) onto an edge of the sub-map, and the re-routed river should
+	 * terminate on that edge. The bug this guards against is a re-routed river that stops one or more polygons short of the map edge.
+	 */
+	private void assertRedistributedRiverReachesMapEdge(MapSettings originalSettings, Rectangle selectionBoundsRI, MapSettings subMapSettings, String testName)
+			throws Exception
+	{
+		WorldGraph newGraph = MapCreator.createGraphForUnitTests(subMapSettings);
+		double meanWidthRI = newGraph.getMeanCenterWidthBetweenNeighbors() / subMapSettings.resolution;
+
+		// Collect every point where a source river crosses the selection boundary, transformed into sub-map RI space (where it lies on a map
+		// edge). Deduplicate near-identical crossings so multiple source segments crossing at the same spot count once.
+		List<Point> expectedEdgePoints = new ArrayList<>();
+		for (River sourceRiver : originalSettings.edits.rivers)
+		{
+			List<Point> path = nortantis.PathOperations.toLocationList(sourceRiver.nodes);
+			for (int i = 0; i + 1 < path.size(); i++)
+			{
+				Point a = path.get(i);
+				Point b = path.get(i + 1);
+				boolean aIn = selectionBoundsRI.contains(a.x, a.y);
+				boolean bIn = selectionBoundsRI.contains(b.x, b.y);
+				if (aIn == bIn)
+					continue;
+				Point outside = aIn ? b : a;
+				// The crossing maps onto an edge of the sub-map. Use the outside node clamped to the selection to locate the edge it exits.
+				double clampedX = Math.max(selectionBoundsRI.x, Math.min(selectionBoundsRI.x + selectionBoundsRI.width, outside.x));
+				double clampedY = Math.max(selectionBoundsRI.y, Math.min(selectionBoundsRI.y + selectionBoundsRI.height, outside.y));
+				Point edgePoint = new Point((clampedX - selectionBoundsRI.x) / selectionBoundsRI.width * subMapSettings.generatedWidth,
+						(clampedY - selectionBoundsRI.y) / selectionBoundsRI.height * subMapSettings.generatedHeight);
+				boolean duplicate = false;
+				for (Point existing : expectedEdgePoints)
+				{
+					if (existing.distanceTo(edgePoint) < meanWidthRI)
+					{
+						duplicate = true;
+						break;
+					}
+				}
+				if (!duplicate)
+					expectedEdgePoints.add(edgePoint);
+			}
+		}
+
+		assertTrue(expectedEdgePoints.size() > 0, "Expected the selection to contain at least one source river crossing its boundary");
+
+		// Sub-map river endpoints.
+		List<Point> subMapEndpoints = new ArrayList<>();
+		for (River river : subMapSettings.edits.rivers)
+		{
+			subMapEndpoints.add(river.nodes.get(0).getLoc());
+			subMapEndpoints.add(river.nodes.get(river.nodes.size() - 1).getLoc());
+		}
+
+		// A river that reaches the map edge ends on a border corner, which sits exactly on the edge (distance 0). One that stops short ends at
+		// an interior corner a fraction of a polygon in. A tenth of a mean polygon width cleanly separates the two (observed short-falls are
+		// 0.16 polygon widths or more).
+		double edgeTolerance = meanWidthRI * 0.1;
+		for (Point expected : expectedEdgePoints)
+		{
+			Point nearestEnd = null;
+			double bestDistance = Double.MAX_VALUE;
+			for (Point endpoint : subMapEndpoints)
+			{
+				double distance = endpoint.distanceTo(expected);
+				if (distance < bestDistance)
+				{
+					bestDistance = distance;
+					nearestEnd = endpoint;
+				}
+			}
+			// The nearest sub-map river endpoint must reach the map edge the crossing maps onto.
+			double distanceToEdge = nearestEnd == null ? Double.MAX_VALUE
+					: Math.min(Math.min(nearestEnd.x, subMapSettings.generatedWidth - nearestEnd.x), Math.min(nearestEnd.y, subMapSettings.generatedHeight - nearestEnd.y));
+			if (nearestEnd == null || distanceToEdge > edgeTolerance)
+			{
+				String failedMapPath = saveFailedMap(subMapSettings, testName);
+				fail("A source river crossing the selection boundary near sub-map edge point " + expected + " did not reach the sub-map edge: nearest river endpoint " + nearestEnd
+						+ " is " + distanceToEdge + " from the nearest edge (tolerance " + edgeTolerance + ").\nFailed map written to: " + failedMapPath);
 			}
 		}
 	}

@@ -1112,6 +1112,21 @@ public class SubMapCreator
 			return null;
 		}
 
+		// Route in a canonical direction so a sub-path and its exact reverse produce identical geometry. The router below is deterministic
+		// but direction-dependent (the A* over the ordered waypoints, and removeCornerRevisits, resolve equal-cost choices differently
+		// depending on which end is the start). A source river that retraces the same corners out and back — e.g. up a valley and back down —
+		// is clipped into two sub-paths that are reverses of each other; routed in opposite directions they diverge into a lens-shaped loop
+		// that was not in the source. Fixing the traversal direction makes both route the same way, so removeDuplicateRiverSegments then
+		// collapses the retrace to a single line. The canonical direction is the one whose first node is not lexicographically greater than
+		// its last, which is stable under reversal.
+		if (comparePointsLexicographically(clippedNodes.get(0).getLoc(), clippedNodes.get(clippedNodes.size() - 1).getLoc()) > 0)
+		{
+			clippedNodes = reverseRiverNodes(clippedNodes);
+			boolean startWasMouth = startIsMouth;
+			startIsMouth = endIsMouth;
+			endIsMouth = startWasMouth;
+		}
+
 		// --- Snap each clipped node to a new-graph corner to form the waypoint list. ---
 		Predicate<Corner> isWaterAdjacent = c -> isNewCornerAdjacentToWater(c, newEdits);
 		List<Corner> waypoints = new ArrayList<>();
@@ -1123,6 +1138,7 @@ public class SubMapCreator
 			RiverPathNode node = clippedNodes.get(i);
 			// The clipped node is in sub-map RI; RI × resolution is new-graph pixel space.
 			Point newGraphPoint = node.getLoc().mult(resolution);
+			boolean isEndpoint = i == 0 || i == clippedNodes.size() - 1;
 			boolean isMouthNode = (i == 0 && startIsMouth) || (i == clippedNodes.size() - 1 && endIsMouth);
 			Corner corner;
 			if (isMouthNode)
@@ -1133,6 +1149,18 @@ public class SubMapCreator
 				// would invent a long river connecting the mouth to a distant, unrelated body of water. When none is within reach we fall
 				// back to the plain nearest corner so the river simply ends inland where its water used to be.
 				corner = findNearestCornerWithinCenterHops(newGraph, newGraphPoint, mouthWaterSearchMaxCenterHops, isWaterAdjacent);
+				if (corner == null)
+				{
+					corner = newGraph.findClosestCorner(newGraphPoint);
+				}
+			}
+			else if (isEndpoint && isPointOnMapBorder(node.getLoc(), newGraph, resolution))
+			{
+				// A river endpoint sitting on the selection boundary is a map-edge exit: the source river continued past the selection, so
+				// on the sub-map it should run off the map edge. The nearest corner is usually a polygon inside the edge (border corners are
+				// sparse), which leaves the river stopping short of the edge. Snap to the nearest border corner instead so it reaches the
+				// edge, falling back to the plain nearest corner if there are none.
+				corner = findNearestBorderCorner(newGraph, newGraphPoint);
 				if (corner == null)
 				{
 					corner = newGraph.findClosestCorner(newGraphPoint);
@@ -1151,7 +1179,6 @@ public class SubMapCreator
 			// the search into a dead-end turn followed by a pair of freehand hops, which renders as a tight swirl. Skipping it
 			// lets the leg route cleanly from the previous inland waypoint to the next. The first and last waypoints are always
 			// kept: they are the river's true endpoints (a coastal mouth or a map-edge exit).
-			boolean isEndpoint = i == 0 || i == clippedNodes.size() - 1;
 			if (!isEndpoint && (corner.isCoast || corner.isOcean || corner.isWater))
 			{
 				continue;
@@ -1186,6 +1213,79 @@ public class SubMapCreator
 			return null;
 		}
 		return new River(nodes);
+	}
+
+	/**
+	 * Returns the border corner of {@code graph} nearest to {@code pixel} (graph/pixel coordinates), or {@code null} if the graph has no
+	 * border corners. Used to snap a map-edge-exit river endpoint onto the map edge.
+	 */
+	private static Corner findNearestBorderCorner(WorldGraph graph, Point pixel)
+	{
+		Corner nearest = null;
+		double nearestDistance = Double.MAX_VALUE;
+		for (Corner corner : graph.corners)
+		{
+			if (!corner.isBorder || corner.loc == null)
+			{
+				continue;
+			}
+			double distance = corner.loc.distanceTo(pixel);
+			if (distance < nearestDistance)
+			{
+				nearestDistance = distance;
+				nearest = corner;
+			}
+		}
+		return nearest;
+	}
+
+	/**
+	 * Returns true if {@code pointRI} (sub-map RI coordinates) lies on one of the four edges of the sub-map, within {@link #mapBorderEpsilonRI}
+	 * of it. Clipping a source river to the selection places a boundary-crossing node exactly on an edge, so this identifies a river endpoint
+	 * that is a map-edge exit (the river continued past the selection) rather than a mouth or an inland source.
+	 */
+	private static boolean isPointOnMapBorder(Point pointRI, WorldGraph newGraph, double resolution)
+	{
+		double widthRI = newGraph.getWidth() / resolution;
+		double heightRI = newGraph.getHeight() / resolution;
+		return pointRI.x <= mapBorderEpsilonRI || pointRI.x >= widthRI - mapBorderEpsilonRI || pointRI.y <= mapBorderEpsilonRI || pointRI.y >= heightRI - mapBorderEpsilonRI;
+	}
+
+	/**
+	 * Tolerance, in resolution-invariant units, for treating a river endpoint as sitting on a map edge (see {@link #isPointOnMapBorder}).
+	 */
+	private static final double mapBorderEpsilonRI = 1.0;
+
+	/**
+	 * Orders two points by x, then y. Returns a negative number if {@code a} comes first, positive if {@code b} comes first, and 0 if they
+	 * are equal. Used to pick a canonical traversal direction for a river sub-path that is stable under reversal.
+	 */
+	private static int comparePointsLexicographically(Point a, Point b)
+	{
+		int compareX = Double.compare(a.x, b.x);
+		return compareX != 0 ? compareX : Double.compare(a.y, b.y);
+	}
+
+	/**
+	 * Returns the reverse of {@code nodes} as a new river path. Per-segment attributes (width level, seed) are re-associated so the segment
+	 * between two given locations keeps its width: each node carries the attributes for the segment leaving it, so on reversal a node's
+	 * outgoing segment becomes the incoming one from the other end. The first node of the reversed path carries the width the last-but-one
+	 * original node did.
+	 */
+	private static List<RiverPathNode> reverseRiverNodes(List<RiverPathNode> nodes)
+	{
+		int count = nodes.size();
+		List<Point> locations = new ArrayList<>(count);
+		List<Integer> widths = new ArrayList<>(Math.max(0, count - 1));
+		for (int i = count - 1; i >= 0; i--)
+		{
+			locations.add(nodes.get(i).getLoc());
+		}
+		for (int i = count - 2; i >= 0; i--)
+		{
+			widths.add(nodes.get(i).getWidthLevelToNext());
+		}
+		return River.fromLocationsAndWidths(locations, widths).nodes;
 	}
 
 	/**
