@@ -9,6 +9,8 @@ import nortantis.platform.awt.AwtBridge;
 import nortantis.swing.translation.Translation;
 
 import nortantis.util.Helper;
+import nortantis.util.Logger;
+import org.apache.commons.io.FileUtils;
 
 import javax.swing.*;
 import javax.swing.event.ChangeListener;
@@ -23,6 +25,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
@@ -631,6 +634,22 @@ public class SubMapDialog
 		}
 	}
 
+	private void handleCancelStep2()
+	{
+		String goBackOptionText = Translation.get("subMapDialog.step2.cancelConfirm.goBack");
+		String discardOptionText = Translation.get("subMapDialog.step2.cancelConfirm.discard");
+		Object[] options = new Object[] { goBackOptionText, discardOptionText };
+		int response = SwingHelper.showOptionDialog(step2Dialog, Translation.get("subMapDialog.step2.cancelConfirm.message"), Translation.get("common.cancel"),
+				JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, goBackOptionText);
+
+		// Discard only on an explicit Discard click. Go Back, or dismissing the dialog with Escape or the window's close button (which
+		// returns CLOSED_OPTION), leaves step 2 open.
+		if (response == Arrays.asList(options).indexOf(discardOptionText))
+		{
+			cancelStep2();
+		}
+	}
+
 	/**
 	 * Tears down step 2 and restores the main window. Shared by the Cancel button and the dialog's window-close (X) handler so the two
 	 * paths can't drift apart.
@@ -914,7 +933,7 @@ public class SubMapDialog
 		});
 
 		JButton cancelButton = new JButton(Translation.get("common.cancel"));
-		cancelButton.addActionListener(e -> cancelStep2());
+		cancelButton.addActionListener(e -> handleCancelStep2());
 
 		// Reuse NewSettingsDialog's Create label so both Create buttons stay consistent. The label is HTML that underlines the
 		// mnemonic letter for each language. Alt+C triggers Create and, unlike Ctrl+C, does not collide with the Copy binding of
@@ -966,6 +985,7 @@ public class SubMapDialog
 			@Override
 			public void windowClosing(WindowEvent e)
 			{
+				// Intentionally not showing the discard warning here.
 				cancelStep2();
 			}
 		});
