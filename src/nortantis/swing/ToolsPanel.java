@@ -144,7 +144,8 @@ public class ToolsPanel extends JPanel
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				mainWindow.updateDisplayedMapFromGeneratedMap(true, null, true);
+				// A zoom change leaves the border padding unchanged, so pass the current value through.
+				mainWindow.updateDisplayedMapFromGeneratedMap(true, null, true, mainWindow.mapEditingPanel.getBorderPadding());
 			}
 		});
 

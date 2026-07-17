@@ -649,12 +649,12 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 		if (graph != null)
 		{
-			if (highlightLakes)
+			if (highlightLakes && getImage() != null)
 			{
 				drawLakes(g);
 			}
 
-			if (highlightRivers)
+			if (highlightRivers && getImage() != null)
 			{
 				drawRivers(g);
 			}

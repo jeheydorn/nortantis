@@ -37,11 +37,13 @@ public class SubMapDialog
 {
 	private final MainWindow mainWindow;
 
-	// Captured state from the current map at construction time.
-	private final MapSettings origSettings;
-	private final WorldGraph origGraph;
+	// Captured state from the current map. origSettings is captured at construction for step 1's resolution-independent dimension math, but
+	// origGraph, origResolution, and origSettings are all (re)captured when entering step 2 from the then-current main-map state, so a
+	// display-quality change made while step 1 is open is reflected in the sub-map (and so the graph is never captured null mid-draw).
+	private MapSettings origSettings;
+	private WorldGraph origGraph;
 	/** The display-quality resolution scale at which origGraph was created. */
-	private final double origResolution;
+	private double origResolution;
 	/** File name (not full path) of the original map, or null if it had not been saved. Recorded in the sub-map's provenance info. */
 	private final String origFileName;
 
@@ -127,8 +129,6 @@ public class SubMapDialog
 	{
 		this.mainWindow = mainWindow;
 		this.origSettings = mainWindow.getSettingsFromGUI(false);
-		this.origGraph = mainWindow.updater.mapParts.graph;
-		this.origResolution = mainWindow.displayQualityScale;
 		this.origFileName = mainWindow.getOpenSettingsFilePath() == null ? null : mainWindow.getOpenSettingsFilePath().getFileName().toString();
 	}
 
@@ -270,8 +270,24 @@ public class SubMapDialog
 				// values, so the same spinner values always reproduce the same sub-map. validateStep1Spinners has already confirmed the
 				// rounded values are in bounds.
 				selBoundsRI = roundToIntegerBounds(selBoundsRI);
-				disposeStep1();
-				showStep2();
+				// Capture the current main-map graph, resolution, and settings now, rather than at construction, so a display-quality change
+				// made while step 1 was open is reflected in the sub-map. The guard ensures the graph is fully built and non-null (a full draw
+				// leaves mapParts.graph null until it finishes) and that origResolution matches the resolution the shared edits' text bounds
+				// were last re-baked to. If a full draw is still running, the action briefly defers until it completes, then proceeds.
+				mainWindow.updater.doWhenMapIsReadyForInteractions(() ->
+				{
+					// If this action was deferred until a running draw finished, step 1 may have been cancelled (or Next clicked again) in
+					// the meantime; either disposes step1Dialog. Don't advance to step 2 in that case.
+					if (step1Dialog == null)
+					{
+						return;
+					}
+					origSettings = mainWindow.getSettingsFromGUI(false);
+					origGraph = mainWindow.updater.mapParts.graph;
+					origResolution = mainWindow.displayQualityScale;
+					disposeStep1();
+					showStep2();
+				});
 			}
 		});
 

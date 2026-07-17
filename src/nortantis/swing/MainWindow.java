@@ -371,7 +371,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	void enableOrDisableFieldsThatRequireMap(boolean enable, MapSettings settings, boolean forceEnableZoom)
 	{
 		newMapWithSameThemeMenuItem.setEnabled(enable);
-		createSubMapMenuItem.setEnabled(enable);
+		createSubMapMenuItem.setEnabled(enable && hasDrawnCurrentMapAtLeastOnce);
 		saveMenuItem.setEnabled(enable);
 		saveAsMenItem.setEnabled(enable);
 		exportMapAsImageMenuItem.setEnabled(enable);
@@ -387,7 +387,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		{
 			undoer.updateUndoRedoEnabled();
 		}
-		clearEntireMapButton.setEnabled(enable);
+		clearEntireMapButton.setEnabled(enable && hasDrawnCurrentMapAtLeastOnce);
 		customImagesMenuItem.setEnabled(enable);
 
 		nameGeneratorMenuItem.setEnabled(enable);
@@ -729,7 +729,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				updateZoomOptionsBasedOnWindowSize();
 				if (ToolsPanel.fitToWindowZoomLevel.equals(toolsPanel.getZoomString()))
 				{
-					updateDisplayedMapFromGeneratedMap(true, null, true);
+					// A resize is a zoom-only change; the border padding is unchanged, so pass the current value through.
+					updateDisplayedMapFromGeneratedMap(true, null, true, mapEditingPanel.getBorderPadding());
 				}
 			}
 		});
@@ -802,7 +803,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 			private void onFinishedDrawingCommon(boolean anotherDrawIsQueued, int borderPaddingAsDrawn, IntRectangle incrementalChangeArea, List<String> warningMessages)
 			{
-				mapEditingPanel.setBorderPadding(borderPaddingAsDrawn);
 				mapEditingPanel.setGraph(mapParts.graph);
 				mapEditingPanel.setRivers(edits == null ? null : edits.rivers, getSettingsFromGUI().lineStyle);
 				mapEditingPanel.setFreeIcons(edits == null ? null : edits.freeIcons);
@@ -826,7 +826,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					lastSettingsLoadedOrSaved.edits = edits.deepCopy();
 				}
 
-				updateDisplayedMapFromGeneratedMap(false, incrementalChangeArea, false);
+				updateDisplayedMapFromGeneratedMap(false, incrementalChangeArea, false, borderPaddingAsDrawn);
 
 				if (!anotherDrawIsQueued)
 				{
@@ -1924,7 +1924,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		}
 	}
 
-	public void updateDisplayedMapFromGeneratedMap(boolean updateScrollLocationIfZoomChanged, IntRectangle incrementalChangeArea, boolean isOnlyZoomChange)
+	public void updateDisplayedMapFromGeneratedMap(boolean updateScrollLocationIfZoomChanged, IntRectangle incrementalChangeArea, boolean isOnlyZoomChange,
+			int borderPadding)
 	{
 		// The zoom the current combo-box selection maps to, given the current map's size. Fit-to-window depends on the map's
 		// dimensions, so this must be recomputed on every call - in particular on the first draw of a newly sized map, where the
@@ -1948,15 +1949,14 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		if (isOnlyZoomChange)
 		{
 			// A zoom change always needs a full rescale (there's no existing region to patch), and the target zoom can differ from
-			// what's currently displayed, so do it in the background and only commit it once it's ready. The display quality
-			// (setResolution) is intentionally left untouched here, matching the old behavior of skipping it for zoom-only changes.
+			// what's currently displayed, so do it in the background and only commit it once it's ready. The display quality is unchanged
+			// for a zoom-only change, so the setResolution in commitBackgroundRescale is a no-op on this path.
 			lastDisplayUpdateWasAsync = true;
-			submitBackgroundFullRescale(targetZoom, updateScrollLocationIfZoomChanged);
+			submitBackgroundFullRescale(targetZoom, updateScrollLocationIfZoomChanged, borderPadding);
 			return;
 		}
 
 		// A draw just finished.
-		mapEditingPanel.setResolution(displayQualityScale);
 		Method method = targetZoom < 0.34 ? Method.QUALITY : Method.BALANCED;
 		if (method == Method.BALANCED && incrementalChangeArea != null && targetZoom == zoom && mapEditingPanel.getImage() != null)
 		{
@@ -1964,6 +1964,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			// on the EDT (a small-region scale is only a couple ms).
 			// Use wrapBufferedImage for the target so changes write back to the display BufferedImage.
 			// fromBufferedImage would create a copy when using SkiaFactory, losing the changes.
+			mapEditingPanel.setResolution(displayQualityScale);
+			mapEditingPanel.setBorderPadding(borderPadding);
 			ImageHelper.getInstance().scaleInto(mapEditingPanel.mapFromMapCreator, AwtBridge.wrapBufferedImage(mapEditingPanel.getImage()), incrementalChangeArea);
 			finishDisplayUpdate();
 		}
@@ -1973,7 +1975,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			// full draw with no region to patch, or the displayed zoom doesn't match the target yet (e.g. the first draw at
 			// fit-to-window). Do the (possibly slow) rescale on a background thread so it never blocks the EDT.
 			lastDisplayUpdateWasAsync = true;
-			submitBackgroundFullRescale(targetZoom, false);
+			submitBackgroundFullRescale(targetZoom, false, borderPadding);
 		}
 	}
 
@@ -1984,14 +1986,14 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	 * only committed to the display (on the EDT, via commitBackgroundRescale) if it's still the latest request when the scale
 	 * finishes. This lets zoom changes and full-rescale draw completions run fully in parallel with the next map draw.
 	 */
-	private void submitBackgroundFullRescale(double targetZoom, boolean updateScrollLocationIfZoomChanged)
+	private void submitBackgroundFullRescale(double targetZoom, boolean updateScrollLocationIfZoomChanged, int borderPadding)
 	{
 		Image sourceMap = mapEditingPanel.mapFromMapCreator;
 		long generation = displayScaleGeneration.incrementAndGet();
-		displayScaleExecutor.submit(() -> runBackgroundRescale(generation, sourceMap, targetZoom, updateScrollLocationIfZoomChanged));
+		displayScaleExecutor.submit(() -> runBackgroundRescale(generation, sourceMap, targetZoom, updateScrollLocationIfZoomChanged, borderPadding));
 	}
 
-	private void runBackgroundRescale(long generation, Image sourceMap, double targetZoom, boolean updateScrollLocationIfZoomChanged)
+	private void runBackgroundRescale(long generation, Image sourceMap, double targetZoom, boolean updateScrollLocationIfZoomChanged, int borderPadding)
 	{
 		if (sourceMap == null || generation != displayScaleGeneration.get())
 		{
@@ -2024,7 +2026,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			mapReadLock.unlock();
 		}
 
-		SwingUtilities.invokeLater(() -> commitBackgroundRescale(generation, scaledImage, targetZoom, updateScrollLocationIfZoomChanged));
+		SwingUtilities.invokeLater(() -> commitBackgroundRescale(generation, scaledImage, targetZoom, updateScrollLocationIfZoomChanged, borderPadding));
 	}
 
 	/**
@@ -2060,7 +2062,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	 * rescale runs, the panel stays at the previously committed zoom, so overlays and the displayed image stay consistent; then
 	 * everything snaps to the new zoom at once.
 	 */
-	private void commitBackgroundRescale(long generation, BufferedImage scaledImage, double targetZoom, boolean updateScrollLocationIfZoomChanged)
+	private void commitBackgroundRescale(long generation, BufferedImage scaledImage, double targetZoom, boolean updateScrollLocationIfZoomChanged, int borderPadding)
 	{
 		if (generation != displayScaleGeneration.get() || mapEditingPanel.mapFromMapCreator == null)
 		{
@@ -2094,6 +2096,12 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		}
 
+		// Commit the resolution and border padding together with the zoom and image, so overlays that read the panel's resolution, zoom,
+		// and border padding (such as the sub-map selection box) match the newly displayed image in the same frame. Committing any of them
+		// earlier, while the rescale is still in flight, would draw those overlays against a scale or border offset that doesn't match the
+		// still-old zoom for a frame, making them visibly jump. Both are no-ops for zoom-only changes, where neither value changes.
+		mapEditingPanel.setResolution(displayQualityScale);
+		mapEditingPanel.setBorderPadding(borderPadding);
 		mapEditingPanel.setZoom(zoom);
 		mapEditingPanel.setImage(scaledImage);
 
@@ -2198,8 +2206,14 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	public void showAsDrawing(boolean isDrawing)
 	{
-		clearEntireMapButton.setEnabled(!isDrawing);
-		createSubMapMenuItem.setEnabled(!isDrawing);
+		// While the sub-map workflow holds the menu bar locked, leave these two items alone: the lock's snapshot is authoritative and
+		// restores their correct state on unlock. Re-enabling them here (as a background draw completes mid-workflow) would let the user
+		// re-trigger Create Sub-Map or Clear Entire Map from inside the workflow.
+		if (menuItemEnabledStatesBeforeLock == null)
+		{
+			clearEntireMapButton.setEnabled(hasDrawnCurrentMapAtLeastOnce);
+			createSubMapMenuItem.setEnabled(hasDrawnCurrentMapAtLeastOnce);
+		}
 		toolsPanel.showAsDrawing(isDrawing);
 		if (textSearchDialog != null)
 		{
@@ -2345,7 +2359,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		boolean cancelPressed = checkForUnsavedChanges();
 		if (!cancelPressed)
 		{
-			updater.doIfMapIsReadyForInteractions(() -> new SubMapDialog(this).showStep1());
+			// Step 1 (region selection) needs no graph/resolution snapshot, so it can open even while the map is mid-draw. The snapshot is
+			// captured later, when advancing to step 2, from the then-current map state.
+			new SubMapDialog(this).showStep1();
 		}
 	}
 
