@@ -1143,12 +1143,15 @@ public class SubMapCreator
 			Corner corner;
 			if (isMouthNode)
 			{
-				// Snap the mouth to a nearby water-adjacent corner so the river reaches the sea, but only search outward a bounded number
-				// of centers (the same limit exact-copy mode uses to anchor mouths). If the source water body the river emptied into (e.g.
-				// a small lake) did not survive the regrid, the nearest water-adjacent corner can be many polygons away; snapping to it
-				// would invent a long river connecting the mouth to a distant, unrelated body of water. When none is within reach we fall
-				// back to the plain nearest corner so the river simply ends inland where its water used to be.
-				corner = findNearestCornerWithinCenterHops(newGraph, newGraphPoint, mouthWaterSearchMaxCenterHops, isWaterAdjacent);
+				// Snap the mouth to a nearby shore corner the river can actually reach along land: one adjacent to water (so it sits on
+				// the coast) AND with at least one pure-land neighbor, so the router can step onto it from a land corner. A water-adjacent
+				// corner with no land neighbor is a shore point walled off by other coast/water corners; the router (which won't step
+				// through coast/ocean/water except the target itself) can only reach it by a freehand jump across the water, which renders
+				// as a straight line cutting to the sea. Searching outward is bounded to a few centers (the same limit exact-copy mode
+				// uses): if the source water body (e.g. a small lake) did not survive the regrid, a distant shore corner would invent a
+				// long river to unrelated water. When none is within reach we fall back to the plain nearest corner so the river ends
+				// where its water was.
+				corner = findNearestCornerWithinCenterHops(newGraph, newGraphPoint, mouthWaterSearchMaxCenterHops, c -> isWaterAdjacent.test(c) && hasLandNeighbor(c));
 				if (corner == null)
 				{
 					corner = newGraph.findClosestCorner(newGraphPoint);
@@ -1603,6 +1606,24 @@ public class SubMapCreator
 		Point pixelPoint = new Point(riPoint.x * originalResolution, riPoint.y * originalResolution);
 		Corner corner = originalGraph.findClosestCorner(pixelPoint);
 		return corner != null && isSourceCornerAdjacentToWater(corner, originalEdits);
+	}
+
+	/**
+	 * Returns true if {@code corner} has at least one neighboring corner that is pure land (not coast, ocean, or water). The river router
+	 * only steps through such corners, so a corner with a land neighbor can be reached along graph edges from the land network, whereas one
+	 * whose neighbors are all coast/water can only be reached by a freehand jump across the water.
+	 */
+	private static boolean hasLandNeighbor(Corner corner)
+	{
+		for (Edge e : corner.protrudes)
+		{
+			Corner neighbor = edgeOtherCorner(e, corner);
+			if (neighbor != null && !(neighbor.isCoast || neighbor.isOcean || neighbor.isWater))
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**

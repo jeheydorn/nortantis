@@ -536,6 +536,36 @@ public class SubMapCreatorTest
 	}
 
 	/**
+	 * Verifies that rivers in a higher-detail redistribute sub-map of {@code simpleSmallWorld} reach the coast along graph edges without any
+	 * freehand jumps. This is a regression test for river mouths snapping to a water-adjacent shore corner that is walled off by other
+	 * coast/water corners: the router (which won't step through coast/ocean/water except the target waypoint) could only reach such a corner
+	 * by a freehand jump straight across the water to the sea. Several rivers here jump without the mouth being restricted to shore corners
+	 * that have a land neighbor. Same source, selection, and seed as {@code MapCreatorTest.subMapOfSimpleSmallWorldAtHighDetail}.
+	 */
+	@Test
+	public void subMapHighDetailRiversHaveNoFreehandJumps() throws Exception
+	{
+		// Set to true to force this test to write its result map to the failed sub-maps folder, even when it passes.
+		boolean forceWrite = false;
+
+		MapSettings originalSettings = new MapSettings(Paths.get("unit test files", "map settings", "simpleSmallWorld.nort").toString());
+		WorldGraph originalGraph = MapCreator.createGraphForUnitTests(originalSettings);
+
+		Rectangle selectionBoundsRI = new Rectangle(1024, 1024, 2048, 2048);
+		int matchWorldSize = SubMapDialog.computeDefaultWorldSize(originalSettings, selectionBoundsRI);
+		int worldSize = Math.min(SettingsGenerator.maxWorldSize, matchWorldSize * 8);
+
+		long seed = 987654321L;
+		MapSettings subMapSettings = SubMapCreator.createSubMapSettings(originalSettings, originalGraph, selectionBoundsRI, worldSize, originalSettings.resolution, seed, true);
+
+		assertRiversHaveNoFreehandJumps(subMapSettings.edits.rivers, subMapSettings, "subMapHighDetailRiversHaveNoFreehandJumps");
+		if (forceWrite || forceWriteAllMaps)
+		{
+			saveFailedMap(subMapSettings, "subMapHighDetailRiversHaveNoFreehandJumps");
+		}
+	}
+
+	/**
 	 * Verifies that a sub-map covering the entire source map at the original detail level (a 1× "Match source detail" sub-map) preserves
 	 * every source river faithfully — none dropped. "Match source detail" copies rivers verbatim (no loop removal, no re-routing), so a
 	 * full-map copy must reproduce all of them. {@code riversForSubMaps.nort} intentionally contains a complex river that revisits points;
