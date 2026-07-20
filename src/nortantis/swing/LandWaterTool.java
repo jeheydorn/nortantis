@@ -2433,6 +2433,32 @@ public class LandWaterTool extends EditorTool
 		return nearest != null && nearest.distanceTo(mouseRI) < snapRadius ? nearest : null;
 	}
 
+	// A polygon-placed river's control points sit exactly on Voronoi corners, so a snap that latched onto one round-trips back to the
+	// corner location with only floating-point error. A freehand river's control points sit off-corner. This sub-pixel threshold (graph
+	// pixels) cleanly tells the two apart.
+	private static final double snapPointOnCornerThresholdGraphPixels = 0.5;
+
+	/**
+	 * If {@code snapPointRI} (resolution-invariant) lies on a Voronoi corner, returns that corner; otherwise returns null. A snap latches
+	 * onto a corner when it connects to a polygon-placed river, whose control points sit exactly on corners; a freehand river's control
+	 * points sit off-corner and yield null. Callers use this to route a polygon-river connection to the corner along real edges instead of
+	 * bridging to it with an index-less freehand segment.
+	 */
+	private Corner snapPointOnCornerOrNull(Point snapPointRI)
+	{
+		if (snapPointRI == null || updater.mapParts == null || updater.mapParts.graph == null)
+		{
+			return null;
+		}
+		Point snapGraph = snapPointRI.mult(mainWindow.displayQualityScale);
+		Corner corner = updater.mapParts.graph.findClosestCorner(snapGraph);
+		if (corner == null || corner.loc == null)
+		{
+			return null;
+		}
+		return snapGraph.distanceTo(corner.loc) <= snapPointOnCornerThresholdGraphPixels ? corner : null;
+	}
+
 	private List<List<Point>> getSelectedRiverSegments(java.awt.Point pointFromMouse)
 	{
 		Point targetPoint = getPointOnGraph(pointFromMouse).mult(1.0 / mainWindow.displayQualityScale);
@@ -4167,6 +4193,24 @@ public class LandWaterTool extends EditorTool
 		{
 			Corner end = updater.mapParts.graph.findClosestCorner(getPointOnGraph(e.getPoint()));
 			Point polygonRiverSnapEnd = computeSnapPointForType(e.getPoint(), LineType.RIVER);
+
+			// When a snap point sits exactly on a Voronoi corner, the river it latched onto is polygon-placed (its control points are
+			// corners). Route the greedy path directly to that corner instead of leaving a bridge to fill the gap, so the connecting
+			// segment is a real edge-following polygon segment rather than an index-less "freehand" one. The bridge is then reserved for
+			// off-corner snaps (freehand rivers), which is what it's for.
+			Corner snapStartCorner = snapPointOnCornerOrNull(polygonRiverSnapStart);
+			if (snapStartCorner != null)
+			{
+				riverStart = snapStartCorner;
+				polygonRiverSnapStart = null;
+			}
+			Corner snapEndCorner = snapPointOnCornerOrNull(polygonRiverSnapEnd);
+			if (snapEndCorner != null)
+			{
+				end = snapEndCorner;
+				polygonRiverSnapEnd = null;
+			}
+
 			Set<Edge> river = filterOutOceanAndCoastEdges(updater.mapParts.graph.findPathGreedy(riverStart, end));
 			Point snapEndGraphPixels = polygonRiverSnapEnd == null ? null : polygonRiverSnapEnd.mult(mainWindow.displayQualityScale);
 			Point snapStartGraphPixels = polygonRiverSnapStart == null ? null : polygonRiverSnapStart.mult(mainWindow.displayQualityScale);
@@ -4654,23 +4698,41 @@ public class LandWaterTool extends EditorTool
 		mapEditingPanel.clearHighlightedEdges();
 		mapEditingPanel.clearHighlightedPolylines();
 		Corner end = updater.mapParts.graph.findClosestCorner(getPointOnGraph(e.getPoint()));
-		Set<Edge> river = filterOutOceanAndCoastEdges(updater.mapParts.graph.findPathGreedy(riverStart, end));
+		Point currentEndSnapPoint = computeSnapPointForType(e.getPoint(), LineType.RIVER);
+
+		// Mirror the release handler: a snap that lands on a Voronoi corner is a polygon-river connection, so route the path to that
+		// corner along real edges rather than previewing a bridge to it. Off-corner (freehand) snaps still preview a bridge.
+		Corner startCorner = riverStart;
+		Point effectiveSnapStart = polygonRiverSnapStart;
+		Corner snapStartCorner = snapPointOnCornerOrNull(polygonRiverSnapStart);
+		if (snapStartCorner != null)
+		{
+			startCorner = snapStartCorner;
+			effectiveSnapStart = null;
+		}
+		Corner snapEndCorner = snapPointOnCornerOrNull(currentEndSnapPoint);
+		if (snapEndCorner != null)
+		{
+			end = snapEndCorner;
+			currentEndSnapPoint = null;
+		}
+
+		Set<Edge> river = filterOutOceanAndCoastEdges(updater.mapParts.graph.findPathGreedy(startCorner, end));
 		// Preview the snap-back connection that will be added when the mouse is released, so the
 		// user isn't surprised by the gap between the polygon path and the freehand control point
 		// they clicked on (or the one they're hovering near at the other end).
-		Point currentEndSnapPoint = computeSnapPointForType(e.getPoint(), LineType.RIVER);
 		Point snapEndGraphPixels = currentEndSnapPoint == null ? null : currentEndSnapPoint.mult(mainWindow.displayQualityScale);
-		Point snapStartGraphPixels = polygonRiverSnapStart == null ? null : polygonRiverSnapStart.mult(mainWindow.displayQualityScale);
-		TrimmedRiverPath trimmed = trimRiverPathIfPathOvershootsMouse(river, riverStart, end, snapStartGraphPixels, snapEndGraphPixels);
+		Point snapStartGraphPixels = effectiveSnapStart == null ? null : effectiveSnapStart.mult(mainWindow.displayQualityScale);
+		TrimmedRiverPath trimmed = trimRiverPathIfPathOvershootsMouse(river, startCorner, end, snapStartGraphPixels, snapEndGraphPixels);
 		river = trimmed.path();
 		Corner start = trimmed.start();
 		end = trimmed.end();
 		mapEditingPanel.addHighlightedEdges(river, EdgeType.Voronoi);
 		Point riverStartRI = start == null ? null : start.loc.mult(1.0 / mainWindow.displayQualityScale);
 		Point endRI = end == null ? null : end.loc.mult(1.0 / mainWindow.displayQualityScale);
-		if (polygonRiverSnapStart != null && start != null && !polygonRiverSnapStart.isCloseEnough(riverStartRI))
+		if (effectiveSnapStart != null && start != null && !effectiveSnapStart.isCloseEnough(riverStartRI))
 		{
-			mapEditingPanel.addPolylinesToHighlight(List.of(polygonRiverSnapStart.mult(mainWindow.displayQualityScale), start.loc));
+			mapEditingPanel.addPolylinesToHighlight(List.of(effectiveSnapStart.mult(mainWindow.displayQualityScale), start.loc));
 		}
 		if (currentEndSnapPoint != null && endRI != null && !currentEndSnapPoint.isCloseEnough(endRI))
 		{

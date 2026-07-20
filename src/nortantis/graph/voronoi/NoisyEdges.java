@@ -30,6 +30,13 @@ public class NoisyEdges
 	// but with curves
 	private Map<Integer, List<Point>> curves;
 
+	// Per-edge geometry overrides used where a river runs along a region boundary: the edge's drawn geometry (fill boundary, region
+	// boundary line) is replaced with the river's own control-point curve so the polygons conform to the river instead of the river
+	// conforming to the polygons. Stamped by RiverDrawer#stampRiverCurvesOntoRegionBoundaryEdges. Read through getNoisyEdge, so every
+	// consumer picks it up automatically. Replaced wholesale via an atomic reference swap (volatile) so a concurrent reader on the EDT
+	// always sees a complete, self-consistent map rather than a half-rebuilt one.
+	private volatile Map<Integer, List<Point>> riverEdgeOverrides = Collections.emptyMap();
+
 	// Mean polygon width of the graph (in display pixels at the graph's resolution). Used to scale the subdivision stopping threshold so that
 	// jaggedness is consistent across world sizes. Larger world sizes have smaller polygons, so the threshold must be proportionally smaller
 	// to subdivide them to the same relative depth.
@@ -377,6 +384,11 @@ public class NoisyEdges
 
 	public List<Point> getNoisyEdge(int edgeIndex)
 	{
+		List<Point> override = riverEdgeOverrides.get(edgeIndex);
+		if (override != null)
+		{
+			return override;
+		}
 		if (lineStyle.equals(LineStyle.Splines) || lineStyle.equals(LineStyle.SplinesWithSmoothedCoastlines))
 		{
 			return curves.get(edgeIndex);
@@ -385,6 +397,15 @@ public class NoisyEdges
 		{
 			return paths.get(edgeIndex);
 		}
+	}
+
+	/**
+	 * Replaces the set of river-conformed edge geometries (edge index &rarr; curve in graph-pixel coordinates). Pass an empty map to clear
+	 * all overrides. The reference is swapped atomically so concurrent readers never see a partially built map.
+	 */
+	public void setRiverEdgeOverrides(Map<Integer, List<Point>> overrides)
+	{
+		riverEdgeOverrides = overrides == null ? Collections.emptyMap() : overrides;
 	}
 
 	public LineStyle getLineStyle()

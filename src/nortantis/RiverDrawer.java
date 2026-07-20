@@ -16,8 +16,10 @@ import nortantis.util.Range;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -160,29 +162,11 @@ public class RiverDrawer
 		RiverPathNode startNode = nodes.get(segmentIndex);
 		Point riStart = startNode.getLoc();
 		Point riEnd = nodes.get(segmentIndex + 1).getLoc();
-		int numSegments = nodes.size() - 1;
 
-		// Polygon-mode segments carry the Voronoi edge they follow. Drawing them along the graph's
-		// precomputed noisy-edge path makes the river exactly cover the region-color fill boundary —
-		// the fill polygons are built from the same noisy edge — and matches how the old code drew
-		// rivers before they were promoted to River objects.
-		//
-		// First/last segments are excluded from this: at a river's leaf corner the noisy-edge
-		// spline degenerates to a straight line (NoisyEdges.findPrevOrNextPointOnCurve returns the
-		// corner itself when there's no continuation), so an end segment drawn from the noisy edge
-		// loses its terminal curve. Instead we fall through to the Catmull-Rom branch below, which
-		// fakes a tangent using a reflected control point.
-		int edgeIndex = startNode.getEdgeIndexToNext();
-		boolean isEndSegment = segmentIndex == 0 || segmentIndex == numSegments - 1;
-		if (!isEndSegment && edgeIndex != RiverPathNode.EDGE_INDEX_NONE && graph != null && edgeIndex >= 0 && edgeIndex < graph.edges.size())
-		{
-			List<Point> noisyEdgePixels = getOrientedNoisyEdgePixels(edgeIndex, riStart, riEnd);
-			if (noisyEdgePixels != null)
-			{
-				return noisyEdgePixels;
-			}
-		}
-
+		// A river's shape is defined entirely by its control points, the same way for freehand and polygon-placed
+		// rivers. Where a river runs along a region boundary, the polygons conform to the river (their edge geometry
+		// is overridden with the river's curve; see {@link #stampRiverCurvesOntoRegionBoundaryEdges}) rather than the
+		// river conforming to the polygons, so the river never kinks to follow a boundary.
 		List<Point> pathRI;
 		if (lineStyle == MapSettings.LineStyle.Jagged && jaggedAmplitudeRI > 0)
 		{
@@ -217,32 +201,70 @@ public class RiverDrawer
 	}
 
 	/**
-	 * Returns the graph's noisy/spline path for {@code edgeIndex} in pixel coordinates, reversed if necessary so that the path starts near
-	 * {@code riStart} and ends near {@code riEnd} (both in RI coordinates). Returns {@code null} if the edge has no built noisy path, which
-	 * happens for edges at the map border with no v0/v1.
+	 * Where a river runs along a region boundary, replaces that Voronoi edge's drawn geometry with the river segment's own control-point
+	 * curve, so the region-color fill and the region boundary line conform exactly to the river rather than the river conforming to them.
+	 * Only region-boundary edges are overridden; coastline and interior edges keep their generated geometry. The full override set is
+	 * rebuilt from the current rivers each call, so an edge a river no longer covers reverts to its generated geometry automatically.
+	 *
+	 * <p>
+	 * Must run after the graph's noisy edges are built and the rivers are (re)synced to the graph, and before any polygon fill or boundary
+	 * drawing reads the geometry via {@link nortantis.graph.voronoi.NoisyEdges#getNoisyEdge(int)}.
 	 */
-	private List<Point> getOrientedNoisyEdgePixels(int edgeIndex, Point riStart, Point riEnd)
+	public void stampRiverCurvesOntoRegionBoundaryEdges()
 	{
-		List<Point> noisyPath = graph.noisyEdges == null ? null : graph.noisyEdges.getNoisyEdge(edgeIndex);
-		if (noisyPath == null || noisyPath.size() < 2)
+		if (graph == null || graph.noisyEdges == null)
 		{
-			return null;
+			return;
 		}
-		Point startPixel = new Point(riStart.x * resolutionScale, riStart.y * resolutionScale);
-		Point endPixel = new Point(riEnd.x * resolutionScale, riEnd.y * resolutionScale);
-		Point first = noisyPath.get(0);
-		Point last = noisyPath.get(noisyPath.size() - 1);
-		boolean forward = first.distanceTo(startPixel) + last.distanceTo(endPixel) <= first.distanceTo(endPixel) + last.distanceTo(startPixel);
-		if (forward)
+		Map<Integer, List<Point>> overrides = new HashMap<>();
+		double jaggedAmplitudeRI = getJaggedAmplitudeRI(graph, resolutionScale);
+		double minLengthRI = 2.0 / resolutionScale;
+		for (River river : rivers)
 		{
-			return new ArrayList<>(noisyPath);
+			List<RiverPathNode> nodes = river.nodes;
+			if (nodes.size() < 2)
+			{
+				continue;
+			}
+			for (int i = 0; i < nodes.size() - 1; i++)
+			{
+				int edgeIndex = nodes.get(i).getEdgeIndexToNext();
+				if (edgeIndex == RiverPathNode.EDGE_INDEX_NONE || edgeIndex < 0 || edgeIndex >= graph.edges.size())
+				{
+					continue;
+				}
+				Edge edge = graph.edges.get(edgeIndex);
+				if (edge.v0 == null || edge.v1 == null || !edge.isRegionBoundary() || edge.isCoastOrLakeShore())
+				{
+					continue;
+				}
+				List<Point> curvePixels = buildSegmentPathPixels(nodes, i, jaggedAmplitudeRI, minLengthRI);
+				if (curvePixels.size() < 2)
+				{
+					continue;
+				}
+				overrides.put(edgeIndex, orientCurveToEdgeCorners(curvePixels, edge));
+			}
 		}
-		List<Point> reversed = new ArrayList<>(noisyPath.size());
-		for (int i = noisyPath.size() - 1; i >= 0; i--)
+		graph.noisyEdges.setRiverEdgeOverrides(overrides);
+	}
+
+	/**
+	 * Orients {@code curvePixels} (a river segment's curve in graph-pixel coordinates) so it runs from {@code edge.v0} to {@code edge.v1},
+	 * and snaps its endpoints exactly onto the corner locations so the polygon that concatenates this edge with its neighbors stays closed.
+	 */
+	private static List<Point> orientCurveToEdgeCorners(List<Point> curvePixels, Edge edge)
+	{
+		List<Point> result = new ArrayList<>(curvePixels);
+		Point first = result.get(0);
+		boolean startsAtV0 = first.distanceTo(edge.v0.loc) <= first.distanceTo(edge.v1.loc);
+		if (!startsAtV0)
 		{
-			reversed.add(noisyPath.get(i));
+			Collections.reverse(result);
 		}
-		return reversed;
+		result.set(0, edge.v0.loc);
+		result.set(result.size() - 1, edge.v1.loc);
+		return result;
 	}
 
 	private List<Point> scaleToPixels(List<Point> pathRI)
