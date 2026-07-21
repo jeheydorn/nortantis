@@ -357,6 +357,38 @@ public class SubMapCreatorTest
 	}
 
 	/**
+	 * Regression test for a redistribute-mode sub-map where two distinct source rivers, re-routed into the sub-map, ended up sharing a
+	 * segment (the same pair of control points), which draws as two overlapping river curves. Rebuilt from the provenance of
+	 * {@code subMapWhereRiversCrossAndShareASegment.nort}: source {@code riversForSubMaps.nort}, selection and seed below.
+	 */
+	@Test
+	public void subMapRedistributedRiversDoNotShareSegments() throws Exception
+	{
+		// Set to true to force this test to write its result map to the failed sub-maps folder, even when it passes.
+		boolean forceWrite = false;
+
+		String originalSettingsPath = Paths.get("unit test files", "map settings", "riversForSubMaps.nort").toString();
+		MapSettings originalSettings = new MapSettings(originalSettingsPath);
+		originalSettings.resolution = 0.5;
+
+		WorldGraph originalGraph = MapCreator.createGraphForUnitTests(originalSettings);
+
+		Rectangle selectionBoundsRI = new Rectangle(2594, 0, 1502, 1458);
+		int worldSize = 1000;
+		long seed = 1727809982L;
+
+		MapSettings subMapSettings = SubMapCreator.createSubMapSettings(originalSettings, originalGraph, selectionBoundsRI, worldSize, originalSettings.resolution, seed, true);
+
+		List<River> rivers = subMapSettings.edits.rivers;
+
+		assertNoDuplicateRiverSegments(rivers, subMapSettings, "subMapRedistributedRiversDoNotShareSegments");
+		if (forceWrite || forceWriteAllMaps)
+		{
+			saveFailedMap(subMapSettings, "subMapRedistributedRiversDoNotShareSegments");
+		}
+	}
+
+	/**
 	 * Verifies that a T-shaped river in a sub-map has 3 mouths where it meets the ocean. Sub-map rivers are stored as freehand
 	 * {@link River} polylines (not tied to the new graph's edges), so a mouth is counted as a river-path endpoint whose location is
 	 * adjacent to a coast or ocean corner in the sub-map graph. This is a regression test for a bug where one arm of the T was incorrectly
@@ -680,8 +712,12 @@ public class SubMapCreatorTest
 
 		List<River> rivers = subMapSettings.edits.rivers;
 
-		// A full-map redistribution re-routes each source river into one sub-map river, so none should be dropped.
-		assertEquals(sourceRiverCount, rivers.size(), "Full-map higher-detail redistribution should re-route every source river (none dropped)");
+		// A full-map redistribution re-routes every source river, so none is dropped. Where two re-routed rivers cross and would share a
+		// segment, the overlap is removed by splitting one of them (see SubMapCreator.removeDuplicateRiverSegments), which can only add
+		// rivers, never drop one -- so the resulting count is at least the source count.
+		assertTrue(rivers.size() >= sourceRiverCount,
+				"Full-map higher-detail redistribution should re-route every source river (none dropped); got " + rivers.size() + " from " + sourceRiverCount);
+		assertNoDuplicateRiverSegments(rivers, subMapSettings, "subMapOfEntireMapAtHigherDetailRivers");
 		if (forceWrite || forceWriteAllMaps)
 		{
 			saveFailedMap(subMapSettings, "subMapOfEntireMapAtHigherDetailRivers");
@@ -719,8 +755,12 @@ public class SubMapCreatorTest
 
 		List<River> rivers = subMapSettings.edits.rivers;
 
-		// A full-map redistribution re-routes each source river into one sub-map river, so none should be dropped.
-		assertEquals(sourceRiverCount, rivers.size(), "Full-map higher-detail redistribution should re-route every source river (none dropped)");
+		// A full-map redistribution re-routes every source river, so none is dropped. Where two re-routed rivers cross and would share a
+		// segment, the overlap is removed by splitting one of them (see SubMapCreator.removeDuplicateRiverSegments), which can only add
+		// rivers, never drop one -- so the resulting count is at least the source count.
+		assertTrue(rivers.size() >= sourceRiverCount,
+				"Full-map higher-detail redistribution should re-route every source river (none dropped); got " + rivers.size() + " from " + sourceRiverCount);
+		assertNoDuplicateRiverSegments(rivers, subMapSettings, "subMapOfEntireMapAtHigherDetailSimpleSmallWorld");
 		if (forceWrite || forceWriteAllMaps)
 		{
 			saveFailedMap(subMapSettings, "subMapOfEntireMapAtHigherDetailSimpleSmallWorld");

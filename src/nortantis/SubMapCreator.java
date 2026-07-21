@@ -1008,50 +1008,107 @@ public class SubMapCreator
 	 * overlapping Catmull-Rom curves, such a duplicate renders as a small loop at the confluence. Trimming the overlapping segment from the
 	 * tributary's end leaves the two rivers sharing a single confluence corner, which is the correct topology.
 	 */
+	/**
+	 * Removes overlaps where two rivers share a segment (the same pair of control points), which would otherwise draw as two overlapping
+	 * river curves. Each shared segment survives in exactly one river; every other river that used it is split there (the shared segment is
+	 * dropped from it), so the segment is drawn once. This handles a shared segment whether it is terminal in one river and interior in the
+	 * other (a confluence) or interior to both (two rivers crossing). The surviving copy is chosen to be a widest occurrence of the segment,
+	 * so when overlapping rivers differ in width the wider one wins; ties prefer to keep the segment where it is interior (leaving the
+	 * confluence's trunk whole and trimming the tributary's terminal segment).
+	 */
 	private static void removeDuplicateRiverSegments(List<River> rivers)
 	{
-		// Count how many rivers use each undirected segment (keyed by its endpoint locations).
-		Map<OrderlessPair<Point>, Integer> segmentCounts = new HashMap<>();
-		for (River river : rivers)
+		// Group every segment occurrence by its undirected endpoint pair. Each occurrence records {riverIndex, segmentIndex, width,
+		// isTerminal} so the survivor can be chosen by width and interior-vs-terminal position.
+		Map<OrderlessPair<Point>, List<int[]>> occurrencesBySegment = new HashMap<>();
+		for (int ri = 0; ri < rivers.size(); ri++)
 		{
-			List<RiverPathNode> nodes = river.nodes;
+			List<RiverPathNode> nodes = rivers.get(ri).nodes;
 			for (int i = 0; i + 1 < nodes.size(); i++)
 			{
-				segmentCounts.merge(new OrderlessPair<>(nodes.get(i).getLoc(), nodes.get(i + 1).getLoc()), 1, Integer::sum);
+				boolean isTerminal = i == 0 || i + 2 == nodes.size();
+				occurrencesBySegment.computeIfAbsent(new OrderlessPair<>(nodes.get(i).getLoc(), nodes.get(i + 1).getLoc()), k -> new ArrayList<>())
+						.add(new int[] { ri, i, nodes.get(i).getWidthLevelToNext(), isTerminal ? 1 : 0 });
 			}
 		}
 
-		// Trim each river's leading and trailing segments while they are shared with another river. A shared segment is interior to exactly
-		// one river (the trunk) and terminal in the other (the tributary), so trimming ends removes the duplicate from the tributary only,
-		// never from the trunk. Decrementing as we trim keeps the surviving copy.
-		for (River river : rivers)
+		// Choose which occurrences survive. Only overlaps between different rivers are resolved: a segment used by two or more rivers keeps
+		// exactly one occurrence -- widest, then interior over terminal, then earliest (occurrences are in river then segment order, so the
+		// first encountered wins remaining ties). A segment used only within a single river (a self-revisit) is left intact, since an
+		// exact-copied complex source river may legitimately revisit a segment and splitting it is not this method's job.
+		Set<Long> survivingOccurrences = new HashSet<>();
+		for (List<int[]> occurrences : occurrencesBySegment.values())
 		{
-			List<RiverPathNode> nodes = river.nodes;
-			while (nodes.size() >= 2 && isSegmentShared(segmentCounts, nodes.get(0).getLoc(), nodes.get(1).getLoc()))
+			int firstRiver = occurrences.get(0)[0];
+			boolean spansMultipleRivers = false;
+			for (int[] candidate : occurrences)
 			{
-				decrementSegment(segmentCounts, nodes.get(0).getLoc(), nodes.get(1).getLoc());
-				nodes.remove(0);
+				if (candidate[0] != firstRiver)
+				{
+					spansMultipleRivers = true;
+					break;
+				}
 			}
-			while (nodes.size() >= 2 && isSegmentShared(segmentCounts, nodes.get(nodes.size() - 2).getLoc(), nodes.get(nodes.size() - 1).getLoc()))
+
+			if (!spansMultipleRivers)
 			{
-				decrementSegment(segmentCounts, nodes.get(nodes.size() - 2).getLoc(), nodes.get(nodes.size() - 1).getLoc());
-				nodes.remove(nodes.size() - 1);
+				for (int[] occurrence : occurrences)
+				{
+					survivingOccurrences.add(occurrenceToken(occurrence[0], occurrence[1]));
+				}
+				continue;
+			}
+
+			int[] best = occurrences.get(0);
+			for (int[] candidate : occurrences)
+			{
+				if (candidate[2] > best[2] || (candidate[2] == best[2] && candidate[3] < best[3]))
+				{
+					best = candidate;
+				}
+			}
+			survivingOccurrences.add(occurrenceToken(best[0], best[1]));
+		}
+
+		// Rebuild each river, splitting it wherever it uses a segment that survives in a different occurrence. Each maximal run of surviving
+		// segments becomes a river; runs shorter than a drawable length are dropped.
+		List<River> result = new ArrayList<>();
+		for (int ri = 0; ri < rivers.size(); ri++)
+		{
+			List<RiverPathNode> nodes = rivers.get(ri).nodes;
+			List<RiverPathNode> currentPiece = new ArrayList<>();
+			for (int i = 0; i + 1 < nodes.size(); i++)
+			{
+				if (survivingOccurrences.contains(occurrenceToken(ri, i)))
+				{
+					if (currentPiece.isEmpty())
+					{
+						currentPiece.add(nodes.get(i));
+					}
+					currentPiece.add(nodes.get(i + 1));
+				}
+				else
+				{
+					if (currentPiece.size() >= 2)
+					{
+						result.add(new River(new ArrayList<>(currentPiece)));
+					}
+					currentPiece.clear();
+				}
+			}
+			if (currentPiece.size() >= 2)
+			{
+				result.add(new River(new ArrayList<>(currentPiece)));
 			}
 		}
 
-		// Drop any river trimmed below a drawable length.
-		rivers.removeIf(river -> river.nodes.size() < 2);
+		rivers.clear();
+		rivers.addAll(result);
 	}
 
-	private static boolean isSegmentShared(Map<OrderlessPair<Point>, Integer> segmentCounts, Point a, Point b)
+	private static long occurrenceToken(int riverIndex, int segmentIndex)
 	{
-		Integer count = segmentCounts.get(new OrderlessPair<>(a, b));
-		return count != null && count > 1;
-	}
-
-	private static void decrementSegment(Map<OrderlessPair<Point>, Integer> segmentCounts, Point a, Point b)
-	{
-		segmentCounts.merge(new OrderlessPair<>(a, b), -1, Integer::sum);
+		return ((long) riverIndex << 32) | (segmentIndex & 0xFFFFFFFFL);
 	}
 
 	/**
