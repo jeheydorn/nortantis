@@ -27,6 +27,10 @@ public class SliderWithSpinner
 
 		int columns = Math.max(Integer.toString(slider.getMinimum()).length(), Integer.toString(slider.getMaximum()).length());
 		((JSpinner.DefaultEditor) spinner.getEditor()).getTextField().setColumns(columns);
+		if (slider.getMinimum() <= 0 && slider.getMaximum() >= 0)
+		{
+			SwingHelper.resetSpinnerToValueWhenBlank(spinner, 0);
+		}
 
 		SwingHelper.addListener(slider, () ->
 		{

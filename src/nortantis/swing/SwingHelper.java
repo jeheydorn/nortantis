@@ -522,6 +522,47 @@ public class SwingHelper
 	}
 
 	/**
+	 * Makes a numeric spinner fall back to its model's minimum value when its editor is left blank — for example when the user deletes the
+	 * number and tabs away — instead of silently restoring the value that was there before the edit. Intended for spinners whose minimum is
+	 * 0, so the blank falls back to 0; callers guard on that themselves.
+	 */
+	public static void resetSpinnerToMinimumWhenBlank(JSpinner spinner)
+	{
+		if (!(spinner.getModel() instanceof SpinnerNumberModel model))
+		{
+			return;
+		}
+		resetSpinnerToValueWhenBlank(spinner, model.getMinimum());
+	}
+
+	/**
+	 * Makes a numeric spinner fall back to {@code value} when its editor is left blank — for example when the user deletes the number and
+	 * tabs away — instead of silently restoring the value that was there before the edit. {@code value} must be within the model's range.
+	 */
+	public static void resetSpinnerToValueWhenBlank(JSpinner spinner, Object value)
+	{
+		if (!(spinner.getEditor() instanceof JSpinner.DefaultEditor editor))
+		{
+			return;
+		}
+		JFormattedTextField textField = editor.getTextField();
+		// This focus listener runs during the formatted text field's own focus-lost processing, before it reverts an uncommittable
+		// (blank) edit back to the previous value, so the field still holds the empty text here. Committing the value clears the
+		// field's "edited" state, which suppresses that revert.
+		textField.addFocusListener(new java.awt.event.FocusAdapter()
+		{
+			@Override
+			public void focusLost(java.awt.event.FocusEvent e)
+			{
+				if (textField.getText().trim().isEmpty())
+				{
+					spinner.setValue(value);
+				}
+			}
+		});
+	}
+
+	/**
 	 * Width, in pixels, that long option-pane messages are wrapped to. See {@link #wrapDialogMessage(Object)}.
 	 */
 	private static final int dialogWrapWidthPixels = 400;

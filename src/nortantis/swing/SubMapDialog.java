@@ -231,6 +231,8 @@ public class SubMapDialog
 		ySpinner = new JSpinner(new SpinnerNumberModel(0, 0, mapDisplayH, 1));
 		widthSpinner = new JSpinner(new SpinnerNumberModel(Math.min(100, mapDisplayW), 1, mapDisplayW, 1));
 		heightSpinner = new JSpinner(new SpinnerNumberModel(Math.min(100, mapDisplayH), 1, mapDisplayH, 1));
+		SwingHelper.resetSpinnerToMinimumWhenBlank(xSpinner);
+		SwingHelper.resetSpinnerToMinimumWhenBlank(ySpinner);
 
 		// TODO See if I need to set the preferred sizes of the spinners like the code had here before.
 		Dimension spinnerSize = new Dimension(75, xSpinner.getPreferredSize().height);
