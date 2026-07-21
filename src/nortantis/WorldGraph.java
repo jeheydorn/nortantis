@@ -3502,23 +3502,41 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
+	 * True if {@code e} is a drawable river edge that a river path may be extended through. Edges that touch water (coastlines, lake
+	 * shores, and edges between two water centers) are excluded, so an extracted river stops at the water's edge and is split into separate
+	 * {@link GraphRiver} pieces wherever it would otherwise run along a coastline or through water — e.g. where the user has painted ocean
+	 * across a river. Procedurally generated rivers reach the sea via land edges ending at a coastal corner, so none of their edges touch
+	 * water and this exclusion never affects them.
+	 */
+	private static boolean isTraversableRiverEdge(Edge e)
+	{
+		return e.isRiver() && e.v0 != null && e.v1 != null && !e.isCoastOrLakeShore() && !e.isWater();
+	}
+
+	/**
 	 * Finds all rivers in the graph and returns them as ordered lists of edges. Each tributary that joins a main river is returned as a
 	 * separate {@link GraphRiver} object.
 	 * <p>
-	 * Seeding is done from corners adjacent to drawable river edges (i.e.
-	 * {@code edge.river > RIVERS_THIS_SIZE_OR_SMALLER_WILL_NOT_BE_DRAWN}), so both procedurally generated rivers and user-drawn rivers are
-	 * found.
+	 * Seeding is done from corners adjacent to drawable river edges (see {@link #isTraversableRiverEdge(Edge)}), so both procedurally
+	 * generated rivers and user-drawn rivers are found.
 	 * </p>
 	 */
 	public List<GraphRiver> findRivers()
 	{
+		// Seed from a corner's own protruding edges rather than from edges' v0/v1 endpoints. findRiver and followRiver navigate via
+		// corner.protrudes, so seeding the same way guarantees every seeded corner actually has a traversable edge to follow. (An edge can
+		// list a corner as v0/v1 without that edge appearing in the corner's protrudes, which would otherwise seed a corner that findRiver
+		// finds no options for.)
 		Set<Corner> riverCorners = new HashSet<>();
-		for (Edge e : edges)
+		for (Corner corner : corners)
 		{
-			if (e.isRiver() && e.v0 != null && e.v1 != null)
+			for (Edge e : corner.protrudes)
 			{
-				riverCorners.add(e.v0);
-				riverCorners.add(e.v1);
+				if (isTraversableRiverEdge(e))
+				{
+					riverCorners.add(corner);
+					break;
+				}
 			}
 		}
 
@@ -3558,7 +3576,7 @@ public class WorldGraph extends VoronoiGraph
 		List<Edge> options = new ArrayList<>();
 		for (Edge e : start.protrudes)
 		{
-			if (e.river > GraphRiver.RIVERS_THIS_SIZE_OR_SMALLER_WILL_NOT_BE_DRAWN && e.v0 != null && e.v1 != null)
+			if (isTraversableRiverEdge(e))
 			{
 				options.add(e);
 			}
@@ -3576,8 +3594,13 @@ public class WorldGraph extends VoronoiGraph
 		}
 		else
 		{
-			GraphRiver river1 = followRiver(riversAlreadyFound, start, options.get(0).getOtherCorner(start));
-			GraphRiver river2 = followRiver(riversAlreadyFound, start, options.get(1).getOtherCorner(start));
+			// Follow the two widest directions away from start, sharing one visited-corner set so the second arm cannot re-enter corners
+			// the first arm already covered. Without sharing, a river whose two arms rejoin into a loop walks the shared stretch twice,
+			// producing a river that draws a doubled line along those edges.
+			Set<Corner> visitedCorners = new HashSet<>();
+			visitedCorners.add(start);
+			GraphRiver river1 = followRiver(riversAlreadyFound, start, options.get(0).getOtherCorner(start), visitedCorners);
+			GraphRiver river2 = followRiver(riversAlreadyFound, start, options.get(1).getOtherCorner(start), visitedCorners);
 			river2.reverse();
 			river2.addAll(river1);
 			return river2;
@@ -3621,7 +3644,7 @@ public class WorldGraph extends VoronoiGraph
 		List<Edge> riverEdges = new ArrayList<>();
 		for (Edge e : head.protrudes)
 		{
-			if (e.isRiver() && e != lastToHead)
+			if (isTraversableRiverEdge(e) && e != lastToHead)
 			{
 				riverEdges.add(e);
 			}
