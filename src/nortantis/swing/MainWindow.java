@@ -773,8 +773,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					mapEditingPanel.mapFromMapCreator.close();
 				}
 				mapEditingPanel.mapFromMapCreator = map;
+				// Record the resolution the new raw map was rendered at, but don't lift highlight suppression here: this fires when the
+				// raw map is installed, which is before the displayed image is rescaled and committed (finishDisplayUpdate, delayed by a
+				// zoom rescale). Lifting suppression now would let highlights draw over the still-old image for that gap. finishDisplayUpdate
+				// re-evaluates suppression once the displayed image actually reflects this resolution.
 				displayedMapResolution = displayQualityScale;
-				updateHighlightSuppression();
 				onFinishedDrawingCommon(anotherDrawIsQueued, borderPaddingAsDrawn, null, warningMessages);
 				warnIfCitiesWereRemovedForWater(citiesRemovedForWater, wasTriggeredByUndoRedo);
 			}
@@ -2130,6 +2133,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	private void finishDisplayUpdate()
 	{
+		// The displayed image now reflects the raw map at displayedMapResolution, so this is the point where highlight suppression should
+		// be re-evaluated: it lifts exactly when the image on screen matches the target display quality, and stays raised through the
+		// zoom-rescale window that follows a quality change (where the raw map is already new but the displayed image is not yet).
+		updateHighlightSuppression();
+
 		// The map on screen now reflects the finished draw, so run any post-draw actions that were deferred while its display
 		// update was rescaling on a background thread (e.g. removing the orange processing-area highlights for erased icons/text).
 		if (!actionsToRunOnNextDisplayUpdate.isEmpty())

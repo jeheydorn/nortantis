@@ -694,7 +694,10 @@ public class MapEditingPanel extends UnscaledImagePanel
 			drawTextBox(((Graphics2D) g));
 		}
 
-		if (iconToEditBounds != null)
+		// The icon-edit box (Icons-tool move/scale handles, Overlay-tool position box) is positioned from the target display quality but
+		// rendered against the panel's resolution, so during a quality change it would be drawn misaligned ("disconnected") from the
+		// still-old image. Suppress it with the other highlights; the tool re-shows it via onAfterShowMap once the new image is committed.
+		if (iconToEditBounds != null && showHighlights)
 		{
 			if (!editBoxIsInMapSpace)
 			{
