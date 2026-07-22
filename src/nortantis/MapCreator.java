@@ -235,7 +235,7 @@ public class MapCreator implements WarningLogger
 		applyRegionEdits(mapParts.graph, settings.edits);
 		// Apply river edits before center edits because applying center edits smoothes region boundaries, which depends on rivers.
 		migrateLegacyRiversIfNeeded(settings, mapParts.graph);
-		applyRiverEdits(mapParts.graph, settings.edits);
+		applyRiverEdits(mapParts.graph, settings.edits, centersChanged);
 		Set<Center> centersChangedThatAffectedLandOrRegionBoundaries = applyCenterEdits(mapParts.graph, settings.edits, getCenterEditsForCenters(settings.edits, centersChanged),
 				settings.areRegionBoundariesVisible(), settings.resolution);
 
@@ -1879,7 +1879,7 @@ public class MapCreator implements WarningLogger
 		// values.
 		if (settings.edits != null && settings.edits.hasInitializedRivers)
 		{
-			applyRiverEdits(graph, settings.edits);
+			applyRiverEdits(graph, settings.edits, null);
 		}
 		else
 		{
@@ -2098,10 +2098,25 @@ public class MapCreator implements WarningLogger
 	 * {@link nortantis.editor.RiverPathNode#getEdgeIndexToNext()} is set (polygon-mode rivers) are written back to that edge; freehand
 	 * segments without an edge index are skipped because they do not lie on a single Voronoi edge.
 	 */
-	private static void applyRiverEdits(WorldGraph graph, MapEdits edits)
+	private static void applyRiverEdits(WorldGraph graph, MapEdits edits, Set<Center> centersChanged)
 	{
+		Stopwatch sw = new Stopwatch("apply river edits");
+		// On a full draw (centersChanged == null) every edge is recomputed. On an incremental draw only the edges of the changed centers are
+		// recomputed; every other edge keeps its current river level, since only rivers near a changed center can have changed. Restricting the
+		// clear and rebuild passes to those edges avoids iterating the entire edge set on incremental updates. An untouched river edge keeps its
+		// level and is not needlessly rebuilt.
+		Collection<Edge> edgesToRecompute;
+		if (centersChanged == null)
+		{
+			edgesToRecompute = graph.edges;
+		}
+		else
+		{
+			edgesToRecompute = graph.getEdgesFromCenters(centersChanged);
+		}
+
 		int[] oldRivers = new int[graph.edges.size()];
-		for (Edge edge : graph.edges)
+		for (Edge edge : edgesToRecompute)
 		{
 			oldRivers[edge.index] = edge.river;
 			edge.river = 0;
@@ -2120,18 +2135,24 @@ public class MapCreator implements WarningLogger
 						continue;
 					}
 					Edge edge = graph.edges.get(edgeIndex);
+					if (centersChanged != null && !edgesToRecompute.contains(edge))
+					{
+						// The edge is not touching a center that changed, so its river level is left as it is.
+						continue;
+					}
 					edge.river = Math.max(edge.river, nodes.get(i).getWidthLevelToNext());
 				}
 			}
 		}
 
-		for (Edge edge : graph.edges)
+		for (Edge edge : edgesToRecompute)
 		{
 			if (edge.river != oldRivers[edge.index] && edge.d0 != null)
 			{
 				graph.rebuildNoisyEdgesForCenter(edge.d0);
 			}
 		}
+		sw.printElapsedTime();
 	}
 
 	public Image createHeightMap(MapSettings settings)
