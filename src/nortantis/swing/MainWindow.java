@@ -97,6 +97,12 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	// for a newer zoom is still in flight.
 	double zoom;
 	double displayQualityScale;
+	// The resolution the raw map image currently on screen (mapFromMapCreator) was actually rendered at. Updated only when a new full-draw
+	// map is installed - NOT by zoom rescales, which reuse the existing raw map and would otherwise make the panel's resolution report the
+	// target quality before the image at that quality exists. Overlays that scale RI geometry by displayQualityScale (the river/road
+	// highlights) only line up with the on-screen image while this equals displayQualityScale; during a display-quality change it lags until
+	// the new full draw completes.
+	double displayedMapResolution;
 	// Single background thread that produces full-map rescaled images for display (used whenever the display needs a full rescale
 	// rather than a fast in-place patch of the existing displayed image), so that a slow QUALITY downscale never blocks the EDT.
 	// Coalescing/superseding is handled with displayScaleGeneration: each request captures the generation counter at submit time, and
@@ -767,6 +773,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					mapEditingPanel.mapFromMapCreator.close();
 				}
 				mapEditingPanel.mapFromMapCreator = map;
+				displayedMapResolution = displayQualityScale;
+				updateHighlightSuppression();
 				onFinishedDrawingCommon(anotherDrawIsQueued, borderPaddingAsDrawn, null, warningMessages);
 				warnIfCitiesWereRemovedForWater(citiesRemovedForWater, wasTriggeredByUndoRedo);
 			}
@@ -2259,6 +2267,21 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		else if (quality == DisplayQuality.Ultra)
 		{
 			displayQualityScale = 1.5;
+		}
+		updateHighlightSuppression();
+	}
+
+	/**
+	 * Suppresses the map highlight overlays whenever the raw map image on screen was rendered at a different resolution than the current
+	 * target display quality - i.e. while a display-quality change is redrawing the map. Called both when the target quality changes and when
+	 * a full draw installs a new raw map. Robust to a concurrent zoom change, which rescales the still-old raw map and would otherwise make
+	 * the panel report the target resolution before the image at that resolution exists.
+	 */
+	private void updateHighlightSuppression()
+	{
+		if (mapEditingPanel != null)
+		{
+			mapEditingPanel.setHighlightsSuppressed(displayedMapResolution != displayQualityScale);
 		}
 	}
 

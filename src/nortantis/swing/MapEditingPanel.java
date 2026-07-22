@@ -49,6 +49,13 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private List<List<Point>> polylinesToHighlight;
 	private List<List<Point>> hoverPolylinesToHighlight;
 	private List<List<Point>> processingPolylines;
+	// While true, the map highlight overlays (brush, hover/selection outlines, river/road segment and control-point highlights, icon/text
+	// processing areas) are not drawn. These are positioned from the graph or from RI geometry scaled by the target display quality, so
+	// during a display-quality change - while the image on screen is still at the previous resolution - they would not line up with it.
+	// MainWindow raises this while a quality-changing full redraw is in flight and lowers it once that redraw lands; the tools recompute the
+	// highlights then. Overlays are also suppressed whenever there is no map image on screen (see paintComponent), which covers the initial
+	// load and the fit-to-window rescales that run before the first draw is shown.
+	private boolean highlightsSuppressed;
 	private EdgeType edgeTypeToHighlight;
 	private List<Point> roadControlPointCircles = null;
 	private List<Point> selectedRoadControlPointCircles = null;
@@ -239,6 +246,20 @@ public class MapEditingPanel extends UnscaledImagePanel
 	public void clearProcessingPolylines()
 	{
 		processingPolylines.clear();
+	}
+
+	/**
+	 * Suppresses (or restores) drawing of the map highlight overlays. Used to hide them while a display-quality change is redrawing the map,
+	 * since until the new image is shown they would be drawn at a resolution that doesn't match the still-old image on screen. See
+	 * {@link #highlightsSuppressed}.
+	 */
+	public void setHighlightsSuppressed(boolean suppressed)
+	{
+		if (highlightsSuppressed != suppressed)
+		{
+			highlightsSuppressed = suppressed;
+			repaint();
+		}
 	}
 
 	public void setControlPointCircles(List<Point> circles)
@@ -630,7 +651,25 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 		Graphics2D g2 = ((Graphics2D) g);
 
-		if (brushLocation != null)
+		// Draw no highlights or overlays until a map image is actually on screen. Before the first draw of a map lands - including
+		// the fit-to-window zoom rescales MainWindow runs before it (see submitBackgroundFullRescale) - the panel is blank. The graph,
+		// zoom, and os-scaling transform can still hold values left over from a previously displayed map, so a brush ring or a polygon
+		// highlight would otherwise be drawn (at a stale resolution/zoom) floating over the gray background.
+		if (getImage() == null)
+		{
+			return;
+		}
+
+		// While a display-quality change is still being processed, the image on screen is still at the previous resolution, so the
+		// highlights (positioned from the graph or from RI geometry scaled by the target resolution) wouldn't line up with it. Hide them
+		// until the new image is shown; MainWindow lowers this once the new full draw lands and the tools recompute the highlights. A
+		// top-level zoom change does not need this: MainWindow keeps the committed zoom until the rescaled image is ready (see
+		// commitBackgroundRescale), so overlays and the image stay consistent. Incremental snippet draws keep the same zoom and quality,
+		// so highlights stay visible. The text box, icon-edit handles, and selection box are active-editing UI (not hover highlights) and
+		// stay drawn.
+		boolean showHighlights = !highlightsSuppressed;
+
+		if (brushLocation != null && showHighlights)
 		{
 			g.setColor(getHighlightColor());
 			drawBrush(g2);
@@ -645,7 +684,10 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 		// Handle drawing/highlighting
 
-		highlightArtPacksIfNeeded(g2);
+		if (showHighlights)
+		{
+			highlightArtPacksIfNeeded(g2);
+		}
 
 		if (textBoxBounds != null)
 		{
@@ -667,35 +709,38 @@ public class MapEditingPanel extends UnscaledImagePanel
 			}
 		}
 
-		drawAreas(g);
-
-		if (graph != null)
+		if (showHighlights)
 		{
-			if (highlightLakes && getImage() != null)
+			drawAreas(g);
+
+			if (graph != null)
 			{
-				drawLakes(g);
+				if (highlightLakes)
+				{
+					drawLakes(g);
+				}
+
+				if (highlightRivers)
+				{
+					drawRivers(g);
+				}
+
+				g.setColor(highlightEditColor);
+				drawCenterOutlines(g, highlightedCenters);
+				// Hover polylines (orange) go below selected polylines (yellow) so a selected segment that also happens to be near the
+				// cursor shows the brighter selected color.
+				g.setColor(processingColor);
+				drawHoverPolylines(g);
+				g.setColor(getHighlightColor());
+				drawEdges(g, highlightedEdges);
+				drawPolylines(g);
+				g.setColor(processingColor);
+				drawProcessingPolylines(g);
+				drawRoadControlPoints((Graphics2D) g);
+
+				g.setColor(selectColor);
+				drawCenterOutlines(g, selectedCenters);
 			}
-
-			if (highlightRivers && getImage() != null)
-			{
-				drawRivers(g);
-			}
-
-			g.setColor(highlightEditColor);
-			drawCenterOutlines(g, highlightedCenters);
-			// Hover polylines (orange) go below selected polylines (yellow) so a selected segment that also happens to be near the cursor
-			// shows the brighter selected color.
-			g.setColor(processingColor);
-			drawHoverPolylines(g);
-			g.setColor(getHighlightColor());
-			drawEdges(g, highlightedEdges);
-			drawPolylines(g);
-			g.setColor(processingColor);
-			drawProcessingPolylines(g);
-			drawRoadControlPoints((Graphics2D) g);
-
-			g.setColor(selectColor);
-			drawCenterOutlines(g, selectedCenters);
 		}
 
 		drawSelectionBox((Graphics2D) g);
@@ -1206,16 +1251,6 @@ public class MapEditingPanel extends UnscaledImagePanel
 	public void setZoom(double zoom)
 	{
 		this.zoom = zoom;
-	}
-
-	/**
-	 * The resolution (RI-to-graph-pixel scale) of the map image currently displayed. This is committed together with the displayed image, so
-	 * it lags the target display quality while a quality-change draw is still in flight. Overlays that convert RI geometry to on-screen
-	 * positions should scale by this rather than the target resolution so they stay aligned with the image actually on screen.
-	 */
-	public double getResolution()
-	{
-		return resolution;
 	}
 
 	public void setResolution(double resolution)

@@ -4646,29 +4646,10 @@ public class LandWaterTool extends EditorTool
 		highlightHoverCentersOrEdgesAndBrush(mouseLocation, false);
 	}
 
-	/**
-	 * Whether the map image currently on screen is at a different resolution than the target display quality - true only while a
-	 * display-quality change is redrawing the map. River/road highlights are positioned from RI geometry scaled by the target resolution, so
-	 * during this window they would not line up with the still-old image on screen.
-	 */
-	private boolean isDisplayResolutionStale()
-	{
-		return mapEditingPanel.getResolution() != mainWindow.displayQualityScale;
-	}
-
 	protected void highlightHoverCentersOrEdgesAndBrush(java.awt.Point mouseLocation, boolean ctrlDown)
 	{
 		if (mouseLocation == null)
 		{
-			return;
-		}
-
-		if ((riversButton.isSelected() || roadsButton.isSelected()) && isDisplayResolutionStale())
-		{
-			// A display-quality change is redrawing the map at a new resolution. Until that draw commits, the displayed image is still
-			// at the old resolution, so river/road highlights (whose positions come from RI geometry scaled by the target resolution)
-			// would be drawn misaligned with the image on screen. Leave the existing highlights untouched - they still line up with the
-			// image currently on screen - and let onAfterShowMap recompute them at the new resolution once the new image is shown.
 			return;
 		}
 
