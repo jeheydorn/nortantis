@@ -249,7 +249,9 @@ public class MapCreator implements WarningLogger
 
 		// Re-stamp river curves onto region-boundary edges now that rivers are resynced and noisy edges were rebuilt for changed centers,
 		// before the region-color fill and boundary line are redrawn below, so those polygons conform to the current rivers.
-		new RiverDrawer(settings, mapParts.graph).stampRiverCurvesOntoRegionBoundaryEdges();
+		Stopwatch sw = new Stopwatch("stamps rivers");
+		new RiverDrawer(settings, mapParts.graph).stampRiverCurvesOntoGraphEdges();
+		sw.printElapsedTime();
 
 		if (!centersChangedThatAffectedLandOrRegionBoundaries.isEmpty())
 		{
@@ -1183,12 +1185,12 @@ public class MapCreator implements WarningLogger
 		reportProgressAndCheckForCancel();
 
 		// Initialize rivers and stamp their curves onto region-boundary edges before any polygon fill or boundary line is drawn, so those
-		// polygons conform to the rivers rather than the reverse (see RiverDrawer#stampRiverCurvesOntoRegionBoundaryEdges).
+		// polygons conform to the rivers rather than the reverse (see RiverDrawer#stampRiverCurvesOntoGraphEdges).
 		if (!settings.edits.hasInitializedRivers)
 		{
 			settings.edits.initializeRiversFromGraph(graph, settings.resolution);
 		}
-		new RiverDrawer(settings, graph).stampRiverCurvesOntoRegionBoundaryEdges();
+		new RiverDrawer(settings, graph).stampRiverCurvesOntoGraphEdges();
 
 		IconDrawer iconDrawer;
 		boolean needToAddIcons;

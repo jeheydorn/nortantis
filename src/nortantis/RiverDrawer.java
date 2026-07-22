@@ -165,7 +165,7 @@ public class RiverDrawer
 
 		// A river's shape is defined entirely by its control points, the same way for freehand and polygon-placed
 		// rivers. Where a river runs along a region boundary, the polygons conform to the river (their edge geometry
-		// is overridden with the river's curve; see {@link #stampRiverCurvesOntoRegionBoundaryEdges}) rather than the
+		// is overridden with the river's curve; see {@link #stampRiverCurvesOntoGraphEdges}) rather than the
 		// river conforming to the polygons, so the river never kinks to follow a boundary.
 		List<Point> pathRI;
 		if (lineStyle == MapSettings.LineStyle.Jagged && jaggedAmplitudeRI > 0)
@@ -201,16 +201,23 @@ public class RiverDrawer
 	}
 
 	/**
-	 * Where a river runs along a region boundary, replaces that Voronoi edge's drawn geometry with the river segment's own control-point
-	 * curve, so the region-color fill and the region boundary line conform exactly to the river rather than the river conforming to them.
-	 * Only region-boundary edges are overridden; coastline and interior edges keep their generated geometry. The full override set is
-	 * rebuilt from the current rivers each call, so an edge a river no longer covers reverts to its generated geometry automatically.
+	 * Where a river runs along a Voronoi edge, replaces that edge's drawn geometry with the river segment's own control-point curve, so
+	 * everything that reads the edge geometry conforms exactly to the river rather than the river conforming to the edge. This makes the
+	 * region-color fill and region boundary line coincide with the river where it runs along a region boundary, and makes the editor's
+	 * polygon highlights (which trace the same edge geometry) coincide with the river on any river edge. Coastline and lakeshore edges are
+	 * excluded, so the coast keeps its generated shape. The full override set is rebuilt from the current rivers each call, so an edge a
+	 * river no longer covers reverts to its generated geometry automatically.
+	 *
+	 * <p>
+	 * Overriding an interior river edge (one shared by two centers of the same region) does not change the region fill: both centers trace
+	 * the identical curve for the shared edge, so their filled union is unchanged; only the visible region boundary, coastline, and highlight
+	 * outlines are affected.
 	 *
 	 * <p>
 	 * Must run after the graph's noisy edges are built and the rivers are (re)synced to the graph, and before any polygon fill or boundary
 	 * drawing reads the geometry via {@link nortantis.graph.voronoi.NoisyEdges#getNoisyEdge(int)}.
 	 */
-	public void stampRiverCurvesOntoRegionBoundaryEdges()
+	public void stampRiverCurvesOntoGraphEdges()
 	{
 		if (graph == null || graph.noisyEdges == null)
 		{
@@ -234,7 +241,7 @@ public class RiverDrawer
 					continue;
 				}
 				Edge edge = graph.edges.get(edgeIndex);
-				if (edge.v0 == null || edge.v1 == null || !edge.isRegionBoundary() || edge.isCoastOrLakeShore())
+				if (edge.v0 == null || edge.v1 == null || edge.isCoastOrLakeShore())
 				{
 					continue;
 				}

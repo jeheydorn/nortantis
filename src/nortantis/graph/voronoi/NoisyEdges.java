@@ -30,11 +30,12 @@ public class NoisyEdges
 	// but with curves
 	private Map<Integer, List<Point>> curves;
 
-	// Per-edge geometry overrides used where a river runs along a region boundary: the edge's drawn geometry (fill boundary, region
-	// boundary line) is replaced with the river's own control-point curve so the polygons conform to the river instead of the river
-	// conforming to the polygons. Stamped by RiverDrawer#stampRiverCurvesOntoRegionBoundaryEdges. Read through getNoisyEdge, so every
-	// consumer picks it up automatically. Replaced wholesale via an atomic reference swap (volatile) so a concurrent reader on the EDT
-	// always sees a complete, self-consistent map rather than a half-rebuilt one.
+	// Per-edge geometry overrides used where a river runs along a Voronoi edge: the edge's drawn geometry is replaced with the river's own
+	// control-point curve so everything that traces the edge (the region-color fill, region boundary line, and the editor's polygon
+	// highlights) conforms to the river instead of the river conforming to the polygons. Coastline edges are excluded. Stamped by
+	// RiverDrawer#stampRiverCurvesOntoGraphEdges. Read through getNoisyEdge, so every consumer picks it up automatically. Replaced wholesale
+	// via an atomic reference swap (volatile) so a concurrent reader on the EDT always sees a complete, self-consistent map rather than a
+	// half-rebuilt one.
 	private volatile Map<Integer, List<Point>> riverEdgeOverrides = Collections.emptyMap();
 
 	// Mean polygon width of the graph (in display pixels at the graph's resolution). Used to scale the subdivision stopping threshold so that
