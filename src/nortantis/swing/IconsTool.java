@@ -64,7 +64,12 @@ public class IconsTool extends EditorTool
 	 */
 	private final Set<FreeIcon> iconsUnderBrushInPreviousDragEvent = Collections.newSetFromMap(new IdentityHashMap<>());
 	private Set<FreeIcon> iconsToEdit;
-	private java.awt.Point editStart;
+	/**
+	 * The location where the mouse was pressed to begin a move or scale, stored in graph coordinates rather than panel pixels so it stays
+	 * correct if the zoom changes mid-drag. A panel-pixel press point would map to a different graph location under the new zoom, corrupting
+	 * the move delta and the scale ratio.
+	 */
+	private Point editStart;
 	private boolean isMoving;
 	private boolean isScaling;
 	private JComboBox<String> artPackComboBox;
@@ -1717,7 +1722,7 @@ public class IconsTool extends EditorTool
 				isScaling = mapEditingPanel.isInScaleTool(e.getPoint());
 				if (isMoving || isScaling)
 				{
-					editStart = e.getPoint();
+					editStart = getPointOnGraph(e.getPoint());
 				}
 				else
 				{
@@ -1737,7 +1742,7 @@ public class IconsTool extends EditorTool
 			if (iconsToEdit != null && !iconsToEdit.isEmpty())
 			{
 				Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
-				Point graphPointMousePressedLocation = getPointOnGraph(editStart);
+				Point graphPointMousePressedLocation = editStart;
 
 				List<FreeIcon> updated = new ArrayList<>();
 
@@ -1835,7 +1840,7 @@ public class IconsTool extends EditorTool
 			if (isMoving || isScaling)
 			{
 				Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
-				Point graphPointMousePressedLocation = getPointOnGraph(editStart);
+				Point graphPointMousePressedLocation = editStart;
 				List<FreeIcon> updated = new ArrayList<>();
 				Rectangle iconEditBounds = mapEditingPanel.getIconEditBounds(iconsToEdit);
 

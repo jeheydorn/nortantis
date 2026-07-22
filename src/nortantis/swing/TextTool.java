@@ -27,7 +27,12 @@ public class TextTool extends EditorTool
 {
 	private JTextField editTextField;
 	private MapText lastSelected;
-	private Point mousePressedLocation;
+	/**
+	 * The location where the mouse was pressed to begin moving or rotating text, stored in graph coordinates rather than panel pixels so it
+	 * stays correct if the zoom changes mid-drag. A panel-pixel press point would map to a different graph location under the new zoom,
+	 * corrupting the move delta and the rotation reference angle.
+	 */
+	private nortantis.geom.Point mousePressedLocation;
 	private DrawModeWidget modeWidget;
 	private RowHider textTypeHider;
 	private JComboBox<TextType> textTypeComboBox;
@@ -637,12 +642,12 @@ public class TextTool extends EditorTool
 			if (lastSelected != null && mapEditingPanel.isInRotateTool(e.getPoint()))
 			{
 				isRotating = true;
-				mousePressedLocation = e.getPoint();
+				mousePressedLocation = getPointOnGraph(e.getPoint());
 			}
 			else if (lastSelected != null && mapEditingPanel.isInMoveTool(e.getPoint()))
 			{
 				isMoving = true;
-				mousePressedLocation = e.getPoint();
+				mousePressedLocation = getPointOnGraph(e.getPoint());
 			}
 			else
 			{
@@ -852,7 +857,7 @@ public class TextTool extends EditorTool
 			{
 				// The user is dragging a text box.
 				nortantis.geom.Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
-				nortantis.geom.Point graphPointMousePressedLocation = getPointOnGraph(mousePressedLocation);
+				nortantis.geom.Point graphPointMousePressedLocation = mousePressedLocation;
 
 				int deltaX = (int) (graphPointMouseLocation.x - graphPointMousePressedLocation.x);
 				int deltaY = (int) (graphPointMouseLocation.y - graphPointMousePressedLocation.y);
@@ -880,7 +885,7 @@ public class TextTool extends EditorTool
 	private double calcRotationAngle(MouseEvent e)
 	{
 		nortantis.geom.Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
-		nortantis.geom.Point graphPointMousePressedLocation = getPointOnGraph(mousePressedLocation);
+		nortantis.geom.Point graphPointMousePressedLocation = mousePressedLocation;
 
 		// Find the bounding box currently displayed
 		RotatedRectangle boundingBox = lastSelected.line1Bounds.addRotatedRectangleThatHasTheSameAngleAndPivot(lastSelected.line2Bounds);
@@ -916,7 +921,7 @@ public class TextTool extends EditorTool
 			{
 				MapText before = lastSelected.deepCopy();
 				nortantis.geom.Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
-				nortantis.geom.Point graphPointMousePressedLocation = getPointOnGraph(mousePressedLocation);
+				nortantis.geom.Point graphPointMousePressedLocation = mousePressedLocation;
 
 				// The user dragged and dropped text.
 				// Divide the translation by mainWindow.displayQualityScale because MapText locations are stored as if
