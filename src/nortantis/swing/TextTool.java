@@ -572,7 +572,16 @@ public class TextTool extends EditorTool
 	@Override
 	protected void onAfterShowMap()
 	{
-		updateHighlightsForMousePosition();
+		if ((isMoving || isRotating) && mousePressedLocation != null)
+		{
+			// A move or rotate is in progress. Reposition the preview from the current mouse location so it follows a zoom change made
+			// mid-drag, which repaints the map without generating a mouse-move event.
+			updateMoveOrRotatePreview(mapEditingPanel.getMousePosition());
+		}
+		else
+		{
+			updateHighlightsForMousePosition();
+		}
 	}
 
 	@Override
@@ -853,28 +862,7 @@ public class TextTool extends EditorTool
 
 		if (lastSelected != null)
 		{
-			if (isMoving)
-			{
-				// The user is dragging a text box.
-				nortantis.geom.Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
-				nortantis.geom.Point graphPointMousePressedLocation = mousePressedLocation;
-
-				int deltaX = (int) (graphPointMouseLocation.x - graphPointMousePressedLocation.x);
-				int deltaY = (int) (graphPointMouseLocation.y - graphPointMousePressedLocation.y);
-
-				RotatedRectangle line1 = lastSelected.line1Bounds.translate(new nortantis.geom.Point(deltaX, deltaY));
-				RotatedRectangle line2 = lastSelected.line2Bounds == null ? null : lastSelected.line2Bounds.translate(new nortantis.geom.Point(deltaX, deltaY));
-				mapEditingPanel.setTextBoxToDraw(line1, line2);
-				mapEditingPanel.repaint();
-			}
-			else if (isRotating)
-			{
-				double angle = calcRotationAngle(e);
-				RotatedRectangle line1 = lastSelected.line1Bounds.rotateTo(angle);
-				RotatedRectangle line2 = lastSelected.line2Bounds == null ? null : lastSelected.line2Bounds.rotateTo(angle);
-				mapEditingPanel.setTextBoxToDraw(line1, line2);
-				mapEditingPanel.repaint();
-			}
+			updateMoveOrRotatePreview(e.getPoint());
 		}
 		else if (modeWidget.isEraseMode())
 		{
@@ -882,9 +870,44 @@ public class TextTool extends EditorTool
 		}
 	}
 
-	private double calcRotationAngle(MouseEvent e)
+	/**
+	 * Recomputes the in-progress move/rotate preview box from the current mouse location and the graph-coordinate press point. Called on each
+	 * drag event, and also from {@link #onAfterShowMap()} so the preview follows a zoom change made mid-drag without requiring a mouse move.
+	 */
+	private void updateMoveOrRotatePreview(java.awt.Point mouseLocation)
 	{
-		nortantis.geom.Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
+		if (mouseLocation == null || mousePressedLocation == null || lastSelected == null)
+		{
+			return;
+		}
+
+		if (isMoving)
+		{
+			// The user is dragging a text box.
+			nortantis.geom.Point graphPointMouseLocation = getPointOnGraph(mouseLocation);
+			nortantis.geom.Point graphPointMousePressedLocation = mousePressedLocation;
+
+			int deltaX = (int) (graphPointMouseLocation.x - graphPointMousePressedLocation.x);
+			int deltaY = (int) (graphPointMouseLocation.y - graphPointMousePressedLocation.y);
+
+			RotatedRectangle line1 = lastSelected.line1Bounds.translate(new nortantis.geom.Point(deltaX, deltaY));
+			RotatedRectangle line2 = lastSelected.line2Bounds == null ? null : lastSelected.line2Bounds.translate(new nortantis.geom.Point(deltaX, deltaY));
+			mapEditingPanel.setTextBoxToDraw(line1, line2);
+			mapEditingPanel.repaint();
+		}
+		else if (isRotating)
+		{
+			double angle = calcRotationAngle(mouseLocation);
+			RotatedRectangle line1 = lastSelected.line1Bounds.rotateTo(angle);
+			RotatedRectangle line2 = lastSelected.line2Bounds == null ? null : lastSelected.line2Bounds.rotateTo(angle);
+			mapEditingPanel.setTextBoxToDraw(line1, line2);
+			mapEditingPanel.repaint();
+		}
+	}
+
+	private double calcRotationAngle(java.awt.Point mouseLocation)
+	{
+		nortantis.geom.Point graphPointMouseLocation = getPointOnGraph(mouseLocation);
 		nortantis.geom.Point graphPointMousePressedLocation = mousePressedLocation;
 
 		// Find the bounding box currently displayed
@@ -935,7 +958,7 @@ public class TextTool extends EditorTool
 			}
 			else if (isRotating)
 			{
-				double angle = calcRotationAngle(e);
+				double angle = calcRotationAngle(e.getPoint());
 				MapText before = lastSelected.deepCopy();
 
 				lastSelected.angle = angle;

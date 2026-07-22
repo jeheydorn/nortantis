@@ -1739,46 +1739,7 @@ public class IconsTool extends EditorTool
 
 		if (isMoving || isScaling)
 		{
-			if (iconsToEdit != null && !iconsToEdit.isEmpty())
-			{
-				Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
-				Point graphPointMousePressedLocation = editStart;
-
-				List<FreeIcon> updated = new ArrayList<>();
-
-				if (isMoving)
-				{
-					double deltaX = (int) (graphPointMouseLocation.x - graphPointMousePressedLocation.x);
-					double deltaY = (int) (graphPointMouseLocation.y - graphPointMousePressedLocation.y);
-
-					for (FreeIcon iconToEdit : iconsToEdit)
-					{
-						Point scaledOldLocation = iconToEdit.getScaledLocation(mainWindow.displayQualityScale);
-						updated.add(iconToEdit.copyWithLocation(mainWindow.displayQualityScale, new Point(scaledOldLocation.x + deltaX, scaledOldLocation.y + deltaY)));
-					}
-
-				}
-				else if (isScaling)
-				{
-					Rectangle iconEditBounds = mapEditingPanel.getIconEditBounds(iconsToEdit);
-					double scale = calcScale(graphPointMouseLocation, graphPointMousePressedLocation, iconEditBounds);
-
-					for (FreeIcon iconToEdit : iconsToEdit)
-					{
-						Rectangle imageBounds = updater.mapParts.iconDrawer.toIconDrawTask(iconToEdit).getOrCreateContentBoundsPadded();
-						updated.add(iconToEdit.copyWithScale(iconToEdit.scale * floorWithMinScale(scale, imageBounds)));
-					}
-				}
-
-				if (!updated.isEmpty())
-				{
-					mapEditingPanel.setHighlightedAreasFromIcons(updated, updater.mapParts.iconDrawer, false);
-					boolean isValidPosition = updated.stream().anyMatch(icon -> icon.type == IconType.decorations || !updater.mapParts.iconDrawer.isContentBottomTouchingWater(icon));
-					mapEditingPanel.showIconEditToolsAt(updated, isValidPosition);
-				}
-			}
-
-			showOrHideEditComponents();
+			updateMoveOrScalePreview(e.getPoint());
 		}
 		else
 		{
@@ -1814,6 +1775,57 @@ public class IconsTool extends EditorTool
 		}
 
 		mapEditingPanel.repaint();
+	}
+
+	/**
+	 * Recomputes the in-progress move/scale preview (the highlighted icons and the edit box) from the current mouse location and the
+	 * graph-coordinate press point. Called on each drag event, and also from {@link #onAfterShowMap()} so the preview follows a zoom change
+	 * made mid-drag without requiring a mouse move.
+	 */
+	private void updateMoveOrScalePreview(java.awt.Point mouseLocation)
+	{
+		if (mouseLocation == null || editStart == null || iconsToEdit == null || iconsToEdit.isEmpty())
+		{
+			return;
+		}
+
+		Point graphPointMouseLocation = getPointOnGraph(mouseLocation);
+		Point graphPointMousePressedLocation = editStart;
+
+		List<FreeIcon> updated = new ArrayList<>();
+
+		if (isMoving)
+		{
+			double deltaX = (int) (graphPointMouseLocation.x - graphPointMousePressedLocation.x);
+			double deltaY = (int) (graphPointMouseLocation.y - graphPointMousePressedLocation.y);
+
+			for (FreeIcon iconToEdit : iconsToEdit)
+			{
+				Point scaledOldLocation = iconToEdit.getScaledLocation(mainWindow.displayQualityScale);
+				updated.add(iconToEdit.copyWithLocation(mainWindow.displayQualityScale, new Point(scaledOldLocation.x + deltaX, scaledOldLocation.y + deltaY)));
+			}
+
+		}
+		else if (isScaling)
+		{
+			Rectangle iconEditBounds = mapEditingPanel.getIconEditBounds(iconsToEdit);
+			double scale = calcScale(graphPointMouseLocation, graphPointMousePressedLocation, iconEditBounds);
+
+			for (FreeIcon iconToEdit : iconsToEdit)
+			{
+				Rectangle imageBounds = updater.mapParts.iconDrawer.toIconDrawTask(iconToEdit).getOrCreateContentBoundsPadded();
+				updated.add(iconToEdit.copyWithScale(iconToEdit.scale * floorWithMinScale(scale, imageBounds)));
+			}
+		}
+
+		if (!updated.isEmpty())
+		{
+			mapEditingPanel.setHighlightedAreasFromIcons(updated, updater.mapParts.iconDrawer, false);
+			boolean isValidPosition = updated.stream().anyMatch(icon -> icon.type == IconType.decorations || !updater.mapParts.iconDrawer.isContentBottomTouchingWater(icon));
+			mapEditingPanel.showIconEditToolsAt(updated, isValidPosition);
+		}
+
+		showOrHideEditComponents();
 	}
 
 	private double calcScale(Point graphPointMouseLocation, Point graphPointMousePressedLocation, Rectangle iconEditBounds)
@@ -2209,7 +2221,17 @@ public class IconsTool extends EditorTool
 	@Override
 	protected void onAfterShowMap()
 	{
-		updateHighlightsForMousePosition();
+		if ((isMoving || isScaling) && editStart != null)
+		{
+			// A move or scale is in progress. Reposition the preview from the current mouse location so it follows a zoom change made
+			// mid-drag, which repaints the map without generating a mouse-move event.
+			updateMoveOrScalePreview(mapEditingPanel.getMousePosition());
+			mapEditingPanel.repaint();
+		}
+		else
+		{
+			updateHighlightsForMousePosition();
+		}
 	}
 
 	@Override
