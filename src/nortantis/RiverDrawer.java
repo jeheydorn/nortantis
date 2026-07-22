@@ -184,7 +184,10 @@ public class RiverDrawer
 			int last = nodes.size() - 1;
 			Point p0 = segmentIndex == 0 ? riStart.add(riStart.subtract(riEnd)) : nodes.get(segmentIndex - 1).getLoc();
 			Point p3 = segmentIndex == last - 1 ? riEnd.add(riEnd.subtract(riStart)) : nodes.get(segmentIndex + 2).getLoc();
-			pathRI = CurveCreator.createCurve(p0, riStart, riEnd, p3, CurveCreator.defaultDistanceBetweenPoints / resolutionScale);
+			// getDistanceBetweenPointsForResolution returns a spacing in graph-pixel space; dividing by resolutionScale converts it to the
+			// RI space this curve is built in (the path is scaled to pixels afterward). The resolution-based spacing adds points at low
+			// display resolutions so smooth rivers don't collapse toward sharp polygon lines.
+			pathRI = CurveCreator.createCurve(p0, riStart, riEnd, p3, CurveCreator.getDistanceBetweenPointsForResolution(resolutionScale) / resolutionScale);
 			// createCurve runs t < t2 so the endpoint may be missing; ensure it is present.
 			if (pathRI.isEmpty() || !pathRI.get(pathRI.size() - 1).isCloseEnough(riEnd))
 			{

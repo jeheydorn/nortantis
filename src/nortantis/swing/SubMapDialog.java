@@ -463,17 +463,25 @@ public class SubMapDialog
 	}
 
 	/**
-	 * Returns {@code box} with each field rounded to the nearest whole RI pixel, matching exactly how {@link #updateStep1SpinnersFromBox}
-	 * rounds for display (so the snapped bounds equal the values shown in the spinners). Width and height are floored at 1. Returns null if
-	 * {@code box} is null.
+	 * Returns {@code box} with each field rounded to the nearest whole RI pixel and clamped so the result stays within the displayed map
+	 * bounds. This matches exactly how {@link #updateStep1SpinnersFromBox} rounds for display (so the snapped bounds equal the values shown in
+	 * the spinners). Rounding each field independently can otherwise push {@code x + width} (or {@code y + height}) one pixel past the map
+	 * edge, which would fail {@link #validateStep1Spinners} and disable the Next button even though the selection is valid. Width and height
+	 * are floored at 1. Returns null if {@code box} is null.
 	 */
-	private static Rectangle roundToIntegerBounds(Rectangle box)
+	private Rectangle roundToIntegerBounds(Rectangle box)
 	{
 		if (box == null)
 		{
 			return null;
 		}
-		return new Rectangle(Math.round(box.x), Math.round(box.y), Math.max(1, Math.round(box.width)), Math.max(1, Math.round(box.height)));
+		long mapWidth = getMapDisplayWidth();
+		long mapHeight = getMapDisplayHeight();
+		long x = Math.max(0, Math.min(Math.round(box.x), mapWidth - 1));
+		long y = Math.max(0, Math.min(Math.round(box.y), mapHeight - 1));
+		long width = Math.max(1, Math.min(Math.round(box.width), mapWidth - x));
+		long height = Math.max(1, Math.min(Math.round(box.height), mapHeight - y));
+		return new Rectangle(x, y, width, height);
 	}
 
 	/**
@@ -485,13 +493,14 @@ public class SubMapDialog
 		{
 			return;
 		}
+		Rectangle rounded = roundToIntegerBounds(selBoundsRI);
 		updatingSpinnersFromBox = true;
 		try
 		{
-			xSpinner.setValue((int) Math.round(selBoundsRI.x));
-			ySpinner.setValue((int) Math.round(selBoundsRI.y));
-			widthSpinner.setValue(Math.max(1, (int) Math.round(selBoundsRI.width)));
-			heightSpinner.setValue(Math.max(1, (int) Math.round(selBoundsRI.height)));
+			xSpinner.setValue((int) rounded.x);
+			ySpinner.setValue((int) rounded.y);
+			widthSpinner.setValue((int) rounded.width);
+			heightSpinner.setValue((int) rounded.height);
 			step1ErrorLabel.setText(" ");
 		}
 		finally

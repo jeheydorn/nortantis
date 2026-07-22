@@ -48,6 +48,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private Collection<Edge> highlightedEdges;
 	private List<List<Point>> polylinesToHighlight;
 	private List<List<Point>> hoverPolylinesToHighlight;
+	private List<List<Point>> processingPolylines;
 	private EdgeType edgeTypeToHighlight;
 	private List<Point> roadControlPointCircles = null;
 	private List<Point> selectedRoadControlPointCircles = null;
@@ -131,6 +132,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		resolution = 0.0;
 		polylinesToHighlight = new ArrayList<>();
 		hoverPolylinesToHighlight = new ArrayList<>();
+		processingPolylines = new ArrayList<>();
 
 		addMouseListener(new MouseAdapter()
 		{
@@ -217,6 +219,26 @@ public class MapEditingPanel extends UnscaledImagePanel
 	public void clearHoverPolylines()
 	{
 		hoverPolylinesToHighlight.clear();
+	}
+
+	/**
+	 * "Processing" polylines, drawn in the processing color (orange). Used to briefly mark the river/road segments being erased while the
+	 * incremental redraw is in flight, mirroring the processing-area highlights the icon and text tools show while erasing. Add the segments
+	 * before starting the erase draw and remove the same lists in a post-draw action so they clear once the erased line has visibly gone.
+	 */
+	public void addProcessingPolylines(List<List<Point>> lines)
+	{
+		processingPolylines.addAll(lines);
+	}
+
+	public void removeProcessingPolylines(List<List<Point>> lines)
+	{
+		processingPolylines.removeAll(lines);
+	}
+
+	public void clearProcessingPolylines()
+	{
+		processingPolylines.clear();
 	}
 
 	public void setControlPointCircles(List<Point> circles)
@@ -668,6 +690,8 @@ public class MapEditingPanel extends UnscaledImagePanel
 			g.setColor(getHighlightColor());
 			drawEdges(g, highlightedEdges);
 			drawPolylines(g);
+			g.setColor(processingColor);
+			drawProcessingPolylines(g);
 			drawRoadControlPoints((Graphics2D) g);
 
 			g.setColor(selectColor);
@@ -996,6 +1020,14 @@ public class MapEditingPanel extends UnscaledImagePanel
 		}
 	}
 
+	private void drawProcessingPolylines(Graphics g)
+	{
+		for (List<Point> line : processingPolylines)
+		{
+			drawPolyline(g, line);
+		}
+	}
+
 	/**
 	 * Returns the road control-point highlight radius in graph pixels. Used by both drawing and hit-testing so they stay in sync.
 	 */
@@ -1174,6 +1206,16 @@ public class MapEditingPanel extends UnscaledImagePanel
 	public void setZoom(double zoom)
 	{
 		this.zoom = zoom;
+	}
+
+	/**
+	 * The resolution (RI-to-graph-pixel scale) of the map image currently displayed. This is committed together with the displayed image, so
+	 * it lags the target display quality while a quality-change draw is still in flight. Overlays that convert RI geometry to on-screen
+	 * positions should scale by this rather than the target resolution so they stay aligned with the image actually on screen.
+	 */
+	public double getResolution()
+	{
+		return resolution;
 	}
 
 	public void setResolution(double resolution)
@@ -1799,6 +1841,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		clearHighlightedEdges();
 		clearHighlightedPolylines();
 		clearHoverPolylines();
+		clearProcessingPolylines();
 		clearRoadControlPointCircles();
 		clearSelectedRoadControlPointCircles();
 		clearHoveredControlPoint();

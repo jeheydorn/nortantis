@@ -291,7 +291,7 @@ public class WorldGraph extends VoronoiGraph
 
 	public void buildNoisyEdges(LineStyle lineStyle, boolean isForFrayedBorder)
 	{
-		noisyEdges = new NoisyEdges(getMeanCenterWidth(), centers.size(), lineStyle, isForFrayedBorder);
+		noisyEdges = new NoisyEdges(getMeanCenterWidth(), centers.size(), lineStyle, isForFrayedBorder, resolutionScale);
 		noisyEdges.buildNoisyEdges(this);
 		// The canonical (water-check-resolution) slices mirror these (a full/line-style rebuild changes the whole coastline). If they have
 		// been built, rebuild them now against the new coastline rather than nulling them out, so readers never see a null window.
@@ -1361,7 +1361,10 @@ public class WorldGraph extends VoronoiGraph
 				return;
 			}
 
-			NoisyEdges canonical = new NoisyEdges(getMeanCenterWidth(), centers.size(), noisyEdges.getLineStyle(), false,
+			// Pass resolutionScale = 1.0 so the canonical water-check curves keep a fixed point density (independent of the display
+			// resolution), which is what keeps water detection resolution-invariant. The coordinateScale already normalizes coordinates to
+			// waterCheckResolution.
+			NoisyEdges canonical = new NoisyEdges(getMeanCenterWidth(), centers.size(), noisyEdges.getLineStyle(), false, 1.0,
 					waterCheckResolution / resolutionScale);
 			canonical.buildNoisyEdges(this);
 
@@ -3105,10 +3108,8 @@ public class WorldGraph extends VoronoiGraph
 				}
 			}
 
-			// When drawing concentric waves with random variation, we need more
-			// points in the curve at lower resolutions to make it look
-			// good.
-			double distanceBetweenPoints = Math.max(1.0, Math.min(CurveCreator.defaultDistanceBetweenPoints, CurveCreator.defaultDistanceBetweenPoints * resolutionScale));
+			// When drawing concentric waves with random variation, we need more points in the curve at lower resolutions to make it look good.
+			double distanceBetweenPoints = CurveCreator.getDistanceBetweenPointsForResolutionUngated(resolutionScale);
 			drawPoints = CurveCreator.createCurve(drawPoints, distanceBetweenPoints);
 
 			if (drawPoints == null || drawPoints.size() <= 1)

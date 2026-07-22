@@ -236,8 +236,9 @@ public class MapCreator implements WarningLogger
 		// Apply river edits before center edits because applying center edits smoothes region boundaries, which depends on rivers.
 		migrateLegacyRiversIfNeeded(settings, mapParts.graph);
 		applyRiverEdits(mapParts.graph, settings.edits, centersChanged);
+		Set<Center> coastlineCentersChanged = new HashSet<>();
 		Set<Center> centersChangedThatAffectedLandOrRegionBoundaries = applyCenterEdits(mapParts.graph, settings.edits, getCenterEditsForCenters(settings.edits, centersChanged),
-				settings.areRegionBoundariesVisible(), settings.resolution);
+				settings.areRegionBoundariesVisible(), settings.resolution, coastlineCentersChanged);
 
 		Rectangle centersChangedBounds = WorldGraph.getBoundingBox(centersChanged);
 
@@ -299,11 +300,13 @@ public class MapCreator implements WarningLogger
 				}
 
 				// Concentric waves with random breaks need the entire coastline redrawn because a change somewhere in the
-				// coastline can affect the random numbers used to draw the rest of it.
-				if (settings.hasConcentricWaves() && settings.brokenLinesForConcentricWaves)
+				// coastline can affect the random numbers used to draw the rest of it. Only do this when the coastline actually
+				// changed (a center's land/water status flipped) - not for river, road, or region-boundary-only changes, which
+				// leave the coastline untouched.
+				if (!coastlineCentersChanged.isEmpty() && settings.hasConcentricWaves() && settings.brokenLinesForConcentricWaves)
 				{
 					List<List<Edge>> coastlines;
-					coastlines = mapParts.graph.findShoreEdges(centersChanged, settings.drawOceanEffectsInLakes, false);
+					coastlines = mapParts.graph.findShoreEdges(coastlineCentersChanged, settings.drawOceanEffectsInLakes, false);
 
 					Set<Center> coastlineCenters = new HashSet<>();
 					for (List<Edge> boundary : coastlines)
@@ -1885,7 +1888,7 @@ public class MapCreator implements WarningLogger
 		{
 			applyEdgeEdits(graph, settings.edits, null);
 		}
-		applyCenterEdits(graph, settings.edits, null, settings.areRegionBoundariesVisible(), resolutionScale);
+		applyCenterEdits(graph, settings.edits, null, settings.areRegionBoundariesVisible(), resolutionScale, null);
 
 		return graph;
 	}
@@ -1946,7 +1949,14 @@ public class MapCreator implements WarningLogger
 	 * @return A set of centers whose noisy edges have been recalculated, meaning something about their terrain or region boundaries
 	 *         changed.
 	 */
-	private static Set<Center> applyCenterEdits(WorldGraph graph, MapEdits edits, Collection<CenterEdit> centerEditChanges, boolean areRegionBoundariesVisible, double resolutionScale)
+	/**
+	 * @param coastlineCentersChangedOut
+	 *            If not null, this is populated with the centers whose land/water (or lake/ocean) status flipped - i.e. the edits that
+	 *            actually changed the coastline. This lets callers distinguish real coastline changes (which affect ocean waves) from
+	 *            region-boundary-only changes (e.g. drawing a river along a region boundary), which do not touch the coastline.
+	 */
+	private static Set<Center> applyCenterEdits(WorldGraph graph, MapEdits edits, Collection<CenterEdit> centerEditChanges, boolean areRegionBoundariesVisible, double resolutionScale,
+			Set<Center> coastlineCentersChangedOut)
 	{
 		if (edits == null || edits.centerEdits.isEmpty())
 		{
@@ -1972,6 +1982,10 @@ public class MapCreator implements WarningLogger
 			centersChanged.add(center);
 			Integer currentRegionId = center.region == null ? null : center.region.id;
 			boolean needsRebuild = center.isWater != cEdit.isWater || currentRegionId != cEdit.regionId;
+			if (coastlineCentersChangedOut != null && (center.isWater != cEdit.isWater || center.isLake != cEdit.isLake))
+			{
+				coastlineCentersChangedOut.add(center);
+			}
 			center.isWater = cEdit.isWater;
 			center.isLake = cEdit.isLake;
 
@@ -2100,7 +2114,6 @@ public class MapCreator implements WarningLogger
 	 */
 	private static void applyRiverEdits(WorldGraph graph, MapEdits edits, Set<Center> centersChanged)
 	{
-		Stopwatch sw = new Stopwatch("apply river edits");
 		// On a full draw (centersChanged == null) every edge is recomputed. On an incremental draw only the edges of the changed centers are
 		// recomputed; every other edge keeps its current river level, since only rivers near a changed center can have changed. Restricting the
 		// clear and rebuild passes to those edges avoids iterating the entire edge set on incremental updates. An untouched river edge keeps its
@@ -2152,7 +2165,6 @@ public class MapCreator implements WarningLogger
 				graph.rebuildNoisyEdgesForCenter(edge.d0);
 			}
 		}
-		sw.printElapsedTime();
 	}
 
 	public Image createHeightMap(MapSettings settings)

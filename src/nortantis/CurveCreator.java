@@ -12,6 +12,43 @@ public class CurveCreator
 {
 	public static final double defaultDistanceBetweenPoints = 4.0;
 
+	// Below this resolution, getDistanceBetweenPointsForResolution adds extra curve points. At and above it, the default spacing already looks
+	// good, and adding points there made curves look slightly worse.
+	public static final double resolutionScaleToStartAddingPoints = 0.5;
+
+	// Floor on the point spacing at very low resolutions, so the number of points doesn't grow without bound as resolution shrinks.
+	private static final double minDistanceBetweenPoints = 2.0;
+
+	/**
+	 * Returns the spacing to pass to {@link #createCurve} (in the coordinate space of the curve's control points, at the given resolution
+	 * scale) so that the curve keeps enough interpolated points to look smooth at that resolution. Below
+	 * {@link #resolutionScaleToStartAddingPoints} the spacing shrinks, adding points, so curves don't collapse toward sharp polygon lines when
+	 * the low-resolution image is scaled up to the display. At and above that resolution it returns {@link #defaultDistanceBetweenPoints}
+	 * unchanged (the default spacing already looks good there, and adding points slightly worsened the appearance).
+	 */
+	public static double getDistanceBetweenPointsForResolution(double resolutionScale)
+	{
+		if (resolutionScale >= resolutionScaleToStartAddingPoints)
+		{
+			return defaultDistanceBetweenPoints;
+		}
+		return clampDistanceBetweenPoints(resolutionScale, minDistanceBetweenPoints);
+	}
+
+	/**
+	 * Like {@link #getDistanceBetweenPointsForResolution(double)}, but adds points at any resolution below 1.0 (no threshold) using a minimum
+	 * spacing of 1.0, for curves where denser points always help (such as concentric wave lines).
+	 */
+	public static double getDistanceBetweenPointsForResolutionUngated(double resolutionScale)
+	{
+		return clampDistanceBetweenPoints(resolutionScale, 1.0);
+	}
+
+	private static double clampDistanceBetweenPoints(double resolutionScale, double minDistanceBetweenPoints)
+	{
+		return Math.max(minDistanceBetweenPoints, Math.min(defaultDistanceBetweenPoints, defaultDistanceBetweenPoints * resolutionScale));
+	}
+
 	/**
 	 * Creates a curve from p1 to p2 inclusive by creating a centripetal Catmull-Rom spline.
 	 * 

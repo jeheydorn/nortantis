@@ -44,18 +44,21 @@ public class NoisyEdges
 	private double meanPolygonWidth;
 	private int worldSize;
 	private boolean isForFrayedBorder;
+	// The graph's resolution scale, used only to choose how densely to sample spline curves (see CurveCreator#getDistanceBetweenPointsForResolution)
+	// so curves keep enough points to look smooth when drawn at low display resolutions. It does not affect jagged edges.
+	private double resolutionScale;
 	// A uniform factor applied to every corner/center coordinate read while generating noisy edges. Normally 1.0 (use the graph's own
 	// coordinates). The icon water-check builds a second NoisyEdges at a fixed canonical resolution from the same graph by setting this to
 	// (canonicalResolution / graphResolution), so the generated noisy coastline shape depends only on the canonical resolution and is
 	// therefore stable when the display resolution changes. See WorldGraph.findClosestCenter(Point, boolean, boolean) with useWaterCheckResolution=true.
 	private double coordinateScale;
 
-	public NoisyEdges(double meanPolygonWidth, int worldSize, LineStyle style, boolean isForFrayedBorder)
+	public NoisyEdges(double meanPolygonWidth, int worldSize, LineStyle style, boolean isForFrayedBorder, double resolutionScale)
 	{
-		this(meanPolygonWidth, worldSize, style, isForFrayedBorder, 1.0);
+		this(meanPolygonWidth, worldSize, style, isForFrayedBorder, resolutionScale, 1.0);
 	}
 
-	public NoisyEdges(double meanPolygonWidth, int worldSize, LineStyle style, boolean isForFrayedBorder, double coordinateScale)
+	public NoisyEdges(double meanPolygonWidth, int worldSize, LineStyle style, boolean isForFrayedBorder, double resolutionScale, double coordinateScale)
 	{
 		this.meanPolygonWidth = meanPolygonWidth;
 		this.worldSize = worldSize;
@@ -63,6 +66,7 @@ public class NoisyEdges
 		curves = new ConcurrentHashMap<>();
 		lineStyle = style;
 		this.isForFrayedBorder = isForFrayedBorder;
+		this.resolutionScale = resolutionScale;
 		this.coordinateScale = coordinateScale;
 	}
 
@@ -196,7 +200,7 @@ public class NoisyEdges
 				Point p3 = scaled(findPrevOrNextPointOnCurve(edge, edge.v1));
 
 				List<Point> curve = new LinkedList<>();
-				curve.addAll(CurveCreator.createCurve(p0, p1, p2, p3, CurveCreator.defaultDistanceBetweenPoints));
+				curve.addAll(CurveCreator.createCurve(p0, p1, p2, p3, CurveCreator.getDistanceBetweenPointsForResolution(resolutionScale)));
 				if (curve.isEmpty() || !curve.get(0).equals(p1))
 				{
 					curve.add(0, p1);

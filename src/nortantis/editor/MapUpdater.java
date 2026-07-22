@@ -131,6 +131,11 @@ public abstract class MapUpdater
 		createAndShowMap(UpdateType.Incremental, centersChanged, null, null, null, null, null);
 	}
 
+	public void createAndShowMapIncrementalUsingCenters(Set<Center> centersChanged, Runnable postRun)
+	{
+		createAndShowMap(UpdateType.Incremental, centersChanged, null, null, null, null, postRun);
+	}
+
 	public void createAndShowMapIncrementalUsingEdges(Set<Edge> edgesChanged)
 	{
 		createAndShowMap(UpdateType.Incremental, null, edgesChanged, null, null, null, null);

@@ -1879,7 +1879,7 @@ public class LandWaterTool extends EditorTool
 				continue;
 			}
 			List<RiverPathNode> nodes = new ArrayList<>(river.nodes);
-			boolean changedThisRiver = false;
+			List<Integer> changedSegmentIndices = new ArrayList<>();
 			for (int i = 0; i < nodes.size() - 1; i++)
 			{
 				if (sel.contains(i) && sel.contains(i + 1))
@@ -1888,14 +1888,16 @@ public class LandWaterTool extends EditorTool
 					if (old.getWidthLevelToNext() != newLevel)
 					{
 						nodes.set(i, new RiverPathNode(old.getLoc(), newLevel, old.getSeedToNext(), old.getEdgeIndexToNext()));
-						changedThisRiver = true;
+						changedSegmentIndices.add(i);
 					}
 				}
 			}
-			if (changedThisRiver)
+			if (!changedSegmentIndices.isEmpty())
 			{
 				river.nodes = new java.util.concurrent.CopyOnWriteArrayList<>(nodes);
-				centersTouched.add(PathOperations.toLocationList(nodes));
+				// A width change doesn't move the curve, so redraw only the changed segments plus their Catmull-Rom neighbors instead
+				// of the whole river.
+				appendControlPointEditScope(centersTouched, nodes, changedSegmentIndices.stream().mapToInt(Integer::intValue).toArray());
 				anyChanged = true;
 			}
 		}
@@ -2156,7 +2158,15 @@ public class LandWaterTool extends EditorTool
 					Set<Center> centersToRedraw = getCentersTouchingPoints(centerPaths);
 					if (!centersToRedraw.isEmpty())
 					{
-						updater.createAndShowMapIncrementalUsingCenters(centersToRedraw);
+						// Briefly highlight the segments being erased (orange) until the redraw has removed them from the map.
+						List<List<Point>> erasedHighlights = scalePoints(riverSegmentsToRemove, mainWindow.displayQualityScale);
+						mapEditingPanel.addProcessingPolylines(erasedHighlights);
+						mapEditingPanel.repaint();
+						updater.createAndShowMapIncrementalUsingCenters(centersToRedraw, MapUpdater.afterMapDisplayed(() ->
+						{
+							mapEditingPanel.removeProcessingPolylines(erasedHighlights);
+							mapEditingPanel.repaint();
+						}));
 					}
 					updater.doWhenMapIsNotDrawing(() -> updater.createAndShowLowPriorityChanges(false));
 					undoer.setUndoPoint(UpdateType.Incremental, this);
@@ -2177,7 +2187,22 @@ public class LandWaterTool extends EditorTool
 				{
 					centerPaths.add(PathOperations.toLocationList(ext.nodes));
 				}
-				updater.createAndShowMapIncrementalUsingCenters(getCentersTouchingPoints(centerPaths));
+				if (!roadSegmentsToRemove.isEmpty())
+				{
+					// Briefly highlight the segments being erased (orange) until the redraw has removed them from the map.
+					List<List<Point>> erasedHighlights = scalePoints(roadSegmentsToRemove, mainWindow.displayQualityScale);
+					mapEditingPanel.addProcessingPolylines(erasedHighlights);
+					mapEditingPanel.repaint();
+					updater.createAndShowMapIncrementalUsingCenters(getCentersTouchingPoints(centerPaths), MapUpdater.afterMapDisplayed(() ->
+					{
+						mapEditingPanel.removeProcessingPolylines(erasedHighlights);
+						mapEditingPanel.repaint();
+					}));
+				}
+				else
+				{
+					updater.createAndShowMapIncrementalUsingCenters(getCentersTouchingPoints(centerPaths));
+				}
 				List<Road> roadsToRedraw = new ArrayList<>(changed);
 				roadsToRedraw.removeIf(r -> !mainWindow.edits.roads.contains(r));
 				for (Road ext : extended)
@@ -2243,6 +2268,42 @@ public class LandWaterTool extends EditorTool
 			if (!slice.isEmpty())
 			{
 				sink.add(slice);
+			}
+		}
+	}
+
+	/**
+	 * Appends redraw-scope paths for rivers whose width was retuned by drawing a polygon-mode river over them. For each river, only the
+	 * segments anchored to one of {@code drawnEdgeIndices} (plus their Catmull-Rom neighbors) are included, so bumping the width over part of
+	 * a long river redraws just that part instead of the whole river. A newly drawn river has all of its segments anchored to drawn edges, so
+	 * it is still covered in full. A river with no drawn-edge-anchored segments (a snap/bridge-only synthetic river) is included in full as a
+	 * safe fallback, since it is small and its geometry is entirely new.
+	 */
+	private static void appendDrawnOverRiverScope(List<List<Point>> sink, List<River> rivers, Set<Integer> drawnEdgeIndices)
+	{
+		for (River river : rivers)
+		{
+			if (river == null || river.nodes.isEmpty())
+			{
+				continue;
+			}
+			List<RiverPathNode> nodes = river.nodes;
+			List<Integer> changedSegmentIndices = new ArrayList<>();
+			for (int i = 0; i < nodes.size() - 1; i++)
+			{
+				int edgeIndex = nodes.get(i).getEdgeIndexToNext();
+				if (edgeIndex != RiverPathNode.EDGE_INDEX_NONE && drawnEdgeIndices.contains(edgeIndex))
+				{
+					changedSegmentIndices.add(i);
+				}
+			}
+			if (changedSegmentIndices.isEmpty())
+			{
+				sink.add(PathOperations.toLocationList(nodes));
+			}
+			else
+			{
+				appendControlPointEditScope(sink, nodes, changedSegmentIndices.stream().mapToInt(Integer::intValue).toArray());
 			}
 		}
 	}
@@ -4115,6 +4176,9 @@ public class LandWaterTool extends EditorTool
 		purgeOrphanedSelections();
 		undoer.setUndoPoint(UpdateType.Incremental, this);
 		updater.createAndShowMapIncrementalUsingCenters(centersToRedraw);
+		// A river change can change how a region boundary is drawn (a dashed/dotted boundary pauses under a polygon-mode river,
+		// but draws through once the river becomes freehand or is removed), so redraw affected region boundaries low priority.
+		updater.doWhenMapIsNotDrawing(() -> updater.createAndShowLowPriorityChanges(false));
 		mapEditingPanel.clearHighlightedPolylines();
 		applySelectedSegmentsHighlight();
 		mapEditingPanel.repaint();
@@ -4323,7 +4387,13 @@ public class LandWaterTool extends EditorTool
 
 			if (!newRivers.isEmpty())
 			{
-				List<List<Point>> pathsForCenters = newRivers.stream().map(r -> PathOperations.toLocationList(r.nodes)).collect(Collectors.toList());
+				Set<Integer> drawnEdgeIndices = new HashSet<>();
+				for (Edge edge : river)
+				{
+					drawnEdgeIndices.add(edge.index);
+				}
+				List<List<Point>> pathsForCenters = new ArrayList<>();
+				appendDrawnOverRiverScope(pathsForCenters, newRivers, drawnEdgeIndices);
 				updater.createAndShowMapIncrementalUsingCenters(getCentersTouchingPoints(pathsForCenters));
 			}
 		}
@@ -4576,10 +4646,29 @@ public class LandWaterTool extends EditorTool
 		highlightHoverCentersOrEdgesAndBrush(mouseLocation, false);
 	}
 
+	/**
+	 * Whether the map image currently on screen is at a different resolution than the target display quality - true only while a
+	 * display-quality change is redrawing the map. River/road highlights are positioned from RI geometry scaled by the target resolution, so
+	 * during this window they would not line up with the still-old image on screen.
+	 */
+	private boolean isDisplayResolutionStale()
+	{
+		return mapEditingPanel.getResolution() != mainWindow.displayQualityScale;
+	}
+
 	protected void highlightHoverCentersOrEdgesAndBrush(java.awt.Point mouseLocation, boolean ctrlDown)
 	{
 		if (mouseLocation == null)
 		{
+			return;
+		}
+
+		if ((riversButton.isSelected() || roadsButton.isSelected()) && isDisplayResolutionStale())
+		{
+			// A display-quality change is redrawing the map at a new resolution. Until that draw commits, the displayed image is still
+			// at the old resolution, so river/road highlights (whose positions come from RI geometry scaled by the target resolution)
+			// would be drawn misaligned with the image on screen. Leave the existing highlights untouched - they still line up with the
+			// image currently on screen - and let onAfterShowMap recompute them at the new resolution once the new image is shown.
 			return;
 		}
 
@@ -4856,14 +4945,13 @@ public class LandWaterTool extends EditorTool
 		}
 		if (roadsButton.isSelected() && modeWidget.isDrawMode())
 		{
-			freeHandRoadSnapPoint = null;
-			mapEditingPanel.clearHoveredControlPoint();
-			// Keep circles and preview path visible so the user can see them even when the mouse exits.
+			// Clear the hover highlights (the control-point circles shown for a line under the cursor and the snap disk) but
+			// leave any in-progress free-hand preview path and its start circle visible so the user can still see it.
+			updateControlPointDisplay(null, LineType.ROAD);
 		}
-		if (riversButton.isSelected() && modeWidget.isDrawMode() && isFreeHandDrawMode())
+		if (riversButton.isSelected() && modeWidget.isDrawMode())
 		{
-			freeHandRiverSnapPoint = null;
-			mapEditingPanel.clearHoveredControlPoint();
+			updateControlPointDisplay(null, LineType.RIVER);
 		}
 		if ((riversButton.isSelected() || roadsButton.isSelected()) && modeWidget.isEditMode())
 		{
