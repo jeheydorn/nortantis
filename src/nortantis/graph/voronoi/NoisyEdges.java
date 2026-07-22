@@ -409,22 +409,6 @@ public class NoisyEdges
 		riverEdgeOverrides = overrides == null ? Collections.emptyMap() : overrides;
 	}
 
-	/**
-	 * Merges a subset of river-conformed edge geometries into the existing overrides without disturbing overrides on other edges. The entries
-	 * for {@code edgeIndicesToClear} are removed first (so an edge a river no longer covers reverts to its generated geometry), then
-	 * {@code changed} is applied. This is used by incremental updates that only re-stamp the edges of the centers that changed.
-	 * <p>
-	 * A fresh map is built and published in a single volatile write so concurrent readers of {@link #getNoisyEdge(int)} never see a partially
-	 * built map.
-	 */
-	public void updateRiverEdgeOverrides(Map<Integer, List<Point>> changed, Set<Integer> edgeIndicesToClear)
-	{
-		Map<Integer, List<Point>> next = new HashMap<>(riverEdgeOverrides);
-		next.keySet().removeAll(edgeIndicesToClear);
-		next.putAll(changed);
-		riverEdgeOverrides = next;
-	}
-
 	public LineStyle getLineStyle()
 	{
 		return lineStyle;
