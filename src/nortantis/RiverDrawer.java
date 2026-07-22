@@ -216,8 +216,9 @@ public class RiverDrawer
 	 * <p>
 	 * Must run after the graph's noisy edges are built and the rivers are (re)synced to the graph, and before any polygon fill or boundary
 	 * drawing reads the geometry via {@link nortantis.graph.voronoi.NoisyEdges#getNoisyEdge(int)}.
+	 * @param centersChanged If not null, only centers in this set will be updated. This is for performance for incremental updates.
 	 */
-	public void stampRiverCurvesOntoGraphEdges()
+	public void stampRiverCurvesOntoGraphEdges(Set<Center> centersChanged)
 	{
 		if (graph == null || graph.noisyEdges == null)
 		{
@@ -245,6 +246,11 @@ public class RiverDrawer
 				{
 					continue;
 				}
+				if (centersChanged != null && (edge.d0 == null || !centersChanged.contains(edge.d0)) && (edge.d1 == null || !centersChanged.contains(edge.d1)))
+				{
+					// The edge is not touching a center that changed, so its existing override is still valid and is left untouched.
+					continue;
+				}
 				List<Point> curvePixels = buildSegmentPathPixels(nodes, i, jaggedAmplitudeRI, minLengthRI);
 				if (curvePixels.size() < 2)
 				{
@@ -253,7 +259,25 @@ public class RiverDrawer
 				overrides.put(edgeIndex, orientCurveToEdgeCorners(curvePixels, edge));
 			}
 		}
-		graph.noisyEdges.setRiverEdgeOverrides(overrides);
+
+		if (centersChanged == null)
+		{
+			graph.noisyEdges.setRiverEdgeOverrides(overrides);
+		}
+		else
+		{
+			// Clear any existing overrides on the edges of the changed centers so an edge a river no longer covers reverts to its generated
+			// geometry, then apply the freshly stamped curves. Overrides on edges away from the changed centers are left in place.
+			Set<Integer> edgeIndicesToClear = new HashSet<>();
+			for (Center center : centersChanged)
+			{
+				for (Edge edge : center.borders)
+				{
+					edgeIndicesToClear.add(edge.index);
+				}
+			}
+			graph.noisyEdges.updateRiverEdgeOverrides(overrides, edgeIndicesToClear);
+		}
 	}
 
 	/**
