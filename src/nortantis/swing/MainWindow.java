@@ -2133,10 +2133,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	private void finishDisplayUpdate()
 	{
-		// The displayed image now reflects the raw map at displayedMapResolution, so this is the point where highlight suppression should
-		// be re-evaluated: it lifts exactly when the image on screen matches the target display quality, and stays raised through the
+		// The displayed image now reflects the raw map at displayedMapResolution, so this is the point where hover-highlight suppression
+		// should be re-evaluated: it lifts exactly when the image on screen matches the target display quality, and stays raised through the
 		// zoom-rescale window that follows a quality change (where the raw map is already new but the displayed image is not yet).
-		updateHighlightSuppression();
+		updateHoverHighlightSuppression();
 
 		// The map on screen now reflects the finished draw, so run any post-draw actions that were deferred while its display
 		// update was rescaling on a background thread (e.g. removing the orange processing-area highlights for erased icons/text).
@@ -2276,20 +2276,20 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		{
 			displayQualityScale = 1.5;
 		}
-		updateHighlightSuppression();
+		updateHoverHighlightSuppression();
 	}
 
 	/**
-	 * Suppresses the map highlight overlays whenever the raw map image on screen was rendered at a different resolution than the current
+	 * Suppresses the mouse-hover highlights whenever the raw map image on screen was rendered at a different resolution than the current
 	 * target display quality - i.e. while a display-quality change is redrawing the map. Called both when the target quality changes and when
 	 * a full draw installs a new raw map. Robust to a concurrent zoom change, which rescales the still-old raw map and would otherwise make
 	 * the panel report the target resolution before the image at that resolution exists.
 	 */
-	private void updateHighlightSuppression()
+	private void updateHoverHighlightSuppression()
 	{
 		if (mapEditingPanel != null)
 		{
-			mapEditingPanel.setHighlightsSuppressed(displayedMapResolution != displayQualityScale);
+			mapEditingPanel.setHoverHighlightsSuppressed(displayedMapResolution != displayQualityScale);
 		}
 	}
 

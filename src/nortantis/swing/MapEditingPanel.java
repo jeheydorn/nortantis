@@ -49,13 +49,14 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private List<List<Point>> polylinesToHighlight;
 	private List<List<Point>> hoverPolylinesToHighlight;
 	private List<List<Point>> processingPolylines;
-	// While true, the map highlight overlays (brush, hover/selection outlines, river/road segment and control-point highlights, icon/text
-	// processing areas) are not drawn. These are positioned from the graph or from RI geometry scaled by the target display quality, so
-	// during a display-quality change - while the image on screen is still at the previous resolution - they would not line up with it.
-	// MainWindow raises this while a quality-changing full redraw is in flight and lowers it once that redraw lands; the tools recompute the
-	// highlights then. Overlays are also suppressed whenever there is no map image on screen (see paintComponent), which covers the initial
+	// While true, the mouse-hover highlights that track the cursor (the brush, the brushed-center and hovered-edge outlines, and the
+	// river/road hover polylines) are not drawn. These follow the mouse in graph space, so during a display-quality change - while the image
+	// on screen is still at the previous resolution - they would briefly appear misaligned with it. MainWindow raises this while a
+	// quality-changing full redraw is in flight and lowers it once that redraw lands, at which point the tool recomputes them from the mouse
+	// position. Only the transient hover highlights are affected; the persistent overlays (selection outlines, edit box, processing areas,
+	// selection box) keep drawing. Nothing draws at all while there is no map image on screen (see paintComponent), which covers the initial
 	// load and the fit-to-window rescales that run before the first draw is shown.
-	private boolean highlightsSuppressed;
+	private boolean hoverHighlightsSuppressed;
 	private EdgeType edgeTypeToHighlight;
 	private List<Point> roadControlPointCircles = null;
 	private List<Point> selectedRoadControlPointCircles = null;
@@ -249,15 +250,15 @@ public class MapEditingPanel extends UnscaledImagePanel
 	}
 
 	/**
-	 * Suppresses (or restores) drawing of the map highlight overlays. Used to hide them while a display-quality change is redrawing the map,
+	 * Suppresses (or restores) drawing of the mouse-hover highlights. Used to hide them while a display-quality change is redrawing the map,
 	 * since until the new image is shown they would be drawn at a resolution that doesn't match the still-old image on screen. See
-	 * {@link #highlightsSuppressed}.
+	 * {@link #hoverHighlightsSuppressed}.
 	 */
-	public void setHighlightsSuppressed(boolean suppressed)
+	public void setHoverHighlightsSuppressed(boolean suppressed)
 	{
-		if (highlightsSuppressed != suppressed)
+		if (hoverHighlightsSuppressed != suppressed)
 		{
-			highlightsSuppressed = suppressed;
+			hoverHighlightsSuppressed = suppressed;
 			repaint();
 		}
 	}
@@ -661,15 +662,13 @@ public class MapEditingPanel extends UnscaledImagePanel
 		}
 
 		// While a display-quality change is still being processed, the image on screen is still at the previous resolution, so the
-		// highlights (positioned from the graph or from RI geometry scaled by the target resolution) wouldn't line up with it. Hide them
-		// until the new image is shown; MainWindow lowers this once the new full draw lands and the tools recompute the highlights. A
-		// top-level zoom change does not need this: MainWindow keeps the committed zoom until the rescaled image is ready (see
-		// commitBackgroundRescale), so overlays and the image stay consistent. Incremental snippet draws keep the same zoom and quality,
-		// so highlights stay visible. The text box, icon-edit handles, and selection box are active-editing UI (not hover highlights) and
-		// stay drawn.
-		boolean showHighlights = !highlightsSuppressed;
+		// mouse-hover highlights (positioned from the graph, following the cursor) would briefly appear misaligned with it. Hide only those
+		// until the new image is shown; MainWindow lowers this once the new full draw lands and the tool recomputes them from the mouse
+		// position. The persistent overlays below stay drawn. A top-level zoom change does not need this either: MainWindow keeps the
+		// committed zoom until the rescaled image is ready (see commitBackgroundRescale), so overlays and the image stay consistent.
+		boolean showHoverHighlights = !hoverHighlightsSuppressed;
 
-		if (brushLocation != null && showHighlights)
+		if (brushLocation != null && showHoverHighlights)
 		{
 			g.setColor(getHighlightColor());
 			drawBrush(g2);
@@ -684,20 +683,14 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 		// Handle drawing/highlighting
 
-		if (showHighlights)
-		{
-			highlightArtPacksIfNeeded(g2);
-		}
+		highlightArtPacksIfNeeded(g2);
 
 		if (textBoxBounds != null)
 		{
 			drawTextBox(((Graphics2D) g));
 		}
 
-		// The icon-edit box (Icons-tool move/scale handles, Overlay-tool position box) is positioned from the target display quality but
-		// rendered against the panel's resolution, so during a quality change it would be drawn misaligned ("disconnected") from the
-		// still-old image. Suppress it with the other highlights; the tool re-shows it via onAfterShowMap once the new image is committed.
-		if (iconToEditBounds != null && showHighlights)
+		if (iconToEditBounds != null)
 		{
 			if (!editBoxIsInMapSpace)
 			{
@@ -712,22 +705,25 @@ public class MapEditingPanel extends UnscaledImagePanel
 			}
 		}
 
-		if (showHighlights)
+		drawAreas(g);
+
+		if (graph != null)
 		{
-			drawAreas(g);
-
-			if (graph != null)
+			if (highlightLakes)
 			{
-				if (highlightLakes)
-				{
-					drawLakes(g);
-				}
+				drawLakes(g);
+			}
 
-				if (highlightRivers)
-				{
-					drawRivers(g);
-				}
+			if (highlightRivers)
+			{
+				drawRivers(g);
+			}
 
+			// The brushed-center outlines, hovered-edge outlines, and hover polylines track the cursor and are recomputed by the tool
+			// after each redraw, so they are hidden while a display-quality change is in flight to avoid a brief misaligned flash. The
+			// persistent selected overlays below are not.
+			if (showHoverHighlights)
+			{
 				g.setColor(highlightEditColor);
 				drawCenterOutlines(g, highlightedCenters);
 				// Hover polylines (orange) go below selected polylines (yellow) so a selected segment that also happens to be near the
@@ -736,14 +732,16 @@ public class MapEditingPanel extends UnscaledImagePanel
 				drawHoverPolylines(g);
 				g.setColor(getHighlightColor());
 				drawEdges(g, highlightedEdges);
-				drawPolylines(g);
-				g.setColor(processingColor);
-				drawProcessingPolylines(g);
-				drawRoadControlPoints((Graphics2D) g);
-
-				g.setColor(selectColor);
-				drawCenterOutlines(g, selectedCenters);
 			}
+
+			g.setColor(getHighlightColor());
+			drawPolylines(g);
+			g.setColor(processingColor);
+			drawProcessingPolylines(g);
+			drawRoadControlPoints((Graphics2D) g);
+
+			g.setColor(selectColor);
+			drawCenterOutlines(g, selectedCenters);
 		}
 
 		drawSelectionBox((Graphics2D) g);
