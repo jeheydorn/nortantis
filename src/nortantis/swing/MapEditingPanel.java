@@ -49,14 +49,14 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private List<List<Point>> polylinesToHighlight;
 	private List<List<Point>> hoverPolylinesToHighlight;
 	private List<List<Point>> processingPolylines;
-	// While true, the mouse-hover highlights that track the cursor (the brush, the brushed-center and hovered-edge outlines, and the
-	// river/road hover polylines) are not drawn. These follow the mouse in graph space, so during a display-quality change - while the image
-	// on screen is still at the previous resolution - they would briefly appear misaligned with it. MainWindow raises this while a
-	// quality-changing full redraw is in flight and lowers it once that redraw lands, at which point the tool recomputes them from the mouse
-	// position. Only the transient hover highlights are affected; the persistent overlays (selection outlines, edit box, processing areas,
-	// selection box) keep drawing. Nothing draws at all while there is no map image on screen (see paintComponent), which covers the initial
-	// load and the fit-to-window rescales that run before the first draw is shown.
-	private boolean hoverHighlightsSuppressed;
+	// Returns whether the mouse-hover highlights that track the cursor (the brush, the brushed-center and hovered-edge outlines, and the
+	// river/road hover polylines) should be hidden right now. These follow the mouse in graph space, so during a display-quality change -
+	// while the image on screen is still at the previous resolution - they would briefly appear misaligned with it. Read live each paint, so
+	// the panel reflects MainWindow's current state without a cached copy that has to be kept in sync. Only the transient hover highlights are
+	// affected; the persistent overlays (selection outlines, edit box, processing areas, selection box) keep drawing. Nothing draws at all
+	// while there is no map image on screen (see paintComponent), which covers the initial load and the fit-to-window rescales that run before
+	// the first draw is shown.
+	private java.util.function.BooleanSupplier hoverHighlightsSuppressedSupplier;
 	private EdgeType edgeTypeToHighlight;
 	private List<Point> roadControlPointCircles = null;
 	private List<Point> selectedRoadControlPointCircles = null;
@@ -250,17 +250,13 @@ public class MapEditingPanel extends UnscaledImagePanel
 	}
 
 	/**
-	 * Suppresses (or restores) drawing of the mouse-hover highlights. Used to hide them while a display-quality change is redrawing the map,
-	 * since until the new image is shown they would be drawn at a resolution that doesn't match the still-old image on screen. See
-	 * {@link #hoverHighlightsSuppressed}.
+	 * Sets the source of truth for whether the mouse-hover highlights should currently be hidden (see
+	 * {@link #hoverHighlightsSuppressedSupplier}). Read live each paint so no separate update call is needed when the underlying state
+	 * changes.
 	 */
-	public void setHoverHighlightsSuppressed(boolean suppressed)
+	public void setHoverHighlightsSuppressedSupplier(java.util.function.BooleanSupplier supplier)
 	{
-		if (hoverHighlightsSuppressed != suppressed)
-		{
-			hoverHighlightsSuppressed = suppressed;
-			repaint();
-		}
+		this.hoverHighlightsSuppressedSupplier = supplier;
 	}
 
 	public void setControlPointCircles(List<Point> circles)
@@ -653,7 +649,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		Graphics2D g2 = ((Graphics2D) g);
 
 		// Draw no highlights or overlays until a map image is actually on screen. Before the first draw of a map lands - including
-		// the fit-to-window zoom rescales MainWindow runs before it (see submitBackgroundFullRescale) - the panel is blank. The graph,
+		// the fit-to-window zoom rescales MainWindow runs before it (see fullRescale) - the panel is blank. The graph,
 		// zoom, and os-scaling transform can still hold values left over from a previously displayed map, so a brush ring or a polygon
 		// highlight would otherwise be drawn (at a stale resolution/zoom) floating over the gray background.
 		if (getImage() == null)
@@ -666,7 +662,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		// until the new image is shown; MainWindow lowers this once the new full draw lands and the tool recomputes them from the mouse
 		// position. The persistent overlays below stay drawn. A top-level zoom change does not need this either: MainWindow keeps the
 		// committed zoom until the rescaled image is ready (see commitBackgroundRescale), so overlays and the image stay consistent.
-		boolean showHoverHighlights = !hoverHighlightsSuppressed;
+		boolean showHoverHighlights = hoverHighlightsSuppressedSupplier == null || !hoverHighlightsSuppressedSupplier.getAsBoolean();
 
 		if (brushLocation != null && showHoverHighlights)
 		{
@@ -1252,6 +1248,29 @@ public class MapEditingPanel extends UnscaledImagePanel
 	public void setZoom(double zoom)
 	{
 		this.zoom = zoom;
+	}
+
+	/**
+	 * The resolution of the map image currently displayed. During a display-quality change this stays at the previous value until the new
+	 * image's rescale commits, so overlays positioned against the displayed image should use this rather than the target display quality.
+	 */
+	public double getResolution()
+	{
+		return resolution;
+	}
+
+	/**
+	 * The pixel size, including border, of the map currently on screen at {@link #getResolution()} - i.e. the displayed image scaled back
+	 * down by the current zoom. This is committed together with the resolution and zoom, so it stays consistent with them during a
+	 * display-quality change, unlike the in-flight draw's map bounds. Returns null when no map is shown.
+	 */
+	public nortantis.geom.IntDimension getDisplayedMapSizeIncludingBorder()
+	{
+		if (getImage() == null || zoom <= 0)
+		{
+			return null;
+		}
+		return new nortantis.geom.IntDimension((int) Math.round(getImage().getWidth() / zoom), (int) Math.round(getImage().getHeight() / zoom));
 	}
 
 	public void setResolution(double resolution)

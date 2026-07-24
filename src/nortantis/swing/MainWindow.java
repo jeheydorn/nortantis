@@ -556,6 +556,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private void createMapEditingPanel()
 	{
 		mapEditingPanel = new MapEditingPanel(null);
+		mapEditingPanel.setHoverHighlightsSuppressedSupplier(this::areHoverHighlightsSuppressed);
 
 		mapEditingPanel.addMouseListener(new MouseAdapter()
 		{
@@ -765,7 +766,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 
 			@Override
-			protected void onFinishedDrawingFull(Image map, boolean anotherDrawIsQueued, int borderPaddingAsDrawn, List<String> warningMessages,
+			protected void onFinishedDrawingFull(Image map, double mapResolution, boolean anotherDrawIsQueued, int borderPaddingAsDrawn, List<String> warningMessages,
 					List<nortantis.IconDrawer.CityIconRemovedForWater> citiesRemovedForWater, boolean wasTriggeredByUndoRedo)
 			{
 				if (mapEditingPanel.mapFromMapCreator != null && mapEditingPanel.mapFromMapCreator != map)
@@ -773,11 +774,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					mapEditingPanel.mapFromMapCreator.close();
 				}
 				mapEditingPanel.mapFromMapCreator = map;
-				// Record the resolution the new raw map was rendered at, but don't lift highlight suppression here: this fires when the
-				// raw map is installed, which is before the displayed image is rescaled and committed (finishDisplayUpdate, delayed by a
-				// zoom rescale). Lifting suppression now would let highlights draw over the still-old image for that gap. finishDisplayUpdate
-				// re-evaluates suppression once the displayed image actually reflects this resolution.
-				displayedMapResolution = displayQualityScale;
+				// Record the resolution THIS map was actually drawn at, not the live target display quality: when quality changes are queued or
+				// coalesced, a finishing draw can be at an earlier resolution than the current target, and using the target here would tell the
+				// panel the on-screen image is a resolution it isn't - misplacing every resolution-scaled overlay for the whole next redraw. The
+				// mouse-hover highlights are suppressed while this differs from the target (see areHoverHighlightsSuppressed), read live.
+				displayedMapResolution = mapResolution;
 				onFinishedDrawingCommon(anotherDrawIsQueued, borderPaddingAsDrawn, null, warningMessages);
 				warnIfCitiesWereRemovedForWater(citiesRemovedForWater, wasTriggeredByUndoRedo);
 			}
@@ -1960,10 +1961,12 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		if (isOnlyZoomChange)
 		{
 			// A zoom change always needs a full rescale (there's no existing region to patch), and the target zoom can differ from
-			// what's currently displayed, so do it in the background and only commit it once it's ready. The display quality is unchanged
-			// for a zoom-only change, so the setResolution in commitBackgroundRescale is a no-op on this path.
+			// what's currently displayed, so do it in the background and only commit it once it's ready. This path rescales the raw map
+			// currently on screen, which is not necessarily at the target display quality: a zoom change can arrive while a display-quality
+			// change is still drawing. commitBackgroundRescale commits the source map's own resolution (captured at submit), so overlays
+			// stay matched to the image actually shown rather than jumping to the in-flight target quality.
 			lastDisplayUpdateWasAsync = true;
-			submitBackgroundFullRescale(targetZoom, updateScrollLocationIfZoomChanged, borderPadding);
+			fullRescale(targetZoom, updateScrollLocationIfZoomChanged, borderPadding, false);
 			return;
 		}
 
@@ -1975,36 +1978,63 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			// on the EDT (a small-region scale is only a couple ms).
 			// Use wrapBufferedImage for the target so changes write back to the display BufferedImage.
 			// fromBufferedImage would create a copy when using SkiaFactory, losing the changes.
-			mapEditingPanel.setResolution(displayQualityScale);
+			// The raw map being patched is the one on screen, so commit its own resolution (matches displayQualityScale except when a
+			// display-quality change is mid-flight).
+			mapEditingPanel.setResolution(displayedMapResolution);
 			mapEditingPanel.setBorderPadding(borderPadding);
 			ImageHelper.getInstance().scaleInto(mapEditingPanel.mapFromMapCreator, AwtBridge.wrapBufferedImage(mapEditingPanel.getImage()), incrementalChangeArea);
 			finishDisplayUpdate();
 		}
+		else if (incrementalChangeArea == null)
+		{
+			// A full draw with no region to patch. Rescale synchronously here on the EDT so the new image is committed in the SAME event as
+			// the new graph/rivers/free-icons/icon-drawer that onFinishedDrawingCommon just set. If this ran on a background thread, there
+			// would be a brief window where the panel holds the new-resolution graph over the still-displayed old image, and any repaint in
+			// that window draws graph-derived overlays (Highlight Lakes/Rivers, etc.) misaligned. A full draw already spent significant time
+			// generating on a background thread, so the added synchronous rescale is minor. The async path is kept for zoom changes (below)
+			// and incremental updates, where responsiveness matters and the graph/image are already consistent.
+			lastDisplayUpdateWasAsync = false;
+			fullRescale(targetZoom, false, borderPadding, true);
+		}
 		else
 		{
-			// Either a QUALITY downscale (which can't be patched incrementally - the whole image must be re-rendered every time), a
-			// full draw with no region to patch, or the displayed zoom doesn't match the target yet (e.g. the first draw at
+			// A QUALITY downscale of an incremental update, or the displayed zoom doesn't match the target yet (e.g. the first draw at
 			// fit-to-window). Do the (possibly slow) rescale on a background thread so it never blocks the EDT.
 			lastDisplayUpdateWasAsync = true;
-			submitBackgroundFullRescale(targetZoom, false, borderPadding);
+			fullRescale(targetZoom, false, borderPadding, false);
 		}
 	}
 
 	/**
-	 * Submits a request to produce a fresh full rescale of mapEditingPanel.mapFromMapCreator at targetZoom on a background thread, so a
-	 * slow QUALITY downscale never blocks the EDT. Requests are coalesced via displayScaleGeneration: a request bails out (before doing
-	 * any scaling, and again right after acquiring the map read lock) if a newer request has since been submitted, and its result is
-	 * only committed to the display (on the EDT, via commitBackgroundRescale) if it's still the latest request when the scale
-	 * finishes. This lets zoom changes and full-rescale draw completions run fully in parallel with the next map draw.
+	 * Produces a fresh full rescale of mapEditingPanel.mapFromMapCreator at targetZoom and commits it to the display. When {@code synchronous}
+	 * is false the scale runs on a background thread so a slow QUALITY downscale never blocks the EDT; requests are then coalesced via
+	 * displayScaleGeneration (a request bails - before scaling, and again right after acquiring the map read lock - if a newer request has
+	 * since been submitted, and only commits if it's still the latest). When {@code synchronous} is true the scale and commit run inline on
+	 * the caller's (EDT) thread, so the image is committed in the same event as any panel state the caller set just before - used for full
+	 * draws so graph-derived overlays never draw against the new graph over the old image.
 	 */
-	private void submitBackgroundFullRescale(double targetZoom, boolean updateScrollLocationIfZoomChanged, int borderPadding)
+	private void fullRescale(double targetZoom, boolean updateScrollLocationIfZoomChanged, int borderPadding, boolean synchronous)
 	{
 		Image sourceMap = mapEditingPanel.mapFromMapCreator;
+		// Capture the resolution the source raw map was rendered at, together with the map itself. commitBackgroundRescale must set the
+		// panel to THIS resolution, not the live displayQualityScale: a zoom-only rescale that runs while a display-quality change is still
+		// drawing rescales the previous (still-shown) raw map, yet displayQualityScale has already jumped to the new target. Committing the
+		// target there would tell the panel the displayed image is the new resolution while it is still the old one, misplacing every
+		// resolution-scaled overlay for the duration of the change.
+		double committedResolution = displayedMapResolution;
 		long generation = displayScaleGeneration.incrementAndGet();
-		displayScaleExecutor.submit(() -> runBackgroundRescale(generation, sourceMap, targetZoom, updateScrollLocationIfZoomChanged, borderPadding));
+		if (synchronous)
+		{
+			runBackgroundRescale(generation, sourceMap, committedResolution, targetZoom, updateScrollLocationIfZoomChanged, borderPadding, true);
+		}
+		else
+		{
+			displayScaleExecutor.submit(() -> runBackgroundRescale(generation, sourceMap, committedResolution, targetZoom, updateScrollLocationIfZoomChanged, borderPadding, false));
+		}
 	}
 
-	private void runBackgroundRescale(long generation, Image sourceMap, double targetZoom, boolean updateScrollLocationIfZoomChanged, int borderPadding)
+	private void runBackgroundRescale(long generation, Image sourceMap, double committedResolution, double targetZoom, boolean updateScrollLocationIfZoomChanged, int borderPadding,
+			boolean synchronous)
 	{
 		if (sourceMap == null || generation != displayScaleGeneration.get())
 		{
@@ -2037,7 +2067,16 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			mapReadLock.unlock();
 		}
 
-		SwingUtilities.invokeLater(() -> commitBackgroundRescale(generation, scaledImage, targetZoom, updateScrollLocationIfZoomChanged, borderPadding));
+		if (synchronous)
+		{
+			// Already on the EDT (called inline for a full draw). Commit in this same event so the image lands together with the panel
+			// state the caller set just before.
+			commitBackgroundRescale(generation, scaledImage, committedResolution, targetZoom, updateScrollLocationIfZoomChanged, borderPadding);
+		}
+		else
+		{
+			SwingUtilities.invokeLater(() -> commitBackgroundRescale(generation, scaledImage, committedResolution, targetZoom, updateScrollLocationIfZoomChanged, borderPadding));
+		}
 	}
 
 	/**
@@ -2073,7 +2112,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	 * rescale runs, the panel stays at the previously committed zoom, so overlays and the displayed image stay consistent; then
 	 * everything snaps to the new zoom at once.
 	 */
-	private void commitBackgroundRescale(long generation, BufferedImage scaledImage, double targetZoom, boolean updateScrollLocationIfZoomChanged, int borderPadding)
+	private void commitBackgroundRescale(long generation, BufferedImage scaledImage, double committedResolution, double targetZoom, boolean updateScrollLocationIfZoomChanged, int borderPadding)
 	{
 		if (generation != displayScaleGeneration.get() || mapEditingPanel.mapFromMapCreator == null)
 		{
@@ -2110,8 +2149,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		// Commit the resolution and border padding together with the zoom and image, so overlays that read the panel's resolution, zoom,
 		// and border padding (such as the sub-map selection box) match the newly displayed image in the same frame. Committing any of them
 		// earlier, while the rescale is still in flight, would draw those overlays against a scale or border offset that doesn't match the
-		// still-old zoom for a frame, making them visibly jump. Both are no-ops for zoom-only changes, where neither value changes.
-		mapEditingPanel.setResolution(displayQualityScale);
+		// still-old zoom for a frame, making them visibly jump. committedResolution is the resolution the rescaled raw map was actually
+		// rendered at (captured at submit), not the live target: for a zoom-only rescale that overlaps a display-quality change, the source
+		// is the previous raw map, so this keeps the panel reporting the resolution that matches the image actually on screen.
+		mapEditingPanel.setResolution(committedResolution);
 		mapEditingPanel.setBorderPadding(borderPadding);
 		mapEditingPanel.setZoom(zoom);
 		mapEditingPanel.setImage(scaledImage);
@@ -2133,11 +2174,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	private void finishDisplayUpdate()
 	{
-		// The displayed image now reflects the raw map at displayedMapResolution, so this is the point where hover-highlight suppression
-		// should be re-evaluated: it lifts exactly when the image on screen matches the target display quality, and stays raised through the
-		// zoom-rescale window that follows a quality change (where the raw map is already new but the displayed image is not yet).
-		updateHoverHighlightSuppression();
-
 		// The map on screen now reflects the finished draw, so run any post-draw actions that were deferred while its display
 		// update was rescaling on a background thread (e.g. removing the orange processing-area highlights for erased icons/text).
 		if (!actionsToRunOnNextDisplayUpdate.isEmpty())
@@ -2276,21 +2312,23 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		{
 			displayQualityScale = 1.5;
 		}
-		updateHoverHighlightSuppression();
+		// The hover-highlight suppression state (areHoverHighlightsSuppressed) is derived from displayQualityScale, so repaint to reflect the
+		// change; the actual redraw that follows will keep it suppressed until the new image is shown.
+		if (mapEditingPanel != null)
+		{
+			mapEditingPanel.repaint();
+		}
 	}
 
 	/**
-	 * Suppresses the mouse-hover highlights whenever the raw map image on screen was rendered at a different resolution than the current
-	 * target display quality - i.e. while a display-quality change is redrawing the map. Called both when the target quality changes and when
-	 * a full draw installs a new raw map. Robust to a concurrent zoom change, which rescales the still-old raw map and would otherwise make
-	 * the panel report the target resolution before the image at that resolution exists.
+	 * Whether the mouse-hover highlights should be hidden: true while the raw map on screen was rendered at a different resolution than the
+	 * current target display quality, i.e. while a display-quality change is redrawing and the image on screen is still the previous one. The
+	 * panel reads this live each paint. A zoom-only change does not trigger it: it keeps the committed zoom until the rescaled image is ready,
+	 * so overlays and the image stay consistent and the hover highlights remain visible throughout.
 	 */
-	private void updateHoverHighlightSuppression()
+	public boolean areHoverHighlightsSuppressed()
 	{
-		if (mapEditingPanel != null)
-		{
-			mapEditingPanel.setHoverHighlightsSuppressed(displayedMapResolution != displayQualityScale);
-		}
+		return displayedMapResolution != displayQualityScale;
 	}
 
 	public void clearEntireMap()

@@ -712,7 +712,7 @@ public abstract class MapUpdater
 							}
 							else
 							{
-								onFinishedDrawingFull(map, anotherDrawIsQueued, scaledBorderWidth, warningMessages, result.citiesRemovedForTouchingWater, isUndoRedo);
+								onFinishedDrawingFull(map, settings.resolution, anotherDrawIsQueued, scaledBorderWidth, warningMessages, result.citiesRemovedForTouchingWater, isUndoRedo);
 							}
 						}
 
@@ -858,12 +858,13 @@ public abstract class MapUpdater
 	public abstract MapSettings getSettingsFromGUI();
 
 	/**
-	 * Called when a full draw finishes (on the EDT). {@code citiesRemovedForWater} is the city icons that draw dropped because they landed on
-	 * water (duplicates kept, so the size is the number of cities lost; empty when none). {@code wasTriggeredByUndoRedo} is true when the draw
-	 * was caused by an undo or redo rather than a forward change. Both are per-draw values carried with this specific draw, so they are
-	 * correct even when draws are queued or coalesced.
+	 * Called when a full draw finishes (on the EDT). {@code mapResolution} is the resolution this specific map was drawn at (not necessarily
+	 * the current target display quality, which can already have advanced when draws are queued or coalesced). {@code citiesRemovedForWater}
+	 * is the city icons that draw dropped because they landed on water (duplicates kept, so the size is the number of cities lost; empty when
+	 * none). {@code wasTriggeredByUndoRedo} is true when the draw was caused by an undo or redo rather than a forward change. All are per-draw
+	 * values carried with this specific draw, so they are correct even when draws are queued or coalesced.
 	 */
-	protected abstract void onFinishedDrawingFull(Image map, boolean anotherDrawIsQueued, int borderPaddingAsDrawn, List<String> warningMessages,
+	protected abstract void onFinishedDrawingFull(Image map, double mapResolution, boolean anotherDrawIsQueued, int borderPaddingAsDrawn, List<String> warningMessages,
 			List<IconDrawer.CityIconRemovedForWater> citiesRemovedForWater, boolean wasTriggeredByUndoRedo);
 
 	protected abstract void onFinishedDrawingIncremental(boolean anotherDrawIsQueued, int borderPaddingAsDrawn, IntRectangle incrementalChangeArea, List<String> warningMessages);

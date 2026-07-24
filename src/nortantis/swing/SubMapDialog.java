@@ -1038,7 +1038,7 @@ public class SubMapDialog
 			}
 
 			@Override
-			protected void onFinishedDrawingFull(Image map, boolean anotherDrawIsQueued, int borderPaddingAsDrawn, List<String> warningMessages,
+			protected void onFinishedDrawingFull(Image map, double mapResolution, boolean anotherDrawIsQueued, int borderPaddingAsDrawn, List<String> warningMessages,
 					List<IconDrawer.CityIconRemovedForWater> citiesRemovedForWater, boolean wasTriggeredByUndoRedo)
 			{
 				SwingUtilities.invokeLater(() ->

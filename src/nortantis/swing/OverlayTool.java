@@ -144,6 +144,8 @@ public class OverlayTool extends EditorTool
 						{
 							// Reduce width by 1 pixel so that right side draws inside the map when the overlay is the size of the map.
 							IntRectangle adjusted = new IntRectangle(overlayPosition.x, overlayPosition.y, overlayPosition.width - 1, overlayPosition.height);
+							// adjusted is already in pixels at the displayed resolution (see calcOverlayPositionForScale), which is what
+							// showIconEditToolsAt expects, so it stays aligned with the map during a display-quality change.
 							mapEditingPanel.showIconEditToolsAt(adjusted.toRectangle(), true, IconEditToolsLocation.InsideBox, IconEditToolsSize.Large, true, false);
 						}
 						else
@@ -452,10 +454,14 @@ public class OverlayTool extends EditorTool
 
 	private IntRectangle calcOverlayPositionForScale(double scale)
 	{
-		if (updater != null && updater.mapParts != null && updater.mapParts.background != null)
+		// Compute the box against the map currently on screen (its size and resolution), not the in-flight draw's target quality/background.
+		// Those desync during a display-quality change - the background is rebuilt at the new resolution while the displayed image is still
+		// the old one - which would place the box at the wrong scale until the change finishes. The displayed size and resolution are
+		// committed together, so the box stays aligned with the map throughout, matching how the IconsTool selection box behaves.
+		IntDimension mapSize = mapEditingPanel.getDisplayedMapSizeIncludingBorder();
+		if (mapSize != null)
 		{
-			IntDimension mapSize = updater.mapParts.background.getMapBoundsIncludingBorder().toIntDimension();
-			Tuple2<IntRectangle, Image> tuple = MapCreator.getOverlayPositionAndImage(overlayImagePath.getText(), scale, overlayOffsetResolutionInvariant, mainWindow.displayQualityScale, mapSize);
+			Tuple2<IntRectangle, Image> tuple = MapCreator.getOverlayPositionAndImage(overlayImagePath.getText(), scale, overlayOffsetResolutionInvariant, mapEditingPanel.getResolution(), mapSize);
 			if (tuple != null)
 			{
 				return tuple.getFirst();
