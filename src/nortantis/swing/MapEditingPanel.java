@@ -1714,6 +1714,13 @@ public class MapEditingPanel extends UnscaledImagePanel
 			return;
 		}
 		IntRectangle selectionBoxScaled = getSelectionBoxScaledByResolution();
+		// The right and bottom border lines are drawn at x+width and y+height. When the box spans the whole map (and the map has no border)
+		// those coincide with the panel's edge and get clipped away. Pull them in by one screen pixel so the whole box stays visible. The
+		// inset must be in screen pixels, not graph pixels: at a fit-to-window zoom below 1, a single graph pixel is less than a screen pixel
+		// and would not move the line off the boundary.
+		int edgeInset = zoom > 0 ? (int) Math.ceil(osScale / zoom) : 1;
+		selectionBoxScaled = new IntRectangle(selectionBoxScaled.x, selectionBoxScaled.y, Math.max(0, selectionBoxScaled.width - edgeInset),
+				Math.max(0, selectionBoxScaled.height - edgeInset));
 		int x = selectionBoxScaled.x;
 		int y = selectionBoxScaled.y;
 		int width = selectionBoxScaled.width;
@@ -1738,7 +1745,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		{
 			for (BoxSelectHandle handle : new BoxSelectHandle[] { BoxSelectHandle.UPPER_LEFT, BoxSelectHandle.UPPER_RIGHT, BoxSelectHandle.LOWER_LEFT, BoxSelectHandle.LOWER_RIGHT })
 			{
-				Rectangle loc = getSelectionBoxHandleLocation(handle);
+				Rectangle loc = getSelectionBoxHandleLocation(handle, selectionBoxScaled);
 				g2.drawRect(loc.x, loc.y, loc.width, loc.height);
 			}
 		}
@@ -1747,7 +1754,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 			if (effectiveHandle != null && effectiveHandle != BoxSelectHandle.NONE)
 			{
 				// For top, bottom, and sides, just highlight the area the handle is in.
-				Rectangle rect = getSelectionBoxHandleLocation(effectiveHandle);
+				Rectangle rect = getSelectionBoxHandleLocation(effectiveHandle, selectionBoxScaled);
 				if (rect != null)
 				{
 					g2.drawRect(rect.x, rect.y, rect.width, rect.height);
@@ -1765,7 +1772,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		g2.drawRect(x, y, width, height);
 
 		// Move icon centered in the box, only if it fits within the CENTER handle area
-		Rectangle centerHandle = getSelectionBoxHandleLocation(BoxSelectHandle.CENTER);
+		Rectangle centerHandle = getSelectionBoxHandleLocation(BoxSelectHandle.CENTER, selectionBoxScaled);
 		if (moveIconScaledSmall != null && centerHandle != null && moveIconScaledSmall.getWidth() <= centerHandle.width && moveIconScaledSmall.getHeight() <= centerHandle.height)
 		{
 			int iconX = centerHandle.x + (int) Math.round(centerHandle.width / 2.0) - (int) Math.round(moveIconScaledSmall.getWidth() / 2.0);
@@ -1803,9 +1810,10 @@ public class MapEditingPanel extends UnscaledImagePanel
 		double res = resolution > 0 ? resolution : 1.0;
 		java.awt.Point mousePosition = new java.awt.Point((int) (riPoint.x * res), (int) (riPoint.y * res));
 
+		IntRectangle selectionBoxScaled = getSelectionBoxScaledByResolution();
 		for (BoxSelectHandle handle : BoxSelectHandle.values())
 		{
-			Rectangle location = getSelectionBoxHandleLocation(handle);
+			Rectangle location = getSelectionBoxHandleLocation(handle, selectionBoxScaled);
 			if (location != null && location.contains(mousePosition))
 			{
 				return handle;
@@ -1814,13 +1822,12 @@ public class MapEditingPanel extends UnscaledImagePanel
 		return BoxSelectHandle.NONE;
 	}
 
-	private Rectangle getSelectionBoxHandleLocation(BoxSelectHandle boxHandle)
+	private Rectangle getSelectionBoxHandleLocation(BoxSelectHandle boxHandle, IntRectangle selectionBoxScaled)
 	{
 		if (boxHandle == null || boxHandle == BoxSelectHandle.NONE)
 		{
 			return null;
 		}
-		IntRectangle selectionBoxScaled = getSelectionBoxScaledByResolution();
 		int x = selectionBoxScaled.x;
 		int y = selectionBoxScaled.y;
 		int width = selectionBoxScaled.width;
