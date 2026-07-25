@@ -155,12 +155,15 @@ public class CurveCreator
 		// Add the first point to the curve
 		curve.add(path.get(0));
 
-		for (int i = 0; i < pathToUse.size() - 1; i++)
+		// Only iterate the segments between real points of path. The synthetic control point added at each end of pathToUse shapes the
+		// curve through the real end points, but the segments leading to those synthetic points are not part of the curve, so drawing
+		// them would extend the curve past where the path ends.
+		for (int i = 1; i < pathToUse.size() - 2; i++)
 		{
-			Point p0 = (i == 0) ? pathToUse.get(0) : pathToUse.get(i - 1);
+			Point p0 = pathToUse.get(i - 1);
 			Point p1 = pathToUse.get(i);
 			Point p2 = pathToUse.get(i + 1);
-			Point p3 = (i == pathToUse.size() - 2) ? pathToUse.get(i + 1) : pathToUse.get(i + 2);
+			Point p3 = pathToUse.get(i + 2);
 
 			List<Point> segment = createCurve(p0, p1, p2, p3, distanceBetweenPoints);
 
