@@ -120,14 +120,11 @@ public class ImageCache
 		assert fillColor != null;
 		assert filterColor != null;
 
-		// There is a small chance the 2 different threads might both add the
-		// same image at the same time,
-		// but if that did happen it would only result in a little bit of
-		// duplicated work, not a functional
-		// problem.
-		return coloredCache.getOrCreate(imageAndMasks.createFileIdentifier(), () -> new ConcurrentHashMapF<>())
-				.getOrCreateWithLock(new Tuple4<>(fillColor, filterColor, maximizeOpacity, fillWithColor),
-						() -> ImageHelper.getInstance().coloredIcon(imageAndMasks, fillColor, filterColor, maximizeOpacity, fillWithColor));
+		// computeIfAbsent runs the coloring at most once per image and color combination, so threads coloring icons in parallel don't
+		// repeat each other's work. Icons from different image files use separate inner maps, so they never wait on each other.
+		return coloredCache.computeIfAbsent(imageAndMasks.createFileIdentifier(), unused -> new ConcurrentHashMapF<>())
+				.computeIfAbsent(new Tuple4<>(fillColor, filterColor, maximizeOpacity, fillWithColor),
+						unused -> ImageHelper.getInstance().coloredIcon(imageAndMasks, fillColor, filterColor, maximizeOpacity, fillWithColor));
 	}
 
 	/**
@@ -157,7 +154,8 @@ public class ImageCache
 
 	public Image getImageFromFile(Path path)
 	{
-		return fileCache.getOrCreateWithLock(path.toString().intern(), () ->
+		// computeIfAbsent reads each file at most once even when several threads ask for it at the same time.
+		return fileCache.computeIfAbsent(path.toString(), unused ->
 		{
 			return Assets.readImage(path.toString());
 		});
