@@ -1067,7 +1067,7 @@ public class MapSettings implements Serializable
 		{
 			frayedBorderColor = parseColor((String) root.get("frayedBorderColor"));
 		}
-		if (root.containsKey("frayedBorderColor"))
+		if (root.containsKey("frayedBorderBlurLevel"))
 		{
 			frayedBorderBlurLevel = (int) (long) root.get("frayedBorderBlurLevel");
 		}
