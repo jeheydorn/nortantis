@@ -1671,16 +1671,24 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	{
 		updater.setEnabled(false);
 		undoer.setEnabled(false);
-		ImageCache.clear();
-		ThemePanel.clearBackgroundImageCache();
-		MapSettings settings = getSettingsFromGUI(false);
-		themePanel.handleImagesRefresh(settings);
-		// Tell Icons tool to refresh image previews
-		toolsPanel.handleImagesRefresh(settings);
-		updateArtPackHighlightOptions();
-		updateArtPackHighlights();
-		undoer.setEnabled(true);
-		updater.setEnabled(true);
+		// The re-enabling is in a finally so that an error while refreshing doesn't leave the editor unable to draw or undo for the rest
+		// of the session.
+		try
+		{
+			ImageCache.clear();
+			ThemePanel.clearBackgroundImageCache();
+			MapSettings settings = getSettingsFromGUI(false);
+			themePanel.handleImagesRefresh(settings);
+			// Tell Icons tool to refresh image previews
+			toolsPanel.handleImagesRefresh(settings);
+			updateArtPackHighlightOptions();
+			updateArtPackHighlights();
+		}
+		finally
+		{
+			undoer.setEnabled(true);
+			updater.setEnabled(true);
+		}
 	}
 
 	private void showAboutNortantisDialog()
@@ -2714,12 +2722,20 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	{
 		updater.setEnabled(false);
 		undoer.setEnabled(false);
-		customImagesPath = settings.customImagesPath;
-		edits = settings.edits;
-		themePanel.loadSettingsIntoGUI(settings, refreshImagePreviews);
-		toolsPanel.loadSettingsIntoGUI(settings, isUndoRedoOrAutomaticChange, refreshImagePreviews);
-		undoer.setEnabled(true);
-		updater.setEnabled(true);
+		// The re-enabling is in a finally so that an error while loading settings doesn't leave the editor unable to draw or undo for the
+		// rest of the session.
+		try
+		{
+			customImagesPath = settings.customImagesPath;
+			edits = settings.edits;
+			themePanel.loadSettingsIntoGUI(settings, refreshImagePreviews);
+			toolsPanel.loadSettingsIntoGUI(settings, isUndoRedoOrAutomaticChange, refreshImagePreviews);
+		}
+		finally
+		{
+			undoer.setEnabled(true);
+			updater.setEnabled(true);
+		}
 	}
 
 	private void updateLastSettingsLoadedOrSaved(MapSettings settings)
