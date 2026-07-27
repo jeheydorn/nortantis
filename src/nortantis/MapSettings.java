@@ -1014,20 +1014,14 @@ public class MapSettings implements Serializable
 		oceanWavesType = OceanWaves.valueOf((String) root.get("oceanEffect"));
 
 		// oceanEffectsLevel was replaced by oceanShadingLevel and oceanWavesLevel, so convert the values here.
+		int deprecatedOceanEffectsLevel = root.containsKey("oceanEffectsLevel") ? (int) (long) root.get("oceanEffectsLevel") : 0;
 		if (root.containsKey("oceanShadingLevel"))
 		{
 			oceanShadingLevel = (int) (long) root.get("oceanShadingLevel");
 		}
 		else
 		{
-			if (oceanWavesType == OceanWaves.Blur)
-			{
-				oceanShadingLevel = (int) (long) root.get("oceanEffectsLevel");
-			}
-			else
-			{
-				oceanShadingLevel = 0;
-			}
+			oceanShadingLevel = calcOceanShadingLevelFromOceanEffectsLevel(oceanWavesType, deprecatedOceanEffectsLevel);
 		}
 
 		if (root.containsKey("oceanWavesLevel"))
@@ -1036,14 +1030,7 @@ public class MapSettings implements Serializable
 		}
 		else
 		{
-			if (oceanWavesType != OceanWaves.Blur)
-			{
-				oceanWavesLevel = (int) (long) root.get("oceanEffectsLevel");
-			}
-			else
-			{
-				oceanWavesLevel = 0;
-			}
+			oceanWavesLevel = calcOceanWavesLevelFromOceanEffectsLevel(oceanWavesType, deprecatedOceanEffectsLevel);
 		}
 
 		if (oceanWavesType == OceanWaves.Blur)
@@ -2294,6 +2281,24 @@ public class MapSettings implements Serializable
 		return font;
 	}
 
+	/**
+	 * Converts the deprecated oceanEffectsLevel into the ocean shading level. The deprecated Blur type meant the ocean effects level was a
+	 * shading level; every other type means it was a waves level, so there is no shading.
+	 */
+	static int calcOceanShadingLevelFromOceanEffectsLevel(OceanWaves oceanWavesType, int oceanEffectsLevel)
+	{
+		return oceanWavesType == OceanWaves.Blur ? oceanEffectsLevel : 0;
+	}
+
+	/**
+	 * Converts the deprecated oceanEffectsLevel into the ocean waves level. See
+	 * {@link #calcOceanShadingLevelFromOceanEffectsLevel}.
+	 */
+	static int calcOceanWavesLevelFromOceanEffectsLevel(OceanWaves oceanWavesType, int oceanEffectsLevel)
+	{
+		return oceanWavesType == OceanWaves.Blur ? 0 : oceanEffectsLevel;
+	}
+
 	private void loadFromOldPropertiesFile(String propertiesFilePath)
 	{
 		OldPropertyBasedMapSettings old = new OldPropertyBasedMapSettings(propertiesFilePath);
@@ -2304,6 +2309,8 @@ public class MapSettings implements Serializable
 		oceanEffectsLevel = old.oceanEffectsLevel;
 		concentricWaveCount = old.concentricWaveCount;
 		oceanWavesType = old.oceanEffect;
+		oceanShadingLevel = old.oceanShadingLevel;
+		oceanWavesLevel = old.oceanWavesLevel;
 		worldSize = old.worldSize;
 		riverColor = old.riverColor;
 		roadColor = defaultRoadColor;

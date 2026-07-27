@@ -38,6 +38,11 @@ public class OldPropertyBasedMapSettings implements Serializable
 	public double resolution;
 	public int coastShadingLevel;
 	public int oceanEffectsLevel;
+	/**
+	 * Derived from oceanEffectsLevel, which was later split into a shading level and a waves level.
+	 */
+	public int oceanShadingLevel;
+	public int oceanWavesLevel;
 	public int concentricWaveCount;
 	public OceanWaves oceanEffect;
 	public int worldSize;
@@ -142,6 +147,8 @@ public class OldPropertyBasedMapSettings implements Serializable
 			}
 			return OceanWaves.valueOf(str);
 		});
+		oceanShadingLevel = MapSettings.calcOceanShadingLevelFromOceanEffectsLevel(oceanEffect, oceanEffectsLevel);
+		oceanWavesLevel = MapSettings.calcOceanWavesLevelFromOceanEffectsLevel(oceanEffect, oceanEffectsLevel);
 		centerLandToWaterProbability = getProperty("centerLandToWaterProbability", () -> Double.parseDouble(props.getProperty("centerLandToWaterProbability")));
 		edgeLandToWaterProbability = getProperty("edgeLandToWaterProbability", () -> Double.parseDouble(props.getProperty("edgeLandToWaterProbability")));
 		frayedBorder = getProperty("frayedBorder", () -> parseBoolean(props.getProperty("frayedBorder")));
