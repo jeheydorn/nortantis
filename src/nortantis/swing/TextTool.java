@@ -1069,9 +1069,11 @@ public class TextTool extends EditorTool
 			{
 				fontChooser.setFont(AwtBridge.toAwtFont(selectedText.fontOverride));
 			}
-			curvatureSlider.setValue((int) (selectedText.curvature * curvatureSliderDivider));
+			// Round rather than truncate. These values were stored as sliderValue / divider, and dividing then multiplying can land just
+			// below the original integer, so truncating would drop the slider a step and the next save would persist that lower value.
+			curvatureSlider.setValue((int) Math.round(selectedText.curvature * curvatureSliderDivider));
 			spacingSlider.setValue(selectedText.spacing);
-			backgroundFadeSlider.setValue((int) (selectedText.backgroundFade * backgroundFadeDivider));
+			backgroundFadeSlider.setValue((int) Math.round(selectedText.backgroundFade * backgroundFadeDivider));
 		}
 		actionsSeparatorHider.setVisible((modeWidget.isEditMode() && selectedText != null) || modeWidget.isDrawMode() || modeWidget.isEraseMode());
 		mapEditingPanel.repaint();
