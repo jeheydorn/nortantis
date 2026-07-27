@@ -52,6 +52,16 @@ public class GeometryHelper
 	 */
 	public static boolean doesLineOverlapCircle(Point p1, Point p2, Point circleCenter, double radius)
 	{
+		double dx = p2.x - p1.x;
+		double dy = p2.y - p1.y;
+		double segmentLengthSquared = dx * dx + dy * dy;
+		if (segmentLengthSquared == 0.0)
+		{
+			// The segment is a single point. The math below divides by the segment length, and the resulting NaN fails every comparison,
+			// which would report no overlap even for a point at the circle's center.
+			return circleCenter.distanceTo(p1) <= radius;
+		}
+
 		// Calculate the coefficients of the line equation Ax + By + C = 0
 		double A = p2.y - p1.y;
 		double B = p1.x - p2.x;
@@ -67,9 +77,7 @@ public class GeometryHelper
 		}
 
 		// Check if the closest points on the line segment lie within the circle's radius
-		double dx = p2.x - p1.x;
-		double dy = p2.y - p1.y;
-		double t = ((circleCenter.x - p1.x) * dx + (circleCenter.y - p1.y) * dy) / (dx * dx + dy * dy);
+		double t = ((circleCenter.x - p1.x) * dx + (circleCenter.y - p1.y) * dy) / segmentLengthSquared;
 
 		// Clamp t to the range [0, 1]
 		t = Math.max(0, Math.min(1, t));

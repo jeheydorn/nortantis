@@ -21,7 +21,9 @@ import java.awt.event.FocusEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -190,9 +192,11 @@ public class CustomImagesDialog extends JDialog
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				boolean isChanged = !Objects.equals(customImagesFolderField.getText(), FileHelper.replaceHomeFolderPlaceholder(currentCustomImagesPath));
+				boolean pathChanged = !Objects.equals(customImagesFolderField.getText(), FileHelper.replaceHomeFolderPlaceholder(currentCustomImagesPath));
+				boolean folderContentsChanged = false;
 				if (mergeInstalledImagesIntoCustomFolderIfEmpty(customImagesFolderField.getText()))
 				{
+					folderContentsChanged = true;
 					SwingHelper.showMessageDialog(null, Translation.get("customImages.imagesCopied", Paths.get(customImagesFolderField.getText()).toAbsolutePath()), Translation.get("common.success"),
 							JOptionPane.INFORMATION_MESSAGE);
 				}
@@ -201,6 +205,7 @@ public class CustomImagesDialog extends JDialog
 					try
 					{
 						MapSettings.convertOldCustomImagesFolder(customImagesFolderField.getText());
+						folderContentsChanged = true;
 
 						SwingHelper.showMessageDialog(null, Translation.get("customImages.folderConvertedMessage"), Translation.get("customImages.folderConverted"), JOptionPane.INFORMATION_MESSAGE);
 					}
@@ -212,8 +217,10 @@ public class CustomImagesDialog extends JDialog
 					}
 				}
 
-				// If the custom images folder changed, then store the value, refresh images, and redraw the map.
-				if (isChanged)
+				// Store the value, refresh images, and redraw the map when either the folder selected changed or the images inside it moved.
+				// Copying in the installed images or converting an old folder structure changes what is on disk without changing the path,
+				// and the map would otherwise keep drawing from what was cached before the move.
+				if (pathChanged || folderContentsChanged)
 				{
 					storeResult.accept(FileHelper.replaceHomeFolderWithPlaceholder(customImagesFolderField.getText()));
 				}
@@ -261,9 +268,11 @@ public class CustomImagesDialog extends JDialog
 		}
 
 		boolean isFolderEmpty;
-		try
+		// The stream holds an open directory handle, which on Windows can keep the folder locked against renaming or deleting until it is
+		// closed, so it must not be left to the garbage collector.
+		try (DirectoryStream<Path> folderContents = Files.newDirectoryStream(folder.toPath()))
 		{
-			isFolderEmpty = !Files.newDirectoryStream(folder.toPath()).iterator().hasNext();
+			isFolderEmpty = !folderContents.iterator().hasNext();
 		}
 		catch (IOException ex)
 		{
