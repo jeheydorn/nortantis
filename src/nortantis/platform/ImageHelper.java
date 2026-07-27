@@ -1559,66 +1559,6 @@ public abstract class ImageHelper
 		}
 	}
 
-	public void subtractThresholded(Image toThreshold, int threshold, int highValue, Image toSubtractFrom)
-	{
-		if (!toThreshold.isGrayscaleOrBinary())
-		{
-			throw new IllegalArgumentException("Unsupported image type for thresholding: " + toThreshold.getType());
-		}
-
-		if (!toSubtractFrom.isGrayscaleOrBinary())
-		{
-			throw new IllegalArgumentException("Unsupported target image type for subtracting from: " + toSubtractFrom.getType());
-		}
-
-		if (!toThreshold.size().equals(toSubtractFrom.size()))
-		{
-			throw new IllegalArgumentException("Images for thresholding and subtracting must be the same size. First size: " + toThreshold.size() + ", second size: " + toSubtractFrom.size());
-		}
-
-		try (PixelReader toThresholdPixels = toThreshold.createPixelReader(); PixelReaderWriter toSubtractFromPixels = toSubtractFrom.createPixelReaderWriter())
-		{
-			ThreadHelper.getInstance().processRowsInParallel(0, toThreshold.getHeight(), (y) ->
-			{
-				for (int x = 0; x < toThreshold.getWidth(); x++)
-				{
-					int thresholdedValue = toThresholdPixels.getGrayLevel(x, y) >= threshold ? highValue : 0;
-					toSubtractFromPixels.setGrayLevel(x, y, Math.max(0, toSubtractFromPixels.getGrayLevel(x, y) - thresholdedValue));
-				}
-			});
-		}
-	}
-
-	public void addThresholded(Image toThreshold, int threshold, int highValue, Image toAddTo)
-	{
-		if (!toThreshold.isGrayscaleOrBinary())
-		{
-			throw new IllegalArgumentException("Unsupported image type for thresholding: " + toThreshold.getType());
-		}
-
-		if (!toAddTo.isGrayscaleOrBinary())
-		{
-			throw new IllegalArgumentException("Unsupported target image type for adding to: " + toAddTo.getType());
-		}
-
-		if (!toThreshold.size().equals(toAddTo.size()))
-		{
-			throw new IllegalArgumentException("Images for thresholding and adding must be the same size. First size: " + toThreshold.size() + ", second size: " + toAddTo.size());
-		}
-
-		try (PixelReader toThresholdPixels = toThreshold.createPixelReader(); PixelReaderWriter toAddToPixels = toAddTo.createPixelReaderWriter())
-		{
-			ThreadHelper.getInstance().processRowsInParallel(0, toThreshold.getHeight(), (y) ->
-			{
-				for (int x = 0; x < toThreshold.getWidth(); x++)
-				{
-					int thresholdedValue = toThresholdPixels.getGrayLevel(x, y) >= threshold ? highValue : 0;
-					toAddToPixels.setGrayLevel(x, y, Math.max(0, toAddToPixels.getGrayLevel(x, y) + thresholdedValue));
-				}
-			});
-		}
-	}
-
 	public void threshold(Image image, int threshold)
 	{
 		int maxPixelValue = image.getMaxPixelLevel();

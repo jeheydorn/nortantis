@@ -990,17 +990,24 @@ public class TextTool extends EditorTool
 	{
 		mapEditingPanel.clearHighlightedAreas();
 
+		// A hidden color override row means the text uses the default color, which is stored as null. Both the comparison below and the
+		// assignments that follow it must apply that rule, or a text with no override never compares equal to what the GUI shows and every
+		// selection looks modified.
+		Color colorOverrideFromGui = colorOverrideHider.isVisible() ? AwtBridge.fromAwtColor(colorOverrideDisplay.getBackground()) : null;
+		Color boldBackgroundColorOverrideFromGui = boldBackgroundColorOverrideHider.isVisible() ? AwtBridge.fromAwtColor(boldBackgroundColorOverrideDisplay.getBackground())
+				: null;
+
 		if (lastSelected != null && !(editTextField.getText().trim().equals(lastSelected.value) && textTypeComboBox.getSelectedItem().equals(lastSelected.type)
-				&& lastSelected.lineBreak.equals(lineBreakComboBox.getSelectedItem()) && Objects.equals(lastSelected.colorOverride, AwtBridge.fromAwtColor(colorOverrideDisplay.getBackground()))
-				&& Objects.equals(lastSelected.boldBackgroundColorOverride, AwtBridge.fromAwtColor(boldBackgroundColorOverrideDisplay.getBackground()))))
+				&& lastSelected.lineBreak.equals(lineBreakComboBox.getSelectedItem()) && Objects.equals(lastSelected.colorOverride, colorOverrideFromGui)
+				&& Objects.equals(lastSelected.boldBackgroundColorOverride, boldBackgroundColorOverrideFromGui)))
 		{
 			MapText before = lastSelected.deepCopy();
 			// The user changed the last selected text. Need to save the change.
 			lastSelected.value = editTextField.getText().trim();
 			lastSelected.type = (TextType) textTypeComboBox.getSelectedItem();
 			lastSelected.lineBreak = (LineBreak) lineBreakComboBox.getSelectedItem();
-			lastSelected.colorOverride = colorOverrideHider.isVisible() ? AwtBridge.fromAwtColor(colorOverrideDisplay.getBackground()) : null;
-			lastSelected.boldBackgroundColorOverride = boldBackgroundColorOverrideHider.isVisible() ? AwtBridge.fromAwtColor(boldBackgroundColorOverrideDisplay.getBackground()) : null;
+			lastSelected.colorOverride = colorOverrideFromGui;
+			lastSelected.boldBackgroundColorOverride = boldBackgroundColorOverrideFromGui;
 			lastSelected.fontOverride = fontHider.isVisible() ? AwtBridge.fromAwtFont(fontChooser.getFont()) : null;
 			lastSelected.curvature = curvatureSlider.getValue() / ((double) curvatureSliderDivider);
 			lastSelected.spacing = spacingSlider.getValue();

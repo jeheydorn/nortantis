@@ -323,7 +323,10 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 	public void setTextBoxToDraw(nortantis.geom.RotatedRectangle line1Bounds, nortantis.geom.RotatedRectangle line2Bounds)
 	{
-		this.textBoxBounds = line1Bounds.addRotatedRectangleThatHasTheSameAngleAndPivot(line2Bounds);
+		if (line1Bounds != null)
+		{
+			this.textBoxBounds = line1Bounds.addRotatedRectangleThatHasTheSameAngleAndPivot(line2Bounds);
+		}
 	}
 
 	public void setTextBoxToDraw(MapText text)

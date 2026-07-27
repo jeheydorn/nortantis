@@ -627,26 +627,6 @@ public class ImageHelperTest
 		compareWithExpected(target, "fillInTarget");
 	}
 
-	@Test
-	public void testSubtractThresholded()
-	{
-		Image toThreshold = createGrayscaleTestImage();
-		Image toSubtractFrom = createSolidGrayscaleImage(200);
-
-		ImageHelper.getInstance().subtractThresholded(toThreshold, 128, 100, toSubtractFrom);
-		compareWithExpected(toSubtractFrom, "subtractThresholded");
-	}
-
-	@Test
-	public void testAddThresholded()
-	{
-		Image toThreshold = createGrayscaleTestImage();
-		Image toAddTo = createSolidGrayscaleImage(50);
-
-		ImageHelper.getInstance().addThresholded(toThreshold, 128, 100, toAddTo);
-		compareWithExpected(toAddTo, "addThresholded");
-	}
-
 	// ==================== Draw If Pixel Value Greater Tests ====================
 
 	@Test

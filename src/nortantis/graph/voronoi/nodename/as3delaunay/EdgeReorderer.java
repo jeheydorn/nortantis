@@ -69,6 +69,7 @@ public final class EdgeReorderer
 
 		while (nDone < n)
 		{
+			int nDoneAtStartOfPass = nDone;
 			for (i = 1; i < n; ++i)
 			{
 				if (done.get(i))
@@ -115,6 +116,13 @@ public final class EdgeReorderer
 				{
 					++nDone;
 				}
+			}
+
+			if (nDone == nDoneAtStartOfPass)
+			{
+				// None of the remaining edges connect to either end of the chain, so they belong to a separate chain that this one can
+				// never reach. Nothing changes between passes, so continuing would loop forever. Return the chain built so far.
+				break;
 			}
 		}
 
