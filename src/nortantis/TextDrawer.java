@@ -302,7 +302,7 @@ public class TextDrawer
 							line1Bounds = addBackgroundBlendingPadding(line1Bounds, getFontHeight(p), text);
 
 							Rectangle line2Bounds = getLine2BoundsWithoutCurvatureOrSpacing(lines.getSecond(), textLocation, p);
-							line2Bounds = expandBoundsToIncludeCurvatureAndSpacing(line2Bounds, text, lines.getFirst(), p);
+							line2Bounds = expandBoundsToIncludeCurvatureAndSpacing(line2Bounds, text, lines.getSecond(), p);
 							line2Bounds = addBackgroundBlendingPadding(line2Bounds, getFontHeight(p), text);
 
 							textBoundsAllLines = singleLineBounds.add(line1Bounds.add(line2Bounds));
@@ -350,6 +350,7 @@ public class TextDrawer
 
 					Rectangle line2Bounds = getLine2BoundsWithoutCurvatureOrSpacing(lines.getSecond(), textLocation, p);
 					line2Bounds = expandBoundsToIncludeCurvatureAndSpacing(line2Bounds, text, lines.getSecond(), p);
+					line2Bounds = addBackgroundBlendingPadding(line2Bounds, getFontHeight(p), text);
 					boundingBox = boundingBox.add(new RotatedRectangle(line2Bounds, text.angle, textLocation).getBounds());
 				}
 			}
