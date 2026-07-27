@@ -619,8 +619,10 @@ public abstract class ImageHelper
 		{
 			int upperLeftX = Math.max(0, (int) (boundsInSource.x * scale));
 			int upperLeftY = Math.max(0, (int) (boundsInSource.y * scale));
-			pixelsToUpdate = new IntRectangle(upperLeftX, upperLeftY, Math.min((int) (boundsInSource.width * scale) + 1, target.getWidth() - 1 - upperLeftX),
-					Math.min((int) (boundsInSource.height * scale) + 1, target.getHeight() - 1 - upperLeftY));
+			// The loops below stop before x + width and y + height, so the widest a region starting at upperLeftX can be and still stay in
+			// the target is target.getWidth() - upperLeftX.
+			pixelsToUpdate = new IntRectangle(upperLeftX, upperLeftY, Math.min((int) (boundsInSource.width * scale) + 1, target.getWidth() - upperLeftX),
+					Math.min((int) (boundsInSource.height * scale) + 1, target.getHeight() - upperLeftY));
 		}
 
 		try (PixelReader sourcePixels = source.createPixelReader(null); PixelReaderWriter targetPixels = target.createPixelReaderWriter(pixelsToUpdate))
