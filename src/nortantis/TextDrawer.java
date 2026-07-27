@@ -287,26 +287,26 @@ public class TextDrawer
 					singleLineBounds = expandBoundsToIncludeCurvatureAndSpacing(singleLineBounds, text, text.value, p);
 					singleLineBounds = addBackgroundBlendingPadding(singleLineBounds, getFontHeight(p), text);
 
-					Rectangle textBoundsAllLines;
+					Rectangle textBoundsAllLines = singleLineBounds;
 					// Since it wouldn't be easy from here to figure out whether the text will draw onto one line or two, combine
 					// the bounds for both cases if it's possible the text could be split.
 					if ((text.lineBreak == LineBreak.Auto || text.lineBreak == LineBreak.Two_lines) && text.value.trim().contains(" "))
 					{
 						Pair<String> lines = addLineBreakNearMiddle(text.value);
 
-						Rectangle line1Bounds = getLine1BoundsWithoutCurvatureOrSpacing(lines.getFirst(), textLocation, p, true);
-						line1Bounds = expandBoundsToIncludeCurvatureAndSpacing(line1Bounds, text, lines.getFirst(), p);
-						line1Bounds = addBackgroundBlendingPadding(line1Bounds, getFontHeight(p), text);
+						// A split that leaves either line empty is drawn on one line, so only the single-line bounds apply.
+						if (!lines.getFirst().isEmpty() && !lines.getSecond().isEmpty())
+						{
+							Rectangle line1Bounds = getLine1BoundsWithoutCurvatureOrSpacing(lines.getFirst(), textLocation, p, true);
+							line1Bounds = expandBoundsToIncludeCurvatureAndSpacing(line1Bounds, text, lines.getFirst(), p);
+							line1Bounds = addBackgroundBlendingPadding(line1Bounds, getFontHeight(p), text);
 
-						Rectangle line2Bounds = getLine2BoundsWithoutCurvatureOrSpacing(lines.getSecond(), textLocation, p);
-						line2Bounds = expandBoundsToIncludeCurvatureAndSpacing(line2Bounds, text, lines.getFirst(), p);
-						line2Bounds = addBackgroundBlendingPadding(line2Bounds, getFontHeight(p), text);
+							Rectangle line2Bounds = getLine2BoundsWithoutCurvatureOrSpacing(lines.getSecond(), textLocation, p);
+							line2Bounds = expandBoundsToIncludeCurvatureAndSpacing(line2Bounds, text, lines.getFirst(), p);
+							line2Bounds = addBackgroundBlendingPadding(line2Bounds, getFontHeight(p), text);
 
-						textBoundsAllLines = singleLineBounds.add(line1Bounds.add(line2Bounds));
-					}
-					else
-					{
-						textBoundsAllLines = singleLineBounds;
+							textBoundsAllLines = singleLineBounds.add(line1Bounds.add(line2Bounds));
+						}
 					}
 
 					callIfMapTextIsInBounds(bounds, text, textBoundsAllLines, textLocation, action);
@@ -339,15 +339,19 @@ public class TextDrawer
 			{
 				Pair<String> lines = addLineBreakNearMiddle(text.value);
 
-				Rectangle line1Bounds = getLine1BoundsWithoutCurvatureOrSpacing(lines.getFirst(), textLocation, p, true);
-				line1Bounds = expandBoundsToIncludeCurvatureAndSpacing(line1Bounds, text, lines.getFirst(), p);
-				line1Bounds = addBackgroundBlendingPadding(line1Bounds, getFontHeight(p), text);
+				// A split that leaves either line empty is drawn on one line, so only the single-line bounds apply.
+				if (!lines.getFirst().isEmpty() && !lines.getSecond().isEmpty())
+				{
+					Rectangle line1Bounds = getLine1BoundsWithoutCurvatureOrSpacing(lines.getFirst(), textLocation, p, true);
+					line1Bounds = expandBoundsToIncludeCurvatureAndSpacing(line1Bounds, text, lines.getFirst(), p);
+					line1Bounds = addBackgroundBlendingPadding(line1Bounds, getFontHeight(p), text);
 
-				boundingBox = boundingBox.add(new RotatedRectangle(line1Bounds, text.angle, textLocation).getBounds());
+					boundingBox = boundingBox.add(new RotatedRectangle(line1Bounds, text.angle, textLocation).getBounds());
 
-				Rectangle line2Bounds = getLine2BoundsWithoutCurvatureOrSpacing(lines.getSecond(), textLocation, p);
-				line2Bounds = expandBoundsToIncludeCurvatureAndSpacing(line2Bounds, text, lines.getSecond(), p);
-				boundingBox = boundingBox.add(new RotatedRectangle(line2Bounds, text.angle, textLocation).getBounds());
+					Rectangle line2Bounds = getLine2BoundsWithoutCurvatureOrSpacing(lines.getSecond(), textLocation, p);
+					line2Bounds = expandBoundsToIncludeCurvatureAndSpacing(line2Bounds, text, lines.getSecond(), p);
+					boundingBox = boundingBox.add(new RotatedRectangle(line2Bounds, text.angle, textLocation).getBounds());
+				}
 			}
 
 			return boundingBox;
