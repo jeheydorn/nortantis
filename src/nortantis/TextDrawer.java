@@ -889,7 +889,7 @@ public class TextDrawer
 
 		Point textStart = new Point(originalBounds.x, originalBounds.y + p.getFontAscent());
 		double adjustedSpacing = line.length() < 2 ? 0.0 : text.spacing * ascent * spacingScale;
-		double startXDiffFromSpacing = (adjustedSpacing * line.length() - 1) / 2.0;
+		double startXDiffFromSpacing = (adjustedSpacing * (line.length() - 1)) / 2.0;
 		double totalWidth = p.stringWidth(line) + (line.length() > 0 ? (line.length() - 1) * adjustedSpacing : 0.0);
 
 		if (Math.abs(text.curvature) <= 0.001)

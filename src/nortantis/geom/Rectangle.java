@@ -163,7 +163,7 @@ public class Rectangle
 
 	public Rectangle floor()
 	{
-		return new Rectangle((int) x, (int) y, (int) width, (int) height);
+		return new Rectangle(Math.floor(x), Math.floor(y), Math.floor(width), Math.floor(height));
 	}
 
 	public Rectangle translate(double xTranslation, double yTranslation)
@@ -183,10 +183,12 @@ public class Rectangle
 	 */
 	public IntRectangle toEnclosingIntRectangle()
 	{
-		double xRemainder = x - (int) x;
-		double yRemainder = y - (int) y;
+		// Math.floor rather than a cast, which truncates toward zero and so would move the corner inward for negative coordinates,
+		// producing a rectangle that doesn't enclose this one.
+		double left = Math.floor(x);
+		double top = Math.floor(y);
 
-		return new IntRectangle((int) x, (int) y, (int) Math.ceil(width + xRemainder), (int) Math.ceil(height + yRemainder));
+		return new IntRectangle((int) left, (int) top, (int) Math.ceil(width + (x - left)), (int) Math.ceil(height + (y - top)));
 	}
 
 	/**

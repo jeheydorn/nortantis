@@ -26,7 +26,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * 
  * @author joseph
  */
-@SuppressWarnings("serial")
+// This class reads a format that stored values which are now deprecated, such as OceanWaves.Blur, so deprecation warnings here are
+// expected.
+@SuppressWarnings({ "serial", "deprecation" })
 public class OldPropertyBasedMapSettings implements Serializable
 {
 	public static final double defaultPointPrecision = 2.0;
@@ -143,7 +145,8 @@ public class OldPropertyBasedMapSettings implements Serializable
 				{
 					return OceanWaves.Ripples;
 				}
-				return parseBoolean(str2) ? OceanWaves.Ripples : OceanWaves.Ripples;
+				// Blur is the deprecated value meaning the ocean is shaded rather than given waves.
+				return parseBoolean(str2) ? OceanWaves.Ripples : OceanWaves.Blur;
 			}
 			return OceanWaves.valueOf(str);
 		});
@@ -180,8 +183,8 @@ public class OldPropertyBasedMapSettings implements Serializable
 		pointPrecision = getProperty("pointPrecision", () ->
 		{
 			String str = props.getProperty("pointPrecision");
-			return (str == null || str == "") ? 10.0 : (double) (Double.parseDouble(str)); // 10.0 was the value used before I made a
-																							// setting for it.
+			return (str == null || str.isEmpty()) ? 10.0 : (double) (Double.parseDouble(str)); // 10.0 was the value used before I made a
+																								// setting for it.
 		});
 
 		// Background image stuff.
