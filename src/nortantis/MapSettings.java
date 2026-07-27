@@ -2433,7 +2433,9 @@ public class MapSettings implements Serializable
 	public boolean hasRippleWaves(double resolutionScale)
 	{
 		double sizeMultiplier = MapCreator.calcSizeMultiplierFromResolutionScaleRounded(resolutionScale);
-		return oceanWavesType == OceanWaves.Ripples && ((int) oceanWavesLevel * sizeMultiplier) > 0;
+		// The cast must apply to the product so that this matches the kernel size the ripple drawing code derives from it. Testing the
+		// un-truncated product instead would report ripples for a kernel that truncates to size 0.
+		return oceanWavesType == OceanWaves.Ripples && ((int) (oceanWavesLevel * sizeMultiplier)) > 0;
 	}
 
 	public boolean hasConcentricWaves()
