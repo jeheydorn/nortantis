@@ -79,6 +79,14 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	 */
 	private String loadedMapVersion;
 	static final String frameTitleBase = "Nortantis";
+	/**
+	 * The window created by main(), if it has been created yet. On macOS, a file opened via Finder (either at launch or while the app is
+	 * already running) is delivered as an Apple Event through the OpenFilesHandler registered in main(), rather than as a command-line
+	 * argument. That handler needs this to route the file into an already-open window; before the window exists, it stashes the file in
+	 * pendingFileToOpenFromAppleEvent instead.
+	 */
+	private static volatile MainWindow instance;
+	private static volatile String pendingFileToOpenFromAppleEvent;
 	public MapEdits edits;
 
 	JScrollPane mapEditingScrollPane;
@@ -169,6 +177,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	{
 		super(frameTitleBase);
 
+		instance = this;
 		Logger.setLoggerTarget(this);
 
 		try
@@ -1878,6 +1887,55 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		}
 	}
 
+	/**
+	 * Opens a map file in this window. Used as a fallback for launchNewInstanceForFile when there's no packaged launcher to relaunch (e.g.
+	 * running from an IDE or Gradle). Brings the window to the front first so it, and any confirmation dialog this triggers, are visible
+	 * to the user.
+	 */
+	private void openMapFromOS(String absolutePath)
+	{
+		setState(Frame.NORMAL);
+		toFront();
+		requestFocus();
+
+		boolean cancelPressed = checkForUnsavedChanges();
+		if (cancelPressed)
+		{
+			return;
+		}
+
+		openMap(absolutePath);
+	}
+
+	/**
+	 * Opens a map file in a brand new window by launching a second instance of the app. This mirrors how Windows and Linux already open
+	 * a new window for every file double-clicked in the file explorer - each such double-click there starts a new OS process. On macOS,
+	 * the app stays running as a single process and Finder delivers a double-clicked file to that same process as an Apple Event, so this
+	 * relaunches the packaged launcher executable to get the same one-process-per-window behavior.
+	 */
+	private static void launchNewInstanceForFile(String absolutePath)
+	{
+		Optional<String> launcherCommand = ProcessHandle.current().info().command();
+		if (launcherCommand.isEmpty())
+		{
+			// Not running from a packaged launcher (e.g. running from an IDE or Gradle), so there's nothing to relaunch.
+			if (instance != null)
+			{
+				instance.openMapFromOS(absolutePath);
+			}
+			return;
+		}
+
+		try
+		{
+			new ProcessBuilder(launcherCommand.get(), absolutePath).redirectOutput(ProcessBuilder.Redirect.DISCARD).redirectError(ProcessBuilder.Redirect.DISCARD).start();
+		}
+		catch (IOException e)
+		{
+			Logger.printError("Unable to launch a new window for '" + absolutePath + "':", e);
+		}
+	}
+
 	private void convertCustomImagesFolderIfNeeded(MapSettings settings)
 	{
 		if (settings.hasOldCustomImagesFolderStructure())
@@ -2910,6 +2968,29 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		setLookAndFeel(UserPreferences.getInstance().lookAndFeel);
 
+		// On macOS, a file opened via Finder is delivered as an Apple Event rather than a command-line argument, and can arrive before or
+		// after the window is created depending on timing. Registering this before creating the window ensures an event that arrives
+		// during startup isn't missed.
+		if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.APP_OPEN_FILE))
+		{
+			Desktop.getDesktop().setOpenFileHandler(event ->
+			{
+				if (event.getFiles().isEmpty())
+				{
+					return;
+				}
+				String filePath = event.getFiles().get(0).getAbsolutePath();
+				if (instance != null)
+				{
+					launchNewInstanceForFile(filePath);
+				}
+				else
+				{
+					pendingFileToOpenFromAppleEvent = filePath;
+				}
+			});
+		}
+
 		String fileToOpen = args.length > 0 ? args[0] : "";
 		EventQueue.invokeLater(new Runnable()
 		{
@@ -2917,7 +2998,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				try
 				{
-					MainWindow mainWindow = new MainWindow(fileToOpen);
+					String fileFromAppleEvent = pendingFileToOpenFromAppleEvent;
+					MainWindow mainWindow = new MainWindow(!fileToOpen.isEmpty() ? fileToOpen : fileFromAppleEvent != null ? fileFromAppleEvent : "");
 					mainWindow.setVisible(true);
 				}
 				catch (Exception e)

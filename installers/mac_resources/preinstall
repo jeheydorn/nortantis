@@ -1,0 +1,14 @@
+#!/usr/bin/env sh
+
+if [ ! -d "/Applications" ]
+then
+    mkdir -p "/Applications"
+fi
+
+# jpackage's mac pkg installer can skip re-copying the payload for a package
+# identifier/version it has already installed a receipt for, leaving stale
+# app content in place even though the receipt shows a fresh install. Removing
+# any existing install first forces the new payload to be written every time.
+rm -rf "/Applications/Nortantis.app"
+
+exit 0

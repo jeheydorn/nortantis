@@ -27,6 +27,7 @@ jpackage \
 --type pkg \
 --icon "taskbar icon medium size.icns" \
 --file-associations file_associations_mac.txt \
+--resource-dir mac_resources \
 --vendor "Joseph Heydorn" \
 --app-version "$nortantis_version" \
 --mac-package-name "Nortantis" \

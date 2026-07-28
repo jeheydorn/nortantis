@@ -36,12 +36,14 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class MapSettings implements Serializable
 {
 	/**
-	 * When updating this, also update installers/version.txt.
+	 * When updating this, also update installers/version.txt with the same value.
 	 *
-	 * This must not contain trailing zeros (use "3.2", not "3.20"), since versions are compared numerically and a trailing zero would
-	 * change the value.
+	 * Version strings are compared segment by segment as integers (see {@link #isVersionGreaterThan}), the same way macOS compares
+	 * CFBundleVersion strings. Unlike a decimal number, a trailing zero here is significant and changes the value ("3.20" is not the same
+	 * as "3.2", and is greater than "3.18"). Each new value here must have a numerically greater segment than every version that came
+	 * before it at the same position.
 	 */
-	public static final String currentVersion = "3.2";
+	public static final String currentVersion = "3.20";
 	public static final String fileExtension = "nort";
 	public static final String fileExtensionWithDot = "." + fileExtension;
 	public static final double defaultPointPrecision = 2.0;
@@ -54,11 +56,11 @@ public class MapSettings implements Serializable
 	private final Color defaultRoadColor = Color.black;
 	public static final Color defaultIconFillColor = Color.gray;
 	/**
-	 * The value of defaultIconFillColor before version 3.2. Retained because maps saved before 3.2 omitted an icon's (or icon type's) fill
-	 * color when it equaled the default of the time, so on load a visible icon left at the old default must be resolved back to this value
-	 * to preserve its color rather than picking up the new default.
+	 * The value of defaultIconFillColor before version 3.20. Retained because maps saved before 3.20 omitted an icon's (or icon type's)
+	 * fill color when it equaled the default of the time, so on load a visible icon left at the old default must be resolved back to this
+	 * value to preserve its color rather than picking up the new default.
 	 */
-	public static final Color defaultIconFillColorBeforeV3_2 = Color.create(155, 105, 49, (int) (255 * 0.7));
+	public static final Color defaultIconFillColorBeforeV3_20 = Color.create(155, 105, 49, (int) (255 * 0.7));
 	public static final HSBColor defaultIconFilterColor = new HSBColor(0, 0, 0, 0);
 
 	public String version;
@@ -1491,21 +1493,21 @@ public class MapSettings implements Serializable
 	}
 
 	/**
-	 * defaultIconFillColor changed in version 3.2. Per-type fill colors are stored explicitly for every type in older maps, so without this
-	 * a type that was left at the old default would stay frozen at it. Release any per-type fill color that was at the old default and
-	 * isn't being shown so it tracks the new default. Types the user actually colored, or that have fill enabled, are left untouched.
+	 * defaultIconFillColor changed in version 3.20. Per-type fill colors are stored explicitly for every type in older maps, so without
+	 * this a type that was left at the old default would stay frozen at it. Release any per-type fill color that was at the old default
+	 * and isn't being shown so it tracks the new default. Types the user actually colored, or that have fill enabled, are left untouched.
 	 * Individual icons are handled inline in parseIconEdits.
 	 */
 	private void runConversionForIconFillColorDefaultChange()
 	{
-		if (isVersionGreaterThanOrEqualTo(version, "3.2"))
+		if (isVersionGreaterThanOrEqualTo(version, "3.20"))
 		{
 			return;
 		}
 
 		for (IconType iconType : IconType.values())
 		{
-			if (!getFillWithColorForType(iconType) && defaultIconFillColorBeforeV3_2.equals(iconFillColorsByType.get(iconType)))
+			if (!getFillWithColorForType(iconType) && defaultIconFillColorBeforeV3_20.equals(iconFillColorsByType.get(iconType)))
 			{
 				iconFillColorsByType.put(iconType, defaultIconFillColor);
 			}
@@ -1568,7 +1570,7 @@ public class MapSettings implements Serializable
 
 	private void runConversionOnFillWithColorByType()
 	{
-		if (isVersionGreaterThanOrEqualTo(version, "3.2"))
+		if (isVersionGreaterThanOrEqualTo(version, "3.20"))
 		{
 			return;
 		}
@@ -2031,13 +2033,12 @@ public class MapSettings implements Serializable
 			{
 				fillColor = fillColorFromJSon;
 			}
-			else if (fillWithColor && !isVersionGreaterThanOrEqualTo(version, "3.2"))
+			else if (fillWithColor && !isVersionGreaterThanOrEqualTo(version, "3.20"))
 			{
-				// The color was omitted, which means it equaled the default when the file was saved. For maps saved before 3.2 (when the
-				// default fill color changed) a shown color was displaying the old default, so resolve it back to that to preserve the
-				// icon's
-				// appearance. A hidden omitted color falls through to the current default below so it tracks the new default.
-				fillColor = defaultIconFillColorBeforeV3_2;
+				// The color was omitted, which means it equaled the default when the file was saved. For maps saved before 3.20 (when
+				// the default fill color changed) a shown color was displaying the old default, so resolve it back to that to preserve
+				// the icon's appearance. A hidden omitted color falls through to the current default below so it tracks the new default.
+				fillColor = defaultIconFillColorBeforeV3_20;
 			}
 			else
 			{
@@ -2401,6 +2402,12 @@ public class MapSettings implements Serializable
 		return isVersionGreaterThan(version, currentVersion);
 	}
 
+	/**
+	 * Compares two version strings the way macOS compares CFBundleVersion strings: each dot-separated segment is compared as its own
+	 * integer, in order, with a missing segment treated as 0 (so "3.2" and "3.2.0" are equal). This means segments are integer counters,
+	 * not decimal digits, so "3.18" is greater than "3.2" (18 > 2). Keep MapSettings.currentVersion and installers/version.txt consistent
+	 * with this so a mac installer build is never treated as an unintended downgrade.
+	 */
 	public static boolean isVersionGreaterThan(String version1, String version2)
 	{
 		if (version1 == null || version1.isEmpty())
@@ -2411,7 +2418,20 @@ public class MapSettings implements Serializable
 		{
 			return true;
 		}
-		return Double.parseDouble(version1) > Double.parseDouble(version2);
+
+		String[] segments1 = version1.split("\\.");
+		String[] segments2 = version2.split("\\.");
+		int segmentCount = Math.max(segments1.length, segments2.length);
+		for (int i = 0; i < segmentCount; i++)
+		{
+			int segment1 = i < segments1.length ? Integer.parseInt(segments1[i]) : 0;
+			int segment2 = i < segments2.length ? Integer.parseInt(segments2[i]) : 0;
+			if (segment1 != segment2)
+			{
+				return segment1 > segment2;
+			}
+		}
+		return false;
 	}
 
 	private boolean isVersionGreaterThanOrEqualTo(String version1, String version2)
