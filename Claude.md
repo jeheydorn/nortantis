@@ -12,7 +12,9 @@ Fantasy map generator and editor that uses tectonic plate simulation to create i
 
 ## Shell and Paths
 
-The shell is Windows bash (Git Bash / MSYS2). Use Windows-style paths like `C:/Users/...`, not WSL-style `/mnt/c/...` paths — the latter do not exist in this environment.
+Developed primarily on Windows, sometimes on macOS and Linux. Check the Platform field in your environment info rather than assuming.
+
+On Windows the shell is Git Bash / MSYS2: use `C:/Users/...` style paths, not WSL-style `/mnt/c/...` — the latter do not exist there.
 
 ## Build and Run
 
