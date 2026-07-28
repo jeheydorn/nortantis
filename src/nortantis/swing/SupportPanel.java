@@ -5,6 +5,8 @@ import nortantis.swing.translation.Translation;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Shows a support ask (buy a book / donate), followed by smaller links to the Nortantis website, blog, and source code. Used both as the
@@ -19,6 +21,7 @@ public class SupportPanel extends JPanel
 	private static final int cardPadding = 14;
 	private static final int cardArc = 18;
 	private static final int checkboxGap = 4;
+	private static final int wordGap = 4;
 
 	private static final Color heartColor = new Color(214, 64, 90);
 
@@ -60,7 +63,9 @@ public class SupportPanel extends JPanel
 
 		if (showAskCard)
 		{
-			JPanel askRow = createFlowRow(4, 4);
+			// The ask row spaces its words itself rather than through a layout gap, since some of the seams between words and hyperlinks
+			// take no space. See buildAskRow.
+			JPanel askRow = createFlowRow(0, 4);
 			buildAskRow(askRow);
 
 			JCheckBox hideOnStartupCheckbox = new JCheckBox(Translation.get("startup.supportPanel.hideCheckbox"));
@@ -200,29 +205,222 @@ public class SupportPanel extends JPanel
 		JLabel heart = new JLabel("♥");
 		heart.setForeground(heartColor);
 		heart.setFont(askFont.deriveFont(askFont.getSize2D() + 2f));
+		setSpaceAfter(heart, true);
 		askRow.add(heart);
 
-		addWords(askRow, Translation.get("startup.supportAsk.beforeDonateLink"));
-		askRow.add(createBoldAskLink(Translation.get("startup.supportAsk.donateLinkText"), donateUrl));
-		addWords(askRow, Translation.get("startup.supportAsk.betweenLinks"));
-		askRow.add(createBoldAskLink(Translation.get("startup.supportAsk.bookLinkText"), bookUrl));
-		addWords(askRow, Translation.get("startup.supportAsk.afterBookLink"));
+		String betweenLinksText = Translation.get("startup.supportAsk.betweenLinks");
+		String afterBookText = Translation.get("startup.supportAsk.afterBookLink");
+
+		JLabel previous = addWords(askRow, null, Translation.get("startup.supportAsk.beforeDonateLink"));
+		previous = addLinkWithAttachedPunctuation(askRow, previous,
+				createBoldAskLink(Translation.get("startup.supportAsk.donateLinkText"), donateUrl), betweenLinksText);
+		previous = addWords(askRow, previous, stripLeadingAttachedPunctuation(betweenLinksText));
+		previous = addLinkWithAttachedPunctuation(askRow, previous,
+				createBoldAskLink(Translation.get("startup.supportAsk.bookLinkText"), bookUrl), afterBookText);
+		addWords(askRow, previous, stripLeadingAttachedPunctuation(afterBookText));
+	}
+
+	/**
+	 * Adds a hyperlink to a row, together with any punctuation that starts the text following it, grouped into one component so that a line
+	 * wrap cannot strand the punctuation at the start of the next line.
+	 *
+	 * @param followingText
+	 *            The text that comes after the link, whose leading punctuation is pulled into the group. Callers must add that text with
+	 *            {@link #stripLeadingAttachedPunctuation} applied, or the punctuation appears twice.
+	 * @return The label that later pieces should be spaced against: the punctuation when there is any, otherwise the link.
+	 */
+	private JLabel addLinkWithAttachedPunctuation(JPanel row, JLabel previous, JLabel link, String followingText)
+	{
+		if (previous != null)
+		{
+			setSpaceAfter(previous, needsSpaceBetween(previous.getText(), link.getText()));
+		}
+
+		String punctuation = leadingAttachedPunctuation(followingText);
+		if (punctuation.isEmpty())
+		{
+			row.add(link);
+			return link;
+		}
+
+		JLabel punctuationLabel = new JLabel(punctuation);
+		punctuationLabel.setFont(askFont);
+
+		JPanel group = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+		group.setOpaque(false);
+		group.add(link);
+		group.add(punctuationLabel);
+		row.add(group);
+		return punctuationLabel;
+	}
+
+	/**
+	 * The run of punctuation at the start of text that belongs to whatever came before it, such as the period that ends the ask sentence.
+	 */
+	private static String leadingAttachedPunctuation(String text)
+	{
+		int end = 0;
+		while (end < text.length() && attachesToPrecedingText(text.charAt(end)))
+		{
+			end++;
+		}
+		return text.substring(0, end);
+	}
+
+	private static String stripLeadingAttachedPunctuation(String text)
+	{
+		return text.substring(leadingAttachedPunctuation(text).length());
 	}
 
 	/**
 	 * Adds each word of text as its own label so the enclosing WrapLayout row can wrap the sentence naturally around embedded hyperlinks.
+	 *
+	 * @param previous
+	 *            The label the first word follows, or null to leave the spacing before the first word as it is.
+	 * @return The label holding the last word, or {@code previous} if the text has no words.
 	 */
-	private void addWords(JPanel row, String text)
+	private JLabel addWords(JPanel row, JLabel previous, String text)
 	{
+		JLabel last = previous;
+		boolean isFirstWord = true;
 		for (String word : text.trim().split("\\s+"))
 		{
-			if (!word.isEmpty())
+			if (word.isEmpty())
 			{
-				JLabel label = new JLabel(word);
+				continue;
+			}
+
+			boolean isFirstPieceOfWord = true;
+			for (String piece : splitIntoWrappablePieces(word))
+			{
+				JLabel label = new JLabel(piece);
 				label.setFont(askFont);
-				row.add(label);
+				if (isFirstWord && isFirstPieceOfWord)
+				{
+					addPiece(row, last, label);
+				}
+				else
+				{
+					if (isFirstPieceOfWord)
+					{
+						// Words are separated by whitespace in the text itself, so they always take a space. Pieces within one word are
+						// consecutive characters, so they take none.
+						setSpaceAfter(last, true);
+					}
+					row.add(label);
+				}
+				last = label;
+				isFirstPieceOfWord = false;
+			}
+			isFirstWord = false;
+		}
+		return last;
+	}
+
+	/**
+	 * Splits a word into the pieces a line wrap may fall between. Scripts written without spaces between words, such as Chinese, wrap
+	 * between characters, so each of their characters becomes its own piece and the row can break anywhere in a run of them; runs of other
+	 * characters stay whole so words are never split mid-word. Punctuation that attaches to the text before it stays in the piece it
+	 * follows, which keeps a wrap from stranding it at the start of a line.
+	 */
+	private static List<String> splitIntoWrappablePieces(String word)
+	{
+		List<String> pieces = new ArrayList<>();
+		StringBuilder current = new StringBuilder();
+		for (int i = 0; i < word.length(); i++)
+		{
+			char c = word.charAt(i);
+			if (attachesToPrecedingText(c) && current.length() > 0)
+			{
+				current.append(c);
+			}
+			else if (isWrittenWithoutSpaces(c))
+			{
+				addPieceIfNotEmpty(pieces, current);
+				current.append(c);
+			}
+			else
+			{
+				if (current.length() > 0 && isWrittenWithoutSpaces(current.charAt(0)))
+				{
+					addPieceIfNotEmpty(pieces, current);
+				}
+				current.append(c);
 			}
 		}
+		addPieceIfNotEmpty(pieces, current);
+		return pieces;
+	}
+
+	private static void addPieceIfNotEmpty(List<String> pieces, StringBuilder current)
+	{
+		if (current.length() > 0)
+		{
+			pieces.add(current.toString());
+			current.setLength(0);
+		}
+	}
+
+	/**
+	 * Adds one label of the ask sentence to a row, spacing it from the label it follows.
+	 *
+	 * @param previous
+	 *            The label the added one follows, or null to leave the spacing before it as it is.
+	 * @return The added label.
+	 */
+	private JLabel addPiece(JPanel row, JLabel previous, JLabel piece)
+	{
+		if (previous != null)
+		{
+			setSpaceAfter(previous, needsSpaceBetween(previous.getText(), piece.getText()));
+		}
+		row.add(piece);
+		return piece;
+	}
+
+	private static void setSpaceAfter(JLabel label, boolean hasSpaceAfter)
+	{
+		label.setBorder(hasSpaceAfter ? BorderFactory.createEmptyBorder(0, 0, 0, wordGap) : null);
+	}
+
+	/**
+	 * Whether a space belongs between two adjacent labels of the ask sentence. The translated text has no whitespace where it meets a
+	 * hyperlink, so the spacing at those seams is decided from the characters on either side of them: punctuation that attaches to the text
+	 * before it, such as the period that ends the sentence, and scripts written without spaces between words, such as Chinese, take no
+	 * space.
+	 */
+	private static boolean needsSpaceBetween(String before, String after)
+	{
+		if (before.isEmpty() || after.isEmpty())
+		{
+			return false;
+		}
+
+		char endOfBefore = before.charAt(before.length() - 1);
+		char startOfAfter = after.charAt(0);
+		if (isWrittenWithoutSpaces(endOfBefore) || isWrittenWithoutSpaces(startOfAfter))
+		{
+			return false;
+		}
+		return !attachesToPrecedingText(startOfAfter);
+	}
+
+	private static boolean attachesToPrecedingText(char c)
+	{
+		return ".,;:!?%)]}…".indexOf(c) >= 0 || "。，、；：！？）〕】｝」』〉》".indexOf(c) >= 0;
+	}
+
+	private static boolean isWrittenWithoutSpaces(char c)
+	{
+		if (Character.isIdeographic(c))
+		{
+			return true;
+		}
+
+		Character.UnicodeBlock block = Character.UnicodeBlock.of(c);
+		return block == Character.UnicodeBlock.CJK_SYMBOLS_AND_PUNCTUATION
+				|| block == Character.UnicodeBlock.HALFWIDTH_AND_FULLWIDTH_FORMS || block == Character.UnicodeBlock.HIRAGANA
+				|| block == Character.UnicodeBlock.KATAKANA;
 	}
 
 	@Override
