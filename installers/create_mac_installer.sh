@@ -29,7 +29,7 @@ jpackage \
 --file-associations file_associations_mac.txt \
 --vendor "Joseph Heydorn" \
 --app-version "$nortantis_version" \
---mac-bundle-name "Nortantis" \
+--mac-package-name "Nortantis" \
 --java-options -XX:MaxRAMPercentage=50.0 \
 --java-options -XX:MaxHeapFreeRatio=40 \
 --java-options -XX:MinHeapFreeRatio=20 \
