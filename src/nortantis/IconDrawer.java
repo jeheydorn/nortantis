@@ -1274,8 +1274,7 @@ public class IconDrawer
 						continue;
 					}
 
-					Center closest = graph.findClosestCenter(new Point(graphXLeft + x, graphYTop + y), true);
-					if (closest == null)
+					if (!graph.isPointOnMap(graphXLeft + x, graphYTop + y))
 					{
 						// The pixel isn't on the map.
 						continue;
@@ -1283,6 +1282,15 @@ public class IconDrawer
 
 					if (type == IconType.decorations)
 					{
+						// Decorations can sit on open water, so what shows through their transparent pixels depends on whether this pixel is
+						// land or ocean. Every other icon type always blends with the land background and texture, so it needs no center
+						// lookup - worth keeping out of this loop because it runs once per pixel of every icon drawn.
+						Center closest = graph.findClosestCenter(new Point(graphXLeft + x, graphYTop + y), true);
+						if (closest == null)
+						{
+							continue;
+						}
+
 						bgColorNoIcons = closest.isWater ? Color.create(effectiveOceanTexturePixels.getRGB(xLoc, yLoc), oceanTexture.hasAlpha())
 								: Color.create(effectiveLandBackgroundPixels.getRGB(xLoc, yLoc), landBackground.hasAlpha());
 
@@ -1381,8 +1389,7 @@ public class IconDrawer
 						int snippetX = xLoc - visibleXStart;
 						int snippetY = yLoc - visibleYStart;
 
-						Center closest = graph.findClosestCenter(new Point(graphXLeft + x, graphYTop + y), true);
-						if (closest == null)
+						if (!graph.isPointOnMap(graphXLeft + x, graphYTop + y))
 						{
 							// The pixel isn't on the map.
 							continue;
@@ -1390,6 +1397,15 @@ public class IconDrawer
 
 						if (type == IconType.decorations)
 						{
+							// Decorations can sit on open water, so what shows through their transparent pixels depends on whether this pixel
+							// is land or ocean. Every other icon type always blends with the land background and texture, so it needs no
+							// center lookup - worth keeping out of this loop because it runs once per pixel of every icon drawn.
+							Center closest = graph.findClosestCenter(new Point(graphXLeft + x, graphYTop + y), true);
+							if (closest == null)
+							{
+								continue;
+							}
+
 							bgColorNoIcons = closest.isWater ? Color.create(effectiveOceanTexturePixels.getRGB(xLoc, yLoc), oceanTexture.hasAlpha())
 									: Color.create(effectiveLandBackgroundPixels.getRGB(xLoc, yLoc), landBackground.hasAlpha());
 
@@ -1472,8 +1488,7 @@ public class IconDrawer
 						continue;
 					}
 
-					Center closest = graph.findClosestCenter(new Point(graphXLeft + x, graphYTop + y), true);
-					if (closest == null)
+					if (!graph.isPointOnMap(graphXLeft + x, graphYTop + y))
 					{
 						// The pixel isn't on the map.
 						continue;
@@ -1485,6 +1500,15 @@ public class IconDrawer
 					Color landTextureColor;
 					if (type == IconType.decorations)
 					{
+						// Decorations can sit on open water, so what shows through their transparent pixels depends on whether this pixel is
+						// land or ocean. Every other icon type always blends with the land background and texture, so it needs no center
+						// lookup - worth keeping out of this loop because it runs once per pixel of every icon drawn.
+						Center closest = graph.findClosestCenter(new Point(graphXLeft + x, graphYTop + y), true);
+						if (closest == null)
+						{
+							continue;
+						}
+
 						bgColorNoIcons = closest.isWater ? Color.create(hoistedOceanTexturePixels.getRGB(xLoc, yLoc), oceanTexture.hasAlpha())
 								: Color.create(hoistedLandBackgroundPixels.getRGB(xLoc, yLoc), landBackground.hasAlpha());
 						landTextureColor = closest.isWater ? Color.create(hoistedOceanTexturePixels.getRGB(xLoc, yLoc), oceanTexture.hasAlpha())

@@ -726,6 +726,16 @@ public class WorldGraph extends VoronoiGraph
 		return findClosestCenterUsingGrid(point, returnNullIfNotOnMap, false);
 	}
 
+	/**
+	 * Whether the given point lies within this graph's bounds. This is the same test {@code findClosestCenter} applies when
+	 * returnNullIfNotOnMap is set, so callers that only need to know whether a point is on the map can use this instead of doing a full
+	 * center lookup and checking for null.
+	 */
+	public boolean isPointOnMap(double x, double y)
+	{
+		return x >= 0 && y >= 0 && x < getWidth() && y < getHeight();
+	}
+
 	private Center findClosestCenterUsingGrid(Point point, boolean returnNullIfNotOnMap, boolean useWaterCheckResolution)
 	{
 		buildCenterLookupGridIfNeeded();
@@ -734,7 +744,7 @@ public class WorldGraph extends VoronoiGraph
 			buildCanonicalSlicePolygonsIfNeeded(false);
 		}
 
-		if (returnNullIfNotOnMap && (point.x >= getWidth() || point.y >= getHeight() || point.x < 0 || point.y < 0))
+		if (returnNullIfNotOnMap && !isPointOnMap(point.x, point.y))
 		{
 			return null;
 		}
