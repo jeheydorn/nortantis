@@ -261,6 +261,19 @@ public class MapCanvasOverlay extends JPanel
 		}
 	}
 
+	/**
+	 * False while a message or support panel is showing, because those overlap the scroll pane. Swing's painting optimization assumes a
+	 * container's children never overlap, so a repaint requested from inside the scroll pane (such as the map canvas repainting itself)
+	 * would paint over the strips and leave them erased until something repainted this container. Returning false makes Swing start such
+	 * repaints from here instead, so the strips are painted back on top. Painting stays fully optimized when neither strip is showing,
+	 * which is the case whenever a map is open.
+	 */
+	@Override
+	public boolean isOptimizedDrawingEnabled()
+	{
+		return messagePanel == null && supportPanel == null;
+	}
+
 	@Override
 	public Dimension getPreferredSize()
 	{
