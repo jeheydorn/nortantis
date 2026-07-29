@@ -17,7 +17,6 @@ import nortantis.platform.ImageHelper;
 import nortantis.platform.PlatformFactory;
 import nortantis.platform.awt.AwtBridge;
 import nortantis.platform.awt.AwtFactory;
-import nortantis.swing.translation.TextSpacing;
 import nortantis.swing.translation.Translation;
 import nortantis.util.*;
 import org.apache.commons.io.FileUtils;
@@ -2889,17 +2888,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	 */
 	private void showStartupScreen()
 	{
-		// mainWindow.welcome and mainWindow.welcome.line2 are two lines. The overlay has plenty of width for most fonts, so join them into a
-		// single sentence. On macOS the default decorative font is wider and a single line runs past the default window width, so keep the
-		// two lines separate there to wrap sooner.
-		if (OSHelper.isMac())
-		{
-			showCanvasMessage(Translation.get("mainWindow.welcome"), Translation.get("mainWindow.welcome.line2"));
-		}
-		else
-		{
-			showCanvasMessage(TextSpacing.join(Translation.get("mainWindow.welcome"), Translation.get("mainWindow.welcome.line2")));
-		}
+		showCanvasMessage(Translation.get("mainWindow.welcome"));
 		boolean showAskCard = !UserPreferences.getInstance().hideStartupSupportPanel;
 		mapCanvasOverlay.setSupportPanel(true, SupportPanel.defaultContentWidth, showAskCard);
 	}

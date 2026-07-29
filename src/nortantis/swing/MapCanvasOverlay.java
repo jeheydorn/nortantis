@@ -1,9 +1,14 @@
 package nortantis.swing;
 
+import nortantis.swing.translation.Translation;
 import nortantis.util.OSHelper;
 
 import javax.swing.*;
 import java.awt.*;
+import java.text.BreakIterator;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Wraps the map editing scroll pane and layers transparent, click-through panels on top of it: a message strip near the top (welcome
@@ -24,6 +29,7 @@ public class MapCanvasOverlay extends JPanel
 	private JPanel messagePanel;
 	private SupportPanel supportPanel;
 	private String[] currentMessageLines;
+	private String[] displayedMessageLines;
 	private int supportPanelContentWidth;
 	private boolean supportPanelShowAskCard;
 
@@ -37,36 +43,14 @@ public class MapCanvasOverlay extends JPanel
 
 	/**
 	 * Shows a centered, multi-line message near the top of the canvas (e.g. the welcome text, "drawing map...", or a draw-failure
-	 * message), replacing any message currently shown. Pass no lines to clear the message.
+	 * message), replacing any message currently shown. Lines too wide for the canvas are wrapped. Pass no lines to clear the message.
 	 */
 	public void setMessage(String... lines)
 	{
 		currentMessageLines = lines;
-
-		if (messagePanel != null)
-		{
-			remove(messagePanel);
-			messagePanel = null;
-		}
-
-		if (lines != null && lines.length > 0)
-		{
-			messagePanel = new JPanel();
-			messagePanel.setOpaque(false);
-			messagePanel.setLayout(new BoxLayout(messagePanel, BoxLayout.Y_AXIS));
-			Color textColor = UIManager.getColor("Label.foreground");
-			Font font = chooseMessageFont(lines);
-			for (String line : lines)
-			{
-				JLabel label = new JLabel(line);
-				label.setForeground(textColor);
-				label.setFont(font);
-				label.setAlignmentX(CENTER_ALIGNMENT);
-				messagePanel.add(label);
-			}
-			add(messagePanel, 0);
-		}
-
+		// Clearing this forces the labels to be rebuilt even when the wrapped text works out the same as what's already showing, so that a
+		// look-and-feel change picks up the new text color.
+		displayedMessageLines = null;
 		relayoutAndRepaint();
 	}
 
@@ -145,11 +129,119 @@ public class MapCanvasOverlay extends JPanel
 		return font;
 	}
 
+	/**
+	 * Rebuilds the message labels for the given width, doing nothing if they would come out the same as the ones already showing.
+	 */
+	private void updateMessagePanel(int availableWidth)
+	{
+		String[] wrapped = wrapLines(currentMessageLines, availableWidth);
+		if (Arrays.equals(wrapped, displayedMessageLines))
+		{
+			return;
+		}
+		displayedMessageLines = wrapped;
+
+		if (messagePanel != null)
+		{
+			remove(messagePanel);
+			messagePanel = null;
+		}
+
+		if (wrapped.length == 0)
+		{
+			return;
+		}
+
+		messagePanel = new JPanel();
+		messagePanel.setOpaque(false);
+		messagePanel.setLayout(new BoxLayout(messagePanel, BoxLayout.Y_AXIS));
+		Color textColor = UIManager.getColor("Label.foreground");
+		Font font = chooseMessageFont(currentMessageLines);
+		for (String line : wrapped)
+		{
+			JLabel label = new JLabel(line);
+			label.setForeground(textColor);
+			label.setFont(font);
+			label.setAlignmentX(CENTER_ALIGNMENT);
+			messagePanel.add(label);
+		}
+		add(messagePanel, 0);
+	}
+
+	/**
+	 * Breaks the given lines into as many lines as it takes for each to fit within maxWidth when drawn in the message font. Lines already
+	 * narrow enough are returned unchanged, as is any single unbreakable run of text wider than maxWidth.
+	 */
+	private String[] wrapLines(String[] lines, int maxWidth)
+	{
+		if (lines == null || lines.length == 0)
+		{
+			return new String[0];
+		}
+
+		FontMetrics metrics = getFontMetrics(chooseMessageFont(lines));
+		List<String> result = new ArrayList<>();
+		for (String line : lines)
+		{
+			wrapLine(line, metrics, maxWidth, result);
+		}
+		return result.toArray(new String[0]);
+	}
+
+	private static void wrapLine(String line, FontMetrics metrics, int maxWidth, List<String> result)
+	{
+		if (maxWidth <= 0 || metrics.stringWidth(line) <= maxWidth)
+		{
+			result.add(line);
+			return;
+		}
+
+		// BreakIterator rather than splitting on spaces because languages such as Chinese write without spaces between words, and so would
+		// never find a place to break.
+		BreakIterator breaker = BreakIterator.getLineInstance(Translation.getEffectiveLocale());
+		breaker.setText(line);
+		int lineStart = 0;
+		int widestFittingBreak = BreakIterator.DONE;
+		for (int breakIndex = breaker.first(); breakIndex != BreakIterator.DONE; breakIndex = breaker.next())
+		{
+			if (breakIndex <= lineStart)
+			{
+				continue;
+			}
+
+			if (metrics.stringWidth(line.substring(lineStart, breakIndex).trim()) <= maxWidth)
+			{
+				widestFittingBreak = breakIndex;
+				continue;
+			}
+
+			if (widestFittingBreak == BreakIterator.DONE)
+			{
+				// Nowhere to break this run of text without splitting it mid-word, so let it overflow.
+				widestFittingBreak = breakIndex;
+			}
+			result.add(line.substring(lineStart, widestFittingBreak).trim());
+			lineStart = widestFittingBreak;
+			widestFittingBreak = metrics.stringWidth(line.substring(lineStart, breakIndex).trim()) <= maxWidth ? breakIndex
+					: BreakIterator.DONE;
+		}
+
+		String remainder = line.substring(lineStart).trim();
+		if (!remainder.isEmpty())
+		{
+			result.add(remainder);
+		}
+	}
+
 	@Override
 	public void doLayout()
 	{
 		Dimension size = getSize();
 		scrollPane.setBounds(0, 0, size.width, size.height);
+
+		// Wrapping happens here rather than in setMessage because it depends on the width available, which isn't known until layout and
+		// changes as the window and the panels on either side of the canvas are resized.
+		updateMessagePanel(size.width - sideMargin * 2);
 
 		int messageBottom = topMargin;
 		if (messagePanel != null)
