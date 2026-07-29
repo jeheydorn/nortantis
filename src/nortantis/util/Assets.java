@@ -171,7 +171,12 @@ public class Assets
 		}
 
 		Path result = getArtPackPathNoCache(artPack, customImagesFolder);
-		artPackPathCache.put(key, result);
+		if (result != null)
+		{
+			// A null result is a valid answer, meaning the custom art pack has no images folder set, but ConcurrentHashMap rejects null
+			// values. That case is cheap to recompute, so leave it out of the cache.
+			artPackPathCache.put(key, result);
+		}
 		return result;
 	}
 
