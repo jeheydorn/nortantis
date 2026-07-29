@@ -1,6 +1,7 @@
 package nortantis.swing;
 
 import nortantis.editor.UserPreferences;
+import nortantis.swing.translation.TextSpacing;
 import nortantis.swing.translation.Translation;
 
 import javax.swing.*;
@@ -233,7 +234,7 @@ public class SupportPanel extends JPanel
 	{
 		if (previous != null)
 		{
-			setSpaceAfter(previous, needsSpaceBetween(previous.getText(), link.getText()));
+			setSpaceAfter(previous, TextSpacing.needsSpaceBetween(previous.getText(), link.getText()));
 		}
 
 		String punctuation = leadingAttachedPunctuation(followingText);
@@ -260,7 +261,7 @@ public class SupportPanel extends JPanel
 	private static String leadingAttachedPunctuation(String text)
 	{
 		int end = 0;
-		while (end < text.length() && attachesToPrecedingText(text.charAt(end)))
+		while (end < text.length() && TextSpacing.attachesToPrecedingText(text.charAt(end)))
 		{
 			end++;
 		}
@@ -330,18 +331,18 @@ public class SupportPanel extends JPanel
 		for (int i = 0; i < word.length(); i++)
 		{
 			char c = word.charAt(i);
-			if (attachesToPrecedingText(c) && current.length() > 0)
+			if (TextSpacing.attachesToPrecedingText(c) && current.length() > 0)
 			{
 				current.append(c);
 			}
-			else if (isWrittenWithoutSpaces(c))
+			else if (TextSpacing.isWrittenWithoutSpaces(c))
 			{
 				addPieceIfNotEmpty(pieces, current);
 				current.append(c);
 			}
 			else
 			{
-				if (current.length() > 0 && isWrittenWithoutSpaces(current.charAt(0)))
+				if (current.length() > 0 && TextSpacing.isWrittenWithoutSpaces(current.charAt(0)))
 				{
 					addPieceIfNotEmpty(pieces, current);
 				}
@@ -372,7 +373,7 @@ public class SupportPanel extends JPanel
 	{
 		if (previous != null)
 		{
-			setSpaceAfter(previous, needsSpaceBetween(previous.getText(), piece.getText()));
+			setSpaceAfter(previous, TextSpacing.needsSpaceBetween(previous.getText(), piece.getText()));
 		}
 		row.add(piece);
 		return piece;
@@ -381,46 +382,6 @@ public class SupportPanel extends JPanel
 	private static void setSpaceAfter(JLabel label, boolean hasSpaceAfter)
 	{
 		label.setBorder(hasSpaceAfter ? BorderFactory.createEmptyBorder(0, 0, 0, wordGap) : null);
-	}
-
-	/**
-	 * Whether a space belongs between two adjacent labels of the ask sentence. The translated text has no whitespace where it meets a
-	 * hyperlink, so the spacing at those seams is decided from the characters on either side of them: punctuation that attaches to the text
-	 * before it, such as the period that ends the sentence, and scripts written without spaces between words, such as Chinese, take no
-	 * space.
-	 */
-	private static boolean needsSpaceBetween(String before, String after)
-	{
-		if (before.isEmpty() || after.isEmpty())
-		{
-			return false;
-		}
-
-		char endOfBefore = before.charAt(before.length() - 1);
-		char startOfAfter = after.charAt(0);
-		if (isWrittenWithoutSpaces(endOfBefore) || isWrittenWithoutSpaces(startOfAfter))
-		{
-			return false;
-		}
-		return !attachesToPrecedingText(startOfAfter);
-	}
-
-	private static boolean attachesToPrecedingText(char c)
-	{
-		return ".,;:!?%)]}…".indexOf(c) >= 0 || "。，、；：！？）〕】｝」』〉》".indexOf(c) >= 0;
-	}
-
-	private static boolean isWrittenWithoutSpaces(char c)
-	{
-		if (Character.isIdeographic(c))
-		{
-			return true;
-		}
-
-		Character.UnicodeBlock block = Character.UnicodeBlock.of(c);
-		return block == Character.UnicodeBlock.CJK_SYMBOLS_AND_PUNCTUATION
-				|| block == Character.UnicodeBlock.HALFWIDTH_AND_FULLWIDTH_FORMS || block == Character.UnicodeBlock.HIRAGANA
-				|| block == Character.UnicodeBlock.KATAKANA;
 	}
 
 	@Override

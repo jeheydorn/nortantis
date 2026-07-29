@@ -202,7 +202,7 @@ public class ToolsPanel extends JPanel
 	{
 		toolSelectPanel.setBorder(BorderFactory.createTitledBorder(new LineBorder(UIManager.getColor("controlShadow"), 1), Translation.get("tools.editingTools")));
 
-		toolOptionsPanelBorder = BorderFactory.createTitledBorder(new LineBorder(UIManager.getColor("controlShadow"), 1), currentTool.getToolbarName() + " " + Translation.get("tools.optionsSuffix"));
+		toolOptionsPanelBorder = BorderFactory.createTitledBorder(new LineBorder(UIManager.getColor("controlShadow"), 1), Translation.get("tools.optionsTitle", currentTool.getToolbarName()));
 		toolOptionsPanelContainer.setBorder(toolOptionsPanelBorder);
 	}
 
@@ -261,7 +261,7 @@ public class ToolsPanel extends JPanel
 		// I'm calling onSwitchingAway after setting currentTool because the place EditorTool.shouldShowTextWhenTextIsEnabled
 		// in MainWindow.createMapUpdater depends on it.
 		prevTool.onSwitchingAway();
-		toolOptionsPanelBorder.setTitle(currentTool.getToolbarName() + " " + Translation.get("tools.optionsSuffix"));
+		toolOptionsPanelBorder.setTitle(Translation.get("tools.optionsTitle", currentTool.getToolbarName()));
 		toolOptionsCardLayout.show(toolOptionsPanelContainer, currentTool.getToolbarName());
 		toolOptionsPanelContainer.revalidate();
 		toolOptionsPanelContainer.repaint();

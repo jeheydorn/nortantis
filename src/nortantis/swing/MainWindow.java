@@ -17,6 +17,7 @@ import nortantis.platform.ImageHelper;
 import nortantis.platform.PlatformFactory;
 import nortantis.platform.awt.AwtBridge;
 import nortantis.platform.awt.AwtFactory;
+import nortantis.swing.translation.TextSpacing;
 import nortantis.swing.translation.Translation;
 import nortantis.util.*;
 import org.apache.commons.io.FileUtils;
@@ -2897,7 +2898,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		}
 		else
 		{
-			showCanvasMessage(Translation.get("mainWindow.welcome") + " " + Translation.get("mainWindow.welcome.line2"));
+			showCanvasMessage(TextSpacing.join(Translation.get("mainWindow.welcome"), Translation.get("mainWindow.welcome.line2")));
 		}
 		boolean showAskCard = !UserPreferences.getInstance().hideStartupSupportPanel;
 		mapCanvasOverlay.setSupportPanel(true, SupportPanel.defaultContentWidth, showAskCard);
