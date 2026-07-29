@@ -475,7 +475,7 @@ public class NewSettingsDialog extends JDialog
 		JPanel rightPanel = organizer.panel;
 		generatorSettingsPanel.add(rightPanel);
 
-		artPackComboBox = new JComboBox<String>();
+		artPackComboBox = new ShrinkableComboBox<String>();
 		JLabel artPackLabel = new JLabel(Translation.get("newSettingsDialog.artPack.label"));
 		artPackLabel.setToolTipText(Translation.get("newSettingsDialog.artPack.help"));
 		artPackComboBox.addActionListener(new ActionListener()
@@ -489,7 +489,7 @@ public class NewSettingsDialog extends JDialog
 			}
 		});
 
-		cityIconsTypeComboBox = new JComboBox<String>();
+		cityIconsTypeComboBox = new ShrinkableComboBox<String>();
 		createMapChangeListener(cityIconsTypeComboBox);
 		JLabel cityIconTypeLabel = new JLabel(Translation.get("newSettingsDialog.cityIconType.label"));
 		cityIconTypeLabel.setToolTipText(Translation.get("newSettingsDialog.cityIconType.help"));
@@ -500,6 +500,9 @@ public class NewSettingsDialog extends JDialog
 		rowPanel.add(artPackLabel);
 		rowPanel.add(Box.createHorizontalStrut(5));
 		rowPanel.add(artPackComboBox);
+		// The strut keeps a gap between the two halves of the row when the combo boxes have shrunk as far as they will go. The glue holds
+		// them apart when there is more room than that.
+		rowPanel.add(Box.createHorizontalStrut(15));
 		rowPanel.add(Box.createHorizontalGlue());
 		rowPanel.add(cityIconTypeLabel);
 		rowPanel.add(Box.createHorizontalStrut(5));

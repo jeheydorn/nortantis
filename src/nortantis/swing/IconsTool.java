@@ -423,7 +423,7 @@ public class IconsTool extends EditorTool
 		}
 
 		{
-			artPackComboBox = new JComboBox<String>();
+			artPackComboBox = new ShrinkableComboBox<String>();
 			updateArtPackOptions(Assets.installedArtPack, null);
 			artPackComboBox.addActionListener(new ActionListener()
 			{
