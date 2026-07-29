@@ -70,20 +70,6 @@ public class ShrinkableComboBox<T> extends JComboBox<T>
 	}
 
 	/**
-	 * Keeps layout managers from stretching this combo box past the width it needs when there is room to spare, so that room goes to
-	 * whatever else shares the row.
-	 */
-	@Override
-	public Dimension getMaximumSize()
-	{
-		if (isMaximumSizeSet())
-		{
-			return super.getMaximumSize();
-		}
-		return getPreferredSize();
-	}
-
-	/**
 	 * Grows the popup, when it is not already wide enough, so that the full text of every item is visible. Some look and feels make the
 	 * popup exactly as wide as the combo box, which would truncate the very names the popup was opened to read.
 	 */
