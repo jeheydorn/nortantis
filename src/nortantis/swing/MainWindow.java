@@ -2521,12 +2521,13 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			int n = SwingHelper.showConfirmDialog(this, Translation.get("mainWindow.settingsModified"), "", JOptionPane.YES_NO_CANCEL_OPTION);
 			if (n == JOptionPane.YES_OPTION)
 			{
-				saveSettings(this);
+				// A save that was cancelled or failed counts as a cancel so that the unsaved changes aren't discarded.
+				return !saveSettings(this);
 			}
 			else if (n == JOptionPane.NO_OPTION)
 			{
 			}
-			else if (n == JOptionPane.CANCEL_OPTION)
+			else if (n == JOptionPane.CANCEL_OPTION || n == JOptionPane.CLOSED_OPTION)
 			{
 				return true;
 			}
@@ -2570,12 +2571,21 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		}
 	}
 
-	public void saveSettings(Component parent)
+	/**
+	 * Saves the currently open map, prompting for a file to save into if the map doesn't have one yet.
+	 *
+	 * @return True if the map was saved. False if the save was cancelled or failed.
+	 */
+	public boolean saveSettings(Component parent)
 	{
 		if (openSettingsFilePath == null || forceSaveAs)
 		{
-			saveSettingsAs(parent);
-			forceSaveAs = false;
+			boolean saved = saveSettingsAs(parent);
+			if (saved)
+			{
+				forceSaveAs = false;
+			}
+			return saved;
 		}
 		else
 		{
@@ -2589,12 +2599,19 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				e.printStackTrace();
 				Logger.printError("Error while saving map.", e);
 				SwingHelper.showMessageDialog(null, e.getMessage(), Translation.get("mainWindow.unableToSaveSettings"), JOptionPane.ERROR_MESSAGE);
+				return false;
 			}
 			updateFrameTitle(false, true);
+			return true;
 		}
 	}
 
-	public void saveSettingsAs(Component parent)
+	/**
+	 * Prompts for a file to save the currently open map into, then saves it there.
+	 *
+	 * @return True if the map was saved. False if the save was cancelled or failed.
+	 */
+	public boolean saveSettingsAs(Component parent)
 	{
 		Path curPath = openSettingsFilePath == null ? FileSystemView.getFileSystemView().getDefaultDirectory().toPath() : openSettingsFilePath;
 		File currentFolder = openSettingsFilePath == null ? curPath.toFile() : new File(FilenameUtils.getFullPath(curPath.toString()));
@@ -2624,41 +2641,55 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		}
 
 		int status = fileChooser.showSaveDialog(parent);
-		if (status == JFileChooser.APPROVE_OPTION)
+		if (status != JFileChooser.APPROVE_OPTION)
 		{
-			openSettingsFilePath = Paths.get(fileChooser.getSelectedFile().getAbsolutePath());
-			if (!openSettingsFilePath.getFileName().toString().endsWith(MapSettings.fileExtensionWithDot))
-			{
-				openSettingsFilePath = Paths.get(openSettingsFilePath.toString() + MapSettings.fileExtensionWithDot);
-			}
-
-			if (!openSettingsFilePath.equals(curPath))
-			{
-				// Clear previous image export locations so that a new copy of a map doesn't export over the images from the older version.
-				imageExportPath = null;
-				heightmapExportPath = null;
-			}
-
-			final MapSettings settings = getSettingsFromGUI(false);
-			try
-			{
-				saveMap(settings, openSettingsFilePath.toString());
-			}
-			catch (IOException e)
-			{
-				e.printStackTrace();
-				Logger.printError("Error while saving settings to a new file:", e);
-				SwingHelper.showMessageDialog(null, e.getMessage(), Translation.get("mainWindow.unableToSaveSettings"), JOptionPane.ERROR_MESSAGE);
-			}
-
-			updateFrameTitle(false, true);
+			return false;
 		}
+
+		Path savePath = Paths.get(fileChooser.getSelectedFile().getAbsolutePath());
+		if (!savePath.getFileName().toString().endsWith(MapSettings.fileExtensionWithDot))
+		{
+			savePath = Paths.get(savePath.toString() + MapSettings.fileExtensionWithDot);
+		}
+
+		final MapSettings settings = getSettingsFromGUI(false);
+		final boolean isSavingToDifferentFile = !savePath.equals(curPath);
+		if (isSavingToDifferentFile)
+		{
+			// Clear previous image export locations so that a new copy of a map doesn't export over the images from the older version.
+			settings.imageExportPath = null;
+			settings.heightmapExportPath = null;
+		}
+
+		try
+		{
+			saveMap(settings, savePath.toString());
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+			Logger.printError("Error while saving settings to a new file:", e);
+			SwingHelper.showMessageDialog(null, e.getMessage(), Translation.get("mainWindow.unableToSaveSettings"), JOptionPane.ERROR_MESSAGE);
+			return false;
+		}
+
+		// Only point this window at the new file once the save has succeeded, so that a failed save doesn't change where a later save
+		// would write.
+		openSettingsFilePath = savePath;
+		if (isSavingToDifferentFile)
+		{
+			imageExportPath = null;
+			heightmapExportPath = null;
+		}
+
+		updateFrameTitle(false, true);
+		return true;
 	}
 
 	private void saveMap(MapSettings settings, String absolutePath) throws IOException
 	{
 		settings.writeToFile(absolutePath);
-		Logger.println("Settings saved to " + openSettingsFilePath.toString());
+		Logger.println("Settings saved to " + absolutePath);
 		updateLastSettingsLoadedOrSaved(settings);
 		UserPreferences.getInstance().addRecentMapFilePath(absolutePath);
 		createOrUpdateRecentMapMenuButtons();
