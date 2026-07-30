@@ -1163,6 +1163,9 @@ public class IconDrawer
 	 *            The texture image to use for land areas. Must be the same dimensions as mapOrSnippet.
 	 * @param oceanTexture
 	 *            The texture image to use for ocean areas. Must be the same dimensions as mapOrSnippet.
+	 * @param landMask
+	 *            Binary mask that is white on land and black on ocean, the same one used to composite the ocean texture onto the map. Must be
+	 *            the same dimensions as mapOrSnippet.
 	 * @param type
 	 *            The type of icon being drawn (affects whether ocean texture is used for decorations).
 	 * @param xCenter
@@ -1177,9 +1180,9 @@ public class IconDrawer
 	 *             If mapOrSnippet, landBackground, landTexture, or oceanTexture have mismatched dimensions, or if the content mask or
 	 *             shading mask dimensions don't match the icon dimensions.
 	 */
-	private void drawIconWithBackgroundAndMasks(Image mapOrSnippet, ImageAndMasks imageAndMasks, Image landBackground, Image landTexture, Image oceanTexture, IconType type, int xCenter, int yCenter,
-			int graphXCenter, int graphYCenter, PixelReader hoistedLandTexturePixels, PixelReader hoistedOceanTexturePixels, PixelReader hoistedLandBackgroundPixels,
-			PixelReaderWriter hoistedMapPixels)
+	private void drawIconWithBackgroundAndMasks(Image mapOrSnippet, ImageAndMasks imageAndMasks, Image landBackground, Image landTexture, Image oceanTexture, Image landMask, IconType type, int xCenter,
+			int yCenter, int graphXCenter, int graphYCenter, PixelReader hoistedLandTexturePixels, PixelReader hoistedOceanTexturePixels, PixelReader hoistedLandBackgroundPixels,
+			PixelReader hoistedLandMaskPixels, PixelReaderWriter hoistedMapPixels)
 	{
 		Image icon = imageAndMasks.image;
 		Image contentMask = imageAndMasks.getOrCreateContentMask();
@@ -1214,26 +1217,37 @@ public class IconDrawer
 		// disadvantages to having AWT go through the Skia code path, but I haven't checked that yet).
 		if (PlatformFactory.getInstance() instanceof AwtFactory)
 		{
-			drawIconWithBackgroundAndMasksDirect(mapOrSnippet, imageAndMasks, landBackground, landTexture, oceanTexture, type, xLeft, yTop, graphXLeft, graphYTop, mapOrSnippetSize, icon, contentMask,
-					shadingMask, hoistedLandTexturePixels, hoistedOceanTexturePixels, hoistedLandBackgroundPixels);
+			drawIconWithBackgroundAndMasksDirect(mapOrSnippet, imageAndMasks, landBackground, landTexture, oceanTexture, landMask, type, xLeft, yTop, graphXLeft, graphYTop, mapOrSnippetSize, icon,
+					contentMask, shadingMask, hoistedLandTexturePixels, hoistedOceanTexturePixels, hoistedLandBackgroundPixels, hoistedLandMaskPixels);
 		}
 		else if (hoistedMapPixels != null)
 		{
 			// High-memory non-AWT path: write straight through a map-wide PixelReaderWriter opened once for the whole drawIcons call, instead
 			// of copying a snippet out and pasting it back per icon (which is a GPU readback + upload each time).
 			drawIconWithBackgroundAndMasksHoisted(mapOrSnippet, landBackground, landTexture, oceanTexture, type, xLeft, yTop, graphXLeft, graphYTop, mapOrSnippetSize, icon, contentMask,
-					shadingMask, hoistedLandTexturePixels, hoistedOceanTexturePixels, hoistedLandBackgroundPixels, hoistedMapPixels);
+					shadingMask, hoistedLandTexturePixels, hoistedOceanTexturePixels, hoistedLandBackgroundPixels, hoistedLandMaskPixels, hoistedMapPixels);
 		}
 		else
 		{
-			drawIconWithBackgroundAndMasksUsingSnippet(mapOrSnippet, imageAndMasks, landBackground, landTexture, oceanTexture, type, xLeft, yTop, graphXLeft, graphYTop, mapOrSnippetSize, icon,
-					contentMask, shadingMask, hoistedLandTexturePixels, hoistedOceanTexturePixels, hoistedLandBackgroundPixels);
+			drawIconWithBackgroundAndMasksUsingSnippet(mapOrSnippet, imageAndMasks, landBackground, landTexture, oceanTexture, landMask, type, xLeft, yTop, graphXLeft, graphYTop, mapOrSnippetSize,
+					icon, contentMask, shadingMask, hoistedLandTexturePixels, hoistedOceanTexturePixels, hoistedLandBackgroundPixels, hoistedLandMaskPixels);
 		}
 	}
 
-	private void drawIconWithBackgroundAndMasksDirect(Image mapOrSnippet, ImageAndMasks imageAndMasks, Image landBackground, Image landTexture, Image oceanTexture, IconType type, int xLeft, int yTop,
-			int graphXLeft, int graphYTop, IntDimension mapOrSnippetSize, Image icon, Image contentMask, Image shadingMask, PixelReader hoistedLandTexturePixels, PixelReader hoistedOceanTexturePixels,
-			PixelReader hoistedLandBackgroundPixels)
+	/**
+	 * Whether the given pixel of the map (or snippet) is ocean, according to the binary land mask the map itself was composited with. Land
+	 * versus ocean must be decided from that mask rather than from a center lookup because a lookup can disagree with the rasterized mask by
+	 * a pixel along a coastline, which would let a sliver of ocean texture that never received ocean shading or waves show through a
+	 * decoration.
+	 */
+	private static boolean isOceanPixel(PixelReader landMaskPixels, int x, int y)
+	{
+		return landMaskPixels.getNormalizedPixelLevel(x, y) < 0.5f;
+	}
+
+	private void drawIconWithBackgroundAndMasksDirect(Image mapOrSnippet, ImageAndMasks imageAndMasks, Image landBackground, Image landTexture, Image oceanTexture, Image landMask, IconType type,
+			int xLeft, int yTop, int graphXLeft, int graphYTop, IntDimension mapOrSnippetSize, Image icon, Image contentMask, Image shadingMask, PixelReader hoistedLandTexturePixels,
+			PixelReader hoistedOceanTexturePixels, PixelReader hoistedLandBackgroundPixels, PixelReader hoistedLandMaskPixels)
 	{
 		IntRectangle iconBoundsInMapOrSnippet = new IntRectangle(xLeft, yTop, icon.getWidth(), icon.getHeight());
 
@@ -1244,6 +1258,7 @@ public class IconDrawer
 		try (PixelReader landTexturePixels = useHoisted ? null : landTexture.createPixelReader(iconBoundsInMapOrSnippet);
 				PixelReader oceanTexturePixels = useHoisted ? null : oceanTexture.createPixelReader(iconBoundsInMapOrSnippet);
 				PixelReader landBackgroundPixels = useHoisted ? null : landBackground.createPixelReader(iconBoundsInMapOrSnippet);
+				PixelReader landMaskPixels = useHoisted ? null : landMask.createPixelReader(iconBoundsInMapOrSnippet);
 				PixelReader contentMaskPixels = contentMask.createPixelReader();
 				PixelReader shadingMaskPixels = shadingMask.createPixelReader();
 				PixelReaderWriter mapOrSnippetPixels = mapOrSnippet.createPixelReaderWriter(iconBoundsInMapOrSnippet))
@@ -1251,6 +1266,7 @@ public class IconDrawer
 			PixelReader effectiveLandTexturePixels = useHoisted ? hoistedLandTexturePixels : landTexturePixels;
 			PixelReader effectiveOceanTexturePixels = useHoisted ? hoistedOceanTexturePixels : oceanTexturePixels;
 			PixelReader effectiveLandBackgroundPixels = useHoisted ? hoistedLandBackgroundPixels : landBackgroundPixels;
+			PixelReader effectiveLandMaskPixels = useHoisted ? hoistedLandMaskPixels : landMaskPixels;
 			for (int y : new Range(icon.getHeight()))
 			{
 				for (int x = 0; x < icon.getWidth(); x++)
@@ -1283,19 +1299,11 @@ public class IconDrawer
 					if (type == IconType.decorations)
 					{
 						// Decorations can sit on open water, so what shows through their transparent pixels depends on whether this pixel is
-						// land or ocean. Every other icon type always blends with the land background and texture, so it needs no center
-						// lookup - worth keeping out of this loop because it runs once per pixel of every icon drawn.
-						Center closest = graph.findClosestCenter(new Point(graphXLeft + x, graphYTop + y), true);
-						if (closest == null)
-						{
-							continue;
-						}
-
-						bgColorNoIcons = closest.isWater ? Color.create(effectiveOceanTexturePixels.getRGB(xLoc, yLoc), oceanTexture.hasAlpha())
+						// land or ocean. Every other icon type always blends with the land background and texture.
+						bgColorNoIcons = isOceanPixel(effectiveLandMaskPixels, xLoc, yLoc) ? Color.create(effectiveOceanTexturePixels.getRGB(xLoc, yLoc), oceanTexture.hasAlpha())
 								: Color.create(effectiveLandBackgroundPixels.getRGB(xLoc, yLoc), landBackground.hasAlpha());
 
-						landTextureColor = closest.isWater ? Color.create(effectiveOceanTexturePixels.getRGB(xLoc, yLoc), oceanTexture.hasAlpha())
-								: Color.create(effectiveLandBackgroundPixels.getRGB(xLoc, yLoc), landBackground.hasAlpha());
+						landTextureColor = bgColorNoIcons;
 					}
 					else
 					{
@@ -1329,9 +1337,9 @@ public class IconDrawer
 		}
 	}
 
-	private void drawIconWithBackgroundAndMasksUsingSnippet(Image mapOrSnippet, ImageAndMasks imageAndMasks, Image landBackground, Image landTexture, Image oceanTexture, IconType type, int xLeft,
-			int yTop, int graphXLeft, int graphYTop, IntDimension mapOrSnippetSize, Image icon, Image contentMask, Image shadingMask, PixelReader hoistedLandTexturePixels,
-			PixelReader hoistedOceanTexturePixels, PixelReader hoistedLandBackgroundPixels)
+	private void drawIconWithBackgroundAndMasksUsingSnippet(Image mapOrSnippet, ImageAndMasks imageAndMasks, Image landBackground, Image landTexture, Image oceanTexture, Image landMask, IconType type,
+			int xLeft, int yTop, int graphXLeft, int graphYTop, IntDimension mapOrSnippetSize, Image icon, Image contentMask, Image shadingMask, PixelReader hoistedLandTexturePixels,
+			PixelReader hoistedOceanTexturePixels, PixelReader hoistedLandBackgroundPixels, PixelReader hoistedLandMaskPixels)
 	{
 		// Calculate the visible portion of the icon (clipped to map bounds)
 		int visibleXStart = Math.max(0, xLeft);
@@ -1361,6 +1369,7 @@ public class IconDrawer
 			try (PixelReader landTexturePixels = useHoisted ? null : landTexture.createPixelReader(visibleBounds);
 					PixelReader oceanTexturePixels = useHoisted ? null : oceanTexture.createPixelReader(visibleBounds);
 					PixelReader landBackgroundPixels = useHoisted ? null : landBackground.createPixelReader(visibleBounds);
+					PixelReader landMaskPixels = useHoisted ? null : landMask.createPixelReader(visibleBounds);
 					PixelReader contentMaskPixels = contentMask.createPixelReader();
 					PixelReader shadingMaskPixels = shadingMask.createPixelReader();
 					PixelReaderWriter snippetPixels = mapSnippetForIcon.createPixelReaderWriter())
@@ -1368,6 +1377,7 @@ public class IconDrawer
 				PixelReader effectiveLandTexturePixels = useHoisted ? hoistedLandTexturePixels : landTexturePixels;
 				PixelReader effectiveOceanTexturePixels = useHoisted ? hoistedOceanTexturePixels : oceanTexturePixels;
 				PixelReader effectiveLandBackgroundPixels = useHoisted ? hoistedLandBackgroundPixels : landBackgroundPixels;
+				PixelReader effectiveLandMaskPixels = useHoisted ? hoistedLandMaskPixels : landMaskPixels;
 
 				// Iterate only over the visible portion
 				for (int y = visibleYStart - yTop; y < visibleYEnd - yTop; y++)
@@ -1398,19 +1408,11 @@ public class IconDrawer
 						if (type == IconType.decorations)
 						{
 							// Decorations can sit on open water, so what shows through their transparent pixels depends on whether this pixel
-							// is land or ocean. Every other icon type always blends with the land background and texture, so it needs no
-							// center lookup - worth keeping out of this loop because it runs once per pixel of every icon drawn.
-							Center closest = graph.findClosestCenter(new Point(graphXLeft + x, graphYTop + y), true);
-							if (closest == null)
-							{
-								continue;
-							}
-
-							bgColorNoIcons = closest.isWater ? Color.create(effectiveOceanTexturePixels.getRGB(xLoc, yLoc), oceanTexture.hasAlpha())
+							// is land or ocean. Every other icon type always blends with the land background and texture.
+							bgColorNoIcons = isOceanPixel(effectiveLandMaskPixels, xLoc, yLoc) ? Color.create(effectiveOceanTexturePixels.getRGB(xLoc, yLoc), oceanTexture.hasAlpha())
 									: Color.create(effectiveLandBackgroundPixels.getRGB(xLoc, yLoc), landBackground.hasAlpha());
 
-							landTextureColor = closest.isWater ? Color.create(effectiveOceanTexturePixels.getRGB(xLoc, yLoc), oceanTexture.hasAlpha())
-									: Color.create(effectiveLandBackgroundPixels.getRGB(xLoc, yLoc), landBackground.hasAlpha());
+							landTextureColor = bgColorNoIcons;
 						}
 						else
 						{
@@ -1470,7 +1472,7 @@ public class IconDrawer
 	 */
 	private void drawIconWithBackgroundAndMasksHoisted(Image mapOrSnippet, Image landBackground, Image landTexture, Image oceanTexture, IconType type, int xLeft, int yTop,
 			int graphXLeft, int graphYTop, IntDimension mapOrSnippetSize, Image icon, Image contentMask, Image shadingMask, PixelReader hoistedLandTexturePixels, PixelReader hoistedOceanTexturePixels,
-			PixelReader hoistedLandBackgroundPixels, PixelReaderWriter hoistedMapPixels)
+			PixelReader hoistedLandBackgroundPixels, PixelReader hoistedLandMaskPixels, PixelReaderWriter hoistedMapPixels)
 	{
 		boolean targetOpaque = !mapOrSnippet.hasAlpha();
 		try (PixelReader contentMaskPixels = contentMask.createPixelReader();
@@ -1501,18 +1503,10 @@ public class IconDrawer
 					if (type == IconType.decorations)
 					{
 						// Decorations can sit on open water, so what shows through their transparent pixels depends on whether this pixel is
-						// land or ocean. Every other icon type always blends with the land background and texture, so it needs no center
-						// lookup - worth keeping out of this loop because it runs once per pixel of every icon drawn.
-						Center closest = graph.findClosestCenter(new Point(graphXLeft + x, graphYTop + y), true);
-						if (closest == null)
-						{
-							continue;
-						}
-
-						bgColorNoIcons = closest.isWater ? Color.create(hoistedOceanTexturePixels.getRGB(xLoc, yLoc), oceanTexture.hasAlpha())
+						// land or ocean. Every other icon type always blends with the land background and texture.
+						bgColorNoIcons = isOceanPixel(hoistedLandMaskPixels, xLoc, yLoc) ? Color.create(hoistedOceanTexturePixels.getRGB(xLoc, yLoc), oceanTexture.hasAlpha())
 								: Color.create(hoistedLandBackgroundPixels.getRGB(xLoc, yLoc), landBackground.hasAlpha());
-						landTextureColor = closest.isWater ? Color.create(hoistedOceanTexturePixels.getRGB(xLoc, yLoc), oceanTexture.hasAlpha())
-								: Color.create(hoistedLandBackgroundPixels.getRGB(xLoc, yLoc), landBackground.hasAlpha());
+						landTextureColor = bgColorNoIcons;
 					}
 					else
 					{
@@ -1641,7 +1635,7 @@ public class IconDrawer
 	 * lower on the map are drawn in front of those that are higher.
 	 *
 	 */
-	public void drawIcons(List<IconDrawTask> tasksToDrawSorted, Image mapOrSnippet, Image landBackground, Image landTexture, Image oceanWithWavesAndShading, Rectangle drawBounds)
+	public void drawIcons(List<IconDrawTask> tasksToDrawSorted, Image mapOrSnippet, Image landBackground, Image landTexture, Image oceanWithWavesAndShading, Image landMask, Rectangle drawBounds)
 	{
 		if (tasksToDrawSorted.isEmpty())
 		{
@@ -1673,13 +1667,14 @@ public class IconDrawer
 			boolean useAwtDirect = PlatformFactory.getInstance() instanceof AwtFactory;
 			try (PixelReader landTexturePixels = landTexture.createPixelReader();
 					PixelReader oceanTexturePixels = oceanWithWavesAndShading.createPixelReader();
-					PixelReader landBackgroundPixels = landBackground.createPixelReader())
+					PixelReader landBackgroundPixels = landBackground.createPixelReader();
+					PixelReader landMaskPixels = landMask.createPixelReader())
 			{
 				for (final IconDrawTask task : tasksForCpu)
 				{
-					drawIconWithBackgroundAndMasks(mapOrSnippet, task.scaledImageAndMasks, landBackground, landTexture, oceanWithWavesAndShading, task.type, ((int) task.centerLoc.x) - xToSubtract,
-							((int) task.centerLoc.y) - yToSubtract, (int) task.centerLoc.x, (int) task.centerLoc.y, landTexturePixels, oceanTexturePixels, landBackgroundPixels,
-							useAwtDirect ? null : null);
+					drawIconWithBackgroundAndMasks(mapOrSnippet, task.scaledImageAndMasks, landBackground, landTexture, oceanWithWavesAndShading, landMask, task.type,
+							((int) task.centerLoc.x) - xToSubtract, ((int) task.centerLoc.y) - yToSubtract, (int) task.centerLoc.x, (int) task.centerLoc.y, landTexturePixels, oceanTexturePixels,
+							landBackgroundPixels, landMaskPixels, useAwtDirect ? null : null);
 				}
 			}
 		}
@@ -1687,8 +1682,8 @@ public class IconDrawer
 		{
 			for (final IconDrawTask task : tasksForCpu)
 			{
-				drawIconWithBackgroundAndMasks(mapOrSnippet, task.scaledImageAndMasks, landBackground, landTexture, oceanWithWavesAndShading, task.type, ((int) task.centerLoc.x) - xToSubtract,
-						((int) task.centerLoc.y) - yToSubtract, (int) task.centerLoc.x, (int) task.centerLoc.y, null, null, null, null);
+				drawIconWithBackgroundAndMasks(mapOrSnippet, task.scaledImageAndMasks, landBackground, landTexture, oceanWithWavesAndShading, landMask, task.type,
+						((int) task.centerLoc.x) - xToSubtract, ((int) task.centerLoc.y) - yToSubtract, (int) task.centerLoc.x, (int) task.centerLoc.y, null, null, null, null, null);
 			}
 		}
 	}

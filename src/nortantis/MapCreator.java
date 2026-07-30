@@ -493,7 +493,7 @@ public class MapCreator implements WarningLogger
 			checkForCancel();
 
 			// Draw icons
-			mapParts.iconDrawer.drawIcons(iconsToDraw, mapSnippet, landBackground, landTextureSnippet, oceanWithWavesAndShading, drawBounds);
+			mapParts.iconDrawer.drawIcons(iconsToDraw, mapSnippet, landBackground, landTextureSnippet, oceanWithWavesAndShading, landMask, drawBounds);
 
 			checkForCancel();
 
@@ -1365,7 +1365,7 @@ public class MapCreator implements WarningLogger
 		reportProgressAndCheckForCancel();
 
 		Logger.println("Drawing all icons.");
-		iconDrawer.drawIcons(iconsToDraw, map, landBackground, background.land, oceanWithWavesAndShading, null);
+		iconDrawer.drawIcons(iconsToDraw, map, landBackground, background.land, oceanWithWavesAndShading, landMask, null);
 		landBackground = null;
 
 		reportProgressAndCheckForCancel();

@@ -10,6 +10,8 @@ import nortantis.graph.voronoi.Center;
 import nortantis.platform.Color;
 import nortantis.platform.Image;
 import nortantis.platform.ImageHelper;
+import nortantis.platform.ImageType;
+import nortantis.platform.Painter;
 import nortantis.platform.PixelReader;
 import nortantis.platform.PlatformFactory;
 import nortantis.platform.awt.AwtFactory;
@@ -893,6 +895,73 @@ public class MapCreatorTest
 				}
 			}
 		}
+	}
+
+	/**
+	 * A decoration erases the map beneath its content mask and repaints the land or ocean background there. That land-versus-ocean choice
+	 * must come from the same land mask the map was composited with. Deciding it with a center lookup instead disagrees with the rasterized
+	 * mask by about a pixel along the coast, which paints ocean texture onto pixels that the ocean shading and waves treated as land, leaving
+	 * a bright unshaded line of coastline showing through the decoration.
+	 * <p>
+	 * This map's only icon is a decoration straddling a coastline. Drawing it over solid-color stand-ins for the land background (red) and
+	 * the ocean (blue) makes the choice directly readable: since the decoration's art is gray, no land pixel may end up with more blue in it
+	 * than red.
+	 * </p>
+	 */
+	@Test
+	public void decorationTakesItsBackgroundFromTheLandMask()
+	{
+		String settingsPath = Paths.get("unit test files", "map settings", "decorationStraddlingCoastline.nort").toString();
+		MapSettings settings = new MapSettings(settingsPath);
+		MapParts mapParts = new MapParts();
+		try (Image ignored = new MapCreator().createMap(settings, null, mapParts))
+		{
+			WorldGraph graph = mapParts.graph;
+			int width = graph.getWidth();
+			int height = graph.getHeight();
+
+			try (Image landMask = Image.create(width, height, ImageType.Binary);
+					Image landBackground = createSolidColorImage(width, height, Color.red);
+					Image ocean = createSolidColorImage(width, height, Color.blue);
+					Image map = createSolidColorImage(width, height, Color.green))
+			{
+				try (Painter p = landMask.createPainter())
+				{
+					graph.drawLandAndOceanBlackAndWhite(p, graph.centers, null);
+				}
+
+				List<IconDrawTask> tasks = mapParts.iconDrawer.getTasksInDrawBoundsSortedAndScaled(null);
+				mapParts.iconDrawer.drawIcons(tasks, map, landBackground, landBackground, ocean, landMask, null);
+
+				try (PixelReader landMaskPixels = landMask.createPixelReader(); PixelReader mapPixels = map.createPixelReader())
+				{
+					for (int y = 0; y < height; y++)
+					{
+						for (int x = 0; x < width; x++)
+						{
+							if (landMaskPixels.getNormalizedPixelLevel(x, y) < 0.5f)
+							{
+								continue;
+							}
+							Color color = Color.create(mapPixels.getRGB(x, y));
+							assertTrue(color.getBlue() <= color.getRed(), "The ocean background showed through the decoration at (" + x + ", " + y
+									+ "), which the land mask says is land. The color there was " + color + ".");
+						}
+					}
+				}
+			}
+		}
+	}
+
+	private static Image createSolidColorImage(int width, int height, Color color)
+	{
+		Image image = Image.create(width, height, ImageType.RGB);
+		try (Painter p = image.createPainter())
+		{
+			p.setColor(color);
+			p.fillRect(0, 0, width, height);
+		}
+		return image;
 	}
 
 	@Test
