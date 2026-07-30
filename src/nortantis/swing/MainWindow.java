@@ -411,9 +411,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		highlightLakesButton.setEnabled(enable);
 		highlightRiversButton.setEnabled(enable);
 
-		// Refresh Images and Redraw is deliberately absent from this method. It re-scans the art packs folder, which is worth doing with no
-		// map open, such as after installing an art pack that a map needs but could not be opened without. It skips the redraw part in that
-		// case.
+		refreshMenuItem.setEnabled(enable);
 
 		// Highlighting icons by art pack only makes sense once a map is loaded, and behaves strangely otherwise.
 		highlightIconsInArtPackMenu.setEnabled(enable);
@@ -1103,8 +1101,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 				if (lastSettingsLoadedOrSaved == null)
 				{
-					// No map is open, so there is nothing to redraw. Refreshing the images is still worthwhile because it re-scans the art
-					// packs folder. A map that is open but failed to draw does have settings, and so is redrawn below.
+					// Nothing to redraw. This menu item is disabled while no map is open, so this is only a guard against the redraw below
+					// being asked for settings that don't exist. A map that is open but failed to draw does have settings, and so is redrawn.
 					return;
 				}
 
