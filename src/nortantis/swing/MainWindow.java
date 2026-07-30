@@ -68,9 +68,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	 */
 	private boolean hasEstablishedCityOnWaterBaseline;
 	/**
-	 * True when the currently loaded map was saved in an older version of Nortantis than the current one. Used to show a warning message that
-	 * explains cities sinking into the water may be caused by version differences in how shores are drawn or water collision is detected. Set
-	 * in loadSettingsIntoGUI.
+	 * True when the currently loaded map was saved in an older version of Nortantis than the current one and has not been drawn yet in the
+	 * current version. Used to show a warning message that explains cities sinking into the water may be caused by version differences in how
+	 * shores are drawn or water collision is detected. Set in loadSettingsIntoGUI and cleared by the first full draw that follows, since after
+	 * that draw the map has already been rendered in the current version and version differences can no longer sink cities.
 	 */
 	private boolean loadedMapIsFromOlderVersion;
 	/**
@@ -2702,9 +2703,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	 * removed cities here, so that expected case is not warned about. The first full draw after loading a current-version map only establishes
 	 * the baseline, so opening such a map (or creating a sub-map, which warns separately) does not warn; but when the loaded map is from an
 	 * older version of Nortantis, the first draw does warn (with a message explaining the version-difference cause), because the cities sank
-	 * from rendering changes between versions. Undo/redo draws are skipped: an undo is trying to put removed cities back, not make a forward
-	 * change, so warning then would be backwards. The specific cities are not listed to keep the popup small; the user can undo to see what
-	 * changed.
+	 * from rendering changes between versions. That version-difference message is only used for that first draw: after it, the map has already
+	 * been drawn in the current version, so any later loss is caused by whatever the user just changed, not by the version it was saved in.
+	 * Undo/redo draws are skipped: an undo is trying to put removed cities back, not make a forward change, so warning then would be backwards.
+	 * The specific cities are not listed to keep the popup small; the user can undo to see what changed.
 	 */
 	private void warnIfCitiesWereRemovedForWater(List<nortantis.IconDrawer.CityIconRemovedForWater> citiesRemovedForWater, boolean wasTriggeredByUndoRedo)
 	{
@@ -2728,6 +2730,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			SwingHelper.showMessageDialog(this, message, Translation.get("mainWindow.citiesRemovedForWater.title"), JOptionPane.WARNING_MESSAGE);
 		}
 		hasEstablishedCityOnWaterBaseline = true;
+		// The map has now been drawn once in the current version, so cities cannot sink from version differences again. Any later loss is from
+		// something the user changed, so stop using the version-difference message even though the map was loaded from an older version.
+		loadedMapIsFromOlderVersion = false;
 	}
 
 	void loadSettingsIntoGUI(MapSettings settings)
