@@ -97,6 +97,12 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private static final IntDimension defaultContentPaneSize = new IntDimension(1400, 780);
 	private JSplitPane themePanelSplitPane;
 	private JSplitPane toolsPanelSplitPane;
+	private JSplitPane consoleOutputSplitPane;
+	/**
+	 * A divider location far below the bottom of the window, which hides the console output. The console output is hidden by default and is
+	 * only seen when the user drags it open.
+	 */
+	private static final int consoleOutputHiddenDividerLocation = 9999999;
 	/**
 	 * The window created by main(), if it has been created yet. On macOS, a file opened via Finder (either at launch or while the app is
 	 * already running) is delivered as an Apple Event through the OpenFilesHandler registered in main(), rather than as a command-line
@@ -519,11 +525,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		createConsoleOutput();
 
-		JSplitPane splitPane0 = new JSplitPane(JSplitPane.VERTICAL_SPLIT, themePanel, consoleOutputPane);
-		splitPane0.setDividerLocation(9999999);
-		splitPane0.setResizeWeight(1.0);
+		consoleOutputSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, themePanel, consoleOutputPane);
+		consoleOutputSplitPane.setDividerLocation(consoleOutputHiddenDividerLocation);
+		consoleOutputSplitPane.setResizeWeight(1.0);
 
-		themePanelSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, splitPane0, mapCanvasOverlay);
+		themePanelSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, consoleOutputSplitPane, mapCanvasOverlay);
 		themePanelSplitPane.setOneTouchExpandable(true);
 		toolsPanelSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, themePanelSplitPane, toolsPanel);
 		toolsPanelSplitPane.setResizeWeight(1.0);
@@ -570,10 +576,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	}
 
 	/**
-	 * Restores the window to its default size and the side panels to their default widths, which are the narrowest widths that fit their
-	 * contents in the current language. The window is left where it is unless part of it would then be off screen.
+	 * Restores the window to its default size, the side panels to their default widths, which are the narrowest widths that fit their
+	 * contents in the current language, and the console output to hidden. The window is left where it is unless part of it would then be off
+	 * screen.
 	 */
-	private void resetWindowAndPanelSizes()
+	private void resetWindowLayout()
 	{
 		setExtendedState(getExtendedState() & ~Frame.MAXIMIZED_BOTH);
 
@@ -589,6 +596,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		validate();
 
 		resetSidePanelWidths();
+		consoleOutputSplitPane.setDividerLocation(consoleOutputHiddenDividerLocation);
+
+		getContentPane().revalidate();
+		getContentPane().repaint();
 	}
 
 	private void resetSidePanelWidths()
@@ -1428,17 +1439,17 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		viewMenu.addSeparator();
 
-		JMenuItem resetWindowAndPanelSizesMenuItem = new JMenuItem(Translation.get("menu.view.resetWindowAndPanelSizes"));
-		resetWindowAndPanelSizesMenuItem.setToolTipText(Translation.get("menu.view.resetWindowAndPanelSizes.tooltip"));
-		resetWindowAndPanelSizesMenuItem.addActionListener(new ActionListener()
+		JMenuItem resetWindowLayoutMenuItem = new JMenuItem(Translation.get("menu.view.resetWindowLayout"));
+		resetWindowLayoutMenuItem.setToolTipText(Translation.get("menu.view.resetWindowLayout.tooltip"));
+		resetWindowLayoutMenuItem.addActionListener(new ActionListener()
 		{
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				resetWindowAndPanelSizes();
+				resetWindowLayout();
 			}
 		});
-		viewMenu.add(resetWindowAndPanelSizesMenuItem);
+		viewMenu.add(resetWindowLayoutMenuItem);
 
 		viewMenu.addSeparator();
 
