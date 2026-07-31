@@ -8,6 +8,7 @@ import nortantis.GeneratedDimension;
 import nortantis.ImageCache;
 import nortantis.MapSettings;
 import nortantis.editor.*;
+import nortantis.geom.IntDimension;
 import nortantis.geom.IntRectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
@@ -80,6 +81,28 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	 */
 	private String loadedMapVersion;
 	static final String frameTitleBase = "Nortantis";
+	/**
+	 * The bounds of this window the last time it was seen in a non-maximized state, used to store where to open the window next time.
+	 * Maximized bounds are not stored because restoring them would leave the window covering the whole screen but not actually maximized.
+	 */
+	private IntRectangle lastNormalWindowBounds;
+	/**
+	 * A floor on how small fitting the window to a monitor is allowed to make it. It exists only to keep a monitor that reports unusable
+	 * dimensions from opening the window too small to use. It does not constrain sizes the user chose by resizing the window.
+	 */
+	private static final IntDimension minimumSizeWhenFittingToScreen = new IntDimension(400, 300);
+	/**
+	 * The size the content pane is given when the window has no stored size, and when the user resets the window size.
+	 */
+	private static final IntDimension defaultContentPaneSize = new IntDimension(1400, 780);
+	private JSplitPane themePanelSplitPane;
+	private JSplitPane toolsPanelSplitPane;
+	private JSplitPane consoleOutputSplitPane;
+	/**
+	 * A divider location far below the bottom of the window, which hides the console output. The console output is hidden by default and is
+	 * only seen when the user drags it open.
+	 */
+	private static final int consoleOutputHiddenDividerLocation = 9999999;
 	/**
 	 * The window created by main(), if it has been created yet. On macOS, a file opened via Finder (either at launch or while the app is
 	 * already running) is delivered as an Apple Event through the OpenFilesHandler registered in main(), rather than as a command-line
@@ -423,7 +446,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	private void createGUI()
 	{
-		getContentPane().setPreferredSize(new Dimension(1400, 780));
+		getContentPane().setPreferredSize(new Dimension(defaultContentPaneSize.width, defaultContentPaneSize.height));
 		getContentPane().setLayout(new BorderLayout());
 
 		String iconFileName = System.getProperty("os.name", "").toLowerCase().contains("win") ? "taskbar icon.png" : "taskbar icon medium size.png";
@@ -453,6 +476,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					{
 						UserPreferences.getInstance().toolsPanelWidth = toolsPanel.getWidth();
 						UserPreferences.getInstance().themePanelWidth = themePanel.getWidth();
+						storeWindowPlacementInPreferences();
 						UserPreferences.getInstance().save();
 						dispose();
 						System.exit(0);
@@ -472,6 +496,21 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 
+		addComponentListener(new ComponentAdapter()
+		{
+			@Override
+			public void componentResized(ComponentEvent e)
+			{
+				updateLastNormalWindowBounds();
+			}
+
+			@Override
+			public void componentMoved(ComponentEvent e)
+			{
+				updateLastNormalWindowBounds();
+			}
+		});
+
 		createMenuBar();
 
 		undoer = new Undoer(this);
@@ -486,22 +525,214 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		createConsoleOutput();
 
-		JSplitPane splitPane0 = new JSplitPane(JSplitPane.VERTICAL_SPLIT, themePanel, consoleOutputPane);
-		splitPane0.setDividerLocation(9999999);
-		splitPane0.setResizeWeight(1.0);
+		consoleOutputSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, themePanel, consoleOutputPane);
+		consoleOutputSplitPane.setDividerLocation(consoleOutputHiddenDividerLocation);
+		consoleOutputSplitPane.setResizeWeight(1.0);
 
-		JSplitPane splitPane1 = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, splitPane0, mapCanvasOverlay);
-		splitPane1.setOneTouchExpandable(true);
-		JSplitPane splitPane2 = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, splitPane1, toolsPanel);
-		splitPane2.setResizeWeight(1.0);
-		splitPane2.setOneTouchExpandable(true);
+		themePanelSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, consoleOutputSplitPane, mapCanvasOverlay);
+		themePanelSplitPane.setOneTouchExpandable(true);
+		toolsPanelSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, themePanelSplitPane, toolsPanel);
+		toolsPanelSplitPane.setResizeWeight(1.0);
+		toolsPanelSplitPane.setOneTouchExpandable(true);
 
-		getContentPane().add(splitPane2, BorderLayout.CENTER);
+		getContentPane().add(toolsPanelSplitPane, BorderLayout.CENTER);
 
 		registerZoomKeyboardShortcuts();
 
 		pack();
 
+		restoreWindowPlacement();
+	}
+
+	/**
+	 * Sizes and positions the window to where it was when it was last closed. When there is no usable stored position, the operating system
+	 * chooses the position. When the monitor the window was last on is no longer connected, the window is centered on the default monitor.
+	 * Either way the window is kept entirely within the usable area of the monitor it lands on, so that it is never partly off screen even if
+	 * the monitors have gotten smaller or fewer since the position was stored.
+	 */
+	private void restoreWindowPlacement()
+	{
+		IntRectangle savedBounds = UserPreferences.getInstance().windowBounds;
+		if (savedBounds == null || savedBounds.isEmpty())
+		{
+			// Shrink the packed size if it is larger than the screen. Calling setSize rather than setBounds leaves the location for the OS to
+			// choose, which cascades new windows rather than always using the upper left corner of the screen.
+			IntDimension size = fitSizeToScreen(new IntDimension(getWidth(), getHeight()), getDefaultScreen());
+			setSize(size.width, size.height);
+			setLocationByPlatform(true);
+		}
+		else
+		{
+			GraphicsConfiguration screen = findScreenForBounds(savedBounds);
+			IntRectangle boundsToUse = screen == null ? centerBoundsOnDefaultScreen(savedBounds.size()) : fitBoundsToScreen(savedBounds, screen);
+			setBounds(boundsToUse.x, boundsToUse.y, boundsToUse.width, boundsToUse.height);
+			lastNormalWindowBounds = boundsToUse;
+		}
+
+		if (UserPreferences.getInstance().isWindowMaximized)
+		{
+			setExtendedState(getExtendedState() | Frame.MAXIMIZED_BOTH);
+		}
+	}
+
+	/**
+	 * Restores the window to its default size, the side panels to their default widths, which are the narrowest widths that fit their
+	 * contents in the current language, and the console output to hidden. The window is left where it is unless part of it would then be off
+	 * screen.
+	 */
+	private void resetWindowLayout()
+	{
+		setExtendedState(getExtendedState() & ~Frame.MAXIMIZED_BOTH);
+
+		getContentPane().setPreferredSize(new Dimension(defaultContentPaneSize.width, defaultContentPaneSize.height));
+		pack();
+
+		IntRectangle bounds = new IntRectangle(getX(), getY(), getWidth(), getHeight());
+		GraphicsConfiguration screen = findScreenForBounds(bounds);
+		IntRectangle boundsToUse = screen == null ? centerBoundsOnDefaultScreen(bounds.size()) : fitBoundsToScreen(bounds, screen);
+		setBounds(boundsToUse.x, boundsToUse.y, boundsToUse.width, boundsToUse.height);
+
+		// Lay out at the new size before moving the dividers, since where the tools panel divider goes depends on the split pane's width.
+		validate();
+
+		resetSidePanelWidths();
+		consoleOutputSplitPane.setDividerLocation(consoleOutputHiddenDividerLocation);
+
+		getContentPane().revalidate();
+		getContentPane().repaint();
+	}
+
+	private void resetSidePanelWidths()
+	{
+		themePanel.setPreferredSize(new Dimension(SwingHelper.sidePanelMinimumWidth, themePanel.getPreferredSize().height));
+		toolsPanel.setPreferredSize(new Dimension(SwingHelper.sidePanelMinimumWidth, toolsPanel.getPreferredSize().height));
+
+		// The dividers keep whatever the user last dragged them to, so they must be moved explicitly rather than only through preferred sizes.
+		themePanelSplitPane.setDividerLocation(SwingHelper.sidePanelMinimumWidth);
+		toolsPanelSplitPane.setDividerLocation(toolsPanelSplitPane.getWidth() - SwingHelper.sidePanelMinimumWidth - toolsPanelSplitPane.getDividerSize());
+	}
+
+	/**
+	 * Returns the connected monitor that the given window bounds overlap the most, or null if they do not overlap any monitor enough for the
+	 * window to be usable, meaning the user can see it and grab its title bar.
+	 */
+	private static GraphicsConfiguration findScreenForBounds(IntRectangle bounds)
+	{
+		final int minimumVisibleWidth = 200;
+		final int minimumVisibleHeight = 60;
+
+		GraphicsConfiguration result = null;
+		long largestOverlapArea = 0;
+		for (GraphicsDevice device : GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices())
+		{
+			GraphicsConfiguration screen = device.getDefaultConfiguration();
+			IntRectangle intersection = bounds.findIntersection(toIntRectangle(screen.getBounds()));
+			if (intersection == null || intersection.width < minimumVisibleWidth || intersection.height < minimumVisibleHeight)
+			{
+				continue;
+			}
+
+			long overlapArea = (long) intersection.width * intersection.height;
+			if (overlapArea > largestOverlapArea)
+			{
+				largestOverlapArea = overlapArea;
+				result = screen;
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * Returns the part of the given monitor that windows can occupy, which excludes space reserved for things like the task bar and the Mac
+	 * menu bar. Falls back to the monitor's full bounds when the reported insets leave less than half of the monitor usable, since some
+	 * window managers report insets that cover most or all of a monitor.
+	 */
+	private static IntRectangle getUsableScreenArea(GraphicsConfiguration screen)
+	{
+		IntRectangle screenBounds = toIntRectangle(screen.getBounds());
+		Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(screen);
+		IntRectangle usableArea = new IntRectangle(screenBounds.x + insets.left, screenBounds.y + insets.top, screenBounds.width - insets.left - insets.right, screenBounds.height - insets.top - insets.bottom);
+
+		// Intersecting with the monitor guards against negative insets, which would otherwise report area beyond the edge of the monitor as
+		// usable.
+		usableArea = usableArea.findIntersection(screenBounds);
+		if (usableArea == null || usableArea.width < screenBounds.width / 2 || usableArea.height < screenBounds.height / 2)
+		{
+			return screenBounds;
+		}
+		return usableArea;
+	}
+
+	/**
+	 * Shrinks the given window size as needed to make it fit within the usable area of the given monitor, leaving it alone when it already
+	 * fits. The result is never smaller than {@link #minimumSizeWhenFittingToScreen} unless the given size already was, so that a monitor
+	 * reporting unusable dimensions cannot shrink the window to nothing, while a small size the user deliberately chose is kept.
+	 */
+	private static IntDimension fitSizeToScreen(IntDimension size, GraphicsConfiguration screen)
+	{
+		IntRectangle usableArea = getUsableScreenArea(screen);
+		return new IntDimension(Math.min(size.width, Math.max(usableArea.width, minimumSizeWhenFittingToScreen.width)), Math.min(size.height, Math.max(usableArea.height, minimumSizeWhenFittingToScreen.height)));
+	}
+
+	/**
+	 * Shrinks and moves the given window bounds as needed to make them fit entirely within the usable area of the given monitor, leaving them
+	 * alone when they already fit.
+	 */
+	private static IntRectangle fitBoundsToScreen(IntRectangle bounds, GraphicsConfiguration screen)
+	{
+		IntRectangle usableArea = getUsableScreenArea(screen);
+		IntDimension size = fitSizeToScreen(bounds.size(), screen);
+		int x = clamp(bounds.x, usableArea.x, usableArea.x + usableArea.width - size.width);
+		int y = clamp(bounds.y, usableArea.y, usableArea.y + usableArea.height - size.height);
+		return new IntRectangle(x, y, size.width, size.height);
+	}
+
+	/**
+	 * Moves the given value into the range [minimum, maximum], returning the minimum when the range is empty.
+	 */
+	private static int clamp(int value, int minimum, int maximum)
+	{
+		return Math.max(minimum, Math.min(value, Math.max(minimum, maximum)));
+	}
+
+	private static IntRectangle centerBoundsOnDefaultScreen(IntDimension sizeToCenter)
+	{
+		IntRectangle usableArea = getUsableScreenArea(getDefaultScreen());
+		IntDimension size = fitSizeToScreen(sizeToCenter, getDefaultScreen());
+		return new IntRectangle(usableArea.x + (usableArea.width - size.width) / 2, usableArea.y + (usableArea.height - size.height) / 2, size.width, size.height);
+	}
+
+	private static GraphicsConfiguration getDefaultScreen()
+	{
+		return GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration();
+	}
+
+	private static IntRectangle toIntRectangle(java.awt.Rectangle rectangle)
+	{
+		return new IntRectangle(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
+	}
+
+	private void updateLastNormalWindowBounds()
+	{
+		if (!isMaximized())
+		{
+			java.awt.Rectangle bounds = getBounds();
+			lastNormalWindowBounds = new IntRectangle(bounds.x, bounds.y, bounds.width, bounds.height);
+		}
+	}
+
+	private boolean isMaximized()
+	{
+		return (getExtendedState() & Frame.MAXIMIZED_BOTH) != 0;
+	}
+
+	private void storeWindowPlacementInPreferences()
+	{
+		UserPreferences.getInstance().isWindowMaximized = isMaximized();
+		if (lastNormalWindowBounds != null)
+		{
+			UserPreferences.getInstance().windowBounds = lastNormalWindowBounds;
+		}
 	}
 
 	/**
@@ -1205,6 +1436,22 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 		viewMenu.add(highlightRiversButton);
+
+		viewMenu.addSeparator();
+
+		JMenuItem resetWindowLayoutMenuItem = new JMenuItem(Translation.get("menu.view.resetWindowLayout"));
+		resetWindowLayoutMenuItem.setToolTipText(Translation.get("menu.view.resetWindowLayout.tooltip"));
+		resetWindowLayoutMenuItem.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				resetWindowLayout();
+			}
+		});
+		viewMenu.add(resetWindowLayoutMenuItem);
+
+		viewMenu.addSeparator();
 
 		{
 			// Create the theme menu
@@ -2527,12 +2774,13 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			int n = SwingHelper.showConfirmDialog(this, Translation.get("mainWindow.settingsModified"), "", JOptionPane.YES_NO_CANCEL_OPTION);
 			if (n == JOptionPane.YES_OPTION)
 			{
-				saveSettings(this);
+				// A save that was cancelled or failed counts as a cancel so that the unsaved changes aren't discarded.
+				return !saveSettings(this);
 			}
 			else if (n == JOptionPane.NO_OPTION)
 			{
 			}
-			else if (n == JOptionPane.CANCEL_OPTION)
+			else if (n == JOptionPane.CANCEL_OPTION || n == JOptionPane.CLOSED_OPTION)
 			{
 				return true;
 			}
@@ -2576,12 +2824,21 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		}
 	}
 
-	public void saveSettings(Component parent)
+	/**
+	 * Saves the currently open map, prompting for a file to save into if the map doesn't have one yet.
+	 *
+	 * @return True if the map was saved. False if the save was cancelled or failed.
+	 */
+	public boolean saveSettings(Component parent)
 	{
 		if (openSettingsFilePath == null || forceSaveAs)
 		{
-			saveSettingsAs(parent);
-			forceSaveAs = false;
+			boolean saved = saveSettingsAs(parent);
+			if (saved)
+			{
+				forceSaveAs = false;
+			}
+			return saved;
 		}
 		else
 		{
@@ -2595,12 +2852,19 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				e.printStackTrace();
 				Logger.printError("Error while saving map.", e);
 				SwingHelper.showMessageDialog(null, e.getMessage(), Translation.get("mainWindow.unableToSaveSettings"), JOptionPane.ERROR_MESSAGE);
+				return false;
 			}
 			updateFrameTitle(false, true);
+			return true;
 		}
 	}
 
-	public void saveSettingsAs(Component parent)
+	/**
+	 * Prompts for a file to save the currently open map into, then saves it there.
+	 *
+	 * @return True if the map was saved. False if the save was cancelled or failed.
+	 */
+	public boolean saveSettingsAs(Component parent)
 	{
 		Path curPath = openSettingsFilePath == null ? FileSystemView.getFileSystemView().getDefaultDirectory().toPath() : openSettingsFilePath;
 		File currentFolder = openSettingsFilePath == null ? curPath.toFile() : new File(FilenameUtils.getFullPath(curPath.toString()));
@@ -2630,41 +2894,55 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		}
 
 		int status = fileChooser.showSaveDialog(parent);
-		if (status == JFileChooser.APPROVE_OPTION)
+		if (status != JFileChooser.APPROVE_OPTION)
 		{
-			openSettingsFilePath = Paths.get(fileChooser.getSelectedFile().getAbsolutePath());
-			if (!openSettingsFilePath.getFileName().toString().endsWith(MapSettings.fileExtensionWithDot))
-			{
-				openSettingsFilePath = Paths.get(openSettingsFilePath.toString() + MapSettings.fileExtensionWithDot);
-			}
-
-			if (!openSettingsFilePath.equals(curPath))
-			{
-				// Clear previous image export locations so that a new copy of a map doesn't export over the images from the older version.
-				imageExportPath = null;
-				heightmapExportPath = null;
-			}
-
-			final MapSettings settings = getSettingsFromGUI(false);
-			try
-			{
-				saveMap(settings, openSettingsFilePath.toString());
-			}
-			catch (IOException e)
-			{
-				e.printStackTrace();
-				Logger.printError("Error while saving settings to a new file:", e);
-				SwingHelper.showMessageDialog(null, e.getMessage(), Translation.get("mainWindow.unableToSaveSettings"), JOptionPane.ERROR_MESSAGE);
-			}
-
-			updateFrameTitle(false, true);
+			return false;
 		}
+
+		Path savePath = Paths.get(fileChooser.getSelectedFile().getAbsolutePath());
+		if (!savePath.getFileName().toString().endsWith(MapSettings.fileExtensionWithDot))
+		{
+			savePath = Paths.get(savePath.toString() + MapSettings.fileExtensionWithDot);
+		}
+
+		final MapSettings settings = getSettingsFromGUI(false);
+		final boolean isSavingToDifferentFile = !savePath.equals(curPath);
+		if (isSavingToDifferentFile)
+		{
+			// Clear previous image export locations so that a new copy of a map doesn't export over the images from the older version.
+			settings.imageExportPath = null;
+			settings.heightmapExportPath = null;
+		}
+
+		try
+		{
+			saveMap(settings, savePath.toString());
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+			Logger.printError("Error while saving settings to a new file:", e);
+			SwingHelper.showMessageDialog(null, e.getMessage(), Translation.get("mainWindow.unableToSaveSettings"), JOptionPane.ERROR_MESSAGE);
+			return false;
+		}
+
+		// Only point this window at the new file once the save has succeeded, so that a failed save doesn't change where a later save
+		// would write.
+		openSettingsFilePath = savePath;
+		if (isSavingToDifferentFile)
+		{
+			imageExportPath = null;
+			heightmapExportPath = null;
+		}
+
+		updateFrameTitle(false, true);
+		return true;
 	}
 
 	private void saveMap(MapSettings settings, String absolutePath) throws IOException
 	{
 		settings.writeToFile(absolutePath);
-		Logger.println("Settings saved to " + openSettingsFilePath.toString());
+		Logger.println("Settings saved to " + absolutePath);
 		updateLastSettingsLoadedOrSaved(settings);
 		UserPreferences.getInstance().addRecentMapFilePath(absolutePath);
 		createOrUpdateRecentMapMenuButtons();

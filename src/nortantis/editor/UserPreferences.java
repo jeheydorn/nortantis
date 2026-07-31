@@ -1,5 +1,6 @@
 package nortantis.editor;
 
+import nortantis.geom.IntRectangle;
 import nortantis.swing.LookAndFeel;
 import nortantis.util.FileHelper;
 import nortantis.util.Logger;
@@ -42,6 +43,11 @@ public class UserPreferences
 	public int toolsPanelWidth;
 	public int themePanelWidth;
 	public String language;
+	/**
+	 * The bounds of the main window the last time it was closed while not maximized, or null if they are unknown.
+	 */
+	public IntRectangle windowBounds;
+	public boolean isWindowMaximized;
 
 	/**
 	 * Messages describing preferences that failed to load. Used to warn the user that some of their preferences may have been reset.
@@ -182,6 +188,16 @@ public class UserPreferences
 			tryLoad(props, "hideStartupSupportPanel", () -> hideStartupSupportPanel = Boolean.parseBoolean(props.getProperty("hideStartupSupportPanel")));
 		}
 
+		if (props.containsKey("windowBounds") && !StringUtils.isEmpty(props.getProperty("windowBounds")))
+		{
+			tryLoad(props, "windowBounds", () -> windowBounds = parseWindowBounds(props.getProperty("windowBounds")));
+		}
+
+		if (props.containsKey("isWindowMaximized"))
+		{
+			tryLoad(props, "isWindowMaximized", () -> isWindowMaximized = Boolean.parseBoolean(props.getProperty("isWindowMaximized")));
+		}
+
 		// If anything failed to load, preserve a copy of the original file so the user can recover values that we are about to overwrite
 		// the
 		// next time preferences are saved.
@@ -189,6 +205,21 @@ public class UserPreferences
 		{
 			backUpCorruptedFile(filePath);
 		}
+	}
+
+	private static IntRectangle parseWindowBounds(String value)
+	{
+		String[] pieces = value.split(",");
+		if (pieces.length != 4)
+		{
+			throw new IllegalArgumentException("Expected 4 comma separated numbers but found " + pieces.length + ".");
+		}
+		return new IntRectangle(Integer.parseInt(pieces[0].trim()), Integer.parseInt(pieces[1].trim()), Integer.parseInt(pieces[2].trim()), Integer.parseInt(pieces[3].trim()));
+	}
+
+	private static String formatWindowBounds(IntRectangle bounds)
+	{
+		return bounds.x + "," + bounds.y + "," + bounds.width + "," + bounds.height;
 	}
 
 	/**
@@ -288,6 +319,8 @@ public class UserPreferences
 		props.setProperty("language", language == null ? "" : language);
 		props.setProperty("hideThemeChangedMessage", hideThemeChangedMessage + "");
 		props.setProperty("hideStartupSupportPanel", hideStartupSupportPanel + "");
+		props.setProperty("windowBounds", windowBounds == null ? "" : formatWindowBounds(windowBounds));
+		props.setProperty("isWindowMaximized", isWindowMaximized + "");
 
 		try
 		{

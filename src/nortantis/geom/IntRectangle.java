@@ -126,7 +126,6 @@ public class IntRectangle
 		}
 	}
 
-	@SuppressWarnings("unused")
 	public boolean isEmpty()
 	{
 		return width <= 0 || height <= 0;
