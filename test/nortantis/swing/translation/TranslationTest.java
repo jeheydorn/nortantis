@@ -2,6 +2,8 @@ package nortantis.swing.translation;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
@@ -32,6 +34,32 @@ public class TranslationTest
 	public void englishLoadsWhenSystemLocaleHasNoTranslation()
 	{
 		assertEquals(Locale.ROOT, loadBundleWithSystemLocale(Locale.JAPANESE, Locale.ENGLISH).getLocale());
+	}
+
+	/**
+	 * Every string is run through MessageFormat, including those with no arguments, so an apostrophe that is not doubled silently
+	 * disappears (a lone {@code '} starts a quoted section) and a doubled one that reaches the screen means it was never formatted. Both
+	 * halves of that were real bugs before 3.20 - the French UI showed {@code l''océan} throughout, and the English keyboard-shortcut
+	 * dialog showed {@code the tool s icon}.
+	 */
+	@Test
+	public void everyApostropheIsEscaped()
+	{
+		List<String> offenders = new ArrayList<>();
+		for (Locale locale : List.of(Locale.ROOT, Locale.GERMAN, new Locale("es"), Locale.FRENCH, new Locale("pt"), new Locale("ru"),
+				Locale.SIMPLIFIED_CHINESE))
+		{
+			ResourceBundle bundle = Translation.loadBundle(locale);
+			for (String key : bundle.keySet())
+			{
+				// Collapsing pairs first leaves behind exactly the apostrophes that stand alone.
+				if (bundle.getString(key).replace("''", "").contains("'"))
+				{
+					offenders.add(locale + ": " + key);
+				}
+			}
+		}
+		assertEquals(List.of(), offenders, "these strings contain an apostrophe that is not doubled, so MessageFormat will eat it");
 	}
 
 	/**

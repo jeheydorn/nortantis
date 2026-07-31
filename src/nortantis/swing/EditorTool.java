@@ -46,8 +46,6 @@ public abstract class EditorTool
 
 	public abstract int getMnemonic();
 
-	public abstract String getKeyboardShortcutText();
-
 	public abstract Image getToolIcon();
 
 	public void onSwitchingTo()

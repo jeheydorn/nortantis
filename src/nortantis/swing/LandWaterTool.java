@@ -202,12 +202,6 @@ public class LandWaterTool extends EditorTool
 	}
 
 	@Override
-	public String getKeyboardShortcutText()
-	{
-		return "(" + SwingHelper.getAltKeyName() + "+Z)";
-	}
-
-	@Override
 	public Image getToolIcon()
 	{
 		Image icon = Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal/Land Water tool.png").toString());

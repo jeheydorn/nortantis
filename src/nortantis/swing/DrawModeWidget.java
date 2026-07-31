@@ -33,24 +33,25 @@ public class DrawModeWidget
 			changeListener.run();
 		};
 
+		// bindAltMnemonic appends the keyboard shortcut to each tooltip, so these set only the description.
 		drawModeButton = new JToggleButton(Translation.get("drawMode.draw"));
-		drawModeButton.setToolTipText(drawTooltipWithoutKeyboardShortcut + " (" + Translation.get("drawMode.draw.shortcut", SwingHelper.getAltKeyName()) + ")");
+		drawModeButton.setToolTipText(drawTooltipWithoutKeyboardShortcut);
 		drawModeButton.setSelected(true);
 		drawModeButton.addActionListener(modeListener);
 		SwingHelper.bindAltMnemonic(drawModeButton, KeyEvent.VK_D);
 
 		replaceModeButton = new JToggleButton(Translation.get("drawMode.replace"));
-		replaceModeButton.setToolTipText(replaceTooltipWithoutKeyboardShortcut + " (" + Translation.get("drawMode.replace.shortcut", SwingHelper.getAltKeyName()) + ")");
+		replaceModeButton.setToolTipText(replaceTooltipWithoutKeyboardShortcut);
 		replaceModeButton.addActionListener(modeListener);
 		SwingHelper.bindAltMnemonic(replaceModeButton, KeyEvent.VK_R);
 
 		editModeButton = new JToggleButton(Translation.get("drawMode.edit"));
-		editModeButton.setToolTipText(editTooltipWithoutKeyboardShortcut + " (" + Translation.get("drawMode.edit.shortcut", SwingHelper.getAltKeyName()) + ")");
+		editModeButton.setToolTipText(editTooltipWithoutKeyboardShortcut);
 		editModeButton.addActionListener(modeListener);
 		SwingHelper.bindAltMnemonic(editModeButton, KeyEvent.VK_T);
 
 		eraseModeButton = new JToggleButton(Translation.get("drawMode.erase"));
-		eraseModeButton.setToolTipText(eraseTooltipWithoutKeyboardShortcut + " (" + Translation.get("drawMode.erase.shortcut", SwingHelper.getAltKeyName()) + ")");
+		eraseModeButton.setToolTipText(eraseTooltipWithoutKeyboardShortcut);
 		eraseModeButton.addActionListener(modeListener);
 		SwingHelper.bindAltMnemonic(eraseModeButton, KeyEvent.VK_E);
 
@@ -94,10 +95,10 @@ public class DrawModeWidget
 		return editModeButton.isSelected();
 	}
 
-	public void configureDrawButton(String translatedHtml, String tooltipWithoutShortcut, int mnemonic, String translatedShortcutText)
+	public void configureDrawButton(String translatedText, String tooltipWithoutShortcut, int mnemonic)
 	{
-		drawModeButton.setText(translatedHtml);
-		drawModeButton.setToolTipText(tooltipWithoutShortcut + " (" + translatedShortcutText + ")");
+		drawModeButton.setText(translatedText);
+		drawModeButton.setToolTipText(tooltipWithoutShortcut);
 		SwingHelper.bindAltMnemonic(drawModeButton, mnemonic);
 		SwingHelper.reduceHorizontalMargin(drawModeButton);
 	}

@@ -16,8 +16,6 @@ import javax.swing.*;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.plaf.basic.BasicHTML;
-import javax.swing.text.View;
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
@@ -310,7 +308,7 @@ public class SubMapDialog
 		// computed for the width it is actually displayed at. Otherwise its height is computed for its natural single-line width, and the
 		// text is clipped once it wraps at the narrower dialog width.
 		step1Dialog.pack();
-		fitMultiLineLabelToWidth(instructionsLabel, organizer.panel.getWidth() - 10);
+		SwingHelper.fitWrappedLabel(instructionsLabel, organizer.panel.getWidth() - 10);
 		step1Dialog.setPreferredSize(new Dimension(step1Dialog.getPreferredSize().width + 15, step1Dialog.getPreferredSize().height + 15));
 		step1Dialog.pack();
 		step1Dialog.setMinimumSize(step1Dialog.getSize());
@@ -549,27 +547,6 @@ public class SubMapDialog
 	}
 
 	/**
-	 * Sizes a multi-line HTML label so its preferred height matches the height it needs when laid out at the given display width. This
-	 * keeps the text from being clipped when it wraps at a width narrower than its natural single-line width.
-	 */
-	private void fitMultiLineLabelToWidth(JLabel label, int width)
-	{
-		if (width <= 0)
-		{
-			return;
-		}
-		View view = (View) label.getClientProperty(BasicHTML.propertyKey);
-		if (view == null)
-		{
-			return;
-		}
-		view.setSize(width, 0);
-		int preferredWidth = (int) Math.ceil(view.getPreferredSpan(View.X_AXIS));
-		int preferredHeight = (int) Math.ceil(view.getPreferredSpan(View.Y_AXIS));
-		label.setPreferredSize(new Dimension(Math.min(preferredWidth, width), preferredHeight));
-	}
-
-	/**
 	 * Rotates the current selection box 90° in place by swapping its width and height (keeping the top-left corner and clamping to the map
 	 * bounds). This preserves the selection's area when the Rotate 90° checkbox is toggled, instead of stretching a single dimension.
 	 */
@@ -775,7 +752,7 @@ public class SubMapDialog
 		sliderRowHider.setVisible(!matchDetailPossible);
 
 		// Warning shown when Choose mode is selected.
-		JLabel customWarningLabel = new JLabel(Translation.get("subMapDialog.step2.customWarning"));
+		JLabel customWarningLabel = new JLabel(Translation.get("subMapDialog.step2.customWarning", Translation.get("iconsTool.name")));
 		customWarningLabel.setForeground(warningMessageColor);
 		customWarningRowHider = controlOrganizer.addLeftAlignedComponent(customWarningLabel, 2, 8, false);
 		customWarningRowHider.setVisible(!matchDetailPossible);

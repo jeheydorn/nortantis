@@ -135,12 +135,6 @@ public class IconsTool extends EditorTool
 	}
 
 	@Override
-	public String getKeyboardShortcutText()
-	{
-		return "(" + SwingHelper.getAltKeyName() + "+X)";
-	}
-
-	@Override
 	public Image getToolIcon()
 	{
 		Image icon = Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal/Icon tool.png").toString());

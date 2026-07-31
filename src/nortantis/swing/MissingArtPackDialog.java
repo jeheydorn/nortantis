@@ -63,7 +63,7 @@ public class MissingArtPackDialog
 		String affectedAssets = buildAffectedAssetsClause(info);
 		String message = Translation.get("mainWindow.missingArtPack.message", mapName, missingPacksList, affectedAssets);
 
-		JLabel messageLabel = new JLabel("<html><body style='width: 380px'>" + escapeHtml(message) + "</body></html>");
+		JLabel messageLabel = new JLabel("<html><body style='width: 380px'>" + SwingHelper.escapeHtml(message) + "</body></html>");
 		messageLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 		panel.add(messageLabel);
 
@@ -110,10 +110,5 @@ public class MissingArtPackDialog
 			fragments.add(Translation.get("mainWindow.missingArtPack.affectsIcons", Integer.toString(info.iconCount)));
 		}
 		return String.join(", ", fragments);
-	}
-
-	private static String escapeHtml(String text)
-	{
-		return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
 	}
 }

@@ -57,7 +57,24 @@ public class Translation
 		return Locale.ENGLISH;
 	}
 
+	/**
+	 * Every string in the message bundles is a {@link MessageFormat} pattern, whether or not it takes arguments, so both overloads of
+	 * {@code get} format it. Formatting strings with no arguments too is what makes the escaping rule uniform: a literal apostrophe is
+	 * always written {@code ''}, in every string of every language. Formatting only the strings that happened to take arguments meant a
+	 * translator could not tell which rule applied to the string in front of them, and French - which needs an apostrophe in a large
+	 * fraction of its strings - escaped them all and had the doubled ones show up on screen.
+	 */
 	public static String get(String key)
+	{
+		return format(getPattern(key), new Object[0]);
+	}
+
+	public static String get(String key, Object... args)
+	{
+		return format(getPattern(key), args);
+	}
+
+	private static String getPattern(String key)
 	{
 		try
 		{
@@ -69,9 +86,8 @@ public class Translation
 		}
 	}
 
-	public static String get(String key, Object... args)
+	private static String format(String pattern, Object[] args)
 	{
-		String pattern = get(key);
 		try
 		{
 			return MessageFormat.format(pattern, args);

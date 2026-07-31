@@ -76,7 +76,10 @@ public class CustomImagesDialog extends JDialog
 		organizer.addLeftAlignedComponent(new JLabel("<html>" + Translation.get("customImages.iconSizing") + "</html>"), space, space, false);
 		organizer.addLeftAlignedComponent(new JLabel("<html>" + Translation.get("customImages.borderImageNames") + "</html>"), space, space, false);
 
-		organizer.addLeftAlignedComponent(new JLabel("<html>" + Translation.get("customImages.treeTypes", Translation.get("customImages.placeholder.treeType")) + "</html>"), space, space, false);
+		// The tree-type placeholder is <tree type>, which Swing's HTML parser would drop as an unknown tag. The placeholder strings are
+		// plain text because the folder-structure listing above renders them in plain labels, so escape here rather than in the bundles.
+		organizer.addLeftAlignedComponent(
+				new JLabel("<html>" + Translation.get("customImages.treeTypes", SwingHelper.escapeHtml(Translation.get("customImages.placeholder.treeType"))) + "</html>"), space, space, false);
 
 		organizer.addLeftAlignedComponent(new JLabel("<html>" + Translation.get("customImages.hillMountainPairing") + "</html>"), space, space, false);
 

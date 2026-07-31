@@ -8,6 +8,8 @@ import nortantis.util.OSHelper;
 import org.apache.commons.io.FilenameUtils;
 
 import javax.swing.*;
+import javax.swing.plaf.basic.BasicHTML;
+import javax.swing.text.View;
 import javax.swing.colorchooser.AbstractColorChooserPanel;
 import javax.swing.colorchooser.ColorSelectionModel;
 import javax.swing.event.ChangeEvent;
@@ -116,15 +118,27 @@ public class SwingHelper
 	}
 
 	/**
-	 * Sets a button's mnemonic (the underlined letter) and, on macOS, also binds Option+letter to activate it. Windows and Linux
-	 * look-and-feels register the Alt+letter activation for a mnemonic automatically, but the macOS look-and-feel does not, so Option+letter
-	 * otherwise does nothing. Binding it explicitly makes the shortcut work on macOS. The binding is registered at
-	 * {@link JComponent#WHEN_IN_FOCUSED_WINDOW}, so it only fires while the button is showing (e.g. only the visible tool's mode buttons in a
-	 * card layout respond).
+	 * Sets a button's mnemonic (the underlined letter), appends the shortcut to its tooltip, and, on macOS, also binds Option+letter to
+	 * activate it. Windows and Linux look-and-feels register the Alt+letter activation for a mnemonic automatically, but the macOS
+	 * look-and-feel does not, so Option+letter otherwise does nothing. Binding it explicitly makes the shortcut work on macOS. The binding
+	 * is registered at {@link JComponent#WHEN_IN_FOCUSED_WINDOW}, so it only fires while the button is showing (e.g. only the visible tool's
+	 * mode buttons in a card layout respond).
+	 *
+	 * <p>
+	 * The tooltip is written here rather than at each call site so that the letter it names is necessarily the letter that is bound. Both
+	 * come from {@code keyCode}, so they cannot drift apart, which is what went wrong when translations marked the underlined letter
+	 * themselves: the marked letter and the bound key disagreed in 39 of 84 cases. Call sites that set their own tooltip should set it
+	 * before calling this, and should not mention the shortcut.
 	 */
 	public static void bindAltMnemonic(AbstractButton button, int keyCode)
 	{
 		button.setMnemonic(keyCode);
+
+		// Not KeyEvent.getKeyText, which is localized from the JDK's own bundle and so follows the system locale rather than Nortantis's
+		// language setting. Every mnemonic in the app is VK_A through VK_Z, where this cast is exact.
+		String shortcut = Translation.get("common.shortcut", getAltKeyName(), String.valueOf((char) keyCode));
+		String existing = button.getToolTipText();
+		button.setToolTipText(existing == null || existing.isBlank() ? shortcut : existing + " (" + shortcut + ")");
 
 		if (!OSHelper.isMac())
 		{
@@ -574,6 +588,54 @@ public class SwingHelper
 	private static final int dialogWrapThresholdChars = 60;
 
 	/**
+	 * Escapes text that is about to be concatenated into an HTML Swing label or dialog message. Swing's HTML parser silently drops anything
+	 * that looks like a tag it doesn't know, so text with angle brackets in it - a placeholder such as {@code <tree type>}, or a file path
+	 * the user typed - disappears from the label without any error. Use this on any run of text that is not itself markup.
+	 */
+	public static String escapeHtml(String text)
+	{
+		return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+	}
+
+	/**
+	 * Creates a label holding a paragraph of HTML that wraps at exactly {@code width} pixels. Without a width an HTML label prefers to lay
+	 * out on a single line, which makes {@link Window#pack()} size the window to the width of the whole paragraph.
+	 *
+	 * <p>
+	 * A CSS width (<code>&lt;body style='width:430px'&gt;</code>) would be the obvious way to do this, but Swing's HTML parser treats a CSS
+	 * pixel as 1.3 device pixels, so that lays out at 559 px instead. Measuring the wrapped height and fixing the preferred size gives the
+	 * width the caller actually asked for, and leaves the label's minimum width at its longest word so it can still shrink if it has to.
+	 */
+	public static JLabel createWrappedLabel(String html, int width)
+	{
+		JLabel label = new JLabel(html);
+		fitWrappedLabel(label, width);
+		return label;
+	}
+
+	/**
+	 * Sizes an existing HTML label so its preferred size is the size it needs when laid out at {@code width} pixels: no wider than
+	 * {@code width}, and tall enough for however many lines the text wraps onto. See {@link #createWrappedLabel(String, int)} for why a CSS
+	 * width doesn't do this.
+	 */
+	public static void fitWrappedLabel(JLabel label, int width)
+	{
+		if (width <= 0)
+		{
+			return;
+		}
+		View view = (View) label.getClientProperty(BasicHTML.propertyKey);
+		if (view == null)
+		{
+			return;
+		}
+		view.setSize(width, 0);
+		int preferredWidth = (int) Math.ceil(view.getPreferredSpan(View.X_AXIS));
+		int preferredHeight = (int) Math.ceil(view.getPreferredSpan(View.Y_AXIS));
+		label.setPreferredSize(new Dimension(Math.min(preferredWidth, width), preferredHeight));
+	}
+
+	/**
 	 * Prepares an option-pane message so that long text wraps to a reasonable width. Some look-and-feels (notably the native macOS one) do
 	 * not word-wrap long plain-text option-pane messages, so a long message can render wider than the screen. This wraps a long plain
 	 * String in width-constrained HTML, which every look-and-feel wraps consistently. Non-String messages (e.g. a JPanel), messages the
@@ -602,7 +664,7 @@ public class SwingHelper
 			return message;
 		}
 
-		String escaped = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br>");
+		String escaped = escapeHtml(text).replace("\n", "<br>");
 		return "<html><body><div style='width:" + dialogWrapWidthPixels + "px'>" + escaped + "</div></body></html>";
 	}
 

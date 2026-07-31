@@ -70,12 +70,6 @@ public class OverlayTool extends EditorTool
 	}
 
 	@Override
-	public String getKeyboardShortcutText()
-	{
-		return "(" + SwingHelper.getAltKeyName() + "+V)";
-	}
-
-	@Override
 	public Image getToolIcon()
 	{
 		Image icon = Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal/Overlay tool.png").toString());

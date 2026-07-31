@@ -41,12 +41,18 @@ public class ImageExportDialog extends JDialog
 	List<String> allowedExtension = Arrays.asList("png", "jpg", "jpeg");
 	private ImageExportType type;
 
+	/**
+	 * The size this dialog used to be hard-coded to. It fits the English labels exactly, which is why every other language clipped them, so
+	 * the dialog now packs to its content and uses this only as a floor - English looks unchanged and longer translations get the room they
+	 * need.
+	 */
+	private static final int minimumWidth = 460;
+
 	public ImageExportDialog(MainWindow mainWindow, ImageExportType type)
 	{
 		super(mainWindow, type == ImageExportType.Map ? Translation.get("imageExport.title.map") : Translation.get("imageExport.title.heightmap"), Dialog.ModalityType.APPLICATION_MODAL);
 		this.type = type;
 
-		setSize(new Dimension(460, type == ImageExportType.Map ? 293 : 380));
 		JPanel contents = new JPanel();
 		contents.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 		contents.setLayout(new BorderLayout());
@@ -57,7 +63,9 @@ public class ImageExportDialog extends JDialog
 
 		if (type == ImageExportType.Heightmap)
 		{
-			organizer.addLeftAlignedComponent(new JLabel("<html>" + Translation.get("imageExport.heightmapDescription") + "</html>"), false);
+			// Wrap the paragraph at a fixed width so that pack() below sizes the dialog to its controls rather than to this paragraph.
+			organizer.addLeftAlignedComponent(
+					SwingHelper.createWrappedLabel("<html>" + Translation.get("imageExport.heightmapDescription") + "</html>", minimumWidth - 30), false);
 		}
 
 		resolutionSlider = new JSlider();
@@ -122,6 +130,9 @@ public class ImageExportDialog extends JDialog
 				Arrays.asList(fileRadioButton, openInViewerRadioButton));
 
 		JTextField pathField = new JTextField();
+		// A JTextField with no column count prefers to be as wide as its text, and its text here is an absolute file path, so pack() would
+		// size the dialog to that path. Any column count makes the preferred width independent of the text.
+		pathField.setColumns(20);
 		{
 			// Determine the default path to save to.
 			try
@@ -345,6 +356,14 @@ public class ImageExportDialog extends JDialog
 			{
 			}
 		});
+
+		// Size to the content rather than to a fixed width, so translated labels are not clipped. Pack with the export path row showing
+		// because that is the taller of the two states this dialog toggles between, and the row can be switched back on without resizing.
+		boolean pathChooserWasVisible = pathChooserHider.isVisible();
+		pathChooserHider.setVisible(true);
+		pack();
+		setSize(Math.max(getWidth(), minimumWidth), Math.max(getHeight(), type == ImageExportType.Map ? 293 : 380));
+		pathChooserHider.setVisible(pathChooserWasVisible);
 	}
 
 	private void rememberResolutionAndPath(MainWindow mainWindow, double resolution, String path)

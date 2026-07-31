@@ -80,7 +80,7 @@ public class ToolsPanel extends JPanel
 				e.printStackTrace();
 				Logger.printError("Error while setting an image for a tool: ", e);
 			}
-			toolButton.setToolTipText(tool.getToolbarName() + " " + tool.getKeyboardShortcutText());
+			toolButton.setToolTipText(tool.getToolbarName());
 			SwingHelper.bindAltMnemonic(toolButton, tool.getMnemonic());
 			toolButton.setMaximumSize(new Dimension(50, 50));
 			tool.setToggleButton(toolButton);

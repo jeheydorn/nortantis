@@ -1446,6 +1446,12 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			SwingHelper.showMessageDialog(null, message, "Error", JOptionPane.ERROR_MESSAGE);
 			return;
 		}
+
+		// Keep mnemonic underlines visible without holding Alt. FlatLaf hides them until Alt is pressed on some platforms (Linux) but not
+		// others (Windows), and the buttons that have a mnemonic rely on the underline to show which letter it is. This is a FlatLaf
+		// property; the System look and feel ignores it and follows the platform's own convention. Set after installing the look and feel,
+		// since installing one replaces the defaults table this reads from.
+		UIManager.put("Component.hideMnemonics", false);
 	}
 
 	private void updateArtPackHighlightOptions()
