@@ -24,6 +24,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
@@ -110,6 +111,12 @@ public class SubMapDialog
 	private RowHider customWarningRowHider;
 	/** Radio button for custom polygon count; instance field so createPreviewUpdater can read its state. */
 	private JRadioButton customRadio;
+	/** Step 2's full-width paragraphs, re-wrapped by {@link #refitStep2Text()} whenever the dialog's width changes. */
+	private final List<JLabel> step2Paragraphs = new ArrayList<>();
+	/** Step 2's detail-mode radios, whose labels are long enough in some languages to need wrapping. */
+	private JRadioButton matchSourceRadio;
+	/** Step 2's control area. Its width is what the paragraphs and radios above wrap to. */
+	private JPanel step2ControlPanel;
 	private int clampedOneXWorldSize;
 	static final int minPolygonsInSubMap = 1000;
 	private static final Color warningMessageColor = new java.awt.Color(160, 90, 0);
@@ -547,6 +554,64 @@ public class SubMapDialog
 	}
 
 	/**
+	 * Wraps step 2's long text to the width the control area actually has.
+	 *
+	 * An HTML label given no width prefers to lay out on a single line, and these paragraphs are long enough that their preferred width runs
+	 * to a couple of thousand pixels in some languages. GridBagLayout works from preferred widths, so it sizes the two columns to hold that,
+	 * finds the dialog is only as wide as it is, and takes the shortfall back out of the columns in proportion to their weight - starving the
+	 * label column and clipping labels that had nothing to do with the paragraphs. In Russian that left "Уровень детализации:" with 60 px of
+	 * the 96 px it needs. Telling each paragraph the width it has stops it overstating its needs; it does not change how any of them are
+	 * drawn, since they already wrapped at that width.
+	 *
+	 * The detail-mode radios get the same treatment with whatever width is left beside their row label, so a translation long enough to
+	 * overflow the row wraps instead of pushing the second radio off the edge. Because a fitted component asks for the smaller of its natural
+	 * width and the width offered, the five languages that already fit are left on one line and pay nothing for this.
+	 */
+	private void refitStep2Text()
+	{
+		if (step2ControlPanel == null || step2ControlPanel.getWidth() <= 0)
+		{
+			return;
+		}
+		int available = step2ControlPanel.getWidth() - 10;
+
+		for (JLabel paragraph : step2Paragraphs)
+		{
+			// Each paragraph's own laid-out width, which is what it is really drawn at. There is none before the first layout, so fall back
+			// to the panel width and let the second pass correct it.
+			SwingHelper.fitParagraphHeight(paragraph, paragraph.getWidth() > 0 ? paragraph.getWidth() : available);
+		}
+
+		// Give the long radio whatever is left once the label column has the width its widest label wants. Measuring the radio's current
+		// width instead would feed back on itself: a narrower radio lets the label column keep less, which narrows the radio again, and it
+		// settles with the labels wrapped even though there was room for them.
+		int labelColumnWidth = 0;
+		for (String labelKey : new String[] { "subMapDialog.step2.numberOfPolygons.label", "subMapDialog.step2.randomSeed.label",
+				"subMapDialog.step2.preview.label" })
+		{
+			labelColumnWidth = Math.max(labelColumnWidth,
+					GridBagOrganizer.createWrappingLabel(Translation.get(labelKey), "").getPreferredSize().width);
+		}
+		SwingHelper.fitWrappedLabel(matchSourceRadio, available - labelColumnWidth - customRadio.getPreferredSize().width - 20);
+
+		step2ControlPanel.revalidate();
+	}
+
+	/**
+	 * Re-wraps step 2's text and then does it once more after the layout has settled.
+	 *
+	 * The first pass sets the paragraphs' heights from the widths they had under the old layout, and takes the columns off the paragraphs so
+	 * they collapse to what the labels and controls actually need. That changes how wide the paragraphs are drawn, so their heights are
+	 * re-derived on the next event, once those widths are real. It converges after that second pass because paragraphs no longer influence
+	 * the column widths, so nothing they do can move them again.
+	 */
+	private void refitStep2TextWhenLaidOut()
+	{
+		refitStep2Text();
+		SwingUtilities.invokeLater(this::refitStep2Text);
+	}
+
+	/**
 	 * Rotates the current selection box 90° in place by swapping its width and height (keeping the top-left corner and clamping to the map
 	 * bounds). This preserves the selection's area when the Rotate 90° checkbox is toggled, instead of stretching a single dimension.
 	 */
@@ -685,6 +750,8 @@ public class SubMapDialog
 
 		// -- Top control area (GridBagOrganizer for aligned labels and fields) --
 		GridBagOrganizer controlOrganizer = new GridBagOrganizer();
+		// This dialog is far wider than its labels need, so let the controls have the extra room rather than the label column.
+		controlOrganizer.keepSpareWidthInComponentColumn();
 		final int topInset = 2;
 
 		// Compute the 1× polygon count for this selection to use as the default slider value.
@@ -696,10 +763,11 @@ public class SubMapDialog
 
 		// Advice label explaining key sub-map limitations.
 		JLabel adviceLabel = new JLabel(Translation.get("subMapDialog.step2.advice"));
+		step2Paragraphs.add(adviceLabel);
 		controlOrganizer.addLeftAlignedComponent(adviceLabel, 0, 8, false);
 
 		// Number of polygons: radio buttons to choose between matching source detail or a custom level.
-		JRadioButton matchSourceRadio = new JRadioButton(Translation.get("subMapDialog.step2.matchSourceDetail", clampedOneXWorldSize));
+		matchSourceRadio = new JRadioButton("<html>" + Translation.get("subMapDialog.step2.matchSourceDetail", clampedOneXWorldSize) + "</html>");
 		customRadio = new JRadioButton(Translation.get("subMapDialog.step2.choose"));
 		ButtonGroup detailModeGroup = new ButtonGroup();
 		detailModeGroup.add(matchSourceRadio);
@@ -724,6 +792,7 @@ public class SubMapDialog
 		{
 			JLabel matchDetailDisabledLabel = new JLabel(Translation.get("subMapDialog.step2.matchDetailDisabled", minPolygonsInSubMap));
 			matchDetailDisabledLabel.setForeground(warningMessageColor);
+			step2Paragraphs.add(matchDetailDisabledLabel);
 			controlOrganizer.addLeftAlignedComponent(matchDetailDisabledLabel, 0, 4, false);
 		}
 
@@ -754,6 +823,7 @@ public class SubMapDialog
 		// Warning shown when Choose mode is selected.
 		JLabel customWarningLabel = new JLabel(Translation.get("subMapDialog.step2.customWarning", Translation.get("iconsTool.name")));
 		customWarningLabel.setForeground(warningMessageColor);
+		step2Paragraphs.add(customWarningLabel);
 		customWarningRowHider = controlOrganizer.addLeftAlignedComponent(customWarningLabel, 2, 8, false);
 		customWarningRowHider.setVisible(!matchDetailPossible);
 
@@ -827,6 +897,7 @@ public class SubMapDialog
 		newSeedButton.addActionListener(e -> seedTextField.setText(String.valueOf(Helper.safeAbs(new Random().nextInt()))));
 		controlOrganizer.addLabelAndComponentsHorizontalWithTopInset(Translation.get("subMapDialog.step2.randomSeed.label"), "", Arrays.asList(seedTextField, newSeedButton), topInset);
 
+		step2ControlPanel = controlOrganizer.panel;
 		mainPanel.add(controlOrganizer.panel, BorderLayout.NORTH);
 
 		// -- Preview area --
@@ -956,6 +1027,7 @@ public class SubMapDialog
 				{
 					return;
 				}
+				refitStep2TextWhenLaidOut();
 				triggerPreviewRedrawIfSizeChanged();
 			}
 		});
@@ -966,6 +1038,7 @@ public class SubMapDialog
 			public void windowOpened(WindowEvent e)
 			{
 				step2DialogOpened = true;
+				refitStep2TextWhenLaidOut();
 				// Trigger the first draw here, after the dialog is visible and its container is sized.
 				triggerPreviewRedrawIfSizeChanged();
 			}

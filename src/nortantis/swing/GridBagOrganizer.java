@@ -13,8 +13,8 @@ import java.util.List;
 public class GridBagOrganizer
 {
 	public final JPanel panel;
-	private final double labelWeight = 0.4;
-	private final double componentWeight = 0.6;
+	private double labelWeight = 0.4;
+	private double componentWeight = 0.6;
 	private int curY = 0;
 	public static final int rowVerticalInset = 10;
 	private final int defaultHorizontalSpaceBetweenComponentsAddAsList = 10;
@@ -23,6 +23,20 @@ public class GridBagOrganizer
 	{
 		panel = new VerticallyScrollablePanel();
 		panel.setLayout(new GridBagLayout());
+	}
+
+	/**
+	 * Gives spare horizontal space entirely to the component column instead of splitting it 40/60 with the label column.
+	 *
+	 * <p>
+	 * The default split suits the side panels, which are only as wide as they need to be, so growing both columns together keeps them
+	 * balanced. In a wide dialog it works out differently: the labels are short and the controls are not, so the label column ends up with
+	 * a few hundred pixels of empty space it has no use for while the controls beside it are squeezed. Call this before adding rows.
+	 */
+	public void keepSpareWidthInComponentColumn()
+	{
+		labelWeight = 0;
+		componentWeight = 1;
 	}
 
 	public RowHider addLabelAndComponent(String labelText, String tooltip, JComponent component)

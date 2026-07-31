@@ -614,25 +614,73 @@ public class SwingHelper
 	}
 
 	/**
+	 * Sizes a full-width HTML paragraph so it reports the height it needs when drawn at {@code drawnWidth}, while asking for no width of its
+	 * own. Pass the width the paragraph is actually laid out at - {@link Component#getWidth()} once it has been laid out once.
+	 *
+	 * <p>
+	 * Use this instead of {@link #fitWrappedLabel} for text that spans every column of a GridBagLayout. A spanning component drives the
+	 * columns it spans: the layout grows them until together they can hold its preferred width, splitting that demand between them by
+	 * weight. For a paragraph, which is happy to wrap to any width, that is the wrong signal in both directions - left unfitted it claims a
+	 * single line and inflates the columns to thousands of pixels, and fitted to the full width it still hands the label column a fixed
+	 * fraction of the whole dialog. Reporting no width at all leaves the columns to the rows that actually care about them, while the
+	 * paragraph still fills the span because the constraint fills horizontally.
+	 */
+	public static void fitParagraphHeight(JLabel paragraph, int drawnWidth)
+	{
+		if (drawnWidth <= 0)
+		{
+			return;
+		}
+		View view = (View) paragraph.getClientProperty(BasicHTML.propertyKey);
+		if (view == null)
+		{
+			return;
+		}
+		Insets insets = paragraph.getInsets();
+		view.setSize(drawnWidth - insets.left - insets.right, 0);
+		paragraph.setPreferredSize(
+				new Dimension(0, (int) Math.ceil(view.getPreferredSpan(View.Y_AXIS)) + insets.top + insets.bottom));
+	}
+
+	/**
 	 * Sizes an existing HTML label so its preferred size is the size it needs when laid out at {@code width} pixels: no wider than
 	 * {@code width}, and tall enough for however many lines the text wraps onto. See {@link #createWrappedLabel(String, int)} for why a CSS
 	 * width doesn't do this.
 	 */
-	public static void fitWrappedLabel(JLabel label, int width)
+	public static void fitWrappedLabel(JComponent labelOrButton, int width)
 	{
 		if (width <= 0)
 		{
 			return;
 		}
-		View view = (View) label.getClientProperty(BasicHTML.propertyKey);
+		View view = (View) labelOrButton.getClientProperty(BasicHTML.propertyKey);
 		if (view == null)
 		{
 			return;
 		}
-		view.setSize(width, 0);
-		int preferredWidth = (int) Math.ceil(view.getPreferredSpan(View.X_AXIS));
-		int preferredHeight = (int) Math.ceil(view.getPreferredSpan(View.Y_AXIS));
-		label.setPreferredSize(new Dimension(Math.min(preferredWidth, width), preferredHeight));
+
+		// A button's icon (a radio button's dot, a checkbox's box) sits beside the text and is not part of what wraps.
+		// Everything here is derived from the icon and the insets rather than from the component's current preferred
+		// size, so calling this repeatedly - which resizing the window does - always lands on the same answer.
+		int iconWidth = 0;
+		int iconHeight = 0;
+		if (labelOrButton instanceof AbstractButton button && button.getIcon() != null)
+		{
+			iconWidth = button.getIcon().getIconWidth() + button.getIconTextGap();
+			iconHeight = button.getIcon().getIconHeight();
+		}
+		Insets insets = labelOrButton.getInsets();
+		int textWidth = width - iconWidth - insets.left - insets.right;
+		if (textWidth <= 0)
+		{
+			return;
+		}
+
+		view.setSize(textWidth, 0);
+		int textPreferredWidth = Math.min((int) Math.ceil(view.getPreferredSpan(View.X_AXIS)), textWidth);
+		int textPreferredHeight = (int) Math.ceil(view.getPreferredSpan(View.Y_AXIS));
+		labelOrButton.setPreferredSize(new Dimension(textPreferredWidth + iconWidth + insets.left + insets.right,
+				Math.max(textPreferredHeight, iconHeight) + insets.top + insets.bottom));
 	}
 
 	/**
