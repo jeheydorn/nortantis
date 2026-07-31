@@ -50,7 +50,12 @@ public class SliderWithDisplayedValue
 
 		// I can't seem to shut off the default displayed value in Ubuntu with the System look and feel, so
 		// hide my displayed value to avoid redundancy.
-		if (OSHelper.isLinux() && UserPreferences.getInstance().lookAndFeel == LookAndFeel.System)
+		//
+		// Only when it really is redundant, though. Without a formatter this label shows exactly the number the
+		// look and feel already paints above the knob. With one it shows something else entirely - the exported
+		// image size, a slider value scaled into the units the user thinks in (27 shown as 2.7), the polygon
+		// count of a sub-map - which no look and feel paints, so hiding it loses the value rather than repeating it.
+		if (valueFormatter == null && OSHelper.isLinux() && UserPreferences.getInstance().lookAndFeel == LookAndFeel.System)
 		{
 			valueDisplay.setVisible(false);
 		}
