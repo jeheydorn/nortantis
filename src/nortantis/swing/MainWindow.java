@@ -1222,6 +1222,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 
+		fileMenu.addSeparator();
+
 		loadSettingsMenuItem = new JMenuItem(Translation.get("menu.file.open"));
 		loadSettingsMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, SwingHelper.getMenuShortcutKeyMask()));
 		fileMenu.add(loadSettingsMenuItem);
@@ -1276,6 +1278,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		fileMenu.add(recentSettingsMenuItem);
 		createOrUpdateRecentMapMenuButtons();
 
+		fileMenu.addSeparator();
+
 		saveMenuItem = new JMenuItem(Translation.get("menu.file.save"));
 		saveMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, SwingHelper.getMenuShortcutKeyMask()));
 		fileMenu.add(saveMenuItem);
@@ -1299,6 +1303,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 
+		fileMenu.addSeparator();
+
 		exportMapAsImageMenuItem = new JMenuItem(Translation.get("menu.file.exportAsImage"));
 		fileMenu.add(exportMapAsImageMenuItem);
 		exportMapAsImageMenuItem.addActionListener(new ActionListener()
@@ -1320,6 +1326,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				handleExportHeightmapPressed();
 			}
 		});
+
+		fileMenu.addSeparator();
 
 		refreshMenuItem = new JMenuItem(Translation.get("menu.file.refreshImagesAndRedraw"));
 		refreshMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, SwingHelper.getMenuShortcutKeyMask()));
@@ -1385,6 +1393,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 
+		editMenu.addSeparator();
+
 		clearEntireMapButton = new JMenuItem(Translation.get("menu.edit.clearEntireMap"));
 		editMenu.add(clearEntireMapButton);
 		clearEntireMapButton.addActionListener(new ActionListener()
@@ -1396,6 +1406,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 		clearEntireMapButton.setEnabled(false);
+
+		editMenu.addSeparator();
 
 		customImagesMenuItem = new JMenuItem(Translation.get("menu.edit.customImagesFolder"));
 		editMenu.add(customImagesMenuItem);
