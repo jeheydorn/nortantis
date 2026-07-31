@@ -249,8 +249,8 @@ public class NewSettingsDialog extends JDialog
 		JPanel bottomButtonsPanel = new JPanel();
 		bottomButtonsPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
 		JButton createMapButton = new JButton(Translation.get("newSettingsDialog.create"));
-		// The label underlines 'C' (see newSettingsDialog.create), so the mnemonic must be C for the advertised Alt+C (Option+C on Mac) to work.
-		SwingHelper.bindAltMnemonic(createMapButton, KeyEvent.VK_C);
+		// R rather than C so that Alt+C means Cancel in every dialog that has both buttons.
+		SwingHelper.bindAltMnemonic(createMapButton, KeyEvent.VK_R);
 		bottomButtonsPanel.add(createMapButton);
 		createMapButton.addActionListener(new ActionListener()
 		{

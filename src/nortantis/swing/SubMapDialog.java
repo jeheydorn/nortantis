@@ -254,9 +254,11 @@ public class SubMapDialog
 		JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
 
 		JButton cancelButton = new JButton(Translation.get("common.cancel"));
+		SwingHelper.bindAltMnemonic(cancelButton, KeyEvent.VK_C);
 		cancelButton.addActionListener(e -> cancelStep1());
 
 		step1NextButton = new JButton(Translation.get("subMapDialog.step1.next"));
+		SwingHelper.bindAltMnemonic(step1NextButton, KeyEvent.VK_N);
 		step1NextButton.setEnabled(false);
 		step1NextButton.addActionListener(e ->
 		{
@@ -297,6 +299,10 @@ public class SubMapDialog
 		buttonsPanel.add(step1NextButton);
 		buttonsPanel.add(Box.createHorizontalStrut(5));
 		buttonsPanel.add(cancelButton);
+
+		// Enter advances to step 2. The button stays disabled until a selection exists, and its action re-validates the spinners, so
+		// pressing Enter to commit a spinner edit cannot advance with an invalid selection.
+		step1Dialog.getRootPane().setDefaultButton(step1NextButton);
 
 		JPanel bottomRow = new JPanel(new BorderLayout());
 		bottomRow.add(step1ErrorLabel, BorderLayout.LINE_START);
@@ -908,6 +914,7 @@ public class SubMapDialog
 		JPanel buttonRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 2));
 
 		JButton backButton = new JButton(Translation.get("subMapDialog.step2.back"));
+		SwingHelper.bindAltMnemonic(backButton, KeyEvent.VK_B);
 		backButton.addActionListener(e ->
 		{
 			stopPreviewUpdater();
@@ -921,13 +928,12 @@ public class SubMapDialog
 		});
 
 		JButton cancelButton = new JButton(Translation.get("common.cancel"));
+		SwingHelper.bindAltMnemonic(cancelButton, KeyEvent.VK_C);
 		cancelButton.addActionListener(e -> handleCancelStep2());
 
-		// Reuse NewSettingsDialog's Create label so both Create buttons stay consistent. The label is HTML that underlines the
-		// mnemonic letter for each language. Alt+C triggers Create and, unlike Ctrl+C, does not collide with the Copy binding of
-		// the spinners and seed text field.
+		// Reuse NewSettingsDialog's Create label and mnemonic so both Create buttons stay consistent.
 		createButton = new JButton(Translation.get("newSettingsDialog.create"));
-		SwingHelper.bindAltMnemonic(createButton, KeyEvent.VK_C);
+		SwingHelper.bindAltMnemonic(createButton, KeyEvent.VK_R);
 		createButton.addActionListener(e -> handleCreate());
 
 		buttonRow.add(backButton);

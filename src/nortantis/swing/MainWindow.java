@@ -1711,6 +1711,12 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		// property; the System look and feel ignores it and follows the platform's own convention. Set after installing the look and feel,
 		// since installing one replaces the defaults table this reads from.
 		UIManager.put("Component.hideMnemonics", false);
+
+		// Give the Cancel button of Yes/No/Cancel dialogs a mnemonic. The JDK defines one for Yes and No but not for Cancel or OK, so
+		// without this the third button is the only one in the dialog with no underlined letter. The value must be a string holding the key
+		// code, which is how BasicOptionPaneUI reads it. Where the look and feel's own translation of "Cancel" has no C in it, the letter is
+		// simply not underlined, matching how the rest of the app handles a mnemonic that its translated label doesn't contain.
+		UIManager.put("OptionPane.cancelButtonMnemonic", String.valueOf(KeyEvent.VK_C));
 	}
 
 	private void updateArtPackHighlightOptions()
