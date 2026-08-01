@@ -87,6 +87,13 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	 */
 	private IntRectangle lastNormalWindowBounds;
 	/**
+	 * The bounds to give the window the first time the user un-maximizes it, when the window was opened maximized. Opening maximized sizes
+	 * the window to the maximized area before showing it, which is what the window manager would otherwise restore it to, so the size it was
+	 * last seen at while not maximized is kept here and applied instead. Null once it has been used, and whenever the window was not opened
+	 * maximized.
+	 */
+	private IntRectangle boundsToRestoreWhenUnmaximized;
+	/**
 	 * A floor on how small fitting the window to a monitor is allowed to make it. It exists only to keep a monitor that reports unusable
 	 * dimensions from opening the window too small to use. It does not constrain sizes the user chose by resizing the window.
 	 */
@@ -511,6 +518,20 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 
+		addWindowStateListener(new WindowAdapter()
+		{
+			@Override
+			public void windowStateChanged(WindowEvent event)
+			{
+				boolean wasMaximized = (event.getOldState() & Frame.MAXIMIZED_BOTH) != 0;
+				boolean isNowMaximized = (event.getNewState() & Frame.MAXIMIZED_BOTH) != 0;
+				if (wasMaximized && !isNowMaximized)
+				{
+					restoreBoundsFromBeforeMaximizing();
+				}
+			}
+		});
+
 		createMenuBar();
 
 		undoer = new Undoer(this);
@@ -553,6 +574,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private void restoreWindowPlacement()
 	{
 		IntRectangle savedBounds = UserPreferences.getInstance().windowBounds;
+		GraphicsConfiguration screenToOpenOn = getDefaultScreen();
 		if (savedBounds == null || savedBounds.isEmpty())
 		{
 			// Shrink the packed size if it is larger than the screen. Calling setSize rather than setBounds leaves the location for the OS to
@@ -567,12 +589,40 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			IntRectangle boundsToUse = screen == null ? centerBoundsOnDefaultScreen(savedBounds.size()) : fitBoundsToScreen(savedBounds, screen);
 			setBounds(boundsToUse.x, boundsToUse.y, boundsToUse.width, boundsToUse.height);
 			lastNormalWindowBounds = boundsToUse;
+			screenToOpenOn = screen == null ? getDefaultScreen() : screen;
 		}
 
 		if (UserPreferences.getInstance().isWindowMaximized)
 		{
+			// Mark the window maximized before resizing it, so that the resize below is not mistaken for the user sizing the window and does
+			// not overwrite the size to go back to when the window is un-maximized.
 			setExtendedState(getExtendedState() | Frame.MAXIMIZED_BOTH);
+
+			// Lay the window out at the size it will have once the window manager maximizes it. Without this the window is shown, and its
+			// contents are drawn, at the smaller size it was last un-maximized at, and then everything visibly jumps when maximizing takes
+			// effect a moment later.
+			boundsToRestoreWhenUnmaximized = lastNormalWindowBounds;
+			IntRectangle maximizedArea = getUsableScreenArea(screenToOpenOn);
+			setBounds(maximizedArea.x, maximizedArea.y, maximizedArea.width, maximizedArea.height);
 		}
+	}
+
+	/**
+	 * Gives the window back the size it was last seen at while not maximized, the first time it is un-maximized after being opened maximized.
+	 * Without this the window manager would restore it to the maximized area, because that is the size the window was opened at.
+	 */
+	private void restoreBoundsFromBeforeMaximizing()
+	{
+		IntRectangle bounds = boundsToRestoreWhenUnmaximized;
+		boundsToRestoreWhenUnmaximized = null;
+		if (bounds == null)
+		{
+			return;
+		}
+
+		GraphicsConfiguration screen = findScreenForBounds(bounds);
+		IntRectangle boundsToUse = screen == null ? centerBoundsOnDefaultScreen(bounds.size()) : fitBoundsToScreen(bounds, screen);
+		setBounds(boundsToUse.x, boundsToUse.y, boundsToUse.width, boundsToUse.height);
 	}
 
 	/**
@@ -582,6 +632,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	 */
 	private void resetWindowLayout()
 	{
+		// The reset chooses the size itself, so drop the size the window would otherwise go back to when un-maximized.
+		boundsToRestoreWhenUnmaximized = null;
 		setExtendedState(getExtendedState() & ~Frame.MAXIMIZED_BOTH);
 
 		getContentPane().setPreferredSize(new Dimension(defaultContentPaneSize.width, defaultContentPaneSize.height));
