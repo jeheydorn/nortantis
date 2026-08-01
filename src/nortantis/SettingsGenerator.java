@@ -104,9 +104,9 @@ public class SettingsGenerator
 
 		settings.oceanColor = MapCreator.generateColorFromBaseColor(rand, oceanColor, hueRange, saturationRange, brightnessRange);
 
-		double landBlurColorScale = 0.5;
-		settings.coastShadingColor = Color.create((int) (settings.landColor.getRed() * landBlurColorScale), (int) (settings.landColor.getGreen() * landBlurColorScale),
-				(int) (settings.landColor.getBlue() * landBlurColorScale), defaultCoastShadingAlpha);
+		double coastShadingColorScale = 0.5;
+		settings.coastShadingColor = Color.create((int) (settings.landColor.getRed() * coastShadingColorScale), (int) (settings.landColor.getGreen() * coastShadingColorScale),
+				(int) (settings.landColor.getBlue() * coastShadingColorScale), defaultCoastShadingAlpha);
 
 		{
 			double oceanShadingColorScale = 0.3;
