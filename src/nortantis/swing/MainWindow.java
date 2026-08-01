@@ -523,9 +523,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			public void windowStateChanged(WindowEvent event)
 			{
+				// The state the event carries can be wrong while the window is opening: Windows reports the window as no longer maximized
+				// at the moment it is shown, even though it is. The window's current state is accurate, so let it decide.
 				boolean wasMaximized = (event.getOldState() & Frame.MAXIMIZED_BOTH) != 0;
-				boolean isNowMaximized = (event.getNewState() & Frame.MAXIMIZED_BOTH) != 0;
-				if (wasMaximized && !isNowMaximized)
+				if (wasMaximized && !isMaximized())
 				{
 					restoreBoundsFromBeforeMaximizing();
 				}
@@ -604,6 +605,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			boundsToRestoreWhenUnmaximized = lastNormalWindowBounds;
 			IntRectangle maximizedArea = getUsableScreenArea(screenToOpenOn);
 			setBounds(maximizedArea.x, maximizedArea.y, maximizedArea.width, maximizedArea.height);
+
+			// Giving the window explicit bounds takes away the maximized state on Windows, so mark it maximized again.
+			setExtendedState(getExtendedState() | Frame.MAXIMIZED_BOTH);
 		}
 	}
 
