@@ -87,12 +87,20 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	 */
 	private IntRectangle lastNormalWindowBounds;
 	/**
-	 * The bounds to give the window the first time the user un-maximizes it, when the window was opened maximized. Opening maximized sizes
-	 * the window to the maximized area before showing it, which is what the window manager would otherwise restore it to, so the size it was
-	 * last seen at while not maximized is kept here and applied instead. Null once it has been used, and whenever the window was not opened
-	 * maximized.
+	 * True while the contents of a window that was opened maximized are being kept from being drawn until the window manager has maximized
+	 * it.
 	 */
-	private IntRectangle boundsToRestoreWhenUnmaximized;
+	private boolean isHidingContentUntilMaximized;
+	/**
+	 * How long the contents of a window opened maximized stay hidden when the window never becomes maximized, after which they are shown
+	 * anyway so that a window manager that refuses to maximize cannot leave the window empty.
+	 */
+	private static final int hiddenContentTimeout = 2000;
+	private javax.swing.Timer normalWindowBoundsTimer;
+	/**
+	 * How long the window must go without moving or resizing before the bounds it has count as a size the window is actually sitting at.
+	 */
+	private static final int normalWindowBoundsSettleDelay = 250;
 	/**
 	 * A floor on how small fitting the window to a monitor is allowed to make it. It exists only to keep a monitor that reports unusable
 	 * dimensions from opening the window too small to use. It does not constrain sizes the user chose by resizing the window.
@@ -508,28 +516,14 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			public void componentResized(ComponentEvent e)
 			{
-				updateLastNormalWindowBounds();
+				restartNormalWindowBoundsTimer();
+				showHiddenContentIfMaximized();
 			}
 
 			@Override
 			public void componentMoved(ComponentEvent e)
 			{
-				updateLastNormalWindowBounds();
-			}
-		});
-
-		addWindowStateListener(new WindowAdapter()
-		{
-			@Override
-			public void windowStateChanged(WindowEvent event)
-			{
-				// The state the event carries can be wrong while the window is opening: Windows reports the window as no longer maximized
-				// at the moment it is shown, even though it is. The window's current state is accurate, so let it decide.
-				boolean wasMaximized = (event.getOldState() & Frame.MAXIMIZED_BOTH) != 0;
-				if (wasMaximized && !isMaximized())
-				{
-					restoreBoundsFromBeforeMaximizing();
-				}
+				restartNormalWindowBoundsTimer();
 			}
 		});
 
@@ -575,7 +569,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private void restoreWindowPlacement()
 	{
 		IntRectangle savedBounds = UserPreferences.getInstance().windowBounds;
-		GraphicsConfiguration screenToOpenOn = getDefaultScreen();
 		if (savedBounds == null || savedBounds.isEmpty())
 		{
 			// Shrink the packed size if it is larger than the screen. Calling setSize rather than setBounds leaves the location for the OS to
@@ -590,43 +583,56 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			IntRectangle boundsToUse = screen == null ? centerBoundsOnDefaultScreen(savedBounds.size()) : fitBoundsToScreen(savedBounds, screen);
 			setBounds(boundsToUse.x, boundsToUse.y, boundsToUse.width, boundsToUse.height);
 			lastNormalWindowBounds = boundsToUse;
-			screenToOpenOn = screen == null ? getDefaultScreen() : screen;
 		}
 
 		if (UserPreferences.getInstance().isWindowMaximized)
 		{
-			// Mark the window maximized before resizing it, so that the resize below is not mistaken for the user sizing the window and does
-			// not overwrite the size to go back to when the window is un-maximized.
+			// The window keeps the bounds set above as the size to go back to when it is un-maximized, which is what makes un-maximizing
+			// return it to the size it was last seen at rather than to the size of the screen.
 			setExtendedState(getExtendedState() | Frame.MAXIMIZED_BOTH);
-
-			// Lay the window out at the size it will have once the window manager maximizes it. Without this the window is shown, and its
-			// contents are drawn, at the smaller size it was last un-maximized at, and then everything visibly jumps when maximizing takes
-			// effect a moment later.
-			boundsToRestoreWhenUnmaximized = lastNormalWindowBounds;
-			IntRectangle maximizedArea = getUsableScreenArea(screenToOpenOn);
-			setBounds(maximizedArea.x, maximizedArea.y, maximizedArea.width, maximizedArea.height);
-
-			// Giving the window explicit bounds takes away the maximized state on Windows, so mark it maximized again.
-			setExtendedState(getExtendedState() | Frame.MAXIMIZED_BOTH);
+			hideContentUntilMaximized();
 		}
 	}
 
 	/**
-	 * Gives the window back the size it was last seen at while not maximized, the first time it is un-maximized after being opened maximized.
-	 * Without this the window manager would restore it to the maximized area, because that is the size the window was opened at.
+	 * Keeps the window's contents from being drawn until the window manager has maximized the window. The window is shown before maximizing
+	 * takes effect, so without this its contents are drawn at the size the window had before it was maximized and then visibly jump. The
+	 * whole root pane is hidden rather than the content pane, since the title bar and menu bar are laid out to the window's width too.
 	 */
-	private void restoreBoundsFromBeforeMaximizing()
+	private void hideContentUntilMaximized()
 	{
-		IntRectangle bounds = boundsToRestoreWhenUnmaximized;
-		boundsToRestoreWhenUnmaximized = null;
-		if (bounds == null)
+		isHidingContentUntilMaximized = true;
+		getRootPane().setVisible(false);
+
+		javax.swing.Timer timer = new javax.swing.Timer(hiddenContentTimeout, e -> showHiddenContent());
+		timer.setRepeats(false);
+		timer.start();
+	}
+
+	private void showHiddenContentIfMaximized()
+	{
+		if (isMaximized())
+		{
+			showHiddenContent();
+		}
+	}
+
+	private void showHiddenContent()
+	{
+		if (!isHidingContentUntilMaximized)
 		{
 			return;
 		}
 
-		GraphicsConfiguration screen = findScreenForBounds(bounds);
-		IntRectangle boundsToUse = screen == null ? centerBoundsOnDefaultScreen(bounds.size()) : fitBoundsToScreen(bounds, screen);
-		setBounds(boundsToUse.x, boundsToUse.y, boundsToUse.width, boundsToUse.height);
+		isHidingContentUntilMaximized = false;
+		getRootPane().setVisible(true);
+
+		// Lay the window out before letting go of the event thread, since a layout scheduled for later would leave a moment in which the
+		// window could be drawn at the size it had while hidden. The window is marked invalid first because it counts as laid out while its
+		// contents are hidden, and an already valid window lays out nothing.
+		invalidate();
+		validate();
+		repaint();
 	}
 
 	/**
@@ -636,8 +642,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	 */
 	private void resetWindowLayout()
 	{
-		// The reset chooses the size itself, so drop the size the window would otherwise go back to when un-maximized.
-		boundsToRestoreWhenUnmaximized = null;
 		setExtendedState(getExtendedState() & ~Frame.MAXIMIZED_BOTH);
 
 		getContentPane().setPreferredSize(new Dimension(defaultContentPaneSize.width, defaultContentPaneSize.height));
@@ -768,6 +772,20 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		return new IntRectangle(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
 	}
 
+	/**
+	 * Waits for the window to stop changing before its bounds are recorded. The window's bounds change before the platform reports it as
+	 * maximized, so bounds read while it is still becoming maximized are neither the maximized nor the normal size.
+	 */
+	private void restartNormalWindowBoundsTimer()
+	{
+		if (normalWindowBoundsTimer == null)
+		{
+			normalWindowBoundsTimer = new javax.swing.Timer(normalWindowBoundsSettleDelay, e -> updateLastNormalWindowBounds());
+			normalWindowBoundsTimer.setRepeats(false);
+		}
+		normalWindowBoundsTimer.restart();
+	}
+
 	private void updateLastNormalWindowBounds()
 	{
 		if (!isMaximized())
@@ -784,6 +802,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	private void storeWindowPlacementInPreferences()
 	{
+		// Catch a size change made in the moment before closing, which the wait for the window to settle would otherwise miss.
+		updateLastNormalWindowBounds();
+
 		UserPreferences.getInstance().isWindowMaximized = isMaximized();
 		if (lastNormalWindowBounds != null)
 		{
