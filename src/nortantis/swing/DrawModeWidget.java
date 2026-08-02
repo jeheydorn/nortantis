@@ -112,7 +112,7 @@ public class DrawModeWidget
 	{
 		if (grabFocus)
 		{
-			editModeButton.doClick();
+			editModeButton.doClick(0);
 		}
 		else
 		{

@@ -614,7 +614,9 @@ public class ImageCache
 		// Also clear the assets cache so that any change to the list of art packs becomes visible.
 		Assets.clearArtPackCache();
 
-		System.gc();
+		// Collecting the images just dropped can take hundreds of milliseconds, which would freeze the UI if it happened on the thread that
+		// cleared the cache. Nothing depends on the memory being freed by a particular moment, so let it happen on its own.
+		ThreadHelper.getInstance().submit(() -> System.gc());
 	}
 
 	public static void clearColoredAndScaledImageCaches()

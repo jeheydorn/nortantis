@@ -442,7 +442,7 @@ public class IconsTool extends EditorTool
 
 		createOrUpdateDecorationButtons(organizer, Assets.installedArtPack, null);
 
-		mountainsButton.doClick();
+		mountainsButton.doClick(0);
 
 		organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.666);
 		organizer.addVerticalFillerRow();

@@ -38,7 +38,9 @@ public class IconTypeButtons
 		{
 			if (buttonWithImage.getText().equals(buttonText))
 			{
-				buttonWithImage.getRadioButton().doClick();
+				// Clicked with a press time of zero because nobody is watching a button they did not press be pressed, and the default press
+				// time sleeps on the calling thread.
+				buttonWithImage.getRadioButton().doClick(0);
 				return true;
 			}
 		}
