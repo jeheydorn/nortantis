@@ -632,7 +632,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		// contents are hidden, and an already valid window lays out nothing.
 		invalidate();
 		validate();
-		repaint();
+
+		// Drawn now rather than when the event thread next has nothing to do, because opening a map keeps the event thread busy for long
+		// enough that the window would otherwise sit empty until the map had finished loading.
+		getRootPane().paintImmediately(0, 0, getRootPane().getWidth(), getRootPane().getHeight());
 	}
 
 	/**
