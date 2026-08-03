@@ -85,39 +85,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	 */
 	private IntRectangle lastNormalWindowBounds;
 	/**
-	 * True while a window that was opened maximized is waiting for the window manager to make it as large as a maximized window. Its
-	 * contents are hidden until then, so that they are neither drawn at the smaller size the window was opened at nor drawn with the side
-	 * panels squeezed by that size.
+	 * The bounds to give a window that was opened maximized the first time it is un-maximized. A window opened maximized is opened at the
+	 * size of a maximized window, so the platform has only ever seen it at that size and would otherwise un-maximize it to the size of the
+	 * screen. Null once it has been used, and for a window that was not opened maximized, which the platform sizes correctly on its own.
 	 */
-	private boolean isWaitingForMaximizedSize;
-	/**
-	 * How long the contents of a window opened maximized stay hidden when the window never becomes maximized, after which they are shown
-	 * anyway so that a window manager that refuses to maximize cannot leave the window empty.
-	 */
-	private static final int hiddenContentTimeout = 2000;
-	/**
-	 * Work held until a window opened maximized has been drawn, so that it cannot keep the event thread busy while the window is still
-	 * waiting to be maximized. Used for opening a map given on the command line. Null when there is nothing to run.
-	 */
-	private Runnable runWhenMaximizedWindowOpened;
-	/**
-	 * The size a window opened maximized was opened at, which is the size it was last un-maximized at. Growing past it is how a window
-	 * manager that maximizes to a size other than the one the operating system reports as usable is noticed. Null unless the window is
-	 * waiting to be maximized.
-	 */
-	private IntDimension sizeWindowWasOpenedAt;
-	/**
-	 * How far below the usable area of a monitor a window is allowed to be while still counting as maximized. It absorbs a window manager
-	 * that maximizes to slightly less than the area it reports as usable. It does not have to account for a maximized window being larger
-	 * than that area, which is what Windows does, since anything that large already counts as maximized.
-	 */
-	private static final int maximizedSizeTolerance = 20;
-	/**
-	 * Reveals the contents of a window opened maximized that has grown but stopped short of the size of a maximized window, once it has
-	 * stopped resizing. It keeps a window manager whose maximized size cannot be recognized from leaving the window empty for as long as
-	 * {@link #hiddenContentTimeout}.
-	 */
-	private javax.swing.Timer grownWindowSettleTimer;
+	private IntRectangle boundsToUnMaximizeTo;
 	private javax.swing.Timer normalWindowBoundsTimer;
 	/**
 	 * How long the window must go without moving or resizing before the bounds it has count as a size the window is actually sitting at.
@@ -267,25 +239,13 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		boolean hasCommandLineMap = fileToOpen != null && !fileToOpen.isEmpty() && fileToOpen.endsWith(MapSettings.fileExtensionWithDot) && new File(fileToOpen).exists();
 		if (hasCommandLineMap)
 		{
-			Runnable openCommandLineMap = () ->
+			SwingUtilities.invokeLater(() ->
 			{
 				if (!openMap(new File(fileToOpen).getAbsolutePath()))
 				{
 					showStartupScreen();
 				}
-			};
-
-			if (isWaitingForMaximizedSize)
-			{
-				// Held until the window has been maximized and drawn. Opening the map keeps the event thread busy for long enough that the
-				// resize the window manager sends when it maximizes the window would otherwise wait behind it, leaving the window empty
-				// while the map loads rather than showing the editor and then filling it in.
-				runWhenMaximizedWindowOpened = openCommandLineMap;
-			}
-			else
-			{
-				SwingUtilities.invokeLater(openCommandLineMap);
-			}
+			});
 		}
 		else
 		{
@@ -545,13 +505,14 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 
+		addWindowStateListener(event -> restoreBoundsWhenUnMaximized(event));
+
 		addComponentListener(new ComponentAdapter()
 		{
 			@Override
 			public void componentResized(ComponentEvent e)
 			{
 				restartNormalWindowBoundsTimer();
-				finishOpeningMaximizedWindowWhenMaximized();
 			}
 
 			@Override
@@ -595,13 +556,14 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	}
 
 	/**
-	 * Sizes and positions the window to where it was when it was last closed. When there is no usable stored position, the operating system
-	 * chooses the position. When the monitor the window was last on is no longer connected, the window is centered on the default monitor.
-	 * Either way the window is kept entirely within the usable area of the monitor it lands on, so that it is never partly off screen even if
-	 * the monitors have gotten smaller or fewer since the position was stored.
+	 * Sizes and positions the window to where it was when it was last closed, and gives the side panels the widths they were last closed at.
+	 * When there is no usable stored position, the operating system chooses the position. When the monitor the window was last on is no longer
+	 * connected, the window is centered on the default monitor. Either way the window is kept entirely within the usable area of the monitor it
+	 * lands on, so that it is never partly off screen even if the monitors have gotten smaller or fewer since the position was stored.
 	 */
 	private void restoreWindowPlacement()
 	{
+		IntRectangle normalBounds = null;
 		IntRectangle savedBounds = UserPreferences.getInstance().windowBounds;
 		if (savedBounds == null || savedBounds.isEmpty())
 		{
@@ -614,84 +576,36 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		else
 		{
 			GraphicsConfiguration screen = findScreenForBounds(savedBounds);
-			IntRectangle boundsToUse = screen == null ? centerBoundsOnDefaultScreen(savedBounds.size()) : fitBoundsToScreen(savedBounds, screen);
-			setBounds(boundsToUse.x, boundsToUse.y, boundsToUse.width, boundsToUse.height);
-			lastNormalWindowBounds = boundsToUse;
+			normalBounds = screen == null ? centerBoundsOnDefaultScreen(savedBounds.size()) : fitBoundsToScreen(savedBounds, screen);
+			setBounds(normalBounds.x, normalBounds.y, normalBounds.width, normalBounds.height);
+			lastNormalWindowBounds = normalBounds;
 		}
 
 		if (UserPreferences.getInstance().isWindowMaximized)
 		{
-			// The window keeps the bounds set above as the size to go back to when it is un-maximized, which is what makes un-maximizing
-			// return it to the size it was last seen at rather than to the size of the screen.
-			setExtendedState(getExtendedState() | Frame.MAXIMIZED_BOTH);
-			hideContentUntilMaximized();
-		}
-	}
-
-	/**
-	 * Keeps the window's contents from being drawn until the window manager has made the window as large as a maximized window. The window is
-	 * shown before maximizing takes effect, so without this its contents are drawn at the size the window had before it was maximized and then
-	 * visibly jump. The whole root pane is hidden rather than the content pane, since the title bar and menu bar are laid out to the window's
-	 * width too.
-	 */
-	private void hideContentUntilMaximized()
-	{
-		isWaitingForMaximizedSize = true;
-		sizeWindowWasOpenedAt = new IntDimension(getWidth(), getHeight());
-		getRootPane().setVisible(false);
-
-		// Shown anyway after a while, so that a window manager that refuses to maximize cannot leave the window empty.
-		javax.swing.Timer timer = new javax.swing.Timer(hiddenContentTimeout, e -> finishOpeningMaximizedWindow());
-		timer.setRepeats(false);
-		timer.start();
-	}
-
-	private void finishOpeningMaximizedWindowWhenMaximized()
-	{
-		if (!isWaitingForMaximizedSize)
-		{
-			return;
-		}
-
-		if (hasReachedMaximizedSize())
-		{
-			finishOpeningMaximizedWindow();
-			return;
-		}
-
-		// A window that has grown but is not as large as a maximized window has been resized by a window manager that maximizes to a size
-		// other than the usable area of the monitor. Waiting for it to stop resizing reveals its contents at the size it settles on, rather
-		// than leaving the window empty until the timeout. The wait only starts once the window has grown, since the size the window was opened
-		// at is the size the contents are being kept from being drawn at.
-		if (hasGrownSinceOpening())
-		{
-			if (grownWindowSettleTimer == null)
+			if (normalBounds == null)
 			{
-				grownWindowSettleTimer = new javax.swing.Timer(windowResizeSettleDelay, e -> finishOpeningMaximizedWindow());
-				grownWindowSettleTimer.setRepeats(false);
+				// There were no stored bounds, so the size the window packed to, centered, is the closest thing to a size it was last seen at.
+				normalBounds = centerBoundsOnDefaultScreen(new IntDimension(getWidth(), getHeight()));
+				lastNormalWindowBounds = normalBounds;
 			}
-			grownWindowSettleTimer.restart();
-		}
-	}
 
-	/**
-	 * Whether the window has actually been made as large as a maximized window is. {@link #isMaximized()} only reports the state that was
-	 * asked for, which on Linux is true from the moment it is set and well before the window manager has resized anything.
-	 */
-	private boolean hasReachedMaximizedSize()
-	{
-		if (!isMaximized())
-		{
-			return false;
+			// The platform only ever sees this window at the size of a maximized window, so it has no size to un-maximize it to other than
+			// the size of the screen.
+			boundsToUnMaximizeTo = normalBounds;
+
+			// Sized to the maximized area before being shown, so that the window is never drawn at another size while waiting for the window
+			// manager to maximize it. The bounds are set before the state, since setting bounds afterwards takes the maximized state away.
+			IntRectangle maximizedArea = getUsableScreenArea(getScreenWindowIsOn());
+			setBounds(maximizedArea.x, maximizedArea.y, maximizedArea.width, maximizedArea.height);
+			setExtendedState(getExtendedState() | Frame.MAXIMIZED_BOTH);
 		}
 
-		IntRectangle usableArea = getUsableScreenArea(getScreenWindowIsOn());
-		return getWidth() >= usableArea.width - maximizedSizeTolerance && getHeight() >= usableArea.height - maximizedSizeTolerance;
-	}
-
-	private boolean hasGrownSinceOpening()
-	{
-		return sizeWindowWasOpenedAt != null && getWidth() > sizeWindowWasOpenedAt.width && getHeight() > sizeWindowWasOpenedAt.height;
+		// The window was laid out at the size it was packed at, which can be too narrow to hold both side panels at their stored widths. The
+		// layout done at that size squeezes them, and giving the window its real size afterwards does not undo it, since a split pane gives
+		// the width it gains to the side the map is on.
+		validate();
+		applyStoredSidePanelWidths();
 	}
 
 	/**
@@ -711,51 +625,27 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	}
 
 	/**
-	 * Gives the side panels the widths stored in preferences and then reveals the contents of a window opened maximized. Both happen here so
-	 * that the first thing drawn is the finished layout: the window is opened at the size it was last un-maximized at, which can be too
-	 * narrow to hold both side panels at their stored widths, and the layout done at that size squeezes them and growing the window
-	 * afterwards does not undo it. Runs once, and only for a window that was opened maximized, so it cannot override widths the user drags to
-	 * later.
+	 * Gives a window that was opened maximized the bounds it was last un-maximized at, the first time it is un-maximized. Does nothing
+	 * afterwards, leaving the platform to remember the bounds itself once it has seen the window at them.
 	 */
-	private void finishOpeningMaximizedWindow()
+	private void restoreBoundsWhenUnMaximized(WindowEvent event)
 	{
-		if (!isWaitingForMaximizedSize)
+		boolean wasMaximized = (event.getOldState() & Frame.MAXIMIZED_BOTH) != 0;
+		boolean isNowMaximized = (event.getNewState() & Frame.MAXIMIZED_BOTH) != 0;
+		if (boundsToUnMaximizeTo == null || !wasMaximized || isNowMaximized)
 		{
 			return;
 		}
 
-		isWaitingForMaximizedSize = false;
-		sizeWindowWasOpenedAt = null;
-		if (grownWindowSettleTimer != null)
-		{
-			grownWindowSettleTimer.stop();
-		}
-		getRootPane().setVisible(true);
-
-		// Lay the window out before letting go of the event thread, since a layout scheduled for later would leave a moment in which the
-		// window could be drawn at the size it had while hidden. The window is marked invalid first because it counts as laid out while its
-		// contents are hidden, and an already valid window lays out nothing.
-		invalidate();
-		validate();
-
-		// The side panels are given their widths after that layout rather than before it, because while the contents were hidden the split
-		// panes were never laid out at the size the window has now, and their widths are what the divider positions are measured from.
-		applyStoredSidePanelWidths();
-		invalidate();
-		validate();
-
-		// Drawn now rather than when the event thread next has nothing to do, because opening a map keeps the event thread busy for long
-		// enough that the window would otherwise sit empty until the map had finished loading.
-		getRootPane().paintImmediately(0, 0, getRootPane().getWidth(), getRootPane().getHeight());
-
-		if (runWhenMaximizedWindowOpened != null)
-		{
-			Runnable toRun = runWhenMaximizedWindowOpened;
-			runWhenMaximizedWindowOpened = null;
-			SwingUtilities.invokeLater(toRun);
-		}
+		IntRectangle bounds = boundsToUnMaximizeTo;
+		boundsToUnMaximizeTo = null;
+		setBounds(bounds.x, bounds.y, bounds.width, bounds.height);
 	}
 
+	/**
+	 * Gives the side panels the widths stored in preferences by moving the dividers, which keep whatever they were last laid out or dragged
+	 * to and so do not follow the panels' preferred widths on their own.
+	 */
 	private void applyStoredSidePanelWidths()
 	{
 		// The tools panel divider is moved first because it decides the width the theme panel's split pane then divides. That layout is done
@@ -785,6 +675,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	 */
 	private void resetWindowLayout()
 	{
+		// Dropped before un-maximizing, since this sets the bounds the window is being reset to and the un-maximize would otherwise put the
+		// window back to the bounds it was opened at afterwards.
+		boundsToUnMaximizeTo = null;
 		setExtendedState(getExtendedState() & ~Frame.MAXIMIZED_BOTH);
 
 		getContentPane().setPreferredSize(new Dimension(defaultContentPaneSize.width, defaultContentPaneSize.height));
