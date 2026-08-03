@@ -12,10 +12,12 @@ public class Stopwatch
 	String name;
 	long accumulatedTicks;
 	boolean isRunning;
+	long lastCheckTime;
 
 	public Stopwatch()
 	{
 		startTime = System.currentTimeMillis();
+		lastCheckTime = startTime;
 	}
 
 	public Stopwatch(String name)
@@ -40,6 +42,10 @@ public class Stopwatch
 		}
 		isRunning = true;
 		startTime = System.currentTimeMillis();
+		if (lastCheckTime == 0)
+		{
+			lastCheckTime = startTime;
+		}
 	}
 
 	@SuppressWarnings("unused")
@@ -55,10 +61,12 @@ public class Stopwatch
 	public double getElapsedSeconds()
 	{
 		long elapsed = 0;
+		long currentTime = System.currentTimeMillis();
 		if (isRunning)
 		{
-			elapsed += (System.currentTimeMillis() - startTime);
+			elapsed += (currentTime - startTime);
 		}
+		lastCheckTime = currentTime;
 		return (accumulatedTicks + elapsed) / 1000.0;
 	}
 
@@ -75,4 +83,13 @@ public class Stopwatch
 	{
 		System.out.println(toString());
 	}
+
+	public void printTimeSinceLastCheck()
+	{
+		long currentTime = System.currentTimeMillis();
+		long diff = (currentTime - lastCheckTime);
+		lastCheckTime = currentTime;
+		System.out.println("Time since last check: " + diff / 1000.0);
+	}
+
 }

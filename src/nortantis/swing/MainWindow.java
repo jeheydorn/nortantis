@@ -11,7 +11,6 @@ import nortantis.editor.*;
 import nortantis.geom.IntDimension;
 import nortantis.geom.IntRectangle;
 import nortantis.graph.voronoi.Center;
-import nortantis.graph.voronoi.Edge;
 import nortantis.platform.BackgroundTask;
 import nortantis.platform.Image;
 import nortantis.platform.ImageHelper;
@@ -24,7 +23,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.apache.commons.lang3.time.StopWatch;
 import org.imgscalr.Scalr.Method;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -2525,15 +2523,15 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		long generation = displayScaleGeneration.incrementAndGet();
 		if (synchronous)
 		{
-			runBackgroundRescale(generation, sourceMap, committedResolution, targetZoom, updateScrollLocationIfZoomChanged, borderPadding, true);
+			runScaleMapFull(generation, sourceMap, committedResolution, targetZoom, updateScrollLocationIfZoomChanged, borderPadding, true);
 		}
 		else
 		{
-			displayScaleExecutor.submit(() -> runBackgroundRescale(generation, sourceMap, committedResolution, targetZoom, updateScrollLocationIfZoomChanged, borderPadding, false));
+			displayScaleExecutor.submit(() -> runScaleMapFull(generation, sourceMap, committedResolution, targetZoom, updateScrollLocationIfZoomChanged, borderPadding, false));
 		}
 	}
 
-	private void runBackgroundRescale(long generation, Image sourceMap, double committedResolution, double targetZoom, boolean updateScrollLocationIfZoomChanged, int borderPadding,
+	private void runScaleMapFull(long generation, Image sourceMap, double committedResolution, double targetZoom, boolean updateScrollLocationIfZoomChanged, int borderPadding,
 			boolean synchronous)
 	{
 		if (sourceMap == null || generation != displayScaleGeneration.get())
@@ -2577,6 +2575,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		{
 			SwingUtilities.invokeLater(() -> commitBackgroundRescale(generation, scaledImage, committedResolution, targetZoom, updateScrollLocationIfZoomChanged, borderPadding));
 		}
+		// Zoom changes create a huge amount of trash on the heap (many GBs can accumulate after just a couple of times zoom in and out), so run garbage collection. This is done in a background thread to avoid blocking the EDT.
+		ThreadHelper.getInstance().submit(() -> System.gc());
 	}
 
 	/**
