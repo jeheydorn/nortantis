@@ -42,6 +42,7 @@ public class Stopwatch
 		}
 		isRunning = true;
 		startTime = System.currentTimeMillis();
+		// Left at the time the stopwatch first started, so that time before then is not counted as time since a check.
 		if (lastCheckTime == 0)
 		{
 			lastCheckTime = startTime;
@@ -61,12 +62,10 @@ public class Stopwatch
 	public double getElapsedSeconds()
 	{
 		long elapsed = 0;
-		long currentTime = System.currentTimeMillis();
 		if (isRunning)
 		{
-			elapsed += (currentTime - startTime);
+			elapsed += (System.currentTimeMillis() - startTime);
 		}
-		lastCheckTime = currentTime;
 		return (accumulatedTicks + elapsed) / 1000.0;
 	}
 
@@ -84,12 +83,22 @@ public class Stopwatch
 		System.out.println(toString());
 	}
 
+	/**
+	 * Prints how long it has been since the last call to this method, or since this Stopwatch was created if this is the first call.
+	 */
+	@SuppressWarnings("unused")
 	public void printTimeSinceLastCheck()
 	{
 		long currentTime = System.currentTimeMillis();
-		long diff = (currentTime - lastCheckTime);
+		double secondsSinceLastCheck = (currentTime - lastCheckTime) / 1000.0;
 		lastCheckTime = currentTime;
-		System.out.println("Time since last check: " + diff / 1000.0);
+		if (name != null && !name.isEmpty())
+		{
+			System.out.println("Time since last check to " + name + " (in seconds): " + secondsSinceLastCheck);
+		}
+		else
+		{
+			System.out.println("Time since last check (in seconds): " + secondsSinceLastCheck);
+		}
 	}
-
 }

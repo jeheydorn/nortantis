@@ -664,7 +664,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		// mouse-hover highlights (positioned from the graph, following the cursor) would briefly appear misaligned with it. Hide only those
 		// until the new image is shown; MainWindow lowers this once the new full draw lands and the tool recomputes them from the mouse
 		// position. The persistent overlays below stay drawn. A top-level zoom change does not need this either: MainWindow keeps the
-		// committed zoom until the rescaled image is ready (see commitBackgroundRescale), so overlays and the image stay consistent.
+		// committed zoom until the rescaled image is ready (see commitScaledMap), so overlays and the image stay consistent.
 		boolean showHoverHighlights = hoverHighlightsSuppressedSupplier == null || !hoverHighlightsSuppressedSupplier.getAsBoolean();
 
 		if (brushLocation != null && showHoverHighlights)

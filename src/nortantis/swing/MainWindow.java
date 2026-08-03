@@ -139,7 +139,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private JMenuItem clearEntireMapButton;
 	public Undoer undoer;
 	// The zoom level currently reflected by mapEditingPanel's displayed image. Only updated when a rescaled image is actually
-	// committed to the panel (see commitBackgroundRescale), so it always matches what's on screen, even while a background rescale
+	// committed to the panel (see commitScaledMap), so it always matches what's on screen, even while a background rescale
 	// for a newer zoom is still in flight.
 	double zoom;
 	double displayQualityScale;
@@ -161,6 +161,13 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		return thread;
 	});
 	private final java.util.concurrent.atomic.AtomicLong displayScaleGeneration = new java.util.concurrent.atomic.AtomicLong();
+	/**
+	 * How long zooming must go without committing a new image before the garbage it left behind is collected. Short enough that a long
+	 * burst of zooming still gets collected partway through, which is what keeps peak heap usage down, rather than only once the burst
+	 * ends.
+	 */
+	private static final int zoomSettleDelayBeforeGarbageCollection = 200;
+	private javax.swing.Timer garbageCollectAfterZoomTimer;
 	// True when the display update for the draw that just finished was handed off to a background rescale (rather than patched
 	// synchronously), so its post-draw actions must wait until the rescale commits instead of running immediately.
 	private boolean lastDisplayUpdateWasAsync;
@@ -2443,10 +2450,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			// A zoom change always needs a full rescale (there's no existing region to patch), and the target zoom can differ from
 			// what's currently displayed, so do it in the background and only commit it once it's ready. This path rescales the raw map
 			// currently on screen, which is not necessarily at the target display quality: a zoom change can arrive while a display-quality
-			// change is still drawing. commitBackgroundRescale commits the source map's own resolution (captured at submit), so overlays
+			// change is still drawing. commitScaledMap commits the source map's own resolution (captured at submit), so overlays
 			// stay matched to the image actually shown rather than jumping to the in-flight target quality.
 			lastDisplayUpdateWasAsync = true;
-			fullRescale(targetZoom, updateScrollLocationIfZoomChanged, borderPadding, false);
+			fullRescale(targetZoom, updateScrollLocationIfZoomChanged, borderPadding, false, true);
 			return;
 		}
 
@@ -2474,14 +2481,14 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			// generating on a background thread, so the added synchronous rescale is minor. The async path is kept for zoom changes (below)
 			// and incremental updates, where responsiveness matters and the graph/image are already consistent.
 			lastDisplayUpdateWasAsync = false;
-			fullRescale(targetZoom, false, borderPadding, true);
+			fullRescale(targetZoom, false, borderPadding, true, false);
 		}
 		else
 		{
 			// A QUALITY downscale of an incremental update, or the displayed zoom doesn't match the target yet (e.g. the first draw at
 			// fit-to-window). Do the (possibly slow) rescale on a background thread so it never blocks the EDT.
 			lastDisplayUpdateWasAsync = true;
-			fullRescale(targetZoom, false, borderPadding, false);
+			fullRescale(targetZoom, false, borderPadding, false, false);
 		}
 	}
 
@@ -2493,10 +2500,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	 * the caller's (EDT) thread, so the image is committed in the same event as any panel state the caller set just before - used for full
 	 * draws so graph-derived overlays never draw against the new graph over the old image.
 	 */
-	private void fullRescale(double targetZoom, boolean updateScrollLocationIfZoomChanged, int borderPadding, boolean synchronous)
+	private void fullRescale(double targetZoom, boolean updateScrollLocationIfZoomChanged, int borderPadding, boolean synchronous, boolean isZoomChange)
 	{
 		Image sourceMap = mapEditingPanel.mapFromMapCreator;
-		// Capture the resolution the source raw map was rendered at, together with the map itself. commitBackgroundRescale must set the
+		// Capture the resolution the source raw map was rendered at, together with the map itself. commitScaledMap must set the
 		// panel to THIS resolution, not the live displayQualityScale: a zoom-only rescale that runs while a display-quality change is still
 		// drawing rescales the previous (still-shown) raw map, yet displayQualityScale has already jumped to the new target. Committing the
 		// target there would tell the panel the displayed image is the new resolution while it is still the old one, misplacing every
@@ -2505,16 +2512,16 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		long generation = displayScaleGeneration.incrementAndGet();
 		if (synchronous)
 		{
-			runScaleMapFull(generation, sourceMap, committedResolution, targetZoom, updateScrollLocationIfZoomChanged, borderPadding, true);
+			runScaleMapFull(generation, sourceMap, committedResolution, targetZoom, updateScrollLocationIfZoomChanged, borderPadding, true, isZoomChange);
 		}
 		else
 		{
-			displayScaleExecutor.submit(() -> runScaleMapFull(generation, sourceMap, committedResolution, targetZoom, updateScrollLocationIfZoomChanged, borderPadding, false));
+			displayScaleExecutor.submit(() -> runScaleMapFull(generation, sourceMap, committedResolution, targetZoom, updateScrollLocationIfZoomChanged, borderPadding, false, isZoomChange));
 		}
 	}
 
 	private void runScaleMapFull(long generation, Image sourceMap, double committedResolution, double targetZoom, boolean updateScrollLocationIfZoomChanged, int borderPadding,
-			boolean synchronous)
+			boolean synchronous, boolean isZoomChange)
 	{
 		if (sourceMap == null || generation != displayScaleGeneration.get())
 		{
@@ -2551,14 +2558,12 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		{
 			// Already on the EDT (called inline for a full draw). Commit in this same event so the image lands together with the panel
 			// state the caller set just before.
-			commitBackgroundRescale(generation, scaledImage, committedResolution, targetZoom, updateScrollLocationIfZoomChanged, borderPadding);
+			commitScaledMap(generation, scaledImage, committedResolution, targetZoom, updateScrollLocationIfZoomChanged, borderPadding, isZoomChange);
 		}
 		else
 		{
-			SwingUtilities.invokeLater(() -> commitBackgroundRescale(generation, scaledImage, committedResolution, targetZoom, updateScrollLocationIfZoomChanged, borderPadding));
+			SwingUtilities.invokeLater(() -> commitScaledMap(generation, scaledImage, committedResolution, targetZoom, updateScrollLocationIfZoomChanged, borderPadding, isZoomChange));
 		}
-		// Zoom changes create a huge amount of trash on the heap (many GBs can accumulate after just a couple of times zoom in and out), so run garbage collection. This is done in a background thread to avoid blocking the EDT.
-		ThreadHelper.getInstance().submit(() -> System.gc());
 	}
 
 	/**
@@ -2588,13 +2593,14 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	}
 
 	/**
-	 * Runs on the EDT once a background rescale finishes. Commits the zoom and the rescaled image to mapEditingPanel together, in one
+	 * Runs on the EDT once a rescale finishes. Commits the zoom and the rescaled image to mapEditingPanel together, in one
 	 * frame, rather than applying the new zoom as soon as it's requested - otherwise overlays (which read the panel's zoom) would sit
 	 * at the new zoom over a base image still at the old one for as long as the rescale takes, and visibly float off the map. While the
 	 * rescale runs, the panel stays at the previously committed zoom, so overlays and the displayed image stay consistent; then
 	 * everything snaps to the new zoom at once.
 	 */
-	private void commitBackgroundRescale(long generation, BufferedImage scaledImage, double committedResolution, double targetZoom, boolean updateScrollLocationIfZoomChanged, int borderPadding)
+	private void commitScaledMap(long generation, BufferedImage scaledImage, double committedResolution, double targetZoom, boolean updateScrollLocationIfZoomChanged, int borderPadding,
+			boolean isZoomChange)
 	{
 		if (generation != displayScaleGeneration.get() || mapEditingPanel.mapFromMapCreator == null)
 		{
@@ -2639,6 +2645,12 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		mapEditingPanel.setZoom(zoom);
 		mapEditingPanel.setImage(scaledImage);
 
+		if (isZoomChange)
+		{
+			// The image just replaced is now unreachable, so this is the point where collecting is worthwhile.
+			restartGarbageCollectAfterZoomTimer();
+		}
+
 		if (scrollTo != null)
 		{
 			// For some reason I have to do a bunch of revalidation or
@@ -2652,6 +2664,24 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		}
 
 		finishDisplayUpdate();
+	}
+
+	/**
+	 * Schedules a garbage collection for once zooming has settled. Each committed zoom step drops the image it replaced along with the
+	 * full-size intermediates the rescale allocated, which is enough unreachable data that a few zoom steps can leave gigabytes on the
+	 * heap. Restarting the timer on each committed step keeps collections out of the steps themselves, and collapses the closely spaced
+	 * ones into a single collection.
+	 */
+	private void restartGarbageCollectAfterZoomTimer()
+	{
+		if (garbageCollectAfterZoomTimer == null)
+		{
+			// Collecting on a background thread keeps the timer's own callback from holding up the EDT.
+			garbageCollectAfterZoomTimer = new javax.swing.Timer(zoomSettleDelayBeforeGarbageCollection,
+					e -> ThreadHelper.getInstance().submit(System::gc));
+			garbageCollectAfterZoomTimer.setRepeats(false);
+		}
+		garbageCollectAfterZoomTimer.restart();
 	}
 
 	private void finishDisplayUpdate()
