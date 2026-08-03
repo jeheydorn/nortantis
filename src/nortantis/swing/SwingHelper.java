@@ -64,6 +64,15 @@ public class SwingHelper
 		return total;
 	}
 
+	/**
+	 * The width to give a side panel that was last seen at the given width, which is that width unless it is narrower than the narrowest
+	 * width a side panel's contents fit in.
+	 */
+	public static int clampSidePanelWidthToMinimum(int storedWidth)
+	{
+		return Math.max(storedWidth, sidePanelMinimumWidth);
+	}
+
 	public static int getMenuShortcutKeyMask()
 	{
 		return Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx();

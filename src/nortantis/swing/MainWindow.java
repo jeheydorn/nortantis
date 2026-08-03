@@ -101,15 +101,28 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	 */
 	private Runnable runWhenMaximizedWindowOpened;
 	/**
-	 * How far below the maximized area the window is allowed to be while still counting as maximized. Windows makes a maximized window
-	 * slightly larger than the work area, so this only has to absorb rounding rather than a real difference in size.
+	 * The size a window opened maximized was opened at, which is the size it was last un-maximized at. Growing past it is how a window
+	 * manager that maximizes to a size other than the one the operating system reports as usable is noticed. Null unless the window is
+	 * waiting to be maximized.
+	 */
+	private IntDimension sizeWindowWasOpenedAt;
+	/**
+	 * How far below the usable area of a monitor a window is allowed to be while still counting as maximized. It absorbs a window manager
+	 * that maximizes to slightly less than the area it reports as usable. It does not have to account for a maximized window being larger
+	 * than that area, which is what Windows does, since anything that large already counts as maximized.
 	 */
 	private static final int maximizedSizeTolerance = 20;
+	/**
+	 * Reveals the contents of a window opened maximized that has grown but stopped short of the size of a maximized window, once it has
+	 * stopped resizing. It keeps a window manager whose maximized size cannot be recognized from leaving the window empty for as long as
+	 * {@link #hiddenContentTimeout}.
+	 */
+	private javax.swing.Timer grownWindowSettleTimer;
 	private javax.swing.Timer normalWindowBoundsTimer;
 	/**
 	 * How long the window must go without moving or resizing before the bounds it has count as a size the window is actually sitting at.
 	 */
-	private static final int normalWindowBoundsSettleDelay = 250;
+	private static final int windowResizeSettleDelay = 250;
 	/**
 	 * A floor on how small fitting the window to a monitor is allowed to make it. It exists only to keep a monitor that reports unusable
 	 * dimensions from opening the window too small to use. It does not constrain sizes the user chose by resizing the window.
@@ -556,7 +569,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		createMapEditingPanel();
 		createMapUpdater();
 		toolsPanel = new ToolsPanel(this, updater);
-		int toolsPanelWidth = UserPreferences.getInstance().toolsPanelWidth > SwingHelper.sidePanelMinimumWidth ? UserPreferences.getInstance().toolsPanelWidth : SwingHelper.sidePanelMinimumWidth;
+		int toolsPanelWidth = SwingHelper.clampSidePanelWidthToMinimum(UserPreferences.getInstance().toolsPanelWidth);
 		toolsPanel.setPreferredSize(new Dimension(toolsPanelWidth, toolsPanel.getPreferredSize().height));
 		toolsPanel.setMinimumSize(new Dimension(SwingHelper.sidePanelMinimumWidth, toolsPanel.getMinimumSize().height));
 
@@ -616,13 +629,15 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	}
 
 	/**
-	 * Keeps the window's contents from being drawn until the window manager has maximized the window. The window is shown before maximizing
-	 * takes effect, so without this its contents are drawn at the size the window had before it was maximized and then visibly jump. The
-	 * whole root pane is hidden rather than the content pane, since the title bar and menu bar are laid out to the window's width too.
+	 * Keeps the window's contents from being drawn until the window manager has made the window as large as a maximized window. The window is
+	 * shown before maximizing takes effect, so without this its contents are drawn at the size the window had before it was maximized and then
+	 * visibly jump. The whole root pane is hidden rather than the content pane, since the title bar and menu bar are laid out to the window's
+	 * width too.
 	 */
 	private void hideContentUntilMaximized()
 	{
 		isWaitingForMaximizedSize = true;
+		sizeWindowWasOpenedAt = new IntDimension(getWidth(), getHeight());
 		getRootPane().setVisible(false);
 
 		// Shown anyway after a while, so that a window manager that refuses to maximize cannot leave the window empty.
@@ -633,9 +648,29 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	private void finishOpeningMaximizedWindowWhenMaximized()
 	{
-		if (isWaitingForMaximizedSize && hasReachedMaximizedSize())
+		if (!isWaitingForMaximizedSize)
+		{
+			return;
+		}
+
+		if (hasReachedMaximizedSize())
 		{
 			finishOpeningMaximizedWindow();
+			return;
+		}
+
+		// A window that has grown but is not as large as a maximized window has been resized by a window manager that maximizes to a size
+		// other than the usable area of the monitor. Waiting for it to stop resizing reveals its contents at the size it settles on, rather
+		// than leaving the window empty until the timeout. The wait only starts once the window has grown, since the size the window was opened
+		// at is the size the contents are being kept from being drawn at.
+		if (hasGrownSinceOpening())
+		{
+			if (grownWindowSettleTimer == null)
+			{
+				grownWindowSettleTimer = new javax.swing.Timer(windowResizeSettleDelay, e -> finishOpeningMaximizedWindow());
+				grownWindowSettleTimer.setRepeats(false);
+			}
+			grownWindowSettleTimer.restart();
 		}
 	}
 
@@ -650,9 +685,29 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			return false;
 		}
 
-		GraphicsConfiguration screen = getGraphicsConfiguration() == null ? getDefaultScreen() : getGraphicsConfiguration();
-		IntRectangle maximizedArea = getUsableScreenArea(screen);
-		return getWidth() >= maximizedArea.width - maximizedSizeTolerance && getHeight() >= maximizedArea.height - maximizedSizeTolerance;
+		IntRectangle usableArea = getUsableScreenArea(getScreenWindowIsOn());
+		return getWidth() >= usableArea.width - maximizedSizeTolerance && getHeight() >= usableArea.height - maximizedSizeTolerance;
+	}
+
+	private boolean hasGrownSinceOpening()
+	{
+		return sizeWindowWasOpenedAt != null && getWidth() > sizeWindowWasOpenedAt.width && getHeight() > sizeWindowWasOpenedAt.height;
+	}
+
+	/**
+	 * The monitor this window is on, which is the one its bounds overlap the most. Falls back to the monitor the window reports being on, and
+	 * then to the default monitor, when the window does not overlap any monitor enough to tell.
+	 */
+	private GraphicsConfiguration getScreenWindowIsOn()
+	{
+		GraphicsConfiguration screen = findScreenForBounds(new IntRectangle(getX(), getY(), getWidth(), getHeight()));
+		if (screen != null)
+		{
+			return screen;
+		}
+
+		screen = getGraphicsConfiguration();
+		return screen == null ? getDefaultScreen() : screen;
 	}
 
 	/**
@@ -670,6 +725,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		}
 
 		isWaitingForMaximizedSize = false;
+		sizeWindowWasOpenedAt = null;
+		if (grownWindowSettleTimer != null)
+		{
+			grownWindowSettleTimer.stop();
+		}
 		getRootPane().setVisible(true);
 
 		// Lay the window out before letting go of the event thread, since a layout scheduled for later would leave a moment in which the
@@ -698,16 +758,24 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	private void applyStoredSidePanelWidths()
 	{
-		int themePanelWidth = Math.max(UserPreferences.getInstance().themePanelWidth, SwingHelper.sidePanelMinimumWidth);
-		int toolsPanelWidth = Math.max(UserPreferences.getInstance().toolsPanelWidth, SwingHelper.sidePanelMinimumWidth);
-
 		// The tools panel divider is moved first because it decides the width the theme panel's split pane then divides. That layout is done
 		// before the theme panel's divider is moved, since otherwise the theme panel's divider would be limited by the width its split pane
 		// had while the window was still smaller. The split pane is marked invalid first because an already valid one lays out nothing.
-		toolsPanelSplitPane.setDividerLocation(toolsPanelSplitPane.getWidth() - toolsPanelWidth - toolsPanelSplitPane.getDividerSize());
+		setToolsPanelWidth(SwingHelper.clampSidePanelWidthToMinimum(UserPreferences.getInstance().toolsPanelWidth));
 		toolsPanelSplitPane.invalidate();
 		toolsPanelSplitPane.validate();
-		themePanelSplitPane.setDividerLocation(themePanelWidth);
+		setThemePanelWidth(SwingHelper.clampSidePanelWidthToMinimum(UserPreferences.getInstance().themePanelWidth));
+	}
+
+	private void setThemePanelWidth(int width)
+	{
+		themePanelSplitPane.setDividerLocation(width);
+	}
+
+	private void setToolsPanelWidth(int width)
+	{
+		// The tools panel is the right side of its split pane, so where its divider goes is measured from the split pane's current width.
+		toolsPanelSplitPane.setDividerLocation(toolsPanelSplitPane.getWidth() - width - toolsPanelSplitPane.getDividerSize());
 	}
 
 	/**
@@ -743,8 +811,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		toolsPanel.setPreferredSize(new Dimension(SwingHelper.sidePanelMinimumWidth, toolsPanel.getPreferredSize().height));
 
 		// The dividers keep whatever the user last dragged them to, so they must be moved explicitly rather than only through preferred sizes.
-		themePanelSplitPane.setDividerLocation(SwingHelper.sidePanelMinimumWidth);
-		toolsPanelSplitPane.setDividerLocation(toolsPanelSplitPane.getWidth() - SwingHelper.sidePanelMinimumWidth - toolsPanelSplitPane.getDividerSize());
+		setThemePanelWidth(SwingHelper.sidePanelMinimumWidth);
+		setToolsPanelWidth(SwingHelper.sidePanelMinimumWidth);
 	}
 
 	/**
@@ -855,7 +923,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	{
 		if (normalWindowBoundsTimer == null)
 		{
-			normalWindowBoundsTimer = new javax.swing.Timer(normalWindowBoundsSettleDelay, e -> updateLastNormalWindowBounds());
+			normalWindowBoundsTimer = new javax.swing.Timer(windowResizeSettleDelay, e -> updateLastNormalWindowBounds());
 			normalWindowBoundsTimer.setRepeats(false);
 		}
 		normalWindowBoundsTimer.restart();

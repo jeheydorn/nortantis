@@ -173,7 +173,7 @@ public class ThemePanel extends JTabbedPane
 	{
 		this.mainWindow = mainWindow;
 
-		int width = UserPreferences.getInstance().themePanelWidth > SwingHelper.sidePanelMinimumWidth ? UserPreferences.getInstance().themePanelWidth : SwingHelper.sidePanelMinimumWidth;
+		int width = SwingHelper.clampSidePanelWidthToMinimum(UserPreferences.getInstance().themePanelWidth);
 		setPreferredSize(new Dimension(width, mainWindow.getContentPane().getHeight()));
 		setMinimumSize(new Dimension(SwingHelper.sidePanelMinimumWidth, getMinimumSize().height));
 
