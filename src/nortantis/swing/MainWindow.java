@@ -90,6 +90,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	 * screen. Null once it has been used, and for a window that was not opened maximized, which the platform sizes correctly on its own.
 	 */
 	private IntRectangle boundsToUnMaximizeTo;
+	/**
+	 * Whether the window has been shown, so that the layout and side panel widths that a window needs when it is first shown are not redone
+	 * if it is ever hidden and shown again, which would undo widths the user has dragged to.
+	 */
+	private boolean hasBeenShown;
 	private javax.swing.Timer normalWindowBoundsTimer;
 	/**
 	 * How long the window must go without moving or resizing before the bounds it has count as a size the window is actually sitting at.
@@ -556,10 +561,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	}
 
 	/**
-	 * Sizes and positions the window to where it was when it was last closed, and gives the side panels the widths they were last closed at.
-	 * When there is no usable stored position, the operating system chooses the position. When the monitor the window was last on is no longer
-	 * connected, the window is centered on the default monitor. Either way the window is kept entirely within the usable area of the monitor it
-	 * lands on, so that it is never partly off screen even if the monitors have gotten smaller or fewer since the position was stored.
+	 * Sizes and positions the window to where it was when it was last closed. When there is no usable stored position, the operating system
+	 * chooses the position. When the monitor the window was last on is no longer connected, the window is centered on the default monitor.
+	 * Either way the window is kept entirely within the usable area of the monitor it lands on, so that it is never partly off screen even if
+	 * the monitors have gotten smaller or fewer since the position was stored.
 	 */
 	private void restoreWindowPlacement()
 	{
@@ -600,11 +605,27 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			setBounds(maximizedArea.x, maximizedArea.y, maximizedArea.width, maximizedArea.height);
 			setExtendedState(getExtendedState() | Frame.MAXIMIZED_BOTH);
 		}
+	}
 
-		// The window was laid out at the size it was packed at, which can be too narrow to hold both side panels at their stored widths. The
-		// layout done at that size squeezes them, and giving the window its real size afterwards does not undo it, since a split pane gives
-		// the width it gains to the side the map is on.
+	@Override
+	public void setVisible(boolean visible)
+	{
+		super.setVisible(visible);
+
+		if (!visible || hasBeenShown)
+		{
+			return;
+		}
+		hasBeenShown = true;
+
+		// A window that has not been shown reports the insets of a window with no border yet, so everything laid out before now, including by
+		// pack, sits a few pixels too high. Laying out again with the insets the window really has corrects that before anything is drawn,
+		// rather than leaving the first layout the window does on its own to visibly shift its contents down.
+		invalidate();
 		validate();
+
+		// The side panels are given their widths after that layout, since the width a split pane has is what its divider position is measured
+		// from, and before now the window had only been laid out at the size it was packed at.
 		applyStoredSidePanelWidths();
 	}
 
