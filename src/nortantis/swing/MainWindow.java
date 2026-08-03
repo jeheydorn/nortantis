@@ -87,15 +87,26 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	 */
 	private IntRectangle lastNormalWindowBounds;
 	/**
-	 * True while the contents of a window that was opened maximized are being kept from being drawn until the window manager has maximized
-	 * it.
+	 * True while a window that was opened maximized is waiting for the window manager to make it as large as a maximized window. Its
+	 * contents are hidden until then, so that they are neither drawn at the smaller size the window was opened at nor drawn with the side
+	 * panels squeezed by that size.
 	 */
-	private boolean isHidingContentUntilMaximized;
+	private boolean isWaitingForMaximizedSize;
 	/**
 	 * How long the contents of a window opened maximized stay hidden when the window never becomes maximized, after which they are shown
 	 * anyway so that a window manager that refuses to maximize cannot leave the window empty.
 	 */
 	private static final int hiddenContentTimeout = 2000;
+	/**
+	 * Work held until a window opened maximized has been drawn, so that it cannot keep the event thread busy while the window is still
+	 * waiting to be maximized. Used for opening a map given on the command line. Null when there is nothing to run.
+	 */
+	private Runnable runWhenMaximizedWindowOpened;
+	/**
+	 * How far below the maximized area the window is allowed to be while still counting as maximized. Windows makes a maximized window
+	 * slightly larger than the work area, so this only has to absorb rounding rather than a real difference in size.
+	 */
+	private static final int maximizedSizeTolerance = 20;
 	private javax.swing.Timer normalWindowBoundsTimer;
 	/**
 	 * How long the window must go without moving or resizing before the bounds it has count as a size the window is actually sitting at.
@@ -245,13 +256,25 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		boolean hasCommandLineMap = fileToOpen != null && !fileToOpen.isEmpty() && fileToOpen.endsWith(MapSettings.fileExtensionWithDot) && new File(fileToOpen).exists();
 		if (hasCommandLineMap)
 		{
-			SwingUtilities.invokeLater(() ->
+			Runnable openCommandLineMap = () ->
 			{
 				if (!openMap(new File(fileToOpen).getAbsolutePath()))
 				{
 					showStartupScreen();
 				}
-			});
+			};
+
+			if (isWaitingForMaximizedSize)
+			{
+				// Held until the window has been maximized and drawn. Opening the map keeps the event thread busy for long enough that the
+				// resize the window manager sends when it maximizes the window would otherwise wait behind it, leaving the window empty
+				// while the map loads rather than showing the editor and then filling it in.
+				runWhenMaximizedWindowOpened = openCommandLineMap;
+			}
+			else
+			{
+				SwingUtilities.invokeLater(openCommandLineMap);
+			}
 		}
 		else
 		{
@@ -517,7 +540,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			public void componentResized(ComponentEvent e)
 			{
 				restartNormalWindowBoundsTimer();
-				showHiddenContentIfMaximized();
+				finishOpeningMaximizedWindowWhenMaximized();
 			}
 
 			@Override
@@ -601,30 +624,54 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	 */
 	private void hideContentUntilMaximized()
 	{
-		isHidingContentUntilMaximized = true;
+		isWaitingForMaximizedSize = true;
 		getRootPane().setVisible(false);
 
-		javax.swing.Timer timer = new javax.swing.Timer(hiddenContentTimeout, e -> showHiddenContent());
+		// Shown anyway after a while, so that a window manager that refuses to maximize cannot leave the window empty.
+		javax.swing.Timer timer = new javax.swing.Timer(hiddenContentTimeout, e -> finishOpeningMaximizedWindow());
 		timer.setRepeats(false);
 		timer.start();
 	}
 
-	private void showHiddenContentIfMaximized()
+	private void finishOpeningMaximizedWindowWhenMaximized()
 	{
-		if (isMaximized())
+		if (isWaitingForMaximizedSize && hasReachedMaximizedSize())
 		{
-			showHiddenContent();
+			finishOpeningMaximizedWindow();
 		}
 	}
 
-	private void showHiddenContent()
+	/**
+	 * Whether the window has actually been made as large as a maximized window is. {@link #isMaximized()} only reports the state that was
+	 * asked for, which on Linux is true from the moment it is set and well before the window manager has resized anything.
+	 */
+	private boolean hasReachedMaximizedSize()
 	{
-		if (!isHidingContentUntilMaximized)
+		if (!isMaximized())
+		{
+			return false;
+		}
+
+		GraphicsConfiguration screen = getGraphicsConfiguration() == null ? getDefaultScreen() : getGraphicsConfiguration();
+		IntRectangle maximizedArea = getUsableScreenArea(screen);
+		return getWidth() >= maximizedArea.width - maximizedSizeTolerance && getHeight() >= maximizedArea.height - maximizedSizeTolerance;
+	}
+
+	/**
+	 * Gives the side panels the widths stored in preferences and then reveals the contents of a window opened maximized. Both happen here so
+	 * that the first thing drawn is the finished layout: the window is opened at the size it was last un-maximized at, which can be too
+	 * narrow to hold both side panels at their stored widths, and the layout done at that size squeezes them and growing the window
+	 * afterwards does not undo it. Runs once, and only for a window that was opened maximized, so it cannot override widths the user drags to
+	 * later.
+	 */
+	private void finishOpeningMaximizedWindow()
+	{
+		if (!isWaitingForMaximizedSize)
 		{
 			return;
 		}
 
-		isHidingContentUntilMaximized = false;
+		isWaitingForMaximizedSize = false;
 		getRootPane().setVisible(true);
 
 		// Lay the window out before letting go of the event thread, since a layout scheduled for later would leave a moment in which the
@@ -633,9 +680,36 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		invalidate();
 		validate();
 
+		// The side panels are given their widths after that layout rather than before it, because while the contents were hidden the split
+		// panes were never laid out at the size the window has now, and their widths are what the divider positions are measured from.
+		applyStoredSidePanelWidths();
+		invalidate();
+		validate();
+
 		// Drawn now rather than when the event thread next has nothing to do, because opening a map keeps the event thread busy for long
 		// enough that the window would otherwise sit empty until the map had finished loading.
 		getRootPane().paintImmediately(0, 0, getRootPane().getWidth(), getRootPane().getHeight());
+
+		if (runWhenMaximizedWindowOpened != null)
+		{
+			Runnable toRun = runWhenMaximizedWindowOpened;
+			runWhenMaximizedWindowOpened = null;
+			SwingUtilities.invokeLater(toRun);
+		}
+	}
+
+	private void applyStoredSidePanelWidths()
+	{
+		int themePanelWidth = Math.max(UserPreferences.getInstance().themePanelWidth, SwingHelper.sidePanelMinimumWidth);
+		int toolsPanelWidth = Math.max(UserPreferences.getInstance().toolsPanelWidth, SwingHelper.sidePanelMinimumWidth);
+
+		// The tools panel divider is moved first because it decides the width the theme panel's split pane then divides. That layout is done
+		// before the theme panel's divider is moved, since otherwise the theme panel's divider would be limited by the width its split pane
+		// had while the window was still smaller. The split pane is marked invalid first because an already valid one lays out nothing.
+		toolsPanelSplitPane.setDividerLocation(toolsPanelSplitPane.getWidth() - toolsPanelWidth - toolsPanelSplitPane.getDividerSize());
+		toolsPanelSplitPane.invalidate();
+		toolsPanelSplitPane.validate();
+		themePanelSplitPane.setDividerLocation(themePanelWidth);
 	}
 
 	/**
