@@ -388,6 +388,26 @@ public class ToolsPanel extends JPanel
 			return new ToggleButtonBorder(null, null);
 		}
 
-		return new ToggleButtonBorder(getColorForToggledButtons(), UIManager.getColor("Panel.background"));
+		Color highlightColor = getColorForToggledButtons();
+		return new ToggleButtonBorder(highlightColor, getColorForToggleButtonSeparator(highlightColor));
+	}
+
+	/**
+	 * Gives the color of the line between a toggle button's highlight and its image. The line is the color of the panel behind the button,
+	 * lightened toward the highlight so that it reads as a thin gap rather than a hard outline.
+	 */
+	private static Color getColorForToggleButtonSeparator(Color highlightColor)
+	{
+		final double fractionOfHighlight = 0.35;
+
+		Color panelColor = UIManager.getColor("Panel.background");
+		return new Color(blendChannels(panelColor.getRed(), highlightColor.getRed(), fractionOfHighlight),
+				blendChannels(panelColor.getGreen(), highlightColor.getGreen(), fractionOfHighlight),
+				blendChannels(panelColor.getBlue(), highlightColor.getBlue(), fractionOfHighlight));
+	}
+
+	private static int blendChannels(int from, int to, double fractionOfTo)
+	{
+		return (int) Math.round(from + ((to - from) * fractionOfTo));
 	}
 }
