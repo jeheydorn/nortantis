@@ -69,6 +69,7 @@ public class ToolsPanel extends JPanel
 					// Set rendering hints
 					g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
 					super.paintComponent(g);
+					paintSelectionHighlight(this, g2d);
 				}
 			};
 			try
@@ -353,6 +354,31 @@ public class ToolsPanel extends JPanel
 			tool.handleImagesRefresh(settings);
 			tool.updateBorder();
 		}
+	}
+
+	/**
+	 * Marks a selected tool button with a ring in the desktop's selection color, drawn on top of what the look and feel already painted.
+	 * Linux's System look and feel (GTK) does show a selected toggle button differently, but the tool icons are opaque images that cover
+	 * nearly the whole button, leaving only a hairline of that state visible, so on its own it reads as no highlight at all. Pulling the
+	 * color from the look and feel's selection color rather than hard-coding one keeps this following the desktop's theme and accent color.
+	 */
+	private static void paintSelectionHighlight(AbstractButton button, Graphics2D g2d)
+	{
+		if (!button.isSelected() || !(OSHelper.isLinux() && UserPreferences.getInstance().lookAndFeel == LookAndFeel.System))
+		{
+			return;
+		}
+
+		Color accent = UIManager.getColor("textHighlight");
+		if (accent == null)
+		{
+			return;
+		}
+
+		g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		g2d.setColor(accent);
+		g2d.setStroke(new BasicStroke(2f));
+		g2d.drawRoundRect(1, 1, button.getWidth() - 3, button.getHeight() - 3, 8, 8);
 	}
 
 	public static Color getColorForToggledButtons()
