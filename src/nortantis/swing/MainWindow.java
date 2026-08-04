@@ -104,7 +104,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	 * A floor on how small fitting the window to a monitor is allowed to make it. It exists only to keep a monitor that reports unusable
 	 * dimensions from opening the window too small to use. It does not constrain sizes the user chose by resizing the window.
 	 */
-	private static final IntDimension minimumSizeWhenFittingToScreen = new IntDimension(400, 300);
+	private static final IntDimension minimumSizeWhenFittingToScreen = new IntDimension(800, 300);
 	/**
 	 * The size the content pane is given when the window has no stored size, and when the user resets the window size.
 	 */
@@ -113,7 +113,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	 * The smallest size the content pane is allowed to be resized to. Without a floor, the window can be dragged down to little more than its
 	 * title bar.
 	 */
-	private static final IntDimension minimumContentPaneSize = new IntDimension(800, 600);
+	private static final IntDimension minimumContentPaneSize = new IntDimension(800, 300);
 	private JSplitPane themePanelSplitPane;
 	private JSplitPane toolsPanelSplitPane;
 	private JSplitPane consoleOutputSplitPane;
