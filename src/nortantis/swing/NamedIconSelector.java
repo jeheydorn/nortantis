@@ -204,21 +204,13 @@ public class NamedIconSelector
 
 	public static void updateToggleButtonBorder(UnscaledImageToggleButton toggleButton)
 	{
-		final int width = 4;
 		if (UserPreferences.getInstance().lookAndFeel == LookAndFeel.Dark || UserPreferences.getInstance().lookAndFeel == LookAndFeel.Light)
 		{
-			if (toggleButton.isSelected())
-			{
-				toggleButton.setBorder(BorderFactory.createLineBorder(ToolsPanel.getColorForToggledButtons(), width));
-			}
-			else
-			{
-				toggleButton.setBorder(BorderFactory.createEmptyBorder(width, width, width, width));
-			}
+			toggleButton.setBorder(ToolsPanel.createToggleButtonBorder(toggleButton.isSelected()));
 		}
 		else
 		{
-			toggleButton.setBorder(BorderFactory.createEmptyBorder(width, width, width, width));
+			toggleButton.setBorder(ToolsPanel.createToggleButtonBorder(false));
 		}
 	}
 }

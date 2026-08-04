@@ -94,22 +94,13 @@ public abstract class EditorTool
 
 	public void updateBorder()
 	{
-		final int width = 4;
-
 		if ((OSHelper.isWindows() || OSHelper.isLinux()) && UserPreferences.getInstance().lookAndFeel == LookAndFeel.System)
 		{
-			toggleButton.setBorder(BorderFactory.createEmptyBorder(width, width, width, width));
+			toggleButton.setBorder(ToolsPanel.createToggleButtonBorder(false));
 			return;
 		}
 
-		if (toggleButton.isSelected())
-		{
-			toggleButton.setBorder(BorderFactory.createLineBorder(ToolsPanel.getColorForToggledButtons(), width));
-		}
-		else
-		{
-			toggleButton.setBorder(BorderFactory.createEmptyBorder(width, width, width, width));
-		}
+		toggleButton.setBorder(ToolsPanel.createToggleButtonBorder(toggleButton.isSelected()));
 	}
 
 	public void setToggleButton(JToggleButton toggleButton)

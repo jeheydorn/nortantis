@@ -11,6 +11,7 @@ import nortantis.util.Logger;
 import nortantis.util.OSHelper;
 
 import javax.swing.*;
+import javax.swing.border.Border;
 import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
@@ -374,5 +375,19 @@ public class ToolsPanel extends JPanel
 			throw new IllegalArgumentException("Unrecognized look and feel for getting color for toggle buttons: " + UserPreferences.getInstance().lookAndFeel);
 		}
 		return new Color(shade, shade, shade);
+	}
+
+	/**
+	 * Creates the border for a toggle button that shows an image, highlighting the button when it is selected. The border keeps the same
+	 * width either way so that selecting a button does not move its image.
+	 */
+	public static Border createToggleButtonBorder(boolean isSelected)
+	{
+		if (!isSelected)
+		{
+			return new ToggleButtonBorder(null, null);
+		}
+
+		return new ToggleButtonBorder(getColorForToggledButtons(), UIManager.getColor("Panel.background"));
 	}
 }
