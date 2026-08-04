@@ -415,7 +415,12 @@ public class ToolsPanel extends JPanel
 		}
 
 		Color highlightColor = getColorForToggledButtons();
-		return new ToggleButtonBorder(highlightColor, getColorForToggleButtonSeparator(highlightColor));
+
+		// The separator reads as a gap only against the dark theme's panel. The other themes have a panel light enough that it looks like an
+		// outline drawn around the image instead, so they get a solid highlight.
+		Color separatorColor = UserPreferences.getInstance().lookAndFeel == LookAndFeel.Dark ? getColorForToggleButtonSeparator(highlightColor) : null;
+
+		return new ToggleButtonBorder(highlightColor, separatorColor);
 	}
 
 	/**

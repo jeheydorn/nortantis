@@ -6,7 +6,7 @@ import java.awt.geom.AffineTransform;
 
 /**
  * The border around the image in a toggle button that shows an image, drawing a highlight when the button is selected. The innermost pixel
- * of the highlight is the color of the panel behind the button, which separates the highlight from the image.
+ * of the highlight can be given its own color, separating the highlight from the image.
  * <p>
  * The highlight is painted in device pixels rather than in the border's own coordinates so that it is one pixel thick on every side. A
  * border painted in the border's coordinates lands between device pixels whenever the display scale makes its width fractional, which
@@ -33,7 +33,7 @@ public class ToggleButtonBorder extends AbstractBorder
 	 * @param highlightColor
 	 *            The color of the highlight, or null to leave the border blank.
 	 * @param separatorColor
-	 *            The color of the single pixel between the highlight and the image.
+	 *            The color of the single pixel between the highlight and the image, or null to fill the whole border with the highlight.
 	 */
 	public ToggleButtonBorder(Color highlightColor, Color separatorColor)
 	{
@@ -79,14 +79,18 @@ public class ToggleButtonBorder extends AbstractBorder
 			// Undo the scaling Java adds because of Windows Display settings scaling apps, so that the edges land on whole pixels.
 			g2.setTransform(new AffineTransform());
 
-			int separatorInset = (int) Math.round(borderWidth * scale) - separatorThickness;
+			int scaledBorderWidth = (int) Math.round(borderWidth * scale);
+			int highlightThickness = separatorColor == null ? scaledBorderWidth : scaledBorderWidth - separatorThickness;
 
 			g2.setColor(highlightColor);
-			fillRing(g2, left, top, right - left, bottom - top, separatorInset);
+			fillRing(g2, left, top, right - left, bottom - top, highlightThickness);
 
-			g2.setColor(separatorColor);
-			fillRing(g2, left + separatorInset, top + separatorInset, (right - left) - (separatorInset * 2), (bottom - top) - (separatorInset * 2),
-					separatorThickness);
+			if (separatorColor != null)
+			{
+				g2.setColor(separatorColor);
+				fillRing(g2, left + highlightThickness, top + highlightThickness, (right - left) - (highlightThickness * 2),
+						(bottom - top) - (highlightThickness * 2), separatorThickness);
+			}
 		}
 		finally
 		{
