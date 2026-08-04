@@ -7,6 +7,9 @@ arch=('x86_64')
 url="https://github.com/jeheydorn/nortantis"
 license=('custom:EULA')
 depends=('java-runtime>=21')
+optdepends=('shared-mime-info: file type and icon association for .nort files'
+            'desktop-file-utils: application menu integration'
+            'gtk-update-icon-cache: application and file type icons')
 source=('nortantis.jar' 'nortantis.png')
 noextract=('nortantis.jar')
 sha256sums=('SKIP' 'SKIP')
@@ -14,6 +17,12 @@ sha256sums=('SKIP' 'SKIP')
 package() {
     install -Dm644 "$srcdir/nortantis.jar" "$pkgdir/opt/nortantis/nortantis.jar"
     install -Dm644 "$srcdir/nortantis.png" "$pkgdir/usr/share/pixmaps/nortantis.png"
+    install -Dm644 "$srcdir/nortantis.png" "$pkgdir/usr/share/icons/hicolor/256x256/apps/nortantis.png"
+
+    # This lets file managers show the app's icon for .nort files. Without an icon installed
+    # under this name, file managers fall back to a blank/generic document icon for .nort files
+    # even though the file association itself (open-with-Nortantis) still works.
+    install -Dm644 "$srcdir/nortantis.png" "$pkgdir/usr/share/icons/hicolor/256x256/mimetypes/application-x-nortantis.png"
 
     install -dm755 "$pkgdir/usr/bin"
     cat > "$pkgdir/usr/bin/nortantis" << 'EOF'
@@ -52,4 +61,18 @@ EOF
   </mime-type>
 </mime-info>
 EOF
+}
+
+post_install() {
+    update-mime-database usr/share/mime &> /dev/null
+    update-desktop-database -q &> /dev/null
+    gtk-update-icon-cache -q -t -f usr/share/icons/hicolor &> /dev/null
+}
+
+post_upgrade() {
+    post_install
+}
+
+post_remove() {
+    post_install
 }
