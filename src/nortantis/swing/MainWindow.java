@@ -109,6 +109,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	 * The size the content pane is given when the window has no stored size, and when the user resets the window size.
 	 */
 	private static final IntDimension defaultContentPaneSize = new IntDimension(1400, 780);
+	/**
+	 * The smallest size the content pane is allowed to be resized to. Without a floor, the window can be dragged down to little more than its
+	 * title bar.
+	 */
+	private static final IntDimension minimumContentPaneSize = new IntDimension(800, 600);
 	private JSplitPane themePanelSplitPane;
 	private JSplitPane toolsPanelSplitPane;
 	private JSplitPane consoleOutputSplitPane;
@@ -564,7 +569,22 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		pack();
 
+		applyMinimumWindowSize();
+
 		restoreWindowPlacement();
+	}
+
+	/**
+	 * Stops the window from being resized down to less than {@link #minimumContentPaneSize}. Assumes the window has been packed, since the
+	 * window decorations and menu bar that the content pane's minimum must be padded by are only measurable once it has been.
+	 */
+	private void applyMinimumWindowSize()
+	{
+		Dimension windowSize = getSize();
+		Dimension contentPaneSize = getContentPane().getSize();
+		int paddingWidth = windowSize.width - contentPaneSize.width;
+		int paddingHeight = windowSize.height - contentPaneSize.height;
+		setMinimumSize(new Dimension(minimumContentPaneSize.width + paddingWidth, minimumContentPaneSize.height + paddingHeight));
 	}
 
 	/**

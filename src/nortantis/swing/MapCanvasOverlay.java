@@ -1,21 +1,17 @@
 package nortantis.swing;
 
-import nortantis.swing.translation.Translation;
 import nortantis.util.OSHelper;
 
 import javax.swing.*;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
 import java.awt.*;
-import java.text.BreakIterator;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * Wraps the map editing scroll pane and layers transparent, click-through panels on top of it: a message strip near the top (welcome
- * text, "drawing map...", error messages) and, only at startup, a support panel near the bottom (donation/book links). Neither strip
- * spans the full canvas, so mouse events for the map itself fall through the empty space between them to the scroll pane underneath -
- * the scroll pane is a sibling that fills the whole container and sits behind the strips in z-order, so clicks outside the strips'
- * bounds simply hit it instead.
+ * text, "drawing map...", error messages) and, only at startup, a support panel near the bottom (donation/book links). Mouse events for
+ * the map itself reach the scroll pane underneath - it is a sibling that fills the whole container and sits behind the strips in
+ * z-order, so clicks outside the support panel's bounds simply hit it instead, and the message strip refuses hits entirely.
  */
 @SuppressWarnings("serial")
 public class MapCanvasOverlay extends JPanel
@@ -26,10 +22,9 @@ public class MapCanvasOverlay extends JPanel
 	private static final int messageFontSize = 26;
 
 	private final JScrollPane scrollPane;
-	private JPanel messagePanel;
+	private JTextPane messagePanel;
 	private SupportPanel supportPanel;
 	private String[] currentMessageLines;
-	private String[] displayedMessageLines;
 	private int supportPanelContentWidth;
 	private boolean supportPanelShowAskCard;
 
@@ -48,9 +43,19 @@ public class MapCanvasOverlay extends JPanel
 	public void setMessage(String... lines)
 	{
 		currentMessageLines = lines;
-		// Clearing this forces the labels to be rebuilt even when the wrapped text works out the same as what's already showing, so that a
-		// look-and-feel change picks up the new text color.
-		displayedMessageLines = null;
+
+		if (messagePanel != null)
+		{
+			remove(messagePanel);
+			messagePanel = null;
+		}
+
+		if (lines != null && lines.length > 0)
+		{
+			messagePanel = createMessagePanel(lines);
+			add(messagePanel, 0);
+		}
+
 		relayoutAndRepaint();
 	}
 
@@ -104,14 +109,10 @@ public class MapCanvasOverlay extends JPanel
 	private void relayoutAndRepaint()
 	{
 		doLayout();
-		// doLayout only sets the bounds of our direct children; validate their subtrees so their descendants (the support panel's links and
-		// card, the message text) are laid out within those bounds too. Without this, when this runs while the window is already showing (for
-		// example returning to the startup screen after cancelling a command-line open), those descendants stay at zero size until the next
-		// full validation pass, such as a window resize.
-		if (messagePanel != null)
-		{
-			messagePanel.validate();
-		}
+		// doLayout only sets the bounds of our direct children; validate the support panel's subtree so its descendants (its links and card)
+		// are laid out within those bounds too. Without this, when this runs while the window is already showing (for example returning to the
+		// startup screen after cancelling a command-line open), those descendants stay at zero size until the next full validation pass, such
+		// as a window resize.
 		if (supportPanel != null)
 		{
 			supportPanel.validate();
@@ -130,107 +131,65 @@ public class MapCanvasOverlay extends JPanel
 	}
 
 	/**
-	 * Rebuilds the message labels for the given width, doing nothing if they would come out the same as the ones already showing.
+	 * Creates the text pane that shows the message, centered and wrapped to whatever width it is later given.
 	 */
-	private void updateMessagePanel(int availableWidth)
+	private static JTextPane createMessagePanel(String[] lines)
 	{
-		String[] wrapped = wrapLines(currentMessageLines, availableWidth);
-		if (Arrays.equals(wrapped, displayedMessageLines))
-		{
-			return;
-		}
-		displayedMessageLines = wrapped;
+		JTextPane pane = new MessagePane();
+		pane.setEditable(false);
+		pane.setFocusable(false);
+		pane.setOpaque(false);
+		pane.setBorder(null);
+		pane.setFont(chooseMessageFont(lines));
+		pane.setForeground(UIManager.getColor("Label.foreground"));
+		pane.setText(String.join("\n", lines));
 
-		if (messagePanel != null)
-		{
-			remove(messagePanel);
-			messagePanel = null;
-		}
+		SimpleAttributeSet attributes = new SimpleAttributeSet();
+		StyleConstants.setAlignment(attributes, StyleConstants.ALIGN_CENTER);
+		StyleConstants.setLineSpacing(attributes, getLineSpacingThatRemovesLeading(pane));
+		pane.getStyledDocument().setParagraphAttributes(0, pane.getDocument().getLength(), attributes, false);
 
-		if (wrapped.length == 0)
-		{
-			return;
-		}
-
-		messagePanel = new JPanel();
-		messagePanel.setOpaque(false);
-		messagePanel.setLayout(new BoxLayout(messagePanel, BoxLayout.Y_AXIS));
-		Color textColor = UIManager.getColor("Label.foreground");
-		Font font = chooseMessageFont(currentMessageLines);
-		for (String line : wrapped)
-		{
-			JLabel label = new JLabel(line);
-			label.setForeground(textColor);
-			label.setFont(font);
-			label.setAlignmentX(CENTER_ALIGNMENT);
-			messagePanel.add(label);
-		}
-		add(messagePanel, 0);
+		return pane;
 	}
 
 	/**
-	 * Breaks the given lines into as many lines as it takes for each to fit within maxWidth when drawn in the message font. Lines already
-	 * narrow enough are returned unchanged, as is any single unbreakable run of text wider than maxWidth.
+	 * A text pane that no mouse event can land on, so that it neither shows a text cursor nor swallows clicks meant for the map beneath it.
 	 */
-	private String[] wrapLines(String[] lines, int maxWidth)
+	@SuppressWarnings("serial")
+	private static class MessagePane extends JTextPane
 	{
-		if (lines == null || lines.length == 0)
+		@Override
+		public boolean contains(int x, int y)
 		{
-			return new String[0];
+			return false;
 		}
-
-		FontMetrics metrics = getFontMetrics(chooseMessageFont(lines));
-		List<String> result = new ArrayList<>();
-		for (String line : lines)
-		{
-			wrapLine(line, metrics, maxWidth, result);
-		}
-		return result.toArray(new String[0]);
 	}
 
-	private static void wrapLine(String line, FontMetrics metrics, int maxWidth, List<String> result)
+	private static FontMetrics getMessageFontMetrics(JTextPane pane)
 	{
-		if (maxWidth <= 0 || metrics.stringWidth(line) <= maxWidth)
-		{
-			result.add(line);
-			return;
-		}
+		return pane.getFontMetrics(pane.getFont());
+	}
 
-		// BreakIterator rather than splitting on spaces because languages such as Chinese write without spaces between words, and so would
-		// never find a place to break.
-		BreakIterator breaker = BreakIterator.getLineInstance(Translation.getEffectiveLocale());
-		breaker.setText(line);
-		int lineStart = 0;
-		int widestFittingBreak = BreakIterator.DONE;
-		for (int breakIndex = breaker.first(); breakIndex != BreakIterator.DONE; breakIndex = breaker.next())
-		{
-			if (breakIndex <= lineStart)
-			{
-				continue;
-			}
+	/**
+	 * The paragraph line spacing, in the fraction-of-a-line-height units StyleConstants.setLineSpacing takes, that closes up the gap between
+	 * lines by the font's leading. Decorative fonts such as Gabriola report a leading nearly as tall as the text itself, which without this
+	 * reads as an oversized gap between wrapped lines.
+	 */
+	private static float getLineSpacingThatRemovesLeading(JTextPane pane)
+	{
+		FontMetrics metrics = getMessageFontMetrics(pane);
+		return -metrics.getLeading() / (float) metrics.getHeight();
+	}
 
-			if (metrics.stringWidth(line.substring(lineStart, breakIndex).trim()) <= maxWidth)
-			{
-				widestFittingBreak = breakIndex;
-				continue;
-			}
-
-			if (widestFittingBreak == BreakIterator.DONE)
-			{
-				// Nowhere to break this run of text without splitting it mid-word, so let it overflow.
-				widestFittingBreak = breakIndex;
-			}
-			result.add(line.substring(lineStart, widestFittingBreak).trim());
-			lineStart = widestFittingBreak;
-			widestFittingBreak = metrics.stringWidth(line.substring(lineStart, breakIndex).trim()) <= maxWidth ? breakIndex
-					: BreakIterator.DONE;
-		}
-
-		String remainder = line.substring(lineStart).trim();
-		if (!remainder.isEmpty())
-		{
-			result.add(remainder);
-		}
+	/**
+	 * The height the message needs once wrapped to the given width. A negative line spacing shortens every line including the last, which
+	 * the text pane's preferred height does not compensate for, so the leading taken off the last line is added back to keep it from being
+	 * clipped.
+	 */
+	private int getMessagePanelHeight(int availableWidth)
+	{
+		messagePanel.setSize(availableWidth, Short.MAX_VALUE);
+		return messagePanel.getPreferredSize().height + getMessageFontMetrics(messagePanel).getLeading();
 	}
 
 	@Override
@@ -239,17 +198,19 @@ public class MapCanvasOverlay extends JPanel
 		Dimension size = getSize();
 		scrollPane.setBounds(0, 0, size.width, size.height);
 
-		// Wrapping happens here rather than in setMessage because it depends on the width available, which isn't known until layout and
-		// changes as the window and the panels on either side of the canvas are resized.
-		updateMessagePanel(size.width - sideMargin * 2);
-
 		int messageBottom = topMargin;
 		if (messagePanel != null)
 		{
-			Dimension preferred = messagePanel.getPreferredSize();
-			int x = Math.max(sideMargin, (size.width - preferred.width) / 2);
-			messagePanel.setBounds(x, topMargin, preferred.width, preferred.height);
-			messageBottom = topMargin + preferred.height;
+			// The message pane spans the canvas rather than being sized to its text, since it wraps and centers its own lines. How tall that
+			// leaves it isn't known until here, because it depends on the width available, which changes as the window and the panels on either
+			// side of the canvas are resized.
+			int width = Math.max(1, size.width - sideMargin * 2);
+			int height = getMessagePanelHeight(width);
+			// Raised by the leading the text pane holds above its first line, so that the text itself starts at the top margin rather than the
+			// blank space above it doing so.
+			int y = topMargin - getMessageFontMetrics(messagePanel).getLeading();
+			messagePanel.setBounds(sideMargin, y, width, height);
+			messageBottom = y + height;
 		}
 
 		if (supportPanel != null)
