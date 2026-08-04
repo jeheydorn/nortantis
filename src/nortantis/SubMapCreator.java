@@ -73,6 +73,10 @@ public class SubMapCreator
 		// A sub-map is a brand-new map created in the current version, so it should carry the current version rather than inheriting the
 		// original map's (possibly older) version from the deep copy. Otherwise opening the sub-map would treat it as an upgraded older map.
 		newSettings.version = MapSettings.currentVersion;
+		// Likewise, the sub-map's polygons are generated fresh, so use the current defaults rather than inheriting values the original map
+		// only had for backwards compatibility.
+		newSettings.lloydRelaxationsScale = MapSettings.defaultLloydRelaxationsScale;
+		newSettings.pointPrecision = MapSettings.defaultPointPrecision;
 		newSettings.randomSeed = seed;
 		newSettings.generatedWidth = newGenWidth;
 		newSettings.generatedHeight = newGenHeight;
