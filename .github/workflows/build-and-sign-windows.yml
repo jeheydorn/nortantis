@@ -37,6 +37,7 @@ jobs:
       with:
         name: windows-installer.zip
         path: installers/Nortantis-${{ env.VERSION }}.msi
+        if-no-files-found: error
     
     - name: Submit Signing Request for Windows Installer
       id: sign_windows
@@ -55,6 +56,7 @@ jobs:
       with:
         name: signed-windows-installer.zip
         path: ./installers/signed/Nortantis-${{ env.VERSION }}.msi
+        if-no-files-found: error
 
 
 

@@ -39,3 +39,4 @@ jobs:
         with:
           name: arch-package.zip
           path: installers/nortantis-${{ env.VERSION }}-1-x86_64.pkg.tar.zst
+          if-no-files-found: error

@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 nortantis_version=$(cat version.txt)
 

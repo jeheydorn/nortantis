@@ -79,3 +79,4 @@ jobs:
       with:
         name: mac-installer.zip
         path: installers/Nortantis-${{ env.VERSION }}.pkg
+        if-no-files-found: error

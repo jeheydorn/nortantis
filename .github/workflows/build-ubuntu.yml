@@ -41,3 +41,4 @@ jobs:
       with:
         name: linux-installer.zip
         path: installers/nortantis_${{ env.VERSION }}_amd64.deb
+        if-no-files-found: error
