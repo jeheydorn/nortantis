@@ -85,7 +85,11 @@ public class AboutDialog extends JDialog
 
 		JLabel versionLabel = new JLabel(Translation.get("about.version", MapSettings.currentVersion));
 		Dimension versionSize = versionLabel.getPreferredSize();
-		versionLabel.setBounds(0, y, versionSize.width, versionSize.height);
+		// The version label gets at least the full text column, and the column widens if the version line is longer than that, because a
+		// JLabel bounded to exactly its preferred width can still end up an antialiasing rounding error too narrow, which makes it truncate
+		// its text with an ellipsis.
+		int panelWidth = Math.max(width, versionSize.width);
+		versionLabel.setBounds(0, y, panelWidth, versionSize.height);
 		y += versionSize.height + rowSpacing;
 
 		JComponent bugReportRow = createBugReportRow();
@@ -99,7 +103,7 @@ public class AboutDialog extends JDialog
 		supportPanel.setBounds(0, y, width, supportPanelSize.height);
 		y += supportPanelSize.height;
 
-		Dimension fixedSize = new Dimension(width, y);
+		Dimension fixedSize = new Dimension(panelWidth, y);
 		JPanel rightPanel = new JPanel(null)
 		{
 			@Override
