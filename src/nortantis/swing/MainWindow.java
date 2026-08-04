@@ -85,9 +85,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	 */
 	private IntRectangle lastNormalWindowBounds;
 	/**
-	 * The bounds to give a window that was opened maximized the first time it is un-maximized. A window opened maximized is opened at the
-	 * size of a maximized window, so the platform has only ever seen it at that size and would otherwise un-maximize it to the size of the
-	 * screen. Null once it has been used, and for a window that was not opened maximized, which the platform sizes correctly on its own.
+	 * The bounds to give a window that was opened maximized the first time it is un-maximized. Only used where opening maximized has to size
+	 * the window to the maximized area before showing it, since the platform has then only ever seen the window at that size and would
+	 * un-maximize it to the size of the screen. Null once it has been used, and wherever the platform sizes the window correctly on its own.
 	 */
 	private IntRectangle boundsToUnMaximizeTo;
 	/**
@@ -615,21 +615,26 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		if (UserPreferences.getInstance().isWindowMaximized)
 		{
-			if (normalBounds == null)
+			// Linux window managers maximize a window after it has been shown, so a window given only the maximized state is drawn at the size
+			// set above and then visibly jumps. Sizing it to the maximized area first avoids that, at the cost of the platform never seeing the
+			// window at the size it should un-maximize to, which is applied by hand instead. Elsewhere the window is shown already maximized,
+			// and the size set above is the size the platform un-maximizes it to, on every un-maximize path including a title bar drag.
+			if (OSHelper.isLinux())
 			{
-				// There were no stored bounds, so the size the window packed to, centered, is the closest thing to a size it was last seen at.
-				normalBounds = centerBoundsOnDefaultScreen(new IntDimension(getWidth(), getHeight()));
-				lastNormalWindowBounds = normalBounds;
+				if (normalBounds == null)
+				{
+					// There were no stored bounds, so the size the window packed to, centered, is the closest thing to a size it was last seen
+					// at.
+					normalBounds = centerBoundsOnDefaultScreen(new IntDimension(getWidth(), getHeight()));
+					lastNormalWindowBounds = normalBounds;
+				}
+				boundsToUnMaximizeTo = normalBounds;
+
+				// The bounds are set before the state, since setting bounds afterwards takes the maximized state away.
+				IntRectangle maximizedArea = getUsableScreenArea(getScreenWindowIsOn());
+				setBounds(maximizedArea.x, maximizedArea.y, maximizedArea.width, maximizedArea.height);
 			}
 
-			// The platform only ever sees this window at the size of a maximized window, so it has no size to un-maximize it to other than
-			// the size of the screen.
-			boundsToUnMaximizeTo = normalBounds;
-
-			// Sized to the maximized area before being shown, so that the window is never drawn at another size while waiting for the window
-			// manager to maximize it. The bounds are set before the state, since setting bounds afterwards takes the maximized state away.
-			IntRectangle maximizedArea = getUsableScreenArea(getScreenWindowIsOn());
-			setBounds(maximizedArea.x, maximizedArea.y, maximizedArea.width, maximizedArea.height);
 			setExtendedState(getExtendedState() | Frame.MAXIMIZED_BOTH);
 		}
 	}
