@@ -38,11 +38,11 @@ public class CenterTrees
 	}
 
 	/**
-	 * Copies the given CenterTrees object with the given artPack and treeType.
+	 * Copies this CenterTrees with the given artPack and treeType.
 	 *
-	 * @param artPack Art pack of the given treeType. Required to remind the caller to ensure the art pack is correct for the chosen tree type.
+	 * @param artPack The art pack the given treeType comes from. Must be an art pack that contains treeType.
 	 * @param treeType A string identifying the folder name the tree images come from under the tree assets in the art pack.
-	 * @return A deep copy
+	 * @return A copy with the given art pack and tree type
 	 */
 	public CenterTrees copyWithTreeType(String artPack, String treeType)
 	{
@@ -62,6 +62,12 @@ public class CenterTrees
 	public CenterTrees copyWithColors(IconColors colors)
 	{
 		return new CenterTrees(artPack, treeType, density, randomSeed, isDormant, colors);
+	}
+
+	@Override
+	public int hashCode()
+	{
+		return Objects.hash(artPack, density, isDormant, randomSeed, treeType, colors);
 	}
 
 	@Override

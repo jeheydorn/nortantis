@@ -1948,20 +1948,23 @@ public class IconsTool extends EditorTool
 
 	private void replaceTreesThatFailedToDrawDueToLowDensity(MouseEvent e)
 	{
+		String treeType = treeTypes.getSelectedOption();
+		if (StringUtils.isEmpty(treeType))
+		{
+			return;
+		}
+
 		String artPack = (String) artPackComboBox.getSelectedItem();
-		assert artPack != null : "The selected art pack should never be null";
 		Set<Center> selected = getSelectedLandCenters(e.getPoint());
 		for (Center center : selected)
 		{
-			CenterTrees currentTrees = mainWindow.edits.centerEdits.get(center.index).trees;
-			if (currentTrees != null)
+			CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
+			if (cEdit.trees != null)
 			{
-				String treeType = treeTypes.getSelectedOption();
-				if (!StringUtils.isEmpty(treeType))
-				{
-					CenterTrees newTrees = currentTrees.copyWithTreeType(artPack, treeType);
-					mainWindow.edits.centerEdits.put(center.index, mainWindow.edits.centerEdits.get(center.index).copyWithTrees(newTrees));
-				}
+				// Clear the remembered colors so these trees reappear with the currently selected tree colors rather than the colors they
+				// were originally drawn with.
+				CenterTrees newTrees = cEdit.trees.copyWithTreeType(artPack, treeType).copyWithColors(null);
+				mainWindow.edits.centerEdits.put(center.index, cEdit.copyWithTrees(newTrees));
 			}
 		}
 	}
