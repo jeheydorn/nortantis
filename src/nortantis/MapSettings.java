@@ -675,10 +675,14 @@ public class MapSettings implements Serializable
 				treesObj.put("randomSeed", centerEdit.trees.randomSeed);
 				treesObj.put("isDormant", centerEdit.trees.isDormant);
 				// Persist the colors these trees were drawn with so dormant trees reappear with their original color rather than the
-				// current per-type tree color. Absent for trees that use the per-type colors (the normal case).
+				// current per-type tree color. Absent for trees that use the per-type colors (the normal case). The presence of the
+				// "colors" object is what marks the trees as having their own colors, so it is written even when it ends up empty because
+				// every value in it equaled its default.
 				if (centerEdit.trees.colors != null)
 				{
-					putIconColors(treesObj, centerEdit.trees.colors);
+					JSONObject colorsObj = new JSONObject();
+					putIconColors(colorsObj, "fillColor", centerEdit.trees.colors);
+					treesObj.put("colors", colorsObj);
 				}
 				mpObj.put("trees", treesObj);
 			}
@@ -688,37 +692,67 @@ public class MapSettings implements Serializable
 	}
 
 	/**
-	 * Writes the four icon color properties of {@code colors} into {@code obj}. Mirrors {@link #parseIconColors}.
+	 * Writes the four icon color properties of {@code colors} into {@code obj}, leaving out the ones that equal their default so that files
+	 * stay small. Mirrors {@link #parseIconColors}.
+	 *
+	 * @param fillColorKey The key to store the fill color under, since icons and trees use different names for it.
 	 */
 	@SuppressWarnings("unchecked")
-	private void putIconColors(JSONObject obj, IconColors colors)
+	private void putIconColors(JSONObject obj, String fillColorKey, IconColors colors)
 	{
-		if (colors.fillColor != null)
+		// Only persist the fill color when it is actually shown (fillWithColor) or it differs from the default. A hidden default color is
+		// left out so it tracks defaultIconFillColor, which keeps files small and lets a later change to the default take effect for icons
+		// that aren't displaying a color. A shown default color is written explicitly so changing the default won't alter existing maps.
+		if (colors.fillColor != null && (colors.fillWithColor || !colors.fillColor.equals(defaultIconFillColor)))
 		{
-			obj.put("fillColor", colorToString(colors.fillColor));
+			obj.put(fillColorKey, colorToString(colors.fillColor));
 		}
-		if (colors.filterColor != null)
+		if (colors.filterColor != null && !colors.filterColor.equals(defaultIconFilterColor))
 		{
 			obj.put("filterColor", colors.filterColor.toJson());
 		}
-		obj.put("maximizeOpacity", colors.maximizeOpacity);
-		obj.put("fillWithColor", colors.fillWithColor);
+		if (colors.maximizeOpacity)
+		{
+			obj.put("maximizeOpacity", colors.maximizeOpacity);
+		}
+		if (colors.fillWithColor)
+		{
+			obj.put("fillWithColor", colors.fillWithColor);
+		}
 	}
 
 	/**
-	 * Reads the icon color properties written by {@link #putIconColors} from {@code obj}, or returns null if none are present (the normal
-	 * case, meaning the per-type colors should be used).
+	 * Reads the icon color properties written by {@link #putIconColors} from {@code obj}, filling in the defaults for the ones left out.
+	 * Returns null if {@code obj} is null, meaning the per-type colors should be used.
 	 */
 	private IconColors parseIconColors(JSONObject obj)
 	{
-		if (obj == null || !(obj.containsKey("fillColor") || obj.containsKey("filterColor") || obj.containsKey("maximizeOpacity") || obj.containsKey("fillWithColor")))
+		if (obj == null)
 		{
 			return null;
 		}
-		Color fillColor = obj.containsKey("fillColor") ? parseColor((String) obj.get("fillColor")) : null;
-		HSBColor filterColor = obj.containsKey("filterColor") ? HSBColor.fromJson((JSONObject) obj.get("filterColor")) : null;
+		Color fillColor = obj.containsKey("fillColor") ? parseColor((String) obj.get("fillColor")) : defaultIconFillColor;
+		HSBColor filterColor = obj.containsKey("filterColor") ? HSBColor.fromJson((JSONObject) obj.get("filterColor")) : defaultIconFilterColor;
 		boolean maximizeOpacity = obj.containsKey("maximizeOpacity") ? (Boolean) obj.get("maximizeOpacity") : false;
 		boolean fillWithColor = obj.containsKey("fillWithColor") ? (Boolean) obj.get("fillWithColor") : false;
+		return new IconColors(fillColor, filterColor, maximizeOpacity, fillWithColor);
+	}
+
+	/**
+	 * Reads the icon color properties of a CenterTrees saved in the older format, where they were stored directly on the trees object
+	 * rather than in a "colors" object, and every value was written whether or not it equaled its default. Returns null if none are
+	 * present, meaning the per-type colors should be used.
+	 */
+	private IconColors parseIconColorsStoredOnTreesObject(JSONObject treesObj)
+	{
+		if (!(treesObj.containsKey("fillColor") || treesObj.containsKey("filterColor") || treesObj.containsKey("maximizeOpacity") || treesObj.containsKey("fillWithColor")))
+		{
+			return null;
+		}
+		Color fillColor = treesObj.containsKey("fillColor") ? parseColor((String) treesObj.get("fillColor")) : null;
+		HSBColor filterColor = treesObj.containsKey("filterColor") ? HSBColor.fromJson((JSONObject) treesObj.get("filterColor")) : null;
+		boolean maximizeOpacity = treesObj.containsKey("maximizeOpacity") ? (Boolean) treesObj.get("maximizeOpacity") : false;
+		boolean fillWithColor = treesObj.containsKey("fillWithColor") ? (Boolean) treesObj.get("fillWithColor") : false;
 		return new IconColors(fillColor, filterColor, maximizeOpacity, fillWithColor);
 	}
 
@@ -747,28 +781,7 @@ public class MapSettings implements Serializable
 			{
 				iconObj.put("density", icon.density);
 			}
-			// Only persist the fill color when it is actually shown (fillWithColor) or it differs from the default. A hidden default color
-			// is
-			// left out so it tracks defaultIconFillColor, which keeps files small and lets a later change to the default take effect for
-			// icons
-			// that aren't displaying a color. A shown default color is written explicitly so changing the default won't alter existing
-			// maps.
-			if (icon.fillColor != null && (icon.fillWithColor || !icon.fillColor.equals(defaultIconFillColor)))
-			{
-				iconObj.put("color", colorToString(icon.fillColor));
-			}
-			if (icon.filterColor != null && !icon.filterColor.equals(defaultIconFilterColor))
-			{
-				iconObj.put("filterColor", icon.filterColor.toJson());
-			}
-			if (icon.maximizeOpacity)
-			{
-				iconObj.put("maximizeOpacity", icon.maximizeOpacity);
-			}
-			if (icon.fillWithColor)
-			{
-				iconObj.put("fillWithColor", icon.fillWithColor);
-			}
+			putIconColors(iconObj, "color", new IconColors(icon.fillColor, icon.filterColor, icon.maximizeOpacity, icon.fillWithColor));
 			if (icon.originalScale != 1.0)
 			{
 				iconObj.put("originalScale", icon.originalScale);
@@ -1962,7 +1975,7 @@ public class MapSettings implements Serializable
 					double density = (Double) treesObj.get("density");
 					long randomSeed = (Long) treesObj.get("randomSeed");
 					boolean isDormant = treesObj.containsKey("isDormant") ? (Boolean) treesObj.get("isDormant") : false;
-					IconColors colors = parseIconColors(treesObj);
+					IconColors colors = treesObj.containsKey("colors") ? parseIconColors((JSONObject) treesObj.get("colors")) : parseIconColorsStoredOnTreesObject(treesObj);
 					trees = new CenterTrees(artPack, treeType, density, randomSeed, isDormant, colors);
 				}
 			}
