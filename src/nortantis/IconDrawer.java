@@ -2181,7 +2181,7 @@ public class IconDrawer
 			return cTrees;
 		}
 
-		return cTrees.copyWithTreeType(groupId);
+		return cTrees.copyWithTreeType(artPackToUse, groupId);
 	}
 
 	private Rectangle convertTreesToFreeIcons(Map<Integer, CenterTrees> treesByCenter, WarningLogger warningLogger)

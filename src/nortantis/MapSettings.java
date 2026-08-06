@@ -43,7 +43,7 @@ public class MapSettings implements Serializable
 	 * as "3.2", and is greater than "3.18"). Each new value here must have a numerically greater segment than every version that came
 	 * before it at the same position.
 	 */
-	public static final String currentVersion = "3.20";
+	public static final String currentVersion = "3.21";
 	public static final String fileExtension = "nort";
 	public static final String fileExtensionWithDot = "." + fileExtension;
 	public static final double defaultPointPrecision = 2.0;

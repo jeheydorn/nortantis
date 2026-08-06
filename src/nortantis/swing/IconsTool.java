@@ -1948,6 +1948,8 @@ public class IconsTool extends EditorTool
 
 	private void replaceTreesThatFailedToDrawDueToLowDensity(MouseEvent e)
 	{
+		String artPack = (String) artPackComboBox.getSelectedItem();
+		assert artPack != null : "The selected art pack should never be null";
 		Set<Center> selected = getSelectedLandCenters(e.getPoint());
 		for (Center center : selected)
 		{
@@ -1957,7 +1959,7 @@ public class IconsTool extends EditorTool
 				String treeType = treeTypes.getSelectedOption();
 				if (!StringUtils.isEmpty(treeType))
 				{
-					CenterTrees newTrees = currentTrees.copyWithTreeType(treeType);
+					CenterTrees newTrees = currentTrees.copyWithTreeType(artPack, treeType);
 					mainWindow.edits.centerEdits.put(center.index, mainWindow.edits.centerEdits.get(center.index).copyWithTrees(newTrees));
 				}
 			}
