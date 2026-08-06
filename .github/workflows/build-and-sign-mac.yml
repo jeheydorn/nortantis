@@ -1,9 +1,12 @@
 name: Build and Sign Mac Installer
 
+# Manual-run only while the Mac installer is unsupported, so pushes to release don't spend runner minutes on it. Uncomment the push
+# trigger to build it automatically again.
 on:
-  push:
-    branches:
-      - release
+  workflow_dispatch:
+#  push:
+#    branches:
+#      - release
 
 jobs:
   build-mac:
