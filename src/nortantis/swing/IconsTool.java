@@ -1955,15 +1955,17 @@ public class IconsTool extends EditorTool
 		}
 
 		String artPack = (String) artPackComboBox.getSelectedItem();
+		// Stamp the selected colors so these trees keep the colors they are being replaced with. Trees carrying no colors of their own
+		// take on whatever the per-type tree colors are whenever they are next converted for drawing, which can be long after this edit.
+		IconColors colors = new IconColors(getSelectedIconTypeColor(), getSelectedIconTypeFilterColor(), maximizeOpacityCheckbox.isSelected(),
+				fillWithColorCheckbox.isSelected());
 		Set<Center> selected = getSelectedLandCenters(e.getPoint());
 		for (Center center : selected)
 		{
 			CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
 			if (cEdit.trees != null)
 			{
-				// Clear the remembered colors so these trees reappear with the currently selected tree colors rather than the colors they
-				// were originally drawn with.
-				CenterTrees newTrees = cEdit.trees.copyWithTreeType(artPack, treeType).copyWithColors(null);
+				CenterTrees newTrees = cEdit.trees.copyWithTreeType(artPack, treeType).copyWithColors(colors);
 				mainWindow.edits.centerEdits.put(center.index, cEdit.copyWithTrees(newTrees));
 			}
 		}
