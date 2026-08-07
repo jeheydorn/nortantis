@@ -1094,8 +1094,9 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	// Array-based cache for slice polygons: [centerIndex][edgePositionInBorders]
-	// This is faster than HashMap because it avoids hash computation and lookup
-	private CachedSlicePolygon[][] slicePolygonsByCenter;
+	// This is faster than HashMap because it avoids hash computation and lookup.
+	// Volatile for safe publication to concurrent readers, which read it without holding centerLookupGridLock.
+	private volatile CachedSlicePolygon[][] slicePolygonsByCenter;
 
 	private CachedSlicePolygon getSlicePolygon(Center center, int edgePosition, boolean useWaterCheckResolution)
 	{
@@ -1172,7 +1173,8 @@ public class WorldGraph extends VoronoiGraph
 	 */
 	private void clearSlicePolygonCache(Collection<Center> centers)
 	{
-		if (slicePolygonsByCenter == null)
+		CachedSlicePolygon[][] slices = slicePolygonsByCenter;
+		if (slices == null)
 		{
 			return;
 		}
@@ -1190,11 +1192,11 @@ public class WorldGraph extends VoronoiGraph
 		for (Center c : centersWithNeighbors)
 		{
 			// Clear the array for this center so it will be rebuilt
-			if (c.index < slicePolygonsByCenter.length && slicePolygonsByCenter[c.index] != null)
+			if (c.index < slices.length && slices[c.index] != null)
 			{
-				for (int i = 0; i < slicePolygonsByCenter[c.index].length; i++)
+				for (int i = 0; i < slices[c.index].length; i++)
 				{
-					slicePolygonsByCenter[c.index][i] = null;
+					slices[c.index][i] = null;
 				}
 			}
 		}
@@ -1273,25 +1275,27 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Precomputes all slice polygons for all centers and their edges using array-based storage.
+	 * Precomputes all slice polygons for all centers and their edges using array-based storage. Builds into a local array and publishes it
+	 * last, so concurrent readers never see a partially built array.
 	 */
 	private void precomputeSlicePolygons()
 	{
-		// Initialize the 2D array
-		slicePolygonsByCenter = new CachedSlicePolygon[centers.size()][];
+		CachedSlicePolygon[][] slices = new CachedSlicePolygon[centers.size()][];
 
 		for (Center center : centers)
 		{
-			slicePolygonsByCenter[center.index] = new CachedSlicePolygon[center.borders.size()];
+			slices[center.index] = new CachedSlicePolygon[center.borders.size()];
 			for (int i = 0; i < center.borders.size(); i++)
 			{
 				Edge edge = center.borders.get(i);
 				if (edge.v0 != null && edge.v1 != null)
 				{
-					slicePolygonsByCenter[center.index][i] = buildSlicePolygon(center, edge);
+					slices[center.index][i] = buildSlicePolygon(center, edge);
 				}
 			}
 		}
+
+		slicePolygonsByCenter = slices;
 	}
 
 	/**
@@ -1299,7 +1303,10 @@ public class WorldGraph extends VoronoiGraph
 	 */
 	private void precomputeSlicePolygonsForCenters(Collection<Center> centersToUpdate)
 	{
-		if (slicePolygonsByCenter == null)
+		// Read the arrays into locals so that this loop stays self-consistent even if another thread publishes replacements partway
+		// through. Without this, an element read here can belong to a different array than the one the enclosing null check saw.
+		CachedSlicePolygon[][] slices = slicePolygonsByCenter;
+		if (slices == null)
 		{
 			// Initialize full array if not yet done
 			precomputeSlicePolygons();
@@ -1318,22 +1325,24 @@ public class WorldGraph extends VoronoiGraph
 
 		// Mirror the rebuild for the canonical (water-check-resolution) slices, but only if they have been built. The canonical noisy edges
 		// must be rebuilt for the affected centers first, since the canonical slices are derived from them.
-		boolean updateCanonical = canonicalSlicePolygonsByCenter != null && canonicalNoisyEdges != null;
+		CachedSlicePolygon[][] canonicalSlices = canonicalSlicePolygonsByCenter;
+		NoisyEdges canonicalEdges = canonicalNoisyEdges;
+		boolean updateCanonical = canonicalSlices != null && canonicalEdges != null;
 		double canonicalPathToActualScale = resolutionScale / waterCheckResolution;
 
 		for (Center center : centersWithNeighbors)
 		{
 			// Rebuild the slice polygons array for this center
-			if (slicePolygonsByCenter[center.index] == null)
+			if (slices[center.index] == null)
 			{
-				slicePolygonsByCenter[center.index] = new CachedSlicePolygon[center.borders.size()];
+				slices[center.index] = new CachedSlicePolygon[center.borders.size()];
 			}
 			if (updateCanonical)
 			{
-				canonicalNoisyEdges.buildNoisyEdgesForCenter(center, true);
-				if (canonicalSlicePolygonsByCenter[center.index] == null)
+				canonicalEdges.buildNoisyEdgesForCenter(center, true);
+				if (canonicalSlices[center.index] == null)
 				{
-					canonicalSlicePolygonsByCenter[center.index] = new CachedSlicePolygon[center.borders.size()];
+					canonicalSlices[center.index] = new CachedSlicePolygon[center.borders.size()];
 				}
 			}
 			for (int i = 0; i < center.borders.size(); i++)
@@ -1341,10 +1350,10 @@ public class WorldGraph extends VoronoiGraph
 				Edge edge = center.borders.get(i);
 				if (edge.v0 != null && edge.v1 != null)
 				{
-					slicePolygonsByCenter[center.index][i] = buildSlicePolygon(center, edge);
+					slices[center.index][i] = buildSlicePolygon(center, edge);
 					if (updateCanonical)
 					{
-						canonicalSlicePolygonsByCenter[center.index][i] = buildSlicePolygon(center, edge, canonicalNoisyEdges, canonicalPathToActualScale);
+						canonicalSlices[center.index][i] = buildSlicePolygon(center, edge, canonicalEdges, canonicalPathToActualScale);
 					}
 				}
 			}
@@ -1530,9 +1539,14 @@ public class WorldGraph extends VoronoiGraph
 	 */
 	public void updateCenterLookupTable(Collection<Center> centersToUpdate)
 	{
-		// Clear and rebuild slice polygon cache for affected centers (used by grid-based lookup)
-		clearSlicePolygonCache(centersToUpdate);
-		precomputeSlicePolygonsForCenters(centersToUpdate);
+		// Held so that this cannot interleave with the full rebuild in buildCenterLookupGridIfNeeded. Both write slicePolygonsByCenter, and
+		// a full rebuild replacing the array partway through this update would drop the updated slices.
+		synchronized (centerLookupGridLock)
+		{
+			// Clear and rebuild slice polygon cache for affected centers (used by grid-based lookup)
+			clearSlicePolygonCache(centersToUpdate);
+			precomputeSlicePolygonsForCenters(centersToUpdate);
+		}
 	}
 
 	/**
