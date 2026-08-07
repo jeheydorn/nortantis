@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -109,5 +110,44 @@ public class HelperTest
 	{
 		List<Integer> input = Arrays.asList(-5, -1, -10, -3);
 		assertEquals(Integer.valueOf(-1), Helper.maxItem(input));
+	}
+
+	/**
+	 * Sub-maps derive each redistributed center's random seed from a base seed plus the center index, then use the first nextDouble() of
+	 * that seed's Random to decide whether to add one more tree. Without mixing, consecutive seeds give nearly identical first values, so
+	 * that decision stays constant across long runs of center indices. Center indices are sorted by y, so those runs are horizontal strips
+	 * of the map, and the result is visible tree banding.
+	 */
+	@Test
+	public void testMixSeedDecorrelatesConsecutiveSeeds()
+	{
+		final int seedCount = 20000;
+		final double threshold = 0.5;
+		long baseSeed = 804888644L;
+
+		int transitions = 0;
+		boolean previous = new Random(Helper.mixSeed(baseSeed)).nextDouble() < threshold;
+		for (int i = 1; i < seedCount; i++)
+		{
+			boolean current = new Random(Helper.mixSeed(baseSeed + i)).nextDouble() < threshold;
+			if (current != previous)
+			{
+				transitions++;
+				previous = current;
+			}
+		}
+
+		// Independent seeds flip sides of the threshold about half the time, giving close to seedCount / 2 transitions. Unmixed consecutive
+		// seeds give around 25, so the bound is loose enough to be robust while still failing by two orders of magnitude if the mixing is
+		// removed.
+		assertTrue(transitions > seedCount / 4, "Expected consecutive mixed seeds to behave independently, but got only " + transitions
+				+ " threshold crossings across " + seedCount + " seeds.");
+	}
+
+	@Test
+	public void testMixSeedIsDeterministic()
+	{
+		assertEquals(Helper.mixSeed(12345L), Helper.mixSeed(12345L));
+		assertNotEquals(Helper.mixSeed(12345L), Helper.mixSeed(12346L));
 	}
 }

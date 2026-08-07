@@ -326,4 +326,23 @@ public class Helper
 	{
 		return Math.min(Math.max(value, min), max);
 	}
+
+	/**
+	 * Mixes the bits of the given value so that inputs that differ only slightly produce unrelated results. Use this when deriving a random
+	 * seed from a base seed plus a sequential value such as a Center index.
+	 * <p>
+	 * {@link Random} is a linear congruential generator whose first few outputs vary only slightly between nearby seeds: seeds n and n + 1
+	 * give first {@code nextDouble()} values that differ by about 0.0001. Code that consumes just the first value or two - such as deciding
+	 * whether to place one more item - therefore makes the same decision across long runs of consecutive seeds, which shows up as visible
+	 * banding wherever those sequential values correspond to position on the map.
+	 * </p>
+	 * This is the SplitMix64 finalizer.
+	 */
+	public static long mixSeed(long value)
+	{
+		long result = value + 0x9E3779B97F4A7C15L;
+		result = (result ^ (result >>> 30)) * 0xBF58476D1CE4E5B9L;
+		result = (result ^ (result >>> 27)) * 0x94D049BB133111EBL;
+		return result ^ (result >>> 31);
+	}
 }

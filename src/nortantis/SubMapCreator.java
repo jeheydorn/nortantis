@@ -9,6 +9,7 @@ import nortantis.graph.voronoi.Corner;
 import nortantis.graph.voronoi.Edge;
 import nortantis.platform.Font;
 import nortantis.swing.MapEdits;
+import nortantis.util.Helper;
 import nortantis.util.OrderlessPair;
 import nortantis.util.Tuple2;
 
@@ -703,7 +704,7 @@ public class SubMapCreator
 				if (iconsAtLocation != null)
 				{
 					FreeIcon icon = iconsAtLocation.get(0);
-					int randomIconIndex = new Random(seed + newCenter.index).nextInt(Integer.MAX_VALUE);
+					int randomIconIndex = new Random(Helper.mixSeed(seed + newCenter.index)).nextInt(Integer.MAX_VALUE);
 					CenterIcon centerIcon = new CenterIcon(IconDrawer.iconTypeToCenterIconType(icon.type), icon.artPack, icon.groupId, randomIconIndex).copyWithColors(iconColorsOf(icon));
 					newEdits.centerEdits.put(newCenter.index, existingEdit != null ? existingEdit.copyWithIcon(centerIcon) : new CenterEdit(newCenter.index, false, false, null, centerIcon, null));
 					existingEdit = newEdits.centerEdits.get(newCenter.index);
@@ -719,7 +720,8 @@ public class SubMapCreator
 				CenterTrees originalTrees = originalCenterToCenterTrees.get(originalCenterAtLocation.index);
 				if (originalTrees != null)
 				{
-					CenterTrees newTrees = new CenterTrees(originalTrees.artPack, originalTrees.treeType, originalTrees.density, seed + newCenter.index, originalTrees.isDormant, originalTrees.colors);
+					CenterTrees newTrees = new CenterTrees(originalTrees.artPack, originalTrees.treeType, originalTrees.density, Helper.mixSeed(seed + newCenter.index), originalTrees.isDormant,
+							originalTrees.colors);
 					CenterEdit current = newEdits.centerEdits.get(newCenter.index);
 					if (current != null)
 					{
@@ -736,7 +738,7 @@ public class SubMapCreator
 						double avgDensity = treeFreeIcons.stream().mapToDouble(t -> t.density).average().getAsDouble();
 						// Keep the source trees' colors so the redistributed trees match instead of using the sub-map's per-type tree
 						// color.
-						CenterTrees newTrees = new CenterTrees(artPack, treeType, avgDensity, seed + newCenter.index, false, iconColorsOf(treeFreeIcons.get(0)));
+						CenterTrees newTrees = new CenterTrees(artPack, treeType, avgDensity, Helper.mixSeed(seed + newCenter.index), false, iconColorsOf(treeFreeIcons.get(0)));
 						CenterEdit current = newEdits.centerEdits.get(newCenter.index);
 						if (current != null)
 						{
