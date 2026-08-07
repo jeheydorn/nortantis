@@ -495,8 +495,8 @@ public class IconDrawer
 	 * <ul>
 	 * <li>A {@code CenterTrees} whose center now has visible tree free icons is dropped (the visible trees take over).</li>
 	 * <li>A {@code CenterTrees} with no visible trees of its own (dormant or failed-to-draw) is re-seeded as non-dormant if there is a
-	 * visible tree within {@link #treeReplantVisibleTreeSearchDistance} centers (so it gets another chance to grow), or dropped otherwise
-	 * (so it does not pop up far from any trees).</li>
+	 * visible tree of the same art pack, tree type, and colors within {@link #treeReplantVisibleTreeSearchDistance} centers (so it gets
+	 * another chance to grow), or dropped otherwise (so it does not pop up far from, or looking unlike, the trees around it).</li>
 	 * <li>Each center with visible tree free icons gets a fresh non-dormant {@code CenterTrees} carrying the most common tree type, the
 	 * average density, and a representative color of those trees.</li>
 	 * </ul>
@@ -522,7 +522,7 @@ public class IconDrawer
 					// Visible trees override invisible ones.
 					edits.centerEdits.put(entry.getKey(), entry.getValue().copyWithTrees(null));
 				}
-				else if (hasVisibleTreeWithinDistance(edits, graph, entry.getKey(), treeReplantVisibleTreeSearchDistance))
+				else if (hasMatchingVisibleTreeWithinDistance(edits, graph, entry.getKey(), cTrees, treeReplantVisibleTreeSearchDistance))
 				{
 					// Carry the dormant trees' remembered colors forward so they reappear with their original color rather than the current
 					// per-type tree color.
@@ -568,8 +568,9 @@ public class IconDrawer
 	}
 
 	/**
-	 * The maximum number of centers away a visible tree may be for a dormant/failed {@link CenterTrees} to be kept and replanted by
-	 * {@link #rebuildAnchoredTrees}. Beyond this, the dormant trees are dropped so they don't pop up far from any visible trees.
+	 * The maximum number of centers away a matching visible tree may be for a dormant/failed {@link CenterTrees} to be kept and replanted
+	 * by {@link #rebuildAnchoredTrees}. Beyond this, the dormant trees are dropped so they don't pop up far from any matching visible
+	 * trees.
 	 */
 	private static final int treeReplantVisibleTreeSearchDistance = 3;
 
@@ -590,14 +591,22 @@ public class IconDrawer
 		{
 			if (Objects.equals(tree.artPack, artPack) && Objects.equals(tree.groupId, treeType))
 			{
-				return new IconColors(tree.fillColor, tree.filterColor, tree.maximizeOpacity, tree.fillWithColor);
+				return IconColors.fromIcon(tree);
 			}
 		}
-		FreeIcon first = trees.get(0);
-		return new IconColors(first.fillColor, first.filterColor, first.maximizeOpacity, first.fillWithColor);
+		return IconColors.fromIcon(trees.get(0));
 	}
 
-	private static boolean hasVisibleTreeWithinDistance(MapEdits edits, WorldGraph graph, int centerStartIndex, int maxSearchDistance)
+	/**
+	 * Returns whether a visible tree matching {@code cTrees} in art pack, tree type, and colors exists within {@code maxSearchDistance}
+	 * centers of {@code centerStartIndex}.
+	 * <p>
+	 * Requiring a match, rather than only that some tree is nearby, keeps replanted trees from sprouting as a forest type or color unlike
+	 * the trees they appear among - for example, dormant firs between two forests would otherwise reappear beside deciduous trees of a
+	 * different color.
+	 * </p>
+	 */
+	private static boolean hasMatchingVisibleTreeWithinDistance(MapEdits edits, WorldGraph graph, int centerStartIndex, CenterTrees cTrees, int maxSearchDistance)
 	{
 		Center start = graph.centers.get(centerStartIndex);
 		Center found = graph.breadthFirstSearchForGoal((ignored1, ignored2, distanceFromStart) ->
@@ -605,10 +614,33 @@ public class IconDrawer
 			return distanceFromStart < maxSearchDistance;
 		}, (c) ->
 		{
-			return edits.freeIcons.hasTrees(c.index);
+			return hasVisibleTreeMatching(edits, c.index, cTrees);
 		}, start);
 
 		return found != null;
+	}
+
+	/**
+	 * Returns whether the center at {@code centerIndex} has at least one visible tree drawn from the same art pack and tree type as
+	 * {@code cTrees}, with the same colors. Trees that carry no colors of their own are matched on art pack and tree type alone, since they
+	 * have no particular color to match against.
+	 */
+	private static boolean hasVisibleTreeMatching(MapEdits edits, int centerIndex, CenterTrees cTrees)
+	{
+		for (FreeIcon tree : edits.freeIcons.getTrees(centerIndex))
+		{
+			if (!Objects.equals(tree.artPack, cTrees.artPack) || !Objects.equals(tree.groupId, cTrees.treeType))
+			{
+				continue;
+			}
+
+			if (cTrees.colors == null || cTrees.colors.equals(IconColors.fromIcon(tree)))
+			{
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	private Rectangle createDrawTasksForFreeIconsAndRemovedFailedIcons(WarningLogger warningLogger, Rectangle replaceBounds)

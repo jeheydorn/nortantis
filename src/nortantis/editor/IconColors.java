@@ -31,6 +31,15 @@ public class IconColors
 		this.fillWithColor = fillWithColor;
 	}
 
+	/**
+	 * Returns the colors {@code icon} is drawn with, for copying them onto a {@link CenterIcon}/{@link CenterTrees} or comparing them
+	 * against the colors one remembers.
+	 */
+	public static IconColors fromIcon(FreeIcon icon)
+	{
+		return new IconColors(icon.fillColor, icon.filterColor, icon.maximizeOpacity, icon.fillWithColor);
+	}
+
 	@Override
 	public int hashCode()
 	{
