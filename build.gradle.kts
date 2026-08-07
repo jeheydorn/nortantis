@@ -96,7 +96,7 @@ tasks.register<Test>("benchmark") {
     // Run benchmark classes (any class named *Benchmark) under JFR profiling. With no --tests this runs all of them; pass
     // --tests "nortantis.SomeBenchmark" to profile just one (e.g. from IntelliJ). The include must be this broad because Gradle's --tests
     // can only narrow a task's includes, not override them - a narrower include here (e.g. only AwtMapCreatorBenchmark) would make
-    // `:benchmark --tests "nortantis.FindClosestCenterBenchmark"` match nothing.
+    // `:benchmark --tests "nortantis.ImageHelperBenchmark"` match nothing.
     filter {
         includeTestsMatching("*Benchmark")
         // Don't fail the build when this task is asked (e.g. by IntelliJ as a candidate test task) to run a non-benchmark test it doesn't
