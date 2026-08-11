@@ -13,6 +13,8 @@ public class IntRectangle
 		this.y = y;
 		this.width = width;
 		this.height = height;
+		assert width >= 0;
+		assert height >= 0;
 	}
 
 	public IntRectangle(IntPoint location, IntDimension size)

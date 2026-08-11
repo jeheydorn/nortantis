@@ -37,7 +37,7 @@ public abstract class VoronoiGraph
 	 * This controls how many rivers there are. Bigger means more.
 	 */
 	private double riverDensity = 1.0 / 14.0;
-	protected double resolutionScale;
+	public double resolutionScale;
 
 	static final double verySmall = 0.0000001;
 	double pointPrecision;
@@ -417,7 +417,6 @@ public abstract class VoronoiGraph
 		// missing triangles.
 		List<Corner> edgeCorners = null;
 
-		c.area = 0;
 		for (Center n : c.neighbors)
 		{
 			Edge e = edgeWithCenters(c, n);
@@ -469,8 +468,6 @@ public abstract class VoronoiGraph
 			{
 				drawTriangle(g, e.v0, e.v1, c);
 			}
-
-			c.area += Math.abs(c.loc.x * (e.v0.loc.y - e.v1.loc.y) + e.v0.loc.x * (e.v1.loc.y - c.loc.y) + e.v1.loc.x * (c.loc.y - e.v0.loc.y)) / 2;
 		}
 
 		// Handle the missing triangles along borders.
@@ -562,7 +559,6 @@ public abstract class VoronoiGraph
 							g.setColor(Color.create(grayLevel, grayLevel, grayLevel));
 						}
 						g.fillPolygon(x, y);
-						c.area += 0; // TODOO: area of polygon given vertices
 					}
 				}
 			}
@@ -896,8 +892,7 @@ public abstract class VoronoiGraph
 
 	private void drawPolygon(Painter p, Center c)
 	{
-		List<Edge> edges = c.orderEdgesAroundCenter();
-		List<Point> vertices = edgeListToDrawPoints(edges, false, 0.0);
+		List<Point> vertices = c.toPolygon(this);
 		p.fillPolygonDouble(vertices);
 	}
 
