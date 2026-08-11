@@ -3077,6 +3077,50 @@ public class WorldGraph extends VoronoiGraph
 		return cSize;
 	}
 
+	private Double meanCenterArea = null;
+	/**
+	 * Gets the approximate mean area of centers in the graph, ignoring noisy edges, non-convexity, and border polygons.
+	 * @return average center area
+	 */	public double getMeanCenterArea()
+	{
+		if (meanCenterArea == null)
+		{
+			meanCenterArea = findMeanCenterArea();
+		}
+		return meanCenterArea;
+	}
+
+	private double findMeanCenterArea()
+	{
+		double sum = 0;
+		int count = 0;
+		for (Center center : centers)
+		{
+			if (center.isBorder)
+			{
+				// Centers along the edge of the graph are missing the Voronoi edges that would close their polygons, so their areas come out
+				// too small and would drag down the mean.
+				continue;
+			}
+
+			double area = center.findSimpleArea();
+
+			if (area > 0)
+			{
+				count++;
+				sum += area;
+			}
+		}
+
+		if (count == 0)
+		{
+			return 0;
+		}
+
+		return sum / count;
+	}
+
+
 	public void drawCoastlineWithVariation(Painter p, long randomSeed, double variationRange, double widthBetweenWaves, boolean addRandomBreaks, Rectangle drawBounds,
 			BiFunction<Boolean, Random, Double> getNewSkipDistance, List<List<Edge>> shoreEdges)
 	{

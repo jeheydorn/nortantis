@@ -1,11 +1,11 @@
 package nortantis;
 
 import nortantis.editor.FreeIcon;
+import nortantis.graph.voronoi.Center;
 import nortantis.util.ConcurrentHashMapF;
 import nortantis.util.Helper;
 
 import java.util.*;
-import java.util.Map.Entry;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 
@@ -108,6 +108,23 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 			return Collections.emptyList();
 		}
 		return anchoredTreeIcons.get(centerIndex);
+	}
+
+	public synchronized List<FreeIcon> getIconsOnCenterFilteredByType(WorldGraph graph, int centerIndex, IconType type)
+	{
+		// TODO this is horribly inefficient and should be replaced with a spatial lookup before release.
+
+		List<FreeIcon> result = new ArrayList<>();
+		Center center = graph.centers.get(centerIndex);
+		for (FreeIcon icon : this)
+		{
+			// TODO account for mountain offset if needed.
+			if (icon.type == type && graph.findClosestCenter(icon.getScaledLocation(graph.resolutionScale), true) == center)
+			{
+				result.add(icon);
+			}
+		}
+		return result;
 	}
 
 	public synchronized Iterable<Integer> iterateTreeAnchors()

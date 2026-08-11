@@ -36,6 +36,9 @@ application {
     mainClass.set("nortantis.swing.MainWindow")
     applicationDefaultJvmArgs = listOf(
         "--enable-native-access=ALL-UNNAMED",
+        // Assertions are on for development runs only. The installers build the jar and launch it through jpackage (or, for Arch, a
+        // wrapper script), so they never see these arguments - they pass their own via --java-options.
+        "-ea",
     )
 }
 

@@ -35,7 +35,8 @@ jpackage ^
 --java-options -XX:G1PeriodicGCInterval=15000 ^
 --java-options -Dsun.java2d.d3d=false ^
 --license-file end_user_license_agreement.txt ^
---java-options -Dfile.encoding=UTF-8
+--java-options -Dfile.encoding=UTF-8 ^
+--java-options "--enable-native-access=ALL-UNNAMED"
 
 
 REM Line to create Windows console: --win-console ^
