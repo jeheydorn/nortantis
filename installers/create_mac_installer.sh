@@ -37,6 +37,7 @@ jpackage \
 --java-options -XX:MinHeapFreeRatio=20 \
 --java-options -XX:G1PeriodicGCInterval=15000 \
 --java-options -Dfile.encoding=UTF-8 \
+--java-options "--enable-native-access=ALL-UNNAMED" \
 --license-file end_user_license_agreement.txt \
 "${sign_args[@]}"
 

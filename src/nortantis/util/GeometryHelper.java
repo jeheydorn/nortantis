@@ -1,6 +1,7 @@
 package nortantis.util;
 
 import nortantis.geom.Point;
+import nortantis.geom.Rectangle;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -92,6 +93,34 @@ public class GeometryHelper
 	}
 
 	/**
+	 * Calculates the area enclosed by a polygon whose boundary passes through {@code points} in order, using the shoelace formula. The
+	 * polygon is treated as closed, so the last point does not need to repeat the first. Winding direction does not matter.
+	 * <p>
+	 * The polygon may be concave, but it must not intersect itself. Where a boundary crosses itself, the resulting lobes wind in opposite
+	 * directions and cancel, so the area comes out too small.
+	 *
+	 * @param points
+	 *            The polygon's boundary points, in order around the boundary. Fewer than 3 points enclose no area.
+	 * @return The enclosed area, in the square of whatever units the points are in.
+	 */
+	public static double calcPolygonArea(List<Point> points)
+	{
+		if (points == null || points.size() < 3)
+		{
+			return 0.0;
+		}
+
+		double sum = 0.0;
+		for (int i = 0; i < points.size(); i++)
+		{
+			Point current = points.get(i);
+			Point next = points.get((i + 1) % points.size());
+			sum += (current.x * next.y) - (next.x * current.y);
+		}
+		return Math.abs(sum) / 2.0;
+	}
+
+	/**
 	 * Splits {@code path} at any segments that already exist in {@code existingConnections}, returning the non-overlapping sub-paths. Newly
 	 * seen segments are added to {@code existingConnections} as they are consumed.
 	 */
@@ -129,5 +158,21 @@ public class GeometryHelper
 			result.add(currentPath);
 		}
 		return result;
+	}
+
+	public static Rectangle calcBounds(List<Point> points)
+	{
+		if (points == null || points.isEmpty())
+		{
+			return null;
+		}
+
+		Rectangle bounds = new Rectangle(points.get(0).x, points.get(0).y, 0, 0);
+		for (int i = 1; i < points.size(); i++)
+		{
+			bounds = bounds.add(points.get(i));
+		}
+
+		return bounds;
 	}
 }

@@ -2236,7 +2236,8 @@ public class IconDrawer
 				CenterTrees toUse = replaceTreeAssetsIfNeeded(cTrees, warningLogger);
 
 				Center c = graph.centers.get(entry.getKey());
-				changeBounds = Rectangle.add(changeBounds, drawTreesAtCenterAndCorners(c, toUse, treesByCenter.keySet()));
+				changeBounds = Rectangle.add(changeBounds, addTreesToCenterUniform(c, cTrees));
+				//changeBounds = Rectangle.add(changeBounds, drawTreesAtCenterAndCorners(c, toUse, treesByCenter.keySet())); TODO remove
 			}
 		}
 		return changeBounds;
@@ -2284,6 +2285,84 @@ public class IconDrawer
 
 		changeBounds = Rectangle.add(changeBounds, getAnchoredTreeIconBoundsAt(center.index));
 		return changeBounds;
+	}
+
+	private Rectangle addTreesToCenterUniform(Center center, CenterTrees cTrees)
+	{
+		Random rand = new Random(Helper.mixSeed(cTrees.randomSeed));
+		List<Point> vertices = center.toPolygon(graph);
+		double area = GeometryHelper.calcPolygonArea(vertices);
+		if (area < 0.001)
+		{
+			return null;
+		}
+
+		// Use the colors these trees remember (e.g. dormant or sub-map-redistributed trees), falling back to the per-type tree colors.
+		IconColors colors = resolveIconColors(cTrees.colors, IconType.trees);
+
+		Rectangle bounds = GeometryHelper.calcBounds(vertices);
+		int numAdded = 0;
+
+		// Use rejection sampling to get the desired tree density on the center.
+		int targetNumber = calcNumberOfTreesForCenterAndDensity(rand, area, cTrees.density);
+		int numberOfTreesAlreadyOnCenter = freeIcons.getIconsOnCenterFilteredByType(graph, center.index, IconType.trees).size();
+		int numberToAdd = targetNumber - numberOfTreesAlreadyOnCenter;
+		if (numberToAdd > 0)
+		{
+			for (int iteration = 0; numAdded < targetNumber; iteration++)
+			{
+				if (iteration > numberToAdd * 100)
+				{
+					assert false : "Tree adding loop took too long."; // TODO remove this once I've tested that it's not hit since it's theoretically hittable.
+					break;
+				}
+				Point loc = ProbabilityHelper.sampleUniform(rand, bounds);
+				Center closest = graph.findClosestCenter(loc, true);
+				assert closest != null : "A tree tried to add off the graph.";
+				if (closest != null && closest == center)
+				{
+					int index = Helper.safeAbs(rand.nextInt());
+					FreeIcon icon = new FreeIcon(resolutionScale, loc, 1.0, IconType.trees, cTrees.artPack, cTrees.treeType, index, center.index, cTrees.density, colors.fillColor, colors.filterColor,
+							colors.maximizeOpacity, colors.fillWithColor);
+
+					// TODO - decide what to do about trees that go into the ocean. They should count as added for the sake of the density, but nothing stores that they were attempted to be added, so the center will look like it isn't full, so another brush stroke later might add more trees. This goes against idempotence of the Draw brush.
+
+					if (!isContentBottomTouchingWater(icon))
+					{
+						freeIcons.addOrReplace(icon);
+					}
+
+
+					numAdded++;
+					if (numAdded >= numberToAdd)
+					{
+						break;
+					}
+				}
+			}
+		}
+
+		return bounds;
+	}
+
+	private int calcNumberOfTreesForCenterAndDensity(Random rand, double centerArea, double forestDensity)
+	{
+		// Calculated empirically from a map.
+		double meanCornersPerCenter = 5.926;
+		double meanCentersPerCorner = 3.03;
+
+		// The old way of adding trees calculated the number of trees for the density and then added that number of trees at each corner of a center, plus the middle of the center. The new method only adds trees in the selected center. I'm using mostly the same density calculations below to try to keep tree density when drawn with brushes in this new version looking the same, but that means we need to adjust the density by an estimate of the number of trees that actually landed in the center on average with the old method.
+		double meanAddPointsForTreesUsingOldMethod = (meanCornersPerCenter + 1)/ meanCentersPerCorner;
+		double density = forestDensity * treeDensityScale * meanAddPointsForTreesUsingOldMethod * (centerArea / graph.getMeanCenterArea());
+
+		//Claude - I'm changing this value at the moment for testing.
+		final double scatterPercentage = 1.0; // TODO Expose as user parameter
+		double densityWithScatter = density - (density * scatterPercentage) + rand.nextDouble() * (density * scatterPercentage * 2.0);
+
+		// Convert the forestDensity into an integer number of trees to draw such that the expected value is the desired density.
+		double fraction = densityWithScatter - (int) densityWithScatter;
+		int extra = rand.nextDouble() < fraction ? 1 : 0;
+		return ((int) densityWithScatter) + extra;
 	}
 
 	/**
@@ -2334,8 +2413,6 @@ public class IconDrawer
 		}
 	}
 
-	;
-
 	private String getGroupIdForForestType(String artPack, ForestType forest)
 	{
 		List<String> groups = ImageCache.getInstance(artPack, customImagesPath).getIconGroupNames(IconType.trees);
@@ -2367,9 +2444,7 @@ public class IconDrawer
 	@SuppressWarnings("lossy-conversions")
 	private void addTreeNearLocation(Point loc, double forestDensity, Center center, Random rand, String artPack, String groupId, IconColors colors)
 	{
-		// Convert the forestDensity into an integer number of trees to draw
-		// such that the expected
-		// value is forestDensity.
+		// Convert the forestDensity into an integer number of trees to draw such that the expected value is forestDensity.
 		double density = forestDensity * treeDensityScale;
 		double fraction = density - (int) density;
 		int extra = rand.nextDouble() < fraction ? 1 : 0;

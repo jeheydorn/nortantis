@@ -3,6 +3,7 @@ package nortantis.graph.voronoi;
 import nortantis.Biome;
 import nortantis.Region;
 import nortantis.TectonicPlate;
+import nortantis.WorldGraph;
 import nortantis.geom.IntPoint;
 import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
@@ -33,7 +34,6 @@ public class Center implements Comparable<Center>
 	public double elevation;
 	public double moisture;
 	public Biome biome;
-	public double area;
 	public TectonicPlate tectonicPlate;
 	public Region region;
 	// neighborsNotInSamePlateRatio is only here to make GraphImpl.createTectonicPlates faster.
@@ -141,6 +141,32 @@ public class Center implements Comparable<Center>
 			}
 		}
 		return maxCorner;
+	}
+
+	/**
+	 * Calculates the area of this Center by summing the triangles fanning out from loc to each border edge, ignoring noisy edges.
+	 * <p>
+	 * The result is exact when loc lies inside a convex polygon, which is the case for the straight-edge Voronoi cells the graph is built
+	 * from. Each triangle contributes its absolute area rather than its signed area, so a concave outline comes out too large instead of
+	 * having its reflex parts cancel out.
+	 * <p>
+	 * Centers with isBorder set come out too small, because the outermost Voronoi edges are not stored in the graph, and so the triangles
+	 * that would close those polygons are missing.
+	 *
+	 * @return The area in graph space, which scales with the square of the graph's resolution.
+	 */
+	public double findSimpleArea()
+	{
+		double triangleSumDoubled = 0.0;
+		for (Edge edge : borders)
+		{
+			if (edge.v0 == null || edge.v1 == null)
+			{
+				continue;
+			}
+			triangleSumDoubled += Math.abs(loc.x * (edge.v0.loc.y - edge.v1.loc.y) + edge.v0.loc.x * (edge.v1.loc.y - loc.y) + edge.v1.loc.x * (loc.y - edge.v0.loc.y));
+		}
+		return triangleSumDoubled / 2.0;
 	}
 
 	// This is needed to give the object a deterministic hash code. If I use the object's address as the hash
@@ -425,6 +451,13 @@ public class Center implements Comparable<Center>
 		isCoast = numOcean > 0 && numLand > 0;
 	}
 
+	public List<Point> toPolygon(VoronoiGraph graph)
+	{
+		List<Edge> edges = orderEdgesAroundCenter();
+		List<Point> vertices = graph.edgeListToDrawPoints(edges, false, 0.0);
+		return vertices;
+	}
+
 	@Override
 	public int compareTo(Center o)
 	{
@@ -435,5 +468,4 @@ public class Center implements Comparable<Center>
 		}
 		return locComp;
 	}
-
 }

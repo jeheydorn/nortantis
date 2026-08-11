@@ -1,6 +1,12 @@
 package nortantis.util;
 
-import java.util.*;
+import nortantis.geom.Point;
+import nortantis.geom.Rectangle;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Random;
 
 public class ProbabilityHelper
 {
@@ -94,19 +100,8 @@ public class ProbabilityHelper
 		return distribution;
 	}
 
-	public static void main(String[] args)
+	public static Point sampleUniform(Random rand, Rectangle rect)
 	{
-		Map<String, Integer> counts = new HashMap<>();
-		for (@SuppressWarnings("unused")
-		int i : new Range(10000))
-		{
-			String value = sampleCategorical(new Random(), Arrays.asList(new Tuple2<>(0.1, "first"), new Tuple2<>(0.5, "second"), new Tuple2<>(0.4, "third")));
-			if (!counts.containsKey(value))
-			{
-				counts.put(value, 0);
-			}
-			counts.put(value, counts.get(value) + 1);
-		}
-		System.out.println(counts);
+		return new Point(rand.nextDouble() * rect.width + rect.x, rand.nextDouble() * rect.height + rect.y);
 	}
 }

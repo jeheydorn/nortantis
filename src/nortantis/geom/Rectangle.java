@@ -12,6 +12,8 @@ public class Rectangle
 		this.y = y;
 		this.width = width;
 		this.height = height;
+		assert width >= 0;
+		assert height >= 0;
 	}
 
 	public Rectangle(Point location, double width, double height)
@@ -20,6 +22,8 @@ public class Rectangle
 		this.y = location.y;
 		this.width = width;
 		this.height = height;
+		assert width >= 0;
+		assert height >= 0;
 	}
 
 	public boolean liesOnAxes(Point p, double closeEnoughDistance)
