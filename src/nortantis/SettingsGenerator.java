@@ -416,6 +416,7 @@ public class SettingsGenerator
 		settings.mountainRangeFont = randomSettings.mountainRangeFont;
 		settings.otherMountainsFont = randomSettings.otherMountainsFont;
 		settings.riverFont = randomSettings.riverFont;
+		settings.roadFont = randomSettings.roadFont;
 		settings.boldBackgroundColor = randomSettings.boldBackgroundColor;
 		settings.textColor = randomSettings.textColor;
 		settings.drawBoldBackground = randomSettings.drawBoldBackground;

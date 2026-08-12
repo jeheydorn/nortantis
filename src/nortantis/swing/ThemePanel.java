@@ -90,6 +90,7 @@ public class ThemePanel extends JTabbedPane
 	private FontChooser otherMountainsFontChooser;
 	private FontChooser citiesFontChooser;
 	private FontChooser riverFontChooser;
+	private FontChooser roadFontChooser;
 	private JPanel textColorDisplay;
 	private JPanel boldBackgroundColorDisplay;
 	private JCheckBox drawBoldBackgroundCheckbox;
@@ -1329,6 +1330,8 @@ public class ThemePanel extends JTabbedPane
 		citiesFontChooser.addToOrganizer(organizer);
 		riverFontChooser = new FontChooser(Translation.get("theme.riverLakeFont.label"), 30, 40, () -> handleFontsChange());
 		riverFontChooser.addToOrganizer(organizer);
+		roadFontChooser = new FontChooser(Translation.get("theme.roadFont.label"), 30, 40, () -> handleFontsChange());
+		roadFontChooser.addToOrganizer(organizer);
 
 		organizer.addSeparator();
 		textColorDisplay = SwingHelper.createColorPickerPreviewPanel();
@@ -1798,6 +1801,7 @@ public class ThemePanel extends JTabbedPane
 		otherMountainsFontChooser.setFont(AwtBridge.toAwtFont(settings.otherMountainsFont));
 		citiesFontChooser.setFont(AwtBridge.toAwtFont(settings.citiesFont));
 		riverFontChooser.setFont(AwtBridge.toAwtFont(settings.riverFont));
+		roadFontChooser.setFont(AwtBridge.toAwtFont(settings.roadFont));
 		textColorDisplay.setBackground(AwtBridge.toAwtColor(settings.textColor));
 		boldBackgroundColorDisplay.setBackground(AwtBridge.toAwtColor(settings.boldBackgroundColor));
 		drawBoldBackgroundCheckbox.setSelected(settings.drawBoldBackground);
@@ -1966,6 +1970,7 @@ public class ThemePanel extends JTabbedPane
 		settings.otherMountainsFont = getOtherMountainsFont();
 		settings.citiesFont = getCitiesFont();
 		settings.riverFont = getRiverFont();
+		settings.roadFont = getRoadFont();
 		settings.textColor = AwtBridge.fromAwtColor(textColorDisplay.getBackground());
 		settings.boldBackgroundColor = AwtBridge.fromAwtColor(boldBackgroundColorDisplay.getBackground());
 		settings.drawBoldBackground = drawBoldBackgroundCheckbox.isSelected();
@@ -2026,6 +2031,11 @@ public class ThemePanel extends JTabbedPane
 	public Font getRiverFont()
 	{
 		return AwtBridge.fromAwtFont(riverFontChooser.getFont());
+	}
+
+	public Font getRoadFont()
+	{
+		return AwtBridge.fromAwtFont(roadFontChooser.getFont());
 	}
 
 	private boolean areRegionColorsVisible()
@@ -2151,6 +2161,7 @@ public class ThemePanel extends JTabbedPane
 		otherMountainsFontChooser.chooseButton.setEnabled(enableTextCheckBox.isSelected());
 		citiesFontChooser.chooseButton.setEnabled(enableTextCheckBox.isSelected());
 		riverFontChooser.chooseButton.setEnabled(enableTextCheckBox.isSelected());
+		roadFontChooser.chooseButton.setEnabled(enableTextCheckBox.isSelected());
 		btnChooseTextColor.setEnabled(enableTextCheckBox.isSelected());
 		drawBoldBackgroundCheckbox.setEnabled(enableTextCheckBox.isSelected());
 

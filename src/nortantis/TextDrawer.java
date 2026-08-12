@@ -48,6 +48,7 @@ public class TextDrawer
 	private Font mountainRangeFontScaled;
 	private Font otherMountainsFontScaled;
 	private Font riverFontScaled;
+	private Font roadFontScaled;
 	private Random r;
 	private Font citiesFontScaled;
 	/**
@@ -100,6 +101,7 @@ public class TextDrawer
 		otherMountainsFontScaled = settings.otherMountainsFont.deriveFont(settings.otherMountainsFont.getStyle(), (float) (settings.otherMountainsFont.getSize() * sizeMultiplier));
 		citiesFontScaled = settings.citiesFont.deriveFont(settings.citiesFont.getStyle(), (float) (settings.citiesFont.getSize() * sizeMultiplier));
 		riverFontScaled = settings.riverFont.deriveFont(settings.riverFont.getStyle(), (float) (settings.riverFont.getSize() * sizeMultiplier));
+		roadFontScaled = settings.roadFont.deriveFont(settings.roadFont.getStyle(), (float) (settings.roadFont.getSize() * sizeMultiplier));
 	}
 
 	public synchronized void drawTextFromEdits(Image map, Image landAndOceanBackground, WorldGraph graph, Rectangle drawBounds)
@@ -480,6 +482,10 @@ public class TextDrawer
 				{
 					drawNameRotated(map, p, graph, 0, false, null, text, false, drawOffset);
 				}
+				else if (text.type == TextType.Road)
+				{
+					drawNameRotated(map, p, graph, 0, false, null, text, false, drawOffset);
+				}
 			}));
 		}
 
@@ -534,6 +540,10 @@ public class TextDrawer
 		else if (type == TextType.Lake)
 		{
 			p.setFont(riverFontScaled);
+		}
+		else if (type == TextType.Road)
+		{
+			p.setFont(roadFontScaled);
 		}
 		else
 		{

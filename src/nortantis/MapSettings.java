@@ -138,6 +138,7 @@ public class MapSettings implements Serializable
 	public Font otherMountainsFont;
 	public Font citiesFont;
 	public Font riverFont;
+	public Font roadFont;
 	public Color boldBackgroundColor;
 	public Color textColor;
 	public MapEdits edits;
@@ -460,6 +461,7 @@ public class MapSettings implements Serializable
 		root.put("otherMountainsFont", fontToString(otherMountainsFont));
 		root.put("citiesFont", fontToString(citiesFont));
 		root.put("riverFont", fontToString(riverFont));
+		root.put("roadFont", fontToString(roadFont));
 		root.put("boldBackgroundColor", colorToString(boldBackgroundColor));
 		root.put("drawBoldBackground", drawBoldBackground);
 		root.put("textColor", colorToString(textColor));
@@ -943,6 +945,12 @@ public class MapSettings implements Serializable
 		return font.getName() + "\t" + font.getStyle().value + "\t" + (int) font.getSize();
 	}
 
+	private static Font createDefaultRoadFont(Font riverFont)
+	{
+		// Font sizes are persisted as integers, so round here to keep an upgraded map stable after its first save/reload.
+		return riverFont.deriveFont(riverFont.getStyle(), Math.max(1, Math.round(riverFont.getSize() / 2f)));
+	}
+
 	private void parseFromJson(String fileContents)
 	{
 		JSONObject root = null;
@@ -1196,6 +1204,7 @@ public class MapSettings implements Serializable
 		otherMountainsFont = parseFont((String) root.get("otherMountainsFont"));
 		citiesFont = root.containsKey("citiesFont") ? parseFont((String) root.get("citiesFont")) : otherMountainsFont;
 		riverFont = parseFont((String) root.get("riverFont"));
+		roadFont = root.containsKey("roadFont") ? parseFont((String) root.get("roadFont")) : createDefaultRoadFont(riverFont);
 
 		boldBackgroundColor = parseColor((String) root.get("boldBackgroundColor"));
 		drawBoldBackground = (boolean) root.get("drawBoldBackground");
@@ -2365,6 +2374,7 @@ public class MapSettings implements Serializable
 		otherMountainsFont = old.otherMountainsFont;
 		citiesFont = old.otherMountainsFont;
 		riverFont = old.riverFont;
+		roadFont = createDefaultRoadFont(riverFont);
 		boldBackgroundColor = old.boldBackgroundColor;
 		textColor = old.textColor;
 		drawBoldBackground = old.drawBoldBackground;
@@ -3153,6 +3163,8 @@ public class MapSettings implements Serializable
 			differences.add("riverColor: " + riverColor + " vs " + other.riverColor);
 		if (!Objects.equals(riverFont, other.riverFont))
 			differences.add("riverFont: " + riverFont + " vs " + other.riverFont);
+		if (!Objects.equals(roadFont, other.roadFont))
+			differences.add("roadFont: " + roadFont + " vs " + other.roadFont);
 		if (!Objects.equals(roadColor, other.roadColor))
 			differences.add("roadColor: " + roadColor + " vs " + other.roadColor);
 		if (!Objects.equals(roadStyle, other.roadStyle))
@@ -3201,7 +3213,7 @@ public class MapSettings implements Serializable
 				iconFilterColorsByType, imageExportPath, jitterToConcentricWaves, landColor, landShape, lineStyle, lloydRelaxationsScale, maximizeOpacityByType, mountainRangeFont, mountainScale,
 				oceanColor, oceanEffectsColor, oceanEffectsLevel, oceanShadingColor, oceanShadingLevel, oceanWavesColor, oceanWavesLevel, oceanWavesType, otherMountainsFont, overlayImageDefaultScale,
 				overlayImageDefaultTransparency, overlayImagePath, overlayImageTransparency, overlayOffsetResolutionInvariant, overlayScale, pointPrecision, randomSeed, regionBaseColor,
-				regionBoundaryColor, regionBoundaryStyle, regionCount, regionFont, regionsRandomSeed, resolution, rightRotationCount, riverColor, riverFont, roadColor, roadStyle, saturationRange,
+				regionBoundaryColor, regionBoundaryStyle, regionCount, regionFont, regionsRandomSeed, resolution, rightRotationCount, riverColor, riverFont, roadColor, roadFont, roadStyle, saturationRange,
 				solidColorBackground, textColor, textRandomSeed, titleFont, treeHeightScale, version, worldSize);
 	}
 
@@ -3266,6 +3278,7 @@ public class MapSettings implements Serializable
 				&& Objects.equals(regionBoundaryStyle, other.regionBoundaryStyle) && regionCount == other.regionCount && Objects.equals(regionFont, other.regionFont)
 				&& regionsRandomSeed == other.regionsRandomSeed && Double.doubleToLongBits(resolution) == Double.doubleToLongBits(other.resolution) && rightRotationCount == other.rightRotationCount
 				&& Objects.equals(riverColor, other.riverColor) && Objects.equals(riverFont, other.riverFont) && Objects.equals(roadColor, other.roadColor)
+				&& Objects.equals(roadFont, other.roadFont)
 				&& Objects.equals(roadStyle, other.roadStyle) && saturationRange == other.saturationRange && solidColorBackground == other.solidColorBackground
 				&& Objects.equals(textColor, other.textColor) && textRandomSeed == other.textRandomSeed && Objects.equals(titleFont, other.titleFont)
 				&& Double.doubleToLongBits(treeHeightScale) == Double.doubleToLongBits(other.treeHeightScale) && Objects.equals(version, other.version) && worldSize == other.worldSize;

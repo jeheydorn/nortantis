@@ -132,6 +132,7 @@ public class SubMapCreator
 		newSettings.otherMountainsFont = scaleFontSize(newSettings.otherMountainsFont, fontScale);
 		newSettings.citiesFont = scaleFontSize(newSettings.citiesFont, fontScale);
 		newSettings.riverFont = scaleFontSize(newSettings.riverFont, fontScale);
+		newSettings.roadFont = scaleFontSize(newSettings.roadFont, fontScale);
 		// Initialize fresh empty edits so createGraphForUnitTests will create elevation (isInitialized=false).
 		newSettings.edits = new MapEdits();
 		// The sub-map graph must be built at originalResolution so the RI ↔ pixel conversions used when transferring rivers and icons
