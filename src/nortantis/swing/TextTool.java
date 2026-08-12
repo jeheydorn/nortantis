@@ -440,6 +440,7 @@ public class TextTool extends EditorTool
 			// Lakes don't have their own font.
 			case Lake -> mainWindow.themePanel.getRiverFont();
 			case River -> mainWindow.themePanel.getRiverFont();
+			case Road -> mainWindow.themePanel.getRoadFont();
 		};
 	}
 
