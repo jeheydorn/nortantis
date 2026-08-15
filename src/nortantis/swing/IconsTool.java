@@ -533,7 +533,7 @@ public class IconsTool extends EditorTool
 			{
 				Point newLocation = new Point(icon.locationResolutionInvariant.x - center.x + graphPointMouseLocation.x, icon.locationResolutionInvariant.y - center.y + graphPointMouseLocation.y);
 				FreeIcon copied = icon.copyUnanchored().copyWithLocationResolutionInvariant(newLocation);
-				mainWindow.edits.freeIcons.addOrReplace(copied);
+				mainWindow.edits.freeIcons.add(copied);
 				pasted.add(copied);
 			}
 
@@ -545,7 +545,7 @@ public class IconsTool extends EditorTool
 				final double offset = resolutionScale * 50;
 				Point newLocation = new Point(icon.locationResolutionInvariant.x + offset, icon.locationResolutionInvariant.y + offset);
 				FreeIcon copied = icon.copyUnanchored().copyWithLocationResolutionInvariant(newLocation);
-				mainWindow.edits.freeIcons.addOrReplace(copied);
+				mainWindow.edits.freeIcons.add(copied);
 				pasted.add(copied);
 
 			}
@@ -571,8 +571,7 @@ public class IconsTool extends EditorTool
 		for (FreeIcon icon : iconsToEdit)
 		{
 			FreeIcon withoutScale = icon.copyWithScale(icon.originalScale);
-			mainWindow.edits.freeIcons.remove(icon);
-			mainWindow.edits.freeIcons.addOrReplace(withoutScale);
+			mainWindow.edits.freeIcons.replace(icon, withoutScale);
 			updated.add(icon);
 			updated.add(withoutScale);
 			unscaled.add(withoutScale);
@@ -1483,7 +1482,7 @@ public class IconsTool extends EditorTool
 				nortantis.geom.Point point = getPointOnGraph(e.getPoint());
 				FreeIcon icon = new FreeIcon(mainWindow.displayQualityScale, point, 1.0, IconType.decorations, (String) artPackComboBox.getSelectedItem(), groupId, iconName, null,
 						getSelectedIconTypeColor(), getSelectedIconTypeFilterColor(), maximizeOpacityCheckbox.isSelected(), fillWithColorCheckbox.isSelected());
-				mainWindow.edits.freeIcons.addOrReplace(icon);
+				mainWindow.edits.freeIcons.add(icon);
 				updater.createAndShowMapIncrementalUsingIcons(Arrays.asList(icon));
 			}
 		}

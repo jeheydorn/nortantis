@@ -471,6 +471,8 @@ public class SubMapCreator
 	private static void transferFreeIcons(MapEdits originalEdits, WorldGraph originalGraph, WorldGraph newGraph, Rectangle selectionBoundsRI, double originalResolution, MapEdits newEdits,
 			int newGenWidth, int newGenHeight, boolean redistributeIconsAndRivers, long seed, IconDrawer sourceIconDrawer)
 	{
+		newEdits.freeIcons.rebuildGridForMap(newGenWidth, newGenHeight, newGraph.centers.size());
+
 		// Cities and decorations always copy by position, regardless of redistributeIconsAndRivers.
 		// They must be copied before redistribution so that redistribution can skip their centers.
 		for (FreeIcon icon : originalEdits.freeIcons)
@@ -494,8 +496,8 @@ public class SubMapCreator
 						newCenterIndex = nearestNewCenter.index;
 					}
 				}
-				newEdits.freeIcons.addOrReplace(new FreeIcon(newLoc, icon.scale, icon.type, icon.artPack, icon.groupId, icon.iconIndex, icon.iconName, newCenterIndex, icon.density, icon.fillColor,
-						icon.filterColor, icon.maximizeOpacity, icon.fillWithColor, icon.originalScale));
+				newEdits.freeIcons.addOrReplace(new FreeIcon(newLoc, icon.scale, icon.type, icon.artPack, icon.groupId, icon.iconIndex, icon.iconName, newCenterIndex, icon.density,
+						icon.fillColor, icon.filterColor, icon.maximizeOpacity, icon.fillWithColor, icon.originalScale));
 			}
 		}
 
@@ -516,7 +518,8 @@ public class SubMapCreator
 				if (selectionBoundsRI.containsOrOverlaps(icon.locationResolutionInvariant))
 				{
 					Point newLoc = transformRIPoint(icon.locationResolutionInvariant, selectionBoundsRI, newGenWidth, newGenHeight);
-					newEdits.freeIcons.addOrReplace(new FreeIcon(newLoc, icon.scale, icon.type, icon.artPack, icon.groupId, icon.iconIndex, icon.iconName, null, icon.density, icon.fillColor,
+					// These icons have no anchor, so there is nothing on a Center for them to replace.
+					newEdits.freeIcons.add(new FreeIcon(newLoc, icon.scale, icon.type, icon.artPack, icon.groupId, icon.iconIndex, icon.iconName, null, icon.density, icon.fillColor,
 							icon.filterColor, icon.maximizeOpacity, icon.fillWithColor, icon.originalScale));
 				}
 			}
@@ -600,7 +603,7 @@ public class SubMapCreator
 			{
 				continue;
 			}
-			if (newEdits.freeIcons.getNonTree(nearestNew.index) != null)
+			if (newEdits.freeIcons.getAnchoredNonTreeIcon(nearestNew.index) != null)
 			{
 				continue; // city already there
 			}
@@ -699,7 +702,7 @@ public class SubMapCreator
 			// For new centers not yet assigned by step 1, check whether their loc maps to an original
 			// center that had an icon. If so, place a CenterIcon with a random iconIndex from the same
 			// group, letting IconDrawer handle positioning and scaling during rendering.
-			if (hasNonTreeData && newEdits.freeIcons.getNonTree(newCenter.index) == null && (existingEdit == null || existingEdit.icon == null) && originalCenterAtLocation != null)
+			if (hasNonTreeData && newEdits.freeIcons.getAnchoredNonTreeIcon(newCenter.index) == null && (existingEdit == null || existingEdit.icon == null) && originalCenterAtLocation != null)
 			{
 				List<FreeIcon> iconsAtLocation = originalCenterToIcons.get(originalCenterAtLocation.index);
 				if (iconsAtLocation != null)

@@ -1268,7 +1268,7 @@ public class ThemePanel extends JTabbedPane
 						continue;
 					}
 					Point loc = iconDrawer.getAnchoredMountainDrawPoint(graph.centers.get(icon.centerIndex), icon.groupId, icon.iconIndex, mountainScale, iconsByGroup);
-					freeIcons.addOrReplace(icon.copyWithLocation(resolution, loc));
+					freeIcons.replace(icon, icon.copyWithLocation(resolution, loc));
 				}
 			}
 
