@@ -1,9 +1,14 @@
 package nortantis;
 
 import nortantis.editor.FreeIcon;
+import nortantis.geom.GridCoordinate;
+import nortantis.geom.Point;
+import nortantis.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.util.ConcurrentHashMapF;
+import nortantis.util.GeometryHelper;
 import nortantis.util.Helper;
+import nortantis.util.Range;
 
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -15,72 +20,91 @@ import java.util.function.Supplier;
 public class FreeIconCollection implements Iterable<FreeIcon>
 {
 	/**
-	 * Maps from Center index to lists of icons that are anchored to that Center.
+	 * A spatial index of icons on the map, for fast spatial lookup.
+	 * This uses resolution-invariant coordinates to avoid having to scale icon coordinates with each query and avoid having to re-create the grid when the display quality changes.
+	 * Icons that are off the map but not all the way off, so they aren't deleted, are placed in the grid cell determined by clamping the coordinates of their location.
 	 */
-	private ConcurrentHashMapF<Integer, FreeIcon> anchoredNonTreeIcons;
-	private ConcurrentHashMapF<Integer, CopyOnWriteArrayList<FreeIcon>> anchoredTreeIcons;
-	private CopyOnWriteArrayList<FreeIcon> nonAnchoredIcons;
+	private List<FreeIcon>[][] grid;
+	private double cellWidth;
+	private double cellHeight;
+	private int gridCols;
+	private int gridRows;
+	private final int mapWidthRI;
+	private final int mapHeightRI;
+	private final int centerCount;
 
-	public FreeIconCollection()
+	/**
+	 * @param mapWidthRI Resolution-invariant width of the map.
+	 * @param mapHeightRI Resolution-invariant height of the map.
+	 * @param worldSize Number of Centers in the map's graph.
+	 */
+	public FreeIconCollection(int mapWidthRI, int mapHeightRI, int worldSize)
 	{
-		anchoredNonTreeIcons = new ConcurrentHashMapF<>();
-		anchoredTreeIcons = new ConcurrentHashMapF<>();
-		nonAnchoredIcons = new CopyOnWriteArrayList<>();
+		assert mapWidthRI > 0;
+		assert mapHeightRI > 0;
+		assert worldSize > 0;
+		this.mapWidthRI = mapWidthRI;
+		this.mapHeightRI = mapHeightRI;
+		this.centerCount = worldSize;
+		buildGrid();
 	}
 
 	public FreeIconCollection(FreeIconCollection other)
 	{
-		anchoredNonTreeIcons = new ConcurrentHashMapF<>(other.anchoredNonTreeIcons);
-		anchoredTreeIcons = new ConcurrentHashMapF<>();
-		for (Map.Entry<Integer, CopyOnWriteArrayList<FreeIcon>> entry : other.anchoredTreeIcons.entrySet())
-		{
-			anchoredTreeIcons.put(entry.getKey(), new CopyOnWriteArrayList<FreeIcon>(entry.getValue()));
-		}
-		nonAnchoredIcons = new CopyOnWriteArrayList<FreeIcon>(other.nonAnchoredIcons);
+		this(other.mapWidthRI, other.mapHeightRI, other.centerCount);
 	}
 
-	@SuppressWarnings("unused")
-	public synchronized int calcSize()
+	/**
+	 * Build the spacial lookup grid for icons. Must be called before any icons are added to the collection.
+	 */
+	@SuppressWarnings("unchecked")
+	void buildGrid()
 	{
-		int size = anchoredNonTreeIcons.size();
-		for (CopyOnWriteArrayList<FreeIcon> trees : anchoredTreeIcons.values())
+		// Calculate cell size based on center density.
+		double avgSpacing = Math.sqrt(((double) (mapWidthRI * mapHeightRI)) / centerCount);
+		cellWidth = Math.max(1, (int) (avgSpacing));
+		cellHeight = Math.max(1, (int) (avgSpacing));
+		gridCols = (int) ((mapWidthRI / cellWidth) + 1);
+		gridRows = (int) ((mapHeightRI / cellHeight) + 1);
+
+		// Instantiate the cells
+		grid = new ArrayList[gridRows][gridCols];
+		for (int row = 0; row < gridRows; row++)
 		{
-			size += trees.size();
+			for (int col = 0; col < gridCols; col++)
+			{
+				grid[row][col] = new ArrayList<FreeIcon>();
+			}
 		}
-		size += nonAnchoredIcons.size();
-		return size;
 	}
 
-	public synchronized void addOrReplace(FreeIcon icon)
+	private List<FreeIcon> getCell(FreeIcon icon)
 	{
-		if (icon.centerIndex != null)
-		{
-			if (icon.type == IconType.trees)
-			{
-				anchoredTreeIcons.computeIfAbsent(icon.centerIndex, unused -> new CopyOnWriteArrayList<FreeIcon>()).add(icon);
-			}
-			else
-			{
-				anchoredNonTreeIcons.put(icon.centerIndex, icon);
-			}
-		}
-		else
-		{
-			nonAnchoredIcons.add(icon);
-		}
+		GridCoordinate coordinates = getCoordinates(icon.locationResolutionInvariant);
+		return grid[coordinates.row()][coordinates.col()];
+	}
+
+	private List<FreeIcon> getCell(GridCoordinate coordinates)
+	{
+		return grid[coordinates.row()][coordinates.col()];
+	}
+
+	private GridCoordinate getCoordinates(Point pointRI)
+	{
+		int row = GeometryHelper.clamp((int) (pointRI.y / cellHeight), 0, gridRows - 1);
+		int col = GeometryHelper.clamp((int) (pointRI.x / cellWidth), 0, gridCols - 1);
+		return new GridCoordinate(row, col);
+	}
+
+	public synchronized void add(FreeIcon icon)
+	{
+		getCell(icon).add(icon);
 	}
 
 	public synchronized void replace(FreeIcon before, FreeIcon after)
 	{
-		if ((before.type != IconType.trees && after.type != IconType.trees) && (before.centerIndex != null && before.centerIndex == after.centerIndex))
-		{
-			anchoredNonTreeIcons.put(after.centerIndex, after);
-		}
-		else
-		{
-			remove(before);
-			addOrReplace(after);
-		}
+		remove(before);
+		add(after);
 	}
 
 	public synchronized FreeIcon getNonTree(int centerIndex)
@@ -110,21 +134,59 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		return anchoredTreeIcons.get(centerIndex);
 	}
 
-	public synchronized List<FreeIcon> getIconsOnCenterFilteredByType(WorldGraph graph, int centerIndex, IconType type)
+	public synchronized List<FreeIcon> getIconsOnCenterByType(WorldGraph graph, int centerIndex, IconType type)
 	{
-		// TODO this is horribly inefficient and should be replaced with a spatial lookup before release.
+		// Pad the bounding box a little to account for getBoundingBox not guaranteeing coverage. The 2.0 division is just my guess at how much to pad.
+		Rectangle boundsInGraphSpace = graph.getBoundingBox(Collections.singleton(graph.centers.get(centerIndex))).pad(graph.getMeanCenterWidth() / 2.0);
+		return getIconsInBoundsFiltered(graph, boundsInGraphSpace, Collections.singleton(centerIndex), type);
+	}
 
-		List<FreeIcon> result = new ArrayList<>();
-		Center center = graph.centers.get(centerIndex);
-		for (FreeIcon icon : this)
+	/**
+	 * Finds all icons in the given boundsInGraphSpace filtered by boundsInGraphSpace and typeToInclude.
+	 * Note - the bounds check with boundsInGraphSpace is based on the icons' location, not its extent.
+	 * @param graph The graph the centers are from
+	 * @param boundsInGraphSpace Bounding box in graph space
+	 * @param indexesOfCentersToInclude Only icons whose location is on a Center with an index in this collection will be returned. Passing in null means don't filter by Centers.
+	 * @param typeToInclude Only icons of this type will be returned. Null is not supported.
+	 * @return
+	 */
+	private synchronized List<FreeIcon> getIconsInBoundsFiltered(WorldGraph graph, Rectangle boundsInGraphSpace, Set<Integer> indexesOfCentersToInclude, IconType typeToInclude)
+	{
+		assert typeToInclude != null;
+		Rectangle boundsRI = boundsInGraphSpace.scaleAboutOrigin(1.0 / graph.resolutionScale);
+		GridCoordinate upperLeft = getCoordinates(boundsRI.upperLeftCorner());
+		GridCoordinate lowerRight = getCoordinates(boundsRI.lowerRightCorner());
+		List<FreeIcon> found = new ArrayList<>();
+
+		for (int row : new Range(upperLeft.row(), lowerRight.row()))
 		{
-			// TODO account for mountain offset if needed.
-			if (icon.type == type && graph.findClosestCenter(icon.getScaledLocation(graph.resolutionScale), true) == center)
+			for (int col : new Range(upperLeft.col(), lowerRight.col()))
 			{
-				result.add(icon);
+				for (FreeIcon icon : getCell(new GridCoordinate(row, col)))
+				{
+					if (!boundsRI.contains(icon.locationResolutionInvariant))
+					{
+						break;
+					}
+
+					if (indexesOfCentersToInclude != null && !indexesOfCentersToInclude.isEmpty())
+					{
+						Center closest = graph.findClosestCenter(icon.getScaledLocation(graph.resolutionScale), true, true);
+						if (closest == null || !indexesOfCentersToInclude.contains(closest.index))
+						{
+							continue;
+						}
+					}
+					if (!Objects.equals(icon.type, typeToInclude))
+					{
+						continue;
+					}
+
+					found.add(icon);
+				}
 			}
 		}
-		return result;
+		return found;
 	}
 
 	public synchronized Iterable<Integer> iterateTreeAnchors()
@@ -152,29 +214,7 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 
 	public synchronized void remove(FreeIcon icon)
 	{
-		if (icon.centerIndex == null)
-		{
-			nonAnchoredIcons.remove(icon);
-		}
-		else
-		{
-			if (icon.type == IconType.trees)
-			{
-				if (anchoredTreeIcons.containsKey(icon.centerIndex))
-				{
-					List<FreeIcon> trees = anchoredTreeIcons.get(icon.centerIndex);
-					trees.remove(icon);
-					if (trees.isEmpty())
-					{
-						anchoredTreeIcons.remove(icon.centerIndex);
-					}
-				}
-			}
-			else
-			{
-				anchoredNonTreeIcons.remove(icon.centerIndex);
-			}
-		}
+		getCell(icon).remove(icon);
 	}
 
 	@Override

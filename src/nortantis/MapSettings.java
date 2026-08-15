@@ -283,6 +283,32 @@ public class MapSettings implements Serializable
 		return drawRegionBoundaries || drawRegionColors;
 	}
 
+	/**
+	 * Returns the width of the map as it is laid out and drawn, in resolution-invariant units, which is {@link #generatedHeight} rather than
+	 * {@link #generatedWidth} when {@link #rightRotationCount} is a quarter turn.
+	 */
+	public int getWidthResolutionInvariant()
+	{
+		return isRotatedAQuarterTurn() ? generatedHeight : generatedWidth;
+	}
+
+	/**
+	 * Returns the height of the map as it is laid out and drawn, in resolution-invariant units, which is {@link #generatedWidth} rather than
+	 * {@link #generatedHeight} when {@link #rightRotationCount} is a quarter turn.
+	 */
+	public int getHeightResolutionInvariant()
+	{
+		return isRotatedAQuarterTurn() ? generatedWidth : generatedHeight;
+	}
+
+	/**
+	 * Returns true if the map is rotated 90 or 270 degrees, which swaps its width and height relative to the generated dimensions.
+	 */
+	public boolean isRotatedAQuarterTurn()
+	{
+		return rightRotationCount == 1 || rightRotationCount == 3;
+	}
+
 	public boolean hasOldCustomImagesFolderStructure()
 	{
 		if (customImagesPath == null || customImagesPath.isEmpty())
@@ -2000,11 +2026,11 @@ public class MapSettings implements Serializable
 	{
 		if (editsJson == null)
 		{
-			return new FreeIconCollection();
+			return new FreeIconCollection(getWidthResolutionInvariant(), getHeightResolutionInvariant(), worldSize);
 		}
 
 		JSONArray array = (JSONArray) editsJson.get("iconEdits");
-		FreeIconCollection result = new FreeIconCollection();
+		FreeIconCollection result = new FreeIconCollection(getWidthResolutionInvariant(), getHeightResolutionInvariant(), worldSize);
 		if (array == null)
 		{
 			return result;

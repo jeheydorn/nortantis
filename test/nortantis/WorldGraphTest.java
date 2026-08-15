@@ -1,6 +1,7 @@
 package nortantis;
 
 import nortantis.geom.Point;
+import nortantis.geom.PolarCoordinate;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
