@@ -99,12 +99,13 @@ public class IconDrawer
 
 		if (!settings.edits.isInitialized())
 		{
-			this.freeIcons = new FreeIconCollection();
+			this.freeIcons = new FreeIconCollection(settings.getWidthResolutionInvariant(), settings.getHeightResolutionInvariant(), settings.worldSize);
 			settings.edits.freeIcons = freeIcons;
 		}
 		else
 		{
 			freeIcons = settings.edits.freeIcons;
+			freeIcons.rebuildGridForMap(settings.getWidthResolutionInvariant(), settings.getHeightResolutionInvariant(), settings.worldSize);
 		}
 
 		iconsToDraw = new ArrayList<>();
@@ -365,10 +366,10 @@ public class IconDrawer
 			freeIcons.addOrReplace(icon);
 			changeBounds = Rectangle.add(changeBounds, drawTask.createBounds());
 		}
-		else if (freeIcons.getNonTree(center.index) != null)
+		else if (freeIcons.getAnchoredNonTreeIcon(center.index) != null)
 		{
 			changeBounds = Rectangle.add(changeBounds, getAnchoredNonTreeIconBoundsAt(center.index));
-			freeIcons.remove(freeIcons.getNonTree(center.index));
+			freeIcons.remove(freeIcons.getAnchoredNonTreeIcon(center.index));
 		}
 
 		edits.centerEdits.put(cEdit.index, cEdit.copyWithIcon(null));
@@ -379,7 +380,7 @@ public class IconDrawer
 	private Rectangle getAnchoredNonTreeIconBoundsAt(int centerIndex)
 	{
 		Rectangle changeBounds = null;
-		FreeIcon icon = freeIcons.getNonTree(centerIndex);
+		FreeIcon icon = freeIcons.getAnchoredNonTreeIcon(centerIndex);
 		if (icon != null)
 		{
 			IconDrawTask task = toIconDrawTask(icon);
@@ -508,6 +509,8 @@ public class IconDrawer
 	{
 		edits.freeIcons.doWithLock(() ->
 		{
+			Map<Integer, List<FreeIcon>> treesByCenter = edits.freeIcons.groupAnchoredIconsByCenter(IconType.trees);
+
 			// Reassign the random seeds to all CenterTrees that still exist because they failed to create any visible trees, and mark them
 			// not dormant so they try to draw again. Drop those that are not close to any visible tree so they don't randomly pop up.
 			for (Map.Entry<Integer, CenterEdit> entry : edits.centerEdits.entrySet())
@@ -517,7 +520,7 @@ public class IconDrawer
 				{
 					continue;
 				}
-				if (edits.freeIcons.hasTrees(entry.getKey()))
+				if (treesByCenter.containsKey(entry.getKey()))
 				{
 					// Visible trees override invisible ones.
 					edits.centerEdits.put(entry.getKey(), entry.getValue().copyWithTrees(null));
@@ -534,9 +537,10 @@ public class IconDrawer
 				}
 			}
 
-			for (int centerIndex : edits.freeIcons.iterateTreeAnchors())
+			for (Map.Entry<Integer, List<FreeIcon>> treeEntry : treesByCenter.entrySet())
 			{
-				List<FreeIcon> trees = edits.freeIcons.getTrees(centerIndex);
+				int centerIndex = treeEntry.getKey();
+				List<FreeIcon> trees = treeEntry.getValue();
 				if (trees == null || trees.isEmpty())
 				{
 					continue;
@@ -614,7 +618,7 @@ public class IconDrawer
 			return distanceFromStart < maxSearchDistance;
 		}, (c) ->
 		{
-			return hasVisibleTreeMatching(edits, c.index, cTrees);
+			return hasVisibleTreeMatching(edits, graph, c.index, cTrees);
 		}, start);
 
 		return found != null;
@@ -625,7 +629,7 @@ public class IconDrawer
 	 * {@code cTrees}, with the same colors. Trees that carry no colors of their own are matched on art pack and tree type alone, since they
 	 * have no particular color to match against.
 	 */
-	private static boolean hasVisibleTreeMatching(MapEdits edits, int centerIndex, CenterTrees cTrees)
+	private static boolean hasVisibleTreeMatching(MapEdits edits, WorldGraph graph, int centerIndex, CenterTrees cTrees)
 	{
 		for (FreeIcon tree : edits.freeIcons.getTrees(centerIndex))
 		{

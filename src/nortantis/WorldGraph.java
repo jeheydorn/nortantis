@@ -1450,8 +1450,8 @@ public class WorldGraph extends VoronoiGraph
 			// Add each center to the cell containing its loc
 			for (Center center : centers)
 			{
-				int col = clamp((int) (center.loc.x / cellWidth), 0, gridCols - 1);
-				int row = clamp((int) (center.loc.y / cellHeight), 0, gridRows - 1);
+				int col = GeometryHelper.clamp((int) (center.loc.x / cellWidth), 0, gridCols - 1);
+				int row = GeometryHelper.clamp((int) (center.loc.y / cellHeight), 0, gridRows - 1);
 				tempGrid[row][col].add(center);
 			}
 			cellCenters = tempGrid;
