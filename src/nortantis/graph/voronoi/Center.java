@@ -172,6 +172,11 @@ public class Center implements Comparable<Center>
 	// This is needed to give the object a deterministic hash code. If I use the object's address as the hash
 	// code, it may change from one run to the next, and so HashSet iterates over the objects in a different
 	// order sometimes.
+	//
+	// equals is deliberately not overridden, so centers compare by identity. An index is only unique within one
+	// graph, and sub-map creation holds two graphs alive at once whose indexes both start at 0, so comparing by
+	// index would silently match a center against an unrelated center in the other graph. Comparing by identity
+	// makes that mistake produce no match rather than the wrong match.
 	@Override
 	public int hashCode()
 	{

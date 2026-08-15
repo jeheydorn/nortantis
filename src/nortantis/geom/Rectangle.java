@@ -160,9 +160,14 @@ public class Rectangle
 	/**
 	 * Returns a new rectangle with the same centroid as this one but with the width and height expanded by the given width and height.
 	 */
-	public Rectangle pad(double paddWidth, double paddHeight)
+	public Rectangle pad(double padWidth, double padHeight)
 	{
-		return new Rectangle(x - paddWidth / 2.0, y - paddHeight / 2.0, width + paddWidth, height + paddHeight);
+		return new Rectangle(x - padWidth / 2.0, y - padHeight / 2.0, width + padWidth, height + padHeight);
+	}
+
+	public Rectangle pad(double padWidthAndHeight)
+	{
+		return pad(padWidthAndHeight, padWidthAndHeight);
 	}
 
 	public Rectangle floor()
@@ -208,6 +213,11 @@ public class Rectangle
 	public Point upperLeftCorner()
 	{
 		return new Point(x, y);
+	}
+
+	public Point lowerRightCorner()
+	{
+		return new Point(x + width, y + height);
 	}
 
 	public Point getCenter()

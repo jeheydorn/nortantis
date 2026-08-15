@@ -2,10 +2,14 @@ package nortantis;
 
 import nortantis.MapSettings.LineStyle;
 import nortantis.geom.Point;
+import nortantis.geom.PolarCoordinate;
 import nortantis.geom.Rectangle;
 import nortantis.graph.voronoi.*;
 import nortantis.graph.voronoi.nodename.as3delaunay.Voronoi;
-import nortantis.platform.*;
+import nortantis.platform.Color;
+import nortantis.platform.Painter;
+import nortantis.platform.Transform;
+import nortantis.util.GeometryHelper;
 import nortantis.util.Helper;
 import nortantis.util.Range;
 import org.apache.commons.lang3.function.TriFunction;
@@ -1495,8 +1499,8 @@ public class WorldGraph extends VoronoiGraph
 
 		Center getRepresentative(Point query)
 		{
-			int col = clamp((int) (query.x / cellWidth), 0, gridCols - 1);
-			int row = clamp((int) (query.y / cellHeight), 0, gridRows - 1);
+			int col = GeometryHelper.clamp((int) (query.x / cellWidth), 0, gridCols - 1);
+			int row = GeometryHelper.clamp((int) (query.y / cellHeight), 0, gridRows - 1);
 			return grid[row][col];
 		}
 
@@ -1508,8 +1512,8 @@ public class WorldGraph extends VoronoiGraph
 		 */
 		Center findNearestByLocation(Point query)
 		{
-			int col = clamp((int) (query.x / cellWidth), 0, gridCols - 1);
-			int row = clamp((int) (query.y / cellHeight), 0, gridRows - 1);
+			int col = GeometryHelper.clamp((int) (query.x / cellWidth), 0, gridCols - 1);
+			int row = GeometryHelper.clamp((int) (query.y / cellHeight), 0, gridRows - 1);
 			return findClosestFromCandidates(cellCenters, row, col, query);
 		}
 
@@ -1522,11 +1526,6 @@ public class WorldGraph extends VoronoiGraph
 		{
 			double cutoff = 1.5 * Math.max(cellWidth, cellHeight);
 			return cutoff * cutoff;
-		}
-
-		private int clamp(int value, int min, int max)
-		{
-			return Math.max(min, Math.min(max, value));
 		}
 	}
 
@@ -2553,6 +2552,17 @@ public class WorldGraph extends VoronoiGraph
 		return centroid;
 	}
 
+	/**
+	 * Calculates a bounding box that approximately covers the area the given centers draw into, including the extra reach of noisy edges.
+	 * <p>
+	 * The result is an approximation rather than a guaranteed cover, because each center's extent is estimated from its neighbors'
+	 * locations instead of from its own drawn outline. It can fall short in obscure cases: a Voronoi corner is a circumcenter, so an
+	 * obtuse Delaunay triangle can place that corner outside the hull of the neighbors; noisy edges are only assumed to reach about as far
+	 * as a neighboring center; and coastline smoothing displaces corners further still. Callers that cannot tolerate a short bound should
+	 * pad the result, or measure the drawn outline directly with {@code GeometryHelper.calcBounds(center.toPolygon(graph))}.
+	 *
+	 * @return A bounding box in graph pixel coordinates, or null if no centers are given.
+	 */
 	public static Rectangle getBoundingBox(Collection<Center> centers)
 	{
 		if (centers.size() == 0)

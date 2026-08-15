@@ -1,10 +1,10 @@
 package nortantis;
 
 import nortantis.geom.Point;
+import nortantis.geom.PolarCoordinate;
 import nortantis.graph.voronoi.Center;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 public class TectonicPlate

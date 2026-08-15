@@ -2305,7 +2305,7 @@ public class IconDrawer
 
 		// Use rejection sampling to get the desired tree density on the center.
 		int targetNumber = calcNumberOfTreesForCenterAndDensity(rand, area, cTrees.density);
-		int numberOfTreesAlreadyOnCenter = freeIcons.getIconsOnCenterFilteredByType(graph, center.index, IconType.trees).size();
+		int numberOfTreesAlreadyOnCenter = freeIcons.getIconsOnCenterByType(graph, center.index, IconType.trees).size();
 		int numberToAdd = targetNumber - numberOfTreesAlreadyOnCenter;
 		if (numberToAdd > 0)
 		{
@@ -2356,7 +2356,7 @@ public class IconDrawer
 		double density = forestDensity * treeDensityScale * meanAddPointsForTreesUsingOldMethod * (centerArea / graph.getMeanCenterArea());
 
 		//Claude - I'm changing this value at the moment for testing.
-		final double scatterPercentage = 1.0; // TODO Expose as user parameter
+		final double scatterPercentage = 1.0; // TODO Expose as user parameter, and consider whether it might work for all icon types.
 		double densityWithScatter = density - (density * scatterPercentage) + rand.nextDouble() * (density * scatterPercentage * 2.0);
 
 		// Convert the forestDensity into an integer number of trees to draw such that the expected value is the desired density.

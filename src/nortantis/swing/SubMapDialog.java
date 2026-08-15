@@ -1248,7 +1248,7 @@ public class SubMapDialog
 	 */
 	private int getMapDisplayWidth()
 	{
-		return (origSettings.rightRotationCount == 1 || origSettings.rightRotationCount == 3) ? origSettings.generatedHeight : origSettings.generatedWidth;
+		return origSettings.getWidthResolutionInvariant();
 	}
 
 	/**
@@ -1256,7 +1256,7 @@ public class SubMapDialog
 	 */
 	private int getMapDisplayHeight()
 	{
-		return (origSettings.rightRotationCount == 1 || origSettings.rightRotationCount == 3) ? origSettings.generatedWidth : origSettings.generatedHeight;
+		return origSettings.getHeightResolutionInvariant();
 	}
 
 	private void handleCreate()
