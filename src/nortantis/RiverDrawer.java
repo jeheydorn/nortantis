@@ -257,6 +257,23 @@ public class RiverDrawer
 			}
 		}
 		graph.noisyEdges.setRiverEdgeOverrides(overrides);
+
+		// The overrides change the shape of the edges the centers draw, so any pie-slice polygons already cached for those centers now
+		// describe the pre-override geometry, which would make point location disagree with what is drawn.
+		Set<Center> centersOfOverriddenEdges = new HashSet<>();
+		for (int edgeIndex : overrides.keySet())
+		{
+			Edge edge = graph.edges.get(edgeIndex);
+			if (edge.d0 != null)
+			{
+				centersOfOverriddenEdges.add(edge.d0);
+			}
+			if (edge.d1 != null)
+			{
+				centersOfOverriddenEdges.add(edge.d1);
+			}
+		}
+		graph.updateCenterLookupTable(centersOfOverriddenEdges);
 	}
 
 	/**
