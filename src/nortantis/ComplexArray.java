@@ -64,30 +64,42 @@ public class ComplexArray
 		}
 	}
 
+	/**
+	 * Moves the origin of the left side from its corner to its middle, which puts a convolution's result where the image it came from was.
+	 *
+	 * This is a circular rotation by half the height and half the width, rounded down. Rotating is what makes odd widths and heights come out
+	 * right: swapping opposite quadrants only lines up when both dimensions are even, and for odd ones it leaves the last row untouched and
+	 * writes the middle column twice. For even dimensions the rotation and the swap are the same thing.
+	 */
 	public void swapQuadrantsOfLeftSideInPlace()
 	{
-		int rows = height;
-		int cols = width;
-		int halfRows = rows / 2;
-		int halfCols = cols / 2;
-		for (int r = 0; r < halfRows; r++)
+		int halfRows = height / 2;
+		int halfCols = width / 2;
+
+		// Rotating rows only needs their references moved, not their contents.
+		float[][] rotatedRows = new float[height][];
+		for (int r = 0; r < height; r++)
 		{
-			for (int c = 0; c < cols; c++)
-			{
-				int r2 = r + halfRows;
-				int c2;
-				if (c < halfCols)
-				{
-					c2 = c + halfCols;
-				}
-				else
-				{
-					c2 = c - halfCols;
-				}
-				float temp = array[r2][c2];
-				array[r2][c2] = array[r][c];
-				array[r][c] = temp;
-			}
+			rotatedRows[r] = array[(r + halfRows) % height];
+		}
+		array = rotatedRows;
+
+		// Rotating a row left by halfCols is three reversals, which needs no scratch space.
+		for (int r = 0; r < height; r++)
+		{
+			reverseRange(array[r], 0, halfCols);
+			reverseRange(array[r], halfCols, width);
+			reverseRange(array[r], 0, width);
+		}
+	}
+
+	private static void reverseRange(float[] values, int start, int end)
+	{
+		for (int low = start, high = end - 1; low < high; low++, high--)
+		{
+			float temp = values[low];
+			values[low] = values[high];
+			values[high] = temp;
 		}
 	}
 
