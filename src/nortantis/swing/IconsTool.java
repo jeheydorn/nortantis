@@ -1309,8 +1309,9 @@ public class IconsTool extends EditorTool
 				p.fillRect(fadeWidth, fadeWidth, image.getWidth() - fadeWidth * 2, image.getHeight() - fadeWidth * 2);
 			}
 
-			// Use convolution to make a hazy background for the text.
-			try (Image hazyBox = ImageHelper.getInstance().blur(box, fadeWidth, true, false))
+			// Blur the box to get an alpha mask that fades to transparent at the edges. The blur must treat the outside of the
+			// image as empty, or the edges would draw brightness from the opposite side and never reach transparent.
+			try (Image hazyBox = ImageHelper.getInstance().blur(box, fadeWidth, true, true))
 			{
 				return ImageHelper.getInstance().setAlphaFromMask(image, hazyBox, false);
 			}

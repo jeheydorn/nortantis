@@ -39,6 +39,79 @@ public abstract class ImageHelper
 		return instance;
 	}
 
+	/**
+	 * Ways of blurring that {@link #blur} and {@link #blurAndScale} can use. They differ in how closely they follow the shape of a true
+	 * Gaussian and in how their cost grows with the blur level, and all of them treat everything outside the image as zero.
+	 */
+	public enum BlurAlgorithm
+	{
+		/**
+		 * Multiply by the kernel in the frequency domain. Follows a Gaussian almost exactly, but costs the most, and its cost is driven by the
+		 * size of the image rather than the size of the kernel.
+		 */
+		fft,
+
+		/**
+		 * Convolve with a sampled Gaussian kernel, once horizontally and once vertically. Nearly as faithful as the FFT, but its cost grows
+		 * with the blur level, so it is the slowest of these at large blur levels.
+		 */
+		separableGaussian,
+
+		/**
+		 * Run a recursive filter forwards and then backwards along each line. Costs the same per pixel whatever the blur level is.
+		 */
+		recursiveGaussian,
+
+		/**
+		 * Three box filters in a row. The cheapest, and also the least faithful to a Gaussian.
+		 */
+		threeBoxes
+	}
+
+	/**
+	 * Set this system property to the name of a {@link BlurAlgorithm} to override which one is used, for comparing them.
+	 */
+	public static final String blurAlgorithmProperty = "nortantis.blurAlgorithm";
+
+	private static final BlurAlgorithm defaultBlurAlgorithm = BlurAlgorithm.recursiveGaussian;
+
+	private static BlurAlgorithm blurAlgorithm;
+
+	public static synchronized BlurAlgorithm getBlurAlgorithm()
+	{
+		if (blurAlgorithm == null)
+		{
+			String name = System.getProperty(blurAlgorithmProperty);
+			if (name == null || name.isBlank())
+			{
+				blurAlgorithm = defaultBlurAlgorithm;
+			}
+			else
+			{
+				for (BlurAlgorithm candidate : BlurAlgorithm.values())
+				{
+					if (candidate.name().equalsIgnoreCase(name.trim()))
+					{
+						blurAlgorithm = candidate;
+						break;
+					}
+				}
+				if (blurAlgorithm == null)
+				{
+					throw new IllegalArgumentException(
+							"'" + name + "' is not a recognized value for the system property " + blurAlgorithmProperty + ". Expected one of "
+									+ Arrays.toString(BlurAlgorithm.values()) + ".");
+				}
+			}
+		}
+		return blurAlgorithm;
+	}
+
+	public static synchronized void setBlurAlgorithm(BlurAlgorithm algorithm)
+	{
+		blurAlgorithm = algorithm;
+	}
+
 	public Image convertToGrayscale(Image img)
 	{
 		return convertImageToType(img, ImageType.Grayscale8Bit);
@@ -473,7 +546,13 @@ public abstract class ImageHelper
 			return image;
 		}
 
-		return convolveGrayscale(image, createGaussianKernel(blurLevel), maximizeContrast, padImageToAvoidWrapping);
+		BlurAlgorithm algorithm = getBlurAlgorithm();
+		if (algorithm == BlurAlgorithm.fft)
+		{
+			return convolveGrayscale(image, createGaussianKernel(blurLevel), maximizeContrast, padImageToAvoidWrapping);
+		}
+
+		return GaussianBlur.blur(image, blurLevel, maximizeContrast, padImageToAvoidWrapping, toSpatialAlgorithm(algorithm));
 	}
 
 	public Image blurAndScale(Image image, int blurLevel, float scale, boolean padImageToAvoidWrapping)
@@ -483,7 +562,45 @@ public abstract class ImageHelper
 			return image;
 		}
 
-		return convolveGrayscaleThenScale(image, createGaussianKernel(blurLevel), scale, padImageToAvoidWrapping);
+		BlurAlgorithm algorithm = getBlurAlgorithm();
+		if (algorithm == BlurAlgorithm.fft)
+		{
+			return convolveGrayscaleThenScale(image, createGaussianKernel(blurLevel), scale, padImageToAvoidWrapping);
+		}
+
+		return GaussianBlur.blurAndScale(image, blurLevel, scale, padImageToAvoidWrapping, toSpatialAlgorithm(algorithm));
+	}
+
+	/**
+	 * Blurs with the blur wrapping around the edges of the image, so that values near one edge are drawn from the opposite edge rather than
+	 * from nothing. Use this where treating the outside of the image as empty would leave the edges wrongly darkened.
+	 *
+	 * Of the ways of blurring in {@link BlurAlgorithm} only {@link BlurAlgorithm#fft} wraps, so this always uses that one regardless of which
+	 * one {@link #getBlurAlgorithm} returns.
+	 */
+	public Image blurWithWrappingEdges(Image image, int blurLevel, boolean maximizeContrast)
+	{
+		if (blurLevel == 0)
+		{
+			return image;
+		}
+
+		return convolveGrayscale(image, createGaussianKernel(blurLevel), maximizeContrast, false);
+	}
+
+	private static GaussianBlur.Algorithm toSpatialAlgorithm(BlurAlgorithm algorithm)
+	{
+		switch (algorithm)
+		{
+		case separableGaussian:
+			return GaussianBlur.Algorithm.separableGaussian;
+		case recursiveGaussian:
+			return GaussianBlur.Algorithm.recursiveGaussian;
+		case threeBoxes:
+			return GaussianBlur.Algorithm.threeBoxes;
+		default:
+			throw new IllegalArgumentException(algorithm + " is not done in the spatial domain.");
+		}
 	}
 
 	private int colorizePixel(float pixelLevelNormalized, float[] hsb, ColorizeAlgorithm how)
