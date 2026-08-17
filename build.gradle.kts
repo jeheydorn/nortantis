@@ -80,6 +80,9 @@ tasks.test {
     // Benchmarks are gated by @EnabledIfSystemProperty(named = "runBenchmarks", matches = "true"), so they are skipped during normal
     // test runs. Forward the flag from the Gradle invocation so `./gradlew test -DrunBenchmarks=true` can opt in. Default off.
     systemProperty("runBenchmarks", System.getProperty("runBenchmarks", "false"))
+    // Forward the blur algorithm override, so `./gradlew test -Dnortantis.blurAlgorithm=fft` can render the tests with a
+    // different blur to compare them. Left unset, ImageHelper picks its own default.
+    System.getProperty("nortantis.blurAlgorithm")?.let { systemProperty("nortantis.blurAlgorithm", it) }
 }
 
 // Benchmark task with JFR profiling

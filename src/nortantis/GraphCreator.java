@@ -43,7 +43,9 @@ public class GraphCreator
 			graph.paintElevationUsingTriangles(p);
 		}
 
-		heightMap = ImageHelper.getInstance().blur(heightMap, (int) graph.getMeanCenterWidth() / 2, false, false);
+		// The blur wraps around the edges of the height map. Treating the outside as empty instead would pull the elevation along
+		// the edges downward, which would push those areas toward becoming ocean.
+		heightMap = ImageHelper.getInstance().blurWithWrappingEdges(heightMap, (int) graph.getMeanCenterWidth() / 2, false);
 
 		// Use a texture generated from mountain elevation to carve mountain shapes into the areas with high elevation.
 		Image mountains = Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal/mountain texture.png").toString());
