@@ -47,6 +47,11 @@ public class IconDrawer
 	 * {@link #createDrawTasksForFreeIconsAndRemovedFailedIcons}; read via {@link #getCitiesRemovedForTouchingWater()}.
 	 */
 	private final List<CityIconRemovedForWater> citiesRemovedForTouchingWater = new ArrayList<>();
+	/**
+	 * TEMPORARY measurement scaffolding: set false to rebuild the draw task instead of reusing it, so a benchmark can compare both in one
+	 * JVM.
+	 */
+	static boolean reuseDrawTask = true;
 	FreeIconCollection freeIcons;
 	WorldGraph graph;
 	Random rand;
@@ -476,16 +481,40 @@ public class IconDrawer
 			// mountains/hills/trees)
 			// conversionBoundsOfIconsChanged is non-null, so filterBounds would become that bounding box and free icons outside it (such as
 			// cities away from the converted terrain) would be wrongly skipped.
-			Rectangle filterBounds = replaceBounds == null ? null : Rectangle.add(replaceBounds, conversionBoundsOfIconsChanged);
-			Rectangle removedOrReplacedChangeBounds = createDrawTasksForFreeIconsAndRemovedFailedIcons(warningLogger, filterBounds);
-			Rectangle combined = Rectangle.add(conversionBoundsOfIconsChanged, removedOrReplacedChangeBounds);
-			if (combined == null)
-			{
-				return combined;
-			}
-			double paddingForIntegerTruncation = 4.0;
-			return combined.pad(paddingForIntegerTruncation, paddingForIntegerTruncation);
+			Rectangle filterBounds = replaceBounds == null ? null : Rectangle.add(replaceBounds, MapCreator.padForIntegerTruncation(conversionBoundsOfIconsChanged));
+			Rectangle removedOrReplacedChangeBounds = expandFilterBoundsToCoverRemovedIcons(warningLogger, filterBounds);
+			return MapCreator.padForIntegerTruncation(Rectangle.add(conversionBoundsOfIconsChanged, removedOrReplacedChangeBounds));
 		});
+	}
+
+	/**
+	 * Removing an icon (its center touched water, its asset went missing, or it fell entirely off the map) expands the area the caller
+	 * replaces to that icon's full bounds, which can reach outside {@code filterBounds}. Any other, still-valid icon living in that
+	 * expansion would be left out of the draw tasks and painted over with nothing when the snippet is pasted, so this grows
+	 * {@code filterBounds} to match and redoes the icon pass over the larger area - which can itself remove more icons - repeating until a
+	 * round removes nothing new. Every icon removed leaves the free icon collection for good, so the number of rounds is bounded by how
+	 * many icons it held.
+	 *
+	 * @return The bounds of everything removed or replaced across every round.
+	 */
+	private Rectangle expandFilterBoundsToCoverRemovedIcons(WarningLogger warningLogger, Rectangle filterBounds)
+	{
+		Rectangle newlyRemovedBounds = createDrawTasksForFreeIconsAndRemovedFailedIcons(warningLogger, filterBounds);
+		Rectangle removedOrReplacedChangeBounds = newlyRemovedBounds;
+		while (filterBounds != null && newlyRemovedBounds != null)
+		{
+			// Grow by the padded bounds, since the caller adds the padded bounds this method returns to the area it replaces.
+			Rectangle expandedFilterBounds = Rectangle.add(filterBounds, MapCreator.padForIntegerTruncation(newlyRemovedBounds));
+			if (expandedFilterBounds.equals(filterBounds))
+			{
+				// What was removed was already inside the bounds being drawn, so redoing the pass would find nothing new.
+				break;
+			}
+			filterBounds = expandedFilterBounds;
+			newlyRemovedBounds = createDrawTasksForFreeIconsAndRemovedFailedIcons(warningLogger, filterBounds);
+			removedOrReplacedChangeBounds = Rectangle.add(removedOrReplacedChangeBounds, newlyRemovedBounds);
+		}
+		return removedOrReplacedChangeBounds;
 	}
 
 	/**
@@ -692,13 +721,18 @@ public class IconDrawer
 			}
 		}
 
+		return removeIconsAndGetTheirBounds(toRemove);
+	}
+
+	private Rectangle removeIconsAndGetTheirBounds(List<FreeIcon> toRemove)
+	{
 		Rectangle removeBounds = null;
 		for (FreeIcon icon : toRemove)
 		{
 			IconDrawTask task = toIconDrawTask(icon);
 			if (task != null)
 			{
-				removeBounds = Rectangle.add(removeBounds, toIconDrawTask(icon).createBounds());
+				removeBounds = Rectangle.add(removeBounds, task.createBounds());
 			}
 		}
 		freeIcons.removeAll(toRemove);
@@ -769,6 +803,11 @@ public class IconDrawer
 			return;
 		}
 
+		addIconOrRemoveIfOnWater(icon, updated, task, checkContentBottomTouchingWater, toRemove);
+	}
+
+	private void addIconOrRemoveIfOnWater(FreeIcon icon, FreeIcon updated, IconDrawTask task, boolean checkContentBottomTouchingWater, List<FreeIcon> toRemove)
+	{
 		if (checkContentBottomTouchingWater && isContentBottomTouchingWater(task))
 		{
 			if (icon.type == IconType.cities && task.unScaledImageAndMasks != null)
@@ -787,7 +826,7 @@ public class IconDrawer
 		{
 			freeIcons.replace(icon, updated);
 		}
-		iconsToDraw.add(toIconDrawTask(updated));
+		iconsToDraw.add(reuseDrawTask ? task : toIconDrawTask(updated));
 	}
 
 	/**

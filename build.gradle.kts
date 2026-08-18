@@ -83,6 +83,8 @@ tasks.test {
     // Forward the blur algorithm override, so `./gradlew test -Dnortantis.blurAlgorithm=fft` can render the tests with a
     // different blur to compare them. Left unset, ImageHelper picks its own default.
     System.getProperty("nortantis.blurAlgorithm")?.let { systemProperty("nortantis.blurAlgorithm", it) }
+    // Lets a benchmark be pointed at a map outside the repository.
+    System.getProperty("incrementalBenchmarkSettings")?.let { systemProperty("incrementalBenchmarkSettings", it) }
 }
 
 // Benchmark task with JFR profiling
@@ -113,6 +115,10 @@ tasks.register<Test>("benchmark") {
 
     // Enable the benchmark gate (@EnabledIfSystemProperty(named = "runBenchmarks", matches = "true")).
     systemProperty("runBenchmarks", "true")
+    // Same overrides the test task forwards, so a benchmark can be profiled against a chosen map and blur.
+    System.getProperty("nortantis.blurAlgorithm")?.let { systemProperty("nortantis.blurAlgorithm", it) }
+    System.getProperty("incrementalBenchmarkSettings")?.let { systemProperty("incrementalBenchmarkSettings", it) }
+    System.getProperty("incrementalBenchmarkOceanShading")?.let { systemProperty("incrementalBenchmarkOceanShading", it) }
 
     jvmArgs = listOf(
         "-ea",

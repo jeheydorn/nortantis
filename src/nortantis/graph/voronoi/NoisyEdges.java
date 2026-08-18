@@ -413,6 +413,14 @@ public class NoisyEdges
 		riverEdgeOverrides = overrides == null ? Collections.emptyMap() : overrides;
 	}
 
+	/**
+	 * The current river-conformed edge geometries, as set by {@link #setRiverEdgeOverrides}. Callers must not modify the result.
+	 */
+	public Map<Integer, List<Point>> getRiverEdgeOverrides()
+	{
+		return riverEdgeOverrides;
+	}
+
 	public LineStyle getLineStyle()
 	{
 		return lineStyle;

@@ -162,7 +162,6 @@ public class MapCreator implements WarningLogger
 		double effectsPadding = calcEffectsPadding(settings);
 		mapParts.iconDrawer = new IconDrawer(mapParts.graph, new Random(), settings);
 
-		final int paddingToAccountForIntegerTruncation = 4;
 		IntRectangle bounds = null;
 
 		// Compute the union of all change bounds for the hint
@@ -175,7 +174,7 @@ public class MapCreator implements WarningLogger
 				continue;
 			}
 
-			Rectangle padded = change.pad(paddingToAccountForIntegerTruncation, paddingToAccountForIntegerTruncation);
+			Rectangle padded = padForIntegerTruncation(change);
 			IntRectangle updateBounds;
 			mapParts.iconDrawer.addOrUpdateIconsFromEdits(settings.edits, Collections.emptySet(), padded, this);
 			updateBounds = incrementalUpdateBounds(settings, mapParts, fullSizeMap, padded, effectsPadding, textDrawer, onlyTextChanged);
@@ -193,7 +192,7 @@ public class MapCreator implements WarningLogger
 		{
 			return null;
 		}
-		return bounds.pad(paddingToAccountForIntegerTruncation, paddingToAccountForIntegerTruncation);
+		return padForIntegerTruncation(bounds);
 	}
 
 	/**
@@ -248,9 +247,15 @@ public class MapCreator implements WarningLogger
 			return null;
 		}
 
+		// Every center whose noisy edges were rebuilt, not just the directly-edited ones. Coastline/region-boundary smoothing can move
+		// corners on centers beyond the edited set, so their noisy edges (and therefore their slice polygons and any river curve stamped
+		// onto their edges) changed too.
+		Set<Center> centersWithRebuiltNoisyEdges = new HashSet<>(centersChanged);
+		centersWithRebuiltNoisyEdges.addAll(centersChangedThatAffectedLandOrRegionBoundaries);
+
 		// Re-stamp river curves onto region-boundary edges now that rivers are resynced and noisy edges were rebuilt for changed centers,
 		// before the region-color fill and boundary line are redrawn below, so those polygons conform to the current rivers.
-		new RiverDrawer(settings, mapParts.graph).stampRiverCurvesOntoGraphEdges();
+		new RiverDrawer(settings, mapParts.graph).stampRiverCurvesOntoGraphEdges(RiverDrawer.useIncrementalRiverStamping ? centersWithRebuiltNoisyEdges : null);
 
 		if (!centersChangedThatAffectedLandOrRegionBoundaries.isEmpty())
 		{
@@ -265,13 +270,9 @@ public class MapCreator implements WarningLogger
 		Rectangle replaceBounds = centersChangedBounds.pad(effectsPadding, effectsPadding);
 
 		// Refresh the center lookup (grid slice polygons and, in pixel mode, the lookup table) for every center whose noisy edges were
-		// rebuilt - not just the directly-edited centers. Coastline/region-boundary smoothing can move corners on centers beyond the edited
-		// set, so their noisy edges (and therefore their slice polygons) changed too; if we only refreshed the edited centers + their
-		// immediate neighbors, those farther centers would keep stale geometry and findClosestCenter would return the wrong center near the
-		// edited coastline.
-		Set<Center> centersToRefreshLookup = new HashSet<>(centersChanged);
-		centersToRefreshLookup.addAll(centersChangedThatAffectedLandOrRegionBoundaries);
-		mapParts.graph.updateCenterLookupTable(centersToRefreshLookup);
+		// rebuilt; if we only refreshed the edited centers + their immediate neighbors, farther centers moved by coastline/region-boundary
+		// smoothing would keep stale geometry and findClosestCenter would return the wrong center near the edited coastline.
+		mapParts.graph.updateCenterLookupTable(centersWithRebuiltNoisyEdges);
 
 		TextDrawer textDrawer = new TextDrawer(settings);
 		textDrawer.setMapTexts(settings.edits.text);
@@ -621,6 +622,28 @@ public class MapCreator implements WarningLogger
 		int scaledBorderWidth = settings.drawBorder && settings.borderPosition == BorderPosition.Outside_map ? (int) (settings.borderWidth * settings.resolution) : 0;
 		IntRectangle bounds = replaceBounds.toIntRectangle();
 		return new IntRectangle(bounds.x + scaledBorderWidth, bounds.y + scaledBorderWidth, bounds.width, bounds.height);
+	}
+
+	/**
+	 * How much to expand bounds by so that nothing is lost to the rounding done as they pass through the incremental draw pipeline, which
+	 * converts them to whole pixels in several places, each of which can pull an edge inward.
+	 */
+	private static final double paddingForIntegerTruncation = 4.0;
+
+	/**
+	 * Pads bounds by {@link #paddingForIntegerTruncation}. Null passes through.
+	 */
+	static Rectangle padForIntegerTruncation(Rectangle bounds)
+	{
+		return bounds == null ? null : bounds.pad(paddingForIntegerTruncation, paddingForIntegerTruncation);
+	}
+
+	/**
+	 * Pads bounds by {@link #paddingForIntegerTruncation}. Null passes through.
+	 */
+	static IntRectangle padForIntegerTruncation(IntRectangle bounds)
+	{
+		return bounds == null ? null : bounds.pad((int) paddingForIntegerTruncation, (int) paddingForIntegerTruncation);
 	}
 
 	private double calcEffectsPadding(final MapSettings settings)

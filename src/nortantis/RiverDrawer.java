@@ -57,6 +57,11 @@ public class RiverDrawer
 	private final MapSettings.LineStyle lineStyle;
 	private final Color riverColor;
 	private final WorldGraph graph;
+	/**
+	 * TEMPORARY measurement scaffolding: set false to make {@link MapCreator#incrementalUpdateForCentersAndEdges} pass null instead of the
+	 * changed centers, so a benchmark can compare the incremental and full-rebuild paths in one JVM.
+	 */
+	static boolean useIncrementalRiverStamping = true;
 
 	public RiverDrawer(MapSettings settings, WorldGraph graph)
 	{
@@ -208,8 +213,8 @@ public class RiverDrawer
 	 * everything that reads the edge geometry conforms exactly to the river rather than the river conforming to the edge. This makes the
 	 * region-color fill and region boundary line coincide with the river where it runs along a region boundary, and makes the editor's
 	 * polygon highlights (which trace the same edge geometry) coincide with the river on any river edge. Coastline and lakeshore edges are
-	 * excluded, so the coast keeps its generated shape. The full override set is rebuilt from the current rivers each call, so an edge a
-	 * river no longer covers reverts to its generated geometry automatically.
+	 * excluded, so the coast keeps its generated shape. The override set is rebuilt from the current rivers (see the {@code centersToUpdate}
+	 * overload for how much of it), so an edge a river no longer covers reverts to its generated geometry automatically.
 	 *
 	 * <p>
 	 * Overriding an interior river edge (one shared by two centers of the same region) does not change the region fill: both centers trace
@@ -222,11 +227,45 @@ public class RiverDrawer
 	 */
 	public void stampRiverCurvesOntoGraphEdges()
 	{
+		stampRiverCurvesOntoGraphEdges(null);
+	}
+
+	/**
+	 * Same as {@link #stampRiverCurvesOntoGraphEdges()}, but when {@code centersToUpdate} is non-null, only edges bordering those centers
+	 * are re-derived; every other edge keeps whatever override it already had. A river's override for an edge only changes if the edge's
+	 * corners moved or the river's own path changed, and both only happen for edges bordering a center whose noisy edges were just
+	 * rebuilt, so an incremental redraw can pass the centers it touched instead of paying for every river on the map. Pass null to
+	 * recompute every override from scratch, which a full draw needs since there is no prior state to keep.
+	 */
+	public void stampRiverCurvesOntoGraphEdges(Set<Center> centersToUpdate)
+	{
 		if (graph == null || graph.noisyEdges == null)
 		{
 			return;
 		}
-		Map<Integer, List<Point>> overrides = new HashMap<>();
+
+		Set<Integer> edgesToUpdate = null;
+		Map<Integer, List<Point>> overrides;
+		if (centersToUpdate == null)
+		{
+			overrides = new HashMap<>();
+		}
+		else
+		{
+			edgesToUpdate = new HashSet<>();
+			for (Center center : centersToUpdate)
+			{
+				for (Edge edge : center.borders)
+				{
+					edgesToUpdate.add(edge.index);
+				}
+			}
+			// Start from what is already there so unaffected edges keep their curve instead of being recomputed for no reason, then drop
+			// the affected ones so a river that no longer covers one of them does not leave a stale entry behind.
+			overrides = new HashMap<>(graph.noisyEdges.getRiverEdgeOverrides());
+			overrides.keySet().removeAll(edgesToUpdate);
+		}
+
 		double jaggedAmplitudeRI = getJaggedAmplitudeRI(graph, resolutionScale);
 		double minLengthRI = 2.0 / resolutionScale;
 		for (River river : rivers)
@@ -240,6 +279,10 @@ public class RiverDrawer
 			{
 				int edgeIndex = nodes.get(i).getEdgeIndexToNext();
 				if (edgeIndex == RiverPathNode.EDGE_INDEX_NONE || edgeIndex < 0 || edgeIndex >= graph.edges.size())
+				{
+					continue;
+				}
+				if (edgesToUpdate != null && !edgesToUpdate.contains(edgeIndex))
 				{
 					continue;
 				}
@@ -257,6 +300,13 @@ public class RiverDrawer
 			}
 		}
 		graph.noisyEdges.setRiverEdgeOverrides(overrides);
+
+		if (centersToUpdate != null)
+		{
+			// The caller already refreshes the lookup table for centersToUpdate (a river-edge override cannot reach a center beyond it),
+			// so doing it again here would just repeat that work.
+			return;
+		}
 
 		// The overrides change the shape of the edges the centers draw, so any pie-slice polygons already cached for those centers now
 		// describe the pre-override geometry, which would make point location disagree with what is drawn.

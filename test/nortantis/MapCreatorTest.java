@@ -7,6 +7,7 @@ import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
 import nortantis.geom.RotatedRectangle;
 import nortantis.graph.voronoi.Center;
+import nortantis.graph.voronoi.Edge;
 import nortantis.platform.Color;
 import nortantis.platform.Image;
 import nortantis.platform.ImageHelper;
@@ -132,6 +133,286 @@ public class MapCreatorTest
 				}
 			}
 		}
+	}
+
+	/**
+	 * Changing centers between land and ocean moves the coastline, and what gets drawn along a coastline reaches past the centers that
+	 * changed. An incremental redraw has to cover everything that moved, so its result must match a full draw of the same edits.
+	 *
+	 * The coast shading, ocean shading and waves are all turned off here on purpose. Those settings pad the redrawn area by their own width,
+	 * which is wide enough to cover for a mistake in working out which centers changed. With them off the padding is only a few pixels, so
+	 * anything the redraw fails to cover shows up as a difference from the full draw.
+	 *
+	 * Pixels that a redraw moves whether or not anything changed are measured and excluded, so what is left is only what the redraw failed
+	 * to cover. See runOneLandWaterChange.
+	 */
+	@Test
+	public void incrementalUpdateMatchesFullDrawWhenCentersChangeBetweenLandAndOcean()
+	{
+		String settingsFileName = "simpleSmallWorld.nort";
+		String settingsPath = Paths.get("unit test files", "map settings", settingsFileName).toString();
+		MapSettings settings = new MapSettings(settingsPath);
+		// Full resolution, because at half resolution a change moves enough sub-pixel geometry that a stray anti-aliased pixel or two
+		// survives the measurement below of what redrawing alone moves, and this test is only useful with no tolerance for stray pixels.
+		settings.resolution = 1.0;
+		// A dashed region boundary is drawn from the whole boundary at once, so an incremental redraw that covers only part of it puts the
+		// dashes in different places. That is expected, and the editor handles it by redrawing the whole boundary separately, so use a solid
+		// boundary here to keep it out of the comparison.
+		settings.regionBoundaryStyle = new Stroke(StrokeType.Solid, settings.regionBoundaryStyle.width);
+		settings.coastShadingLevel = 0;
+		settings.oceanShadingLevel = 0;
+		settings.oceanWavesLevel = 0;
+		settings.oceanWavesType = MapSettings.OceanWaves.None;
+
+		// Each direction and location starts from its own freshly drawn map, so that a difference left behind by one cannot show up in
+		// another.
+		int failCount = 0;
+		for (int location = 0; location < 12; location++)
+		{
+			failCount += runOneLandWaterChange(settings.deepCopy(), settingsFileName, true, location);
+			failCount += runOneLandWaterChange(settings.deepCopy(), settingsFileName, false, location);
+		}
+
+		if (failCount > 0)
+		{
+			fail(failCount + " land/water incremental update tests did not match a full draw. See the '" + failedMapsFolderName + "' folder.");
+		}
+	}
+
+	/**
+	 * Regression test for a bug class the author hit in an earlier attempt at making {@link RiverDrawer#stampRiverCurvesOntoGraphEdges}
+	 * skip unaffected rivers: passing {@link nortantis.graph.voronoi.NoisyEdges#setRiverEdgeOverrides} a map containing only the edges near
+	 * the edit, rather than the full previous map with just those edges updated, silently erases every other river's stamped curve. Uses
+	 * allTypesOfEdits.nort, which has 187 rivers, so a bug like that would have plenty of untouched rivers to erase.
+	 */
+	@Test
+	public void incrementalRiverStampingLeavesOtherRiversUnchanged()
+	{
+		String settingsFileName = "allTypesOfEdits.nort";
+		MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", settingsFileName).toString());
+		settings.resolution = 0.5;
+
+		MapCreator mapCreator = new MapCreator();
+		MapParts mapParts = new MapParts();
+		Image fullMap = mapCreator.createMap(settings, null, mapParts);
+		try
+		{
+			Map<Integer, List<Point>> before = new HashMap<>(mapParts.graph.noisyEdges.getRiverEdgeOverrides());
+			assertTrue(before.size() > 10, "Expected " + settingsFileName + " to have plenty of river-edge overrides to test against, found " + before.size());
+
+			Set<Integer> centersToChange = findCoastalCenters(mapParts.graph, false, 0);
+			assertFalse(centersToChange.isEmpty());
+
+			// Edges bordering the edited centers or their neighbors are allowed to change (coastline/region-boundary smoothing can rebuild a
+			// neighbor's noisy edges too); everything farther away should be untouched.
+			Set<Integer> possiblyAffectedEdges = new HashSet<>();
+			for (int index : centersToChange)
+			{
+				Center center = mapParts.graph.centers.get(index);
+				for (Edge edge : center.borders)
+				{
+					possiblyAffectedEdges.add(edge.index);
+				}
+				for (Center neighbor : center.neighbors)
+				{
+					for (Edge edge : neighbor.borders)
+					{
+						possiblyAffectedEdges.add(edge.index);
+					}
+				}
+			}
+
+			for (int index : centersToChange)
+			{
+				CenterEdit existing = settings.edits.centerEdits.get(index);
+				settings.edits.centerEdits.put(index, new CenterEdit(index, true, false, null, existing.icon, null));
+			}
+
+			MapCreator incrementalCreator = new MapCreator();
+			incrementalCreator.incrementalUpdateForCentersAndEdges(settings, mapParts, fullMap, centersToChange, new HashSet<>(), false);
+
+			Map<Integer, List<Point>> after = mapParts.graph.noisyEdges.getRiverEdgeOverrides();
+
+			int checkedCount = 0;
+			for (Map.Entry<Integer, List<Point>> entry : before.entrySet())
+			{
+				if (possiblyAffectedEdges.contains(entry.getKey()))
+				{
+					continue;
+				}
+				checkedCount++;
+				assertEquals(entry.getValue(), after.get(entry.getKey()),
+						"River-edge override for edge " + entry.getKey() + ", far from the edited centers, changed or disappeared after an incremental update.");
+			}
+			assertTrue(checkedCount > 0, "Test didn't actually check any edges outside the edited area; the cluster or its neighbors covered every river edge.");
+		}
+		finally
+		{
+			fullMap.close();
+		}
+	}
+
+	/**
+	 * Changes a cluster of centers to water or to land, redraws incrementally, and compares against a full draw of the same edits. Returns 1
+	 * if they differ and 0 if they match.
+	 */
+	private int runOneLandWaterChange(MapSettings settings, String settingsFileName, boolean changeToWater, int location)
+	{
+		MapCreator mapCreator = new MapCreator();
+		mapCreator.overrideMemoryMode(false);
+		MapParts mapParts = new MapParts();
+		Image incrementalMap = mapCreator.createMap(settings, null, mapParts);
+
+		Set<Integer> centersToChange = findCoastalCenters(mapParts.graph, !changeToWater, location);
+		if (centersToChange.isEmpty())
+		{
+			return 0;
+		}
+
+		final int diffThreshold = 10;
+
+		// Redrawing an area at all moves a few pixels of anti-aliasing along the edges of icons and text, which says nothing about whether
+		// the redrawn area covered what changed. Find those pixels by redrawing the same centers without changing anything, and leave them
+		// out of the comparison below.
+		Image beforeRedrawingWithoutChanges = incrementalMap.deepCopy();
+		MapCreator unchangedCreator = new MapCreator();
+		unchangedCreator.overrideMemoryMode(false);
+		unchangedCreator.incrementalUpdateForCentersAndEdges(settings, mapParts, incrementalMap, centersToChange, new HashSet<>(), false);
+		Set<Long> pixelsFromRedrawingAlone = findDifferingPixels(beforeRedrawingWithoutChanges, incrementalMap, diffThreshold);
+
+		for (int index : centersToChange)
+		{
+			CenterEdit existing = settings.edits.centerEdits.get(index);
+			// Trees are cleared when a center becomes water, matching what the land and water tool does.
+			settings.edits.centerEdits.put(index,
+					new CenterEdit(index, changeToWater, false, changeToWater ? null : existing.regionId, existing.icon, changeToWater ? null : existing.trees));
+		}
+
+		MapCreator incrementalCreator = new MapCreator();
+		incrementalCreator.overrideMemoryMode(false);
+		IntRectangle replaceBounds = incrementalCreator.incrementalUpdateForCentersAndEdges(settings, mapParts, incrementalMap, centersToChange, new HashSet<>(), false);
+
+		MapCreator fullCreator = new MapCreator();
+		fullCreator.overrideMemoryMode(false);
+		Image expectedMap = fullCreator.createMap(settings.deepCopy(), null, new MapParts());
+
+		Set<Long> differingPixels = findDifferingPixels(expectedMap, incrementalMap, diffThreshold);
+		differingPixels.removeAll(pixelsFromRedrawingAlone);
+		if (differingPixels.isEmpty())
+		{
+			return 0;
+		}
+
+		FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
+		String name = FilenameUtils.getBaseName(settingsFileName) + " location " + location + " centers changed to " + (changeToWater ? "water" : "land");
+		ImageHelper.getInstance().write(expectedMap, MapTestUtil.getFailedMapFilePath(name + " expected full draw", failedMapsFolderName));
+		ImageHelper.getInstance().write(incrementalMap, MapTestUtil.getFailedMapFilePath(name + " actual incremental draw", failedMapsFolderName));
+		createImageDiffIfImagesAreSameSize(expectedMap, incrementalMap, name, diffThreshold);
+		System.out.println("FAILURE location " + location + ", centers changed to " + (changeToWater ? "water" : "land") + ": "
+				+ describeWhereImagesDiffer(differingPixels, replaceBounds));
+		return 1;
+	}
+
+	/**
+	 * Returns the pixels at which two images differ by more than the threshold, each packed as x in the high 32 bits and y in the low 32.
+	 */
+	private Set<Long> findDifferingPixels(Image expected, Image actual, int threshold)
+	{
+		Set<Long> differingPixels = new HashSet<>();
+		try (PixelReader expectedPixels = expected.createPixelReader(); PixelReader actualPixels = actual.createPixelReader())
+		{
+			for (int y = 0; y < expected.getHeight(); y++)
+			{
+				for (int x = 0; x < expected.getWidth(); x++)
+				{
+					Color expectedColor = expectedPixels.getPixelColor(x, y);
+					Color actualColor = actualPixels.getPixelColor(x, y);
+					int difference = Math.abs(expectedColor.getRed() - actualColor.getRed()) + Math.abs(expectedColor.getGreen() - actualColor.getGreen())
+							+ Math.abs(expectedColor.getBlue() - actualColor.getBlue());
+					if (difference > threshold)
+					{
+						differingPixels.add(((long) x << 32) | (y & 0xFFFFFFFFL));
+					}
+				}
+			}
+		}
+		return differingPixels;
+	}
+
+	/**
+	 * Says where the differing pixels are in relation to the region the incremental draw replaced. Differences outside it mean the redraw did
+	 * not reach far enough, while differences inside it mean the redraw covered the right area but drew the wrong thing there.
+	 */
+	private String describeWhereImagesDiffer(Set<Long> differingPixels, IntRectangle replaceBounds)
+	{
+		int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE, maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE;
+		int insideCount = 0;
+		int outsideCount = 0;
+		for (long packed : differingPixels)
+		{
+			int x = (int) (packed >> 32);
+			int y = (int) packed;
+			minX = Math.min(minX, x);
+			maxX = Math.max(maxX, x);
+			minY = Math.min(minY, y);
+			maxY = Math.max(maxY, y);
+			if (replaceBounds != null && replaceBounds.contains(x, y))
+			{
+				insideCount++;
+			}
+			else
+			{
+				outsideCount++;
+			}
+		}
+
+		if (minX == Integer.MAX_VALUE)
+		{
+			return "no differences above the threshold";
+		}
+		return "differences span x " + minX + " to " + maxX + ", y " + minY + " to " + maxY + "; replaced region was " + replaceBounds + "; "
+				+ insideCount + " differing pixels inside it and " + outsideCount + " outside it";
+	}
+
+	/**
+	 * @param clustersToSkip
+	 *            How many matching clusters to pass over before returning one, so that different parts of the coast can be tried.
+	 */
+	private Set<Integer> findCoastalCenters(WorldGraph graph, boolean wantWater, int clustersToSkip)
+	{
+		int skipped = 0;
+		for (Center center : graph.centers)
+		{
+			if (center.isWater != wantWater || center.isBorder)
+			{
+				continue;
+			}
+			boolean touchesOppositeKind = center.neighbors.stream().anyMatch(neighbor -> neighbor.isWater != wantWater);
+			if (!touchesOppositeKind)
+			{
+				continue;
+			}
+
+			// Spread the clusters out so that skipping gives a genuinely different part of the coast rather than a neighbor.
+			if (skipped < clustersToSkip * 40)
+			{
+				skipped++;
+				continue;
+			}
+
+			// Take this center and a few neighbors of the same kind, which is roughly what one dab of a brush covers.
+			Set<Integer> cluster = new LinkedHashSet<>();
+			cluster.add(center.index);
+			for (Center neighbor : center.neighbors)
+			{
+				if (neighbor.isWater == wantWater && !neighbor.isBorder && cluster.size() < 4)
+				{
+					cluster.add(neighbor.index);
+				}
+			}
+			return cluster;
+		}
+		return new HashSet<>();
 	}
 
 	@Test
