@@ -44,6 +44,16 @@ public class Assets
 	public static final String installedArtPack = "nortantis";
 	public static final List<String> reservedArtPacks = Collections.unmodifiableList(Arrays.asList(installedArtPack, customArtPack, "all"));
 	private static boolean disableAddedArtPacksForUnitTests;
+	/**
+	 * The result of listArtPacks for each value of its argument. Building the list copies and sorts it, which is too much work to repeat
+	 * for every icon looked up. Cleared by clearArtPackCache.
+	 */
+	private static volatile List<String> artPacksIncludingCustomCache;
+	private static volatile List<String> artPacksExcludingCustomCache;
+	/**
+	 * TEMPORARY measurement scaffolding: set false to bypass the two caches above so a benchmark can compare both in one JVM.
+	 */
+	public static boolean useArtPackListCache = true;
 	private static List<CachedEntry> cachedEntries;
 	/**
 	 * Must be lower case
@@ -69,6 +79,15 @@ public class Assets
 
 	public static List<String> listArtPacks(boolean includeCustomArtPack)
 	{
+		if (useArtPackListCache)
+		{
+			List<String> cached = includeCustomArtPack ? artPacksIncludingCustomCache : artPacksExcludingCustomCache;
+			if (cached != null)
+			{
+				return cached;
+			}
+		}
+
 		List<String> result = new ArrayList<>();
 		result.add(installedArtPack);
 
@@ -85,7 +104,18 @@ public class Assets
 		}
 
 		result.sort(String::compareTo);
-		return result;
+
+		// Unmodifiable because it is shared with every later caller rather than rebuilt for each one.
+		List<String> shared = Collections.unmodifiableList(result);
+		if (includeCustomArtPack)
+		{
+			artPacksIncludingCustomCache = shared;
+		}
+		else
+		{
+			artPacksExcludingCustomCache = shared;
+		}
+		return shared;
 	}
 
 	public static boolean artPackExists(String artPack, String customImagesFolder)
@@ -126,6 +156,8 @@ public class Assets
 	{
 		ArtPacksFromArtPacksFolderCache.clearCache();
 		artPackPathCache.clear();
+		artPacksIncludingCustomCache = null;
+		artPacksExcludingCustomCache = null;
 		// Don't clear cachedEntries because it's values never change while the program is running.
 	}
 
@@ -787,5 +819,7 @@ public class Assets
 	public static void disableAddedArtPacksForUnitTests()
 	{
 		disableAddedArtPacksForUnitTests = true;
+		artPacksIncludingCustomCache = null;
+		artPacksExcludingCustomCache = null;
 	}
 }

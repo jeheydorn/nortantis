@@ -50,7 +50,7 @@ public class AwtMapCreatorBenchmark
 	@Test
 	public void benchmarkIncrementalDrawing() throws Exception
 	{
-		MapTestUtil.runIncrementalDrawingBenchmark("AWT CPU", 0, 1);
+		MapTestUtil.runIncrementalDrawingBenchmark("AWT CPU", 1, 1);
 	}
 
 	/** Per-operation profile of highResTest.nort @ 1.25. */

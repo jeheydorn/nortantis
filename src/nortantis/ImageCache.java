@@ -20,6 +20,20 @@ import java.util.regex.Pattern;
 public class ImageCache
 {
 	private static ConcurrentHashMapF<String, ImageCache> instances = new ConcurrentHashMapF<>();
+	/**
+	 * The folder each art pack's images live in, keyed by art pack and custom images folder. Cleared alongside instances, since a change
+	 * to the art packs available can change where an art pack resolves to.
+	 */
+	private static ConcurrentHashMapF<String, String> artPackPaths = new ConcurrentHashMapF<>();
+	/**
+	 * TEMPORARY measurement scaffolding: set false to bypass artPackPaths so a benchmark can compare with and against it in one JVM.
+	 */
+	static boolean useArtPackPathCache = true;
+	/**
+	 * TEMPORARY measurement scaffolding: set false to rebuild the derived icon lists below on every call, so a benchmark can compare both
+	 * in one JVM.
+	 */
+	static boolean useDerivedIconListCaches = true;
 
 	/**
 	 * Maps original images, to scaled width, to scaled images.
@@ -47,6 +61,16 @@ public class ImageCache
 
 	private ConcurrentHashMapF<IconType, List<String>> iconGroupNames;
 
+	/**
+	 * The icons of each group, sorted by name, keyed by type then group name.
+	 */
+	private ConcurrentHashMapF<IconType, ConcurrentHashMapF<String, List<ImageAndMasks>>> iconsInGroupCache;
+
+	/**
+	 * Every group of a type with its icons, keyed by type.
+	 */
+	private ConcurrentHashMapF<IconType, ListMap<String, ImageAndMasks>> iconGroupsAsListsCache;
+
 	private String imagesPath;
 
 	private final String artPack;
@@ -63,6 +87,8 @@ public class ImageCache
 		iconsWithSizesCache = new ConcurrentHashMapF<>();
 		iconGroupFilesNamesCache = new ConcurrentHashMapF<>();
 		iconGroupNames = new ConcurrentHashMapF<>();
+		iconsInGroupCache = new ConcurrentHashMapF<>();
+		iconGroupsAsListsCache = new ConcurrentHashMapF<>();
 		alphaCache = new ConcurrentHashMapF<>();
 		this.artPack = artPack;
 	}
@@ -72,6 +98,20 @@ public class ImageCache
 	 * installed images is given.
 	 */
 	public static synchronized ImageCache getInstance(String artPack, String customImagesFolder)
+	{
+		// The separator cannot appear in an art pack name or a folder, so it keeps the two parts of the key from running together.
+		String key = StringUtils.defaultString(artPack) + "\u0000" + StringUtils.defaultString(customImagesFolder);
+		String normalizedPath = useArtPackPathCache ? artPackPaths.getOrCreate(key, () -> findArtPackPath(artPack, customImagesFolder))
+				: findArtPackPath(artPack, customImagesFolder);
+
+		return instances.getOrCreate(normalizedPath, () -> new ImageCache(normalizedPath, artPack));
+	}
+
+	/**
+	 * Resolves the folder an art pack's images live in. Callers should go through artPackPaths rather than calling this every time,
+	 * because resolving and normalizing the path costs enough to matter when icons are looked up one at a time.
+	 */
+	private static String findArtPackPath(String artPack, String customImagesFolder)
 	{
 		Path artPackPath;
 		String pathWithHomeReplaced;
@@ -87,9 +127,7 @@ public class ImageCache
 		}
 
 		// Probably not necessary, but I don't want to take a chance of accidentally creating multiple ImageCache instances.
-		String normalizedPath = FilenameUtils.normalize(pathWithHomeReplaced);
-
-		return instances.getOrCreate(normalizedPath, () -> new ImageCache(normalizedPath, artPack));
+		return FilenameUtils.normalize(pathWithHomeReplaced);
 	}
 
 	/**
@@ -185,7 +223,21 @@ public class ImageCache
 		}
 	}
 
+	/**
+	 * The icons in a group, ordered by name. The map this is built from is cached, but sorting it into a list is not free, and this is
+	 * called for every icon drawn, so the list is cached too. Callers must not modify the result.
+	 */
 	public List<ImageAndMasks> getIconsInGroup(IconType iconType, String groupName)
+	{
+		if (!useDerivedIconListCaches)
+		{
+			return sortIconsInGroupByName(iconType, groupName);
+		}
+		return iconsInGroupCache.getOrCreate(iconType, () -> new ConcurrentHashMapF<>()).getOrCreate((groupName == null ? "" : groupName).intern(),
+				() -> sortIconsInGroupByName(iconType, groupName));
+	}
+
+	private List<ImageAndMasks> sortIconsInGroupByName(IconType iconType, String groupName)
 	{
 		Map<String, ImageAndMasks> map = getIconsByNameForGroup(iconType, groupName);
 		List<ImageAndMasks> result = new ArrayList<>();
@@ -195,10 +247,23 @@ public class ImageCache
 		{
 			result.add(map.get(name));
 		}
-		return result;
+		return Collections.unmodifiableList(result);
 	}
 
+	/**
+	 * Every group of the given type with its icons. Built from the caches above, but building it walks every group, and this is called for
+	 * every icon whose assets are checked, so the result is cached. Callers must not modify the result.
+	 */
 	public ListMap<String, ImageAndMasks> getIconGroupsAsListsForType(IconType iconType)
+	{
+		if (!useDerivedIconListCaches)
+		{
+			return buildIconGroupsAsListsForType(iconType);
+		}
+		return iconGroupsAsListsCache.getOrCreate(iconType, () -> buildIconGroupsAsListsForType(iconType));
+	}
+
+	private ListMap<String, ImageAndMasks> buildIconGroupsAsListsForType(IconType iconType)
 	{
 		ListMap<String, ImageAndMasks> result = new ListMap<>();
 		for (String groupName : getIconGroupNames(iconType))
@@ -611,6 +676,7 @@ public class ImageCache
 	public static void clear()
 	{
 		instances.clear();
+		artPackPaths.clear();
 		// Also clear the assets cache so that any change to the list of art packs becomes visible.
 		Assets.clearArtPackCache();
 
