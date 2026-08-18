@@ -73,7 +73,7 @@ public abstract class ImageHelper
 	 */
 	public static final String blurAlgorithmProperty = "nortantis.blurAlgorithm";
 
-	private static final BlurAlgorithm defaultBlurAlgorithm = BlurAlgorithm.recursiveGaussian;
+	private static final BlurAlgorithm defaultBlurAlgorithm = BlurAlgorithm.threeBoxes;
 
 	private static BlurAlgorithm blurAlgorithm;
 
