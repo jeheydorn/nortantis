@@ -823,7 +823,7 @@ public abstract class ImageHelper
 		return (float) dist.density(0.0);
 	}
 
-	protected double getStandardDeviationSizeForGaussianKernel(int kernelSize)
+	public double getStandardDeviationSizeForGaussianKernel(int kernelSize)
 	{
 		if (kernelSize == 0)
 		{

@@ -646,7 +646,25 @@ public class MapCreator implements WarningLogger
 		return bounds == null ? null : bounds.pad((int) paddingForIntegerTruncation, (int) paddingForIntegerTruncation);
 	}
 
-	private double calcEffectsPadding(final MapSettings settings)
+	/**
+	 * How far coast and ocean shading stay visible, in standard deviations of the blur that creates them. Shading is a coastline mask
+	 * blurred and then scaled so that its peak is the same no matter how wide the blur is, at roughly 214 of 255 levels, and a Gaussian
+	 * falls below half a level of that peak by this distance. Superposition where several stretches of coastline are close together
+	 * raises the peak, but only pushes this out as the square root of a logarithm, so the margin here covers it.
+	 */
+	private static final double visibleShadingStandardDeviations = 4.0;
+
+	/**
+	 * How far the shading for the given shading level reaches, in pixels. A blur level spans several standard deviations, so shading
+	 * fades below what a pixel can show well before reaching the level itself.
+	 */
+	private static double calcVisibleShadingWidth(int shadingLevel, double sizeMultiplier)
+	{
+		int blurLevel = (int) (shadingLevel * sizeMultiplier);
+		return visibleShadingStandardDeviations * ImageHelper.getInstance().getStandardDeviationSizeForGaussianKernel(blurLevel);
+	}
+
+	static double calcEffectsPadding(final MapSettings settings)
 	{
 		double sizeMultiplier = calcSizeMultiplierFromResolutionScaleRounded(settings.resolution);
 
@@ -664,10 +682,8 @@ public class MapCreator implements WarningLogger
 		// lot
 		// with performance.
 		double rippleWaveWidth = settings.hasRippleWaves(settings.resolution) ? (settings.oceanWavesLevel * sizeMultiplier) * 0.75 : 0;
-		// The shading from Gaussian blur isn't visible all the way out, so save performance by reducing the width
-		// contributed by it.
-		double oceanShadingWidth = 0.9 * (settings.oceanShadingLevel * sizeMultiplier);
-		double coastShadingWidth = 0.9 * (settings.coastShadingLevel * sizeMultiplier);
+		double oceanShadingWidth = calcVisibleShadingWidth(settings.oceanShadingLevel, sizeMultiplier);
+		double coastShadingWidth = calcVisibleShadingWidth(settings.coastShadingLevel, sizeMultiplier);
 
 		double effectsPadding = Math.ceil(Math.max(concentricWaveWidth, Math.max(rippleWaveWidth, Math.max(oceanShadingWidth, coastShadingWidth))));
 
@@ -1758,7 +1774,7 @@ public class MapCreator implements WarningLogger
 		return oceanEffects;
 	}
 
-	private double calcJitterVarianceRange(double resolutionScaled)
+	private static double calcJitterVarianceRange(double resolutionScaled)
 	{
 		double sizeMultiplier = calcSizeMultiplierFromResolutionScaleRounded(resolutionScaled);
 		double widthBetweenWaves = concentricWaveWidthBetweenWaves * sizeMultiplier;
