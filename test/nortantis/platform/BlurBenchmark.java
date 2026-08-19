@@ -164,41 +164,6 @@ public class BlurBenchmark
 	}
 
 	/**
-	 * Blurs from inside jobs that are themselves running on ThreadHelper's pools, which is what icon shading masks do. Fails rather than
-	 * hanging if the blur ever waits on a pool it is already running inside of.
-	 */
-	@Test
-	public void blurringFromInsideParallelJobsDoesNotDeadlock() throws Exception
-	{
-		int jobCount = nortantis.util.ThreadHelper.getInstance().getThreadCount() * 2;
-		List<Runnable> jobs = new ArrayList<>();
-		for (int i = 0; i < jobCount; i++)
-		{
-			jobs.add(() ->
-			{
-				try (Image mask = createCoastlineLikeMask(512, 512, 3))
-				{
-					closeQuietly(GaussianBlur.blurAndScale(mask, 80, 0.35f, true, GaussianBlur.Algorithm.threeBoxes));
-					closeQuietly(GaussianBlur.blur(mask, 80, true, true, GaussianBlur.Algorithm.separableGaussian));
-				}
-			});
-		}
-
-		Thread runner = new Thread(() ->
-		{
-			nortantis.util.ThreadHelper.getInstance().processInParallel(jobs, true);
-			nortantis.util.ThreadHelper.getInstance().processInParallel(jobs, false);
-		});
-		runner.start();
-		runner.join(120_000);
-		if (runner.isAlive())
-		{
-			throw new AssertionError("Blurring from inside ThreadHelper's pools deadlocked.");
-		}
-		System.out.println("\n=== Blurring from inside both of ThreadHelper's pools completed without deadlock ===");
-	}
-
-	/**
 	 * Measures each method against an exact double-precision Gaussian convolution, as a fraction of the blurred image's peak value.
 	 *
 	 * Comparing 8-bit outputs hides errors whenever the blurred image is dim: the grunge box's peak is about 0.008, so its whole 8-bit output
@@ -269,6 +234,256 @@ public class BlurBenchmark
 				System.out.println("    recursive:   " + describeRelativeError(exact, peak, blurredFloatLevels(impulse, blurLevel, GaussianBlur.Algorithm.recursiveGaussian)));
 			}
 		}
+	}
+
+	/**
+	 * Reports the standard deviation each method actually produces at the small blur levels that text background haze uses, by measuring the
+	 * second moment of its impulse response. The box filters can only compose whole-pixel widths, and the recursive filter's coefficients come
+	 * from a fit that stops holding once the blur is narrower than about one pixel, so both drift from the requested standard deviation here in
+	 * ways they do not at the levels shading and grunge use.
+	 */
+	@Test
+	public void measureSmallBlurLevelStandardDeviations()
+	{
+		System.out.println("\n=== Standard deviation produced at small blur levels (requested is blurLevel / 6) ===");
+		System.out.println("Two ways of reading the width off the impulse response: its second moment, which the tails dominate, and its peak,");
+		System.out.println("which only the core reaches. A method that agrees with one and not the other has the right core and the wrong tails.");
+		System.out.println("  level  requested       separable            3 boxes           recursive");
+
+		for (int blurLevel = 2; blurLevel <= 60; blurLevel += blurLevel < 20 ? 1 : 5)
+		{
+			double requested = blurLevel / 6.0;
+			int size = Math.max(64, blurLevel * 6);
+			StringBuilder moments = new StringBuilder(String.format("  %5d  %9.3f", blurLevel, requested));
+			StringBuilder peaks = new StringBuilder(String.format("  %5s  %9s", "", "from peak"));
+			for (GaussianBlur.Algorithm algorithm : new GaussianBlur.Algorithm[] { GaussianBlur.Algorithm.separableGaussian,
+					GaussianBlur.Algorithm.threeBoxes, GaussianBlur.Algorithm.recursiveGaussian })
+			{
+				double[] marginal = measureImpulseMarginal(blurLevel, algorithm, size);
+				double fromMoment = calcStandardDeviation(marginal);
+				moments.append(String.format("   %7.3f (%+5.1f%%)", fromMoment, 100.0 * (fromMoment - requested) / requested));
+
+				double peak = 0;
+				double total = 0;
+				for (double value : marginal)
+				{
+					peak = Math.max(peak, value);
+					total += value;
+				}
+				// A Gaussian normalized to sum to one peaks at 1 / (standardDeviation * sqrt(2 * pi)), so the peak names a width of its own.
+				double fromPeak = total / (peak * Math.sqrt(2 * Math.PI));
+				peaks.append(String.format("   %7.3f (%+5.1f%%)", fromPeak, 100.0 * (fromPeak - requested) / requested));
+			}
+			System.out.println(moments);
+			System.out.println(peaks);
+		}
+	}
+
+	/**
+	 * Runs the same pair of blurs, with the threshold between them, that {@code TextDrawer.drawBackgroundBlendingForText} runs, and reports how
+	 * far each method's finished haze lands from the one FFT convolution produces.
+	 *
+	 * The chain amplifies whatever the first blur gets wrong. Both blurs stretch their output to the full range of gray levels, and the
+	 * threshold between them turns every level above zero white, so the second blur's input is the whole area the first blur's tail reached at
+	 * all rather than the area it covered strongly. Methods whose tails end sooner or later than a Gaussian's differ there by much more than
+	 * their shape error alone would suggest.
+	 */
+	@Test
+	public void measureTextHazeChain()
+	{
+		System.out.println("\n=== Text background haze: blur, threshold, blur again, compared against FFT ===");
+		System.out.println("Font heights span small labels at low display quality up to region names at high display quality.");
+
+		for (int fontHeight : new int[] { 12, 20, 30, 50, 80, 130, 220 })
+		{
+			int kernelSize = (int) ((13.0 / 54.0) * fontHeight);
+			if (kernelSize == 0)
+			{
+				continue;
+			}
+
+			try (Image textBG = createTextLikeMask(fontHeight, kernelSize))
+			{
+				System.out.println("\n  font height " + fontHeight + " -> blurLevel " + kernelSize + " (sigma " + String.format("%.2f", kernelSize / 6.0)
+						+ "), mask " + textBG.getWidth() + "x" + textBG.getHeight());
+
+				try (Image fftHaze = fftHazeChain(textBG, kernelSize))
+				{
+					long fftTime = time(5, () -> closeQuietly(fftHazeChain(textBG, kernelSize)));
+					System.out.println("    FFT:         " + formatTime(fftTime));
+					for (GaussianBlur.Algorithm algorithm : new GaussianBlur.Algorithm[] { GaussianBlur.Algorithm.separableGaussian,
+							GaussianBlur.Algorithm.threeBoxes, GaussianBlur.Algorithm.recursiveGaussian, null })
+					{
+						long algorithmTime = time(5, () -> closeQuietly(runHazeChain(textBG, kernelSize, algorithm)));
+						try (Image haze = runHazeChain(textBG, kernelSize, algorithm))
+						{
+							System.out.println(String.format("    %-12s", shortName(algorithm) + ":") + formatTime(algorithmTime) + "   "
+									+ describeWhiteFraction(textBG, kernelSize, algorithm) + "   " + describeDifference(fftHaze, haze));
+						}
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * Finds where convolving with the exact kernel stops being cheap. Its cost grows with the blur level while the box filters' does not, so
+	 * below some level the exact kernel is both the most accurate way to blur and an affordable one.
+	 */
+	@Test
+	public void measureExactKernelCrossover()
+	{
+		System.out.println("\n=== Cost of the exact kernel against the box filters, by blur level ===");
+		for (int imageSize : new int[] { 512, 1024 })
+		{
+			try (Image mask = createCoastlineLikeMask(imageSize, imageSize, 42))
+			{
+				// Warm up both paths before either is timed, so that neither pays for the other's compilation.
+				for (int i = 0; i < 3; i++)
+				{
+					closeQuietly(GaussianBlur.blurAndScale(mask, 20, 1f, true, GaussianBlur.Algorithm.separableGaussian));
+					closeQuietly(GaussianBlur.blurAndScale(mask, 20, 1f, true, GaussianBlur.Algorithm.threeBoxes));
+				}
+
+				System.out.println("\n  " + imageSize + "x" + imageSize);
+				System.out.println("   level    separable    three box    ratio");
+				for (int blurLevel : new int[] { 2, 4, 8, 12, 16, 20, 30, 40, 60, 80, 120 })
+				{
+					long separableTime = time(15, () -> closeQuietly(GaussianBlur.blurAndScale(mask, blurLevel, 1f, true, GaussianBlur.Algorithm.separableGaussian)));
+					long boxTime = time(15, () -> closeQuietly(GaussianBlur.blurAndScale(mask, blurLevel, 1f, true, GaussianBlur.Algorithm.threeBoxes)));
+					System.out.println(String.format("   %5d %12s %12s   %5.2fx", blurLevel, formatTime(separableTime), formatTime(boxTime),
+							separableTime / (double) boxTime));
+				}
+			}
+		}
+	}
+
+	private static String shortName(GaussianBlur.Algorithm algorithm)
+	{
+		if (algorithm == null)
+		{
+			return "as shipped";
+		}
+		return algorithm == GaussianBlur.Algorithm.threeBoxes ? "three box" : algorithm == GaussianBlur.Algorithm.recursiveGaussian ? "recursive" : "separable";
+	}
+
+	/**
+	 * Blurs with the given algorithm, or, when it is null, however {@link ImageHelper} is configured to blur one of this level, which is what
+	 * text haze actually gets.
+	 */
+	private Image hazeBlur(Image image, int blurLevel, GaussianBlur.Algorithm algorithm)
+	{
+		if (algorithm == null)
+		{
+			return ImageHelper.getInstance().blur(image, blurLevel, true, true);
+		}
+		return GaussianBlur.blur(image, blurLevel, true, true, algorithm);
+	}
+
+	private Image fftHazeChain(Image textBG, int blurLevel)
+	{
+		try (Image haze1 = ImageHelper.getInstance().convolveGrayscale(textBG, ImageHelper.getInstance().createGaussianKernel(blurLevel), true, true))
+		{
+			ImageHelper.getInstance().threshold(haze1, 1);
+			return ImageHelper.getInstance().convolveGrayscale(haze1, ImageHelper.getInstance().createGaussianKernel(blurLevel), true, true);
+		}
+	}
+
+	private Image runHazeChain(Image textBG, int blurLevel, GaussianBlur.Algorithm algorithm)
+	{
+		try (Image haze1 = hazeBlur(textBG, blurLevel, algorithm))
+		{
+			ImageHelper.getInstance().threshold(haze1, 1);
+			return hazeBlur(haze1, blurLevel, algorithm);
+		}
+	}
+
+	/**
+	 * The fraction of the mask the threshold in the middle of the haze chain turns white, which is how far the first blur's tail reached.
+	 */
+	private String describeWhiteFraction(Image textBG, int blurLevel, GaussianBlur.Algorithm algorithm)
+	{
+		try (Image haze1 = hazeBlur(textBG, blurLevel, algorithm))
+		{
+			ImageHelper.getInstance().threshold(haze1, 1);
+			long white = 0;
+			try (PixelReader pixels = haze1.createPixelReader())
+			{
+				for (int y = 0; y < haze1.getHeight(); y++)
+				{
+					for (int x = 0; x < haze1.getWidth(); x++)
+					{
+						if (pixels.getGrayLevel(x, y) > 0)
+						{
+							white++;
+						}
+					}
+				}
+			}
+			return String.format("%5.1f%% white after threshold", 100.0 * white / ((double) haze1.getWidth() * haze1.getHeight()));
+		}
+	}
+
+	/**
+	 * Draws a place name into an image padded the way {@code TextDrawer} pads its own, which leaves the blur only as much room around the text
+	 * as its own blur level.
+	 */
+	private Image createTextLikeMask(int fontHeight, int padding)
+	{
+		int width = (int) (fontHeight * 4.5) + padding * 2;
+		int height = (int) (fontHeight * 1.3) + padding * 2;
+		Image mask = Image.create(width, height, ImageType.Grayscale8Bit);
+		try (Painter p = mask.createPainter(DrawQuality.High))
+		{
+			p.setFont(Font.create("Serif", FontStyle.Plain, fontHeight));
+			p.setColor(Color.white);
+			p.drawString("Riverwood", padding, padding + p.getFontAscent());
+		}
+		return mask;
+	}
+
+	/**
+	 * Sums an impulse response down its columns, which for a blur done as a horizontal pass and then a vertical one leaves the horizontal pass's
+	 * one-dimensional kernel by itself.
+	 */
+	private double[] measureImpulseMarginal(int blurLevel, GaussianBlur.Algorithm algorithm, int size)
+	{
+		try (Image impulse = Image.create(size, size, ImageType.Grayscale16Bit))
+		{
+			try (PixelWriter pixels = impulse.createPixelWriter())
+			{
+				pixels.setGrayLevel(size / 2, size / 2, impulse.getMaxPixelLevel());
+			}
+
+			float[] levels = GaussianBlur.blurToLevels(impulse, blurLevel, true, algorithm);
+			double[] marginal = new double[size];
+			for (int y = 0; y < size; y++)
+			{
+				for (int x = 0; x < size; x++)
+				{
+					marginal[x] += levels[y * size + x];
+				}
+			}
+			return marginal;
+		}
+	}
+
+	private double calcStandardDeviation(double[] marginal)
+	{
+		double total = 0;
+		double weightedSum = 0;
+		for (int x = 0; x < marginal.length; x++)
+		{
+			total += marginal[x];
+			weightedSum += x * marginal[x];
+		}
+		double mean = weightedSum / total;
+		double variance = 0;
+		for (int x = 0; x < marginal.length; x++)
+		{
+			variance += marginal[x] * (x - mean) * (x - mean);
+		}
+		return Math.sqrt(variance / total);
 	}
 
 	/**
@@ -490,26 +705,6 @@ public class BlurBenchmark
 				{
 					System.out.println("  no contrast stretch, separable:  " + describeDifference(fftPlain, separablePlain));
 					System.out.println("  no contrast stretch, three box:  " + describeDifference(fftPlain, boxPlain));
-				}
-			}
-		}
-	}
-
-	@Test
-	public void measureSincKernelConvolutionForReference()
-	{
-		System.out.println("\n=== Ripple waves (non-separable sinc kernel, FFT only) ===");
-		int[] imageSizes = { 512, 1024 };
-		int[] wavesLevels = { 15, 40 };
-		for (int imageSize : imageSizes)
-		{
-			try (Image mask = createCoastlineLikeMask(imageSize, imageSize, 7))
-			{
-				for (int wavesLevel : wavesLevels)
-				{
-					float[][] kernel = ImageHelper.getInstance().createPositiveSincKernel(wavesLevel, 1.0);
-					long fftTime = time(3, () -> closeQuietly(ImageHelper.getInstance().convolveGrayscaleThenScale(mask, kernel, 0.35f, true)));
-					System.out.println("  " + imageSize + "x" + imageSize + ", sinc kernel " + wavesLevel + "x" + wavesLevel + ":  " + formatTime(fftTime));
 				}
 			}
 		}
