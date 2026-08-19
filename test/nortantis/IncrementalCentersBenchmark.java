@@ -129,7 +129,7 @@ public class IncrementalCentersBenchmark
 			long averageArea = totalArea / timedIterations;
 
 			System.out.println("\n  " + label);
-			System.out.println("    effects padding:    " + calcEffectsPaddingForReport(settings) + " px on each side");
+			System.out.println("    effects padding:    " + (long) MapCreator.calcEffectsPadding(settings) + " px on each side");
 			System.out.println("    redrawn snippet:    " + lastBounds.width + "x" + lastBounds.height + " (average area " + averageArea
 					+ " px, " + String.format("%.2f", averageArea / 1_000_000.0) + " megapixels)");
 			System.out.println("    median per stroke:  " + String.format("%.1f", median / 1_000_000.0) + " ms");
@@ -233,21 +233,5 @@ public class IncrementalCentersBenchmark
 			}
 		}
 		return total;
-	}
-
-	/**
-	 * Mirrors MapCreator's effects padding so the report can show it, since that method is private.
-	 */
-	private long calcEffectsPaddingForReport(MapSettings settings)
-	{
-		double sizeMultiplier = MapCreator.calcSizeMultiplierFromResolutionScaleRounded(settings.resolution);
-		double rippleWaveWidth = settings.hasRippleWaves(settings.resolution) ? (settings.oceanWavesLevel * sizeMultiplier) * 0.75 : 0;
-		double oceanShadingWidth = 0.9 * (settings.oceanShadingLevel * sizeMultiplier);
-		double coastShadingWidth = 0.9 * (settings.coastShadingLevel * sizeMultiplier);
-		double padding = Math.ceil(Math.max(rippleWaveWidth, Math.max(oceanShadingWidth, coastShadingWidth)));
-		// The same floor MapCreator applies, for the widest line that might be drawn.
-		double buffer = 10;
-		padding = Math.max(padding, Math.max((buffer / 2.0) * settings.resolution, (SettingsGenerator.maxLineWidthInEditor / 2.0) * settings.resolution));
-		return (long) padding;
 	}
 }
