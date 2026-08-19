@@ -42,6 +42,10 @@ public abstract class ImageHelper
 	/**
 	 * Ways of blurring that {@link #blur} and {@link #blurAndScale} can use. They differ in how closely they follow the shape of a true
 	 * Gaussian and in how their cost grows with the blur level, and all of them treat everything outside the image as zero.
+	 *
+	 * Narrow blurs are done the way {@link #separableGaussian} does them whichever of these is chosen, because at that width convolving the
+	 * kernel directly costs no more than approximating it. So those two are the ones used at every blur level, along with {@link #fft}; the
+	 * remaining two are used only where the blur is wide enough for approximating it to pay off.
 	 */
 	public enum BlurAlgorithm
 	{
@@ -74,6 +78,18 @@ public abstract class ImageHelper
 	public static final String blurAlgorithmProperty = "nortantis.blurAlgorithm";
 
 	private static final BlurAlgorithm defaultBlurAlgorithm = BlurAlgorithm.threeBoxes;
+
+	/**
+	 * The blur level at and above which the approximations are used. Below it the sampled kernel is convolved directly instead, the way
+	 * {@link BlurAlgorithm#separableGaussian} does it.
+	 *
+	 * Both approximations lose accuracy as the blur narrows. The box filters can only compose whole-pixel widths, and the standard deviations
+	 * those can reach grow sparse as the blur gets narrower, so at a blur level of 4 the closest one available is a quarter too small. The
+	 * recursive filter's coefficients come from a fit that stops holding once the blur is narrower than about a pixel. Convolving the kernel
+	 * directly, meanwhile, gets cheaper the narrower the blur is, because the kernel has fewer taps to walk, and below this level it is the
+	 * faster of the two as well as the more faithful.
+	 */
+	private static final int minBlurLevelForApproximation = 16;
 
 	private static BlurAlgorithm blurAlgorithm;
 
@@ -552,7 +568,7 @@ public abstract class ImageHelper
 			return convolveGrayscale(image, createGaussianKernel(blurLevel), maximizeContrast, padImageToAvoidWrapping);
 		}
 
-		return GaussianBlur.blur(image, blurLevel, maximizeContrast, padImageToAvoidWrapping, toSpatialAlgorithm(algorithm));
+		return GaussianBlur.blur(image, blurLevel, maximizeContrast, padImageToAvoidWrapping, toSpatialAlgorithm(algorithm, blurLevel));
 	}
 
 	public Image blurAndScale(Image image, int blurLevel, float scale, boolean padImageToAvoidWrapping)
@@ -568,7 +584,7 @@ public abstract class ImageHelper
 			return convolveGrayscaleThenScale(image, createGaussianKernel(blurLevel), scale, padImageToAvoidWrapping);
 		}
 
-		return GaussianBlur.blurAndScale(image, blurLevel, scale, padImageToAvoidWrapping, toSpatialAlgorithm(algorithm));
+		return GaussianBlur.blurAndScale(image, blurLevel, scale, padImageToAvoidWrapping, toSpatialAlgorithm(algorithm, blurLevel));
 	}
 
 	/**
@@ -588,19 +604,29 @@ public abstract class ImageHelper
 		return convolveGrayscale(image, createGaussianKernel(blurLevel), maximizeContrast, false);
 	}
 
-	private static GaussianBlur.Algorithm toSpatialAlgorithm(BlurAlgorithm algorithm)
+	/**
+	 * The way of blurring to use for a blur of the given level, which is the given one except where the blur is narrow enough that convolving
+	 * the sampled kernel directly costs no more than approximating it.
+	 */
+	private static GaussianBlur.Algorithm toSpatialAlgorithm(BlurAlgorithm algorithm, int blurLevel)
 	{
+		GaussianBlur.Algorithm requested;
 		switch (algorithm)
 		{
 		case separableGaussian:
-			return GaussianBlur.Algorithm.separableGaussian;
+			requested = GaussianBlur.Algorithm.separableGaussian;
+			break;
 		case recursiveGaussian:
-			return GaussianBlur.Algorithm.recursiveGaussian;
+			requested = GaussianBlur.Algorithm.recursiveGaussian;
+			break;
 		case threeBoxes:
-			return GaussianBlur.Algorithm.threeBoxes;
+			requested = GaussianBlur.Algorithm.threeBoxes;
+			break;
 		default:
 			throw new IllegalArgumentException(algorithm + " is not done in the spatial domain.");
 		}
+
+		return blurLevel < minBlurLevelForApproximation ? GaussianBlur.Algorithm.separableGaussian : requested;
 	}
 
 	private int colorizePixel(float pixelLevelNormalized, float[] hsb, ColorizeAlgorithm how)

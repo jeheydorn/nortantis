@@ -44,12 +44,14 @@ public class ThreadHelper
 	}
 
 	/**
-	 * Processes a list of jobs in parallel using a shared thread pool.
-	 * 
+	 * Processes a list of jobs in parallel, waiting for all of them to finish.
+	 *
 	 * @param jobs
 	 * @param useFixedThreadPool
-	 *            Whether to use the thread pool with a limited number of threads vs the one that grows as needed. Warning: Never submit a
-	 *            job that will submit more jobs to the fixed thread pool, as that can lead to a deadlock.
+	 *            Whether to use a pool with a limited number of threads vs the shared one that grows as needed. The limited pool is built
+	 *            for this call and shut down when it returns, so a job that parallelizes through this class again gets threads of its own
+	 *            rather than waiting on the ones its caller holds. That keeps nesting from running out of threads, but it multiplies them:
+	 *            every level deeper creates another pool the size of the processor count. Prefer to parallelize at one level only.
 	 */
 	public void processInParallel(List<Runnable> jobs, boolean useFixedThreadPool)
 	{
@@ -108,8 +110,8 @@ public class ThreadHelper
 	}
 
 	/**
-	 * Processes rows of data in parallel. Warning: Never submit a job that will submit more jobs using the methods in this class, as that
-	 * can lead to a deadlock.
+	 * Processes rows of data in parallel. A row consumer that parallelizes through this class again gets a pool of its own for every call,
+	 * multiplying threads by the processor count at each level, so prefer to parallelize at one level only.
 	 * 
 	 * @param startRow
 	 * @param numRows

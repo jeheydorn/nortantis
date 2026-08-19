@@ -38,8 +38,9 @@ class GaussianBlur
 	private static final int maxColumnsPerBand = 64;
 
 	/**
-	 * Which way of blurring to use. Production code gets this from {@link ImageHelper#getBlurAlgorithm()}. The ones it never returns are
-	 * kept so that benchmarks and tests can compare them.
+	 * Which way of blurring to use. Production code picks this from {@link ImageHelper#getBlurAlgorithm()} together with the blur level, since
+	 * narrow blurs are convolved exactly whatever is configured. The ones it never picks are kept so that benchmarks and tests can compare
+	 * them.
 	 */
 	enum Algorithm
 	{
@@ -808,9 +809,9 @@ class GaussianBlur
 	 * Splits the numbers 0 through count into contiguous ranges of at most minPerTask each and runs them in parallel.
 	 *
 	 * This uses a fork-join pool rather than the pools in {@code ThreadHelper} because a blur can be started from a thread that is itself one
-	 * of that class's workers - icon shading masks are blurred lazily from inside icon drawing jobs, for instance. Submitting work to a pool
-	 * from one of its own threads and then waiting on it risks deadlock, whereas a fork-join pool resolves the same nesting by having the
-	 * waiting thread help run the queued work.
+	 * of that class's workers - icon shading masks are blurred lazily from inside icon drawing jobs, for instance. Those pools would hand
+	 * each nested blur a whole set of threads of its own, multiplying them by the processor count at every level, whereas a fork-join pool
+	 * resolves the nesting by having the waiting thread help run the work it queued, needing no extra threads for it at all.
 	 */
 	private static void processRangesInParallel(int count, int minPerTask, RangeConsumer consumer)
 	{
