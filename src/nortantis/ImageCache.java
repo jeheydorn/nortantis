@@ -25,15 +25,6 @@ public class ImageCache
 	 * to the art packs available can change where an art pack resolves to.
 	 */
 	private static ConcurrentHashMapF<String, String> artPackPaths = new ConcurrentHashMapF<>();
-	/**
-	 * TEMPORARY measurement scaffolding: set false to bypass artPackPaths so a benchmark can compare with and against it in one JVM.
-	 */
-	static boolean useArtPackPathCache = true;
-	/**
-	 * TEMPORARY measurement scaffolding: set false to rebuild the derived icon lists below on every call, so a benchmark can compare both
-	 * in one JVM.
-	 */
-	static boolean useDerivedIconListCaches = true;
 
 	/**
 	 * Maps original images, to scaled width, to scaled images.
@@ -101,8 +92,7 @@ public class ImageCache
 	{
 		// The separator cannot appear in an art pack name or a folder, so it keeps the two parts of the key from running together.
 		String key = StringUtils.defaultString(artPack) + "\u0000" + StringUtils.defaultString(customImagesFolder);
-		String normalizedPath = useArtPackPathCache ? artPackPaths.getOrCreate(key, () -> findArtPackPath(artPack, customImagesFolder))
-				: findArtPackPath(artPack, customImagesFolder);
+		String normalizedPath = artPackPaths.getOrCreate(key, () -> findArtPackPath(artPack, customImagesFolder));
 
 		return instances.getOrCreate(normalizedPath, () -> new ImageCache(normalizedPath, artPack));
 	}
@@ -229,10 +219,6 @@ public class ImageCache
 	 */
 	public List<ImageAndMasks> getIconsInGroup(IconType iconType, String groupName)
 	{
-		if (!useDerivedIconListCaches)
-		{
-			return sortIconsInGroupByName(iconType, groupName);
-		}
 		return iconsInGroupCache.getOrCreate(iconType, () -> new ConcurrentHashMapF<>()).getOrCreate((groupName == null ? "" : groupName).intern(),
 				() -> sortIconsInGroupByName(iconType, groupName));
 	}
@@ -256,10 +242,6 @@ public class ImageCache
 	 */
 	public ListMap<String, ImageAndMasks> getIconGroupsAsListsForType(IconType iconType)
 	{
-		if (!useDerivedIconListCaches)
-		{
-			return buildIconGroupsAsListsForType(iconType);
-		}
 		return iconGroupsAsListsCache.getOrCreate(iconType, () -> buildIconGroupsAsListsForType(iconType));
 	}
 

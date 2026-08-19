@@ -47,11 +47,6 @@ public class IconDrawer
 	 * {@link #createDrawTasksForFreeIconsAndRemovedFailedIcons}; read via {@link #getCitiesRemovedForTouchingWater()}.
 	 */
 	private final List<CityIconRemovedForWater> citiesRemovedForTouchingWater = new ArrayList<>();
-	/**
-	 * TEMPORARY measurement scaffolding: set false to rebuild the draw task instead of reusing it, so a benchmark can compare both in one
-	 * JVM.
-	 */
-	static boolean reuseDrawTask = true;
 	FreeIconCollection freeIcons;
 	WorldGraph graph;
 	Random rand;
@@ -826,7 +821,7 @@ public class IconDrawer
 		{
 			freeIcons.replace(icon, updated);
 		}
-		iconsToDraw.add(reuseDrawTask ? task : toIconDrawTask(updated));
+		iconsToDraw.add(task);
 	}
 
 	/**
