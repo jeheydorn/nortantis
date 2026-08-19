@@ -19,6 +19,11 @@ public interface PixelReader extends AutoCloseable
 
 	public Color getPixelColor(int x, int y);
 
+	/**
+	 * The gray level at the given pixel divided by the maximum level the image's type can hold, so the result runs from 0 to 1 whatever
+	 * the type is. Implementations must keep this equal to {@code getGrayLevel(x, y) / (float) image.getMaxPixelLevel()}, with no
+	 * adjustment such as gamma, so that callers may work in whichever of the two forms suits them.
+	 */
 	public float getNormalizedPixelLevel(int x, int y);
 
 	public int getAlpha(int x, int y);

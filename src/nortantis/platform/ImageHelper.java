@@ -988,30 +988,39 @@ public abstract class ImageHelper
 		if (mask.getType() != ImageType.Grayscale8Bit && mask.getType() != ImageType.Binary)
 			throw new IllegalArgumentException("mask type must be ImageType.Grayscale.");
 
+		// The overlay is the same color everywhere and only its transparency varies with the mask, so every mask level a pixel can have
+		// maps to a known alpha. Working those out up front leaves the loop below with a lookup per pixel.
+		final int[] alphaForMaskLevel = new int[mask.getMaxPixelLevel() + 1];
+		final float maxMaskLevel = mask.getMaxPixelLevel();
+		for (int level = 0; level < alphaForMaskLevel.length; level++)
+		{
+			int maskLevel = (int) ((level / maxMaskLevel) * color.getAlpha());
+			if (invertMask)
+				maskLevel = 255 - maskLevel;
+
+			alphaForMaskLevel[level] = 255 - maskLevel;
+		}
+		final int red = color.getRed();
+		final int green = color.getGreen();
+		final int blue = color.getBlue();
+
 		try (Image overlay = Image.create(image.getWidth(), image.getHeight(), ImageType.ARGB))
 		{
 			try (PixelReader maskPixels = mask.createPixelReader(new IntRectangle(imageOffsetInMask, overlay.getWidth(), overlay.getHeight())); PixelWriter overlayPixels = overlay.createPixelWriter())
 			{
 				ThreadHelper.getInstance().processRowsInParallel(0, overlay.getHeight(), (y) ->
 				{
-					for (int x = 0; x < overlay.getWidth(); x++)
+					int yInMask = y + imageOffsetInMask.y;
+					if (yInMask < 0 || yInMask >= mask.getHeight())
 					{
-						int xInMask = x + imageOffsetInMask.x;
-						int yInMask = y + imageOffsetInMask.y;
-						if (xInMask < 0 || yInMask < 0 || xInMask >= mask.getWidth() || yInMask >= mask.getHeight())
-						{
-							continue;
-						}
+						return;
+					}
 
-						int maskLevel = (int) (maskPixels.getNormalizedPixelLevel(xInMask, yInMask) * color.getAlpha());
-						if (invertMask)
-							maskLevel = 255 - maskLevel;
-
-						int r = color.getRed();
-						int g = color.getGreen();
-						int b = color.getBlue();
-						int a = 255 - maskLevel;
-						overlayPixels.setRGB(x, y, r, g, b, a);
+					int xStart = Math.max(0, -imageOffsetInMask.x);
+					int xEnd = Math.min(overlay.getWidth(), mask.getWidth() - imageOffsetInMask.x);
+					for (int x = xStart; x < xEnd; x++)
+					{
+						overlayPixels.setRGB(x, y, red, green, blue, alphaForMaskLevel[maskPixels.getGrayLevel(x + imageOffsetInMask.x, yInMask)]);
 					}
 				});
 			}

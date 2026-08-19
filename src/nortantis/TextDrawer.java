@@ -708,13 +708,12 @@ public class TextDrawer
 				drawStringCurved(bP, text, name, drawPointForMask, false);
 			}
 
-			// Use convolution to make a hazy background for the text.
-			float[][] kernel = ImageHelper.getInstance().createGaussianKernel(kernelSize);
-			try (Image haze1 = ImageHelper.getInstance().convolveGrayscale(textBG, kernel, true, true))
+			// Blur to make a hazy background for the text.
+			try (Image haze1 = ImageHelper.getInstance().blur(textBG, kernelSize, true, true))
 			{
-				// Threshold it and convolve it again to make the haze bigger.
+				// Threshold it and blur it again to make the haze bigger.
 				ImageHelper.getInstance().threshold(haze1, 1);
-				try (Image haze2 = ImageHelper.getInstance().convolveGrayscale(haze1, kernel, true, true))
+				try (Image haze2 = ImageHelper.getInstance().blur(haze1, kernelSize, true, true))
 				{
 					ImageHelper.getInstance().combineImagesWithMaskInRegion(map, landAndOceanBackground, haze2,
 							((int) Math.round(textStart.x - textStartDiffInMaskCausedByCurvatureAndSpacing.x)) - padding,
