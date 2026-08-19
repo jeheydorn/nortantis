@@ -21,13 +21,6 @@ import java.util.concurrent.RecursiveAction;
 class GaussianBlur
 {
 	/**
-	 * Blur levels at least this large use the three-box approximation rather than the exact Gaussian kernel. Below it the exact kernel is
-	 * cheap enough that there is nothing to gain, and box filters approximate a narrow Gaussian poorly because their widths must be whole
-	 * pixels.
-	 */
-	private static final int minBlurLevelForBoxApproximation = 30;
-
-	/**
 	 * How far out from the center, in standard deviations, the exact Gaussian kernel extends. Beyond 3 standard deviations a Gaussian holds
 	 * about 0.3% of its weight, which is below what an 8-bit gray level can represent.
 	 */
@@ -45,8 +38,8 @@ class GaussianBlur
 	private static final int maxColumnsPerBand = 64;
 
 	/**
-	 * Which of the two ways of blurring below to use. Exposed so that benchmarks and tests can compare them; production code should let
-	 * {@link #chooseAlgorithm} decide.
+	 * Which way of blurring to use. Production code gets this from {@link ImageHelper#getBlurAlgorithm()}. The ones it never returns are
+	 * kept so that benchmarks and tests can compare them.
 	 */
 	enum Algorithm
 	{
@@ -78,11 +71,6 @@ class GaussianBlur
 		{
 			return boxCount > 0;
 		}
-	}
-
-	static Algorithm chooseAlgorithm(int blurLevel)
-	{
-		return blurLevel >= minBlurLevelForBoxApproximation ? Algorithm.threeBoxes : Algorithm.separableGaussian;
 	}
 
 	static Image blur(Image image, int blurLevel, boolean maximizeContrast, boolean padImageToAvoidWrapping, Algorithm algorithm)
