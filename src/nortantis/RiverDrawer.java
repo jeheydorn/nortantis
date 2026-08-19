@@ -57,11 +57,6 @@ public class RiverDrawer
 	private final MapSettings.LineStyle lineStyle;
 	private final Color riverColor;
 	private final WorldGraph graph;
-	/**
-	 * TEMPORARY measurement scaffolding: set false to make {@link MapCreator#incrementalUpdateForCentersAndEdges} pass null instead of the
-	 * changed centers, so a benchmark can compare the incremental and full-rebuild paths in one JVM.
-	 */
-	static boolean useIncrementalRiverStamping = true;
 
 	public RiverDrawer(MapSettings settings, WorldGraph graph)
 	{

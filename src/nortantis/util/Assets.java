@@ -50,10 +50,6 @@ public class Assets
 	 */
 	private static volatile List<String> artPacksIncludingCustomCache;
 	private static volatile List<String> artPacksExcludingCustomCache;
-	/**
-	 * TEMPORARY measurement scaffolding: set false to bypass the two caches above so a benchmark can compare both in one JVM.
-	 */
-	public static boolean useArtPackListCache = true;
 	private static List<CachedEntry> cachedEntries;
 	/**
 	 * Must be lower case
@@ -79,13 +75,10 @@ public class Assets
 
 	public static List<String> listArtPacks(boolean includeCustomArtPack)
 	{
-		if (useArtPackListCache)
+		List<String> cached = includeCustomArtPack ? artPacksIncludingCustomCache : artPacksExcludingCustomCache;
+		if (cached != null)
 		{
-			List<String> cached = includeCustomArtPack ? artPacksIncludingCustomCache : artPacksExcludingCustomCache;
-			if (cached != null)
-			{
-				return cached;
-			}
+			return cached;
 		}
 
 		List<String> result = new ArrayList<>();
