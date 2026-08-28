@@ -2355,9 +2355,10 @@ public class IconDrawer
 					break;
 				}
 				Point loc = ProbabilityHelper.sampleUniform(rand, bounds);
+				// For centers along the edge of the map, the polygon's bounding box can extend past the map, so samples can land off the
+				// graph, where findClosestCenter returns null. Those are rejected just like samples that land in another center.
 				Center closest = graph.findClosestCenter(loc, true);
-				assert closest != null : "A tree tried to add off the graph.";
-				if (closest != null && closest == center)
+				if (closest == center)
 				{
 					int index = Helper.safeAbs(rand.nextInt());
 					FreeIcon icon = new FreeIcon(resolutionScale, loc, 1.0, IconType.trees, cTrees.artPack, cTrees.treeType, index, center.index, cTrees.density, colors.fillColor, colors.filterColor,
