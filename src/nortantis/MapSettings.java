@@ -50,6 +50,11 @@ public class MapSettings implements Serializable
 	public static final double defaultLloydRelaxationsScale = 0.1;
 	public static final double defaultResolution = 1.0;
 	public static final double defaultHeightmapResolution = 1.0;
+	/**
+	 * Font size for road labels in maps that don't store one, which is both new maps and maps saved before road labels existed. Road labels
+	 * are deliberately smaller than river and lake labels so that they fit on maps dense enough to need road names.
+	 */
+	public static final float defaultRoadFontSize = 6f;
 	private final double defaultTreeHeightScaleForOldMaps = 0.5;
 	private final double defaultRoadWidth = 1.0;
 	private final Stroke defaultRoadStyle = new Stroke(StrokeType.Dots, (float) (MapCreator.calcSizeMultiplierFromResolutionScaleRounded(1.0) * defaultRoadWidth));
@@ -971,10 +976,13 @@ public class MapSettings implements Serializable
 		return font.getName() + "\t" + font.getStyle().value + "\t" + (int) font.getSize();
 	}
 
+	/**
+	 * Creates the road font for maps that don't store one. Only the family and style come from the river font; the size is fixed at
+	 * {@link #defaultRoadFontSize} so that road labels are the same size in upgraded maps as in new ones.
+	 */
 	private static Font createDefaultRoadFont(Font riverFont)
 	{
-		// Font sizes are persisted as integers, so round here to keep an upgraded map stable after its first save/reload.
-		return riverFont.deriveFont(riverFont.getStyle(), Math.max(1, Math.round(riverFont.getSize() / 2f)));
+		return riverFont.deriveFont(riverFont.getStyle(), defaultRoadFontSize);
 	}
 
 	private void parseFromJson(String fileContents)

@@ -43,11 +43,6 @@ public class SettingsGenerator
 	public static final int defaultOceanShadingAlpha = 87;
 	public static final int defaultOceanRipplesAlpha = 204;
 	public static final float maxLineWidthInEditor = 10f;
-	/**
-	 * Font size for road labels in new maps. Road labels are deliberately smaller than river and lake labels so that they fit on maps dense
-	 * enough to need road names.
-	 */
-	public static final float defaultRoadFontSize = 6f;
 
 	public static MapSettings generate(String customImageFolder)
 	{
@@ -70,9 +65,6 @@ public class SettingsGenerator
 		settings.version = MapSettings.currentVersion;
 		settings.pointPrecision = MapSettings.defaultPointPrecision;
 		settings.lloydRelaxationsScale = MapSettings.defaultLloydRelaxationsScale;
-		// The default settings file has no road font, so give new maps an explicit road font size in the river font's family and style.
-		// Note - this line will need to be removed as part of the project to add themes to nort files.
-		settings.roadFont = settings.riverFont.deriveFont(settings.riverFont.getStyle(), defaultRoadFontSize);
 
 		setRandomSeeds(settings, rand);
 
