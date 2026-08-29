@@ -43,7 +43,7 @@ public class MapSettings implements Serializable
 	 * as "3.2", and is greater than "3.18"). Each new value here must have a numerically greater segment than every version that came
 	 * before it at the same position.
 	 */
-	public static final String currentVersion = "3.21";
+	public static final String currentVersion = "3.22";
 	public static final String fileExtension = "nort";
 	public static final String fileExtensionWithDot = "." + fileExtension;
 	public static final double defaultPointPrecision = 2.0;
@@ -3304,8 +3304,8 @@ public class MapSettings implements Serializable
 				&& Objects.equals(regionBoundaryStyle, other.regionBoundaryStyle) && regionCount == other.regionCount && Objects.equals(regionFont, other.regionFont)
 				&& regionsRandomSeed == other.regionsRandomSeed && Double.doubleToLongBits(resolution) == Double.doubleToLongBits(other.resolution) && rightRotationCount == other.rightRotationCount
 				&& Objects.equals(riverColor, other.riverColor) && Objects.equals(riverFont, other.riverFont) && Objects.equals(roadColor, other.roadColor)
-				&& Objects.equals(roadFont, other.roadFont)
-				&& Objects.equals(roadStyle, other.roadStyle) && saturationRange == other.saturationRange && solidColorBackground == other.solidColorBackground
+				&& Objects.equals(roadFont, other.roadFont) && Objects.equals(roadStyle, other.roadStyle) && saturationRange == other.saturationRange
+				&& solidColorBackground == other.solidColorBackground
 				&& Objects.equals(textColor, other.textColor) && textRandomSeed == other.textRandomSeed && Objects.equals(titleFont, other.titleFont)
 				&& Double.doubleToLongBits(treeHeightScale) == Double.doubleToLongBits(other.treeHeightScale) && Objects.equals(version, other.version) && worldSize == other.worldSize;
 	}

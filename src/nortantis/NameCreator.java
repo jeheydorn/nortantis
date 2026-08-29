@@ -328,7 +328,40 @@ public class NameCreator
 		}
 		else if (type.equals(TextType.Road))
 		{
-			return generatePlaceName("%s Road", requireUnique);
+			double probabilityOfDestinationName = 0.25;
+			if (r.nextDouble() < probabilityOfDestinationName)
+			{
+				// These formats name the place the road leads to, so the generated name cannot be made possessive.
+				String format = ProbabilityHelper.sampleCategorical(r,
+						Arrays.asList(new Tuple2<>(0.6, "Road to %s"), new Tuple2<>(0.2, "Way to %s"), new Tuple2<>(0.2, "Path to %s")));
+				return generatePlaceName(format, requireUnique);
+			}
+			else
+			{
+				String format = ProbabilityHelper.sampleCategorical(r, Arrays.asList(new Tuple2<>(0.45, "%s Road"), new Tuple2<>(0.15, "%s Way"),
+						new Tuple2<>(0.15, "%s Trail"), new Tuple2<>(0.15, "%s Pass"), new Tuple2<>(0.1, "%s Path")));
+
+				double probabilityOfCompiledName = nameCompiler.isEmpty() ? 0.0 : 0.5;
+				if (r.nextDouble() < probabilityOfCompiledName)
+				{
+					return compileName(format, requireUnique);
+				}
+				else
+				{
+					double probabilityOfPersonName = 0.4;
+					if (r.nextDouble() < probabilityOfPersonName)
+					{
+						// Person name
+						// Make the name possessive.
+						format = format.replace("%s", "%s's");
+						return generatePersonName(format, requireUnique);
+					}
+					else
+					{
+						return generatePlaceName(format, requireUnique);
+					}
+				}
+			}
 		}
 		else
 		{
