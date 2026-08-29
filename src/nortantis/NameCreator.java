@@ -326,6 +326,10 @@ public class NameCreator
 				return generatePlaceName(format, requireUnique);
 			}
 		}
+		else if (type.equals(TextType.Road))
+		{
+			return generatePlaceName("%s Road", requireUnique);
+		}
 		else
 		{
 			throw new UnsupportedOperationException("Unknown text type: " + type);
