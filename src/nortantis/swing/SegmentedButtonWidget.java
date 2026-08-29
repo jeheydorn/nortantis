@@ -122,11 +122,6 @@ public class SegmentedButtonWidget
 		}
 	}
 
-	public void setReserveScrollBarSpace(boolean reserveScrollBarSpace)
-	{
-		wrapLayout.setReserveScrollBarSpace(reserveScrollBarSpace);
-	}
-
 	public RowHider addToOrganizer(GridBagOrganizer organizer, String label, String tooltip)
 	{
 		return organizer.addLabelAndComponent(label, tooltip, container);

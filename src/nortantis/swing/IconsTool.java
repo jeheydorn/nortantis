@@ -215,7 +215,6 @@ public class IconsTool extends EditorTool
 			decorationsButton.addActionListener(typeListener);
 
 			iconTypeWidget = new SegmentedButtonWidget(List.of(mountainsButton, hillsButton, dunesButton, treesButton, citiesButton, decorationsButton));
-			iconTypeWidget.setReserveScrollBarSpace(true);
 			iconTypeButtonsHider = iconTypeWidget.addToOrganizer(organizer, Translation.get("iconsTool.type.label"), Translation.get("iconsTool.type.help"));
 		}
 
@@ -232,7 +231,6 @@ public class IconsTool extends EditorTool
 			toggles.forEach(button -> button.setSelected(true));
 
 			SegmentedButtonWidget iconTypeCheckboxesWidget = new SegmentedButtonWidget(toggles, true);
-			iconTypeCheckboxesWidget.setReserveScrollBarSpace(true);
 			iconTypeCheckboxesHider = iconTypeCheckboxesWidget.addToOrganizer(organizer, Translation.get("iconsTool.types.label"), Translation.get("iconsTool.types.help"));
 
 			JButton selectAll = new JButton(Translation.get("iconsTool.selectAll"));

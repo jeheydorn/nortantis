@@ -9,7 +9,6 @@ import java.awt.*;
 @SuppressWarnings("serial")
 public class WrapLayout extends FlowLayout
 {
-	private boolean reserveScrollBarSpace;
 	private int lastRevalidationWidth = -1;
 
 	/**
@@ -48,15 +47,6 @@ public class WrapLayout extends FlowLayout
 	public WrapLayout(int align, int hgap, int vgap)
 	{
 		super(align, hgap, vgap);
-	}
-
-	/**
-	 * When true, always reserves space for the ancestor scroll pane's vertical scrollbar width, even when the scrollbar is not currently
-	 * visible. This keeps wrapping consistent regardless of scrollbar visibility.
-	 */
-	public void setReserveScrollBarSpace(boolean reserveScrollBarSpace)
-	{
-		this.reserveScrollBarSpace = reserveScrollBarSpace;
 	}
 
 	/**
@@ -280,8 +270,14 @@ public class WrapLayout extends FlowLayout
 	}
 
 	/**
-	 * Computes the maximum content width available for laying out components, accounting for the container's current width and any ancestor
-	 * scroll pane whose vertical scrollbar reduces available space.
+	 * Computes the maximum content width available for laying out components.
+	 *
+	 * This must depend only on the width the container has been given, never on whether an ancestor scroll pane's vertical scrollbar
+	 * happens to be showing. A scroll pane with VERTICAL_SCROLLBAR_AS_NEEDED decides whether that scrollbar is needed by asking the view
+	 * for its preferred size, so a preferred size that changes with the scrollbar's visibility makes the answer depend on the question.
+	 * Wrapping content already has a height that varies with width, which by itself leaves the scroll pane with two self-consistent
+	 * answers at some viewport heights; it settles on one of them. Reading the scrollbar's live state here turned that into an endless
+	 * flip between the two, seen as the panel repeatedly growing and shrinking by the width of the scrollbar (issue 56).
 	 */
 	private int computeMaxWidth(Container target, int horizontalInsetsAndGap)
 	{
@@ -302,16 +298,13 @@ public class WrapLayout extends FlowLayout
 
 		int maxWidth = targetWidth - horizontalInsetsAndGap;
 
-		// When inside a scroll pane, use the viewport width as a tighter upper bound. This matters in two cases:
-		// 1. Scrollbar visible: viewport is narrower than the container's reported width.
-		// 2. Initial layout (target width is 0): the parent walk may find an ancestor wider than this panel will
-		// actually get; the viewport width is a closer estimate.
-		JScrollPane scrollPane = (JScrollPane) SwingUtilities.getAncestorOfClass(JScrollPane.class, target);
-		if (scrollPane != null)
+		// Once this panel has a width of its own, that width already reflects the space the scrollbar is taking, so it is the whole
+		// answer. Only when the panel has no width yet is a scroll pane worth consulting: the parent walk above may have landed on an
+		// ancestor much wider than this panel will actually get, and the viewport width is a closer estimate.
+		if (target.getSize().width == 0)
 		{
-			boolean scrollBarVisible = scrollPane.getVerticalScrollBar().isVisible();
-			boolean initialLayout = target.getSize().width == 0;
-			if (scrollBarVisible || initialLayout)
+			JScrollPane scrollPane = (JScrollPane) SwingUtilities.getAncestorOfClass(JScrollPane.class, target);
+			if (scrollPane != null)
 			{
 				int viewportWidth = scrollPane.getViewport().getWidth();
 				if (viewportWidth > 0)
@@ -319,13 +312,6 @@ public class WrapLayout extends FlowLayout
 					int viewportMaxWidth = viewportWidth - horizontalInsetsAndGap;
 					maxWidth = Math.min(maxWidth, viewportMaxWidth);
 				}
-			}
-			else if (reserveScrollBarSpace && scrollPane.getVerticalScrollBarPolicy() == ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED)
-			{
-				// Reserve space for the scrollbar even when it is not currently visible,
-				// so wrapping stays consistent regardless of scrollbar visibility.
-				int scrollBarWidth = scrollPane.getVerticalScrollBar().getPreferredSize().width;
-				maxWidth -= scrollBarWidth;
 			}
 		}
 
