@@ -11,6 +11,7 @@ public class WrapLayout extends FlowLayout
 {
 	private boolean reserveScrollBarSpace;
 	private int lastRevalidationWidth = -1;
+	private int widthAtPreviousLayout = -1;
 
 	/**
 	 * Constructs a new <code>WrapLayout</code> with a left alignment and a default 5-unit horizontal and vertical gap.
@@ -214,10 +215,22 @@ public class WrapLayout extends FlowLayout
 			// If the actual layout needs more height than the container was allocated, preferredLayoutSize() must have
 			// underestimated (e.g. due to the parent walk using a wider width than we actually got). Schedule a
 			// revalidation so the preferred size is recalculated with the now-known correct width.
-			// Guard: only schedule once per target width to avoid an infinite revalidation loop. If we already
-			// tried at this width and the container is still constrained (e.g. by a split pane), retrying won't help.
+			// Guard: don't schedule twice in a row at an unchanged width, or a revalidation that cannot help (because the
+			// container is constrained by something like a split pane) would ask for another layout at the same width,
+			// which would ask again, without end.
 			int neededHeight = y + rowHeight + vgap + insets.bottom;
 			int currentWidth = target.getWidth();
+
+			// The guard only makes sense while the width stays put. Once the container is resized, an attempt made at
+			// this width earlier says nothing about whether one would help now, and treating it as permanent leaves the
+			// panel a row short for good: dragging a split pane back and forth revisits widths, and on the second visit
+			// the correction would never be scheduled, hiding the last row of icons until the app is restarted.
+			if (currentWidth != widthAtPreviousLayout)
+			{
+				widthAtPreviousLayout = currentWidth;
+				lastRevalidationWidth = -1;
+			}
+
 			if (neededHeight > target.getHeight() + 1 && currentWidth != lastRevalidationWidth)
 			{
 				lastRevalidationWidth = currentWidth;
