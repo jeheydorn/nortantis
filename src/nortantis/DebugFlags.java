@@ -48,6 +48,13 @@ public class DebugFlags
 	private static boolean drawRoadDebugInfo = false;
 
 	/**
+	 * Tints the border pixels that show the map instead of the border background. The geometry that decides which those are is hard to
+	 * eyeball on a finished map, and this makes it directly visible, including when checking whether Nortantis reads a new piece of border
+	 * art's inner edge the way it was drawn.
+	 */
+	private static boolean tintBorderRevealMask = false;
+
+	/**
 	 * When true, the corners used as waypoints by the sub-map river re-routing (the "Choose" detail level) are highlighted on the rendered
 	 * sub-map. The waypoint corner indexes are recorded into {@link #subMapRiverWaypointCornerIndexes} by {@link SubMapCreator} as it
 	 * routes each river, and drawn by {@link MapCreator}. Because the sub-map's render graph is built with the same seed and parameters as
@@ -136,6 +143,11 @@ public class DebugFlags
 	public static boolean drawRoadDebugInfo()
 	{
 		return !Assets.isRunningFromJar() && drawRoadDebugInfo;
+	}
+
+	public static boolean tintBorderRevealMask()
+	{
+		return !Assets.isRunningFromJar() && tintBorderRevealMask;
 	}
 
 	public static boolean highlightSubMapRiverWaypoints()

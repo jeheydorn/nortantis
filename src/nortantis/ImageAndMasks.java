@@ -14,7 +14,16 @@ import java.util.List;
 
 public class ImageAndMasks implements AutoCloseable
 {
-	private static final int opaqueThreshold = 60;
+	/**
+	 * Alpha at or above this level counts as ink that a flood fill cannot pass through. It sits well below the faintest wash used in any
+	 * of the art, so a translucent outline still stops a fill.
+	 */
+	static final int opaqueThreshold = 60;
+	/**
+	 * A flood fill stops expanding out of a pixel that has ink within this many pixels on both sides of it, so the fill cannot squeeze
+	 * through a gap in the art this narrow. The chokepoint pixel itself is still filled.
+	 */
+	static final int narrowPassageThreshold = 4;
 	public final Image image;
 	/**
 	 * Used to linearly combine pixel values pulled from the background image without other icons vs the map being drawn so far.
@@ -150,14 +159,9 @@ public class ImageAndMasks implements AutoCloseable
 			return;
 		}
 
-		final int narrowPassageThreshold = 4;
-
 		floodFillContentMask(narrowPassageThreshold);
 
-		if (narrowPassageThreshold > 0)
-		{
-			remove4DirectionalSilhouetteFromContentMask();
-		}
+		remove4DirectionalSilhouetteFromContentMask();
 	}
 
 	private void floodFillContentMask(int narrowPassageThreshold)
@@ -215,7 +219,7 @@ public class ImageAndMasks implements AutoCloseable
 					// This is part of the "background" that should be black in the mask
 					contentMaskPixels.setGrayLevel(x, y, 0);
 
-					if (!isNarrowPassage(imagePixels, x, y, narrowPassageThreshold))
+					if (!isNarrowPassage(imagePixels, width, height, x, y, narrowPassageThreshold))
 					{
 						// Add unvisited, in-bounds neighbors to the queue
 						if (x + 1 < width && !visited[x + 1][y])
@@ -328,7 +332,10 @@ public class ImageAndMasks implements AutoCloseable
 		}
 	}
 
-	private boolean isNarrowPassage(PixelReader imagePixels, int x, int y, int distanceToCheck)
+	/**
+	 * Tells whether the given pixel has ink within distanceToCheck pixels on both sides of it, either horizontally or vertically.
+	 */
+	static boolean isNarrowPassage(PixelReader imagePixels, int width, int height, int x, int y, int distanceToCheck)
 	{
 		if (distanceToCheck == 0)
 		{
@@ -338,7 +345,7 @@ public class ImageAndMasks implements AutoCloseable
 		boolean upFound = false;
 		for (int j = 1; j <= distanceToCheck; j++)
 		{
-			if (y + j > image.getHeight() - 1)
+			if (y + j > height - 1)
 			{
 				break;
 			}
@@ -368,7 +375,7 @@ public class ImageAndMasks implements AutoCloseable
 		boolean rightFound = false;
 		for (int i = 1; i <= distanceToCheck; i++)
 		{
-			if (x + i > image.getWidth() - 1)
+			if (x + i > width - 1)
 			{
 				break;
 			}

@@ -4,7 +4,7 @@ import nortantis.swing.translation.Translation;
 
 public enum BorderPosition
 {
-	Outside_map, Over_map;
+	Outside_map, Inside_map;
 
 	public String toString()
 	{

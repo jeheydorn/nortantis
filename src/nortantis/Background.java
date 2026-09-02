@@ -1,16 +1,16 @@
 package nortantis;
 
+import nortantis.BorderArt.BorderEdgeType;
+import nortantis.BorderArt.CornerType;
 import nortantis.geom.*;
 import nortantis.graph.voronoi.Center;
 import nortantis.platform.*;
-import nortantis.util.Assets;
 import nortantis.platform.ImageHelper;
 import nortantis.platform.ImageHelper.ColorizeAlgorithm;
 import nortantis.util.Tuple2;
 import org.apache.commons.lang3.StringUtils;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 
 /**
@@ -45,6 +45,17 @@ public class Background
 	private Image leftEdge;
 	private Image rightEdge;
 	public Image landColoredBeforeAddingIconColors;
+	/**
+	 * How much background the border adds to each side of the map. This is the border width less the depth of the art's soft inner edge,
+	 * so that the transparent notches along that edge end up over the map rather than over flat backdrop.
+	 */
+	private int borderPaddingScaled;
+	private BorderArt borderArt;
+	/**
+	 * The reveal masks of the border images, scaled to match the scaled art. A mask is null when nothing in that image shows the map.
+	 */
+	private final Map<BorderEdgeType, Image> edgeRevealMasks = new EnumMap<>(BorderEdgeType.class);
+	private final Map<CornerType, Image> cornerRevealMasks = new EnumMap<>(CornerType.class);
 
 	public Background(MapSettings settings, Dimension mapBounds, WarningLogger warningLogger)
 	{
@@ -67,13 +78,19 @@ public class Background
 			borderWidthScaled = Math.min(borderWidthScaled, maxOverMapBorderElementWidth());
 		}
 
+		if (settings.drawBorder)
+		{
+			borderArt = BorderArt.load(borderResource, customImagesPath);
+		}
+		borderPaddingScaled = isBorderOutsideMap ? borderWidthScaled - calcInsetDepthScaled(borderArt, borderWidthScaled) : 0;
+
 		if (settings.generateBackground)
 		{
 			// Fractal generated background images
 
 			final float fractalPower = 1.3f;
 			Image oceanGeneratedBackground = FractalBGGenerator.generate(new Random(settings.backgroundRandomSeed), fractalPower,
-					((int) mapBounds.width) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0), ((int) mapBounds.height) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0), 0.75f);
+					((int) mapBounds.width) + (borderPaddingScaled * 2), ((int) mapBounds.height) + (borderPaddingScaled * 2), 0.75f);
 			landGeneratedBackground = oceanGeneratedBackground;
 			landColorizeAlgorithm = ColorizeAlgorithm.algorithm2;
 			oceanColorizeAlgorithm = ColorizeAlgorithm.algorithm2;
@@ -140,7 +157,7 @@ public class Background
 			if (settings.colorizeOcean)
 			{
 				oceanGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(settings.backgroundRandomSeed), ImageHelper.getInstance().convertToGrayscale(texture),
-						((int) mapBounds.height) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0), ((int) mapBounds.width) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0));
+						((int) mapBounds.height) + (borderPaddingScaled * 2), ((int) mapBounds.width) + (borderPaddingScaled * 2));
 
 				if (settings.borderColorOption == BorderColorOption.Ocean_color)
 				{
@@ -168,7 +185,7 @@ public class Background
 			else
 			{
 				oceanGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(settings.backgroundRandomSeed), texture,
-						((int) mapBounds.height) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0), ((int) mapBounds.width) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0));
+						((int) mapBounds.height) + (borderPaddingScaled * 2), ((int) mapBounds.width) + (borderPaddingScaled * 2));
 				if (settings.drawBorder)
 				{
 					ocean = removeBorderPadding(oceanGeneratedBackground);
@@ -224,7 +241,7 @@ public class Background
 					// texture of the ocean.
 
 					landGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(settings.backgroundRandomSeed), ImageHelper.getInstance().convertToGrayscale(texture),
-							((int) mapBounds.height) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0), ((int) mapBounds.width) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0));
+							((int) mapBounds.height) + (borderPaddingScaled * 2), ((int) mapBounds.width) + (borderPaddingScaled * 2));
 					if (shouldDrawRegionColors)
 					{
 						// Drawing region colors must be done later because it
@@ -240,7 +257,7 @@ public class Background
 				else
 				{
 					landGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(settings.backgroundRandomSeed), texture,
-							((int) mapBounds.height) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0), ((int) mapBounds.width) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0));
+							((int) mapBounds.height) + (borderPaddingScaled * 2), ((int) mapBounds.width) + (borderPaddingScaled * 2));
 					land = removeBorderPadding(landGeneratedBackground);
 					landColorizeAlgorithm = ColorizeAlgorithm.none;
 				}
@@ -248,7 +265,7 @@ public class Background
 		}
 		else if (settings.solidColorBackground)
 		{
-			Image background = Image.create(((int) mapBounds.width) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0), ((int) mapBounds.height) + (isBorderOutsideMap ? borderWidthScaled * 2 : 0),
+			Image background = Image.create(((int) mapBounds.width) + (borderPaddingScaled * 2), ((int) mapBounds.height) + (borderPaddingScaled * 2),
 					ImageType.Grayscale8Bit);
 			landColorizeAlgorithm = ColorizeAlgorithm.solidColor;
 			oceanColorizeAlgorithm = ColorizeAlgorithm.solidColor;
@@ -322,11 +339,7 @@ public class Background
 		mapBounds = sizeFromSettingsAt100PercentResolution.mult(settings.resolution);
 		if (maxDimensions != null)
 		{
-			int borderPadding = 0;
-			if (settings.drawBorder && settings.borderPosition == BorderPosition.Outside_map)
-			{
-				borderPadding = (int) (settings.borderWidth * settings.resolution);
-			}
+			int borderPadding = calcBorderPaddingScaledByResolution(settings, calcBorderWidthScaledByResolution(settings));
 			Dimension mapBoundsPlusBorder = new Dimension(mapBounds.width + borderPadding * 2, mapBounds.height + borderPadding * 2);
 
 			Dimension newBounds = ImageHelper.getInstance().fitDimensionsWithinBoundingBox(maxDimensions, mapBoundsPlusBorder.width, mapBoundsPlusBorder.height);
@@ -356,7 +369,7 @@ public class Background
 			// The border is drawn over the map, so there is no padding to remove.
 			return image;
 		}
-		return image.copySubImage(new IntRectangle(borderWidthScaled, borderWidthScaled, (int) (image.getWidth() - borderWidthScaled * 2), (int) (image.getHeight() - borderWidthScaled * 2)));
+		return image.copySubImage(new IntRectangle(borderPaddingScaled, borderPaddingScaled, (int) (image.getWidth() - borderPaddingScaled * 2), (int) (image.getHeight() - borderPaddingScaled * 2)));
 	}
 
 	public void doSetupThatNeedsGraphAndIcons(WorldGraph graph, List<IconDrawTask> tasks, Set<Center> centersToDraw, Rectangle drawBounds, Rectangle replaceBounds)
@@ -485,7 +498,7 @@ public class Background
 
 			if (isBorderOutsideMap)
 			{
-				p.drawImage(map, borderWidthScaled, borderWidthScaled);
+				p.drawImage(map, borderPaddingScaled, borderPaddingScaled);
 			}
 			else
 			{
@@ -493,43 +506,28 @@ public class Background
 			}
 		}
 
-		Path artPackPath = Assets.getArtPackPath(borderResource.artPack, customImagesPath);
-		if (artPackPath == null)
-		{
-			throw new RuntimeException(
-					"Unable to draw the border because the selected border type, '" + borderResource.name + "', is from the art pack '" + borderResource.artPack + "', which does not exist.");
-		}
-		Path allBordersPath = Paths.get(artPackPath.toString(), "borders");
-		Path borderPath = Paths.get(allBordersPath.toString(), borderResource.name);
-		if (!Assets.exists(borderPath.toString()))
-		{
-			throw new RuntimeException("The selected border type '" + borderResource + "' does not have a folder for images in " + allBordersPath + ".");
-		}
+		int edgeOriginalWidth = borderArt.getEdgeOriginalWidth();
+		int cornerOriginalWidth = borderArt.getCornerOriginalWidth();
 
-		int edgeOriginalWidth = 0;
 		// Edges
-		topEdge = loadImageWithStringInFileName(borderPath, "top_edge.", false);
+		topEdge = borderArt.getLoadedEdge(BorderEdgeType.Top);
 		if (topEdge != null)
 		{
-			edgeOriginalWidth = topEdge.getHeight();
 			topEdge = ImageHelper.getInstance().scaleByHeight(topEdge, borderWidthScaled);
 		}
-		bottomEdge = loadImageWithStringInFileName(borderPath, "bottom_edge.", false);
+		bottomEdge = borderArt.getLoadedEdge(BorderEdgeType.Bottom);
 		if (bottomEdge != null)
 		{
-			edgeOriginalWidth = bottomEdge.getHeight();
 			bottomEdge = ImageHelper.getInstance().scaleByHeight(bottomEdge, borderWidthScaled);
 		}
-		leftEdge = loadImageWithStringInFileName(borderPath, "left_edge.", false);
+		leftEdge = borderArt.getLoadedEdge(BorderEdgeType.Left);
 		if (leftEdge != null)
 		{
-			edgeOriginalWidth = leftEdge.getWidth();
 			leftEdge = ImageHelper.getInstance().scaleByWidth(leftEdge, borderWidthScaled);
 		}
-		rightEdge = loadImageWithStringInFileName(borderPath, "right_edge.", false);
+		rightEdge = borderArt.getLoadedEdge(BorderEdgeType.Right);
 		if (rightEdge != null)
 		{
-			edgeOriginalWidth = rightEdge.getWidth();
 			rightEdge = ImageHelper.getInstance().scaleByWidth(rightEdge, borderWidthScaled);
 		}
 
@@ -537,66 +535,28 @@ public class Background
 		{
 			if (rightEdge != null)
 			{
-				topEdge = createEdgeFromEdge(rightEdge, BorderEdgeType.Right, BorderEdgeType.Top);
+				topEdge = BorderArt.createEdgeFromEdge(rightEdge, BorderEdgeType.Right, BorderEdgeType.Top);
 			}
 			else if (leftEdge != null)
 			{
-				topEdge = createEdgeFromEdge(leftEdge, BorderEdgeType.Left, BorderEdgeType.Top);
-			}
-			else if (bottomEdge != null)
-			{
-				topEdge = createEdgeFromEdge(bottomEdge, BorderEdgeType.Bottom, BorderEdgeType.Top);
+				topEdge = BorderArt.createEdgeFromEdge(leftEdge, BorderEdgeType.Left, BorderEdgeType.Top);
 			}
 			else
 			{
-				throw new RuntimeException("Border cannot be drawn. Couldn't find any edge images in " + borderPath);
+				topEdge = BorderArt.createEdgeFromEdge(bottomEdge, BorderEdgeType.Bottom, BorderEdgeType.Top);
 			}
 		}
 		if (rightEdge == null)
 		{
-			rightEdge = createEdgeFromEdge(topEdge, BorderEdgeType.Top, BorderEdgeType.Right);
+			rightEdge = BorderArt.createEdgeFromEdge(topEdge, BorderEdgeType.Top, BorderEdgeType.Right);
 		}
 		if (leftEdge == null)
 		{
-			leftEdge = createEdgeFromEdge(topEdge, BorderEdgeType.Top, BorderEdgeType.Left);
+			leftEdge = BorderArt.createEdgeFromEdge(topEdge, BorderEdgeType.Top, BorderEdgeType.Left);
 		}
 		if (bottomEdge == null)
 		{
-			bottomEdge = createEdgeFromEdge(topEdge, BorderEdgeType.Top, BorderEdgeType.Bottom);
-		}
-
-		int cornerOriginalWidth = 0;
-
-		// Corners
-		upperLeftCorner = loadImageWithStringInFileName(borderPath, "upper_left_corner.", false);
-		if (upperLeftCorner != null)
-		{
-			cornerOriginalWidth = upperLeftCorner.getWidth();
-		}
-		upperRightCorner = loadImageWithStringInFileName(borderPath, "upper_right_corner.", false);
-		if (upperRightCorner != null)
-		{
-			cornerOriginalWidth = upperRightCorner.getWidth();
-		}
-		lowerLeftCorner = loadImageWithStringInFileName(borderPath, "lower_left_corner.", false);
-		if (lowerLeftCorner != null)
-		{
-			cornerOriginalWidth = lowerLeftCorner.getWidth();
-		}
-		lowerRightCorner = loadImageWithStringInFileName(borderPath, "lower_right_corner.", false);
-		if (lowerRightCorner != null)
-		{
-			cornerOriginalWidth = lowerRightCorner.getWidth();
-		}
-
-		if (cornerOriginalWidth == 0)
-		{
-			throw new RuntimeException("Border cannot be drawn. Could not find any corner images in " + borderPath);
-		}
-
-		if (edgeOriginalWidth == 0)
-		{
-			throw new RuntimeException("Border cannot be drawn. Could not find any edge images in " + borderPath);
+			bottomEdge = BorderArt.createEdgeFromEdge(topEdge, BorderEdgeType.Top, BorderEdgeType.Bottom);
 		}
 
 		if (cornerOriginalWidth <= edgeOriginalWidth)
@@ -610,6 +570,7 @@ public class Background
 			cornerWidth = (int) (borderWidthScaled * (((double) cornerOriginalWidth) / ((double) edgeOriginalWidth)));
 		}
 
+		int cornerWidthBeforeClamping = cornerWidth;
 		if (!isBorderOutsideMap)
 		{
 			// Inset corners are wider than the border width, so clamp them to the same over-the-map limit as borderWidthScaled to keep
@@ -617,59 +578,50 @@ public class Background
 			cornerWidth = Math.min(cornerWidth, maxOverMapBorderElementWidth());
 		}
 
-		if (upperLeftCorner != null)
-		{
-			upperLeftCorner = ImageHelper.getInstance().scaleByWidth(upperLeftCorner, cornerWidth);
-		}
-		if (upperRightCorner != null)
-		{
-			upperRightCorner = ImageHelper.getInstance().scaleByWidth(upperRightCorner, cornerWidth);
-		}
-		if (lowerLeftCorner != null)
-		{
-			lowerLeftCorner = ImageHelper.getInstance().scaleByWidth(lowerLeftCorner, cornerWidth);
-		}
-		if (lowerRightCorner != null)
-		{
-			lowerRightCorner = ImageHelper.getInstance().scaleByWidth(lowerRightCorner, cornerWidth);
-		}
+		// Corners
+		upperLeftCorner = scaleCornerByWidth(borderArt.getLoadedCorner(CornerType.upperLeft));
+		upperRightCorner = scaleCornerByWidth(borderArt.getLoadedCorner(CornerType.upperRight));
+		lowerLeftCorner = scaleCornerByWidth(borderArt.getLoadedCorner(CornerType.lowerLeft));
+		lowerRightCorner = scaleCornerByWidth(borderArt.getLoadedCorner(CornerType.lowerRight));
 
 		if (upperLeftCorner == null)
 		{
 			if (upperRightCorner != null)
 			{
-				upperLeftCorner = createCornerFromCornerByFlipping(upperRightCorner, CornerType.upperRight, CornerType.upperLeft);
+				upperLeftCorner = BorderArt.createCornerFromCornerByFlipping(upperRightCorner, CornerType.upperRight, CornerType.upperLeft);
 			}
 			else if (lowerLeftCorner != null)
 			{
-				upperLeftCorner = createCornerFromCornerByFlipping(lowerLeftCorner, CornerType.lowerLeft, CornerType.upperLeft);
-			}
-			else if (lowerRightCorner != null)
-			{
-				upperLeftCorner = createCornerFromCornerByFlipping(lowerRightCorner, CornerType.lowerRight, CornerType.upperLeft);
+				upperLeftCorner = BorderArt.createCornerFromCornerByFlipping(lowerLeftCorner, CornerType.lowerLeft, CornerType.upperLeft);
 			}
 			else
 			{
-				throw new RuntimeException("Border cannot be drawn. Couldn't find any corner images in " + borderPath);
+				upperLeftCorner = BorderArt.createCornerFromCornerByFlipping(lowerRightCorner, CornerType.lowerRight, CornerType.upperLeft);
 			}
 		}
 		if (upperRightCorner == null)
 		{
-			upperRightCorner = createCornerFromCornerByFlipping(upperLeftCorner, CornerType.upperLeft, CornerType.upperRight);
+			upperRightCorner = BorderArt.createCornerFromCornerByFlipping(upperLeftCorner, CornerType.upperLeft, CornerType.upperRight);
 		}
 		if (lowerLeftCorner == null)
 		{
-			lowerLeftCorner = createCornerFromCornerByFlipping(upperLeftCorner, CornerType.upperLeft, CornerType.lowerLeft);
+			lowerLeftCorner = BorderArt.createCornerFromCornerByFlipping(upperLeftCorner, CornerType.upperLeft, CornerType.lowerLeft);
 		}
 		if (lowerRightCorner == null)
 		{
-			lowerRightCorner = createCornerFromCornerByFlipping(upperLeftCorner, CornerType.upperLeft, CornerType.lowerRight);
+			lowerRightCorner = BorderArt.createCornerFromCornerByFlipping(upperLeftCorner, CornerType.upperLeft, CornerType.lowerRight);
 		}
 
-		drawUpperLeftCorner(result, new IntPoint(0, 0));
-		drawUpperRightCorner(result, new IntPoint(0, 0));
-		drawLowerLeftCorner(result, new IntPoint(0, 0));
-		drawLowerRightCorner(result, new IntPoint(0, 0));
+		// The map's boundary within a corner image is where the edge bands end, which is the edge images' band width. It only moves when
+		// the corner width had to be clamped, since then the corner scaled by less than the edges did.
+		int cornerSeedStartInOriginalPixels = cornerWidth == cornerWidthBeforeClamping ? edgeOriginalWidth
+				: (int) Math.round((((double) cornerOriginalWidth) * borderWidthScaled) / cornerWidth);
+		createScaledRevealMasks(cornerSeedStartInOriginalPixels);
+
+		for (CornerType cornerType : CornerType.values())
+		{
+			drawCorner(result, new IntPoint(0, 0), cornerType);
+		}
 
 		// Draw the edges
 		drawEdgesIfBoundsTouchesThem(result, null);
@@ -677,24 +629,66 @@ public class Background
 		return result;
 	}
 
-	public void drawEdgesIfBoundsTouchesThem(Image result, Rectangle drawBounds)
+	private Image scaleCornerByWidth(Image corner)
 	{
+		return corner == null ? null : ImageHelper.getInstance().scaleByWidth(corner, cornerWidth);
+	}
+
+	/**
+	 * Scales the reveal masks of the border art to match the scaled edge and corner images, so they can say, pixel for pixel, where the
+	 * border must not paint the border background over the map.
+	 * 
+	 * @param cornerSeedStartInOriginalPixels
+	 *            Where the edge bands end within a corner image, in the corner images' own pixels.
+	 */
+	private void createScaledRevealMasks(int cornerSeedStartInOriginalPixels)
+	{
+		putScaledRevealMask(edgeRevealMasks, BorderEdgeType.Top, borderArt.getEdgeRevealMask(BorderEdgeType.Top), topEdge);
+		putScaledRevealMask(edgeRevealMasks, BorderEdgeType.Bottom, borderArt.getEdgeRevealMask(BorderEdgeType.Bottom), bottomEdge);
+		putScaledRevealMask(edgeRevealMasks, BorderEdgeType.Left, borderArt.getEdgeRevealMask(BorderEdgeType.Left), leftEdge);
+		putScaledRevealMask(edgeRevealMasks, BorderEdgeType.Right, borderArt.getEdgeRevealMask(BorderEdgeType.Right), rightEdge);
+
+		for (CornerType cornerType : CornerType.values())
+		{
+			putScaledRevealMask(cornerRevealMasks, cornerType, borderArt.getCornerRevealMask(cornerType, cornerSeedStartInOriginalPixels), getCorner(cornerType));
+		}
+	}
+
+	private static <T extends Enum<T>> void putScaledRevealMask(Map<T, Image> masks, T key, Image revealMaskAtOriginalResolution, Image scaledArt)
+	{
+		if (revealMaskAtOriginalResolution == null)
+		{
+			// Nothing in this border image shows the map, so there is no mask to apply and the border draws the way it always has.
+			return;
+		}
+		masks.put(key, ImageHelper.getInstance().scaleBinaryMask(revealMaskAtOriginalResolution, scaledArt.getWidth(), scaledArt.getHeight()));
+	}
+
+	/**
+	 * Draws the four border edge bands onto the given image.
+	 * 
+	 * @param drawBoundsBeforeBorder
+	 *            The part of the map the given image holds, in coordinates that do not include the border padding, or null when the given
+	 *            image is the whole map including its border.
+	 */
+	public void drawEdgesIfBoundsTouchesThem(Image result, Rectangle drawBoundsBeforeBorder)
+	{
+		Rectangle drawBounds = drawBoundsBeforeBorder == null ? null : drawBoundsBeforeBorder.translate(borderPaddingScaled, borderPaddingScaled);
 		drawTopOrBottomEdgeIfBoundsTouchesIt(result, drawBounds, 0);
 		drawTopOrBottomEdgeIfBoundsTouchesIt(result, drawBounds, 1);
 		drawLeftOrRightEdgesIfBoundsTouchesThem(result, drawBounds, 0);
 		drawLeftOrRightEdgesIfBoundsTouchesThem(result, drawBounds, 1);
 	}
 
+	/**
+	 * @param drawBounds
+	 *            The part of the map the given image holds, in coordinates that include the border padding, or null for the whole map.
+	 */
 	private void drawTopOrBottomEdgeIfBoundsTouchesIt(Image result, Rectangle drawBounds, int topVsBottom)
 	{
-		if (drawBounds != null && isBorderOutsideMap)
-		{
-			// Nothing to draw in this case because incremental drawing is only allowed inside the map.
-			return;
-		}
-
 		// Top and bottom edges
 		Image edge = topVsBottom == 0 ? topEdge : bottomEdge;
+		Image revealMask = edgeRevealMasks.get(topVsBottom == 0 ? BorderEdgeType.Top : BorderEdgeType.Bottom);
 		final int y = topVsBottom == 0 ? 0 : ((int) borderBounds.height) - borderWidthScaled;
 
 		int xOffset = drawBounds == null ? 0 : (int) drawBounds.x;
@@ -703,57 +697,44 @@ public class Background
 		int increment = edge.getWidth();
 		for (int x = cornerWidth; x < end; x += increment)
 		{
-			int distanceRemaining = end - x;
-			if (distanceRemaining >= increment)
+			int widthToDraw = Math.min(increment, end - x);
+			if (drawBounds != null && !drawBounds.overlaps(new Rectangle(x, y, widthToDraw, borderWidthScaled)))
 			{
-				if (drawBounds == null || drawBounds.overlaps(new Rectangle(x, y, increment, borderWidthScaled)))
-				{
-					if (!isBorderOutsideMap)
-					{
-						// Clear out the part of the map that is there.
-						ImageHelper.getInstance().copySnippetFromSourceAndPasteIntoTarget(result, borderBackground, new IntPoint(x - xOffset, y - yOffset),
-								new IntRectangle(x, y, increment, borderWidthScaled), 0);
-					}
+				continue;
+			}
 
-					try (Painter p = result.createPainter())
+			IntPoint whereToDraw = new IntPoint(x - xOffset, y - yOffset);
+			eraseMapUnderBorderElement(result, whereToDraw, new IntRectangle(x, y, widthToDraw, borderWidthScaled), revealMask, doEdgeBandsCoverMap());
+
+			try (Painter p = result.createPainter())
+			{
+				p.setAlphaComposite(alphaCompositeForDrawingCornersAndEdges);
+				if (widthToDraw == increment)
+				{
+					p.drawImage(edge, whereToDraw.x, whereToDraw.y);
+				}
+				else
+				{
+					// The image is too long to draw in the remaining space.
+					try (Image partToDraw = edge.copySubImage(new IntRectangle(0, 0, widthToDraw, borderWidthScaled)))
 					{
-						p.setAlphaComposite(alphaCompositeForDrawingCornersAndEdges);
-						p.drawImage(edge, x - xOffset, y - yOffset);
+						p.drawImage(partToDraw, whereToDraw.x, whereToDraw.y);
 					}
 				}
 			}
-			else
-			{
-				if (drawBounds == null || drawBounds.overlaps(new Rectangle(x, y, distanceRemaining, borderWidthScaled)))
-				{
-					if (!isBorderOutsideMap)
-					{
-						// Clear out the part of the map that is there.
-						ImageHelper.getInstance().copySnippetFromSourceAndPasteIntoTarget(result, borderBackground, new IntPoint(x - xOffset, y - yOffset),
-								new IntRectangle(x, y, distanceRemaining, borderWidthScaled), 0);
-					}
 
-					// The image is too long/tall to draw in the remaining
-					// space.
-					try (Image partToDraw = edge.copySubImage(new IntRectangle(0, 0, distanceRemaining, borderWidthScaled)); Painter p = result.createPainter())
-					{
-						p.setAlphaComposite(alphaCompositeForDrawingCornersAndEdges);
-						p.drawImage(partToDraw, x - xOffset, y - yOffset);
-					}
-				}
-			}
+			tintRevealMaskIfDebugFlagIsOn(result, whereToDraw, revealMask);
 		}
 	}
 
+	/**
+	 * @param drawBounds
+	 *            The part of the map the given image holds, in coordinates that include the border padding, or null for the whole map.
+	 */
 	private void drawLeftOrRightEdgesIfBoundsTouchesThem(Image result, Rectangle drawBounds, int leftVsRight)
 	{
-		if (drawBounds != null && isBorderOutsideMap)
-		{
-			// Nothing to draw in this case because incremental drawing is only allowed inside the map.
-			return;
-		}
-
 		Image edge = leftVsRight == 0 ? leftEdge : rightEdge;
+		Image revealMask = edgeRevealMasks.get(leftVsRight == 0 ? BorderEdgeType.Left : BorderEdgeType.Right);
 		final int x = leftVsRight == 0 ? 0 : ((int) borderBounds.width) - borderWidthScaled;
 
 		int xOffset = drawBounds == null ? 0 : (int) drawBounds.x;
@@ -762,117 +743,148 @@ public class Background
 		int increment = edge.getHeight();
 		for (int y = cornerWidth; y < end; y += increment)
 		{
-			int distanceRemaining = end - y;
-			if (distanceRemaining >= increment)
+			int heightToDraw = Math.min(increment, end - y);
+			if (drawBounds != null && !drawBounds.overlaps(new Rectangle(x, y, borderWidthScaled, heightToDraw)))
 			{
-				if (drawBounds == null || drawBounds.overlaps(new Rectangle(x, y, borderWidthScaled, increment)))
-				{
-					if (!isBorderOutsideMap)
-					{
-						// Clear out the part of the map that is there.
-						ImageHelper.getInstance().copySnippetFromSourceAndPasteIntoTarget(result, borderBackground, new IntPoint(x - xOffset, y - yOffset),
-								new IntRectangle(x, y, borderWidthScaled, increment), 0);
-					}
+				continue;
+			}
 
-					try (Painter p = result.createPainter())
+			IntPoint whereToDraw = new IntPoint(x - xOffset, y - yOffset);
+			eraseMapUnderBorderElement(result, whereToDraw, new IntRectangle(x, y, borderWidthScaled, heightToDraw), revealMask, doEdgeBandsCoverMap());
+
+			try (Painter p = result.createPainter())
+			{
+				p.setAlphaComposite(alphaCompositeForDrawingCornersAndEdges);
+				if (heightToDraw == increment)
+				{
+					p.drawImage(edge, whereToDraw.x, whereToDraw.y);
+				}
+				else
+				{
+					// The image is too tall to draw in the remaining space.
+					try (Image partToDraw = edge.copySubImage(new IntRectangle(0, 0, borderWidthScaled, heightToDraw)))
 					{
-						p.setAlphaComposite(alphaCompositeForDrawingCornersAndEdges);
-						p.drawImage(edge, x - xOffset, y - yOffset);
+						p.drawImage(partToDraw, whereToDraw.x, whereToDraw.y);
 					}
 				}
 			}
-			else
-			{
-				if (drawBounds == null || drawBounds.overlaps(new Rectangle(x, y, borderWidthScaled, distanceRemaining)))
-				{
-					if (!isBorderOutsideMap)
-					{
-						// Clear out the part of the map that is there.
-						ImageHelper.getInstance().copySnippetFromSourceAndPasteIntoTarget(result, borderBackground, new IntPoint(x - xOffset, y - yOffset),
-								new IntRectangle(x, y, borderWidthScaled, distanceRemaining), 0);
-					}
 
-					// The image is too long/tall to draw in the remaining
-					// space.
-					try (Image partToDraw = edge.copySubImage(new IntRectangle(0, 0, borderWidthScaled, distanceRemaining)); Painter p = result.createPainter())
-					{
-						p.setAlphaComposite(alphaCompositeForDrawingCornersAndEdges);
-						p.drawImage(partToDraw, x - xOffset, y - yOffset);
-					}
-				}
-			}
+			tintRevealMaskIfDebugFlagIsOn(result, whereToDraw, revealMask);
+		}
+	}
+
+	/**
+	 * Puts the border background back over the part of the map a border element is about to draw on, leaving alone the pixels the
+	 * element's reveal mask marks as showing the map.
+	 * 
+	 * @param whereToDraw
+	 *            Where the element's upper-left corner lands in target.
+	 * @param elementBounds
+	 *            The element's bounds in the map's coordinates including border padding, which is also where to read the border
+	 *            background from.
+	 * @param revealMask
+	 *            The element's reveal mask, or null when nothing in the element shows the map.
+	 * @param elementCoversMap
+	 *            Whether any of the element lands on the map. When it doesn't, the border background is already all that is there.
+	 */
+	private void eraseMapUnderBorderElement(Image target, IntPoint whereToDraw, IntRectangle elementBounds, Image revealMask, boolean elementCoversMap)
+	{
+		if (!elementCoversMap)
+		{
+			return;
+		}
+
+		if (revealMask == null)
+		{
+			ImageHelper.getInstance().copySnippetFromSourceAndPasteIntoTarget(target, borderBackground, whereToDraw, elementBounds, 0);
+		}
+		else
+		{
+			ImageHelper.getInstance().copySnippetFromSourceAndPasteIntoTargetWhereMaskIsBlack(target, borderBackground, whereToDraw, elementBounds, revealMask);
+		}
+	}
+
+	/**
+	 * Whether the border's edge bands land on the map. They always do when the border is drawn inside the map, and they do when the border
+	 * is outside the map but has been shifted inward so that map sits behind the art's soft inner edge.
+	 */
+	private boolean doEdgeBandsCoverMap()
+	{
+		return !isBorderOutsideMap || borderPaddingScaled < borderWidthScaled;
+	}
+
+	private void tintRevealMaskIfDebugFlagIsOn(Image target, IntPoint whereToDraw, Image revealMask)
+	{
+		if (revealMask != null && DebugFlags.tintBorderRevealMask())
+		{
+			ImageHelper.getInstance().drawMaskOntoImage(target, revealMask, Color.magenta, whereToDraw);
 		}
 	}
 
 	private final AlphaComposite alphaCompositeForDrawingCornersAndEdges = AlphaComposite.SrcOver;
 
-	private void drawUpperLeftCorner(Image target, IntPoint drawOffset)
+	private void drawCorner(Image target, IntPoint drawOffset, CornerType cornerType)
 	{
-		// If the corner protrudes into the map, then erase the map in the area the corner will be drawn on.
-		if (hasInsetCorners || !isBorderOutsideMap)
-		{
-			ImageHelper.getInstance().copySnippetFromSourceAndPasteIntoTarget(target, borderBackground, new IntPoint(0, 0).subtract(drawOffset),
-					new IntRectangle(0, 0, upperLeftCorner.getWidth(), upperLeftCorner.getHeight()), 0);
-		}
+		Image corner = getCorner(cornerType);
+		IntPoint cornerLocation = getCornerLocation(cornerType);
+		IntPoint whereToDraw = cornerLocation.subtract(drawOffset);
+		Image revealMask = cornerRevealMasks.get(cornerType);
+
+		// A corner lands on the map when it protrudes past the edge bands, and also whenever the bands themselves cover the map.
+		eraseMapUnderBorderElement(target, whereToDraw, new IntRectangle(cornerLocation.x, cornerLocation.y, corner.getWidth(), corner.getHeight()), revealMask,
+				hasInsetCorners || doEdgeBandsCoverMap());
+
 		try (Painter p = target.createPainter())
 		{
 			p.setAlphaComposite(alphaCompositeForDrawingCornersAndEdges);
 			p.translate(-drawOffset.x, -drawOffset.y);
-			p.drawImage(upperLeftCorner, 0, 0);
+			p.drawImage(corner, cornerLocation.x, cornerLocation.y);
 		}
+
+		tintRevealMaskIfDebugFlagIsOn(target, whereToDraw, revealMask);
 	}
 
-	private void drawUpperRightCorner(Image target, IntPoint drawOffset)
+	private Image getCorner(CornerType cornerType)
 	{
-		// If the corner protrudes into the map, then erase the map in the area the corner will be drawn on.
-		if (hasInsetCorners || !isBorderOutsideMap)
+		switch (cornerType)
 		{
-			ImageHelper.getInstance().copySnippetFromSourceAndPasteIntoTarget(target, borderBackground, new IntPoint(((int) borderBounds.width) - cornerWidth, 0).subtract(drawOffset),
-					new IntRectangle(((int) borderBounds.width) - cornerWidth, 0, upperRightCorner.getWidth(), upperRightCorner.getHeight()), 0);
-		}
-		try (Painter p = target.createPainter())
-		{
-			p.setAlphaComposite(alphaCompositeForDrawingCornersAndEdges);
-			p.translate(-drawOffset.x, -drawOffset.y);
-			p.drawImage(upperRightCorner, ((int) borderBounds.width) - cornerWidth, 0);
+			case upperLeft:
+				return upperLeftCorner;
+			case upperRight:
+				return upperRightCorner;
+			case lowerLeft:
+				return lowerLeftCorner;
+			default:
+				return lowerRightCorner;
 		}
 	}
 
-	private void drawLowerLeftCorner(Image target, IntPoint drawOffset)
+	/**
+	 * Where the given corner's upper-left pixel lands in the map's coordinates including border padding.
+	 */
+	private IntPoint getCornerLocation(CornerType cornerType)
 	{
-		// If the corner protrudes into the map, then erase the map in the area the corner will be drawn on.
-		if (hasInsetCorners || !isBorderOutsideMap)
+		int right = ((int) borderBounds.width) - cornerWidth;
+		int bottom = ((int) borderBounds.height) - cornerWidth;
+		switch (cornerType)
 		{
-			ImageHelper.getInstance().copySnippetFromSourceAndPasteIntoTarget(target, borderBackground, new IntPoint(0, ((int) borderBounds.height) - cornerWidth).subtract(drawOffset),
-					new IntRectangle(0, ((int) borderBounds.height) - cornerWidth, lowerLeftCorner.getWidth(), lowerLeftCorner.getHeight()), 0);
-
-		}
-		try (Painter p = target.createPainter())
-		{
-			p.setAlphaComposite(alphaCompositeForDrawingCornersAndEdges);
-			p.translate(-drawOffset.x, -drawOffset.y);
-			p.drawImage(lowerLeftCorner, 0, ((int) borderBounds.height) - cornerWidth);
-		}
-	}
-
-	private void drawLowerRightCorner(Image target, IntPoint drawOffset)
-	{
-		// If the corner protrudes into the map, then erase the map in the area the corner will be drawn on.
-		if (hasInsetCorners || !isBorderOutsideMap)
-		{
-			ImageHelper.getInstance().copySnippetFromSourceAndPasteIntoTarget(target, borderBackground,
-					new IntPoint(((int) borderBounds.width) - cornerWidth, ((int) borderBounds.height) - cornerWidth).subtract(drawOffset),
-					new IntRectangle(((int) borderBounds.width) - cornerWidth, ((int) borderBounds.height) - cornerWidth, lowerRightCorner.getWidth(), lowerRightCorner.getHeight()), 0);
-
-		}
-		try (Painter p = target.createPainter())
-		{
-			p.setAlphaComposite(alphaCompositeForDrawingCornersAndEdges);
-			p.translate(-drawOffset.x, -drawOffset.y);
-			p.drawImage(lowerRightCorner, ((int) borderBounds.width) - cornerWidth, ((int) borderBounds.height) - cornerWidth);
+			case upperLeft:
+				return new IntPoint(0, 0);
+			case upperRight:
+				return new IntPoint(right, 0);
+			case lowerLeft:
+				return new IntPoint(0, bottom);
+			default:
+				return new IntPoint(right, bottom);
 		}
 	}
 
+	/**
+	 * Draws each border corner that reaches into the part of the map the given image holds.
+	 * 
+	 * @param drawBoundsBeforeBorder
+	 *            The part of the map the given image holds, in coordinates that do not include the border padding.
+	 */
 	public void drawInsetCornersIfBoundsTouchesThem(Image target, Rectangle drawBoundsBeforeBorder)
 	{
 		if (borderWidthScaled == 0)
@@ -880,178 +892,18 @@ public class Background
 			return;
 		}
 
-		int borderPaddingScaled = isBorderOutsideMap ? borderWidthScaled : 0;
-
 		IntPoint drawOffset = new IntPoint(drawBoundsBeforeBorder.toIntRectangle().x + borderPaddingScaled, drawBoundsBeforeBorder.toIntRectangle().y + borderPaddingScaled);
 		Rectangle bounds = drawBoundsBeforeBorder.translate(borderPaddingScaled, borderPaddingScaled);
-		Rectangle upperLeftCornerBounds = new IntRectangle(0, 0, upperLeftCorner.getWidth(), upperLeftCorner.getHeight()).toRectangle();
-		if (upperLeftCornerBounds.overlaps(bounds))
+		for (CornerType cornerType : CornerType.values())
 		{
-			drawUpperLeftCorner(target, drawOffset);
-		}
-		Rectangle upperRightCornerBounds = new IntRectangle(((int) borderBounds.width) - cornerWidth, 0, upperRightCorner.getWidth(), upperRightCorner.getHeight()).toRectangle();
-		if (upperRightCornerBounds.overlaps(bounds))
-		{
-			drawUpperRightCorner(target, drawOffset);
-		}
-		Rectangle lowerLeftCornerBounds = new IntRectangle(0, ((int) borderBounds.height) - cornerWidth, lowerLeftCorner.getWidth(), lowerLeftCorner.getHeight()).toRectangle();
-		if (lowerLeftCornerBounds.overlaps(bounds))
-		{
-			drawLowerLeftCorner(target, drawOffset);
-		}
-		Rectangle lowerRightCornerBounds = new IntRectangle(((int) borderBounds.width) - cornerWidth, ((int) borderBounds.height) - cornerWidth, lowerRightCorner.getWidth(),
-				lowerRightCorner.getHeight()).toRectangle();
-		if (lowerRightCornerBounds.overlaps(bounds))
-		{
-			drawLowerRightCorner(target, drawOffset);
-		}
-	}
-
-	private Image createEdgeFromEdge(Image edgeIn, BorderEdgeType edgeTypeIn, BorderEdgeType outputType)
-	{
-		switch (edgeTypeIn)
-		{
-			case Bottom:
-				switch (outputType)
-				{
-					case Bottom:
-						return edgeIn;
-					case Left:
-						return ImageHelper.getInstance().rotate90Degrees(edgeIn, true);
-					case Right:
-						return ImageHelper.getInstance().rotate90Degrees(edgeIn, false);
-					case Top:
-						return ImageHelper.getInstance().flipOnYAxis(edgeIn);
-				}
-			case Left:
-				switch (outputType)
-				{
-					case Bottom:
-						return ImageHelper.getInstance().rotate90Degrees(edgeIn, false);
-					case Left:
-						return edgeIn;
-					case Right:
-						return ImageHelper.getInstance().flipOnXAxis(edgeIn);
-					case Top:
-						return ImageHelper.getInstance().rotate90Degrees(edgeIn, true);
-				}
-			case Right:
-				switch (outputType)
-				{
-					case Bottom:
-						return ImageHelper.getInstance().rotate90Degrees(edgeIn, true);
-					case Left:
-						return ImageHelper.getInstance().flipOnXAxis(edgeIn);
-					case Right:
-						return edgeIn;
-					case Top:
-						return ImageHelper.getInstance().rotate90Degrees(edgeIn, false);
-				}
-			case Top:
-				switch (outputType)
-				{
-					case Bottom:
-						return ImageHelper.getInstance().flipOnYAxis(edgeIn);
-					case Left:
-						return ImageHelper.getInstance().rotate90Degrees(edgeIn, false);
-					case Right:
-						return ImageHelper.getInstance().rotate90Degrees(edgeIn, true);
-					case Top:
-						return edgeIn;
-				}
-		}
-
-		throw new IllegalStateException("Unable to create a border edge from the edges given");
-	}
-
-	private enum BorderEdgeType
-	{
-		Top, Bottom, Left, Right
-	}
-
-	private Image createCornerFromCornerByFlipping(Image cornerIn, CornerType inputCornerType, CornerType outputType)
-	{
-		switch (inputCornerType)
-		{
-			case lowerLeft:
-				switch (outputType)
-				{
-					case lowerLeft:
-						return cornerIn;
-					case lowerRight:
-						return ImageHelper.getInstance().flipOnXAxis(cornerIn);
-					case upperLeft:
-						return ImageHelper.getInstance().flipOnYAxis(cornerIn);
-					case upperRight:
-						return ImageHelper.getInstance().flipOnXAxis(ImageHelper.getInstance().flipOnYAxis(cornerIn));
-				}
-				break;
-			case lowerRight:
-				switch (outputType)
-				{
-					case lowerLeft:
-						return ImageHelper.getInstance().flipOnXAxis(cornerIn);
-					case lowerRight:
-						return cornerIn;
-					case upperLeft:
-						return ImageHelper.getInstance().flipOnXAxis(ImageHelper.getInstance().flipOnYAxis(cornerIn));
-					case upperRight:
-						return ImageHelper.getInstance().flipOnYAxis(cornerIn);
-				}
-			case upperLeft:
-				switch (outputType)
-				{
-					case lowerLeft:
-						return ImageHelper.getInstance().flipOnYAxis(cornerIn);
-					case lowerRight:
-						return ImageHelper.getInstance().flipOnXAxis(ImageHelper.getInstance().flipOnYAxis(cornerIn));
-					case upperLeft:
-						return cornerIn;
-					case upperRight:
-						return ImageHelper.getInstance().flipOnXAxis(cornerIn);
-				}
-			case upperRight:
-				switch (outputType)
-				{
-					case lowerLeft:
-						return ImageHelper.getInstance().flipOnXAxis(ImageHelper.getInstance().flipOnYAxis(cornerIn));
-					case lowerRight:
-						return ImageHelper.getInstance().flipOnYAxis(cornerIn);
-					case upperLeft:
-						return ImageHelper.getInstance().flipOnXAxis(cornerIn);
-					case upperRight:
-						return cornerIn;
-				}
-		}
-
-		throw new IllegalStateException("Unable to flip corner image.");
-	}
-
-	private enum CornerType
-	{
-		upperLeft, upperRight, lowerLeft, lowerRight
-	}
-
-	private Image loadImageWithStringInFileName(Path path, String inFileName, boolean throwExceptionIfMissing)
-	{
-		List<Path> corners = Assets.listFiles(path.toString(), inFileName, null, Assets.allowedImageExtensions);
-		if (corners.isEmpty())
-		{
-			if (throwExceptionIfMissing)
+			Image corner = getCorner(cornerType);
+			IntPoint cornerLocation = getCornerLocation(cornerType);
+			Rectangle cornerBounds = new IntRectangle(cornerLocation.x, cornerLocation.y, corner.getWidth(), corner.getHeight()).toRectangle();
+			if (cornerBounds.overlaps(bounds))
 			{
-				throw new RuntimeException("Unable to find a file containing \"" + inFileName + "\" in the directory " + path.toAbsolutePath());
-			}
-			else
-			{
-				return null;
+				drawCorner(target, drawOffset, cornerType);
 			}
 		}
-		if (corners.size() > 1)
-		{
-			throw new RuntimeException("More than one file contains \"" + inFileName + "\" in the directory " + path.toAbsolutePath());
-		}
-
-		return Assets.readImage(corners.get(0).toString());
 	}
 
 	public int getBorderWidthScaledByResolution()
@@ -1061,12 +913,54 @@ public class Background
 
 	public int getBorderPaddingScaledByResolution()
 	{
-		return isBorderOutsideMap ? borderWidthScaled : 0;
+		return borderPaddingScaled;
 	}
 
 	public static int calcBorderWidthScaledByResolution(MapSettings settings)
 	{
 		return settings.drawBorder ? (int) (settings.borderWidth * settings.resolution) : 0;
+	}
+
+	/**
+	 * How much background the border adds to each side of the map, in pixels scaled by resolution. This is less than the border width when
+	 * the border's art has a soft inner edge, because the frame moves onto the map far enough to put map behind the transparent notches
+	 * along that edge.
+	 * 
+	 * @param borderWidthScaled
+	 *            The border width scaled by the resolution the caller is asking about, which is not always the resolution in settings.
+	 */
+	public static int calcBorderPaddingScaledByResolution(MapSettings settings, int borderWidthScaled)
+	{
+		if (!settings.drawBorder || settings.borderPosition != BorderPosition.Outside_map)
+		{
+			return 0;
+		}
+
+		BorderArt borderArt;
+		try
+		{
+			borderArt = BorderArt.load(settings.borderResource, settings.customImagesPath);
+		}
+		catch (RuntimeException e)
+		{
+			// The border art is missing or unreadable. Report the size the border would take without a shift; drawing the map will raise
+			// the real error.
+			return borderWidthScaled;
+		}
+		return borderWidthScaled - calcInsetDepthScaled(borderArt, borderWidthScaled);
+	}
+
+	/**
+	 * How far the border frame moves onto the map so that the transparent notches along the art's inner edge have map behind them, in
+	 * pixels scaled by resolution. Zero when the art's inner edge is opaque, which is the case for most border art.
+	 */
+	private static int calcInsetDepthScaled(BorderArt borderArt, int borderWidthScaled)
+	{
+		if (borderArt == null)
+		{
+			return 0;
+		}
+		return (int) Math.round(borderArt.getInsetDepthFraction() * borderWidthScaled);
 	}
 
 	public Dimension getMapBoundsIncludingBorder()
@@ -1131,6 +1025,14 @@ public class Background
 		if (rightEdge != null)
 		{
 			rightEdge.close();
+		}
+		for (Image mask : edgeRevealMasks.values())
+		{
+			mask.close();
+		}
+		for (Image mask : cornerRevealMasks.values())
+		{
+			mask.close();
 		}
 	}
 }

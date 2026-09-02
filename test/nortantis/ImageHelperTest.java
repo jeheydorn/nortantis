@@ -197,7 +197,7 @@ public class ImageHelperTest
 		compareWithExpected(snippet, "copySnippetPreservingAlpha", 4);
 	}
 
-	// ==================== Flip and Rotate Tests ====================
+	// ==================== Flip and Reflect Tests ====================
 
 	@Test
 	public void testFlipOnXAxis()
@@ -222,25 +222,25 @@ public class ImageHelperTest
 	}
 
 	@Test
-	public void testRotate90DegreesClockwise()
+	public void testReflectAcrossAntiDiagonal()
 	{
 		Image original = createAsymmetricTestImage();
-		Image rotated = ImageHelper.getInstance().rotate90Degrees(original, true);
+		Image reflected = ImageHelper.getInstance().reflectAcrossDiagonal(original, true);
 
-		assertEquals(original.getHeight(), rotated.getWidth(), "Width should equal original height");
-		assertEquals(original.getWidth(), rotated.getHeight(), "Height should equal original width");
-		compareWithExpected(rotated, "rotate90DegreesClockwise");
+		assertEquals(original.getHeight(), reflected.getWidth(), "Width should equal original height");
+		assertEquals(original.getWidth(), reflected.getHeight(), "Height should equal original width");
+		compareWithExpected(reflected, "reflectAcrossAntiDiagonal");
 	}
 
 	@Test
-	public void testRotate90DegreesCounterClockwise()
+	public void testReflectAcrossDiagonal()
 	{
 		Image original = createAsymmetricTestImage();
-		Image rotated = ImageHelper.getInstance().rotate90Degrees(original, false);
+		Image reflected = ImageHelper.getInstance().reflectAcrossDiagonal(original, false);
 
-		assertEquals(original.getHeight(), rotated.getWidth(), "Width should equal original height");
-		assertEquals(original.getWidth(), rotated.getHeight(), "Height should equal original width");
-		compareWithExpected(rotated, "rotate90DegreesCounterClockwise");
+		assertEquals(original.getHeight(), reflected.getWidth(), "Width should equal original height");
+		assertEquals(original.getWidth(), reflected.getHeight(), "Height should equal original width");
+		compareWithExpected(reflected, "reflectAcrossDiagonal");
 	}
 
 	// ==================== Mask Tests ====================

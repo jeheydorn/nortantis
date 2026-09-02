@@ -1266,8 +1266,13 @@ public class MapSettings implements Serializable
 
 		if (root.containsKey("borderPosition"))
 		{
-			borderPosition = Enum.valueOf(BorderPosition.class, ((String) root.get("borderPosition")).replace(" ", "_"));
-			;
+			String borderPositionName = ((String) root.get("borderPosition")).replace(" ", "_");
+			// Maps saved before 3.22 call BorderPosition.Inside_map "Over map".
+			if (borderPositionName.equals("Over_map"))
+			{
+				borderPositionName = BorderPosition.Inside_map.name();
+			}
+			borderPosition = Enum.valueOf(BorderPosition.class, borderPositionName);
 		}
 		else
 		{

@@ -123,11 +123,6 @@ public abstract class ImageHelper
 		return blurAlgorithm;
 	}
 
-	public static synchronized void setBlurAlgorithm(BlurAlgorithm algorithm)
-	{
-		blurAlgorithm = algorithm;
-	}
-
 	public Image convertToGrayscale(Image img)
 	{
 		return convertImageToType(img, ImageType.Grayscale8Bit);
@@ -717,6 +712,40 @@ public abstract class ImageHelper
 		return inImage.scale(method, width, height);
 	}
 
+	/**
+	 * Scales a binary mask to the given size, keeping it binary. The usual scaling path goes by way of a color image and then dithers the
+	 * result back down to two levels, which speckles the mask's boundary. This one scales in grayscale and rounds each pixel instead.
+	 */
+	public Image scaleBinaryMask(Image mask, int width, int height)
+	{
+		if (mask.getType() != ImageType.Binary)
+		{
+			throw new IllegalArgumentException("Mask must be of type ImageType.Binary.");
+		}
+
+		if (mask.getWidth() == width && mask.getHeight() == height)
+		{
+			return mask.deepCopy();
+		}
+
+		Image result = Image.create(width, height, ImageType.Binary);
+		try (Image grayscale = convertImageToType(mask, ImageType.Grayscale8Bit); Image scaled = scale(grayscale, width, height, Method.QUALITY))
+		{
+			final int halfLevel = scaled.getMaxPixelLevel() / 2;
+			try (PixelReader scaledPixels = scaled.createPixelReader(); PixelWriter resultPixels = result.createPixelWriter())
+			{
+				ThreadHelper.getInstance().processRowsInParallel(0, height, (y) ->
+				{
+					for (int x = 0; x < width; x++)
+					{
+						resultPixels.setGrayLevel(x, y, scaledPixels.getGrayLevel(x, y) > halfLevel ? result.getMaxPixelLevel() : 0);
+					}
+				});
+			}
+		}
+		return result;
+	}
+
 	public int getHeightWhenScaledByWidth(Image inImage, int xSize)
 	{
 		double aspectRatio = ((double) inImage.getHeight()) / inImage.getWidth();
@@ -1265,7 +1294,15 @@ public abstract class ImageHelper
 		return copySnippetPreservingAlphaOfTransparentPixels(source, boundsInSourceToCopyFrom.x, boundsInSourceToCopyFrom.y, boundsInSourceToCopyFrom.width, boundsInSourceToCopyFrom.height);
 	}
 
-	public Image rotate90Degrees(Image image, boolean isClockwise)
+	/**
+	 * Mirrors an image across one of its diagonals, swapping its width and height. This is a reflection, not a rotation: the result is a
+	 * turned image that has also been flipped, so applying it twice with the same argument gives back the original.
+	 * 
+	 * @param useAntiDiagonal
+	 *            False to mirror across the diagonal running from the upper left to the lower right, true to mirror across the one running
+	 *            from the upper right to the lower left.
+	 */
+	public Image reflectAcrossDiagonal(Image image, boolean useAntiDiagonal)
 	{
 		Image result = Image.create(image.getHeight(), image.getWidth(), image.getType());
 		try (PixelReader imagePixels = image.createPixelReader(); PixelWriter resultPixels = result.createPixelWriter())
@@ -1274,7 +1311,7 @@ public abstract class ImageHelper
 			{
 				for (int x = 0; x < image.getWidth(); x++)
 				{
-					if (isClockwise)
+					if (useAntiDiagonal)
 					{
 						resultPixels.setRGB(image.getHeight() - y - 1, image.getWidth() - x - 1, imagePixels.getRGB(x, y));
 					}
@@ -1770,6 +1807,48 @@ public abstract class ImageHelper
 			p.setClip(widthOfBorderToNotDrawOn, widthOfBorderToNotDrawOn, target.getWidth() - widthOfBorderToNotDrawOn * 2, target.getHeight() - widthOfBorderToNotDrawOn * 2);
 			p.setAlphaComposite(AlphaComposite.Src);
 			p.drawImage(snippet, upperLeftCornerToPasteIntoInTarget.x, upperLeftCornerToPasteIntoInTarget.y);
+		}
+	}
+
+	/**
+	 * Copies a snippet from source into target the way {@link #copySnippetFromSourceAndPasteIntoTarget} does, except that pixels the mask
+	 * marks white are left as they are in target.
+	 * 
+	 * @param mask
+	 *            A binary image whose upper-left corner lines up with upperLeftCornerToPasteIntoInTarget. Parts of the snippet that fall
+	 *            outside the mask, or outside target, are not copied.
+	 */
+	public void copySnippetFromSourceAndPasteIntoTargetWhereMaskIsBlack(Image target, Image source, IntPoint upperLeftCornerToPasteIntoInTarget, IntRectangle boundsInSourceToCopyFrom, Image mask)
+	{
+		if (mask.getType() != ImageType.Binary)
+		{
+			throw new IllegalArgumentException("Mask must be of type ImageType.Binary.");
+		}
+
+		int xStart = Math.max(0, -upperLeftCornerToPasteIntoInTarget.x);
+		int yStart = Math.max(0, -upperLeftCornerToPasteIntoInTarget.y);
+		int xEnd = Math.min(Math.min(boundsInSourceToCopyFrom.width, mask.getWidth()), target.getWidth() - upperLeftCornerToPasteIntoInTarget.x);
+		int yEnd = Math.min(Math.min(boundsInSourceToCopyFrom.height, mask.getHeight()), target.getHeight() - upperLeftCornerToPasteIntoInTarget.y);
+		if (xStart >= xEnd || yStart >= yEnd)
+		{
+			return;
+		}
+
+		IntRectangle boundsInTarget = new IntRectangle(upperLeftCornerToPasteIntoInTarget.x + xStart, upperLeftCornerToPasteIntoInTarget.y + yStart, xEnd - xStart, yEnd - yStart);
+		try (PixelReader maskPixels = mask.createPixelReader(); PixelReader sourcePixels = source.createPixelReader(); PixelReaderWriter targetPixels = target.createPixelReaderWriter(boundsInTarget))
+		{
+			ThreadHelper.getInstance().processRowsInParallel(yStart, yEnd - yStart, (y) ->
+			{
+				for (int x = xStart; x < xEnd; x++)
+				{
+					if (maskPixels.getGrayLevel(x, y) > 0)
+					{
+						continue;
+					}
+					targetPixels.setRGB(upperLeftCornerToPasteIntoInTarget.x + x, upperLeftCornerToPasteIntoInTarget.y + y,
+							sourcePixels.getRGB(boundsInSourceToCopyFrom.x + x, boundsInSourceToCopyFrom.y + y));
+				}
+			});
 		}
 	}
 

@@ -1,0 +1,12 @@
+borders/rose
+
+The two images in borders/rose are taken unmodified from the FA01-Temperate art pack:
+https://cartographyassets.com/assets/96299/fa01-temperate/
+
+That pack is released under the CAL-NR license ("No restrictions. Do whatever you want!"), which
+permits this use. They are included here because they are the art that motivated the soft-inner-edge
+border work: the inner edge of rose/top_edge.png is scalloped, so a quarter of the band's width along
+its map-facing side is transparent. Nortantis' own installed borders are all opaque along that side,
+so without this art there is nothing in the repository that exercises the feature on real artwork.
+
+Used by BorderRevealTest.

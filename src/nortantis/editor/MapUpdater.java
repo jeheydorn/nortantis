@@ -705,14 +705,14 @@ public abstract class MapUpdater
 						if (updateType != UpdateType.ReprocessBooks)
 						{
 							boolean anotherDrawIsQueued = next != null;
-							int scaledBorderWidth = settings.drawBorder && settings.borderPosition == BorderPosition.Outside_map ? (int) (settings.borderWidth * settings.resolution) : 0;
+							int borderPaddingAsDrawn = Background.calcBorderPaddingScaledByResolution(settings, Background.calcBorderWidthScaledByResolution(settings));
 							if (replaceBounds != null)
 							{
-								onFinishedDrawingIncremental(anotherDrawIsQueued, scaledBorderWidth, replaceBounds, warningMessages);
+								onFinishedDrawingIncremental(anotherDrawIsQueued, borderPaddingAsDrawn, replaceBounds, warningMessages);
 							}
 							else
 							{
-								onFinishedDrawingFull(map, settings.resolution, anotherDrawIsQueued, scaledBorderWidth, warningMessages, result.citiesRemovedForTouchingWater, isUndoRedo);
+								onFinishedDrawingFull(map, settings.resolution, anotherDrawIsQueued, borderPaddingAsDrawn, warningMessages, result.citiesRemovedForTouchingWater, isUndoRedo);
 							}
 						}
 

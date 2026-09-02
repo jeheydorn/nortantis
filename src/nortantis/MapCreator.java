@@ -595,7 +595,7 @@ public class MapCreator implements WarningLogger
 			{
 				try (Painter p = fullSizedMap.createPainter())
 				{
-					int scaledBorderWidth = settings.drawBorder && settings.borderPosition == BorderPosition.Outside_map ? (int) (settings.borderWidth * settings.resolution) : 0;
+					int scaledBorderWidth = mapParts.background.getBorderPaddingScaledByResolution();
 					p.setBasicStroke(4f);
 					p.setColor(Color.red);
 					{
@@ -619,9 +619,9 @@ public class MapCreator implements WarningLogger
 			}
 		}
 
-		int scaledBorderWidth = settings.drawBorder && settings.borderPosition == BorderPosition.Outside_map ? (int) (settings.borderWidth * settings.resolution) : 0;
+		int borderPadding = mapParts.background.getBorderPaddingScaledByResolution();
 		IntRectangle bounds = replaceBounds.toIntRectangle();
-		return new IntRectangle(bounds.x + scaledBorderWidth, bounds.y + scaledBorderWidth, bounds.width, bounds.height);
+		return new IntRectangle(bounds.x + borderPadding, bounds.y + borderPadding, bounds.width, bounds.height);
 	}
 
 	/**
@@ -2330,7 +2330,7 @@ public class MapCreator implements WarningLogger
 		IntRectangle overlayPosition = tuple.getFirst();
 		Image overlayImage = tuple.getSecond();
 
-		int borderWidthScaledByResolution = Background.calcBorderWidthScaledByResolution(settings);
+		int borderPaddingScaledByResolution = Background.calcBorderPaddingScaledByResolution(settings, Background.calcBorderWidthScaledByResolution(settings));
 
 		try (Painter p = mapOrSnippet.createPainter(DrawQuality.High))
 		{
@@ -2338,8 +2338,8 @@ public class MapCreator implements WarningLogger
 			int y = overlayPosition.y;
 			if (drawBounds != null)
 			{
-				IntRectangle drawBoundsAdjustedForBorder = new IntRectangle(drawBounds.upperLeftCorner().toIntPoint().x + borderWidthScaledByResolution,
-						drawBounds.upperLeftCorner().toIntPoint().y + borderWidthScaledByResolution, (int) drawBounds.width, (int) drawBounds.height);
+				IntRectangle drawBoundsAdjustedForBorder = new IntRectangle(drawBounds.upperLeftCorner().toIntPoint().x + borderPaddingScaledByResolution,
+						drawBounds.upperLeftCorner().toIntPoint().y + borderPaddingScaledByResolution, (int) drawBounds.width, (int) drawBounds.height);
 
 				x -= drawBoundsAdjustedForBorder.x;
 				y -= drawBoundsAdjustedForBorder.y;

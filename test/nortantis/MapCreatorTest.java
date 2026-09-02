@@ -1060,9 +1060,9 @@ public class MapCreatorTest
 	}
 
 	@Test
-	public void noText_WithCities_GoldenRatio()
+	public void noText_WithCities_GoldenRatio_maskedBorder()
 	{
-		generateAndCompare("noText_WithCities_GoldenRatio.nort");
+		generateAndCompare("noText_WithCities_GoldenRatio_maskedBorder.nort");
 	}
 
 	@Test

@@ -659,6 +659,7 @@ public class ImageCache
 	{
 		instances.clear();
 		artPackPaths.clear();
+		BorderArt.clear();
 		// Also clear the assets cache so that any change to the list of art packs becomes visible.
 		Assets.clearArtPackCache();
 

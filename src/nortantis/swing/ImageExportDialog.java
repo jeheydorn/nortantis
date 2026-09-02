@@ -1,6 +1,6 @@
 package nortantis.swing;
 
-import nortantis.BorderPosition;
+import nortantis.Background;
 import nortantis.CancelledException;
 import nortantis.ImageCache;
 import nortantis.MapCreator;
@@ -96,12 +96,12 @@ public class ImageExportDialog extends JDialog
 		MapSettings exportSettings = mainWindow.getSettingsFromGUI(false);
 		final int exportBaseWidth = (exportSettings.rightRotationCount == 1 || exportSettings.rightRotationCount == 3) ? exportSettings.generatedHeight : exportSettings.generatedWidth;
 		final int exportBaseHeight = (exportSettings.rightRotationCount == 1 || exportSettings.rightRotationCount == 3) ? exportSettings.generatedWidth : exportSettings.generatedHeight;
-		final int borderPaddingPerSide = exportSettings.drawBorder && exportSettings.borderPosition == BorderPosition.Outside_map ? exportSettings.borderWidth : 0;
 		SliderWithDisplayedValue resolutionSliderWithDisplay = new SliderWithDisplayedValue(resolutionSlider, value ->
 		{
 			double resolution = value / 100.0;
-			int w = (int) (exportBaseWidth * resolution) + 2 * (int) (borderPaddingPerSide * resolution);
-			int h = (int) (exportBaseHeight * resolution) + 2 * (int) (borderPaddingPerSide * resolution);
+			int borderPaddingPerSide = Background.calcBorderPaddingScaledByResolution(exportSettings, (int) (exportSettings.borderWidth * resolution));
+			int w = (int) (exportBaseWidth * resolution) + 2 * borderPaddingPerSide;
+			int h = (int) (exportBaseHeight * resolution) + 2 * borderPaddingPerSide;
 			return w + " \u00d7 " + h;
 		}, null, null);
 		resolutionSliderWithDisplay.addToOrganizer(organizer, Translation.get("imageExport.resolution.label"), tooltip);
