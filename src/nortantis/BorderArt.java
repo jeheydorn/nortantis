@@ -7,8 +7,6 @@ import nortantis.platform.PixelReader;
 import nortantis.platform.PixelReaderWriter;
 import nortantis.platform.ImageHelper;
 import nortantis.util.Assets;
-import nortantis.util.ConcurrentHashMapF;
-import org.apache.commons.lang3.StringUtils;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -24,7 +22,8 @@ import java.util.Map;
  * A transparent pixel shows the map when it is connected, through transparency, to the open map area. Transparency enclosed by the art's
  * own ink, such as the inside of an inset corner box, is not connected to the map and keeps the border background behind it.
  *
- * Instances are cached per border because the masks depend only on the art, not on the border width or the resolution.
+ * Everything stored here depends only on the art, not on the border width or the resolution, so instances are worth caching. Get one from
+ * {@link ImageCache#getBorderArt(NamedResource)} rather than creating it.
  */
 public class BorderArt
 {
@@ -35,8 +34,6 @@ public class BorderArt
 	 * of the map.
 	 */
 	private static final double maxInsetDepthFraction = 2.0 / 3.0;
-
-	private static final ConcurrentHashMapF<String, BorderArt> instances = new ConcurrentHashMapF<>();
 
 	/**
 	 * The edge and corner images as they were found on disk. Any of these can be missing, in which case the border draws that element by
@@ -50,22 +47,23 @@ public class BorderArt
 	private final Map<BorderEdgeType, Image> derivedEdges = new EnumMap<>(BorderEdgeType.class);
 	private final Map<CornerType, Image> derivedCorners = new EnumMap<>(CornerType.class);
 	private final Map<BorderEdgeType, Image> edgeRevealMasks = new EnumMap<>(BorderEdgeType.class);
-	private final ConcurrentHashMapF<Integer, Map<CornerType, Image>> cornerRevealMasksBySeedStart = new ConcurrentHashMapF<>();
 	private final int edgeOriginalWidth;
 	private final int cornerOriginalWidth;
 	private final double insetDepthFraction;
 
-	private BorderArt(Path borderPath)
+	BorderArt(ImageCache imageCache, NamedResource borderResource, String customImagesPath)
 	{
-		loadedEdges.put(BorderEdgeType.Top, loadImageWithStringInFileName(borderPath, "top_edge."));
-		loadedEdges.put(BorderEdgeType.Bottom, loadImageWithStringInFileName(borderPath, "bottom_edge."));
-		loadedEdges.put(BorderEdgeType.Left, loadImageWithStringInFileName(borderPath, "left_edge."));
-		loadedEdges.put(BorderEdgeType.Right, loadImageWithStringInFileName(borderPath, "right_edge."));
+		Path borderPath = findBorderPath(borderResource, customImagesPath);
 
-		loadedCorners.put(CornerType.upperLeft, loadImageWithStringInFileName(borderPath, "upper_left_corner."));
-		loadedCorners.put(CornerType.upperRight, loadImageWithStringInFileName(borderPath, "upper_right_corner."));
-		loadedCorners.put(CornerType.lowerLeft, loadImageWithStringInFileName(borderPath, "lower_left_corner."));
-		loadedCorners.put(CornerType.lowerRight, loadImageWithStringInFileName(borderPath, "lower_right_corner."));
+		loadedEdges.put(BorderEdgeType.Top, loadImageWithStringInFileName(imageCache, borderPath, "top_edge."));
+		loadedEdges.put(BorderEdgeType.Bottom, loadImageWithStringInFileName(imageCache, borderPath, "bottom_edge."));
+		loadedEdges.put(BorderEdgeType.Left, loadImageWithStringInFileName(imageCache, borderPath, "left_edge."));
+		loadedEdges.put(BorderEdgeType.Right, loadImageWithStringInFileName(imageCache, borderPath, "right_edge."));
+
+		loadedCorners.put(CornerType.upperLeft, loadImageWithStringInFileName(imageCache, borderPath, "upper_left_corner."));
+		loadedCorners.put(CornerType.upperRight, loadImageWithStringInFileName(imageCache, borderPath, "upper_right_corner."));
+		loadedCorners.put(CornerType.lowerLeft, loadImageWithStringInFileName(imageCache, borderPath, "lower_left_corner."));
+		loadedCorners.put(CornerType.lowerRight, loadImageWithStringInFileName(imageCache, borderPath, "lower_right_corner."));
 
 		edgeOriginalWidth = calcEdgeOriginalWidth();
 		if (edgeOriginalWidth == 0)
@@ -80,21 +78,6 @@ public class BorderArt
 
 		deriveMissingEdgesAndCorners();
 		insetDepthFraction = createEdgeRevealMasks();
-	}
-
-	public static BorderArt load(NamedResource borderResource, String customImagesPath)
-	{
-		// The separator cannot appear in an art pack name, a folder, or a border name, so it keeps the parts of the key from running together.
-		String key = StringUtils.defaultString(borderResource.artPack) + "\u0000" + StringUtils.defaultString(customImagesPath) + "\u0000" + borderResource.name;
-		return instances.computeIfAbsent(key, unused -> new BorderArt(findBorderPath(borderResource, customImagesPath)));
-	}
-
-	/**
-	 * Drops the cached art of every border. Called when the set of art packs available can have changed.
-	 */
-	public static void clear()
-	{
-		instances.clear();
 	}
 
 	private static Path findBorderPath(NamedResource borderResource, String customImagesPath)
@@ -114,7 +97,7 @@ public class BorderArt
 		return borderPath;
 	}
 
-	private static Image loadImageWithStringInFileName(Path path, String inFileName)
+	private static Image loadImageWithStringInFileName(ImageCache imageCache, Path path, String inFileName)
 	{
 		List<Path> matches = Assets.listFiles(path.toString(), inFileName, null, Assets.allowedImageExtensions);
 		if (matches.isEmpty())
@@ -126,7 +109,7 @@ public class BorderArt
 			throw new RuntimeException("More than one file contains \"" + inFileName + "\" in the directory " + path.toAbsolutePath());
 		}
 
-		return Assets.readImage(matches.get(0).toString());
+		return imageCache.getImageFromFile(matches.get(0));
 	}
 
 	private int calcEdgeOriginalWidth()
@@ -310,11 +293,14 @@ public class BorderArt
 	 * edge bands and so faces open map. A corner that does not protrude gets no seeds, since its inner sides are adjacent to the edge
 	 * bands rather than to the map, and it touches the map only at a single point.
 	 *
+	 * Where the seeds start depends on the border width, so unlike the rest of this class the result is not reusable across border widths.
+	 * The caller owns the returned masks and should close them once it has scaled them.
+	 *
 	 * @param seedStartInOriginalPixels
 	 *            Where the edge bands end within the corner image, in the corner image's own pixels. This is the edge images' band width
 	 *            except when the border width had to be clamped to keep the border from overlapping itself in the middle of the map.
 	 */
-	private Map<CornerType, Image> createCornerRevealMasks(int seedStartInOriginalPixels)
+	public Map<CornerType, Image> createCornerRevealMasks(int seedStartInOriginalPixels)
 	{
 		Map<CornerType, Image> masks = new EnumMap<>(CornerType.class);
 		for (CornerType type : CornerType.values())
@@ -551,18 +537,6 @@ public class BorderArt
 	public Image getEdgeRevealMask(BorderEdgeType type)
 	{
 		return edgeRevealMasks.get(type);
-	}
-
-	/**
-	 * The reveal mask of the given corner, at the resolution the corner image is stored at, or null when nothing in that corner shows the
-	 * map.
-	 *
-	 * @param seedStartInOriginalPixels
-	 *            Where the edge bands end within the corner image, in the corner image's own pixels.
-	 */
-	public Image getCornerRevealMask(CornerType type, int seedStartInOriginalPixels)
-	{
-		return cornerRevealMasksBySeedStart.computeIfAbsent(seedStartInOriginalPixels, unused -> createCornerRevealMasks(seedStartInOriginalPixels)).get(type);
 	}
 
 	/**

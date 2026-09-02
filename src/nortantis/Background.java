@@ -80,7 +80,7 @@ public class Background
 
 		if (settings.drawBorder)
 		{
-			borderArt = BorderArt.load(borderResource, customImagesPath);
+			borderArt = ImageCache.getInstance(borderResource.artPack, customImagesPath).getBorderArt(borderResource);
 		}
 		borderPaddingScaled = isBorderOutsideMap ? borderWidthScaled - calcInsetDepthScaled(borderArt, borderWidthScaled) : 0;
 
@@ -648,9 +648,16 @@ public class Background
 		putScaledRevealMask(edgeRevealMasks, BorderEdgeType.Left, borderArt.getEdgeRevealMask(BorderEdgeType.Left), leftEdge);
 		putScaledRevealMask(edgeRevealMasks, BorderEdgeType.Right, borderArt.getEdgeRevealMask(BorderEdgeType.Right), rightEdge);
 
+		// Unlike the edge masks, the corner masks depend on the border width, so they are created for this Background rather than kept
+		// with the art.
+		Map<CornerType, Image> cornerMasksAtOriginalResolution = borderArt.createCornerRevealMasks(cornerSeedStartInOriginalPixels);
 		for (CornerType cornerType : CornerType.values())
 		{
-			putScaledRevealMask(cornerRevealMasks, cornerType, borderArt.getCornerRevealMask(cornerType, cornerSeedStartInOriginalPixels), getCorner(cornerType));
+			putScaledRevealMask(cornerRevealMasks, cornerType, cornerMasksAtOriginalResolution.get(cornerType), getCorner(cornerType));
+		}
+		for (Image mask : cornerMasksAtOriginalResolution.values())
+		{
+			mask.close();
 		}
 	}
 
@@ -939,7 +946,7 @@ public class Background
 		BorderArt borderArt;
 		try
 		{
-			borderArt = BorderArt.load(settings.borderResource, settings.customImagesPath);
+			borderArt = ImageCache.getInstance(settings.borderResource.artPack, settings.customImagesPath).getBorderArt(settings.borderResource);
 		}
 		catch (RuntimeException e)
 		{

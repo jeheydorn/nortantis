@@ -141,6 +141,11 @@ public class BorderRevealTest
 		return Paths.get("unit test files", "border art").toString();
 	}
 
+	private static BorderArt loadBorderArt(NamedResource borderResource, String customImagesPath)
+	{
+		return ImageCache.getInstance(borderResource.artPack, customImagesPath).getBorderArt(borderResource);
+	}
+
 	private MapSettings createSettingsForRealArt(BorderPosition position, int borderWidth)
 	{
 		MapSettings settings = createSettings(position, borderWidth);
@@ -152,28 +157,22 @@ public class BorderRevealTest
 	@Test
 	public void insetDepthComesFromTheNotchesInTheEdgeArt()
 	{
-		BorderArt art = BorderArt.load(new NamedResource(Assets.customArtPack, "soft"), artPackFolder.toString());
+		BorderArt art = loadBorderArt(new NamedResource(Assets.customArtPack, "soft"), artPackFolder.toString());
 		assertEquals(((double) notchDepth) / edgeArtHeight, art.getInsetDepthFraction(), 0.0001);
 		assertEquals(edgeArtHeight, art.getEdgeOriginalWidth());
 		assertEquals(cornerArtWidth, art.getCornerOriginalWidth());
 
 		// The corner is not inset, so it touches the map at a single point and reveals nothing.
-		for (BorderArt.CornerType cornerType : BorderArt.CornerType.values())
-		{
-			assertNull(art.getCornerRevealMask(cornerType, art.getEdgeOriginalWidth()));
-		}
+		assertTrue(art.createCornerRevealMasks(art.getEdgeOriginalWidth()).isEmpty());
 
 		// The same measurements against the real art. It ships only a top edge, so the other three are derived from it and must agree.
-		BorderArt realArt = BorderArt.load(realArtBorderResource(), realArtCustomImagesPath());
+		BorderArt realArt = loadBorderArt(realArtBorderResource(), realArtCustomImagesPath());
 		assertEquals(realArtInsetDepthFraction, realArt.getInsetDepthFraction(), 0.001);
 		for (BorderArt.BorderEdgeType type : BorderArt.BorderEdgeType.values())
 		{
 			assertNotNull(realArt.getEdgeRevealMask(type), "Every edge of " + realArtBorderName + " should reveal part of the map");
 		}
-		for (BorderArt.CornerType cornerType : BorderArt.CornerType.values())
-		{
-			assertNull(realArt.getCornerRevealMask(cornerType, realArt.getEdgeOriginalWidth()));
-		}
+		assertTrue(realArt.createCornerRevealMasks(realArt.getEdgeOriginalWidth()).isEmpty());
 	}
 
 	@Test

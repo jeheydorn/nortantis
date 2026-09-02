@@ -62,16 +62,24 @@ public class ImageCache
 	 */
 	private ConcurrentHashMapF<IconType, ListMap<String, ImageAndMasks>> iconGroupsAsListsCache;
 
+	/**
+	 * The art of each border, keyed by border name.
+	 */
+	private ConcurrentHashMapF<String, BorderArt> borderArtCache;
+
 	private String imagesPath;
 
 	private final String artPack;
 
+	private final String customImagesFolder;
+
 	/**
 	 * Singleton
 	 */
-	private ImageCache(String imagesPath, String artPack)
+	private ImageCache(String imagesPath, String artPack, String customImagesFolder)
 	{
 		this.imagesPath = imagesPath;
+		this.customImagesFolder = customImagesFolder;
 		scaledCache = new ConcurrentHashMapF<>();
 		coloredCache = new ConcurrentHashMapF<>();
 		fileCache = new ConcurrentHashMapF<>();
@@ -81,6 +89,7 @@ public class ImageCache
 		iconsInGroupCache = new ConcurrentHashMapF<>();
 		iconGroupsAsListsCache = new ConcurrentHashMapF<>();
 		alphaCache = new ConcurrentHashMapF<>();
+		borderArtCache = new ConcurrentHashMapF<>();
 		this.artPack = artPack;
 	}
 
@@ -94,7 +103,7 @@ public class ImageCache
 		String key = StringUtils.defaultString(artPack) + "\u0000" + StringUtils.defaultString(customImagesFolder);
 		String normalizedPath = artPackPaths.getOrCreate(key, () -> findArtPackPath(artPack, customImagesFolder));
 
-		return instances.getOrCreate(normalizedPath, () -> new ImageCache(normalizedPath, artPack));
+		return instances.getOrCreate(normalizedPath, () -> new ImageCache(normalizedPath, artPack, customImagesFolder));
 	}
 
 	/**
@@ -187,6 +196,17 @@ public class ImageCache
 		{
 			return Assets.readImage(path.toString());
 		});
+	}
+
+	/**
+	 * Either looks up in the cache, or creates, the art of the given border. The art is the border's images along with everything derived
+	 * from them that depends only on the art, so it is worth keeping between draws.
+	 */
+	public BorderArt getBorderArt(NamedResource borderResource)
+	{
+		// computeIfAbsent rather than getOrCreate because deriving a border's missing images and reveal masks is expensive enough that
+		// running it more than once matters.
+		return borderArtCache.computeIfAbsent(borderResource.name, unused -> new BorderArt(this, borderResource, customImagesFolder));
 	}
 
 	public ImageAndMasks getImageAndMasks(FreeIcon icon)
@@ -659,7 +679,6 @@ public class ImageCache
 	{
 		instances.clear();
 		artPackPaths.clear();
-		BorderArt.clear();
 		// Also clear the assets cache so that any change to the list of art packs becomes visible.
 		Assets.clearArtPackCache();
 
