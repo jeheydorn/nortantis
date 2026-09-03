@@ -663,6 +663,13 @@ public class Background
 
 	private static <T extends Enum<T>> void putScaledRevealMask(Map<T, Image> masks, T key, Image revealMaskAtOriginalResolution, Image scaledArt)
 	{
+		// The scaled masks belong to this Background, so a mask already under this key can be closed rather than left to replacement.
+		Image previous = masks.remove(key);
+		if (previous != null)
+		{
+			previous.close();
+		}
+
 		if (revealMaskAtOriginalResolution == null)
 		{
 			// Nothing in this border image shows the map, so there is no mask to apply and the border draws the way it always has.
