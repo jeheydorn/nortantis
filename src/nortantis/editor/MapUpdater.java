@@ -705,7 +705,10 @@ public abstract class MapUpdater
 						if (updateType != UpdateType.ReprocessBooks)
 						{
 							boolean anotherDrawIsQueued = next != null;
-							int borderPaddingAsDrawn = Background.calcBorderPaddingScaledByResolution(settings, Background.calcBorderWidthScaledByResolution(settings));
+							// The Background of the draw that just finished knows what it actually used, which is not always what the
+							// current settings would give.
+							int borderPaddingAsDrawn = mapParts != null && mapParts.background != null ? mapParts.background.getBorderPaddingScaledByResolution()
+									: Background.calcBorderPaddingScaledByResolution(settings, Background.calcBorderWidthScaledByResolution(settings));
 							if (replaceBounds != null)
 							{
 								onFinishedDrawingIncremental(anotherDrawIsQueued, borderPaddingAsDrawn, replaceBounds, warningMessages);

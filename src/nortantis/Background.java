@@ -82,7 +82,7 @@ public class Background
 		{
 			borderArt = ImageCache.getInstance(borderResource.artPack, customImagesPath).getBorderArt(borderResource);
 		}
-		borderPaddingScaled = isBorderOutsideMap ? borderWidthScaled - calcInsetDepthScaled(borderArt, borderWidthScaled) : 0;
+		borderPaddingScaled = isBorderOutsideMap ? calcBorderPaddingScaledByResolution(borderArt == null ? 0.0 : borderArt.getInsetDepthFraction(), borderWidthScaled) : 0;
 
 		if (settings.generateBackground)
 		{
@@ -938,36 +938,42 @@ public class Background
 	 */
 	public static int calcBorderPaddingScaledByResolution(MapSettings settings, int borderWidthScaled)
 	{
+		return calcBorderPaddingScaledByResolution(calcBorderInsetDepthFraction(settings), borderWidthScaled);
+	}
+
+	/**
+	 * How much background the border adds to each side of the map, given how far the frame sits over the map.
+	 *
+	 * Callers that ask repeatedly for the same settings, such as while a resolution slider moves, should look the fraction up once with
+	 * {@link #calcBorderInsetDepthFraction(MapSettings)} and call this, since the fraction does not depend on the resolution.
+	 */
+	public static int calcBorderPaddingScaledByResolution(double insetDepthFraction, int borderWidthScaled)
+	{
+		return borderWidthScaled - (int) Math.round(insetDepthFraction * borderWidthScaled);
+	}
+
+	/**
+	 * How far the border frame sits over the map rather than adding to the image, as a fraction of the border width. For a border outside
+	 * the map this is the depth of the transparent notches along its art's inner edge, which is 0 for art whose inner edge is opaque. It
+	 * is 1 for a border drawn inside the map, since the whole width of that border is over the map.
+	 */
+	public static double calcBorderInsetDepthFraction(MapSettings settings)
+	{
 		if (!settings.drawBorder || settings.borderPosition != BorderPosition.Outside_map)
 		{
-			return 0;
+			return 1.0;
 		}
 
-		BorderArt borderArt;
 		try
 		{
-			borderArt = ImageCache.getInstance(settings.borderResource.artPack, settings.customImagesPath).getBorderArt(settings.borderResource);
+			return ImageCache.getInstance(settings.borderResource.artPack, settings.customImagesPath).getBorderArt(settings.borderResource).getInsetDepthFraction();
 		}
 		catch (RuntimeException e)
 		{
 			// The border art is missing or unreadable. Report the size the border would take without a shift; drawing the map will raise
 			// the real error.
-			return borderWidthScaled;
+			return 0.0;
 		}
-		return borderWidthScaled - calcInsetDepthScaled(borderArt, borderWidthScaled);
-	}
-
-	/**
-	 * How far the border frame moves onto the map so that the transparent notches along the art's inner edge have map behind them, in
-	 * pixels scaled by resolution. Zero when the art's inner edge is opaque, which is the case for most border art.
-	 */
-	private static int calcInsetDepthScaled(BorderArt borderArt, int borderWidthScaled)
-	{
-		if (borderArt == null)
-		{
-			return 0;
-		}
-		return (int) Math.round(borderArt.getInsetDepthFraction() * borderWidthScaled);
 	}
 
 	public Dimension getMapBoundsIncludingBorder()

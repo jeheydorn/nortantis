@@ -162,22 +162,6 @@ public class HistogramEqualizer
 		return null;
 	}
 
-	@SuppressWarnings("unused")
-	private void writeToCSV(int[] histogram, String csvFileName)
-	{
-		StringBuilder exportStr = new StringBuilder();
-		exportStr.append("Pixel Value, Frequency\n");
-		int pixelMax = histogram.length - 1;
-		for (int pixelVal = 0; pixelVal <= pixelMax; pixelVal++)
-		{
-			exportStr.append(pixelVal);
-			exportStr.append(",");
-			exportStr.append(histogram[pixelVal]);
-			exportStr.append("\n");
-		}
-		FileHelper.writeToFile(csvFileName, exportStr.toString());
-	}
-
 	public Image equalize(Image inImage)
 	{
 		return applyLookupTables(inImage, lookupTables);

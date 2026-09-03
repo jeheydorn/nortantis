@@ -147,6 +147,84 @@ tasks.register<Test>("benchmark") {
     }
 }
 
+// Accepts the images written by failing image-comparison tests as the new expected images, for use after the diff images have been
+// reviewed and the new rendering is the wanted one.
+// Usage: ./gradlew acceptFailedImages
+tasks.register("acceptFailedImages") {
+    description = "Copy failed test images over their expected images, for baselines that changed intentionally"
+    // Deliberately not in the "verification" group, and with no task dependencies, so that nothing treats this as a test task and
+    // compiles or runs the tests before it. It only copies files that are already on disk.
+    group = "unit test images"
+
+    // Failed-image folders paired with the expected-image folder they are compared against. A folder without an expected counterpart
+    // does not belong here: "failed sub-maps" is omitted because those tests assert on data rather than pixels and write their maps
+    // there for viewing even when they pass.
+    val folderPairs = listOf(
+        "failed maps" to "expected maps",
+        "failed image helper tests" to "expected image helper tests",
+        "failed skia tests" to "expected skia tests",
+        "failed maps skia" to "expected maps skia",
+    )
+    val unitTestFilesFolder = file("unit test files")
+
+    doLast {
+        fun describeAge(millis: Long): String {
+            val minutes = millis / (60L * 1000L)
+            if (minutes < 90L) {
+                return "$minutes minute(s) ago"
+            }
+            val hours = minutes / 60L
+            if (hours < 48L) {
+                return "$hours hour(s) ago"
+            }
+            return "${hours / 24L} day(s) ago"
+        }
+
+        val now = System.currentTimeMillis()
+        // Failed image paired with the expected image it would overwrite.
+        val toAccept = mutableListOf<Pair<File, File>>()
+        var diagnosticImageCount = 0
+
+        for ((failedFolderName, expectedFolderName) in folderPairs) {
+            val failedFolder = File(unitTestFilesFolder, failedFolderName)
+            val expectedFolder = File(unitTestFilesFolder, expectedFolderName)
+            if (!failedFolder.isDirectory || !expectedFolder.isDirectory) {
+                continue
+            }
+
+            val failedImages = failedFolder.listFiles { f: File -> f.isFile && f.name.endsWith(".png") }?.sortedBy { it.name } ?: emptyList()
+            for (failedImage in failedImages) {
+                val expectedImage = File(expectedFolder, failedImage.name)
+                // A failed image with no expected image of the same name is a diagnostic that a test wrote to be looked at (a diff
+                // image, an incremental-draw snippet, and the like) rather than a baseline that can be accepted.
+                if (!expectedImage.isFile) {
+                    diagnosticImageCount++
+                    continue
+                }
+                toAccept.add(failedImage to expectedImage)
+            }
+        }
+
+        if (toAccept.isEmpty()) {
+            println("No failed images to accept.")
+            if (diagnosticImageCount > 0) {
+                println("$diagnosticImageCount diagnostic image(s) have no expected image and were left alone.")
+            }
+            return@doLast
+        }
+
+        for ((failedImage, expectedImage) in toAccept) {
+            failedImage.copyTo(expectedImage, overwrite = true)
+            println("Accepted ${expectedImage.parentFile.name}/${expectedImage.name} (${describeAge(now - failedImage.lastModified())})")
+        }
+
+        println("\nAccepted ${toAccept.size} image(s) as expected.")
+        if (diagnosticImageCount > 0) {
+            println("$diagnosticImageCount diagnostic image(s) have no expected image and were left alone.")
+        }
+    }
+}
+
 sourceSets {
     main {
         java {

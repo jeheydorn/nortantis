@@ -96,10 +96,13 @@ public class ImageExportDialog extends JDialog
 		MapSettings exportSettings = mainWindow.getSettingsFromGUI(false);
 		final int exportBaseWidth = (exportSettings.rightRotationCount == 1 || exportSettings.rightRotationCount == 3) ? exportSettings.generatedHeight : exportSettings.generatedWidth;
 		final int exportBaseHeight = (exportSettings.rightRotationCount == 1 || exportSettings.rightRotationCount == 3) ? exportSettings.generatedWidth : exportSettings.generatedHeight;
+		// The border art cannot change while this dialog is open, and how far the border sits over the map does not depend on the
+		// resolution, so look it up once rather than on every move of the slider.
+		final double borderInsetDepthFraction = Background.calcBorderInsetDepthFraction(exportSettings);
 		SliderWithDisplayedValue resolutionSliderWithDisplay = new SliderWithDisplayedValue(resolutionSlider, value ->
 		{
 			double resolution = value / 100.0;
-			int borderPaddingPerSide = Background.calcBorderPaddingScaledByResolution(exportSettings, (int) (exportSettings.borderWidth * resolution));
+			int borderPaddingPerSide = Background.calcBorderPaddingScaledByResolution(borderInsetDepthFraction, (int) (exportSettings.borderWidth * resolution));
 			int w = (int) (exportBaseWidth * resolution) + 2 * borderPaddingPerSide;
 			int h = (int) (exportBaseHeight * resolution) + 2 * borderPaddingPerSide;
 			return w + " \u00d7 " + h;

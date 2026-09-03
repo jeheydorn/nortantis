@@ -3056,7 +3056,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				saveMap(settings, openSettingsFilePath.toString());
 			}
-			catch (IOException e)
+			catch (Exception e)
 			{
 				e.printStackTrace();
 				Logger.printError("Error while saving map.", e);
@@ -3127,7 +3127,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		{
 			saveMap(settings, savePath.toString());
 		}
-		catch (IOException e)
+		catch (Exception e)
 		{
 			e.printStackTrace();
 			Logger.printError("Error while saving settings to a new file:", e);

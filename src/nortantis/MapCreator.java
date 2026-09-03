@@ -564,7 +564,7 @@ public class MapCreator implements WarningLogger
 
 		if (settings.drawOverlayImage)
 		{
-			drawOverlayImage(mapSnippet, settings, drawBounds, fullSizedMap.size());
+			drawOverlayImage(mapSnippet, settings, drawBounds, fullSizedMap.size(), mapParts.background.getBorderPaddingScaledByResolution());
 		}
 
 		// Add frayed border
@@ -1016,6 +1016,7 @@ public class MapCreator implements WarningLogger
 		{
 			background.closeImages();
 		}
+		int borderPaddingAsDrawn = background.getBorderPaddingScaledByResolution();
 		background = null;
 
 		Logger.println("Map dimensions: " + map.getWidth() + "x" + map.getHeight() + ", resolution scale: " + settings.resolution);
@@ -1055,7 +1056,7 @@ public class MapCreator implements WarningLogger
 			map = ImageHelper.getInstance().maskWithColor(map, settings.frayedBorderColor, grunge, true);
 		}
 
-		drawOverlayImageIfNeededAndUpdateMapParts(map, settings);
+		drawOverlayImageIfNeededAndUpdateMapParts(map, settings, borderPaddingAsDrawn);
 
 		reportProgressAndCheckForCancel();
 
@@ -2298,11 +2299,11 @@ public class MapCreator implements WarningLogger
 		return citiesRemovedForTouchingWater;
 	}
 
-	private static void drawOverlayImageIfNeededAndUpdateMapParts(Image map, MapSettings settings)
+	private static void drawOverlayImageIfNeededAndUpdateMapParts(Image map, MapSettings settings, int borderPaddingScaledByResolution)
 	{
 		if (settings.drawOverlayImage)
 		{
-			drawOverlayImage(map, settings, null, map.size());
+			drawOverlayImage(map, settings, null, map.size(), borderPaddingScaledByResolution);
 		}
 	}
 
@@ -2318,8 +2319,11 @@ public class MapCreator implements WarningLogger
 	 *            snippet. Does not include border width.
 	 * @param mapSize
 	 *            The size of the entire map, including borders, as it is drawn.
+	 * @param borderPaddingScaledByResolution
+	 *            How much background the border adds to each side of the map, as the map being drawn on has it. Only used when drawBounds
+	 *            is given, since that is what makes a snippet's bounds line up with the map it came from.
 	 */
-	public static void drawOverlayImage(Image mapOrSnippet, MapSettings settings, Rectangle drawBounds, IntDimension mapSize)
+	public static void drawOverlayImage(Image mapOrSnippet, MapSettings settings, Rectangle drawBounds, IntDimension mapSize, int borderPaddingScaledByResolution)
 	{
 		Tuple2<IntRectangle, Image> tuple = getOverlayPositionAndImage(settings.overlayImagePath, settings.overlayScale, settings.overlayOffsetResolutionInvariant, settings.resolution, mapSize);
 		if (tuple == null)
@@ -2329,8 +2333,6 @@ public class MapCreator implements WarningLogger
 
 		IntRectangle overlayPosition = tuple.getFirst();
 		Image overlayImage = tuple.getSecond();
-
-		int borderPaddingScaledByResolution = Background.calcBorderPaddingScaledByResolution(settings, Background.calcBorderWidthScaledByResolution(settings));
 
 		try (Painter p = mapOrSnippet.createPainter(DrawQuality.High))
 		{
