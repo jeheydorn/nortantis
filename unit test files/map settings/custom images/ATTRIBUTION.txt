@@ -9,4 +9,3 @@ border work: the inner edge of rose/top_edge.png is scalloped, so a quarter of t
 its map-facing side is transparent. Nortantis' own installed borders are all opaque along that side,
 so without this art there is nothing in the repository that exercises the feature on real artwork.
 
-Used by BorderRevealTest.

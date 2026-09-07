@@ -121,8 +121,9 @@ public class BorderRevealTest
 
 	/**
 	 * The scalloped inner edge of FA01-Temperate's "rose" border, which is the real art this feature exists for. See
-	 * "unit test files/border art/ATTRIBUTION.txt" for where it comes from and the license it is used under. The synthetic art above
-	 * pins the behavior with measurements that are exact by construction; this pins it against artwork nobody here controls.
+	 * "unit test files/map settings/custom images/ATTRIBUTION.txt" for where it comes from and the license it is used under. The
+	 * synthetic art above pins the behavior with measurements that are exact by construction; this pins it against artwork nobody here
+	 * controls.
 	 */
 	private static final String realArtBorderName = "rose";
 	/**
@@ -138,7 +139,7 @@ public class BorderRevealTest
 
 	private static String realArtCustomImagesPath()
 	{
-		return Paths.get("unit test files", "border art").toString();
+		return Paths.get("unit test files", "map settings", "custom images").toString();
 	}
 
 	private static BorderArt loadBorderArt(NamedResource borderResource, String customImagesPath)
