@@ -112,7 +112,6 @@ public class SubMapDialog
 	private JRadioButton customRadio;
 	private int clampedOneXWorldSize;
 	static final int minPolygonsInSubMap = 1000;
-	private static final Color warningMessageColor = new java.awt.Color(160, 90, 0);
 
 	/**
 	 * Computes the clamped 1× world size (polygon count) for a sub-map selection. This matches the default "Match source detail" value
@@ -729,7 +728,7 @@ public class SubMapDialog
 		if (!matchDetailPossible)
 		{
 			JLabel matchDetailDisabledLabel = new JLabel(Translation.get("subMapDialog.step2.matchDetailDisabled", minPolygonsInSubMap));
-			matchDetailDisabledLabel.setForeground(warningMessageColor);
+			matchDetailDisabledLabel.setForeground(SwingHelper.warningMessageColor);
 			controlOrganizer.addLeftAlignedComponent(matchDetailDisabledLabel, 0, 4, false);
 		}
 
@@ -759,7 +758,7 @@ public class SubMapDialog
 
 		// Warning shown when Choose mode is selected.
 		JLabel customWarningLabel = new JLabel(Translation.get("subMapDialog.step2.customWarning", Translation.get("iconsTool.name")));
-		customWarningLabel.setForeground(warningMessageColor);
+		customWarningLabel.setForeground(SwingHelper.warningMessageColor);
 		customWarningRowHider = controlOrganizer.addLeftAlignedComponent(customWarningLabel, 2, 8, false);
 		customWarningRowHider.setVisible(!matchDetailPossible);
 
@@ -865,20 +864,12 @@ public class SubMapDialog
 		citiesOnWaterWarningArea.setLineWrap(true);
 		citiesOnWaterWarningArea.setWrapStyleWord(true);
 		citiesOnWaterWarningArea.setOpaque(false);
-		citiesOnWaterWarningArea.setForeground(warningMessageColor);
+		citiesOnWaterWarningArea.setForeground(SwingHelper.warningMessageColor);
 		citiesOnWaterWarningArea.setFont(UIManager.getFont("Label.font"));
 
 		citiesOnWaterWarningPanel = new JPanel(new BorderLayout());
 		citiesOnWaterWarningPanel.setBorder(BorderFactory.createEmptyBorder(4, 0, 0, 0));
-		Icon warningIcon = UIManager.getIcon("OptionPane.warningIcon");
-		if (warningIcon != null)
-		{
-			JLabel warningIconLabel = new JLabel(warningIcon);
-			// Align the icon with the first line of text and leave a gap before the text.
-			warningIconLabel.setVerticalAlignment(SwingConstants.TOP);
-			warningIconLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 6));
-			citiesOnWaterWarningPanel.add(warningIconLabel, BorderLayout.WEST);
-		}
+		citiesOnWaterWarningPanel.add(SwingHelper.createWarningIconLabel(), BorderLayout.WEST);
 		citiesOnWaterWarningPanel.add(citiesOnWaterWarningArea, BorderLayout.CENTER);
 		citiesOnWaterWarningPanel.setVisible(false);
 		previewWrapper.add(citiesOnWaterWarningPanel, BorderLayout.SOUTH);

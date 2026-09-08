@@ -142,26 +142,10 @@ public class IconsTool extends EditorTool
 		{
 			String text = Translation.get("iconsTool.toolIcon");
 			p.setColor(Color.black);
-			p.setFont(createToolIconFont(19, text));
-			p.drawString(text, 11 + getXOffSetBasedOnLanguage(), 48);
+			drawCenteredToolIconText(p, icon, toolIconLabelFontSize, text, 48);
 		}
 		return icon;
 	}
-
-	private int getXOffSetBasedOnLanguage()
-	{
-		return switch (Translation.getEffectiveLocale().getLanguage())
-		{
-			case "en" -> OSHelper.isMac() ? -1 : 0;
-			case "de" -> -9;
-			case "es" -> OSHelper.isMac() ? -2 : 0;
-			case "fr" -> OSHelper.isLinux() ? -7 : OSHelper.isMac() ? -2 : 0;
-			case "pt" -> OSHelper.isLinux() ? -6 : 0;
-			case "ru" -> OSHelper.isLinux() ? -2 : OSHelper.isMac() ? -2 : 0;
-			default -> 0;
-		};
-	}
-
 
 	@Override
 	public void onSwitchingAway()

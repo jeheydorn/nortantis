@@ -1,5 +1,7 @@
 package nortantis.swing;
 
+import nortantis.FontFinder;
+import nortantis.FontFinder.FontCategory;
 import nortantis.LineBreak;
 import nortantis.MapSettings;
 import nortantis.MapText;
@@ -12,10 +14,11 @@ import nortantis.platform.Font;
 import nortantis.platform.awt.AwtBridge;
 import nortantis.swing.translation.Translation;
 import nortantis.util.Assets;
-import nortantis.util.OSHelper;
 import nortantis.util.Tuple2;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.*;
 import java.nio.file.Paths;
@@ -26,6 +29,8 @@ import java.util.stream.Collectors;
 public class TextTool extends EditorTool
 {
 	private JTextField editTextField;
+	private JTextArea fontCoverageWarningArea;
+	private RowHider fontCoverageWarningHider;
 	private MapText lastSelected;
 	/**
 	 * The location where the mouse was pressed to begin moving or rotating text, stored in graph coordinates rather than panel pixels so it
@@ -123,7 +128,42 @@ public class TextTool extends EditorTool
 				handleSelectingTextToEdit(lastSelected, SelectionFocus.ModeWidget);
 			}
 		});
+		editTextField.getDocument().addDocumentListener(new DocumentListener()
+		{
+			@Override
+			public void insertUpdate(DocumentEvent e)
+			{
+				updateFontCoverageWarning();
+			}
+
+			@Override
+			public void removeUpdate(DocumentEvent e)
+			{
+				updateFontCoverageWarning();
+			}
+
+			@Override
+			public void changedUpdate(DocumentEvent e)
+			{
+				updateFontCoverageWarning();
+			}
+		});
 		editTextFieldHider = organizer.addLeftAlignedComponent(editTextField);
+
+		fontCoverageWarningArea = new JTextArea();
+		fontCoverageWarningArea.setEditable(false);
+		fontCoverageWarningArea.setFocusable(false);
+		fontCoverageWarningArea.setLineWrap(true);
+		fontCoverageWarningArea.setWrapStyleWord(true);
+		fontCoverageWarningArea.setOpaque(false);
+		fontCoverageWarningArea.setForeground(SwingHelper.warningMessageColor);
+		fontCoverageWarningArea.setFont(UIManager.getFont("Label.font"));
+
+		JPanel fontCoverageWarningPanel = new JPanel(new BorderLayout());
+		fontCoverageWarningPanel.add(SwingHelper.createWarningIconLabel(), BorderLayout.WEST);
+		fontCoverageWarningPanel.add(fontCoverageWarningArea, BorderLayout.CENTER);
+		fontCoverageWarningHider = organizer.addLeftAlignedComponent(fontCoverageWarningPanel);
+		fontCoverageWarningHider.setVisible(false);
 
 		textTypeComboBox = new JComboBoxFixed<>();
 		textTypeComboBox.setSelectedItem(TextType.Other_mountains);
@@ -210,7 +250,9 @@ public class TextTool extends EditorTool
 
 						MapText old = lastSelected.deepCopy();
 						lastSelected.fontOverride = getFontForType(lastSelected.type);
+						lastSelected.fontOverrideCategory = mainWindow.themePanel.getThemeFontCategory(MapSettings.getThemeFontTypeForText(lastSelected.type));
 						fontChooser.setFont(AwtBridge.toAwtFont(lastSelected.fontOverride));
+						fontChooser.setCategory(lastSelected.fontOverrideCategory);
 						updater.createAndShowMapIncrementalUsingText(Arrays.asList(old, lastSelected));
 					}
 
@@ -218,12 +260,15 @@ public class TextTool extends EditorTool
 			});
 			useDefaultFontCheckboxHider = organizer.addLeftAlignedComponent(useDefaultFontCheckbox);
 
-			fontChooser = new FontChooser(Translation.get("textTool.font.label"), 30, 40, () ->
+			final int maxFontPreviewHeight = 90;
+			fontChooser = new FontChooser(Translation.get("textTool.font.label"), 30, maxFontPreviewHeight, 40, () ->
 			{
 				if (lastSelected != null)
 				{
 					MapText old = lastSelected.deepCopy();
 					lastSelected.fontOverride = AwtBridge.fromAwtFont(fontChooser.getFont());
+					lastSelected.fontOverrideCategory = fontChooser.getCategory();
+					updateFontCoverageWarning();
 					undoer.setUndoPoint(UpdateType.Incremental, TextTool.this);
 					updater.createAndShowMapIncrementalUsingText(Arrays.asList(old, lastSelected));
 				}
@@ -428,6 +473,53 @@ public class TextTool extends EditorTool
 		return toolOptionsPanel;
 	}
 
+	/**
+	 * Shows a warning under the text field when the font that will draw the selected text has no glyphs for what has been typed, naming a
+	 * font that does. The map still draws the boxes; this only makes sure the user finds out at the moment they type rather than from
+	 * someone else's screenshot.
+	 *
+	 * <p>
+	 * No delay is needed to stop this flickering mid-word: adding characters can only add requirements, so a prefix a font cannot draw
+	 * means the whole word fails, and the warning appears at the first undrawable character and stays.
+	 */
+	private void updateFontCoverageWarning()
+	{
+		if (lastSelected == null || !editTextFieldHider.isVisible())
+		{
+			fontCoverageWarningHider.setVisible(false);
+			return;
+		}
+
+		String text = trimTrailingUnpairedSurrogate(editTextField.getText());
+		Font font = lastSelected.fontOverride != null ? lastSelected.fontOverride : getFontForType(lastSelected.type);
+		if (font == null || FontFinder.canDisplay(font.getName(), text))
+		{
+			fontCoverageWarningHider.setVisible(false);
+			return;
+		}
+
+		FontCategory category = FontFinder.getCategory(font.getName(),
+				lastSelected.fontOverride != null ? lastSelected.fontOverrideCategory
+						: mainWindow.themePanel.getThemeFontCategory(MapSettings.getThemeFontTypeForText(lastSelected.type)));
+		String substitute = FontFinder.chooseSubstitute(font.getName(), category, text);
+		fontCoverageWarningArea.setText(substitute == null ? Translation.get("textTool.fontCannotDisplay.noneAvailable")
+				: Translation.get("textTool.fontCannotDisplay", substitute));
+		fontCoverageWarningHider.setVisible(true);
+	}
+
+	/**
+	 * A character outside the basic multilingual plane is two char values, and a string observed between them ends in an unpaired high
+	 * surrogate, which reports as undrawable even when the completed pair is fine.
+	 */
+	private static String trimTrailingUnpairedSurrogate(String text)
+	{
+		if (!text.isEmpty() && Character.isHighSurrogate(text.charAt(text.length() - 1)))
+		{
+			return text.substring(0, text.length() - 1);
+		}
+		return text;
+	}
+
 	private Font getFontForType(TextType type)
 	{
 		return switch (type)
@@ -524,44 +616,11 @@ public class TextTool extends EditorTool
 			String text = Translation.get("textTool.toolIcon");
 			p.setColor(Color.black);
 
-			p.setFont(createToolIconFont((int) (34 * getBaseFontScale()), text));
-			p.drawString(text, 3 + getXOffSetBasedOnLanguage(), 37);
+			// The Text tool's icon has no picture other than the word itself, so it draws much larger than the other tool labels.
+			final int textToolIconFontSize = 34;
+			drawCenteredToolIconText(p, icons, textToolIconFontSize, text, 37);
 		}
 		return icons;
-	}
-
-	private double getBaseFontScale()
-	{
-		String language = Translation.getEffectiveLocale().getLanguage();
-		double baseFontScale;
-		if (OSHelper.isMac())
-		{
-			baseFontScale = switch (language)
-			{
-				case "es" -> 0.85;
-				case "fr" -> 0.9;
-				case "pt" -> 0.85;
-				default -> 1.0;
-			};
-		}
-		else
-		{
-			baseFontScale = 1.0;
-		}
-		return baseFontScale;
-	}
-
-	private int getXOffSetBasedOnLanguage()
-	{
-		return switch (Translation.getEffectiveLocale().getLanguage())
-		{
-			case "en" -> OSHelper.isMac() ? -1 : 0;
-			case "zh" -> -4;
-			case "fr" -> OSHelper.isLinux() ? -1 : -2;
-			case "pt" -> -1;
-			case "ru" -> -1;
-			default -> 0;
-		};
 	}
 
 	@Override
@@ -1004,6 +1063,7 @@ public class TextTool extends EditorTool
 			lastSelected.colorOverride = colorOverrideFromGui;
 			lastSelected.boldBackgroundColorOverride = boldBackgroundColorOverrideFromGui;
 			lastSelected.fontOverride = fontHider.isVisible() ? AwtBridge.fromAwtFont(fontChooser.getFont()) : null;
+			lastSelected.fontOverrideCategory = fontHider.isVisible() ? fontChooser.getCategory() : null;
 			lastSelected.curvature = curvatureSlider.getValue() / ((double) curvatureSliderDivider);
 			lastSelected.spacing = spacingSlider.getValue();
 			lastSelected.backgroundFade = backgroundFadeSlider.getValue() / (double) backgroundFadeDivider;
@@ -1025,6 +1085,7 @@ public class TextTool extends EditorTool
 			mapEditingPanel.setTextBoxToDraw(selectedText);
 			editTextField.setText(selectedText.value);
 			editTextFieldHider.setVisible(true);
+			updateFontCoverageWarning();
 			clearRotationButtonHider.setVisible(true);
 			if (focusBehavior == SelectionFocus.EditField && !editTextField.hasFocus())
 			{
@@ -1070,7 +1131,9 @@ public class TextTool extends EditorTool
 			if (selectedText.fontOverride != null)
 			{
 				fontChooser.setFont(AwtBridge.toAwtFont(selectedText.fontOverride));
+				fontChooser.setCategory(selectedText.fontOverrideCategory);
 			}
+			fontChooser.setTextThatMustBeDrawable(selectedText.value);
 			// Round rather than truncate. These values were stored as sliderValue / divider, and dividing then multiplying can land just
 			// below the original integer, so truncating would drop the slider a step and the next save would persist that lower value.
 			curvatureSlider.setValue((int) Math.round(selectedText.curvature * curvatureSliderDivider));
@@ -1088,6 +1151,7 @@ public class TextTool extends EditorTool
 		mapEditingPanel.clearTextBox();
 		editTextField.setText("");
 		editTextFieldHider.setVisible(false);
+		fontCoverageWarningHider.setVisible(false);
 		clearRotationButtonHider.setVisible(false);
 		textTypeHider.setVisible(false);
 		lineBreakHider.setVisible(false);

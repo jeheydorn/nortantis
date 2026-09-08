@@ -9,6 +9,8 @@ import nortantis.platform.Font;
 import nortantis.platform.Image;
 import nortantis.platform.Painter;
 import nortantis.swing.SwingHelper;
+import nortantis.util.Assets;
+import nortantis.util.Logger;
 import org.apache.commons.io.FilenameUtils;
 
 import javax.imageio.IIOImage;
@@ -183,6 +185,38 @@ public class AwtFactory extends PlatformFactory
 	}
 
 	@Override
+	public String registerFont(String assetFilePath)
+	{
+		try
+		{
+			java.awt.Font font;
+			if (Assets.isOnDisk(assetFilePath))
+			{
+				// The InputStream overload of createFont copies to a temporary file on every call, so use the File overload when the font is
+				// on disk.
+				font = java.awt.Font.createFont(java.awt.Font.TRUETYPE_FONT, new File(assetFilePath));
+			}
+			else
+			{
+				try (InputStream stream = Assets.openStream(assetFilePath))
+				{
+					font = java.awt.Font.createFont(java.awt.Font.TRUETYPE_FONT, stream);
+				}
+			}
+
+			// registerFont returns false when a family of that name is already installed on the machine. That's fine - the user's own copy
+			// wins - and the family name is still the one to use.
+			GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
+			return font.getFamily();
+		}
+		catch (FontFormatException | IOException e)
+		{
+			Logger.printError("Unable to load the font file '" + assetFilePath + "'.", e);
+			return null;
+		}
+	}
+
+	@Override
 	public Color createColor(int rgb, boolean hasAlpha)
 	{
 		return new AwtColor(rgb, hasAlpha);
@@ -314,6 +348,12 @@ public class AwtFactory extends PlatformFactory
 			return null;
 		}
 		return new AwtPainter(g);
+	}
+
+	@Override
+	public java.util.List<String> listFontFamilies()
+	{
+		return java.util.Arrays.asList(GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames());
 	}
 
 	@Override

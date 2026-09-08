@@ -122,6 +122,14 @@ public class SegmentedButtonWidget
 		}
 	}
 
+	/**
+	 * The component holding the buttons, for callers that lay it out themselves rather than through a GridBagOrganizer.
+	 */
+	public JComponent getComponent()
+	{
+		return container;
+	}
+
 	public RowHider addToOrganizer(GridBagOrganizer organizer, String label, String tooltip)
 	{
 		return organizer.addLabelAndComponent(label, tooltip, container);

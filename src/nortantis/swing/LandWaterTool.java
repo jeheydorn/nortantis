@@ -13,7 +13,6 @@ import nortantis.swing.translation.Translation;
 import nortantis.util.Assets;
 import nortantis.util.GeometryHelper;
 import nortantis.util.Helper;
-import nortantis.util.OSHelper;
 import nortantis.util.Tuple2;
 
 import javax.swing.*;
@@ -209,25 +208,12 @@ public class LandWaterTool extends EditorTool
 		{
 			String land = Translation.get("landWaterTool.toolIcon.land");
 			String water = Translation.get("landWaterTool.toolIcon.water");
-			p.setFont(createToolIconFont(19, land + water));
 			p.setColor(nortantis.platform.Color.black);
-			p.drawString(land, 7, 15);
-			p.drawString(water, 12 + getXOffSetBasedOnLanguage(), 48);
+			// Each word sits over the part of the coastline it names, so neither is centered: the coast runs down the left of the icon, and
+			// starting "water" clear of it is what keeps the word off the land.
+			drawToolIconText(p, icon, toolIconLabelFontSize, new ToolIconText(land, 7, 15), new ToolIconText(water, 12, 48));
 		}
 		return icon;
-	}
-
-	private int getXOffSetBasedOnLanguage()
-	{
-		return switch (Translation.getEffectiveLocale().getLanguage())
-		{
-			case "de" -> OSHelper.isMac() ? 0 : -3;
-			case "es" -> 3;
-			case "fr" -> 4;
-			case "pt" -> 4;
-			case "ru" -> 4;
-			default -> 0;
-		};
 	}
 
 

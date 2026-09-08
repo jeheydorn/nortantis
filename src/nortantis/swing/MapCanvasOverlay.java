@@ -1,6 +1,6 @@
 package nortantis.swing;
 
-import nortantis.util.OSHelper;
+import nortantis.FontFinder;
 
 import javax.swing.*;
 import javax.swing.text.SimpleAttributeSet;
@@ -19,7 +19,7 @@ public class MapCanvasOverlay extends JPanel
 	private static final int topMargin = 24;
 	private static final int bottomMargin = 24;
 	private static final int sideMargin = 20;
-	private static final int messageFontSize = 26;
+	private static final int messageFontSize = 21;
 
 	private final JScrollPane scrollPane;
 	private JTextPane messagePanel;
@@ -122,7 +122,7 @@ public class MapCanvasOverlay extends JPanel
 
 	private static Font chooseMessageFont(String[] lines)
 	{
-		Font font = new Font(OSHelper.getDecorativeFontFamilyName(), Font.PLAIN, messageFontSize);
+		Font font = new Font(FontFinder.getChromeFontFamily(), Font.PLAIN, messageFontSize);
 		if (font.canDisplayUpTo(String.join("", lines)) != -1)
 		{
 			font = new Font(Font.SERIF, Font.PLAIN, messageFontSize);

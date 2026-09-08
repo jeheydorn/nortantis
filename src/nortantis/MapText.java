@@ -1,5 +1,6 @@
 package nortantis;
 
+import nortantis.FontFinder.FontCategory;
 import nortantis.geom.Point;
 import nortantis.geom.RotatedRectangle;
 import nortantis.platform.Color;
@@ -60,6 +61,11 @@ public class MapText implements Serializable
 	public static final double defaultBackgroundFade = 1.0;
 
 	public Font fontOverride;
+	/**
+	 * The category recorded for {@link #fontOverride}, or null when none is recorded. Only meaningful for a font that came from this
+	 * machine, since a bundled or art pack font's category comes from where it ships.
+	 */
+	public FontCategory fontOverrideCategory;
 
 	private MapText(String text, Point location, double angle, TextType type, RotatedRectangle line1Bounds, RotatedRectangle line2Bounds, LineBreak lineBreak, Color colorOverride,
 			Color boldBackgroundColorOverride, double curvature, int spacing, Font fontOverride, double backgroundFade)
@@ -98,7 +104,9 @@ public class MapText implements Serializable
 		Color boldBackgroundColorOverride = this.boldBackgroundColorOverride;
 		Font fontOverride = this.fontOverride;
 
-		return new MapText(value, location, angle, type, line1Bounds, line2Bounds, lineBreak, colorOverride, boldBackgroundColorOverride, curvature, spacing, fontOverride, backgroundFade);
+		MapText copy = new MapText(value, location, angle, type, line1Bounds, line2Bounds, lineBreak, colorOverride, boldBackgroundColorOverride, curvature, spacing, fontOverride, backgroundFade);
+		copy.fontOverrideCategory = fontOverrideCategory;
+		return copy;
 	}
 
 	/**
@@ -108,7 +116,7 @@ public class MapText implements Serializable
 	@Override
 	public int hashCode()
 	{
-		return Objects.hash(angle, backgroundFade, boldBackgroundColorOverride, colorOverride, curvature, fontOverride, lineBreak, location, spacing, type, value);
+		return Objects.hash(angle, backgroundFade, boldBackgroundColorOverride, colorOverride, curvature, fontOverride, fontOverrideCategory, lineBreak, location, spacing, type, value);
 	}
 
 	/**
@@ -132,7 +140,7 @@ public class MapText implements Serializable
 		MapText other = (MapText) obj;
 		return Double.doubleToLongBits(angle) == Double.doubleToLongBits(other.angle) && Double.doubleToLongBits(backgroundFade) == Double.doubleToLongBits(other.backgroundFade)
 				&& Objects.equals(boldBackgroundColorOverride, other.boldBackgroundColorOverride) && Objects.equals(colorOverride, other.colorOverride)
-				&& Double.doubleToLongBits(curvature) == Double.doubleToLongBits(other.curvature) && Objects.equals(fontOverride, other.fontOverride) && lineBreak == other.lineBreak
+				&& Double.doubleToLongBits(curvature) == Double.doubleToLongBits(other.curvature) && Objects.equals(fontOverride, other.fontOverride) && fontOverrideCategory == other.fontOverrideCategory && lineBreak == other.lineBreak
 				&& Objects.equals(location, other.location) && spacing == other.spacing && type == other.type && Objects.equals(value, other.value);
 	}
 

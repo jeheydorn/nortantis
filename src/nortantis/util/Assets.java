@@ -281,7 +281,7 @@ public class Assets
 	{
 		if (isPackagedAsset(folderPath))
 		{
-			return listFilesFromJar(folderPath, containsText, endingText);
+			return listFilesFromJar(folderPath, containsText, endingText, allowedExtensions);
 		}
 
 		File[] files = new File(folderPath).listFiles(
@@ -307,7 +307,7 @@ public class Assets
 		return StringUtils.isNotEmpty(path) && path.startsWith(getAssetsPath()) && (isRunningFromJar() || assetInputStreamProvider != null);
 	}
 
-	public static List<Path> listFilesFromJar(String folderPath, String containsText, String endingText)
+	public static List<Path> listFilesFromJar(String folderPath, String containsText, String endingText, Set<String> allowedExtensions)
 	{
 		List<Path> fileNames = new ArrayList<>();
 
@@ -317,8 +317,9 @@ public class Assets
 		cachedEntries.stream().forEach(entry ->
 		{
 			String entryName = entry.name;
-			if (!entry.isDirectory && entryName.startsWith(assetPathInEntryFormat) && ((StringUtils.isEmpty(containsText) || entryName.contains(containsText)))
-					&& (StringUtils.isEmpty(endingText) || entryName.endsWith(endingText)))
+			if (!entry.isDirectory && isDirectlyInside(entryName, assetPathInEntryFormat) && ((StringUtils.isEmpty(containsText) || entryName.contains(containsText)))
+					&& (StringUtils.isEmpty(endingText) || entryName.endsWith(endingText))
+					&& (allowedExtensions == null || allowedExtensions.contains(FilenameUtils.getExtension(entryName).toLowerCase())))
 			{
 				fileNames.add(Paths.get(folderPath, FilenameUtils.getName(entryName)));
 			}
@@ -336,13 +337,22 @@ public class Assets
 		List<String> result = new ArrayList<>();
 		for (CachedEntry entry : cachedEntries)
 		{
-			if (entry.isDirectory && entry.name.startsWith(assetPathInEntryFormat) && !addTrailingSlash(entry.name).equals(assetPathInEntryFormat))
+			if (entry.isDirectory && isDirectlyInside(removeTrailingSlash(entry.name), assetPathInEntryFormat))
 			{
 				result.add(FilenameUtils.getName(removeTrailingSlash(entry.name)));
 			}
 		}
 
 		return result;
+	}
+
+	/**
+	 * Whether the given entry name is an immediate child of the given folder rather than something nested deeper inside it. Entry names are
+	 * flat strings, so without this a folder's whole subtree looks like its contents.
+	 */
+	private static boolean isDirectlyInside(String entryName, String folderInEntryFormat)
+	{
+		return entryName.startsWith(folderInEntryFormat) && !entryName.substring(folderInEntryFormat.length()).contains("/");
 	}
 
 	private static void initializeEntryCache()
@@ -590,6 +600,22 @@ public class Assets
 			}
 		}
 		return lines;
+	}
+
+	/**
+	 * Opens a stream over the bytes of the given file, whether it is on disk or packaged in the jar. The caller must close it.
+	 */
+	public static InputStream openStream(String filePath)
+	{
+		return createInputStream(filePath);
+	}
+
+	/**
+	 * Returns true when the given path resolves to a file on disk rather than to one packaged in the jar or served by an asset provider.
+	 */
+	public static boolean isOnDisk(String filePath)
+	{
+		return !isPackagedAsset(filePath);
 	}
 
 	private static InputStream createInputStream(String filePath)

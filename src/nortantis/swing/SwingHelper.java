@@ -588,6 +588,11 @@ public class SwingHelper
 	/**
 	 * Width, in pixels, that long option-pane messages are wrapped to. See {@link #wrapDialogMessage(Object)}.
 	 */
+	/** The color of text that warns the user about something that is wrong but not an error. */
+	public static final Color warningMessageColor = new Color(160, 90, 0);
+
+	private static final Color linkColor = new Color(26, 113, 228);
+
 	private static final int dialogWrapWidthPixels = 400;
 
 	/**
@@ -824,26 +829,50 @@ public class SwingHelper
 
 	public static JLabel createHyperlink(String text, String URL)
 	{
-		JLabel link = new JLabel(text);
-		link.setForeground(new Color(26, 113, 228));
-		link.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		JLabel link = createActionLink(text, () ->
+		{
+			try
+			{
+				Desktop.getDesktop().browse(new URI(URL));
+			}
+			catch (IOException | URISyntaxException ex)
+			{
+				Logger.printError("Error while trying to open URL: " + URL, ex);
+			}
+		});
 		link.setToolTipText(URL);
+		return link;
+	}
+
+	/**
+	 * A label that looks like a hyperlink but runs the given action instead of opening a URL.
+	 */
+	public static JLabel createActionLink(String text, Runnable action)
+	{
+		JLabel link = new JLabel(text);
+		link.setForeground(linkColor);
+		link.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		link.addMouseListener(new MouseAdapter()
 		{
 			@Override
 			public void mouseClicked(MouseEvent e)
 			{
-				try
-				{
-					Desktop.getDesktop().browse(new URI(URL));
-				}
-				catch (IOException | URISyntaxException ex)
-				{
-					Logger.printError("Error while trying to open URL: " + URL, ex);
-				}
+				action.run();
 			}
 		});
 		return link;
+	}
+
+	/**
+	 * A label holding the look-and-feel's standard warning icon, aligned with the first line of the text it sits beside. The icon is an
+	 * image rather than a glyph, so it renders the same across languages, fonts, and operating systems.
+	 */
+	public static JLabel createWarningIconLabel()
+	{
+		JLabel iconLabel = new JLabel(UIManager.getIcon("OptionPane.warningIcon"));
+		iconLabel.setVerticalAlignment(SwingConstants.TOP);
+		iconLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 6));
+		return iconLabel;
 	}
 
 	public static String chooseImageFile(Component parent, String curFolder)

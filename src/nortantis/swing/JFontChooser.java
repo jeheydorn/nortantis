@@ -15,6 +15,18 @@ import javax.swing.text.JTextComponent;
 import javax.swing.text.Position;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import nortantis.FontFinder;
+import nortantis.FontFinder.AvailableFont;
+import nortantis.FontFinder.FontCategory;
+import nortantis.FontFinder.FontSource;
+import nortantis.FontFinder.Script;
 import nortantis.swing.translation.Translation;
 
 /**
@@ -54,13 +66,47 @@ public class JFontChooser extends JComponent
 	private static final int[] FONT_STYLE_CODES = { Font.PLAIN, Font.BOLD, Font.ITALIC, Font.BOLD | Font.ITALIC };
 	private static final String[] DEFAULT_FONT_SIZE_STRINGS = { "8", "9", "10", "11", "12", "14", "16", "18", "20", "22", "24", "26", "28", "36", "48", "72", "96", "120", "144", "168", "192", "216",
 			"240", };
+	private static final int sampleWidth = 300;
+	private static final int minSampleHeight = 100;
+	/** Beyond this the sample clips rather than growing, so that a 240 point sample can't push the dialog off the screen. */
+	private static final int maxSampleHeight = 260;
+	private static final int sampleVerticalPadding = 8;
+	/** The size each family name is drawn at in its own font, in the family list. */
+	private static final int familyPreviewFontSize = 14;
+
+	/**
+	 * The row shown above a family that the selected font source excludes but that the map uses. It is a heading rather than a font, so it
+	 * cannot be selected.
+	 */
+	private static final Object currentFontSeparatorRow = new Object()
+	{
+		@Override
+		public String toString()
+		{
+			return Translation.get("fontChooser.source.currentFont");
+		}
+	};
 
 	// instance variables
 	protected int dialogResultValue = ERROR_OPTION;
 
 	private String[] fontStyleNames = null;
-	private String[] fontFamilyNames = null;
 	private String[] fontSizeStrings = null;
+
+	/** Which fonts the family list shows. Derived from the font the dialog opens on, never stored with the map. */
+	private FontSource selectedSource = FontSource.Bundled;
+	/** The family the dialog opened on, which is always listed whatever the selected source excludes. */
+	private String familyFromSettings;
+	/** The distinct characters the chosen font has to be able to draw, used to mark families that cannot draw them. */
+	private String charactersThatMustBeDrawable = "";
+	private final Map<String, Script> missingScriptByFamily = new HashMap<>();
+	private JRadioButton bundledSourceButton;
+	private JRadioButton artPackSourceButton;
+	private JRadioButton systemSourceButton;
+	private JComponent sourcePanel;
+	private JPanel noCoverageNoticePanel;
+	/** The category the map recorded for the family it opened on, kept so that reopening the picker doesn't discard it. */
+	private FontCategory categoryFromSettings;
 	private JTextField fontFamilyTextField = null;
 	private JTextField fontStyleTextField = null;
 	private JTextField fontSizeTextField = null;
@@ -106,8 +152,17 @@ public class JFontChooser extends JComponent
 		contentsPanel.add(selectPanel, BorderLayout.NORTH);
 		contentsPanel.add(getSamplePanel(), BorderLayout.CENTER);
 
+		JPanel headerPanel = new JPanel();
+		headerPanel.setLayout(new BoxLayout(headerPanel, BoxLayout.Y_AXIS));
+		headerPanel.add(getSourcePanel());
+		headerPanel.add(getNoCoverageNoticePanel());
+
+		JPanel outerPanel = new JPanel(new BorderLayout());
+		outerPanel.add(headerPanel, BorderLayout.NORTH);
+		outerPanel.add(contentsPanel, BorderLayout.CENTER);
+
 		this.setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
-		this.add(contentsPanel);
+		this.add(outerPanel);
 		this.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 		this.setSelectedFont(DEFAULT_SELECTED_FONT);
 	}
@@ -156,8 +211,9 @@ public class JFontChooser extends JComponent
 	{
 		if (fontNameList == null)
 		{
-			fontNameList = new JList<Object>(getFontFamilies());
+			fontNameList = new JList<Object>(buildFontFamilyRows());
 			fontNameList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+			fontNameList.setCellRenderer(new FontFamilyRenderer());
 			fontNameList.addListSelectionListener(new ListSelectionHandler(getFontFamilyTextField()));
 			fontNameList.setSelectedIndex(0);
 			fontNameList.setFont(DEFAULT_FONT);
@@ -203,8 +259,8 @@ public class JFontChooser extends JComponent
 	 **/
 	public String getSelectedFontFamily()
 	{
-		String fontName = (String) getFontFamilyList().getSelectedValue();
-		return fontName;
+		Object selected = getFontFamilyList().getSelectedValue();
+		return selected instanceof String ? (String) selected : familyFromSettings;
 	}
 
 	/**
@@ -274,15 +330,16 @@ public class JFontChooser extends JComponent
 	 **/
 	public void setSelectedFontFamily(String name)
 	{
-		String[] names = getFontFamilies();
-		for (int i = 0; i < names.length; i++)
+		// The source selector reflects where the font in the field came from. Deriving it rather than storing it is what makes an existing
+		// map keep its own fonts with nothing to migrate and no flag that can disagree with what the map says.
+		familyFromSettings = name;
+		selectedSource = FontFinder.getSource(name);
+		if (selectedSource == FontSource.ArtPack && !hasFontsFromSource(FontSource.ArtPack))
 		{
-			if (names[i].toLowerCase().equals(name.toLowerCase()))
-			{
-				getFontFamilyList().setSelectedIndex(i);
-				break;
-			}
+			selectedSource = FontSource.System;
 		}
+
+		rebuildFontFamilyList(name);
 		updateSampleFont();
 	}
 
@@ -345,7 +402,8 @@ public class JFontChooser extends JComponent
 	 **/
 	public void setSelectedFont(Font font)
 	{
-		setSelectedFontFamily(font.getFamily());
+		// getName, not getFamily: for a family this machine does not have, getFamily reports "Dialog" rather than what the map says.
+		setSelectedFontFamily(font.getName());
 		setSelectedFontStyle(font.getStyle());
 		setSelectedFontSize(font.getSize());
 	}
@@ -394,8 +452,15 @@ public class JFontChooser extends JComponent
 			if (e.getValueIsAdjusting() == false)
 			{
 				JList<?> list = (JList<?>) e.getSource();
-				String selectedValue = (String) list.getSelectedValue();
-
+				Object selected = list.getSelectedValue();
+				if (selected == currentFontSeparatorRow)
+				{
+					// It is a heading, not a font, so step past it in whichever direction the selection was moving.
+					int index = list.getSelectedIndex();
+					list.setSelectedIndex(index + 1 < list.getModel().getSize() ? index + 1 : index - 1);
+					return;
+				}
+				String selectedValue = (String) selected;
 				String oldValue = textComponent.getText();
 				textComponent.setText(selectedValue);
 				if (!oldValue.equalsIgnoreCase(selectedValue))
@@ -620,7 +685,16 @@ public class JFontChooser extends JComponent
 	protected void updateSampleFont()
 	{
 		Font font = getSelectedFont();
-		getSampleTextField().setFont(font);
+		JTextField sampleField = getSampleTextField();
+		sampleField.setFont(font);
+
+		// Measure the font rather than assuming a height, since the size list goes up to 240. getMaxAscent is used rather than getAscent
+		// because script faces routinely draw swashes and ascenders above the typical ascent.
+		FontMetrics metrics = sampleField.getFontMetrics(font);
+		int neededHeight = metrics.getMaxAscent() + metrics.getMaxDescent() + sampleVerticalPadding;
+		int height = Math.max(minSampleHeight, Math.min(neededHeight, maxSampleHeight));
+		sampleField.setPreferredSize(new Dimension(sampleWidth, height));
+		sampleField.revalidate();
 	}
 
 	protected JPanel getFontFamilyPanel()
@@ -630,7 +704,8 @@ public class JFontChooser extends JComponent
 			fontNamePanel = new JPanel();
 			fontNamePanel.setLayout(new BorderLayout());
 			fontNamePanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-			fontNamePanel.setPreferredSize(new Dimension(180, 130));
+			// Wide enough for a family name and the name of the art pack it came from side by side.
+			fontNamePanel.setPreferredSize(new Dimension(240, 130));
 
 			JScrollPane scrollPane = new JScrollPane(getFontFamilyList());
 			scrollPane.getVerticalScrollBar().setFocusable(false);
@@ -649,7 +724,6 @@ public class JFontChooser extends JComponent
 
 			fontNamePanel.add(label, BorderLayout.NORTH);
 			fontNamePanel.add(p, BorderLayout.CENTER);
-
 		}
 		return fontNamePanel;
 	}
@@ -739,19 +813,302 @@ public class JFontChooser extends JComponent
 
 			sampleText = new JTextField(Translation.get("fontChooser.sampleText"));
 			sampleText.setBorder(lowered);
-			sampleText.setPreferredSize(new Dimension(300, 100));
+			sampleText.setPreferredSize(new Dimension(sampleWidth, minSampleHeight));
 		}
 		return sampleText;
 	}
 
-	protected String[] getFontFamilies()
+	/**
+	 * The text the chosen font has to be able to draw. Families that cannot draw it are shown greyed out, with the script they are missing
+	 * named in the row.
+	 */
+	public void setTextThatMustBeDrawable(String text)
 	{
-		if (fontFamilyNames == null)
+		// Only the distinct characters matter, and reducing to them keeps the coverage check cheap when a map has a lot of labels.
+		Set<Integer> distinct = new LinkedHashSet<>();
+		StringBuilder builder = new StringBuilder();
+		if (text != null)
 		{
-			GraphicsEnvironment env = GraphicsEnvironment.getLocalGraphicsEnvironment();
-			fontFamilyNames = env.getAvailableFontFamilyNames();
+			text.codePoints().forEach(codePoint ->
+			{
+				if (distinct.add(codePoint))
+				{
+					builder.appendCodePoint(codePoint);
+				}
+			});
 		}
-		return fontFamilyNames;
+
+		charactersThatMustBeDrawable = builder.toString();
+		missingScriptByFamily.clear();
+		rebuildFontFamilyList(getSelectedFontFamily());
+	}
+
+	private JComponent getSourcePanel()
+	{
+		if (sourcePanel == null)
+		{
+			bundledSourceButton = createSourceButton(Translation.get("fontChooser.source.bundled"), FontSource.Bundled);
+			artPackSourceButton = createSourceButton(Translation.get("fontChooser.source.artPack"), FontSource.ArtPack);
+			systemSourceButton = createSourceButton(Translation.get("fontChooser.source.system"), FontSource.System);
+
+			List<JRadioButton> buttons = new ArrayList<>();
+			buttons.add(bundledSourceButton);
+			// Showing a source that leads to an empty list is worse than not offering it.
+			if (hasFontsFromSource(FontSource.ArtPack))
+			{
+				buttons.add(artPackSourceButton);
+			}
+			buttons.add(systemSourceButton);
+
+			ButtonGroup group = new ButtonGroup();
+			JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 2));
+			panel.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 0));
+			panel.add(new JLabel(Translation.get("fontChooser.source.label")));
+			for (JRadioButton button : buttons)
+			{
+				group.add(button);
+				panel.add(Box.createHorizontalStrut(8));
+				panel.add(button);
+			}
+
+			sourcePanel = panel;
+			sourcePanel.setAlignmentX(LEFT_ALIGNMENT);
+		}
+		return sourcePanel;
+	}
+
+	private JRadioButton createSourceButton(String text, FontSource source)
+	{
+		JRadioButton button = new JRadioButton(text);
+		button.addActionListener(e ->
+		{
+			selectedSource = source;
+			// A source the user picked keeps whatever family is selected if that source also has it, and otherwise falls back to the
+			// family the picker opened on, so that switching sources to look around never silently changes the map's font.
+			rebuildFontFamilyList(getSelectedFontFamily());
+		});
+		return button;
+	}
+
+	private JPanel getNoCoverageNoticePanel()
+	{
+		if (noCoverageNoticePanel == null)
+		{
+			noCoverageNoticePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 2));
+			noCoverageNoticePanel.setAlignmentX(LEFT_ALIGNMENT);
+
+			JLabel notice = new JLabel(Translation.get("fontChooser.noFontsCoverMapText"));
+			notice.setForeground(SwingHelper.warningMessageColor);
+			noCoverageNoticePanel.add(notice);
+			noCoverageNoticePanel.add(Box.createHorizontalStrut(8));
+			noCoverageNoticePanel.add(SwingHelper.createActionLink(Translation.get("fontChooser.switchToSystemFonts"), () ->
+			{
+				selectedSource = FontSource.System;
+				systemSourceButton.setSelected(true);
+				rebuildFontFamilyList(getSelectedFontFamily());
+			}));
+			noCoverageNoticePanel.setVisible(false);
+		}
+		return noCoverageNoticePanel;
+	}
+
+	/**
+	 * The category of the selected family, which decides what a replacement in the same style would be if the font is ever missing. A
+	 * bundled or art pack font knows its category from the folder it ships in; a font on this computer is categorized by its name, except
+	 * that the family the picker opened on keeps whatever category the map recorded for it.
+	 */
+	public FontCategory getSelectedCategory()
+	{
+		String family = getSelectedFontFamily();
+		FontCategory stored = family != null && family.equalsIgnoreCase(familyFromSettings) ? categoryFromSettings : null;
+		return FontFinder.getCategory(family, stored);
+	}
+
+	public void setSelectedCategory(FontCategory category)
+	{
+		categoryFromSettings = category;
+	}
+
+	private static boolean hasFontsFromSource(FontSource source)
+	{
+		for (AvailableFont font : FontFinder.listAvailableFonts())
+		{
+			if (font.source == source)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * The rows of the family list: every family from the selected source, plus the family the dialog opened on when that source excludes
+	 * it. Without the latter the picker looks like it silently cleared the map's font.
+	 */
+	private Object[] buildFontFamilyRows()
+	{
+		List<Object> rows = new ArrayList<>();
+		boolean containsFamilyFromSettings = false;
+		for (AvailableFont font : FontFinder.listAvailableFonts())
+		{
+			if (font.source == selectedSource)
+			{
+				rows.add(font.family);
+				if (font.family.equalsIgnoreCase(familyFromSettings))
+				{
+					containsFamilyFromSettings = true;
+				}
+			}
+		}
+
+		if (familyFromSettings != null && !containsFamilyFromSettings)
+		{
+			rows.add(currentFontSeparatorRow);
+			rows.add(familyFromSettings);
+		}
+		return rows.toArray();
+	}
+
+	@SuppressWarnings("unchecked")
+	private void rebuildFontFamilyList(String familyToSelect)
+	{
+		((JList<Object>) getFontFamilyList()).setListData(buildFontFamilyRows());
+		if (!selectFamilyInList(familyToSelect))
+		{
+			selectFamilyInList(familyFromSettings);
+		}
+
+		getSourcePanel();
+		bundledSourceButton.setSelected(selectedSource == FontSource.Bundled);
+		artPackSourceButton.setSelected(selectedSource == FontSource.ArtPack);
+		systemSourceButton.setSelected(selectedSource == FontSource.System);
+		getNoCoverageNoticePanel().setVisible(selectedSource != FontSource.System && !anyListedFamilyCanDrawTheText());
+	}
+
+	private boolean anyListedFamilyCanDrawTheText()
+	{
+		if (charactersThatMustBeDrawable.isEmpty())
+		{
+			return true;
+		}
+		ListModel<?> model = getFontFamilyList().getModel();
+		for (int i = 0; i < model.getSize(); i++)
+		{
+			Object row = model.getElementAt(i);
+			if (row != currentFontSeparatorRow && getMissingScript((String) row) == null
+					&& FontFinder.canDisplay((String) row, charactersThatMustBeDrawable))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Selects the given family in the list and scrolls it into view.
+	 *
+	 * @return True if the list contained the family.
+	 */
+	private boolean selectFamilyInList(String family)
+	{
+		if (family == null)
+		{
+			return false;
+		}
+		ListModel<?> model = getFontFamilyList().getModel();
+		for (int i = 0; i < model.getSize(); i++)
+		{
+			Object row = model.getElementAt(i);
+			if (row != currentFontSeparatorRow && ((String) row).equalsIgnoreCase(family))
+			{
+				getFontFamilyList().setSelectedIndex(i);
+				getFontFamilyList().ensureIndexIsVisible(i);
+				// Selecting a row that was already selected fires no event, so the text field is set here rather than left to the
+				// selection listener, which is what otherwise leaves the field showing a family the list no longer has selected.
+				getFontFamilyTextField().setText((String) row);
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * The script the given family has no glyphs for among the characters it has to draw, or null when it can draw all of them. Memoized
+	 * because the list renderer asks on every repaint.
+	 */
+	private Script getMissingScript(String family)
+	{
+		if (charactersThatMustBeDrawable.isEmpty())
+		{
+			return null;
+		}
+		return missingScriptByFamily.computeIfAbsent(family, key -> FontFinder.findMissingScript(key, charactersThatMustBeDrawable));
+	}
+
+	/**
+	 * Draws each family in its own font, with the art pack it came from named at the right of the row and the script it cannot draw named
+	 * where that applies.
+	 */
+	private class FontFamilyRenderer extends JPanel implements ListCellRenderer<Object>
+	{
+		private final JLabel familyLabel = new JLabel();
+		private final JLabel artPackLabel = new JLabel();
+
+		FontFamilyRenderer()
+		{
+			super(new BorderLayout());
+			artPackLabel.setFont(DEFAULT_FONT);
+			artPackLabel.setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 0));
+			add(familyLabel, BorderLayout.CENTER);
+			add(artPackLabel, BorderLayout.EAST);
+			setOpaque(true);
+		}
+
+		@Override
+		public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus)
+		{
+			setBackground(isSelected ? list.getSelectionBackground() : list.getBackground());
+			Color foreground = isSelected ? list.getSelectionForeground() : list.getForeground();
+			familyLabel.setForeground(foreground);
+			artPackLabel.setForeground(foreground);
+			setBorder(BorderFactory.createEmptyBorder());
+
+			if (value == currentFontSeparatorRow)
+			{
+				setBackground(list.getBackground());
+				familyLabel.setFont(DEFAULT_FONT);
+				familyLabel.setText(value.toString());
+				familyLabel.setEnabled(false);
+				artPackLabel.setText("");
+				setToolTipText(null);
+				setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, list.getForeground()),
+						BorderFactory.createEmptyBorder(2, 0, 0, 0)));
+				return this;
+			}
+
+			String family = (String) value;
+			// Showing each family in its own font is worth more to someone browsing unfamiliar fonts than any amount of categorising.
+			familyLabel.setFont(new Font(family, Font.PLAIN, familyPreviewFontSize));
+			familyLabel.setText(family);
+			artPackLabel.setText(FontFinder.getSource(family) == FontSource.ArtPack ? FontFinder.getArtPack(family) : "");
+
+			Script missingScript = getMissingScript(family);
+			familyLabel.setEnabled(missingScript == null);
+			artPackLabel.setEnabled(missingScript == null);
+			if (missingScript != null)
+			{
+				// Greying a row without saying why is worse than not marking it at all, so the reason goes in the row rather than only in a
+				// tooltip that a user may never hover.
+				String scriptName = Translation.get("script." + missingScript.name());
+				familyLabel.setText(family + "   " + Translation.get("fontChooser.missingScriptSuffix", scriptName));
+				setToolTipText(Translation.get("fontChooser.cannotDisplayMapText", family, scriptName));
+			}
+			else
+			{
+				setToolTipText(null);
+			}
+			return this;
+		}
 	}
 
 	protected String[] getFontStyleNames()

@@ -1,5 +1,6 @@
 package nortantis.swing;
 
+import nortantis.FontFinder;
 import nortantis.MapSettings;
 import nortantis.editor.EdgeType;
 import nortantis.editor.MapUpdater;
@@ -11,7 +12,7 @@ import nortantis.graph.voronoi.Edge;
 import nortantis.platform.Font;
 import nortantis.platform.FontStyle;
 import nortantis.platform.Image;
-import nortantis.swing.translation.Translation;
+import nortantis.platform.Painter;
 import nortantis.util.OSHelper;
 
 import javax.swing.*;
@@ -207,58 +208,86 @@ public abstract class EditorTool
 
 	}
 
-	protected static Font createToolIconFont(int baseFontSize, String text)
+	/** Space kept clear at the left and right edges of a tool icon, so text never sits against the edge of the image. */
+	private static final int toolIconTextMargin = 2;
+	/** Tool icon text is not shrunk below this, since text too small to read is no more useful than text that overflows. */
+	private static final int minToolIconFontSize = 8;
+	/**
+	 * The size a tool icon's label prefers. The Text tool's icon is the exception: its picture is the word itself, so it asks for its own,
+	 * much larger size.
+	 */
+	protected static final int toolIconLabelFontSize = 16;
+
+	/**
+	 * One line of text on a tool icon: what to draw, the left edge to start it at, and the baseline to sit it on.
+	 */
+	protected record ToolIconText(String text, int x, int baselineY)
 	{
-		String language = Translation.getEffectiveLocale().getLanguage();
-		double scale = switch (language)
-		{
-			case "es" -> 0.9;
-			case "fr" -> 0.97;
-			case "pt" -> 0.91;
-			case "ru" -> 0.8;
-			case "zh" -> 0.85;
-			default -> 1.0;
-		};
+	}
 
-		double osScale;
-		if (OSHelper.isLinux())
-		{
-			osScale = switch (language)
-			{
-				case "en" -> 0.73;
-				case "de" -> 0.9;
-				case "es" -> 0.85;
-				case "fr" -> 0.8;
-				case "pt" -> 0.85;
-				case "ru" -> 0.65;
-				default -> 1.0;
-			};
-		}
-		else if (OSHelper.isMac())
-		{
-			osScale = switch (language)
-			{
-				case "en" -> 0.8;
-				case "de" -> 0.75;
-				case "es" -> 0.85;
-				case "fr" -> 0.8;
-				case "pt" -> 0.85;
-				case "ru" -> 0.8;
-				default -> 1.0;
-			};
-		}
-		else
-		{
-			osScale = 1.0;
-		}
+	/**
+	 * Draws a tool icon's only line of text, centered across the icon.
+	 */
+	protected static void drawCenteredToolIconText(Painter p, Image icon, int preferredFontSize, String text, int baselineY)
+	{
+		setToolIconFont(p, icon, preferredFontSize, new ToolIconText(text, toolIconTextMargin, baselineY));
+		p.drawString(text, (icon.getWidth() - p.stringWidth(text)) / 2.0, baselineY);
+	}
 
-		int fontSize = (int) (baseFontSize * scale * osScale);
-		String fontFamily = OSHelper.isLinux() ? "Gurajada" : OSHelper.isMac() ? "Serif" : "Gabriola";
-		Font font = Font.create(fontFamily, FontStyle.Plain, fontSize);
-		if (font.canDisplayUpTo(text) != -1)
+	/**
+	 * Draws the lines of a tool icon's text, each starting exactly where it asks to start, at the largest shared size at or below the
+	 * preferred size at which every line fits between its own left edge and the right edge of the icon.
+	 *
+	 * <p>
+	 * Sizing the text to the room the tool leaves for it is what keeps a translation from overflowing its icon or drifting across the
+	 * picture behind it, without a table of per-language offsets. The family is bundled, so it has the same metrics on every operating
+	 * system.
+	 */
+	protected static void drawToolIconText(Painter p, Image icon, int preferredFontSize, ToolIconText... lines)
+	{
+		setToolIconFont(p, icon, preferredFontSize, lines);
+		for (ToolIconText line : lines)
 		{
-			// The font cannot display the text
-			font = Font.create("SansSerif", FontStyle.Plain, fontSize);
+			p.drawString(line.text(), line.x(), line.baselineY());
+		}
+	}
+
+	private static void setToolIconFont(Painter p, Image icon, int preferredFontSize, ToolIconText... lines)
+	{
+		for (int fontSize = preferredFontSize; fontSize > minToolIconFontSize; fontSize--)
+		{
+			p.setFont(createToolIconFont(fontSize, lines));
+			if (everyLineFits(p, icon, lines))
+			{
+				return;
+			}
+		}
+		p.setFont(createToolIconFont(minToolIconFontSize, lines));
+	}
+
+	private static boolean everyLineFits(Painter p, Image icon, ToolIconText... lines)
+	{
+		for (ToolIconText line : lines)
+		{
+			if (p.stringWidth(line.text()) > icon.getWidth() - line.x() - toolIconTextMargin)
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	private static Font createToolIconFont(int fontSize, ToolIconText... lines)
+	{
+		Font font = Font.create(FontFinder.getChromeFontFamily(), FontStyle.Plain, fontSize);
+		for (ToolIconText line : lines)
+		{
+			if (font.canDisplayUpTo(line.text()) != -1)
+			{
+				// A bundled family covers every language Nortantis is translated into, so reaching this means the chrome font for some
+				// language is wrong. Chrome may substitute silently, unlike map text, but it should never need to.
+				return Font.create("SansSerif", FontStyle.Plain, fontSize);
+			}
 		}
 		return font;
 	}

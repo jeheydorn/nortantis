@@ -1,9 +1,11 @@
 package nortantis.swing;
 
 import nortantis.*;
+import nortantis.FontFinder.FontCategory;
 import nortantis.MapSettings.GridOverlayLayer;
 import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanWaves;
+import nortantis.MapSettings.ThemeFontType;
 import nortantis.Stroke;
 import nortantis.editor.CenterEdit;
 import nortantis.editor.CenterTrees;
@@ -84,13 +86,7 @@ public class ThemePanel extends JTabbedPane
 	private JRadioButton splinesLinesButton;
 	private JRadioButton splinesWithSmoothedCoastlinesButton;
 	private ActionListener oceanEffectsListener;
-	private FontChooser titleFontChooser;
-	private FontChooser regionFontChooser;
-	private FontChooser mountainRangeFontChooser;
-	private FontChooser otherMountainsFontChooser;
-	private FontChooser citiesFontChooser;
-	private FontChooser riverFontChooser;
-	private FontChooser roadFontChooser;
+	private final Map<ThemeFontType, FontChooser> fontChoosersByType = new LinkedHashMap<>();
 	private JPanel textColorDisplay;
 	private JPanel boldBackgroundColorDisplay;
 	private JCheckBox drawBoldBackgroundCheckbox;
@@ -188,6 +184,10 @@ public class ThemePanel extends JTabbedPane
 		{
 			baseTabTitles[i] = getTitleAt(i);
 		}
+
+		// Editing text elsewhere can change whether a theme font has glyphs for everything it draws, so recheck when the tab is shown
+		// rather than only when a font changes.
+		addChangeListener(e -> updateFontStatuses());
 	}
 
 	private Component createBackgroundPanel(MainWindow mainWindow)
@@ -1318,20 +1318,13 @@ public class ThemePanel extends JTabbedPane
 		organizer.addLeftAlignedComponent(enableTextCheckBox);
 		organizer.addSeparator();
 
-		titleFontChooser = new FontChooser(Translation.get("theme.titleFont.label"), 70, 50, () -> handleFontsChange());
-		titleFontChooser.addToOrganizer(organizer);
-		regionFontChooser = new FontChooser(Translation.get("theme.regionFont.label"), 40, 50, () -> handleFontsChange());
-		regionFontChooser.addToOrganizer(organizer);
-		mountainRangeFontChooser = new FontChooser(Translation.get("theme.mountainRangeFont.label"), 30, 40, () -> handleFontsChange());
-		mountainRangeFontChooser.addToOrganizer(organizer);
-		otherMountainsFontChooser = new FontChooser(Translation.get("theme.otherMountainsFont.label"), 30, 40, () -> handleFontsChange());
-		otherMountainsFontChooser.addToOrganizer(organizer);
-		citiesFontChooser = new FontChooser(Translation.get("theme.citiesFont.label"), 30, 40, () -> handleFontsChange());
-		citiesFontChooser.addToOrganizer(organizer);
-		riverFontChooser = new FontChooser(Translation.get("theme.riverLakeFont.label"), 30, 40, () -> handleFontsChange());
-		riverFontChooser.addToOrganizer(organizer);
-		roadFontChooser = new FontChooser(Translation.get("theme.roadFont.label"), 30, 40, () -> handleFontsChange());
-		roadFontChooser.addToOrganizer(organizer);
+		addFontChooser(organizer, ThemeFontType.Title, "theme.titleFont.label", 70, 50);
+		addFontChooser(organizer, ThemeFontType.Region, "theme.regionFont.label", 40, 50);
+		addFontChooser(organizer, ThemeFontType.MountainRange, "theme.mountainRangeFont.label", 30, 40);
+		addFontChooser(organizer, ThemeFontType.OtherMountains, "theme.otherMountainsFont.label", 30, 40);
+		addFontChooser(organizer, ThemeFontType.Cities, "theme.citiesFont.label", 30, 40);
+		addFontChooser(organizer, ThemeFontType.River, "theme.riverLakeFont.label", 30, 40);
+		addFontChooser(organizer, ThemeFontType.Road, "theme.roadFont.label", 30, 40);
 
 		organizer.addSeparator();
 		textColorDisplay = SwingHelper.createColorPickerPreviewPanel();
@@ -1795,13 +1788,12 @@ public class ThemePanel extends JTabbedPane
 		enableTextCheckBox.setSelected(settings.drawText);
 		enableTextCheckboxActionListener.actionPerformed(null);
 
-		titleFontChooser.setFont(AwtBridge.toAwtFont(settings.titleFont));
-		regionFontChooser.setFont(AwtBridge.toAwtFont(settings.regionFont));
-		mountainRangeFontChooser.setFont(AwtBridge.toAwtFont(settings.mountainRangeFont));
-		otherMountainsFontChooser.setFont(AwtBridge.toAwtFont(settings.otherMountainsFont));
-		citiesFontChooser.setFont(AwtBridge.toAwtFont(settings.citiesFont));
-		riverFontChooser.setFont(AwtBridge.toAwtFont(settings.riverFont));
-		roadFontChooser.setFont(AwtBridge.toAwtFont(settings.roadFont));
+		for (Map.Entry<ThemeFontType, FontChooser> entry : fontChoosersByType.entrySet())
+		{
+			entry.getValue().setFont(AwtBridge.toAwtFont(settings.getThemeFont(entry.getKey())));
+			entry.getValue().setCategory(settings.getThemeFontCategory(entry.getKey()));
+		}
+		updateFontStatuses();
 		textColorDisplay.setBackground(AwtBridge.toAwtColor(settings.textColor));
 		boldBackgroundColorDisplay.setBackground(AwtBridge.toAwtColor(settings.boldBackgroundColor));
 		drawBoldBackgroundCheckbox.setSelected(settings.drawBoldBackground);
@@ -1964,13 +1956,11 @@ public class ThemePanel extends JTabbedPane
 		settings.regionBoundaryColor = AwtBridge.fromAwtColor(regionBoundaryColorDisplay.getBackground());
 		settings.landColor = AwtBridge.fromAwtColor(landDisplayPanel.getColor());
 
-		settings.titleFont = getTitleFont();
-		settings.regionFont = getRegionFont();
-		settings.mountainRangeFont = getMountainRangeFont();
-		settings.otherMountainsFont = getOtherMountainsFont();
-		settings.citiesFont = getCitiesFont();
-		settings.riverFont = getRiverFont();
-		settings.roadFont = getRoadFont();
+		for (Map.Entry<ThemeFontType, FontChooser> entry : fontChoosersByType.entrySet())
+		{
+			settings.setThemeFont(entry.getKey(), AwtBridge.fromAwtFont(entry.getValue().getFont()));
+			settings.setThemeFontCategory(entry.getKey(), entry.getValue().getCategory());
+		}
 		settings.textColor = AwtBridge.fromAwtColor(textColorDisplay.getBackground());
 		settings.boldBackgroundColor = AwtBridge.fromAwtColor(boldBackgroundColorDisplay.getBackground());
 		settings.drawBoldBackground = drawBoldBackgroundCheckbox.isSelected();
@@ -2003,39 +1993,49 @@ public class ThemePanel extends JTabbedPane
 		settings.drawVoronoiGridOverlayOnlyOnLand = drawGridOverlayOnlyOnLandCheckbox.isSelected();
 	}
 
+	public Font getThemeFont(ThemeFontType type)
+	{
+		return AwtBridge.fromAwtFont(fontChoosersByType.get(type).getFont());
+	}
+
+	public FontCategory getThemeFontCategory(ThemeFontType type)
+	{
+		return fontChoosersByType.get(type).getCategory();
+	}
+
 	public Font getTitleFont()
 	{
-		return AwtBridge.fromAwtFont(titleFontChooser.getFont());
+		return getThemeFont(ThemeFontType.Title);
 	}
 
 	public Font getRegionFont()
 	{
-		return AwtBridge.fromAwtFont(regionFontChooser.getFont());
+		return getThemeFont(ThemeFontType.Region);
 	}
 
 	public Font getMountainRangeFont()
 	{
-		return AwtBridge.fromAwtFont(mountainRangeFontChooser.getFont());
+		return getThemeFont(ThemeFontType.MountainRange);
 	}
 
 	public Font getOtherMountainsFont()
 	{
-		return AwtBridge.fromAwtFont(otherMountainsFontChooser.getFont());
+		return getThemeFont(ThemeFontType.OtherMountains);
 	}
 
 	public Font getCitiesFont()
 	{
-		return AwtBridge.fromAwtFont(citiesFontChooser.getFont());
+		return getThemeFont(ThemeFontType.Cities);
 	}
 
 	public Font getRiverFont()
 	{
-		return AwtBridge.fromAwtFont(riverFontChooser.getFont());
+		return getThemeFont(ThemeFontType.River);
 	}
 
 	public Font getRoadFont()
 	{
-		return AwtBridge.fromAwtFont(roadFontChooser.getFont());
+		return getThemeFont(ThemeFontType.Road);
 	}
 
 	private boolean areRegionColorsVisible()
@@ -2097,8 +2097,104 @@ public class ThemePanel extends JTabbedPane
 		mainWindow.updater.createAndShowMapTerrainChange();
 	}
 
+	private void addFontChooser(GridBagOrganizer organizer, ThemeFontType type, String labelKey, int minPreviewHeight, int maxFontSize)
+	{
+		FontChooser fontChooser = new FontChooser(Translation.get(labelKey), minPreviewHeight, maxFontSize, () -> handleFontsChange());
+		fontChooser.addToOrganizer(organizer);
+		fontChoosersByType.put(type, fontChooser);
+	}
+
+	/**
+	 * Shows, under each font preview, whether this machine will draw that font the way the map says it should: nothing when it will, a
+	 * warning when the family is missing or has no glyphs for the text it has to draw.
+	 */
+	void updateFontStatuses()
+	{
+		Map<ThemeFontType, String> textByType = getTextDrawnByEachThemeFont();
+		for (Map.Entry<ThemeFontType, FontChooser> entry : fontChoosersByType.entrySet())
+		{
+			updateFontStatus(entry.getKey(), entry.getValue(), textByType.getOrDefault(entry.getKey(), ""));
+		}
+	}
+
+	private void updateFontStatus(ThemeFontType type, FontChooser fontChooser, String textToDraw)
+	{
+		fontChooser.setTextThatMustBeDrawable(textToDraw);
+
+		java.awt.Font font = fontChooser.getFont();
+		if (font == null)
+		{
+			fontChooser.setStatus(null, null, null);
+			return;
+		}
+
+		String family = font.getName();
+		FontCategory category = FontFinder.getCategory(family, fontChooser.getCategory());
+		String resolved = FontFinder.resolveAlias(family);
+
+		String message;
+		if (!FontFinder.isAvailable(resolved))
+		{
+			String drawnWith = FontFinder.resolveForDrawing(AwtBridge.fromAwtFont(font), category).getName();
+			message = Translation.get("theme.font.notInstalled", drawnWith);
+		}
+		else if (!FontFinder.canDisplay(resolved, textToDraw))
+		{
+			message = Translation.get("theme.font.missingCharacters");
+		}
+		else
+		{
+			fontChooser.setStatus(null, null, null);
+			return;
+		}
+
+		String suggestion = FontFinder.chooseSubstitute(family, category, textToDraw);
+		if (suggestion == null || suggestion.equals(family))
+		{
+			fontChooser.setStatus(message, null, null);
+			return;
+		}
+		fontChooser.setStatus(message, Translation.get("theme.font.fixTooltip", suggestion), () -> replaceThemeFontFamily(type, suggestion));
+	}
+
+	private void replaceThemeFontFamily(ThemeFontType type, String family)
+	{
+		FontChooser fontChooser = fontChoosersByType.get(type);
+		java.awt.Font current = fontChooser.getFont();
+		fontChooser.setFont(new java.awt.Font(family, current.getStyle(), current.getSize()));
+		handleFontsChange();
+	}
+
+	/**
+	 * The map's text, gathered per theme font, so that each font can be asked whether it has glyphs for what it actually has to draw. Text
+	 * with a font override of its own is excluded, since a theme font doesn't draw it.
+	 */
+	private Map<ThemeFontType, String> getTextDrawnByEachThemeFont()
+	{
+		Map<ThemeFontType, StringBuilder> textByType = new HashMap<>();
+		if (mainWindow.edits != null && mainWindow.edits.text != null)
+		{
+			for (MapText text : mainWindow.edits.text)
+			{
+				if (text == null || text.fontOverride != null || StringUtils.isEmpty(text.value))
+				{
+					continue;
+				}
+				textByType.computeIfAbsent(MapSettings.getThemeFontTypeForText(text.type), key -> new StringBuilder()).append(text.value);
+			}
+		}
+
+		Map<ThemeFontType, String> result = new HashMap<>();
+		for (Map.Entry<ThemeFontType, StringBuilder> entry : textByType.entrySet())
+		{
+			result.put(entry.getKey(), entry.getValue().toString());
+		}
+		return result;
+	}
+
 	private void handleFontsChange()
 	{
+		updateFontStatuses();
 		mainWindow.undoer.setUndoPoint(UpdateType.Fonts, null);
 		mainWindow.handleThemeChange(false);
 		mainWindow.updater.createAndShowMapFontsChange();
@@ -2155,13 +2251,10 @@ public class ThemePanel extends JTabbedPane
 		grungeColorChooseButton.setEnabled(drawGrungeCheckbox.isSelected());
 		grungeSlider.setEnabled(drawGrungeCheckbox.isSelected());
 
-		titleFontChooser.chooseButton.setEnabled(enableTextCheckBox.isSelected());
-		regionFontChooser.chooseButton.setEnabled(enableTextCheckBox.isSelected());
-		mountainRangeFontChooser.chooseButton.setEnabled(enableTextCheckBox.isSelected());
-		otherMountainsFontChooser.chooseButton.setEnabled(enableTextCheckBox.isSelected());
-		citiesFontChooser.chooseButton.setEnabled(enableTextCheckBox.isSelected());
-		riverFontChooser.chooseButton.setEnabled(enableTextCheckBox.isSelected());
-		roadFontChooser.chooseButton.setEnabled(enableTextCheckBox.isSelected());
+		for (FontChooser fontChooser : fontChoosersByType.values())
+		{
+			fontChooser.chooseButton.setEnabled(enableTextCheckBox.isSelected());
+		}
 		btnChooseTextColor.setEnabled(enableTextCheckBox.isSelected());
 		drawBoldBackgroundCheckbox.setEnabled(enableTextCheckBox.isSelected());
 

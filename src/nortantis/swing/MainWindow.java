@@ -4,6 +4,7 @@ import com.formdev.flatlaf.FlatDarkLaf;
 import com.formdev.flatlaf.FlatLightLaf;
 import nortantis.CancelledException;
 import nortantis.DebugFlags;
+import nortantis.FontFinder;
 import nortantis.GeneratedDimension;
 import nortantis.ImageCache;
 import nortantis.MapSettings;
@@ -2133,6 +2134,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			ImageCache.clear();
 			ThemePanel.clearBackgroundImageCache();
 			MapSettings settings = getSettingsFromGUI(false);
+			// An art pack the user just added, or a custom images folder they just chose, may supply fonts as well as images.
+			FontFinder.registerFontsFromArtPacks(settings.customImagesPath);
 			themePanel.handleImagesRefresh(settings);
 			// Tell Icons tool to refresh image previews
 			toolsPanel.handleImagesRefresh(settings);
@@ -2295,6 +2298,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			// Before drawing anything, make sure every art pack the map's icons, border, and background texture depend on is installed. If
 			// some are missing, let the user substitute an installed art pack or cancel opening the map, so the map isn't drawn with a large
 			// number of silent substitutions.
+			// What the file says, before any substitution the user chooses below. A substitution is a change the user made, so the map must
+			// open showing unsaved changes and prompt on close, which happens on its own when this is what the GUI is compared against.
+			// Left null when nothing is substituted, so an ordinary open is unaffected.
+			MapSettings settingsBeforeSubstitution = null;
+
 			MapSettings.MissingArtPackInfo missingArtPacks = settings.findMissingArtPacks();
 			if (!missingArtPacks.isEmpty())
 			{
@@ -2304,7 +2312,27 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				{
 					return false;
 				}
+				settingsBeforeSubstitution = settings.deepCopy();
 				settings.applyMissingArtPackSubstitution(missingArtPacks.missingArtPacks, response.chosenArtPack);
+			}
+
+			// Likewise for the fonts the map names, so that a map isn't drawn with silent font substitutions the user is never told about.
+			// The map's custom images folder may itself supply some of those fonts, so it has to be registered before they are looked for.
+			FontFinder.registerFontsFromArtPacks(settings.customImagesPath);
+			MapSettings.MissingFontInfo fontProblems = settings.findFontProblems();
+			if (!fontProblems.isEmpty())
+			{
+				String mapName = FilenameUtils.getBaseName(absolutePath);
+				MissingFontDialog.Result response = MissingFontDialog.show(this, mapName, fontProblems);
+				if (response.cancelled)
+				{
+					return false;
+				}
+				if (settingsBeforeSubstitution == null)
+				{
+					settingsBeforeSubstitution = settings.deepCopy();
+				}
+				settings.applyFontSubstitution(response.replacements);
 			}
 
 			openSettingsFilePath = Paths.get(absolutePath);
@@ -2316,9 +2344,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			convertCustomImagesFolderIfNeeded(settings);
 
 			updater.cancel();
+			final MapSettings unsavedChangesBaseline = settingsBeforeSubstitution;
 			updater.doWhenMapIsNotDrawing(() ->
 			{
-				loadSettingsIntoGUI(settings);
+				loadSettingsIntoGUI(settings, unsavedChangesBaseline);
 			});
 
 			updateFrameTitle(false, true);
@@ -3230,6 +3259,16 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	void loadSettingsIntoGUI(MapSettings settings)
 	{
+		loadSettingsIntoGUI(settings, null);
+	}
+
+	/**
+	 * @param unsavedChangesBaseline
+	 *            The settings to compare the GUI against when deciding whether the map has unsaved changes, or null to use {@code settings}
+	 *            itself. Callers that rewrote the settings after loading them pass what the file said, so the rewrite shows up as a change.
+	 */
+	void loadSettingsIntoGUI(MapSettings settings, MapSettings unsavedChangesBaseline)
+	{
 		hasDrawnCurrentMapAtLeastOnce = false;
 		// A map saved in an older version of Nortantis can have cities that sink into the water when it is first drawn in the current version,
 		// because the way shores are drawn or water collision is detected has changed between versions. In that case we want the first draw to
@@ -3243,7 +3282,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		hasEstablishedCityOnWaterBaseline = loadedMapIsFromOlderVersion;
 		mapEditingPanel.clearAllSelectionsAndHighlights();
 
-		updateLastSettingsLoadedOrSaved(settings);
+		updateLastSettingsLoadedOrSaved(unsavedChangesBaseline != null ? unsavedChangesBaseline : settings);
 		toolsPanel.resetToolsForNewMap();
 		loadSettingsAndEditsIntoThemeAndToolsPanels(settings, false, false);
 
@@ -3459,6 +3498,13 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		System.setProperty("apple.laf.useScreenMenuBar", "true");
 
 		PlatformFactory.setInstance(new AwtFactory());
+
+		// Registering the bundled fonts means parsing every bundled font file and enumerating the machine's own font families, which takes
+		// a few hundred milliseconds. Nothing in building the window needs a map font, so doing it here hides most of that behind work that
+		// has to happen anyway. FontFinder.ensureInitialized blocks, so the first caller that genuinely needs a font waits for what is left.
+		Thread fontRegistrationThread = new Thread(FontFinder::ensureInitialized, "Font registration");
+		fontRegistrationThread.setDaemon(true);
+		fontRegistrationThread.start();
 
 		Translation.initialize();
 

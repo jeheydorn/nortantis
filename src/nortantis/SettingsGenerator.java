@@ -3,7 +3,9 @@ package nortantis;
 import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanWaves;
 import nortantis.platform.Color;
+import nortantis.platform.Font;
 import nortantis.swing.MapEdits;
+import nortantis.swing.translation.Translation;
 import nortantis.util.*;
 import org.apache.commons.lang3.StringUtils;
 
@@ -65,6 +67,7 @@ public class SettingsGenerator
 		settings.version = MapSettings.currentVersion;
 		settings.pointPrecision = MapSettings.defaultPointPrecision;
 		settings.lloydRelaxationsScale = MapSettings.defaultLloydRelaxationsScale;
+		useADefaultFontThatCanDrawTheUsersLanguage(settings);
 
 		setRandomSeeds(settings, rand);
 
@@ -308,6 +311,24 @@ public class SettingsGenerator
 		}
 
 		return settings;
+	}
+
+	/**
+	 * Points the built-in default fonts at a bundled family that can draw the script of the user's language, so a brand new map doesn't
+	 * arrive full of missing-glyph boxes the moment its owner types a place name. Every font field is rewritten, including the road font,
+	 * which otherwise keeps the family it derived from the river font.
+	 */
+	private static void useADefaultFontThatCanDrawTheUsersLanguage(MapSettings settings)
+	{
+		String family = FontFinder.getDefaultFamilyForLanguage(Translation.getEffectiveLocale().getLanguage());
+		for (MapSettings.ThemeFontType type : MapSettings.ThemeFontType.values())
+		{
+			Font font = settings.getThemeFont(type);
+			if (font != null && !font.getName().equals(family))
+			{
+				settings.setThemeFont(type, Font.create(family, font.getStyle(), font.getSize()));
+			}
+		}
 	}
 
 	private static void setRandomSeeds(MapSettings settings, Random rand)

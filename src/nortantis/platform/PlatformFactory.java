@@ -75,6 +75,17 @@ public abstract class PlatformFactory
 	public abstract Font createFont(String name, FontStyle style, float size);
 
 	/**
+	 * Makes the font in the given asset file available to this platform, so that createFont can use it by family name. Returns the family
+	 * name the platform assigned to it, or null if the file could not be loaded.
+	 */
+	public abstract String registerFont(String assetFilePath);
+
+	/**
+	 * The names of the font families this platform can draw with, including any made available by registerFont.
+	 */
+	public abstract List<String> listFontFamilies();
+
+	/**
 	 * Creates a color. Note - callers outside the nortantis.platform packages should call Color.create(...)
 	 */
 	public abstract Color createColor(int rgb, boolean hasAlpha);
