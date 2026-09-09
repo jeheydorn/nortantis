@@ -195,14 +195,17 @@ public class FontFinder
 	private static final Object initializationLock = new Object();
 	private static volatile boolean isInitialized;
 
+	// These three are replaced wholesale, never mutated in place, and only ever gain entries. They are volatile because an art pack
+	// installed while the app runs replaces them after initialization, under the lock, while readers - the map drawing thread among them -
+	// read them without it.
 	/** Bundled and art pack fonts, keyed by lower case family name. */
-	private static Map<String, AvailableFont> registeredFontsByLowerCaseFamily;
+	private static volatile Map<String, AvailableFont> registeredFontsByLowerCaseFamily;
 	/**
 	 * Lower case names of every family that can be drawn with. Cached because the platform's own lookup rebuilds and scans the whole list
 	 * on every call, and the new code paths ask far more often than the old ones did.
 	 */
-	private static Set<String> availableFamiliesLowerCase;
-	private static List<AvailableFont> availableFonts;
+	private static volatile Set<String> availableFamiliesLowerCase;
+	private static volatile List<AvailableFont> availableFonts;
 
 	private static final Map<String, String> substitutesByRequest = new ConcurrentHashMap<>();
 	private static final String noSubstituteFound = "";

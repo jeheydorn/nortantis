@@ -73,6 +73,18 @@ public class JFontChooser extends JComponent
 	private static final int sampleVerticalPadding = 8;
 	/** The size each family name is drawn at in its own font, in the family list. */
 	private static final int familyPreviewFontSize = 14;
+	/**
+	 * The size of a row in the family list. Fixing it is what keeps the list from measuring every row in order to lay itself out, and
+	 * measuring a row means loading the font it is drawn in - so without this, opening the picker loads every font on the machine before it
+	 * can show anything, which takes about a second. Rows are drawn at {@link #familyPreviewFontSize}, and a family whose line box is taller
+	 * than the height loses only leading, not glyphs.
+	 *
+	 * <p>
+	 * The width is a floor, not the width a row is drawn at: a list stretches its rows to its viewport whenever they would otherwise be
+	 * narrower, so keeping this well under the width of the panel is what puts the right edge of every row where it can be seen.
+	 */
+	private static final int familyRowHeight = 22;
+	private static final int minimumFamilyRowWidth = 120;
 
 	/**
 	 * The row shown above a family that the selected font source excludes but that the map uses. It is a heading rather than a font, so it
@@ -214,6 +226,8 @@ public class JFontChooser extends JComponent
 			fontNameList = new JList<Object>(buildFontFamilyRows());
 			fontNameList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 			fontNameList.setCellRenderer(new FontFamilyRenderer());
+			fontNameList.setFixedCellHeight(familyRowHeight);
+			fontNameList.setFixedCellWidth(minimumFamilyRowWidth);
 			fontNameList.addListSelectionListener(new ListSelectionHandler(getFontFamilyTextField()));
 			fontNameList.setSelectedIndex(0);
 			fontNameList.setFont(DEFAULT_FONT);
@@ -1047,7 +1061,7 @@ public class JFontChooser extends JComponent
 
 	/**
 	 * Draws each family in its own font, with the art pack it came from named at the right of the row and the script it cannot draw named
-	 * where that applies.
+	 * where that applies. A font this computer supplies came from no pack, so it is the only kind with nothing named beside it.
 	 */
 	private class FontFamilyRenderer extends JPanel implements ListCellRenderer<Object>
 	{
@@ -1090,7 +1104,9 @@ public class JFontChooser extends JComponent
 			// Showing each family in its own font is worth more to someone browsing unfamiliar fonts than any amount of categorising.
 			familyLabel.setFont(new Font(family, Font.PLAIN, familyPreviewFontSize));
 			familyLabel.setText(family);
-			artPackLabel.setText(FontFinder.getSource(family) == FontSource.ArtPack ? FontFinder.getArtPack(family) : "");
+			// The installed art pack is named like any other, the way every other place that shows where a resource came from names it.
+			String artPack = FontFinder.getArtPack(family);
+			artPackLabel.setText(artPack == null ? "" : artPack);
 
 			Script missingScript = getMissingScript(family);
 			familyLabel.setEnabled(missingScript == null);

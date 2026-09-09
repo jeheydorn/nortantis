@@ -178,7 +178,9 @@ public class FontChooser
 
 		Font displayFont = font.deriveFont(font.getStyle(), (float) (Math.min(font.getSize(), maxFontDisplaySize)));
 		fontDisplay.setFont(displayFont);
-		fontDisplay.setText(font.getFontName());
+		// getName, not getFontName: the preview names the family the map records, not the particular face the family resolves to. Those
+		// differ whenever a family ships a single weight that isn't Regular, and for a family this machine doesn't have at all.
+		fontDisplay.setText(font.getName());
 
 		// Measure the font rather than assuming a height. getMaxAscent is used rather than getAscent because script faces routinely draw
 		// swashes and ascenders above the typical ascent, and those are the fonts this app is full of.
