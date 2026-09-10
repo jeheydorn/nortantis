@@ -144,6 +144,12 @@ public class MapSettings implements Serializable
 	public Font citiesFont;
 	public Font riverFont;
 	public Font roadFont;
+	/**
+	 * The art pack each font family this map uses came from, keyed by family name, for families that came from one. Recorded so that a map
+	 * opened on a machine without that art pack can say which art pack is missing, rather than only that a font is. Read back as written
+	 * rather than looked up when loading, since the machine opening the map is exactly the one that cannot answer the question.
+	 */
+	public Map<String, String> fontArtPacks;
 	public Color boldBackgroundColor;
 	public Color textColor;
 	public MapEdits edits;
@@ -493,6 +499,7 @@ public class MapSettings implements Serializable
 		root.put("citiesFont", fontToString(citiesFont));
 		root.put("riverFont", fontToString(riverFont));
 		root.put("roadFont", fontToString(roadFont));
+		root.put("fontArtPacks", toJsonObject(gatherFontArtPacksToStore()));
 		root.put("boldBackgroundColor", colorToString(boldBackgroundColor));
 		root.put("drawBoldBackground", drawBoldBackground);
 		root.put("textColor", colorToString(textColor));
@@ -977,6 +984,76 @@ public class MapSettings implements Serializable
 	}
 
 	/**
+	 * The art pack to record for each font family this map uses. A family the map already carries an art pack for keeps it, even when that
+	 * art pack is not installed, so that saving a map on a machine missing the art pack does not erase which art pack to ask for. Families
+	 * the map no longer uses are dropped.
+	 */
+	private Map<String, String> gatherFontArtPacksToStore()
+	{
+		Map<String, String> result = new TreeMap<>();
+		for (String family : getFontFamiliesUsed())
+		{
+			String artPack = getFontArtPack(family);
+			if (artPack == null)
+			{
+				artPack = FontFinder.getArtPack(family);
+			}
+			if (artPack != null)
+			{
+				result.put(family, artPack);
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * The art pack the given font family came from according to this map, or null when the map records none, which means the family came
+	 * from the device rather than an art pack.
+	 */
+	public String getFontArtPack(String family)
+	{
+		if (fontArtPacks == null || family == null)
+		{
+			return null;
+		}
+		for (Entry<String, String> entry : fontArtPacks.entrySet())
+		{
+			if (entry.getKey().equalsIgnoreCase(family))
+			{
+				return entry.getValue();
+			}
+		}
+		return null;
+	}
+
+	@SuppressWarnings("unchecked")
+	private static JSONObject toJsonObject(Map<String, String> values)
+	{
+		JSONObject result = new JSONObject();
+		result.putAll(values);
+		return result;
+	}
+
+	private static Map<String, String> parseFontArtPacks(JSONObject obj)
+	{
+		Map<String, String> result = new TreeMap<>();
+		if (obj == null)
+		{
+			// Every map saved before fonts recorded an art pack. Their fonts are looked up by name alone, as they always were.
+			return result;
+		}
+		for (Object key : obj.keySet())
+		{
+			Object value = obj.get(key);
+			if (key instanceof String && value instanceof String)
+			{
+				result.put((String) key, (String) value);
+			}
+		}
+		return result;
+	}
+
+	/**
 	 * Creates the road font for maps that don't store one. Only the family and style come from the river font; the size is fixed at
 	 * {@link #defaultRoadFontSize} so that road labels are the same size in upgraded maps as in new ones.
 	 */
@@ -1289,6 +1366,7 @@ public class MapSettings implements Serializable
 		citiesFont = root.containsKey("citiesFont") ? parseFont((String) root.get("citiesFont")) : otherMountainsFont;
 		riverFont = parseFont((String) root.get("riverFont"));
 		roadFont = root.containsKey("roadFont") ? parseFont((String) root.get("roadFont")) : createDefaultRoadFont(riverFont);
+		fontArtPacks = parseFontArtPacks((JSONObject) root.get("fontArtPacks"));
 
 		boldBackgroundColor = parseColor((String) root.get("boldBackgroundColor"));
 		drawBoldBackground = (boolean) root.get("drawBoldBackground");
@@ -2593,12 +2671,18 @@ public class MapSettings implements Serializable
 		public final List<String> usedBy;
 		/** The map's text this family was drawing, which a replacement has to be able to draw too. */
 		public final String textToDraw;
+		/**
+		 * The art pack the map says this family came from, when that art pack is not installed. Null when the map records no art pack for
+		 * it, or when the art pack is installed and simply no longer supplies the family.
+		 */
+		public final String missingArtPack;
 
-		public FontProblem(String family, List<String> usedBy, String textToDraw)
+		public FontProblem(String family, List<String> usedBy, String textToDraw, String missingArtPack)
 		{
 			this.family = family;
 			this.usedBy = usedBy;
 			this.textToDraw = textToDraw;
+			this.missingArtPack = missingArtPack;
 		}
 	}
 
@@ -2739,7 +2823,12 @@ public class MapSettings implements Serializable
 
 			// The text this family was drawing is what a replacement has to be able to draw, so that swapping a missing font does not
 			// silently trade it for one with no glyphs for the map's labels.
-			problems.add(new FontProblem(family, usedBy, textByFamily.get(family).toString()));
+			String artPack = getFontArtPack(family);
+			if (artPack != null && Assets.artPackExists(artPack, customImagesPath))
+			{
+				artPack = null;
+			}
+			problems.add(new FontProblem(family, usedBy, textByFamily.get(family).toString(), artPack));
 		}
 
 		return new MissingFontInfo(problems);
@@ -2813,29 +2902,38 @@ public class MapSettings implements Serializable
 		public final List<String> missingArtPacks;
 		public final boolean affectsBorder;
 		public final boolean affectsBackgroundTexture;
+		/** The number of font families the map uses that come from a missing art pack. */
+		public final int fontCount;
 		/**
 		 * The number of icons (free icons plus any not-yet-converted center icons and trees) that reference a missing art pack. Informational
 		 * only, to convey scale; it is not an exact count of what will be drawn.
 		 */
 		public final int iconCount;
 
-		public MissingArtPackInfo(List<String> missingArtPacks, boolean affectsBorder, boolean affectsBackgroundTexture, int iconCount)
+		public MissingArtPackInfo(List<String> missingArtPacks, boolean affectsBorder, boolean affectsBackgroundTexture, int iconCount,
+				int fontCount)
 		{
 			this.missingArtPacks = missingArtPacks;
 			this.affectsBorder = affectsBorder;
 			this.affectsBackgroundTexture = affectsBackgroundTexture;
 			this.iconCount = iconCount;
+			this.fontCount = fontCount;
 		}
 
+		/**
+		 * True when nothing the user could fix by choosing a different art pack is affected. Fonts are deliberately not counted: choosing
+		 * a replacement art pack does nothing for a font, since a font has no equivalent under the same name in another pack, so a map
+		 * whose only missing asset is a font must not be asked the question. The missing font dialog names the art pack instead.
+		 */
 		public boolean isEmpty()
 		{
-			return missingArtPacks.isEmpty();
+			return !affectsBorder && !affectsBackgroundTexture && iconCount == 0;
 		}
 	}
 
 	/**
-	 * Scans every art pack referenced by this map's icons, border, and background texture and reports which of those art packs are not
-	 * installed, along with the kinds of assets that depend on them. {@link #artPack} is intentionally ignored, since it only seeds the icon
+	 * Scans every art pack referenced by this map's icons, border, background texture and fonts, and reports which of those art packs are
+	 * not installed, along with the kinds of assets that depend on them. {@link #artPack} is intentionally ignored, since it only seeds the icon
 	 * tool's art pack selection for placing new icons and does not affect what is drawn.
 	 */
 	public MissingArtPackInfo findMissingArtPacks()
@@ -2846,6 +2944,19 @@ public class MapSettings implements Serializable
 		boolean affectsBorder = false;
 		boolean affectsBackgroundTexture = false;
 		int iconCount = 0;
+		int fontCount = 0;
+
+		for (String family : getFontFamiliesUsed())
+		{
+			String artPack = getFontArtPack(family);
+			// A family the art pack still supplies is not missing, however the map got it, and one the map records no art pack for is
+			// looked up by name as it always was.
+			if (artPack != null && !installedArtPacks.contains(artPack) && !FontFinder.isAvailable(family))
+			{
+				missing.add(artPack);
+				fontCount++;
+			}
+		}
 
 		if (drawBorder && borderResource != null && !installedArtPacks.contains(borderResource.artPack))
 		{
@@ -2897,7 +3008,7 @@ public class MapSettings implements Serializable
 			}
 		}
 
-		return new MissingArtPackInfo(new ArrayList<>(missing), affectsBorder, affectsBackgroundTexture, iconCount);
+		return new MissingArtPackInfo(new ArrayList<>(missing), affectsBorder, affectsBackgroundTexture, iconCount, fontCount);
 	}
 
 	/**
@@ -3454,6 +3565,8 @@ public class MapSettings implements Serializable
 			differences.add("riverFont: " + riverFont + " vs " + other.riverFont);
 		if (!Objects.equals(roadFont, other.roadFont))
 			differences.add("roadFont: " + roadFont + " vs " + other.roadFont);
+		if (!Objects.equals(fontArtPacks, other.fontArtPacks))
+			differences.add("fontArtPacks: " + fontArtPacks + " vs " + other.fontArtPacks);
 		if (!Objects.equals(roadColor, other.roadColor))
 			differences.add("roadColor: " + roadColor + " vs " + other.roadColor);
 		if (!Objects.equals(roadStyle, other.roadStyle))
@@ -3503,7 +3616,7 @@ public class MapSettings implements Serializable
 				oceanColor, oceanEffectsColor, oceanEffectsLevel, oceanShadingColor, oceanShadingLevel, oceanWavesColor, oceanWavesLevel, oceanWavesType, otherMountainsFont, overlayImageDefaultScale,
 				overlayImageDefaultTransparency, overlayImagePath, overlayImageTransparency, overlayOffsetResolutionInvariant, overlayScale, pointPrecision, randomSeed, regionBaseColor,
 				regionBoundaryColor, regionBoundaryStyle, regionCount, regionFont, regionsRandomSeed, resolution, rightRotationCount, riverColor, riverFont, roadColor, roadFont, roadStyle, saturationRange,
-				solidColorBackground, textColor, textRandomSeed, titleFont, treeHeightScale, version, worldSize);
+				solidColorBackground, textColor, textRandomSeed, titleFont, treeHeightScale, version, worldSize, fontArtPacks);
 	}
 
 	@Override
@@ -3567,7 +3680,7 @@ public class MapSettings implements Serializable
 				&& Objects.equals(regionBoundaryStyle, other.regionBoundaryStyle) && regionCount == other.regionCount && Objects.equals(regionFont, other.regionFont)
 				&& regionsRandomSeed == other.regionsRandomSeed && Double.doubleToLongBits(resolution) == Double.doubleToLongBits(other.resolution) && rightRotationCount == other.rightRotationCount
 				&& Objects.equals(riverColor, other.riverColor) && Objects.equals(riverFont, other.riverFont) && Objects.equals(roadColor, other.roadColor)
-				&& Objects.equals(roadFont, other.roadFont) && Objects.equals(roadStyle, other.roadStyle)
+				&& Objects.equals(roadFont, other.roadFont) && Objects.equals(roadStyle, other.roadStyle) && Objects.equals(fontArtPacks, other.fontArtPacks)
 				&& saturationRange == other.saturationRange
 				&& solidColorBackground == other.solidColorBackground
 				&& Objects.equals(textColor, other.textColor) && textRandomSeed == other.textRandomSeed && Objects.equals(titleFont, other.titleFont)

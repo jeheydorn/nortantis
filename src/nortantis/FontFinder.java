@@ -382,8 +382,12 @@ public class FontFinder
 
 	/**
 	 * Which source a family came from. A family that is both bundled and installed on the machine reports as bundled, because that is the
-	 * more useful thing to tell the user - it means the map is portable - and it makes no rendering difference either way. A family that is
-	 * not available at all reports as a system font, so that a map's font source doesn't change depending on who opens it.
+	 * more useful thing to tell the user: it means everyone opening the map has a font of that name. A family that is not available at all
+	 * reports as a system font, so that a map's font source doesn't change depending on who opens it.
+	 *
+	 * <p>
+	 * This says where the font Nortantis offers came from, not which file the platform draws. The platform refuses to register a family it
+	 * already has installed, so on a machine with its own copy of that name, that copy is what draws.
 	 */
 	public static FontSource getSource(String family)
 	{

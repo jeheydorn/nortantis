@@ -109,6 +109,12 @@ public class MissingArtPackDialog
 		{
 			fragments.add(Translation.get("mainWindow.missingArtPack.affectsIcons", Integer.toString(info.iconCount)));
 		}
+		if (info.fontCount > 0)
+		{
+			fragments.add(Translation.get(
+					info.fontCount == 1 ? "mainWindow.missingArtPack.affectsOneFont" : "mainWindow.missingArtPack.affectsFonts",
+					Integer.toString(info.fontCount)));
+		}
 		return String.join(", ", fragments);
 	}
 }

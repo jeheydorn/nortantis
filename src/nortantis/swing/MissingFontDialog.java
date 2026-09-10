@@ -118,8 +118,6 @@ public class MissingFontDialog
 		rows.setAlignmentX(Component.LEFT_ALIGNMENT);
 		panel.add(rows);
 
-		panel.add(Box.createVerticalStrut(12));
-		panel.add(createFullWidthWrappedLabel(Translation.get("mainWindow.missingFont.savedOnNextSave")));
 		return panel;
 	}
 
@@ -156,7 +154,14 @@ public class MissingFontDialog
 			familyLabel.setFont(familyLabel.getFont().deriveFont(Font.BOLD));
 			addToRow(panel, row++, familyLabel, 0, 4);
 
-			addToRow(panel, row++, new JLabel(Translation.get("mainWindow.missingFont.usedBy", String.join(", ", problem.usedBy))), 12, 4);
+			addToRow(panel, row++, new JLabel(Translation.get("mainWindow.missingFont.usedBy", String.join(", ", problem.usedBy))), 12,
+					problem.missingArtPack == null ? 4 : 0);
+
+			if (problem.missingArtPack != null)
+			{
+				addToRow(panel, row++, new JLabel(Translation.get("mainWindow.missingFont.fromMissingArtPack", problem.missingArtPack)), 12,
+						4);
+			}
 
 			JComboBox<Object> comboBox = createFontComboBox(problem);
 			comboBoxesByFamily.put(problem.family, comboBox);
@@ -196,6 +201,22 @@ public class MissingFontDialog
 				messageWidth);
 		addToRow(panel, row++, familiesLabel, 0, 8);
 
+		// Collapsing hides the per-font rows, so the art packs to install are named once here instead of being lost.
+		Set<String> missingArtPacks = new LinkedHashSet<>();
+		for (FontProblem problem : info.problems)
+		{
+			if (problem.missingArtPack != null)
+			{
+				missingArtPacks.add(problem.missingArtPack);
+			}
+		}
+		if (!missingArtPacks.isEmpty())
+		{
+			addToRow(panel, row++, SwingHelper.createWrappedLabel("<html>" + SwingHelper.escapeHtml(
+					Translation.get("mainWindow.missingFont.fromMissingArtPacks", String.join(", ", missingArtPacks))) + "</html>",
+					messageWidth), 0, 8);
+		}
+
 		// Every font gets the same replacement, so the choices must be drawable for all of the text, and each family maps to the same combo.
 		FontProblem combined = combine(info);
 		JComboBox<Object> comboBox = createFontComboBox(combined);
@@ -229,7 +250,8 @@ public class MissingFontDialog
 			textToDraw.append(problem.textToDraw);
 			usedBy.addAll(problem.usedBy);
 		}
-		return new FontProblem(info.problems.get(0).family, new ArrayList<>(usedBy), textToDraw.toString());
+		// The combined row offers one replacement for every font, so it carries no single art pack; the art packs are named per font above.
+		return new FontProblem(info.problems.get(0).family, new ArrayList<>(usedBy), textToDraw.toString(), null);
 	}
 
 	private static JComboBox<Object> createFontComboBox(FontProblem problem)

@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -18,6 +20,7 @@ import nortantis.platform.FontStyle;
 import nortantis.platform.PlatformFactory;
 import nortantis.platform.awt.AwtFactory;
 import nortantis.swing.MapEdits;
+import nortantis.util.Assets;
 
 public class MapSettingsTest
 {
@@ -174,6 +177,87 @@ public class MapSettingsTest
 		for (TextType type : TextType.values())
 		{
 			assertNotNull(MapSettings.getThemeFontTypeForText(type), "No theme font for text type " + type);
+		}
+	}
+
+	@Test
+	public void aFontFromAMissingArtPackReportsTheArtPack()
+	{
+		// The map cannot draw the font and this device cannot say why, unless the map itself recorded which art pack to ask for.
+		MapSettings settings = createSettingsWithAllThemeFonts("A Font That Does Not Exist");
+		settings.fontArtPacks = Map.of("A Font That Does Not Exist", "An Art Pack That Is Not Installed");
+
+		MapSettings.MissingArtPackInfo info = settings.findMissingArtPacks();
+
+		assertEquals(List.of("An Art Pack That Is Not Installed"), info.missingArtPacks);
+		assertEquals(1, info.fontCount);
+		assertTrue(info.isEmpty(), "A missing font is not something choosing another art pack can fix, so it must not raise that dialog.");
+
+		// The missing art pack is named where the user can act on it instead.
+		MapSettings.MissingFontInfo fontProblems = settings.findFontProblems();
+		assertEquals(1, fontProblems.problems.size());
+		assertEquals("An Art Pack That Is Not Installed", fontProblems.problems.get(0).missingArtPack);
+	}
+
+	@Test
+	public void aFontFromAnInstalledArtPackIsNotMissing()
+	{
+		MapSettings settings = createSettingsWithAllThemeFonts(FontFinder.houseFontFamily);
+		settings.fontArtPacks = Map.of(FontFinder.houseFontFamily, Assets.installedArtPack);
+
+		assertTrue(settings.findMissingArtPacks().isEmpty());
+	}
+
+	@Test
+	public void aFontRecordingNoArtPackNeverReportsAMissingArtPack()
+	{
+		// Maps saved before fonts recorded an art pack, and fonts that came from the device, are looked up by name as they always were.
+		MapSettings settings = createSettingsWithAllThemeFonts("A Font That Does Not Exist");
+
+		assertTrue(settings.findMissingArtPacks().isEmpty());
+		MapSettings.MissingFontInfo fontProblems = settings.findFontProblems();
+		assertEquals(1, fontProblems.problems.size(), "It is still a missing font.");
+		assertNull(fontProblems.problems.get(0).missingArtPack, "The map records no art pack for it, so there is none to name.");
+	}
+
+	@Test
+	public void theArtPackAFontCameFromIsSavedAndReadBack() throws Exception
+	{
+		MapSettings settings = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
+		settings.setThemeFont(MapSettings.ThemeFontType.Title, Font.create(FontFinder.houseFontFamily, FontStyle.Plain, 40));
+
+		Path temp = Files.createTempFile("fontArtPacks", ".nort");
+		try
+		{
+			settings.writeToFile(temp.toString());
+			MapSettings reloaded = new MapSettings(temp.toString());
+			assertEquals(Assets.installedArtPack, reloaded.getFontArtPack(FontFinder.houseFontFamily));
+		}
+		finally
+		{
+			Files.deleteIfExists(temp);
+		}
+	}
+
+	@Test
+	public void anArtPackRecordedForAFontSurvivesSavingWithoutThatArtPack() throws Exception
+	{
+		// Saving a map on a device that lacks the art pack must not erase which art pack to ask for, or the next person to open it loses
+		// the only explanation of why the font is missing.
+		MapSettings settings = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
+		settings.setThemeFont(MapSettings.ThemeFontType.Title, Font.create("A Font That Does Not Exist", FontStyle.Plain, 40));
+		settings.fontArtPacks = Map.of("A Font That Does Not Exist", "An Art Pack That Is Not Installed");
+
+		Path temp = Files.createTempFile("fontArtPacks", ".nort");
+		try
+		{
+			settings.writeToFile(temp.toString());
+			MapSettings reloaded = new MapSettings(temp.toString());
+			assertEquals("An Art Pack That Is Not Installed", reloaded.getFontArtPack("A Font That Does Not Exist"));
+		}
+		finally
+		{
+			Files.deleteIfExists(temp);
 		}
 	}
 
