@@ -730,6 +730,42 @@ public class SwingHelper
 		return JOptionPane.showOptionDialog(parent, wrapDialogMessage(message), title, optionType, messageType, icon, options, initialValue);
 	}
 
+	/**
+	 * Same as {@link #showOptionDialog(Component, Object, String, int, int, Icon, Object[], Object)}, except the dialog can be resized.
+	 * JOptionPane's own show* methods always give a dialog that cannot be, so the pane and its dialog are created here instead.
+	 *
+	 * <p>
+	 * The dialog can only be made larger than the size its contents ask for. An option pane lays its contents out at their minimum size when
+	 * there isn't room for more, which clips anything that wraps, so there is nothing to gain by allowing it to shrink.
+	 *
+	 * @return The index in {@code options} of the option the user chose, or {@link JOptionPane#CLOSED_OPTION} if they closed the dialog
+	 *         without choosing one.
+	 */
+	public static int showResizableOptionDialog(Component parent, Object message, String title, int optionType, int messageType, Icon icon,
+			Object[] options, Object initialValue)
+	{
+		JOptionPane optionPane = new JOptionPane(wrapDialogMessage(message), messageType, optionType, icon, options, initialValue);
+		JDialog dialog = optionPane.createDialog(parent, title);
+		dialog.setResizable(true);
+		dialog.setMinimumSize(dialog.getSize());
+		dialog.setVisible(true);
+		dialog.dispose();
+
+		Object chosen = optionPane.getValue();
+		if (chosen == null || options == null)
+		{
+			return JOptionPane.CLOSED_OPTION;
+		}
+		for (int i = 0; i < options.length; i++)
+		{
+			if (options[i].equals(chosen))
+			{
+				return i;
+			}
+		}
+		return JOptionPane.CLOSED_OPTION;
+	}
+
 	public static void handleException(Exception ex, Component parent, boolean isExport)
 	{
 		if (ex instanceof ExecutionException)

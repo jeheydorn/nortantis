@@ -82,8 +82,9 @@ public class MissingFontDialog
 		String cancelButtonText = Translation.get("mainWindow.missingFont.cancel");
 		Object[] options = new Object[] { openButtonText, cancelButtonText };
 
-		int result = SwingHelper.showOptionDialog(parent, panel, Translation.get("mainWindow.missingFont.title"), JOptionPane.DEFAULT_OPTION,
-				JOptionPane.QUESTION_MESSAGE, null, options, openButtonText);
+		// Resizable so that a map naming enough fonts to make the rows scroll can be given a taller dialog and show more of them at once.
+		int result = SwingHelper.showResizableOptionDialog(parent, panel, Translation.get("mainWindow.missingFont.title"),
+				JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, openButtonText);
 
 		if (result != 0)
 		{
@@ -238,7 +239,7 @@ public class MissingFontDialog
 		addToRow(panel, row++, comboRow, 0, 2);
 		addToRow(panel, row++, preview, 0, 0);
 
-		return panel;
+		return pinToPreferredHeight(panel);
 	}
 
 	private static FontProblem combine(MissingFontInfo info)
@@ -284,6 +285,16 @@ public class MissingFontDialog
 	}
 
 	/**
+	 * Stops a panel being stretched taller than its contents, so that height the dialog gains from being resized collects below the rows
+	 * instead of being spread through them.
+	 */
+	private static JComponent pinToPreferredHeight(JPanel panel)
+	{
+		panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, panel.getPreferredSize().height));
+		return panel;
+	}
+
+	/**
 	 * Keeps the dialog on screen when several fonts each get their own row.
 	 */
 	private static JComponent wrapIfTall(JPanel panel)
@@ -291,7 +302,7 @@ public class MissingFontDialog
 		final int maxHeightBeforeScrolling = 420;
 		if (panel.getPreferredSize().height <= maxHeightBeforeScrolling)
 		{
-			return panel;
+			return pinToPreferredHeight(panel);
 		}
 
 		JScrollPane scrollPane = new JScrollPane(panel, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
