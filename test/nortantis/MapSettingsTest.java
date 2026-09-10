@@ -12,7 +12,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import nortantis.FontFinder.FontCategory;
 import nortantis.geom.Point;
 import nortantis.platform.Font;
 import nortantis.platform.FontStyle;
@@ -41,22 +40,11 @@ public class MapSettingsTest
 	}
 
 	@Test
-	public void fontStringWithACategoryRoundTrips()
+	public void aFontStringWrittenBeforeCategoriesWereDroppedStillParses()
 	{
-		Font font = Font.create("Georgia", FontStyle.Plain, 20);
-		String written = MapSettings.fontToString(font, FontCategory.Display);
-
-		assertEquals("Georgia\t0\t20\tDisplay", written);
-		assertEquals("Georgia", MapSettings.parseFont(written).getName());
-		assertEquals(20f, MapSettings.parseFont(written).getSize());
-		assertEquals(FontCategory.Display, MapSettings.parseFontCategory(written));
-	}
-
-	@Test
-	public void aFontStringWithNoCategoryParsesAsUnknown()
-	{
-		// Every font string written before categories existed has three values, and must keep loading.
-		assertNull(MapSettings.parseFontCategory("Georgia\t0\t20"));
+		// Maps saved while fonts recorded a category have a fourth value, which is ignored rather than rejected.
+		assertEquals("Georgia", MapSettings.parseFont("Georgia	0	20	Display").getName());
+		assertEquals(20f, MapSettings.parseFont("Georgia	0	20	Display").getSize());
 	}
 
 	@Test

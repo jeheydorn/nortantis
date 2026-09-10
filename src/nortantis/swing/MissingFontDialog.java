@@ -229,7 +229,7 @@ public class MissingFontDialog
 			textToDraw.append(problem.textToDraw);
 			usedBy.addAll(problem.usedBy);
 		}
-		return new FontProblem(info.problems.get(0).family, info.problems.get(0).category, new ArrayList<>(usedBy), textToDraw.toString());
+		return new FontProblem(info.problems.get(0).family, new ArrayList<>(usedBy), textToDraw.toString());
 	}
 
 	private static JComboBox<Object> createFontComboBox(FontProblem problem)
@@ -237,7 +237,7 @@ public class MissingFontDialog
 		// Offering a replacement with no glyphs for the labels the missing font was drawing would trade one problem for another, so the
 		// families offered are only those that can draw them. The map's own fonts are not gathered at the top here: the one being replaced
 		// is by definition not available, and the rest are a worse answer than what the substitute suggests.
-		String suggested = FontFinder.chooseSubstitute(problem.family, problem.category, problem.textToDraw);
+		String suggested = FontFinder.chooseSubstitute(problem.family, problem.textToDraw);
 		List<Object> rows = FontFamilySections.buildRows(new ArrayList<>(), "", family -> FontFinder.canDisplay(family, problem.textToDraw));
 		return FontFamilySections.createFamilyComboBox(rows, suggested);
 	}

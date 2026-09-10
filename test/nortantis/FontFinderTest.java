@@ -19,7 +19,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import nortantis.FontFinder.AvailableFont;
-import nortantis.FontFinder.FontCategory;
 import nortantis.FontFinder.FontSource;
 import nortantis.FontFinder.Script;
 import nortantis.platform.Font;
@@ -76,26 +75,26 @@ public class FontFinderTest
 	}
 
 	@Test
-	public void everyCategoryHasAnAvailableSubstitute()
+	public void aMissingFamilyAlwaysHasAnAvailableSubstitute()
 	{
-		for (FontCategory category : FontCategory.values())
-		{
-			String substitute = FontFinder.chooseSubstitute("A Font That Does Not Exist", category, "Aa");
-			assertNotNull(substitute, "No substitute available for category " + category + ".");
-			assertTrue(FontFinder.isAvailable(substitute), "chooseSubstitute returned an unavailable family: " + substitute);
-		}
+		String substitute = FontFinder.chooseSubstitute("A Font That Does Not Exist", "Aa");
+		assertNotNull(substitute, "No substitute available for a missing family.");
+		assertTrue(FontFinder.isAvailable(substitute), "chooseSubstitute returned an unavailable family: " + substitute);
 	}
 
 	@Test
-	public void everyPreferredFamilyIsBundled()
+	public void aMissingFamilyIsReplacedWithTheFamilyNewMapsUse()
 	{
-		for (FontCategory category : FontCategory.values())
+		assertEquals(FontFinder.houseFontFamily, FontFinder.chooseSubstitute("A Font That Does Not Exist", "Aa"));
+	}
+
+	@Test
+	public void everyPreferredSubstituteIsBundled()
+	{
+		for (String family : FontFinder.preferredSubstituteFamilies)
 		{
-			for (String family : FontFinder.preferredFamiliesByCategory.get(category))
-			{
-				assertEquals(FontSource.Bundled, FontFinder.getSource(family),
-						"The preferred substitute '" + family + "' for category " + category + " is not a bundled font.");
-			}
+			assertEquals(FontSource.Bundled, FontFinder.getSource(family),
+					"The preferred substitute '" + family + "' is not a bundled font.");
 		}
 	}
 
@@ -104,19 +103,16 @@ public class FontFinderTest
 	{
 		// Russian is the second language of this application by a wide margin, and Cyrillic coverage inside a family that already covers
 		// Latin costs no extra bytes, so it is a selection criterion for the bundled set rather than a single fallback font.
-		Set<FontCategory> categories = new HashSet<>();
 		int count = 0;
 		for (AvailableFont font : getBundledFonts())
 		{
 			if (FontFinder.covers(font.family, Script.Cyrillic))
 			{
 				count++;
-				categories.add(font.category);
 			}
 		}
 
 		assertTrue(count >= 2, "Only " + count + " bundled families cover Cyrillic. Expected at least 2.");
-		assertTrue(categories.size() > 1, "Every bundled family that covers Cyrillic is in the same category: " + categories);
 		assertTrue(FontFinder.covers(FontFinder.broadCoverageFontFamily, Script.Cyrillic),
 				FontFinder.broadCoverageFontFamily + " must cover Cyrillic, since it is the family text falls back to.");
 	}
@@ -152,60 +148,34 @@ public class FontFinderTest
 	}
 
 	@Test
-	public void everyFontFolderMapsToAKnownCategory()
-	{
-		String fontsFolder = Paths.get(Assets.getInstalledArtPackPath(), "fonts").toString();
-		List<String> categoryFolderNames = Assets.listNonEmptySubFolders(fontsFolder);
-		assertFalse(categoryFolderNames.isEmpty(), "No category folders under " + fontsFolder);
-
-		for (String categoryFolderName : categoryFolderNames)
-		{
-			boolean matches = false;
-			for (FontCategory category : FontCategory.values())
-			{
-				if (category.name().equalsIgnoreCase(categoryFolderName))
-				{
-					matches = true;
-					break;
-				}
-			}
-			assertTrue(matches, "The font folder '" + categoryFolderName + "' does not name a FontCategory.");
-		}
-	}
-
-	@Test
 	public void everyFamilyFolderHasAFontFileAndALicense()
 	{
 		String fontsFolder = Paths.get(Assets.getInstalledArtPackPath(), "fonts").toString();
-		for (String categoryFolderName : Assets.listNonEmptySubFolders(fontsFolder))
+		for (String familyFolderName : Assets.listNonEmptySubFolders(fontsFolder))
 		{
-			String categoryFolder = Paths.get(fontsFolder, categoryFolderName).toString();
-			for (String familyFolderName : Assets.listNonEmptySubFolders(categoryFolder))
-			{
-				String familyFolder = Paths.get(categoryFolder, familyFolderName).toString();
-				List<Path> files = Assets.listFiles(familyFolder, null, null, null);
+			String familyFolder = Paths.get(fontsFolder, familyFolderName).toString();
+			List<Path> files = Assets.listFiles(familyFolder, null, null, null);
 
-				boolean hasFontFile = false;
-				boolean hasLicense = false;
-				for (Path file : files)
+			boolean hasFontFile = false;
+			boolean hasLicense = false;
+			for (Path file : files)
+			{
+				String fileName = file.getFileName().toString().toLowerCase();
+				if (fileName.endsWith(".ttf") || fileName.endsWith(".otf"))
 				{
-					String fileName = file.getFileName().toString().toLowerCase();
-					if (fileName.endsWith(".ttf") || fileName.endsWith(".otf"))
+					hasFontFile = true;
+				}
+				for (String fragment : licenseFileNameFragments)
+				{
+					if (fileName.contains(fragment))
 					{
-						hasFontFile = true;
-					}
-					for (String fragment : licenseFileNameFragments)
-					{
-						if (fileName.contains(fragment))
-						{
-							hasLicense = true;
-						}
+						hasLicense = true;
 					}
 				}
-
-				assertTrue(hasFontFile, familyFolder + " contains no font file.");
-				assertTrue(hasLicense, familyFolder + " contains no license file.");
 			}
+
+			assertTrue(hasFontFile, familyFolder + " contains no font file.");
+			assertTrue(hasLicense, familyFolder + " contains no license file.");
 		}
 	}
 
@@ -235,7 +205,7 @@ public class FontFinderTest
 	public void drawingResolvesAnAliasedFamily()
 	{
 		Font requested = Font.create("URW Chancery L", FontStyle.Plain, 20);
-		Font resolved = FontFinder.resolveForDrawing(requested, FontCategory.Script);
+		Font resolved = FontFinder.resolveForDrawing(requested);
 		assertEquals(FontFinder.houseFontFamily, resolved.getName());
 		assertEquals(20f, resolved.getSize());
 		assertEquals(FontStyle.Plain, resolved.getStyle());
@@ -245,10 +215,10 @@ public class FontFinderTest
 	public void drawingSubstitutesOnlyWhenAFamilyIsNotInstalled()
 	{
 		Font present = Font.create(FontFinder.houseFontFamily, FontStyle.Bold, 14);
-		assertEquals(FontFinder.houseFontFamily, FontFinder.resolveForDrawing(present, FontCategory.Script).getName());
+		assertEquals(FontFinder.houseFontFamily, FontFinder.resolveForDrawing(present).getName());
 
 		Font missing = Font.create("A Font That Does Not Exist", FontStyle.Bold, 14);
-		Font resolved = FontFinder.resolveForDrawing(missing, FontCategory.Script);
+		Font resolved = FontFinder.resolveForDrawing(missing);
 		assertFalse(resolved.getName().equals("A Font That Does Not Exist"));
 		assertTrue(FontFinder.isAvailable(resolved.getName()));
 		assertEquals(FontStyle.Bold, resolved.getStyle());
@@ -261,32 +231,8 @@ public class FontFinderTest
 		// A font that is present but cannot draw the text is returned unchanged, so that the map draws boxes rather than quietly using a
 		// font its author did not choose.
 		Font font = Font.create(FontFinder.houseFontFamily, FontStyle.Plain, 12);
-		Font resolved = FontFinder.resolveForDrawing(font, FontCategory.Script);
+		Font resolved = FontFinder.resolveForDrawing(font);
 		assertEquals(FontFinder.houseFontFamily, resolved.getName());
-	}
-
-	@Test
-	public void categoryComesFromTheFolderForBundledFonts()
-	{
-		assertEquals(FontCategory.Script, FontFinder.guessCategory(FontFinder.houseFontFamily));
-	}
-
-	@Test
-	public void categoryOfWellKnownDecorativeSystemFontsIsScript()
-	{
-		// These are the families existing maps are full of, because of the substitution chain that used to run at load time. The name
-		// heuristic has nothing to work with for them, so they are seeded.
-		assertEquals(FontCategory.Script, FontFinder.guessCategory("Gabriola"));
-		assertEquals(FontCategory.Script, FontFinder.guessCategory("Apple Chancery"));
-		assertEquals(FontCategory.Display, FontFinder.guessCategory("Papyrus"));
-	}
-
-	@Test
-	public void categoryHeuristicReadsNames()
-	{
-		assertEquals(FontCategory.Sans, FontFinder.guessCategory("Some Sans Family"));
-		assertEquals(FontCategory.Script, FontFinder.guessCategory("Some Handwriting Family"));
-		assertEquals(FontCategory.Serif, FontFinder.guessCategory("Some Unremarkable Family"));
 	}
 
 	@Test

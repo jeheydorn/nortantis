@@ -3,10 +3,8 @@ package nortantis;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -28,11 +26,6 @@ import nortantis.util.Logger;
  */
 public class FontFinder
 {
-	public enum FontCategory
-	{
-		Serif, Sans, Script, Display
-	}
-
 	public enum FontSource
 	{
 		Bundled, ArtPack, System
@@ -119,15 +112,13 @@ public class FontFinder
 	public static class AvailableFont
 	{
 		public final String family;
-		public final FontCategory category;
 		public final FontSource source;
 		/** The art pack the font came from, or null when it did not come from one. */
 		public final String artPack;
 
-		public AvailableFont(String family, FontCategory category, FontSource source, String artPack)
+		public AvailableFont(String family, FontSource source, String artPack)
 		{
 			this.family = family;
-			this.category = category;
 			this.source = source;
 			this.artPack = artPack;
 		}
@@ -135,7 +126,7 @@ public class FontFinder
 		@Override
 		public String toString()
 		{
-			return family + " (" + source + ", " + category + ")";
+			return family + " (" + source + ")";
 		}
 	}
 
@@ -169,14 +160,18 @@ public class FontFinder
 	public static final String broadCoverageFontFamily = "EB Garamond";
 
 	/**
-	 * The bundled families to reach for first when a map's font will not do, in preference order per category. Kept as a constant rather
-	 * than derived from the folder listing so that the suggestion is stable across releases. Nothing sans is bundled, so that category
-	 * falls through to the machine's own fonts.
+	 * The bundled families to reach for first when a map's font will not do, in preference order. A replacement is offered for a font
+	 * nobody on this device can see any more, so matching what it looked like is not on the table; falling back to the family new maps
+	 * are drawn in is, which leaves the map looking like a Nortantis map. The broad coverage family follows for text the house font has
+	 * no glyphs for.
 	 */
-	static final Map<FontCategory, List<String>> preferredFamiliesByCategory = Map.of(FontCategory.Serif,
-			List.of(broadCoverageFontFamily, "Sorts Mill Goudy"), FontCategory.Sans, List.of(), FontCategory.Script,
-			List.of(houseFontFamily, "Tangerine", "Pinyon Script"), FontCategory.Display,
-			List.of("Cinzel", "MedievalSharp", "Uncial Antiqua"));
+	static final List<String> preferredSubstituteFamilies = List.of(houseFontFamily, broadCoverageFontFamily);
+
+	/** The platform's own reading face, for when nothing bundled or installed can draw a map's text. */
+	private static final String logicalSerifFamily = "Serif";
+
+	/** The platform's own interface face, for when nothing bundled can draw the language the app is running in. */
+	private static final String logicalSansFamily = "SansSerif";
 
 	/**
 	 * Bundled families whose lettering is decorative enough that Nortantis never picks them on the user's behalf, even when one of them is
@@ -185,12 +180,6 @@ public class FontFinder
 	 * text is typed both offer them.
 	 */
 	private static final Set<String> familiesWithADecorativeRegister = Set.of("Ma Shan Zheng");
-
-	/**
-	 * Categories for well-known system fonts whose names the heuristic below has nothing to work with. Most of these are the decorative
-	 * faces that existing maps are full of, so getting them into the right register matters to the substitutes that get suggested.
-	 */
-	private static final Map<String, FontCategory> knownSystemFontCategories = buildKnownSystemFontCategories();
 
 	private static final Object initializationLock = new Object();
 	private static volatile boolean isInitialized;
@@ -239,8 +228,9 @@ public class FontFinder
 	 * chosen per map rather than known when the app starts. Safe to call repeatedly and from any thread.
 	 *
 	 * <p>
-	 * Fonts already registered stay registered: the platform has no way to unregister a font, so which families are available only ever
-	 * grows while the app runs. Nothing may assume a family can stop being available.
+	 * Fonts already registered stay registered: the platform has no way to unregister a font, so the set of registered families only ever
+	 * grows while the app runs. Nothing may assume a registered family can stop being available. Families the device supplies itself carry
+	 * no such promise, since they are re-read from the platform on each call.
 	 *
 	 * @param customImagesFolder
 	 *            The custom images folder to look in as well, or null to look only in the installed art packs.
@@ -293,44 +283,29 @@ public class FontFinder
 		registerFontsInFolder(Paths.get(artPackPath, fontsFolderName).toString(), source, artPack, result);
 	}
 
+	/**
+	 * Registers every font in an art pack's fonts folder, which holds one folder per family in the same shape as the folders that group an
+	 * art pack's icons.
+	 */
 	private static void registerFontsInFolder(String fontsFolderPath, FontSource source, String artPack, Map<String, AvailableFont> result)
 	{
-		for (String categoryFolderName : Assets.listNonEmptySubFolders(fontsFolderPath))
+		for (String familyFolderName : Assets.listNonEmptySubFolders(fontsFolderPath))
 		{
-			FontCategory category = parseCategoryFolderName(categoryFolderName);
-			String categoryFolderPath = Paths.get(fontsFolderPath, categoryFolderName).toString();
+			String familyFolderPath = Paths.get(fontsFolderPath, familyFolderName).toString();
 
-			for (String familyFolderName : Assets.listNonEmptySubFolders(categoryFolderPath))
+			for (Path fontFile : Assets.listFiles(familyFolderPath, null, null, fontFileExtensions))
 			{
-				String familyFolderPath = Paths.get(categoryFolderPath, familyFolderName).toString();
-
-				for (Path fontFile : Assets.listFiles(familyFolderPath, null, null, fontFileExtensions))
+				// The family name comes from the font file rather than from the folder, because that is the name the platform will
+				// answer to and so the name that must go into a map's settings.
+				String family = PlatformFactory.getInstance().registerFont(fontFile.toString());
+				if (family == null)
 				{
-					// The family name comes from the font file rather than from the folder, because that is the name the platform will
-					// answer to and so the name that must go into a map's settings.
-					String family = PlatformFactory.getInstance().registerFont(fontFile.toString());
-					if (family == null)
-					{
-						// registerFont logged the file it could not load. An art pack must never be able to stop the app from starting.
-						continue;
-					}
-					result.putIfAbsent(family.toLowerCase(Locale.ROOT), new AvailableFont(family, category, source, artPack));
+					// registerFont logged the file it could not load. An art pack must never be able to stop the app from starting.
+					continue;
 				}
+				result.putIfAbsent(family.toLowerCase(Locale.ROOT), new AvailableFont(family, source, artPack));
 			}
 		}
-	}
-
-	private static FontCategory parseCategoryFolderName(String folderName)
-	{
-		for (FontCategory category : FontCategory.values())
-		{
-			if (category.name().equalsIgnoreCase(folderName))
-			{
-				return category;
-			}
-		}
-		Logger.println("Unrecognized font category folder: '" + folderName + "'. Its fonts will be treated as " + FontCategory.Serif + ".");
-		return FontCategory.Serif;
 	}
 
 	private static void rebuildAvailableFonts()
@@ -359,7 +334,7 @@ public class FontFinder
 		systemFamilies.sort(String::compareToIgnoreCase);
 		for (String family : systemFamilies)
 		{
-			result.add(new AvailableFont(family, guessCategoryOfSystemFont(family), FontSource.System, null));
+			result.add(new AvailableFont(family, FontSource.System, null));
 		}
 
 		availableFonts = Collections.unmodifiableList(result);
@@ -406,35 +381,6 @@ public class FontFinder
 	}
 
 	/**
-	 * The category recorded for a bundled or art pack font, or a guess based on the name for a system font.
-	 */
-	public static FontCategory guessCategory(String family)
-	{
-		ensureInitialized();
-		AvailableFont registered = getRegistered(family);
-		if (registered != null)
-		{
-			return registered.category;
-		}
-		return guessCategoryOfSystemFont(family);
-	}
-
-	/**
-	 * The category to treat a font as having. Where a bundled or art pack font ships says what it is, so that wins; otherwise the category
-	 * stored with the map is used, and failing that the name is guessed from.
-	 */
-	public static FontCategory getCategory(String family, FontCategory storedCategory)
-	{
-		ensureInitialized();
-		AvailableFont registered = getRegistered(family);
-		if (registered != null)
-		{
-			return registered.category;
-		}
-		return storedCategory != null ? storedCategory : guessCategoryOfSystemFont(family);
-	}
-
-	/**
 	 * Which source a family came from. A family that is both bundled and installed on the machine reports as bundled, because that is the
 	 * more useful thing to tell the user - it means the map is portable - and it makes no rendering difference either way. A family that is
 	 * not available at all reports as a system font, so that a map's font source doesn't change depending on who opens it.
@@ -466,11 +412,11 @@ public class FontFinder
 	}
 
 	/**
-	 * The font to actually draw with. Resolves aliases, and substitutes by category only when the family is not installed at all. Glyph
-	 * coverage is deliberately not considered: a font that is present but lacks glyphs for a map's text is returned unchanged, so that the
-	 * map draws missing-glyph boxes rather than quietly rendering in a font its author did not choose.
+	 * The font to actually draw with. Resolves aliases, and substitutes only when the family is not installed at all. Glyph coverage is
+	 * deliberately not considered: a font that is present but lacks glyphs for a map's text is returned unchanged, so that the map draws
+	 * missing-glyph boxes rather than quietly rendering in a font its author did not choose.
 	 */
-	public static Font resolveForDrawing(Font requested, FontCategory category)
+	public static Font resolveForDrawing(Font requested)
 	{
 		ensureInitialized();
 		if (requested == null)
@@ -482,8 +428,8 @@ public class FontFinder
 		String resolved = resolveAlias(family);
 		if (!isAvailableInternal(resolved))
 		{
-			String preferred = firstAvailable(preferredFamiliesByCategory.get(category));
-			resolved = preferred != null ? preferred : getLogicalFamily(category);
+			String preferred = firstAvailable(preferredSubstituteFamilies);
+			resolved = preferred != null ? preferred : logicalSerifFamily;
 		}
 
 		if (resolved.equals(family))
@@ -499,25 +445,25 @@ public class FontFinder
 	 * @param sampleText
 	 *            Text the replacement must be able to draw, or null to not require any particular coverage.
 	 */
-	public static String chooseSubstitute(String missingFamily, FontCategory category, String sampleText)
+	public static String chooseSubstitute(String missingFamily, String sampleText)
 	{
 		ensureInitialized();
 
 		// The answer depends on which scripts are missing rather than on the particular words, so memoizing by script keeps this off the
 		// hot path when it is called per keystroke.
-		String key = (missingFamily == null ? "" : missingFamily.toLowerCase(Locale.ROOT)) + "|" + category + "|" + getScripts(sampleText);
+		String key = (missingFamily == null ? "" : missingFamily.toLowerCase(Locale.ROOT)) + "|" + getScripts(sampleText);
 		String cached = substitutesByRequest.get(key);
 		if (cached != null)
 		{
 			return cached.equals(noSubstituteFound) ? null : cached;
 		}
 
-		String substitute = findSubstitute(missingFamily, category, sampleText);
+		String substitute = findSubstitute(missingFamily, sampleText);
 		substitutesByRequest.put(key, substitute == null ? noSubstituteFound : substitute);
 		return substitute;
 	}
 
-	private static String findSubstitute(String missingFamily, FontCategory category, String sampleText)
+	private static String findSubstitute(String missingFamily, String sampleText)
 	{
 		String alias = missingFamily == null ? null : aliasesByLowerCaseFamily.get(missingFamily.toLowerCase(Locale.ROOT));
 		if (alias != null && isAvailableInternal(alias) && canDisplay(alias, sampleText))
@@ -525,27 +471,15 @@ public class FontFinder
 			return alias;
 		}
 
-		List<String> preferred = preferredFamiliesByCategory.get(category);
-		if (preferred != null)
+		for (String family : preferredSubstituteFamilies)
 		{
-			for (String family : preferred)
+			if (isAvailableInternal(family) && canDisplay(family, sampleText))
 			{
-				if (isAvailableInternal(family) && canDisplay(family, sampleText))
-				{
-					return family;
-				}
+				return family;
 			}
 		}
 
 		// availableFonts puts bundled fonts first, so this prefers a portable answer without needing to say so.
-		for (AvailableFont font : availableFonts)
-		{
-			if (font.category == category && canDisplay(font.family, sampleText))
-			{
-				return font.family;
-			}
-		}
-
 		for (AvailableFont font : availableFonts)
 		{
 			if (canDisplay(font.family, sampleText))
@@ -554,8 +488,7 @@ public class FontFinder
 			}
 		}
 
-		String logical = getLogicalFamily(category);
-		return canDisplay(logical, sampleText) ? logical : null;
+		return canDisplay(logicalSerifFamily, sampleText) ? logicalSerifFamily : null;
 	}
 
 	/**
@@ -640,7 +573,7 @@ public class FontFinder
 		String family = findBundledFamilyCovering(script, false);
 		// Nothing bundled draws this language plainly enough for furniture, and decorative lettering on a button is worse than lettering
 		// that varies by machine, so the platform's own interface face is the better answer.
-		return family != null ? family : getLogicalFamily(FontCategory.Sans);
+		return family != null ? family : logicalSansFamily;
 	}
 
 	/**
@@ -751,73 +684,4 @@ public class FontFinder
 		return null;
 	}
 
-	/**
-	 * The logical family for a category. Every platform maps these to something real, so they are the last-resort answer that cannot fail.
-	 */
-	private static String getLogicalFamily(FontCategory category)
-	{
-		return category == FontCategory.Sans ? "SansSerif" : "Serif";
-	}
-
-	private static FontCategory guessCategoryOfSystemFont(String family)
-	{
-		if (family == null)
-		{
-			return FontCategory.Serif;
-		}
-
-		String lowerCase = family.toLowerCase(Locale.ROOT);
-		FontCategory known = knownSystemFontCategories.get(lowerCase);
-		if (known != null)
-		{
-			return known;
-		}
-
-		if (containsAny(lowerCase, "script", "hand", "chancery", "calligr", "brush", "cursive"))
-		{
-			return FontCategory.Script;
-		}
-		if (containsAny(lowerCase, "sans", "grotesk", "grotesque"))
-		{
-			return FontCategory.Sans;
-		}
-		if (containsAny(lowerCase, "display", "decor", "fraktur", "blackletter", "uncial"))
-		{
-			return FontCategory.Display;
-		}
-		return FontCategory.Serif;
-	}
-
-	private static boolean containsAny(String text, String... substrings)
-	{
-		for (String substring : substrings)
-		{
-			if (text.contains(substring))
-			{
-				return true;
-			}
-		}
-		return false;
-	}
-
-	private static Map<String, FontCategory> buildKnownSystemFontCategories()
-	{
-		Map<String, FontCategory> result = new HashMap<>();
-		for (String family : Arrays.asList("Gabriola", "Apple Chancery", "Zapfino", "Snell Roundhand", "Bradley Hand", "Brush Script MT",
-				"Lucida Handwriting", "Lucida Calligraphy", "Edwardian Script ITC", "Freestyle Script", "French Script MT", "Mistral",
-				"Palace Script MT", "Rage Italic", "Script MT Bold", "Vladimir Script", "Segoe Script", "Ink Free", "Monotype Corsiva",
-				"Kunstler Script", "Blackadder ITC", "Chalkboard", "Chalkduster", "Marker Felt", "Noteworthy", "Savoye LET", "SignPainter"))
-		{
-			result.put(family.toLowerCase(Locale.ROOT), FontCategory.Script);
-		}
-
-		for (String family : Arrays.asList("Papyrus", "Impact", "Old English Text MT", "Chiller", "Jokerman", "Broadway", "Stencil",
-				"Algerian", "Bauhaus 93", "Curlz MT", "Harrington", "Herculanum", "Luminari", "Copperplate", "Trattatello", "Wide Latin",
-				"Castellar", "Colonna MT", "Engravers MT", "Felix Titling", "Magneto", "Playbill", "Ravie", "Showcard Gothic"))
-		{
-			result.put(family.toLowerCase(Locale.ROOT), FontCategory.Display);
-		}
-
-		return Collections.unmodifiableMap(result);
-	}
 }

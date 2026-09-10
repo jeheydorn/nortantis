@@ -1,6 +1,5 @@
 package nortantis;
 
-import nortantis.FontFinder.FontCategory;
 import nortantis.editor.*;
 import nortantis.geom.Point;
 import nortantis.platform.Color;
@@ -145,11 +144,6 @@ public class MapSettings implements Serializable
 	public Font citiesFont;
 	public Font riverFont;
 	public Font roadFont;
-	/**
-	 * The category the user chose for each theme font, for fonts whose category can't be read from where they came from. Null entries, and
-	 * a null map, mean "unknown", which is what every map saved before categories existed says.
-	 */
-	public Map<ThemeFontType, FontCategory> themeFontCategories;
 	public Color boldBackgroundColor;
 	public Color textColor;
 	public MapEdits edits;
@@ -492,13 +486,13 @@ public class MapSettings implements Serializable
 		}
 		root.put("books", booksArray);
 
-		root.put("titleFont", fontToString(titleFont, getThemeFontCategory(ThemeFontType.Title)));
-		root.put("regionFont", fontToString(regionFont, getThemeFontCategory(ThemeFontType.Region)));
-		root.put("mountainRangeFont", fontToString(mountainRangeFont, getThemeFontCategory(ThemeFontType.MountainRange)));
-		root.put("otherMountainsFont", fontToString(otherMountainsFont, getThemeFontCategory(ThemeFontType.OtherMountains)));
-		root.put("citiesFont", fontToString(citiesFont, getThemeFontCategory(ThemeFontType.Cities)));
-		root.put("riverFont", fontToString(riverFont, getThemeFontCategory(ThemeFontType.River)));
-		root.put("roadFont", fontToString(roadFont, getThemeFontCategory(ThemeFontType.Road)));
+		root.put("titleFont", fontToString(titleFont));
+		root.put("regionFont", fontToString(regionFont));
+		root.put("mountainRangeFont", fontToString(mountainRangeFont));
+		root.put("otherMountainsFont", fontToString(otherMountainsFont));
+		root.put("citiesFont", fontToString(citiesFont));
+		root.put("riverFont", fontToString(riverFont));
+		root.put("roadFont", fontToString(roadFont));
 		root.put("boldBackgroundColor", colorToString(boldBackgroundColor));
 		root.put("drawBoldBackground", drawBoldBackground);
 		root.put("textColor", colorToString(textColor));
@@ -675,7 +669,7 @@ public class MapSettings implements Serializable
 			}
 			if (text.fontOverride != null)
 			{
-				mpObj.put("fontOverride", fontToString(text.fontOverride, text.fontOverrideCategory));
+				mpObj.put("fontOverride", fontToString(text.fontOverride));
 			}
 			list.add(mpObj);
 		}
@@ -979,38 +973,7 @@ public class MapSettings implements Serializable
 
 	static String fontToString(Font font)
 	{
-		return fontToString(font, null);
-	}
-
-	/**
-	 * Writes a font as tab delimited values. The category is optional and appended as a fourth value when it is known, so that a
-	 * machine without the font can substitute something in the same spirit rather than guessing from the name.
-	 */
-	static String fontToString(Font font, FontCategory category)
-	{
-		String result = font.getName() + "\t" + font.getStyle().value + "\t" + (int) font.getSize();
-		return category == null ? result : result + "\t" + category.name();
-	}
-
-	/**
-	 * The category recorded alongside a font in a settings file, or null when the file records none. Where a font came from is a
-	 * better answer when that is known, so prefer {@code FontFinder.getCategory} over this on its own.
-	 */
-	public static FontCategory parseFontCategory(String str)
-	{
-		String[] parts = str.split("\t");
-		if (parts.length < 4)
-		{
-			return null;
-		}
-		for (FontCategory category : FontCategory.values())
-		{
-			if (category.name().equalsIgnoreCase(parts[3]))
-			{
-				return category;
-			}
-		}
-		return null;
+		return font.getName() + "	" + font.getStyle().value + "	" + (int) font.getSize();
 	}
 
 	/**
@@ -1028,31 +991,6 @@ public class MapSettings implements Serializable
 	public enum ThemeFontType
 	{
 		Title, Region, MountainRange, OtherMountains, Cities, River, Road
-	}
-
-	/**
-	 * The category recorded for each theme font, or null for fonts with none. Only meaningful for fonts that came from this machine, since
-	 * a bundled or art pack font's category comes from where it ships.
-	 */
-	public FontCategory getThemeFontCategory(ThemeFontType type)
-	{
-		return themeFontCategories == null ? null : themeFontCategories.get(type);
-	}
-
-	public void setThemeFontCategory(ThemeFontType type, FontCategory category)
-	{
-		if (themeFontCategories == null)
-		{
-			themeFontCategories = new HashMap<>();
-		}
-		if (category == null)
-		{
-			themeFontCategories.remove(type);
-		}
-		else
-		{
-			themeFontCategories.put(type, category);
-		}
 	}
 
 	public Font getThemeFont(ThemeFontType type)
@@ -2057,11 +1995,8 @@ public class MapSettings implements Serializable
 			double curvature = jsonObj.containsKey("curvature") ? (Double) jsonObj.get("curvature") : 0.0;
 			int spacing = jsonObj.containsKey("spacing") ? (int) (long) jsonObj.get("spacing") : 0;
 			Font fontOverride = jsonObj.containsKey("fontOverride") ? parseFont((String) jsonObj.get("fontOverride")) : null;
-			FontCategory fontOverrideCategory = jsonObj.containsKey("fontOverride") ? parseFontCategory((String) jsonObj.get("fontOverride"))
-					: null;
 			double backgroundFade = jsonObj.containsKey("backgroundFade") ? (Double) jsonObj.get("backgroundFade") : MapText.defaultBackgroundFade;
 			MapText mp = new MapText(text, location, angle, type, lineBreak, colorOverride, boldBackgroundColorOverride, curvature, spacing, fontOverride, backgroundFade);
-			mp.fontOverrideCategory = fontOverrideCategory;
 			result.add(mp);
 		}
 
@@ -2654,17 +2589,14 @@ public class MapSettings implements Serializable
 	public static class FontProblem
 	{
 		public final String family;
-		/** The category to look for a replacement in, so the substitute is in the same spirit as what the map asked for. */
-		public final FontCategory category;
 		/** Which parts of the map use the family, already localized. */
 		public final List<String> usedBy;
 		/** The map's text this family was drawing, which a replacement has to be able to draw too. */
 		public final String textToDraw;
 
-		public FontProblem(String family, FontCategory category, List<String> usedBy, String textToDraw)
+		public FontProblem(String family, List<String> usedBy, String textToDraw)
 		{
 			this.family = family;
-			this.category = category;
 			this.usedBy = usedBy;
 			this.textToDraw = textToDraw;
 		}
@@ -2707,8 +2639,8 @@ public class MapSettings implements Serializable
 	}
 
 	/**
-	 * Every font family this map names, gathered in one pass: what each is used for, the text it has to draw, and the category recorded
-	 * with it. Families are keyed by the name as written in the map, and one family named two ways is one entry.
+	 * Every font family this map names, gathered in one pass: what each is used for and the text it has to draw. Families are keyed by the
+	 * name as written in the map, and one family named two ways is one entry.
 	 */
 	private static class FontUsage
 	{
@@ -2716,7 +2648,6 @@ public class MapSettings implements Serializable
 		final Map<String, List<String>> usedByByFamily = new LinkedHashMap<>();
 		final Map<String, StringBuilder> textByFamily = new LinkedHashMap<>();
 		final Map<String, Integer> overrideCountByFamily = new LinkedHashMap<>();
-		final Map<String, FontCategory> storedCategoryByFamily = new LinkedHashMap<>();
 	}
 
 	private FontUsage gatherFontUsage()
@@ -2731,7 +2662,6 @@ public class MapSettings implements Serializable
 			}
 			String family = recordFamily(entry.getValue().getName(), usage);
 			usage.usedByByFamily.get(family).add(Translation.get("themeFontType." + entry.getKey().name()));
-			usage.storedCategoryByFamily.putIfAbsent(family, getThemeFontCategory(entry.getKey()));
 		}
 
 		if (edits != null && edits.text != null)
@@ -2748,7 +2678,6 @@ public class MapSettings implements Serializable
 				{
 					family = recordFamily(text.fontOverride.getName(), usage);
 					usage.overrideCountByFamily.merge(family, 1, Integer::sum);
-					usage.storedCategoryByFamily.putIfAbsent(family, text.fontOverrideCategory);
 				}
 				else
 				{
@@ -2791,7 +2720,6 @@ public class MapSettings implements Serializable
 		Map<String, List<String>> usedByByFamily = usage.usedByByFamily;
 		Map<String, StringBuilder> textByFamily = usage.textByFamily;
 		Map<String, Integer> overrideCountByFamily = usage.overrideCountByFamily;
-		Map<String, FontCategory> storedCategoryByFamily = usage.storedCategoryByFamily;
 
 		List<FontProblem> problems = new ArrayList<>();
 		for (String family : usedByByFamily.keySet())
@@ -2811,8 +2739,7 @@ public class MapSettings implements Serializable
 
 			// The text this family was drawing is what a replacement has to be able to draw, so that swapping a missing font does not
 			// silently trade it for one with no glyphs for the map's labels.
-			FontCategory category = FontFinder.getCategory(family, storedCategoryByFamily.get(family));
-			problems.add(new FontProblem(family, category, usedBy, textByFamily.get(family).toString()));
+			problems.add(new FontProblem(family, usedBy, textByFamily.get(family).toString()));
 		}
 
 		return new MissingFontInfo(problems);
@@ -3527,8 +3454,6 @@ public class MapSettings implements Serializable
 			differences.add("riverFont: " + riverFont + " vs " + other.riverFont);
 		if (!Objects.equals(roadFont, other.roadFont))
 			differences.add("roadFont: " + roadFont + " vs " + other.roadFont);
-		if (!Objects.equals(themeFontCategories, other.themeFontCategories))
-			differences.add("themeFontCategories: " + themeFontCategories + " vs " + other.themeFontCategories);
 		if (!Objects.equals(roadColor, other.roadColor))
 			differences.add("roadColor: " + roadColor + " vs " + other.roadColor);
 		if (!Objects.equals(roadStyle, other.roadStyle))
@@ -3578,7 +3503,7 @@ public class MapSettings implements Serializable
 				oceanColor, oceanEffectsColor, oceanEffectsLevel, oceanShadingColor, oceanShadingLevel, oceanWavesColor, oceanWavesLevel, oceanWavesType, otherMountainsFont, overlayImageDefaultScale,
 				overlayImageDefaultTransparency, overlayImagePath, overlayImageTransparency, overlayOffsetResolutionInvariant, overlayScale, pointPrecision, randomSeed, regionBaseColor,
 				regionBoundaryColor, regionBoundaryStyle, regionCount, regionFont, regionsRandomSeed, resolution, rightRotationCount, riverColor, riverFont, roadColor, roadFont, roadStyle, saturationRange,
-				solidColorBackground, textColor, textRandomSeed, themeFontCategories, titleFont, treeHeightScale, version, worldSize);
+				solidColorBackground, textColor, textRandomSeed, titleFont, treeHeightScale, version, worldSize);
 	}
 
 	@Override
@@ -3642,7 +3567,7 @@ public class MapSettings implements Serializable
 				&& Objects.equals(regionBoundaryStyle, other.regionBoundaryStyle) && regionCount == other.regionCount && Objects.equals(regionFont, other.regionFont)
 				&& regionsRandomSeed == other.regionsRandomSeed && Double.doubleToLongBits(resolution) == Double.doubleToLongBits(other.resolution) && rightRotationCount == other.rightRotationCount
 				&& Objects.equals(riverColor, other.riverColor) && Objects.equals(riverFont, other.riverFont) && Objects.equals(roadColor, other.roadColor)
-				&& Objects.equals(roadFont, other.roadFont) && Objects.equals(roadStyle, other.roadStyle) && Objects.equals(themeFontCategories, other.themeFontCategories)
+				&& Objects.equals(roadFont, other.roadFont) && Objects.equals(roadStyle, other.roadStyle)
 				&& saturationRange == other.saturationRange
 				&& solidColorBackground == other.solidColorBackground
 				&& Objects.equals(textColor, other.textColor) && textRandomSeed == other.textRandomSeed && Objects.equals(titleFont, other.titleFont)

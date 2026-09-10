@@ -26,7 +26,6 @@ import java.util.Set;
 
 import nortantis.FontFinder;
 import nortantis.FontFinder.AvailableFont;
-import nortantis.FontFinder.FontCategory;
 import nortantis.FontFinder.Script;
 import nortantis.swing.translation.Translation;
 
@@ -113,8 +112,6 @@ public class JFontChooser extends JComponent
 	/** Which way the selection was last moving, so that arrowing onto a heading carries on in the same direction. */
 	private int previousSelectedIndex = -1;
 	private JPanel noCoverageNoticePanel;
-	/** The category the map recorded for the family it opened on, kept so that reopening the picker doesn't discard it. */
-	private FontCategory categoryFromSettings;
 	private JTextField fontFamilyTextField = null;
 	private JTextField fontStyleTextField = null;
 	private JTextField fontSizeTextField = null;
@@ -916,23 +913,6 @@ public class JFontChooser extends JComponent
 			noCoverageNoticePanel.setVisible(false);
 		}
 		return noCoverageNoticePanel;
-	}
-
-	/**
-	 * The category of the selected family, which decides what a replacement in the same style would be if the font is ever missing. A
-	 * bundled or art pack font knows its category from the folder it ships in; a font on this computer is categorized by its name, except
-	 * that the family the picker opened on keeps whatever category the map recorded for it.
-	 */
-	public FontCategory getSelectedCategory()
-	{
-		String family = getSelectedFontFamily();
-		FontCategory stored = family != null && family.equalsIgnoreCase(familyFromSettings) ? categoryFromSettings : null;
-		return FontFinder.getCategory(family, stored);
-	}
-
-	public void setSelectedCategory(FontCategory category)
-	{
-		categoryFromSettings = category;
 	}
 
 	private Object[] buildFontFamilyRows()

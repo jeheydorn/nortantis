@@ -1,7 +1,6 @@
 package nortantis.swing;
 
 import nortantis.FontFinder;
-import nortantis.FontFinder.FontCategory;
 import nortantis.LineBreak;
 import nortantis.MapSettings;
 import nortantis.MapText;
@@ -250,9 +249,7 @@ public class TextTool extends EditorTool
 
 						MapText old = lastSelected.deepCopy();
 						lastSelected.fontOverride = getFontForType(lastSelected.type);
-						lastSelected.fontOverrideCategory = mainWindow.themePanel.getThemeFontCategory(MapSettings.getThemeFontTypeForText(lastSelected.type));
 						fontChooser.setFont(AwtBridge.toAwtFont(lastSelected.fontOverride));
-						fontChooser.setCategory(lastSelected.fontOverrideCategory);
 						updater.createAndShowMapIncrementalUsingText(Arrays.asList(old, lastSelected));
 					}
 
@@ -267,7 +264,6 @@ public class TextTool extends EditorTool
 				{
 					MapText old = lastSelected.deepCopy();
 					lastSelected.fontOverride = AwtBridge.fromAwtFont(fontChooser.getFont());
-					lastSelected.fontOverrideCategory = fontChooser.getCategory();
 					updateFontCoverageWarning();
 					undoer.setUndoPoint(UpdateType.Incremental, TextTool.this);
 					updater.createAndShowMapIncrementalUsingText(Arrays.asList(old, lastSelected));
@@ -498,10 +494,7 @@ public class TextTool extends EditorTool
 			return;
 		}
 
-		FontCategory category = FontFinder.getCategory(font.getName(),
-				lastSelected.fontOverride != null ? lastSelected.fontOverrideCategory
-						: mainWindow.themePanel.getThemeFontCategory(MapSettings.getThemeFontTypeForText(lastSelected.type)));
-		String substitute = FontFinder.chooseSubstitute(font.getName(), category, text);
+		String substitute = FontFinder.chooseSubstitute(font.getName(), text);
 		fontCoverageWarningArea.setText(substitute == null ? Translation.get("textTool.fontCannotDisplay.noneAvailable")
 				: Translation.get("textTool.fontCannotDisplay", substitute));
 		fontCoverageWarningHider.setVisible(true);
@@ -1063,7 +1056,6 @@ public class TextTool extends EditorTool
 			lastSelected.colorOverride = colorOverrideFromGui;
 			lastSelected.boldBackgroundColorOverride = boldBackgroundColorOverrideFromGui;
 			lastSelected.fontOverride = fontHider.isVisible() ? AwtBridge.fromAwtFont(fontChooser.getFont()) : null;
-			lastSelected.fontOverrideCategory = fontHider.isVisible() ? fontChooser.getCategory() : null;
 			lastSelected.curvature = curvatureSlider.getValue() / ((double) curvatureSliderDivider);
 			lastSelected.spacing = spacingSlider.getValue();
 			lastSelected.backgroundFade = backgroundFadeSlider.getValue() / (double) backgroundFadeDivider;
@@ -1131,7 +1123,6 @@ public class TextTool extends EditorTool
 			if (selectedText.fontOverride != null)
 			{
 				fontChooser.setFont(AwtBridge.toAwtFont(selectedText.fontOverride));
-				fontChooser.setCategory(selectedText.fontOverrideCategory);
 			}
 			fontChooser.setTextThatMustBeDrawable(selectedText.value);
 			MapSettings settingsForFonts = mainWindow.getSettingsFromGUI(false);

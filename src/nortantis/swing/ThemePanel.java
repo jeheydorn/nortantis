@@ -1,7 +1,6 @@
 package nortantis.swing;
 
 import nortantis.*;
-import nortantis.FontFinder.FontCategory;
 import nortantis.MapSettings.GridOverlayLayer;
 import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanWaves;
@@ -1791,7 +1790,6 @@ public class ThemePanel extends JTabbedPane
 		for (Map.Entry<ThemeFontType, FontChooser> entry : fontChoosersByType.entrySet())
 		{
 			entry.getValue().setFont(AwtBridge.toAwtFont(settings.getThemeFont(entry.getKey())));
-			entry.getValue().setCategory(settings.getThemeFontCategory(entry.getKey()));
 		}
 		updateFontStatuses();
 		textColorDisplay.setBackground(AwtBridge.toAwtColor(settings.textColor));
@@ -1959,7 +1957,6 @@ public class ThemePanel extends JTabbedPane
 		for (Map.Entry<ThemeFontType, FontChooser> entry : fontChoosersByType.entrySet())
 		{
 			settings.setThemeFont(entry.getKey(), AwtBridge.fromAwtFont(entry.getValue().getFont()));
-			settings.setThemeFontCategory(entry.getKey(), entry.getValue().getCategory());
 		}
 		settings.textColor = AwtBridge.fromAwtColor(textColorDisplay.getBackground());
 		settings.boldBackgroundColor = AwtBridge.fromAwtColor(boldBackgroundColorDisplay.getBackground());
@@ -1996,11 +1993,6 @@ public class ThemePanel extends JTabbedPane
 	public Font getThemeFont(ThemeFontType type)
 	{
 		return AwtBridge.fromAwtFont(fontChoosersByType.get(type).getFont());
-	}
-
-	public FontCategory getThemeFontCategory(ThemeFontType type)
-	{
-		return fontChoosersByType.get(type).getCategory();
 	}
 
 	public Font getTitleFont()
@@ -2132,13 +2124,12 @@ public class ThemePanel extends JTabbedPane
 		}
 
 		String family = font.getName();
-		FontCategory category = FontFinder.getCategory(family, fontChooser.getCategory());
 		String resolved = FontFinder.resolveAlias(family);
 
 		String message;
 		if (!FontFinder.isAvailable(resolved))
 		{
-			String drawnWith = FontFinder.resolveForDrawing(AwtBridge.fromAwtFont(font), category).getName();
+			String drawnWith = FontFinder.resolveForDrawing(AwtBridge.fromAwtFont(font)).getName();
 			message = Translation.get("theme.font.notInstalled", drawnWith);
 		}
 		else if (!FontFinder.canDisplay(resolved, textToDraw))
@@ -2151,7 +2142,7 @@ public class ThemePanel extends JTabbedPane
 			return;
 		}
 
-		String suggestion = FontFinder.chooseSubstitute(family, category, textToDraw);
+		String suggestion = FontFinder.chooseSubstitute(family, textToDraw);
 		if (suggestion == null || suggestion.equals(family))
 		{
 			fontChooser.setStatus(message, null, null);

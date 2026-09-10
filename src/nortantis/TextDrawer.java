@@ -1,6 +1,5 @@
 package nortantis;
 
-import nortantis.FontFinder.FontCategory;
 import nortantis.MapSettings.ThemeFontType;
 import nortantis.editor.River;
 import nortantis.editor.RiverPathNode;
@@ -97,13 +96,13 @@ public class TextDrawer
 		}
 
 		double sizeMultiplier = MapCreator.calcSizeMultiplierFromResolutionScale(settings.resolution);
-		titleFontScaled = scaleAndResolveThemeFont(settings, ThemeFontType.Title, sizeMultiplier);
-		regionFontScaled = scaleAndResolveThemeFont(settings, ThemeFontType.Region, sizeMultiplier);
-		mountainRangeFontScaled = scaleAndResolveThemeFont(settings, ThemeFontType.MountainRange, sizeMultiplier);
-		otherMountainsFontScaled = scaleAndResolveThemeFont(settings, ThemeFontType.OtherMountains, sizeMultiplier);
-		citiesFontScaled = scaleAndResolveThemeFont(settings, ThemeFontType.Cities, sizeMultiplier);
-		riverFontScaled = scaleAndResolveThemeFont(settings, ThemeFontType.River, sizeMultiplier);
-		roadFontScaled = scaleAndResolveThemeFont(settings, ThemeFontType.Road, sizeMultiplier);
+		titleFontScaled = scaleAndResolve(settings.getThemeFont(ThemeFontType.Title), sizeMultiplier);
+		regionFontScaled = scaleAndResolve(settings.getThemeFont(ThemeFontType.Region), sizeMultiplier);
+		mountainRangeFontScaled = scaleAndResolve(settings.getThemeFont(ThemeFontType.MountainRange), sizeMultiplier);
+		otherMountainsFontScaled = scaleAndResolve(settings.getThemeFont(ThemeFontType.OtherMountains), sizeMultiplier);
+		citiesFontScaled = scaleAndResolve(settings.getThemeFont(ThemeFontType.Cities), sizeMultiplier);
+		riverFontScaled = scaleAndResolve(settings.getThemeFont(ThemeFontType.River), sizeMultiplier);
+		roadFontScaled = scaleAndResolve(settings.getThemeFont(ThemeFontType.Road), sizeMultiplier);
 	}
 
 	/**
@@ -111,15 +110,10 @@ public class TextDrawer
 	 * coverage is not considered: a font that is present but lacks glyphs for the text draws missing-glyph boxes, which is the truth about
 	 * the map, rather than being quietly swapped for a font its author did not choose.
 	 */
-	private static Font scaleAndResolve(Font font, FontCategory storedCategory, double sizeMultiplier)
+	private static Font scaleAndResolve(Font font, double sizeMultiplier)
 	{
 		Font scaled = font.deriveFont(font.getStyle(), (float) (font.getSize() * sizeMultiplier));
-		return FontFinder.resolveForDrawing(scaled, FontFinder.getCategory(font.getName(), storedCategory));
-	}
-
-	private static Font scaleAndResolveThemeFont(MapSettings settings, ThemeFontType type, double sizeMultiplier)
-	{
-		return scaleAndResolve(settings.getThemeFont(type), settings.getThemeFontCategory(type), sizeMultiplier);
+		return FontFinder.resolveForDrawing(scaled);
 	}
 
 	public synchronized void drawTextFromEdits(Image map, Image landAndOceanBackground, WorldGraph graph, Rectangle drawBounds)
@@ -520,7 +514,7 @@ public class TextDrawer
 		if (text.fontOverride != null)
 		{
 			double sizeMultiplier = MapCreator.calcSizeMultiplierFromResolutionScale(settings.resolution);
-			p.setFont(scaleAndResolve(text.fontOverride, text.fontOverrideCategory, sizeMultiplier));
+			p.setFont(scaleAndResolve(text.fontOverride, sizeMultiplier));
 		}
 		else
 		{

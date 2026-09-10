@@ -1,6 +1,5 @@
 package nortantis.swing;
 
-import nortantis.FontFinder.FontCategory;
 import nortantis.swing.translation.Translation;
 
 import javax.swing.*;
@@ -30,7 +29,6 @@ public class FontChooser
 	private Runnable fixAction;
 	private String textThatMustBeDrawable = "";
 	private List<String> familiesUsedByThisMap = new ArrayList<>();
-	private FontCategory category;
 	final JButton chooseButton;
 	private Font font;
 	private final int maxFontDisplaySize;
@@ -112,7 +110,7 @@ public class FontChooser
 		{
 			public void actionPerformed(ActionEvent arg0)
 			{
-				runFontChooser(organizer.panel, fontDisplay, okAction);
+				runFontChooser(organizer.panel, okAction);
 			}
 		});
 		JPanel chooseButtonHolder = new JPanel();
@@ -124,18 +122,16 @@ public class FontChooser
 		return hider;
 	}
 
-	private void runFontChooser(JComponent parent, JLabel fontDisplay, Runnable okAction)
+	private void runFontChooser(JComponent parent, Runnable okAction)
 	{
 		JFontChooser fontChooser = new JFontChooser();
 		fontChooser.setTextThatMustBeDrawable(textThatMustBeDrawable);
 		fontChooser.setFamiliesUsedByThisMap(familiesUsedByThisMap);
 		fontChooser.setSelectedFont(font);
-		fontChooser.setSelectedCategory(category);
 		int status = fontChooser.showDialog(parent);
 		if (status == JFontChooser.OK_OPTION)
 		{
 			font = fontChooser.getSelectedFont();
-			category = fontChooser.getSelectedCategory();
 			updatePreview();
 			okAction.run();
 		}
@@ -161,19 +157,6 @@ public class FontChooser
 	public Font getFont()
 	{
 		return font;
-	}
-
-	/**
-	 * The category chosen for this font, used to pick a replacement in the same style when the font is ever missing.
-	 */
-	public FontCategory getCategory()
-	{
-		return category;
-	}
-
-	public void setCategory(FontCategory category)
-	{
-		this.category = category;
 	}
 
 	public void setFont(Font font)
