@@ -252,7 +252,6 @@ public class TextTool extends EditorTool
 						fontChooser.setFont(AwtBridge.toAwtFont(lastSelected.fontOverride));
 						updater.createAndShowMapIncrementalUsingText(Arrays.asList(old, lastSelected));
 					}
-
 				}
 			});
 			useDefaultFontCheckboxHider = organizer.addLeftAlignedComponent(useDefaultFontCheckbox);
@@ -269,6 +268,12 @@ public class TextTool extends EditorTool
 					updater.createAndShowMapIncrementalUsingText(Arrays.asList(old, lastSelected));
 				}
 			});
+			fontChooser.setFamiliesUsedByThisMap(() ->
+			{
+				MapSettings settings = mainWindow.getSettingsFromGUI(false);
+				return settings == null ? null : settings.getFontFamiliesUsed();
+			});
+			fontChooser.setTextThatMustBeDrawable(() -> lastSelected == null ? "" : lastSelected.value);
 			fontHider = fontChooser.addToOrganizer(organizer);
 		}
 
@@ -1077,7 +1082,6 @@ public class TextTool extends EditorTool
 			mapEditingPanel.setTextBoxToDraw(selectedText);
 			editTextField.setText(selectedText.value);
 			editTextFieldHider.setVisible(true);
-			updateFontCoverageWarning();
 			clearRotationButtonHider.setVisible(true);
 			if (focusBehavior == SelectionFocus.EditField && !editTextField.hasFocus())
 			{
@@ -1124,9 +1128,6 @@ public class TextTool extends EditorTool
 			{
 				fontChooser.setFont(AwtBridge.toAwtFont(selectedText.fontOverride));
 			}
-			fontChooser.setTextThatMustBeDrawable(selectedText.value);
-			MapSettings settingsForFonts = mainWindow.getSettingsFromGUI(false);
-			fontChooser.setFamiliesUsedByThisMap(settingsForFonts == null ? null : settingsForFonts.getFontFamiliesUsed());
 			// Round rather than truncate. These values were stored as sliderValue / divider, and dividing then multiplying can land just
 			// below the original integer, so truncating would drop the slider a step and the next save would persist that lower value.
 			curvatureSlider.setValue((int) Math.round(selectedText.curvature * curvatureSliderDivider));
@@ -1137,6 +1138,9 @@ public class TextTool extends EditorTool
 		mapEditingPanel.repaint();
 
 		lastSelected = selectedText;
+		// The warning reads the selected text's font, so it can only be right once the new selection is the one in hand. Filling in the edit
+		// field above ran it too, while the previous selection was still current.
+		updateFontCoverageWarning();
 	}
 
 	private void hideTextEditComponents()

@@ -6,9 +6,12 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Supplier;
 
 public class FontChooser
 {
@@ -23,12 +26,8 @@ public class FontChooser
 
 	private final JLabel fontDisplay = new JLabel("");
 	private final JPanel displayHolder = new JPanel();
-	private final JPanel statusPanel = new JPanel();
-	private final JLabel statusLabel = new JLabel();
-	private final JLabel fixLink;
-	private Runnable fixAction;
-	private String textThatMustBeDrawable = "";
-	private List<String> familiesUsedByThisMap = new ArrayList<>();
+	private Supplier<String> textThatMustBeDrawable = () -> "";
+	private Supplier<List<String>> familiesUsedByThisMap = ArrayList::new;
 	final JButton chooseButton;
 	private Font font;
 	private final int maxFontDisplaySize;
@@ -53,42 +52,6 @@ public class FontChooser
 		this.okAction = okAction;
 		this.labelText = labelText;
 		chooseButton = new JButton(Translation.get("fontChooser.choose"));
-
-		statusLabel.setForeground(SwingHelper.warningMessageColor);
-		fixLink = SwingHelper.createActionLink(Translation.get("theme.font.fix"), () ->
-		{
-			if (fixAction != null)
-			{
-				fixAction.run();
-			}
-		});
-
-		statusPanel.setLayout(new BoxLayout(statusPanel, BoxLayout.X_AXIS));
-		statusPanel.add(SwingHelper.createWarningIconLabel());
-		statusPanel.add(statusLabel);
-		statusPanel.add(Box.createHorizontalStrut(8));
-		statusPanel.add(fixLink);
-		statusPanel.add(Box.createHorizontalGlue());
-		statusPanel.setVisible(false);
-	}
-
-	/**
-	 * Shows a warning under the preview saying that this machine will not draw the chosen font the way the map says it should.
-	 *
-	 * @param message
-	 *            The warning to show, or null to show nothing. Silence is the normal case and must stay visually quiet.
-	 * @param fixTooltip
-	 *            Tooltip for the fix link, naming the font it would switch to, or null to hide the link.
-	 * @param fixAction
-	 *            What the fix link does, or null to hide the link.
-	 */
-	public void setStatus(String message, String fixTooltip, Runnable fixAction)
-	{
-		this.fixAction = fixAction;
-		statusLabel.setText(message == null ? "" : message);
-		fixLink.setToolTipText(fixTooltip);
-		fixLink.setVisible(fixAction != null);
-		statusPanel.setVisible(message != null);
 	}
 
 	/**
@@ -118,15 +81,17 @@ public class FontChooser
 		chooseButtonHolder.add(chooseButton);
 		chooseButtonHolder.add(Box.createHorizontalGlue());
 		RowHider hider = organizer.addLabelAndComponentsVertical(labelText, "",
-				Arrays.asList(displayHolder, statusPanel, Box.createVerticalStrut(spaceUnderFontDisplays), chooseButtonHolder));
+				Arrays.asList(displayHolder, Box.createVerticalStrut(spaceUnderFontDisplays), chooseButtonHolder));
 		return hider;
 	}
 
 	private void runFontChooser(JComponent parent, Runnable okAction)
 	{
 		JFontChooser fontChooser = new JFontChooser();
-		fontChooser.setTextThatMustBeDrawable(textThatMustBeDrawable);
-		fontChooser.setFamiliesUsedByThisMap(familiesUsedByThisMap);
+		String text = textThatMustBeDrawable.get();
+		fontChooser.setTextThatMustBeDrawable(text == null ? "" : text);
+		List<String> families = familiesUsedByThisMap.get();
+		fontChooser.setFamiliesUsedByThisMap(families == null ? new ArrayList<>() : families);
 		fontChooser.setSelectedFont(font);
 		int status = fontChooser.showDialog(parent);
 		if (status == JFontChooser.OK_OPTION)
@@ -138,20 +103,22 @@ public class FontChooser
 	}
 
 	/**
-	 * The text this font has to be able to draw, so the picker can mark families that have no glyphs for it.
+	 * Where to get the text this font has to be able to draw, so the picker can mark families that have no glyphs for it. Asked for when
+	 * the picker opens, so that it reflects whatever the map says at that moment without anything having to keep it up to date.
 	 */
-	public void setTextThatMustBeDrawable(String text)
+	public void setTextThatMustBeDrawable(Supplier<String> text)
 	{
-		textThatMustBeDrawable = text == null ? "" : text;
+		textThatMustBeDrawable = text == null ? () -> "" : text;
 	}
 
 	/**
-	 * The families the map already draws with, which the picker lists first so that matching one piece of text to another does not mean
-	 * hunting through every font on the machine for the one already in use.
+	 * Where to get the families the map already draws with, which the picker lists first so that matching one piece of text to another does
+	 * not mean hunting through every font on the machine for the one already in use. Asked for when the picker opens rather than kept up to
+	 * date, because gathering them costs a copy of the map's settings and nothing but the picker has any use for them.
 	 */
-	public void setFamiliesUsedByThisMap(List<String> families)
+	public void setFamiliesUsedByThisMap(Supplier<List<String>> families)
 	{
-		familiesUsedByThisMap = families == null ? new ArrayList<>() : families;
+		familiesUsedByThisMap = families == null ? ArrayList::new : families;
 	}
 
 	public Font getFont()

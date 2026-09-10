@@ -184,9 +184,6 @@ public class ThemePanel extends JTabbedPane
 			baseTabTitles[i] = getTitleAt(i);
 		}
 
-		// Editing text elsewhere can change whether a theme font has glyphs for everything it draws, so recheck when the tab is shown
-		// rather than only when a font changes.
-		addChangeListener(e -> updateFontStatuses());
 	}
 
 	private Component createBackgroundPanel(MainWindow mainWindow)
@@ -1791,7 +1788,6 @@ public class ThemePanel extends JTabbedPane
 		{
 			entry.getValue().setFont(AwtBridge.toAwtFont(settings.getThemeFont(entry.getKey())));
 		}
-		updateFontStatuses();
 		textColorDisplay.setBackground(AwtBridge.toAwtColor(settings.textColor));
 		boldBackgroundColorDisplay.setBackground(AwtBridge.toAwtColor(settings.boldBackgroundColor));
 		drawBoldBackgroundCheckbox.setSelected(settings.drawBoldBackground);
@@ -2092,80 +2088,26 @@ public class ThemePanel extends JTabbedPane
 	private void addFontChooser(GridBagOrganizer organizer, ThemeFontType type, String labelKey, int minPreviewHeight, int maxFontSize)
 	{
 		FontChooser fontChooser = new FontChooser(Translation.get(labelKey), minPreviewHeight, maxFontSize, () -> handleFontsChange());
+		fontChooser.setFamiliesUsedByThisMap(this::getFontFamiliesUsedByThisMap);
+		fontChooser.setTextThatMustBeDrawable(() -> getTextDrawnByEachThemeFont().getOrDefault(type, ""));
 		fontChooser.addToOrganizer(organizer);
 		fontChoosersByType.put(type, fontChooser);
 	}
 
-	/**
-	 * Shows, under each font preview, whether this machine will draw that font the way the map says it should: nothing when it will, a
-	 * warning when the family is missing or has no glyphs for the text it has to draw.
-	 */
-	void updateFontStatuses()
+	private List<String> getFontFamiliesUsedByThisMap()
 	{
-		Map<ThemeFontType, String> textByType = getTextDrawnByEachThemeFont();
 		MapSettings settings = mainWindow.getSettingsFromGUI(false);
-		List<String> familiesUsed = settings == null ? new ArrayList<>() : settings.getFontFamiliesUsed();
-		for (Map.Entry<ThemeFontType, FontChooser> entry : fontChoosersByType.entrySet())
-		{
-			entry.getValue().setFamiliesUsedByThisMap(familiesUsed);
-			updateFontStatus(entry.getKey(), entry.getValue(), textByType.getOrDefault(entry.getKey(), ""));
-		}
-	}
-
-	private void updateFontStatus(ThemeFontType type, FontChooser fontChooser, String textToDraw)
-	{
-		fontChooser.setTextThatMustBeDrawable(textToDraw);
-
-		java.awt.Font font = fontChooser.getFont();
-		if (font == null)
-		{
-			fontChooser.setStatus(null, null, null);
-			return;
-		}
-
-		String family = font.getName();
-		String resolved = FontFinder.resolveAlias(family);
-
-		String message;
-		if (!FontFinder.isAvailable(resolved))
-		{
-			String drawnWith = FontFinder.resolveForDrawing(AwtBridge.fromAwtFont(font)).getName();
-			message = Translation.get("theme.font.notInstalled", drawnWith);
-		}
-		else if (!FontFinder.canDisplay(resolved, textToDraw))
-		{
-			message = Translation.get("theme.font.missingCharacters");
-		}
-		else
-		{
-			fontChooser.setStatus(null, null, null);
-			return;
-		}
-
-		String suggestion = FontFinder.chooseSubstitute(family, textToDraw);
-		if (suggestion == null || suggestion.equals(family))
-		{
-			fontChooser.setStatus(message, null, null);
-			return;
-		}
-		fontChooser.setStatus(message, Translation.get("theme.font.fixTooltip", suggestion), () -> replaceThemeFontFamily(type, suggestion));
-	}
-
-	private void replaceThemeFontFamily(ThemeFontType type, String family)
-	{
-		FontChooser fontChooser = fontChoosersByType.get(type);
-		java.awt.Font current = fontChooser.getFont();
-		fontChooser.setFont(new java.awt.Font(family, current.getStyle(), current.getSize()));
-		handleFontsChange();
+		return settings == null ? new ArrayList<>() : settings.getFontFamiliesUsed();
 	}
 
 	/**
-	 * The map's text, gathered per theme font, so that each font can be asked whether it has glyphs for what it actually has to draw. Text
-	 * with a font override of its own is excluded, since a theme font doesn't draw it.
+	 * The characters each theme font has to be able to draw. Only the distinct ones are gathered: whether a font covers a map's text depends
+	 * on which characters appear in it, not how often, and checking a map's worth of labels character by character costs a hundred times
+	 * more than checking the few dozen distinct characters they are made of.
 	 */
 	private Map<ThemeFontType, String> getTextDrawnByEachThemeFont()
 	{
-		Map<ThemeFontType, StringBuilder> textByType = new HashMap<>();
+		Map<ThemeFontType, Set<Integer>> codePointsByType = new HashMap<>();
 		if (mainWindow.edits != null && mainWindow.edits.text != null)
 		{
 			for (MapText text : mainWindow.edits.text)
@@ -2174,21 +2116,27 @@ public class ThemePanel extends JTabbedPane
 				{
 					continue;
 				}
-				textByType.computeIfAbsent(MapSettings.getThemeFontTypeForText(text.type), key -> new StringBuilder()).append(text.value);
+				Set<Integer> codePoints = codePointsByType.computeIfAbsent(MapSettings.getThemeFontTypeForText(text.type),
+						key -> new LinkedHashSet<>());
+				text.value.codePoints().forEach(codePoints::add);
 			}
 		}
 
 		Map<ThemeFontType, String> result = new HashMap<>();
-		for (Map.Entry<ThemeFontType, StringBuilder> entry : textByType.entrySet())
+		for (Map.Entry<ThemeFontType, Set<Integer>> entry : codePointsByType.entrySet())
 		{
-			result.put(entry.getKey(), entry.getValue().toString());
+			StringBuilder builder = new StringBuilder();
+			for (int codePoint : entry.getValue())
+			{
+				builder.appendCodePoint(codePoint);
+			}
+			result.put(entry.getKey(), builder.toString());
 		}
 		return result;
 	}
 
 	private void handleFontsChange()
 	{
-		updateFontStatuses();
 		mainWindow.undoer.setUndoPoint(UpdateType.Fonts, null);
 		mainWindow.handleThemeChange(false);
 		mainWindow.updater.createAndShowMapFontsChange();
