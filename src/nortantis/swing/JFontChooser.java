@@ -67,10 +67,14 @@ public class JFontChooser extends JComponent
 	private static final String[] DEFAULT_FONT_SIZE_STRINGS = { "8", "9", "10", "11", "12", "14", "16", "18", "20", "22", "24", "26", "28", "36", "48", "72", "96", "120", "144", "168", "192", "216",
 			"240", };
 	private static final int sampleWidth = 300;
-	private static final int minSampleHeight = 100;
-	/** Beyond this the sample clips rather than growing, so that a 240 point sample can't push the dialog off the screen. */
-	private static final int maxSampleHeight = 260;
-	private static final int sampleVerticalPadding = 8;
+	/**
+	 * The height the sample opens at. It does not change with the font being previewed: the sizes go up to 240 point, which no sample the
+	 * dialog could hold would show whole anyway, and a sample that resized itself would rearrange the dialog every time a size was clicked.
+	 * Someone who wants to see more of a large font makes the dialog taller, which the sample does grow with.
+	 */
+	private static final int sampleHeight = 100;
+	/** The share of the height the dialog gains from being resized that goes to the lists rather than to the sample. */
+	private static final double listShareOfAddedHeight = 0.75;
 	/** The size each family name is drawn at in its own font, in the family list. */
 	private static final int familyPreviewFontSize = 14;
 	/**
@@ -86,7 +90,7 @@ public class JFontChooser extends JComponent
 	private static final int familyRowHeight = 22;
 	private static final int minimumFamilyRowWidth = 120;
 	/** The height of the panels holding the family, style, and size lists. */
-	private static final int listPanelHeight = 130;
+	private static final int listPanelHeight = 180;
 
 	// instance variables
 	protected int dialogResultValue = ERROR_OPTION;
@@ -154,10 +158,19 @@ public class JFontChooser extends JComponent
 		selectPanel.add(getFontStylePanel());
 		selectPanel.add(getFontSizePanel());
 
-		JPanel contentsPanel = new JPanel();
-		contentsPanel.setLayout(new GridLayout(2, 1));
-		contentsPanel.add(selectPanel, BorderLayout.NORTH);
-		contentsPanel.add(getSamplePanel(), BorderLayout.CENTER);
+		// Both rows open at the height they ask for, and height the dialog is given beyond that is split by weight rather than evenly, so
+		// that making the dialog taller mostly lengthens the lists.
+		JPanel contentsPanel = new JPanel(new GridBagLayout());
+		GridBagConstraints constraints = new GridBagConstraints();
+		constraints.gridx = 0;
+		constraints.fill = GridBagConstraints.BOTH;
+		constraints.weightx = 1.0;
+		constraints.gridy = 0;
+		constraints.weighty = listShareOfAddedHeight;
+		contentsPanel.add(selectPanel, constraints);
+		constraints.gridy = 1;
+		constraints.weighty = 1.0 - listShareOfAddedHeight;
+		contentsPanel.add(getSamplePanel(), constraints);
 
 		JPanel outerPanel = new JPanel(new BorderLayout());
 		outerPanel.add(getNoCoverageNoticePanel(), BorderLayout.NORTH);
@@ -743,17 +756,7 @@ public class JFontChooser extends JComponent
 
 	protected void updateSampleFont()
 	{
-		Font font = getSelectedFont();
-		JTextField sampleField = getSampleTextField();
-		sampleField.setFont(font);
-
-		// Measure the font rather than assuming a height, since the size list goes up to 240. getMaxAscent is used rather than getAscent
-		// because script faces routinely draw swashes and ascenders above the typical ascent.
-		FontMetrics metrics = sampleField.getFontMetrics(font);
-		int neededHeight = metrics.getMaxAscent() + metrics.getMaxDescent() + sampleVerticalPadding;
-		int height = Math.max(minSampleHeight, Math.min(neededHeight, maxSampleHeight));
-		sampleField.setPreferredSize(new Dimension(sampleWidth, height));
-		sampleField.revalidate();
+		getSampleTextField().setFont(getSelectedFont());
 	}
 
 	protected JPanel getFontFamilyPanel()
@@ -871,7 +874,7 @@ public class JFontChooser extends JComponent
 
 			sampleText = new JTextField(Translation.get("fontChooser.sampleText"));
 			sampleText.setBorder(lowered);
-			sampleText.setPreferredSize(new Dimension(sampleWidth, minSampleHeight));
+			sampleText.setPreferredSize(new Dimension(sampleWidth, sampleHeight));
 		}
 		return sampleText;
 	}
