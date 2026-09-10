@@ -117,7 +117,6 @@ public class JFontChooser extends JComponent
 	private boolean isRebuildingFamilyList;
 	/** Which way the selection was last moving, so that arrowing onto a heading carries on in the same direction. */
 	private int previousSelectedIndex = -1;
-	private JPanel noCoverageNoticePanel;
 	private JTextField fontFamilyTextField = null;
 	private JTextField fontStyleTextField = null;
 	private JTextField fontSizeTextField = null;
@@ -172,12 +171,8 @@ public class JFontChooser extends JComponent
 		constraints.weighty = 1.0 - listShareOfAddedHeight;
 		contentsPanel.add(getSamplePanel(), constraints);
 
-		JPanel outerPanel = new JPanel(new BorderLayout());
-		outerPanel.add(getNoCoverageNoticePanel(), BorderLayout.NORTH);
-		outerPanel.add(contentsPanel, BorderLayout.CENTER);
-
 		this.setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
-		this.add(outerPanel);
+		this.add(contentsPanel);
 		this.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 		this.setSelectedFont(DEFAULT_SELECTED_FONT);
 	}
@@ -904,21 +899,6 @@ public class JFontChooser extends JComponent
 		rebuildFontFamilyList();
 	}
 
-	private JPanel getNoCoverageNoticePanel()
-	{
-		if (noCoverageNoticePanel == null)
-		{
-			noCoverageNoticePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 2));
-			noCoverageNoticePanel.setAlignmentX(LEFT_ALIGNMENT);
-
-			JLabel notice = new JLabel(Translation.get("fontChooser.noFontsCoverMapText"));
-			notice.setForeground(SwingHelper.warningMessageColor);
-			noCoverageNoticePanel.add(notice);
-			noCoverageNoticePanel.setVisible(false);
-		}
-		return noCoverageNoticePanel;
-	}
-
 	private Object[] buildFontFamilyRows()
 	{
 		return FontFamilySections.buildRows(getFamiliesUsedByThisMapIncludingCurrent(), searchText).toArray();
@@ -951,27 +931,6 @@ public class JFontChooser extends JComponent
 		{
 			isRebuildingFamilyList = false;
 		}
-
-		getNoCoverageNoticePanel().setVisible(!anyListedFamilyCanDrawTheText());
-	}
-
-	private boolean anyListedFamilyCanDrawTheText()
-	{
-		if (charactersThatMustBeDrawable.isEmpty())
-		{
-			return true;
-		}
-		ListModel<?> model = getFontFamilyList().getModel();
-		for (int i = 0; i < model.getSize(); i++)
-		{
-			Object row = model.getElementAt(i);
-			if (row instanceof String && getMissingScript((String) row) == null
-					&& FontFinder.canDisplay((String) row, charactersThatMustBeDrawable))
-			{
-				return true;
-			}
-		}
-		return false;
 	}
 
 	/**
