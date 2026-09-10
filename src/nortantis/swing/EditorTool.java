@@ -5,6 +5,7 @@ import nortantis.MapSettings;
 import nortantis.editor.EdgeType;
 import nortantis.editor.MapUpdater;
 import nortantis.editor.UserPreferences;
+import nortantis.geom.Rectangle;
 import nortantis.geom.RotatedRectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Corner;
@@ -231,7 +232,12 @@ public abstract class EditorTool
 	protected static void drawCenteredToolIconText(Painter p, Image icon, int preferredFontSize, String text, int baselineY)
 	{
 		setToolIconFont(p, icon, preferredFontSize, new ToolIconText(text, toolIconTextMargin, baselineY));
-		p.drawString(text, (icon.getWidth() - p.stringWidth(text)) / 2.0, baselineY);
+
+		// Centering on the width the text advances the pen leaves the word looking a little to the right, because the blank space the font
+		// reserves before the first glyph is wider than the space it leaves after the last one. Centering the ink puts the word where the
+		// eye expects it.
+		Rectangle ink = p.getStringVisualBounds(text);
+		p.drawString(text, (icon.getWidth() - ink.width) / 2.0 - ink.x, baselineY);
 	}
 
 	/**

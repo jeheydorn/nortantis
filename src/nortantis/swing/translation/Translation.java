@@ -74,6 +74,24 @@ public class Translation
 		return format(getPattern(key), args);
 	}
 
+	/**
+	 * The English text for a key, whatever language the app is running in. For text whose value has to be the same everywhere Nortantis
+	 * runs, such as a name that is reserved on disk and so must stay reserved no matter who is looking at it.
+	 */
+	public static String getEnglish(String key)
+	{
+		String pattern;
+		try
+		{
+			pattern = loadBundle(Locale.ENGLISH).getString(key);
+		}
+		catch (MissingResourceException e)
+		{
+			return key;
+		}
+		return format(pattern, new Object[0]);
+	}
+
 	private static String getPattern(String key)
 	{
 		try

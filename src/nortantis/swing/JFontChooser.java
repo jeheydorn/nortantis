@@ -85,6 +85,8 @@ public class JFontChooser extends JComponent
 	 */
 	private static final int familyRowHeight = 22;
 	private static final int minimumFamilyRowWidth = 120;
+	/** The height of the panels holding the family, style, and size lists. */
+	private static final int listPanelHeight = 130;
 
 	// instance variables
 	protected int dialogResultValue = ERROR_OPTION;
@@ -761,8 +763,7 @@ public class JFontChooser extends JComponent
 			fontNamePanel = new JPanel();
 			fontNamePanel.setLayout(new BorderLayout());
 			fontNamePanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-			// Wide enough for a family name and the name of the art pack it came from side by side.
-			fontNamePanel.setPreferredSize(new Dimension(240, 130));
+			fontNamePanel.setPreferredSize(new Dimension(240, listPanelHeight));
 
 			JScrollPane scrollPane = new JScrollPane(getFontFamilyList());
 			scrollPane.getVerticalScrollBar().setFocusable(false);
@@ -792,7 +793,7 @@ public class JFontChooser extends JComponent
 			fontStylePanel = new JPanel();
 			fontStylePanel.setLayout(new BorderLayout());
 			fontStylePanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-			fontStylePanel.setPreferredSize(new Dimension(140, 130));
+			fontStylePanel.setPreferredSize(new Dimension(140, listPanelHeight));
 
 			JScrollPane scrollPane = new JScrollPane(getFontStyleList());
 			scrollPane.getVerticalScrollBar().setFocusable(false);
@@ -821,7 +822,7 @@ public class JFontChooser extends JComponent
 		{
 			fontSizePanel = new JPanel();
 			fontSizePanel.setLayout(new BorderLayout());
-			fontSizePanel.setPreferredSize(new Dimension(70, 130));
+			fontSizePanel.setPreferredSize(new Dimension(70, listPanelHeight));
 			fontSizePanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
 			JScrollPane scrollPane = new JScrollPane(getFontSizeList());
@@ -1032,21 +1033,17 @@ public class JFontChooser extends JComponent
 	}
 
 	/**
-	 * Draws each family in its own font, with the art pack it came from named at the right of the row and the script it cannot draw named
-	 * where that applies. A font this computer supplies came from no pack, so it is the only kind with nothing named beside it.
+	 * Draws each family in its own font, with the script it cannot draw named where that applies. Where a family came from is not named in
+	 * the row, since the heading the row sits under already says it.
 	 */
 	private class FontFamilyRenderer extends JPanel implements ListCellRenderer<Object>
 	{
 		private final JLabel familyLabel = new JLabel();
-		private final JLabel artPackLabel = new JLabel();
 
 		FontFamilyRenderer()
 		{
 			super(new BorderLayout());
-			artPackLabel.setFont(DEFAULT_FONT);
-			artPackLabel.setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 0));
 			add(familyLabel, BorderLayout.CENTER);
-			add(artPackLabel, BorderLayout.EAST);
 			setOpaque(true);
 		}
 
@@ -1059,31 +1056,29 @@ public class JFontChooser extends JComponent
 			{
 				setBackground(list.getBackground());
 				FontFamilySections.applyHeadingStyle(familyLabel, (FontFamilySections.SectionHeading) value, list, DEFAULT_FONT);
-				artPackLabel.setText("");
+				familyLabel.setBorder(null);
 				setToolTipText(null);
 				setBorder(FontFamilySections.createHeadingBorder(list, index == 0));
 				return this;
 			}
+
+			// The indent is on the label rather than on the row, so that the band a chosen family is highlighted in still runs the whole
+			// width of the list.
+			familyLabel.setBorder(FontFamilySections.createFamilyBorder());
 
 			String family = (String) value;
 			// A family can occupy more than one row, so what counts as selected is the family rather than the row the list happens to have
 			// its own selection on. Without this, the same font would look chosen in one place and not in another.
 			boolean isFamilySelected = family.equalsIgnoreCase(getSelectedFontFamily());
 			setBackground(isFamilySelected ? list.getSelectionBackground() : list.getBackground());
-			Color foreground = isFamilySelected ? list.getSelectionForeground() : list.getForeground();
-			familyLabel.setForeground(foreground);
-			artPackLabel.setForeground(foreground);
+			familyLabel.setForeground(isFamilySelected ? list.getSelectionForeground() : list.getForeground());
 
 			// Showing each family in its own font is worth more to someone browsing unfamiliar fonts than any amount of categorising.
 			familyLabel.setFont(new Font(family, Font.PLAIN, familyPreviewFontSize));
 			familyLabel.setText(family);
-			// The installed art pack is named like any other, the way every other place that shows where a resource came from names it.
-			String artPack = FontFinder.getArtPack(family);
-			artPackLabel.setText(artPack == null ? "" : artPack);
 
 			Script missingScript = getMissingScript(family);
 			familyLabel.setEnabled(missingScript == null);
-			artPackLabel.setEnabled(missingScript == null);
 			if (missingScript != null)
 			{
 				// Greying a row without saying why is worse than not marking it at all, so the reason goes in the row rather than only in a

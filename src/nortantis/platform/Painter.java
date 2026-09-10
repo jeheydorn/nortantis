@@ -4,6 +4,7 @@ import nortantis.Stroke;
 import nortantis.geom.FloatPoint;
 import nortantis.geom.IntPoint;
 import nortantis.geom.Point;
+import nortantis.geom.Rectangle;
 import nortantis.util.Range;
 
 import java.util.List;
@@ -120,6 +121,13 @@ public abstract class Painter implements AutoCloseable
 	public abstract void fillRect(int x, int y, int width, int height);
 
 	public abstract int stringWidth(String string);
+
+	/**
+	 * The area the string's glyphs actually put ink on, relative to the position it would be drawn at. Unlike {@link #stringWidth(String)},
+	 * this leaves out the blank space the font reserves before the first glyph and after the last one, which are not the same size as each
+	 * other. Use it to center a string on its appearance rather than on the room it takes up.
+	 */
+	public abstract Rectangle getStringVisualBounds(String string);
 
 	public abstract int charWidth(char c);
 

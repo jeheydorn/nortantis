@@ -2,6 +2,7 @@ package nortantis.platform.awt;
 
 import nortantis.StrokeType;
 import nortantis.geom.FloatPoint;
+import nortantis.geom.Rectangle;
 import nortantis.platform.*;
 import nortantis.platform.Color;
 import nortantis.platform.Font;
@@ -254,6 +255,13 @@ class AwtPainter extends Painter
 	public int stringWidth(String string)
 	{
 		return g.getFontMetrics().stringWidth(string);
+	}
+
+	@Override
+	public Rectangle getStringVisualBounds(String string)
+	{
+		java.awt.geom.Rectangle2D bounds = g.getFont().createGlyphVector(g.getFontRenderContext(), string).getVisualBounds();
+		return new Rectangle(bounds.getX(), bounds.getY(), bounds.getWidth(), bounds.getHeight());
 	}
 
 	@Override

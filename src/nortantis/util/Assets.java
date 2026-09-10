@@ -3,6 +3,7 @@ package nortantis.util;
 import nortantis.NamedResource;
 import nortantis.platform.Image;
 import nortantis.platform.PlatformFactory;
+import nortantis.swing.translation.Translation;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
@@ -42,7 +43,15 @@ public class Assets
 	public static final String customArtPack = "custom";
 	private static final String artPacksFolder = "art packs";
 	public static final String installedArtPack = "nortantis";
-	public static final List<String> reservedArtPacks = Collections.unmodifiableList(Arrays.asList(installedArtPack, customArtPack, "all"));
+	/**
+	 * The message key for the name shown in place of an art pack name for fonts that came from the device rather than from a pack. That name
+	 * is reserved, since an art pack that used it would be indistinguishable from the device wherever fonts are grouped by where they came
+	 * from. Only the English name is reserved: a pack named for the translation of it can only collide for someone running in that language,
+	 * which is not worth reserving seven names over.
+	 */
+	public static final String deviceFontSourceNameKey = "fontChooser.section.thisDevice";
+	public static final List<String> reservedArtPacks = Collections.unmodifiableList(
+			Arrays.asList(installedArtPack, customArtPack, "all", Translation.getEnglish(deviceFontSourceNameKey).toLowerCase()));
 	private static boolean disableAddedArtPacksForUnitTests;
 	/**
 	 * The result of listArtPacks for each value of its argument. Building the list copies and sorts it, which is too much work to repeat

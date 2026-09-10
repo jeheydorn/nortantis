@@ -12,6 +12,7 @@ import java.util.function.Predicate;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.border.Border;
@@ -19,6 +20,7 @@ import javax.swing.border.Border;
 import nortantis.FontFinder;
 import nortantis.FontFinder.AvailableFont;
 import nortantis.swing.translation.Translation;
+import nortantis.util.Assets;
 
 /**
  * Builds and draws the grouped rows that every list of font families shares: the families a map already uses, then the families each art
@@ -41,6 +43,8 @@ class FontFamilySections
 	/** How far a heading's rule is moved towards the background. A rule as bright as the text draws more attention than what it separates. */
 	private static final double ruleFadeTowardsBackground = 0.78;
 	private static final int headingTopPadding = 5;
+	/** How far a family name sits in from the heading above it, so that the headings are what the eye catches when scanning the list. */
+	private static final int familyIndent = 10;
 
 	/**
 	 * The rows of a family list: every family this installation can draw with, under a heading naming where it came from.
@@ -88,7 +92,7 @@ class FontFamilySections
 		{
 			addSection(rows, entry.getKey(), entry.getValue(), searchText, isOffered);
 		}
-		addSection(rows, Translation.get("fontChooser.section.thisDevice"), systemFamilies, searchText, isOffered);
+		addSection(rows, Translation.get(Assets.deviceFontSourceNameKey), systemFamilies, searchText, isOffered);
 
 		if (rows.isEmpty())
 		{
@@ -160,6 +164,14 @@ class FontFamilySections
 		}
 		Border rule = BorderFactory.createMatteBorder(1, 0, 0, 0, blend(list.getForeground(), list.getBackground(), ruleFadeTowardsBackground));
 		return BorderFactory.createCompoundBorder(rule, padding);
+	}
+
+	/**
+	 * The border that sets a family name in from the left edge, leaving the headings out at it.
+	 */
+	static Border createFamilyBorder()
+	{
+		return BorderFactory.createEmptyBorder(0, familyIndent, 0, 0);
 	}
 
 	/**
@@ -238,7 +250,15 @@ class FontFamilySections
 		{
 			if (!(value instanceof SectionHeading))
 			{
-				return super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+				Component row = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+				if (index >= 0 && row instanceof JComponent)
+				{
+					// Only the rows in the list are indented. Index -1 is the chosen family drawn in the closed combo box, where there is no
+					// heading to sit in from. The renderer's own border goes inside, since it is what marks the focused row.
+					JComponent component = (JComponent) row;
+					component.setBorder(BorderFactory.createCompoundBorder(createFamilyBorder(), component.getBorder()));
+				}
+				return row;
 			}
 
 			JLabel label = (JLabel) super.getListCellRendererComponent(list, "", index, false, false);
