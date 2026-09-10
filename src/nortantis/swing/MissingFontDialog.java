@@ -25,15 +25,13 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
 import nortantis.FontFinder;
-import nortantis.FontFinder.AvailableFont;
 import nortantis.MapSettings.FontProblem;
 import nortantis.MapSettings.MissingFontInfo;
 import nortantis.swing.translation.Translation;
 
 /**
- * A modal dialog shown when a map being opened names fonts this machine cannot draw as the map's author intended, either because they are
- * not installed or because they have no glyphs for the map's text. It lets the user pick a replacement for each one, or cancel opening the
- * map.
+ * A modal dialog shown when a map being opened names fonts this machine does not have. It lets the user pick a replacement for each one, or
+ * cancel opening the map.
  */
 public class MissingFontDialog
 {
@@ -77,26 +75,8 @@ public class MissingFontDialog
 	 */
 	public static Result show(Component parent, String mapName, MissingFontInfo info)
 	{
-		JPanel panel = new JPanel();
-		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-
-		JLabel messageLabel = SwingHelper.createWrappedLabel(
-				"<html>" + SwingHelper.escapeHtml(Translation.get("mainWindow.missingFont.message", mapName)) + "</html>", messageWidth);
-		messageLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-		panel.add(messageLabel);
-		panel.add(Box.createVerticalStrut(12));
-
-		Map<String, JComboBox<String>> comboBoxesByFamily = new HashMap<>();
-		JComponent rows = info.problems.size() > maxRowsBeforeCollapsing ? createCollapsedRow(info, comboBoxesByFamily)
-				: createRowPerProblem(info, comboBoxesByFamily);
-		rows.setAlignmentX(Component.LEFT_ALIGNMENT);
-		panel.add(rows);
-
-		panel.add(Box.createVerticalStrut(12));
-		JLabel savedLabel = SwingHelper.createWrappedLabel(
-				"<html>" + SwingHelper.escapeHtml(Translation.get("mainWindow.missingFont.savedOnNextSave")) + "</html>", messageWidth);
-		savedLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-		panel.add(savedLabel);
+		Map<String, JComboBox<Object>> comboBoxesByFamily = new HashMap<>();
+		JPanel panel = createContentPanel(mapName, info, comboBoxesByFamily);
 
 		String openButtonText = Translation.get("mainWindow.missingFont.openButton");
 		String cancelButtonText = Translation.get("mainWindow.missingFont.cancel");
@@ -111,7 +91,7 @@ public class MissingFontDialog
 		}
 
 		Map<String, String> replacements = new HashMap<>();
-		for (Map.Entry<String, JComboBox<String>> entry : comboBoxesByFamily.entrySet())
+		for (Map.Entry<String, JComboBox<Object>> entry : comboBoxesByFamily.entrySet())
 		{
 			String chosen = (String) entry.getValue().getSelectedItem();
 			if (chosen != null && !chosen.equals(entry.getKey()))
@@ -122,7 +102,46 @@ public class MissingFontDialog
 		return new Result(false, replacements);
 	}
 
-	private static JComponent createRowPerProblem(MissingFontInfo info, Map<String, JComboBox<String>> comboBoxesByFamily)
+	/**
+	 * Builds the dialog's contents: the message, a row per font, and the note about when the choice is saved.
+	 */
+	static JPanel createContentPanel(String mapName, MissingFontInfo info, Map<String, JComboBox<Object>> comboBoxesByFamily)
+	{
+		JPanel panel = new JPanel();
+		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+
+		panel.add(createFullWidthWrappedLabel(Translation.get("mainWindow.missingFont.message", mapName)));
+		panel.add(Box.createVerticalStrut(12));
+
+		JComponent rows = info.problems.size() > maxRowsBeforeCollapsing ? createCollapsedRow(info, comboBoxesByFamily)
+				: createRowPerProblem(info, comboBoxesByFamily);
+		rows.setAlignmentX(Component.LEFT_ALIGNMENT);
+		panel.add(rows);
+
+		panel.add(Box.createVerticalStrut(12));
+		panel.add(createFullWidthWrappedLabel(Translation.get("mainWindow.missingFont.savedOnNextSave")));
+		return panel;
+	}
+
+	/**
+	 * A wrapped label that keeps the height it needs.
+	 *
+	 * <p>
+	 * A label in a vertical BoxLayout is given a height between its minimum and its maximum, and a plain label's maximum is unbounded in
+	 * both directions, so a taller sibling can leave a wrapped label with less height than its text occupies and the last line is cut off.
+	 * Pinning the maximum and the minimum to the height the text needs is what stops the layout from taking it away.
+	 */
+	private static JLabel createFullWidthWrappedLabel(String text)
+	{
+		JLabel label = SwingHelper.createWrappedLabel("<html>" + SwingHelper.escapeHtml(text) + "</html>", messageWidth);
+		Dimension preferred = label.getPreferredSize();
+		label.setMinimumSize(new Dimension(0, preferred.height));
+		label.setMaximumSize(new Dimension(Integer.MAX_VALUE, preferred.height));
+		label.setAlignmentX(Component.LEFT_ALIGNMENT);
+		return label;
+	}
+
+	private static JComponent createRowPerProblem(MissingFontInfo info, Map<String, JComboBox<Object>> comboBoxesByFamily)
 	{
 		JPanel panel = new JPanel(new GridBagLayout());
 		int row = 0;
@@ -137,10 +156,9 @@ public class MissingFontDialog
 			familyLabel.setFont(familyLabel.getFont().deriveFont(Font.BOLD));
 			addToRow(panel, row++, familyLabel, 0, 4);
 
-			addToRow(panel, row++, new JLabel(describe(problem)), 12, 2);
 			addToRow(panel, row++, new JLabel(Translation.get("mainWindow.missingFont.usedBy", String.join(", ", problem.usedBy))), 12, 4);
 
-			JComboBox<String> comboBox = createFontComboBox(problem);
+			JComboBox<Object> comboBox = createFontComboBox(problem);
 			comboBoxesByFamily.put(problem.family, comboBox);
 
 			JLabel preview = new JLabel();
@@ -164,7 +182,7 @@ public class MissingFontDialog
 	 * A single "replace all with" row. A map naming this many missing fonts does not want one decision per font, and the fonts it names are
 	 * in practice all the same kind of thing.
 	 */
-	private static JComponent createCollapsedRow(MissingFontInfo info, Map<String, JComboBox<String>> comboBoxesByFamily)
+	private static JComponent createCollapsedRow(MissingFontInfo info, Map<String, JComboBox<Object>> comboBoxesByFamily)
 	{
 		JPanel panel = new JPanel(new GridBagLayout());
 		int row = 0;
@@ -180,7 +198,7 @@ public class MissingFontDialog
 
 		// Every font gets the same replacement, so the choices must be drawable for all of the text, and each family maps to the same combo.
 		FontProblem combined = combine(info);
-		JComboBox<String> comboBox = createFontComboBox(combined);
+		JComboBox<Object> comboBox = createFontComboBox(combined);
 		for (FontProblem problem : info.problems)
 		{
 			comboBoxesByFamily.put(problem.family, comboBox);
@@ -204,48 +222,24 @@ public class MissingFontDialog
 
 	private static FontProblem combine(MissingFontInfo info)
 	{
-		StringBuilder undrawable = new StringBuilder();
+		StringBuilder textToDraw = new StringBuilder();
 		Set<String> usedBy = new LinkedHashSet<>();
-		FontProblem.Kind kind = FontProblem.Kind.NotInstalled;
 		for (FontProblem problem : info.problems)
 		{
-			undrawable.append(problem.sampleOfUndrawableText);
+			textToDraw.append(problem.textToDraw);
 			usedBy.addAll(problem.usedBy);
-			if (problem.kind == FontProblem.Kind.MissingCharacters)
-			{
-				kind = FontProblem.Kind.MissingCharacters;
-			}
 		}
-		return new FontProblem(info.problems.get(0).family, kind, info.problems.get(0).category, new ArrayList<>(usedBy), undrawable.toString());
+		return new FontProblem(info.problems.get(0).family, info.problems.get(0).category, new ArrayList<>(usedBy), textToDraw.toString());
 	}
 
-	private static String describe(FontProblem problem)
+	private static JComboBox<Object> createFontComboBox(FontProblem problem)
 	{
-		if (problem.kind == FontProblem.Kind.MissingCharacters)
-		{
-			return Translation.get("mainWindow.missingFont.messageMissingCharacters", problem.sampleOfUndrawableText);
-		}
-		return Translation.get("mainWindow.missingFont.messageNotInstalled");
-	}
-
-	private static JComboBox<String> createFontComboBox(FontProblem problem)
-	{
-		// For a font that lacks glyphs, offering families that lack them too would just move the problem, so the list is filtered to
-		// families that can draw the text. Bundled fonts come first because listAvailableFonts orders them that way.
-		List<String> families = new ArrayList<>();
-		for (AvailableFont font : FontFinder.listAvailableFonts())
-		{
-			if (FontFinder.canDisplay(font.family, problem.sampleOfUndrawableText))
-			{
-				families.add(font.family);
-			}
-		}
-
-		String suggested = FontFinder.chooseSubstitute(problem.family, problem.category, problem.sampleOfUndrawableText);
-
-		JComboBox<String> comboBox = new JComboBox<>();
-		SwingHelper.initializeComboBoxItems(comboBox, families, suggested, true);
-		return comboBox;
+		// Offering a replacement with no glyphs for the labels the missing font was drawing would trade one problem for another, so the
+		// families offered are only those that can draw them. The map's own fonts are not gathered at the top here: the one being replaced
+		// is by definition not available, and the rest are a worse answer than what the substitute suggests.
+		String suggested = FontFinder.chooseSubstitute(problem.family, problem.category, problem.textToDraw);
+		List<Object> rows = FontFamilySections.buildRows(new ArrayList<>(), "", family -> FontFinder.canDisplay(family, problem.textToDraw));
+		return FontFamilySections.createFamilyComboBox(rows, suggested);
 	}
 
 	private static void updatePreview(JLabel preview, String family)
@@ -278,9 +272,16 @@ public class MissingFontDialog
 			return panel;
 		}
 
-		JScrollPane scrollPane = new JScrollPane(panel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+		JScrollPane scrollPane = new JScrollPane(panel, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 		scrollPane.setBorder(BorderFactory.createEmptyBorder());
-		scrollPane.setPreferredSize(new Dimension(Math.max(messageWidth, panel.getPreferredSize().width), maxHeightBeforeScrolling));
+		scrollPane.getVerticalScrollBar().setUnitIncrement(SwingHelper.sidePanelScrollSpeed);
+
+		// The scroll bar takes its width from the scroll pane, not from the space beside it, so a pane only as wide as its contents leaves
+		// them narrower than they asked to be. Anything that wraps then needs more height than it reported, and the extra is left below the
+		// bottom of the scrollable area, where no amount of scrolling reaches it.
+		int scrollBarWidth = scrollPane.getVerticalScrollBar().getPreferredSize().width;
+		int contentWidth = Math.max(messageWidth, panel.getPreferredSize().width);
+		scrollPane.setPreferredSize(new Dimension(contentWidth + scrollBarWidth, maxHeightBeforeScrolling));
 		return scrollPane;
 	}
 

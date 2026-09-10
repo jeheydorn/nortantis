@@ -2111,8 +2111,11 @@ public class ThemePanel extends JTabbedPane
 	void updateFontStatuses()
 	{
 		Map<ThemeFontType, String> textByType = getTextDrawnByEachThemeFont();
+		MapSettings settings = mainWindow.getSettingsFromGUI(false);
+		List<String> familiesUsed = settings == null ? new ArrayList<>() : settings.getFontFamiliesUsed();
 		for (Map.Entry<ThemeFontType, FontChooser> entry : fontChoosersByType.entrySet())
 		{
+			entry.getValue().setFamiliesUsedByThisMap(familiesUsed);
 			updateFontStatus(entry.getKey(), entry.getValue(), textByType.getOrDefault(entry.getKey(), ""));
 		}
 	}

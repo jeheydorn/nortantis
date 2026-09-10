@@ -79,7 +79,6 @@ public class MapSettingsTest
 		assertEquals(1, info.problems.size(), "Every theme font names the same family, so there should be one problem.");
 		MapSettings.FontProblem problem = info.problems.get(0);
 		assertEquals("A Font That Does Not Exist", problem.family);
-		assertEquals(MapSettings.FontProblem.Kind.NotInstalled, problem.kind);
 		assertEquals(MapSettings.ThemeFontType.values().length, problem.usedBy.size());
 	}
 
@@ -93,17 +92,29 @@ public class MapSettingsTest
 	}
 
 	@Test
-	public void aFontThatCannotDrawTheMapsTextIsAProblem()
+	public void anInstalledFontThatCannotDrawTheMapsTextIsNotAProblem()
 	{
+		// The author picked a font that cannot draw their own text. Nothing about the machine opening the map caused that or can fix it,
+		// and they will see it the moment the map draws, so opening the map must not stop to report it.
 		MapSettings settings = createSettingsWithAllThemeFonts(FontFinder.houseFontFamily);
 		settings.edits = new MapEdits();
 		settings.edits.text = new CopyOnWriteArrayList<>(List.of(createMapText(TextType.Title, "上海", null)));
 
+		assertTrue(settings.findFontProblems().isEmpty());
+	}
+
+	@Test
+	public void aMissingFontCarriesTheTextItHadToDraw()
+	{
+		// The replacement offered has to be able to draw the map's labels, which means knowing what they were.
+		MapSettings settings = createSettingsWithAllThemeFonts("A Font That Does Not Exist");
+		settings.edits = new MapEdits();
+		settings.edits.text = new CopyOnWriteArrayList<>(List.of(createMapText(TextType.Title, "Atelan", null)));
+
 		MapSettings.MissingFontInfo info = settings.findFontProblems();
 
 		assertEquals(1, info.problems.size());
-		assertEquals(MapSettings.FontProblem.Kind.MissingCharacters, info.problems.get(0).kind);
-		assertEquals("上海", info.problems.get(0).sampleOfUndrawableText);
+		assertEquals("Atelan", info.problems.get(0).textToDraw);
 	}
 
 	@Test
@@ -137,6 +148,36 @@ public class MapSettingsTest
 		assertEquals(FontStyle.Italic, settings.edits.text.get(0).fontOverride.getStyle());
 		assertEquals(33f, settings.edits.text.get(0).fontOverride.getSize());
 		assertEquals("Georgia", settings.edits.text.get(1).fontOverride.getName());
+	}
+
+	@Test
+	public void fontFamiliesUsedIncludeThemeFontsAndEveryOverride()
+	{
+		MapSettings settings = createSettingsWithAllThemeFonts("Georgia");
+		settings.titleFont = Font.create("Palatino", FontStyle.Plain, 50);
+		settings.edits = new MapEdits();
+		settings.edits.text = new CopyOnWriteArrayList<>(
+				List.of(createMapText(TextType.Title, "Atelan", Font.create("Tangerine", FontStyle.Plain, 20)),
+						createMapText(TextType.Region, "Vinx", Font.create("Tangerine", FontStyle.Plain, 30)),
+						createMapText(TextType.City, "Bree", null)));
+
+		List<String> used = settings.getFontFamiliesUsed();
+
+		assertEquals(List.of("Palatino", "Georgia", "Tangerine"), used,
+				"Expected the theme fonts in order, then the families only individual labels use.");
+	}
+
+	@Test
+	public void fontFamiliesUsedNamesAFamilyOnceHoweverManyLabelsUseIt()
+	{
+		MapSettings settings = createSettingsWithAllThemeFonts("Georgia");
+		settings.edits = new MapEdits();
+		settings.edits.text = new CopyOnWriteArrayList<>(
+				List.of(createMapText(TextType.Title, "Atelan", Font.create("georgia", FontStyle.Bold, 20)),
+						createMapText(TextType.Region, "Vinx", Font.create("GEORGIA", FontStyle.Plain, 30))));
+
+		// The same family named three ways is one entry, keeping the picker from listing a font once per spelling.
+		assertEquals(List.of("Georgia"), settings.getFontFamiliesUsed());
 	}
 
 	@Test

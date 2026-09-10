@@ -2653,30 +2653,20 @@ public class MapSettings implements Serializable
 	 */
 	public static class FontProblem
 	{
-		public enum Kind
-		{
-			/** The family is not on this machine at all, so something else will be drawn. */
-			NotInstalled,
-			/** The family is here but has no glyphs for some of the map's text, which will draw as boxes. */
-			MissingCharacters
-		}
-
 		public final String family;
-		public final Kind kind;
 		/** The category to look for a replacement in, so the substitute is in the same spirit as what the map asked for. */
 		public final FontCategory category;
 		/** Which parts of the map use the family, already localized. */
 		public final List<String> usedBy;
-		/** For {@link Kind#MissingCharacters}, a short sample of text the family cannot draw. Empty otherwise. */
-		public final String sampleOfUndrawableText;
+		/** The map's text this family was drawing, which a replacement has to be able to draw too. */
+		public final String textToDraw;
 
-		public FontProblem(String family, Kind kind, FontCategory category, List<String> usedBy, String sampleOfUndrawableText)
+		public FontProblem(String family, FontCategory category, List<String> usedBy, String textToDraw)
 		{
 			this.family = family;
-			this.kind = kind;
 			this.category = category;
 			this.usedBy = usedBy;
-			this.sampleOfUndrawableText = sampleOfUndrawableText;
+			this.textToDraw = textToDraw;
 		}
 	}
 
@@ -2717,18 +2707,21 @@ public class MapSettings implements Serializable
 	}
 
 	/**
-	 * Finds the font families this map names that this machine either does not have, or has but cannot draw the map's text with. Results
-	 * are grouped by family rather than by field, so a map whose theme fonts are all the same family produces one problem rather than one
-	 * per field.
+	 * Every font family this map names, gathered in one pass: what each is used for, the text it has to draw, and the category recorded
+	 * with it. Families are keyed by the name as written in the map, and one family named two ways is one entry.
 	 */
-	public MissingFontInfo findFontProblems()
+	private static class FontUsage
 	{
-		// Family name as written in this map, mapped to what it is used for and the text it has to draw.
-		Map<String, List<String>> usedByByFamily = new LinkedHashMap<>();
-		Map<String, StringBuilder> textByFamily = new LinkedHashMap<>();
-		Map<String, String> familyAsWrittenByLowerCase = new LinkedHashMap<>();
-		Map<String, Integer> overrideCountByFamily = new LinkedHashMap<>();
-		Map<String, FontCategory> storedCategoryByFamily = new LinkedHashMap<>();
+		final Map<String, String> familyAsWrittenByLowerCase = new LinkedHashMap<>();
+		final Map<String, List<String>> usedByByFamily = new LinkedHashMap<>();
+		final Map<String, StringBuilder> textByFamily = new LinkedHashMap<>();
+		final Map<String, Integer> overrideCountByFamily = new LinkedHashMap<>();
+		final Map<String, FontCategory> storedCategoryByFamily = new LinkedHashMap<>();
+	}
+
+	private FontUsage gatherFontUsage()
+	{
+		FontUsage usage = new FontUsage();
 
 		for (Entry<ThemeFontType, Font> entry : getThemeFonts().entrySet())
 		{
@@ -2736,9 +2729,9 @@ public class MapSettings implements Serializable
 			{
 				continue;
 			}
-			String family = recordFamily(entry.getValue().getName(), familyAsWrittenByLowerCase, usedByByFamily, textByFamily);
-			usedByByFamily.get(family).add(Translation.get("themeFontType." + entry.getKey().name()));
-			storedCategoryByFamily.putIfAbsent(family, getThemeFontCategory(entry.getKey()));
+			String family = recordFamily(entry.getValue().getName(), usage);
+			usage.usedByByFamily.get(family).add(Translation.get("themeFontType." + entry.getKey().name()));
+			usage.storedCategoryByFamily.putIfAbsent(family, getThemeFontCategory(entry.getKey()));
 		}
 
 		if (edits != null && edits.text != null)
@@ -2753,9 +2746,9 @@ public class MapSettings implements Serializable
 				String family;
 				if (text.fontOverride != null)
 				{
-					family = recordFamily(text.fontOverride.getName(), familyAsWrittenByLowerCase, usedByByFamily, textByFamily);
-					overrideCountByFamily.merge(family, 1, Integer::sum);
-					storedCategoryByFamily.putIfAbsent(family, text.fontOverrideCategory);
+					family = recordFamily(text.fontOverride.getName(), usage);
+					usage.overrideCountByFamily.merge(family, 1, Integer::sum);
+					usage.storedCategoryByFamily.putIfAbsent(family, text.fontOverrideCategory);
 				}
 				else
 				{
@@ -2764,11 +2757,41 @@ public class MapSettings implements Serializable
 					{
 						continue;
 					}
-					family = recordFamily(themeFont.getName(), familyAsWrittenByLowerCase, usedByByFamily, textByFamily);
+					family = recordFamily(themeFont.getName(), usage);
 				}
-				textByFamily.get(family).append(text.value);
+				usage.textByFamily.get(family).append(text.value);
 			}
 		}
+
+		return usage;
+	}
+
+	/**
+	 * Every font family this map names, in the order they are first met, as written in the map. That is the theme fonts plus the font of
+	 * every individual label that overrides its type's font, so a family appears whether it is used once or everywhere.
+	 */
+	public List<String> getFontFamiliesUsed()
+	{
+		return new ArrayList<>(gatherFontUsage().usedByByFamily.keySet());
+	}
+
+	/**
+	 * Finds the font families this map names that this machine does not have. Results are grouped by family rather than by field, so a map
+	 * whose theme fonts are all the same family produces one problem rather than one per field.
+	 *
+	 * <p>
+	 * A font that is installed but has no glyphs for some of the map's text is not reported. Nothing about this machine caused that, and
+	 * nothing about this machine can fix it: the map's author chose a font that cannot draw their own text, and they will see that the
+	 * moment the map draws. Interrupting everyone who opens the map to say so would be reporting the author's decision as this reader's
+	 * problem.
+	 */
+	public MissingFontInfo findFontProblems()
+	{
+		FontUsage usage = gatherFontUsage();
+		Map<String, List<String>> usedByByFamily = usage.usedByByFamily;
+		Map<String, StringBuilder> textByFamily = usage.textByFamily;
+		Map<String, Integer> overrideCountByFamily = usage.overrideCountByFamily;
+		Map<String, FontCategory> storedCategoryByFamily = usage.storedCategoryByFamily;
 
 		List<FontProblem> problems = new ArrayList<>();
 		for (String family : usedByByFamily.keySet())
@@ -2781,56 +2804,26 @@ public class MapSettings implements Serializable
 						overrideCount));
 			}
 
-			FontCategory category = FontFinder.getCategory(family, storedCategoryByFamily.get(family));
-			if (!FontFinder.isAvailable(FontFinder.resolveAlias(family)))
+			if (FontFinder.isAvailable(FontFinder.resolveAlias(family)))
 			{
-				problems.add(new FontProblem(family, FontProblem.Kind.NotInstalled, category, usedBy, ""));
 				continue;
 			}
 
-			String drawnText = textByFamily.get(family).toString();
-			String undrawable = findUndrawableSample(FontFinder.resolveAlias(family), drawnText);
-			if (undrawable != null)
-			{
-				problems.add(new FontProblem(family, FontProblem.Kind.MissingCharacters, category, usedBy, undrawable));
-			}
+			// The text this family was drawing is what a replacement has to be able to draw, so that swapping a missing font does not
+			// silently trade it for one with no glyphs for the map's labels.
+			FontCategory category = FontFinder.getCategory(family, storedCategoryByFamily.get(family));
+			problems.add(new FontProblem(family, category, usedBy, textByFamily.get(family).toString()));
 		}
 
 		return new MissingFontInfo(problems);
 	}
 
-	private static String recordFamily(String familyAsWritten, Map<String, String> familyAsWrittenByLowerCase, Map<String, List<String>> usedByByFamily,
-			Map<String, StringBuilder> textByFamily)
+	private static String recordFamily(String familyAsWritten, FontUsage usage)
 	{
-		String canonical = familyAsWrittenByLowerCase.computeIfAbsent(familyAsWritten.toLowerCase(), key -> familyAsWritten);
-		usedByByFamily.computeIfAbsent(canonical, key -> new ArrayList<>());
-		textByFamily.computeIfAbsent(canonical, key -> new StringBuilder());
+		String canonical = usage.familyAsWrittenByLowerCase.computeIfAbsent(familyAsWritten.toLowerCase(), key -> familyAsWritten);
+		usage.usedByByFamily.computeIfAbsent(canonical, key -> new ArrayList<>());
+		usage.textByFamily.computeIfAbsent(canonical, key -> new StringBuilder());
 		return canonical;
-	}
-
-	/**
-	 * The distinct characters of the given text that the given family has no glyphs for, or null when it can draw all of them.
-	 */
-	private static String findUndrawableSample(String family, String text)
-	{
-		if (StringUtils.isEmpty(text) || FontFinder.canDisplay(family, text))
-		{
-			return null;
-		}
-
-		final int maxSampleLength = 12;
-		StringBuilder sample = new StringBuilder();
-		Set<Integer> seen = new LinkedHashSet<>();
-		for (int i = 0; i < text.length() && sample.length() < maxSampleLength;)
-		{
-			int codePoint = text.codePointAt(i);
-			if (!FontFinder.canDisplay(family, new String(Character.toChars(codePoint))) && seen.add(codePoint))
-			{
-				sample.appendCodePoint(codePoint);
-			}
-			i += Character.charCount(codePoint);
-		}
-		return sample.toString();
 	}
 
 	/**

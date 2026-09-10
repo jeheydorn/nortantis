@@ -1134,6 +1134,8 @@ public class TextTool extends EditorTool
 				fontChooser.setCategory(selectedText.fontOverrideCategory);
 			}
 			fontChooser.setTextThatMustBeDrawable(selectedText.value);
+			MapSettings settingsForFonts = mainWindow.getSettingsFromGUI(false);
+			fontChooser.setFamiliesUsedByThisMap(settingsForFonts == null ? null : settingsForFonts.getFontFamiliesUsed());
 			// Round rather than truncate. These values were stored as sliderValue / divider, and dividing then multiplying can land just
 			// below the original integer, so truncating would drop the slider a step and the next save would persist that lower value.
 			curvatureSlider.setValue((int) Math.round(selectedText.curvature * curvatureSliderDivider));

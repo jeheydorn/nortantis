@@ -17,15 +17,16 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
 import nortantis.FontFinder;
 import nortantis.FontFinder.AvailableFont;
 import nortantis.FontFinder.FontCategory;
-import nortantis.FontFinder.FontSource;
 import nortantis.FontFinder.Script;
 import nortantis.swing.translation.Translation;
 
@@ -86,36 +87,31 @@ public class JFontChooser extends JComponent
 	private static final int familyRowHeight = 22;
 	private static final int minimumFamilyRowWidth = 120;
 
-	/**
-	 * The row shown above a family that the selected font source excludes but that the map uses. It is a heading rather than a font, so it
-	 * cannot be selected.
-	 */
-	private static final Object currentFontSeparatorRow = new Object()
-	{
-		@Override
-		public String toString()
-		{
-			return Translation.get("fontChooser.source.currentFont");
-		}
-	};
-
 	// instance variables
 	protected int dialogResultValue = ERROR_OPTION;
 
 	private String[] fontStyleNames = null;
 	private String[] fontSizeStrings = null;
 
-	/** Which fonts the family list shows. Derived from the font the dialog opens on, never stored with the map. */
-	private FontSource selectedSource = FontSource.Bundled;
-	/** The family the dialog opened on, which is always listed whatever the selected source excludes. */
+	/**
+	 * The chosen family. Selection is held here rather than read back from the list because one family can occupy several rows - a font the
+	 * map uses is listed both under what it is used by and under where it came from - and because a search can hide the row it is on
+	 * without changing what is chosen.
+	 */
+	private String selectedFamily;
+	/** The family the dialog opened on. */
 	private String familyFromSettings;
+	/** Families this map draws with, listed first so that matching one field to another does not mean hunting for it. */
+	private List<String> familiesUsedByThisMap = new ArrayList<>();
+	/** What has been typed to narrow the list, or empty to show every family. */
+	private String searchText = "";
 	/** The distinct characters the chosen font has to be able to draw, used to mark families that cannot draw them. */
 	private String charactersThatMustBeDrawable = "";
 	private final Map<String, Script> missingScriptByFamily = new HashMap<>();
-	private JRadioButton bundledSourceButton;
-	private JRadioButton artPackSourceButton;
-	private JRadioButton systemSourceButton;
-	private JComponent sourcePanel;
+	/** True while the family list's contents are being replaced, when the selection changes for reasons the user did not cause. */
+	private boolean isRebuildingFamilyList;
+	/** Which way the selection was last moving, so that arrowing onto a heading carries on in the same direction. */
+	private int previousSelectedIndex = -1;
 	private JPanel noCoverageNoticePanel;
 	/** The category the map recorded for the family it opened on, kept so that reopening the picker doesn't discard it. */
 	private FontCategory categoryFromSettings;
@@ -164,13 +160,8 @@ public class JFontChooser extends JComponent
 		contentsPanel.add(selectPanel, BorderLayout.NORTH);
 		contentsPanel.add(getSamplePanel(), BorderLayout.CENTER);
 
-		JPanel headerPanel = new JPanel();
-		headerPanel.setLayout(new BoxLayout(headerPanel, BoxLayout.Y_AXIS));
-		headerPanel.add(getSourcePanel());
-		headerPanel.add(getNoCoverageNoticePanel());
-
 		JPanel outerPanel = new JPanel(new BorderLayout());
-		outerPanel.add(headerPanel, BorderLayout.NORTH);
+		outerPanel.add(getNoCoverageNoticePanel(), BorderLayout.NORTH);
 		outerPanel.add(contentsPanel, BorderLayout.CENTER);
 
 		this.setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
@@ -184,11 +175,10 @@ public class JFontChooser extends JComponent
 		if (fontFamilyTextField == null)
 		{
 			fontFamilyTextField = new JTextField();
-			fontFamilyTextField.addFocusListener(new TextFieldFocusHandlerForTextSelection(fontFamilyTextField));
 			fontFamilyTextField.addKeyListener(new TextFieldKeyHandlerForListSelectionUpDown(getFontFamilyList()));
-			fontFamilyTextField.getDocument().addDocumentListener(new ListSearchTextFieldDocumentHandler(getFontFamilyList()));
+			fontFamilyTextField.getDocument().addDocumentListener(new FamilySearchHandler());
 			fontFamilyTextField.setFont(DEFAULT_FONT);
-
+			fontFamilyTextField.setToolTipText(Translation.get("fontChooser.search"));
 		}
 		return fontFamilyTextField;
 	}
@@ -228,8 +218,7 @@ public class JFontChooser extends JComponent
 			fontNameList.setCellRenderer(new FontFamilyRenderer());
 			fontNameList.setFixedCellHeight(familyRowHeight);
 			fontNameList.setFixedCellWidth(minimumFamilyRowWidth);
-			fontNameList.addListSelectionListener(new ListSelectionHandler(getFontFamilyTextField()));
-			fontNameList.setSelectedIndex(0);
+			fontNameList.addListSelectionListener(new FamilySelectionHandler());
 			fontNameList.setFont(DEFAULT_FONT);
 			fontNameList.setFocusable(false);
 		}
@@ -273,8 +262,7 @@ public class JFontChooser extends JComponent
 	 **/
 	public String getSelectedFontFamily()
 	{
-		Object selected = getFontFamilyList().getSelectedValue();
-		return selected instanceof String ? (String) selected : familyFromSettings;
+		return selectedFamily != null ? selectedFamily : familyFromSettings;
 	}
 
 	/**
@@ -344,17 +332,22 @@ public class JFontChooser extends JComponent
 	 **/
 	public void setSelectedFontFamily(String name)
 	{
-		// The source selector reflects where the font in the field came from. Deriving it rather than storing it is what makes an existing
-		// map keep its own fonts with nothing to migrate and no flag that can disagree with what the map says.
 		familyFromSettings = name;
-		selectedSource = FontFinder.getSource(name);
-		if (selectedSource == FontSource.ArtPack && !hasFontsFromSource(FontSource.ArtPack))
-		{
-			selectedSource = FontSource.System;
-		}
-
-		rebuildFontFamilyList(name);
+		selectedFamily = name;
+		rebuildFontFamilyList();
+		scrollSelectedFamilyIntoView();
 		updateSampleFont();
+	}
+
+	/**
+	 * The families this map draws with, which the list shows first. A family the map uses but this machine does not have belongs here too:
+	 * it is the only group it can appear under, and leaving it out would make the picker look like it had dropped the map's font.
+	 */
+	public void setFamiliesUsedByThisMap(List<String> families)
+	{
+		familiesUsedByThisMap = families == null ? new ArrayList<>() : new ArrayList<>(families);
+		rebuildFontFamilyList();
+		scrollSelectedFamilyIntoView();
 	}
 
 	/**
@@ -452,6 +445,9 @@ public class JFontChooser extends JComponent
 		return dialogResultValue;
 	}
 
+	/**
+	 * Copies the style or size the user picked into the text field above its list.
+	 */
 	protected class ListSelectionHandler implements ListSelectionListener
 	{
 		private JTextComponent textComponent;
@@ -463,26 +459,54 @@ public class JFontChooser extends JComponent
 
 		public void valueChanged(ListSelectionEvent e)
 		{
-			if (e.getValueIsAdjusting() == false)
+			if (e.getValueIsAdjusting())
 			{
-				JList<?> list = (JList<?>) e.getSource();
-				Object selected = list.getSelectedValue();
-				if (selected == currentFontSeparatorRow)
-				{
-					// It is a heading, not a font, so step past it in whichever direction the selection was moving.
-					int index = list.getSelectedIndex();
-					list.setSelectedIndex(index + 1 < list.getModel().getSize() ? index + 1 : index - 1);
-					return;
-				}
-				String selectedValue = (String) selected;
-				String oldValue = textComponent.getText();
-				textComponent.setText(selectedValue);
-				if (!oldValue.equalsIgnoreCase(selectedValue))
-				{
-					textComponent.selectAll();
-					textComponent.requestFocus();
-				}
+				return;
+			}
 
+			Object selected = ((JList<?>) e.getSource()).getSelectedValue();
+			if (selected == null)
+			{
+				return;
+			}
+
+			textComponent.setText((String) selected);
+			updateSampleFont();
+		}
+	}
+
+	/**
+	 * Keeps {@link #selectedFamily} in step with the row the user picked, and steps over headings, which name a group rather than a font.
+	 */
+	private class FamilySelectionHandler implements ListSelectionListener
+	{
+		public void valueChanged(ListSelectionEvent e)
+		{
+			if (e.getValueIsAdjusting() || isRebuildingFamilyList)
+			{
+				return;
+			}
+
+			JList<?> list = (JList<?>) e.getSource();
+			Object selected = list.getSelectedValue();
+			if (selected instanceof FontFamilySections.SectionHeading)
+			{
+				// Step past it in whichever direction the selection was moving, so arrowing through the list never lands on a heading.
+				int index = list.getSelectedIndex();
+				int next = index + (index >= previousSelectedIndex ? 1 : -1);
+				if (next >= 0 && next < list.getModel().getSize())
+				{
+					list.setSelectedIndex(next);
+				}
+				return;
+			}
+
+			previousSelectedIndex = list.getSelectedIndex();
+			if (selected instanceof String)
+			{
+				selectedFamily = (String) selected;
+				// Every row for this family is drawn as selected, so repaint rather than relying on the two rows the list knows changed.
+				list.repaint();
 				updateSampleFont();
 			}
 		}
@@ -509,43 +533,10 @@ public class JFontChooser extends JComponent
 		}
 	}
 
-	protected class TextFieldKeyHandlerForListSelectionUpDown extends KeyAdapter
-	{
-		private JList<?> targetList;
-
-		public TextFieldKeyHandlerForListSelectionUpDown(JList<?> list)
-		{
-			this.targetList = list;
-		}
-
-		public void keyPressed(KeyEvent e)
-		{
-			int i = targetList.getSelectedIndex();
-			switch (e.getKeyCode())
-			{
-				case KeyEvent.VK_UP:
-					i = targetList.getSelectedIndex() - 1;
-					if (i < 0)
-					{
-						i = 0;
-					}
-					targetList.setSelectedIndex(i);
-					break;
-				case KeyEvent.VK_DOWN:
-					int listSize = targetList.getModel().getSize();
-					i = targetList.getSelectedIndex() + 1;
-					if (i >= listSize)
-					{
-						i = listSize - 1;
-					}
-					targetList.setSelectedIndex(i);
-					break;
-				default:
-					break;
-			}
-		}
-	}
-
+	/**
+	 * Keeps the style and size lists in step with what is typed above them. The family list has its own handler, because it narrows the
+	 * list rather than jumping within it.
+	 */
 	protected class ListSearchTextFieldDocumentHandler implements DocumentListener
 	{
 		JList<?> targetList;
@@ -585,37 +576,89 @@ public class JFontChooser extends JComponent
 
 			if (newValue.length() > 0)
 			{
-				int index = targetList.getNextMatch(newValue, 0, Position.Bias.Forward);
-				if (index < 0)
-				{
-					index = 0;
-				}
+				int match = targetList.getNextMatch(newValue, 0, Position.Bias.Forward);
+				final int index = match < 0 ? 0 : match;
 				targetList.ensureIndexIsVisible(index);
 
 				String matchedName = targetList.getModel().getElementAt(index).toString();
-				if (newValue.equalsIgnoreCase(matchedName))
+				if (newValue.equalsIgnoreCase(matchedName) && index != targetList.getSelectedIndex())
 				{
-					if (index != targetList.getSelectedIndex())
-					{
-						SwingUtilities.invokeLater(new ListSelector(index));
-					}
+					SwingUtilities.invokeLater(() -> targetList.setSelectedIndex(index));
 				}
 			}
 		}
+	}
 
-		public class ListSelector implements Runnable
+	protected class TextFieldKeyHandlerForListSelectionUpDown extends KeyAdapter
+	{
+		private JList<?> targetList;
+
+		public TextFieldKeyHandlerForListSelectionUpDown(JList<?> list)
 		{
-			private int index;
+			this.targetList = list;
+		}
 
-			public ListSelector(int index)
+		public void keyPressed(KeyEvent e)
+		{
+			int listSize = targetList.getModel().getSize();
+			if (listSize == 0)
 			{
-				this.index = index;
+				return;
 			}
 
-			public void run()
+			switch (e.getKeyCode())
 			{
-				targetList.setSelectedIndex(this.index);
+				case KeyEvent.VK_UP:
+					targetList.setSelectedIndex(Math.max(0, targetList.getSelectedIndex() - 1));
+					break;
+				case KeyEvent.VK_DOWN:
+					targetList.setSelectedIndex(Math.min(listSize - 1, targetList.getSelectedIndex() + 1));
+					break;
+				default:
+					break;
 			}
+			targetList.ensureIndexIsVisible(targetList.getSelectedIndex());
+		}
+	}
+
+	/**
+	 * Narrows the family list to the families whose names contain what has been typed.
+	 *
+	 * <p>
+	 * Narrowing rather than jumping to the first match is what makes a long list usable: every match is visible at once, and a search that
+	 * matches nothing says so. It hides families, but only the ones the user just asked to hide, and clearing the box brings them back.
+	 */
+	private class FamilySearchHandler implements DocumentListener
+	{
+		public void insertUpdate(DocumentEvent e)
+		{
+			update(e);
+		}
+
+		public void removeUpdate(DocumentEvent e)
+		{
+			update(e);
+		}
+
+		public void changedUpdate(DocumentEvent e)
+		{
+			update(e);
+		}
+
+		private void update(DocumentEvent event)
+		{
+			try
+			{
+				Document document = event.getDocument();
+				searchText = document.getText(0, document.getLength()).trim();
+			}
+			catch (BadLocationException e)
+			{
+				searchText = "";
+			}
+
+			rebuildFontFamilyList();
+			scrollSelectedFamilyIntoView();
 		}
 	}
 
@@ -692,6 +735,9 @@ public class JFontChooser extends JComponent
 		dialog.getContentPane().add(this, BorderLayout.CENTER);
 		dialog.getContentPane().add(dialogEastPanel, BorderLayout.EAST);
 		dialog.pack();
+		// Scrolling only lands where it should once the list has a height, which it gets from packing, so this waits until after it rather
+		// than happening when the font was set.
+		scrollSelectedFamilyIntoView();
 		dialog.setLocationRelativeTo(frame);
 		return dialog;
 	}
@@ -854,54 +900,7 @@ public class JFontChooser extends JComponent
 
 		charactersThatMustBeDrawable = builder.toString();
 		missingScriptByFamily.clear();
-		rebuildFontFamilyList(getSelectedFontFamily());
-	}
-
-	private JComponent getSourcePanel()
-	{
-		if (sourcePanel == null)
-		{
-			bundledSourceButton = createSourceButton(Translation.get("fontChooser.source.bundled"), FontSource.Bundled);
-			artPackSourceButton = createSourceButton(Translation.get("fontChooser.source.artPack"), FontSource.ArtPack);
-			systemSourceButton = createSourceButton(Translation.get("fontChooser.source.system"), FontSource.System);
-
-			List<JRadioButton> buttons = new ArrayList<>();
-			buttons.add(bundledSourceButton);
-			// Showing a source that leads to an empty list is worse than not offering it.
-			if (hasFontsFromSource(FontSource.ArtPack))
-			{
-				buttons.add(artPackSourceButton);
-			}
-			buttons.add(systemSourceButton);
-
-			ButtonGroup group = new ButtonGroup();
-			JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 2));
-			panel.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 0));
-			panel.add(new JLabel(Translation.get("fontChooser.source.label")));
-			for (JRadioButton button : buttons)
-			{
-				group.add(button);
-				panel.add(Box.createHorizontalStrut(8));
-				panel.add(button);
-			}
-
-			sourcePanel = panel;
-			sourcePanel.setAlignmentX(LEFT_ALIGNMENT);
-		}
-		return sourcePanel;
-	}
-
-	private JRadioButton createSourceButton(String text, FontSource source)
-	{
-		JRadioButton button = new JRadioButton(text);
-		button.addActionListener(e ->
-		{
-			selectedSource = source;
-			// A source the user picked keeps whatever family is selected if that source also has it, and otherwise falls back to the
-			// family the picker opened on, so that switching sources to look around never silently changes the map's font.
-			rebuildFontFamilyList(getSelectedFontFamily());
-		});
-		return button;
+		rebuildFontFamilyList();
 	}
 
 	private JPanel getNoCoverageNoticePanel()
@@ -914,13 +913,6 @@ public class JFontChooser extends JComponent
 			JLabel notice = new JLabel(Translation.get("fontChooser.noFontsCoverMapText"));
 			notice.setForeground(SwingHelper.warningMessageColor);
 			noCoverageNoticePanel.add(notice);
-			noCoverageNoticePanel.add(Box.createHorizontalStrut(8));
-			noCoverageNoticePanel.add(SwingHelper.createActionLink(Translation.get("fontChooser.switchToSystemFonts"), () ->
-			{
-				selectedSource = FontSource.System;
-				systemSourceButton.setSelected(true);
-				rebuildFontFamilyList(getSelectedFontFamily());
-			}));
 			noCoverageNoticePanel.setVisible(false);
 		}
 		return noCoverageNoticePanel;
@@ -943,60 +935,40 @@ public class JFontChooser extends JComponent
 		categoryFromSettings = category;
 	}
 
-	private static boolean hasFontsFromSource(FontSource source)
+	private Object[] buildFontFamilyRows()
 	{
-		for (AvailableFont font : FontFinder.listAvailableFonts())
-		{
-			if (font.source == source)
-			{
-				return true;
-			}
-		}
-		return false;
+		return FontFamilySections.buildRows(getFamiliesUsedByThisMapIncludingCurrent(), searchText).toArray();
 	}
 
 	/**
-	 * The rows of the family list: every family from the selected source, plus the family the dialog opened on when that source excludes
-	 * it. Without the latter the picker looks like it silently cleared the map's font.
+	 * The families the map uses, plus the one the picker opened on. They are normally the same set, but a picker opened on a font nothing
+	 * has drawn with yet would otherwise leave that font out of the only group it belongs to.
 	 */
-	private Object[] buildFontFamilyRows()
+	private List<String> getFamiliesUsedByThisMapIncludingCurrent()
 	{
-		List<Object> rows = new ArrayList<>();
-		boolean containsFamilyFromSettings = false;
-		for (AvailableFont font : FontFinder.listAvailableFonts())
+		List<String> families = new ArrayList<>(familiesUsedByThisMap);
+		if (familyFromSettings != null && families.stream().noneMatch(family -> family.equalsIgnoreCase(familyFromSettings)))
 		{
-			if (font.source == selectedSource)
-			{
-				rows.add(font.family);
-				if (font.family.equalsIgnoreCase(familyFromSettings))
-				{
-					containsFamilyFromSettings = true;
-				}
-			}
+			families.add(0, familyFromSettings);
 		}
-
-		if (familyFromSettings != null && !containsFamilyFromSettings)
-		{
-			rows.add(currentFontSeparatorRow);
-			rows.add(familyFromSettings);
-		}
-		return rows.toArray();
+		return families;
 	}
 
 	@SuppressWarnings("unchecked")
-	private void rebuildFontFamilyList(String familyToSelect)
+	private void rebuildFontFamilyList()
 	{
-		((JList<Object>) getFontFamilyList()).setListData(buildFontFamilyRows());
-		if (!selectFamilyInList(familyToSelect))
+		isRebuildingFamilyList = true;
+		try
 		{
-			selectFamilyInList(familyFromSettings);
+			((JList<Object>) getFontFamilyList()).setListData(buildFontFamilyRows());
+			selectFamilyInList(getSelectedFontFamily());
+		}
+		finally
+		{
+			isRebuildingFamilyList = false;
 		}
 
-		getSourcePanel();
-		bundledSourceButton.setSelected(selectedSource == FontSource.Bundled);
-		artPackSourceButton.setSelected(selectedSource == FontSource.ArtPack);
-		systemSourceButton.setSelected(selectedSource == FontSource.System);
-		getNoCoverageNoticePanel().setVisible(selectedSource != FontSource.System && !anyListedFamilyCanDrawTheText());
+		getNoCoverageNoticePanel().setVisible(!anyListedFamilyCanDrawTheText());
 	}
 
 	private boolean anyListedFamilyCanDrawTheText()
@@ -1009,7 +981,7 @@ public class JFontChooser extends JComponent
 		for (int i = 0; i < model.getSize(); i++)
 		{
 			Object row = model.getElementAt(i);
-			if (row != currentFontSeparatorRow && getMissingScript((String) row) == null
+			if (row instanceof String && getMissingScript((String) row) == null
 					&& FontFinder.canDisplay((String) row, charactersThatMustBeDrawable))
 			{
 				return true;
@@ -1019,31 +991,51 @@ public class JFontChooser extends JComponent
 	}
 
 	/**
-	 * Selects the given family in the list and scrolls it into view.
-	 *
-	 * @return True if the list contained the family.
+	 * Puts the list's own selection on the first row for the given family, or clears it when a search has hidden every row for it. What is
+	 * chosen is {@link #selectedFamily} either way; this only keeps the list's idea of the selection from contradicting it.
 	 */
-	private boolean selectFamilyInList(String family)
+	private void selectFamilyInList(String family)
+	{
+		int index = findFirstRowForFamily(family);
+		if (index < 0)
+		{
+			getFontFamilyList().clearSelection();
+			return;
+		}
+		getFontFamilyList().setSelectedIndex(index);
+		previousSelectedIndex = index;
+	}
+
+	private void scrollSelectedFamilyIntoView()
+	{
+		int index = findFirstRowForFamily(getSelectedFontFamily());
+		if (index < 0)
+		{
+			return;
+		}
+
+		// Scrolling to the top first is what shows the heading above the selected family. Ensuring a row is visible only ever scrolls far
+		// enough to reveal it, so on its own it leaves the viewport wherever an earlier scroll put it, hiding whatever sits above.
+		getFontFamilyList().ensureIndexIsVisible(0);
+		getFontFamilyList().ensureIndexIsVisible(index);
+	}
+
+	private int findFirstRowForFamily(String family)
 	{
 		if (family == null)
 		{
-			return false;
+			return -1;
 		}
 		ListModel<?> model = getFontFamilyList().getModel();
 		for (int i = 0; i < model.getSize(); i++)
 		{
 			Object row = model.getElementAt(i);
-			if (row != currentFontSeparatorRow && ((String) row).equalsIgnoreCase(family))
+			if (row instanceof String && ((String) row).equalsIgnoreCase(family))
 			{
-				getFontFamilyList().setSelectedIndex(i);
-				getFontFamilyList().ensureIndexIsVisible(i);
-				// Selecting a row that was already selected fires no event, so the text field is set here rather than left to the
-				// selection listener, which is what otherwise leaves the field showing a family the list no longer has selected.
-				getFontFamilyTextField().setText((String) row);
-				return true;
+				return i;
 			}
 		}
-		return false;
+		return -1;
 	}
 
 	/**
@@ -1081,26 +1073,27 @@ public class JFontChooser extends JComponent
 		@Override
 		public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus)
 		{
-			setBackground(isSelected ? list.getSelectionBackground() : list.getBackground());
-			Color foreground = isSelected ? list.getSelectionForeground() : list.getForeground();
-			familyLabel.setForeground(foreground);
-			artPackLabel.setForeground(foreground);
 			setBorder(BorderFactory.createEmptyBorder());
 
-			if (value == currentFontSeparatorRow)
+			if (value instanceof FontFamilySections.SectionHeading)
 			{
 				setBackground(list.getBackground());
-				familyLabel.setFont(DEFAULT_FONT);
-				familyLabel.setText(value.toString());
-				familyLabel.setEnabled(false);
+				FontFamilySections.applyHeadingStyle(familyLabel, (FontFamilySections.SectionHeading) value, list, DEFAULT_FONT);
 				artPackLabel.setText("");
 				setToolTipText(null);
-				setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, list.getForeground()),
-						BorderFactory.createEmptyBorder(2, 0, 0, 0)));
+				setBorder(FontFamilySections.createHeadingBorder(list, index == 0));
 				return this;
 			}
 
 			String family = (String) value;
+			// A family can occupy more than one row, so what counts as selected is the family rather than the row the list happens to have
+			// its own selection on. Without this, the same font would look chosen in one place and not in another.
+			boolean isFamilySelected = family.equalsIgnoreCase(getSelectedFontFamily());
+			setBackground(isFamilySelected ? list.getSelectionBackground() : list.getBackground());
+			Color foreground = isFamilySelected ? list.getSelectionForeground() : list.getForeground();
+			familyLabel.setForeground(foreground);
+			artPackLabel.setForeground(foreground);
+
 			// Showing each family in its own font is worth more to someone browsing unfamiliar fonts than any amount of categorising.
 			familyLabel.setFont(new Font(family, Font.PLAIN, familyPreviewFontSize));
 			familyLabel.setText(family);

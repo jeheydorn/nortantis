@@ -7,7 +7,9 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public class FontChooser
 {
@@ -27,6 +29,7 @@ public class FontChooser
 	private final JLabel fixLink;
 	private Runnable fixAction;
 	private String textThatMustBeDrawable = "";
+	private List<String> familiesUsedByThisMap = new ArrayList<>();
 	private FontCategory category;
 	final JButton chooseButton;
 	private Font font;
@@ -125,6 +128,7 @@ public class FontChooser
 	{
 		JFontChooser fontChooser = new JFontChooser();
 		fontChooser.setTextThatMustBeDrawable(textThatMustBeDrawable);
+		fontChooser.setFamiliesUsedByThisMap(familiesUsedByThisMap);
 		fontChooser.setSelectedFont(font);
 		fontChooser.setSelectedCategory(category);
 		int status = fontChooser.showDialog(parent);
@@ -143,6 +147,15 @@ public class FontChooser
 	public void setTextThatMustBeDrawable(String text)
 	{
 		textThatMustBeDrawable = text == null ? "" : text;
+	}
+
+	/**
+	 * The families the map already draws with, which the picker lists first so that matching one piece of text to another does not mean
+	 * hunting through every font on the machine for the one already in use.
+	 */
+	public void setFamiliesUsedByThisMap(List<String> families)
+	{
+		familiesUsedByThisMap = families == null ? new ArrayList<>() : families;
 	}
 
 	public Font getFont()

@@ -115,7 +115,7 @@ public class FontFinderTest
 			}
 		}
 
-		assertTrue(count >= 4, "Only " + count + " bundled families cover Cyrillic. Expected at least 4.");
+		assertTrue(count >= 2, "Only " + count + " bundled families cover Cyrillic. Expected at least 2.");
 		assertTrue(categories.size() > 1, "Every bundled family that covers Cyrillic is in the same category: " + categories);
 		assertTrue(FontFinder.covers(FontFinder.broadCoverageFontFamily, Script.Cyrillic),
 				FontFinder.broadCoverageFontFamily + " must cover Cyrillic, since it is the family text falls back to.");

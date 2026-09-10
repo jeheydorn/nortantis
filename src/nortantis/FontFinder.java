@@ -166,7 +166,7 @@ public class FontFinder
 	 * The family that always ships and covers Latin, Cyrillic and Greek, so it is the family to reach for when text needs a home and
 	 * nothing more specific fits.
 	 */
-	public static final String broadCoverageFontFamily = "Gentium Book Plus";
+	public static final String broadCoverageFontFamily = "EB Garamond";
 
 	/**
 	 * The bundled families to reach for first when a map's font will not do, in preference order per category. Kept as a constant rather
@@ -174,7 +174,7 @@ public class FontFinder
 	 * falls through to the machine's own fonts.
 	 */
 	static final Map<FontCategory, List<String>> preferredFamiliesByCategory = Map.of(FontCategory.Serif,
-			List.of("EB Garamond", broadCoverageFontFamily, "Sorts Mill Goudy"), FontCategory.Sans, List.of(), FontCategory.Script,
+			List.of(broadCoverageFontFamily, "Sorts Mill Goudy"), FontCategory.Sans, List.of(), FontCategory.Script,
 			List.of(houseFontFamily, "Tangerine", "Pinyon Script"), FontCategory.Display,
 			List.of("Cinzel", "MedievalSharp", "Uncial Antiqua"));
 
