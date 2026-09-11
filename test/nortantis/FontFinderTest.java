@@ -246,9 +246,14 @@ public class FontFinderTest
 	}
 
 	@Test
-	public void findMissingScriptNamesWhatAFontCannotDraw()
+	public void canDisplayAnswersForTheStyleAsked()
 	{
-		assertNull(FontFinder.findMissingScript(FontFinder.houseFontFamily, "Ordinary Latin text"));
+		assertTrue(FontFinder.canDisplay(FontFinder.houseFontFamily, FontStyle.Plain, "Ordinary Latin text"));
+
+		// The faces of a family need not have the same glyphs. Almendra's regular face draws this name and its bold face does not, so a
+		// check that ignored the style would call the bold face able to draw it and let it render with a letter missing.
+		assertTrue(FontFinder.canDisplay("Almendra", FontStyle.Plain, "Łódź"));
+		assertFalse(FontFinder.canDisplay("Almendra", FontStyle.Bold, "Łódź"));
 	}
 
 	@Test
