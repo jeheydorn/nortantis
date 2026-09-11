@@ -529,26 +529,6 @@ public class FontFinder
 	}
 
 	/**
-	 * The script of the first character in the given text that the given family cannot draw in the given style, or null when it can draw all
-	 * of the text or when the character it cannot draw belongs to no script in particular.
-	 */
-	public static Script findMissingScript(String family, FontStyle style, String text)
-	{
-		ensureInitialized();
-		if (text == null || text.isEmpty())
-		{
-			return null;
-		}
-
-		int index = createProbeFont(family, style).canDisplayUpTo(text);
-		if (index == -1)
-		{
-			return null;
-		}
-		return Script.of(text.codePointAt(index));
-	}
-
-	/**
 	 * The bundled family a new map's fonts should default to for the given language: the house font when it can draw that language's
 	 * script, and otherwise the highest-priority bundled family that can.
 	 *

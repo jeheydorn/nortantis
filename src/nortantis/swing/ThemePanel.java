@@ -2090,6 +2090,9 @@ public class ThemePanel extends JTabbedPane
 		FontChooser fontChooser = new FontChooser(Translation.get(labelKey), minPreviewHeight, maxFontSize, () -> handleFontsChange());
 		fontChooser.setFamiliesUsedByThisMap(this::getFontFamiliesUsedByThisMap);
 		fontChooser.setTextThatMustBeDrawable(() -> getTextDrawnByEachThemeFont().getOrDefault(type, ""));
+		// The same name the type is given everywhere else, lowered to sit inside a sentence.
+		fontChooser.setNameOfTextThatMustBeDrawable(
+				Translation.get("themeFontType." + type.name()).toLowerCase(Translation.getEffectiveLocale()));
 		fontChooser.addToOrganizer(organizer);
 		fontChoosersByType.put(type, fontChooser);
 	}

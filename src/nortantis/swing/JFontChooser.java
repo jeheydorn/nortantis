@@ -27,7 +27,6 @@ import java.util.Set;
 
 import nortantis.FontFinder;
 import nortantis.FontFinder.AvailableFont;
-import nortantis.FontFinder.Script;
 import nortantis.platform.FontStyle;
 import nortantis.swing.translation.Translation;
 
@@ -116,8 +115,11 @@ public class JFontChooser extends JComponent
 	private String searchText = "";
 	/** The distinct characters the chosen font has to be able to draw, used to mark families that cannot draw them. */
 	private String charactersThatMustBeDrawable = "";
-	private final Map<String, Script> missingScriptByFamily = new HashMap<>();
-	/** The style {@link #missingScriptByFamily} was measured in, so that the rows can be re-marked when another style is chosen. */
+	/** What that text is called, or null where it is one piece of text rather than a kind of it. */
+	private String nameOfTextThatMustBeDrawable;
+	/** Whether each family has glyphs for all of that text, so that the rows are not measured again on every repaint. */
+	private final Map<String, Boolean> canDrawTheTextByFamily = new HashMap<>();
+	/** The style {@link #canDrawTheTextByFamily} was measured in, so that the rows can be re-marked when another style is chosen. */
 	private FontStyle styleCoverageIsMeasuredIn = FontStyle.Plain;
 	/** The border each family row is drawn with. It follows from the family's font, so one per family is enough. */
 	private final Map<String, Border> rowBordersByFamily = new HashMap<>();
@@ -957,11 +959,15 @@ public class JFontChooser extends JComponent
 	}
 
 	/**
-	 * The text the chosen font has to be able to draw. Families that cannot draw it are shown greyed out, with the script they are missing
-	 * named in the row.
+	 * The text the chosen font has to be able to draw. Families that cannot draw it are shown greyed out, with a tooltip saying so.
+	 *
+	 * @param name
+	 *            What to call that text in the tooltip, in the lower case a sentence wants - "cities", "region". Null where the font draws
+	 *            one piece of text rather than a kind of it, which the tooltip says instead of naming it.
 	 */
-	public void setTextThatMustBeDrawable(String text)
+	public void setTextThatMustBeDrawable(String text, String name)
 	{
+		nameOfTextThatMustBeDrawable = name;
 		// Only the distinct characters matter, and reducing to them keeps the coverage check cheap when a map has a lot of labels.
 		Set<Integer> distinct = new LinkedHashSet<>();
 		StringBuilder builder = new StringBuilder();
@@ -977,7 +983,7 @@ public class JFontChooser extends JComponent
 		}
 
 		charactersThatMustBeDrawable = builder.toString();
-		missingScriptByFamily.clear();
+		canDrawTheTextByFamily.clear();
 		rebuildFontFamilyList();
 	}
 
@@ -1077,17 +1083,17 @@ public class JFontChooser extends JComponent
 	}
 
 	/**
-	 * The script the given family has no glyphs for among the characters it has to draw, in the style the dialog has chosen, or null when it
-	 * can draw all of them. Memoized because the list renderer asks on every repaint.
+	 * Whether the given family, in the style the dialog has chosen, can draw every character it has to. Memoized because the list renderer
+	 * asks on every repaint.
 	 */
-	private Script getMissingScript(String family)
+	private boolean canDrawTheText(String family)
 	{
 		if (charactersThatMustBeDrawable.isEmpty())
 		{
-			return null;
+			return true;
 		}
-		return missingScriptByFamily.computeIfAbsent(family,
-				key -> FontFinder.findMissingScript(key, styleCoverageIsMeasuredIn, charactersThatMustBeDrawable));
+		return canDrawTheTextByFamily.computeIfAbsent(family,
+				key -> FontFinder.canDisplay(key, styleCoverageIsMeasuredIn, charactersThatMustBeDrawable));
 	}
 
 	/**
@@ -1103,7 +1109,7 @@ public class JFontChooser extends JComponent
 		}
 
 		styleCoverageIsMeasuredIn = style;
-		missingScriptByFamily.clear();
+		canDrawTheTextByFamily.clear();
 		getFontFamilyList().repaint();
 	}
 
@@ -1148,13 +1154,14 @@ public class JFontChooser extends JComponent
 			familyLabel.setFont(new Font(family, Font.PLAIN, familyPreviewFontSize));
 			familyLabel.setText(family);
 
-			Script missingScript = getMissingScript(family);
-			familyLabel.setEnabled(missingScript == null);
-			if (missingScript != null)
+			boolean canDrawTheText = canDrawTheText(family);
+			familyLabel.setEnabled(canDrawTheText);
+			if (!canDrawTheText)
 			{
 				// The reason a row is greyed is in its tooltip rather than in the row, where it would read as part of the family's name.
-				setToolTipText(
-						Translation.get("fontChooser.cannotDisplayMapText", family, Translation.get("script." + missingScript.name())));
+				setToolTipText(nameOfTextThatMustBeDrawable == null
+						? Translation.get("fontChooser.cannotDisplayTextBeingEdited", family)
+						: Translation.get("fontChooser.cannotDisplayMapText", family, nameOfTextThatMustBeDrawable));
 			}
 			else
 			{

@@ -34,6 +34,7 @@ public class FontChooser
 	private final JLabel fontDisplay = new JLabel("");
 	private final JPanel displayHolder = new JPanel();
 	private Supplier<String> textThatMustBeDrawable = () -> "";
+	private String nameOfTextThatMustBeDrawable;
 	private Supplier<List<String>> familiesUsedByThisMap = ArrayList::new;
 	final JButton chooseButton;
 	private Font font;
@@ -96,7 +97,7 @@ public class FontChooser
 	{
 		JFontChooser fontChooser = new JFontChooser();
 		String text = textThatMustBeDrawable.get();
-		fontChooser.setTextThatMustBeDrawable(text == null ? "" : text);
+		fontChooser.setTextThatMustBeDrawable(text == null ? "" : text, nameOfTextThatMustBeDrawable);
 		List<String> families = familiesUsedByThisMap.get();
 		fontChooser.setFamiliesUsedByThisMap(families == null ? new ArrayList<>() : families);
 		fontChooser.setSelectedFont(font);
@@ -116,6 +117,15 @@ public class FontChooser
 	public void setTextThatMustBeDrawable(Supplier<String> text)
 	{
 		textThatMustBeDrawable = text == null ? () -> "" : text;
+	}
+
+	/**
+	 * What to call the text this font draws, in the lower case a sentence wants - "cities", "region" - so that a family that cannot draw it
+	 * can say which text it cannot draw. Null where the font draws one piece of text rather than a kind of it.
+	 */
+	public void setNameOfTextThatMustBeDrawable(String name)
+	{
+		nameOfTextThatMustBeDrawable = name;
 	}
 
 	/**
