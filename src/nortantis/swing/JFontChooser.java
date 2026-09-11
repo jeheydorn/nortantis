@@ -117,6 +117,8 @@ public class JFontChooser extends JComponent
 	private final Map<String, Border> rowBordersByFamily = new HashMap<>();
 	/** True while the family list's contents are being replaced, when the selection changes for reasons the user did not cause. */
 	private boolean isRebuildingFamilyList;
+	/** True while the chosen family's name is being put in the field above the list, where it reports a choice rather than asking for one. */
+	private boolean isShowingSelectedFamilyInSearchField;
 	/** Which way the selection was last moving, so that arrowing onto a heading carries on in the same direction. */
 	private int previousSelectedIndex = -1;
 	private JTextField fontFamilyTextField = null;
@@ -345,6 +347,7 @@ public class JFontChooser extends JComponent
 		selectedFamily = name;
 		rebuildFontFamilyList();
 		scrollSelectedFamilyIntoView();
+		showSelectedFamilyInSearchField();
 		updateSampleFont();
 	}
 
@@ -514,6 +517,7 @@ public class JFontChooser extends JComponent
 			if (selected instanceof String)
 			{
 				selectedFamily = (String) selected;
+				showSelectedFamilyInSearchField();
 				// Every row for this family is drawn as selected, so repaint rather than relying on the two rows the list knows changed.
 				list.repaint();
 				updateSampleFont();
@@ -656,6 +660,11 @@ public class JFontChooser extends JComponent
 
 		private void update(DocumentEvent event)
 		{
+			if (isShowingSelectedFamilyInSearchField)
+			{
+				return;
+			}
+
 			try
 			{
 				Document document = event.getDocument();
@@ -949,6 +958,31 @@ public class JFontChooser extends JComponent
 		}
 		getFontFamilyList().setSelectedIndex(index);
 		previousSelectedIndex = index;
+	}
+
+	/**
+	 * Puts the chosen family's name in the field above the list, ready to be copied, and leaves it selected so that typing replaces it with a
+	 * new search rather than extending it into one that matches nothing. The list is left showing whatever it was showing: the name is there
+	 * to say what is chosen, not to narrow by.
+	 */
+	private void showSelectedFamilyInSearchField()
+	{
+		JTextField field = getFontFamilyTextField();
+		if (selectedFamily == null || selectedFamily.equals(field.getText()))
+		{
+			return;
+		}
+
+		isShowingSelectedFamilyInSearchField = true;
+		try
+		{
+			field.setText(selectedFamily);
+			field.selectAll();
+		}
+		finally
+		{
+			isShowingSelectedFamilyInSearchField = false;
+		}
 	}
 
 	private void scrollSelectedFamilyIntoView()
