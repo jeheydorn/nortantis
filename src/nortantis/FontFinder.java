@@ -417,8 +417,8 @@ public class FontFinder
 
 	/**
 	 * The font to actually draw with. Resolves aliases, and substitutes only when the family is not installed at all. Glyph coverage is
-	 * deliberately not considered: a font that is present but lacks glyphs for a map's text is returned unchanged, so that the map draws
-	 * missing-glyph boxes rather than quietly rendering in a font its author did not choose.
+	 * deliberately not considered: a font that is present but lacks glyphs for a map's text is returned unchanged, so that those characters
+	 * go undrawn - a box in most fonts, a blank gap in some - rather than the map quietly rendering in a font its author did not choose.
 	 */
 	public static Font resolveForDrawing(Font requested)
 	{

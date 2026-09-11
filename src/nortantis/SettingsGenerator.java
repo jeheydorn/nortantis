@@ -314,9 +314,10 @@ public class SettingsGenerator
 	}
 
 	/**
-	 * Points the built-in default fonts at a bundled family that can draw the script of the user's language, so a brand new map doesn't
-	 * arrive full of missing-glyph boxes the moment its owner types a place name. Every font field is rewritten, including the road font,
-	 * which otherwise keeps the family it derived from the river font.
+	 * Points the built-in default fonts at a bundled family that can draw the script of the user's language, so a brand new map doesn't lose
+	 * the place names its owner types. A character a font has no glyph for goes undrawn: most fonts mark the gap with a box, and some leave
+	 * nothing there at all. Every font field is rewritten, including the road font, which otherwise keeps the family it derived from the
+	 * river font.
 	 */
 	private static void useADefaultFontThatCanDrawTheUsersLanguage(MapSettings settings)
 	{

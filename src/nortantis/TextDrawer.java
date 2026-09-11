@@ -107,8 +107,8 @@ public class TextDrawer
 
 	/**
 	 * Scales a font from the settings to the resolution being drawn at, and resolves the family to one this machine actually has. Glyph
-	 * coverage is not considered: a font that is present but lacks glyphs for the text draws missing-glyph boxes, which is the truth about
-	 * the map, rather than being quietly swapped for a font its author did not choose.
+	 * coverage is not considered: a font that is present but lacks glyphs for the text leaves those characters undrawn, which is the truth
+	 * about the map, rather than being quietly swapped for a font its author did not choose.
 	 */
 	private static Font scaleAndResolve(Font font, double sizeMultiplier)
 	{
