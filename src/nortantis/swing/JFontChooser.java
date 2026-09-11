@@ -1130,11 +1130,9 @@ public class JFontChooser extends JComponent
 			familyLabel.setEnabled(missingScript == null);
 			if (missingScript != null)
 			{
-				// Greying a row without saying why is worse than not marking it at all, so the reason goes in the row rather than only in a
-				// tooltip that a user may never hover.
-				String scriptName = Translation.get("script." + missingScript.name());
-				familyLabel.setText(family + "   " + Translation.get("fontChooser.missingScriptSuffix", scriptName));
-				setToolTipText(Translation.get("fontChooser.cannotDisplayMapText", family, scriptName));
+				// The reason a row is greyed is in its tooltip rather than in the row, where it would read as part of the family's name.
+				setToolTipText(
+						Translation.get("fontChooser.cannotDisplayMapText", family, Translation.get("script." + missingScript.name())));
 			}
 			else
 			{
