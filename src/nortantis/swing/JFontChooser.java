@@ -720,6 +720,7 @@ public class JFontChooser extends JComponent
 			}
 
 			rebuildFontFamilyList();
+			selectFamilyIfNamedExactly();
 			scrollSelectedFamilyIntoView();
 		}
 	}
@@ -1024,6 +1025,19 @@ public class JFontChooser extends JComponent
 		}
 		getFontFamilyList().setSelectedIndex(index);
 		previousSelectedIndex = index;
+	}
+
+	/**
+	 * Chooses the family the search names, when it names one in full. Typing narrows the list rather than choosing from it, but a name typed
+	 * or pasted out whole is a choice, and leaving it as only a search means pressing Enter accepts whatever was chosen before instead.
+	 */
+	private void selectFamilyIfNamedExactly()
+	{
+		int index = findFirstRowForFamily(searchText);
+		if (index >= 0)
+		{
+			getFontFamilyList().setSelectedIndex(index);
+		}
 	}
 
 	private void scrollSelectedFamilyIntoView()
