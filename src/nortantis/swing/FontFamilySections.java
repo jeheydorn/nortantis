@@ -45,6 +45,11 @@ class FontFamilySections
 	private static final int headingTopPadding = 5;
 	/** How far a family name sits in from the heading above it, so that the headings are what the eye catches when scanning the list. */
 	private static final int familyIndent = 10;
+	/**
+	 * How much of a family row is kept below the baseline, for descenders. The row is only a little taller than the names in it, so this is
+	 * as much as can be given to descenders while still leaving the tallest family room for its ascenders above the line.
+	 */
+	private static final int familyRowDescenderRoom = 6;
 
 	/**
 	 * The rows of a family list: every family this installation can draw with, under a heading naming where it came from.
@@ -175,13 +180,13 @@ class FontFamilySections
 	}
 
 	/**
-	 * The border for a family name's row: indented from the heading above it, and shifted so the name is centered on its own ink. Each row
-	 * is drawn in the family's own font, and fonts disagree about how much room to leave around their glyphs, so centering the line box the
-	 * way a label does leaves some families riding high in their row or losing their tops off it.
+	 * The border for a family name's row: indented from the heading above it, and shifted so every name sits on the same baseline. Each row
+	 * is drawn in the family's own font, and families disagree about their ascent and the gap they want between lines, so letting each one
+	 * place its own baseline leaves the column of names visibly uneven.
 	 */
-	static Border createFamilyRowBorder(JLabel label)
+	static Border createFamilyRowBorder(JLabel label, int rowHeight)
 	{
-		return SwingHelper.createInkCenteringBorder(label, familyIndent);
+		return SwingHelper.createBaselineBorder(label, rowHeight, familyRowDescenderRoom, familyIndent);
 	}
 
 	/**

@@ -113,8 +113,8 @@ public class JFontChooser extends JComponent
 	/** The distinct characters the chosen font has to be able to draw, used to mark families that cannot draw them. */
 	private String charactersThatMustBeDrawable = "";
 	private final Map<String, Script> missingScriptByFamily = new HashMap<>();
-	/** The border each family row is drawn with, keyed by the text of the row, since that is what it is measured from. */
-	private final Map<String, Border> rowBordersByText = new HashMap<>();
+	/** The border each family row is drawn with. It follows from the family's font, so one per family is enough. */
+	private final Map<String, Border> rowBordersByFamily = new HashMap<>();
 	/** True while the family list's contents are being replaced, when the selection changes for reasons the user did not cause. */
 	private boolean isRebuildingFamilyList;
 	/** Which way the selection was last moving, so that arrowing onto a heading carries on in the same direction. */
@@ -1052,10 +1052,10 @@ public class JFontChooser extends JComponent
 				setToolTipText(null);
 			}
 
-			// Done last, since it depends on whatever text the row ended up with. Memoized on that text because the renderer runs on every
-			// repaint, and measuring a family's ink means asking its font to lay the name out.
-			familyLabel.setBorder(rowBordersByText.computeIfAbsent(familyLabel.getText(),
-					key -> FontFamilySections.createFamilyRowBorder(familyLabel)));
+			// Done last, since it reads the font the row ended up with. Memoized because the renderer runs on every repaint, and measuring a
+			// family means asking its font for its metrics.
+			familyLabel.setBorder(rowBordersByFamily.computeIfAbsent(family,
+					key -> FontFamilySections.createFamilyRowBorder(familyLabel, familyRowHeight)));
 			return this;
 		}
 	}

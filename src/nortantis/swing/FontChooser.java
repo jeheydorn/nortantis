@@ -24,6 +24,13 @@ public class FontChooser
 	/** Space left above and below the preview text so glyphs don't sit against the edge of the holder. */
 	private static final int previewVerticalPadding = 6;
 
+	/**
+	 * How much of a preview is kept below the baseline for descenders, as a share of the point size the name is drawn at. The families here
+	 * run to about four tenths of their point size below the baseline at the deepest, but reserving that much leaves a visible hole under
+	 * every name that has no descender at all, so this reserves enough for most of them and lets the deepest hang a little lower.
+	 */
+	private static final double previewDescenderShareOfPointSize = 0.3;
+
 	private final JLabel fontDisplay = new JLabel("");
 	private final JPanel displayHolder = new JPanel();
 	private Supplier<String> textThatMustBeDrawable = () -> "";
@@ -145,16 +152,16 @@ public class FontChooser
 		// differ whenever a family ships a single weight that isn't Regular, and for a family this machine doesn't have at all.
 		fontDisplay.setText(font.getName());
 
-		// Reserve the room the font says it needs, or the room its glyphs actually take if that is more, and then place the name by its ink
-		// rather than by what the font declares. Fonts disagree about how much space to leave around their glyphs - some reserve half a line
-		// box of gap, some draw past the descent they claim - so centering what a label centers, the line box, leaves a family riding high
-		// or low in its preview even when the preview is plenty big enough for it.
 		FontMetrics metrics = fontDisplay.getFontMetrics(displayFont);
-		int inkHeight = (int) Math.ceil(SwingHelper.getTextInkHeight(fontDisplay, displayFont, fontDisplay.getText()));
-		int neededHeight = Math.max(inkHeight, metrics.getMaxAscent() + metrics.getMaxDescent()) + previewVerticalPadding;
-		int height = Math.max(minPreviewHeight, Math.min(neededHeight, maxPreviewHeight));
+		int naturalHeight = Math.min(metrics.getMaxAscent() + metrics.getMaxDescent() + previewVerticalPadding, maxPreviewHeight);
+		int height = Math.max(minPreviewHeight, naturalHeight);
 		applyPreviewHeight(height);
-		fontDisplay.setBorder(SwingHelper.createInkCenteringBorder(fontDisplay, 0));
+
+		// The name sits on a baseline chosen here rather than wherever the font's own metrics land it, so that every preview leaves the same
+		// gap above the button under it however much room its family claims to need. Where the preview is taller than the name needs, the
+		// room left over is shared above and below rather than all of it going above.
+		int descenderRoom = (int) Math.round(displayFont.getSize2D() * previewDescenderShareOfPointSize) + (height - naturalHeight) / 2;
+		fontDisplay.setBorder(SwingHelper.createBaselineBorder(fontDisplay, height, descenderRoom, 0));
 		displayHolder.revalidate();
 	}
 

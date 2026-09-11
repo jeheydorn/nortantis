@@ -27,7 +27,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
-import java.awt.geom.Rectangle2D;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -652,59 +651,34 @@ public class SwingHelper
 	}
 
 	/**
-	 * The height of the ink a string puts on the page in a given font, ignoring the space the font reserves around it. Zero for a string
-	 * with nothing to draw.
-	 */
-	public static double getTextInkHeight(JComponent component, java.awt.Font font, String text)
-	{
-		Rectangle2D ink = getTextInk(component, font, text);
-		return ink == null ? 0 : ink.getHeight();
-	}
-
-	/**
-	 * A label's whole border, sized so that the ink its glyphs actually put down sits in the middle of the label rather than the font's
-	 * line box sitting there.
+	 * A label's whole border, sized so that its text sits on a baseline {@code baselineFromBottom} pixels up from the bottom of a label
+	 * {@code height} tall, instead of wherever the font's own metrics would put it.
 	 *
 	 * <p>
-	 * A label centers the line box and then draws the baseline one ascent below the top of it. Both of those are numbers the font declares,
-	 * so a family whose glyphs don't fill them, or which asks for more room than they describe, sits visibly high or low even though the
-	 * line box is centered exactly - and where the line box is taller than the label, it pushes the tops of the glyphs out of sight above
-	 * it. Gabriola and Nirmala Text give about half their line box to the gap between lines, which is enough to do that.
+	 * A label centers the font's line box and draws the baseline one ascent below the top of it. Both of those are numbers the font
+	 * declares, and families disagree about them enough that a column of names each drawn in its own font sits on a different line in every
+	 * row - and a family that gives a large share of its line box to the gap between lines, as Gabriola and Nirmala Text do, has the tops of
+	 * its glyphs pushed out of sight above a label sized from the ascent and descent. Choosing the baseline puts every row on one line and
+	 * leaves the same space under each of them.
 	 *
 	 * <p>
-	 * How tall the label is doesn't come into it: the line box is centered either way, so what is left over is the font's own asymmetry.
-	 * The border moves the baseline by half of itself, since the line box stays centered in what the insets leave. The result therefore
-	 * depends only on the label's font and text, so a caller that asks repeatedly for the same pair can keep the answer.
+	 * The border moves the baseline by half of itself, since the line box stays centered in whatever the insets leave.
 	 *
 	 * <p>
-	 * This is for labels only. A text field looks like it should take the same correction, but its view stops centering and pins the text
-	 * to the top once the line box no longer fits, so the border and the baseline part ways.
+	 * This is for labels only. A text field looks like it should take the same treatment, but its view stops centering and pins the text to
+	 * the top once the line box no longer fits, so the border and the baseline part ways.
 	 *
+	 * @param baselineFromBottom
+	 *            How much of the height to keep below the baseline. Anything a font draws below it deeper than this hangs out of the label.
 	 * @param leftInset
 	 *            Left inset to include, since this is the whole border and it may need to carry an indent.
 	 */
-	public static Border createInkCenteringBorder(JLabel label, int leftInset)
+	public static Border createBaselineBorder(JLabel label, int height, int baselineFromBottom, int leftInset)
 	{
-		java.awt.Font font = label.getFont();
-		Rectangle2D ink = getTextInk(label, font, label.getText());
-		if (ink == null)
-		{
-			return BorderFactory.createEmptyBorder(0, leftInset, 0, 0);
-		}
-
-		FontMetrics metrics = label.getFontMetrics(font);
-		int shift = (int) Math.round((metrics.getHeight() / 2.0 - metrics.getAscent() - (ink.getY() + ink.getMaxY()) / 2.0) * 2);
+		FontMetrics metrics = label.getFontMetrics(label.getFont());
+		double baselineTheFontWouldGive = (height - metrics.getHeight()) / 2.0 + metrics.getAscent();
+		int shift = (int) Math.round(((height - baselineFromBottom) - baselineTheFontWouldGive) * 2);
 		return BorderFactory.createEmptyBorder(Math.max(0, shift), leftInset, Math.max(0, -shift), 0);
-	}
-
-	private static Rectangle2D getTextInk(JComponent component, java.awt.Font font, String text)
-	{
-		if (font == null || text == null || text.isEmpty())
-		{
-			return null;
-		}
-		Rectangle2D ink = font.createGlyphVector(component.getFontMetrics(font).getFontRenderContext(), text).getVisualBounds();
-		return ink.isEmpty() ? null : ink;
 	}
 
 	/**
