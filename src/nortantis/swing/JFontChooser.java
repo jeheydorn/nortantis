@@ -28,6 +28,7 @@ import java.util.Set;
 import nortantis.FontFinder;
 import nortantis.FontFinder.AvailableFont;
 import nortantis.FontFinder.Script;
+import nortantis.platform.FontStyle;
 import nortantis.swing.translation.Translation;
 
 /**
@@ -116,6 +117,8 @@ public class JFontChooser extends JComponent
 	/** The distinct characters the chosen font has to be able to draw, used to mark families that cannot draw them. */
 	private String charactersThatMustBeDrawable = "";
 	private final Map<String, Script> missingScriptByFamily = new HashMap<>();
+	/** The style {@link #missingScriptByFamily} was measured in, so that the rows can be re-marked when another style is chosen. */
+	private FontStyle styleCoverageIsMeasuredIn = FontStyle.Plain;
 	/** The border each family row is drawn with. It follows from the family's font, so one per family is enough. */
 	private final Map<String, Border> rowBordersByFamily = new HashMap<>();
 	/** True while the family list's contents are being replaced, when the selection changes for reasons the user did not cause. */
@@ -810,6 +813,7 @@ public class JFontChooser extends JComponent
 		getSampleTextField().setFont(getSelectedFont());
 		String family = getSelectedFontFamily();
 		getSelectedFamilyTextField().setText(family == null ? "" : family);
+		updateCoverageForSelectedStyle();
 	}
 
 	protected JPanel getFontFamilyPanel()
@@ -1073,8 +1077,8 @@ public class JFontChooser extends JComponent
 	}
 
 	/**
-	 * The script the given family has no glyphs for among the characters it has to draw, or null when it can draw all of them. Memoized
-	 * because the list renderer asks on every repaint.
+	 * The script the given family has no glyphs for among the characters it has to draw, in the style the dialog has chosen, or null when it
+	 * can draw all of them. Memoized because the list renderer asks on every repaint.
 	 */
 	private Script getMissingScript(String family)
 	{
@@ -1082,7 +1086,25 @@ public class JFontChooser extends JComponent
 		{
 			return null;
 		}
-		return missingScriptByFamily.computeIfAbsent(family, key -> FontFinder.findMissingScript(key, charactersThatMustBeDrawable));
+		return missingScriptByFamily.computeIfAbsent(family,
+				key -> FontFinder.findMissingScript(key, styleCoverageIsMeasuredIn, charactersThatMustBeDrawable));
+	}
+
+	/**
+	 * Re-marks the rows when the chosen style changes, since a family's faces need not have the same glyphs: a family whose regular face can
+	 * draw the map's text can have a bold face that cannot.
+	 */
+	private void updateCoverageForSelectedStyle()
+	{
+		FontStyle style = FontStyle.fromNumber(getSelectedFontStyle());
+		if (style == styleCoverageIsMeasuredIn)
+		{
+			return;
+		}
+
+		styleCoverageIsMeasuredIn = style;
+		missingScriptByFamily.clear();
+		getFontFamilyList().repaint();
 	}
 
 	/**

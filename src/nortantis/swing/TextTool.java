@@ -493,13 +493,13 @@ public class TextTool extends EditorTool
 
 		String text = trimTrailingUnpairedSurrogate(editTextField.getText());
 		Font font = lastSelected.fontOverride != null ? lastSelected.fontOverride : getFontForType(lastSelected.type);
-		if (font == null || FontFinder.canDisplay(font.getName(), text))
+		if (font == null || FontFinder.canDisplay(font.getName(), font.getStyle(), text))
 		{
 			fontCoverageWarningHider.setVisible(false);
 			return;
 		}
 
-		String substitute = FontFinder.chooseSubstitute(font.getName(), text);
+		String substitute = FontFinder.chooseSubstitute(font.getName(), font.getStyle(), text);
 		fontCoverageWarningArea.setText(substitute == null ? Translation.get("textTool.fontCannotDisplay.noneAvailable")
 				: Translation.get("textTool.fontCannotDisplay", substitute));
 		fontCoverageWarningHider.setVisible(true);

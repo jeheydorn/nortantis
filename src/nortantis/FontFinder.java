@@ -451,33 +451,42 @@ public class FontFinder
 	 */
 	public static String chooseSubstitute(String missingFamily, String sampleText)
 	{
+		return chooseSubstitute(missingFamily, FontStyle.Plain, sampleText);
+	}
+
+	/**
+	 * @param style
+	 *            The style the replacement will be drawn in, since a family's faces need not have the same glyphs.
+	 */
+	public static String chooseSubstitute(String missingFamily, FontStyle style, String sampleText)
+	{
 		ensureInitialized();
 
 		// The answer depends on which scripts are missing rather than on the particular words, so memoizing by script keeps this off the
 		// hot path when it is called per keystroke.
-		String key = (missingFamily == null ? "" : missingFamily.toLowerCase(Locale.ROOT)) + "|" + getScripts(sampleText);
+		String key = (missingFamily == null ? "" : missingFamily.toLowerCase(Locale.ROOT)) + "|" + style + "|" + getScripts(sampleText);
 		String cached = substitutesByRequest.get(key);
 		if (cached != null)
 		{
 			return cached.equals(noSubstituteFound) ? null : cached;
 		}
 
-		String substitute = findSubstitute(missingFamily, sampleText);
+		String substitute = findSubstitute(missingFamily, style, sampleText);
 		substitutesByRequest.put(key, substitute == null ? noSubstituteFound : substitute);
 		return substitute;
 	}
 
-	private static String findSubstitute(String missingFamily, String sampleText)
+	private static String findSubstitute(String missingFamily, FontStyle style, String sampleText)
 	{
 		String alias = missingFamily == null ? null : aliasesByLowerCaseFamily.get(missingFamily.toLowerCase(Locale.ROOT));
-		if (alias != null && isAvailableInternal(alias) && canDisplay(alias, sampleText))
+		if (alias != null && isAvailableInternal(alias) && canDisplay(alias, style, sampleText))
 		{
 			return alias;
 		}
 
 		for (String family : preferredSubstituteFamilies)
 		{
-			if (isAvailableInternal(family) && canDisplay(family, sampleText))
+			if (isAvailableInternal(family) && canDisplay(family, style, sampleText))
 			{
 				return family;
 			}
@@ -486,13 +495,13 @@ public class FontFinder
 		// availableFonts puts bundled fonts first, so this prefers a portable answer without needing to say so.
 		for (AvailableFont font : availableFonts)
 		{
-			if (canDisplay(font.family, sampleText))
+			if (canDisplay(font.family, style, sampleText))
 			{
 				return font.family;
 			}
 		}
 
-		return canDisplay(logicalSerifFamily, sampleText) ? logicalSerifFamily : null;
+		return canDisplay(logicalSerifFamily, style, sampleText) ? logicalSerifFamily : null;
 	}
 
 	/**
@@ -501,19 +510,29 @@ public class FontFinder
 	 */
 	public static boolean canDisplay(String family, String text)
 	{
+		return canDisplay(family, FontStyle.Plain, text);
+	}
+
+	/**
+	 * @param style
+	 *            The style the text will be drawn in. A family's faces need not have the same glyphs - a family whose regular face draws a
+	 *            character can have a bold face that does not - so the answer is about one face rather than the whole family.
+	 */
+	public static boolean canDisplay(String family, FontStyle style, String text)
+	{
 		ensureInitialized();
 		if (text == null || text.isEmpty())
 		{
 			return true;
 		}
-		return createProbeFont(family).canDisplayUpTo(text) == -1;
+		return createProbeFont(family, style).canDisplayUpTo(text) == -1;
 	}
 
 	/**
-	 * The script of the first character in the given text that the given family cannot draw, or null when it can draw all of the text or
-	 * when the character it cannot draw belongs to no script in particular.
+	 * The script of the first character in the given text that the given family cannot draw in the given style, or null when it can draw all
+	 * of the text or when the character it cannot draw belongs to no script in particular.
 	 */
-	public static Script findMissingScript(String family, String text)
+	public static Script findMissingScript(String family, FontStyle style, String text)
 	{
 		ensureInitialized();
 		if (text == null || text.isEmpty())
@@ -521,7 +540,7 @@ public class FontFinder
 			return null;
 		}
 
-		int index = createProbeFont(family).canDisplayUpTo(text);
+		int index = createProbeFont(family, style).canDisplayUpTo(text);
 		if (index == -1)
 		{
 			return null;
@@ -637,12 +656,12 @@ public class FontFinder
 	}
 
 	/**
-	 * Whether the given family has glyphs for the given script.
+	 * Whether the given family's regular face has glyphs for the given script.
 	 */
 	public static boolean covers(String family, Script script)
 	{
 		ensureInitialized();
-		return createProbeFont(family).canDisplayUpTo(script.probeCharacters) == -1;
+		return createProbeFont(family, FontStyle.Plain).canDisplayUpTo(script.probeCharacters) == -1;
 	}
 
 	/**
@@ -667,9 +686,9 @@ public class FontFinder
 		return scripts;
 	}
 
-	private static Font createProbeFont(String family)
+	private static Font createProbeFont(String family, FontStyle style)
 	{
-		return Font.create(family, FontStyle.Plain, probeFontSize);
+		return Font.create(family, style, probeFontSize);
 	}
 
 	private static String firstAvailable(List<String> families)
