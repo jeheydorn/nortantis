@@ -14,6 +14,7 @@ import javax.swing.text.Document;
 import javax.swing.text.JTextComponent;
 import javax.swing.text.Position;
 import java.awt.*;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -91,6 +92,8 @@ public class JFontChooser extends JComponent
 	private static final int minimumFamilyRowWidth = 120;
 	/** The height of the panels holding the family, style, and size lists. */
 	private static final int listPanelHeight = 180;
+	/** Space between the name of the chosen family and the sample drawn in it. */
+	private static final int spaceUnderSelectedFamilyName = 5;
 
 	// instance variables
 	protected int dialogResultValue = ERROR_OPTION;
@@ -117,8 +120,6 @@ public class JFontChooser extends JComponent
 	private final Map<String, Border> rowBordersByFamily = new HashMap<>();
 	/** True while the family list's contents are being replaced, when the selection changes for reasons the user did not cause. */
 	private boolean isRebuildingFamilyList;
-	/** True while the chosen family's name is being put in the field above the list, where it reports a choice rather than asking for one. */
-	private boolean isShowingSelectedFamilyInSearchField;
 	/** Which way the selection was last moving, so that arrowing onto a heading carries on in the same direction. */
 	private int previousSelectedIndex = -1;
 	private JTextField fontFamilyTextField = null;
@@ -132,6 +133,7 @@ public class JFontChooser extends JComponent
 	private JPanel fontSizePanel = null;
 	private JPanel samplePanel = null;
 	private JTextField sampleText = null;
+	private JTextField selectedFamilyText = null;
 
 	/**
 	 * Constructs a <code>JFontChooser</code> object.
@@ -230,6 +232,7 @@ public class JFontChooser extends JComponent
 			fontNameList.setFixedCellHeight(familyRowHeight);
 			fontNameList.setFixedCellWidth(minimumFamilyRowWidth);
 			fontNameList.addListSelectionListener(new FamilySelectionHandler());
+			fontNameList.addMouseListener(new FamilyRowMenuHandler());
 			fontNameList.setFont(DEFAULT_FONT);
 			fontNameList.setFocusable(false);
 		}
@@ -347,8 +350,7 @@ public class JFontChooser extends JComponent
 		selectedFamily = name;
 		rebuildFontFamilyList();
 		scrollSelectedFamilyIntoView();
-		showSelectedFamilyInSearchField();
-		updateSampleFont();
+		updateSample();
 	}
 
 	/**
@@ -384,7 +386,7 @@ public class JFontChooser extends JComponent
 				break;
 			}
 		}
-		updateSampleFont();
+		updateSample();
 	}
 
 	/**
@@ -407,7 +409,7 @@ public class JFontChooser extends JComponent
 			}
 		}
 		getFontSizeTextField().setText(sizeString);
-		updateSampleFont();
+		updateSample();
 	}
 
 	/**
@@ -483,7 +485,7 @@ public class JFontChooser extends JComponent
 			}
 
 			textComponent.setText((String) selected);
-			updateSampleFont();
+			updateSample();
 		}
 	}
 
@@ -517,11 +519,58 @@ public class JFontChooser extends JComponent
 			if (selected instanceof String)
 			{
 				selectedFamily = (String) selected;
-				showSelectedFamilyInSearchField();
 				// Every row for this family is drawn as selected, so repaint rather than relying on the two rows the list knows changed.
 				list.repaint();
-				updateSampleFont();
+				updateSample();
 			}
+		}
+	}
+
+	/**
+	 * Offers the name of the family row under the pointer as something to copy. What is chosen does not change, so a name can be taken
+	 * without choosing the font it belongs to.
+	 */
+	private class FamilyRowMenuHandler extends MouseAdapter
+	{
+		// Which of the two a right click arrives as depends on the platform, so both have to be watched.
+		public void mousePressed(MouseEvent e)
+		{
+			showMenuIfRequested(e);
+		}
+
+		public void mouseReleased(MouseEvent e)
+		{
+			showMenuIfRequested(e);
+		}
+
+		private void showMenuIfRequested(MouseEvent e)
+		{
+			if (!e.isPopupTrigger())
+			{
+				return;
+			}
+
+			JList<?> list = (JList<?>) e.getSource();
+			int index = list.locationToIndex(e.getPoint());
+			// locationToIndex gives the nearest row rather than nothing at all when the click is past the end of the list.
+			if (index < 0 || !list.getCellBounds(index, index).contains(e.getPoint()))
+			{
+				return;
+			}
+
+			Object row = list.getModel().getElementAt(index);
+			if (!(row instanceof String))
+			{
+				return;
+			}
+
+			final String family = (String) row;
+			JPopupMenu menu = new JPopupMenu();
+			JMenuItem copyItem = new JMenuItem(Translation.get("fontChooser.copyFontName"));
+			copyItem.addActionListener(
+					event -> Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(family), null));
+			menu.add(copyItem);
+			menu.show(list, e.getX(), e.getY());
 		}
 	}
 
@@ -542,7 +591,7 @@ public class JFontChooser extends JComponent
 		public void focusLost(FocusEvent e)
 		{
 			textComponent.select(0, 0);
-			updateSampleFont();
+			updateSample();
 		}
 	}
 
@@ -660,11 +709,6 @@ public class JFontChooser extends JComponent
 
 		private void update(DocumentEvent event)
 		{
-			if (isShowingSelectedFamilyInSearchField)
-			{
-				return;
-			}
-
 			try
 			{
 				Document document = event.getDocument();
@@ -760,9 +804,11 @@ public class JFontChooser extends JComponent
 		return dialog;
 	}
 
-	protected void updateSampleFont()
+	protected void updateSample()
 	{
 		getSampleTextField().setFont(getSelectedFont());
+		String family = getSelectedFontFamily();
+		getSelectedFamilyTextField().setText(family == null ? "" : family);
 	}
 
 	protected JPanel getFontFamilyPanel()
@@ -867,9 +913,29 @@ public class JFontChooser extends JComponent
 			samplePanel.setLayout(new BorderLayout());
 			samplePanel.setBorder(border);
 
+			samplePanel.add(getSelectedFamilyTextField(), BorderLayout.NORTH);
 			samplePanel.add(getSampleTextField(), BorderLayout.CENTER);
 		}
 		return samplePanel;
+	}
+
+	/**
+	 * Names the chosen family above the sample. It is a text field rather than a label so the name can be selected and copied, and because a
+	 * search that hides the chosen family's row would otherwise leave nothing on screen saying what is chosen.
+	 */
+	protected JTextField getSelectedFamilyTextField()
+	{
+		if (selectedFamilyText == null)
+		{
+			selectedFamilyText = new JTextField();
+			selectedFamilyText.setEditable(false);
+			// Dressed as a label: the name is something the dialog is saying, not somewhere to type.
+			selectedFamilyText.setBorder(BorderFactory.createEmptyBorder(0, 0, spaceUnderSelectedFamilyName, 0));
+			selectedFamilyText.setOpaque(false);
+			selectedFamilyText.setFont(UIManager.getFont("Label.font"));
+			selectedFamilyText.setForeground(UIManager.getColor("Label.foreground"));
+		}
+		return selectedFamilyText;
 	}
 
 	protected JTextField getSampleTextField()
@@ -958,31 +1024,6 @@ public class JFontChooser extends JComponent
 		}
 		getFontFamilyList().setSelectedIndex(index);
 		previousSelectedIndex = index;
-	}
-
-	/**
-	 * Puts the chosen family's name in the field above the list, ready to be copied, and leaves it selected so that typing replaces it with a
-	 * new search rather than extending it into one that matches nothing. The list is left showing whatever it was showing: the name is there
-	 * to say what is chosen, not to narrow by.
-	 */
-	private void showSelectedFamilyInSearchField()
-	{
-		JTextField field = getFontFamilyTextField();
-		if (selectedFamily == null || selectedFamily.equals(field.getText()))
-		{
-			return;
-		}
-
-		isShowingSelectedFamilyInSearchField = true;
-		try
-		{
-			field.setText(selectedFamily);
-			field.selectAll();
-		}
-		finally
-		{
-			isShowingSelectedFamilyInSearchField = false;
-		}
 	}
 
 	private void scrollSelectedFamilyIntoView()
