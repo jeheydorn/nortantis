@@ -175,6 +175,16 @@ class FontFamilySections
 	}
 
 	/**
+	 * The border for a family name's row: indented from the heading above it, and shifted so the name is centered on its own ink. Each row
+	 * is drawn in the family's own font, and fonts disagree about how much room to leave around their glyphs, so centering the line box the
+	 * way a label does leaves some families riding high in their row or losing their tops off it.
+	 */
+	static Border createFamilyRowBorder(JLabel label)
+	{
+		return SwingHelper.createInkCenteringBorder(label, familyIndent);
+	}
+
+	/**
 	 * A combo box of font families grouped under the same headings as the font picker's list, so that where a font comes from is shown the
 	 * same way wherever a font is chosen.
 	 */

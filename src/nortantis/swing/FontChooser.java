@@ -17,7 +17,7 @@ public class FontChooser
 {
 	/**
 	 * Multiplier applied to a preview's maximum point size to get a preview height tall enough for any font drawn at that size. A font's
-	 * maximum ascent plus maximum descent rarely reaches twice its point size, even for script faces with tall swashes.
+	 * line box rarely reaches twice its point size, even for a script face with tall swashes or one that declares a large line gap.
 	 */
 	private static final double previewHeightToPointSizeThatFitsAnyFont = 3.0;
 
@@ -145,11 +145,16 @@ public class FontChooser
 		// differ whenever a family ships a single weight that isn't Regular, and for a family this machine doesn't have at all.
 		fontDisplay.setText(font.getName());
 
-		// Measure the font rather than assuming a height. getMaxAscent is used rather than getAscent because script faces routinely draw
-		// swashes and ascenders above the typical ascent, and those are the fonts this app is full of.
+		// Reserve the room the font says it needs, or the room its glyphs actually take if that is more, and then place the name by its ink
+		// rather than by what the font declares. Fonts disagree about how much space to leave around their glyphs - some reserve half a line
+		// box of gap, some draw past the descent they claim - so centering what a label centers, the line box, leaves a family riding high
+		// or low in its preview even when the preview is plenty big enough for it.
 		FontMetrics metrics = fontDisplay.getFontMetrics(displayFont);
-		int neededHeight = metrics.getMaxAscent() + metrics.getMaxDescent() + previewVerticalPadding;
-		applyPreviewHeight(Math.max(minPreviewHeight, Math.min(neededHeight, maxPreviewHeight)));
+		int inkHeight = (int) Math.ceil(SwingHelper.getTextInkHeight(fontDisplay, displayFont, fontDisplay.getText()));
+		int neededHeight = Math.max(inkHeight, metrics.getMaxAscent() + metrics.getMaxDescent()) + previewVerticalPadding;
+		int height = Math.max(minPreviewHeight, Math.min(neededHeight, maxPreviewHeight));
+		applyPreviewHeight(height);
+		fontDisplay.setBorder(SwingHelper.createInkCenteringBorder(fontDisplay, 0));
 		displayHolder.revalidate();
 	}
 

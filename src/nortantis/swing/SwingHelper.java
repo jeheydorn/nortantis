@@ -8,6 +8,7 @@ import nortantis.util.OSHelper;
 import org.apache.commons.io.FilenameUtils;
 
 import javax.swing.*;
+import javax.swing.border.Border;
 import javax.swing.plaf.basic.BasicHTML;
 import javax.swing.text.View;
 import javax.swing.colorchooser.AbstractColorChooserPanel;
@@ -26,6 +27,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -647,6 +649,62 @@ public class SwingHelper
 		int preferredWidth = (int) Math.ceil(view.getPreferredSpan(View.X_AXIS));
 		int preferredHeight = (int) Math.ceil(view.getPreferredSpan(View.Y_AXIS));
 		label.setPreferredSize(new Dimension(Math.min(preferredWidth, width), preferredHeight));
+	}
+
+	/**
+	 * The height of the ink a string puts on the page in a given font, ignoring the space the font reserves around it. Zero for a string
+	 * with nothing to draw.
+	 */
+	public static double getTextInkHeight(JComponent component, java.awt.Font font, String text)
+	{
+		Rectangle2D ink = getTextInk(component, font, text);
+		return ink == null ? 0 : ink.getHeight();
+	}
+
+	/**
+	 * A label's whole border, sized so that the ink its glyphs actually put down sits in the middle of the label rather than the font's
+	 * line box sitting there.
+	 *
+	 * <p>
+	 * A label centers the line box and then draws the baseline one ascent below the top of it. Both of those are numbers the font declares,
+	 * so a family whose glyphs don't fill them, or which asks for more room than they describe, sits visibly high or low even though the
+	 * line box is centered exactly - and where the line box is taller than the label, it pushes the tops of the glyphs out of sight above
+	 * it. Gabriola and Nirmala Text give about half their line box to the gap between lines, which is enough to do that.
+	 *
+	 * <p>
+	 * How tall the label is doesn't come into it: the line box is centered either way, so what is left over is the font's own asymmetry.
+	 * The border moves the baseline by half of itself, since the line box stays centered in what the insets leave. The result therefore
+	 * depends only on the label's font and text, so a caller that asks repeatedly for the same pair can keep the answer.
+	 *
+	 * <p>
+	 * This is for labels only. A text field looks like it should take the same correction, but its view stops centering and pins the text
+	 * to the top once the line box no longer fits, so the border and the baseline part ways.
+	 *
+	 * @param leftInset
+	 *            Left inset to include, since this is the whole border and it may need to carry an indent.
+	 */
+	public static Border createInkCenteringBorder(JLabel label, int leftInset)
+	{
+		java.awt.Font font = label.getFont();
+		Rectangle2D ink = getTextInk(label, font, label.getText());
+		if (ink == null)
+		{
+			return BorderFactory.createEmptyBorder(0, leftInset, 0, 0);
+		}
+
+		FontMetrics metrics = label.getFontMetrics(font);
+		int shift = (int) Math.round((metrics.getHeight() / 2.0 - metrics.getAscent() - (ink.getY() + ink.getMaxY()) / 2.0) * 2);
+		return BorderFactory.createEmptyBorder(Math.max(0, shift), leftInset, Math.max(0, -shift), 0);
+	}
+
+	private static Rectangle2D getTextInk(JComponent component, java.awt.Font font, String text)
+	{
+		if (font == null || text == null || text.isEmpty())
+		{
+			return null;
+		}
+		Rectangle2D ink = font.createGlyphVector(component.getFontMetrics(font).getFontRenderContext(), text).getVisualBounds();
+		return ink.isEmpty() ? null : ink;
 	}
 
 	/**
