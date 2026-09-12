@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -126,7 +127,7 @@ public class MapFonts
 		{
 			if (!StringUtils.isEmpty(entry.getValue()))
 			{
-				replacementsByLowerCase.put(entry.getKey().toLowerCase(), entry.getValue());
+				replacementsByLowerCase.put(entry.getKey().toLowerCase(Locale.ROOT), entry.getValue());
 			}
 		}
 
@@ -161,7 +162,7 @@ public class MapFonts
 		{
 			return null;
 		}
-		String replacement = replacementsByLowerCase.get(font.getName().toLowerCase());
+		String replacement = replacementsByLowerCase.get(font.getName().toLowerCase(Locale.ROOT));
 		return replacement == null ? null : Font.create(replacement, font.getStyle(), font.getSize());
 	}
 
@@ -224,7 +225,9 @@ public class MapFonts
 
 	private static String recordFamily(String familyAsWritten, FontUsage usage)
 	{
-		String canonical = usage.familyAsWrittenByLowerCase.computeIfAbsent(familyAsWritten.toLowerCase(), key -> familyAsWritten);
+		// Locale.ROOT because this key only ever groups two spellings of one family. The default locale would make that grouping depend on
+		// the machine: in Turkish, "Iosevka" and "iosevka" lower case to different strings and would be asked about twice.
+		String canonical = usage.familyAsWrittenByLowerCase.computeIfAbsent(familyAsWritten.toLowerCase(Locale.ROOT), key -> familyAsWritten);
 		usage.usedByByFamily.computeIfAbsent(canonical, key -> new ArrayList<>());
 		usage.textByFamily.computeIfAbsent(canonical, key -> new StringBuilder());
 		return canonical;
