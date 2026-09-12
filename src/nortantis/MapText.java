@@ -98,8 +98,7 @@ public class MapText implements Serializable
 		Color boldBackgroundColorOverride = this.boldBackgroundColorOverride;
 		Font fontOverride = this.fontOverride;
 
-		MapText copy = new MapText(value, location, angle, type, line1Bounds, line2Bounds, lineBreak, colorOverride, boldBackgroundColorOverride, curvature, spacing, fontOverride, backgroundFade);
-		return copy;
+		return new MapText(value, location, angle, type, line1Bounds, line2Bounds, lineBreak, colorOverride, boldBackgroundColorOverride, curvature, spacing, fontOverride, backgroundFade);
 	}
 
 	/**
