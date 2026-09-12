@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 import nortantis.platform.Font;
@@ -196,8 +197,8 @@ public class FontFinder
 	private static volatile Set<String> availableFamiliesLowerCase;
 	private static volatile List<AvailableFont> availableFonts;
 
+	/** Families found to replace a font, by what was asked for. Only answers are kept, since "nothing fits" is not worth trusting twice. */
 	private static final Map<String, String> substitutesByRequest = new ConcurrentHashMap<>();
-	private static final String noSubstituteFound = "";
 
 	/**
 	 * Registers the fonts in every art pack that is known without a map being open. Idempotent, and safe to call from any thread. Every
@@ -462,18 +463,56 @@ public class FontFinder
 	{
 		ensureInitialized();
 
-		// The answer depends on which scripts are missing rather than on the particular words, so memoizing by script keeps this off the
-		// hot path when it is called per keystroke.
-		String key = (missingFamily == null ? "" : missingFamily.toLowerCase(Locale.ROOT)) + "|" + style + "|" + getScripts(sampleText);
+		// Memoized by the writing systems the text is made of rather than by the words, since searching means trying families one at a time
+		// and this is asked per keystroke. Two texts written the same way usually want the same family, but families differ character by
+		// character within a writing system, so a memoized answer is used only once it has been shown to draw the text in hand.
+		String key = (missingFamily == null ? "" : missingFamily.toLowerCase(Locale.ROOT)) + "|" + style + "|"
+				+ describeWritingSystems(sampleText);
 		String cached = substitutesByRequest.get(key);
-		if (cached != null)
+		if (cached != null && canDisplay(cached, style, sampleText))
 		{
-			return cached.equals(noSubstituteFound) ? null : cached;
+			return cached;
 		}
 
 		String substitute = findSubstitute(missingFamily, style, sampleText);
-		substitutesByRequest.put(key, substitute == null ? noSubstituteFound : substitute);
+		if (substitute != null)
+		{
+			substitutesByRequest.put(key, substitute);
+		}
 		return substitute;
+	}
+
+	/**
+	 * Names the writing systems the given text is made of, so that two texts made of the same ones describe themselves the same way. A
+	 * character belonging to no script this class has a value for is described by the platform's name for its script, which keeps texts as
+	 * unalike as Armenian and Devanagari from describing themselves identically.
+	 */
+	private static String describeWritingSystems(String text)
+	{
+		if (text == null)
+		{
+			return "";
+		}
+
+		Set<String> names = new TreeSet<>();
+		text.codePoints().forEach(codePoint ->
+		{
+			Script script = Script.of(codePoint);
+			names.add(script != null ? script.name() : describeUnicodeScript(codePoint));
+		});
+		return names.toString();
+	}
+
+	private static String describeUnicodeScript(int codePoint)
+	{
+		try
+		{
+			return Character.UnicodeScript.of(codePoint).name();
+		}
+		catch (IllegalArgumentException e)
+		{
+			return "unassigned";
+		}
 	}
 
 	private static String findSubstitute(String missingFamily, FontStyle style, String sampleText)

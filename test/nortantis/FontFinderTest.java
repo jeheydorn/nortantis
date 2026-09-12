@@ -257,6 +257,22 @@ public class FontFinderTest
 	}
 
 	@Test
+	public void chooseSubstituteAnswersForTheTextItWasAskedAbout()
+	{
+		// Texts written in different systems, several of which FontFinder.Script has no value for, followed by two Latin names that need
+		// different families. Each has to be answered for itself: a family offered for one of them need not be able to draw the next.
+		for (String text : List.of("Երևան", "नमस्ते", "თბილისი", "123", "Łódź", "Zagƀreb"))
+		{
+			String substitute = FontFinder.chooseSubstitute("Almendra", FontStyle.Bold, text);
+			if (substitute != null)
+			{
+				assertTrue(FontFinder.canDisplay(substitute, FontStyle.Bold, text),
+						"\"" + substitute + "\" was offered as a replacement for \"" + text + "\" but cannot draw it.");
+			}
+		}
+	}
+
+	@Test
 	public void getScriptsFindsEveryScriptInText()
 	{
 		Set<Script> scripts = FontFinder.getScripts("Abc Абв 123");
