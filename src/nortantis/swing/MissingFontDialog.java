@@ -9,6 +9,7 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +29,7 @@ import nortantis.FontFinder;
 import nortantis.MapFonts.FontProblem;
 import nortantis.MapFonts.MissingFontInfo;
 import nortantis.MapSettings.ThemeFontType;
+import nortantis.platform.FontStyle;
 import nortantis.swing.translation.Translation;
 
 /**
@@ -245,17 +247,29 @@ public class MissingFontDialog
 
 	private static FontProblem combine(MissingFontInfo info)
 	{
-		StringBuilder textToDraw = new StringBuilder();
+		// Text stays under the style it is drawn in while the fonts are merged, so that one font's bold labels are still judged against a
+		// candidate's bold face rather than against whichever face the other fonts happened to use.
+		Map<FontStyle, StringBuilder> textToDrawByStyle = new LinkedHashMap<>();
 		Set<ThemeFontType> usedBy = new LinkedHashSet<>();
 		int individualLabelCount = 0;
 		for (FontProblem problem : info.problems)
 		{
-			textToDraw.append(problem.textToDraw);
+			for (Map.Entry<FontStyle, String> entry : problem.textToDrawByStyle.entrySet())
+			{
+				textToDrawByStyle.computeIfAbsent(entry.getKey(), key -> new StringBuilder()).append(entry.getValue());
+			}
 			usedBy.addAll(problem.usedByThemeFontTypes);
 			individualLabelCount += problem.individualLabelCount;
 		}
+
+		Map<FontStyle, String> combinedText = new LinkedHashMap<>();
+		for (Map.Entry<FontStyle, StringBuilder> entry : textToDrawByStyle.entrySet())
+		{
+			combinedText.put(entry.getKey(), entry.getValue().toString());
+		}
+
 		// The combined row offers one replacement for every font, so it carries no single art pack; the art packs are named per font above.
-		return new FontProblem(info.problems.get(0).family, new ArrayList<>(usedBy), individualLabelCount, textToDraw.toString(), null);
+		return new FontProblem(info.problems.get(0).family, new ArrayList<>(usedBy), individualLabelCount, combinedText, null);
 	}
 
 	/**
@@ -289,20 +303,20 @@ public class MissingFontDialog
 		// as in the font picker. Leaving those out instead would shorten the list with nothing to say why a font someone came looking for is
 		// not in it, and when nothing at all covers the labels it would empty the list entirely. The map's own fonts are not gathered at the
 		// top here: the one being replaced is by definition not available, and the rest are a worse answer than what the substitute suggests.
-		String suggested = FontFinder.chooseSubstitute(problem.family, problem.textToDraw);
+		String suggested = FontFinder.chooseSubstitute(problem.family, problem.textToDrawByStyle);
 		if (suggested == null)
 		{
 			// Nothing on this device draws every character the missing font was drawing, so the characters no font has go undrawn, as they
 			// already do for a font that is present and lacks them. What is suggested is then the family a missing font falls back to
 			// anyway, rather than whichever family happens to sort first.
-			suggested = FontFinder.chooseSubstitute(problem.family, null);
+			suggested = FontFinder.chooseSubstitute(problem.family, Map.of());
 		}
 
 		List<Object> rows = FontFamilySections.buildRows(new ArrayList<>(), "");
 		// Memoized because the renderer asks on every repaint, and the text a missing font was drawing is every label it drew.
 		Map<String, Boolean> canDrawTheTextByFamily = new HashMap<>();
 		return FontFamilySections.createFamilyComboBox(rows, suggested,
-				family -> canDrawTheTextByFamily.computeIfAbsent(family, key -> FontFinder.canDisplay(key, problem.textToDraw)) ? null
+				family -> canDrawTheTextByFamily.computeIfAbsent(family, key -> FontFinder.canDisplay(key, problem.textToDrawByStyle)) ? null
 						: Translation.get(cannotDisplayKey, family));
 	}
 

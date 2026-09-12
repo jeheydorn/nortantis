@@ -68,7 +68,7 @@ public class FontFinderTest
 			for (String key : toolIconKeys)
 			{
 				String text = bundle.getString(key);
-				assertTrue(FontFinder.canDisplay(family, text),
+				assertTrue(FontFinder.canDisplay(family, FontStyle.Plain, text),
 						"The chrome font for '" + language + "' (" + family + ") cannot draw " + key + ": " + text);
 			}
 		}
@@ -77,7 +77,7 @@ public class FontFinderTest
 	@Test
 	public void aMissingFamilyAlwaysHasAnAvailableSubstitute()
 	{
-		String substitute = FontFinder.chooseSubstitute("A Font That Does Not Exist", "Aa");
+		String substitute = FontFinder.chooseSubstitute("A Font That Does Not Exist", FontStyle.Plain, "Aa");
 		assertNotNull(substitute, "No substitute available for a missing family.");
 		assertTrue(FontFinder.isAvailable(substitute), "chooseSubstitute returned an unavailable family: " + substitute);
 	}
@@ -85,7 +85,7 @@ public class FontFinderTest
 	@Test
 	public void aMissingFamilyIsReplacedWithTheFamilyNewMapsUse()
 	{
-		assertEquals(FontFinder.houseFontFamily, FontFinder.chooseSubstitute("A Font That Does Not Exist", "Aa"));
+		assertEquals(FontFinder.houseFontFamily, FontFinder.chooseSubstitute("A Font That Does Not Exist", FontStyle.Plain, "Aa"));
 	}
 
 	@Test

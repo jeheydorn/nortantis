@@ -1,6 +1,7 @@
 package nortantis;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -105,7 +106,34 @@ public class MapSettingsTest
 		MapFonts.MissingFontInfo info = MapFonts.findProblems(settings);
 
 		assertEquals(1, info.problems.size());
-		assertEquals("Atelan", info.problems.get(0).textToDraw);
+		assertEquals(Map.of(FontStyle.Plain, "Atelan"), info.problems.get(0).textToDrawByStyle);
+	}
+
+	@Test
+	public void aMissingFontKeepsItsTextUnderTheStyleItIsDrawnIn()
+	{
+		// A family's faces need not have the same glyphs, so which face has to draw which label decides whether a replacement will do.
+		MapSettings settings = createSettingsWithAllThemeFonts("A Font That Does Not Exist");
+		settings.setThemeFont(MapSettings.ThemeFontType.Title, Font.create("A Font That Does Not Exist", FontStyle.Bold, 20));
+		settings.edits = new MapEdits();
+		settings.edits.text = new CopyOnWriteArrayList<>(List.of(createMapText(TextType.Title, "Łódź", null),
+				createMapText(TextType.Region, "Atelan", null),
+				createMapText(TextType.City, "Vinx", Font.create("A Font That Does Not Exist", FontStyle.Italic, 12))));
+
+		MapFonts.MissingFontInfo info = MapFonts.findProblems(settings);
+
+		assertEquals(1, info.problems.size());
+		assertEquals(Map.of(FontStyle.Bold, "Łódź", FontStyle.Plain, "Atelan", FontStyle.Italic, "Vinx"),
+				info.problems.get(0).textToDrawByStyle);
+	}
+
+	@Test
+	public void aReplacementMustDrawEachStylesOwnText()
+	{
+		// Almendra's regular face has a glyph for ź and its bold face does not, so it can replace a font that drew "Łódź" plainly but not
+		// one that drew it in bold.
+		assertTrue(FontFinder.canDisplay("Almendra", Map.of(FontStyle.Plain, "Łódź", FontStyle.Bold, "Atelan")));
+		assertFalse(FontFinder.canDisplay("Almendra", Map.of(FontStyle.Plain, "Atelan", FontStyle.Bold, "Łódź")));
 	}
 
 	@Test

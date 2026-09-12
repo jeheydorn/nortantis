@@ -12,6 +12,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import nortantis.MapSettings.ThemeFontType;
 import nortantis.platform.Font;
+import nortantis.platform.FontStyle;
 import nortantis.util.Assets;
 
 /**
@@ -33,21 +34,25 @@ public class MapFonts
 		public final List<ThemeFontType> usedByThemeFontTypes;
 		/** How many individual labels choose this family for themselves, or 0 when none do. */
 		public final int individualLabelCount;
-		/** The map's text this family was drawing, which a replacement has to be able to draw too. */
-		public final String textToDraw;
+		/**
+		 * The map's text this family was drawing, gathered under the style it is drawn in, which a replacement has to be able to draw too. A
+		 * family's faces need not have the same glyphs, so the text a map draws in bold has to be judged against a candidate's bold face
+		 * rather than against the whole family.
+		 */
+		public final Map<FontStyle, String> textToDrawByStyle;
 		/**
 		 * The art pack the map says this family came from, when that art pack is not installed. Null when the map records no art pack for
 		 * it, or when the art pack is installed and simply no longer supplies the family.
 		 */
 		public final String missingArtPack;
 
-		public FontProblem(String family, List<ThemeFontType> usedByThemeFontTypes, int individualLabelCount, String textToDraw,
-				String missingArtPack)
+		public FontProblem(String family, List<ThemeFontType> usedByThemeFontTypes, int individualLabelCount,
+				Map<FontStyle, String> textToDrawByStyle, String missingArtPack)
 		{
 			this.family = family;
 			this.usedByThemeFontTypes = usedByThemeFontTypes;
 			this.individualLabelCount = individualLabelCount;
-			this.textToDraw = textToDraw;
+			this.textToDrawByStyle = textToDrawByStyle;
 			this.missingArtPack = missingArtPack;
 		}
 	}
@@ -110,7 +115,7 @@ public class MapFonts
 			// The text this family was drawing is what a replacement has to be able to draw, so that swapping a missing font does not
 			// silently trade it for one with no glyphs for the map's labels.
 			problems.add(new FontProblem(family, new ArrayList<>(usage.usedByByFamily.get(family)),
-					usage.overrideCountByFamily.getOrDefault(family, 0), usage.textByFamily.get(family).toString(), artPack));
+					usage.overrideCountByFamily.getOrDefault(family, 0), toTextByStyle(usage.textByFamilyAndStyle.get(family)), artPack));
 		}
 
 		return new MissingFontInfo(problems);
@@ -174,8 +179,19 @@ public class MapFonts
 	{
 		final Map<String, String> familyAsWrittenByLowerCase = new LinkedHashMap<>();
 		final Map<String, List<ThemeFontType>> usedByByFamily = new LinkedHashMap<>();
-		final Map<String, StringBuilder> textByFamily = new LinkedHashMap<>();
+		/** The text each family draws, kept apart by the style it is drawn in, since a family's faces need not have the same glyphs. */
+		final Map<String, Map<FontStyle, StringBuilder>> textByFamilyAndStyle = new LinkedHashMap<>();
 		final Map<String, Integer> overrideCountByFamily = new LinkedHashMap<>();
+	}
+
+	private static Map<FontStyle, String> toTextByStyle(Map<FontStyle, StringBuilder> textByStyle)
+	{
+		Map<FontStyle, String> result = new LinkedHashMap<>();
+		for (Entry<FontStyle, StringBuilder> entry : textByStyle.entrySet())
+		{
+			result.put(entry.getKey(), entry.getValue().toString());
+		}
+		return result;
 	}
 
 	private static FontUsage gatherUsage(MapSettings settings)
@@ -202,21 +218,23 @@ public class MapFonts
 				}
 
 				String family;
+				Font font;
 				if (text.fontOverride != null)
 				{
-					family = recordFamily(text.fontOverride.getName(), usage);
+					font = text.fontOverride;
+					family = recordFamily(font.getName(), usage);
 					usage.overrideCountByFamily.merge(family, 1, Integer::sum);
 				}
 				else
 				{
-					Font themeFont = settings.getThemeFont(MapSettings.getThemeFontTypeForText(text.type));
-					if (themeFont == null)
+					font = settings.getThemeFont(MapSettings.getThemeFontTypeForText(text.type));
+					if (font == null)
 					{
 						continue;
 					}
-					family = recordFamily(themeFont.getName(), usage);
+					family = recordFamily(font.getName(), usage);
 				}
-				usage.textByFamily.get(family).append(text.value);
+				usage.textByFamilyAndStyle.get(family).computeIfAbsent(font.getStyle(), key -> new StringBuilder()).append(text.value);
 			}
 		}
 
@@ -229,7 +247,7 @@ public class MapFonts
 		// the machine: in Turkish, "Iosevka" and "iosevka" lower case to different strings and would be asked about twice.
 		String canonical = usage.familyAsWrittenByLowerCase.computeIfAbsent(familyAsWritten.toLowerCase(Locale.ROOT), key -> familyAsWritten);
 		usage.usedByByFamily.computeIfAbsent(canonical, key -> new ArrayList<>());
-		usage.textByFamily.computeIfAbsent(canonical, key -> new StringBuilder());
+		usage.textByFamilyAndStyle.computeIfAbsent(canonical, key -> new LinkedHashMap<>());
 		return canonical;
 	}
 }

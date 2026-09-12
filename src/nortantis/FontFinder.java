@@ -449,35 +449,46 @@ public class FontFinder
 	 *
 	 * @param sampleText
 	 *            Text the replacement must be able to draw, or null to not require any particular coverage.
-	 */
-	public static String chooseSubstitute(String missingFamily, String sampleText)
-	{
-		return chooseSubstitute(missingFamily, FontStyle.Plain, sampleText);
-	}
-
-	/**
 	 * @param style
 	 *            The style the replacement will be drawn in, since a family's faces need not have the same glyphs.
 	 */
 	public static String chooseSubstitute(String missingFamily, FontStyle style, String sampleText)
+	{
+		return chooseSubstitute(missingFamily, Map.of(style, sampleText == null ? "" : sampleText));
+	}
+
+	/**
+	 * @param sampleTextByStyle
+	 *            The text the replacement must be able to draw, under the style each piece of it will be drawn in. Empty to not require any
+	 *            particular coverage. Text is kept apart by style because a family whose regular face draws a character can have a bold face
+	 *            that does not, so a replacement for a font used both ways has to be judged against each face in turn.
+	 */
+	public static String chooseSubstitute(String missingFamily, Map<FontStyle, String> sampleTextByStyle)
 	{
 		ensureInitialized();
 
 		// Memoized by the writing systems the text is made of rather than by the words, since searching means trying families one at a time
 		// and this is asked per keystroke. Two texts written the same way usually want the same family, but families differ character by
 		// character within a writing system, so a memoized answer is used only once it has been shown to draw the text in hand.
-		String key = (missingFamily == null ? "" : missingFamily.toLowerCase(Locale.ROOT)) + "|" + style + "|"
-				+ describeWritingSystems(sampleText);
-		String cached = substitutesByRequest.get(key);
-		if (cached != null && canDisplay(cached, style, sampleText))
+		StringBuilder key = new StringBuilder(missingFamily == null ? "" : missingFamily.toLowerCase(Locale.ROOT));
+		for (FontStyle style : FontStyle.values())
+		{
+			if (sampleTextByStyle.containsKey(style))
+			{
+				key.append("|").append(style).append(":").append(describeWritingSystems(sampleTextByStyle.get(style)));
+			}
+		}
+
+		String cached = substitutesByRequest.get(key.toString());
+		if (cached != null && canDisplay(cached, sampleTextByStyle))
 		{
 			return cached;
 		}
 
-		String substitute = findSubstitute(missingFamily, style, sampleText);
+		String substitute = findSubstitute(missingFamily, sampleTextByStyle);
 		if (substitute != null)
 		{
-			substitutesByRequest.put(key, substitute);
+			substitutesByRequest.put(key.toString(), substitute);
 		}
 		return substitute;
 	}
@@ -515,17 +526,17 @@ public class FontFinder
 		}
 	}
 
-	private static String findSubstitute(String missingFamily, FontStyle style, String sampleText)
+	private static String findSubstitute(String missingFamily, Map<FontStyle, String> sampleTextByStyle)
 	{
 		String alias = missingFamily == null ? null : aliasesByLowerCaseFamily.get(missingFamily.toLowerCase(Locale.ROOT));
-		if (alias != null && isAvailableInternal(alias) && canDisplay(alias, style, sampleText))
+		if (alias != null && isAvailableInternal(alias) && canDisplay(alias, sampleTextByStyle))
 		{
 			return alias;
 		}
 
 		for (String family : preferredSubstituteFamilies)
 		{
-			if (isAvailableInternal(family) && canDisplay(family, style, sampleText))
+			if (isAvailableInternal(family) && canDisplay(family, sampleTextByStyle))
 			{
 				return family;
 			}
@@ -534,25 +545,36 @@ public class FontFinder
 		// availableFonts puts bundled fonts first, so this prefers a portable answer without needing to say so.
 		for (AvailableFont font : availableFonts)
 		{
-			if (canDisplay(font.family, style, sampleText))
+			if (canDisplay(font.family, sampleTextByStyle))
 			{
 				return font.family;
 			}
 		}
 
-		return canDisplay(logicalSerifFamily, style, sampleText) ? logicalSerifFamily : null;
+		return canDisplay(logicalSerifFamily, sampleTextByStyle) ? logicalSerifFamily : null;
+	}
+
+	/**
+	 * Whether the given family can draw each piece of the given text in the style that piece is drawn in. Text that is null or empty is
+	 * considered drawable by anything, so a family that has to draw nothing passes.
+	 */
+	public static boolean canDisplay(String family, Map<FontStyle, String> textByStyle)
+	{
+		ensureInitialized();
+		for (Map.Entry<FontStyle, String> entry : textByStyle.entrySet())
+		{
+			if (!canDisplay(family, entry.getKey(), entry.getValue()))
+			{
+				return false;
+			}
+		}
+		return true;
 	}
 
 	/**
 	 * Whether the given family has glyphs for every character of the given text. Text that is null or empty is considered drawable by
 	 * anything.
-	 */
-	public static boolean canDisplay(String family, String text)
-	{
-		return canDisplay(family, FontStyle.Plain, text);
-	}
-
-	/**
+	 *
 	 * @param style
 	 *            The style the text will be drawn in. A family's faces need not have the same glyphs - a family whose regular face draws a
 	 *            character can have a bold face that does not - so the answer is about one face rather than the whole family.
