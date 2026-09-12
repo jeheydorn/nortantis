@@ -165,7 +165,7 @@ public class MissingFontDialog
 						4);
 			}
 
-			JComboBox<Object> comboBox = createFontComboBox(problem);
+			JComboBox<Object> comboBox = createFontComboBox(problem, "mainWindow.missingFont.cannotDisplay");
 			comboBoxesByFamily.put(problem.family, comboBox);
 
 			JLabel preview = new JLabel();
@@ -221,7 +221,7 @@ public class MissingFontDialog
 
 		// Every font gets the same replacement, so the choices must be drawable for all of the text, and each family maps to the same combo.
 		FontProblem combined = combine(info);
-		JComboBox<Object> comboBox = createFontComboBox(combined);
+		JComboBox<Object> comboBox = createFontComboBox(combined, "mainWindow.missingFont.cannotDisplayAny");
 		for (FontProblem problem : info.problems)
 		{
 			comboBoxesByFamily.put(problem.family, comboBox);
@@ -278,38 +278,32 @@ public class MissingFontDialog
 		return String.join(", ", parts);
 	}
 
-	private static JComboBox<Object> createFontComboBox(FontProblem problem)
+	/**
+	 * @param cannotDisplayKey
+	 *            The message shown for a family that cannot draw all of the text, which differs by whether the combo box replaces one
+	 *            missing font or all of them.
+	 */
+	private static JComboBox<Object> createFontComboBox(FontProblem problem, String cannotDisplayKey)
 	{
-		// Offering a replacement with no glyphs for the labels the missing font was drawing would trade one problem for another, so the
-		// families offered are only those that can draw them. The map's own fonts are not gathered at the top here: the one being replaced
-		// is by definition not available, and the rest are a worse answer than what the substitute suggests.
+		// Every family is offered, with the ones that have no glyphs for some of the labels the missing font was drawing greyed out, the same
+		// as in the font picker. Leaving those out instead would shorten the list with nothing to say why a font someone came looking for is
+		// not in it, and when nothing at all covers the labels it would empty the list entirely. The map's own fonts are not gathered at the
+		// top here: the one being replaced is by definition not available, and the rest are a worse answer than what the substitute suggests.
 		String suggested = FontFinder.chooseSubstitute(problem.family, problem.textToDraw);
-		List<Object> rows = FontFamilySections.buildRows(new ArrayList<>(), "", family -> FontFinder.canDisplay(family, problem.textToDraw));
-		if (!namesAFont(rows))
+		if (suggested == null)
 		{
-			// Nothing on this device draws every character the missing font was drawing, so no replacement avoids the problem and offering
-			// none would leave nothing to choose. The whole list is offered instead, and the characters no font has go undrawn, as they
+			// Nothing on this device draws every character the missing font was drawing, so the characters no font has go undrawn, as they
 			// already do for a font that is present and lacks them. What is suggested is then the family a missing font falls back to
 			// anyway, rather than whichever family happens to sort first.
-			rows = FontFamilySections.buildRows(new ArrayList<>(), "");
 			suggested = FontFinder.chooseSubstitute(problem.family, null);
 		}
-		return FontFamilySections.createFamilyComboBox(rows, suggested);
-	}
 
-	/**
-	 * Whether any of the given rows names a font rather than heading a group of them.
-	 */
-	private static boolean namesAFont(List<Object> rows)
-	{
-		for (Object row : rows)
-		{
-			if (row instanceof String)
-			{
-				return true;
-			}
-		}
-		return false;
+		List<Object> rows = FontFamilySections.buildRows(new ArrayList<>(), "");
+		// Memoized because the renderer asks on every repaint, and the text a missing font was drawing is every label it drew.
+		Map<String, Boolean> canDrawTheTextByFamily = new HashMap<>();
+		return FontFamilySections.createFamilyComboBox(rows, suggested,
+				family -> canDrawTheTextByFamily.computeIfAbsent(family, key -> FontFinder.canDisplay(key, problem.textToDraw)) ? null
+						: Translation.get(cannotDisplayKey, family));
 	}
 
 	/**

@@ -240,6 +240,9 @@ public class JFontChooser extends JComponent
 			fontNameList.addMouseListener(new FamilyRowMenuHandler());
 			fontNameList.setFont(DEFAULT_FONT);
 			fontNameList.setFocusable(false);
+			// A list is sent the mouse events a tooltip needs only once it is registered, and setting a tooltip on the rows from the
+			// renderer does not register it, so without this the reason a greyed family is greyed never appears.
+			ToolTipManager.sharedInstance().registerComponent(fontNameList);
 		}
 		return fontNameList;
 	}

@@ -7,15 +7,18 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.function.Predicate;
+import java.util.function.Function;
 
+import javax.accessibility.Accessible;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.ToolTipManager;
 import javax.swing.border.Border;
+import javax.swing.plaf.basic.ComboPopup;
 
 import nortantis.FontFinder;
 import nortantis.FontFinder.AvailableFont;
@@ -65,17 +68,8 @@ class FontFamilySections
 	 */
 	static List<Object> buildRows(List<String> familiesUsedByThisMap, String searchText)
 	{
-		return buildRows(familiesUsedByThisMap, searchText, family -> true);
-	}
-
-	/**
-	 * @param isOffered
-	 *            Which families to include at all, for a list that can only offer some of them.
-	 */
-	static List<Object> buildRows(List<String> familiesUsedByThisMap, String searchText, Predicate<String> isOffered)
-	{
 		List<Object> rows = new ArrayList<>();
-		addSection(rows, Translation.get("fontChooser.section.usedByThisMap"), familiesUsedByThisMap, searchText, isOffered);
+		addSection(rows, Translation.get("fontChooser.section.usedByThisMap"), familiesUsedByThisMap, searchText);
 
 		// Registered fonts are grouped by the pack that supplied them, in the order listAvailableFonts gives, which puts the bundled ones
 		// first. Anything the machine itself supplies came from no pack and goes last.
@@ -95,9 +89,9 @@ class FontFamilySections
 
 		for (Map.Entry<String, List<String>> entry : familiesByArtPack.entrySet())
 		{
-			addSection(rows, entry.getKey(), entry.getValue(), searchText, isOffered);
+			addSection(rows, entry.getKey(), entry.getValue(), searchText);
 		}
-		addSection(rows, Translation.get(Assets.deviceFontSourceNameKey), systemFamilies, searchText, isOffered);
+		addSection(rows, Translation.get(Assets.deviceFontSourceNameKey), systemFamilies, searchText);
 
 		if (rows.isEmpty())
 		{
@@ -111,12 +105,12 @@ class FontFamilySections
 	 * Adds a heading and the families under it that match what has been typed, or nothing at all when none of them do. A heading with
 	 * nothing under it would say a group is empty when what is really true is that nothing in it matched.
 	 */
-	private static void addSection(List<Object> rows, String title, List<String> families, String searchText, Predicate<String> isOffered)
+	private static void addSection(List<Object> rows, String title, List<String> families, String searchText)
 	{
 		List<String> matching = new ArrayList<>();
 		for (String family : families)
 		{
-			if (matches(family, searchText) && isOffered.test(family))
+			if (matches(family, searchText))
 			{
 				matching.add(family);
 			}
@@ -195,13 +189,39 @@ class FontFamilySections
 	 */
 	static JComboBox<Object> createFamilyComboBox(List<Object> rows, String selectedFamily)
 	{
+		return createFamilyComboBox(rows, selectedFamily, family -> null);
+	}
+
+	/**
+	 * @param describeWhyItCannotDraw
+	 *            Given a family, why it cannot draw all of the text it would have to, or null when it can. Families it answers for are
+	 *            greyed out with that answer as their tooltip, and stay choosable, the same as in the font picker's list. Greying them
+	 *            rather than leaving them out keeps the list whole, so that a font someone expects to find is where they look for it
+	 *            instead of being absent with nothing to say why.
+	 */
+	static JComboBox<Object> createFamilyComboBox(List<Object> rows, String selectedFamily, Function<String, String> describeWhyItCannotDraw)
+	{
 		JComboBox<Object> comboBox = new SectionedFamilyComboBox(rows);
-		comboBox.setRenderer(new ComboSectionRenderer(comboBox));
+		comboBox.setRenderer(new ComboSectionRenderer(comboBox, describeWhyItCannotDraw));
+		showTooltipsInPopup(comboBox);
 		if (selectedFamily != null)
 		{
 			comboBox.setSelectedItem(selectedFamily);
 		}
 		return comboBox;
+	}
+
+	/**
+	 * Lets the rows of a combo box's popup show the tooltips its renderer gives them. A list is sent the mouse events a tooltip needs only
+	 * once it is registered, and neither the look and feel nor setting a tooltip from the renderer registers the popup's list.
+	 */
+	private static void showTooltipsInPopup(JComboBox<Object> comboBox)
+	{
+		Accessible popup = comboBox.getUI().getAccessibleChild(comboBox, 0);
+		if (popup instanceof ComboPopup)
+		{
+			ToolTipManager.sharedInstance().registerComponent(((ComboPopup) popup).getList());
+		}
 	}
 
 	/**
@@ -273,10 +293,12 @@ class FontFamilySections
 	private static class ComboSectionRenderer extends DefaultListCellRenderer
 	{
 		private final JComboBox<Object> comboBox;
+		private final Function<String, String> describeWhyItCannotDraw;
 
-		ComboSectionRenderer(JComboBox<Object> comboBox)
+		ComboSectionRenderer(JComboBox<Object> comboBox, Function<String, String> describeWhyItCannotDraw)
 		{
 			this.comboBox = comboBox;
+			this.describeWhyItCannotDraw = describeWhyItCannotDraw;
 		}
 
 		@Override
@@ -285,6 +307,15 @@ class FontFamilySections
 			if (!(value instanceof SectionHeading))
 			{
 				Component row = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+
+				// The reason a row is greyed is in its tooltip rather than in the row, where it would read as part of the family's name.
+				String cannotDraw = value instanceof String ? describeWhyItCannotDraw.apply((String) value) : null;
+				row.setEnabled(cannotDraw == null);
+				if (row instanceof JComponent)
+				{
+					((JComponent) row).setToolTipText(cannotDraw);
+				}
+
 				if (index >= 0 && row instanceof JComponent)
 				{
 					// Only the rows in the list are indented. Index -1 is the chosen family drawn in the closed combo box, where there is no
@@ -298,6 +329,7 @@ class FontFamilySections
 			JLabel label = (JLabel) super.getListCellRendererComponent(list, "", index, false, false);
 			applyHeadingStyle(label, (SectionHeading) value, list, comboBox.getFont());
 			label.setBorder(createHeadingBorder(list, index == 0));
+			label.setToolTipText(null);
 			return label;
 		}
 	}
