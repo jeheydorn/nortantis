@@ -127,10 +127,6 @@ This runs `AwtMapCreatorBenchmark` with JFR (Java Flight Recorder) profiling ena
 
 The benchmark creates maps using settings from `unit test files/map settings/simpleSmallWorld.nort`.
 
-## Editing Files
-
-Whenever possible, use the Read, Edit, and Write tools to read and modify files. Try to never use Python scripts, shell commands like `sed` or `awk`, or PowerShell to read or write file content.
-
 ## Version Control
 
 Do NOT commit, and do NOT push, unless I ask you to in that message. Finish the work and leave the changes in the working tree. Asking me first is not a substitute — wait for me to ask. Being asked to commit once is not standing permission to commit later work; every commit needs its own request. The same goes for anything else that leaves this machine or changes shared branches: pushing, merging into `master` or `release`, opening pull requests, and creating tags.
