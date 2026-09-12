@@ -65,12 +65,12 @@ public class MapSettingsTest
 	{
 		MapSettings settings = createSettingsWithAllThemeFonts("A Font That Does Not Exist");
 
-		MapSettings.MissingFontInfo info = settings.findFontProblems();
+		MapFonts.MissingFontInfo info = MapFonts.findProblems(settings);
 
 		assertEquals(1, info.problems.size(), "Every theme font names the same family, so there should be one problem.");
-		MapSettings.FontProblem problem = info.problems.get(0);
+		MapFonts.FontProblem problem = info.problems.get(0);
 		assertEquals("A Font That Does Not Exist", problem.family);
-		assertEquals(MapSettings.ThemeFontType.values().length, problem.usedBy.size());
+		assertEquals(MapSettings.ThemeFontType.values().length, problem.usedByThemeFontTypes.size());
 	}
 
 	@Test
@@ -79,7 +79,7 @@ public class MapSettingsTest
 		// URW Chancery L resolves to the bundled Z003, which is the same typeface under another name, so it must not prompt.
 		MapSettings settings = createSettingsWithAllThemeFonts("URW Chancery L");
 
-		assertTrue(settings.findFontProblems().isEmpty());
+		assertTrue(MapFonts.findProblems(settings).isEmpty());
 	}
 
 	@Test
@@ -91,7 +91,7 @@ public class MapSettingsTest
 		settings.edits = new MapEdits();
 		settings.edits.text = new CopyOnWriteArrayList<>(List.of(createMapText(TextType.Title, "上海", null)));
 
-		assertTrue(settings.findFontProblems().isEmpty());
+		assertTrue(MapFonts.findProblems(settings).isEmpty());
 	}
 
 	@Test
@@ -102,7 +102,7 @@ public class MapSettingsTest
 		settings.edits = new MapEdits();
 		settings.edits.text = new CopyOnWriteArrayList<>(List.of(createMapText(TextType.Title, "Atelan", null)));
 
-		MapSettings.MissingFontInfo info = settings.findFontProblems();
+		MapFonts.MissingFontInfo info = MapFonts.findProblems(settings);
 
 		assertEquals(1, info.problems.size());
 		assertEquals("Atelan", info.problems.get(0).textToDraw);
@@ -124,7 +124,7 @@ public class MapSettingsTest
 				List.of(createMapText(TextType.Title, "Atelan", Font.create("A Font That Does Not Exist", FontStyle.Italic, 33)),
 						createMapText(TextType.Region, "Vinx", Font.create("Georgia", FontStyle.Plain, 12))));
 
-		settings.applyFontSubstitution(Map.of("A Font That Does Not Exist", FontFinder.houseFontFamily));
+		MapFonts.applySubstitution(settings, Map.of("A Font That Does Not Exist", FontFinder.houseFontFamily));
 
 		assertEquals(FontFinder.houseFontFamily, settings.titleFont.getName());
 		assertEquals(FontStyle.BoldItalic, settings.titleFont.getStyle());
@@ -152,7 +152,7 @@ public class MapSettingsTest
 						createMapText(TextType.Region, "Vinx", Font.create("Tangerine", FontStyle.Plain, 30)),
 						createMapText(TextType.City, "Bree", null)));
 
-		List<String> used = settings.getFontFamiliesUsed();
+		List<String> used = MapFonts.getFamiliesUsed(settings);
 
 		assertEquals(List.of("Palatino", "Georgia", "Tangerine"), used,
 				"Expected the theme fonts in order, then the families only individual labels use.");
@@ -168,7 +168,7 @@ public class MapSettingsTest
 						createMapText(TextType.Region, "Vinx", Font.create("GEORGIA", FontStyle.Plain, 30))));
 
 		// The same family named three ways is one entry, keeping the picker from listing a font once per spelling.
-		assertEquals(List.of("Georgia"), settings.getFontFamiliesUsed());
+		assertEquals(List.of("Georgia"), MapFonts.getFamiliesUsed(settings));
 	}
 
 	@Test
@@ -194,7 +194,7 @@ public class MapSettingsTest
 		assertTrue(info.isEmpty(), "A missing font is not something choosing another art pack can fix, so it must not raise that dialog.");
 
 		// The missing art pack is named where the user can act on it instead.
-		MapSettings.MissingFontInfo fontProblems = settings.findFontProblems();
+		MapFonts.MissingFontInfo fontProblems = MapFonts.findProblems(settings);
 		assertEquals(1, fontProblems.problems.size());
 		assertEquals("An Art Pack That Is Not Installed", fontProblems.problems.get(0).missingArtPack);
 	}
@@ -215,7 +215,7 @@ public class MapSettingsTest
 		MapSettings settings = createSettingsWithAllThemeFonts("A Font That Does Not Exist");
 
 		assertTrue(settings.findMissingArtPacks().isEmpty());
-		MapSettings.MissingFontInfo fontProblems = settings.findFontProblems();
+		MapFonts.MissingFontInfo fontProblems = MapFonts.findProblems(settings);
 		assertEquals(1, fontProblems.problems.size(), "It is still a missing font.");
 		assertNull(fontProblems.problems.get(0).missingArtPack, "The map records no art pack for it, so there is none to name.");
 	}

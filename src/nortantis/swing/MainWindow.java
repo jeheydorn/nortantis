@@ -7,6 +7,7 @@ import nortantis.DebugFlags;
 import nortantis.FontFinder;
 import nortantis.GeneratedDimension;
 import nortantis.ImageCache;
+import nortantis.MapFonts;
 import nortantis.MapSettings;
 import nortantis.editor.*;
 import nortantis.geom.IntDimension;
@@ -2319,7 +2320,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			// Likewise for the fonts the map names, so that a map isn't drawn with silent font substitutions the user is never told about.
 			// The map's custom images folder may itself supply some of those fonts, so it has to be registered before they are looked for.
 			FontFinder.registerFontsFromArtPacks(settings.customImagesPath);
-			MapSettings.MissingFontInfo fontProblems = settings.findFontProblems();
+			MapFonts.MissingFontInfo fontProblems = MapFonts.findProblems(settings);
 			if (!fontProblems.isEmpty())
 			{
 				String mapName = FilenameUtils.getBaseName(absolutePath);
@@ -2332,7 +2333,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				{
 					settingsBeforeSubstitution = settings.deepCopy();
 				}
-				settings.applyFontSubstitution(response.replacements);
+				MapFonts.applySubstitution(settings, response.replacements);
 			}
 
 			openSettingsFilePath = Paths.get(absolutePath);

@@ -2,6 +2,7 @@ package nortantis.swing;
 
 import nortantis.FontFinder;
 import nortantis.LineBreak;
+import nortantis.MapFonts;
 import nortantis.MapSettings;
 import nortantis.MapText;
 import nortantis.TextType;
@@ -271,7 +272,7 @@ public class TextTool extends EditorTool
 			fontChooser.setFamiliesUsedByThisMap(() ->
 			{
 				MapSettings settings = mainWindow.getSettingsFromGUI(false);
-				return settings == null ? null : settings.getFontFamiliesUsed();
+				return settings == null ? null : MapFonts.getFamiliesUsed(settings);
 			});
 			fontChooser.setTextThatMustBeDrawable(() -> lastSelected == null ? "" : lastSelected.value);
 			fontHider = fontChooser.addToOrganizer(organizer);

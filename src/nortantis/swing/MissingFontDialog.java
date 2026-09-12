@@ -25,8 +25,9 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
 import nortantis.FontFinder;
-import nortantis.MapSettings.FontProblem;
-import nortantis.MapSettings.MissingFontInfo;
+import nortantis.MapFonts.FontProblem;
+import nortantis.MapFonts.MissingFontInfo;
+import nortantis.MapSettings.ThemeFontType;
 import nortantis.swing.translation.Translation;
 
 /**
@@ -155,7 +156,7 @@ public class MissingFontDialog
 			familyLabel.setFont(familyLabel.getFont().deriveFont(Font.BOLD));
 			addToRow(panel, row++, familyLabel, 0, 4);
 
-			addToRow(panel, row++, new JLabel(Translation.get("mainWindow.missingFont.usedBy", String.join(", ", problem.usedBy))), 12,
+			addToRow(panel, row++, new JLabel(Translation.get("mainWindow.missingFont.usedBy", describeWhatUsesIt(problem))), 12,
 					problem.missingArtPack == null ? 4 : 0);
 
 			if (problem.missingArtPack != null)
@@ -245,14 +246,36 @@ public class MissingFontDialog
 	private static FontProblem combine(MissingFontInfo info)
 	{
 		StringBuilder textToDraw = new StringBuilder();
-		Set<String> usedBy = new LinkedHashSet<>();
+		Set<ThemeFontType> usedBy = new LinkedHashSet<>();
+		int individualLabelCount = 0;
 		for (FontProblem problem : info.problems)
 		{
 			textToDraw.append(problem.textToDraw);
-			usedBy.addAll(problem.usedBy);
+			usedBy.addAll(problem.usedByThemeFontTypes);
+			individualLabelCount += problem.individualLabelCount;
 		}
 		// The combined row offers one replacement for every font, so it carries no single art pack; the art packs are named per font above.
-		return new FontProblem(info.problems.get(0).family, new ArrayList<>(usedBy), textToDraw.toString(), null);
+		return new FontProblem(info.problems.get(0).family, new ArrayList<>(usedBy), individualLabelCount, textToDraw.toString(), null);
+	}
+
+	/**
+	 * Names what a missing family draws: the kinds of text whose theme font it is, and the labels that chose it for themselves.
+	 */
+	private static String describeWhatUsesIt(FontProblem problem)
+	{
+		List<String> parts = new ArrayList<>();
+		for (ThemeFontType type : problem.usedByThemeFontTypes)
+		{
+			parts.add(Translation.get("themeFontType." + type.name()));
+		}
+
+		if (problem.individualLabelCount > 0)
+		{
+			parts.add(Translation.get(
+					problem.individualLabelCount == 1 ? "mainWindow.missingFont.oneIndividualLabel" : "mainWindow.missingFont.individualLabels",
+					problem.individualLabelCount));
+		}
+		return String.join(", ", parts);
 	}
 
 	private static JComboBox<Object> createFontComboBox(FontProblem problem)

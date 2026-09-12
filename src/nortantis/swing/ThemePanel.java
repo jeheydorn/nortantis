@@ -2100,7 +2100,7 @@ public class ThemePanel extends JTabbedPane
 	private List<String> getFontFamiliesUsedByThisMap()
 	{
 		MapSettings settings = mainWindow.getSettingsFromGUI(false);
-		return settings == null ? new ArrayList<>() : settings.getFontFamiliesUsed();
+		return settings == null ? new ArrayList<>() : MapFonts.getFamiliesUsed(settings);
 	}
 
 	/**

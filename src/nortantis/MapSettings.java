@@ -991,7 +991,7 @@ public class MapSettings implements Serializable
 	private Map<String, String> gatherFontArtPacksToStore()
 	{
 		Map<String, String> result = new TreeMap<>();
-		for (String family : getFontFamiliesUsed())
+		for (String family : MapFonts.getFamiliesUsed(this))
 		{
 			String artPack = getFontArtPack(family);
 			if (artPack == null)
@@ -2662,49 +2662,6 @@ public class MapSettings implements Serializable
 	}
 
 	/**
-	 * One font a map names that this machine cannot render as the author intended.
-	 */
-	public static class FontProblem
-	{
-		public final String family;
-		/** Which parts of the map use the family, already localized. */
-		public final List<String> usedBy;
-		/** The map's text this family was drawing, which a replacement has to be able to draw too. */
-		public final String textToDraw;
-		/**
-		 * The art pack the map says this family came from, when that art pack is not installed. Null when the map records no art pack for
-		 * it, or when the art pack is installed and simply no longer supplies the family.
-		 */
-		public final String missingArtPack;
-
-		public FontProblem(String family, List<String> usedBy, String textToDraw, String missingArtPack)
-		{
-			this.family = family;
-			this.usedBy = usedBy;
-			this.textToDraw = textToDraw;
-			this.missingArtPack = missingArtPack;
-		}
-	}
-
-	/**
-	 * Result of {@link #findFontProblems()}.
-	 */
-	public static class MissingFontInfo
-	{
-		public final List<FontProblem> problems;
-
-		public MissingFontInfo(List<FontProblem> problems)
-		{
-			this.problems = problems;
-		}
-
-		public boolean isEmpty()
-		{
-			return problems.isEmpty();
-		}
-	}
-
-	/**
 	 * The theme font a piece of text is drawn with when it has no font override of its own.
 	 */
 	public static ThemeFontType getThemeFontTypeForText(TextType type)
@@ -2720,176 +2677,6 @@ public class MapSettings implements Serializable
 			case Lake, River -> ThemeFontType.River;
 			case Road -> ThemeFontType.Road;
 		};
-	}
-
-	/**
-	 * Every font family this map names, gathered in one pass: what each is used for and the text it has to draw. Families are keyed by the
-	 * name as written in the map, and one family named two ways is one entry.
-	 */
-	private static class FontUsage
-	{
-		final Map<String, String> familyAsWrittenByLowerCase = new LinkedHashMap<>();
-		final Map<String, List<String>> usedByByFamily = new LinkedHashMap<>();
-		final Map<String, StringBuilder> textByFamily = new LinkedHashMap<>();
-		final Map<String, Integer> overrideCountByFamily = new LinkedHashMap<>();
-	}
-
-	private FontUsage gatherFontUsage()
-	{
-		FontUsage usage = new FontUsage();
-
-		for (Entry<ThemeFontType, Font> entry : getThemeFonts().entrySet())
-		{
-			if (entry.getValue() == null)
-			{
-				continue;
-			}
-			String family = recordFamily(entry.getValue().getName(), usage);
-			usage.usedByByFamily.get(family).add(Translation.get("themeFontType." + entry.getKey().name()));
-		}
-
-		if (edits != null && edits.text != null)
-		{
-			for (MapText text : edits.text)
-			{
-				if (text == null || StringUtils.isEmpty(text.value))
-				{
-					continue;
-				}
-
-				String family;
-				if (text.fontOverride != null)
-				{
-					family = recordFamily(text.fontOverride.getName(), usage);
-					usage.overrideCountByFamily.merge(family, 1, Integer::sum);
-				}
-				else
-				{
-					Font themeFont = getThemeFont(getThemeFontTypeForText(text.type));
-					if (themeFont == null)
-					{
-						continue;
-					}
-					family = recordFamily(themeFont.getName(), usage);
-				}
-				usage.textByFamily.get(family).append(text.value);
-			}
-		}
-
-		return usage;
-	}
-
-	/**
-	 * Every font family this map names, in the order they are first met, as written in the map. That is the theme fonts plus the font of
-	 * every individual label that overrides its type's font, so a family appears whether it is used once or everywhere.
-	 */
-	public List<String> getFontFamiliesUsed()
-	{
-		return new ArrayList<>(gatherFontUsage().usedByByFamily.keySet());
-	}
-
-	/**
-	 * Finds the font families this map names that this machine does not have. Results are grouped by family rather than by field, so a map
-	 * whose theme fonts are all the same family produces one problem rather than one per field.
-	 *
-	 * <p>
-	 * A font that is installed but has no glyphs for some of the map's text is not reported. Nothing about this machine caused that, and
-	 * nothing about this machine can fix it: the map's author chose a font that cannot draw their own text, and they will see that the
-	 * moment the map draws. Interrupting everyone who opens the map to say so would be reporting the author's decision as this reader's
-	 * problem.
-	 */
-	public MissingFontInfo findFontProblems()
-	{
-		FontUsage usage = gatherFontUsage();
-		Map<String, List<String>> usedByByFamily = usage.usedByByFamily;
-		Map<String, StringBuilder> textByFamily = usage.textByFamily;
-		Map<String, Integer> overrideCountByFamily = usage.overrideCountByFamily;
-
-		List<FontProblem> problems = new ArrayList<>();
-		for (String family : usedByByFamily.keySet())
-		{
-			List<String> usedBy = new ArrayList<>(usedByByFamily.get(family));
-			Integer overrideCount = overrideCountByFamily.get(family);
-			if (overrideCount != null)
-			{
-				usedBy.add(Translation.get(overrideCount == 1 ? "mainWindow.missingFont.oneIndividualLabel" : "mainWindow.missingFont.individualLabels",
-						overrideCount));
-			}
-
-			if (FontFinder.isAvailable(FontFinder.resolveAlias(family)))
-			{
-				continue;
-			}
-
-			// The text this family was drawing is what a replacement has to be able to draw, so that swapping a missing font does not
-			// silently trade it for one with no glyphs for the map's labels.
-			String artPack = getFontArtPack(family);
-			if (artPack != null && Assets.artPackExists(artPack, customImagesPath))
-			{
-				artPack = null;
-			}
-			problems.add(new FontProblem(family, usedBy, textByFamily.get(family).toString(), artPack));
-		}
-
-		return new MissingFontInfo(problems);
-	}
-
-	private static String recordFamily(String familyAsWritten, FontUsage usage)
-	{
-		String canonical = usage.familyAsWrittenByLowerCase.computeIfAbsent(familyAsWritten.toLowerCase(), key -> familyAsWritten);
-		usage.usedByByFamily.computeIfAbsent(canonical, key -> new ArrayList<>());
-		usage.textByFamily.computeIfAbsent(canonical, key -> new StringBuilder());
-		return canonical;
-	}
-
-	/**
-	 * Replaces every theme font and every per-text font override whose family is a key in {@code replacements}, keeping each one's own
-	 * style and size.
-	 */
-	public void applyFontSubstitution(Map<String, String> replacements)
-	{
-		Map<String, String> replacementsByLowerCase = new HashMap<>();
-		for (Entry<String, String> entry : replacements.entrySet())
-		{
-			if (!StringUtils.isEmpty(entry.getValue()))
-			{
-				replacementsByLowerCase.put(entry.getKey().toLowerCase(), entry.getValue());
-			}
-		}
-
-		for (ThemeFontType type : ThemeFontType.values())
-		{
-			Font replaced = replaceFamily(getThemeFont(type), replacementsByLowerCase);
-			if (replaced != null)
-			{
-				setThemeFont(type, replaced);
-			}
-		}
-
-		if (edits != null && edits.text != null)
-		{
-			for (MapText text : edits.text)
-			{
-				if (text != null && text.fontOverride != null)
-				{
-					Font replaced = replaceFamily(text.fontOverride, replacementsByLowerCase);
-					if (replaced != null)
-					{
-						text.fontOverride = replaced;
-					}
-				}
-			}
-		}
-	}
-
-	private static Font replaceFamily(Font font, Map<String, String> replacementsByLowerCase)
-	{
-		if (font == null)
-		{
-			return null;
-		}
-		String replacement = replacementsByLowerCase.get(font.getName().toLowerCase());
-		return replacement == null ? null : Font.create(replacement, font.getStyle(), font.getSize());
 	}
 
 	/**
@@ -2946,7 +2733,7 @@ public class MapSettings implements Serializable
 		int iconCount = 0;
 		int fontCount = 0;
 
-		for (String family : getFontFamiliesUsed())
+		for (String family : MapFonts.getFamiliesUsed(this))
 		{
 			String artPack = getFontArtPack(family);
 			// A family the art pack still supplies is not missing, however the map got it, and one the map records no art pack for is
