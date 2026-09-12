@@ -214,6 +214,25 @@ class FontFamilySections
 		SectionedFamilyComboBox(List<Object> rows)
 		{
 			super(rows.toArray());
+			// The model selects the first row itself, without going through setSelectedItem, and the first row is a heading.
+			selectFirstFamily();
+		}
+
+		/**
+		 * Selects the first row that names a font, or selects nothing at all when no row does, so that what the combo box reports as chosen
+		 * is always a font or nothing.
+		 */
+		private void selectFirstFamily()
+		{
+			for (int i = 0; i < getItemCount(); i++)
+			{
+				if (!(getItemAt(i) instanceof SectionHeading))
+				{
+					super.setSelectedItem(getItemAt(i));
+					return;
+				}
+			}
+			super.setSelectedItem(null);
 		}
 
 		@Override

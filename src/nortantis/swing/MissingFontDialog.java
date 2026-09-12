@@ -95,7 +95,7 @@ public class MissingFontDialog
 		Map<String, String> replacements = new HashMap<>();
 		for (Map.Entry<String, JComboBox<Object>> entry : comboBoxesByFamily.entrySet())
 		{
-			String chosen = (String) entry.getValue().getSelectedItem();
+			String chosen = getSelectedFamily(entry.getValue());
 			if (chosen != null && !chosen.equals(entry.getKey()))
 			{
 				replacements.put(entry.getKey(), chosen);
@@ -169,8 +169,8 @@ public class MissingFontDialog
 			comboBoxesByFamily.put(problem.family, comboBox);
 
 			JLabel preview = new JLabel();
-			updatePreview(preview, (String) comboBox.getSelectedItem());
-			comboBox.addActionListener(e -> updatePreview(preview, (String) comboBox.getSelectedItem()));
+			updatePreview(preview, getSelectedFamily(comboBox));
+			comboBox.addActionListener(e -> updatePreview(preview, getSelectedFamily(comboBox)));
 
 			JPanel comboRow = new JPanel();
 			comboRow.setLayout(new BoxLayout(comboRow, BoxLayout.X_AXIS));
@@ -228,8 +228,8 @@ public class MissingFontDialog
 		}
 
 		JLabel preview = new JLabel();
-		updatePreview(preview, (String) comboBox.getSelectedItem());
-		comboBox.addActionListener(e -> updatePreview(preview, (String) comboBox.getSelectedItem()));
+		updatePreview(preview, getSelectedFamily(comboBox));
+		comboBox.addActionListener(e -> updatePreview(preview, getSelectedFamily(comboBox)));
 
 		JPanel comboRow = new JPanel();
 		comboRow.setLayout(new BoxLayout(comboRow, BoxLayout.X_AXIS));
@@ -285,7 +285,40 @@ public class MissingFontDialog
 		// is by definition not available, and the rest are a worse answer than what the substitute suggests.
 		String suggested = FontFinder.chooseSubstitute(problem.family, problem.textToDraw);
 		List<Object> rows = FontFamilySections.buildRows(new ArrayList<>(), "", family -> FontFinder.canDisplay(family, problem.textToDraw));
+		if (!namesAFont(rows))
+		{
+			// Nothing on this device draws every character the missing font was drawing, so no replacement avoids the problem and offering
+			// none would leave nothing to choose. The whole list is offered instead, and the characters no font has go undrawn, as they
+			// already do for a font that is present and lacks them. What is suggested is then the family a missing font falls back to
+			// anyway, rather than whichever family happens to sort first.
+			rows = FontFamilySections.buildRows(new ArrayList<>(), "");
+			suggested = FontFinder.chooseSubstitute(problem.family, null);
+		}
 		return FontFamilySections.createFamilyComboBox(rows, suggested);
+	}
+
+	/**
+	 * Whether any of the given rows names a font rather than heading a group of them.
+	 */
+	private static boolean namesAFont(List<Object> rows)
+	{
+		for (Object row : rows)
+		{
+			if (row instanceof String)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * The family chosen in a combo box, or null when nothing in it names a font.
+	 */
+	private static String getSelectedFamily(JComboBox<Object> comboBox)
+	{
+		Object selected = comboBox.getSelectedItem();
+		return selected instanceof String ? (String) selected : null;
 	}
 
 	private static void updatePreview(JLabel preview, String family)
