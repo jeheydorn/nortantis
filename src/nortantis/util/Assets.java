@@ -50,8 +50,26 @@ public class Assets
 	 * which is not worth reserving seven names over.
 	 */
 	public static final String deviceFontSourceNameKey = "fontChooser.section.thisDevice";
-	public static final List<String> reservedArtPacks = Collections.unmodifiableList(
-			Arrays.asList(installedArtPack, customArtPack, "all", Translation.getEnglish(deviceFontSourceNameKey).toLowerCase()));
+	/**
+	 * The art pack names Nortantis has taken for itself, in lower case, which a folder in the art packs folder may not use. Lower cased
+	 * with {@link Locale#ROOT} because these are English names matched against English names, so the rules of whatever language the machine
+	 * is set to have no business deciding what they fold to. In Turkish they would decide it: "I" lower cases to a dotless "ı" there, so a
+	 * reserved name and the folder being checked against it could fold two different ways and stop matching.
+	 */
+	public static final List<String> reservedArtPacks = Collections.unmodifiableList(Arrays.asList(installedArtPack, customArtPack, "all",
+			Translation.getEnglish(deviceFontSourceNameKey).toLowerCase(Locale.ROOT)));
+	/**
+	 * The order art pack names are listed in wherever the user sees them. Case is ignored because these are folder names the user typed, and
+	 * comparing them by their characters' codes would file every name starting with a capital ahead of every name starting with a lower case
+	 * letter - two alphabets one after the other rather than the single one that file managers show and that the user is expecting. Names
+	 * that differ only in case, which is possible on file systems that keep case apart, are then ordered by their characters so that the
+	 * result does not depend on the order the folders happened to be read in.
+	 *
+	 * <p>
+	 * Deliberately not a Collator: a Collator would sort accented names the way the user's language does, at the cost of making the order
+	 * depend on the machine's locale. Ignoring case per character is the same everywhere.
+	 */
+	private static final Comparator<String> artPackNameOrder = String.CASE_INSENSITIVE_ORDER.thenComparing(Comparator.naturalOrder());
 	private static boolean disableAddedArtPacksForUnitTests;
 	/**
 	 * The result of listArtPacks for each value of its argument. Building the list copies and sorts it, which is too much work to repeat
@@ -105,7 +123,7 @@ public class Assets
 			result.add(customArtPack);
 		}
 
-		result.sort(String::compareTo);
+		result.sort(artPackNameOrder);
 
 		// Unmodifiable because it is shared with every later caller rather than rebuilt for each one.
 		List<String> shared = Collections.unmodifiableList(result);
@@ -147,10 +165,14 @@ public class Assets
 	private static List<String> listArtPacksFromArtPackFolder()
 	{
 		List<String> result = new ArrayList<>();
-		// Add installed art packs.
-		result.addAll(Assets.listNonEmptySubFolders(getArtPacksFolder().toString()).stream().filter(name -> !reservedArtPacks.contains(name.toLowerCase())).toList());
+		// Add installed art packs. What is reserved is the same name everywhere: a name Nortantis relies on cannot be reserved for some
+		// users and free for others without the meaning of a folder changing with who is looking at it. So the reserved names are English,
+		// and a folder is folded against them the same way on every machine. Someone may well name a pack in their own language, and that
+		// name is theirs to use; only these few English ones are spoken for.
+		result.addAll(Assets.listNonEmptySubFolders(getArtPacksFolder().toString()).stream()
+				.filter(name -> !reservedArtPacks.contains(name.toLowerCase(Locale.ROOT))).toList());
 
-		result.sort(String::compareTo);
+		result.sort(artPackNameOrder);
 		return result;
 	}
 
