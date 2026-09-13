@@ -322,7 +322,18 @@ public class FontFinder
 		availableFamiliesLowerCase = Collections.unmodifiableSet(lowerCaseNames);
 
 		List<AvailableFont> result = new ArrayList<>(registeredFontsByLowerCaseFamily.values());
-		result.sort((font1, font2) -> font1.family.compareToIgnoreCase(font2.family));
+		Map<String, Integer> artPackOrder = positionsArtPacksAreListedIn();
+		result.sort((font1, font2) ->
+		{
+			int byArtPack = Integer.compare(positionOf(font1, artPackOrder), positionOf(font2, artPackOrder));
+			if (byArtPack != 0)
+			{
+				return byArtPack;
+			}
+			// Art packs that share a position are ones no longer installed, which the list above cannot order.
+			int byArtPackName = String.valueOf(font1.artPack).compareTo(String.valueOf(font2.artPack));
+			return byArtPackName != 0 ? byArtPackName : font1.family.compareToIgnoreCase(font2.family);
+		});
 
 		List<String> systemFamilies = new ArrayList<>();
 		for (String family : installedFamilies)
@@ -342,7 +353,33 @@ public class FontFinder
 	}
 
 	/**
-	 * Every family this installation can draw with, bundled and art pack fonts first, then the machine's own.
+	 * Where each art pack sits in the order art packs are listed in everywhere else they are shown. Grouping fonts by art pack in this
+	 * order is what keeps a list of fonts from ordering the packs differently than the rest of the app does.
+	 */
+	private static Map<String, Integer> positionsArtPacksAreListedIn()
+	{
+		Map<String, Integer> result = new LinkedHashMap<>();
+		List<String> artPacks = Assets.listArtPacks(true);
+		for (int i = 0; i < artPacks.size(); i++)
+		{
+			result.put(artPacks.get(i), i);
+		}
+		return result;
+	}
+
+	/**
+	 * Where a font's art pack is listed, or after every listed pack when it is not one of them. A pack that supplied a font and has since
+	 * been removed is no longer listed, but the fonts it registered stay registered for the rest of the session.
+	 */
+	private static int positionOf(AvailableFont font, Map<String, Integer> artPackOrder)
+	{
+		Integer position = font.artPack == null ? null : artPackOrder.get(font.artPack);
+		return position == null ? Integer.MAX_VALUE : position;
+	}
+
+	/**
+	 * Every family this installation can draw with: the bundled and art pack fonts first, grouped by the pack that supplied them and in the
+	 * order art packs are listed in elsewhere, then the families the machine itself supplies.
 	 */
 	public static List<AvailableFont> listAvailableFonts()
 	{
@@ -542,7 +579,14 @@ public class FontFinder
 			}
 		}
 
-		// availableFonts puts bundled fonts first, so this prefers a portable answer without needing to say so.
+		// A bundled family is the portable answer, because every installation has it. An art pack's font is not: whoever opens the map next
+		// need not have that pack, and would be asked about the replacement all over again.
+		String bundled = firstFromSourceThatCanDisplay(FontSource.Bundled, sampleTextByStyle);
+		if (bundled != null)
+		{
+			return bundled;
+		}
+
 		for (AvailableFont font : availableFonts)
 		{
 			if (canDisplay(font.family, sampleTextByStyle))
@@ -569,6 +613,18 @@ public class FontFinder
 			}
 		}
 		return true;
+	}
+
+	private static String firstFromSourceThatCanDisplay(FontSource source, Map<FontStyle, String> sampleTextByStyle)
+	{
+		for (AvailableFont font : availableFonts)
+		{
+			if (font.source == source && canDisplay(font.family, sampleTextByStyle))
+			{
+				return font.family;
+			}
+		}
+		return null;
 	}
 
 	/**
@@ -654,9 +710,17 @@ public class FontFinder
 	 */
 	private static String findBundledFamilyCovering(Script script, boolean mustAlsoDrawLatin)
 	{
+		// Bundled before art pack, so that what a new map or the app's own furniture defaults to is the same everywhere Nortantis runs
+		// rather than depending on which art packs happen to be installed.
+		String bundled = findFamilyCovering(FontSource.Bundled, script, mustAlsoDrawLatin);
+		return bundled != null ? bundled : findFamilyCovering(FontSource.ArtPack, script, mustAlsoDrawLatin);
+	}
+
+	private static String findFamilyCovering(FontSource source, Script script, boolean mustAlsoDrawLatin)
+	{
 		for (AvailableFont font : availableFonts)
 		{
-			if (font.source == FontSource.System || familiesWithADecorativeRegister.contains(font.family))
+			if (font.source != source || familiesWithADecorativeRegister.contains(font.family))
 			{
 				continue;
 			}

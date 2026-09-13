@@ -71,8 +71,8 @@ class FontFamilySections
 		List<Object> rows = new ArrayList<>();
 		addSection(rows, Translation.get("fontChooser.section.usedByThisMap"), familiesUsedByThisMap, searchText);
 
-		// Registered fonts are grouped by the pack that supplied them, in the order listAvailableFonts gives, which puts the bundled ones
-		// first. Anything the machine itself supplies came from no pack and goes last.
+		// Registered fonts are grouped by the pack that supplied them, in the order listAvailableFonts gives, which is the order art packs
+		// are listed in everywhere else. Anything the machine itself supplies came from no pack and goes last.
 		Map<String, List<String>> familiesByArtPack = new LinkedHashMap<>();
 		List<String> systemFamilies = new ArrayList<>();
 		for (AvailableFont font : FontFinder.listAvailableFonts())

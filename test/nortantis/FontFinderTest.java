@@ -300,6 +300,55 @@ public class FontFinderTest
 	}
 
 	@Test
+	public void listAvailableFontsOrdersArtPacksTheWayTheRestOfTheAppDoes()
+	{
+		// The font picker groups its rows by the art pack that supplied each font, in the order this list gives, so an art pack that comes
+		// earlier here is an art pack whose heading comes earlier there. Ordering them any other way puts the picker's headings in a
+		// different order than the art pack lists everywhere else in the app.
+		List<String> expectedOrder = Assets.listArtPacks(true);
+
+		List<String> artPacksInOrderMet = new ArrayList<>();
+		for (AvailableFont font : FontFinder.listAvailableFonts())
+		{
+			if (font.source != FontSource.System && !artPacksInOrderMet.contains(font.artPack))
+			{
+				artPacksInOrderMet.add(font.artPack);
+			}
+		}
+
+		// Only the packs that actually supplied a font can be checked, since a pack with no fonts never appears in either list.
+		List<String> expectedForThisMachine = new ArrayList<>(expectedOrder);
+		expectedForThisMachine.retainAll(artPacksInOrderMet);
+		assertEquals(expectedForThisMachine, artPacksInOrderMet,
+				"The art packs supplying fonts are not in the order " + Assets.class.getSimpleName() + ".listArtPacks gives.");
+	}
+
+	@Test
+	public void familiesAreSortedWithinTheirArtPack()
+	{
+		String artPack = null;
+		String previousFamily = null;
+		for (AvailableFont font : FontFinder.listAvailableFonts())
+		{
+			if (font.source == FontSource.System)
+			{
+				break;
+			}
+			if (!font.artPack.equals(artPack))
+			{
+				artPack = font.artPack;
+				previousFamily = null;
+			}
+			if (previousFamily != null)
+			{
+				assertTrue(previousFamily.compareToIgnoreCase(font.family) <= 0,
+						font.family + " came after " + previousFamily + " in art pack " + artPack + ".");
+			}
+			previousFamily = font.family;
+		}
+	}
+
+	@Test
 	public void aFamilyThatIsNotAvailableAtAllReportsAsASystemFont()
 	{
 		// It is a system font, just not this system's. Reporting it that way keeps a map's font source steady across machines.
