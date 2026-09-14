@@ -238,10 +238,10 @@ public class ThemePanel extends JTabbedPane
 		}
 
 		{
-			textureImageComboBox = new JComboBox<>();
+			// Shrinkable because texture names carry the name of the art pack that supplied them, which has no bound on its length.
+			textureImageComboBox = new ShrinkableComboBox<>();
 			textureImageComboBoxHider = organizer.addLabelAndComponent(Translation.get("theme.texture.label"), Translation.get("theme.texture.help"), textureImageComboBox);
 			textureImageComboBox.addActionListener(backgroundImageButtonGroupListener);
-			textureImageComboBox.setMinimumSize(new Dimension(100, textureImageComboBox.getMinimumSize().height));
 		}
 
 		textureImageFilename = new JTextField();
@@ -670,7 +670,8 @@ public class ThemePanel extends JTabbedPane
 		});
 		organizer.addLeftAlignedComponent(drawBorderCheckbox);
 
-		borderTypeComboBox = new JComboBox<>();
+		// Shrinkable because border names carry the name of the art pack that supplied them, which has no bound on its length.
+		borderTypeComboBox = new ShrinkableComboBox<>();
 		createMapChangeListenerForFullRedraw(borderTypeComboBox);
 		organizer.addLabelAndComponent(Translation.get("theme.borderType.label"), Translation.get("theme.borderType.help"), borderTypeComboBox);
 
