@@ -2091,9 +2091,11 @@ public class ThemePanel extends JTabbedPane
 		FontChooser fontChooser = new FontChooser(Translation.get(labelKey), minPreviewHeight, maxFontSize, () -> handleFontsChange());
 		fontChooser.setFamiliesUsedByThisMap(this::getFontFamiliesUsedByThisMap);
 		fontChooser.setTextThatMustBeDrawable(() -> getTextDrawnByEachThemeFont().getOrDefault(type, ""));
-		// The same name the type is given everywhere else, lowered to sit inside a sentence.
-		fontChooser.setNameOfTextThatMustBeDrawable(
-				Translation.get("themeFontType." + type.name()).toLowerCase(Translation.getEffectiveLocale()));
+		// The same name the type is given everywhere else, lowered to sit inside a sentence. German keeps it capitalized, since German
+		// capitalizes nouns.
+		String typeName = Translation.get("themeFontType." + type.name());
+		Locale locale = Translation.getEffectiveLocale();
+		fontChooser.setNameOfTextThatMustBeDrawable(locale.getLanguage().equals("de") ? typeName : typeName.toLowerCase(locale));
 		fontChooser.addToOrganizer(organizer);
 		fontChoosersByType.put(type, fontChooser);
 	}
