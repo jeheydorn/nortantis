@@ -22,6 +22,7 @@ import javax.swing.Timer;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
+import java.text.Collator;
 import java.util.*;
 import java.util.List;
 
@@ -374,11 +375,19 @@ public class NewSettingsDialog extends JDialog
 		organizer.addLabelAndComponent(Translation.get("newSettingsDialog.worldSize.label"), Translation.get("newSettingsDialog.worldSize.help"), worldSizeSlider);
 
 		landShapeComboBox = new JComboBox<LandShape>();
-		for (LandShape shape : LandShape.values())
+		// Alphabetical by displayed name in the user's language.
+		Collator collator = Collator.getInstance(Translation.getEffectiveLocale());
+		List<LandShape> landShapesInDisplayOrder = new ArrayList<>(Arrays.asList(LandShape.values()));
+		landShapesInDisplayOrder.sort((shape1, shape2) -> collator.compare(shape1.toString(), shape2.toString()));
+		for (LandShape shape : landShapesInDisplayOrder)
 		{
 			landShapeComboBox.addItem(shape);
 		}
 		createMapChangeListener(landShapeComboBox);
+		// The label's tooltip describes the control, and the combo box's tooltip describes the selected shape. This listener is separate
+		// from the map change listener because that one ignores changes made while loading settings into the GUI.
+		landShapeComboBox.addActionListener(e -> updateLandShapeTooltip());
+		updateLandShapeTooltip();
 		organizer.addLabelAndComponent(Translation.get("newSettingsDialog.landShape.label"), Translation.get("newSettingsDialog.landShape.help"), landShapeComboBox);
 
 		regionCountSlider = new JSlider();
@@ -669,6 +678,12 @@ public class NewSettingsDialog extends JDialog
 
 	}
 
+	private void updateLandShapeTooltip()
+	{
+		LandShape selected = (LandShape) landShapeComboBox.getSelectedItem();
+		landShapeComboBox.setToolTipText(selected == null ? null : selected.getDescription());
+	}
+
 	private void loadSettingsIntoGUI(MapSettings settings)
 	{
 		GeneratedDimension dim = GeneratedDimension.fromDimensions(settings.generatedWidth, settings.generatedHeight);
@@ -715,21 +730,6 @@ public class NewSettingsDialog extends JDialog
 		resultSettings.worldSize = worldSizeSlider.getValue();
 		resultSettings.landShape = (LandShape) landShapeComboBox.getSelectedItem();
 		resultSettings.regionCount = regionCountSlider.getValue();
-		switch (resultSettings.landShape)
-		{
-			case Continents:
-				resultSettings.edgeLandToWaterProbability = 0.1;
-				resultSettings.centerLandToWaterProbability = 0.75;
-				break;
-			case Inland_Sea:
-				resultSettings.edgeLandToWaterProbability = 0.75;
-				resultSettings.centerLandToWaterProbability = 0.1;
-				break;
-			case Scattered:
-				resultSettings.edgeLandToWaterProbability = 0.5;
-				resultSettings.centerLandToWaterProbability = 0.5;
-				break;
-		}
 
 		Dimension generatedDimensions = getGeneratedBackgroundDimensionsFromGUI();
 		resultSettings.generatedWidth = (int) generatedDimensions.getWidth();

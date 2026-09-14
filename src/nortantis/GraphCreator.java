@@ -13,17 +13,17 @@ import java.util.Random;
 
 public class GraphCreator
 {
-	public static WorldGraph createGraph(double width, double height, int numSites, double borderPlateContinentalProbability, double nonBorderPlateContinentalProbability, Random r,
-			double resolutionScale, LineStyle lineStyle, double pointPrecision, boolean createElevationBiomesLakesAndRegions, double lloydRelaxationsScale, boolean areRegionBoundariesVisible,
-			int rightRotationCount, boolean flipHorizontally, boolean flipVertically, LandShape landShape, int regionCount)
+	public static WorldGraph createGraph(double width, double height, int numSites, Random r, double resolutionScale, LineStyle lineStyle, double pointPrecision,
+			boolean createElevationBiomesLakesAndRegions, double lloydRelaxationsScale, boolean areRegionBoundariesVisible, int rightRotationCount, boolean flipHorizontally, boolean flipVertically,
+			LandShape landShape, int regionCount)
 	{
 		Dimension graphSize = getGraphDimensionsWithStandardWidth(new Dimension(width, height));
 		// make the initial underlying voronoi structure
 		final Voronoi v = new Voronoi(numSites, graphSize.width, graphSize.height, r);
 
 		// assemble the voronoi structure into a usable graph object representing a map
-		final WorldGraph graph = new WorldGraph(v, lloydRelaxationsScale, r, nonBorderPlateContinentalProbability, borderPlateContinentalProbability, resolutionScale, lineStyle, pointPrecision,
-				createElevationBiomesLakesAndRegions, areRegionBoundariesVisible, landShape, regionCount);
+		final WorldGraph graph = new WorldGraph(v, lloydRelaxationsScale, r, resolutionScale, lineStyle, pointPrecision, createElevationBiomesLakesAndRegions, areRegionBoundariesVisible, landShape,
+				regionCount);
 		graph.scaleFlipAndRotate(width, height, rightRotationCount, flipHorizontally, flipVertically);
 		graph.buildNoisyEdges(lineStyle, false);
 

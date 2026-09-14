@@ -96,8 +96,6 @@ public class MapSettings implements Serializable
 	public Color oceanShadingColor;
 	public Color coastlineColor;
 	public double coastlineWidth;
-	public double centerLandToWaterProbability;
-	public double edgeLandToWaterProbability;
 	public LandShape landShape;
 	public int regionCount;
 	public boolean frayedBorder;
@@ -429,8 +427,6 @@ public class MapSettings implements Serializable
 		root.put("oceanShadingColor", colorToString(oceanShadingColor));
 		root.put("coastlineColor", colorToString(coastlineColor));
 		root.put("coastlineWidth", coastlineWidth);
-		root.put("edgeLandToWaterProbability", edgeLandToWaterProbability);
-		root.put("centerLandToWaterProbability", centerLandToWaterProbability);
 		if (landShape != null)
 		{
 			root.put("landShape", landShape.name());
@@ -1223,8 +1219,9 @@ public class MapSettings implements Serializable
 		}
 
 		drawOceanEffectsInLakes = root.containsKey("drawOceanEffectsInLakes") ? (boolean) root.get("drawOceanEffectsInLakes") : false;
-		centerLandToWaterProbability = (double) root.get("centerLandToWaterProbability");
-		edgeLandToWaterProbability = (double) root.get("edgeLandToWaterProbability");
+		// Only maps from before land shapes existed need these, to infer their land shape.
+		Double centerLandToWaterProbability = root.containsKey("centerLandToWaterProbability") ? ((Number) root.get("centerLandToWaterProbability")).doubleValue() : null;
+		Double edgeLandToWaterProbability = root.containsKey("edgeLandToWaterProbability") ? ((Number) root.get("edgeLandToWaterProbability")).doubleValue() : null;
 		if (root.containsKey("landShape"))
 		{
 			landShape = LandShape.valueOf((String) root.get("landShape"));
@@ -1675,7 +1672,7 @@ public class MapSettings implements Serializable
 		runConversionToRemoveRegionIdsOfEditsThatAreWater();
 		runConversionForNewRangesForRandomRegionColorGeneratorSettings();
 		runConversionToFixCompassRosesGroupId();
-		runConversionToFillInLandShape();
+		runConversionToFillInLandShape(edgeLandToWaterProbability, centerLandToWaterProbability);
 		runConversionForRegionCount();
 		runConversionForIconFillColorDefaultChange();
 		runConversionOnFillWithColorByType();
@@ -1731,7 +1728,7 @@ public class MapSettings implements Serializable
 	 * LandShape was added in version 3.18. For older maps, infer it from the edge and center land-to-water probabilities that were
 	 * previously used.
 	 */
-	private void runConversionToFillInLandShape()
+	private void runConversionToFillInLandShape(Double edgeLandToWaterProbability, Double centerLandToWaterProbability)
 	{
 		if (isVersionGreaterThanOrEqualTo(version, "3.18"))
 		{
@@ -1743,17 +1740,31 @@ public class MapSettings implements Serializable
 			return;
 		}
 
+		if (edgeLandToWaterProbability == null || centerLandToWaterProbability == null)
+		{
+			return;
+		}
+
+		landShape = inferLandShapeFromLandToWaterProbabilities(edgeLandToWaterProbability, centerLandToWaterProbability);
+	}
+
+	/**
+	 * Infers the land shape of a map created before land shapes existed, from the probabilities those maps used for plates along the map
+	 * edges and plates elsewhere to be continental.
+	 */
+	private static LandShape inferLandShapeFromLandToWaterProbabilities(double edgeLandToWaterProbability, double centerLandToWaterProbability)
+	{
 		if (edgeLandToWaterProbability < centerLandToWaterProbability)
 		{
-			landShape = LandShape.Continents;
+			return LandShape.Continents;
 		}
 		else if (edgeLandToWaterProbability > centerLandToWaterProbability)
 		{
-			landShape = LandShape.Inland_Sea;
+			return LandShape.Inland_Sea;
 		}
 		else
 		{
-			landShape = LandShape.Scattered;
+			return LandShape.Scattered;
 		}
 	}
 
@@ -2490,8 +2501,7 @@ public class MapSettings implements Serializable
 		oceanEffectsColor = old.oceanEffectsColor;
 		coastlineColor = old.coastlineColor;
 		coastlineWidth = MapCreator.calcSizeMultiplierFromResolutionScaleRounded(1.0);
-		centerLandToWaterProbability = old.centerLandToWaterProbability;
-		edgeLandToWaterProbability = old.edgeLandToWaterProbability;
+		landShape = inferLandShapeFromLandToWaterProbabilities(old.edgeLandToWaterProbability, old.centerLandToWaterProbability);
 		frayedBorder = old.frayedBorder;
 		frayedBorderColor = old.frayedBorderColor;
 		frayedBorderBlurLevel = old.frayedBorderBlurLevel;
@@ -3156,8 +3166,6 @@ public class MapSettings implements Serializable
 			differences.add("brightnessRange: " + brightnessRange + " vs " + other.brightnessRange);
 		if (brokenLinesForConcentricWaves != other.brokenLinesForConcentricWaves)
 			differences.add("brokenLinesForConcentricWaves: " + brokenLinesForConcentricWaves + " vs " + other.brokenLinesForConcentricWaves);
-		if (Double.doubleToLongBits(centerLandToWaterProbability) != Double.doubleToLongBits(other.centerLandToWaterProbability))
-			differences.add("centerLandToWaterProbability: " + centerLandToWaterProbability + " vs " + other.centerLandToWaterProbability);
 		if (!Objects.equals(citiesFont, other.citiesFont))
 			differences.add("citiesFont: " + citiesFont + " vs " + other.citiesFont);
 		if (!Objects.equals(cityIconTypeName, other.cityIconTypeName))
@@ -3220,8 +3228,6 @@ public class MapSettings implements Serializable
 			differences.add("drawVoronoiGridOverlayOnlyOnLand: " + drawVoronoiGridOverlayOnlyOnLand + " vs " + other.drawVoronoiGridOverlayOnlyOnLand);
 		if (Double.doubleToLongBits(duneScale) != Double.doubleToLongBits(other.duneScale))
 			differences.add("duneScale: " + duneScale + " vs " + other.duneScale);
-		if (Double.doubleToLongBits(edgeLandToWaterProbability) != Double.doubleToLongBits(other.edgeLandToWaterProbability))
-			differences.add("edgeLandToWaterProbability: " + edgeLandToWaterProbability + " vs " + other.edgeLandToWaterProbability);
 		if (edits != other.edits)
 			differences.add("edits: (reference differs, deep comparison skipped)");
 		if (fadeConcentricWaves != other.fadeConcentricWaves)
@@ -3392,11 +3398,11 @@ public class MapSettings implements Serializable
 	public int hashCode()
 	{
 		return Objects.hash(artPack, backgroundRandomSeed, backgroundTextureImage, backgroundTextureResource, backgroundTextureSource, boldBackgroundColor, books, borderColor, borderColorOption,
-				borderPosition, borderResource, borderType, borderWidth, brightnessRange, brokenLinesForConcentricWaves, centerLandToWaterProbability, citiesFont, cityIconTypeName, cityProbability,
+				borderPosition, borderResource, borderType, borderWidth, brightnessRange, brokenLinesForConcentricWaves, citiesFont, cityIconTypeName, cityProbability,
 				cityScale, coastShadingColor, coastShadingLevel, coastlineColor, coastlineWidth, colorizeLand, colorizeOcean, concentricWaveCount, customImagesPath, defaultDefaultExportAction,
 				defaultHeightmapExportAction, defaultMapExportAction, defaultRoadColor, defaultRoadStyle, defaultRoadWidth, defaultTreeHeightScaleForOldMaps, drawBoldBackground, drawBorder,
 				drawGridOverlay, drawGrunge, drawOceanEffectsInLakes, drawOverlayImage, drawRegionBoundaries, drawRegionColors, drawRoads, drawText, drawVoronoiGridOverlayOnlyOnLand, duneScale,
-				edgeLandToWaterProbability, edits, fadeConcentricWaves, fillWithColorByType, flipHorizontally, flipVertically, frayedBorder, frayedBorderBlurLevel, frayedBorderColor, frayedBorderSeed,
+				edits, fadeConcentricWaves, fillWithColorByType, flipHorizontally, flipVertically, frayedBorder, frayedBorderBlurLevel, frayedBorderColor, frayedBorderSeed,
 				frayedBorderSize, generateBackground, generateBackgroundFromTexture, generatedHeight, generatedWidth, gridOverlayColor, gridOverlayLayer, gridOverlayLineWidth,
 				gridOverlayRowOrColCount, gridOverlayShape, gridOverlayXOffset, gridOverlayYOffset, grungeWidth, heightmapExportPath, heightmapResolution, hillScale, hueRange, iconFillColorsByType,
 				iconFilterColorsByType, imageExportPath, jitterToConcentricWaves, landColor, landShape, lineStyle, lloydRelaxationsScale, maximizeOpacityByType, mountainRangeFont, mountainScale,
@@ -3428,7 +3434,7 @@ public class MapSettings implements Serializable
 				&& borderColorOption == other.borderColorOption && borderPosition == other.borderPosition && Objects.equals(borderResource, other.borderResource)
 				&& Objects.equals(borderType, other.borderType) && borderWidth == other.borderWidth && brightnessRange == other.brightnessRange
 				&& brokenLinesForConcentricWaves == other.brokenLinesForConcentricWaves
-				&& Double.doubleToLongBits(centerLandToWaterProbability) == Double.doubleToLongBits(other.centerLandToWaterProbability) && Objects.equals(citiesFont, other.citiesFont)
+				&& Objects.equals(citiesFont, other.citiesFont)
 				&& Objects.equals(cityIconTypeName, other.cityIconTypeName) && Double.doubleToLongBits(cityProbability) == Double.doubleToLongBits(other.cityProbability)
 				&& Double.doubleToLongBits(cityScale) == Double.doubleToLongBits(other.cityScale) && Objects.equals(coastShadingColor, other.coastShadingColor)
 				&& coastShadingLevel == other.coastShadingLevel && Objects.equals(coastlineColor, other.coastlineColor)
@@ -3442,7 +3448,7 @@ public class MapSettings implements Serializable
 				&& drawOverlayImage == other.drawOverlayImage && drawRegionBoundaries == other.drawRegionBoundaries && drawRegionColors == other.drawRegionColors && drawRoads == other.drawRoads
 				&& drawText == other.drawText && drawVoronoiGridOverlayOnlyOnLand == other.drawVoronoiGridOverlayOnlyOnLand
 				&& Double.doubleToLongBits(duneScale) == Double.doubleToLongBits(other.duneScale)
-				&& Double.doubleToLongBits(edgeLandToWaterProbability) == Double.doubleToLongBits(other.edgeLandToWaterProbability) && Objects.equals(edits, other.edits)
+				&& Objects.equals(edits, other.edits)
 				&& fadeConcentricWaves == other.fadeConcentricWaves && Objects.equals(fillWithColorByType, other.fillWithColorByType) && flipHorizontally == other.flipHorizontally
 				&& flipVertically == other.flipVertically && frayedBorder == other.frayedBorder && frayedBorderBlurLevel == other.frayedBorderBlurLevel
 				&& Objects.equals(frayedBorderColor, other.frayedBorderColor) && frayedBorderSeed == other.frayedBorderSeed && frayedBorderSize == other.frayedBorderSize

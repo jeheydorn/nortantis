@@ -13,14 +13,12 @@ import nortantis.util.GeometryHelper;
 import nortantis.util.Helper;
 import nortantis.util.Range;
 import org.apache.commons.lang3.function.TriFunction;
-import org.apache.commons.math3.distribution.BetaDistribution;
-import org.apache.commons.math3.random.JDKRandomGenerator;
-import org.apache.commons.math3.random.RandomGenerator;
 
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.ToDoubleFunction;
 
 /**
  * An implementation of VoronoiGraph for creating a world with continents.
@@ -31,28 +29,15 @@ public class WorldGraph extends VoronoiGraph
 	public static final float oceanPlateLevel = 0.2f;
 	final double continentalPlateLevel = 0.45;
 	public static final float seaLevel = 0.39f;
-	// Higher values will make larger plates, but fewer of them.
-	private final int tectonicPlateIterationMultiplier = 30;
 
 	// Zero is most random. Higher values make the polygons more uniform shaped.
 	// This value is scaled by lloydRelaxationsScale passed into constructors.
 	private final int numLloydRelaxations = 1;
 
-	double nonBorderPlateContinentalProbability;
-	// The probability that a plate touching the border will be continental.
-	double borderPlateContinentalProbability;
 	// This scales how much elevation is added or subtracted at
 	// convergent/divergent boundaries.
 	final double collisionScale = 0.4;
-	// This controls how smooth the plates boundaries are. Higher is smoother. 1
-	// is minimum. Larger values
-	// will slow down plate generation.
-	final int plateBoundarySmoothness = 26;
 	final int minPoliticalRegionSize = 10;
-	// During tectonic plate creation, if there are only two plates left and the
-	// smaller of the two is less than this size, stop.
-	// Prevents small maps from containing only one tectonic plate.
-	final int minNinthtoLastPlateSize = 100;
 	private Double meanCenterWidth;
 	private Double meanCenterWidthBetweenNeighbors;
 	private List<Set<Center>> lakes;
@@ -63,14 +48,13 @@ public class WorldGraph extends VoronoiGraph
 	LandShape landShape;
 	int regionCount;
 
-	public WorldGraph(Voronoi v, double lloydRelaxationsScale, Random r, double nonBorderPlateContinentalProbability, double borderPlateContinentalProbability, double sizeMultiplier,
-			LineStyle lineStyle, double pointPrecision, boolean createElevationBiomesLakesAndRegions, boolean areRegionBoundariesVisible, LandShape landShape, int regionCount)
+	public WorldGraph(Voronoi v, double lloydRelaxationsScale, Random r, double sizeMultiplier, LineStyle lineStyle, double pointPrecision, boolean createElevationBiomesLakesAndRegions,
+			boolean areRegionBoundariesVisible, LandShape landShape, int regionCount)
 	{
 		super(r, sizeMultiplier, pointPrecision);
-		this.nonBorderPlateContinentalProbability = nonBorderPlateContinentalProbability;
-		this.borderPlateContinentalProbability = borderPlateContinentalProbability;
 		this.landShape = landShape;
-		this.regionCount = regionCount;
+		assert !createElevationBiomesLakesAndRegions || regionCount > 0;
+		this.regionCount = createElevationBiomesLakesAndRegions ? Math.max(regionCount, SettingsGenerator.minRegionCount) : regionCount;
 		TectonicPlate.resetIds();
 		initVoronoiGraph(v, numLloydRelaxations, lloydRelaxationsScale, createElevationBiomesLakesAndRegions);
 		regions = new TreeMap<>();
@@ -512,8 +496,10 @@ public class WorldGraph extends VoronoiGraph
 
 				if (mergeTarget != null)
 				{
-					mergeTarget.addAll(new HashSet<>(smallest.getCenters()));
+					// Clear before adding because clearing sets the region of the cleared centers to null.
+					Set<Center> mergedCenters = new HashSet<>(smallest.getCenters());
 					smallest.clear();
+					mergeTarget.addAll(mergedCenters);
 					regionList.remove(smallest);
 				}
 				else
@@ -623,6 +609,23 @@ public class WorldGraph extends VoronoiGraph
 								groupB.add(n);
 								queueB.add(n);
 							}
+						}
+					}
+				}
+
+				// A region can include land that isn't connected to the rest of it, which neither search reaches. Give that land to
+				// the group with the closer pole so that it doesn't lose its region.
+				for (Center c : regionCenters)
+				{
+					if (!visited.contains(c))
+					{
+						if (c.loc.distanceTo(poleA.loc) <= c.loc.distanceTo(poleB.loc))
+						{
+							groupA.add(c);
+						}
+						else
+						{
+							groupB.add(c);
 						}
 					}
 				}
@@ -1928,21 +1931,14 @@ public class WorldGraph extends VoronoiGraph
 	@Override
 	protected void assignCornerElevations()
 	{
-		if (regionCount > 0)
-		{
-			createTectonicPlatesForRegionCount();
-		}
-		else
-		{
-			createTectonicPlates();
-			assignOceanAndContinentalPlates();
-		}
+		createTectonicPlates();
 		lowerOceanPlates();
 		assignPlateCornerElevations();
 	}
 
 	private void assignPlateCornerElevations()
 	{
+		double continentalRiftScale = LandShapeParameters.forLandShape(landShape).getContinentalRiftScale(regionCount);
 		for (final TectonicPlate plate : plates)
 		{
 
@@ -1974,6 +1970,12 @@ public class WorldGraph extends VoronoiGraph
 					if (d0ConvergeLevel > 0)
 					{
 						d0ConvergeLevel = calcLevelOfConvergence(e.d0.loc, e.d0.tectonicPlate.velocity, e.d1.loc, e.d1.tectonicPlate.velocity);
+					}
+					else if (continentalRiftScale != 1.0 && e.d0.tectonicPlate.type == PlateType.Continental && e.d1.tectonicPlate.type == PlateType.Continental)
+					{
+						// Continental land sits only slightly above sea level, so even a mild rift between two continental plates
+						// floods. Damping the rift keeps more of those boundaries as land.
+						d0ConvergeLevel *= continentalRiftScale;
 					}
 
 					e.v0.elevation += d0ConvergeLevel * collisionScale;
@@ -2085,41 +2087,6 @@ public class WorldGraph extends VoronoiGraph
 		updateCoastAndCornerFlags();
 	}
 
-	private void assignOceanAndContinentalPlates()
-	{
-		for (TectonicPlate plate : plates)
-		{
-			if (rand.nextDouble() > nonBorderPlateContinentalProbability)
-			{
-				plate.type = PlateType.Oceanic;
-			}
-			else
-			{
-				plate.type = PlateType.Continental;
-			}
-		}
-
-		// Set the type for plates that touch the borders, overwriting any
-		// settings from above.
-		Set<TectonicPlate> borderPlates = new HashSet<TectonicPlate>();
-		for (Center c : centers)
-		{
-			for (Corner corner : c.corners)
-				if (corner.isBorder)
-				{
-					borderPlates.add(c.tectonicPlate);
-					continue;
-				}
-		}
-		for (TectonicPlate plate : borderPlates)
-		{
-			if (rand.nextDouble() < borderPlateContinentalProbability)
-				plate.type = PlateType.Continental;
-			else
-				plate.type = PlateType.Oceanic;
-		}
-	}
-
 	private double distFromNearestEdge(Point p)
 	{
 		double distLeft = p.x;
@@ -2129,17 +2096,143 @@ public class WorldGraph extends VoronoiGraph
 		return Math.min(Math.min(distLeft, distRight), Math.min(distTop, distBottom));
 	}
 
-	private void createTectonicPlatesForRegionCount()
+	/**
+	 * Distance from a line segment through the map center along the map's longer axis, with the segment's length set so that its ends are as
+	 * far from the short sides of the map as the segment is from the long sides. Points with equal values lie on a stadium (a rectangle with
+	 * half-circle end caps) that is the same distance from all four sides of the map. On a square map the segment is a point and the
+	 * stadium is a circle.
+	 */
+	private double distFromCenterStadiumAxis(Point p)
 	{
+		double halfSegmentLength = Math.abs(bounds.width - bounds.height) / 2.0;
+		double centerX = bounds.width / 2.0;
+		double centerY = bounds.height / 2.0;
+		double alongLongAxis;
+		double acrossLongAxis;
+		if (bounds.width >= bounds.height)
+		{
+			alongLongAxis = Math.abs(p.x - centerX);
+			acrossLongAxis = Math.abs(p.y - centerY);
+		}
+		else
+		{
+			alongLongAxis = Math.abs(p.y - centerY);
+			acrossLongAxis = Math.abs(p.x - centerX);
+		}
+		double pastSegmentEnd = Math.max(0.0, alongLongAxis - halfSegmentLength);
+		return Math.sqrt(pastSegmentEnd * pastSegmentEnd + acrossLongAxis * acrossLongAxis);
+	}
+
+	/**
+	 * Decides which plate seeds become continental plates. Only the first basePlateCount seeds are candidates; the rest are extra oceanic
+	 * plates.
+	 *
+	 * @return An array of length totalPlates, true for each continental plate.
+	 */
+	private boolean[] chooseContinentalPlates(LandShapeParameters shapeParameters, List<Point> seedPoints, int basePlateCount, int totalPlates)
+	{
+		boolean[] isContinental = new boolean[totalPlates];
+		// Using more continental plates than regions is fine because political region creation merges whole plates.
+		int continentalPlateCount = Math.min(basePlateCount, Math.max(regionCount, (int) Math.round(shapeParameters.minContinentalPlateFraction * basePlateCount)));
+		switch (shapeParameters.seedSelectionRule)
+		{
+			case FarthestFromEdge:
+			{
+				Integer[] sorted = sortBasePlateIndicesByScore(seedPoints, basePlateCount, this::distFromNearestEdge);
+				for (int i = basePlateCount - regionCount; i < basePlateCount; i++)
+				{
+					isContinental[sorted[i]] = true;
+				}
+				break;
+			}
+			case ClosestToEdge:
+			{
+				Integer[] sorted = sortBasePlateIndicesByScore(seedPoints, basePlateCount, this::distFromNearestEdge);
+				for (int i = 0; i < regionCount; i++)
+				{
+					isContinental[sorted[i]] = true;
+				}
+				break;
+			}
+			case Random:
+			{
+				List<Integer> baseIndices = new ArrayList<>();
+				for (int i = 0; i < basePlateCount; i++)
+				{
+					baseIndices.add(i);
+				}
+				Collections.shuffle(baseIndices, rand);
+				for (int i = 0; i < regionCount; i++)
+				{
+					isContinental[baseIndices.get(i)] = true;
+				}
+				break;
+			}
+			case NearestToCenterStadium:
+			{
+				Integer[] sorted = sortBasePlateIndicesByScore(seedPoints, basePlateCount, this::distFromCenterStadiumAxis);
+				for (int i = 0; i < continentalPlateCount; i++)
+				{
+					isContinental[sorted[i]] = true;
+				}
+				break;
+			}
+			case FarthestAlongRandomDirection:
+			{
+				double angle = rand.nextDouble() * 2 * Math.PI;
+				double directionX = Math.cos(angle);
+				double directionY = Math.sin(angle);
+				Integer[] sorted = sortBasePlateIndicesByScore(seedPoints, basePlateCount, p -> p.x * directionX + p.y * directionY);
+				for (int i = basePlateCount - continentalPlateCount; i < basePlateCount; i++)
+				{
+					isContinental[sorted[i]] = true;
+				}
+				break;
+			}
+			case AllContinental:
+			{
+				for (int i = 0; i < basePlateCount; i++)
+				{
+					isContinental[i] = true;
+				}
+				if (rand.nextDouble() < shapeParameters.singleOceanicPlateProbability)
+				{
+					isContinental[rand.nextInt(basePlateCount)] = false;
+				}
+				break;
+			}
+			default:
+				throw new IllegalStateException("Unrecognized seed selection rule: " + shapeParameters.seedSelectionRule);
+		}
+		return isContinental;
+	}
+
+	/**
+	 * Returns the indexes of the first basePlateCount seed points, sorted in ascending order of score.
+	 */
+	private Integer[] sortBasePlateIndicesByScore(List<Point> seedPoints, int basePlateCount, ToDoubleFunction<Point> score)
+	{
+		Integer[] indices = new Integer[basePlateCount];
+		for (int i = 0; i < basePlateCount; i++)
+		{
+			indices[i] = i;
+		}
+		Arrays.sort(indices, (a, b) -> Double.compare(score.applyAsDouble(seedPoints.get(a)), score.applyAsDouble(seedPoints.get(b))));
+		return indices;
+	}
+
+	private void createTectonicPlates()
+	{
+		LandShapeParameters shapeParameters = LandShapeParameters.forLandShape(landShape);
 		int oceanicPlateCount = Math.max(regionCount, 4);
 
-		// For Continents/Scattered with high world size or region count, add extra oceanic
-		// plates to break up maze-like land patterns. The continental plate count stays the same.
+		// With high world size or region count, some land shapes add extra oceanic plates to break up
+		// maze-like land patterns. The continental plate count stays the same.
 		int extraOceanicPlates = 0;
 		int worldSize = centers.size();
 		int worldSizeThreshold = 5000;
 		int regionCountThreshold = 10;
-		if ((landShape == null || landShape == LandShape.Continents || landShape == LandShape.Scattered) && (worldSize >= worldSizeThreshold || regionCount >= regionCountThreshold))
+		if (shapeParameters.maxExtraOceanicPlateRatio > 0 && (worldSize >= worldSizeThreshold || regionCount >= regionCountThreshold))
 		{
 			assert SettingsGenerator.maxRegionCount >= 2;
 
@@ -2150,8 +2243,7 @@ public class WorldGraph extends VoronoiGraph
 					: 0;
 			double factor = Math.max(worldSizeFactor, regionFactor);
 
-			final double maxExtraOceanicRatio = 0.9;
-			int maxExtraOceanic = Math.max(1, (int) Math.round((regionCount * maxExtraOceanicRatio) * factor));
+			int maxExtraOceanic = Math.max(1, (int) Math.round((regionCount * shapeParameters.maxExtraOceanicPlateRatio) * factor));
 			// Sample from a distribution skewed toward maxExtraOceanic. The exponent controls the skew.
 			extraOceanicPlates = (int) Math.round((1.0 - Math.pow(rand.nextDouble(), 5)) * maxExtraOceanic);
 		}
@@ -2188,50 +2280,7 @@ public class WorldGraph extends VoronoiGraph
 		// Only consider the base plates (excluding extra oceanic) for continental assignment.
 		// Extra oceanic plates always remain oceanic.
 		int basePlateCount = totalPlates - extraOceanicPlates;
-		Integer[] indicesByEdgeDist = new Integer[basePlateCount];
-		for (int i = 0; i < basePlateCount; i++)
-		{
-			indicesByEdgeDist[i] = i;
-		}
-		final ArrayList<Point> finalSeedPoints = seedPoints;
-		Arrays.sort(indicesByEdgeDist, (a, b) ->
-		{
-			double da = distFromNearestEdge(finalSeedPoints.get(a));
-			double db = distFromNearestEdge(finalSeedPoints.get(b));
-			return Double.compare(da, db);
-		});
-
-		boolean[] isContinental = new boolean[totalPlates];
-		if (landShape == null || landShape == LandShape.Continents)
-		{
-			// Farthest from edges are continental
-			for (int i = basePlateCount - regionCount; i < basePlateCount; i++)
-			{
-				isContinental[indicesByEdgeDist[i]] = true;
-			}
-		}
-		else if (landShape == LandShape.Inland_Sea)
-		{
-			// Closest to edges are continental
-			for (int i = 0; i < regionCount; i++)
-			{
-				isContinental[indicesByEdgeDist[i]] = true;
-			}
-		}
-		else
-		{
-			// Scattered: randomly choose regionCount from base plates to be continental
-			List<Integer> baseIndices = new ArrayList<>();
-			for (int i = 0; i < basePlateCount; i++)
-			{
-				baseIndices.add(i);
-			}
-			Collections.shuffle(baseIndices, rand);
-			for (int i = 0; i < regionCount; i++)
-			{
-				isContinental[baseIndices.get(i)] = true;
-			}
-		}
+		boolean[] isContinental = chooseContinentalPlates(shapeParameters, seedPoints, basePlateCount, totalPlates);
 
 		// Step 3: Create TectonicPlates and assign growth weights.
 		List<TectonicPlate> plateList = new ArrayList<>();
@@ -2275,9 +2324,9 @@ public class WorldGraph extends VoronoiGraph
 		// which makes plates grow at stochastic rates in each direction. This produces organic,
 		// irregular plate shapes rather than smooth Voronoi blobs, while still guaranteeing
 		// every center is claimed and no plate ends up tiny.
-		// For Continents mode, continental plates pay an extra cost to grow near map edges,
+		// For some land shapes, continental plates pay an extra cost to grow near map edges,
 		// which naturally shapes them away from borders.
-		boolean biasAwayFromEdges = landShape == null || landShape == LandShape.Continents;
+		boolean biasAwayFromEdges = shapeParameters.biasContinentalGrowthAwayFromEdges;
 		double edgeBiasDistance = Math.min(bounds.width, bounds.height) * 0.15;
 
 		PriorityQueue<double[]> frontier = new PriorityQueue<>((a, b) -> Double.compare(a[0], b[0]));
@@ -2315,7 +2364,7 @@ public class WorldGraph extends VoronoiGraph
 					// expansion stochastic in every direction rather than a smooth wavefront.
 					double baseCost = -Math.log(rand.nextDouble()) / plateList.get(plateIdx).growthProbability;
 
-					// In Continents mode, make continental plates reluctant to grow near edges.
+					// Make continental plates reluctant to grow near edges.
 					if (biasAwayFromEdges && plateList.get(plateIdx).type == PlateType.Continental)
 					{
 						double edgeDist = distFromNearestEdge(neighbor.loc);
@@ -2331,7 +2380,6 @@ public class WorldGraph extends VoronoiGraph
 					// Boundary smoothing: count how many of the neighbor's neighbors are already
 					// in this plate. A cell enclosed on multiple sides is cheap to absorb (filling
 					// gaps), while a finger-tip cell with only one plate-neighbor gets no reduction.
-					// This mirrors the old algorithm's preference for low neighborsNotInSamePlateRatio.
 					int alreadyInPlate = 0;
 					for (Center nn : neighbor.neighbors)
 					{
@@ -2356,119 +2404,6 @@ public class WorldGraph extends VoronoiGraph
 		{
 			plate.velocity = new PolarCoordinate(rand.nextDouble() * 2 * Math.PI, rand.nextDouble());
 			plates.add(plate);
-		}
-	}
-
-	private void createTectonicPlates()
-	{
-		// First, assign a unique plate id and a random growth probability to
-		// each center.
-		RandomGenerator randomData = new JDKRandomGenerator();
-		randomData.setSeed(rand.nextLong());
-
-		// Maps tectonic plates to the number of centers in that plate.
-		HashMap<TectonicPlate, Integer> plateCounts = new HashMap<>(centers.size());
-
-		// A beta distribution is nice because (with the parameters I use) it
-		// creates a few plates
-		// with high growth probabilities and many with low growth
-		// probabilities. This makes plate creation
-		// faster and creates a larger variety of plate sizes than a uniform
-		// distribution would.
-		BetaDistribution betaDist = new BetaDistribution(randomData, 1, 3, BetaDistribution.DEFAULT_INVERSE_ABSOLUTE_ACCURACY);
-		for (Center c : centers)
-		{
-			c.tectonicPlate = new TectonicPlate(betaDist.sample());
-			plateCounts.put(c.tectonicPlate, 1);
-		}
-
-		for (Center c : centers)
-		{
-			c.updateNeighborsNotInSamePlateCount();
-		}
-
-		int numIterationsForTectonicPlateCreation = tectonicPlateIterationMultiplier * centers.size();
-		for (int curIteration = 0; curIteration < numIterationsForTectonicPlateCreation; curIteration++)
-		{
-			// Sample some centers and choose the one with the least number of
-			// neighbors which
-			// are not on this plate (greater than 0). This makes the plate
-			// boundaries more smooth.
-			Center least = null;
-			for (int i = 0; i < plateBoundarySmoothness; i++)
-			{
-				final Center cTemp = centers.get(rand.nextInt(centers.size()));
-				if (cTemp.neighborsNotInSamePlateRatio == 0)
-					continue;
-
-				if (least == null || cTemp.neighborsNotInSamePlateRatio < least.neighborsNotInSamePlateRatio)
-				{
-					least = cTemp;
-				}
-
-			}
-			if (least == null)
-			{
-				continue;
-			}
-			final Center c = least;
-
-			// Keep the merge with probability equal to the score of the new
-			// tectonic plate.
-			if (rand.nextDouble() < c.tectonicPlate.growthProbability)
-			{
-				// Choose a center at random.
-				// Choose one of it's neighbors not in the same plate.
-				List<Center> neighborsNotInSamePlate = Helper.filter(c.neighbors, otherC -> c.tectonicPlate != otherC.tectonicPlate);
-				Center neighbor = neighborsNotInSamePlate.get(rand.nextInt(neighborsNotInSamePlate.size()));
-
-				plateCounts.put(c.tectonicPlate, plateCounts.get(c.tectonicPlate) + 1);
-				plateCounts.put(neighbor.tectonicPlate, plateCounts.get(neighbor.tectonicPlate) - 1);
-				if (plateCounts.get(neighbor.tectonicPlate) == 0)
-				{
-					plateCounts.remove(neighbor.tectonicPlate);
-				}
-
-				// Merge the neighbor into c's plate.
-				neighbor.tectonicPlate = c.tectonicPlate;
-
-				c.updateNeighborsNotInSamePlateCount();
-				for (Center n : c.neighbors)
-					n.updateNeighborsNotInSamePlateCount();
-				neighbor.updateNeighborsNotInSamePlateCount();
-				for (Center n : neighbor.neighbors)
-					n.updateNeighborsNotInSamePlateCount();
-
-				// Stop if there are only nine plates left and one of them is
-				// getting too small. This will usually prevent
-				// creating a map this just ocean or has only tiny islands,
-				// although it isn't guaranteed since it's
-				// possible all 9 plates will be assigned to oceanic.
-				if (plateCounts.keySet().size() == 9 && Helper.minElement(plateCounts) <= minNinthtoLastPlateSize)
-				{
-					break;
-				}
-			}
-		}
-
-		// Find the plates still on the map.
-		plates = new HashSet<TectonicPlate>();
-		for (Center c : centers)
-		{
-			plates.add(c.tectonicPlate);
-		}
-
-		// Setup tectonic plate velocities randomly. The maximum speed of a
-		// plate is 1.
-		for (TectonicPlate plate : plates)
-		{
-			plate.velocity = new PolarCoordinate(rand.nextDouble() * 2 * Math.PI, rand.nextDouble());
-		}
-
-		// Store which Centers are in each plate.
-		for (Center c : centers)
-		{
-			c.tectonicPlate.centers.add(c);
 		}
 	}
 

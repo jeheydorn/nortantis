@@ -36,8 +36,6 @@ public class Center implements Comparable<Center>
 	public Biome biome;
 	public TectonicPlate tectonicPlate;
 	public Region region;
-	// neighborsNotInSamePlateRatio is only here to make GraphImpl.createTectonicPlates faster.
-	public float neighborsNotInSamePlateRatio;
 	public Integer mountainRangeId;
 
 	/**
@@ -181,20 +179,6 @@ public class Center implements Comparable<Center>
 	public int hashCode()
 	{
 		return index;
-	}
-
-	public void updateNeighborsNotInSamePlateCount()
-	{
-		float neighborsNotInSamePlateCount = 0;
-		float neighborsInSamePlateCount = 0;
-		for (Center neighbor : neighbors)
-		{
-			if (tectonicPlate != neighbor.tectonicPlate)
-				neighborsNotInSamePlateCount++;
-			else
-				neighborsInSamePlateCount++;
-		}
-		neighborsNotInSamePlateRatio = neighborsNotInSamePlateCount / neighborsInSamePlateCount;
 	}
 
 	public boolean isRiver()

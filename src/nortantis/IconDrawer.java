@@ -2351,7 +2351,11 @@ public class IconDrawer
 			{
 				if (iteration > numberToAdd * 100)
 				{
-					assert false : "Tree adding loop took too long."; // TODO remove this once I've tested that it's not hit since it's theoretically hittable.
+					// Some tiny sliver centers are never returned by findClosestCenter, so no sample can land in them.
+					// TODO Decide whether to fix findClosestCenter for these centers. They are triangles (3 edges), and findClosestCenter
+					// never returns them at any resolution, for any point, so anything relying on it (such as clicking in the editor) can't
+					// reach them either. Example: Continents, SettingsGenerator.generate(new Random(2), ...), center 24934 - a 13x9 pixel
+					// bounding box at resolution 1.0 where 0 of 300 uniform samples came back as that center.
 					break;
 				}
 				Point loc = ProbabilityHelper.sampleUniform(rand, bounds);

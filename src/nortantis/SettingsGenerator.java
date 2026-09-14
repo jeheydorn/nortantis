@@ -148,7 +148,7 @@ public class SettingsGenerator
 
 		if (settings.worldSize > (maxWorldSize - minWorldSize) / 2)
 		{
-			settings.landShape = LandShape.Continents;
+			settings.landShape = ProbabilityHelper.sampleUniform(rand, Arrays.asList(LandShape.Continents, LandShape.Supercontinent));
 		}
 		else
 		{
@@ -252,23 +252,6 @@ public class SettingsGenerator
 
 		settings.drawBoldBackground = rand.nextDouble() > 0.5;
 		settings.boldBackgroundColor = MapCreator.generateColorFromBaseColor(rand, settings.boldBackgroundColor, hueRange, saturationRange, brightnessRange);
-
-		// This threshold prevents large maps from having land on the edge, because such maps should be the entire world/continent.
-		int noOceanOnEdgeThreshold = 15000;
-		if (settings.worldSize < noOceanOnEdgeThreshold)
-		{
-			settings.centerLandToWaterProbability = settings.worldSize / (double) noOceanOnEdgeThreshold;
-			// Make the edge and center land water probability add up to 1 so there is usually both land and ocean.
-			settings.edgeLandToWaterProbability = 1.0 - settings.centerLandToWaterProbability;
-		}
-		else
-		{
-			settings.centerLandToWaterProbability = 0.75 + rand.nextDouble() * 0.25;
-			settings.edgeLandToWaterProbability = 0;
-		}
-
-		settings.edgeLandToWaterProbability = Math.round(settings.edgeLandToWaterProbability * 100.0) / 100.0;
-		settings.centerLandToWaterProbability = Math.round(settings.centerLandToWaterProbability * 100.0) / 100.0;
 
 		GeneratedDimension dimension = ProbabilityHelper.sampleUniform(rand, Arrays.asList(GeneratedDimension.presets()));
 		settings.generatedWidth = dimension.width;

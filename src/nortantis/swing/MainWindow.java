@@ -3388,8 +3388,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			// Copy over settings with a UI only in the new map dialog.
 			settings.worldSize = lastSettingsLoadedOrSaved.worldSize;
 			settings.randomSeed = lastSettingsLoadedOrSaved.randomSeed;
-			settings.edgeLandToWaterProbability = lastSettingsLoadedOrSaved.edgeLandToWaterProbability;
-			settings.centerLandToWaterProbability = lastSettingsLoadedOrSaved.centerLandToWaterProbability;
 			settings.generatedWidth = lastSettingsLoadedOrSaved.generatedWidth;
 			settings.generatedHeight = lastSettingsLoadedOrSaved.generatedHeight;
 		}

@@ -774,6 +774,24 @@ public class MapCreatorTest
 		generateAndCompare("simpleSmallWorld.nort");
 	}
 
+	@Test
+	public void supercontinentLandShape()
+	{
+		generateAndCompare("supercontinentLandShape.nort");
+	}
+
+	@Test
+	public void coastlineLandShape()
+	{
+		generateAndCompare("coastlineLandShape.nort");
+	}
+
+	@Test
+	public void landlockedLandShape()
+	{
+		generateAndCompare("landlockedLandShape.nort");
+	}
+
 	/**
 	 * Verifies that the city water-touch check (which removes city icons whose base would draw over water) is resolution-invariant: changing
 	 * the draw resolution must not change the set of cities that get removed. Before the fix, changing the display quality (e.g. from Low =

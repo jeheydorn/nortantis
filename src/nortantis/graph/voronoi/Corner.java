@@ -54,6 +54,7 @@ public class Corner
 			return false;
 		}
 
+		double lowestNeighborElevationBeforeCarving = lowestNeighbor.elevation;
 		if (lowestNeighbor.elevation >= elevation)
 		{
 			lowestNeighbor.elevation = elevation * 0.9999; // Make it a little
@@ -73,6 +74,9 @@ public class Corner
 		}
 		else
 		{
+			// The walk never reached water, so undo the channel it carved. findingRivers deliberately stays true, which keeps later walks
+			// from choosing this corner and so steers them away from a path that already failed. Resetting it gives noticeably fewer rivers.
+			lowestNeighbor.elevation = lowestNeighborElevationBeforeCarving;
 			return false;
 		}
 	}
