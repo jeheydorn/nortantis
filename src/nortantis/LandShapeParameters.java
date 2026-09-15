@@ -9,26 +9,24 @@ import java.util.EnumMap;
 class LandShapeParameters
 {
 	/**
-	 * How the base plate seeds are divided into continental and oceanic plates.
+	 * How the base plate seeds are divided into continental and oceanic plates. Except for {@link #AllContinental}, each rule selects
+	 * {@link LandShapeParameters#getMinContinentalPlateCount(int)} seeds, or more if {@link LandShapeParameters#minContinentalPlateFraction}
+	 * requires it.
 	 */
 	enum SeedSelectionRule
 	{
-		/** The regionCount seeds farthest from the nearest map edge are continental. */
+		/** The seeds farthest from the nearest map edge are continental. */
 		FarthestFromEdge,
-		/** The regionCount seeds closest to the nearest map edge are continental. */
+		/** The seeds closest to the nearest map edge are continental. */
 		ClosestToEdge,
-		/** regionCount seeds chosen at random are continental. */
+		/** Seeds chosen at random are continental. */
 		Random,
 		/**
 		 * The seeds closest to a line segment through the map center along the map's longer axis are continental, so the selected area is a
-		 * stadium (a rectangle with half-circle end caps) the same distance from all four sides of the map. Selects regionCount seeds, or more
-		 * if {@link #minContinentalPlateFraction} requires it.
+		 * stadium (a rectangle with half-circle end caps) the same distance from all four sides of the map.
 		 */
 		NearestToCenterStadium,
-		/**
-		 * The seeds farthest along a random direction are continental, which selects a half-plane. Selects regionCount seeds, or more if
-		 * {@link #minContinentalPlateFraction} requires it.
-		 */
+		/** The seeds farthest along a random direction are continental, which selects a half-plane. */
 		FarthestAlongRandomDirection,
 		/** Every base seed is continental, except that with probability {@link #singleOceanicPlateProbability} one random seed is oceanic. */
 		AllContinental
@@ -66,30 +64,55 @@ class LandShapeParameters
 	final double singleOceanicPlateProbability;
 
 	/**
-	 * For {@link SeedSelectionRule#NearestToCenterStadium} and {@link SeedSelectionRule#FarthestAlongRandomDirection}, the minimum fraction
-	 * of the base plates that are continental. When this gives more continental plates than the region count, political region creation
-	 * merges plates to reach the region count. 0 means exactly regionCount plates are continental.
+	 * The minimum fraction of the base plates that are continental. When this gives more continental plates than the region count, political
+	 * region creation merges plates to reach the region count. Not used by {@link SeedSelectionRule#AllContinental}.
 	 */
 	final double minContinentalPlateFraction;
+
+	/**
+	 * The minimum number of continental plates. When this is more than the region count, political region creation merges plates to reach
+	 * the region count. See {@link #getMinContinentalPlateCount(int)}.
+	 */
+	private final int minContinentalPlateCount;
+
+	/**
+	 * Multiplier applied to the elevation rise where two oceanic plates collide. 1.0 applies the full rise. Lower values raise fewer of those
+	 * boundaries above sea level, so fewer long, narrow islands and peninsulas form along them.
+	 */
+	final double oceanicCollisionScale;
+
+	/**
+	 * The minimum number of continental plates per region. Values above 1 give political region creation spare plates to merge, so that
+	 * regions do not have to be split when a continental plate ends up with too little land to form a region.
+	 */
+	private final double minContinentalPlatesPerRegion;
+
+	/**
+	 * When greater than 0, oceanic plates are added between the map edges and any continental seed closer than this to an edge, which keeps
+	 * continental land from running into the edges. Measured in multiples of the typical distance between plate seeds.
+	 */
+	final double edgeGuardDistance;
 
 	private static final EnumMap<LandShape, LandShapeParameters> parametersByShape = new EnumMap<>(LandShape.class);
 
 	static
 	{
 		// Arguments: seed selection rule, max extra oceanic plate ratio, bias continental growth away from edges, continental rift scale at the
-		// minimum and maximum region counts, single oceanic plate probability, min continental plate fraction.
-		parametersByShape.put(LandShape.Continents, new LandShapeParameters(SeedSelectionRule.FarthestFromEdge, 0.9, true, 1.0, 1.0, 0.0, 0.0));
-		parametersByShape.put(LandShape.Inland_Sea, new LandShapeParameters(SeedSelectionRule.ClosestToEdge, 0.0, false, 1.0, 1.0, 0.0, 0.0));
-		parametersByShape.put(LandShape.Scattered, new LandShapeParameters(SeedSelectionRule.Random, 0.9, false, 1.0, 1.0, 0.0, 0.0));
-		parametersByShape.put(LandShape.Supercontinent, new LandShapeParameters(SeedSelectionRule.NearestToCenterStadium, 0.0, true, 0.2, 0.2, 0.0, 0.0));
-		parametersByShape.put(LandShape.Coastline, new LandShapeParameters(SeedSelectionRule.FarthestAlongRandomDirection, 0.0, false, 0.2, 0.2, 0.0, 0.45));
-		parametersByShape.put(LandShape.Landlocked, new LandShapeParameters(SeedSelectionRule.AllContinental, 0.0, false, 0.45, 0.25, 0.2, 0.0));
+		// minimum and maximum region counts, single oceanic plate probability, min continental plate fraction, min continental plate count,
+		// oceanic collision scale, min continental plates per region, edge guard distance.
+		parametersByShape.put(LandShape.Continents, new LandShapeParameters(SeedSelectionRule.FarthestFromEdge, 0.9, true, 0.5, 0.5, 0.0, 0.0, 8, 0.5, 1.25, 0.7));
+		parametersByShape.put(LandShape.Inland_Sea, new LandShapeParameters(SeedSelectionRule.ClosestToEdge, 0.0, false, 1.0, 1.0, 0.0, 0.0, 0, 1.0, 1.0, 0.0));
+		parametersByShape.put(LandShape.Scattered, new LandShapeParameters(SeedSelectionRule.Random, 0.9, false, 1.0, 1.0, 0.0, 0.0, 0, 1.0, 1.0, 0.0));
+		parametersByShape.put(LandShape.Supercontinent, new LandShapeParameters(SeedSelectionRule.NearestToCenterStadium, 0.0, true, 0.2, 0.2, 0.0, 0.0, 8, 0.5, 1.25, 1.0));
+		parametersByShape.put(LandShape.Coastline, new LandShapeParameters(SeedSelectionRule.FarthestAlongRandomDirection, 0.0, false, 0.2, 0.2, 0.0, 0.45, 0, 1.0, 1.0, 0.0));
+		parametersByShape.put(LandShape.Landlocked, new LandShapeParameters(SeedSelectionRule.AllContinental, 0.0, false, 0.45, 0.25, 0.2, 0.0, 0, 1.0, 1.0, 0.0));
 		assert parametersByShape.size() == LandShape.values().length;
 	}
 
 	private LandShapeParameters(SeedSelectionRule seedSelectionRule, double maxExtraOceanicPlateRatio, boolean biasContinentalGrowthAwayFromEdges,
 			double continentalRiftScaleAtMinRegionCount, double continentalRiftScaleAtMaxRegionCount, double singleOceanicPlateProbability,
-			double minContinentalPlateFraction)
+			double minContinentalPlateFraction, int minContinentalPlateCount, double oceanicCollisionScale, double minContinentalPlatesPerRegion,
+			double edgeGuardDistance)
 	{
 		this.seedSelectionRule = seedSelectionRule;
 		this.maxExtraOceanicPlateRatio = maxExtraOceanicPlateRatio;
@@ -98,6 +121,19 @@ class LandShapeParameters
 		this.continentalRiftScaleAtMaxRegionCount = continentalRiftScaleAtMaxRegionCount;
 		this.singleOceanicPlateProbability = singleOceanicPlateProbability;
 		this.minContinentalPlateFraction = minContinentalPlateFraction;
+		this.minContinentalPlateCount = minContinentalPlateCount;
+		this.oceanicCollisionScale = oceanicCollisionScale;
+		this.minContinentalPlatesPerRegion = minContinentalPlatesPerRegion;
+		this.edgeGuardDistance = edgeGuardDistance;
+	}
+
+	/**
+	 * Returns how many continental plates to create before {@link #minContinentalPlateFraction} is applied: the region count times
+	 * {@link #minContinentalPlatesPerRegion} rounded up, or {@link #minContinentalPlateCount} if that is larger.
+	 */
+	int getMinContinentalPlateCount(int regionCount)
+	{
+		return Math.max((int) Math.ceil(regionCount * minContinentalPlatesPerRegion), minContinentalPlateCount);
 	}
 
 	/**

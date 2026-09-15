@@ -1938,7 +1938,9 @@ public class WorldGraph extends VoronoiGraph
 
 	private void assignPlateCornerElevations()
 	{
-		double continentalRiftScale = LandShapeParameters.forLandShape(landShape).getContinentalRiftScale(regionCount);
+		LandShapeParameters shapeParameters = LandShapeParameters.forLandShape(landShape);
+		double continentalRiftScale = shapeParameters.getContinentalRiftScale(regionCount);
+		double oceanicCollisionScale = shapeParameters.oceanicCollisionScale;
 		for (final TectonicPlate plate : plates)
 		{
 
@@ -1976,6 +1978,13 @@ public class WorldGraph extends VoronoiGraph
 						// Continental land sits only slightly above sea level, so even a mild rift between two continental plates
 						// floods. Damping the rift keeps more of those boundaries as land.
 						d0ConvergeLevel *= continentalRiftScale;
+					}
+
+					if (oceanicCollisionScale != 1.0 && d0ConvergeLevel > 0 && e.d0.tectonicPlate.type == PlateType.Oceanic && e.d1.tectonicPlate.type == PlateType.Oceanic)
+					{
+						// Colliding oceanic plates raise a line of land along their boundary, which becomes a long, narrow island, or a
+						// peninsula where the boundary meets a coast.
+						d0ConvergeLevel *= oceanicCollisionScale;
 					}
 
 					e.v0.elevation += d0ConvergeLevel * collisionScale;
@@ -2133,13 +2142,14 @@ public class WorldGraph extends VoronoiGraph
 	{
 		boolean[] isContinental = new boolean[totalPlates];
 		// Using more continental plates than regions is fine because political region creation merges whole plates.
-		int continentalPlateCount = Math.min(basePlateCount, Math.max(regionCount, (int) Math.round(shapeParameters.minContinentalPlateFraction * basePlateCount)));
+		int continentalPlateCount = Math.min(basePlateCount,
+				Math.max(shapeParameters.getMinContinentalPlateCount(regionCount), (int) Math.round(shapeParameters.minContinentalPlateFraction * basePlateCount)));
 		switch (shapeParameters.seedSelectionRule)
 		{
 			case FarthestFromEdge:
 			{
 				Integer[] sorted = sortBasePlateIndicesByScore(seedPoints, basePlateCount, this::distFromNearestEdge);
-				for (int i = basePlateCount - regionCount; i < basePlateCount; i++)
+				for (int i = basePlateCount - continentalPlateCount; i < basePlateCount; i++)
 				{
 					isContinental[sorted[i]] = true;
 				}
@@ -2148,7 +2158,7 @@ public class WorldGraph extends VoronoiGraph
 			case ClosestToEdge:
 			{
 				Integer[] sorted = sortBasePlateIndicesByScore(seedPoints, basePlateCount, this::distFromNearestEdge);
-				for (int i = 0; i < regionCount; i++)
+				for (int i = 0; i < continentalPlateCount; i++)
 				{
 					isContinental[sorted[i]] = true;
 				}
@@ -2162,7 +2172,7 @@ public class WorldGraph extends VoronoiGraph
 					baseIndices.add(i);
 				}
 				Collections.shuffle(baseIndices, rand);
-				for (int i = 0; i < regionCount; i++)
+				for (int i = 0; i < continentalPlateCount; i++)
 				{
 					isContinental[baseIndices.get(i)] = true;
 				}
@@ -2208,6 +2218,82 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
+	 * Creates oceanic plate seeds between the map edges and the continental seeds within guardDistance of an edge. For each such seed and
+	 * edge, candidate guard seeds are placed a short distance in from the edge, beside the seed along the edge. A candidate is skipped when
+	 * an oceanic seed or an earlier guard seed is already close to it, since that area is already covered by an oceanic plate.
+	 *
+	 * @param seedSpacing
+	 *            The typical distance between plate seeds. The guard seed placement distances are fractions of this.
+	 */
+	private List<Point> createEdgeGuardSeeds(List<Point> seedPoints, boolean[] isContinental, double guardDistance, double seedSpacing)
+	{
+		final double insetFromEdge = 0.15 * seedSpacing;
+		final double coveredDistance = 0.5 * seedSpacing;
+		final double[] offsetsAlongEdge = { -0.6 * seedSpacing, 0.0, 0.6 * seedSpacing };
+
+		List<Point> guardSeeds = new ArrayList<>();
+		for (int i = 0; i < isContinental.length; i++)
+		{
+			if (!isContinental[i])
+			{
+				continue;
+			}
+			Point seed = seedPoints.get(i);
+			List<Point> candidates = new ArrayList<>();
+			if (seed.y < guardDistance)
+			{
+				for (double offset : offsetsAlongEdge)
+				{
+					candidates.add(new Point(seed.x + offset, insetFromEdge));
+				}
+			}
+			if (bounds.height - seed.y < guardDistance)
+			{
+				for (double offset : offsetsAlongEdge)
+				{
+					candidates.add(new Point(seed.x + offset, bounds.height - insetFromEdge));
+				}
+			}
+			if (seed.x < guardDistance)
+			{
+				for (double offset : offsetsAlongEdge)
+				{
+					candidates.add(new Point(insetFromEdge, seed.y + offset));
+				}
+			}
+			if (bounds.width - seed.x < guardDistance)
+			{
+				for (double offset : offsetsAlongEdge)
+				{
+					candidates.add(new Point(bounds.width - insetFromEdge, seed.y + offset));
+				}
+			}
+
+			for (Point candidate : candidates)
+			{
+				if (candidate.x < 0 || candidate.y < 0 || candidate.x > bounds.width || candidate.y > bounds.height)
+				{
+					continue;
+				}
+				boolean isCovered = false;
+				for (int j = 0; j < isContinental.length && !isCovered; j++)
+				{
+					isCovered = !isContinental[j] && seedPoints.get(j).distanceTo(candidate) < coveredDistance;
+				}
+				for (int j = 0; j < guardSeeds.size() && !isCovered; j++)
+				{
+					isCovered = guardSeeds.get(j).distanceTo(candidate) < coveredDistance;
+				}
+				if (!isCovered)
+				{
+					guardSeeds.add(candidate);
+				}
+			}
+		}
+		return guardSeeds;
+	}
+
+	/**
 	 * Returns the indexes of the first basePlateCount seed points, sorted in ascending order of score.
 	 */
 	private Integer[] sortBasePlateIndicesByScore(List<Point> seedPoints, int basePlateCount, ToDoubleFunction<Point> score)
@@ -2224,7 +2310,9 @@ public class WorldGraph extends VoronoiGraph
 	private void createTectonicPlates()
 	{
 		LandShapeParameters shapeParameters = LandShapeParameters.forLandShape(landShape);
-		int oceanicPlateCount = Math.max(regionCount, 4);
+		int baseContinentalPlateCount = shapeParameters.getMinContinentalPlateCount(regionCount);
+		// At least as many oceanic plates as continental ones keeps land to roughly half of the map or less.
+		int oceanicPlateCount = Math.max(baseContinentalPlateCount, 4);
 
 		// With high world size or region count, some land shapes add extra oceanic plates to break up
 		// maze-like land patterns. The continental plate count stays the same.
@@ -2249,7 +2337,7 @@ public class WorldGraph extends VoronoiGraph
 		}
 
 		oceanicPlateCount += extraOceanicPlates;
-		int totalPlates = regionCount + oceanicPlateCount;
+		int totalPlates = baseContinentalPlateCount + oceanicPlateCount;
 
 		// Step 1: Generate well-spaced seed points using Mitchell's best-candidate algorithm.
 		// This is deterministic given the same Random instance.
@@ -2281,6 +2369,16 @@ public class WorldGraph extends VoronoiGraph
 		// Extra oceanic plates always remain oceanic.
 		int basePlateCount = totalPlates - extraOceanicPlates;
 		boolean[] isContinental = chooseContinentalPlates(shapeParameters, seedPoints, basePlateCount, totalPlates);
+
+		// Some land shapes add oceanic plates between the map edges and continental seeds near them, so that land rarely runs into the edges.
+		if (shapeParameters.edgeGuardDistance > 0)
+		{
+			double seedSpacing = Math.sqrt(bounds.width * bounds.height / totalPlates);
+			List<Point> guardSeeds = createEdgeGuardSeeds(seedPoints, isContinental, shapeParameters.edgeGuardDistance * seedSpacing, seedSpacing);
+			seedPoints.addAll(guardSeeds);
+			totalPlates += guardSeeds.size();
+			isContinental = Arrays.copyOf(isContinental, totalPlates);
+		}
 
 		// Step 3: Create TectonicPlates and assign growth weights.
 		List<TectonicPlate> plateList = new ArrayList<>();

@@ -202,6 +202,32 @@ public class WorldGraphTest
 		}
 	}
 
+	/**
+	 * Continents and Supercontinent add oceanic plates between the map edges and continental plates near them, so continental land should
+	 * rarely reach the edges.
+	 */
+	@Test
+	public void continentalLandRarelyTouchesTheMapEdgesForCentralLandShapes()
+	{
+		for (LandShape landShape : new LandShape[] { LandShape.Continents, LandShape.Supercontinent })
+		{
+			for (int regionCount : new int[] { 3, 8 })
+			{
+				int seedCount = 5;
+				double totalBorderContinentalLandFraction = 0;
+				for (long seed = 1; seed <= seedCount; seed++)
+				{
+					WorldGraph graph = createGraph(landShape, regionCount, seed);
+					long borderCount = graph.centers.stream().filter(c -> c.isBorder).count();
+					long borderContinentalLandCount = graph.centers.stream().filter(c -> c.isBorder && !c.isWater && c.tectonicPlate.type == PlateType.Continental).count();
+					totalBorderContinentalLandFraction += borderContinentalLandCount / (double) borderCount;
+				}
+				double average = totalBorderContinentalLandFraction / seedCount;
+				assertTrue(average < 0.02, "Average fraction of border centers that are continental land for " + landShape.name() + " with " + regionCount + " regions: " + average);
+			}
+		}
+	}
+
 	private static WorldGraph createGraph(LandShape landShape, int regionCount, long seed)
 	{
 		final double width = 1024;
