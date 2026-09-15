@@ -185,6 +185,31 @@ public class MapCreatorTest
 	 * the edit, rather than the full previous map with just those edges updated, silently erases every other river's stamped curve. Uses
 	 * allTypesOfEdits.nort, which has 187 rivers, so a bug like that would have plenty of untouched rivers to erase.
 	 */
+	/**
+	 * A map without a border never loads border edge images, so an incremental draw must not try to draw border edges.
+	 */
+	@Test
+	public void incrementalDrawWorksWithoutABorder()
+	{
+		MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", "simpleSmallWorld.nort").toString());
+		settings.drawBorder = false;
+
+		MapCreator mapCreator = new MapCreator();
+		MapParts mapParts = new MapParts();
+		try (Image fullMap = mapCreator.createMap(settings, null, mapParts))
+		{
+			Set<Integer> centersToChange = findCoastalCenters(mapParts.graph, false, 0);
+			assertFalse(centersToChange.isEmpty());
+			for (int index : centersToChange)
+			{
+				CenterEdit existing = settings.edits.centerEdits.get(index);
+				settings.edits.centerEdits.put(index, new CenterEdit(index, true, false, null, existing.icon, null));
+			}
+
+			assertDoesNotThrow(() -> new MapCreator().incrementalUpdateForCentersAndEdges(settings, mapParts, fullMap, centersToChange, new HashSet<>(), false));
+		}
+	}
+
 	@Test
 	public void incrementalRiverStampingLeavesOtherRiversUnchanged()
 	{

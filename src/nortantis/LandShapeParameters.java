@@ -100,7 +100,7 @@ class LandShapeParameters
 		// Arguments: seed selection rule, max extra oceanic plate ratio, bias continental growth away from edges, continental rift scale at the
 		// minimum and maximum region counts, single oceanic plate probability, min continental plate fraction, min continental plate count,
 		// oceanic collision scale, min continental plates per region, edge guard distance.
-		parametersByShape.put(LandShape.Continents, new LandShapeParameters(SeedSelectionRule.FarthestFromEdge, 0.9, true, 0.5, 0.5, 0.0, 0.0, 8, 0.5, 1.25, 0.7));
+		parametersByShape.put(LandShape.Continents, new LandShapeParameters(SeedSelectionRule.FarthestFromEdge, 0.9, true, 1.0, 1.0, 0.0, 0.0, 8, 0.5, 1.25, 0.6));
 		parametersByShape.put(LandShape.Inland_Sea, new LandShapeParameters(SeedSelectionRule.ClosestToEdge, 0.0, false, 1.0, 1.0, 0.0, 0.0, 0, 1.0, 1.0, 0.0));
 		parametersByShape.put(LandShape.Scattered, new LandShapeParameters(SeedSelectionRule.Random, 0.9, false, 1.0, 1.0, 0.0, 0.0, 0, 1.0, 1.0, 0.0));
 		parametersByShape.put(LandShape.Supercontinent, new LandShapeParameters(SeedSelectionRule.NearestToCenterStadium, 0.0, true, 0.2, 0.2, 0.0, 0.0, 8, 0.5, 1.25, 1.0));

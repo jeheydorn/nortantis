@@ -687,6 +687,11 @@ public class Background
 	 */
 	public void drawEdgesIfBoundsTouchesThem(Image result, Rectangle drawBoundsBeforeBorder)
 	{
+		if (borderWidthScaled == 0)
+		{
+			return;
+		}
+
 		Rectangle drawBounds = drawBoundsBeforeBorder == null ? null : drawBoundsBeforeBorder.translate(borderPaddingScaled, borderPaddingScaled);
 		drawTopOrBottomEdgeIfBoundsTouchesIt(result, drawBounds, 0);
 		drawTopOrBottomEdgeIfBoundsTouchesIt(result, drawBounds, 1);

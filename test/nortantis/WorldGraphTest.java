@@ -217,7 +217,9 @@ public class WorldGraphTest
 				double totalBorderContinentalLandFraction = 0;
 				for (long seed = 1; seed <= seedCount; seed++)
 				{
-					WorldGraph graph = createGraph(landShape, regionCount, seed);
+					// A typical world size. In small worlds, plate seeds are only a few polygons apart, which leaves little room between a
+					// continental plate and the edge.
+					WorldGraph graph = createGraph(landShape, regionCount, seed, 8000);
 					long borderCount = graph.centers.stream().filter(c -> c.isBorder).count();
 					long borderContinentalLandCount = graph.centers.stream().filter(c -> c.isBorder && !c.isWater && c.tectonicPlate.type == PlateType.Continental).count();
 					totalBorderContinentalLandFraction += borderContinentalLandCount / (double) borderCount;
@@ -230,9 +232,14 @@ public class WorldGraphTest
 
 	private static WorldGraph createGraph(LandShape landShape, int regionCount, long seed)
 	{
+		return createGraph(landShape, regionCount, seed, 3000);
+	}
+
+	private static WorldGraph createGraph(LandShape landShape, int regionCount, long seed, int worldSize)
+	{
 		final double width = 1024;
 		final double height = 768;
-		return GraphCreator.createGraph(width, height, 3000, new Random(seed), width / 4096.0, MapSettings.LineStyle.Jagged, MapSettings.defaultPointPrecision, true,
+		return GraphCreator.createGraph(width, height, worldSize, new Random(seed), width / 4096.0, MapSettings.LineStyle.Jagged, MapSettings.defaultPointPrecision, true,
 				MapSettings.defaultLloydRelaxationsScale, false, 0, false, false, landShape, regionCount);
 	}
 
