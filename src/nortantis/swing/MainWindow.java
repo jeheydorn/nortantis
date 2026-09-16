@@ -2036,30 +2036,26 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 			try
 			{
-				String settingsPath = subfolderNames.get(0) + "/" + "settings.txt";
-				Properties settingsProps = FileHelper.readPropertiesFromZipFile(selectedFile.toPath(), settingsPath);
-				final String requiredVersionKey = "requiredVersion";
-				if (settingsProps.containsKey(requiredVersionKey))
+				Properties settingsProps = Assets.loadArtPackSettingsFromZipFile(selectedFile.toPath(), subfolderNames.get(0));
+				String requiredVersion = Assets.getArtPackRequiredVersion(settingsProps);
+				if (requiredVersion != null)
 				{
-					String requiredVersion = settingsProps.getProperty(requiredVersionKey);
-					if (!StringUtils.isBlank(requiredVersion))
+					try
 					{
-						try
+						if (MapSettings.isVersionGreaterThanCurrent(requiredVersion))
 						{
-							if (MapSettings.isVersionGreaterThanCurrent(requiredVersion))
-							{
-								SwingHelper.showMessageDialog(this, Translation.get("artPack.requiresVersion", requiredVersion, MapSettings.currentVersion), Translation.get("common.error"),
-										JOptionPane.ERROR_MESSAGE);
-								return;
-							}
-						}
-						catch (NumberFormatException e)
-						{
-							String message = "Number format error while reading " + requiredVersionKey + " from '" + settingsPath + "' in '" + selectedFile.toPath() + "': " + e.getMessage();
-							Logger.printError(message, e);
-							SwingHelper.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
+							SwingHelper.showMessageDialog(this, Translation.get("artPack.requiresVersion", requiredVersion, MapSettings.currentVersion), Translation.get("common.error"),
+									JOptionPane.ERROR_MESSAGE);
 							return;
 						}
+					}
+					catch (NumberFormatException e)
+					{
+						String message = "Number format error while reading the required version '" + requiredVersion + "' from the settings of art pack '" + subfolderNames.get(0) + "' in '"
+								+ selectedFile.toPath() + "': " + e.getMessage();
+						Logger.printError(message, e);
+						SwingHelper.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
+						return;
 					}
 				}
 			}

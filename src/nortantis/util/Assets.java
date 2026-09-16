@@ -42,6 +42,12 @@ public class Assets
 	private static final String assetsPath = "assets";
 	public static final String customArtPack = "custom";
 	private static final String artPacksFolder = "art packs";
+	/**
+	 * The optional properties file at the top level of an art pack.
+	 */
+	private static final String artPackSettingsFileName = "settings.txt";
+	private static final String includeInNewRandomMapsKey = "includeInNewRandomMaps";
+	private static final String requiredVersionKey = "requiredVersion";
 	public static final String installedArtPack = "nortantis";
 	/**
 	 * The message key for the name shown in place of an art pack name for fonts that came from the device rather than from a pack. That name
@@ -138,6 +144,69 @@ public class Assets
 		return shared;
 	}
 
+	/**
+	 * Lists the art packs that File -> New Random Map may pick from on its own. An art pack opts out by putting
+	 * {@code includeInNewRandomMaps=false} in its settings file. Art packs that opt out can still be chosen by the user.
+	 */
+	public static List<String> listArtPacksForNewRandomMaps(String customImagesFolder)
+	{
+		List<String> allArtPacks = listArtPacks(!StringUtils.isEmpty(customImagesFolder));
+		List<String> result = allArtPacks.stream().filter(artPack -> isArtPackIncludedInNewRandomMaps(artPack, customImagesFolder)).toList();
+		return result.isEmpty() ? allArtPacks : result;
+	}
+
+	private static boolean isArtPackIncludedInNewRandomMaps(String artPack, String customImagesFolder)
+	{
+		Properties settings = loadArtPackSettings(artPack, customImagesFolder);
+		String value = settings.getProperty(includeInNewRandomMapsKey);
+		return StringUtils.isBlank(value) || !value.trim().equalsIgnoreCase("false");
+	}
+
+	/**
+	 * Returns the minimum Nortantis version an art pack's settings say it requires, or null if they don't specify one.
+	 */
+	public static String getArtPackRequiredVersion(Properties artPackSettings)
+	{
+		String value = artPackSettings.getProperty(requiredVersionKey);
+		return StringUtils.isBlank(value) ? null : value.trim();
+	}
+
+	/**
+	 * Loads the settings file of an art pack in a zip file, where the art pack is the zip file's top level folder.
+	 *
+	 * @throws FileNotFoundException
+	 *             If the art pack doesn't have a settings file.
+	 */
+	public static Properties loadArtPackSettingsFromZipFile(Path zipFilePath, String artPackName) throws IOException
+	{
+		return FileHelper.readPropertiesFromZipFile(zipFilePath, artPackName + "/" + artPackSettingsFileName);
+	}
+
+	/**
+	 * Loads an art pack's optional settings file. Returns empty properties if the art pack doesn't have one or it can't be read.
+	 */
+	private static Properties loadArtPackSettings(String artPack, String customImagesFolder)
+	{
+		Path artPackPath = getArtPackPath(artPack, customImagesFolder);
+		if (artPackPath == null)
+		{
+			return new Properties();
+		}
+		String settingsPath = Paths.get(artPackPath.toString(), artPackSettingsFileName).toString();
+		try
+		{
+			if (exists(settingsPath))
+			{
+				return loadPropertiesFile(settingsPath);
+			}
+		}
+		catch (IOException | RuntimeException e)
+		{
+			Logger.printError("Error while reading art pack settings file '" + settingsPath + "': " + e.getMessage(), e);
+		}
+		return new Properties();
+	}
+
 	public static boolean artPackExists(String artPack, String customImagesFolder)
 	{
 		return listArtPacks(!StringUtils.isEmpty(customImagesFolder)).contains(artPack);
@@ -187,8 +256,13 @@ public class Assets
 
 	public static List<NamedResource> listBackgroundTexturesForAllArtPacks(String customImagesFolder)
 	{
+		return listBackgroundTexturesForArtPacks(listArtPacks(StringUtils.isNotEmpty(customImagesFolder)), customImagesFolder);
+	}
+
+	public static List<NamedResource> listBackgroundTexturesForArtPacks(List<String> artPacks, String customImagesFolder)
+	{
 		List<NamedResource> result = new ArrayList<>();
-		for (String artPack : listArtPacks(StringUtils.isNotEmpty(customImagesFolder)))
+		for (String artPack : artPacks)
 		{
 			for (NamedResource textureResource : listBackgroundTexturesForArtPack(artPack, FileHelper.replaceHomeFolderPlaceholder(customImagesFolder)))
 			{
@@ -281,8 +355,13 @@ public class Assets
 
 	public static List<NamedResource> listAllBorderTypes(String customImagesFolder)
 	{
+		return listBorderTypesForArtPacks(listArtPacks(StringUtils.isNotEmpty(customImagesFolder)), customImagesFolder);
+	}
+
+	public static List<NamedResource> listBorderTypesForArtPacks(List<String> artPacks, String customImagesFolder)
+	{
 		List<NamedResource> result = new ArrayList<>();
-		for (String artPack : listArtPacks(StringUtils.isNotEmpty(customImagesFolder)))
+		for (String artPack : artPacks)
 		{
 			result.addAll(listBorderTypesForArtPack(artPack, customImagesFolder));
 		}

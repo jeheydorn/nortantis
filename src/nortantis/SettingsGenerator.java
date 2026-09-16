@@ -7,7 +7,6 @@ import nortantis.platform.Font;
 import nortantis.swing.MapEdits;
 import nortantis.swing.translation.Translation;
 import nortantis.util.*;
-import org.apache.commons.lang3.StringUtils;
 
 import java.nio.file.Paths;
 import java.util.*;
@@ -49,7 +48,7 @@ public class SettingsGenerator
 	public static MapSettings generate(String customImageFolder)
 	{
 		Random rand = new Random();
-		String artPack = ProbabilityHelper.sampleUniform(rand, Assets.listArtPacks(!StringUtils.isEmpty(customImageFolder)));
+		String artPack = ProbabilityHelper.sampleUniform(rand, Assets.listArtPacksForNewRandomMaps(customImageFolder));
 		return generate(rand, artPack, customImageFolder);
 	}
 
@@ -146,14 +145,26 @@ public class SettingsGenerator
 		settings.worldSize = (rand.nextInt((maxWorldSize - minWorldSizeForRandomSettings) / worldSizePrecision) + minWorldSizeForRandomSettings / worldSizePrecision) * worldSizePrecision;
 
 
-		if (settings.worldSize > (maxWorldSize - minWorldSize) / 2)
+		List<Tuple3<LandShape, Integer, Integer>> ranges = Arrays.asList(new Tuple3<>(LandShape.Supercontinent, 11000, 18000), new Tuple3<>(LandShape.Continents, 8000, maxWorldSize),
+				new Tuple3<>(LandShape.Scattered, minWorldSize, 10000), new Tuple3<>(LandShape.Coastline, minWorldSize, 8000));
+		List<LandShape> sampleDomain = new ArrayList<>();
+		for (Tuple3<LandShape, Integer, Integer> range : ranges)
 		{
-			settings.landShape = ProbabilityHelper.sampleUniform(rand, Arrays.asList(LandShape.Continents, LandShape.Supercontinent));
+			if (settings.worldSize >= range.getSecond() && settings.worldSize <= range.getThird())
+			{
+				sampleDomain.add(range.getFirst());
+			}
+		}
+		if (sampleDomain.isEmpty())
+		{
+			assert false : "The probability distribution for land shapes has a gap.";
+			settings.landShape = LandShape.Continents;
 		}
 		else
 		{
-			settings.landShape = ProbabilityHelper.sampleUniform(rand, Arrays.asList(LandShape.Continents, LandShape.Scattered));
+			settings.landShape = ProbabilityHelper.sampleUniform(rand, sampleDomain);
 		}
+
 
 		int rangeSize = maxGeneratedRegionCount(settings.worldSize) - minRegionCount;
 		int low = minRegionCount + rangeSize / 4;
@@ -173,7 +184,7 @@ public class SettingsGenerator
 		List<NamedResource> borderTypes = Assets.listBorderTypesForArtPack(artPack, customImagesFolder);
 		if (borderTypes.isEmpty())
 		{
-			borderTypes = Assets.listAllBorderTypes(customImagesFolder);
+			borderTypes = Assets.listBorderTypesForArtPacks(Assets.listArtPacksForNewRandomMaps(customImagesFolder), customImagesFolder);
 		}
 		// Note- borderTypes shouldn't be empty since that would mean there's no border types, including installed ones.
 		if (!borderTypes.isEmpty())
@@ -244,7 +255,7 @@ public class SettingsGenerator
 		List<NamedResource> textureFiles = Assets.listBackgroundTexturesForArtPack(artPack, settings.customImagesPath);
 		if (textureFiles.isEmpty())
 		{
-			textureFiles = Assets.listBackgroundTexturesForAllArtPacks(settings.customImagesPath);
+			textureFiles = Assets.listBackgroundTexturesForArtPacks(Assets.listArtPacksForNewRandomMaps(settings.customImagesPath), settings.customImagesPath);
 		}
 
 		settings.backgroundTextureResource = ProbabilityHelper.sampleUniform(rand, textureFiles);
@@ -267,8 +278,7 @@ public class SettingsGenerator
 		{
 			int numBooks = 2 + Math.abs(rand.nextInt(allBooks.size() - 1));
 			List<String> booksRemaining = new ArrayList<>(allBooks);
-			for (@SuppressWarnings("unused")
-			int ignored : new Range(numBooks))
+			for (@SuppressWarnings("unused") int ignored : new Range(numBooks))
 			{
 				int index = rand.nextInt(booksRemaining.size());
 				settings.books.add(booksRemaining.get(index));
@@ -297,10 +307,9 @@ public class SettingsGenerator
 	}
 
 	/**
-	 * Points the built-in default fonts at a bundled family that can draw the script of the user's language, so a brand new map doesn't lose
-	 * the place names its owner types. A character a font has no glyph for goes undrawn: most fonts mark the gap with a box, and some leave
-	 * nothing there at all. Every font field is rewritten, including the road font, which otherwise keeps the family it derived from the
-	 * river font.
+	 * Points the built-in default fonts at a bundled family that can draw the script of the user's language, so a brand new map doesn't lose the place names its owner types. A character a font has no
+	 * glyph for goes undrawn: most fonts mark the gap with a box, and some leave nothing there at all. Every font field is rewritten, including the road font, which otherwise keeps the family it
+	 * derived from the river font.
 	 */
 	private static void useADefaultFontThatCanDrawTheUsersLanguage(MapSettings settings)
 	{
@@ -339,8 +348,7 @@ public class SettingsGenerator
 	}
 
 	/**
-	 * Creates new map settings that keep the theme (colors, fonts, border, background, etc.) from the given settings but generate a new
-	 * world layout and text names.
+	 * Creates new map settings that keep the theme (colors, fonts, border, background, etc.) from the given settings but generate a new world layout and text names.
 	 */
 	public static MapSettings newMapWithSameTheme(MapSettings currentSettings)
 	{
@@ -378,8 +386,7 @@ public class SettingsGenerator
 	}
 
 	/**
-	 * Randomizes only the theme (visual appearance) fields of the given settings, keeping the world layout (land seed, world size,
-	 * probabilities, etc.) unchanged.
+	 * Randomizes only the theme (visual appearance) fields of the given settings, keeping the world layout (land seed, world size, probabilities, etc.) unchanged.
 	 */
 	public static void randomizeTheme(MapSettings settings, String artPack, String customImagesPath)
 	{
