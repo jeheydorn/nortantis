@@ -7,7 +7,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -83,17 +82,19 @@ public class ArtPackSettingsTest
 	}
 
 	@Test
-	public void missingSettingsFileThrowsFileNotFoundException() throws IOException
+	public void missingSettingsFileGivesEmptySettings() throws IOException
 	{
 		Path zip = createArtPackZip("pack", null);
-		assertThrows(FileNotFoundException.class, () -> Assets.loadArtPackSettingsFromZipFile(zip, "pack"));
+		Properties settings = Assets.loadArtPackSettingsFromZipFile(zip, "pack");
+		assertTrue(settings.isEmpty());
+		assertNull(Assets.getArtPackRequiredVersion(settings));
 	}
 
 	@Test
 	public void settingsFileIsReadFromTheNamedArtPackFolder() throws IOException
 	{
 		Path zip = createArtPackZip("pack", "requiredVersion=999.0\n");
-		assertThrows(FileNotFoundException.class, () -> Assets.loadArtPackSettingsFromZipFile(zip, "otherPack"));
+		assertTrue(Assets.loadArtPackSettingsFromZipFile(zip, "otherPack").isEmpty());
 	}
 
 	/**

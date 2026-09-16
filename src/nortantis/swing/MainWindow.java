@@ -37,7 +37,6 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
@@ -2058,10 +2057,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 						return;
 					}
 				}
-			}
-			catch (FileNotFoundException e)
-			{
-				// Do nothing. This means the art pack doesn't have a settings file. It's optional.
 			}
 			catch (IOException e)
 			{

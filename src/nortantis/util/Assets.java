@@ -172,14 +172,19 @@ public class Assets
 	}
 
 	/**
-	 * Loads the settings file of an art pack in a zip file, where the art pack is the zip file's top level folder.
-	 *
-	 * @throws FileNotFoundException
-	 *             If the art pack doesn't have a settings file.
+	 * Loads the optional settings file of an art pack in a zip file, where the art pack is the zip file's top level folder. Returns empty
+	 * properties if the art pack doesn't have one.
 	 */
 	public static Properties loadArtPackSettingsFromZipFile(Path zipFilePath, String artPackName) throws IOException
 	{
-		return FileHelper.readPropertiesFromZipFile(zipFilePath, artPackName + "/" + artPackSettingsFileName);
+		try
+		{
+			return FileHelper.readPropertiesFromZipFile(zipFilePath, artPackName + "/" + artPackSettingsFileName);
+		}
+		catch (FileNotFoundException e)
+		{
+			return new Properties();
+		}
 	}
 
 	/**
