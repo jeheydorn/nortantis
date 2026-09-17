@@ -10,12 +10,12 @@ public class DebugFlags
 	/**
 	 * Causes the replacement draw bounds for incremental updates to be drawn onto the map.
 	 */
-	private static boolean showIncrementalUpdateBounds = false;
+	private static boolean showIncrementalUpdateBounds = true;
 
 	/**
 	 * Prints how long incremental updates take.
 	 */
-	private static boolean printIncrementalUpdateTimes = false;
+	private static boolean printIncrementalUpdateTimes = true;
 
 	/**
 	 * Causes the indexes of edges to be printed to standard out when adding rivers in the Land and Water tool. This is useful when you're
@@ -53,6 +53,11 @@ public class DebugFlags
 	 * art's inner edge the way it was drawn.
 	 */
 	private static boolean tintBorderRevealMask = false;
+
+	/**
+	 * Draws each wave line in the Wave lines ocean wave style as one unbroken stroke, which makes the full length of each stroke visible.
+	 */
+	private static boolean disableWaveLineBreaks = true;
 
 	/**
 	 * When true, the corners used as waypoints by the sub-map river re-routing (the "Choose" detail level) are highlighted on the rendered
@@ -148,6 +153,11 @@ public class DebugFlags
 	public static boolean tintBorderRevealMask()
 	{
 		return !Assets.isRunningFromJar() && tintBorderRevealMask;
+	}
+
+	public static boolean disableWaveLineBreaks()
+	{
+		return !Assets.isRunningFromJar() && disableWaveLineBreaks;
 	}
 
 	public static boolean highlightSubMapRiverWaypoints()

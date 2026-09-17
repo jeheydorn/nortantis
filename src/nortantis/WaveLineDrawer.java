@@ -80,11 +80,12 @@ public class WaveLineDrawer
 
 	private static final long rowShiftSalt = 0x5A17C0DE01L;
 	private static final long rowPhaseSalt = 0x5A17C0DE02L;
-	private static final long lengthSalt = 0x5A17C0DE03L;
+	private static final long leftEndLengthSalt = 0x5A17C0DE03L;
 	private static final long jitterSalt = 0x5A17C0DE04L;
 	private static final long breakSalt = 0x5A17C0DE05L;
 	private static final long crestShiftSalt = 0x5A17C0DE06L;
 	private static final long crestHeightSalt = 0x5A17C0DE07L;
+	private static final long rightEndLengthSalt = 0x5A17C0DE08L;
 
 	private final MapSettings settings;
 	private final double resolutionScale;
@@ -444,6 +445,11 @@ public class WaveLineDrawer
 
 			double startInUnits = start / sizeMultiplier;
 			double endInUnits = end / sizeMultiplier;
+			if (DebugFlags.disableWaveLineBreaks())
+			{
+				drawPiece(p, row, yInGraph, rowJitterAmplitude, startInUnits, endInUnits, drawBounds);
+				continue;
+			}
 			if (breakPattern == null)
 			{
 				breakPattern = new BreakPattern(row);
@@ -468,7 +474,9 @@ public class WaveLineDrawer
 	 */
 	private double findOuterEnd(int row, double bandEdge, int direction, double yInGraph, SegmentGrid segmentGrid, double concentricLineOuterRadius)
 	{
-		double reach = reachDistribution.getReach(sampleLengthNoise(row, bandEdge / sizeMultiplier)) * sizeMultiplier;
+		// Walking right means this is a stroke's left end.
+		boolean isLeftEnd = direction > 0;
+		double reach = reachDistribution.getReach(sampleLengthNoise(row, bandEdge / sizeMultiplier, isLeftEnd)) * sizeMultiplier;
 		double maxWalk = reachDistribution.getMaxReach() * sizeMultiplier;
 
 		double previous = bandEdge;
@@ -512,10 +520,12 @@ public class WaveLineDrawer
 	}
 
 	/**
-	 * A standard normal value that varies smoothly along a row, and is independent between rows.
+	 * A standard normal value that varies smoothly along a row, and is independent between rows. Left and right ends of strokes use separate
+	 * values, so that two strokes whose ends face each other across a narrow gap, such as a bay or a strait, still get independent lengths.
 	 */
-	private double sampleLengthNoise(int row, double xInUnits)
+	private double sampleLengthNoise(int row, double xInUnits, boolean isLeftEnd)
 	{
+		long salt = isLeftEnd ? leftEndLengthSalt : rightEndLengthSalt;
 		double controlPointSpacing = rowSpacing * lengthNoiseControlPointSpacingAsMultipleOfRowSpacing;
 		double position = xInUnits / controlPointSpacing;
 		long index = (long) Math.floor(position);
@@ -523,7 +533,7 @@ public class WaveLineDrawer
 		// The squares of these weights sum to 1, so the blend of two independent standard normal values is itself standard normal.
 		double weight0 = Math.cos(t * Math.PI / 2.0);
 		double weight1 = Math.sin(t * Math.PI / 2.0);
-		return weight0 * random(lengthSalt, row, index).nextGaussian() + weight1 * random(lengthSalt, row, index + 1).nextGaussian();
+		return weight0 * random(salt, row, index).nextGaussian() + weight1 * random(salt, row, index + 1).nextGaussian();
 	}
 
 	/**
