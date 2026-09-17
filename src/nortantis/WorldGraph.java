@@ -3222,7 +3222,7 @@ public class WorldGraph extends VoronoiGraph
 				{
 					addPointsOffMapToMakeWavesGoToEdgeOfMap(drawPoints);
 				}
-				drawPoints = addJitter(randomSeed, drawPoints, variationRange);
+				drawPoints = addJitter(randomSeed, drawPoints, variationRange, isPolygon);
 			}
 			else
 			{
@@ -3341,19 +3341,90 @@ public class WorldGraph extends VoronoiGraph
 		return null;
 	}
 
-	private List<Point> addJitter(long randomSeed, List<Point> points, double variationRange)
+	/**
+	 * How far apart, in resolution-invariant pixels, the random values that jitter a line are. Points closer together than this move by
+	 * similar amounts, which makes the line wander rather than jump from point to point.
+	 */
+	private static final double jitterControlPointSpacing = 20;
+
+	/**
+	 * Moves each point of a line perpendicular to the line by a smoothly varying random amount, up to variationRange. Perpendicular moves are
+	 * what shows: moving a point along its own line only slides it toward its neighbors.
+	 *
+	 * The random amounts come from the points' positions rather than from how far along the line they are, so that changing part of a
+	 * coastline leaves the rest of it jittered exactly as it was, and an incremental draw doesn't have to redraw the whole coastline.
+	 */
+	private List<Point> addJitter(long randomSeed, List<Point> points, double variationRange, boolean isPolygon)
 	{
-		List<Point> result = points.stream().map(p ->
+		if (points.size() < 2)
 		{
-			// Use a random seed that is close to unique for each point so that
-			// incremental draws don't have to redraw the entire coastline.
-			Random rand = new Random(randomSeed + (long) ((p.x * resolutionScale + p.y * resolutionScale) * 100));
-			double radius = rand.nextDouble() * variationRange;
-			double angle = rand.nextDouble() * 2 * Math.PI;
-			Point toAdd = new Point(radius * Math.cos(angle), radius * Math.sin(angle));
-			return p.add(toAdd);
-		}).toList();
+			return points;
+		}
+
+		double spacing = jitterControlPointSpacing * resolutionScale;
+		List<Point> result = new ArrayList<>(points.size());
+		// A polygon's last point is its first one again, so it moves with it.
+		int distinctPointCount = isPolygon ? points.size() - 1 : points.size();
+		for (int i = 0; i < points.size(); i++)
+		{
+			Point point = points.get(i < distinctPointCount ? i : 0);
+			Point before = points.get(getNeighborIndexForJitter(i - 1, distinctPointCount, isPolygon));
+			Point after = points.get(getNeighborIndexForJitter(i + 1, distinctPointCount, isPolygon));
+			double directionX = after.x - before.x;
+			double directionY = after.y - before.y;
+			double length = Math.sqrt(directionX * directionX + directionY * directionY);
+			if (length == 0.0)
+			{
+				result.add(point);
+				continue;
+			}
+
+			double amount = variationRange * sampleJitterNoise(randomSeed, point.x / resolutionScale, point.y / resolutionScale, spacing / resolutionScale);
+			result.add(new Point(point.x - amount * directionY / length, point.y + amount * directionX / length));
+		}
 		return result;
+	}
+
+	private static int getNeighborIndexForJitter(int index, int distinctPointCount, boolean isPolygon)
+	{
+		if (isPolygon)
+		{
+			return Math.floorMod(index, distinctPointCount);
+		}
+		return Math.max(0, Math.min(distinctPointCount - 1, index));
+	}
+
+	/**
+	 * A smooth random value from -1 to 1 that depends only on a position on the map: random values at the corners of a grid of squares
+	 * controlPointSpacing across, blended with a curve that flattens at each corner so the result has no creases.
+	 */
+	private static double sampleJitterNoise(long randomSeed, double x, double y, double controlPointSpacing)
+	{
+		double gridX = x / controlPointSpacing;
+		double gridY = y / controlPointSpacing;
+		long column = (long) Math.floor(gridX);
+		long row = (long) Math.floor(gridY);
+		double weightX = smoothStep(gridX - column);
+		double weightY = smoothStep(gridY - row);
+
+		double topLeft = getJitterControlValue(randomSeed, column, row);
+		double topRight = getJitterControlValue(randomSeed, column + 1, row);
+		double bottomLeft = getJitterControlValue(randomSeed, column, row + 1);
+		double bottomRight = getJitterControlValue(randomSeed, column + 1, row + 1);
+		double top = topLeft + (topRight - topLeft) * weightX;
+		double bottom = bottomLeft + (bottomRight - bottomLeft) * weightX;
+		return top + (bottom - top) * weightY;
+	}
+
+	private static double smoothStep(double t)
+	{
+		return t * t * (3.0 - 2.0 * t);
+	}
+
+	private static double getJitterControlValue(long randomSeed, long column, long row)
+	{
+		long hash = Helper.mixSeed(Helper.mixSeed(Helper.mixSeed(randomSeed) + column) + row);
+		return 2.0 * ((hash >>> 11) * 0x1.0p-53) - 1.0;
 	}
 
 	List<List<Point>> addRandomBreaks(Random rand, List<Point> points, BiFunction<Boolean, Random, Double> getNewSkipDistance)

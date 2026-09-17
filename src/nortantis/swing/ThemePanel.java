@@ -151,6 +151,8 @@ public class ThemePanel extends JTabbedPane
 	private RowHider roadColorHider;
 	private JCheckBox fadeWavesCheckbox;
 	private JCheckBox jitterWavesCheckbox;
+	private JSlider jitterLevelSlider;
+	private JPanel jitterLevelPanel;
 	private JCheckBox brokenLinesCheckbox;
 	private RowHider concentricWavesOptionsHider;
 	private RowHider concentricWavesLevelSliderHider;
@@ -989,6 +991,7 @@ public class ThemePanel extends JTabbedPane
 			{
 				boolean isConcentric = concentricWavesButton.isSelected();
 				boolean isWaveLines = waveLinesButton.isSelected();
+				jitterLevelPanel.setVisible(jitterWavesCheckbox.isSelected());
 				concentricWavesLevelSlider.setVisible(isConcentric);
 				concentricWavesOptionsHider.setVisible(isConcentric || isWaveLines);
 				fadeWavesCheckbox.setVisible(isConcentric);
@@ -1025,7 +1028,19 @@ public class ThemePanel extends JTabbedPane
 		createMapChangeListenerForTerrainChange(fadeWavesCheckbox);
 
 		jitterWavesCheckbox = new JCheckBox(Translation.get("theme.jitter"));
-		createMapChangeListenerForTerrainChange(jitterWavesCheckbox);
+		jitterWavesCheckbox.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				jitterLevelPanel.setVisible(jitterWavesCheckbox.isSelected());
+				handleTerrainChange();
+			}
+		});
+
+		jitterLevelSlider = createWaveLineSlider(1, MapSettings.maxJitterLevel);
+		jitterLevelPanel = new SliderWithDisplayedValue(jitterLevelSlider).createPanelWithLabelAbove(Translation.get("theme.jitterLevel.label"),
+				Translation.get("theme.jitterLevel.help"));
 
 		brokenLinesCheckbox = new JCheckBox(Translation.get("theme.brokenLines"));
 		createMapChangeListenerForTerrainChange(brokenLinesCheckbox);
@@ -1079,7 +1094,7 @@ public class ThemePanel extends JTabbedPane
 				Translation.get("theme.waveLineLengthVariation.label"), Translation.get("theme.waveLineLengthVariation.help"));
 
 		concentricWavesOptionsHider = organizer.addLabelAndComponentsVertical(Translation.get("theme.styleOptions.label"), Translation.get("theme.styleOptions.help"),
-				Arrays.asList(fadeWavesCheckbox, jitterWavesCheckbox, brokenLinesCheckbox, waveLineShapePanel, waveLineRowSpacingPanel, waveLineRowSpacingVariationPanel,
+				Arrays.asList(fadeWavesCheckbox, jitterWavesCheckbox, jitterLevelPanel, brokenLinesCheckbox, waveLineShapePanel, waveLineRowSpacingPanel, waveLineRowSpacingVariationPanel,
 						waveLineLengthPanel, waveLineLengthVariationPanel));
 
 		concentricWavesLevelSlider = new JSlider();
@@ -1748,6 +1763,7 @@ public class ThemePanel extends JTabbedPane
 		waveLineLengthVariationSlider.setValue(settings.waveLineLengthVariation);
 		fadeWavesCheckbox.setSelected(settings.fadeConcentricWaves);
 		jitterWavesCheckbox.setSelected(settings.jitterToConcentricWaves);
+		jitterLevelSlider.setValue(settings.jitterLevel);
 		brokenLinesCheckbox.setSelected(settings.brokenLinesForConcentricWaves);
 		drawOceanEffectsInLakesCheckbox.setSelected(settings.drawOceanEffectsInLakes);
 		oceanEffectsListener.actionPerformed(null);
@@ -2013,6 +2029,7 @@ public class ThemePanel extends JTabbedPane
 		settings.waveLineLengthVariation = waveLineLengthVariationSlider.getValue();
 		settings.fadeConcentricWaves = fadeWavesCheckbox.isSelected();
 		settings.jitterToConcentricWaves = jitterWavesCheckbox.isSelected();
+		settings.jitterLevel = jitterLevelSlider.getValue();
 		settings.brokenLinesForConcentricWaves = brokenLinesCheckbox.isSelected();
 		settings.drawOceanEffectsInLakes = drawOceanEffectsInLakesCheckbox.isSelected();
 		settings.coastShadingColor = AwtBridge.fromAwtColor(coastShadingColorDisplay.getBackground());

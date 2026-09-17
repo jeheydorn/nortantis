@@ -50,6 +50,8 @@ public class MapSettings implements Serializable
 	public static final double defaultLloydRelaxationsScale = 0.1;
 	public static final double defaultResolution = 1.0;
 	public static final double defaultHeightmapResolution = 1.0;
+	public static final int defaultJitterLevel = 10;
+	public static final int maxJitterLevel = 10;
 	public static final WaveLineShape defaultWaveLineShape = WaveLineShape.Scallops;
 	public static final int defaultWaveLineRowSpacing = 6;
 	public static final int defaultWaveLineRowSpacingVariation = 0;
@@ -87,6 +89,11 @@ public class MapSettings implements Serializable
 	public int oceanShadingLevel;
 	public int concentricWaveCount;
 	public boolean jitterToConcentricWaves;
+	/**
+	 * How strong jitter is when jitterToConcentricWaves is on, from 1 to maxJitterLevel, where maxJitterLevel is as much as the concentric
+	 * lines or wave lines can wander without touching the coast or each other. Used by both wave styles.
+	 */
+	public int jitterLevel = defaultJitterLevel;
 	public boolean brokenLinesForConcentricWaves;
 	public boolean fadeConcentricWaves;
 	public OceanWaves oceanWavesType;
@@ -439,6 +446,7 @@ public class MapSettings implements Serializable
 		root.put("fadeConcentricWaves", fadeConcentricWaves);
 		root.put("brokenLinesForConcentricWaves", brokenLinesForConcentricWaves);
 		root.put("jitterToConcentricWaves", jitterToConcentricWaves);
+		root.put("jitterLevel", jitterLevel);
 		root.put("oceanEffect", enumToJson(oceanWavesType));
 		root.put("waveLineShape", enumToJson(waveLineShape));
 		root.put("waveLineRowSpacing", waveLineRowSpacing);
@@ -1172,6 +1180,8 @@ public class MapSettings implements Serializable
 		{
 			jitterToConcentricWaves = (boolean) root.get("jitterToConcentricWaves");
 		}
+		// Maps made before jitter had an amount used the strongest one.
+		jitterLevel = root.containsKey("jitterLevel") ? (int) (long) root.get("jitterLevel") : defaultJitterLevel;
 		waveLineShape = root.containsKey("waveLineShape") ? WaveLineShape.valueOf((String) root.get("waveLineShape")) : defaultWaveLineShape;
 		waveLineRowSpacing = root.containsKey("waveLineRowSpacing") ? (int) (long) root.get("waveLineRowSpacing") : defaultWaveLineRowSpacing;
 		waveLineRowSpacingVariation = root.containsKey("waveLineRowSpacingVariation") ? (int) (long) root.get("waveLineRowSpacingVariation") : defaultWaveLineRowSpacingVariation;
@@ -3372,6 +3382,8 @@ public class MapSettings implements Serializable
 			differences.add("imageExportPath: " + imageExportPath + " vs " + other.imageExportPath);
 		if (jitterToConcentricWaves != other.jitterToConcentricWaves)
 			differences.add("jitterToConcentricWaves: " + jitterToConcentricWaves + " vs " + other.jitterToConcentricWaves);
+		if (jitterLevel != other.jitterLevel)
+			differences.add("jitterLevel: " + jitterLevel + " vs " + other.jitterLevel);
 		if (!Objects.equals(landColor, other.landColor))
 			differences.add("landColor: " + landColor + " vs " + other.landColor);
 		if (landShape != other.landShape)
@@ -3499,7 +3511,7 @@ public class MapSettings implements Serializable
 				edits, fadeConcentricWaves, fillWithColorByType, flipHorizontally, flipVertically, frayedBorder, frayedBorderBlurLevel, frayedBorderColor, frayedBorderSeed,
 				frayedBorderSize, generateBackground, generateBackgroundFromTexture, generatedHeight, generatedWidth, gridOverlayColor, gridOverlayLayer, gridOverlayLineWidth,
 				gridOverlayRowOrColCount, gridOverlayShape, gridOverlayXOffset, gridOverlayYOffset, grungeWidth, heightmapExportPath, heightmapResolution, hillScale, hueRange, iconFillColorsByType,
-				iconFilterColorsByType, imageExportPath, jitterToConcentricWaves, landColor, landShape, lineStyle, lloydRelaxationsScale, maximizeOpacityByType, mountainRangeFont, mountainScale,
+				iconFilterColorsByType, imageExportPath, jitterLevel, jitterToConcentricWaves, landColor, landShape, lineStyle, lloydRelaxationsScale, maximizeOpacityByType, mountainRangeFont, mountainScale,
 				oceanColor, oceanEffectsColor, oceanEffectsLevel, oceanShadingColor, oceanShadingLevel, oceanWavesColor, oceanWavesLevel, oceanWavesType, otherMountainsFont, overlayImageDefaultScale,
 				overlayImageDefaultTransparency, overlayImagePath, overlayImageTransparency, overlayOffsetResolutionInvariant, overlayScale, pointPrecision, randomSeed, regionBaseColor,
 				regionBoundaryColor, regionBoundaryStyle, regionCount, regionFont, regionsRandomSeed, resolution, rightRotationCount, riverColor, riverFont, roadColor, roadFont, roadStyle, saturationRange,
@@ -3554,7 +3566,7 @@ public class MapSettings implements Serializable
 				&& Objects.equals(heightmapExportPath, other.heightmapExportPath) && Double.doubleToLongBits(heightmapResolution) == Double.doubleToLongBits(other.heightmapResolution)
 				&& Double.doubleToLongBits(hillScale) == Double.doubleToLongBits(other.hillScale) && hueRange == other.hueRange && Objects.equals(iconFillColorsByType, other.iconFillColorsByType)
 				&& Objects.equals(iconFilterColorsByType, other.iconFilterColorsByType) && Objects.equals(imageExportPath, other.imageExportPath)
-				&& jitterToConcentricWaves == other.jitterToConcentricWaves && Objects.equals(landColor, other.landColor) && landShape == other.landShape && lineStyle == other.lineStyle
+				&& jitterToConcentricWaves == other.jitterToConcentricWaves && jitterLevel == other.jitterLevel && Objects.equals(landColor, other.landColor) && landShape == other.landShape && lineStyle == other.lineStyle
 				&& Double.doubleToLongBits(lloydRelaxationsScale) == Double.doubleToLongBits(other.lloydRelaxationsScale) && Objects.equals(maximizeOpacityByType, other.maximizeOpacityByType)
 				&& Objects.equals(mountainRangeFont, other.mountainRangeFont) && Double.doubleToLongBits(mountainScale) == Double.doubleToLongBits(other.mountainScale)
 				&& Objects.equals(oceanColor, other.oceanColor) && Objects.equals(oceanEffectsColor, other.oceanEffectsColor) && oceanEffectsLevel == other.oceanEffectsLevel

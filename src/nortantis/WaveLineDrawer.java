@@ -97,6 +97,7 @@ public class WaveLineDrawer
 	private final double amplitude;
 	private final double wavelength;
 	private final double jitterAmplitude;
+	private final double jitterFraction;
 	private final double minRowSeparation;
 	private final double maxRowShift;
 	private final ReachDistribution reachDistribution;
@@ -115,6 +116,7 @@ public class WaveLineDrawer
 		amplitude = calcAmplitude(settings);
 		wavelength = rowSpacing * wavelengthAsMultipleOfRowSpacing;
 		jitterAmplitude = calcJitterAmplitude(settings);
+		jitterFraction = calcJitterFraction(settings);
 		minRowSeparation = calcMinRowSeparation(settings);
 		maxRowShift = calcMaxRowShift(settings);
 		reachDistribution = ReachDistribution.create(settings);
@@ -149,12 +151,21 @@ public class WaveLineDrawer
 	 */
 	private static double calcJitterAmplitude(MapSettings settings)
 	{
+		// Jitter moves both neighboring rows, so each gets half of the space between them.
+		return calcJitterFraction(settings)
+				* Math.min(settings.waveLineRowSpacing * maxJitterAmplitudeAsFractionOfRowSpacing, calcSpaceBetweenRowsWithoutJitter(settings) / 2.0);
+	}
+
+	/**
+	 * How much of the jitter the settings ask for, from 0 when jitter is off to 1 at the highest jitter level.
+	 */
+	private static double calcJitterFraction(MapSettings settings)
+	{
 		if (!settings.jitterToConcentricWaves)
 		{
 			return 0.0;
 		}
-		// Jitter moves both neighboring rows, so each gets half of the space between them.
-		return Math.min(settings.waveLineRowSpacing * maxJitterAmplitudeAsFractionOfRowSpacing, calcSpaceBetweenRowsWithoutJitter(settings) / 2.0);
+		return Math.max(0, Math.min(MapSettings.maxJitterLevel, settings.jitterLevel)) / (double) MapSettings.maxJitterLevel;
 	}
 
 	/**
@@ -194,7 +205,7 @@ public class WaveLineDrawer
 
 	private static double calcConcentricLineJitter(MapSettings settings, double resolutionScale)
 	{
-		return settings.jitterToConcentricWaves ? MapCreator.calcWaveLinesConcentricLineJitter(resolutionScale) : 0.0;
+		return MapCreator.calcJitter(settings, resolutionScale);
 	}
 
 	/**
@@ -716,10 +727,7 @@ public class WaveLineDrawer
 	private double getPhase(int row, double xInUnits)
 	{
 		double phase = xInUnits / wavelength + uniform(rowPhaseSalt, row, 0);
-		if (settings.jitterToConcentricWaves)
-		{
-			phase += maxCrestShiftInWavelengths * sampleSmoothNoise(crestShiftSalt, row, xInUnits, wavelength * jitterControlPointSpacingAsMultipleOfWavelength);
-		}
+		phase += jitterFraction * maxCrestShiftInWavelengths * sampleSmoothNoise(crestShiftSalt, row, xInUnits, wavelength * jitterControlPointSpacingAsMultipleOfWavelength);
 		return phase;
 	}
 
@@ -732,7 +740,7 @@ public class WaveLineDrawer
 		long period = (long) Math.floor(phase);
 		double fraction = phase - period;
 		double height = shape.evaluate(fraction);
-		if (settings.jitterToConcentricWaves)
+		if (jitterFraction > 0.0)
 		{
 			double startScale = getCrestHeightScale(row, period);
 			double endScale = getCrestHeightScale(row, period + 1);
@@ -743,7 +751,8 @@ public class WaveLineDrawer
 
 	private double getCrestHeightScale(int row, long period)
 	{
-		return minCrestHeightFraction + (1.0 - minCrestHeightFraction) * uniform(crestHeightSalt, row, period);
+		double lowestCrest = 1.0 - jitterFraction * (1.0 - minCrestHeightFraction);
+		return lowestCrest + (1.0 - lowestCrest) * uniform(crestHeightSalt, row, period);
 	}
 
 	/**

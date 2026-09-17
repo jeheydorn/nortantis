@@ -679,7 +679,7 @@ public class MapCreator implements WarningLogger
 		// whichever is largest.
 
 		double concentricWaveWidth = settings.hasConcentricWaves()
-				? settings.concentricWaveCount * calcConcentricWaveSpacing(settings.resolution) + (settings.jitterToConcentricWaves ? calcJitterVarianceRange(settings.resolution) : 0)
+				? settings.concentricWaveCount * calcConcentricWaveSpacing(settings.resolution) + calcJitter(settings, settings.resolution)
 				: 0;
 		// The effects padding is added to the total width and height of the bounds it pads, so half of it lands on each side. The wave lines
 		// padding is a distance for each side.
@@ -1762,7 +1762,7 @@ public class MapCreator implements WarningLogger
 
 				int level = (int) (oceanEffects.getMaxPixelLevel() * waveOpacity);
 				p.setColor(Color.create(level, level, level));
-				double varianceRange = settings.jitterToConcentricWaves ? calcJitterVarianceRange(resolutionScaled) : 0.0;
+				double varianceRange = calcJitter(settings, resolutionScaled);
 				p.setStrokeToSolidLineWithNoEndDecorations((float) whiteWidth);
 				graph.drawCoastlineWithVariation(p, settings.backgroundRandomSeed + i, varianceRange, widthBetweenWaves, settings.brokenLinesForConcentricWaves, drawBounds, getNewSkipDistance,
 						shoreEdges);
@@ -1795,7 +1795,7 @@ public class MapCreator implements WarningLogger
 		double distanceFromCoast = concentricWaveWidthBetweenWaves * waveLinesConcentricLineDistanceScale * sizeMultiplier;
 		double waveWidth = concentricWaveLineWidth * sizeMultiplier;
 		double lineOuterWidth = calcWaveLinesConcentricLineOuterWidth(resolutionScaled);
-		double varianceRange = settings.jitterToConcentricWaves ? calcWaveLinesConcentricLineJitter(resolutionScaled) : 0.0;
+		double varianceRange = calcJitter(settings, resolutionScaled);
 
 		// See createConcentricWavesMask for why this searches the entire graph.
 		List<List<Edge>> shoreEdges = graph.findShoreEdges(centersToDraw, settings.drawOceanEffectsInLakes, true);
@@ -1846,14 +1846,6 @@ public class MapCreator implements WarningLogger
 	}
 
 	/**
-	 * The random variation, in pixels, of the concentric line in the wave lines style, when jitter is on.
-	 */
-	static double calcWaveLinesConcentricLineJitter(double resolutionScaled)
-	{
-		return calcJitterVarianceRange(resolutionScaled) * waveLinesConcentricLineDistanceScale;
-	}
-
-	/**
 	 * The width, in pixels, of a concentric wave as it appears on the map. Each wave is drawn as a stroke with a narrower one erased from its
 	 * middle, which leaves a line on each side half as wide as the difference between the two strokes.
 	 */
@@ -1862,11 +1854,32 @@ public class MapCreator implements WarningLogger
 		return concentricWaveLineWidth * calcSizeMultiplierFromResolutionScaleRounded(resolutionScaled) / 2.0;
 	}
 
-	static double calcJitterVarianceRange(double resolutionScaled)
+	/**
+	 * The most, in pixels, that jitter may move a concentric line or the line wave lines are drawn outside of.
+	 *
+	 * Concentric waves leave half the width between waves clear between one wave and the next, and the same between the innermost wave and
+	 * the coast. Neighboring waves jitter independently and so can move toward each other, which leaves each of them half of that. The line
+	 * for wave lines is drawn half as far from the coast, with no neighbor to collide with, so the same amount is what keeps it off the
+	 * coast.
+	 */
+	static double calcMaxJitter(double resolutionScaled)
 	{
 		double sizeMultiplier = calcSizeMultiplierFromResolutionScaleRounded(resolutionScaled);
 		double widthBetweenWaves = concentricWaveWidthBetweenWaves * sizeMultiplier;
-		return 0.25 * widthBetweenWaves;
+		final double marginSoLinesDontQuiteTouch = 0.9;
+		return 0.25 * widthBetweenWaves * marginSoLinesDontQuiteTouch;
+	}
+
+	/**
+	 * How far, in pixels, jitter moves the lines drawn along coastlines, which is zero when jitter is off.
+	 */
+	static double calcJitter(MapSettings settings, double resolutionScaled)
+	{
+		if (!settings.jitterToConcentricWaves)
+		{
+			return 0.0;
+		}
+		return calcMaxJitter(resolutionScaled) * Math.max(0, Math.min(MapSettings.maxJitterLevel, settings.jitterLevel)) / MapSettings.maxJitterLevel;
 	}
 
 	private static float calcScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(int kernelSize, double sizeMultiplier)
