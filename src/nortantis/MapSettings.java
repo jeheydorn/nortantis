@@ -58,6 +58,11 @@ public class MapSettings implements Serializable
 	public static final int defaultWaveLineLength = 5;
 	public static final int defaultWaveLineLengthVariation = 6;
 	/**
+	 * The highest value of the settings that say how much wave lines vary, which are scaled to a fraction of the most variation there is
+	 * room for.
+	 */
+	public static final int maxWaveLineVariation = 10;
+	/**
 	 * Font size for road labels in maps that don't store one, which is both new maps and maps saved before road labels existed. Road labels
 	 * are deliberately smaller than river and lake labels so that they fit on maps dense enough to need road names.
 	 */

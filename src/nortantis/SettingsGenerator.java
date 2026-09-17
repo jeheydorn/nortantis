@@ -2,6 +2,7 @@ package nortantis;
 
 import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanWaves;
+import nortantis.MapSettings.WaveLineShape;
 import nortantis.platform.Color;
 import nortantis.platform.Font;
 import nortantis.swing.MapEdits;
@@ -40,6 +41,15 @@ public class SettingsGenerator
 	}
 
 	public static final int minConcentricWaveCountToGenerate = 2;
+	public static final int minWaveLineRowSpacingToGenerate = 4;
+	public static final int maxWaveLineRowSpacingToGenerate = 10;
+	public static final int minWaveLineLengthToGenerate = 7;
+	public static final int maxWaveLineLengthToGenerate = 16;
+	/**
+	 * Generated wave lines don't use the lowest jitter levels because at those the lines barely wander at all, which looks like jitter is
+	 * off rather than like a choice.
+	 */
+	public static final int minWaveLineJitterLevelToGenerate = 5;
 	public static final int defaultCoastShadingAlpha = 87;
 	public static final int defaultOceanShadingAlpha = 87;
 	public static final int defaultOceanRipplesAlpha = 204;
@@ -77,8 +87,8 @@ public class SettingsGenerator
 		settings.artPack = artPack;
 		settings.customImagesPath = customImagesFolder;
 
-		List<Tuple2<Double, OceanWaves>> oceanWaveOptions = new ArrayList<>(Arrays.asList(new Tuple2<Double, OceanWaves>(1.0, OceanWaves.None), new Tuple2<Double, OceanWaves>(1.0, OceanWaves.Ripples),
-				new Tuple2<Double, OceanWaves>(2.0, OceanWaves.ConcentricWaves)));
+		List<Tuple2<Double, OceanWaves>> oceanWaveOptions = new ArrayList<>(Arrays.asList(new Tuple2<Double, OceanWaves>(1.0, OceanWaves.None),
+				new Tuple2<Double, OceanWaves>(2.0, OceanWaves.ConcentricWaves), new Tuple2<Double, OceanWaves>(2.0, OceanWaves.WaveLines)));
 
 		settings.oceanWavesType = ProbabilityHelper.sampleCategorical(rand, oceanWaveOptions);
 
@@ -93,6 +103,18 @@ public class SettingsGenerator
 			settings.fadeConcentricWaves = rand.nextBoolean();
 			settings.jitterToConcentricWaves = rand.nextBoolean();
 			settings.brokenLinesForConcentricWaves = rand.nextBoolean();
+		}
+		if (settings.oceanWavesType == OceanWaves.WaveLines)
+		{
+			settings.fadeWaveLines = rand.nextBoolean();
+			settings.jitterToWaveLines = rand.nextBoolean();
+			settings.waveLineJitterLevel = minWaveLineJitterLevelToGenerate + rand.nextInt(MapSettings.maxJitterLevel - minWaveLineJitterLevelToGenerate + 1);
+			settings.waveLineShape = ProbabilityHelper.sampleCategorical(rand, Arrays.asList(new Tuple2<Double, WaveLineShape>(2.0, WaveLineShape.Scallops),
+					new Tuple2<Double, WaveLineShape>(1.0, WaveLineShape.Sine), new Tuple2<Double, WaveLineShape>(1.0, WaveLineShape.Straight)));
+			settings.waveLineRowSpacing = minWaveLineRowSpacingToGenerate + rand.nextInt(maxWaveLineRowSpacingToGenerate - minWaveLineRowSpacingToGenerate + 1);
+			settings.waveLineRowSpacingVariation = rand.nextInt(MapSettings.maxWaveLineVariation + 1);
+			settings.waveLineLength = minWaveLineLengthToGenerate + rand.nextInt(maxWaveLineLengthToGenerate - minWaveLineLengthToGenerate + 1);
+			settings.waveLineLengthVariation = rand.nextInt(MapSettings.maxWaveLineVariation + 1);
 		}
 		settings.concentricWaveCount = Math.max(minConcentricWaveCountToGenerate, Math.min(maxConcentricWaveCountToGenerate, Math.abs((rand.nextInt() % maxConcentricWaveCountInEditor)) + 1));
 		settings.coastShadingLevel = 15 + Math.abs(rand.nextInt(35));
@@ -132,7 +154,7 @@ public class SettingsGenerator
 		}
 		else
 		{
-			// Concentric waves
+			// Lines drawn along coastlines
 			double wavesColorScale = 0.5;
 			int alpha = 255;
 			settings.oceanWavesColor = Color.create((int) (settings.oceanColor.getRed() * wavesColorScale), (int) (settings.oceanColor.getGreen() * wavesColorScale),

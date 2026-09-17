@@ -193,7 +193,7 @@ public class WaveLineDrawer
 	private static double calcMaxRowShift(MapSettings settings)
 	{
 		double largestShift = Math.max(0.0, settings.waveLineRowSpacing - calcMinRowSeparation(settings));
-		return largestShift * Math.max(0, Math.min(10, settings.waveLineRowSpacingVariation)) / 10.0;
+		return largestShift * Math.max(0, Math.min(MapSettings.maxWaveLineVariation, settings.waveLineRowSpacingVariation)) / (double) MapSettings.maxWaveLineVariation;
 	}
 
 	/**
@@ -738,7 +738,7 @@ public class WaveLineDrawer
 			{
 				return null;
 			}
-			double variation = Math.max(0, Math.min(10, settings.waveLineLengthVariation)) / 10.0;
+			double variation = Math.max(0, Math.min(MapSettings.maxWaveLineVariation, settings.waveLineLengthVariation)) / (double) MapSettings.maxWaveLineVariation;
 			double maxDeviation = settings.waveLineLength * maxLengthVariationAsFractionOfLength * variation;
 			return new ReachDistribution(settings.waveLineLength, maxDeviation / maxReachStandardDeviations);
 		}

@@ -1108,7 +1108,7 @@ public class ThemePanel extends JTabbedPane
 		waveLineRowSpacingPanel = new SliderWithDisplayedValue(waveLineRowSpacingSlider).createPanelWithLabelAbove(Translation.get("theme.waveLineRowSpacing.label"),
 				Translation.get("theme.waveLineRowSpacing.help"));
 
-		waveLineRowSpacingVariationSlider = createWaveLineSlider(0, 10);
+		waveLineRowSpacingVariationSlider = createWaveLineSlider(0, MapSettings.maxWaveLineVariation);
 		waveLineRowSpacingVariationPanel = new SliderWithDisplayedValue(waveLineRowSpacingVariationSlider).createPanelWithLabelAbove(
 				Translation.get("theme.waveLineRowSpacingVariation.label"), Translation.get("theme.waveLineRowSpacingVariation.help"));
 
@@ -1116,7 +1116,7 @@ public class ThemePanel extends JTabbedPane
 		waveLineLengthPanel = new SliderWithDisplayedValue(waveLineLengthSlider).createPanelWithLabelAbove(Translation.get("theme.waveLineLength.label"),
 				Translation.get("theme.waveLineLength.help"));
 
-		waveLineLengthVariationSlider = createWaveLineSlider(0, 10);
+		waveLineLengthVariationSlider = createWaveLineSlider(0, MapSettings.maxWaveLineVariation);
 		waveLineLengthVariationPanel = new SliderWithDisplayedValue(waveLineLengthVariationSlider).createPanelWithLabelAbove(
 				Translation.get("theme.waveLineLengthVariation.label"), Translation.get("theme.waveLineLengthVariation.help"));
 
