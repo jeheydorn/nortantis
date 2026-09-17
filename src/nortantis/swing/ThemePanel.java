@@ -5,6 +5,7 @@ import nortantis.MapSettings.GridOverlayLayer;
 import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanWaves;
 import nortantis.MapSettings.ThemeFontType;
+import nortantis.MapSettings.WaveLineShape;
 import nortantis.Stroke;
 import nortantis.editor.CenterEdit;
 import nortantis.editor.CenterTrees;
@@ -48,6 +49,17 @@ public class ThemePanel extends JTabbedPane
 	private JRadioButton ripplesRadioButton;
 	private JRadioButton noneRadioButton;
 	private JRadioButton concentricWavesButton;
+	private JRadioButton waveLinesButton;
+	private JComboBox<WaveLineShape> waveLineShapeComboBox;
+	private JPanel waveLineShapePanel;
+	private JSlider waveLineRowSpacingSlider;
+	private JPanel waveLineRowSpacingPanel;
+	private JSlider waveLineRowSpacingVariationSlider;
+	private JPanel waveLineRowSpacingVariationPanel;
+	private JSlider waveLineLengthSlider;
+	private JPanel waveLineLengthPanel;
+	private JSlider waveLineLengthVariationSlider;
+	private JPanel waveLineLengthVariationPanel;
 	private JPanel coastShadingColorDisplay;
 	private JPanel coastlineColorDisplay;
 	private JSlider coastShadingTransparencySlider;
@@ -975,9 +987,18 @@ public class ThemePanel extends JTabbedPane
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				concentricWavesLevelSlider.setVisible(concentricWavesButton.isSelected());
-				concentricWavesOptionsHider.setVisible(concentricWavesButton.isSelected());
-				concentricWavesLevelSliderHider.setVisible(concentricWavesButton.isSelected());
+				boolean isConcentric = concentricWavesButton.isSelected();
+				boolean isWaveLines = waveLinesButton.isSelected();
+				concentricWavesLevelSlider.setVisible(isConcentric);
+				concentricWavesOptionsHider.setVisible(isConcentric || isWaveLines);
+				fadeWavesCheckbox.setVisible(isConcentric);
+				brokenLinesCheckbox.setVisible(isConcentric);
+				concentricWavesLevelSliderHider.setVisible(isConcentric);
+				waveLineShapePanel.setVisible(isWaveLines);
+				waveLineRowSpacingPanel.setVisible(isWaveLines);
+				waveLineRowSpacingVariationPanel.setVisible(isWaveLines);
+				waveLineLengthPanel.setVisible(isWaveLines);
+				waveLineLengthVariationPanel.setVisible(isWaveLines);
 				rippleWavesLevelSlider.setVisible(ripplesRadioButton.isSelected());
 				rippleWavesLevelSliderHider.setVisible(ripplesRadioButton.isSelected());
 				oceanWavesColorHider.setVisible(!noneRadioButton.isSelected());
@@ -985,6 +1006,10 @@ public class ThemePanel extends JTabbedPane
 			}
 		};
 		concentricWavesButton.addActionListener(oceanEffectsListener);
+
+		waveLinesButton = new JRadioButton(Translation.get("theme.waveType.waveLines"));
+		oceanEffectButtonGroup.add(waveLinesButton);
+		waveLinesButton.addActionListener(oceanEffectsListener);
 
 		ripplesRadioButton = new JRadioButton(Translation.get("theme.waveType.ripples"));
 		oceanEffectButtonGroup.add(ripplesRadioButton);
@@ -994,7 +1019,7 @@ public class ThemePanel extends JTabbedPane
 		oceanEffectButtonGroup.add(noneRadioButton);
 		noneRadioButton.addActionListener(oceanEffectsListener);
 		organizer.addLabelAndComponentsVertical(Translation.get("theme.waveType.label"), Translation.get("theme.waveType.help"),
-				Arrays.asList(concentricWavesButton, ripplesRadioButton, noneRadioButton));
+				Arrays.asList(concentricWavesButton, waveLinesButton, ripplesRadioButton, noneRadioButton));
 
 		fadeWavesCheckbox = new JCheckBox(Translation.get("theme.fadeOuterWaves"));
 		createMapChangeListenerForTerrainChange(fadeWavesCheckbox);
@@ -1004,8 +1029,58 @@ public class ThemePanel extends JTabbedPane
 
 		brokenLinesCheckbox = new JCheckBox(Translation.get("theme.brokenLines"));
 		createMapChangeListenerForTerrainChange(brokenLinesCheckbox);
+
+		waveLineShapeComboBox = new JComboBox<>()
+		{
+			@Override
+			public Dimension getMaximumSize()
+			{
+				// Keeps the combo box from stretching across the row it shares with its label.
+				return getPreferredSize();
+			}
+		};
+		waveLineShapeComboBox.setRenderer(new DefaultListCellRenderer()
+		{
+			public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus)
+			{
+				super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+				if (value instanceof WaveLineShape shape)
+				{
+					// The picture explains the shape to people who don't know the names, so it's shown even when the combo box is disabled.
+					WaveLineShapeIcon icon = new WaveLineShapeIcon(shape);
+					setIcon(icon);
+					setDisabledIcon(icon);
+				}
+				return this;
+			}
+		});
+		for (WaveLineShape shape : WaveLineShape.values())
+		{
+			waveLineShapeComboBox.addItem(shape);
+		}
+		createMapChangeListenerForTerrainChange(waveLineShapeComboBox);
+		waveLineShapePanel = SwingHelper.createPanelWithLabelAbove(Translation.get("theme.waveLineShape.label"), Translation.get("theme.waveLineShape.help"),
+				Arrays.asList(waveLineShapeComboBox));
+
+		waveLineRowSpacingSlider = createWaveLineSlider(4, 15);
+		waveLineRowSpacingPanel = new SliderWithDisplayedValue(waveLineRowSpacingSlider).createPanelWithLabelAbove(Translation.get("theme.waveLineRowSpacing.label"),
+				Translation.get("theme.waveLineRowSpacing.help"));
+
+		waveLineRowSpacingVariationSlider = createWaveLineSlider(0, 10);
+		waveLineRowSpacingVariationPanel = new SliderWithDisplayedValue(waveLineRowSpacingVariationSlider).createPanelWithLabelAbove(
+				Translation.get("theme.waveLineRowSpacingVariation.label"), Translation.get("theme.waveLineRowSpacingVariation.help"));
+
+		waveLineLengthSlider = createWaveLineSlider(0, 50);
+		waveLineLengthPanel = new SliderWithDisplayedValue(waveLineLengthSlider).createPanelWithLabelAbove(Translation.get("theme.waveLineLength.label"),
+				Translation.get("theme.waveLineLength.help"));
+
+		waveLineLengthVariationSlider = createWaveLineSlider(0, 10);
+		waveLineLengthVariationPanel = new SliderWithDisplayedValue(waveLineLengthVariationSlider).createPanelWithLabelAbove(
+				Translation.get("theme.waveLineLengthVariation.label"), Translation.get("theme.waveLineLengthVariation.help"));
+
 		concentricWavesOptionsHider = organizer.addLabelAndComponentsVertical(Translation.get("theme.styleOptions.label"), Translation.get("theme.styleOptions.help"),
-				Arrays.asList(fadeWavesCheckbox, jitterWavesCheckbox, brokenLinesCheckbox));
+				Arrays.asList(fadeWavesCheckbox, jitterWavesCheckbox, brokenLinesCheckbox, waveLineShapePanel, waveLineRowSpacingPanel, waveLineRowSpacingVariationPanel,
+						waveLineLengthPanel, waveLineLengthVariationPanel));
 
 		concentricWavesLevelSlider = new JSlider();
 		concentricWavesLevelSlider.setMinimum(1);
@@ -1665,6 +1740,12 @@ public class ThemePanel extends JTabbedPane
 		ripplesRadioButton.setSelected(settings.oceanWavesType == OceanWaves.Ripples);
 		noneRadioButton.setSelected(settings.oceanWavesType == OceanWaves.None);
 		concentricWavesButton.setSelected(settings.oceanWavesType == OceanWaves.ConcentricWaves);
+		waveLinesButton.setSelected(settings.oceanWavesType == OceanWaves.WaveLines);
+		waveLineShapeComboBox.setSelectedItem(settings.waveLineShape);
+		waveLineRowSpacingSlider.setValue(settings.waveLineRowSpacing);
+		waveLineRowSpacingVariationSlider.setValue(settings.waveLineRowSpacingVariation);
+		waveLineLengthSlider.setValue(settings.waveLineLength);
+		waveLineLengthVariationSlider.setValue(settings.waveLineLengthVariation);
 		fadeWavesCheckbox.setSelected(settings.fadeConcentricWaves);
 		jitterWavesCheckbox.setSelected(settings.jitterToConcentricWaves);
 		brokenLinesCheckbox.setSelected(settings.brokenLinesForConcentricWaves);
@@ -1909,7 +1990,27 @@ public class ThemePanel extends JTabbedPane
 		settings.oceanWavesLevel = rippleWavesLevelSlider.getValue();
 		settings.oceanShadingLevel = oceanShadingSlider.getValue();
 		settings.concentricWaveCount = concentricWavesLevelSlider.getValue();
-		settings.oceanWavesType = ripplesRadioButton.isSelected() ? OceanWaves.Ripples : noneRadioButton.isSelected() ? OceanWaves.None : OceanWaves.ConcentricWaves;
+		if (ripplesRadioButton.isSelected())
+		{
+			settings.oceanWavesType = OceanWaves.Ripples;
+		}
+		else if (noneRadioButton.isSelected())
+		{
+			settings.oceanWavesType = OceanWaves.None;
+		}
+		else if (waveLinesButton.isSelected())
+		{
+			settings.oceanWavesType = OceanWaves.WaveLines;
+		}
+		else
+		{
+			settings.oceanWavesType = OceanWaves.ConcentricWaves;
+		}
+		settings.waveLineShape = (WaveLineShape) waveLineShapeComboBox.getSelectedItem();
+		settings.waveLineRowSpacing = waveLineRowSpacingSlider.getValue();
+		settings.waveLineRowSpacingVariation = waveLineRowSpacingVariationSlider.getValue();
+		settings.waveLineLength = waveLineLengthSlider.getValue();
+		settings.waveLineLengthVariation = waveLineLengthVariationSlider.getValue();
 		settings.fadeConcentricWaves = fadeWavesCheckbox.isSelected();
 		settings.jitterToConcentricWaves = jitterWavesCheckbox.isSelected();
 		settings.brokenLinesForConcentricWaves = brokenLinesCheckbox.isSelected();
@@ -2072,6 +2173,13 @@ public class ThemePanel extends JTabbedPane
 		mainWindow.undoer.setUndoPoint(UpdateType.GridOverlay, null);
 		mainWindow.handleThemeChange(false);
 		mainWindow.updater.createAndShowMapGridOverlayChange();
+	}
+
+	private JSlider createWaveLineSlider(int minimum, int maximum)
+	{
+		JSlider slider = new JSlider(minimum, maximum);
+		createMapChangeListenerForTerrainChange(slider);
+		return slider;
 	}
 
 	private void createMapChangeListenerForTerrainChange(Component component)

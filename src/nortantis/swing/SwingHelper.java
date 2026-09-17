@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
@@ -43,6 +44,7 @@ public class SwingHelper
 	public static final int sidePanelMinimumWidth = calcSidePanelMinWidth();
 	public static final int colorPickerLeftPadding = 2;
 	public static final int sidePanelScrollSpeed = 30;
+	private static final int spaceAbovePanelWithLabelAbove = 14;
 
 	private static int calcSidePanelMinWidth()
 	{
@@ -991,5 +993,32 @@ public class SwingHelper
 	{
 		int grayLevel = UserPreferences.getInstance().lookAndFeel == LookAndFeel.Dark ? 168 : 128;
 		return new Color(grayLevel, grayLevel, grayLevel);
+	}
+
+	/**
+	 * Creates a left-aligned panel with a label above a row of components, for fitting labeled components into a vertical list of other
+	 * components.
+	 */
+	public static JPanel createPanelWithLabelAbove(String label, String toolTip, List<? extends Component> components)
+	{
+		JLabel labelComponent = new JLabel(label);
+		labelComponent.setToolTipText(toolTip);
+		labelComponent.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+		JPanel componentRow = new JPanel();
+		componentRow.setLayout(new BoxLayout(componentRow, BoxLayout.X_AXIS));
+		componentRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+		for (Component component : components)
+		{
+			componentRow.add(component);
+		}
+
+		JPanel panel = new JPanel();
+		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+		panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+		panel.add(Box.createVerticalStrut(spaceAbovePanelWithLabelAbove));
+		panel.add(labelComponent);
+		panel.add(componentRow);
+		return panel;
 	}
 }

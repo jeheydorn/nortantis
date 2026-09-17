@@ -73,6 +73,14 @@ public class SliderWithDisplayedValue
 		}
 	}
 
+	/**
+	 * Creates a panel with the label above the slider and its displayed value, for placing the slider among other components in one row.
+	 */
+	public JPanel createPanelWithLabelAbove(String label, String toolTip)
+	{
+		return SwingHelper.createPanelWithLabelAbove(label, toolTip, Arrays.asList(slider, valueDisplay));
+	}
+
 	public RowHider addToOrganizer(GridBagOrganizer organizer, String label, String toolTip)
 	{
 		return organizer.addLabelAndComponentsHorizontal(label, toolTip, Arrays.asList(slider, valueDisplay));

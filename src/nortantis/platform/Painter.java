@@ -102,6 +102,8 @@ public abstract class Painter implements AutoCloseable
 
 	public abstract void drawPolygonFloat(List<FloatPoint> points);
 
+	public abstract void drawPolylineFloat(List<FloatPoint> points);
+
 	public abstract void setGradient(float x1, float y1, Color color1, float x2, float y2, Color color2);
 
 	public abstract void setBasicStroke(float width);

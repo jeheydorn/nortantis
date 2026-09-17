@@ -278,17 +278,155 @@ public class MapCreatorTest
 	}
 
 	/**
+	 * Changing land to water or water to land moves where wave lines can go across the whole band around the new coastline, which reaches
+	 * much farther than the centers that changed. An incremental redraw must cover all of it.
+	 */
+	@Test
+	public void incrementalUpdateWithWaveLinesMatchesFullDrawWhenCentersChangeBetweenLandAndOcean()
+	{
+		String settingsFileName = "simpleSmallWorld.nort";
+		MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", settingsFileName).toString());
+		settings.resolution = 0.75;
+		settings.regionBoundaryStyle = new Stroke(StrokeType.Solid, settings.regionBoundaryStyle.width);
+		settings.coastShadingLevel = 0;
+		settings.oceanShadingLevel = 0;
+		// Text is redrawn with slightly different anti-aliasing after a change, which says nothing about wave lines.
+		settings.drawText = false;
+		settings.oceanWavesType = MapSettings.OceanWaves.WaveLines;
+		settings.jitterToConcentricWaves = true;
+		settings.waveLineRowSpacing = 24;
+		settings.waveLineRowSpacingVariation = 10;
+		settings.waveLineLength = 20;
+		settings.waveLineLengthVariation = 10;
+
+		// New water away from the ocean is a lake, so draw wave lines in lakes for the interior changes to make a new coastline with waves.
+		settings.drawOceanEffectsInLakes = true;
+
+		int failCount = 0;
+		for (int location = 0; location < 4; location++)
+		{
+			failCount += runOneLandWaterChange(settings.deepCopy(), settingsFileName, true, location);
+			failCount += runOneLandWaterChange(settings.deepCopy(), settingsFileName, false, location);
+			final int clustersToSkip = location;
+			failCount += runOneLandWaterChange(settings.deepCopy(), settingsFileName, true, location, graph -> findLandCluster(graph, false, clustersToSkip), " large interior");
+			failCount += runOneLandWaterChange(settings.deepCopy(), settingsFileName, true, location, graph -> findLandCluster(graph, true, clustersToSkip), " large coastal");
+		}
+
+		if (failCount > 0)
+		{
+			fail(failCount + " land/water incremental update tests with wave lines did not match a full draw. See the '" + failedMapsFolderName + "' folder.");
+		}
+	}
+
+	/**
+	 * Wave lines are placed using only what is near each stroke, so drawing them for part of the map must give the same result as drawing
+	 * them for the whole map, everywhere at least the effects padding away from the edges of that part. This is what lets incremental draws
+	 * of wave lines stay local.
+	 */
+	@Test
+	public void waveLinesDrawnForPartOfTheMapMatchFullDraw()
+	{
+		MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", "simpleSmallWorld.nort").toString());
+		settings.resolution = 0.75;
+		settings.oceanWavesType = MapSettings.OceanWaves.WaveLines;
+		settings.oceanShadingLevel = 0;
+		settings.jitterToConcentricWaves = true;
+		settings.waveLineRowSpacingVariation = 10;
+
+		MapParts mapParts = new MapParts();
+		new MapCreator().createMap(settings, null, mapParts).close();
+		WorldGraph graph = mapParts.graph;
+		int padding = (int) Math.ceil(WaveLineDrawer.calcEffectsPadding(settings, settings.resolution));
+
+		try (Image fullLandMask = createLandMask(graph, null, graph.bounds); Image fullWaves = new MapCreator().createOceanWavesAndShading(settings, graph, settings.resolution, fullLandMask, null, null).getFirst())
+		{
+			Random rand = new Random(3);
+			final int size = 250;
+			final int threshold = 8;
+			int areasWithWaves = 0;
+			List<String> failures = new ArrayList<>();
+			for (int i = 0; i < 25; i++)
+			{
+				Rectangle replaceBounds = new Rectangle(rand.nextInt((int) graph.bounds.width - size), rand.nextInt((int) graph.bounds.height - size), size, size);
+				Rectangle drawBounds = replaceBounds.pad(padding, padding).floor();
+				Center searchStart = graph.findClosestCenter(drawBounds.getCenter());
+				Set<Center> centersToDraw = graph.breadthFirstSearch(c -> c.isInBoundsIncludingNoisyEdges(drawBounds), searchStart);
+
+				try (Image landMask = createLandMask(graph, centersToDraw, drawBounds);
+						Image partWaves = new MapCreator().createOceanWavesAndShading(settings, graph, settings.resolution, landMask, centersToDraw, drawBounds).getFirst();
+						PixelReader fullPixels = fullWaves.createPixelReader();
+						PixelReader partPixels = partWaves.createPixelReader())
+				{
+					int differingCount = 0;
+					boolean hasWaves = false;
+					for (int y = (int) replaceBounds.y; y < (int) (replaceBounds.y + replaceBounds.height); y++)
+					{
+						for (int x = (int) replaceBounds.x; x < (int) (replaceBounds.x + replaceBounds.width); x++)
+						{
+							int fullLevel = fullPixels.getGrayLevel(x, y);
+							hasWaves |= fullLevel > 0;
+							if (Math.abs(fullLevel - partPixels.getGrayLevel(x - (int) drawBounds.x, y - (int) drawBounds.y)) > threshold)
+							{
+								differingCount++;
+							}
+						}
+					}
+					if (hasWaves)
+					{
+						areasWithWaves++;
+					}
+					if (differingCount > 0)
+					{
+						failures.add(differingCount + " pixels differ in " + replaceBounds);
+						FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
+						ImageHelper.getInstance().write(partWaves, MapTestUtil.getFailedMapFilePath("waveLines part " + i, failedMapsFolderName));
+					}
+				}
+			}
+
+			if (!failures.isEmpty())
+			{
+				ImageHelper.getInstance().write(fullWaves, MapTestUtil.getFailedMapFilePath("waveLines full", failedMapsFolderName));
+			}
+			assertTrue(areasWithWaves >= 5, "Only " + areasWithWaves + " of the tested areas had wave lines in them.");
+			assertTrue(failures.isEmpty(), "Wave lines drawn for part of the map differ from a full draw: " + failures);
+		}
+	}
+
+	private static Image createLandMask(WorldGraph graph, Collection<Center> centersToDraw, Rectangle drawBounds)
+	{
+		Image landMask = Image.create((int) drawBounds.width, (int) drawBounds.height, ImageType.Binary);
+		try (Painter p = landMask.createPainter())
+		{
+			graph.drawLandAndOceanBlackAndWhite(p, centersToDraw, drawBounds);
+		}
+		return landMask;
+	}
+
+	/**
 	 * Changes a cluster of centers to water or to land, redraws incrementally, and compares against a full draw of the same edits. Returns 1
 	 * if they differ and 0 if they match.
 	 */
 	private int runOneLandWaterChange(MapSettings settings, String settingsFileName, boolean changeToWater, int location)
+	{
+		return runOneLandWaterChange(settings, settingsFileName, changeToWater, location, graph -> findCoastalCenters(graph, !changeToWater, location), "");
+	}
+
+	/**
+	 * @param findCentersToChange
+	 *            Picks the centers to change from the drawn map's graph.
+	 * @param description
+	 *            Added to the names of images saved on failure, to tell apart runs that change different kinds of centers.
+	 */
+	private int runOneLandWaterChange(MapSettings settings, String settingsFileName, boolean changeToWater, int location, java.util.function.Function<WorldGraph, Set<Integer>> findCentersToChange,
+			String description)
 	{
 		MapCreator mapCreator = new MapCreator();
 		mapCreator.overrideMemoryMode(false);
 		MapParts mapParts = new MapParts();
 		Image incrementalMap = mapCreator.createMap(settings, null, mapParts);
 
-		Set<Integer> centersToChange = findCoastalCenters(mapParts.graph, !changeToWater, location);
+		Set<Integer> centersToChange = findCentersToChange.apply(mapParts.graph);
 		if (centersToChange.isEmpty())
 		{
 			return 0;
@@ -329,7 +467,7 @@ public class MapCreatorTest
 		}
 
 		FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
-		String name = FilenameUtils.getBaseName(settingsFileName) + " location " + location + " centers changed to " + (changeToWater ? "water" : "land");
+		String name = FilenameUtils.getBaseName(settingsFileName) + description + " location " + location + " centers changed to " + (changeToWater ? "water" : "land");
 		ImageHelper.getInstance().write(expectedMap, MapTestUtil.getFailedMapFilePath(name + " expected full draw", failedMapsFolderName));
 		ImageHelper.getInstance().write(incrementalMap, MapTestUtil.getFailedMapFilePath(name + " actual incremental draw", failedMapsFolderName));
 		createImageDiffIfImagesAreSameSize(expectedMap, incrementalMap, name, diffThreshold);
@@ -433,6 +571,61 @@ public class MapCreatorTest
 				if (neighbor.isWater == wantWater && !neighbor.isBorder && cluster.size() < 4)
 				{
 					cluster.add(neighbor.index);
+				}
+			}
+			return cluster;
+		}
+		return new HashSet<>();
+	}
+
+	/**
+	 * Finds a land center of the requested kind, plus the land centers within two steps of it, which is roughly what a large brush covers when
+	 * erasing land.
+	 *
+	 * @param onCoast
+	 *            If true, the center touches water. If false, nothing within three steps of it is water.
+	 */
+	private Set<Integer> findLandCluster(WorldGraph graph, boolean onCoast, int clustersToSkip)
+	{
+		int skipped = 0;
+		for (Center center : graph.centers)
+		{
+			if (center.isWater || center.isBorder)
+			{
+				continue;
+			}
+			Set<Center> withinTwoSteps = new LinkedHashSet<>();
+			withinTwoSteps.add(center);
+			for (Center neighbor : center.neighbors)
+			{
+				withinTwoSteps.add(neighbor);
+				withinTwoSteps.addAll(neighbor.neighbors);
+			}
+			Set<Center> withinThreeSteps = new HashSet<>(withinTwoSteps);
+			for (Center c : withinTwoSteps)
+			{
+				withinThreeSteps.addAll(c.neighbors);
+			}
+			boolean touchesWater = center.neighbors.stream().anyMatch(neighbor -> neighbor.isWater);
+			boolean matches = onCoast ? touchesWater : withinThreeSteps.stream().noneMatch(c -> c.isWater || c.isBorder);
+			if (!matches)
+			{
+				continue;
+			}
+
+			// Spread the clusters out so that skipping gives a genuinely different part of the land rather than a neighbor.
+			if (skipped < clustersToSkip * 40)
+			{
+				skipped++;
+				continue;
+			}
+
+			Set<Integer> cluster = new LinkedHashSet<>();
+			for (Center c : withinTwoSteps)
+			{
+				if (!c.isWater && !c.isBorder)
+				{
+					cluster.add(c.index);
 				}
 			}
 			return cluster;
@@ -815,6 +1008,19 @@ public class MapCreatorTest
 	public void landlockedLandShape()
 	{
 		generateAndCompare("landlockedLandShape.nort");
+	}
+
+	@Test
+	public void waveLinesWithJitterAndRowSpacingVariation()
+	{
+		MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", "simpleSmallWorld.nort").toString());
+		settings.oceanWavesType = MapSettings.OceanWaves.WaveLines;
+		settings.jitterToConcentricWaves = true;
+		settings.waveLineRowSpacingVariation = 5;
+		try (Image actual = new MapCreator().createMap(settings, null, null))
+		{
+			MapTestUtil.compareToExpectedMap(actual, "waveLinesWithJitterAndRowSpacingVariation", expectedMapsFolderName, failedMapsFolderName, 0);
+		}
 	}
 
 	/**

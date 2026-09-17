@@ -3167,13 +3167,30 @@ public class WorldGraph extends VoronoiGraph
 	public void drawCoastlineWithVariation(Painter p, long randomSeed, double variationRange, double widthBetweenWaves, boolean addRandomBreaks, Rectangle drawBounds,
 			BiFunction<Boolean, Random, Double> getNewSkipDistance, List<List<Edge>> shoreEdges)
 	{
-		Transform orig = null;
-		if (drawBounds != null)
-		{
-			orig = p.getTransform();
-			p.translate(-drawBounds.x, -drawBounds.y);
-		}
+		drawCoastlineCurves(p, createCoastlineCurvesWithVariation(randomSeed, variationRange, widthBetweenWaves, shoreEdges), randomSeed, addRandomBreaks, drawBounds, getNewSkipDistance);
+	}
 
+	/**
+	 * A smoothed line that follows one coastline, as used to draw concentric waves.
+	 *
+	 * @param points
+	 *            The points of the line, in graph coordinates.
+	 * @param isPolygon
+	 *            Whether the line is closed, with its last point connecting back to its first.
+	 * @param firstEdgeIndex
+	 *            The index of the first edge of the coastline the line follows, which makes random numbers unique per coastline.
+	 */
+	public record CoastlineCurve(List<Point> points, boolean isPolygon, int firstEdgeIndex)
+	{
+	}
+
+	/**
+	 * Creates the smoothed lines that concentric waves draw along the given shore edges, with random variation added to each line if
+	 * variationRange is positive.
+	 */
+	public List<CoastlineCurve> createCoastlineCurvesWithVariation(long randomSeed, double variationRange, double widthBetweenWaves, List<List<Edge>> shoreEdges)
+	{
+		List<CoastlineCurve> result = new ArrayList<>();
 		for (List<Edge> coastline : shoreEdges)
 		{
 			if (coastline.size() == 0)
@@ -3184,8 +3201,6 @@ public class WorldGraph extends VoronoiGraph
 
 			final double maxDistanceToIgnoreNoisyEdgesWhenCoastlinesUseJaggedLines = widthBetweenWaves * 0.5;
 			boolean isPolygon = false;
-			// Use a random seed that is unique per coastline.
-			Random rand = new Random(randomSeed + coastline.get(0).index);
 
 			List<Point> drawPoints;
 			if (variationRange > 0)
@@ -3228,30 +3243,44 @@ public class WorldGraph extends VoronoiGraph
 				continue;
 			}
 
+			result.add(new CoastlineCurve(drawPoints, isPolygon, coastline.get(0).index));
+		}
+		return result;
+	}
+
+	/**
+	 * Draws lines created by createCoastlineCurvesWithVariation.
+	 */
+	public void drawCoastlineCurves(Painter p, List<CoastlineCurve> curves, long randomSeed, boolean addRandomBreaks, Rectangle drawBounds, BiFunction<Boolean, Random, Double> getNewSkipDistance)
+	{
+		Transform orig = null;
+		if (drawBounds != null)
+		{
+			orig = p.getTransform();
+			p.translate(-drawBounds.x, -drawBounds.y);
+		}
+
+		for (CoastlineCurve curve : curves)
+		{
 			if (addRandomBreaks)
 			{
-				List<List<Point>> drawPointsWithBreaks = addRandomBreaks(rand, drawPoints, getNewSkipDistance);
+				// Use a random seed that is unique per coastline.
+				Random rand = new Random(randomSeed + curve.firstEdgeIndex());
+				List<List<Point>> drawPointsWithBreaks = addRandomBreaks(rand, curve.points(), getNewSkipDistance);
 				for (List<Point> points : drawPointsWithBreaks)
 				{
-					if (isPolygon && !addRandomBreaks)
-					{
-						p.drawPolygon(points);
-					}
-					else
-					{
-						drawPolyline(p, points);
-					}
+					drawPolyline(p, points);
 				}
 			}
 			else
 			{
-				if (isPolygon && !addRandomBreaks)
+				if (curve.isPolygon())
 				{
-					p.drawPolygon(drawPoints);
+					p.drawPolygon(curve.points());
 				}
 				else
 				{
-					drawPolyline(p, drawPoints);
+					drawPolyline(p, curve.points());
 				}
 			}
 		}

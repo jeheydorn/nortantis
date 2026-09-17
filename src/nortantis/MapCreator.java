@@ -32,8 +32,12 @@ public class MapCreator implements WarningLogger
 
 	private Random r;
 
-	private static final double concentricWaveWidthBetweenWaves = 11;
-	private static final double concentricWaveLineWidth = 1.8;
+	static final double concentricWaveWidthBetweenWaves = 11;
+	static final double concentricWaveLineWidth = 1.8;
+	/**
+	 * How far the concentric line in the wave lines style is from the coast, relative to the distance of the innermost concentric wave.
+	 */
+	private static final double waveLinesConcentricLineDistanceScale = 0.5;
 	private boolean isCanceled;
 
 	/**
@@ -675,9 +679,9 @@ public class MapCreator implements WarningLogger
 		// whichever is largest.
 
 		double concentricWaveWidth = settings.hasConcentricWaves()
-				? settings.concentricWaveCount * (concentricWaveLineWidth * sizeMultiplier + concentricWaveWidthBetweenWaves * sizeMultiplier)
-						+ (settings.jitterToConcentricWaves ? calcJitterVarianceRange(settings.resolution) : 0)
+				? settings.concentricWaveCount * calcConcentricWaveSpacing(settings.resolution) + (settings.jitterToConcentricWaves ? calcJitterVarianceRange(settings.resolution) : 0)
 				: 0;
+		double waveLinesWidth = settings.hasWaveLines() ? WaveLineDrawer.calcEffectsPadding(settings, settings.resolution) : 0;
 		// In theory, I shouldn't multiply by 0.75 below, but realistically there doesn't seem to be any visual difference and it helps a
 		// lot
 		// with performance.
@@ -685,7 +689,7 @@ public class MapCreator implements WarningLogger
 		double oceanShadingWidth = calcVisibleShadingWidth(settings.oceanShadingLevel, sizeMultiplier);
 		double coastShadingWidth = calcVisibleShadingWidth(settings.coastShadingLevel, sizeMultiplier);
 
-		double effectsPadding = Math.ceil(Math.max(concentricWaveWidth, Math.max(rippleWaveWidth, Math.max(oceanShadingWidth, coastShadingWidth))));
+		double effectsPadding = Math.ceil(Math.max(Math.max(concentricWaveWidth, waveLinesWidth), Math.max(rippleWaveWidth, Math.max(oceanShadingWidth, coastShadingWidth))));
 
 		// Make sure effectsPadding is at least half the width of the maximum with any line can be drawn, which would probably be a very
 		// wide river. Since there is no easy way to know what that will be, just guess.
@@ -1592,7 +1596,7 @@ public class MapCreator implements WarningLogger
 		return new Tuple2<>(mapOrSnippet, null);
 	}
 
-	private Tuple2<Image, Image> createOceanWavesAndShading(MapSettings settings, WorldGraph graph, double resolutionScale, Image landMask, Collection<Center> centersToDraw, Rectangle drawBounds)
+	Tuple2<Image, Image> createOceanWavesAndShading(MapSettings settings, WorldGraph graph, double resolutionScale, Image landMask, Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
 		if (drawBounds == null)
 		{
@@ -1602,7 +1606,7 @@ public class MapCreator implements WarningLogger
 
 		Image oceanWaves = null;
 		Image oceanShading = null;
-		if (settings.hasRippleWaves(resolutionScale) || settings.hasConcentricWaves() || settings.hasOceanShading(resolutionScale))
+		if (settings.hasRippleWaves(resolutionScale) || settings.hasConcentricWaves() || settings.hasWaveLines() || settings.hasOceanShading(resolutionScale))
 		{
 			double targetStrokeWidth = sizeMultiplier;
 
@@ -1627,6 +1631,10 @@ public class MapCreator implements WarningLogger
 			else if (settings.hasConcentricWaves())
 			{
 				oceanWaves = createConcentricWavesMask(settings, graph, resolutionScale, landMask, centersToDraw, drawBounds);
+			}
+			else if (settings.hasWaveLines())
+			{
+				oceanWaves = createWaveLinesMask(settings, graph, resolutionScale, landMask, centersToDraw, drawBounds);
 			}
 
 			if (settings.hasOceanShading(resolutionScale))
@@ -1677,7 +1685,7 @@ public class MapCreator implements WarningLogger
 
 		double widthBetweenWaves = concentricWaveWidthBetweenWaves * sizeMultiplier;
 		double waveWidth = concentricWaveLineWidth * sizeMultiplier;
-		double largestLineWidth = settings.concentricWaveCount * (widthBetweenWaves + waveWidth);
+		double largestLineWidth = settings.concentricWaveCount * calcConcentricWaveSpacing(resolutionScaled);
 		final double opacityOfLastWave;
 		if (settings.fadeConcentricWaves)
 		{
@@ -1715,7 +1723,7 @@ public class MapCreator implements WarningLogger
 		{
 			for (int i : new Range(0, settings.concentricWaveCount))
 			{
-				double whiteWidth = largestLineWidth - (i * (widthBetweenWaves + waveWidth));
+				double whiteWidth = largestLineWidth - (i * calcConcentricWaveSpacing(resolutionScaled));
 				if (whiteWidth <= 0)
 				{
 					continue;
@@ -1775,7 +1783,110 @@ public class MapCreator implements WarningLogger
 		return oceanEffects;
 	}
 
-	private static double calcJitterVarianceRange(double resolutionScaled)
+	/**
+	 * Draws a single unbroken concentric line along coastlines, with rows of wave lines outside it.
+	 */
+	private Image createWaveLinesMask(MapSettings settings, WorldGraph graph, double resolutionScaled, Image landMask, Collection<Center> centersToDraw, Rectangle drawBounds)
+	{
+		Image oceanEffects = Image.create((int) drawBounds.width, (int) drawBounds.height, ImageType.Grayscale8Bit);
+		double sizeMultiplier = calcSizeMultiplierFromResolutionScaleRounded(resolutionScaled);
+		double distanceFromCoast = concentricWaveWidthBetweenWaves * waveLinesConcentricLineDistanceScale * sizeMultiplier;
+		double waveWidth = concentricWaveLineWidth * sizeMultiplier;
+		double lineOuterWidth = calcWaveLinesConcentricLineOuterWidth(resolutionScaled);
+		double varianceRange = settings.jitterToConcentricWaves ? calcWaveLinesConcentricLineJitter(resolutionScaled) : 0.0;
+
+		// Wave lines are placed using coastlines and land from a wider area than they are drawn in. A full draw already covers everything.
+		Rectangle placementBounds;
+		Collection<Center> placementCenters;
+		Image placementLandMask;
+		if (centersToDraw == null)
+		{
+			placementBounds = drawBounds;
+			placementCenters = null;
+			placementLandMask = landMask;
+		}
+		else
+		{
+			double margin = WaveLineDrawer.calcPlacementMargin(settings, resolutionScaled);
+			placementBounds = drawBounds.pad(margin, margin).floor();
+			placementCenters = graph.breadthFirstSearch(c -> c.isInBoundsIncludingNoisyEdges(placementBounds), graph.findClosestCenter(placementBounds.getCenter()));
+			placementLandMask = Image.create((int) placementBounds.width, (int) placementBounds.height, ImageType.Binary);
+			try (Painter p = placementLandMask.createPainter())
+			{
+				graph.drawLandAndOceanBlackAndWhite(p, placementCenters, placementBounds);
+			}
+		}
+
+		// See createConcentricWavesMask for why this searches the entire graph.
+		List<List<Edge>> shoreEdges = graph.findShoreEdges(placementCenters, settings.drawOceanEffectsInLakes, true);
+		List<WorldGraph.CoastlineCurve> curves = graph.createCoastlineCurvesWithVariation(settings.backgroundRandomSeed, varianceRange, distanceFromCoast, shoreEdges);
+
+		new WaveLineDrawer(settings, resolutionScaled).drawWaveLines(oceanEffects, drawBounds, graph, curves, placementLandMask, placementCenters, placementBounds);
+		if (placementLandMask != landMask)
+		{
+			placementLandMask.close();
+		}
+
+		// Drawing the concentric line over the wave lines also hides the wave lines' inner ends, which run under it.
+		try (Painter p = oceanEffects.createPainter(DrawQuality.High))
+		{
+			p.setColor(Color.white);
+			p.setStrokeToSolidLineWithNoEndDecorations((float) lineOuterWidth);
+			graph.drawCoastlineCurves(p, curves, settings.backgroundRandomSeed, false, drawBounds, null);
+
+			p.setColor(Color.black);
+			p.setBasicStroke((float) (lineOuterWidth - waveWidth));
+			graph.drawCoastlineCurves(p, curves, settings.backgroundRandomSeed, false, drawBounds, null);
+		}
+
+		if (settings.drawOceanEffectsInLakes)
+		{
+			oceanEffects = removeOceanEffectsFromLand(oceanEffects, landMask);
+		}
+		else
+		{
+			oceanEffects = removeOceanEffectsFromLandAndLandLockedLakes(graph, oceanEffects, centersToDraw, drawBounds);
+		}
+
+		return oceanEffects;
+	}
+
+	/**
+	 * The distance, in pixels, from one concentric wave to the next, which is also the stroke width that draws the innermost one.
+	 */
+	static double calcConcentricWaveSpacing(double resolutionScaled)
+	{
+		double sizeMultiplier = calcSizeMultiplierFromResolutionScaleRounded(resolutionScaled);
+		return concentricWaveLineWidth * sizeMultiplier + concentricWaveWidthBetweenWaves * sizeMultiplier;
+	}
+
+	/**
+	 * The width, in pixels, of the stroke whose edge is the outside of the concentric line in the wave lines style.
+	 */
+	static double calcWaveLinesConcentricLineOuterWidth(double resolutionScaled)
+	{
+		double sizeMultiplier = calcSizeMultiplierFromResolutionScaleRounded(resolutionScaled);
+		return concentricWaveLineWidth * sizeMultiplier + concentricWaveWidthBetweenWaves * waveLinesConcentricLineDistanceScale * sizeMultiplier;
+	}
+
+	/**
+	 * The random variation, in pixels, of the concentric line in the wave lines style, when jitter is on.
+	 */
+	static double calcWaveLinesConcentricLineJitter(double resolutionScaled)
+	{
+		return calcJitterVarianceRange(resolutionScaled) * waveLinesConcentricLineDistanceScale;
+	}
+
+	/**
+	 * The width, in pixels, of a concentric wave as it appears on the map. Each wave is drawn as a stroke with a narrower one erased from its
+	 * middle, which leaves a line on each side half as wide as the difference between the two strokes.
+	 */
+	static double calcConcentricWaveVisibleLineWidth(double resolutionScaled)
+	{
+		return concentricWaveLineWidth * calcSizeMultiplierFromResolutionScaleRounded(resolutionScaled) / 2.0;
+	}
+
+	static double calcJitterVarianceRange(double resolutionScaled)
 	{
 		double sizeMultiplier = calcSizeMultiplierFromResolutionScaleRounded(resolutionScaled);
 		double widthBetweenWaves = concentricWaveWidthBetweenWaves * sizeMultiplier;

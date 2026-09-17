@@ -50,6 +50,11 @@ public class MapSettings implements Serializable
 	public static final double defaultLloydRelaxationsScale = 0.1;
 	public static final double defaultResolution = 1.0;
 	public static final double defaultHeightmapResolution = 1.0;
+	public static final WaveLineShape defaultWaveLineShape = WaveLineShape.Scallops;
+	public static final int defaultWaveLineRowSpacing = 6;
+	public static final int defaultWaveLineRowSpacingVariation = 0;
+	public static final int defaultWaveLineLength = 5;
+	public static final int defaultWaveLineLengthVariation = 6;
 	/**
 	 * Font size for road labels in maps that don't store one, which is both new maps and maps saved before road labels existed. Road labels
 	 * are deliberately smaller than river and lake labels so that they fit on maps dense enough to need road names.
@@ -85,6 +90,25 @@ public class MapSettings implements Serializable
 	public boolean brokenLinesForConcentricWaves;
 	public boolean fadeConcentricWaves;
 	public OceanWaves oceanWavesType;
+	public WaveLineShape waveLineShape = defaultWaveLineShape;
+	/**
+	 * Distance between rows of wave lines, in the same units as other resolution-scaled sizes (multiplied by the size multiplier).
+	 */
+	public int waveLineRowSpacing = defaultWaveLineRowSpacing;
+	/**
+	 * How far rows of wave lines are randomly shifted up or down, from 0 to 10, where 10 is the largest shift that can't make neighboring
+	 * rows touch.
+	 */
+	public int waveLineRowSpacingVariation = defaultWaveLineRowSpacingVariation;
+	/**
+	 * The distance wave lines reach out from the concentric line before random variation, in the same units as waveLineRowSpacing.
+	 */
+	public int waveLineLength = defaultWaveLineLength;
+	/**
+	 * The standard deviation of the distance wave lines reach out from the concentric line, in the same units as waveLineRowSpacing. The
+	 * distances vary around waveLineLength, clamped so they are never negative.
+	 */
+	public int waveLineLengthVariation = defaultWaveLineLengthVariation;
 	public boolean drawOceanEffectsInLakes;
 	public int worldSize;
 	public Color riverColor;
@@ -416,6 +440,11 @@ public class MapSettings implements Serializable
 		root.put("brokenLinesForConcentricWaves", brokenLinesForConcentricWaves);
 		root.put("jitterToConcentricWaves", jitterToConcentricWaves);
 		root.put("oceanEffect", enumToJson(oceanWavesType));
+		root.put("waveLineShape", enumToJson(waveLineShape));
+		root.put("waveLineRowSpacing", waveLineRowSpacing);
+		root.put("waveLineRowSpacingVariation", waveLineRowSpacingVariation);
+		root.put("waveLineLength", waveLineLength);
+		root.put("waveLineLengthVariation", waveLineLengthVariation);
 		root.put("drawOceanEffectsInLakes", drawOceanEffectsInLakes);
 		root.put("worldSize", worldSize);
 		root.put("riverColor", colorToString(riverColor));
@@ -1143,6 +1172,11 @@ public class MapSettings implements Serializable
 		{
 			jitterToConcentricWaves = (boolean) root.get("jitterToConcentricWaves");
 		}
+		waveLineShape = root.containsKey("waveLineShape") ? WaveLineShape.valueOf((String) root.get("waveLineShape")) : defaultWaveLineShape;
+		waveLineRowSpacing = root.containsKey("waveLineRowSpacing") ? (int) (long) root.get("waveLineRowSpacing") : defaultWaveLineRowSpacing;
+		waveLineRowSpacingVariation = root.containsKey("waveLineRowSpacingVariation") ? (int) (long) root.get("waveLineRowSpacingVariation") : defaultWaveLineRowSpacingVariation;
+		waveLineLength = root.containsKey("waveLineLength") ? (int) (long) root.get("waveLineLength") : defaultWaveLineLength;
+		waveLineLengthVariation = root.containsKey("waveLineLengthVariation") ? (int) (long) root.get("waveLineLengthVariation") : defaultWaveLineLengthVariation;
 		worldSize = (int) (long) root.get("worldSize");
 		riverColor = parseColor((String) root.get("riverColor"));
 		if (root.containsKey("roadColor"))
@@ -2643,6 +2677,11 @@ public class MapSettings implements Serializable
 		return (oceanWavesType == OceanWaves.ConcentricWaves) && concentricWaveCount > 0;
 	}
 
+	public boolean hasWaveLines()
+	{
+		return oceanWavesType == OceanWaves.WaveLines;
+	}
+
 	public boolean equalsIgnoringEdits(MapSettings other)
 	{
 		return toJson(true).equals(other.toJson(true));
@@ -3110,7 +3149,52 @@ public class MapSettings implements Serializable
 	{
 		@Deprecated
 		Blur, Ripples, ConcentricWaves, @Deprecated
-		FadingConcentricWaves, None
+		FadingConcentricWaves, None, WaveLines
+	}
+
+	/**
+	 * The shape each wave line follows as it runs from left to right. Both shapes repeat once per wavelength.
+	 */
+	public enum WaveLineShape
+	{
+		Scallops, Sine;
+
+		/**
+		 * How sharp the cusps between scallops are. Small values give round, nearly parabolic bowls; large values give flat bottoms with thin
+		 * spikes.
+		 */
+		private static final double scallopSharpness = 4.0;
+
+		/**
+		 * The height of the shape at the given phase.
+		 *
+		 * @param phase
+		 *            Position within one wavelength, from 0 to 1.
+		 * @return A height from 0 to 1, where 1 is the top of the wave.
+		 */
+		public double evaluate(double phase)
+		{
+			if (this == Scallops)
+			{
+				// Bowls that meet at upward-pointing cusps at phase 0 and 1.
+				return (Math.cosh(scallopSharpness * (phase - 0.5)) - 1.0) / (Math.cosh(scallopSharpness / 2.0) - 1.0);
+			}
+			return 0.5 + 0.5 * Math.sin(2.0 * Math.PI * phase);
+		}
+
+		/**
+		 * The phases within one wavelength where the shape has a sharp corner, which must be sampled exactly for the corner to stay sharp.
+		 */
+		public double[] getCornerPhases()
+		{
+			return this == Scallops ? new double[] { 0.0 } : new double[0];
+		}
+
+		@Override
+		public String toString()
+		{
+			return Translation.get("WaveLineShape." + name());
+		}
 	}
 
 	public enum GridOverlayLayer
@@ -3318,6 +3402,16 @@ public class MapSettings implements Serializable
 			differences.add("oceanWavesLevel: " + oceanWavesLevel + " vs " + other.oceanWavesLevel);
 		if (oceanWavesType != other.oceanWavesType)
 			differences.add("oceanWavesType: " + oceanWavesType + " vs " + other.oceanWavesType);
+		if (waveLineShape != other.waveLineShape)
+			differences.add("waveLineShape: " + waveLineShape + " vs " + other.waveLineShape);
+		if (waveLineRowSpacing != other.waveLineRowSpacing)
+			differences.add("waveLineRowSpacing: " + waveLineRowSpacing + " vs " + other.waveLineRowSpacing);
+		if (waveLineRowSpacingVariation != other.waveLineRowSpacingVariation)
+			differences.add("waveLineRowSpacingVariation: " + waveLineRowSpacingVariation + " vs " + other.waveLineRowSpacingVariation);
+		if (waveLineLength != other.waveLineLength)
+			differences.add("waveLineLength: " + waveLineLength + " vs " + other.waveLineLength);
+		if (waveLineLengthVariation != other.waveLineLengthVariation)
+			differences.add("waveLineLengthVariation: " + waveLineLengthVariation + " vs " + other.waveLineLengthVariation);
 		if (!Objects.equals(otherMountainsFont, other.otherMountainsFont))
 			differences.add("otherMountainsFont: " + otherMountainsFont + " vs " + other.otherMountainsFont);
 		if (Double.doubleToLongBits(overlayImageDefaultScale) != Double.doubleToLongBits(other.overlayImageDefaultScale))
@@ -3409,7 +3503,8 @@ public class MapSettings implements Serializable
 				oceanColor, oceanEffectsColor, oceanEffectsLevel, oceanShadingColor, oceanShadingLevel, oceanWavesColor, oceanWavesLevel, oceanWavesType, otherMountainsFont, overlayImageDefaultScale,
 				overlayImageDefaultTransparency, overlayImagePath, overlayImageTransparency, overlayOffsetResolutionInvariant, overlayScale, pointPrecision, randomSeed, regionBaseColor,
 				regionBoundaryColor, regionBoundaryStyle, regionCount, regionFont, regionsRandomSeed, resolution, rightRotationCount, riverColor, riverFont, roadColor, roadFont, roadStyle, saturationRange,
-				solidColorBackground, textColor, textRandomSeed, titleFont, treeHeightScale, version, worldSize, fontArtPacks);
+				solidColorBackground, textColor, textRandomSeed, titleFont, treeHeightScale, version, waveLineLength, waveLineLengthVariation, waveLineRowSpacing,
+				waveLineRowSpacingVariation, waveLineShape, worldSize, fontArtPacks);
 	}
 
 	@Override
@@ -3464,7 +3559,8 @@ public class MapSettings implements Serializable
 				&& Objects.equals(mountainRangeFont, other.mountainRangeFont) && Double.doubleToLongBits(mountainScale) == Double.doubleToLongBits(other.mountainScale)
 				&& Objects.equals(oceanColor, other.oceanColor) && Objects.equals(oceanEffectsColor, other.oceanEffectsColor) && oceanEffectsLevel == other.oceanEffectsLevel
 				&& Objects.equals(oceanShadingColor, other.oceanShadingColor) && oceanShadingLevel == other.oceanShadingLevel && Objects.equals(oceanWavesColor, other.oceanWavesColor)
-				&& oceanWavesLevel == other.oceanWavesLevel && oceanWavesType == other.oceanWavesType && Objects.equals(otherMountainsFont, other.otherMountainsFont)
+				&& oceanWavesLevel == other.oceanWavesLevel && oceanWavesType == other.oceanWavesType && waveLineShape == other.waveLineShape && waveLineRowSpacing == other.waveLineRowSpacing && waveLineRowSpacingVariation == other.waveLineRowSpacingVariation
+				&& waveLineLength == other.waveLineLength && waveLineLengthVariation == other.waveLineLengthVariation && Objects.equals(otherMountainsFont, other.otherMountainsFont)
 				&& Double.doubleToLongBits(overlayImageDefaultScale) == Double.doubleToLongBits(other.overlayImageDefaultScale)
 				&& overlayImageDefaultTransparency == other.overlayImageDefaultTransparency && Objects.equals(overlayImagePath, other.overlayImagePath)
 				&& overlayImageTransparency == other.overlayImageTransparency && Objects.equals(overlayOffsetResolutionInvariant, other.overlayOffsetResolutionInvariant)

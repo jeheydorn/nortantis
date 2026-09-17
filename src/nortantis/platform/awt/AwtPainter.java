@@ -193,6 +193,30 @@ class AwtPainter extends Painter
 	}
 
 	@Override
+	public void drawPolylineFloat(List<FloatPoint> points)
+	{
+		Path2D.Float path = new Path2D.Float();
+		for (int i = 0; i < points.size(); i++)
+		{
+			FloatPoint point = points.get(i);
+			if (i == 0)
+			{
+				path.moveTo(point.x, point.y);
+			}
+			else
+			{
+				path.lineTo(point.x, point.y);
+			}
+		}
+		// Stroke normalization moves each point toward the pixel grid, which makes a line drawn through closely spaced sub-pixel points
+		// wobble.
+		Object originalStrokeControl = g.getRenderingHint(RenderingHints.KEY_STROKE_CONTROL);
+		g.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
+		g.draw(path);
+		g.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, originalStrokeControl);
+	}
+
+	@Override
 	public void fillRect(int x, int y, int width, int height)
 	{
 		g.fillRect(x, y, width, height);
