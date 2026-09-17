@@ -18,7 +18,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 /**
@@ -98,6 +100,10 @@ public class WaveLineDrawer
 	private final double minRowSeparation;
 	private final double maxRowShift;
 	private final ReachDistribution reachDistribution;
+	/**
+	 * Reused by {@link #calcDistanceBeyondReach}, which is called for every pixel of every row's band.
+	 */
+	private final SegmentGrid.Nearest nearestOnCurve = new SegmentGrid.Nearest();
 
 	public WaveLineDrawer(MapSettings settings, double resolutionScale)
 	{
@@ -192,12 +198,9 @@ public class WaveLineDrawer
 	}
 
 	/**
-	 * How far, in pixels, a change on the map directly moves what wave lines and their concentric line draw: the band around the changed part
-	 * of the coastline, and how far strokes in it reach off their rows. Incremental draws must pad each side of the area they draw by at least
-	 * this much.
-	 *
-	 * A change to the coastline can also move strokes farther away, by up to {@link #calcStrokeEndWalkDistance} beyond this, which is left
-	 * out here so that incremental draws stay small. See {@link #drawWaveLines}.
+	 * How far, in pixels, a change on the map can move what wave lines and their concentric line draw: the band around the changed part of the
+	 * coastline, and how far strokes in it reach off their rows. Incremental draws must pad each side of the area they draw by at least this
+	 * much.
 	 */
 	public static double calcEffectsPadding(MapSettings settings, double resolutionScale)
 	{
@@ -210,17 +213,6 @@ public class WaveLineDrawer
 	}
 
 	/**
-	 * How far, in pixels, a stroke's end can move along its row when the band it was found in changes. A stroke's outer end is found by
-	 * walking from the band's edge by up to maxReach, and a piece shorter than minPieceLength next to that end can be dropped or kept. When a
-	 * change to the coastline joins or separates two bands, a row's stroke can appear, disappear or change length this far past the band
-	 * around the changed coastline.
-	 */
-	public static double calcStrokeEndWalkDistance(MapSettings settings, double resolutionScale)
-	{
-		return (calcMaxReach(settings) + minPieceLength) * MapCreator.calcSizeMultiplierFromResolutionScale(resolutionScale) + calcOverhang(calcStrokeWidth(resolutionScale));
-	}
-
-	/**
 	 * How far a stroke's inner end reaches under the concentric line, in pixels.
 	 */
 	private static double calcOverhang(double strokeWidth)
@@ -229,28 +221,22 @@ public class WaveLineDrawer
 	}
 
 	/**
-	 * Draws wave lines in white into target.
-	 *
-	 * Where strokes go is worked out from the placement area, which must extend at least {@link #calcStrokeEndWalkDistance} past each side of
-	 * the drawn area. Coastlines and land just outside the placement area can affect strokes within {@link #calcEffectsPadding} plus that
-	 * distance of its edges, so with that margin, the strokes drawn depend only on the map, not on what area is drawn, except within
-	 * {@link #calcEffectsPadding} of the drawn area's edges.
+	 * Draws wave lines in white into target. Whether a point is part of a wave line depends only on the coastlines within a band radius of it,
+	 * so the strokes drawn depend only on the map, not on what area is drawn, except within {@link #calcEffectsPadding} of the drawn area's
+	 * edges.
 	 *
 	 * @param target
 	 *            A grayscale image covering drawBounds.
+	 * @param curves
+	 *            The lines the concentric line is drawn along, including every one that passes through drawBounds.
+	 * @param landMask
+	 *            A binary image covering drawBounds that is white on land.
+	 * @param centersToDraw
+	 *            The centers overlapping drawBounds, or null to use all centers.
 	 * @param drawBounds
 	 *            The area of the map the target covers, in graph coordinates.
-	 * @param curves
-	 *            The lines the concentric line is drawn along, including every one that passes through placementBounds.
-	 * @param landMask
-	 *            A binary image covering placementBounds that is white on land.
-	 * @param placementCenters
-	 *            The centers overlapping placementBounds, or null to use all centers.
-	 * @param placementBounds
-	 *            The area of the map, in graph coordinates, that strokes are placed from.
 	 */
-	public void drawWaveLines(Image target, Rectangle drawBounds, WorldGraph graph, List<CoastlineCurve> curves, Image landMask, Collection<Center> placementCenters,
-			Rectangle placementBounds)
+	public void drawWaveLines(Image target, WorldGraph graph, List<CoastlineCurve> curves, Image landMask, Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
 		if (reachDistribution == null)
 		{
@@ -264,9 +250,9 @@ public class WaveLineDrawer
 
 		try (Image guide = Image.create(width, height, ImageType.Grayscale8Bit))
 		{
-			drawGuide(guide, graph, curves, concentricLineOuterRadius, bandRadius, placementCenters, placementBounds);
+			drawGuide(guide, graph, curves, concentricLineOuterRadius, bandRadius, centersToDraw, drawBounds);
 
-			SegmentGrid segmentGrid = new SegmentGrid(curves, placementBounds, bandRadius + 1.0);
+			SegmentGrid segmentGrid = new SegmentGrid(curves, drawBounds, bandRadius + 1.0);
 
 			try (PixelReader guidePixels = guide.createPixelReader(); PixelReader landPixels = landMask.createPixelReader(); Painter p = target.createPainter(DrawQuality.High))
 			{
@@ -285,7 +271,7 @@ public class WaveLineDrawer
 					// map. That way a full draw, which has no pixels off the map, and an incremental draw that reaches past the map's edge place it
 					// the same way. What it draws off the map is clipped.
 					double yOnMap = Math.max(graph.bounds.y, Math.min(graph.bounds.y + graph.bounds.height - 1.0, yInGraph));
-					int pixelRow = (int) Math.floor(yOnMap - placementBounds.y);
+					int pixelRow = (int) Math.floor(yOnMap - drawBounds.y);
 					if (pixelRow < 0 || pixelRow >= height)
 					{
 						continue;
@@ -293,7 +279,7 @@ public class WaveLineDrawer
 
 					for (int x = 0; x < width; x++)
 					{
-						double xInGraph = x + placementBounds.x;
+						double xInGraph = x + drawBounds.x;
 						if (xInGraph < graph.bounds.x || xInGraph >= graph.bounds.x + graph.bounds.width)
 						{
 							// Strokes that reach the map's left or right edge continue past it, the same as at the edge of a full draw.
@@ -310,7 +296,7 @@ public class WaveLineDrawer
 						}
 					}
 
-					drawRow(p, row, yInGraph, classes, segmentGrid, concentricLineOuterRadius, placementBounds, drawBounds);
+					drawRow(p, row, yInGraph, classes, segmentGrid, concentricLineOuterRadius, drawBounds);
 				}
 			}
 		}
@@ -391,14 +377,14 @@ public class WaveLineDrawer
 	 * Draws the strokes of one row.
 	 *
 	 * @param classes
-	 *            For each pixel along the row in placementBounds, whether it is outside the band, in it, or kept clear of wave lines.
+	 *            For each pixel along the row in drawBounds, whether it is outside the band, in it, or kept clear of wave lines.
 	 */
-	private void drawRow(Painter p, int row, double yInGraph, byte[] classes, SegmentGrid segmentGrid, double concentricLineOuterRadius, Rectangle placementBounds,
-			Rectangle drawBounds)
+	private void drawRow(Painter p, int row, double yInGraph, byte[] classes, SegmentGrid segmentGrid, double concentricLineOuterRadius, Rectangle drawBounds)
 	{
 		int width = classes.length;
 		double overhang = calcOverhang(strokeWidth);
 		double rowJitterAmplitude = getRowJitterAmplitude(row);
+		RowLengthNoise lengthNoise = new RowLengthNoise(row);
 		BreakPattern breakPattern = null;
 
 		int x = 0;
@@ -416,124 +402,155 @@ public class WaveLineDrawer
 			}
 			int runEnd = x;
 
-			double start;
-			if (runStart > 0 && classes[runStart - 1] == outsideClass)
+			// A run that starts or ends where wave lines are kept out reaches the concentric line there, and one that starts or ends at the
+			// edge of the area being drawn continues past it.
+			boolean reachesLineAtStart = runStart == 0 || classes[runStart - 1] == keepOutClass;
+			boolean reachesLineAtEnd = runEnd == width || classes[runEnd] == keepOutClass;
+
+			double stretchStart = 0.0;
+			boolean isInStretch = false;
+			double previousX = Double.NaN;
+			double previousDistanceBeyondReach = 0.0;
+			for (int pixel = runStart; pixel < runEnd; pixel++)
 			{
-				start = findOuterEnd(row, runStart + placementBounds.x, 1, yInGraph, segmentGrid, concentricLineOuterRadius);
-			}
-			else
-			{
-				// Either the run starts at the concentric line, where the end is hidden under it, or at the edge of the placement area,
-				// where the stroke continues past it.
-				start = runStart + placementBounds.x - overhang;
+				double xInGraph = pixel + drawBounds.x;
+				double distanceBeyondReach = calcDistanceBeyondReach(row, xInGraph, yInGraph, segmentGrid, concentricLineOuterRadius, lengthNoise);
+				boolean isTouchingLine = (pixel == runStart && reachesLineAtStart) || (pixel == runEnd - 1 && reachesLineAtEnd);
+				boolean isWithinReach = distanceBeyondReach <= 0.0 || isTouchingLine;
+
+				if (isWithinReach && !isInStretch)
+				{
+					stretchStart = pixel == runStart && reachesLineAtStart ? xInGraph - overhang
+							: Double.isNaN(previousX) || isTouchingLine ? xInGraph
+									: findReachCrossing(row, previousX, previousDistanceBeyondReach, xInGraph, distanceBeyondReach, yInGraph, segmentGrid, concentricLineOuterRadius, lengthNoise);
+					isInStretch = true;
+				}
+				else if (!isWithinReach && isInStretch)
+				{
+					double stretchEnd = Double.isNaN(previousX) ? xInGraph
+							: findReachCrossing(row, previousX, previousDistanceBeyondReach, xInGraph, distanceBeyondReach, yInGraph, segmentGrid, concentricLineOuterRadius, lengthNoise);
+					breakPattern = drawStretch(p, row, yInGraph, rowJitterAmplitude, stretchStart, stretchEnd, breakPattern, drawBounds);
+					isInStretch = false;
+				}
+
+				previousX = xInGraph;
+				previousDistanceBeyondReach = distanceBeyondReach;
 			}
 
-			double end;
-			if (runEnd < width && classes[runEnd] == outsideClass)
+			if (isInStretch)
 			{
-				end = findOuterEnd(row, runEnd + placementBounds.x, -1, yInGraph, segmentGrid, concentricLineOuterRadius);
-			}
-			else
-			{
-				end = runEnd + placementBounds.x + overhang;
-			}
-
-			if (end <= start)
-			{
-				continue;
-			}
-
-			double startInUnits = start / sizeMultiplier;
-			double endInUnits = end / sizeMultiplier;
-			if (DebugFlags.disableWaveLineBreaks())
-			{
-				drawPiece(p, row, yInGraph, rowJitterAmplitude, startInUnits, endInUnits, drawBounds);
-				continue;
-			}
-			if (breakPattern == null)
-			{
-				breakPattern = new BreakPattern(row);
-			}
-			breakPattern.extendTo(endInUnits);
-			for (double[] drawInterval : breakPattern.drawIntervals)
-			{
-				drawPiece(p, row, yInGraph, rowJitterAmplitude, Math.max(startInUnits, drawInterval[0]), Math.min(endInUnits, drawInterval[1]), drawBounds);
+				double stretchEnd = reachesLineAtEnd ? runEnd + drawBounds.x + overhang : previousX;
+				breakPattern = drawStretch(p, row, yInGraph, rowJitterAmplitude, stretchStart, stretchEnd, breakPattern, drawBounds);
 			}
 		}
 	}
 
 	/**
-	 * Finds where a stroke's outer end goes by walking from the edge of the band toward the concentric line until the row is within this
-	 * end's randomly chosen reach of the line.
+	 * Draws one stroke, in the pieces the row's breaks leave of it.
 	 *
-	 * @param bandEdge
-	 *            The x coordinate of the band's edge, in graph coordinates.
-	 * @param direction
-	 *            1 to walk right, -1 to walk left.
-	 * @return The x coordinate of the end, in graph coordinates.
+	 * @return The row's break pattern, created if it did not exist yet.
 	 */
-	private double findOuterEnd(int row, double bandEdge, int direction, double yInGraph, SegmentGrid segmentGrid, double concentricLineOuterRadius)
+	private BreakPattern drawStretch(Painter p, int row, double yInGraph, double rowJitterAmplitude, double start, double end, BreakPattern breakPattern, Rectangle drawBounds)
 	{
-		// Walking right means this is a stroke's left end.
-		boolean isLeftEnd = direction > 0;
-		double reach = reachDistribution.getReach(sampleLengthNoise(row, bandEdge / sizeMultiplier, isLeftEnd)) * sizeMultiplier;
-		double maxWalk = reachDistribution.getMaxReach() * sizeMultiplier;
-
-		double previous = bandEdge;
-		double walked = 0.0;
-		while (true)
+		if (end <= start)
 		{
-			double x = bandEdge + direction * walked;
-			double distanceBeyondReach = segmentGrid.findDistanceLowerBound(x, yInGraph) - concentricLineOuterRadius - reach;
-			if (distanceBeyondReach <= 0.0)
-			{
-				if (walked == 0.0)
-				{
-					return x;
-				}
-				// The row's distance from the concentric line changes by at most one pixel per pixel walked, so the steps below never pass
-				// the first point within reach, and it lies between the last two points checked.
-				double outside = previous;
-				double inside = x;
-				for (int i = 0; i < bisectionIterations; i++)
-				{
-					double middle = (outside + inside) / 2.0;
-					if (segmentGrid.findDistanceLowerBound(middle, yInGraph) - concentricLineOuterRadius - reach <= 0.0)
-					{
-						inside = middle;
-					}
-					else
-					{
-						outside = middle;
-					}
-				}
-				return inside;
-			}
-
-			if (walked >= maxWalk)
-			{
-				return x;
-			}
-			previous = x;
-			walked = Math.min(maxWalk, walked + Math.max(0.5, distanceBeyondReach));
+			return breakPattern;
 		}
+
+		double startInUnits = start / sizeMultiplier;
+		double endInUnits = end / sizeMultiplier;
+		if (DebugFlags.disableWaveLineBreaks())
+		{
+			drawPiece(p, row, yInGraph, rowJitterAmplitude, startInUnits, endInUnits, drawBounds);
+			return breakPattern;
+		}
+
+		BreakPattern pattern = breakPattern == null ? new BreakPattern(row) : breakPattern;
+		pattern.extendTo(endInUnits);
+		for (double[] drawInterval : pattern.drawIntervals)
+		{
+			drawPiece(p, row, yInGraph, rowJitterAmplitude, Math.max(startInUnits, drawInterval[0]), Math.min(endInUnits, drawInterval[1]), drawBounds);
+		}
+		return pattern;
 	}
 
 	/**
-	 * A standard normal value that varies smoothly along a row, and is independent between rows. Left and right ends of strokes use separate
-	 * values, so that two strokes whose ends face each other across a narrow gap, such as a bay or a strait, still get independent lengths.
+	 * How much farther a point on a row is from the concentric line than the wave line there reaches, in pixels. A point is part of a wave
+	 * line when this is zero or less.
+	 *
+	 * Which end's random reach applies depends on which way the line lies along the row: a point with the line to its left is in the part of
+	 * a stroke that runs rightward from the line, so it uses the reach of right ends. The two blend where the line is directly above or
+	 * below, which is the middle of a stroke rather than either of its ends.
 	 */
-	private double sampleLengthNoise(int row, double xInUnits, boolean isLeftEnd)
+	private double calcDistanceBeyondReach(int row, double xInGraph, double yInGraph, SegmentGrid segmentGrid, double concentricLineOuterRadius, RowLengthNoise lengthNoise)
 	{
-		long salt = isLeftEnd ? leftEndLengthSalt : rightEndLengthSalt;
-		double controlPointSpacing = rowSpacing * lengthNoiseControlPointSpacingAsMultipleOfRowSpacing;
-		double position = xInUnits / controlPointSpacing;
-		long index = (long) Math.floor(position);
-		double t = position - index;
-		// The squares of these weights sum to 1, so the blend of two independent standard normal values is itself standard normal.
-		double weight0 = Math.cos(t * Math.PI / 2.0);
-		double weight1 = Math.sin(t * Math.PI / 2.0);
-		return weight0 * random(salt, row, index).nextGaussian() + weight1 * random(salt, row, index + 1).nextGaussian();
+		segmentGrid.findNearest(xInGraph, yInGraph, nearestOnCurve);
+		double alongRow = nearestOnCurve.distance <= 0.0 ? 0.0 : Math.max(-1.0, Math.min(1.0, (xInGraph - nearestOnCurve.pointX) / nearestOnCurve.distance));
+		double rightEndWeight = (1.0 + alongRow) / 2.0;
+		double xInUnits = xInGraph / sizeMultiplier;
+		double noise = rightEndWeight * lengthNoise.sample(xInUnits, false) + (1.0 - rightEndWeight) * lengthNoise.sample(xInUnits, true);
+		return nearestOnCurve.distance - concentricLineOuterRadius - reachDistribution.getReach(noise) * sizeMultiplier;
+	}
+
+	/**
+	 * Finds where along a row a wave line's reach ends, between a point within reach and one beyond it.
+	 */
+	private double findReachCrossing(int row, double xWithin, double distanceWithin, double xBeyond, double distanceBeyond, double yInGraph, SegmentGrid segmentGrid,
+			double concentricLineOuterRadius, RowLengthNoise lengthNoise)
+	{
+		double within = distanceWithin <= 0.0 ? xWithin : xBeyond;
+		double beyond = distanceWithin <= 0.0 ? xBeyond : xWithin;
+		if (distanceWithin <= 0.0 == distanceBeyond <= 0.0)
+		{
+			return xBeyond;
+		}
+		for (int i = 0; i < bisectionIterations; i++)
+		{
+			double middle = (within + beyond) / 2.0;
+			if (calcDistanceBeyondReach(row, middle, yInGraph, segmentGrid, concentricLineOuterRadius, lengthNoise) <= 0.0)
+			{
+				within = middle;
+			}
+			else
+			{
+				beyond = middle;
+			}
+		}
+		return within;
+	}
+
+	/**
+	 * The random values along one row that decide how far its wave lines reach, kept so that the same control points aren't drawn from the
+	 * random number generator again for every pixel of the row.
+	 */
+	private class RowLengthNoise
+	{
+		private final int row;
+		private final Map<Long, Double> leftEndValues = new HashMap<>();
+		private final Map<Long, Double> rightEndValues = new HashMap<>();
+
+		RowLengthNoise(int row)
+		{
+			this.row = row;
+		}
+
+		double sample(double xInUnits, boolean isLeftEnd)
+		{
+			double controlPointSpacing = rowSpacing * lengthNoiseControlPointSpacingAsMultipleOfRowSpacing;
+			double position = xInUnits / controlPointSpacing;
+			long index = (long) Math.floor(position);
+			double t = position - index;
+			// The squares of these weights sum to 1, so the blend of two independent standard normal values is itself standard normal.
+			double weight0 = Math.cos(t * Math.PI / 2.0);
+			double weight1 = Math.sin(t * Math.PI / 2.0);
+			return weight0 * getControlValue(index, isLeftEnd) + weight1 * getControlValue(index + 1, isLeftEnd);
+		}
+
+		private double getControlValue(long index, boolean isLeftEnd)
+		{
+			Map<Long, Double> values = isLeftEnd ? leftEndValues : rightEndValues;
+			return values.computeIfAbsent(index, i -> random(isLeftEnd ? leftEndLengthSalt : rightEndLengthSalt, row, i).nextGaussian());
+		}
 	}
 
 	/**
@@ -788,7 +805,13 @@ public class WaveLineDrawer
 	 */
 	private static class SegmentGrid
 	{
-		private final double cellSize;
+		/**
+		 * Cells this size hold few enough segments that looking up a distance scans only a handful of them, while the grid stays small enough
+		 * to build quickly.
+		 */
+		private static final double cellSize = 16.0;
+
+		private final double maxDistance;
 		private final double originX;
 		private final double originY;
 		private final int columns;
@@ -804,11 +827,11 @@ public class WaveLineDrawer
 		 */
 		SegmentGrid(List<CoastlineCurve> curves, Rectangle bounds, double maxDistance)
 		{
-			cellSize = maxDistance;
-			originX = bounds.x - cellSize;
-			originY = bounds.y - cellSize;
-			columns = (int) Math.ceil((bounds.width + 2.0 * cellSize) / cellSize) + 1;
-			rows = (int) Math.ceil((bounds.height + 2.0 * cellSize) / cellSize) + 1;
+			this.maxDistance = maxDistance;
+			originX = bounds.x - maxDistance;
+			originY = bounds.y - maxDistance;
+			columns = (int) Math.ceil((bounds.width + 2.0 * maxDistance) / cellSize) + 1;
+			rows = (int) Math.ceil((bounds.height + 2.0 * maxDistance) / cellSize) + 1;
 			segmentsByCell = new float[columns * rows][];
 			segmentCountsByCell = new int[columns * rows];
 
@@ -859,35 +882,76 @@ public class WaveLineDrawer
 		}
 
 		/**
-		 * The distance from the point to the nearest segment if that is at most the grid's cell size, and otherwise the cell size.
+		 * The nearest point on any segment, and its distance, for points within maxDistance of a segment. Farther points report maxDistance as
+		 * their distance, with the x of the nearest point found, if any.
 		 */
-		double findDistanceLowerBound(double x, double y)
+		void findNearest(double x, double y, Nearest result)
 		{
 			int column = (int) Math.floor((x - originX) / cellSize);
 			int row = (int) Math.floor((y - originY) / cellSize);
-			double minDistanceSquared = cellSize * cellSize;
-			for (int r = Math.max(0, row - 1); r <= Math.min(rows - 1, row + 1); r++)
+			double minDistanceSquared = maxDistance * maxDistance;
+			result.distance = maxDistance;
+			result.pointX = x;
+
+			int maxRing = (int) Math.ceil(maxDistance / cellSize) + 1;
+			for (int ring = 0; ring <= maxRing; ring++)
 			{
-				for (int c = Math.max(0, column - 1); c <= Math.min(columns - 1, column + 1); c++)
+				// Segments in cells this far out are at least this far away, so once something nearer has been found, the rest can't beat it.
+				if (result.distance <= (ring - 1) * cellSize)
 				{
-					int cell = r * columns + c;
-					float[] segments = segmentsByCell[cell];
-					if (segments == null)
+					return;
+				}
+
+				for (int r = row - ring; r <= row + ring; r++)
+				{
+					if (r < 0 || r >= rows)
 					{
 						continue;
 					}
-					int count = segmentCountsByCell[cell];
-					for (int i = 0; i < count; i++)
+					boolean isEdgeRow = r == row - ring || r == row + ring;
+					for (int c = column - ring; c <= column + ring; c += isEdgeRow ? 1 : 2 * ring)
 					{
-						double distanceSquared = distanceSquaredToSegment(x, y, segments[i * 4], segments[i * 4 + 1], segments[i * 4 + 2], segments[i * 4 + 3]);
-						if (distanceSquared < minDistanceSquared)
+						if (c < 0 || c >= columns)
 						{
-							minDistanceSquared = distanceSquared;
+							continue;
+						}
+						float[] segments = segmentsByCell[r * columns + c];
+						if (segments == null)
+						{
+							continue;
+						}
+						int count = segmentCountsByCell[r * columns + c];
+						for (int i = 0; i < count; i++)
+						{
+							double distanceSquared = distanceSquaredToSegment(x, y, segments[i * 4], segments[i * 4 + 1], segments[i * 4 + 2], segments[i * 4 + 3]);
+							if (distanceSquared < minDistanceSquared)
+							{
+								minDistanceSquared = distanceSquared;
+								result.distance = Math.sqrt(distanceSquared);
+								result.pointX = closestPointXOnSegment(x, y, segments[i * 4], segments[i * 4 + 1], segments[i * 4 + 2], segments[i * 4 + 3]);
+							}
 						}
 					}
 				}
 			}
-			return Math.sqrt(minDistanceSquared);
+		}
+
+		/**
+		 * Where {@link #findNearest} puts its result, so that calling it for every pixel of a row doesn't allocate.
+		 */
+		static class Nearest
+		{
+			double distance;
+			double pointX;
+		}
+
+		private static double closestPointXOnSegment(double x, double y, double ax, double ay, double bx, double by)
+		{
+			double dx = bx - ax;
+			double dy = by - ay;
+			double lengthSquared = dx * dx + dy * dy;
+			double t = lengthSquared == 0.0 ? 0.0 : Math.max(0.0, Math.min(1.0, ((x - ax) * dx + (y - ay) * dy) / lengthSquared));
+			return ax + t * dx;
 		}
 
 		private static double distanceSquaredToSegment(double x, double y, double ax, double ay, double bx, double by)

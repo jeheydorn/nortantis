@@ -304,19 +304,6 @@ public class MapCreator implements WarningLogger
 					}
 				}
 
-				// Wave lines can change farther from a changed coastline than the padding covers, when joining or separating the bands around
-				// coastlines moves the far end of a row's stroke. Redraw that wider area later rather than making every incremental draw that
-				// large.
-				if (!coastlineCentersChanged.isEmpty() && settings.hasWaveLines())
-				{
-					// The walk distance is for each side, and pad splits what it adds between the two sides.
-					double walkDistance = WaveLineDrawer.calcStrokeEndWalkDistance(settings, settings.resolution);
-					Rectangle walkBounds = centersChangedBounds.pad(2.0 * walkDistance, 2.0 * walkDistance);
-					Set<Center> centersWithinWalk = mapParts.graph.breadthFirstSearch(c -> c.isInBoundsIncludingNoisyEdges(walkBounds),
-							mapParts.graph.findClosestCenter(centersChangedBounds.getCenter()));
-					addLowPriorityCentersToRedraw(centersWithinWalk);
-				}
-
 				// Concentric waves with random breaks need the entire coastline redrawn because a change somewhere in the
 				// coastline can affect the random numbers used to draw the rest of it. Only do this when the coastline actually
 				// changed (a center's land/water status flipped) - not for river, road, or region-boundary-only changes, which
@@ -1810,38 +1797,11 @@ public class MapCreator implements WarningLogger
 		double lineOuterWidth = calcWaveLinesConcentricLineOuterWidth(resolutionScaled);
 		double varianceRange = settings.jitterToConcentricWaves ? calcWaveLinesConcentricLineJitter(resolutionScaled) : 0.0;
 
-		// Wave lines are placed using coastlines and land from a wider area than they are drawn in. A full draw already covers everything.
-		Rectangle placementBounds;
-		Collection<Center> placementCenters;
-		Image placementLandMask;
-		if (centersToDraw == null)
-		{
-			placementBounds = drawBounds;
-			placementCenters = null;
-			placementLandMask = landMask;
-		}
-		else
-		{
-			// The margin is a distance for each side, and pad splits what it adds between the two sides.
-			double margin = Math.ceil(WaveLineDrawer.calcStrokeEndWalkDistance(settings, resolutionScaled));
-			placementBounds = drawBounds.pad(2.0 * margin, 2.0 * margin).floor();
-			placementCenters = graph.breadthFirstSearch(c -> c.isInBoundsIncludingNoisyEdges(placementBounds), graph.findClosestCenter(placementBounds.getCenter()));
-			placementLandMask = Image.create((int) placementBounds.width, (int) placementBounds.height, ImageType.Binary);
-			try (Painter p = placementLandMask.createPainter())
-			{
-				graph.drawLandAndOceanBlackAndWhite(p, placementCenters, placementBounds);
-			}
-		}
-
 		// See createConcentricWavesMask for why this searches the entire graph.
-		List<List<Edge>> shoreEdges = graph.findShoreEdges(placementCenters, settings.drawOceanEffectsInLakes, true);
+		List<List<Edge>> shoreEdges = graph.findShoreEdges(centersToDraw, settings.drawOceanEffectsInLakes, true);
 		List<WorldGraph.CoastlineCurve> curves = graph.createCoastlineCurvesWithVariation(settings.backgroundRandomSeed, varianceRange, distanceFromCoast, shoreEdges);
 
-		new WaveLineDrawer(settings, resolutionScaled).drawWaveLines(oceanEffects, drawBounds, graph, curves, placementLandMask, placementCenters, placementBounds);
-		if (placementLandMask != landMask)
-		{
-			placementLandMask.close();
-		}
+		new WaveLineDrawer(settings, resolutionScaled).drawWaveLines(oceanEffects, graph, curves, landMask, centersToDraw, drawBounds);
 
 		// Drawing the concentric line over the wave lines also hides the wave lines' inner ends, which run under it.
 		try (Painter p = oceanEffects.createPainter(DrawQuality.High))
