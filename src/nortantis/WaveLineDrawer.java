@@ -12,6 +12,7 @@ import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
 import nortantis.platform.PixelReader;
+import nortantis.platform.PixelReaderWriter;
 import nortantis.util.Helper;
 
 import java.util.ArrayList;
@@ -65,11 +66,20 @@ public class WaveLineDrawer
 	 */
 	private static final double minGapBetweenRows = 0.5;
 	private static final double minPieceLength = 3.0;
-	private static final double minBreakDrawLengthInWavelengths = 0.5;
-	private static final double maxBreakDrawLengthInWavelengths = 3.0;
-	private static final double minBreakSkipLengthInWavelengths = 0.15;
-	private static final double maxBreakSkipLengthInWavelengths = 0.65;
+	private static final double minBreakDrawLengthInWavelengths = 0.75;
+	private static final double maxBreakDrawLengthInWavelengths = 5.0;
+	private static final double minBreakSkipLengthInWavelengths = 0.2;
+	private static final double maxBreakSkipLengthInWavelengths = 0.6;
+	/**
+	 * The smallest space a break leaves between the ends of the strokes on either side of it, as a multiple of the stroke width. Narrower
+	 * breaks read as a flaw in a line rather than as a lifted pen.
+	 */
+	private static final double minBreakGapAsMultipleOfStrokeWidth = 1.0;
 	private static final double lengthNoiseControlPointSpacingAsMultipleOfRowSpacing = 6.0;
+	/**
+	 * The value in a row's fade levels that leaves a stroke as opaque as it was drawn.
+	 */
+	private static final int noFadeLevel = 255;
 	private static final int bisectionIterations = 8;
 
 	private static final int outsideLevel = 0;
@@ -161,11 +171,11 @@ public class WaveLineDrawer
 	 */
 	private static double calcJitterFraction(MapSettings settings)
 	{
-		if (!settings.jitterToConcentricWaves)
+		if (!settings.jitterToWaveLines)
 		{
 			return 0.0;
 		}
-		return Math.max(0, Math.min(MapSettings.maxJitterLevel, settings.jitterLevel)) / (double) MapSettings.maxJitterLevel;
+		return Math.max(0, Math.min(MapSettings.maxJitterLevel, settings.waveLineJitterLevel)) / (double) MapSettings.maxJitterLevel;
 	}
 
 	/**
@@ -224,6 +234,15 @@ public class WaveLineDrawer
 	}
 
 	/**
+	 * The shortest a break may be, in units. Round caps make each stroke reach half its width past the end of its piece, so the space a break
+	 * leaves is its length less the stroke width.
+	 */
+	private static double calcMinBreakLength()
+	{
+		return calcStrokeWidthInUnits() * (1.0 + minBreakGapAsMultipleOfStrokeWidth);
+	}
+
+	/**
 	 * How far a stroke's inner end reaches under the concentric line, in pixels.
 	 */
 	private static double calcOverhang(double strokeWidth)
@@ -264,6 +283,8 @@ public class WaveLineDrawer
 			drawGuide(guide, graph, curves, concentricLineOuterRadius, bandRadius, centersToDraw, drawBounds);
 
 			SegmentGrid segmentGrid = new SegmentGrid(curves, drawBounds, bandRadius + 1.0);
+			List<Integer> fadedRows = settings.fadeWaveLines ? new ArrayList<>() : null;
+			List<byte[]> fadeLevelsByRow = settings.fadeWaveLines ? new ArrayList<>() : null;
 
 			try (PixelReader guidePixels = guide.createPixelReader(); PixelReader landPixels = landMask.createPixelReader(); Painter p = target.createPainter(DrawQuality.High))
 			{
@@ -307,10 +328,112 @@ public class WaveLineDrawer
 						}
 					}
 
-					drawRow(p, row, yInGraph, classes, segmentGrid, concentricLineOuterRadius, drawBounds);
+					byte[] fadeLevels = null;
+					if (fadedRows != null)
+					{
+						fadeLevels = new byte[width];
+						Arrays.fill(fadeLevels, (byte) noFadeLevel);
+						fadedRows.add(row);
+						fadeLevelsByRow.add(fadeLevels);
+					}
+
+					drawRow(p, row, yInGraph, classes, segmentGrid, concentricLineOuterRadius, drawBounds, fadeLevels);
+				}
+			}
+
+			if (fadedRows != null)
+			{
+				fadeRows(target, fadedRows, fadeLevelsByRow, drawBounds);
+			}
+		}
+	}
+
+	/**
+	 * Lightens each row's strokes by the fade factors found along it, which lightens the parts of wave lines that are farther from the
+	 * concentric line.
+	 */
+	private void fadeRows(Image target, List<Integer> rows, List<byte[]> fadeLevelsByRow, Rectangle drawBounds)
+	{
+		int height = target.getHeight();
+		try (PixelReaderWriter pixels = target.createPixelReaderWriter())
+		{
+			for (int i = 0; i < rows.size(); i++)
+			{
+				int row = rows.get(i);
+				byte[] fadeLevels = fadeLevelsByRow.get(i);
+				int firstFaded = 0;
+				while (firstFaded < fadeLevels.length && fadeLevels[firstFaded] == (byte) noFadeLevel)
+				{
+					firstFaded++;
+				}
+				int lastFaded = fadeLevels.length - 1;
+				while (lastFaded >= firstFaded && fadeLevels[lastFaded] == (byte) noFadeLevel)
+				{
+					lastFaded--;
+				}
+
+				// A row is faded only where its own strokes can be, and never past halfway to where its neighbors' strokes can be, so that no
+				// pixel is faded twice.
+				int start = (int) Math.max(Math.round(getRowStripStart(row) - drawBounds.y), Math.floor(getRowInkTop(row) - drawBounds.y - 1.0));
+				int end = (int) Math.min(Math.round(getRowStripStart(row + 1) - drawBounds.y), Math.ceil(getRowInkBottom(row) - drawBounds.y + 1.0));
+				for (int y = Math.max(0, start); y < Math.min(height, end); y++)
+				{
+					for (int x = firstFaded; x <= lastFaded; x++)
+					{
+						int fadeLevel = fadeLevels[x] & 0xFF;
+						if (fadeLevel < noFadeLevel)
+						{
+							int level = pixels.getGrayLevel(x, y);
+							if (level > 0)
+							{
+								pixels.setGrayLevel(x, y, (level * fadeLevel + noFadeLevel / 2) / noFadeLevel);
+							}
+						}
+					}
 				}
 			}
 		}
+	}
+
+	/**
+	 * The highest a row's strokes can reach, in pixels in the map.
+	 */
+	private double getRowInkTop(int row)
+	{
+		return (getRowY(row) - amplitude - getRowJitterAmplitude(row)) * sizeMultiplier - strokeWidth / 2.0;
+	}
+
+	/**
+	 * The lowest a row's strokes can reach, in pixels in the map.
+	 */
+	private double getRowInkBottom(int row)
+	{
+		return (getRowY(row) + getRowJitterAmplitude(row)) * sizeMultiplier + strokeWidth / 2.0;
+	}
+
+	/**
+	 * Where, in pixels in the map, the band of pixels that only the given row draws in begins, which is halfway between the highest its
+	 * strokes reach and the lowest the row above it reaches.
+	 */
+	private double getRowStripStart(int row)
+	{
+		return (getRowInkBottom(row - 1) + getRowInkTop(row)) / 2.0;
+	}
+
+	/**
+	 * How opaque a wave line is at a point, out of noFadeLevel, when fading is on: fully opaque where it leaves the concentric line, and
+	 * fading to nothing at the far end of the stroke, however far that stroke reaches.
+	 *
+	 * @param distancePastLine
+	 *            How far the point is outside the concentric line, in pixels.
+	 * @param distanceBeyondReach
+	 *            How much farther the point is from the concentric line than the wave line there reaches, in pixels.
+	 */
+	private byte calcFadeLevel(double distancePastLine, double distanceBeyondReach)
+	{
+		double reach = distancePastLine - distanceBeyondReach;
+		double fraction = reach <= 0.0 ? 1.0 : Math.max(0.0, Math.min(1.0, distancePastLine / reach));
+		return (byte) Math.round(noFadeLevel * (1.0 - fraction));
 	}
 
 	/**
@@ -389,8 +512,11 @@ public class WaveLineDrawer
 	 *
 	 * @param classes
 	 *            For each pixel along the row in drawBounds, whether it is outside the band, in it, or kept clear of wave lines.
+	 * @param fadeLevels
+	 *            If not null, is filled in with how opaque the row's strokes are at each pixel along it, out of noFadeLevel.
 	 */
-	private void drawRow(Painter p, int row, double yInGraph, byte[] classes, SegmentGrid segmentGrid, double concentricLineOuterRadius, Rectangle drawBounds)
+	private void drawRow(Painter p, int row, double yInGraph, byte[] classes, SegmentGrid segmentGrid, double concentricLineOuterRadius, Rectangle drawBounds,
+			byte[] fadeLevels)
 	{
 		int width = classes.length;
 		double overhang = calcOverhang(strokeWidth);
@@ -418,6 +544,7 @@ public class WaveLineDrawer
 			boolean reachesLineAtStart = runStart == 0 || classes[runStart - 1] == keepOutClass;
 			boolean reachesLineAtEnd = runEnd == width || classes[runEnd] == keepOutClass;
 
+			List<double[]> stretches = new ArrayList<>();
 			double stretchStart = 0.0;
 			boolean isInStretch = false;
 			double previousX = Double.NaN;
@@ -426,6 +553,10 @@ public class WaveLineDrawer
 			{
 				double xInGraph = pixel + drawBounds.x;
 				double distanceBeyondReach = calcDistanceBeyondReach(row, xInGraph, yInGraph, segmentGrid, concentricLineOuterRadius, lengthNoise);
+				if (fadeLevels != null)
+				{
+					fadeLevels[pixel] = calcFadeLevel(nearestOnCurve.distance - concentricLineOuterRadius, distanceBeyondReach);
+				}
 				boolean isTouchingLine = (pixel == runStart && reachesLineAtStart) || (pixel == runEnd - 1 && reachesLineAtEnd);
 				boolean isWithinReach = distanceBeyondReach <= 0.0 || isTouchingLine;
 
@@ -440,7 +571,7 @@ public class WaveLineDrawer
 				{
 					double stretchEnd = Double.isNaN(previousX) ? xInGraph
 							: findReachCrossing(row, previousX, previousDistanceBeyondReach, xInGraph, distanceBeyondReach, yInGraph, segmentGrid, concentricLineOuterRadius, lengthNoise);
-					breakPattern = drawStretch(p, row, yInGraph, rowJitterAmplitude, stretchStart, stretchEnd, breakPattern, drawBounds);
+					stretches.add(new double[] { stretchStart, stretchEnd });
 					isInStretch = false;
 				}
 
@@ -451,9 +582,35 @@ public class WaveLineDrawer
 			if (isInStretch)
 			{
 				double stretchEnd = reachesLineAtEnd ? runEnd + drawBounds.x + overhang : previousX;
-				breakPattern = drawStretch(p, row, yInGraph, rowJitterAmplitude, stretchStart, stretchEnd, breakPattern, drawBounds);
+				stretches.add(new double[] { stretchStart, stretchEnd });
 			}
+
+			breakPattern = drawStretches(p, row, yInGraph, rowJitterAmplitude, stretches, breakPattern, drawBounds);
 		}
+	}
+
+	/**
+	 * Draws the strokes of one run, joining any that a dip in how far wave lines reach left separated by a space too small to read as the ends
+	 * of two strokes.
+	 *
+	 * @return The row's break pattern, created if it did not exist yet.
+	 */
+	private BreakPattern drawStretches(Painter p, int row, double yInGraph, double rowJitterAmplitude, List<double[]> stretches, BreakPattern breakPattern,
+			Rectangle drawBounds)
+	{
+		double minGap = calcMinBreakLength() * sizeMultiplier;
+		for (int i = 0; i < stretches.size(); i++)
+		{
+			double start = stretches.get(i)[0];
+			double end = stretches.get(i)[1];
+			while (i + 1 < stretches.size() && stretches.get(i + 1)[0] - end < minGap)
+			{
+				i++;
+				end = stretches.get(i)[1];
+			}
+			breakPattern = drawStretch(p, row, yInGraph, rowJitterAmplitude, start, end, breakPattern, drawBounds);
+		}
+		return breakPattern;
 	}
 
 	/**
@@ -633,7 +790,7 @@ public class WaveLineDrawer
 				}
 				else
 				{
-					position += wavelength * rand.nextDouble(minBreakSkipLengthInWavelengths, maxBreakSkipLengthInWavelengths);
+					position += Math.max(calcMinBreakLength(), wavelength * rand.nextDouble(minBreakSkipLengthInWavelengths, maxBreakSkipLengthInWavelengths));
 				}
 				isDrawing = !isDrawing;
 			}
@@ -740,7 +897,7 @@ public class WaveLineDrawer
 		long period = (long) Math.floor(phase);
 		double fraction = phase - period;
 		double height = shape.evaluate(fraction);
-		if (jitterFraction > 0.0)
+		if (jitterFraction > 0.0 && shape.hasCrests())
 		{
 			double startScale = getCrestHeightScale(row, period);
 			double endScale = getCrestHeightScale(row, period + 1);

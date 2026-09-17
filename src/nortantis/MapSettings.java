@@ -91,11 +91,18 @@ public class MapSettings implements Serializable
 	public boolean jitterToConcentricWaves;
 	/**
 	 * How strong jitter is when jitterToConcentricWaves is on, from 1 to maxJitterLevel, where maxJitterLevel is as much as the concentric
-	 * lines or wave lines can wander without touching the coast or each other. Used by both wave styles.
+	 * lines can wander without touching the coast or each other.
 	 */
 	public int jitterLevel = defaultJitterLevel;
 	public boolean brokenLinesForConcentricWaves;
 	public boolean fadeConcentricWaves;
+	/**
+	 * Like jitterToConcentricWaves, but for the wave lines style, which keeps its own settings so that switching styles doesn't change
+	 * either one's look.
+	 */
+	public boolean jitterToWaveLines;
+	public int waveLineJitterLevel = defaultJitterLevel;
+	public boolean fadeWaveLines;
 	public OceanWaves oceanWavesType;
 	public WaveLineShape waveLineShape = defaultWaveLineShape;
 	/**
@@ -447,6 +454,9 @@ public class MapSettings implements Serializable
 		root.put("brokenLinesForConcentricWaves", brokenLinesForConcentricWaves);
 		root.put("jitterToConcentricWaves", jitterToConcentricWaves);
 		root.put("jitterLevel", jitterLevel);
+		root.put("jitterToWaveLines", jitterToWaveLines);
+		root.put("waveLineJitterLevel", waveLineJitterLevel);
+		root.put("fadeWaveLines", fadeWaveLines);
 		root.put("oceanEffect", enumToJson(oceanWavesType));
 		root.put("waveLineShape", enumToJson(waveLineShape));
 		root.put("waveLineRowSpacing", waveLineRowSpacing);
@@ -1182,6 +1192,10 @@ public class MapSettings implements Serializable
 		}
 		// Maps made before jitter had an amount used the strongest one.
 		jitterLevel = root.containsKey("jitterLevel") ? (int) (long) root.get("jitterLevel") : defaultJitterLevel;
+		// Wave lines used the concentric lines' jitter and fading before they had their own.
+		jitterToWaveLines = root.containsKey("jitterToWaveLines") ? (boolean) root.get("jitterToWaveLines") : jitterToConcentricWaves;
+		waveLineJitterLevel = root.containsKey("waveLineJitterLevel") ? (int) (long) root.get("waveLineJitterLevel") : jitterLevel;
+		fadeWaveLines = root.containsKey("fadeWaveLines") ? (boolean) root.get("fadeWaveLines") : fadeConcentricWaves;
 		waveLineShape = root.containsKey("waveLineShape") ? WaveLineShape.valueOf((String) root.get("waveLineShape")) : defaultWaveLineShape;
 		waveLineRowSpacing = root.containsKey("waveLineRowSpacing") ? (int) (long) root.get("waveLineRowSpacing") : defaultWaveLineRowSpacing;
 		waveLineRowSpacingVariation = root.containsKey("waveLineRowSpacingVariation") ? (int) (long) root.get("waveLineRowSpacingVariation") : defaultWaveLineRowSpacingVariation;
@@ -3167,7 +3181,7 @@ public class MapSettings implements Serializable
 	 */
 	public enum WaveLineShape
 	{
-		Scallops, Sine;
+		Scallops, Sine, Straight;
 
 		/**
 		 * How sharp the cusps between scallops are. Small values give round, nearly parabolic bowls; large values give flat bottoms with thin
@@ -3189,6 +3203,11 @@ public class MapSettings implements Serializable
 				// Bowls that meet at upward-pointing cusps at phase 0 and 1.
 				return (Math.cosh(scallopSharpness * (phase - 0.5)) - 1.0) / (Math.cosh(scallopSharpness / 2.0) - 1.0);
 			}
+			if (this == Straight)
+			{
+				// Halfway up, so straight lines sit where the middle of a wave would, and rows look as evenly spaced as they do with waves.
+				return 0.5;
+			}
 			return 0.5 + 0.5 * Math.sin(2.0 * Math.PI * phase);
 		}
 
@@ -3198,6 +3217,14 @@ public class MapSettings implements Serializable
 		public double[] getCornerPhases()
 		{
 			return this == Scallops ? new double[] { 0.0 } : new double[0];
+		}
+
+		/**
+		 * Whether the shape rises and falls, so that varying the heights of its crests means anything.
+		 */
+		public boolean hasCrests()
+		{
+			return this != Straight;
 		}
 
 		@Override
@@ -3384,6 +3411,12 @@ public class MapSettings implements Serializable
 			differences.add("jitterToConcentricWaves: " + jitterToConcentricWaves + " vs " + other.jitterToConcentricWaves);
 		if (jitterLevel != other.jitterLevel)
 			differences.add("jitterLevel: " + jitterLevel + " vs " + other.jitterLevel);
+		if (jitterToWaveLines != other.jitterToWaveLines)
+			differences.add("jitterToWaveLines: " + jitterToWaveLines + " vs " + other.jitterToWaveLines);
+		if (waveLineJitterLevel != other.waveLineJitterLevel)
+			differences.add("waveLineJitterLevel: " + waveLineJitterLevel + " vs " + other.waveLineJitterLevel);
+		if (fadeWaveLines != other.fadeWaveLines)
+			differences.add("fadeWaveLines: " + fadeWaveLines + " vs " + other.fadeWaveLines);
 		if (!Objects.equals(landColor, other.landColor))
 			differences.add("landColor: " + landColor + " vs " + other.landColor);
 		if (landShape != other.landShape)
@@ -3511,7 +3544,7 @@ public class MapSettings implements Serializable
 				edits, fadeConcentricWaves, fillWithColorByType, flipHorizontally, flipVertically, frayedBorder, frayedBorderBlurLevel, frayedBorderColor, frayedBorderSeed,
 				frayedBorderSize, generateBackground, generateBackgroundFromTexture, generatedHeight, generatedWidth, gridOverlayColor, gridOverlayLayer, gridOverlayLineWidth,
 				gridOverlayRowOrColCount, gridOverlayShape, gridOverlayXOffset, gridOverlayYOffset, grungeWidth, heightmapExportPath, heightmapResolution, hillScale, hueRange, iconFillColorsByType,
-				iconFilterColorsByType, imageExportPath, jitterLevel, jitterToConcentricWaves, landColor, landShape, lineStyle, lloydRelaxationsScale, maximizeOpacityByType, mountainRangeFont, mountainScale,
+				iconFilterColorsByType, imageExportPath, jitterLevel, jitterToConcentricWaves, jitterToWaveLines, waveLineJitterLevel, fadeWaveLines, landColor, landShape, lineStyle, lloydRelaxationsScale, maximizeOpacityByType, mountainRangeFont, mountainScale,
 				oceanColor, oceanEffectsColor, oceanEffectsLevel, oceanShadingColor, oceanShadingLevel, oceanWavesColor, oceanWavesLevel, oceanWavesType, otherMountainsFont, overlayImageDefaultScale,
 				overlayImageDefaultTransparency, overlayImagePath, overlayImageTransparency, overlayOffsetResolutionInvariant, overlayScale, pointPrecision, randomSeed, regionBaseColor,
 				regionBoundaryColor, regionBoundaryStyle, regionCount, regionFont, regionsRandomSeed, resolution, rightRotationCount, riverColor, riverFont, roadColor, roadFont, roadStyle, saturationRange,
@@ -3566,7 +3599,8 @@ public class MapSettings implements Serializable
 				&& Objects.equals(heightmapExportPath, other.heightmapExportPath) && Double.doubleToLongBits(heightmapResolution) == Double.doubleToLongBits(other.heightmapResolution)
 				&& Double.doubleToLongBits(hillScale) == Double.doubleToLongBits(other.hillScale) && hueRange == other.hueRange && Objects.equals(iconFillColorsByType, other.iconFillColorsByType)
 				&& Objects.equals(iconFilterColorsByType, other.iconFilterColorsByType) && Objects.equals(imageExportPath, other.imageExportPath)
-				&& jitterToConcentricWaves == other.jitterToConcentricWaves && jitterLevel == other.jitterLevel && Objects.equals(landColor, other.landColor) && landShape == other.landShape && lineStyle == other.lineStyle
+				&& jitterToConcentricWaves == other.jitterToConcentricWaves && jitterLevel == other.jitterLevel && jitterToWaveLines == other.jitterToWaveLines
+				&& waveLineJitterLevel == other.waveLineJitterLevel && fadeWaveLines == other.fadeWaveLines && Objects.equals(landColor, other.landColor) && landShape == other.landShape && lineStyle == other.lineStyle
 				&& Double.doubleToLongBits(lloydRelaxationsScale) == Double.doubleToLongBits(other.lloydRelaxationsScale) && Objects.equals(maximizeOpacityByType, other.maximizeOpacityByType)
 				&& Objects.equals(mountainRangeFont, other.mountainRangeFont) && Double.doubleToLongBits(mountainScale) == Double.doubleToLongBits(other.mountainScale)
 				&& Objects.equals(oceanColor, other.oceanColor) && Objects.equals(oceanEffectsColor, other.oceanEffectsColor) && oceanEffectsLevel == other.oceanEffectsLevel

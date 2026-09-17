@@ -1875,11 +1875,13 @@ public class MapCreator implements WarningLogger
 	 */
 	static double calcJitter(MapSettings settings, double resolutionScaled)
 	{
-		if (!settings.jitterToConcentricWaves)
+		boolean isJitterOn = settings.hasWaveLines() ? settings.jitterToWaveLines : settings.jitterToConcentricWaves;
+		if (!isJitterOn)
 		{
 			return 0.0;
 		}
-		return calcMaxJitter(resolutionScaled) * Math.max(0, Math.min(MapSettings.maxJitterLevel, settings.jitterLevel)) / MapSettings.maxJitterLevel;
+		int level = settings.hasWaveLines() ? settings.waveLineJitterLevel : settings.jitterLevel;
+		return calcMaxJitter(resolutionScaled) * Math.max(0, Math.min(MapSettings.maxJitterLevel, level)) / MapSettings.maxJitterLevel;
 	}
 
 	private static float calcScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(int kernelSize, double sizeMultiplier)

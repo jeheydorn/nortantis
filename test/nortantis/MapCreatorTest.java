@@ -293,7 +293,7 @@ public class MapCreatorTest
 		// Text is redrawn with slightly different anti-aliasing after a change, which says nothing about wave lines.
 		settings.drawText = false;
 		settings.oceanWavesType = MapSettings.OceanWaves.WaveLines;
-		settings.jitterToConcentricWaves = true;
+		settings.jitterToWaveLines = true;
 		settings.waveLineRowSpacing = 24;
 		settings.waveLineRowSpacingVariation = 10;
 		settings.waveLineLength = 40;
@@ -331,8 +331,9 @@ public class MapCreatorTest
 		settings.resolution = 0.75;
 		settings.oceanWavesType = MapSettings.OceanWaves.WaveLines;
 		settings.oceanShadingLevel = 0;
-		settings.jitterToConcentricWaves = true;
+		settings.jitterToWaveLines = true;
 		settings.waveLineRowSpacingVariation = 10;
+		settings.fadeWaveLines = true;
 
 		MapParts mapParts = new MapParts();
 		new MapCreator().createMap(settings, null, mapParts).close();
@@ -1089,7 +1090,7 @@ public class MapCreatorTest
 	{
 		MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", "simpleSmallWorld.nort").toString());
 		settings.oceanWavesType = MapSettings.OceanWaves.WaveLines;
-		settings.jitterToConcentricWaves = true;
+		settings.jitterToWaveLines = true;
 		settings.waveLineRowSpacingVariation = 5;
 		try (Image actual = new MapCreator().createMap(settings, null, null))
 		{
