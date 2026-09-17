@@ -1062,7 +1062,7 @@ public class ThemePanel extends JTabbedPane
 		waveLineShapePanel = SwingHelper.createPanelWithLabelAbove(Translation.get("theme.waveLineShape.label"), Translation.get("theme.waveLineShape.help"),
 				Arrays.asList(waveLineShapeComboBox));
 
-		waveLineRowSpacingSlider = createWaveLineSlider(4, 15);
+		waveLineRowSpacingSlider = createWaveLineSlider(2, 15);
 		waveLineRowSpacingPanel = new SliderWithDisplayedValue(waveLineRowSpacingSlider).createPanelWithLabelAbove(Translation.get("theme.waveLineRowSpacing.label"),
 				Translation.get("theme.waveLineRowSpacing.help"));
 

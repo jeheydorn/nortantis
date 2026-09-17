@@ -36,13 +36,13 @@ public class WaveLineDrawer
 	 * How many standard deviations the random value that picks a wave line's reach may be from the mean before it is clamped.
 	 */
 	private static final double maxReachStandardDeviations = 2.0;
+	/**
+	 * At the highest length variation, the most a wave line's reach can differ from the wave line length, as a fraction of that length.
+	 */
+	private static final double maxLengthVariationAsFractionOfLength = 0.9;
 	private static final double amplitudeAsFractionOfRowSpacing = 0.22;
 	private static final double wavelengthAsMultipleOfRowSpacing = 1.6;
 	private static final double maxJitterAmplitudeAsFractionOfRowSpacing = 0.3;
-	/**
-	 * The most of the space between rows that jitter may take. The rest is left for row spacing variation.
-	 */
-	private static final double maxJitterShareOfFreeSpace = 2.0 / 3.0;
 	private static final double jitterControlPointSpacingAsMultipleOfWavelength = 1.0;
 	/**
 	 * With jitter on, the most a crest is moved along its row, as a fraction of the wavelength. This must stay small enough that crests never
@@ -137,7 +137,8 @@ public class WaveLineDrawer
 	}
 
 	/**
-	 * The most a row's jitter moves it up or down, in units.
+	 * The most a row's jitter moves it up or down, in units, which is what a row gets when it is evenly spaced from both neighbors. See
+	 * {@link #getRowJitterAmplitude}.
 	 */
 	private static double calcJitterAmplitude(MapSettings settings)
 	{
@@ -145,18 +146,17 @@ public class WaveLineDrawer
 		{
 			return 0.0;
 		}
-		// Jitter moves both neighboring rows, so each gets half of its share of the space between them.
-		return Math.min(settings.waveLineRowSpacing * maxJitterAmplitudeAsFractionOfRowSpacing, calcSpaceBetweenRowsWithoutJitter(settings) * maxJitterShareOfFreeSpace / 2.0);
+		// Jitter moves both neighboring rows, so each gets half of the space between them.
+		return Math.min(settings.waveLineRowSpacing * maxJitterAmplitudeAsFractionOfRowSpacing, calcSpaceBetweenRowsWithoutJitter(settings) / 2.0);
 	}
 
 	/**
-	 * How close, in units, the baselines of neighboring rows can be without the rows touching.
+	 * How close, in units, the baselines of neighboring rows can be without the rows touching, before jitter.
 	 */
 	private static double calcMinRowSeparation(MapSettings settings)
 	{
-		// The upper row reaches down by its jitter and half its stroke width. The lower row reaches up by its waves, jitter and half its
-		// stroke width.
-		return calcAmplitude(settings) + 2.0 * calcJitterAmplitude(settings) + calcStrokeWidthInUnits() + minGapBetweenRows;
+		// The upper row reaches down by half its stroke width. The lower row reaches up by its waves and half its stroke width.
+		return calcAmplitude(settings) + calcStrokeWidthInUnits() + minGapBetweenRows;
 	}
 
 	/**
@@ -191,30 +191,32 @@ public class WaveLineDrawer
 	}
 
 	/**
-	 * How far, in pixels, the area wave lines are placed from must extend past the area they are drawn into. See {@link #drawWaveLines}.
-	 */
-	public static double calcPlacementMargin(MapSettings settings, double resolutionScale)
-	{
-		return Math.ceil(calcBandRadius(settings, resolutionScale) + calcConcentricLineJitter(settings, resolutionScale) + 1.0);
-	}
-
-	/**
-	 * How far, in pixels, a change on the map can move what wave lines and their concentric line draw. Incremental draws must pad the area
-	 * they draw by at least this much.
+	 * How far, in pixels, a change on the map directly moves what wave lines and their concentric line draw: the band around the changed part
+	 * of the coastline, and how far strokes in it reach off their rows. Incremental draws must pad each side of the area they draw by at least
+	 * this much.
+	 *
+	 * A change to the coastline can also move strokes farther away, by up to {@link #calcStrokeEndWalkDistance} beyond this, which is left
+	 * out here so that incremental draws stay small. See {@link #drawWaveLines}.
 	 */
 	public static double calcEffectsPadding(MapSettings settings, double resolutionScale)
 	{
 		double sizeMultiplier = MapCreator.calcSizeMultiplierFromResolutionScale(resolutionScale);
 		double concentricLinePadding = MapCreator.calcWaveLinesConcentricLineOuterWidth(resolutionScale) + calcConcentricLineJitter(settings, resolutionScale);
-		double strokeWidth = calcStrokeWidth(resolutionScale);
-		// A change to the coastline changes where strokes go anywhere in the band around the changed part of the coastline, including the
-		// concentric line's jitter. Separately, a stroke's outer end can be up to maxReach along its row from the edge of the band it was found
-		// in, and a piece shorter than minPieceLength next to that end is dropped.
-		double alongRowPadding = Math.max(calcBandRadius(settings, resolutionScale) + calcConcentricLineJitter(settings, resolutionScale),
-				(calcMaxReach(settings) + minPieceLength) * sizeMultiplier + calcOverhang(strokeWidth));
+		double bandPadding = calcBandRadius(settings, resolutionScale) + calcConcentricLineJitter(settings, resolutionScale);
 		// How far a stroke's waves, jitter, row shift and width reach off its row.
-		double offRowPadding = (calcAmplitude(settings) + calcJitterAmplitude(settings) + calcMaxRowShift(settings)) * sizeMultiplier + strokeWidth;
-		return Math.max(concentricLinePadding, alongRowPadding + offRowPadding);
+		double offRowPadding = (calcAmplitude(settings) + calcJitterAmplitude(settings) + calcMaxRowShift(settings)) * sizeMultiplier + calcStrokeWidth(resolutionScale);
+		return Math.max(concentricLinePadding, bandPadding + offRowPadding);
+	}
+
+	/**
+	 * How far, in pixels, a stroke's end can move along its row when the band it was found in changes. A stroke's outer end is found by
+	 * walking from the band's edge by up to maxReach, and a piece shorter than minPieceLength next to that end can be dropped or kept. When a
+	 * change to the coastline joins or separates two bands, a row's stroke can appear, disappear or change length this far past the band
+	 * around the changed coastline.
+	 */
+	public static double calcStrokeEndWalkDistance(MapSettings settings, double resolutionScale)
+	{
+		return (calcMaxReach(settings) + minPieceLength) * MapCreator.calcSizeMultiplierFromResolutionScale(resolutionScale) + calcOverhang(calcStrokeWidth(resolutionScale));
 	}
 
 	/**
@@ -228,13 +230,14 @@ public class WaveLineDrawer
 	/**
 	 * Draws wave lines in white into target.
 	 *
-	 * Where strokes go is worked out from the placement area, which must extend at least {@link #calcPlacementMargin} past the target on
-	 * every side. The strokes drawn into the target then depend only on the map, not on where the target is, except within
-	 * {@link #calcEffectsPadding} of its edges.
+	 * Where strokes go is worked out from the placement area, which must extend at least {@link #calcStrokeEndWalkDistance} past each side of
+	 * the drawn area. Coastlines and land just outside the placement area can affect strokes within {@link #calcEffectsPadding} plus that
+	 * distance of its edges, so with that margin, the strokes drawn depend only on the map, not on what area is drawn, except within
+	 * {@link #calcEffectsPadding} of the drawn area's edges.
 	 *
 	 * @param target
-	 *            A grayscale image covering targetBounds.
-	 * @param targetBounds
+	 *            A grayscale image covering drawBounds.
+	 * @param drawBounds
 	 *            The area of the map the target covers, in graph coordinates.
 	 * @param curves
 	 *            The lines the concentric line is drawn along, including every one that passes through placementBounds.
@@ -245,7 +248,7 @@ public class WaveLineDrawer
 	 * @param placementBounds
 	 *            The area of the map, in graph coordinates, that strokes are placed from.
 	 */
-	public void drawWaveLines(Image target, Rectangle targetBounds, WorldGraph graph, List<CoastlineCurve> curves, Image landMask, Collection<Center> placementCenters,
+	public void drawWaveLines(Image target, Rectangle drawBounds, WorldGraph graph, List<CoastlineCurve> curves, Image landMask, Collection<Center> placementCenters,
 			Rectangle placementBounds)
 	{
 		if (reachDistribution == null)
@@ -272,12 +275,16 @@ public class WaveLineDrawer
 				// Include rows whose waves, jitter and stroke width reach into the target from just outside it.
 				double rowReach = (amplitude + jitterAmplitude) * sizeMultiplier + strokeWidth;
 				byte[] classes = new byte[width];
-				int firstRow = (int) Math.floor(((targetBounds.y - rowReach) / sizeMultiplier - maxRowShift) / rowSpacing);
-				int lastRow = (int) Math.ceil(((targetBounds.y + targetBounds.height + rowReach) / sizeMultiplier + maxRowShift) / rowSpacing);
+				int firstRow = (int) Math.floor(((drawBounds.y - rowReach) / sizeMultiplier - maxRowShift) / rowSpacing);
+				int lastRow = (int) Math.ceil(((drawBounds.y + drawBounds.height + rowReach) / sizeMultiplier + maxRowShift) / rowSpacing);
 				for (int row = firstRow; row <= lastRow; row++)
 				{
 					double yInGraph = getRowY(row) * sizeMultiplier;
-					int pixelRow = (int) Math.floor(yInGraph - placementBounds.y);
+					// A row just off the top or bottom of the map can still reach onto it, so it is placed using the nearest row of pixels on the
+					// map. That way a full draw, which has no pixels off the map, and an incremental draw that reaches past the map's edge place it
+					// the same way. What it draws off the map is clipped.
+					double yOnMap = Math.max(graph.bounds.y, Math.min(graph.bounds.y + graph.bounds.height - 1.0, yInGraph));
+					int pixelRow = (int) Math.floor(yOnMap - placementBounds.y);
 					if (pixelRow < 0 || pixelRow >= height)
 					{
 						continue;
@@ -285,7 +292,13 @@ public class WaveLineDrawer
 
 					for (int x = 0; x < width; x++)
 					{
-						if (landPixels.getNormalizedPixelLevel(x, pixelRow) > 0.5f)
+						double xInGraph = x + placementBounds.x;
+						if (xInGraph < graph.bounds.x || xInGraph >= graph.bounds.x + graph.bounds.width)
+						{
+							// Strokes that reach the map's left or right edge continue past it, the same as at the edge of a full draw.
+							classes[x] = keepOutClass;
+						}
+						else if (landPixels.getNormalizedPixelLevel(x, pixelRow) > 0.5f)
 						{
 							classes[x] = keepOutClass;
 						}
@@ -296,7 +309,7 @@ public class WaveLineDrawer
 						}
 					}
 
-					drawRow(p, row, yInGraph, classes, segmentGrid, concentricLineOuterRadius, placementBounds, targetBounds);
+					drawRow(p, row, yInGraph, classes, segmentGrid, concentricLineOuterRadius, placementBounds, drawBounds);
 				}
 			}
 		}
@@ -357,16 +370,34 @@ public class WaveLineDrawer
 	}
 
 	/**
+	 * The most jitter moves a row up or down, in units. Each row gets at most half the space left between it and each neighbor, so the jitter
+	 * of two neighboring rows can't make them touch. Rows that row spacing variation moved close to a neighbor get less jitter, and rows that
+	 * are evenly spaced get the full amount.
+	 */
+	private double getRowJitterAmplitude(int row)
+	{
+		if (jitterAmplitude == 0.0)
+		{
+			return 0.0;
+		}
+		double y = getRowY(row);
+		double spaceAbove = y - getRowY(row - 1) - minRowSeparation;
+		double spaceBelow = getRowY(row + 1) - y - minRowSeparation;
+		return Math.min(jitterAmplitude, Math.max(0.0, Math.min(spaceAbove, spaceBelow) / 2.0));
+	}
+
+	/**
 	 * Draws the strokes of one row.
 	 *
 	 * @param classes
-	 *            For each pixel along the row in the placement area, whether it is outside the band, in it, or kept clear of wave lines.
+	 *            For each pixel along the row in placementBounds, whether it is outside the band, in it, or kept clear of wave lines.
 	 */
 	private void drawRow(Painter p, int row, double yInGraph, byte[] classes, SegmentGrid segmentGrid, double concentricLineOuterRadius, Rectangle placementBounds,
-			Rectangle targetBounds)
+			Rectangle drawBounds)
 	{
 		int width = classes.length;
 		double overhang = calcOverhang(strokeWidth);
+		double rowJitterAmplitude = getRowJitterAmplitude(row);
 		BreakPattern breakPattern = null;
 
 		int x = 0;
@@ -420,7 +451,7 @@ public class WaveLineDrawer
 			breakPattern.extendTo(endInUnits);
 			for (double[] drawInterval : breakPattern.drawIntervals)
 			{
-				drawPiece(p, row, yInGraph, Math.max(startInUnits, drawInterval[0]), Math.min(endInUnits, drawInterval[1]), targetBounds);
+				drawPiece(p, row, yInGraph, rowJitterAmplitude, Math.max(startInUnits, drawInterval[0]), Math.min(endInUnits, drawInterval[1]), drawBounds);
 			}
 		}
 	}
@@ -496,25 +527,31 @@ public class WaveLineDrawer
 	}
 
 	/**
-	 * The distances wave lines reach out from the concentric line, in units. Each distance is the wave line length plus the length variation
-	 * times a standard normal value, which is clamped to maxReachStandardDeviations so no line reaches across the ocean, and the distance is
-	 * then kept from going below zero.
+	 * The distances wave lines reach out from the concentric line, in units: the wave line length plus a normally distributed variation,
+	 * clamped at maxReachStandardDeviations. The variation is scaled so that the clamp lands at the length variation's share of
+	 * maxLengthVariationAsFractionOfLength times the length, which keeps the distances symmetric around the length, so their average is the
+	 * length, and never lets them reach zero.
 	 */
 	private record ReachDistribution(double mean, double standardDeviation)
 	{
 		/**
-		 * @return The distribution for the settings' wave line length and length variation, or null if no wave line can have any length.
+		 * @return The distribution for the settings' wave line length and length variation, or null if wave lines have no length.
 		 */
 		static ReachDistribution create(MapSettings settings)
 		{
-			ReachDistribution distribution = new ReachDistribution(settings.waveLineLength, Math.max(0.0, settings.waveLineLengthVariation));
-			return distribution.getMaxReach() > 0.0 ? distribution : null;
+			if (settings.waveLineLength <= 0)
+			{
+				return null;
+			}
+			double variation = Math.max(0, Math.min(10, settings.waveLineLengthVariation)) / 10.0;
+			double maxDeviation = settings.waveLineLength * maxLengthVariationAsFractionOfLength * variation;
+			return new ReachDistribution(settings.waveLineLength, maxDeviation / maxReachStandardDeviations);
 		}
 
 		double getReach(double standardNormalValue)
 		{
 			double clamped = Math.max(-maxReachStandardDeviations, Math.min(maxReachStandardDeviations, standardNormalValue));
-			return Math.max(0.0, mean + standardDeviation * clamped);
+			return mean + standardDeviation * clamped;
 		}
 
 		double getMaxReach()
@@ -568,7 +605,7 @@ public class WaveLineDrawer
 	/**
 	 * Draws the part of a row's stroke from startInUnits to endInUnits, if it is long enough to draw.
 	 */
-	private void drawPiece(Painter p, int row, double yInGraph, double startInUnits, double endInUnits, Rectangle targetBounds)
+	private void drawPiece(Painter p, int row, double yInGraph, double rowJitterAmplitude, double startInUnits, double endInUnits, Rectangle drawBounds)
 	{
 		if (endInUnits - startInUnits < minPieceLength)
 		{
@@ -594,8 +631,8 @@ public class WaveLineDrawer
 		for (double xInUnits : samples)
 		{
 			double phase = getPhase(row, xInUnits);
-			double y = yInGraph - targetBounds.y - amplitudeInPixels * getWaveHeight(shape, row, phase) + sampleJitter(row, xInUnits) * sizeMultiplier;
-			points.add(new FloatPoint((float) (xInUnits * sizeMultiplier - targetBounds.x), (float) y));
+			double y = yInGraph - drawBounds.y - amplitudeInPixels * getWaveHeight(shape, row, phase) + sampleJitter(row, rowJitterAmplitude, xInUnits) * sizeMultiplier;
+			points.add(new FloatPoint((float) (xInUnits * sizeMultiplier - drawBounds.x), (float) y));
 		}
 		p.drawPolylineFloat(points);
 	}
@@ -685,13 +722,13 @@ public class WaveLineDrawer
 	/**
 	 * A smooth random vertical offset along a row, in units.
 	 */
-	private double sampleJitter(int row, double xInUnits)
+	private double sampleJitter(int row, double rowJitterAmplitude, double xInUnits)
 	{
-		if (jitterAmplitude == 0.0)
+		if (rowJitterAmplitude == 0.0)
 		{
 			return 0.0;
 		}
-		return jitterAmplitude * sampleSmoothNoise(jitterSalt, row, xInUnits, wavelength * jitterControlPointSpacingAsMultipleOfWavelength);
+		return rowJitterAmplitude * sampleSmoothNoise(jitterSalt, row, xInUnits, wavelength * jitterControlPointSpacingAsMultipleOfWavelength);
 	}
 
 	/**

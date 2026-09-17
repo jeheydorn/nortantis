@@ -296,7 +296,7 @@ public class MapCreatorTest
 		settings.jitterToConcentricWaves = true;
 		settings.waveLineRowSpacing = 24;
 		settings.waveLineRowSpacingVariation = 10;
-		settings.waveLineLength = 20;
+		settings.waveLineLength = 40;
 		settings.waveLineLengthVariation = 10;
 
 		// New water away from the ocean is a lake, so draw wave lines in lakes for the interior changes to make a new coastline with waves.
@@ -305,6 +305,7 @@ public class MapCreatorTest
 		int failCount = 0;
 		for (int location = 0; location < 4; location++)
 		{
+			failCount += runOneCenterIslandChanges(settings, settingsFileName, location);
 			failCount += runOneLandWaterChange(settings.deepCopy(), settingsFileName, true, location);
 			failCount += runOneLandWaterChange(settings.deepCopy(), settingsFileName, false, location);
 			final int clustersToSkip = location;
@@ -336,7 +337,8 @@ public class MapCreatorTest
 		MapParts mapParts = new MapParts();
 		new MapCreator().createMap(settings, null, mapParts).close();
 		WorldGraph graph = mapParts.graph;
-		int padding = (int) Math.ceil(WaveLineDrawer.calcEffectsPadding(settings, settings.resolution));
+		// Pad the same way an incremental redraw does.
+		double padding = MapCreator.calcEffectsPadding(settings);
 
 		try (Image fullLandMask = createLandMask(graph, null, graph.bounds); Image fullWaves = new MapCreator().createOceanWavesAndShading(settings, graph, settings.resolution, fullLandMask, null, null).getFirst())
 		{
@@ -454,6 +456,16 @@ public class MapCreatorTest
 		MapCreator incrementalCreator = new MapCreator();
 		incrementalCreator.overrideMemoryMode(false);
 		IntRectangle replaceBounds = incrementalCreator.incrementalUpdateForCentersAndEdges(settings, mapParts, incrementalMap, centersToChange, new HashSet<>(), false);
+
+		// Redraw what the change asked to have redrawn at low priority, as the editor does once it finishes the change itself.
+		if (!incrementalCreator.centersToRedrawLowPriority.isEmpty())
+		{
+			MapCreator lowPriorityCreator = new MapCreator();
+			lowPriorityCreator.overrideMemoryMode(false);
+			IntRectangle lowPriorityBounds = lowPriorityCreator.incrementalUpdateForCentersAndEdges(settings, mapParts, incrementalMap,
+					new HashSet<>(incrementalCreator.centersToRedrawLowPriority.keySet()), new HashSet<>(), true);
+			replaceBounds = replaceBounds.add(lowPriorityBounds);
+		}
 
 		MapCreator fullCreator = new MapCreator();
 		fullCreator.overrideMemoryMode(false);
@@ -629,6 +641,68 @@ public class MapCreatorTest
 				}
 			}
 			return cluster;
+		}
+		return new HashSet<>();
+	}
+
+	/**
+	 * Adds a one-polygon island in open ocean and redraws incrementally, then removes that island from a map that already has it and redraws
+	 * incrementally, comparing each against a full draw. Returns how many of the two did not match.
+	 */
+	private int runOneCenterIslandChanges(MapSettings settings, String settingsFileName, int location)
+	{
+		MapParts mapParts = new MapParts();
+		new MapCreator().createMap(settings.deepCopy(), null, mapParts).close();
+		Set<Integer> island = findOpenOceanCenter(mapParts.graph, location);
+		if (island.isEmpty())
+		{
+			return 0;
+		}
+
+		int failCount = runOneLandWaterChange(settings.deepCopy(), settingsFileName, false, location, graph -> island, " add one polygon island");
+
+		MapSettings withIsland = settings.deepCopy();
+		for (int index : island)
+		{
+			CenterEdit existing = withIsland.edits.centerEdits.get(index);
+			withIsland.edits.centerEdits.put(index, new CenterEdit(index, false, false, null, existing.icon, null));
+		}
+		failCount += runOneLandWaterChange(withIsland, settingsFileName, true, location, graph -> island, " remove one polygon island");
+		return failCount;
+	}
+
+	/**
+	 * Finds an ocean center with nothing but ocean within three steps of it, which becomes a one-polygon island when changed to land.
+	 */
+	private Set<Integer> findOpenOceanCenter(WorldGraph graph, int centersToSkip)
+	{
+		int skipped = 0;
+		for (Center center : graph.centers)
+		{
+			if (!center.isWater || center.isLake || center.isBorder)
+			{
+				continue;
+			}
+			Set<Center> nearby = new HashSet<>(center.neighbors);
+			for (int step = 0; step < 2; step++)
+			{
+				Set<Center> next = new HashSet<>(nearby);
+				for (Center c : nearby)
+				{
+					next.addAll(c.neighbors);
+				}
+				nearby = next;
+			}
+			if (nearby.stream().anyMatch(c -> !c.isWater || c.isLake || c.isBorder))
+			{
+				continue;
+			}
+			if (skipped < centersToSkip * 40)
+			{
+				skipped++;
+				continue;
+			}
+			return new HashSet<>(Set.of(center.index));
 		}
 		return new HashSet<>();
 	}

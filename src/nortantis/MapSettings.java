@@ -105,8 +105,8 @@ public class MapSettings implements Serializable
 	 */
 	public int waveLineLength = defaultWaveLineLength;
 	/**
-	 * The standard deviation of the distance wave lines reach out from the concentric line, in the same units as waveLineRowSpacing. The
-	 * distances vary around waveLineLength, clamped so they are never negative.
+	 * How much the distance wave lines reach out from the concentric line varies around waveLineLength, from 0 to 10. At 10 the distance
+	 * ranges from 10% to 190% of waveLineLength.
 	 */
 	public int waveLineLengthVariation = defaultWaveLineLengthVariation;
 	public boolean drawOceanEffectsInLakes;
