@@ -997,9 +997,18 @@ public class SwingHelper
 
 	/**
 	 * Creates a left-aligned panel with a label above a row of components, for fitting labeled components into a vertical list of other
-	 * components.
+	 * components. Space above the label separates it from whatever is above, so that it's clear which components the label belongs to.
 	 */
 	public static JPanel createPanelWithLabelAbove(String label, String toolTip, List<? extends Component> components)
+	{
+		return createPanelWithLabelAbove(label, toolTip, components, true);
+	}
+
+	/**
+	 * Like createPanelWithLabelAbove(String, String, List), but optionally without the space above the label, for a panel that belongs with
+	 * the component above it.
+	 */
+	public static JPanel createPanelWithLabelAbove(String label, String toolTip, List<? extends Component> components, boolean addSpaceAbove)
 	{
 		JLabel labelComponent = new JLabel(label);
 		labelComponent.setToolTipText(toolTip);
@@ -1016,7 +1025,10 @@ public class SwingHelper
 		JPanel panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 		panel.setAlignmentX(Component.LEFT_ALIGNMENT);
-		panel.add(Box.createVerticalStrut(spaceAbovePanelWithLabelAbove));
+		if (addSpaceAbove)
+		{
+			panel.add(Box.createVerticalStrut(spaceAbovePanelWithLabelAbove));
+		}
 		panel.add(labelComponent);
 		panel.add(componentRow);
 		return panel;

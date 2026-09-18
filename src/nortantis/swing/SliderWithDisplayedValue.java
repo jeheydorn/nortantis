@@ -78,7 +78,16 @@ public class SliderWithDisplayedValue
 	 */
 	public JPanel createPanelWithLabelAbove(String label, String toolTip)
 	{
-		return SwingHelper.createPanelWithLabelAbove(label, toolTip, Arrays.asList(slider, valueDisplay));
+		return createPanelWithLabelAbove(label, toolTip, true);
+	}
+
+	/**
+	 * @param addSpaceAbove
+	 *            Whether to separate the label from what is above it. See SwingHelper.createPanelWithLabelAbove.
+	 */
+	public JPanel createPanelWithLabelAbove(String label, String toolTip, boolean addSpaceAbove)
+	{
+		return SwingHelper.createPanelWithLabelAbove(label, toolTip, Arrays.asList(slider, valueDisplay), addSpaceAbove);
 	}
 
 	public RowHider addToOrganizer(GridBagOrganizer organizer, String label, String toolTip)

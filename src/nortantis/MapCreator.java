@@ -1855,19 +1855,30 @@ public class MapCreator implements WarningLogger
 	}
 
 	/**
-	 * The most, in pixels, that jitter may move a concentric line or the line wave lines are drawn outside of.
+	 * The most, in pixels, that jitter may move a concentric line or the line wave lines are drawn outside of: as far as keeps it at least a
+	 * line's width away from the coastline and from the lines beside it.
 	 *
-	 * Concentric waves leave half the width between waves clear between one wave and the next, and the same between the innermost wave and
-	 * the coast. Neighboring waves jitter independently and so can move toward each other, which leaves each of them half of that. The line
-	 * for wave lines is drawn half as far from the coast, with no neighbor to collide with, so the same amount is what keeps it off the
-	 * coast.
+	 * Each line is drawn around a curve along the coast, with its inner edge a fixed distance from that curve, and jitter moves the curve by
+	 * at most this much. The coastline is drawn along the same curve, so between the two there is that distance, less the jitter and half
+	 * the coastline's width. Neighboring concentric waves jitter independently and can move toward each other, so each gets half of the
+	 * space between them.
 	 */
-	static double calcMaxJitter(double resolutionScaled)
+	static double calcMaxJitter(MapSettings settings, double resolutionScaled)
 	{
-		double sizeMultiplier = calcSizeMultiplierFromResolutionScaleRounded(resolutionScaled);
-		double widthBetweenWaves = concentricWaveWidthBetweenWaves * sizeMultiplier;
-		final double marginSoLinesDontQuiteTouch = 0.9;
-		return 0.25 * widthBetweenWaves * marginSoLinesDontQuiteTouch;
+		double waveWidth = concentricWaveLineWidth * calcSizeMultiplierFromResolutionScaleRounded(resolutionScaled);
+		double minSpace = calcConcentricWaveVisibleLineWidth(resolutionScaled);
+		double coastlineHalfWidth = settings.coastlineWidth * resolutionScaled / 2.0;
+		// The space between a concentric wave and the next one in, which is also the distance from the innermost wave's inner edge to its
+		// curve.
+		double spaceBetweenWaves = (calcConcentricWaveSpacing(resolutionScaled) - waveWidth) / 2.0;
+		if (settings.hasWaveLines())
+		{
+			double innerEdgeDistance = (calcWaveLinesConcentricLineOuterWidth(resolutionScaled) - waveWidth) / 2.0;
+			return Math.max(0.0, innerEdgeDistance - coastlineHalfWidth - minSpace);
+		}
+		double awayFromCoast = spaceBetweenWaves - coastlineHalfWidth - minSpace;
+		double awayFromNeighbors = (spaceBetweenWaves - minSpace) / 2.0;
+		return Math.max(0.0, Math.min(awayFromCoast, awayFromNeighbors));
 	}
 
 	/**
@@ -1881,7 +1892,7 @@ public class MapCreator implements WarningLogger
 			return 0.0;
 		}
 		int level = settings.hasWaveLines() ? settings.waveLineJitterLevel : settings.jitterLevel;
-		return calcMaxJitter(resolutionScaled) * Math.max(0, Math.min(MapSettings.maxJitterLevel, level)) / MapSettings.maxJitterLevel;
+		return calcMaxJitter(settings, resolutionScaled) * Math.max(0, Math.min(MapSettings.maxJitterLevel, level)) / MapSettings.maxJitterLevel;
 	}
 
 	private static float calcScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(int kernelSize, double sizeMultiplier)

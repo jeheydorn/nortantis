@@ -3199,39 +3199,14 @@ public class WorldGraph extends VoronoiGraph
 				continue;
 			}
 
+			// The path follows the coastline's corners, except that with jagged lines it follows the noise of edges long enough that the
+			// noise could otherwise reach the waves. Other line styles' curves are approximated by the smoothing below.
 			final double maxDistanceToIgnoreNoisyEdgesWhenCoastlinesUseJaggedLines = widthBetweenWaves * 0.5;
-			boolean isPolygon = false;
-
-			List<Point> drawPoints;
-			if (variationRange > 0)
+			List<Point> drawPoints = edgeListToDrawPoints(coastline, true, maxDistanceToIgnoreNoisyEdgesWhenCoastlinesUseJaggedLines);
+			boolean isPolygon = drawPoints.size() > 2 && drawPoints.get(0).equals(drawPoints.get(drawPoints.size() - 1));
+			if (!isPolygon)
 			{
-				// Get the path without curves, except cases where jagged lines
-				// might overlap with waves when the coastlines use curves.
-				if (noisyEdges.getLineStyle() == LineStyle.Jagged)
-				{
-					drawPoints = edgeListToDrawPoints(coastline, true, maxDistanceToIgnoreNoisyEdgesWhenCoastlinesUseJaggedLines);
-				}
-				else
-				{
-					// Always ignore noisy edges because we will add the curves
-					// after adding the variance.
-					drawPoints = edgeListToDrawPoints(coastline, true, Double.MAX_VALUE);
-				}
-				isPolygon = drawPoints.size() > 2 && drawPoints.get(0).equals(drawPoints.get(drawPoints.size() - 1));
-				if (!isPolygon)
-				{
-					addPointsOffMapToMakeWavesGoToEdgeOfMap(drawPoints);
-				}
-				drawPoints = addJitter(randomSeed, drawPoints, variationRange, isPolygon);
-			}
-			else
-			{
-				drawPoints = edgeListToDrawPoints(coastline, true, maxDistanceToIgnoreNoisyEdgesWhenCoastlinesUseJaggedLines);
-				isPolygon = drawPoints.size() > 2 && drawPoints.get(0).equals(drawPoints.get(drawPoints.size() - 1));
-				if (!isPolygon)
-				{
-					addPointsOffMapToMakeWavesGoToEdgeOfMap(drawPoints);
-				}
+				addPointsOffMapToMakeWavesGoToEdgeOfMap(drawPoints);
 			}
 
 			// When drawing concentric waves with random variation, we need more points in the curve at lower resolutions to make it look good.
@@ -3241,6 +3216,13 @@ public class WorldGraph extends VoronoiGraph
 			if (drawPoints == null || drawPoints.size() <= 1)
 			{
 				continue;
+			}
+
+			// Jitter is added after smoothing because smoothing can move the line farther than the points it passes through were moved,
+			// which would let lines drawn along the same coastline with different jitter cross each other.
+			if (variationRange > 0)
+			{
+				drawPoints = addJitter(randomSeed, drawPoints, variationRange, isPolygon);
 			}
 
 			result.add(new CoastlineCurve(drawPoints, isPolygon, coastline.get(0).index));

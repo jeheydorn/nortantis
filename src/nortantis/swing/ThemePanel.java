@@ -1047,8 +1047,9 @@ public class ThemePanel extends JTabbedPane
 		});
 
 		jitterLevelSlider = createWaveLineSlider(1, MapSettings.maxJitterLevel);
+		// The slider appears only while the jitter checkbox is checked and belongs with it, so it isn't separated from it.
 		jitterLevelPanel = new SliderWithDisplayedValue(jitterLevelSlider).createPanelWithLabelAbove(Translation.get("theme.jitterLevel.label"),
-				Translation.get("theme.jitterLevel.help"));
+				Translation.get("theme.jitterLevel.help"), false);
 
 		// Wave lines have their own fading and jitter so that changing either style leaves the other's look alone.
 		fadeWaveLinesCheckbox = new JCheckBox(Translation.get("theme.fadeOuterWaves"));
@@ -1067,7 +1068,7 @@ public class ThemePanel extends JTabbedPane
 
 		waveLineJitterLevelSlider = createWaveLineSlider(1, MapSettings.maxJitterLevel);
 		waveLineJitterLevelPanel = new SliderWithDisplayedValue(waveLineJitterLevelSlider)
-				.createPanelWithLabelAbove(Translation.get("theme.jitterLevel.label"), Translation.get("theme.jitterLevel.help"));
+				.createPanelWithLabelAbove(Translation.get("theme.jitterLevel.label"), Translation.get("theme.jitterLevel.help"), false);
 
 		brokenLinesCheckbox = new JCheckBox(Translation.get("theme.brokenLines"));
 		createMapChangeListenerForTerrainChange(brokenLinesCheckbox);
