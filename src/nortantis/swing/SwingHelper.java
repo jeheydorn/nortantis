@@ -45,6 +45,11 @@ public class SwingHelper
 	public static final int colorPickerLeftPadding = 2;
 	public static final int sidePanelScrollSpeed = 30;
 	private static final int spaceAbovePanelWithLabelAbove = 14;
+	/**
+	 * The space above a panel with a label above it that belongs with the component above it, which is about what separates two checkboxes
+	 * in a list.
+	 */
+	private static final int spaceAboveAttachedPanelWithLabelAbove = 4;
 
 	private static int calcSidePanelMinWidth()
 	{
@@ -1005,10 +1010,10 @@ public class SwingHelper
 	}
 
 	/**
-	 * Like createPanelWithLabelAbove(String, String, List), but optionally without the space above the label, for a panel that belongs with
-	 * the component above it.
+	 * Like createPanelWithLabelAbove(String, String, List), but optionally with only the usual space between components above the label,
+	 * for a panel that belongs with the component above it.
 	 */
-	public static JPanel createPanelWithLabelAbove(String label, String toolTip, List<? extends Component> components, boolean addSpaceAbove)
+	public static JPanel createPanelWithLabelAbove(String label, String toolTip, List<? extends Component> components, boolean separateFromAbove)
 	{
 		JLabel labelComponent = new JLabel(label);
 		labelComponent.setToolTipText(toolTip);
@@ -1025,10 +1030,7 @@ public class SwingHelper
 		JPanel panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 		panel.setAlignmentX(Component.LEFT_ALIGNMENT);
-		if (addSpaceAbove)
-		{
-			panel.add(Box.createVerticalStrut(spaceAbovePanelWithLabelAbove));
-		}
+		panel.add(Box.createVerticalStrut(separateFromAbove ? spaceAbovePanelWithLabelAbove : spaceAboveAttachedPanelWithLabelAbove));
 		panel.add(labelComponent);
 		panel.add(componentRow);
 		return panel;

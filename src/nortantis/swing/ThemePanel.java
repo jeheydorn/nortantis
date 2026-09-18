@@ -1047,7 +1047,7 @@ public class ThemePanel extends JTabbedPane
 		});
 
 		jitterLevelSlider = createWaveLineSlider(1, MapSettings.maxJitterLevel);
-		// The slider appears only while the jitter checkbox is checked and belongs with it, so it isn't separated from it.
+		// The slider appears only while the jitter checkbox is checked and belongs with it, so it gets no extra space above it.
 		jitterLevelPanel = new SliderWithDisplayedValue(jitterLevelSlider).createPanelWithLabelAbove(Translation.get("theme.jitterLevel.label"),
 				Translation.get("theme.jitterLevel.help"), false);
 
