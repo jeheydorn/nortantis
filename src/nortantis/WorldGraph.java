@@ -12,6 +12,7 @@ import nortantis.platform.Transform;
 import nortantis.util.GeometryHelper;
 import nortantis.util.Helper;
 import nortantis.util.Range;
+import nortantis.util.Tuple2;
 import org.apache.commons.lang3.function.TriFunction;
 
 import java.util.*;
@@ -3167,11 +3168,14 @@ public class WorldGraph extends VoronoiGraph
 	public void drawCoastlineWithVariation(Painter p, long randomSeed, double variationRange, double widthBetweenWaves, boolean addRandomBreaks, Rectangle drawBounds,
 			BiFunction<Boolean, Random, Double> getNewSkipDistance, List<List<Edge>> shoreEdges)
 	{
-		drawCoastlineCurves(p, createCoastlineCurvesWithVariation(randomSeed, variationRange, widthBetweenWaves, shoreEdges), randomSeed, addRandomBreaks, drawBounds, getNewSkipDistance);
+		// Jagged edges shorter than this have noise too small to reach the waves.
+		double maxJaggedEdgeLengthToStraighten = widthBetweenWaves * 0.5;
+		drawCoastlineCurves(p, createCoastlineCurvesWithVariation(randomSeed, variationRange, maxJaggedEdgeLengthToStraighten, shoreEdges), randomSeed, addRandomBreaks, drawBounds,
+				getNewSkipDistance);
 	}
 
 	/**
-	 * A smoothed line that follows one coastline, as used to draw concentric waves.
+	 * A line that follows one coastline, as used to draw concentric waves.
 	 *
 	 * @param points
 	 *            The points of the line, in graph coordinates.
@@ -3187,8 +3191,65 @@ public class WorldGraph extends VoronoiGraph
 	/**
 	 * Creates the smoothed lines that concentric waves draw along the given shore edges, with random variation added to each line if
 	 * variationRange is positive.
+	 *
+	 * @param maxJaggedEdgeLengthToStraighten
+	 *            When coastlines use jagged lines, edges this long or shorter are followed straight from corner to corner, and longer ones
+	 *            follow their noise.
 	 */
-	public List<CoastlineCurve> createCoastlineCurvesWithVariation(long randomSeed, double variationRange, double widthBetweenWaves, List<List<Edge>> shoreEdges)
+	public List<CoastlineCurve> createCoastlineCurvesWithVariation(long randomSeed, double variationRange, double maxJaggedEdgeLengthToStraighten, List<List<Edge>> shoreEdges)
+	{
+		return createCoastlineCurves(randomSeed, variationRange, shoreEdges, true, coastline ->
+		{
+			// The path follows the coastline's corners, except that with jagged lines it follows the noise of long edges. Other line styles'
+			// curves are approximated by the smoothing below.
+			List<Point> drawPoints = edgeListToDrawPoints(coastline, true, maxJaggedEdgeLengthToStraighten);
+			boolean isPolygon = isClosed(drawPoints);
+			if (!isPolygon)
+			{
+				addPointsOffMapToMakeWavesGoToEdgeOfMap(drawPoints);
+			}
+
+			// When drawing concentric waves with random variation, we need more points in the curve at lower resolutions to make it look good.
+			double distanceBetweenPoints = CurveCreator.getDistanceBetweenPointsForResolutionUngated(resolutionScale);
+			return new Tuple2<>(CurveCreator.createCurve(drawPoints, distanceBetweenPoints), isPolygon);
+		});
+	}
+
+	/**
+	 * Creates lines that follow the given shore edges exactly as the coastline is drawn, with random variation added to each line if
+	 * variationRange is positive. Every point of the coastline stays within variationRange of the line, and every point of the line within
+	 * variationRange of the coastline.
+	 */
+	public List<CoastlineCurve> createCoastlineCurvesAlongDrawnCoastline(long randomSeed, double variationRange, List<List<Edge>> shoreEdges)
+	{
+		// The coastline can be jagged, and a jagged line has no meaningful perpendicular direction at each point, so the points are moved
+		// by a smooth offset that depends only on where they are.
+		return createCoastlineCurves(randomSeed, variationRange, shoreEdges, false, coastline ->
+		{
+			List<Point> drawPoints = edgeListToDrawPoints(coastline, false, 0.0);
+			boolean isPolygon = isClosed(drawPoints);
+			if (!isPolygon)
+			{
+				addPointsOffMapToMakeWavesGoToEdgeOfMap(drawPoints);
+			}
+			return new Tuple2<>(drawPoints, isPolygon);
+		});
+	}
+
+	private static boolean isClosed(List<Point> points)
+	{
+		return points.size() > 2 && points.get(0).equals(points.get(points.size() - 1));
+	}
+
+	/**
+	 * @param jitterPerpendicularToLine
+	 *            Whether jitter moves each point perpendicular to the line, which shows more of the jitter, rather than by an offset that
+	 *            depends only on the point's position, which works for lines too jagged to have a meaningful perpendicular direction.
+	 * @param createPath
+	 *            Creates the path a line follows along one coastline, and whether that path is closed.
+	 */
+	private List<CoastlineCurve> createCoastlineCurves(long randomSeed, double variationRange, List<List<Edge>> shoreEdges, boolean jitterPerpendicularToLine,
+			Function<List<Edge>, Tuple2<List<Point>, Boolean>> createPath)
 	{
 		List<CoastlineCurve> result = new ArrayList<>();
 		for (List<Edge> coastline : shoreEdges)
@@ -3199,20 +3260,9 @@ public class WorldGraph extends VoronoiGraph
 				continue;
 			}
 
-			// The path follows the coastline's corners, except that with jagged lines it follows the noise of edges long enough that the
-			// noise could otherwise reach the waves. Other line styles' curves are approximated by the smoothing below.
-			final double maxDistanceToIgnoreNoisyEdgesWhenCoastlinesUseJaggedLines = widthBetweenWaves * 0.5;
-			List<Point> drawPoints = edgeListToDrawPoints(coastline, true, maxDistanceToIgnoreNoisyEdgesWhenCoastlinesUseJaggedLines);
-			boolean isPolygon = drawPoints.size() > 2 && drawPoints.get(0).equals(drawPoints.get(drawPoints.size() - 1));
-			if (!isPolygon)
-			{
-				addPointsOffMapToMakeWavesGoToEdgeOfMap(drawPoints);
-			}
-
-			// When drawing concentric waves with random variation, we need more points in the curve at lower resolutions to make it look good.
-			double distanceBetweenPoints = CurveCreator.getDistanceBetweenPointsForResolutionUngated(resolutionScale);
-			drawPoints = CurveCreator.createCurve(drawPoints, distanceBetweenPoints);
-
+			Tuple2<List<Point>, Boolean> path = createPath.apply(coastline);
+			List<Point> drawPoints = path.getFirst();
+			boolean isPolygon = path.getSecond();
 			if (drawPoints == null || drawPoints.size() <= 1)
 			{
 				continue;
@@ -3222,7 +3272,8 @@ public class WorldGraph extends VoronoiGraph
 			// which would let lines drawn along the same coastline with different jitter cross each other.
 			if (variationRange > 0)
 			{
-				drawPoints = addJitter(randomSeed, drawPoints, variationRange, isPolygon);
+				drawPoints = jitterPerpendicularToLine ? addJitter(randomSeed, drawPoints, variationRange, isPolygon)
+						: addJitterByOffset(randomSeed, drawPoints, variationRange);
 			}
 
 			result.add(new CoastlineCurve(drawPoints, isPolygon, coastline.get(0).index));
@@ -3363,6 +3414,30 @@ public class WorldGraph extends VoronoiGraph
 
 			double amount = variationRange * sampleJitterNoise(randomSeed, point.x / resolutionScale, point.y / resolutionScale, spacing / resolutionScale);
 			result.add(new Point(point.x - amount * directionY / length, point.y + amount * directionX / length));
+		}
+		return result;
+	}
+
+	/**
+	 * Moves each point by a smoothly varying random offset of up to variationRange in any direction, which depends only on where the point
+	 * is. Nearby points move nearly alike, so the line keeps its shape up close and wanders over longer distances, and because the offset
+	 * moves everything near a point together, no part of the line ends up farther than variationRange from where it was, however sharply it
+	 * turns.
+	 */
+	private List<Point> addJitterByOffset(long randomSeed, List<Point> points, double variationRange)
+	{
+		double spacing = jitterControlPointSpacing;
+		long seedForY = Helper.mixSeed(randomSeed ^ 0x5A17C0DE10L);
+		List<Point> result = new ArrayList<>(points.size());
+		for (Point point : points)
+		{
+			double x = point.x / resolutionScale;
+			double y = point.y / resolutionScale;
+			double offsetX = sampleJitterNoise(randomSeed, x, y, spacing);
+			double offsetY = sampleJitterNoise(seedForY, x, y, spacing);
+			double length = Math.sqrt(offsetX * offsetX + offsetY * offsetY);
+			double scale = length > 1.0 ? variationRange / length : variationRange;
+			result.add(new Point(point.x + offsetX * scale, point.y + offsetY * scale));
 		}
 		return result;
 	}

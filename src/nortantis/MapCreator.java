@@ -1792,14 +1792,14 @@ public class MapCreator implements WarningLogger
 	{
 		Image oceanEffects = Image.create((int) drawBounds.width, (int) drawBounds.height, ImageType.Grayscale8Bit);
 		double sizeMultiplier = calcSizeMultiplierFromResolutionScaleRounded(resolutionScaled);
-		double distanceFromCoast = concentricWaveWidthBetweenWaves * waveLinesConcentricLineDistanceScale * sizeMultiplier;
 		double waveWidth = concentricWaveLineWidth * sizeMultiplier;
 		double lineOuterWidth = calcWaveLinesConcentricLineOuterWidth(resolutionScaled);
 		double varianceRange = calcJitter(settings, resolutionScaled);
 
 		// See createConcentricWavesMask for why this searches the entire graph.
 		List<List<Edge>> shoreEdges = graph.findShoreEdges(centersToDraw, settings.drawOceanEffectsInLakes, true);
-		List<WorldGraph.CoastlineCurve> curves = graph.createCoastlineCurvesWithVariation(settings.backgroundRandomSeed, varianceRange, distanceFromCoast, shoreEdges);
+		// The line is close enough to the coast that anywhere it strayed from the coastline as drawn, the coastline could reach it.
+		List<WorldGraph.CoastlineCurve> curves = graph.createCoastlineCurvesAlongDrawnCoastline(settings.backgroundRandomSeed, varianceRange, shoreEdges);
 
 		new WaveLineDrawer(settings, resolutionScaled).drawWaveLines(oceanEffects, graph, curves, landMask, centersToDraw, drawBounds);
 
