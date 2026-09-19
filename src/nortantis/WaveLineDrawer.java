@@ -165,10 +165,6 @@ public class WaveLineDrawer
 	 */
 	private static final double taperPressureVariation = 0.12;
 	private static final double taperPressureNoiseSpacing = 12.0;
-	/**
-	 * How far the tip of a tapered stroke curls up or down, as a multiple of the stroke width.
-	 */
-	private static final double taperCurl = 0.5;
 	private static final int roundCapSegments = 6;
 
 	private static final int outsideLevel = 0;
@@ -192,7 +188,6 @@ public class WaveLineDrawer
 	private static final long dashSalt = 0x5A17C0DE0BL;
 	private static final long dashKeepSalt = 0x5A17C0DE0CL;
 	private static final long taperPressureSalt = 0x5A17C0DE0DL;
-	private static final long taperCurlSalt = 0x5A17C0DE0EL;
 
 	private final MapSettings settings;
 	private final double resolutionScale;
@@ -852,7 +847,7 @@ public class WaveLineDrawer
 			boolean isEndFree = !(end >= runEndInGraph && reachesLineAtEnd);
 			double taperLength = dashTaperAsFractionOfHalfLength * (end - start) / 2.0 / sizeMultiplier;
 			drawPiece(p, row, yInGraph, rowJitterAmplitude, start / sizeMultiplier, end / sizeMultiplier, drawBounds,
-					new StrokeTaper(row, start / sizeMultiplier, end / sizeMultiplier, taperLength, isStartFree, isEndFree));
+					new StrokeTaper(start / sizeMultiplier, end / sizeMultiplier, taperLength, isStartFree, isEndFree));
 		}
 	}
 
@@ -981,7 +976,7 @@ public class WaveLineDrawer
 			}
 			// Wave dashes' stretches say which of their ends are free, and those ends taper.
 			StrokeTaper taper = first.length < 4 ? null
-					: new StrokeTaper(row, first[0] / sizeMultiplier, end / sizeMultiplier, solidDashTaperInWavelengths * wavelength, first[2] > 0.0, last[3] > 0.0);
+					: new StrokeTaper(first[0] / sizeMultiplier, end / sizeMultiplier, solidDashTaperInWavelengths * wavelength, first[2] > 0.0, last[3] > 0.0);
 			breakPattern = drawStretch(p, row, yInGraph, rowJitterAmplitude, first[0], end, taper, breakPattern, drawBounds);
 		}
 		return breakPattern;
@@ -1215,7 +1210,6 @@ public class WaveLineDrawer
 			{
 				double amount = taper.getAmount(xInUnits);
 				waveHeight *= 1.0 - taperFlattening * amount;
-				y += taper.getCurlDirection(xInUnits) * taperCurl * strokeWidth * amount * amount;
 				double pressure = 1.0 + taperPressureVariation * sampleSmoothNoise(taperPressureSalt, row, xInUnits, taperPressureNoiseSpacing);
 				widths[i] = strokeWidth * pressure * (1.0 - (1.0 - taperTipWidthFraction) * amount);
 			}
@@ -1288,9 +1282,8 @@ public class WaveLineDrawer
 	}
 
 	/**
-	 * How a stroke narrows toward its free ends: to a thin tip, with its waves flattening and the tip curling a little up or down, the way a
-	 * pen stroke does as the pen lifts. All of it depends only on where the stroke's ends are, so every piece of a stroke that breaks cut
-	 * into pieces tapers the same way.
+	 * How a stroke narrows toward its free ends: to a thin tip, with its waves flattening, the way a pen stroke does as the pen lifts. It
+	 * depends only on where the stroke's ends are, so every piece of a stroke that breaks cut into pieces tapers the same way.
 	 *
 	 * @param startInUnits
 	 *            Where the whole stroke starts.
@@ -1299,7 +1292,7 @@ public class WaveLineDrawer
 	 * @param lengthInUnits
 	 *            How far from each free end the narrowing reaches.
 	 */
-	private record StrokeTaper(int row, double startInUnits, double endInUnits, double lengthInUnits, boolean isStartFree, boolean isEndFree)
+	private record StrokeTaper(double startInUnits, double endInUnits, double lengthInUnits, boolean isStartFree, boolean isEndFree)
 	{
 		/**
 		 * How far a point on the stroke has narrowed, from 0 at full width to 1 at a free end's tip.
@@ -1315,15 +1308,6 @@ public class WaveLineDrawer
 			double fromEnd = isEndFree ? 1.0 - (endInUnits - xInUnits) / length : 0.0;
 			double amount = Math.max(0.0, Math.min(1.0, Math.max(fromStart, fromEnd)));
 			return amount * amount * (3.0 - 2.0 * amount);
-		}
-
-		/**
-		 * Which way, 1 for down or -1 for up, the nearer end of the stroke curls.
-		 */
-		double getCurlDirection(double xInUnits)
-		{
-			double end = xInUnits < (startInUnits + endInUnits) / 2.0 ? startInUnits : endInUnits;
-			return Helper.mixSeed(taperCurlSalt ^ row ^ Double.doubleToLongBits(end)) < 0 ? -1.0 : 1.0;
 		}
 	}
 
