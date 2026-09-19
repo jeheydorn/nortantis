@@ -103,6 +103,11 @@ public class WaveLineDrawer
 	 */
 	private static final double minDashReachAsFractionOfReach = 0.45;
 	/**
+	 * Rows pass over the concentric line where it keeps less than this many wavelengths of the row clear and touches no land.
+	 * See {@link #passOverGrazedLine}.
+	 */
+	private static final double maxGrazeToPassOverInWavelengths = 1.5;
+	/**
 	 * How far apart, as a multiple of the row spacing, the random values are that vary how far wave dashes reach.
 	 */
 	private static final double dashReachNoiseSpacingAsMultipleOfRowSpacing = 3.0;
@@ -345,7 +350,9 @@ public class WaveLineDrawer
 	{
 		double sizeMultiplier = MapCreator.calcSizeMultiplierFromResolutionScale(resolutionScale);
 		double concentricLinePadding = MapCreator.calcWaveLinesConcentricLineOuterWidth(settings, resolutionScale) + calcConcentricLineJitter(settings, resolutionScale);
-		double bandPadding = calcBandRadius(settings, resolutionScale) + calcConcentricLineJitter(settings, resolutionScale);
+		// Whether a row passes over a graze of the concentric line depends on the row up to a graze's length away.
+		double bandPadding = calcBandRadius(settings, resolutionScale) + calcConcentricLineJitter(settings, resolutionScale)
+				+ maxGrazeToPassOverInWavelengths * settings.getWaveRowStyle().rowSpacing() * wavelengthAsMultipleOfRowSpacing * sizeMultiplier;
 		if (settings.oceanWavesType == OceanWaves.WaveDashes)
 		{
 			// How far out a point is depends on its run up to a band radius away, whether a dash is drawn depends on its middle, so a change
@@ -423,6 +430,7 @@ public class WaveLineDrawer
 				// Include rows whose waves, jitter and stroke width reach into the target from just outside it.
 				double rowReach = (amplitude + jitterAmplitude) * sizeMultiplier + strokeWidth;
 				byte[] classes = new byte[width];
+				boolean[] isLand = new boolean[width];
 				int firstRow = (int) Math.floor(((drawBounds.y - rowReach) / sizeMultiplier - maxRowShift) / rowSpacing);
 				int lastRow = (int) Math.ceil(((drawBounds.y + drawBounds.height + rowReach) / sizeMultiplier + maxRowShift) / rowSpacing);
 				for (int row = firstRow; row <= lastRow; row++)
@@ -441,14 +449,17 @@ public class WaveLineDrawer
 					for (int x = 0; x < width; x++)
 					{
 						double xInGraph = x + drawBounds.x;
+						isLand[x] = false;
 						if (xInGraph < graph.bounds.x || xInGraph >= graph.bounds.x + graph.bounds.width)
 						{
 							// Strokes that reach the map's left or right edge continue past it, the same as at the edge of a full draw.
 							classes[x] = keepOutClass;
+							isLand[x] = true;
 						}
 						else if (landPixels.getNormalizedPixelLevel(x, pixelRow) > 0.5f)
 						{
 							classes[x] = keepOutClass;
+							isLand[x] = true;
 						}
 						else
 						{
@@ -457,6 +468,7 @@ public class WaveLineDrawer
 						}
 					}
 
+					passOverGrazedLine(classes, isLand, maxGrazeToPassOverInWavelengths * wavelength * sizeMultiplier);
 					if (isDashes)
 					{
 						drawDashRow(p, row, yInGraph, classes, segmentGrid, concentricLineOuterRadius, bandRadius, drawBounds);
@@ -848,6 +860,43 @@ public class WaveLineDrawer
 			double taperLength = dashTaperAsFractionOfHalfLength * (end - start) / 2.0 / sizeMultiplier;
 			drawPiece(p, row, yInGraph, rowJitterAmplitude, start / sizeMultiplier, end / sizeMultiplier, drawBounds,
 					new StrokeTaper(start / sizeMultiplier, end / sizeMultiplier, taperLength, isStartFree, isEndFree));
+		}
+	}
+
+	/**
+	 * Lets a row pass over the concentric line where it only grazes the line's outer edge, such as just above the top of land that sticks up
+	 * or out: a stretch of the row that is kept clear, shorter than maxLength, touches no land, and has water on both sides is treated as part
+	 * of the band instead. Otherwise the row would stop at both sides of the graze, where the line is too thin along the row to hide the ends
+	 * of the strokes, which leaves what looks like a wave with a piece missing.
+	 *
+	 * @param isLand
+	 *            For each pixel along the row, whether it is land or off the map.
+	 */
+	private static void passOverGrazedLine(byte[] classes, boolean[] isLand, double maxLength)
+	{
+		int x = 0;
+		while (x < classes.length && classes[x] == keepOutClass)
+		{
+			x++;
+		}
+		while (x < classes.length)
+		{
+			if (classes[x] != keepOutClass)
+			{
+				x++;
+				continue;
+			}
+			int start = x;
+			boolean touchesLand = false;
+			while (x < classes.length && classes[x] == keepOutClass)
+			{
+				touchesLand |= isLand[x];
+				x++;
+			}
+			if (x < classes.length && !touchesLand && x - start < maxLength)
+			{
+				Arrays.fill(classes, start, x, bandClass);
+			}
 		}
 	}
 
