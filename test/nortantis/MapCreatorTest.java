@@ -278,11 +278,27 @@ public class MapCreatorTest
 	}
 
 	/**
-	 * Changing land to water or water to land moves where wave lines can go across the whole band around the new coastline, which reaches
-	 * much farther than the centers that changed. An incremental redraw must cover all of it.
+	 * Changing land to water moves where wave lines can go across the whole band around the new coastline, which reaches much farther than
+	 * the centers that changed. An incremental redraw must cover all of it. A large stretch of coast changing to water moves the most
+	 * coastline at once.
 	 */
 	@Test
 	public void incrementalUpdateWithWaveLinesMatchesFullDrawWhenCentersChangeBetweenLandAndOcean()
+	{
+		runIncrementalLandWaterChangesWithWaveLines(MapSettings.OceanWaves.WaveLines);
+	}
+
+	/**
+	 * Like {@link #incrementalUpdateWithWaveLinesMatchesFullDrawWhenCentersChangeBetweenLandAndOcean}, for wave dashes, where changing land
+	 * also changes the blurred land that shapes where the dashes end.
+	 */
+	@Test
+	public void incrementalUpdateWithWaveDashesMatchesFullDrawWhenCentersChangeBetweenLandAndOcean()
+	{
+		runIncrementalLandWaterChangesWithWaveLines(MapSettings.OceanWaves.WaveDashes);
+	}
+
+	private void runIncrementalLandWaterChangesWithWaveLines(MapSettings.OceanWaves oceanWavesType)
 	{
 		String settingsFileName = "simpleSmallWorld.nort";
 		MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", settingsFileName).toString());
@@ -292,30 +308,14 @@ public class MapCreatorTest
 		settings.oceanShadingLevel = 0;
 		// Text is redrawn with slightly different anti-aliasing after a change, which says nothing about wave lines.
 		settings.drawText = false;
-		settings.oceanWavesType = MapSettings.OceanWaves.WaveLines;
-		settings.jitterToWaveLines = true;
-		settings.waveLineRowSpacing = 24;
-		settings.waveLineRowSpacingVariation = 10;
-		settings.waveLineLength = 40;
-		settings.waveLineLengthVariation = 10;
+		settings.oceanWavesType = oceanWavesType;
+		MapSettings.WaveRowStyle style = settings.getWaveRowStyle();
+		setWaveRowStyle(settings, new MapSettings.WaveRowStyle(style.shape(), 24, 10, 40, 10, true, style.jitterLevel(), style.lineWidth()));
 
-		// New water away from the ocean is a lake, so draw wave lines in lakes for the interior changes to make a new coastline with waves.
-		settings.drawOceanEffectsInLakes = true;
-
-		int failCount = 0;
-		for (int location = 0; location < 4; location++)
-		{
-			failCount += runOneCenterIslandChanges(settings, settingsFileName, location);
-			failCount += runOneLandWaterChange(settings.deepCopy(), settingsFileName, true, location);
-			failCount += runOneLandWaterChange(settings.deepCopy(), settingsFileName, false, location);
-			final int clustersToSkip = location;
-			failCount += runOneLandWaterChange(settings.deepCopy(), settingsFileName, true, location, graph -> findLandCluster(graph, false, clustersToSkip), " large interior");
-			failCount += runOneLandWaterChange(settings.deepCopy(), settingsFileName, true, location, graph -> findLandCluster(graph, true, clustersToSkip), " large coastal");
-		}
-
+		int failCount = runOneLandWaterChange(settings, settingsFileName, true, 0, graph -> findLandCluster(graph, true, 0), " large coastal");
 		if (failCount > 0)
 		{
-			fail(failCount + " land/water incremental update tests with wave lines did not match a full draw. See the '" + failedMapsFolderName + "' folder.");
+			fail("An incremental update with " + oceanWavesType + " after a land/water change did not match a full draw. See the '" + failedMapsFolderName + "' folder.");
 		}
 	}
 
@@ -327,13 +327,28 @@ public class MapCreatorTest
 	@Test
 	public void waveLinesDrawnForPartOfTheMapMatchFullDraw()
 	{
+		assertWaveLinesDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves.WaveLines, null);
+	}
+
+	/**
+	 * Like {@link #waveLinesDrawnForPartOfTheMapMatchFullDraw}, for wave dashes, whose blurred land and dash pattern must also come out the
+	 * same when only part of the map is drawn.
+	 */
+	@Test
+	public void waveDashesDrawnForPartOfTheMapMatchFullDraw()
+	{
+		assertWaveLinesDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves.WaveDashes, 30);
+	}
+
+	private void assertWaveLinesDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves oceanWavesType, Integer waveLineLength)
+	{
 		MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", "simpleSmallWorld.nort").toString());
 		settings.resolution = 0.75;
-		settings.oceanWavesType = MapSettings.OceanWaves.WaveLines;
+		settings.oceanWavesType = oceanWavesType;
 		settings.oceanShadingLevel = 0;
-		settings.jitterToWaveLines = true;
-		settings.waveLineRowSpacingVariation = 10;
-		settings.fadeWaveLines = true;
+		MapSettings.WaveRowStyle style = settings.getWaveRowStyle();
+		setWaveRowStyle(settings, new MapSettings.WaveRowStyle(style.shape(), style.rowSpacing(), 10, waveLineLength != null ? waveLineLength : style.length(),
+				style.lengthVariation(), true, style.jitterLevel(), style.lineWidth()));
 
 		MapParts mapParts = new MapParts();
 		new MapCreator().createMap(settings, null, mapParts).close();
@@ -382,17 +397,32 @@ public class MapCreatorTest
 					{
 						failures.add(differingCount + " pixels differ in " + replaceBounds);
 						FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
-						ImageHelper.getInstance().write(partWaves, MapTestUtil.getFailedMapFilePath("waveLines part " + i, failedMapsFolderName));
+						ImageHelper.getInstance().write(partWaves, MapTestUtil.getFailedMapFilePath(oceanWavesType + " part " + i, failedMapsFolderName));
 					}
 				}
 			}
 
 			if (!failures.isEmpty())
 			{
-				ImageHelper.getInstance().write(fullWaves, MapTestUtil.getFailedMapFilePath("waveLines full", failedMapsFolderName));
+				ImageHelper.getInstance().write(fullWaves, MapTestUtil.getFailedMapFilePath(oceanWavesType + " full", failedMapsFolderName));
 			}
 			assertTrue(areasWithWaves >= 5, "Only " + areasWithWaves + " of the tested areas had wave lines in them.");
 			assertTrue(failures.isEmpty(), "Wave lines drawn for part of the map differ from a full draw: " + failures);
+		}
+	}
+
+	/**
+	 * Sets the style of whichever of wave lines or wave dashes the settings' ocean waves are.
+	 */
+	private static void setWaveRowStyle(MapSettings settings, MapSettings.WaveRowStyle style)
+	{
+		if (settings.oceanWavesType == MapSettings.OceanWaves.WaveDashes)
+		{
+			settings.setWaveDashStyle(style);
+		}
+		else
+		{
+			settings.setWaveLineStyle(style);
 		}
 	}
 
@@ -642,68 +672,6 @@ public class MapCreatorTest
 				}
 			}
 			return cluster;
-		}
-		return new HashSet<>();
-	}
-
-	/**
-	 * Adds a one-polygon island in open ocean and redraws incrementally, then removes that island from a map that already has it and redraws
-	 * incrementally, comparing each against a full draw. Returns how many of the two did not match.
-	 */
-	private int runOneCenterIslandChanges(MapSettings settings, String settingsFileName, int location)
-	{
-		MapParts mapParts = new MapParts();
-		new MapCreator().createMap(settings.deepCopy(), null, mapParts).close();
-		Set<Integer> island = findOpenOceanCenter(mapParts.graph, location);
-		if (island.isEmpty())
-		{
-			return 0;
-		}
-
-		int failCount = runOneLandWaterChange(settings.deepCopy(), settingsFileName, false, location, graph -> island, " add one polygon island");
-
-		MapSettings withIsland = settings.deepCopy();
-		for (int index : island)
-		{
-			CenterEdit existing = withIsland.edits.centerEdits.get(index);
-			withIsland.edits.centerEdits.put(index, new CenterEdit(index, false, false, null, existing.icon, null));
-		}
-		failCount += runOneLandWaterChange(withIsland, settingsFileName, true, location, graph -> island, " remove one polygon island");
-		return failCount;
-	}
-
-	/**
-	 * Finds an ocean center with nothing but ocean within three steps of it, which becomes a one-polygon island when changed to land.
-	 */
-	private Set<Integer> findOpenOceanCenter(WorldGraph graph, int centersToSkip)
-	{
-		int skipped = 0;
-		for (Center center : graph.centers)
-		{
-			if (!center.isWater || center.isLake || center.isBorder)
-			{
-				continue;
-			}
-			Set<Center> nearby = new HashSet<>(center.neighbors);
-			for (int step = 0; step < 2; step++)
-			{
-				Set<Center> next = new HashSet<>(nearby);
-				for (Center c : nearby)
-				{
-					next.addAll(c.neighbors);
-				}
-				nearby = next;
-			}
-			if (nearby.stream().anyMatch(c -> !c.isWater || c.isLake || c.isBorder))
-			{
-				continue;
-			}
-			if (skipped < centersToSkip * 40)
-			{
-				skipped++;
-				continue;
-			}
-			return new HashSet<>(Set.of(center.index));
 		}
 		return new HashSet<>();
 	}

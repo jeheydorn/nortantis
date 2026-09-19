@@ -345,4 +345,37 @@ public class Helper
 		result = (result ^ (result >>> 27)) * 0x94D049BB133111EBL;
 		return result ^ (result >>> 31);
 	}
+
+	/**
+	 * A smooth random value from -1 to 1 that depends only on a position: random values at the corners of a grid of squares
+	 * controlPointSpacing across, blended with a curve that flattens at each corner so the result has no creases.
+	 */
+	public static double sampleSmoothNoise(long randomSeed, double x, double y, double controlPointSpacing)
+	{
+		double gridX = x / controlPointSpacing;
+		double gridY = y / controlPointSpacing;
+		long column = (long) Math.floor(gridX);
+		long row = (long) Math.floor(gridY);
+		double weightX = smoothStep(gridX - column);
+		double weightY = smoothStep(gridY - row);
+
+		double topLeft = getSmoothNoiseControlValue(randomSeed, column, row);
+		double topRight = getSmoothNoiseControlValue(randomSeed, column + 1, row);
+		double bottomLeft = getSmoothNoiseControlValue(randomSeed, column, row + 1);
+		double bottomRight = getSmoothNoiseControlValue(randomSeed, column + 1, row + 1);
+		double top = topLeft + (topRight - topLeft) * weightX;
+		double bottom = bottomLeft + (bottomRight - bottomLeft) * weightX;
+		return top + (bottom - top) * weightY;
+	}
+
+	private static double smoothStep(double t)
+	{
+		return t * t * (3.0 - 2.0 * t);
+	}
+
+	private static double getSmoothNoiseControlValue(long randomSeed, long column, long row)
+	{
+		long hash = mixSeed(mixSeed(mixSeed(randomSeed) + column) + row);
+		return 2.0 * ((hash >>> 11) * 0x1.0p-53) - 1.0;
+	}
 }

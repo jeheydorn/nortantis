@@ -106,7 +106,6 @@ public class SettingsGenerator
 		}
 		if (settings.oceanWavesType == OceanWaves.WaveLines)
 		{
-			settings.fadeWaveLines = rand.nextBoolean();
 			settings.jitterToWaveLines = rand.nextBoolean();
 			settings.waveLineJitterLevel = minWaveLineJitterLevelToGenerate + rand.nextInt(MapSettings.maxJitterLevel - minWaveLineJitterLevelToGenerate + 1);
 			settings.waveLineShape = ProbabilityHelper.sampleCategorical(rand, Arrays.asList(new Tuple2<Double, WaveLineShape>(2.0, WaveLineShape.Scallops),

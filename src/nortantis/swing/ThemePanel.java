@@ -50,16 +50,9 @@ public class ThemePanel extends JTabbedPane
 	private JRadioButton noneRadioButton;
 	private JRadioButton concentricWavesButton;
 	private JRadioButton waveLinesButton;
-	private JComboBox<WaveLineShape> waveLineShapeComboBox;
-	private JPanel waveLineShapePanel;
-	private JSlider waveLineRowSpacingSlider;
-	private JPanel waveLineRowSpacingPanel;
-	private JSlider waveLineRowSpacingVariationSlider;
-	private JPanel waveLineRowSpacingVariationPanel;
-	private JSlider waveLineLengthSlider;
-	private JPanel waveLineLengthPanel;
-	private JSlider waveLineLengthVariationSlider;
-	private JPanel waveLineLengthVariationPanel;
+	private JRadioButton waveDashesButton;
+	private WaveRowStyleControls waveLineControls;
+	private WaveRowStyleControls waveDashControls;
 	private JPanel coastShadingColorDisplay;
 	private JPanel coastlineColorDisplay;
 	private JSlider coastShadingTransparencySlider;
@@ -153,10 +146,8 @@ public class ThemePanel extends JTabbedPane
 	private JCheckBox jitterWavesCheckbox;
 	private JSlider jitterLevelSlider;
 	private JPanel jitterLevelPanel;
-	private JCheckBox fadeWaveLinesCheckbox;
-	private JCheckBox jitterWaveLinesCheckbox;
-	private JSlider waveLineJitterLevelSlider;
-	private JPanel waveLineJitterLevelPanel;
+	private JSlider concentricWaveLineWidthSlider;
+	private JPanel concentricWaveLineWidthPanel;
 	private JCheckBox brokenLinesCheckbox;
 	private RowHider concentricWavesOptionsHider;
 	private RowHider concentricWavesLevelSliderHider;
@@ -995,21 +986,17 @@ public class ThemePanel extends JTabbedPane
 			{
 				boolean isConcentric = concentricWavesButton.isSelected();
 				boolean isWaveLines = waveLinesButton.isSelected();
+				boolean isWaveDashes = waveDashesButton.isSelected();
 				concentricWavesLevelSlider.setVisible(isConcentric);
-				concentricWavesOptionsHider.setVisible(isConcentric || isWaveLines);
+				concentricWavesOptionsHider.setVisible(isConcentric || isWaveLines || isWaveDashes);
 				fadeWavesCheckbox.setVisible(isConcentric);
 				jitterWavesCheckbox.setVisible(isConcentric);
 				jitterLevelPanel.setVisible(isConcentric && jitterWavesCheckbox.isSelected());
 				brokenLinesCheckbox.setVisible(isConcentric);
-				fadeWaveLinesCheckbox.setVisible(isWaveLines);
-				jitterWaveLinesCheckbox.setVisible(isWaveLines);
-				waveLineJitterLevelPanel.setVisible(isWaveLines && jitterWaveLinesCheckbox.isSelected());
+				concentricWaveLineWidthPanel.setVisible(isConcentric);
+				waveLineControls.setVisible(isWaveLines);
+				waveDashControls.setVisible(isWaveDashes);
 				concentricWavesLevelSliderHider.setVisible(isConcentric);
-				waveLineShapePanel.setVisible(isWaveLines);
-				waveLineRowSpacingPanel.setVisible(isWaveLines);
-				waveLineRowSpacingVariationPanel.setVisible(isWaveLines);
-				waveLineLengthPanel.setVisible(isWaveLines);
-				waveLineLengthVariationPanel.setVisible(isWaveLines);
 				rippleWavesLevelSlider.setVisible(ripplesRadioButton.isSelected());
 				rippleWavesLevelSliderHider.setVisible(ripplesRadioButton.isSelected());
 				oceanWavesColorHider.setVisible(!noneRadioButton.isSelected());
@@ -1022,6 +1009,10 @@ public class ThemePanel extends JTabbedPane
 		oceanEffectButtonGroup.add(waveLinesButton);
 		waveLinesButton.addActionListener(oceanEffectsListener);
 
+		waveDashesButton = new JRadioButton(Translation.get("theme.waveType.waveDashes"));
+		oceanEffectButtonGroup.add(waveDashesButton);
+		waveDashesButton.addActionListener(oceanEffectsListener);
+
 		ripplesRadioButton = new JRadioButton(Translation.get("theme.waveType.ripples"));
 		oceanEffectButtonGroup.add(ripplesRadioButton);
 		ripplesRadioButton.addActionListener(oceanEffectsListener);
@@ -1030,7 +1021,7 @@ public class ThemePanel extends JTabbedPane
 		oceanEffectButtonGroup.add(noneRadioButton);
 		noneRadioButton.addActionListener(oceanEffectsListener);
 		organizer.addLabelAndComponentsVertical(Translation.get("theme.waveType.label"), Translation.get("theme.waveType.help"),
-				Arrays.asList(concentricWavesButton, waveLinesButton, ripplesRadioButton, noneRadioButton));
+				Arrays.asList(concentricWavesButton, waveLinesButton, waveDashesButton, ripplesRadioButton, noneRadioButton));
 
 		fadeWavesCheckbox = new JCheckBox(Translation.get("theme.fadeOuterWaves"));
 		createMapChangeListenerForTerrainChange(fadeWavesCheckbox);
@@ -1051,80 +1042,21 @@ public class ThemePanel extends JTabbedPane
 		jitterLevelPanel = new SliderWithDisplayedValue(jitterLevelSlider).createPanelWithLabelAbove(Translation.get("theme.jitterLevel.label"),
 				Translation.get("theme.jitterLevel.help"), false);
 
-		// Wave lines have their own fading and jitter so that changing either style leaves the other's look alone.
-		fadeWaveLinesCheckbox = new JCheckBox(Translation.get("theme.fadeOuterWaves"));
-		createMapChangeListenerForTerrainChange(fadeWaveLinesCheckbox);
-
-		jitterWaveLinesCheckbox = new JCheckBox(Translation.get("theme.jitter"));
-		jitterWaveLinesCheckbox.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				waveLineJitterLevelPanel.setVisible(jitterWaveLinesCheckbox.isSelected());
-				handleTerrainChange();
-			}
-		});
-
-		waveLineJitterLevelSlider = createWaveLineSlider(1, MapSettings.maxJitterLevel);
-		waveLineJitterLevelPanel = new SliderWithDisplayedValue(waveLineJitterLevelSlider)
-				.createPanelWithLabelAbove(Translation.get("theme.jitterLevel.label"), Translation.get("theme.jitterLevel.help"), false);
+		concentricWaveLineWidthSlider = createWaveLineWidthSlider();
+		concentricWaveLineWidthPanel = createWaveLineWidthPanel(concentricWaveLineWidthSlider);
 
 		brokenLinesCheckbox = new JCheckBox(Translation.get("theme.brokenLines"));
 		createMapChangeListenerForTerrainChange(brokenLinesCheckbox);
 
-		waveLineShapeComboBox = new JComboBox<>()
-		{
-			@Override
-			public Dimension getMaximumSize()
-			{
-				// Keeps the combo box from stretching across the row it shares with its label.
-				return getPreferredSize();
-			}
-		};
-		waveLineShapeComboBox.setRenderer(new DefaultListCellRenderer()
-		{
-			public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus)
-			{
-				super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-				if (value instanceof WaveLineShape shape)
-				{
-					// The picture explains the shape to people who don't know the names, so it's shown even when the combo box is disabled.
-					WaveLineShapeIcon icon = new WaveLineShapeIcon(shape);
-					setIcon(icon);
-					setDisabledIcon(icon);
-				}
-				return this;
-			}
-		});
-		for (WaveLineShape shape : WaveLineShape.values())
-		{
-			waveLineShapeComboBox.addItem(shape);
-		}
-		createMapChangeListenerForTerrainChange(waveLineShapeComboBox);
-		waveLineShapePanel = SwingHelper.createPanelWithLabelAbove(Translation.get("theme.waveLineShape.label"), Translation.get("theme.waveLineShape.help"),
-				Arrays.asList(waveLineShapeComboBox));
+		// Wave lines and wave dashes each have their own style options, so that changing one style leaves the others' look alone.
+		waveLineControls = new WaveRowStyleControls();
+		waveDashControls = new WaveRowStyleControls();
 
-		waveLineRowSpacingSlider = createWaveLineSlider(3, 15);
-		waveLineRowSpacingPanel = new SliderWithDisplayedValue(waveLineRowSpacingSlider).createPanelWithLabelAbove(Translation.get("theme.waveLineRowSpacing.label"),
-				Translation.get("theme.waveLineRowSpacing.help"));
-
-		waveLineRowSpacingVariationSlider = createWaveLineSlider(0, MapSettings.maxWaveLineVariation);
-		waveLineRowSpacingVariationPanel = new SliderWithDisplayedValue(waveLineRowSpacingVariationSlider).createPanelWithLabelAbove(
-				Translation.get("theme.waveLineRowSpacingVariation.label"), Translation.get("theme.waveLineRowSpacingVariation.help"));
-
-		waveLineLengthSlider = createWaveLineSlider(0, 50);
-		waveLineLengthPanel = new SliderWithDisplayedValue(waveLineLengthSlider).createPanelWithLabelAbove(Translation.get("theme.waveLineLength.label"),
-				Translation.get("theme.waveLineLength.help"));
-
-		waveLineLengthVariationSlider = createWaveLineSlider(0, MapSettings.maxWaveLineVariation);
-		waveLineLengthVariationPanel = new SliderWithDisplayedValue(waveLineLengthVariationSlider).createPanelWithLabelAbove(
-				Translation.get("theme.waveLineLengthVariation.label"), Translation.get("theme.waveLineLengthVariation.help"));
-
+		List<Component> styleOptions = new ArrayList<>(Arrays.asList(fadeWavesCheckbox, jitterWavesCheckbox, jitterLevelPanel, brokenLinesCheckbox, concentricWaveLineWidthPanel));
+		styleOptions.addAll(waveLineControls.getComponents());
+		styleOptions.addAll(waveDashControls.getComponents());
 		concentricWavesOptionsHider = organizer.addLabelAndComponentsVertical(Translation.get("theme.styleOptions.label"), Translation.get("theme.styleOptions.help"),
-				Arrays.asList(fadeWavesCheckbox, jitterWavesCheckbox, jitterLevelPanel, brokenLinesCheckbox, fadeWaveLinesCheckbox, jitterWaveLinesCheckbox,
-						waveLineJitterLevelPanel, waveLineShapePanel, waveLineRowSpacingPanel, waveLineRowSpacingVariationPanel, waveLineLengthPanel,
-						waveLineLengthVariationPanel));
+				styleOptions);
 
 		concentricWavesLevelSlider = new JSlider();
 		concentricWavesLevelSlider.setMinimum(1);
@@ -1785,17 +1717,13 @@ public class ThemePanel extends JTabbedPane
 		noneRadioButton.setSelected(settings.oceanWavesType == OceanWaves.None);
 		concentricWavesButton.setSelected(settings.oceanWavesType == OceanWaves.ConcentricWaves);
 		waveLinesButton.setSelected(settings.oceanWavesType == OceanWaves.WaveLines);
-		waveLineShapeComboBox.setSelectedItem(settings.waveLineShape);
-		waveLineRowSpacingSlider.setValue(settings.waveLineRowSpacing);
-		waveLineRowSpacingVariationSlider.setValue(settings.waveLineRowSpacingVariation);
-		waveLineLengthSlider.setValue(settings.waveLineLength);
-		waveLineLengthVariationSlider.setValue(settings.waveLineLengthVariation);
+		waveDashesButton.setSelected(settings.oceanWavesType == OceanWaves.WaveDashes);
+		waveLineControls.load(settings.getWaveLineStyle());
+		waveDashControls.load(settings.getWaveDashStyle());
 		fadeWavesCheckbox.setSelected(settings.fadeConcentricWaves);
 		jitterWavesCheckbox.setSelected(settings.jitterToConcentricWaves);
 		jitterLevelSlider.setValue(settings.jitterLevel);
-		fadeWaveLinesCheckbox.setSelected(settings.fadeWaveLines);
-		jitterWaveLinesCheckbox.setSelected(settings.jitterToWaveLines);
-		waveLineJitterLevelSlider.setValue(settings.waveLineJitterLevel);
+		concentricWaveLineWidthSlider.setValue(toWaveLineWidthSliderValue(settings.concentricWaveLineWidth));
 		brokenLinesCheckbox.setSelected(settings.brokenLinesForConcentricWaves);
 		drawOceanEffectsInLakesCheckbox.setSelected(settings.drawOceanEffectsInLakes);
 		oceanEffectsListener.actionPerformed(null);
@@ -2050,21 +1978,20 @@ public class ThemePanel extends JTabbedPane
 		{
 			settings.oceanWavesType = OceanWaves.WaveLines;
 		}
+		else if (waveDashesButton.isSelected())
+		{
+			settings.oceanWavesType = OceanWaves.WaveDashes;
+		}
 		else
 		{
 			settings.oceanWavesType = OceanWaves.ConcentricWaves;
 		}
-		settings.waveLineShape = (WaveLineShape) waveLineShapeComboBox.getSelectedItem();
-		settings.waveLineRowSpacing = waveLineRowSpacingSlider.getValue();
-		settings.waveLineRowSpacingVariation = waveLineRowSpacingVariationSlider.getValue();
-		settings.waveLineLength = waveLineLengthSlider.getValue();
-		settings.waveLineLengthVariation = waveLineLengthVariationSlider.getValue();
+		settings.setWaveLineStyle(waveLineControls.getStyle());
+		settings.setWaveDashStyle(waveDashControls.getStyle());
 		settings.fadeConcentricWaves = fadeWavesCheckbox.isSelected();
 		settings.jitterToConcentricWaves = jitterWavesCheckbox.isSelected();
 		settings.jitterLevel = jitterLevelSlider.getValue();
-		settings.fadeWaveLines = fadeWaveLinesCheckbox.isSelected();
-		settings.jitterToWaveLines = jitterWaveLinesCheckbox.isSelected();
-		settings.waveLineJitterLevel = waveLineJitterLevelSlider.getValue();
+		settings.concentricWaveLineWidth = fromWaveLineWidthSliderValue(concentricWaveLineWidthSlider.getValue());
 		settings.brokenLinesForConcentricWaves = brokenLinesCheckbox.isSelected();
 		settings.drawOceanEffectsInLakes = drawOceanEffectsInLakesCheckbox.isSelected();
 		settings.coastShadingColor = AwtBridge.fromAwtColor(coastShadingColorDisplay.getBackground());
@@ -2232,6 +2159,160 @@ public class ThemePanel extends JTabbedPane
 		JSlider slider = new JSlider(minimum, maximum);
 		createMapChangeListenerForTerrainChange(slider);
 		return slider;
+	}
+
+	/**
+	 * Creates a slider for the width of wave lines or concentric waves' lines. Its values are hundredths of a pixel, so that the default width
+	 * is one of them.
+	 */
+	private JSlider createWaveLineWidthSlider()
+	{
+		return createWaveLineSlider(toWaveLineWidthSliderValue(MapSettings.minWaveLineWidth), toWaveLineWidthSliderValue(MapSettings.maxWaveLineWidth));
+	}
+
+	private JPanel createWaveLineWidthPanel(JSlider slider)
+	{
+		return new SliderWithDisplayedValue(slider, (value) -> String.format("%.1f", fromWaveLineWidthSliderValue(value)), null)
+				.createPanelWithLabelAbove(Translation.get("theme.waveLineWidth.label"), Translation.get("theme.waveLineWidth.help"));
+	}
+
+	private static int toWaveLineWidthSliderValue(double width)
+	{
+		return (int) Math.round(width * 100.0);
+	}
+
+	private static double fromWaveLineWidthSliderValue(int value)
+	{
+		return value / 100.0;
+	}
+
+	/**
+	 * The style options of one of the wave styles drawn as rows of strokes: wave lines or wave dashes.
+	 */
+	private class WaveRowStyleControls
+	{
+		private final JSlider lineWidthSlider;
+		private final JPanel lineWidthPanel;
+		private final JCheckBox jitterCheckbox;
+		private final JSlider jitterLevelSlider;
+		private final JPanel jitterLevelPanel;
+		private final JComboBox<WaveLineShape> shapeComboBox;
+		private final JPanel shapePanel;
+		private final JSlider rowSpacingSlider;
+		private final JPanel rowSpacingPanel;
+		private final JSlider rowSpacingVariationSlider;
+		private final JPanel rowSpacingVariationPanel;
+		private final JSlider lengthSlider;
+		private final JPanel lengthPanel;
+		private final JSlider lengthVariationSlider;
+		private final JPanel lengthVariationPanel;
+
+		WaveRowStyleControls()
+		{
+			lineWidthSlider = createWaveLineWidthSlider();
+			lineWidthPanel = createWaveLineWidthPanel(lineWidthSlider);
+
+			jitterCheckbox = new JCheckBox(Translation.get("theme.jitter"));
+			jitterCheckbox.addActionListener(new ActionListener()
+			{
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					jitterLevelPanel.setVisible(jitterCheckbox.isSelected());
+					handleTerrainChange();
+				}
+			});
+
+			jitterLevelSlider = createWaveLineSlider(1, MapSettings.maxJitterLevel);
+			// The slider appears only while the jitter checkbox is checked and belongs with it, so it gets no extra space above it.
+			jitterLevelPanel = new SliderWithDisplayedValue(jitterLevelSlider).createPanelWithLabelAbove(Translation.get("theme.jitterLevel.label"),
+					Translation.get("theme.jitterLevel.help"), false);
+
+			shapeComboBox = new JComboBox<>()
+			{
+				@Override
+				public Dimension getMaximumSize()
+				{
+					// Keeps the combo box from stretching across the row it shares with its label.
+					return getPreferredSize();
+				}
+			};
+			shapeComboBox.setRenderer(new DefaultListCellRenderer()
+			{
+				public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus)
+				{
+					super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+					if (value instanceof WaveLineShape shape)
+					{
+						// The picture explains the shape to people who don't know the names, so it's shown even when the combo box is disabled.
+						WaveLineShapeIcon icon = new WaveLineShapeIcon(shape);
+						setIcon(icon);
+						setDisabledIcon(icon);
+					}
+					return this;
+				}
+			});
+			for (WaveLineShape shape : WaveLineShape.values())
+			{
+				shapeComboBox.addItem(shape);
+			}
+			createMapChangeListenerForTerrainChange(shapeComboBox);
+			shapePanel = SwingHelper.createPanelWithLabelAbove(Translation.get("theme.waveLineShape.label"), Translation.get("theme.waveLineShape.help"),
+					Arrays.asList(shapeComboBox));
+
+			rowSpacingSlider = createWaveLineSlider(2, 15);
+			rowSpacingPanel = new SliderWithDisplayedValue(rowSpacingSlider).createPanelWithLabelAbove(Translation.get("theme.waveLineRowSpacing.label"),
+					Translation.get("theme.waveLineRowSpacing.help"));
+
+			rowSpacingVariationSlider = createWaveLineSlider(0, MapSettings.maxWaveLineVariation);
+			rowSpacingVariationPanel = new SliderWithDisplayedValue(rowSpacingVariationSlider).createPanelWithLabelAbove(
+					Translation.get("theme.waveLineRowSpacingVariation.label"), Translation.get("theme.waveLineRowSpacingVariation.help"));
+
+			lengthSlider = createWaveLineSlider(0, 50);
+			lengthPanel = new SliderWithDisplayedValue(lengthSlider).createPanelWithLabelAbove(Translation.get("theme.waveLineLength.label"),
+					Translation.get("theme.waveLineLength.help"));
+
+			lengthVariationSlider = createWaveLineSlider(0, MapSettings.maxWaveLineVariation);
+			lengthVariationPanel = new SliderWithDisplayedValue(lengthVariationSlider).createPanelWithLabelAbove(Translation.get("theme.waveLineLengthVariation.label"),
+					Translation.get("theme.waveLineLengthVariation.help"));
+		}
+
+		/**
+		 * The components to add to the style options, in order.
+		 */
+		List<Component> getComponents()
+		{
+			return Arrays.asList(lineWidthPanel, jitterCheckbox, jitterLevelPanel, shapePanel, rowSpacingPanel, rowSpacingVariationPanel, lengthPanel,
+					lengthVariationPanel);
+		}
+
+		void setVisible(boolean isVisible)
+		{
+			for (Component component : getComponents())
+			{
+				component.setVisible(isVisible);
+			}
+			jitterLevelPanel.setVisible(isVisible && jitterCheckbox.isSelected());
+		}
+
+		void load(MapSettings.WaveRowStyle style)
+		{
+			lineWidthSlider.setValue(toWaveLineWidthSliderValue(style.lineWidth()));
+			jitterCheckbox.setSelected(style.jitter());
+			jitterLevelSlider.setValue(style.jitterLevel());
+			shapeComboBox.setSelectedItem(style.shape());
+			rowSpacingSlider.setValue(style.rowSpacing());
+			rowSpacingVariationSlider.setValue(style.rowSpacingVariation());
+			lengthSlider.setValue(style.length());
+			lengthVariationSlider.setValue(style.lengthVariation());
+		}
+
+		MapSettings.WaveRowStyle getStyle()
+		{
+			return new MapSettings.WaveRowStyle((WaveLineShape) shapeComboBox.getSelectedItem(), rowSpacingSlider.getValue(), rowSpacingVariationSlider.getValue(),
+					lengthSlider.getValue(), lengthVariationSlider.getValue(), jitterCheckbox.isSelected(), jitterLevelSlider.getValue(),
+					fromWaveLineWidthSliderValue(lineWidthSlider.getValue()));
+		}
 	}
 
 	private void createMapChangeListenerForTerrainChange(Component component)
