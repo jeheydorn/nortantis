@@ -360,6 +360,15 @@ public class MapCreatorTest
 		assertWaveLinesDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves.WaveDashes, 30, MapSettings.ShoreDetail.Gap);
 	}
 
+	/**
+	 * Like {@link #waveLinesDrawnForPartOfTheMapMatchFullDraw}, with wave lines fading out away from the coast at randomly varying rates.
+	 */
+	@Test
+	public void fadedWaveLinesDrawnForPartOfTheMapMatchFullDraw()
+	{
+		assertWaveLinesDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves.WaveLines, 14, MapSettings.ShoreDetail.ConcentricWave, true);
+	}
+
 	private void assertWaveLinesDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves oceanWavesType, Integer waveLineLength)
 	{
 		assertWaveLinesDrawnForPartOfTheMapMatchFullDraw(oceanWavesType, waveLineLength, MapSettings.ShoreDetail.ConcentricWave);
@@ -367,10 +376,18 @@ public class MapCreatorTest
 
 	private void assertWaveLinesDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves oceanWavesType, Integer waveLineLength, MapSettings.ShoreDetail shoreDetail)
 	{
+		assertWaveLinesDrawnForPartOfTheMapMatchFullDraw(oceanWavesType, waveLineLength, shoreDetail, false);
+	}
+
+	private void assertWaveLinesDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves oceanWavesType, Integer waveLineLength, MapSettings.ShoreDetail shoreDetail,
+			boolean fadeWaveLines)
+	{
 		MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", "simpleSmallWorld.nort").toString());
 		settings.resolution = 0.75;
 		settings.oceanWavesType = oceanWavesType;
 		settings.oceanShadingLevel = 0;
+		settings.fadeWaveLines = fadeWaveLines;
+		settings.waveLineFadeVariation = MapSettings.maxWaveLineVariation;
 		MapSettings.WaveRowStyle style = settings.getWaveRowStyle();
 		setWaveRowStyle(settings, new MapSettings.WaveRowStyle(style.shape(), style.lineWidth(), waveLineLength != null ? waveLineLength : style.length(),
 				style.lengthVariation(), true, style.jitterLevel(), style.rowHeight(), style.rowGap(), 10, shoreDetail, MapSettings.defaultWaveRowJitterLevel));

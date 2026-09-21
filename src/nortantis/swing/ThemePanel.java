@@ -1067,8 +1067,9 @@ public class ThemePanel extends JTabbedPane
 		jitterLevelHider = addCheckboxSlider(styleOrganizer, jitterLevelSlider, Translation.get("theme.jitterLevel.label"), Translation.get("theme.jitterLevel.help"));
 
 		// Wave lines and wave dashes each have their own style options, so that changing one style leaves the others' look alone.
-		waveLineControls = new WaveRowStyleControls(styleOrganizer);
-		waveDashControls = new WaveRowStyleControls(styleOrganizer);
+		waveLineControls = new WaveRowStyleControls(styleOrganizer, true);
+		// Wave dashes already thin out away from the coast by getting shorter and sparser.
+		waveDashControls = new WaveRowStyleControls(styleOrganizer, false);
 
 		concentricWavesOptionsHider = organizer.addLeftAlignedComponent(styleOrganizer.panel, GridBagOrganizer.rowVerticalInset, GridBagOrganizer.rowVerticalInset, false);
 
@@ -1723,6 +1724,7 @@ public class ThemePanel extends JTabbedPane
 		waveLinesButton.setSelected(settings.oceanWavesType == OceanWaves.WaveLines);
 		waveDashesButton.setSelected(settings.oceanWavesType == OceanWaves.WaveDashes);
 		waveLineControls.load(settings.getWaveLineStyle());
+		waveLineControls.loadFade(settings.fadeWaveLines, settings.waveLineFadeVariation);
 		waveDashControls.load(settings.getWaveDashStyle());
 		fadeWavesCheckbox.setSelected(settings.fadeConcentricWaves);
 		jitterWavesCheckbox.setSelected(settings.jitterToConcentricWaves);
@@ -1991,6 +1993,8 @@ public class ThemePanel extends JTabbedPane
 			settings.oceanWavesType = OceanWaves.ConcentricWaves;
 		}
 		settings.setWaveLineStyle(waveLineControls.getStyle());
+		settings.fadeWaveLines = waveLineControls.isFadeSelected();
+		settings.waveLineFadeVariation = waveLineControls.getFadeVariation();
 		settings.setWaveDashStyle(waveDashControls.getStyle());
 		settings.fadeConcentricWaves = fadeWavesCheckbox.isSelected();
 		settings.jitterToConcentricWaves = jitterWavesCheckbox.isSelected();
@@ -2220,6 +2224,11 @@ public class ThemePanel extends JTabbedPane
 		private final JSlider lengthVariationSlider;
 		private final JCheckBox jitterCheckbox;
 		private final JSlider jitterLevelSlider;
+		/**
+		 * Null for styles that don't fade.
+		 */
+		private final JCheckBox fadeCheckbox;
+		private final JSlider fadeVariationSlider;
 		private final JSlider rowHeightSlider;
 		private final JSlider rowGapSlider;
 		private final JSlider rowSpacingVariationSlider;
@@ -2231,10 +2240,15 @@ public class ThemePanel extends JTabbedPane
 		 */
 		private final RowHider rowsHider;
 		private final RowHider jitterLevelHider;
+		private final RowHider fadeVariationHider;
 		private final RowHider shoreJitterHider;
 		private boolean isVisible;
 
-		WaveRowStyleControls(GridBagOrganizer organizer)
+		/**
+		 * @param hasFadeOptions
+		 *            Whether to include the options for fading wave lines out away from the coast.
+		 */
+		WaveRowStyleControls(GridBagOrganizer organizer, boolean hasFadeOptions)
 		{
 			shapeComboBox = new JComboBox<>();
 			shapeComboBox.setRenderer(new DefaultListCellRenderer()
@@ -2283,6 +2297,27 @@ public class ThemePanel extends JTabbedPane
 			jitterLevelHider = addCheckboxSlider(organizer, jitterLevelSlider, Translation.get("theme.jitterLevel.label"), Translation.get("theme.rowJitterLevel.help"));
 			rowsHider.add(jitterLevelHider);
 
+			if (hasFadeOptions)
+			{
+				fadeCheckbox = new JCheckBox(Translation.get("theme.fadeOuterWaves"));
+				fadeCheckbox.addActionListener(e ->
+				{
+					updateVisibility();
+					handleTerrainChange();
+				});
+				rowsHider.add(addWaveStyleCheckbox(organizer, fadeCheckbox));
+				fadeVariationSlider = createWaveLineSlider(0, MapSettings.maxWaveLineVariation);
+				fadeVariationHider = addCheckboxSlider(organizer, fadeVariationSlider, Translation.get("theme.fadeVariation.label"),
+						Translation.get("theme.fadeVariation.help"));
+				rowsHider.add(fadeVariationHider);
+			}
+			else
+			{
+				fadeCheckbox = null;
+				fadeVariationSlider = null;
+				fadeVariationHider = null;
+			}
+
 			rowsHider.add(organizer.addSeparator());
 			rowHeightSlider = createWaveLineSlider(2, 15);
 			rowsHider.add(new SliderWithDisplayedValue(rowHeightSlider).addToOrganizer(organizer, Translation.get("theme.waveLineRowHeight.label"),
@@ -2322,6 +2357,10 @@ public class ThemePanel extends JTabbedPane
 		{
 			rowsHider.setVisible(isVisible);
 			jitterLevelHider.setVisible(isVisible && jitterCheckbox.isSelected());
+			if (fadeCheckbox != null)
+			{
+				fadeVariationHider.setVisible(isVisible && fadeCheckbox.isSelected());
+			}
 			// The coastline, which rows reach when there is no shore detail, has nothing to vary.
 			ShoreDetail shoreDetail = (ShoreDetail) shoreDetailComboBox.getSelectedItem();
 			shoreJitterHider.setVisible(isVisible && shoreDetail != ShoreDetail.None);
@@ -2351,6 +2390,26 @@ public class ThemePanel extends JTabbedPane
 			return new MapSettings.WaveRowStyle((WaveLineShape) shapeComboBox.getSelectedItem(), fromWaveLineWidthSliderValue(lineWidthSlider.getValue()),
 					lengthSlider.getValue(), lengthVariationSlider.getValue(), jitterCheckbox.isSelected(), jitterLevelSlider.getValue(), rowHeightSlider.getValue(),
 					rowGapSlider.getValue(), rowSpacingVariationSlider.getValue(), (ShoreDetail) shoreDetailComboBox.getSelectedItem(), shoreJitterSlider.getValue());
+		}
+
+		/**
+		 * Loads the fade options, for controls that have them.
+		 */
+		void loadFade(boolean fade, int fadeVariation)
+		{
+			fadeCheckbox.setSelected(fade);
+			fadeVariationSlider.setValue(fadeVariation);
+			updateVisibility();
+		}
+
+		boolean isFadeSelected()
+		{
+			return fadeCheckbox.isSelected();
+		}
+
+		int getFadeVariation()
+		{
+			return fadeVariationSlider.getValue();
 		}
 	}
 

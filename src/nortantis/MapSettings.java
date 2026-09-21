@@ -67,6 +67,7 @@ public class MapSettings implements Serializable
 	 * room for.
 	 */
 	public static final int maxWaveLineVariation = 10;
+	public static final int defaultWaveLineFadeVariation = 7;
 	public static final WaveLineShape defaultWaveDashShape = WaveLineShape.Sine;
 	public static final int defaultWaveDashRowHeight = 6;
 	public static final int defaultWaveDashRowGap = 3;
@@ -128,6 +129,14 @@ public class MapSettings implements Serializable
 	 */
 	public boolean jitterToWaveLines;
 	public int waveLineJitterLevel = defaultWaveRowJitterLevel;
+	/**
+	 * Whether wave lines fade out as they get farther from the coast.
+	 */
+	public boolean fadeWaveLines;
+	/**
+	 * How much the rate and curve of wave lines' fading differ from one line to the next, from 0 to maxWaveLineVariation.
+	 */
+	public int waveLineFadeVariation = defaultWaveLineFadeVariation;
 	/**
 	 * What wave lines draw between their rows and the coast.
 	 */
@@ -514,6 +523,8 @@ public class MapSettings implements Serializable
 		root.put("jitterLevel", jitterLevel);
 		root.put("jitterToWaveLines", jitterToWaveLines);
 		root.put("waveLineJitterLevel", waveLineJitterLevel);
+		root.put("fadeWaveLines", fadeWaveLines);
+		root.put("waveLineFadeVariation", waveLineFadeVariation);
 		root.put("waveLineShoreDetail", enumToJson(waveLineShoreDetail));
 		root.put("waveLineShoreJitterLevel", waveLineShoreJitterLevel);
 		root.put("concentricWaveLineWidth", concentricWaveLineWidth);
@@ -1267,6 +1278,8 @@ public class MapSettings implements Serializable
 		jitterLevel = root.containsKey("jitterLevel") ? (int) (long) root.get("jitterLevel") : defaultJitterLevel;
 		jitterToWaveLines = root.containsKey("jitterToWaveLines") && (boolean) root.get("jitterToWaveLines");
 		waveLineJitterLevel = root.containsKey("waveLineJitterLevel") ? (int) (long) root.get("waveLineJitterLevel") : defaultWaveRowJitterLevel;
+		fadeWaveLines = root.containsKey("fadeWaveLines") && (boolean) root.get("fadeWaveLines");
+		waveLineFadeVariation = root.containsKey("waveLineFadeVariation") ? (int) (long) root.get("waveLineFadeVariation") : defaultWaveLineFadeVariation;
 		waveLineShoreDetail = root.containsKey("waveLineShoreDetail") ? ShoreDetail.valueOf((String) root.get("waveLineShoreDetail")) : ShoreDetail.ConcentricWave;
 		waveLineShoreJitterLevel = root.containsKey("waveLineShoreJitterLevel") ? (int) (long) root.get("waveLineShoreJitterLevel") : 0;
 		concentricWaveLineWidth = root.containsKey("concentricWaveLineWidth") ? (double) root.get("concentricWaveLineWidth") : defaultWaveLineWidth;
@@ -3599,6 +3612,10 @@ public class MapSettings implements Serializable
 			differences.add("jitterToWaveLines: " + jitterToWaveLines + " vs " + other.jitterToWaveLines);
 		if (waveLineJitterLevel != other.waveLineJitterLevel)
 			differences.add("waveLineJitterLevel: " + waveLineJitterLevel + " vs " + other.waveLineJitterLevel);
+		if (fadeWaveLines != other.fadeWaveLines)
+			differences.add("fadeWaveLines: " + fadeWaveLines + " vs " + other.fadeWaveLines);
+		if (waveLineFadeVariation != other.waveLineFadeVariation)
+			differences.add("waveLineFadeVariation: " + waveLineFadeVariation + " vs " + other.waveLineFadeVariation);
 		if (waveLineShoreDetail != other.waveLineShoreDetail)
 			differences.add("waveLineShoreDetail: " + waveLineShoreDetail + " vs " + other.waveLineShoreDetail);
 		if (waveLineShoreJitterLevel != other.waveLineShoreJitterLevel)
@@ -3758,8 +3775,8 @@ public class MapSettings implements Serializable
 				edits, fadeConcentricWaves, fillWithColorByType, flipHorizontally, flipVertically, frayedBorder, frayedBorderBlurLevel, frayedBorderColor, frayedBorderSeed,
 				frayedBorderSize, generateBackground, generateBackgroundFromTexture, generatedHeight, generatedWidth, gridOverlayColor, gridOverlayLayer, gridOverlayLineWidth,
 				gridOverlayRowOrColCount, gridOverlayShape, gridOverlayXOffset, gridOverlayYOffset, grungeWidth, heightmapExportPath, heightmapResolution, hillScale, hueRange, iconFillColorsByType,
-				iconFilterColorsByType, imageExportPath, jitterLevel, jitterToConcentricWaves, jitterToWaveLines, waveLineJitterLevel, waveLineShoreDetail,
-				waveLineShoreJitterLevel, concentricWaveLineWidth, waveLineWidth, waveDashShape, waveDashRowHeight, waveDashRowGap,
+				iconFilterColorsByType, imageExportPath, jitterLevel, jitterToConcentricWaves, jitterToWaveLines, waveLineJitterLevel, fadeWaveLines, waveLineFadeVariation,
+				waveLineShoreDetail, waveLineShoreJitterLevel, concentricWaveLineWidth, waveLineWidth, waveDashShape, waveDashRowHeight, waveDashRowGap,
 				waveDashRowSpacingVariation, waveDashLength, waveDashLengthVariation, jitterToWaveDashes, waveDashJitterLevel, waveDashShoreDetail,
 				waveDashShoreJitterLevel, waveDashLineWidth, landColor, landShape, lineStyle, lloydRelaxationsScale, maximizeOpacityByType, mountainRangeFont, mountainScale,
 				oceanColor, oceanEffectsColor, oceanEffectsLevel, oceanShadingColor, oceanShadingLevel, oceanWavesColor, oceanWavesLevel, oceanWavesType, otherMountainsFont, overlayImageDefaultScale,
@@ -3817,7 +3834,8 @@ public class MapSettings implements Serializable
 				&& Double.doubleToLongBits(hillScale) == Double.doubleToLongBits(other.hillScale) && hueRange == other.hueRange && Objects.equals(iconFillColorsByType, other.iconFillColorsByType)
 				&& Objects.equals(iconFilterColorsByType, other.iconFilterColorsByType) && Objects.equals(imageExportPath, other.imageExportPath)
 				&& jitterToConcentricWaves == other.jitterToConcentricWaves && jitterLevel == other.jitterLevel && jitterToWaveLines == other.jitterToWaveLines
-				&& waveLineJitterLevel == other.waveLineJitterLevel && waveLineShoreDetail == other.waveLineShoreDetail
+				&& waveLineJitterLevel == other.waveLineJitterLevel && fadeWaveLines == other.fadeWaveLines && waveLineFadeVariation == other.waveLineFadeVariation
+				&& waveLineShoreDetail == other.waveLineShoreDetail
 				&& waveLineShoreJitterLevel == other.waveLineShoreJitterLevel
 				&& Double.doubleToLongBits(concentricWaveLineWidth) == Double.doubleToLongBits(other.concentricWaveLineWidth)
 				&& Double.doubleToLongBits(waveLineWidth) == Double.doubleToLongBits(other.waveLineWidth) && waveDashShape == other.waveDashShape

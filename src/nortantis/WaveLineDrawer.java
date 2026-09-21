@@ -14,6 +14,7 @@ import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
 import nortantis.platform.PixelReader;
+import nortantis.platform.PixelReaderWriter;
 import nortantis.util.Helper;
 
 import java.util.ArrayList;
@@ -177,6 +178,22 @@ public class WaveLineDrawer
 	private static final double taperPressureVariation = 0.12;
 	private static final double taperPressureNoiseSpacing = 12.0;
 	private static final int roundCapSegments = 6;
+	/**
+	 * At the highest fade variation, the most that a wave line's fade distance is scaled up or down from its reach, as a natural log. This
+	 * ranges from about 0.4 to 2.5 times the reach, so some lines fade out well before their tips and others end while still plainly
+	 * visible.
+	 */
+	private static final double maxLogFadeDistanceScale = 0.9;
+	/**
+	 * At the highest fade variation, the most that the exponent of a wave line's fade curve is scaled up or down from 1, as a natural log.
+	 * This ranges from about 0.45, which fades quickly and then lingers faintly, to 2.2, which holds its strength and then drops off.
+	 */
+	private static final double maxLogFadeExponent = 0.8;
+	private static final double fadeNoiseControlPointSpacingAsMultipleOfRowSpacing = 6.0;
+	/**
+	 * The fade level that leaves a stroke as opaque as it was drawn.
+	 */
+	private static final int noFadeLevel = 255;
 
 	private static final int outsideLevel = 0;
 	private static final int bandLevel = 128;
@@ -200,6 +217,10 @@ public class WaveLineDrawer
 	private static final long dashKeepSalt = 0x5A17C0DE0CL;
 	private static final long taperPressureSalt = 0x5A17C0DE0DL;
 	private static final long lineEndSalt = 0x5A17C0DE0EL;
+	private static final long leftEndFadeDistanceSalt = 0x5A17C0DE0FL;
+	private static final long rightEndFadeDistanceSalt = 0x5A17C0DE10L;
+	private static final long leftEndFadeCurveSalt = 0x5A17C0DE11L;
+	private static final long rightEndFadeCurveSalt = 0x5A17C0DE12L;
 
 	private final MapSettings settings;
 	private final double resolutionScale;
@@ -222,6 +243,18 @@ public class WaveLineDrawer
 	private final double minRowSeparation;
 	private final double maxRowShift;
 	private final ReachDistribution reachDistribution;
+	/**
+	 * Whether wave lines fade out as they get farther from the concentric line.
+	 */
+	private final boolean isFading;
+	/**
+	 * The most that a wave line's fade distance is scaled from its reach, as a natural log.
+	 */
+	private final double fadeDistanceLogRange;
+	/**
+	 * The most that a wave line's fade curve exponent is scaled from 1, as a natural log.
+	 */
+	private final double fadeExponentLogRange;
 	/**
 	 * Reused by {@link #calcDistanceBeyondReach}, which is called for every pixel of every row's band.
 	 */
@@ -252,6 +285,10 @@ public class WaveLineDrawer
 		minRowSeparation = calcMinRowSeparation(settings);
 		maxRowShift = calcMaxRowShift(settings);
 		reachDistribution = ReachDistribution.create(settings);
+		isFading = settings.fadeWaveLines && !isDashes;
+		double fadeVariation = Math.max(0, Math.min(MapSettings.maxWaveLineVariation, settings.waveLineFadeVariation)) / (double) MapSettings.maxWaveLineVariation;
+		fadeDistanceLogRange = maxLogFadeDistanceScale * fadeVariation;
+		fadeExponentLogRange = maxLogFadeExponent * fadeVariation;
 	}
 
 	private static double calcStrokeWidth(MapSettings settings, double resolutionScale)
@@ -469,6 +506,8 @@ public class WaveLineDrawer
 			drawGuide(guide, graph, curves, concentricLineOuterRadius, bandRadius, centersToDraw, drawBounds);
 
 			SegmentGrid segmentGrid = new SegmentGrid(curves, drawBounds, bandRadius + 1.0);
+			List<Integer> fadedRows = isFading ? new ArrayList<>() : null;
+			List<byte[]> fadeLevelsByRow = isFading ? new ArrayList<>() : null;
 
 			try (PixelReader guidePixels = guide.createPixelReader(); PixelReader landPixels = landMask.createPixelReader(); Painter p = target.createPainter(DrawQuality.High))
 			{
@@ -523,11 +562,133 @@ public class WaveLineDrawer
 					}
 					else
 					{
-						drawRow(p, row, yInGraph, classes, segmentGrid, concentricLineOuterRadius, drawBounds);
+						byte[] fadeLevels = null;
+						if (fadedRows != null)
+						{
+							fadeLevels = new byte[width];
+							Arrays.fill(fadeLevels, (byte) noFadeLevel);
+							fadedRows.add(row);
+							fadeLevelsByRow.add(fadeLevels);
+						}
+						drawRow(p, row, yInGraph, classes, segmentGrid, concentricLineOuterRadius, drawBounds, fadeLevels);
+					}
+				}
+			}
+
+			if (fadedRows != null)
+			{
+				fadeRows(target, fadedRows, fadeLevelsByRow, drawBounds);
+			}
+		}
+	}
+
+	/**
+	 * Lightens each row's strokes by the fade levels found along it.
+	 *
+	 * Fading is applied after drawing, rather than by drawing each stroke in pieces of different opacity, because a stroke drawn in pieces
+	 * shows a seam at every join.
+	 */
+	private void fadeRows(Image target, List<Integer> rows, List<byte[]> fadeLevelsByRow, Rectangle drawBounds)
+	{
+		int height = target.getHeight();
+		try (PixelReaderWriter pixels = target.createPixelReaderWriter())
+		{
+			for (int i = 0; i < rows.size(); i++)
+			{
+				int row = rows.get(i);
+				byte[] fadeLevels = fadeLevelsByRow.get(i);
+				int firstFaded = 0;
+				while (firstFaded < fadeLevels.length && fadeLevels[firstFaded] == (byte) noFadeLevel)
+				{
+					firstFaded++;
+				}
+				int lastFaded = fadeLevels.length - 1;
+				while (lastFaded >= firstFaded && fadeLevels[lastFaded] == (byte) noFadeLevel)
+				{
+					lastFaded--;
+				}
+
+				// A row is faded only where its own strokes can be, and never past halfway to where its neighbors' strokes can be, so that no
+				// pixel is faded twice.
+				int start = (int) Math.max(Math.round(getRowStripStart(row) - drawBounds.y), Math.floor(getRowInkTop(row) - drawBounds.y - 1.0));
+				int end = (int) Math.min(Math.round(getRowStripStart(row + 1) - drawBounds.y), Math.ceil(getRowInkBottom(row) - drawBounds.y + 1.0));
+				for (int y = Math.max(0, start); y < Math.min(height, end); y++)
+				{
+					for (int x = firstFaded; x <= lastFaded; x++)
+					{
+						int fadeLevel = fadeLevels[x] & 0xFF;
+						if (fadeLevel < noFadeLevel)
+						{
+							int level = pixels.getGrayLevel(x, y);
+							if (level > 0)
+							{
+								pixels.setGrayLevel(x, y, (level * fadeLevel + noFadeLevel / 2) / noFadeLevel);
+							}
+						}
 					}
 				}
 			}
 		}
+	}
+
+	/**
+	 * The highest a row's strokes can reach, in pixels in the map.
+	 */
+	private double getRowInkTop(int row)
+	{
+		return (getRowY(row) - amplitude - getRowJitterAmplitude(row)) * sizeMultiplier - strokeWidth / 2.0;
+	}
+
+	/**
+	 * The lowest a row's strokes can reach, in pixels in the map.
+	 */
+	private double getRowInkBottom(int row)
+	{
+		return (getRowY(row) + getRowJitterAmplitude(row)) * sizeMultiplier + strokeWidth / 2.0;
+	}
+
+	/**
+	 * Where, in pixels in the map, the band of pixels that only the given row draws in begins, which is halfway between the lowest the row
+	 * above it reaches and the highest its own strokes reach.
+	 */
+	private double getRowStripStart(int row)
+	{
+		return (getRowInkBottom(row - 1) + getRowInkTop(row)) / 2.0;
+	}
+
+	/**
+	 * How opaque a wave line is at a point on a row, out of noFadeLevel: fully opaque where it leaves the concentric line, and fading as it
+	 * gets farther out. How far out it fades to nothing, and the curve it fades along, vary randomly from line to line, so that some lines
+	 * are gone before their tips while others end while still visible. Both come from smooth noise along the row, which, like a line's
+	 * reach, has separate values for lines running left and right from the concentric line.
+	 *
+	 * Expects nearestOnCurve to hold the point on the concentric line's path closest to the point, as calcDistanceBeyondReach leaves it.
+	 *
+	 * @param distancePastLine
+	 *            How far the point is outside the concentric line, in pixels.
+	 * @param distanceBeyondReach
+	 *            How much farther the point is from the concentric line than the wave line there reaches, in pixels.
+	 */
+	private byte calcFadeLevel(int row, double xInGraph, double distancePastLine, double distanceBeyondReach)
+	{
+		double reach = distancePastLine - distanceBeyondReach;
+		if (reach <= 0.0)
+		{
+			return 0;
+		}
+
+		double rightEndWeight = calcRightEndWeight(xInGraph);
+		double xInUnits = xInGraph / sizeMultiplier;
+		double spacing = rowSpacing * fadeNoiseControlPointSpacingAsMultipleOfRowSpacing;
+		double distanceNoise = rightEndWeight * sampleSmoothNoise(rightEndFadeDistanceSalt, row, xInUnits, spacing)
+				+ (1.0 - rightEndWeight) * sampleSmoothNoise(leftEndFadeDistanceSalt, row, xInUnits, spacing);
+		double curveNoise = rightEndWeight * sampleSmoothNoise(rightEndFadeCurveSalt, row, xInUnits, spacing)
+				+ (1.0 - rightEndWeight) * sampleSmoothNoise(leftEndFadeCurveSalt, row, xInUnits, spacing);
+		double fadeDistance = reach * Math.exp(fadeDistanceLogRange * distanceNoise);
+		double exponent = Math.exp(fadeExponentLogRange * curveNoise);
+
+		double fraction = Math.max(0.0, Math.min(1.0, distancePastLine / fadeDistance));
+		return (byte) Math.round(noFadeLevel * Math.pow(1.0 - fraction, exponent));
 	}
 
 	/**
@@ -606,8 +767,11 @@ public class WaveLineDrawer
 	 *
 	 * @param classes
 	 *            For each pixel along the row in drawBounds, whether it is outside the band, in it, or kept clear of wave lines.
+	 * @param fadeLevels
+	 *            If not null, is filled in with how opaque the row's strokes are at each pixel along it, out of noFadeLevel.
 	 */
-	private void drawRow(Painter p, int row, double yInGraph, byte[] classes, SegmentGrid segmentGrid, double concentricLineOuterRadius, Rectangle drawBounds)
+	private void drawRow(Painter p, int row, double yInGraph, byte[] classes, SegmentGrid segmentGrid, double concentricLineOuterRadius, Rectangle drawBounds,
+			byte[] fadeLevels)
 	{
 		int width = classes.length;
 		double overhang = calcOverhang(strokeWidth);
@@ -646,6 +810,10 @@ public class WaveLineDrawer
 			{
 				double xInGraph = pixel + drawBounds.x;
 				double distanceBeyondReach = calcDistanceBeyondReach(row, xInGraph, yInGraph, segmentGrid, concentricLineOuterRadius, lengthNoise);
+				if (fadeLevels != null)
+				{
+					fadeLevels[pixel] = calcFadeLevel(row, xInGraph, nearestOnCurve.distance - concentricLineOuterRadius, distanceBeyondReach);
+				}
 				boolean isTouchingLine = (pixel == runStart && reachesLineAtStart) || (pixel == runEnd - 1 && reachesLineAtEnd);
 				boolean isWithinReach = distanceBeyondReach <= 0.0 || isTouchingLine;
 
@@ -1174,11 +1342,22 @@ public class WaveLineDrawer
 	private double calcDistanceBeyondReach(int row, double xInGraph, double yInGraph, SegmentGrid segmentGrid, double concentricLineOuterRadius, RowLengthNoise lengthNoise)
 	{
 		segmentGrid.findNearest(xInGraph, yInGraph, nearestOnCurve);
-		double alongRow = nearestOnCurve.distance <= 0.0 ? 0.0 : Math.max(-1.0, Math.min(1.0, (xInGraph - nearestOnCurve.pointX) / nearestOnCurve.distance));
-		double rightEndWeight = (1.0 + alongRow) / 2.0;
+		double rightEndWeight = calcRightEndWeight(xInGraph);
 		double xInUnits = xInGraph / sizeMultiplier;
 		double noise = rightEndWeight * lengthNoise.sample(xInUnits, false) + (1.0 - rightEndWeight) * lengthNoise.sample(xInUnits, true);
 		return nearestOnCurve.distance - concentricLineOuterRadius - reachDistribution.getReach(noise) * sizeMultiplier;
+	}
+
+	/**
+	 * How much a point on a row belongs to a stroke running rightward from the concentric line, from 0 where the nearest point on the line is
+	 * directly to its right to 1 where it is directly to its left.
+	 *
+	 * Expects nearestOnCurve to hold the point on the concentric line's path closest to the point.
+	 */
+	private double calcRightEndWeight(double xInGraph)
+	{
+		double alongRow = nearestOnCurve.distance <= 0.0 ? 0.0 : Math.max(-1.0, Math.min(1.0, (xInGraph - nearestOnCurve.pointX) / nearestOnCurve.distance));
+		return (1.0 + alongRow) / 2.0;
 	}
 
 	/**

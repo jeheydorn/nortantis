@@ -119,6 +119,7 @@ public class SettingsGenerator
 			settings.waveLineRowSpacingVariation = rand.nextInt(MapSettings.maxWaveLineVariation + 1);
 			settings.waveLineLength = minWaveLineLengthToGenerate + rand.nextInt(maxWaveLineLengthToGenerate - minWaveLineLengthToGenerate + 1);
 			settings.waveLineLengthVariation = rand.nextInt(MapSettings.maxWaveLineVariation + 1);
+			settings.fadeWaveLines = rand.nextBoolean();
 		}
 		settings.concentricWaveCount = Math.max(minConcentricWaveCountToGenerate, Math.min(maxConcentricWaveCountToGenerate, Math.abs((rand.nextInt() % maxConcentricWaveCountInEditor)) + 1));
 		settings.coastShadingLevel = 15 + Math.abs(rand.nextInt(35));
