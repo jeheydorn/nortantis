@@ -1,6 +1,7 @@
 package nortantis.swing;
 
 import nortantis.*;
+import nortantis.MapSettings.ConcentricLineMode;
 import nortantis.MapSettings.GridOverlayLayer;
 import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanWaves;
@@ -1052,7 +1053,7 @@ public class ThemePanel extends JTabbedPane
 		waveLineControls = new WaveRowStyleControls();
 		waveDashControls = new WaveRowStyleControls();
 
-		List<Component> styleOptions = new ArrayList<>(Arrays.asList(fadeWavesCheckbox, jitterWavesCheckbox, jitterLevelPanel, brokenLinesCheckbox, concentricWaveLineWidthPanel));
+		List<Component> styleOptions = new ArrayList<>(Arrays.asList(fadeWavesCheckbox, brokenLinesCheckbox, jitterWavesCheckbox, jitterLevelPanel, concentricWaveLineWidthPanel));
 		styleOptions.addAll(waveLineControls.getComponents());
 		styleOptions.addAll(waveDashControls.getComponents());
 		concentricWavesOptionsHider = organizer.addLabelAndComponentsVertical(Translation.get("theme.styleOptions.label"), Translation.get("theme.styleOptions.help"),
@@ -1986,12 +1987,12 @@ public class ThemePanel extends JTabbedPane
 		{
 			settings.oceanWavesType = OceanWaves.ConcentricWaves;
 		}
-		settings.setWaveLineStyle(waveLineControls.getStyle());
-		settings.setWaveDashStyle(waveDashControls.getStyle());
+		settings.setWaveLineStyle(waveLineControls.getStyle(settings.getWaveLineStyle()));
+		settings.setWaveDashStyle(waveDashControls.getStyle(settings.getWaveDashStyle()));
 		settings.fadeConcentricWaves = fadeWavesCheckbox.isSelected();
 		settings.jitterToConcentricWaves = jitterWavesCheckbox.isSelected();
 		settings.jitterLevel = jitterLevelSlider.getValue();
-		settings.concentricWaveLineWidth = fromWaveLineWidthSliderValue(concentricWaveLineWidthSlider.getValue());
+		settings.concentricWaveLineWidth = getWaveLineWidth(concentricWaveLineWidthSlider, settings.concentricWaveLineWidth);
 		settings.brokenLinesForConcentricWaves = brokenLinesCheckbox.isSelected();
 		settings.drawOceanEffectsInLakes = drawOceanEffectsInLakesCheckbox.isSelected();
 		settings.coastShadingColor = AwtBridge.fromAwtColor(coastShadingColorDisplay.getBackground());
@@ -2162,8 +2163,7 @@ public class ThemePanel extends JTabbedPane
 	}
 
 	/**
-	 * Creates a slider for the width of wave lines or concentric waves' lines. Its values are hundredths of a pixel, so that the default width
-	 * is one of them.
+	 * Creates a slider for the width of wave lines or concentric waves' lines. Its values are tenths of a pixel.
 	 */
 	private JSlider createWaveLineWidthSlider()
 	{
@@ -2178,12 +2178,21 @@ public class ThemePanel extends JTabbedPane
 
 	private static int toWaveLineWidthSliderValue(double width)
 	{
-		return (int) Math.round(width * 100.0);
+		return (int) Math.round(width * 10.0);
 	}
 
 	private static double fromWaveLineWidthSliderValue(int value)
 	{
-		return value / 100.0;
+		return value / 10.0;
+	}
+
+	/**
+	 * The width a line width slider shows. A width the slider can't show exactly, such as the default, is kept as long as the slider still
+	 * shows it rounded, so that loading a map into the editor doesn't change it.
+	 */
+	private static double getWaveLineWidth(JSlider slider, double previousWidth)
+	{
+		return slider.getValue() == toWaveLineWidthSliderValue(previousWidth) ? previousWidth : fromWaveLineWidthSliderValue(slider.getValue());
 	}
 
 	/**
@@ -2191,43 +2200,32 @@ public class ThemePanel extends JTabbedPane
 	 */
 	private class WaveRowStyleControls
 	{
-		private final JSlider lineWidthSlider;
-		private final JPanel lineWidthPanel;
-		private final JCheckBox jitterCheckbox;
-		private final JSlider jitterLevelSlider;
-		private final JPanel jitterLevelPanel;
 		private final JComboBox<WaveLineShape> shapeComboBox;
 		private final JPanel shapePanel;
-		private final JSlider rowSpacingSlider;
-		private final JPanel rowSpacingPanel;
+		private final JSlider rowHeightSlider;
+		private final JPanel rowHeightPanel;
+		private final JSlider rowGapSlider;
+		private final JPanel rowGapPanel;
 		private final JSlider rowSpacingVariationSlider;
 		private final JPanel rowSpacingVariationPanel;
 		private final JSlider lengthSlider;
 		private final JPanel lengthPanel;
 		private final JSlider lengthVariationSlider;
 		private final JPanel lengthVariationPanel;
+		private final JCheckBox drawLineCheckbox;
+		private final JCheckBox reachShoreCheckbox;
+		private final JCheckBox jitterCheckbox;
+		private final JSlider jitterLevelSlider;
+		private final JPanel jitterLevelPanel;
+		private final JCheckBox lineJitterCheckbox;
+		private final JSlider lineJitterLevelSlider;
+		private final JPanel lineJitterLevelPanel;
+		private final JSlider lineWidthSlider;
+		private final JPanel lineWidthPanel;
+		private boolean isVisible;
 
 		WaveRowStyleControls()
 		{
-			lineWidthSlider = createWaveLineWidthSlider();
-			lineWidthPanel = createWaveLineWidthPanel(lineWidthSlider);
-
-			jitterCheckbox = new JCheckBox(Translation.get("theme.jitter"));
-			jitterCheckbox.addActionListener(new ActionListener()
-			{
-				@Override
-				public void actionPerformed(ActionEvent e)
-				{
-					jitterLevelPanel.setVisible(jitterCheckbox.isSelected());
-					handleTerrainChange();
-				}
-			});
-
-			jitterLevelSlider = createWaveLineSlider(1, MapSettings.maxJitterLevel);
-			// The slider appears only while the jitter checkbox is checked and belongs with it, so it gets no extra space above it.
-			jitterLevelPanel = new SliderWithDisplayedValue(jitterLevelSlider).createPanelWithLabelAbove(Translation.get("theme.jitterLevel.label"),
-					Translation.get("theme.jitterLevel.help"), false);
-
 			shapeComboBox = new JComboBox<>()
 			{
 				@Override
@@ -2260,9 +2258,13 @@ public class ThemePanel extends JTabbedPane
 			shapePanel = SwingHelper.createPanelWithLabelAbove(Translation.get("theme.waveLineShape.label"), Translation.get("theme.waveLineShape.help"),
 					Arrays.asList(shapeComboBox));
 
-			rowSpacingSlider = createWaveLineSlider(2, 15);
-			rowSpacingPanel = new SliderWithDisplayedValue(rowSpacingSlider).createPanelWithLabelAbove(Translation.get("theme.waveLineRowSpacing.label"),
-					Translation.get("theme.waveLineRowSpacing.help"));
+			rowHeightSlider = createWaveLineSlider(2, 15);
+			rowHeightPanel = new SliderWithDisplayedValue(rowHeightSlider).createPanelWithLabelAbove(Translation.get("theme.waveLineRowHeight.label"),
+					Translation.get("theme.waveLineRowHeight.help"));
+
+			rowGapSlider = createWaveLineSlider(0, 15);
+			rowGapPanel = new SliderWithDisplayedValue(rowGapSlider).createPanelWithLabelAbove(Translation.get("theme.waveLineRowGap.label"),
+					Translation.get("theme.waveLineRowGap.help"));
 
 			rowSpacingVariationSlider = createWaveLineSlider(0, MapSettings.maxWaveLineVariation);
 			rowSpacingVariationPanel = new SliderWithDisplayedValue(rowSpacingVariationSlider).createPanelWithLabelAbove(
@@ -2275,6 +2277,46 @@ public class ThemePanel extends JTabbedPane
 			lengthVariationSlider = createWaveLineSlider(0, MapSettings.maxWaveLineVariation);
 			lengthVariationPanel = new SliderWithDisplayedValue(lengthVariationSlider).createPanelWithLabelAbove(Translation.get("theme.waveLineLengthVariation.label"),
 					Translation.get("theme.waveLineLengthVariation.help"));
+
+			drawLineCheckbox = new JCheckBox(Translation.get("theme.drawConcentricLine"));
+			drawLineCheckbox.setToolTipText(Translation.get("theme.drawConcentricLine.tooltip"));
+			drawLineCheckbox.addActionListener(e ->
+			{
+				updateVisibility();
+				handleTerrainChange();
+			});
+
+			reachShoreCheckbox = new JCheckBox(Translation.get("theme.rowsReachShore"));
+			reachShoreCheckbox.setToolTipText(Translation.get("theme.rowsReachShore.tooltip"));
+			reachShoreCheckbox.addActionListener(e ->
+			{
+				updateVisibility();
+				handleTerrainChange();
+			});
+
+			jitterCheckbox = new JCheckBox(Translation.get("theme.jitterRows"));
+			jitterCheckbox.addActionListener(e ->
+			{
+				updateVisibility();
+				handleTerrainChange();
+			});
+			jitterLevelSlider = createWaveLineSlider(1, MapSettings.maxJitterLevel);
+			// The slider appears only while the jitter checkbox is checked and belongs with it, so it gets no extra space above it.
+			jitterLevelPanel = new SliderWithDisplayedValue(jitterLevelSlider).createPanelWithLabelAbove(Translation.get("theme.jitterLevel.label"),
+					Translation.get("theme.rowJitterLevel.help"), false);
+
+			lineJitterCheckbox = new JCheckBox(Translation.get("theme.jitterConcentricLine"));
+			lineJitterCheckbox.addActionListener(e ->
+			{
+				updateVisibility();
+				handleTerrainChange();
+			});
+			lineJitterLevelSlider = createWaveLineSlider(1, MapSettings.maxJitterLevel);
+			lineJitterLevelPanel = new SliderWithDisplayedValue(lineJitterLevelSlider).createPanelWithLabelAbove(Translation.get("theme.jitterLevel.label"),
+					Translation.get("theme.jitterLevel.help"), false);
+
+			lineWidthSlider = createWaveLineWidthSlider();
+			lineWidthPanel = createWaveLineWidthPanel(lineWidthSlider);
 		}
 
 		/**
@@ -2282,36 +2324,67 @@ public class ThemePanel extends JTabbedPane
 		 */
 		List<Component> getComponents()
 		{
-			return Arrays.asList(lineWidthPanel, jitterCheckbox, jitterLevelPanel, shapePanel, rowSpacingPanel, rowSpacingVariationPanel, lengthPanel,
-					lengthVariationPanel);
+			return Arrays.asList(shapePanel, rowHeightPanel, rowGapPanel, rowSpacingVariationPanel, lengthPanel, lengthVariationPanel, drawLineCheckbox,
+					reachShoreCheckbox, jitterCheckbox, jitterLevelPanel, lineJitterCheckbox, lineJitterLevelPanel, lineWidthPanel);
 		}
 
 		void setVisible(boolean isVisible)
+		{
+			this.isVisible = isVisible;
+			updateVisibility();
+		}
+
+		private void updateVisibility()
 		{
 			for (Component component : getComponents())
 			{
 				component.setVisible(isVisible);
 			}
 			jitterLevelPanel.setVisible(isVisible && jitterCheckbox.isSelected());
+			reachShoreCheckbox.setVisible(isVisible && !drawLineCheckbox.isSelected());
+			// Rows that reach the shore start at the coastline, which has nothing to jitter.
+			boolean hasLineToJitter = getLineMode() != ConcentricLineMode.HiddenRowsReachShore;
+			lineJitterCheckbox.setVisible(isVisible && hasLineToJitter);
+			lineJitterLevelPanel.setVisible(isVisible && hasLineToJitter && lineJitterCheckbox.isSelected());
 		}
 
 		void load(MapSettings.WaveRowStyle style)
 		{
-			lineWidthSlider.setValue(toWaveLineWidthSliderValue(style.lineWidth()));
-			jitterCheckbox.setSelected(style.jitter());
-			jitterLevelSlider.setValue(style.jitterLevel());
 			shapeComboBox.setSelectedItem(style.shape());
-			rowSpacingSlider.setValue(style.rowSpacing());
+			rowHeightSlider.setValue(style.rowHeight());
+			rowGapSlider.setValue(style.rowGap());
 			rowSpacingVariationSlider.setValue(style.rowSpacingVariation());
 			lengthSlider.setValue(style.length());
 			lengthVariationSlider.setValue(style.lengthVariation());
+			drawLineCheckbox.setSelected(style.lineMode() == ConcentricLineMode.Drawn);
+			reachShoreCheckbox.setSelected(style.lineMode() == ConcentricLineMode.HiddenRowsReachShore);
+			jitterCheckbox.setSelected(style.jitter());
+			jitterLevelSlider.setValue(style.jitterLevel());
+			lineJitterCheckbox.setSelected(style.lineJitter());
+			lineJitterLevelSlider.setValue(style.lineJitterLevel());
+			lineWidthSlider.setValue(toWaveLineWidthSliderValue(style.lineWidth()));
+			updateVisibility();
 		}
 
-		MapSettings.WaveRowStyle getStyle()
+		/**
+		 * @param previous
+		 *            The style before the controls were changed, which keeps widths the line width slider can't show exactly.
+		 */
+		MapSettings.WaveRowStyle getStyle(MapSettings.WaveRowStyle previous)
 		{
-			return new MapSettings.WaveRowStyle((WaveLineShape) shapeComboBox.getSelectedItem(), rowSpacingSlider.getValue(), rowSpacingVariationSlider.getValue(),
-					lengthSlider.getValue(), lengthVariationSlider.getValue(), jitterCheckbox.isSelected(), jitterLevelSlider.getValue(),
-					fromWaveLineWidthSliderValue(lineWidthSlider.getValue()));
+			return new MapSettings.WaveRowStyle((WaveLineShape) shapeComboBox.getSelectedItem(), rowHeightSlider.getValue(), rowGapSlider.getValue(),
+					rowSpacingVariationSlider.getValue(), lengthSlider.getValue(), lengthVariationSlider.getValue(), jitterCheckbox.isSelected(),
+					jitterLevelSlider.getValue(), lineJitterCheckbox.isSelected(), lineJitterLevelSlider.getValue(),
+					getWaveLineWidth(lineWidthSlider, previous.lineWidth()), getLineMode());
+		}
+
+		private ConcentricLineMode getLineMode()
+		{
+			if (drawLineCheckbox.isSelected())
+			{
+				return ConcentricLineMode.Drawn;
+			}
+			return reachShoreCheckbox.isSelected() ? ConcentricLineMode.HiddenRowsReachShore : ConcentricLineMode.HiddenRowsKeepDistance;
 		}
 	}
 

@@ -1,5 +1,6 @@
 package nortantis;
 
+import nortantis.MapSettings.ConcentricLineMode;
 import nortantis.MapSettings.OceanWaves;
 import nortantis.MapSettings.WaveLineShape;
 import nortantis.WorldGraph.CoastlineCurve;
@@ -46,8 +47,8 @@ public class WaveLineDrawer
 	 * At the highest length variation, the most a wave line's reach can differ from the wave line length, as a fraction of that length.
 	 */
 	private static final double maxLengthVariationAsFractionOfLength = 0.9;
-	private static final double amplitudeAsFractionOfRowSpacing = 0.22;
-	private static final double wavelengthAsMultipleOfRowSpacing = 1.6;
+	private static final double amplitudeAsFractionOfRowHeight = 0.22;
+	private static final double wavelengthAsMultipleOfRowHeight = 1.6;
 	private static final double maxJitterAmplitudeAsFractionOfRowSpacing = 0.3;
 	private static final double jitterControlPointSpacingAsMultipleOfWavelength = 1.0;
 	/**
@@ -80,6 +81,11 @@ public class WaveLineDrawer
 	private static final double minBreakGapAsMultipleOfStrokeWidth = 1.0;
 	private static final double lengthNoiseControlPointSpacingAsMultipleOfRowSpacing = 6.0;
 	private static final int bisectionIterations = 8;
+	/**
+	 * Where rows stop short of a concentric line that isn't drawn, each end is pulled back from it by up to this many wavelengths more than
+	 * keeps its round cap clear of it, so that the rows don't all end along one curve.
+	 */
+	private static final double maxLineEndPullBackInWavelengths = 1.5;
 
 	/**
 	 * For wave dashes, the Gaussian blur of the land that shapes where they end is this wide horizontally, as a fraction of the wave line
@@ -193,6 +199,7 @@ public class WaveLineDrawer
 	private static final long dashSalt = 0x5A17C0DE0BL;
 	private static final long dashKeepSalt = 0x5A17C0DE0CL;
 	private static final long taperPressureSalt = 0x5A17C0DE0DL;
+	private static final long lineEndSalt = 0x5A17C0DE0EL;
 
 	private final MapSettings settings;
 	private final double resolutionScale;
@@ -204,6 +211,10 @@ public class WaveLineDrawer
 	 */
 	private final boolean isDashes;
 	private final double rowSpacing;
+	/**
+	 * Whether rows stop short of a concentric line that isn't drawn, so that their ends there show.
+	 */
+	private final boolean areLineEndsVisible;
 	private final double amplitude;
 	private final double wavelength;
 	private final double jitterAmplitude;
@@ -219,6 +230,10 @@ public class WaveLineDrawer
 	 * For wave dashes, the blurred land that shapes where they end, built for the area being drawn.
 	 */
 	private DashLens dashLens;
+	/**
+	 * The bounds of the whole map, in graph coordinates.
+	 */
+	private Rectangle mapBounds;
 
 	public WaveLineDrawer(MapSettings settings, double resolutionScale)
 	{
@@ -228,9 +243,10 @@ public class WaveLineDrawer
 		strokeWidth = calcStrokeWidth(settings, resolutionScale);
 		strokeWidthInUnits = calcStrokeWidthInUnits(settings);
 		isDashes = settings.oceanWavesType == OceanWaves.WaveDashes;
-		rowSpacing = settings.getWaveRowStyle().rowSpacing();
+		rowSpacing = calcRowSpacing(settings);
+		areLineEndsVisible = settings.getWaveRowStyle().lineMode() == ConcentricLineMode.HiddenRowsKeepDistance;
 		amplitude = calcAmplitude(settings);
-		wavelength = rowSpacing * wavelengthAsMultipleOfRowSpacing;
+		wavelength = calcWavelength(settings);
 		jitterAmplitude = calcJitterAmplitude(settings);
 		jitterFraction = calcJitterFraction(settings);
 		minRowSeparation = calcMinRowSeparation(settings);
@@ -250,7 +266,21 @@ public class WaveLineDrawer
 
 	private static double calcAmplitude(MapSettings settings)
 	{
-		return settings.getWaveRowStyle().rowSpacing() * amplitudeAsFractionOfRowSpacing;
+		return settings.getWaveRowStyle().rowHeight() * amplitudeAsFractionOfRowHeight;
+	}
+
+	private static double calcWavelength(MapSettings settings)
+	{
+		return settings.getWaveRowStyle().rowHeight() * wavelengthAsMultipleOfRowHeight;
+	}
+
+	/**
+	 * The distance between the baselines of neighboring rows before row spacing variation, in units: the least that keeps them from touching,
+	 * plus the row gap.
+	 */
+	private static double calcRowSpacing(MapSettings settings)
+	{
+		return calcMinRowSeparation(settings) + calcSpaceBetweenRowsWithoutJitter(settings);
 	}
 
 	/**
@@ -258,7 +288,21 @@ public class WaveLineDrawer
 	 */
 	private static double calcSpaceBetweenRowsWithoutJitter(MapSettings settings)
 	{
-		return Math.max(0.0, settings.getWaveRowStyle().rowSpacing() - calcAmplitude(settings) - calcStrokeWidthInUnits(settings) - minGapBetweenRows);
+		return Math.max(0, settings.getWaveRowStyle().rowGap());
+	}
+
+	/**
+	 * The row gap that spaces rows of the given height as far apart as the given row spacing did when row spacing set both the height of
+	 * rows and the distance between them.
+	 *
+	 * @param lineWidth
+	 *            The line width, in pixels at resolution 1.
+	 */
+	public static int calcRowGapMatchingRowSpacing(int rowSpacing, double lineWidth)
+	{
+		double strokeWidthInUnits = lineWidth / MapCreator.calcSizeMultiplierFromResolutionScale(1.0);
+		double minRowSeparation = rowSpacing * amplitudeAsFractionOfRowHeight + strokeWidthInUnits + minGapBetweenRows;
+		return (int) Math.max(0, Math.round(rowSpacing - minRowSeparation));
 	}
 
 	/**
@@ -269,7 +313,7 @@ public class WaveLineDrawer
 	{
 		// Jitter moves both neighboring rows, so each gets half of the space between them.
 		return calcJitterFraction(settings)
-				* Math.min(settings.getWaveRowStyle().rowSpacing() * maxJitterAmplitudeAsFractionOfRowSpacing, calcSpaceBetweenRowsWithoutJitter(settings) / 2.0);
+				* Math.min(calcRowSpacing(settings) * maxJitterAmplitudeAsFractionOfRowSpacing, calcSpaceBetweenRowsWithoutJitter(settings) / 2.0);
 	}
 
 	/**
@@ -298,7 +342,7 @@ public class WaveLineDrawer
 	 */
 	private static double calcMaxRowShift(MapSettings settings)
 	{
-		double largestShift = Math.max(0.0, settings.getWaveRowStyle().rowSpacing() - calcMinRowSeparation(settings));
+		double largestShift = calcSpaceBetweenRowsWithoutJitter(settings);
 		return largestShift * Math.max(0, Math.min(MapSettings.maxWaveLineVariation, settings.getWaveRowStyle().rowSpacingVariation())) / (double) MapSettings.maxWaveLineVariation;
 	}
 
@@ -320,11 +364,23 @@ public class WaveLineDrawer
 		{
 			// Past the blur's reach, no land adds to it, so wave dashes can't reach there.
 			DashLens lens = DashLens.create(settings, resolutionScale);
-			double lensRadius = lens == null ? 0.0 : lens.calcSupport() + MapCreator.calcJitter(settings, resolutionScale);
+			double lensRadius = lens == null ? 0.0 : lens.calcSupport() + calcConcentricLineJitter(settings, resolutionScale);
 			return Math.max(lensRadius, calcMinDashBandRadius(settings, resolutionScale));
 		}
-		return MapCreator.calcWaveLinesConcentricLineOuterWidth(settings, resolutionScale) / 2.0
-				+ calcMaxReach(settings) * MapCreator.calcSizeMultiplierFromResolutionScale(resolutionScale);
+		return calcInnerEdgeRadius(settings, resolutionScale) + calcMaxReach(settings) * MapCreator.calcSizeMultiplierFromResolutionScale(resolutionScale);
+	}
+
+	/**
+	 * The distance, in pixels, from a coastline curve to where rows start: the outer edge of the concentric line, or of the coastline for
+	 * rows that reach the shore.
+	 */
+	private static double calcInnerEdgeRadius(MapSettings settings, double resolutionScale)
+	{
+		if (settings.getWaveRowStyle().lineMode() == ConcentricLineMode.HiddenRowsReachShore)
+		{
+			return settings.coastlineWidth * resolutionScale / 2.0;
+		}
+		return MapCreator.calcWaveLinesConcentricLineOuterWidth(settings, resolutionScale) / 2.0;
 	}
 
 	/**
@@ -332,7 +388,7 @@ public class WaveLineDrawer
 	 */
 	private static double calcMinDashBandRadius(MapSettings settings, double resolutionScale)
 	{
-		return MapCreator.calcWaveLinesConcentricLineOuterWidth(settings, resolutionScale) / 2.0
+		return calcInnerEdgeRadius(settings, resolutionScale)
 				+ calcMaxReach(settings) * minDashReachAsFractionOfReach * MapCreator.calcSizeMultiplierFromResolutionScale(resolutionScale);
 	}
 
@@ -352,13 +408,13 @@ public class WaveLineDrawer
 		double concentricLinePadding = MapCreator.calcWaveLinesConcentricLineOuterWidth(settings, resolutionScale) + calcConcentricLineJitter(settings, resolutionScale);
 		// Whether a row passes over a graze of the concentric line depends on the row up to a graze's length away.
 		double bandPadding = calcBandRadius(settings, resolutionScale) + calcConcentricLineJitter(settings, resolutionScale)
-				+ maxGrazeToPassOverInWavelengths * settings.getWaveRowStyle().rowSpacing() * wavelengthAsMultipleOfRowSpacing * sizeMultiplier;
+				+ maxGrazeToPassOverInWavelengths * calcWavelength(settings) * sizeMultiplier;
 		if (settings.oceanWavesType == OceanWaves.WaveDashes)
 		{
 			// How far out a point is depends on its run up to a band radius away, whether a dash is drawn depends on its middle, so a change
 			// can reach half a dash farther, and the blur is computed in blocks.
 			DashLens lens = DashLens.create(settings, resolutionScale);
-			bandPadding += calcBandRadius(settings, resolutionScale) + maxDashLengthInWavelengths * settings.getWaveRowStyle().rowSpacing() * wavelengthAsMultipleOfRowSpacing * sizeMultiplier / 2.0
+			bandPadding += calcBandRadius(settings, resolutionScale) + maxDashLengthInWavelengths * calcWavelength(settings) * sizeMultiplier / 2.0
 					+ (lens == null ? 0.0 : 2.0 * lens.blockSize);
 		}
 		// How far a stroke's waves, jitter, row shift and width reach off its row.
@@ -408,7 +464,8 @@ public class WaveLineDrawer
 
 		int width = landMask.getWidth();
 		int height = landMask.getHeight();
-		double concentricLineOuterRadius = MapCreator.calcWaveLinesConcentricLineOuterWidth(settings, resolutionScale) / 2.0;
+		double concentricLineOuterRadius = calcInnerEdgeRadius(settings, resolutionScale);
+		mapBounds = graph.bounds;
 		double bandRadius = calcBandRadius(settings, resolutionScale);
 		if (isDashes)
 		{
@@ -586,6 +643,8 @@ public class WaveLineDrawer
 			// edge of the area being drawn continues past it.
 			boolean reachesLineAtStart = runStart == 0 || classes[runStart - 1] == keepOutClass;
 			boolean reachesLineAtEnd = runEnd == width || classes[runEnd] == keepOutClass;
+			boolean isStartVisible = isVisibleLineEnd(classes, runStart - 1, drawBounds);
+			boolean isEndVisible = isVisibleLineEnd(classes, runEnd, drawBounds);
 
 			List<double[]> stretches = new ArrayList<>();
 			double stretchStart = 0.0;
@@ -601,7 +660,7 @@ public class WaveLineDrawer
 
 				if (isWithinReach && !isInStretch)
 				{
-					stretchStart = pixel == runStart && reachesLineAtStart ? xInGraph - overhang
+					stretchStart = pixel == runStart && reachesLineAtStart ? (isStartVisible ? xInGraph + calcLineEndPullBack(row, xInGraph) : xInGraph - overhang)
 							: Double.isNaN(previousX) || isTouchingLine ? xInGraph
 									: findReachCrossing(row, previousX, previousDistanceBeyondReach, xInGraph, distanceBeyondReach, yInGraph, segmentGrid, concentricLineOuterRadius, lengthNoise);
 					isInStretch = true;
@@ -620,7 +679,9 @@ public class WaveLineDrawer
 
 			if (isInStretch)
 			{
-				double stretchEnd = reachesLineAtEnd ? runEnd + drawBounds.x + overhang : previousX;
+				double runEndInGraph = runEnd + drawBounds.x;
+				double stretchEnd = !reachesLineAtEnd ? previousX
+						: isEndVisible ? runEndInGraph - calcLineEndPullBack(row, runEndInGraph) : runEndInGraph + overhang;
 				stretches.add(new double[] { stretchStart, stretchEnd });
 			}
 
@@ -680,6 +741,8 @@ public class WaveLineDrawer
 			// edge of the area being drawn continues past it.
 			boolean reachesLineAtStart = runStart == 0 || classes[runStart - 1] == keepOutClass;
 			boolean reachesLineAtEnd = runEnd == width || classes[runEnd] == keepOutClass;
+			boolean isStartVisible = isVisibleLineEnd(classes, runStart - 1, drawBounds);
+			boolean isEndVisible = isVisibleLineEnd(classes, runEnd, drawBounds);
 			double runStartInGraph = runStart + drawBounds.x;
 			double runEndInGraph = runEnd + drawBounds.x;
 			DoubleUnaryOperator runFraction = xInGraph -> calcRunFraction(xInGraph, runStartInGraph, runEndInGraph, reachesLineAtStart, reachesLineAtEnd, bandRadius,
@@ -694,7 +757,7 @@ public class WaveLineDrawer
 
 			// The unbroken part of the row is wherever a point is less far out than the row's solid fraction there. Each stretch of it also
 			// records whether its start and end are free ends, which taper, rather than ends under the concentric line or past the edge of the
-			// area being drawn.
+			// area being drawn. Ends where a concentric line that isn't drawn would be are free, and pulled back from it.
 			List<double[]> stretches = new ArrayList<>();
 			boolean isStretchStartFree = false;
 			double stretchStart = 0.0;
@@ -710,8 +773,9 @@ public class WaveLineDrawer
 
 				if (isSolid && !isInStretch)
 				{
-					isStretchStartFree = !(pixel == runStart && reachesLineAtStart);
-					stretchStart = !isStretchStartFree ? xInGraph - overhang
+					boolean isAtLine = pixel == runStart && reachesLineAtStart;
+					isStretchStartFree = !isAtLine || isStartVisible;
+					stretchStart = isAtLine ? (isStartVisible ? xInGraph + calcLineEndPullBack(row, xInGraph) : xInGraph - overhang)
 							: Double.isNaN(previousX) || isTouchingLine ? xInGraph
 									: findSolidDashCrossing(row, previousX, previousDifference, xInGraph, difference, runFraction);
 					isInStretch = true;
@@ -729,15 +793,16 @@ public class WaveLineDrawer
 			}
 			if (isInStretch)
 			{
-				double stretchEnd = reachesLineAtEnd ? runEnd + drawBounds.x + overhang : previousX;
-				stretches.add(new double[] { stretchStart, stretchEnd, isStretchStartFree ? 1.0 : 0.0, reachesLineAtEnd ? 0.0 : 1.0 });
+				double stretchEnd = !reachesLineAtEnd ? previousX
+						: isEndVisible ? runEndInGraph - calcLineEndPullBack(row, runEndInGraph) : runEndInGraph + overhang;
+				stretches.add(new double[] { stretchStart, stretchEnd, isStretchStartFree ? 1.0 : 0.0, reachesLineAtEnd && !isEndVisible ? 0.0 : 1.0 });
 			}
 			breakPattern = drawStretches(p, row, yInGraph, rowJitterAmplitude, stretches, breakPattern, drawBounds);
 
 			// Dashes past the unbroken part. Each series of them starts just past a free end of the unbroken part and runs outward, the way a
 			// pen carries on across the water after lifting. The unbroken part's ends depend only on the map near them, so the dashes do too.
-			RunDashes runDashes = new RunDashes(p, row, yInGraph, rowJitterAmplitude, runStartInGraph, runEndInGraph, reachesLineAtStart, reachesLineAtEnd, bandRadius,
-					runFraction, drawBounds);
+			RunDashes runDashes = new RunDashes(p, row, yInGraph, rowJitterAmplitude, runStartInGraph, runEndInGraph, reachesLineAtStart && !isStartVisible,
+					reachesLineAtEnd && !isEndVisible, reachesLineAtStart, reachesLineAtEnd, bandRadius, runFraction, drawBounds);
 			if (stretches.isEmpty())
 			{
 				runDashes.drawWithoutUnbrokenPart();
@@ -771,14 +836,20 @@ public class WaveLineDrawer
 		private final double rowJitterAmplitude;
 		private final double runStartInGraph;
 		private final double runEndInGraph;
+		/**
+		 * Whether the run's start is under the concentric line or past the edge of the area being drawn, so that a dash there doesn't taper.
+		 */
+		private final boolean isStartHidden;
+		private final boolean isEndHidden;
 		private final boolean reachesLineAtStart;
 		private final boolean reachesLineAtEnd;
 		private final double searchDistance;
 		private final DoubleUnaryOperator runFraction;
 		private final Rectangle drawBounds;
 
-		RunDashes(Painter p, int row, double yInGraph, double rowJitterAmplitude, double runStartInGraph, double runEndInGraph, boolean reachesLineAtStart,
-				boolean reachesLineAtEnd, double searchDistance, DoubleUnaryOperator runFraction, Rectangle drawBounds)
+		RunDashes(Painter p, int row, double yInGraph, double rowJitterAmplitude, double runStartInGraph, double runEndInGraph, boolean isStartHidden,
+				boolean isEndHidden, boolean reachesLineAtStart, boolean reachesLineAtEnd, double searchDistance, DoubleUnaryOperator runFraction,
+				Rectangle drawBounds)
 		{
 			this.p = p;
 			this.row = row;
@@ -786,6 +857,8 @@ public class WaveLineDrawer
 			this.rowJitterAmplitude = rowJitterAmplitude;
 			this.runStartInGraph = runStartInGraph;
 			this.runEndInGraph = runEndInGraph;
+			this.isStartHidden = isStartHidden;
+			this.isEndHidden = isEndHidden;
 			this.reachesLineAtStart = reachesLineAtStart;
 			this.reachesLineAtEnd = reachesLineAtEnd;
 			this.searchDistance = searchDistance;
@@ -855,12 +928,37 @@ public class WaveLineDrawer
 		 */
 		private void drawDash(double start, double end)
 		{
-			boolean isStartFree = !(start <= runStartInGraph && reachesLineAtStart);
-			boolean isEndFree = !(end >= runEndInGraph && reachesLineAtEnd);
+			boolean isStartFree = !(start <= runStartInGraph && isStartHidden);
+			boolean isEndFree = !(end >= runEndInGraph && isEndHidden);
 			double taperLength = dashTaperAsFractionOfHalfLength * (end - start) / 2.0 / sizeMultiplier;
 			drawPiece(p, row, yInGraph, rowJitterAmplitude, start / sizeMultiplier, end / sizeMultiplier, drawBounds,
 					new StrokeTaper(start / sizeMultiplier, end / sizeMultiplier, taperLength, isStartFree, isEndFree));
 		}
+	}
+
+	/**
+	 * Whether a row's pixel is where the row stops at a concentric line that isn't drawn, so that the end of a stroke there shows. Pixels
+	 * off the area being drawn or off the map are where strokes continue instead.
+	 */
+	private boolean isVisibleLineEnd(byte[] classes, int x, Rectangle drawBounds)
+	{
+		if (!areLineEndsVisible || x < 0 || x >= classes.length || classes[x] != keepOutClass)
+		{
+			return false;
+		}
+		double xInGraph = x + drawBounds.x;
+		return xInGraph >= mapBounds.x && xInGraph < mapBounds.x + mapBounds.width;
+	}
+
+	/**
+	 * How far, in pixels, to pull the end of a stroke back from where a row stops at a concentric line that isn't drawn: enough to keep its
+	 * round cap clear of where the line would be, plus a random amount.
+	 */
+	private double calcLineEndPullBack(int row, double xInGraph)
+	{
+		double random = uniform(lineEndSalt, row, (long) Math.floor(xInGraph / sizeMultiplier));
+		// Squaring favors ends near the line, with an occasional one well short of it.
+		return strokeWidth / 2.0 + maxLineEndPullBackInWavelengths * wavelength * sizeMultiplier * random * random;
 	}
 
 	/**
@@ -1253,16 +1351,17 @@ public class WaveLineDrawer
 		{
 			double xInUnits = samples.get(i);
 			double phase = getPhase(row, xInUnits);
-			double waveHeight = amplitudeInPixels * getWaveHeight(shape, row, phase);
+			double height = getWaveHeight(shape, row, phase);
 			double y = yInGraph - drawBounds.y + sampleJitter(row, rowJitterAmplitude, xInUnits) * sizeMultiplier;
 			if (taper != null)
 			{
 				double amount = taper.getAmount(xInUnits);
-				waveHeight *= 1.0 - taperFlattening * amount;
+				// The wave flattens toward its middle height, so a tapered stroke's tips point along it rather than up or down.
+				height = 0.5 + (height - 0.5) * (1.0 - taperFlattening * amount);
 				double pressure = 1.0 + taperPressureVariation * sampleSmoothNoise(taperPressureSalt, row, xInUnits, taperPressureNoiseSpacing);
 				widths[i] = strokeWidth * pressure * (1.0 - (1.0 - taperTipWidthFraction) * amount);
 			}
-			points.add(new FloatPoint((float) (xInUnits * sizeMultiplier - drawBounds.x), (float) (y - waveHeight)));
+			points.add(new FloatPoint((float) (xInUnits * sizeMultiplier - drawBounds.x), (float) (y - amplitudeInPixels * height)));
 		}
 
 		if (taper == null)

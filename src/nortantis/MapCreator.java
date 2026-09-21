@@ -1,5 +1,6 @@
 package nortantis;
 
+import nortantis.MapSettings.ConcentricLineMode;
 import nortantis.MapSettings.GridOverlayLayer;
 import nortantis.editor.*;
 import nortantis.geom.*;
@@ -37,6 +38,10 @@ public class MapCreator implements WarningLogger
 	 * How far the concentric line in the wave lines style is from the coast, relative to the distance of the innermost concentric wave.
 	 */
 	private static final double waveLinesConcentricLineDistanceScale = 0.5;
+	/**
+	 * The coastline width that lines along the coast are spaced for, in pixels at resolution 1. See calcCoastlineWidthOffset.
+	 */
+	private static final double defaultCoastlineWidth = calcSizeMultiplierFromResolutionScaleRounded(1.0);
 	private boolean isCanceled;
 
 	/**
@@ -678,7 +683,7 @@ public class MapCreator implements WarningLogger
 		// whichever is largest.
 
 		double concentricWaveWidth = settings.hasConcentricWaves()
-				? settings.concentricWaveCount * calcConcentricWaveSpacing(settings, settings.resolution) + calcJitter(settings, settings.resolution)
+				? calcLargestConcentricWaveWidth(settings, settings.resolution) + calcJitter(settings, settings.resolution)
 				: 0;
 		// The effects padding is added to the total width and height of the bounds it pads, so half of it lands on each side. The wave lines
 		// padding is a distance for each side.
@@ -1686,7 +1691,7 @@ public class MapCreator implements WarningLogger
 
 		double widthBetweenWaves = concentricWaveWidthBetweenWaves * sizeMultiplier;
 		double waveWidth = calcConcentricWaveStrokeWidthDifference(settings, resolutionScaled);
-		double largestLineWidth = settings.concentricWaveCount * calcConcentricWaveSpacing(settings, resolutionScaled);
+		double largestLineWidth = calcLargestConcentricWaveWidth(settings, resolutionScaled);
 		final double opacityOfLastWave;
 		if (settings.fadeConcentricWaves)
 		{
@@ -1801,16 +1806,19 @@ public class MapCreator implements WarningLogger
 
 		new WaveLineDrawer(settings, resolutionScaled).drawWaveLines(oceanEffects, graph, curves, landMask, centersToDraw, drawBounds);
 
-		// Drawing the concentric line over the wave lines also hides the wave lines' inner ends, which run under it.
-		try (Painter p = oceanEffects.createPainter(DrawQuality.High))
+		if (settings.getWaveRowStyle().lineMode() == ConcentricLineMode.Drawn)
 		{
-			p.setColor(Color.white);
-			p.setStrokeToSolidLineWithNoEndDecorations((float) lineOuterWidth);
-			graph.drawCoastlineCurves(p, curves, settings.backgroundRandomSeed, false, drawBounds, null);
+			// Drawing the concentric line over the wave lines also hides the wave lines' inner ends, which run under it.
+			try (Painter p = oceanEffects.createPainter(DrawQuality.High))
+			{
+				p.setColor(Color.white);
+				p.setStrokeToSolidLineWithNoEndDecorations((float) lineOuterWidth);
+				graph.drawCoastlineCurves(p, curves, settings.backgroundRandomSeed, false, drawBounds, null);
 
-			p.setColor(Color.black);
-			p.setBasicStroke((float) (lineOuterWidth - waveWidth));
-			graph.drawCoastlineCurves(p, curves, settings.backgroundRandomSeed, false, drawBounds, null);
+				p.setColor(Color.black);
+				p.setBasicStroke((float) (lineOuterWidth - waveWidth));
+				graph.drawCoastlineCurves(p, curves, settings.backgroundRandomSeed, false, drawBounds, null);
+			}
 		}
 
 		if (settings.drawOceanEffectsInLakes)
@@ -1835,12 +1843,31 @@ public class MapCreator implements WarningLogger
 	}
 
 	/**
+	 * The width, in pixels, of the stroke that draws the outermost concentric wave. Its outer edge is how far concentric waves reach from the
+	 * coastline.
+	 */
+	private static double calcLargestConcentricWaveWidth(MapSettings settings, double resolutionScaled)
+	{
+		return settings.concentricWaveCount * calcConcentricWaveSpacing(settings, resolutionScaled) + calcCoastlineWidthOffset(settings, resolutionScaled);
+	}
+
+	/**
 	 * The width, in pixels, of the stroke whose edge is the outside of the concentric line in the wave lines and wave dashes styles.
 	 */
 	static double calcWaveLinesConcentricLineOuterWidth(MapSettings settings, double resolutionScaled)
 	{
 		return calcConcentricWaveStrokeWidthDifference(settings, resolutionScaled)
-				+ concentricWaveWidthBetweenWaves * waveLinesConcentricLineDistanceScale * calcSizeMultiplierFromResolutionScaleRounded(resolutionScaled);
+				+ concentricWaveWidthBetweenWaves * waveLinesConcentricLineDistanceScale * calcSizeMultiplierFromResolutionScaleRounded(resolutionScaled)
+				+ calcCoastlineWidthOffset(settings, resolutionScaled);
+	}
+
+	/**
+	 * How much wider, in pixels, the strokes that draw lines along the coast are made to keep the space between the coastline's outer edge
+	 * and the first line the same however wide the coastline is. It is zero at the default coastline width, and negative for narrower ones.
+	 */
+	private static double calcCoastlineWidthOffset(MapSettings settings, double resolutionScaled)
+	{
+		return (settings.coastlineWidth - defaultCoastlineWidth) * resolutionScaled;
 	}
 
 	/**
@@ -1876,15 +1903,15 @@ public class MapCreator implements WarningLogger
 		double waveWidth = calcConcentricWaveStrokeWidthDifference(settings, resolutionScaled);
 		double minSpace = calcConcentricWaveVisibleLineWidth(settings, resolutionScaled);
 		double coastlineHalfWidth = settings.coastlineWidth * resolutionScaled / 2.0;
-		// The space between a concentric wave and the next one in, which is also the distance from the innermost wave's inner edge to its
-		// curve.
+		// The space between a concentric wave and the next one in. The innermost wave's inner edge is that far from its curve, plus half the
+		// coastline width offset.
 		double spaceBetweenWaves = (calcConcentricWaveSpacing(settings, resolutionScaled) - waveWidth) / 2.0;
 		if (settings.hasWaveLinesOrWaveDashes())
 		{
 			double innerEdgeDistance = (calcWaveLinesConcentricLineOuterWidth(settings, resolutionScaled) - waveWidth) / 2.0;
 			return Math.max(0.0, innerEdgeDistance - coastlineHalfWidth - minSpace);
 		}
-		double awayFromCoast = spaceBetweenWaves - coastlineHalfWidth - minSpace;
+		double awayFromCoast = spaceBetweenWaves + calcCoastlineWidthOffset(settings, resolutionScaled) / 2.0 - coastlineHalfWidth - minSpace;
 		double awayFromNeighbors = (spaceBetweenWaves - minSpace) / 2.0;
 		return Math.max(0.0, Math.min(awayFromCoast, awayFromNeighbors));
 	}
@@ -1894,12 +1921,21 @@ public class MapCreator implements WarningLogger
 	 */
 	static double calcJitter(MapSettings settings, double resolutionScaled)
 	{
-		boolean isJitterOn = settings.hasWaveLinesOrWaveDashes() ? settings.getWaveRowStyle().jitter() : settings.jitterToConcentricWaves;
+		boolean isJitterOn;
+		if (settings.hasWaveLinesOrWaveDashes())
+		{
+			// Rows that reach the shore start at the coastline itself, which doesn't jitter.
+			isJitterOn = settings.getWaveRowStyle().lineJitter() && settings.getWaveRowStyle().lineMode() != ConcentricLineMode.HiddenRowsReachShore;
+		}
+		else
+		{
+			isJitterOn = settings.jitterToConcentricWaves;
+		}
 		if (!isJitterOn)
 		{
 			return 0.0;
 		}
-		int level = settings.hasWaveLinesOrWaveDashes() ? settings.getWaveRowStyle().jitterLevel() : settings.jitterLevel;
+		int level = settings.hasWaveLinesOrWaveDashes() ? settings.getWaveRowStyle().lineJitterLevel() : settings.jitterLevel;
 		return calcMaxJitter(settings, resolutionScaled) * Math.max(0, Math.min(MapSettings.maxJitterLevel, level)) / MapSettings.maxJitterLevel;
 	}
 

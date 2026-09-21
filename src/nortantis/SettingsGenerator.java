@@ -41,8 +41,10 @@ public class SettingsGenerator
 	}
 
 	public static final int minConcentricWaveCountToGenerate = 2;
-	public static final int minWaveLineRowSpacingToGenerate = 4;
-	public static final int maxWaveLineRowSpacingToGenerate = 10;
+	public static final int minWaveLineRowHeightToGenerate = 4;
+	public static final int maxWaveLineRowHeightToGenerate = 10;
+	public static final int minWaveLineRowGapToGenerate = 1;
+	public static final int maxWaveLineRowGapToGenerate = 6;
 	public static final int minWaveLineLengthToGenerate = 7;
 	public static final int maxWaveLineLengthToGenerate = 16;
 	/**
@@ -108,9 +110,12 @@ public class SettingsGenerator
 		{
 			settings.jitterToWaveLines = rand.nextBoolean();
 			settings.waveLineJitterLevel = minWaveLineJitterLevelToGenerate + rand.nextInt(MapSettings.maxJitterLevel - minWaveLineJitterLevelToGenerate + 1);
+			settings.jitterToWaveLinesConcentricLine = rand.nextBoolean();
+			settings.waveLineConcentricLineJitterLevel = minWaveLineJitterLevelToGenerate + rand.nextInt(MapSettings.maxJitterLevel - minWaveLineJitterLevelToGenerate + 1);
 			settings.waveLineShape = ProbabilityHelper.sampleCategorical(rand, Arrays.asList(new Tuple2<Double, WaveLineShape>(2.0, WaveLineShape.Scallops),
 					new Tuple2<Double, WaveLineShape>(1.0, WaveLineShape.Sine), new Tuple2<Double, WaveLineShape>(1.0, WaveLineShape.Straight)));
-			settings.waveLineRowSpacing = minWaveLineRowSpacingToGenerate + rand.nextInt(maxWaveLineRowSpacingToGenerate - minWaveLineRowSpacingToGenerate + 1);
+			settings.waveLineRowHeight = minWaveLineRowHeightToGenerate + rand.nextInt(maxWaveLineRowHeightToGenerate - minWaveLineRowHeightToGenerate + 1);
+			settings.waveLineRowGap = minWaveLineRowGapToGenerate + rand.nextInt(maxWaveLineRowGapToGenerate - minWaveLineRowGapToGenerate + 1);
 			settings.waveLineRowSpacingVariation = rand.nextInt(MapSettings.maxWaveLineVariation + 1);
 			settings.waveLineLength = minWaveLineLengthToGenerate + rand.nextInt(maxWaveLineLengthToGenerate - minWaveLineLengthToGenerate + 1);
 			settings.waveLineLengthVariation = rand.nextInt(MapSettings.maxWaveLineVariation + 1);

@@ -310,7 +310,8 @@ public class MapCreatorTest
 		settings.drawText = false;
 		settings.oceanWavesType = oceanWavesType;
 		MapSettings.WaveRowStyle style = settings.getWaveRowStyle();
-		setWaveRowStyle(settings, new MapSettings.WaveRowStyle(style.shape(), 24, 10, 40, 10, true, style.jitterLevel(), style.lineWidth()));
+		setWaveRowStyle(settings, new MapSettings.WaveRowStyle(style.shape(), 24, 17, 10, 40, 10, true, style.jitterLevel(), true, style.lineJitterLevel(),
+				style.lineWidth(), style.lineMode()));
 
 		int failCount = runOneLandWaterChange(settings, settingsFileName, true, 0, graph -> findLandCluster(graph, true, 0), " large coastal");
 		if (failCount > 0)
@@ -340,15 +341,39 @@ public class MapCreatorTest
 		assertWaveLinesDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves.WaveDashes, 30);
 	}
 
+	/**
+	 * Like {@link #waveLinesDrawnForPartOfTheMapMatchFullDraw}, without the concentric line, where the ends of the rows are pulled back from
+	 * where it would be by random amounts.
+	 */
+	@Test
+	public void waveLinesKeepingDistanceFromHiddenLineDrawnForPartOfTheMapMatchFullDraw()
+	{
+		assertWaveLinesDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves.WaveLines, null, MapSettings.ConcentricLineMode.HiddenRowsKeepDistance);
+	}
+
+	/**
+	 * Like {@link #waveLinesKeepingDistanceFromHiddenLineDrawnForPartOfTheMapMatchFullDraw}, for wave dashes.
+	 */
+	@Test
+	public void waveDashesKeepingDistanceFromHiddenLineDrawnForPartOfTheMapMatchFullDraw()
+	{
+		assertWaveLinesDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves.WaveDashes, 30, MapSettings.ConcentricLineMode.HiddenRowsKeepDistance);
+	}
+
 	private void assertWaveLinesDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves oceanWavesType, Integer waveLineLength)
+	{
+		assertWaveLinesDrawnForPartOfTheMapMatchFullDraw(oceanWavesType, waveLineLength, MapSettings.ConcentricLineMode.Drawn);
+	}
+
+	private void assertWaveLinesDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves oceanWavesType, Integer waveLineLength, MapSettings.ConcentricLineMode lineMode)
 	{
 		MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", "simpleSmallWorld.nort").toString());
 		settings.resolution = 0.75;
 		settings.oceanWavesType = oceanWavesType;
 		settings.oceanShadingLevel = 0;
 		MapSettings.WaveRowStyle style = settings.getWaveRowStyle();
-		setWaveRowStyle(settings, new MapSettings.WaveRowStyle(style.shape(), style.rowSpacing(), 10, waveLineLength != null ? waveLineLength : style.length(),
-				style.lengthVariation(), true, style.jitterLevel(), style.lineWidth()));
+		setWaveRowStyle(settings, new MapSettings.WaveRowStyle(style.shape(), style.rowHeight(), style.rowGap(), 10, waveLineLength != null ? waveLineLength : style.length(),
+				style.lengthVariation(), true, style.jitterLevel(), true, style.lineJitterLevel(), style.lineWidth(), lineMode));
 
 		MapParts mapParts = new MapParts();
 		new MapCreator().createMap(settings, null, mapParts).close();
@@ -397,14 +422,14 @@ public class MapCreatorTest
 					{
 						failures.add(differingCount + " pixels differ in " + replaceBounds);
 						FileHelper.createFolder(Paths.get("unit test files", failedMapsFolderName).toString());
-						ImageHelper.getInstance().write(partWaves, MapTestUtil.getFailedMapFilePath(oceanWavesType + " part " + i, failedMapsFolderName));
+						ImageHelper.getInstance().write(partWaves, MapTestUtil.getFailedMapFilePath(oceanWavesType + " " + lineMode + " part " + i, failedMapsFolderName));
 					}
 				}
 			}
 
 			if (!failures.isEmpty())
 			{
-				ImageHelper.getInstance().write(fullWaves, MapTestUtil.getFailedMapFilePath(oceanWavesType + " full", failedMapsFolderName));
+				ImageHelper.getInstance().write(fullWaves, MapTestUtil.getFailedMapFilePath(oceanWavesType + " " + lineMode + " full", failedMapsFolderName));
 			}
 			assertTrue(areasWithWaves >= 5, "Only " + areasWithWaves + " of the tested areas had wave lines in them.");
 			assertTrue(failures.isEmpty(), "Wave lines drawn for part of the map differ from a full draw: " + failures);
@@ -1059,6 +1084,9 @@ public class MapCreatorTest
 		MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", "simpleSmallWorld.nort").toString());
 		settings.oceanWavesType = MapSettings.OceanWaves.WaveLines;
 		settings.jitterToWaveLines = true;
+		settings.waveLineJitterLevel = MapSettings.maxJitterLevel;
+		settings.jitterToWaveLinesConcentricLine = true;
+		settings.waveLineConcentricLineJitterLevel = MapSettings.maxJitterLevel;
 		settings.waveLineRowSpacingVariation = 5;
 		try (Image actual = new MapCreator().createMap(settings, null, null))
 		{
