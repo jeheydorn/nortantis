@@ -142,6 +142,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	public MapEditingPanel mapEditingPanel;
 	JMenuItem undoButton;
 	JMenuItem redoButton;
+	JMenuItem undoAllButton;
+	JMenuItem redoAllButton;
 	private JMenuItem clearEntireMapButton;
 	public Undoer undoer;
 	// The zoom level currently reflected by mapEditingPanel's displayed image. Only updated when a rescaled image is actually
@@ -448,6 +450,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		{
 			undoButton.setEnabled(false);
 			redoButton.setEnabled(false);
+			undoAllButton.setEnabled(false);
+			redoAllButton.setEnabled(false);
 		}
 		else
 		{
@@ -1555,6 +1559,42 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					updater.doWhenMapIsNotDrawing(() ->
 					{
 						undoer.redo();
+					});
+				}
+			}
+		});
+
+		undoAllButton = new JMenuItem(Translation.get("menu.edit.undoAll"));
+		undoAllButton.setEnabled(false);
+		editMenu.add(undoAllButton);
+		undoAllButton.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				if (toolsPanel.currentTool != null)
+				{
+					updater.doWhenMapIsNotDrawing(() ->
+					{
+						undoer.undoAll();
+					});
+				}
+			}
+		});
+
+		redoAllButton = new JMenuItem(Translation.get("menu.edit.redoAll"));
+		redoAllButton.setEnabled(false);
+		editMenu.add(redoAllButton);
+		redoAllButton.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				if (toolsPanel.currentTool != null)
+				{
+					updater.doWhenMapIsNotDrawing(() ->
+					{
+						undoer.redoAll();
 					});
 				}
 			}

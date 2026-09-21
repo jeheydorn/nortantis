@@ -4,6 +4,8 @@ import nortantis.MapSettings;
 import nortantis.editor.MapChange;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Stack;
 
@@ -189,12 +191,130 @@ public class Undoer
 		updateUndoRedoEnabled();
 	}
 
+	/**
+	 * Undoes every change on the undo stack at once, going back to how the map was when the editor opened it. The changes move to the redo
+	 * stack in order, so that redo steps forward through them one at a time.
+	 */
+	public void undoAll()
+	{
+		if (!enabled || undoStack == null || undoStack.isEmpty())
+		{
+			return;
+		}
+
+		mainWindow.toolsPanel.currentTool.onBeforeUndoRedo();
+
+		// As in undo, the most recent change is recorded with the latest settings, which catches changes made after the latest undo point.
+		MapSettings latestSettings = mainWindow.getSettingsFromGUI(true);
+		List<MapChange> changesUndone = new ArrayList<>();
+		while (!undoStack.isEmpty())
+		{
+			MapChange change = undoStack.pop();
+			if (changesUndone.isEmpty())
+			{
+				change.settings = latestSettings;
+			}
+			changesUndone.add(change);
+			redoStack.push(change);
+		}
+
+		MapSettings settings = copyOfSettingsWhenEditorWasOpened.deepCopy();
+		jumpTo(settings, new MapChange(latestSettings, combineUpdateTypes(changesUndone), null, combinePreRuns(changesUndone)),
+				doesChangeEffectsBackgroundImages(latestSettings, settings));
+	}
+
+	/**
+	 * Redoes every change on the redo stack at once.
+	 */
+	public void redoAll()
+	{
+		if (!enabled || redoStack == null || redoStack.isEmpty())
+		{
+			return;
+		}
+
+		MapSettings currentSettings = undoStack.isEmpty() ? copyOfSettingsWhenEditorWasOpened.deepCopy() : undoStack.peek().settings;
+		List<MapChange> changesRedone = new ArrayList<>();
+		while (!redoStack.isEmpty())
+		{
+			MapChange change = redoStack.pop();
+			changesRedone.add(change);
+			undoStack.push(change);
+		}
+
+		MapSettings newSettings = undoStack.peek().settings.deepCopy();
+		jumpTo(newSettings, new MapChange(currentSettings, combineUpdateTypes(changesRedone), null, combinePreRuns(changesRedone)),
+				doesChangeEffectsBackgroundImages(currentSettings, newSettings));
+	}
+
+	/**
+	 * Loads settings that are more than one change away from what the editor shows, and redraws what the changes between them touched.
+	 *
+	 * @param changeFromCurrent
+	 *            A change holding the settings the editor showed before the jump, with an update type and pre-run that cover every change
+	 *            jumped over.
+	 */
+	private void jumpTo(MapSettings settings, MapChange changeFromCurrent, boolean refreshImagePreviews)
+	{
+		mainWindow.loadSettingsAndEditsIntoThemeAndToolsPanels(settings, true, refreshImagePreviews);
+
+		// See the matching comment in undo().
+		mainWindow.toolsPanel.currentTool.onAfterUndoRedo();
+
+		if (changeFromCurrent.preRun != null)
+		{
+			changeFromCurrent.preRun.run();
+		}
+		mainWindow.updater.createAndShowMapFromChange(changeFromCurrent, true);
+		mainWindow.updater.doWhenMapIsNotDrawing(() -> mainWindow.updater.createAndShowLowPriorityChanges(true));
+		updateUndoRedoEnabled();
+	}
+
+	/**
+	 * The update type that redraws everything the given changes affected: their shared type if they all have the same one, and a full
+	 * redraw otherwise.
+	 */
+	private static UpdateType combineUpdateTypes(List<MapChange> changes)
+	{
+		UpdateType first = changes.get(0).updateType;
+		for (MapChange change : changes)
+		{
+			if (change.updateType != first)
+			{
+				return UpdateType.Full;
+			}
+		}
+		return first;
+	}
+
+	/**
+	 * A pre-run that runs each of the given changes' pre-runs, or null if none of them has one.
+	 */
+	private static Runnable combinePreRuns(List<MapChange> changes)
+	{
+		List<Runnable> preRuns = new ArrayList<>();
+		for (MapChange change : changes)
+		{
+			if (change.preRun != null)
+			{
+				preRuns.add(change.preRun);
+			}
+		}
+		if (preRuns.isEmpty())
+		{
+			return null;
+		}
+		return () -> preRuns.forEach(Runnable::run);
+	}
+
 	public void updateUndoRedoEnabled()
 	{
 		boolean undoEnabled = enabled && undoStack != null && undoStack.size() > 0;
 		mainWindow.undoButton.setEnabled(undoEnabled);
+		mainWindow.undoAllButton.setEnabled(undoEnabled);
 		boolean redoEnabled = enabled && redoStack != null && redoStack.size() > 0;
 		mainWindow.redoButton.setEnabled(redoEnabled);
+		mainWindow.redoAllButton.setEnabled(redoEnabled);
 	}
 
 	public boolean isEnabled()

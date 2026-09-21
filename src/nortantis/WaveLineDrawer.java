@@ -1,7 +1,7 @@
 package nortantis;
 
-import nortantis.MapSettings.ConcentricLineMode;
 import nortantis.MapSettings.OceanWaves;
+import nortantis.MapSettings.ShoreDetail;
 import nortantis.MapSettings.WaveLineShape;
 import nortantis.WorldGraph.CoastlineCurve;
 import nortantis.geom.FloatPoint;
@@ -82,8 +82,8 @@ public class WaveLineDrawer
 	private static final double lengthNoiseControlPointSpacingAsMultipleOfRowSpacing = 6.0;
 	private static final int bisectionIterations = 8;
 	/**
-	 * Where rows stop short of a concentric line that isn't drawn, each end is pulled back from it by up to this many wavelengths more than
-	 * keeps its round cap clear of it, so that the rows don't all end along one curve.
+	 * Where rows stop at a gap instead of a concentric wave, each end is pulled back from the gap's edge by up to this many wavelengths more
+	 * than keeps its round cap clear of it, so that the rows don't all end along one curve.
 	 */
 	private static final double maxLineEndPullBackInWavelengths = 1.5;
 
@@ -212,7 +212,7 @@ public class WaveLineDrawer
 	private final boolean isDashes;
 	private final double rowSpacing;
 	/**
-	 * Whether rows stop short of a concentric line that isn't drawn, so that their ends there show.
+	 * Whether rows stop at a gap instead of a concentric wave, so that their ends there show.
 	 */
 	private final boolean areLineEndsVisible;
 	private final double amplitude;
@@ -244,7 +244,7 @@ public class WaveLineDrawer
 		strokeWidthInUnits = calcStrokeWidthInUnits(settings);
 		isDashes = settings.oceanWavesType == OceanWaves.WaveDashes;
 		rowSpacing = calcRowSpacing(settings);
-		areLineEndsVisible = settings.getWaveRowStyle().lineMode() == ConcentricLineMode.HiddenRowsKeepDistance;
+		areLineEndsVisible = settings.getWaveRowStyle().shoreDetail() == ShoreDetail.Gap;
 		amplitude = calcAmplitude(settings);
 		wavelength = calcWavelength(settings);
 		jitterAmplitude = calcJitterAmplitude(settings);
@@ -292,28 +292,19 @@ public class WaveLineDrawer
 	}
 
 	/**
-	 * The row gap that spaces rows of the given height as far apart as the given row spacing did when row spacing set both the height of
-	 * rows and the distance between them.
-	 *
-	 * @param lineWidth
-	 *            The line width, in pixels at resolution 1.
-	 */
-	public static int calcRowGapMatchingRowSpacing(int rowSpacing, double lineWidth)
-	{
-		double strokeWidthInUnits = lineWidth / MapCreator.calcSizeMultiplierFromResolutionScale(1.0);
-		double minRowSeparation = rowSpacing * amplitudeAsFractionOfRowHeight + strokeWidthInUnits + minGapBetweenRows;
-		return (int) Math.max(0, Math.round(rowSpacing - minRowSeparation));
-	}
-
-	/**
 	 * The most a row's jitter moves it up or down, in units, which is what a row gets when it is evenly spaced from both neighbors. See
 	 * {@link #getRowJitterAmplitude}.
+	 *
+	 * A row gap smaller than the default gives jitter less room, but a larger one doesn't give it more, since jitter big enough to fill a wide
+	 * gap looks extreme.
 	 */
 	private static double calcJitterAmplitude(MapSettings settings)
 	{
+		int defaultRowGap = settings.oceanWavesType == OceanWaves.WaveDashes ? MapSettings.defaultWaveDashRowGap : MapSettings.defaultWaveLineRowGap;
+		double gap = Math.min(calcSpaceBetweenRowsWithoutJitter(settings), defaultRowGap);
+		double rowSpacing = calcMinRowSeparation(settings) + gap;
 		// Jitter moves both neighboring rows, so each gets half of the space between them.
-		return calcJitterFraction(settings)
-				* Math.min(calcRowSpacing(settings) * maxJitterAmplitudeAsFractionOfRowSpacing, calcSpaceBetweenRowsWithoutJitter(settings) / 2.0);
+		return calcJitterFraction(settings) * Math.min(rowSpacing * maxJitterAmplitudeAsFractionOfRowSpacing, gap / 2.0);
 	}
 
 	/**
@@ -376,7 +367,7 @@ public class WaveLineDrawer
 	 */
 	private static double calcInnerEdgeRadius(MapSettings settings, double resolutionScale)
 	{
-		if (settings.getWaveRowStyle().lineMode() == ConcentricLineMode.HiddenRowsReachShore)
+		if (settings.getWaveRowStyle().shoreDetail() == ShoreDetail.None)
 		{
 			return settings.coastlineWidth * resolutionScale / 2.0;
 		}
@@ -757,7 +748,7 @@ public class WaveLineDrawer
 
 			// The unbroken part of the row is wherever a point is less far out than the row's solid fraction there. Each stretch of it also
 			// records whether its start and end are free ends, which taper, rather than ends under the concentric line or past the edge of the
-			// area being drawn. Ends where a concentric line that isn't drawn would be are free, and pulled back from it.
+			// area being drawn. Ends at the edge of a gap are free, and pulled back from it.
 			List<double[]> stretches = new ArrayList<>();
 			boolean isStretchStartFree = false;
 			double stretchStart = 0.0;
@@ -937,8 +928,8 @@ public class WaveLineDrawer
 	}
 
 	/**
-	 * Whether a row's pixel is where the row stops at a concentric line that isn't drawn, so that the end of a stroke there shows. Pixels
-	 * off the area being drawn or off the map are where strokes continue instead.
+	 * Whether a row's pixel is where the row stops at the edge of a gap, so that the end of a stroke there shows. Pixels off the area being
+	 * drawn or off the map are where strokes continue instead.
 	 */
 	private boolean isVisibleLineEnd(byte[] classes, int x, Rectangle drawBounds)
 	{
@@ -951,8 +942,8 @@ public class WaveLineDrawer
 	}
 
 	/**
-	 * How far, in pixels, to pull the end of a stroke back from where a row stops at a concentric line that isn't drawn: enough to keep its
-	 * round cap clear of where the line would be, plus a random amount.
+	 * How far, in pixels, to pull the end of a stroke back from the edge of a gap: enough to keep its round cap clear of the gap, plus a
+	 * random amount.
 	 */
 	private double calcLineEndPullBack(int row, double xInGraph)
 	{

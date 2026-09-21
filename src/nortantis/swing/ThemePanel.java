@@ -1,10 +1,10 @@
 package nortantis.swing;
 
 import nortantis.*;
-import nortantis.MapSettings.ConcentricLineMode;
 import nortantis.MapSettings.GridOverlayLayer;
 import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanWaves;
+import nortantis.MapSettings.ShoreDetail;
 import nortantis.MapSettings.ThemeFontType;
 import nortantis.MapSettings.WaveLineShape;
 import nortantis.Stroke;
@@ -69,6 +69,10 @@ public class ThemePanel extends JTabbedPane
 	private BGColorPreviewPanel landDisplayPanel;
 	private ActionListener backgroundImageButtonGroupListener;
 	private static final Dimension backgroundDisplaySize = new Dimension(150, 110);
+	/**
+	 * The space above and below each checkbox in the wave style options, which is less than other rows get so that checkboxes stack closely.
+	 */
+	private static final int waveStyleCheckboxInset = 4;
 	private JComboBox<LandColoringMethod> landColoringMethodComboBox;
 	private JSlider grungeSlider;
 	private JTextField textureImageFilename;
@@ -146,12 +150,14 @@ public class ThemePanel extends JTabbedPane
 	private JCheckBox fadeWavesCheckbox;
 	private JCheckBox jitterWavesCheckbox;
 	private JSlider jitterLevelSlider;
-	private JPanel jitterLevelPanel;
+	private RowHider jitterLevelHider;
 	private JSlider concentricWaveLineWidthSlider;
-	private JPanel concentricWaveLineWidthPanel;
 	private JCheckBox brokenLinesCheckbox;
 	private RowHider concentricWavesOptionsHider;
-	private RowHider concentricWavesLevelSliderHider;
+	/**
+	 * The rows of the wave style options that only concentric waves use.
+	 */
+	private RowHider concentricStyleHider;
 	private JTextField frayedEdgesSeedTextField;
 	private JButton newFrayedEdgesSeedButton;
 	private JRadioButton solidColorButton;
@@ -988,16 +994,11 @@ public class ThemePanel extends JTabbedPane
 				boolean isConcentric = concentricWavesButton.isSelected();
 				boolean isWaveLines = waveLinesButton.isSelected();
 				boolean isWaveDashes = waveDashesButton.isSelected();
-				concentricWavesLevelSlider.setVisible(isConcentric);
 				concentricWavesOptionsHider.setVisible(isConcentric || isWaveLines || isWaveDashes);
-				fadeWavesCheckbox.setVisible(isConcentric);
-				jitterWavesCheckbox.setVisible(isConcentric);
-				jitterLevelPanel.setVisible(isConcentric && jitterWavesCheckbox.isSelected());
-				brokenLinesCheckbox.setVisible(isConcentric);
-				concentricWaveLineWidthPanel.setVisible(isConcentric);
+				concentricStyleHider.setVisible(isConcentric);
+				jitterLevelHider.setVisible(isConcentric && jitterWavesCheckbox.isSelected());
 				waveLineControls.setVisible(isWaveLines);
 				waveDashControls.setVisible(isWaveDashes);
-				concentricWavesLevelSliderHider.setVisible(isConcentric);
 				rippleWavesLevelSlider.setVisible(ripplesRadioButton.isSelected());
 				rippleWavesLevelSliderHider.setVisible(ripplesRadioButton.isSelected());
 				oceanWavesColorHider.setVisible(!noneRadioButton.isSelected());
@@ -1024,40 +1025,12 @@ public class ThemePanel extends JTabbedPane
 		organizer.addLabelAndComponentsVertical(Translation.get("theme.waveType.label"), Translation.get("theme.waveType.help"),
 				Arrays.asList(concentricWavesButton, waveLinesButton, waveDashesButton, ripplesRadioButton, noneRadioButton));
 
-		fadeWavesCheckbox = new JCheckBox(Translation.get("theme.fadeOuterWaves"));
-		createMapChangeListenerForTerrainChange(fadeWavesCheckbox);
-
-		jitterWavesCheckbox = new JCheckBox(Translation.get("theme.jitter"));
-		jitterWavesCheckbox.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				jitterLevelPanel.setVisible(jitterWavesCheckbox.isSelected());
-				handleTerrainChange();
-			}
-		});
-
-		jitterLevelSlider = createWaveLineSlider(1, MapSettings.maxJitterLevel);
-		// The slider appears only while the jitter checkbox is checked and belongs with it, so it gets no extra space above it.
-		jitterLevelPanel = new SliderWithDisplayedValue(jitterLevelSlider).createPanelWithLabelAbove(Translation.get("theme.jitterLevel.label"),
-				Translation.get("theme.jitterLevel.help"), false);
+		// The wave style options sit in their own bordered panel that spans the width of the tab, with labels beside their controls.
+		GridBagOrganizer styleOrganizer = new GridBagOrganizer();
+		styleOrganizer.panel.setBorder(BorderFactory.createTitledBorder(new DynamicLineBorder("controlShadow", 1), Translation.get("theme.styleOptions.title")));
 
 		concentricWaveLineWidthSlider = createWaveLineWidthSlider();
-		concentricWaveLineWidthPanel = createWaveLineWidthPanel(concentricWaveLineWidthSlider);
-
-		brokenLinesCheckbox = new JCheckBox(Translation.get("theme.brokenLines"));
-		createMapChangeListenerForTerrainChange(brokenLinesCheckbox);
-
-		// Wave lines and wave dashes each have their own style options, so that changing one style leaves the others' look alone.
-		waveLineControls = new WaveRowStyleControls();
-		waveDashControls = new WaveRowStyleControls();
-
-		List<Component> styleOptions = new ArrayList<>(Arrays.asList(fadeWavesCheckbox, brokenLinesCheckbox, jitterWavesCheckbox, jitterLevelPanel, concentricWaveLineWidthPanel));
-		styleOptions.addAll(waveLineControls.getComponents());
-		styleOptions.addAll(waveDashControls.getComponents());
-		concentricWavesOptionsHider = organizer.addLabelAndComponentsVertical(Translation.get("theme.styleOptions.label"), Translation.get("theme.styleOptions.help"),
-				styleOptions);
+		concentricStyleHider = addWaveLineWidthSlider(styleOrganizer, concentricWaveLineWidthSlider);
 
 		concentricWavesLevelSlider = new JSlider();
 		concentricWavesLevelSlider.setMinimum(1);
@@ -1067,7 +1040,37 @@ public class ThemePanel extends JTabbedPane
 		concentricWavesLevelSlider.setMaximum(SettingsGenerator.maxConcentricWaveCountInEditor);
 		concentricWavesLevelSlider.setMajorTickSpacing(1);
 		createMapChangeListenerForTerrainChange(concentricWavesLevelSlider);
-		concentricWavesLevelSliderHider = organizer.addLabelAndComponent(Translation.get("theme.waveCount.label"), Translation.get("theme.waveCount.help"), concentricWavesLevelSlider);
+		concentricStyleHider.add(styleOrganizer.addLabelAndComponent(Translation.get("theme.waveCount.label"), Translation.get("theme.waveCount.help"),
+				concentricWavesLevelSlider));
+
+		fadeWavesCheckbox = new JCheckBox(Translation.get("theme.fadeOuterWaves"));
+		createMapChangeListenerForTerrainChange(fadeWavesCheckbox);
+		concentricStyleHider.add(addWaveStyleCheckbox(styleOrganizer, fadeWavesCheckbox));
+
+		brokenLinesCheckbox = new JCheckBox(Translation.get("theme.brokenLines"));
+		createMapChangeListenerForTerrainChange(brokenLinesCheckbox);
+		concentricStyleHider.add(addWaveStyleCheckbox(styleOrganizer, brokenLinesCheckbox));
+
+		jitterWavesCheckbox = new JCheckBox(Translation.get("theme.jitter"));
+		jitterWavesCheckbox.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				jitterLevelHider.setVisible(jitterWavesCheckbox.isSelected());
+				handleTerrainChange();
+			}
+		});
+		concentricStyleHider.add(addWaveStyleCheckbox(styleOrganizer, jitterWavesCheckbox));
+
+		jitterLevelSlider = createWaveLineSlider(0, MapSettings.maxJitterLevel);
+		jitterLevelHider = addCheckboxSlider(styleOrganizer, jitterLevelSlider, Translation.get("theme.jitterLevel.label"), Translation.get("theme.jitterLevel.help"));
+
+		// Wave lines and wave dashes each have their own style options, so that changing one style leaves the others' look alone.
+		waveLineControls = new WaveRowStyleControls(styleOrganizer);
+		waveDashControls = new WaveRowStyleControls(styleOrganizer);
+
+		concentricWavesOptionsHider = organizer.addLeftAlignedComponent(styleOrganizer.panel, GridBagOrganizer.rowVerticalInset, GridBagOrganizer.rowVerticalInset, false);
 
 		rippleWavesLevelSlider = new JSlider();
 		rippleWavesLevelSlider.setMinorTickSpacing(5);
@@ -1987,12 +1990,12 @@ public class ThemePanel extends JTabbedPane
 		{
 			settings.oceanWavesType = OceanWaves.ConcentricWaves;
 		}
-		settings.setWaveLineStyle(waveLineControls.getStyle(settings.getWaveLineStyle()));
-		settings.setWaveDashStyle(waveDashControls.getStyle(settings.getWaveDashStyle()));
+		settings.setWaveLineStyle(waveLineControls.getStyle());
+		settings.setWaveDashStyle(waveDashControls.getStyle());
 		settings.fadeConcentricWaves = fadeWavesCheckbox.isSelected();
 		settings.jitterToConcentricWaves = jitterWavesCheckbox.isSelected();
 		settings.jitterLevel = jitterLevelSlider.getValue();
-		settings.concentricWaveLineWidth = getWaveLineWidth(concentricWaveLineWidthSlider, settings.concentricWaveLineWidth);
+		settings.concentricWaveLineWidth = fromWaveLineWidthSliderValue(concentricWaveLineWidthSlider.getValue());
 		settings.brokenLinesForConcentricWaves = brokenLinesCheckbox.isSelected();
 		settings.drawOceanEffectsInLakes = drawOceanEffectsInLakesCheckbox.isSelected();
 		settings.coastShadingColor = AwtBridge.fromAwtColor(coastShadingColorDisplay.getBackground());
@@ -2170,10 +2173,28 @@ public class ThemePanel extends JTabbedPane
 		return createWaveLineSlider(toWaveLineWidthSliderValue(MapSettings.minWaveLineWidth), toWaveLineWidthSliderValue(MapSettings.maxWaveLineWidth));
 	}
 
-	private JPanel createWaveLineWidthPanel(JSlider slider)
+	/**
+	 * Adds a row with a line width slider, labeled beside it.
+	 */
+	private RowHider addWaveLineWidthSlider(GridBagOrganizer organizer, JSlider slider)
 	{
-		return new SliderWithDisplayedValue(slider, (value) -> String.format("%.1f", fromWaveLineWidthSliderValue(value)), null)
-				.createPanelWithLabelAbove(Translation.get("theme.waveLineWidth.label"), Translation.get("theme.waveLineWidth.help"));
+		return new SliderWithDisplayedValue(slider, (value) -> String.format("%.1f", fromWaveLineWidthSliderValue(value)), null).addToOrganizer(organizer,
+				Translation.get("theme.waveLineWidth.label"), Translation.get("theme.waveLineWidth.help"));
+	}
+
+	private RowHider addWaveStyleCheckbox(GridBagOrganizer organizer, JCheckBox checkbox)
+	{
+		return organizer.addLeftAlignedComponent(checkbox, waveStyleCheckboxInset, waveStyleCheckboxInset, false);
+	}
+
+	/**
+	 * Adds a row with a slider that appears only while a checkbox above it is checked. Its label is above it, and both are to the right, so
+	 * that they read as belonging to the checkbox.
+	 */
+	private RowHider addCheckboxSlider(GridBagOrganizer organizer, JSlider slider, String label, String toolTip)
+	{
+		JPanel panel = new SliderWithDisplayedValue(slider).createPanelWithLabelAbove(label, toolTip, false);
+		return organizer.addLabelAndComponent("", null, panel, 0);
 	}
 
 	private static int toWaveLineWidthSliderValue(double width)
@@ -2187,54 +2208,35 @@ public class ThemePanel extends JTabbedPane
 	}
 
 	/**
-	 * The width a line width slider shows. A width the slider can't show exactly, such as the default, is kept as long as the slider still
-	 * shows it rounded, so that loading a map into the editor doesn't change it.
-	 */
-	private static double getWaveLineWidth(JSlider slider, double previousWidth)
-	{
-		return slider.getValue() == toWaveLineWidthSliderValue(previousWidth) ? previousWidth : fromWaveLineWidthSliderValue(slider.getValue());
-	}
-
-	/**
-	 * The style options of one of the wave styles drawn as rows of strokes: wave lines or wave dashes.
+	 * The style options of one of the wave styles drawn as rows of strokes: wave lines or wave dashes. They are grouped as the shape, the
+	 * options for the wave lines themselves, the options for the rows they are stacked in, and the shore detail between the rows and the
+	 * coast.
 	 */
 	private class WaveRowStyleControls
 	{
 		private final JComboBox<WaveLineShape> shapeComboBox;
-		private final JPanel shapePanel;
-		private final JSlider rowHeightSlider;
-		private final JPanel rowHeightPanel;
-		private final JSlider rowGapSlider;
-		private final JPanel rowGapPanel;
-		private final JSlider rowSpacingVariationSlider;
-		private final JPanel rowSpacingVariationPanel;
+		private final JSlider lineWidthSlider;
 		private final JSlider lengthSlider;
-		private final JPanel lengthPanel;
 		private final JSlider lengthVariationSlider;
-		private final JPanel lengthVariationPanel;
-		private final JCheckBox drawLineCheckbox;
-		private final JCheckBox reachShoreCheckbox;
 		private final JCheckBox jitterCheckbox;
 		private final JSlider jitterLevelSlider;
-		private final JPanel jitterLevelPanel;
-		private final JCheckBox lineJitterCheckbox;
-		private final JSlider lineJitterLevelSlider;
-		private final JPanel lineJitterLevelPanel;
-		private final JSlider lineWidthSlider;
-		private final JPanel lineWidthPanel;
+		private final JSlider rowHeightSlider;
+		private final JSlider rowGapSlider;
+		private final JSlider rowSpacingVariationSlider;
+		private final JComboBox<ShoreDetail> shoreDetailComboBox;
+		private final JSlider shoreJitterSlider;
+		private final JLabel shoreJitterLabel;
+		/**
+		 * Every row, including the ones that only some settings show.
+		 */
+		private final RowHider rowsHider;
+		private final RowHider jitterLevelHider;
+		private final RowHider shoreJitterHider;
 		private boolean isVisible;
 
-		WaveRowStyleControls()
+		WaveRowStyleControls(GridBagOrganizer organizer)
 		{
-			shapeComboBox = new JComboBox<>()
-			{
-				@Override
-				public Dimension getMaximumSize()
-				{
-					// Keeps the combo box from stretching across the row it shares with its label.
-					return getPreferredSize();
-				}
-			};
+			shapeComboBox = new JComboBox<>();
 			shapeComboBox.setRenderer(new DefaultListCellRenderer()
 			{
 				public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus)
@@ -2255,77 +2257,59 @@ public class ThemePanel extends JTabbedPane
 				shapeComboBox.addItem(shape);
 			}
 			createMapChangeListenerForTerrainChange(shapeComboBox);
-			shapePanel = SwingHelper.createPanelWithLabelAbove(Translation.get("theme.waveLineShape.label"), Translation.get("theme.waveLineShape.help"),
+			rowsHider = organizer.addLabelAndComponentsHorizontal(Translation.get("theme.waveLineShape.label"), Translation.get("theme.waveLineShape.help"),
 					Arrays.asList(shapeComboBox));
 
-			rowHeightSlider = createWaveLineSlider(2, 15);
-			rowHeightPanel = new SliderWithDisplayedValue(rowHeightSlider).createPanelWithLabelAbove(Translation.get("theme.waveLineRowHeight.label"),
-					Translation.get("theme.waveLineRowHeight.help"));
-
-			rowGapSlider = createWaveLineSlider(0, 15);
-			rowGapPanel = new SliderWithDisplayedValue(rowGapSlider).createPanelWithLabelAbove(Translation.get("theme.waveLineRowGap.label"),
-					Translation.get("theme.waveLineRowGap.help"));
-
-			rowSpacingVariationSlider = createWaveLineSlider(0, MapSettings.maxWaveLineVariation);
-			rowSpacingVariationPanel = new SliderWithDisplayedValue(rowSpacingVariationSlider).createPanelWithLabelAbove(
-					Translation.get("theme.waveLineRowSpacingVariation.label"), Translation.get("theme.waveLineRowSpacingVariation.help"));
+			rowsHider.add(organizer.addSeparator());
+			lineWidthSlider = createWaveLineWidthSlider();
+			rowsHider.add(addWaveLineWidthSlider(organizer, lineWidthSlider));
 
 			lengthSlider = createWaveLineSlider(0, 50);
-			lengthPanel = new SliderWithDisplayedValue(lengthSlider).createPanelWithLabelAbove(Translation.get("theme.waveLineLength.label"),
-					Translation.get("theme.waveLineLength.help"));
+			rowsHider.add(new SliderWithDisplayedValue(lengthSlider).addToOrganizer(organizer, Translation.get("theme.waveLineLength.label"),
+					Translation.get("theme.waveLineLength.help")));
 
 			lengthVariationSlider = createWaveLineSlider(0, MapSettings.maxWaveLineVariation);
-			lengthVariationPanel = new SliderWithDisplayedValue(lengthVariationSlider).createPanelWithLabelAbove(Translation.get("theme.waveLineLengthVariation.label"),
-					Translation.get("theme.waveLineLengthVariation.help"));
+			rowsHider.add(new SliderWithDisplayedValue(lengthVariationSlider).addToOrganizer(organizer, Translation.get("theme.waveLineLengthVariation.label"),
+					Translation.get("theme.waveLineLengthVariation.help")));
 
-			drawLineCheckbox = new JCheckBox(Translation.get("theme.drawConcentricLine"));
-			drawLineCheckbox.setToolTipText(Translation.get("theme.drawConcentricLine.tooltip"));
-			drawLineCheckbox.addActionListener(e ->
-			{
-				updateVisibility();
-				handleTerrainChange();
-			});
-
-			reachShoreCheckbox = new JCheckBox(Translation.get("theme.rowsReachShore"));
-			reachShoreCheckbox.setToolTipText(Translation.get("theme.rowsReachShore.tooltip"));
-			reachShoreCheckbox.addActionListener(e ->
-			{
-				updateVisibility();
-				handleTerrainChange();
-			});
-
-			jitterCheckbox = new JCheckBox(Translation.get("theme.jitterRows"));
+			jitterCheckbox = new JCheckBox(Translation.get("theme.jitterWaveLines"));
 			jitterCheckbox.addActionListener(e ->
 			{
 				updateVisibility();
 				handleTerrainChange();
 			});
-			jitterLevelSlider = createWaveLineSlider(1, MapSettings.maxJitterLevel);
-			// The slider appears only while the jitter checkbox is checked and belongs with it, so it gets no extra space above it.
-			jitterLevelPanel = new SliderWithDisplayedValue(jitterLevelSlider).createPanelWithLabelAbove(Translation.get("theme.jitterLevel.label"),
-					Translation.get("theme.rowJitterLevel.help"), false);
+			rowsHider.add(addWaveStyleCheckbox(organizer, jitterCheckbox));
+			jitterLevelSlider = createWaveLineSlider(0, MapSettings.maxJitterLevel);
+			jitterLevelHider = addCheckboxSlider(organizer, jitterLevelSlider, Translation.get("theme.jitterLevel.label"), Translation.get("theme.rowJitterLevel.help"));
+			rowsHider.add(jitterLevelHider);
 
-			lineJitterCheckbox = new JCheckBox(Translation.get("theme.jitterConcentricLine"));
-			lineJitterCheckbox.addActionListener(e ->
+			rowsHider.add(organizer.addSeparator());
+			rowHeightSlider = createWaveLineSlider(2, 15);
+			rowsHider.add(new SliderWithDisplayedValue(rowHeightSlider).addToOrganizer(organizer, Translation.get("theme.waveLineRowHeight.label"),
+					Translation.get("theme.waveLineRowHeight.help")));
+
+			rowGapSlider = createWaveLineSlider(0, 15);
+			rowsHider.add(new SliderWithDisplayedValue(rowGapSlider).addToOrganizer(organizer, Translation.get("theme.waveLineRowGap.label"),
+					Translation.get("theme.waveLineRowGap.help")));
+
+			rowSpacingVariationSlider = createWaveLineSlider(0, MapSettings.maxWaveLineVariation);
+			rowsHider.add(new SliderWithDisplayedValue(rowSpacingVariationSlider).addToOrganizer(organizer, Translation.get("theme.waveLineRowSpacingVariation.label"),
+					Translation.get("theme.waveLineRowSpacingVariation.help")));
+
+			rowsHider.add(organizer.addSeparator());
+			shoreDetailComboBox = new JComboBox<>(ShoreDetail.values());
+			shoreDetailComboBox.addActionListener(e ->
 			{
 				updateVisibility();
 				handleTerrainChange();
 			});
-			lineJitterLevelSlider = createWaveLineSlider(1, MapSettings.maxJitterLevel);
-			lineJitterLevelPanel = new SliderWithDisplayedValue(lineJitterLevelSlider).createPanelWithLabelAbove(Translation.get("theme.jitterLevel.label"),
-					Translation.get("theme.jitterLevel.help"), false);
+			rowsHider.add(organizer.addLabelAndComponentsHorizontal(Translation.get("theme.shoreDetail.label"), Translation.get("theme.shoreDetail.help"),
+					Arrays.asList(shoreDetailComboBox)));
 
-			lineWidthSlider = createWaveLineWidthSlider();
-			lineWidthPanel = createWaveLineWidthPanel(lineWidthSlider);
-		}
-
-		/**
-		 * The components to add to the style options, in order.
-		 */
-		List<Component> getComponents()
-		{
-			return Arrays.asList(shapePanel, rowHeightPanel, rowGapPanel, rowSpacingVariationPanel, lengthPanel, lengthVariationPanel, drawLineCheckbox,
-					reachShoreCheckbox, jitterCheckbox, jitterLevelPanel, lineJitterCheckbox, lineJitterLevelPanel, lineWidthPanel);
+			shoreJitterSlider = createWaveLineSlider(0, MapSettings.maxJitterLevel);
+			shoreJitterLabel = GridBagOrganizer.createWrappingLabel("", null);
+			shoreJitterHider = new SliderWithDisplayedValue(shoreJitterSlider).addToOrganizer(organizer, shoreJitterLabel);
+			rowsHider.add(shoreJitterHider);
 		}
 
 		void setVisible(boolean isVisible)
@@ -2336,55 +2320,37 @@ public class ThemePanel extends JTabbedPane
 
 		private void updateVisibility()
 		{
-			for (Component component : getComponents())
-			{
-				component.setVisible(isVisible);
-			}
-			jitterLevelPanel.setVisible(isVisible && jitterCheckbox.isSelected());
-			reachShoreCheckbox.setVisible(isVisible && !drawLineCheckbox.isSelected());
-			// Rows that reach the shore start at the coastline, which has nothing to jitter.
-			boolean hasLineToJitter = getLineMode() != ConcentricLineMode.HiddenRowsReachShore;
-			lineJitterCheckbox.setVisible(isVisible && hasLineToJitter);
-			lineJitterLevelPanel.setVisible(isVisible && hasLineToJitter && lineJitterCheckbox.isSelected());
+			rowsHider.setVisible(isVisible);
+			jitterLevelHider.setVisible(isVisible && jitterCheckbox.isSelected());
+			// The coastline, which rows reach when there is no shore detail, has nothing to vary.
+			ShoreDetail shoreDetail = (ShoreDetail) shoreDetailComboBox.getSelectedItem();
+			shoreJitterHider.setVisible(isVisible && shoreDetail != ShoreDetail.None);
+			boolean isGap = shoreDetail == ShoreDetail.Gap;
+			shoreJitterLabel.setText("<html>" + Translation.get(isGap ? "theme.gapVariance.label" : "theme.shoreJitter.label") + "</html>");
+			shoreJitterLabel.setToolTipText(Translation.get(isGap ? "theme.gapVariance.help" : "theme.shoreJitter.help"));
 		}
 
 		void load(MapSettings.WaveRowStyle style)
 		{
 			shapeComboBox.setSelectedItem(style.shape());
+			lineWidthSlider.setValue(toWaveLineWidthSliderValue(style.lineWidth()));
+			lengthSlider.setValue(style.length());
+			lengthVariationSlider.setValue(style.lengthVariation());
+			jitterCheckbox.setSelected(style.jitter());
+			jitterLevelSlider.setValue(style.jitterLevel());
 			rowHeightSlider.setValue(style.rowHeight());
 			rowGapSlider.setValue(style.rowGap());
 			rowSpacingVariationSlider.setValue(style.rowSpacingVariation());
-			lengthSlider.setValue(style.length());
-			lengthVariationSlider.setValue(style.lengthVariation());
-			drawLineCheckbox.setSelected(style.lineMode() == ConcentricLineMode.Drawn);
-			reachShoreCheckbox.setSelected(style.lineMode() == ConcentricLineMode.HiddenRowsReachShore);
-			jitterCheckbox.setSelected(style.jitter());
-			jitterLevelSlider.setValue(style.jitterLevel());
-			lineJitterCheckbox.setSelected(style.lineJitter());
-			lineJitterLevelSlider.setValue(style.lineJitterLevel());
-			lineWidthSlider.setValue(toWaveLineWidthSliderValue(style.lineWidth()));
+			shoreDetailComboBox.setSelectedItem(style.shoreDetail());
+			shoreJitterSlider.setValue(style.shoreJitterLevel());
 			updateVisibility();
 		}
 
-		/**
-		 * @param previous
-		 *            The style before the controls were changed, which keeps widths the line width slider can't show exactly.
-		 */
-		MapSettings.WaveRowStyle getStyle(MapSettings.WaveRowStyle previous)
+		MapSettings.WaveRowStyle getStyle()
 		{
-			return new MapSettings.WaveRowStyle((WaveLineShape) shapeComboBox.getSelectedItem(), rowHeightSlider.getValue(), rowGapSlider.getValue(),
-					rowSpacingVariationSlider.getValue(), lengthSlider.getValue(), lengthVariationSlider.getValue(), jitterCheckbox.isSelected(),
-					jitterLevelSlider.getValue(), lineJitterCheckbox.isSelected(), lineJitterLevelSlider.getValue(),
-					getWaveLineWidth(lineWidthSlider, previous.lineWidth()), getLineMode());
-		}
-
-		private ConcentricLineMode getLineMode()
-		{
-			if (drawLineCheckbox.isSelected())
-			{
-				return ConcentricLineMode.Drawn;
-			}
-			return reachShoreCheckbox.isSelected() ? ConcentricLineMode.HiddenRowsReachShore : ConcentricLineMode.HiddenRowsKeepDistance;
+			return new MapSettings.WaveRowStyle((WaveLineShape) shapeComboBox.getSelectedItem(), fromWaveLineWidthSliderValue(lineWidthSlider.getValue()),
+					lengthSlider.getValue(), lengthVariationSlider.getValue(), jitterCheckbox.isSelected(), jitterLevelSlider.getValue(), rowHeightSlider.getValue(),
+					rowGapSlider.getValue(), rowSpacingVariationSlider.getValue(), (ShoreDetail) shoreDetailComboBox.getSelectedItem(), shoreJitterSlider.getValue());
 		}
 	}
 

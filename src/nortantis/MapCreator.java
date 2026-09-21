@@ -1,7 +1,7 @@
 package nortantis;
 
-import nortantis.MapSettings.ConcentricLineMode;
 import nortantis.MapSettings.GridOverlayLayer;
+import nortantis.MapSettings.ShoreDetail;
 import nortantis.editor.*;
 import nortantis.geom.*;
 import nortantis.graph.voronoi.Center;
@@ -1806,7 +1806,7 @@ public class MapCreator implements WarningLogger
 
 		new WaveLineDrawer(settings, resolutionScaled).drawWaveLines(oceanEffects, graph, curves, landMask, centersToDraw, drawBounds);
 
-		if (settings.getWaveRowStyle().lineMode() == ConcentricLineMode.Drawn)
+		if (settings.getWaveRowStyle().shoreDetail() == ShoreDetail.ConcentricWave)
 		{
 			// Drawing the concentric line over the wave lines also hides the wave lines' inner ends, which run under it.
 			try (Painter p = oceanEffects.createPainter(DrawQuality.High))
@@ -1921,21 +1921,20 @@ public class MapCreator implements WarningLogger
 	 */
 	static double calcJitter(MapSettings settings, double resolutionScaled)
 	{
-		boolean isJitterOn;
+		int level;
 		if (settings.hasWaveLinesOrWaveDashes())
 		{
 			// Rows that reach the shore start at the coastline itself, which doesn't jitter.
-			isJitterOn = settings.getWaveRowStyle().lineJitter() && settings.getWaveRowStyle().lineMode() != ConcentricLineMode.HiddenRowsReachShore;
+			level = settings.getWaveRowStyle().shoreDetail() == ShoreDetail.None ? 0 : settings.getWaveRowStyle().shoreJitterLevel();
 		}
 		else
 		{
-			isJitterOn = settings.jitterToConcentricWaves;
+			level = settings.jitterToConcentricWaves ? settings.jitterLevel : 0;
 		}
-		if (!isJitterOn)
+		if (level <= 0)
 		{
 			return 0.0;
 		}
-		int level = settings.hasWaveLinesOrWaveDashes() ? settings.getWaveRowStyle().lineJitterLevel() : settings.jitterLevel;
 		return calcMaxJitter(settings, resolutionScaled) * Math.max(0, Math.min(MapSettings.maxJitterLevel, level)) / MapSettings.maxJitterLevel;
 	}
 

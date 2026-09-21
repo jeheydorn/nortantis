@@ -53,8 +53,7 @@ public class MapSettings implements Serializable
 	public static final int defaultJitterLevel = 10;
 	public static final int maxJitterLevel = 10;
 	/**
-	 * The jitter level of wave lines and wave dashes, and of the line along the coast they are drawn outside of, in maps that don't store
-	 * one.
+	 * The jitter level of wave lines and wave dashes in maps that don't store one.
 	 */
 	public static final int defaultWaveRowJitterLevel = 5;
 	public static final WaveLineShape defaultWaveLineShape = WaveLineShape.Scallops;
@@ -77,7 +76,7 @@ public class MapSettings implements Serializable
 	/**
 	 * The width, in pixels at resolution 1, of concentric waves' lines and of wave lines in maps that don't store one.
 	 */
-	public static final double defaultWaveLineWidth = 2.43;
+	public static final double defaultWaveLineWidth = 2.4;
 	public static final double minWaveLineWidth = 1.0;
 	public static final double maxWaveLineWidth = 6.0;
 	/**
@@ -113,7 +112,7 @@ public class MapSettings implements Serializable
 	public int concentricWaveCount;
 	public boolean jitterToConcentricWaves;
 	/**
-	 * How strong jitter is when jitterToConcentricWaves is on, from 1 to maxJitterLevel, where maxJitterLevel is as much as the concentric
+	 * How strong jitter is when jitterToConcentricWaves is on, from 0 to maxJitterLevel, where maxJitterLevel is as much as the concentric
 	 * lines can wander without touching the coast or each other.
 	 */
 	public int jitterLevel = defaultJitterLevel;
@@ -130,14 +129,13 @@ public class MapSettings implements Serializable
 	public boolean jitterToWaveLines;
 	public int waveLineJitterLevel = defaultWaveRowJitterLevel;
 	/**
-	 * Like jitterToConcentricWaves, but for the line along the coast that wave lines are drawn outside of.
+	 * What wave lines draw between their rows and the coast.
 	 */
-	public boolean jitterToWaveLinesConcentricLine;
-	public int waveLineConcentricLineJitterLevel = defaultWaveRowJitterLevel;
+	public ShoreDetail waveLineShoreDetail = ShoreDetail.ConcentricWave;
 	/**
-	 * Whether wave lines draw the line along the coast they are drawn outside of, and if not, where they stop.
+	 * How far the concentric wave, or the edge of the gap, between wave lines and the coast wanders, from 0 to maxJitterLevel.
 	 */
-	public ConcentricLineMode waveLineConcentricLineMode = ConcentricLineMode.Drawn;
+	public int waveLineShoreJitterLevel;
 	/**
 	 * The width of wave lines and of the line along the coast they are drawn outside of, in pixels at resolution 1.
 	 */
@@ -180,9 +178,8 @@ public class MapSettings implements Serializable
 	public int waveDashLengthVariation = defaultWaveDashLengthVariation;
 	public boolean jitterToWaveDashes;
 	public int waveDashJitterLevel = defaultWaveRowJitterLevel;
-	public boolean jitterToWaveDashesConcentricLine;
-	public int waveDashConcentricLineJitterLevel = defaultWaveRowJitterLevel;
-	public ConcentricLineMode waveDashConcentricLineMode = ConcentricLineMode.Drawn;
+	public ShoreDetail waveDashShoreDetail = ShoreDetail.ConcentricWave;
+	public int waveDashShoreJitterLevel;
 	public double waveDashLineWidth = defaultWaveLineWidth;
 	public boolean drawOceanEffectsInLakes;
 	public int worldSize;
@@ -517,9 +514,8 @@ public class MapSettings implements Serializable
 		root.put("jitterLevel", jitterLevel);
 		root.put("jitterToWaveLines", jitterToWaveLines);
 		root.put("waveLineJitterLevel", waveLineJitterLevel);
-		root.put("jitterToWaveLinesConcentricLine", jitterToWaveLinesConcentricLine);
-		root.put("waveLineConcentricLineJitterLevel", waveLineConcentricLineJitterLevel);
-		root.put("waveLineConcentricLineMode", enumToJson(waveLineConcentricLineMode));
+		root.put("waveLineShoreDetail", enumToJson(waveLineShoreDetail));
+		root.put("waveLineShoreJitterLevel", waveLineShoreJitterLevel);
 		root.put("concentricWaveLineWidth", concentricWaveLineWidth);
 		root.put("waveLineWidth", waveLineWidth);
 		root.put("oceanEffect", enumToJson(oceanWavesType));
@@ -537,9 +533,8 @@ public class MapSettings implements Serializable
 		root.put("waveDashLengthVariation", waveDashLengthVariation);
 		root.put("jitterToWaveDashes", jitterToWaveDashes);
 		root.put("waveDashJitterLevel", waveDashJitterLevel);
-		root.put("jitterToWaveDashesConcentricLine", jitterToWaveDashesConcentricLine);
-		root.put("waveDashConcentricLineJitterLevel", waveDashConcentricLineJitterLevel);
-		root.put("waveDashConcentricLineMode", enumToJson(waveDashConcentricLineMode));
+		root.put("waveDashShoreDetail", enumToJson(waveDashShoreDetail));
+		root.put("waveDashShoreJitterLevel", waveDashShoreJitterLevel);
 		root.put("waveDashLineWidth", waveDashLineWidth);
 		root.put("drawOceanEffectsInLakes", drawOceanEffectsInLakes);
 		root.put("worldSize", worldSize);
@@ -1272,64 +1267,26 @@ public class MapSettings implements Serializable
 		jitterLevel = root.containsKey("jitterLevel") ? (int) (long) root.get("jitterLevel") : defaultJitterLevel;
 		jitterToWaveLines = root.containsKey("jitterToWaveLines") && (boolean) root.get("jitterToWaveLines");
 		waveLineJitterLevel = root.containsKey("waveLineJitterLevel") ? (int) (long) root.get("waveLineJitterLevel") : defaultWaveRowJitterLevel;
-		// Wave lines' rows and the line along the coast shared one jitter setting before each had its own.
-		jitterToWaveLinesConcentricLine = root.containsKey("jitterToWaveLinesConcentricLine") ? (boolean) root.get("jitterToWaveLinesConcentricLine") : jitterToWaveLines;
-		waveLineConcentricLineJitterLevel = root.containsKey("waveLineConcentricLineJitterLevel") ? (int) (long) root.get("waveLineConcentricLineJitterLevel")
-				: waveLineJitterLevel;
-		waveLineConcentricLineMode = root.containsKey("waveLineConcentricLineMode") ? ConcentricLineMode.valueOf((String) root.get("waveLineConcentricLineMode"))
-				: ConcentricLineMode.Drawn;
+		waveLineShoreDetail = root.containsKey("waveLineShoreDetail") ? ShoreDetail.valueOf((String) root.get("waveLineShoreDetail")) : ShoreDetail.ConcentricWave;
+		waveLineShoreJitterLevel = root.containsKey("waveLineShoreJitterLevel") ? (int) (long) root.get("waveLineShoreJitterLevel") : 0;
 		concentricWaveLineWidth = root.containsKey("concentricWaveLineWidth") ? (double) root.get("concentricWaveLineWidth") : defaultWaveLineWidth;
 		waveLineWidth = root.containsKey("waveLineWidth") ? (double) root.get("waveLineWidth") : defaultWaveLineWidth;
 		waveLineShape = root.containsKey("waveLineShape") ? WaveLineShape.valueOf((String) root.get("waveLineShape")) : defaultWaveLineShape;
-		if (root.containsKey("waveLineRowHeight"))
-		{
-			waveLineRowHeight = (int) (long) root.get("waveLineRowHeight");
-			waveLineRowGap = (int) (long) root.get("waveLineRowGap");
-		}
-		else if (root.containsKey("waveLineRowSpacing"))
-		{
-			// Row spacing set both the size of the waves and the distance between rows before each had its own setting.
-			int rowSpacing = (int) (long) root.get("waveLineRowSpacing");
-			waveLineRowHeight = rowSpacing;
-			waveLineRowGap = WaveLineDrawer.calcRowGapMatchingRowSpacing(rowSpacing, waveLineWidth);
-		}
-		else
-		{
-			waveLineRowHeight = defaultWaveLineRowHeight;
-			waveLineRowGap = defaultWaveLineRowGap;
-		}
+		waveLineRowHeight = root.containsKey("waveLineRowHeight") ? (int) (long) root.get("waveLineRowHeight") : defaultWaveLineRowHeight;
+		waveLineRowGap = root.containsKey("waveLineRowGap") ? (int) (long) root.get("waveLineRowGap") : defaultWaveLineRowGap;
 		waveLineRowSpacingVariation = root.containsKey("waveLineRowSpacingVariation") ? (int) (long) root.get("waveLineRowSpacingVariation") : defaultWaveLineRowSpacingVariation;
 		waveLineLength = root.containsKey("waveLineLength") ? (int) (long) root.get("waveLineLength") : defaultWaveLineLength;
 		waveLineLengthVariation = root.containsKey("waveLineLengthVariation") ? (int) (long) root.get("waveLineLengthVariation") : defaultWaveLineLengthVariation;
 		waveDashShape = root.containsKey("waveDashShape") ? WaveLineShape.valueOf((String) root.get("waveDashShape")) : defaultWaveDashShape;
-		if (root.containsKey("waveDashRowHeight"))
-		{
-			waveDashRowHeight = (int) (long) root.get("waveDashRowHeight");
-			waveDashRowGap = (int) (long) root.get("waveDashRowGap");
-		}
-		else if (root.containsKey("waveDashRowSpacing"))
-		{
-			int rowSpacing = (int) (long) root.get("waveDashRowSpacing");
-			waveDashRowHeight = rowSpacing;
-			waveDashRowGap = WaveLineDrawer.calcRowGapMatchingRowSpacing(rowSpacing,
-					root.containsKey("waveDashLineWidth") ? (double) root.get("waveDashLineWidth") : defaultWaveLineWidth);
-		}
-		else
-		{
-			waveDashRowHeight = defaultWaveDashRowHeight;
-			waveDashRowGap = defaultWaveDashRowGap;
-		}
+		waveDashRowHeight = root.containsKey("waveDashRowHeight") ? (int) (long) root.get("waveDashRowHeight") : defaultWaveDashRowHeight;
+		waveDashRowGap = root.containsKey("waveDashRowGap") ? (int) (long) root.get("waveDashRowGap") : defaultWaveDashRowGap;
 		waveDashRowSpacingVariation = root.containsKey("waveDashRowSpacingVariation") ? (int) (long) root.get("waveDashRowSpacingVariation") : defaultWaveDashRowSpacingVariation;
 		waveDashLength = root.containsKey("waveDashLength") ? (int) (long) root.get("waveDashLength") : defaultWaveDashLength;
 		waveDashLengthVariation = root.containsKey("waveDashLengthVariation") ? (int) (long) root.get("waveDashLengthVariation") : defaultWaveDashLengthVariation;
 		jitterToWaveDashes = root.containsKey("jitterToWaveDashes") && (boolean) root.get("jitterToWaveDashes");
 		waveDashJitterLevel = root.containsKey("waveDashJitterLevel") ? (int) (long) root.get("waveDashJitterLevel") : defaultWaveRowJitterLevel;
-		jitterToWaveDashesConcentricLine = root.containsKey("jitterToWaveDashesConcentricLine") ? (boolean) root.get("jitterToWaveDashesConcentricLine")
-				: jitterToWaveDashes;
-		waveDashConcentricLineJitterLevel = root.containsKey("waveDashConcentricLineJitterLevel") ? (int) (long) root.get("waveDashConcentricLineJitterLevel")
-				: waveDashJitterLevel;
-		waveDashConcentricLineMode = root.containsKey("waveDashConcentricLineMode") ? ConcentricLineMode.valueOf((String) root.get("waveDashConcentricLineMode"))
-				: ConcentricLineMode.Drawn;
+		waveDashShoreDetail = root.containsKey("waveDashShoreDetail") ? ShoreDetail.valueOf((String) root.get("waveDashShoreDetail")) : ShoreDetail.ConcentricWave;
+		waveDashShoreJitterLevel = root.containsKey("waveDashShoreJitterLevel") ? (int) (long) root.get("waveDashShoreJitterLevel") : 0;
 		waveDashLineWidth = root.containsKey("waveDashLineWidth") ? (double) root.get("waveDashLineWidth") : defaultWaveLineWidth;
 		worldSize = (int) (long) root.get("worldSize");
 		riverColor = parseColor((String) root.get("riverColor"));
@@ -2849,9 +2806,8 @@ public class MapSettings implements Serializable
 
 	public WaveRowStyle getWaveLineStyle()
 	{
-		return new WaveRowStyle(waveLineShape, waveLineRowHeight, waveLineRowGap, waveLineRowSpacingVariation, waveLineLength, waveLineLengthVariation,
-				jitterToWaveLines, waveLineJitterLevel, jitterToWaveLinesConcentricLine, waveLineConcentricLineJitterLevel, waveLineWidth,
-				waveLineConcentricLineMode);
+		return new WaveRowStyle(waveLineShape, waveLineWidth, waveLineLength, waveLineLengthVariation, jitterToWaveLines, waveLineJitterLevel, waveLineRowHeight,
+				waveLineRowGap, waveLineRowSpacingVariation, waveLineShoreDetail, waveLineShoreJitterLevel);
 	}
 
 	public void setWaveLineStyle(WaveRowStyle style)
@@ -2864,17 +2820,15 @@ public class MapSettings implements Serializable
 		waveLineLengthVariation = style.lengthVariation();
 		jitterToWaveLines = style.jitter();
 		waveLineJitterLevel = style.jitterLevel();
-		jitterToWaveLinesConcentricLine = style.lineJitter();
-		waveLineConcentricLineJitterLevel = style.lineJitterLevel();
 		waveLineWidth = style.lineWidth();
-		waveLineConcentricLineMode = style.lineMode();
+		waveLineShoreDetail = style.shoreDetail();
+		waveLineShoreJitterLevel = style.shoreJitterLevel();
 	}
 
 	public WaveRowStyle getWaveDashStyle()
 	{
-		return new WaveRowStyle(waveDashShape, waveDashRowHeight, waveDashRowGap, waveDashRowSpacingVariation, waveDashLength, waveDashLengthVariation,
-				jitterToWaveDashes, waveDashJitterLevel, jitterToWaveDashesConcentricLine, waveDashConcentricLineJitterLevel, waveDashLineWidth,
-				waveDashConcentricLineMode);
+		return new WaveRowStyle(waveDashShape, waveDashLineWidth, waveDashLength, waveDashLengthVariation, jitterToWaveDashes, waveDashJitterLevel, waveDashRowHeight,
+				waveDashRowGap, waveDashRowSpacingVariation, waveDashShoreDetail, waveDashShoreJitterLevel);
 	}
 
 	public void setWaveDashStyle(WaveRowStyle style)
@@ -2887,10 +2841,9 @@ public class MapSettings implements Serializable
 		waveDashLengthVariation = style.lengthVariation();
 		jitterToWaveDashes = style.jitter();
 		waveDashJitterLevel = style.jitterLevel();
-		jitterToWaveDashesConcentricLine = style.lineJitter();
-		waveDashConcentricLineJitterLevel = style.lineJitterLevel();
 		waveDashLineWidth = style.lineWidth();
-		waveDashConcentricLineMode = style.lineMode();
+		waveDashShoreDetail = style.shoreDetail();
+		waveDashShoreJitterLevel = style.shoreJitterLevel();
 	}
 
 	/**
@@ -2898,28 +2851,35 @@ public class MapSettings implements Serializable
 	 *
 	 * @param jitter
 	 *            Whether the rows jitter.
-	 * @param lineJitter
-	 *            Whether the line along the coast jitters.
 	 */
-	public record WaveRowStyle(WaveLineShape shape, int rowHeight, int rowGap, int rowSpacingVariation, int length, int lengthVariation, boolean jitter,
-			int jitterLevel, boolean lineJitter, int lineJitterLevel, double lineWidth, ConcentricLineMode lineMode)
+	public record WaveRowStyle(WaveLineShape shape, double lineWidth, int length, int lengthVariation, boolean jitter, int jitterLevel, int rowHeight, int rowGap,
+			int rowSpacingVariation, ShoreDetail shoreDetail, int shoreJitterLevel)
 	{
 	}
 
 	/**
-	 * Whether the wave lines and wave dashes styles draw the line along the coast that their rows are drawn outside of.
+	 * What the wave lines and wave dashes styles draw between their rows and the coast.
 	 */
-	public enum ConcentricLineMode
+	public enum ShoreDetail
 	{
-		Drawn,
 		/**
-		 * No line, and the rows reach all the way to the coastline.
+		 * A single concentric wave along the coast, which the rows start outside of.
 		 */
-		HiddenRowsReachShore,
+		ConcentricWave,
 		/**
-		 * No line, and the rows stop around where it would have been.
+		 * Empty space where the concentric wave would be.
 		 */
-		HiddenRowsKeepDistance
+		Gap,
+		/**
+		 * Nothing: the rows reach all the way to the coastline.
+		 */
+		None;
+
+		@Override
+		public String toString()
+		{
+			return Translation.get("ShoreDetail." + name());
+		}
 	}
 
 	public boolean equalsIgnoringEdits(MapSettings other)
@@ -3639,12 +3599,10 @@ public class MapSettings implements Serializable
 			differences.add("jitterToWaveLines: " + jitterToWaveLines + " vs " + other.jitterToWaveLines);
 		if (waveLineJitterLevel != other.waveLineJitterLevel)
 			differences.add("waveLineJitterLevel: " + waveLineJitterLevel + " vs " + other.waveLineJitterLevel);
-		if (jitterToWaveLinesConcentricLine != other.jitterToWaveLinesConcentricLine)
-			differences.add("jitterToWaveLinesConcentricLine: " + jitterToWaveLinesConcentricLine + " vs " + other.jitterToWaveLinesConcentricLine);
-		if (waveLineConcentricLineJitterLevel != other.waveLineConcentricLineJitterLevel)
-			differences.add("waveLineConcentricLineJitterLevel: " + waveLineConcentricLineJitterLevel + " vs " + other.waveLineConcentricLineJitterLevel);
-		if (waveLineConcentricLineMode != other.waveLineConcentricLineMode)
-			differences.add("waveLineConcentricLineMode: " + waveLineConcentricLineMode + " vs " + other.waveLineConcentricLineMode);
+		if (waveLineShoreDetail != other.waveLineShoreDetail)
+			differences.add("waveLineShoreDetail: " + waveLineShoreDetail + " vs " + other.waveLineShoreDetail);
+		if (waveLineShoreJitterLevel != other.waveLineShoreJitterLevel)
+			differences.add("waveLineShoreJitterLevel: " + waveLineShoreJitterLevel + " vs " + other.waveLineShoreJitterLevel);
 		if (Double.doubleToLongBits(concentricWaveLineWidth) != Double.doubleToLongBits(other.concentricWaveLineWidth))
 			differences.add("concentricWaveLineWidth: " + concentricWaveLineWidth + " vs " + other.concentricWaveLineWidth);
 		if (Double.doubleToLongBits(waveLineWidth) != Double.doubleToLongBits(other.waveLineWidth))
@@ -3665,12 +3623,10 @@ public class MapSettings implements Serializable
 			differences.add("jitterToWaveDashes: " + jitterToWaveDashes + " vs " + other.jitterToWaveDashes);
 		if (waveDashJitterLevel != other.waveDashJitterLevel)
 			differences.add("waveDashJitterLevel: " + waveDashJitterLevel + " vs " + other.waveDashJitterLevel);
-		if (jitterToWaveDashesConcentricLine != other.jitterToWaveDashesConcentricLine)
-			differences.add("jitterToWaveDashesConcentricLine: " + jitterToWaveDashesConcentricLine + " vs " + other.jitterToWaveDashesConcentricLine);
-		if (waveDashConcentricLineJitterLevel != other.waveDashConcentricLineJitterLevel)
-			differences.add("waveDashConcentricLineJitterLevel: " + waveDashConcentricLineJitterLevel + " vs " + other.waveDashConcentricLineJitterLevel);
-		if (waveDashConcentricLineMode != other.waveDashConcentricLineMode)
-			differences.add("waveDashConcentricLineMode: " + waveDashConcentricLineMode + " vs " + other.waveDashConcentricLineMode);
+		if (waveDashShoreDetail != other.waveDashShoreDetail)
+			differences.add("waveDashShoreDetail: " + waveDashShoreDetail + " vs " + other.waveDashShoreDetail);
+		if (waveDashShoreJitterLevel != other.waveDashShoreJitterLevel)
+			differences.add("waveDashShoreJitterLevel: " + waveDashShoreJitterLevel + " vs " + other.waveDashShoreJitterLevel);
 		if (Double.doubleToLongBits(waveDashLineWidth) != Double.doubleToLongBits(other.waveDashLineWidth))
 			differences.add("waveDashLineWidth: " + waveDashLineWidth + " vs " + other.waveDashLineWidth);
 		if (!Objects.equals(landColor, other.landColor))
@@ -3802,10 +3758,10 @@ public class MapSettings implements Serializable
 				edits, fadeConcentricWaves, fillWithColorByType, flipHorizontally, flipVertically, frayedBorder, frayedBorderBlurLevel, frayedBorderColor, frayedBorderSeed,
 				frayedBorderSize, generateBackground, generateBackgroundFromTexture, generatedHeight, generatedWidth, gridOverlayColor, gridOverlayLayer, gridOverlayLineWidth,
 				gridOverlayRowOrColCount, gridOverlayShape, gridOverlayXOffset, gridOverlayYOffset, grungeWidth, heightmapExportPath, heightmapResolution, hillScale, hueRange, iconFillColorsByType,
-				iconFilterColorsByType, imageExportPath, jitterLevel, jitterToConcentricWaves, jitterToWaveLines, waveLineJitterLevel, jitterToWaveLinesConcentricLine,
-				waveLineConcentricLineJitterLevel, waveLineConcentricLineMode, concentricWaveLineWidth, waveLineWidth, waveDashShape, waveDashRowHeight, waveDashRowGap,
-				waveDashRowSpacingVariation, waveDashLength, waveDashLengthVariation, jitterToWaveDashes, waveDashJitterLevel, jitterToWaveDashesConcentricLine,
-				waveDashConcentricLineJitterLevel, waveDashConcentricLineMode, waveDashLineWidth, landColor, landShape, lineStyle, lloydRelaxationsScale, maximizeOpacityByType, mountainRangeFont, mountainScale,
+				iconFilterColorsByType, imageExportPath, jitterLevel, jitterToConcentricWaves, jitterToWaveLines, waveLineJitterLevel, waveLineShoreDetail,
+				waveLineShoreJitterLevel, concentricWaveLineWidth, waveLineWidth, waveDashShape, waveDashRowHeight, waveDashRowGap,
+				waveDashRowSpacingVariation, waveDashLength, waveDashLengthVariation, jitterToWaveDashes, waveDashJitterLevel, waveDashShoreDetail,
+				waveDashShoreJitterLevel, waveDashLineWidth, landColor, landShape, lineStyle, lloydRelaxationsScale, maximizeOpacityByType, mountainRangeFont, mountainScale,
 				oceanColor, oceanEffectsColor, oceanEffectsLevel, oceanShadingColor, oceanShadingLevel, oceanWavesColor, oceanWavesLevel, oceanWavesType, otherMountainsFont, overlayImageDefaultScale,
 				overlayImageDefaultTransparency, overlayImagePath, overlayImageTransparency, overlayOffsetResolutionInvariant, overlayScale, pointPrecision, randomSeed, regionBaseColor,
 				regionBoundaryColor, regionBoundaryStyle, regionCount, regionFont, regionsRandomSeed, resolution, rightRotationCount, riverColor, riverFont, roadColor, roadFont, roadStyle, saturationRange,
@@ -3861,14 +3817,13 @@ public class MapSettings implements Serializable
 				&& Double.doubleToLongBits(hillScale) == Double.doubleToLongBits(other.hillScale) && hueRange == other.hueRange && Objects.equals(iconFillColorsByType, other.iconFillColorsByType)
 				&& Objects.equals(iconFilterColorsByType, other.iconFilterColorsByType) && Objects.equals(imageExportPath, other.imageExportPath)
 				&& jitterToConcentricWaves == other.jitterToConcentricWaves && jitterLevel == other.jitterLevel && jitterToWaveLines == other.jitterToWaveLines
-				&& waveLineJitterLevel == other.waveLineJitterLevel && jitterToWaveLinesConcentricLine == other.jitterToWaveLinesConcentricLine
-				&& waveLineConcentricLineJitterLevel == other.waveLineConcentricLineJitterLevel && waveLineConcentricLineMode == other.waveLineConcentricLineMode
+				&& waveLineJitterLevel == other.waveLineJitterLevel && waveLineShoreDetail == other.waveLineShoreDetail
+				&& waveLineShoreJitterLevel == other.waveLineShoreJitterLevel
 				&& Double.doubleToLongBits(concentricWaveLineWidth) == Double.doubleToLongBits(other.concentricWaveLineWidth)
 				&& Double.doubleToLongBits(waveLineWidth) == Double.doubleToLongBits(other.waveLineWidth) && waveDashShape == other.waveDashShape
 				&& waveDashRowHeight == other.waveDashRowHeight && waveDashRowGap == other.waveDashRowGap && waveDashRowSpacingVariation == other.waveDashRowSpacingVariation && waveDashLength == other.waveDashLength
 				&& waveDashLengthVariation == other.waveDashLengthVariation && jitterToWaveDashes == other.jitterToWaveDashes && waveDashJitterLevel == other.waveDashJitterLevel
-				&& jitterToWaveDashesConcentricLine == other.jitterToWaveDashesConcentricLine && waveDashConcentricLineJitterLevel == other.waveDashConcentricLineJitterLevel
-				&& waveDashConcentricLineMode == other.waveDashConcentricLineMode
+				&& waveDashShoreDetail == other.waveDashShoreDetail && waveDashShoreJitterLevel == other.waveDashShoreJitterLevel
 				&& Double.doubleToLongBits(waveDashLineWidth) == Double.doubleToLongBits(other.waveDashLineWidth) && Objects.equals(landColor, other.landColor) && landShape == other.landShape && lineStyle == other.lineStyle
 				&& Double.doubleToLongBits(lloydRelaxationsScale) == Double.doubleToLongBits(other.lloydRelaxationsScale) && Objects.equals(maximizeOpacityByType, other.maximizeOpacityByType)
 				&& Objects.equals(mountainRangeFont, other.mountainRangeFont) && Double.doubleToLongBits(mountainScale) == Double.doubleToLongBits(other.mountainScale)

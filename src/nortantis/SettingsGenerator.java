@@ -110,8 +110,8 @@ public class SettingsGenerator
 		{
 			settings.jitterToWaveLines = rand.nextBoolean();
 			settings.waveLineJitterLevel = minWaveLineJitterLevelToGenerate + rand.nextInt(MapSettings.maxJitterLevel - minWaveLineJitterLevelToGenerate + 1);
-			settings.jitterToWaveLinesConcentricLine = rand.nextBoolean();
-			settings.waveLineConcentricLineJitterLevel = minWaveLineJitterLevelToGenerate + rand.nextInt(MapSettings.maxJitterLevel - minWaveLineJitterLevelToGenerate + 1);
+			settings.waveLineShoreJitterLevel = rand.nextBoolean() ? 0
+					: minWaveLineJitterLevelToGenerate + rand.nextInt(MapSettings.maxJitterLevel - minWaveLineJitterLevelToGenerate + 1);
 			settings.waveLineShape = ProbabilityHelper.sampleCategorical(rand, Arrays.asList(new Tuple2<Double, WaveLineShape>(2.0, WaveLineShape.Scallops),
 					new Tuple2<Double, WaveLineShape>(1.0, WaveLineShape.Sine), new Tuple2<Double, WaveLineShape>(1.0, WaveLineShape.Straight)));
 			settings.waveLineRowHeight = minWaveLineRowHeightToGenerate + rand.nextInt(maxWaveLineRowHeightToGenerate - minWaveLineRowHeightToGenerate + 1);
