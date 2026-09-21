@@ -888,7 +888,7 @@ public class WaveLineDrawer
 		 */
 		void drawSeries(double anchor, double direction, double limit, boolean isAfterUnbrokenPart)
 		{
-			Random rand = random(dashSalt, row, Double.doubleToLongBits(anchor) ^ Double.doubleToLongBits(direction));
+			Random rand = random(dashSalt, row, 2 * calcSeedPosition(anchor) + (direction > 0.0 ? 1 : 0));
 			double wavelengthInPixels = wavelength * sizeMultiplier;
 			double maxDistance = Math.min(Math.abs(limit - anchor), searchDistance);
 			double position = isAfterUnbrokenPart
@@ -928,6 +928,16 @@ public class WaveLineDrawer
 	}
 
 	/**
+	 * A position along a row, rounded to a grid of whole wavelengths, for seeding random choices made at a place whose exact position comes
+	 * from pixels. The exact position shifts a little from one resolution to another, but it rarely crosses to another step of this grid, so
+	 * the same map drawn at another resolution mostly makes the same choices.
+	 */
+	private long calcSeedPosition(double xInGraph)
+	{
+		return Math.round(xInGraph / sizeMultiplier / wavelength);
+	}
+
+	/**
 	 * Whether a row's pixel is where the row stops at the edge of a gap, so that the end of a stroke there shows. Pixels off the area being
 	 * drawn or off the map are where strokes continue instead.
 	 */
@@ -947,7 +957,7 @@ public class WaveLineDrawer
 	 */
 	private double calcLineEndPullBack(int row, double xInGraph)
 	{
-		double random = uniform(lineEndSalt, row, (long) Math.floor(xInGraph / sizeMultiplier));
+		double random = uniform(lineEndSalt, row, calcSeedPosition(xInGraph));
 		// Squaring favors ends near the line, with an occasional one well short of it.
 		return strokeWidth / 2.0 + maxLineEndPullBackInWavelengths * wavelength * sizeMultiplier * random * random;
 	}
