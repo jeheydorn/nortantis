@@ -30,6 +30,10 @@ public class WorldGraph extends VoronoiGraph
 	public static final float oceanPlateLevel = 0.2f;
 	final double continentalPlateLevel = 0.45;
 	public static final float seaLevel = 0.39f;
+	/**
+	 * Water bodies with more centers than this are ocean rather than lakes.
+	 */
+	public static final int maxLakeSize = 120;
 
 	// Zero is most random. Higher values make the polygons more uniform shaped.
 	// This value is scaled by lloydRelaxationsScale passed into constructors.
@@ -1743,9 +1747,6 @@ public class WorldGraph extends VoronoiGraph
 
 	public void markLakes()
 	{
-		// This threshold allows me to distinguish between lakes and oceans.
-		final int maxLakeSize = 120;
-
 		Set<Center> explored = new HashSet<>();
 		lakes = new ArrayList<>();
 		for (Center center : centers)
@@ -2079,6 +2080,14 @@ public class WorldGraph extends VoronoiGraph
 			double oceanicRatio = ((double) numOceanic) / corner.touches.size();
 			corner.elevation = oceanicRatio * oceanPlateLevel + (1.0 - oceanicRatio) * continentalPlateLevel;
 		}
+	}
+
+	@Override
+	protected void createRiversAndLakes()
+	{
+		new RiverAndLakeCreator(this, rand).createRiversAndLakes();
+		markLakes();
+		updateCoastAndCornerFlags();
 	}
 
 	@Override

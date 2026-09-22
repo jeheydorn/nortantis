@@ -3,16 +3,26 @@ package nortantis;
 import nortantis.geom.Point;
 import nortantis.geom.PolarCoordinate;
 import nortantis.graph.voronoi.Center;
+import nortantis.graph.voronoi.Corner;
+import nortantis.graph.voronoi.Edge;
+import nortantis.graph.voronoi.nodename.as3delaunay.Voronoi;
 import nortantis.platform.PlatformFactory;
 import nortantis.platform.awt.AwtFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -228,6 +238,180 @@ public class WorldGraphTest
 				assertTrue(average < 0.02, "Average fraction of border centers that are continental land for " + landShape.name() + " with " + regionCount + " regions: " + average);
 			}
 		}
+	}
+
+	private static final LandShape[] riverTestLandShapes = { LandShape.Continents, LandShape.Scattered, LandShape.Landlocked };
+
+	@Test
+	public void drawnRiversEndInWaterAndNeverRunThroughLakes()
+	{
+		for (LandShape landShape : riverTestLandShapes)
+		{
+			for (long seed = 1; seed <= 3; seed++)
+			{
+				WorldGraph graph = createGraph(landShape, 6, seed);
+				String description = landShape.name() + ", seed " + seed;
+				List<Edge> drawnEdges = new ArrayList<>();
+				for (Edge edge : graph.edges)
+				{
+					if (edge.river > GraphRiver.RIVERS_THIS_SIZE_OR_SMALLER_WILL_NOT_BE_DRAWN)
+					{
+						assertFalse(edge.isWater() || edge.isCoastOrLakeShore(), "River edge in or along water: " + description);
+						drawnEdges.add(edge);
+					}
+				}
+				assertFalse(drawnEdges.isEmpty(), "No rivers: " + description);
+
+				// Every connected network of drawn river edges must reach water somewhere.
+				Map<Corner, List<Edge>> edgesByCorner = new HashMap<>();
+				for (Edge edge : drawnEdges)
+				{
+					edgesByCorner.computeIfAbsent(edge.v0, k -> new ArrayList<>()).add(edge);
+					edgesByCorner.computeIfAbsent(edge.v1, k -> new ArrayList<>()).add(edge);
+				}
+				Set<Edge> visited = new HashSet<>();
+				for (Edge start : drawnEdges)
+				{
+					if (!visited.add(start))
+					{
+						continue;
+					}
+					boolean reachesWater = false;
+					Deque<Edge> queue = new ArrayDeque<>();
+					queue.add(start);
+					while (!queue.isEmpty())
+					{
+						Edge edge = queue.poll();
+						for (Corner corner : new Corner[] { edge.v0, edge.v1 })
+						{
+							reachesWater |= corner.touches.stream().anyMatch(c -> c.isWater);
+							for (Edge next : edgesByCorner.get(corner))
+							{
+								if (visited.add(next))
+								{
+									queue.add(next);
+								}
+							}
+						}
+					}
+					assertTrue(reachesWater, "River that never reaches water: " + description);
+				}
+			}
+		}
+	}
+
+	@Test
+	public void newLakesAreLabeledAndWithinTheSizeCapAndDoNotTouchTheBorder()
+	{
+		int newLakeCount = 0;
+		for (LandShape landShape : riverTestLandShapes)
+		{
+			for (long seed = 1; seed <= 3; seed++)
+			{
+				WorldGraph graph = createGraph(landShape, 6, seed);
+				String description = landShape.name() + ", seed " + seed;
+				int maxLakeSize = RiverAndLakeCreator.getMaxLakeSize(graph.centers.size());
+				Set<Center> visited = new HashSet<>();
+				for (Center center : graph.centers)
+				{
+					// Only lakes put water above sea level.
+					if (!center.isWater || center.elevation < WorldGraph.seaLevel || visited.contains(center))
+					{
+						continue;
+					}
+					Set<Center> lake = graph.breadthFirstSearch(c -> c.isWater, center);
+					visited.addAll(lake);
+					newLakeCount++;
+					long belowSeaLevelCount = lake.stream().filter(c -> c.elevation < WorldGraph.seaLevel).count();
+					assertTrue(lake.size() <= Math.max(maxLakeSize, belowSeaLevelCount), "Lake of size " + lake.size() + " is too big: " + description);
+					assertTrue(lake.stream().noneMatch(c -> c.isBorder), "Lake touches the border: " + description);
+					assertTrue(lake.stream().allMatch(c -> c.isLake), "Lake not labeled as a lake: " + description);
+				}
+			}
+		}
+		assertTrue(newLakeCount > 0);
+	}
+
+	@Test
+	public void carvingOnlyLowersAFewCorners()
+	{
+		int carvedCount = 0;
+		for (long seed = 1; seed <= 3; seed++)
+		{
+			double[][] elevationsBeforeRivers = new double[1][];
+			Random rand = new Random(seed);
+			Voronoi voronoi = new Voronoi(3000, 4096, 3072, rand);
+			WorldGraph graph = new WorldGraph(voronoi, MapSettings.defaultLloydRelaxationsScale, rand, 0.25, MapSettings.LineStyle.Jagged, MapSettings.defaultPointPrecision, true, false,
+					LandShape.Landlocked, 6)
+			{
+				@Override
+				protected void createRiversAndLakes()
+				{
+					elevationsBeforeRivers[0] = corners.stream().mapToDouble(c -> c.elevation).toArray();
+					super.createRiversAndLakes();
+				}
+			};
+
+			int changedCount = 0;
+			for (Corner corner : graph.corners)
+			{
+				double before = elevationsBeforeRivers[0][corner.index];
+				assertTrue(corner.elevation <= before, "Carving raised a corner, seed " + seed);
+				if (corner.elevation < before)
+				{
+					changedCount++;
+				}
+			}
+			assertTrue(changedCount < graph.corners.size() * 0.05, "Carving changed " + changedCount + " corners, seed " + seed);
+			carvedCount += changedCount;
+		}
+		assertTrue(carvedCount > 0, "Nothing was carved");
+	}
+
+	@Test
+	public void riversAndLakesAreDeterministic()
+	{
+		WorldGraph graph1 = createGraph(LandShape.Landlocked, 6, 4);
+		WorldGraph graph2 = createGraph(LandShape.Landlocked, 6, 4);
+		for (int i = 0; i < graph1.edges.size(); i++)
+		{
+			assertEquals(graph1.edges.get(i).river, graph2.edges.get(i).river);
+		}
+		for (int i = 0; i < graph1.centers.size(); i++)
+		{
+			assertEquals(graph1.centers.get(i).isWater, graph2.centers.get(i).isWater);
+			assertEquals(graph1.centers.get(i).moisture, graph2.centers.get(i).moisture);
+		}
+	}
+
+	@Test
+	public void landNextToLakesIsWetterThanAverage()
+	{
+		double lakeNeighborMoisture = 0;
+		int lakeNeighborCount = 0;
+		double landMoisture = 0;
+		int landCount = 0;
+		for (long seed = 1; seed <= 3; seed++)
+		{
+			WorldGraph graph = createGraph(LandShape.Landlocked, 6, seed);
+			for (Center center : graph.centers)
+			{
+				if (center.isWater)
+				{
+					continue;
+				}
+				landMoisture += center.moisture;
+				landCount++;
+				if (center.neighbors.stream().anyMatch(c -> c.isLake))
+				{
+					lakeNeighborMoisture += center.moisture;
+					lakeNeighborCount++;
+				}
+			}
+		}
+		assertTrue(lakeNeighborCount > 0);
+		assertTrue(lakeNeighborMoisture / lakeNeighborCount > landMoisture / landCount + 0.2,
+				"Moisture next to lakes: " + lakeNeighborMoisture / lakeNeighborCount + ", all land: " + landMoisture / landCount);
 	}
 
 	private static WorldGraph createGraph(LandShape landShape, int regionCount, long seed)

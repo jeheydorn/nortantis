@@ -19,68 +19,6 @@ public class Corner
 	public int river;
 	public double moisture;
 
-	public Corner lowestNeighbor;
-	boolean findingRivers = false; // to avoid infinite recursion as we wind our
-									// way to the sea
-
-	public boolean createRivers()
-	{
-		// We need to increment flags for rivers and build lakes where they need
-		// to be by making them water and raising their elevation.
-		if (isOcean || isCoast)
-			return true; // no need to go any further, but rivers coming to me
-							// look good
-
-		// Find the neighbor with an elevation lower than mine
-		if (lowestNeighbor == null && !findingRivers)
-		{
-			for (Corner neighbor : adjacent)
-			{
-				// I am not sure how, but it seems possible that one of my
-				// adjacents is me!
-				if (!neighbor.findingRivers && (neighbor != this) && ((lowestNeighbor == null) || (lowestNeighbor.elevation > neighbor.elevation)))
-				{
-					lowestNeighbor = neighbor;
-				}
-			}
-		}
-
-		if (lowestNeighbor == null)
-			return false; // if we STILL did not find a good point, we are all
-							// done
-
-		if (lowestNeighbor == this)
-		{
-			return false;
-		}
-
-		double lowestNeighborElevationBeforeCarving = lowestNeighbor.elevation;
-		if (lowestNeighbor.elevation >= elevation)
-		{
-			lowestNeighbor.elevation = elevation * 0.9999; // Make it a little
-															// lower than me
-		}
-
-		// recursive call
-		findingRivers = true;
-		boolean likesRiver = lowestNeighbor.createRivers();
-
-		if (likesRiver)
-		{
-			river++;
-			lookupEdgeFromCorner(lowestNeighbor).river++;
-			findingRivers = false; // only set it back if we like our rivers
-			return true;
-		}
-		else
-		{
-			// The walk never reached water, so undo the channel it carved. findingRivers deliberately stays true, which keeps later walks
-			// from choosing this corner and so steers them away from a path that already failed. Resetting it gives noticeably fewer rivers.
-			lowestNeighbor.elevation = lowestNeighborElevationBeforeCarving;
-			return false;
-		}
-	}
-
 	public Edge lookupEdgeFromCorner(Corner c)
 	{
 		for (Edge e : protrudes)

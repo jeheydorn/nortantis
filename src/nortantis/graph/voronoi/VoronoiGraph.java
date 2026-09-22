@@ -3,6 +3,7 @@ package nortantis.graph.voronoi;
 import nortantis.Biome;
 import nortantis.MapSettings.LineStyle;
 import nortantis.GraphRiver;
+import nortantis.IconDrawer;
 import nortantis.geom.IntPoint;
 import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
@@ -33,13 +34,15 @@ public abstract class VoronoiGraph
 	public Rectangle bounds;
 	protected final Random rand;
 	public NoisyEdges noisyEdges;
-	/**
-	 * This controls how many rivers there are. Bigger means more.
-	 */
-	private double riverDensity = 1.0 / 14.0;
 	public double resolutionScale;
 
 	static final double verySmall = 0.0000001;
+
+	/**
+	 * Corners at or above this elevation block moisture from spreading past them. It is slightly above the elevation at which mountains are
+	 * drawn, so that blocking starts inside mountain terrain rather than at its edges.
+	 */
+	static final double moistureBlockingElevation = IconDrawer.mountainElevationThreshold + 0.02;
 	double pointPrecision;
 
 	// How close (in standard-size graph pixels) a border corner must be to a map edge to count as lying on it. This is the
@@ -115,7 +118,7 @@ public abstract class VoronoiGraph
 			assignPolygonElevations();
 			assignOceanCoastAndLand();
 
-			createRivers();
+			createRiversAndLakes();
 			assignCornerMoisture();
 			redistributeMoisture(landCorners());
 			assignPolygonMoisture();
@@ -1293,12 +1296,18 @@ public abstract class VoronoiGraph
 
 	protected abstract void assignOceanCoastAndLand();
 
+	/**
+	 * Creates rivers and lakes from the terrain. Sets {@code Edge.river} and {@code Corner.river}, marks lakes as water, and leaves the
+	 * corner and center water flags up to date.
+	 */
+	protected abstract void createRiversAndLakes();
+
 	private ArrayList<Corner> landCorners()
 	{
 		final ArrayList<Corner> list = new ArrayList<>();
 		for (Corner c : corners)
 		{
-			if (!c.isOcean && !c.isCoast)
+			if (!c.isOcean && !c.isCoast && !c.isWater)
 			{
 				list.add(c);
 			}
@@ -1325,24 +1334,16 @@ public abstract class VoronoiGraph
 		}
 	}
 
-	private void createRivers()
-	{
-		for (int i = 0; i < corners.size() * riverDensity; i++)
-		{
-			int index = rand.nextInt(corners.size());
-			Corner c = corners.get(index);
-			c.createRivers();
-		}
-	}
-
 	private void assignCornerMoisture()
 	{
 		LinkedList<Corner> queue = new LinkedList<>();
+		boolean[] isSource = new boolean[corners.size()];
 		for (Corner c : corners)
 		{
 			if ((c.isWater || c.river > GraphRiver.RIVERS_THIS_SIZE_OR_SMALLER_WILL_NOT_BE_DRAWN) && !c.isOcean)
 			{
 				c.moisture = c.river > GraphRiver.RIVERS_THIS_SIZE_OR_SMALLER_WILL_NOT_BE_DRAWN ? Math.min(3.0, (0.05 * c.river)) : 1.0;
+				isSource[c.index] = true;
 				queue.push(c);
 			}
 			else
@@ -1354,6 +1355,12 @@ public abstract class VoronoiGraph
 		while (!queue.isEmpty())
 		{
 			Corner c = queue.pop();
+			// Mountains receive moisture but don't pass it on, so the far side of a range stays dry. Rivers and lakes in the mountains still
+			// spread it.
+			if (!isSource[c.index] && c.elevation >= moistureBlockingElevation)
+			{
+				continue;
+			}
 			for (Corner a : c.adjacent)
 			{
 				double newM = .9 * c.moisture;
@@ -1365,10 +1372,9 @@ public abstract class VoronoiGraph
 			}
 		}
 
-		// Salt water
 		for (Corner c : corners)
 		{
-			if (c.isOcean || c.isCoast)
+			if (c.isOcean || c.isCoast || c.isWater)
 			{
 				c.moisture = 1.0;
 			}
