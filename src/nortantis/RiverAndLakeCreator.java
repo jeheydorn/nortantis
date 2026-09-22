@@ -18,12 +18,13 @@ import java.util.Random;
  * <p>
  * Rain falls on land, flows downhill across corners, and collects in basins. Each basin holds a lake whose area grows until evaporation from
  * its surface balances its inflow. A basin that fills to its rim before that happens overflows at the lowest point of its rim, and a basin
- * that receives well more than it needs to overflow carves that outlet down, which shrinks its lake. Nested basins are handled by a
- * depression hierarchy: two neighboring basins that both fill to the pass between them become one basin.
+ * with enough outflow carves that outlet down, which shrinks its lake. Rivers lose some flow with each step, so streams far from other
+ * water dry up, and only each map's biggest rivers are drawn. Nested basins are handled by a depression hierarchy: two neighboring basins
+ * that both fill to the pass between them become one basin.
  * </p>
  * <p>
- * The results are stored in the graph: {@code Edge.river} and {@code Corner.river} hold the flow along each river, new lake centers are
- * marked as water, and carving lowers corner elevations along carved channels.
+ * The results are stored in the graph: {@code Corner.river} holds the flow through each corner, {@code Edge.river} holds the flow along
+ * drawn rivers and is zero elsewhere, new lake centers are marked as water, and carving lowers corner elevations along carved channels.
  * </p>
  */
 class RiverAndLakeCreator
@@ -45,36 +46,42 @@ class RiverAndLakeCreator
 	static final int minLakeSize = 4;
 
 	/**
-	 * The most centers a lake may cover, as a fraction of the number of centers in the map, so that lakes look about the same size at any
-	 * world size. Lakes are also never bigger than {@link WorldGraph#maxLakeSize}, beyond which water is treated as ocean.
+	 * How far a basin's rim must be above its lowest point for it to hold a lake. Shallower dips are treated as filled in with sediment, so
+	 * water passes through them. Most basins that hold a lake are closed, with no outflow to carve their way out with, so this is the main
+	 * control over how many lakes a map has. For scale, sea level is 0.39 and land starts a little above it.
 	 */
-	private static final double maxLakeSizeAsFractionOfCenters = 0.003;
+	static final double minLakeDepth = 0.02;
 
 	/**
-	 * The lower limit on the most centers a lake may cover, for small maps.
+	 * An overflowing lake carves its outlet only when its outflow is at least this much, so that small streams never carve.
 	 */
-	private static final int minMaxLakeSize = 10;
+	private static final double minOutflowToCarve = 5.0;
 
 	/**
-	 * A basin carves its outlet only when its inflow is at least this many times what it needs to overflow.
+	 * How much an outlet is lowered in one round of carving, per unit of outflow. Lowering an outlet shrinks the lake, which evaporates less
+	 * and so sends more water through the outlet, which carves it deeper in the next round. An outlet with enough water keeps sinking until
+	 * the lake drains down to the floor of its basin.
 	 */
-	private static final double carveInflowFactor = 2.0;
+	private static final double carveDepthPerOutflow = 0.001;
 
 	/**
-	 * A basin carves its outlet only when its outflow is at least this much, so that small streams never carve.
+	 * The flow a river loses to evaporation and soaking into the ground each time it moves from one corner to the next, so that streams far
+	 * from other water dry up before they get big. Kept below the rain each corner adds on average, since at that loss only streams that
+	 * merge with others survive and rivers nearly vanish.
 	 */
-	private static final double minOutflowToCarve = 15.0;
+	private static final double flowLostPerStep = 0.04;
 
 	/**
-	 * Scales how deep an outlet is carved, relative to the square root of the outflow.
+	 * How many edges of drawn river there are per land center. Each map draws its biggest rivers until it reaches this, so every land shape
+	 * shows a similar amount of river.
 	 */
-	private static final double carveDepthScale = 0.006;
+	private static final double drawnRiverStepsPerLandCenter = 0.07;
 
 	/**
 	 * Carving changes which basins exist and how much water reaches them, so the basins are re-evaluated after each round of carving, up to
 	 * this many times.
 	 */
-	private static final int maxCarveRounds = 4;
+	private static final int maxCarveRounds = 8;
 
 	/**
 	 * How much lower each corner of a carved channel is than the one before it, as a fraction of its elevation, so the channel runs
@@ -83,12 +90,7 @@ class RiverAndLakeCreator
 	private static final double channelSlope = 0.0001;
 
 	private final WorldGraph graph;
-	/**
-	 * The most centers a lake may cover.
-	 */
-	private final int maxLakeSize;
 	private final double[] rain;
-	private final boolean[] isCarved;
 
 	/**
 	 * Index of the water body each center belongs to, or -1 for land. Recomputed when lakes are added.
@@ -99,7 +101,6 @@ class RiverAndLakeCreator
 	RiverAndLakeCreator(WorldGraph graph, Random rand)
 	{
 		this.graph = graph;
-		maxLakeSize = getMaxLakeSize(graph.centers.size());
 		findWaterBodies();
 
 		rain = new double[graph.corners.size()];
@@ -110,15 +111,6 @@ class RiverAndLakeCreator
 				rain[corner.index] = 1.0;
 			}
 		}
-		isCarved = new boolean[graph.corners.size()];
-	}
-
-	/**
-	 * The most centers a new lake may cover in a map with the given number of centers.
-	 */
-	static int getMaxLakeSize(int centerCount)
-	{
-		return Math.min(WorldGraph.maxLakeSize, Math.max(minMaxLakeSize, (int) Math.round(centerCount * maxLakeSizeAsFractionOfCenters)));
 	}
 
 	void createRiversAndLakes()
@@ -312,9 +304,14 @@ class RiverAndLakeCreator
 			return canHoldLakeOfSize(centers.size()) ? Math.min(centers.size(), maxSize) : 0;
 		}
 
+		/**
+		 * How far the basin's rim is above its lowest point.
+		 */
+		double basinDepth;
+
 		boolean canHoldLakeOfSize(int area)
 		{
-			return existingLakeCenterCount > 0 || (area >= minLakeSize && centers.size() >= minLakeSize);
+			return existingLakeCenterCount > 0 || (area >= minLakeSize && centers.size() >= minLakeSize && basinDepth >= minLakeDepth);
 		}
 	}
 
@@ -657,15 +654,30 @@ class RiverAndLakeCreator
 			return basin1 == basin2 ? basin1 : null;
 		}
 
+		/**
+		 * Adds up the rain that reaches each leaf's low point, less what is lost along the way, and credits it to the leaf and the basins
+		 * that contain it.
+		 */
 		private void addUpRain()
 		{
-			for (Corner corner : graph.corners)
+			// Every corner's downhill neighbor is lower than it, so going from highest to lowest visits each corner after everything uphill
+			// of it.
+			List<Corner> highestFirst = new ArrayList<>(graph.corners);
+			highestFirst.sort(Comparator.comparingDouble((Corner c) -> c.elevation).reversed().thenComparingInt(c -> c.index));
+			double[] flow = new double[graph.corners.size()];
+			for (Corner corner : highestFirst)
 			{
-				if (rain[corner.index] > 0)
+				flow[corner.index] += rain[corner.index];
+				Corner next = downhill[corner.index];
+				if (next != null)
+				{
+					flow[next.index] += flowAfterOneStep(flow[corner.index]);
+				}
+				else if (flow[corner.index] > 0)
 				{
 					for (Basin basin = leafOfCorner[corner.index]; basin != null; basin = basin.parent)
 					{
-						basin.rainInflow += rain[corner.index];
+						basin.rainInflow += flow[corner.index];
 					}
 				}
 			}
@@ -718,7 +730,7 @@ class RiverAndLakeCreator
 			}
 
 			double level = Double.NEGATIVE_INFINITY;
-			while (!queue.isEmpty() && growth.centers.size() <= Math.max(maxLakeSize, growth.existingLakeCenterCount))
+			while (!queue.isEmpty() && growth.centers.size() <= Math.max(WorldGraph.maxLakeSize, growth.existingLakeCenterCount))
 			{
 				Center center = queue.poll();
 				boolean isExisting = waterBodyOfCenter[center.index] != -1;
@@ -742,7 +754,8 @@ class RiverAndLakeCreator
 					}
 				}
 			}
-			growth.maxSize = Math.max(maxLakeSize, growth.existingLakeCenterCount);
+			growth.maxSize = Math.max(WorldGraph.maxLakeSize, growth.existingLakeCenterCount);
+			growth.basinDepth = basin.top - basin.floor;
 			basin.lakeGrowth = growth;
 			return growth;
 		}
@@ -930,6 +943,33 @@ class RiverAndLakeCreator
 		}
 	}
 
+	private static double flowAfterOneStep(double flow)
+	{
+		return Math.max(0, flow - flowLostPerStep);
+	}
+
+	/**
+	 * Returns the smallest flow that is drawn as a river. It is chosen so that the drawn rivers are about the same length relative to the
+	 * amount of land on every map, which shows each map's biggest rivers rather than every stream, and it is never below the smallest river
+	 * level that can be drawn.
+	 */
+	private double findMinDrawnRiverFlow(double[] flow, Corner[] flowTarget)
+	{
+		List<Double> flows = new ArrayList<>();
+		for (Corner corner : graph.corners)
+		{
+			if (flowTarget[corner.index] != null && flow[corner.index] > 0)
+			{
+				flows.add(flow[corner.index]);
+			}
+		}
+		flows.sort(Comparator.reverseOrder());
+		long landCenterCount = graph.centers.stream().filter(c -> !c.isWater).count();
+		int drawnStepCount = (int) Math.round(drawnRiverStepsPerLandCenter * landCenterCount);
+		double minFlow = drawnStepCount < flows.size() ? Math.round(flows.get(drawnStepCount)) : 0;
+		return Math.max(minFlow, GraphRiver.MIN_DRAWN_RIVER_LEVEL);
+	}
+
 	private static boolean isLower(Corner corner, Corner other)
 	{
 		return corner.elevation < other.elevation || (corner.elevation == other.elevation && corner.index < other.index);
@@ -940,7 +980,7 @@ class RiverAndLakeCreator
 	// ---------------------------------------------------------------------------------------------------------------------------------
 
 	/**
-	 * Carves the outlets of lakes whose inflow is well past what they need to overflow, and of lakes that would otherwise be too big.
+	 * Carves the outlets of overflowing lakes whose outflow is big enough to carve, and of lakes that would otherwise be too big.
 	 *
 	 * @return True if anything was carved.
 	 */
@@ -949,12 +989,11 @@ class RiverAndLakeCreator
 		List<Lake> toCarve = new ArrayList<>();
 		for (Lake lake : result.lakes)
 		{
-			if (!lake.overflows || isCarved[lake.basin.outlet.index] || isCarved[lake.basin.receiver.index])
+			if (!lake.overflows)
 			{
 				continue;
 			}
-			double outflow = lake.inflow - lake.inflowToOverflow;
-			if (lake.exceedsMaxLakeSize || (lake.inflow >= carveInflowFactor * lake.inflowToOverflow && outflow >= minOutflowToCarve))
+			if (lake.exceedsMaxLakeSize || lake.inflow - lake.inflowToOverflow >= minOutflowToCarve)
 			{
 				toCarve.add(lake);
 			}
@@ -983,7 +1022,7 @@ class RiverAndLakeCreator
 			return false;
 		}
 
-		double depth = carveDepthScale * Math.sqrt(Math.max(0, lake.inflow - lake.inflowToOverflow));
+		double depth = carveDepthPerOutflow * Math.max(0, lake.inflow - lake.inflowToOverflow);
 		if (lake.exceedsMaxLakeSize)
 		{
 			depth = Math.max(depth, rimLevel - lake.maxLevelWithinMaxLakeSize);
@@ -993,7 +1032,7 @@ class RiverAndLakeCreator
 
 		carveUpstream(hierarchy, basin, outlet, channelLevel);
 		carveDownstream(hierarchy, receiver, channelLevel);
-		return true;
+		return Math.max(outlet.elevation, receiver.elevation) < rimLevel;
 	}
 
 	/**
@@ -1082,7 +1121,6 @@ class RiverAndLakeCreator
 		if (corner.elevation > level)
 		{
 			corner.elevation = level;
-			isCarved[corner.index] = true;
 		}
 	}
 
@@ -1192,22 +1230,6 @@ class RiverAndLakeCreator
 			}
 		}
 
-		// Streams that end in a dry basin carry too little water to reach a lake, so they aren't drawn. Every corner's flow target was reached
-		// by the flood before it, so going through the flood order forwards visits each corner after everything downstream of it.
-		boolean[] endsInDryBasin = new boolean[cornerCount];
-		for (Corner pit : result.dryPits)
-		{
-			endsInDryBasin[pit.index] = true;
-		}
-		for (Corner corner : floodOrder)
-		{
-			Corner target = flowTarget[corner.index];
-			if (target != null && waterBodyIndexOfCorner(corner) == -1 && waterBodyIndexOfCorner(target) == -1)
-			{
-				endsInDryBasin[corner.index] = endsInDryBasin[target.index];
-			}
-		}
-
 		// Going through the flood order backwards visits each corner after everything upstream of it.
 		double[] flow = new double[cornerCount];
 		double[] lakeInflow = new double[waterBodies.size()];
@@ -1235,28 +1257,44 @@ class RiverAndLakeCreator
 			}
 
 			Corner target = flowTarget[corner.index];
-			if (target == null || flow[corner.index] <= 0)
+			double passedOn = flowAfterOneStep(flow[corner.index]);
+			if (target == null || passedOn <= 0)
 			{
 				continue;
-			}
-			if (!endsInDryBasin[corner.index])
-			{
-				corner.lookupEdgeFromCorner(target).river = (int) Math.round(flow[corner.index]);
 			}
 			int targetBodyIndex = waterBodyIndexOfCorner(target);
 			if (targetBodyIndex == -1)
 			{
-				flow[target.index] += flow[corner.index];
+				flow[target.index] += passedOn;
 			}
 			else if (waterBodies.get(targetBodyIndex).overflows)
 			{
-				lakeInflow[targetBodyIndex] += flow[corner.index];
+				lakeInflow[targetBodyIndex] += passedOn;
+			}
+		}
+
+		double minDrawnFlow = findMinDrawnRiverFlow(flow, flowTarget);
+
+		// A stretch of river is drawn only if the river stays big enough to draw all the way to water, so that drawn rivers never end on land.
+		// Going through the flood order forwards visits each corner after everything downstream of it.
+		boolean[] isDrawnToWater = new boolean[cornerCount];
+		for (Corner corner : floodOrder)
+		{
+			Corner target = flowTarget[corner.index];
+			if (target == null || Math.round(flow[corner.index]) < minDrawnFlow)
+			{
+				continue;
+			}
+			if (waterBodyIndexOfCorner(target) != -1 || isDrawnToWater[target.index])
+			{
+				isDrawnToWater[corner.index] = true;
+				corner.lookupEdgeFromCorner(target).river = (int) Math.round(flow[corner.index]);
 			}
 		}
 
 		for (Corner corner : graph.corners)
 		{
-			corner.river = endsInDryBasin[corner.index] ? 0 : (int) Math.round(flow[corner.index]);
+			corner.river = (int) Math.round(flow[corner.index]);
 		}
 	}
 

@@ -66,6 +66,11 @@ public class DebugFlags
 	 * the graph used during sub-map creation, corner indexes line up between the two.
 	 */
 	private static boolean highlightSubMapRiverWaypoints = false;
+	/**
+	 * Tints lakes above sea level on newly generated maps. Only the lake generation in {@link RiverAndLakeCreator} puts water above sea
+	 * level, so this shows which lakes it added. Maps opened from files don't have generated elevations, so nothing is tinted on them.
+	 */
+	private static boolean highlightLakesAboveSeaLevel = false;
 
 	/**
 	 * New-graph corner indexes of the waypoints used by the most recent sub-map river re-routing, populated by {@link SubMapCreator} when
@@ -163,6 +168,11 @@ public class DebugFlags
 	public static boolean highlightSubMapRiverWaypoints()
 	{
 		return !Assets.isRunningFromJar() && highlightSubMapRiverWaypoints;
+	}
+
+	public static boolean highlightLakesAboveSeaLevel()
+	{
+		return !Assets.isRunningFromJar() && highlightLakesAboveSeaLevel;
 	}
 
 	/**

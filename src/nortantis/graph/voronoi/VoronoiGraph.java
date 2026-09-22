@@ -166,6 +166,11 @@ public abstract class VoronoiGraph
 
 	protected abstract Biome getBiome(Center p);
 
+	/**
+	 * Returns which of the elevation bands that biomes are chosen from the given elevation falls in. Higher bands have higher numbers.
+	 */
+	protected abstract int getBiomeElevationBand(double elevation);
+
 	protected abstract Color getColor(Biome biome);
 
 	/* an additional smoothing method across corners */
@@ -1381,27 +1386,25 @@ public abstract class VoronoiGraph
 		}
 	}
 
+	/**
+	 * Replaces each land corner's moisture with its rank, spread evenly from 0 to 1. Corners are ranked only against others in the same
+	 * biome elevation band, so each band keeps the same mix of wet and dry land no matter where water collects, and water only decides
+	 * where within a band the wet land is.
+	 */
 	private void redistributeMoisture(ArrayList<Corner> landCorners)
 	{
-		Collections.sort(landCorners, new Comparator<Corner>()
+		Map<Integer, List<Corner>> cornersByBand = new TreeMap<>();
+		for (Corner corner : landCorners)
 		{
-			@Override
-			public int compare(Corner o1, Corner o2)
+			cornersByBand.computeIfAbsent(getBiomeElevationBand(corner.elevation), band -> new ArrayList<>()).add(corner);
+		}
+		for (List<Corner> band : cornersByBand.values())
+		{
+			band.sort(Comparator.comparingDouble((Corner c) -> c.moisture));
+			for (int i = 0; i < band.size(); i++)
 			{
-				if (o1.moisture > o2.moisture)
-				{
-					return 1;
-				}
-				else if (o1.moisture < o2.moisture)
-				{
-					return -1;
-				}
-				return 0;
+				band.get(i).moisture = (double) i / band.size();
 			}
-		});
-		for (int i = 0; i < landCorners.size(); i++)
-		{
-			landCorners.get(i).moisture = (double) i / landCorners.size();
 		}
 	}
 

@@ -1811,10 +1811,38 @@ public class WorldGraph extends VoronoiGraph
 		return biome.color;
 	}
 
+	/**
+	 * The lowest elevations, on the scale {@link #getBiomeElevation(double)} returns, of the elevation bands biomes are chosen from, from the
+	 * highest band down. Land below the last one is the lowest band.
+	 */
+	private static final double[] biomeElevationBandBottoms = { 0.8, 0.6, 0.45, 0.3 };
+
+	/**
+	 * Scales an elevation so that sea level is 0 and the highest center is 1, with more of the range given to low land.
+	 */
+	private double getBiomeElevation(double elevation)
+	{
+		return Math.sqrt((elevation - seaLevel) / (maxElevation - seaLevel));
+	}
+
+	@Override
+	protected int getBiomeElevationBand(double elevation)
+	{
+		double biomeElevation = getBiomeElevation(elevation);
+		for (int i = 0; i < biomeElevationBandBottoms.length; i++)
+		{
+			if (biomeElevation > biomeElevationBandBottoms[i])
+			{
+				return biomeElevationBandBottoms.length - i;
+			}
+		}
+		return 0;
+	}
+
 	@Override
 	protected Biome getBiome(Center p)
 	{
-		double elevation = Math.sqrt((p.elevation - seaLevel) / (maxElevation - seaLevel));
+		double elevation = getBiomeElevation(p.elevation);
 
 		if (p.isWater)
 		{
@@ -1836,7 +1864,7 @@ public class WorldGraph extends VoronoiGraph
 		{
 			return Biome.BEACH;
 		}
-		else if (elevation > 0.8)
+		else if (elevation > biomeElevationBandBottoms[0])
 		{
 			if (p.moisture > 0.50)
 			{
@@ -1855,7 +1883,7 @@ public class WorldGraph extends VoronoiGraph
 				return Biome.SCORCHED;
 			}
 		}
-		else if (elevation > 0.6)
+		else if (elevation > biomeElevationBandBottoms[1])
 		{
 			if (p.moisture > 0.66)
 			{
@@ -1870,7 +1898,7 @@ public class WorldGraph extends VoronoiGraph
 				return Biome.HIGH_TEMPERATE_DESERT;
 			}
 		}
-		else if (elevation > 0.45)
+		else if (elevation > biomeElevationBandBottoms[2])
 		{
 			// Note: I added this else if case. It is not in Red Blob's blog.
 			if (p.moisture > 0.83)
@@ -1890,7 +1918,7 @@ public class WorldGraph extends VoronoiGraph
 				return Biome.TEMPERATE_DESERT;
 			}
 		}
-		else if (elevation > 0.3)
+		else if (elevation > biomeElevationBandBottoms[3])
 		{
 			if (p.moisture > 0.83)
 			{

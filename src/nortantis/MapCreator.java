@@ -936,6 +936,22 @@ public class MapCreator implements WarningLogger
 			}
 		}
 
+		if (DebugFlags.highlightLakesAboveSeaLevel())
+		{
+			try (Painter p = map.createPainter())
+			{
+				Set<Center> toRender = new HashSet<>();
+				for (Center center : graph.centers)
+				{
+					if (center.isWater && center.elevation >= WorldGraph.seaLevel)
+					{
+						toRender.add(center);
+					}
+				}
+				graph.drawPolygons(p, toRender, (ignored) -> Color.create(255, 0, 0, 120));
+			}
+		}
+
 		if (DebugFlags.getIndexesOfEdgesToHighlight().length > 0)
 		{
 			try (Painter p = map.createPainter())

@@ -301,7 +301,7 @@ public class WorldGraphTest
 	}
 
 	@Test
-	public void newLakesAreLabeledAndWithinTheSizeCapAndDoNotTouchTheBorder()
+	public void newLakesAreLabeledAndNotTooBigAndDoNotTouchTheBorder()
 	{
 		int newLakeCount = 0;
 		for (LandShape landShape : riverTestLandShapes)
@@ -310,7 +310,6 @@ public class WorldGraphTest
 			{
 				WorldGraph graph = createGraph(landShape, 6, seed);
 				String description = landShape.name() + ", seed " + seed;
-				int maxLakeSize = RiverAndLakeCreator.getMaxLakeSize(graph.centers.size());
 				Set<Center> visited = new HashSet<>();
 				for (Center center : graph.centers)
 				{
@@ -323,7 +322,7 @@ public class WorldGraphTest
 					visited.addAll(lake);
 					newLakeCount++;
 					long belowSeaLevelCount = lake.stream().filter(c -> c.elevation < WorldGraph.seaLevel).count();
-					assertTrue(lake.size() <= Math.max(maxLakeSize, belowSeaLevelCount), "Lake of size " + lake.size() + " is too big: " + description);
+					assertTrue(lake.size() <= Math.max(WorldGraph.maxLakeSize, belowSeaLevelCount), "Lake of size " + lake.size() + " is too big: " + description);
 					assertTrue(lake.stream().noneMatch(c -> c.isBorder), "Lake touches the border: " + description);
 					assertTrue(lake.stream().allMatch(c -> c.isLake), "Lake not labeled as a lake: " + description);
 				}
