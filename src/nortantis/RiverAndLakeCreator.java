@@ -50,7 +50,7 @@ class RiverAndLakeCreator
 	 * water passes through them. Most basins that hold a lake are closed, with no outflow to carve their way out with, so this is the main
 	 * control over how many lakes a map has. For scale, sea level is 0.39 and land starts a little above it.
 	 */
-	static final double minLakeDepth = 0.02;
+	static final double minLakeDepth = 0.04;
 
 	/**
 	 * An overflowing lake carves its outlet only when its outflow is at least this much, so that small streams never carve.
