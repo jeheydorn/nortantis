@@ -444,8 +444,35 @@ public class SwingHelper
 
 		};
 		Dialog dialog = JColorChooser.createDialog(colorDisplay, title, false, colorChooser, okHandler, null);
+		keepInsideOwnerWindow(dialog, colorDisplay);
 		dialog.setVisible(true);
 
+	}
+
+	/**
+	 * Shifts the dialog so it lies within the window containing {@code component}, along each axis where the window is large enough to hold it.
+	 */
+	private static void keepInsideOwnerWindow(Window dialog, Component component)
+	{
+		Window window = SwingUtilities.getWindowAncestor(component);
+		if (window == null)
+		{
+			return;
+		}
+
+		Rectangle windowBounds = window.getBounds();
+		Rectangle dialogBounds = dialog.getBounds();
+		int x = dialogBounds.x;
+		int y = dialogBounds.y;
+		if (dialogBounds.width <= windowBounds.width)
+		{
+			x = Math.max(windowBounds.x, Math.min(x, windowBounds.x + windowBounds.width - dialogBounds.width));
+		}
+		if (dialogBounds.height <= windowBounds.height)
+		{
+			y = Math.max(windowBounds.y, Math.min(y, windowBounds.y + windowBounds.height - dialogBounds.height));
+		}
+		dialog.setLocation(x, y);
 	}
 
 	/**
