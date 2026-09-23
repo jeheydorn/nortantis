@@ -952,6 +952,14 @@ public class MapCreator implements WarningLogger
 			}
 		}
 
+		if (DebugFlags.highlightSiltedUpLakes())
+		{
+			try (Painter p = map.createPainter())
+			{
+				graph.drawPolygons(p, graph.getSiltedUpLakeCenters(), (ignored) -> Color.create(0, 0, 255, 120));
+			}
+		}
+
 		if (DebugFlags.getIndexesOfEdgesToHighlight().length > 0)
 		{
 			try (Painter p = map.createPainter())

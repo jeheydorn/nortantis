@@ -46,6 +46,7 @@ public class WorldGraph extends VoronoiGraph
 	private Double meanCenterWidth;
 	private Double meanCenterWidthBetweenNeighbors;
 	private List<Set<Center>> lakes;
+	private Set<Center> siltedUpLakeCenters = new HashSet<>();
 
 	// Maps plate ids to plates.
 	Set<TectonicPlate> plates;
@@ -1793,6 +1794,20 @@ public class WorldGraph extends VoronoiGraph
 	public List<Set<Center>> getGeneratedLakes()
 	{
 		return lakes;
+	}
+
+	/**
+	 * The centers of the lakes that were silted up rather than filled with water. Only populated when
+	 * {@link DebugFlags#highlightSiltedUpLakes()} is on.
+	 */
+	public Set<Center> getSiltedUpLakeCenters()
+	{
+		return siltedUpLakeCenters;
+	}
+
+	void setSiltedUpLakeCenters(Set<Center> centers)
+	{
+		siltedUpLakeCenters = centers;
 	}
 
 	public int getWidth()

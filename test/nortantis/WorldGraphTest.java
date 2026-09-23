@@ -332,9 +332,50 @@ public class WorldGraphTest
 	}
 
 	@Test
-	public void carvingOnlyLowersAFewCorners()
+	public void riversNeverRunUphill()
+	{
+		for (LandShape landShape : riverTestLandShapes)
+		{
+			for (long seed = 1; seed <= 3; seed++)
+			{
+				WorldGraph graph = createGraph(landShape, 6, seed);
+				String description = landShape.name() + ", seed " + seed;
+				Map<Corner, List<Corner>> riverNeighbors = new HashMap<>();
+				for (Edge edge : graph.edges)
+				{
+					if (edge.river > GraphRiver.RIVERS_THIS_SIZE_OR_SMALLER_WILL_NOT_BE_DRAWN)
+					{
+						riverNeighbors.computeIfAbsent(edge.v0, corner -> new ArrayList<>()).add(edge.v1);
+						riverNeighbors.computeIfAbsent(edge.v1, corner -> new ArrayList<>()).add(edge.v0);
+					}
+				}
+
+				for (Map.Entry<Corner, List<Corner>> entry : riverNeighbors.entrySet())
+				{
+					Corner corner = entry.getKey();
+					// A river's last step is allowed to climb the shore it crosses to reach the water.
+					if (touchesWater(corner) || entry.getValue().stream().anyMatch(WorldGraphTest::touchesWater))
+					{
+						continue;
+					}
+					double lowestNeighbor = entry.getValue().stream().mapToDouble(neighbor -> neighbor.elevation).min().getAsDouble();
+					assertTrue(lowestNeighbor <= corner.elevation, "A river has to climb " + (lowestNeighbor - corner.elevation) + " to leave a corner at elevation "
+							+ corner.elevation + ": " + description);
+				}
+			}
+		}
+	}
+
+	private static boolean touchesWater(Corner corner)
+	{
+		return corner.touches.stream().anyMatch(center -> center.isWater);
+	}
+
+	@Test
+	public void carvingAndSiltingOnlyChangeAFewCorners()
 	{
 		int carvedCount = 0;
+		int siltedCount = 0;
 		for (long seed = 1; seed <= 3; seed++)
 		{
 			double[][] elevationsBeforeRivers = new double[1][];
@@ -351,20 +392,34 @@ public class WorldGraphTest
 				}
 			};
 
-			int changedCount = 0;
+			int loweredCount = 0;
+			int filledCount = 0;
+			int deeplyFilledCount = 0;
 			for (Corner corner : graph.corners)
 			{
-				double before = elevationsBeforeRivers[0][corner.index];
-				assertTrue(corner.elevation <= before, "Carving raised a corner, seed " + seed);
-				if (corner.elevation < before)
+				double change = corner.elevation - elevationsBeforeRivers[0][corner.index];
+				if (change < 0)
 				{
-					changedCount++;
+					loweredCount++;
+				}
+				else if (change > 0)
+				{
+					filledCount++;
+					if (change > RiverAndLakeCreator.minLakeDepth)
+					{
+						deeplyFilledCount++;
+					}
 				}
 			}
-			assertTrue(changedCount < graph.corners.size() * 0.05, "Carving changed " + changedCount + " corners, seed " + seed);
-			carvedCount += changedCount;
+			assertTrue(loweredCount < graph.corners.size() * 0.05, "Carving lowered " + loweredCount + " corners, seed " + seed);
+			// Most of what silting fills is dips too shallow to hold a lake, so filling one that deep should be rare.
+			assertTrue(deeplyFilledCount < graph.corners.size() * 0.02,
+					"Silting filled " + deeplyFilledCount + " corners by more than " + RiverAndLakeCreator.minLakeDepth + ", seed " + seed);
+			carvedCount += loweredCount;
+			siltedCount += filledCount;
 		}
 		assertTrue(carvedCount > 0, "Nothing was carved");
+		assertTrue(siltedCount > 0, "Nothing was silted up");
 	}
 
 	@Test

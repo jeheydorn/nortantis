@@ -71,6 +71,12 @@ public class DebugFlags
 	 * level, so this shows which lakes it added. Maps opened from files don't have generated elevations, so nothing is tinted on them.
 	 */
 	private static boolean highlightLakesAboveSeaLevel = false;
+	/**
+	 * Tints the lakes that {@link RiverAndLakeCreator} silted up instead of filling with water on newly generated maps, so that the dips
+	 * that were too shallow or too small to become lakes can be seen. Maps opened from files don't have generated elevations, so nothing
+	 * is tinted on them.
+	 */
+	private static boolean highlightSiltedUpLakes = false;
 
 	/**
 	 * New-graph corner indexes of the waypoints used by the most recent sub-map river re-routing, populated by {@link SubMapCreator} when
@@ -173,6 +179,11 @@ public class DebugFlags
 	public static boolean highlightLakesAboveSeaLevel()
 	{
 		return !Assets.isRunningFromJar() && highlightLakesAboveSeaLevel;
+	}
+
+	public static boolean highlightSiltedUpLakes()
+	{
+		return !Assets.isRunningFromJar() && highlightSiltedUpLakes;
 	}
 
 	/**

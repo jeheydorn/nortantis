@@ -8,10 +8,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Random;
+import java.util.Set;
 
 /**
  * Creates the rivers and lakes of a newly generated map from its terrain.
@@ -89,6 +91,12 @@ class RiverAndLakeCreator
 	 */
 	private static final double channelSlope = 0.0001;
 
+	/**
+	 * How much higher each step of the filled level is than the step below it, so that land silted up to that level drains toward the pass
+	 * it empties over instead of lying flat. Land that already rises by more than this keeps its own elevation.
+	 */
+	private static final double siltSlopePerStep = 0.0001;
+
 	private final WorldGraph graph;
 	private final double[] rain;
 
@@ -126,6 +134,10 @@ class RiverAndLakeCreator
 			}
 		}
 
+		if (DebugFlags.highlightSiltedUpLakes())
+		{
+			graph.setSiltedUpLakeCenters(result.siltedUpLakeCenters);
+		}
 		addLakes(result.lakes);
 		routeAndAccumulateFlow(result);
 	}
@@ -346,6 +358,10 @@ class RiverAndLakeCreator
 		 * Land corners at the bottom of basins where every drop of inflow evaporates without making a lake.
 		 */
 		final List<Corner> dryPits = new ArrayList<>();
+		/**
+		 * The centers of the lakes that were silted up instead of being filled with water.
+		 */
+		final Set<Center> siltedUpLakeCenters = new HashSet<>();
 	}
 
 	private class DepressionHierarchy
@@ -818,6 +834,10 @@ class RiverAndLakeCreator
 				{
 					addLake(basin, growth, growth.areaAtTopWithinMaxSize(), true, inflow, inflowToFill, result);
 				}
+				else
+				{
+					result.siltedUpLakeCenters.addAll(growth.centers);
+				}
 				return;
 			}
 
@@ -1160,6 +1180,9 @@ class RiverAndLakeCreator
 	 * across flat ground and through overflowing lakes toward their outlets. An overflowing lake's outlet is the first of its corners the
 	 * flood reaches.
 	 * </p>
+	 * <p>
+	 * The filled levels also say where the land dips below the level its water drains at, which is silted up before the flow is routed.
+	 * </p>
 	 */
 	private void routeAndAccumulateFlow(BasinResult result)
 	{
@@ -1204,10 +1227,12 @@ class RiverAndLakeCreator
 				{
 					WaterBody neighborBody = waterBodyOfCorner(neighbor);
 					int tieBreak = neighborBody != null && neighborBody.overflows ? 0 : 1;
-					queue.add(new FloodEntry(neighbor, corner, Math.max(neighbor.elevation, entry.level), tieBreak, sequence++));
+					queue.add(new FloodEntry(neighbor, corner, Math.max(neighbor.elevation, entry.level + siltSlopePerStep), tieBreak, sequence++));
 				}
 			}
 		}
+
+		siltUpLandWaterOnlyPassesThrough(floodOrder, filledLevel);
 
 		// Where each corner sends its flow. Only land corners and the outlets of overflowing lakes send flow anywhere.
 		Corner[] flowTarget = new Corner[cornerCount];
@@ -1295,6 +1320,44 @@ class RiverAndLakeCreator
 		for (Corner corner : graph.corners)
 		{
 			corner.river = (int) Math.round(flow[corner.index]);
+		}
+	}
+
+	/**
+	 * Raises land that dips below the level at which its water drains, up to that level, so that rivers never run uphill.
+	 * <p>
+	 * A dip too shallow or too small to hold a lake still sits below the pass that drains it, so a river crossing it would have to climb
+	 * back out. Filling the dip up to its pass, the way silt washing into it would, removes the climb. The places where water ends
+	 * instead of passing through, which are lakes and the floors of dry basins, are where the flood starts, so their filled level is their
+	 * own elevation and they keep their shape.
+	 * </p>
+	 * <p>
+	 * The filled levels rise by {@link #siltSlopePerStep} at each step of the flood, so a filled surface runs downhill toward the pass it
+	 * empties over rather than lying level.
+	 * </p>
+	 */
+	private void siltUpLandWaterOnlyPassesThrough(List<Corner> floodOrder, double[] filledLevel)
+	{
+		boolean[] centerNeedsUpdate = new boolean[graph.centers.size()];
+		for (Corner corner : floodOrder)
+		{
+			if (filledLevel[corner.index] <= corner.elevation || waterBodyOfCorner(corner) != null)
+			{
+				continue;
+			}
+			corner.elevation = filledLevel[corner.index];
+			for (Center center : corner.touches)
+			{
+				centerNeedsUpdate[center.index] = true;
+			}
+		}
+
+		for (Center center : graph.centers)
+		{
+			if (centerNeedsUpdate[center.index] && !center.isWater)
+			{
+				graph.updateCenterElevationFromCorners(center);
+			}
 		}
 	}
 

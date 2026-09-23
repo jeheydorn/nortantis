@@ -1326,16 +1326,25 @@ public abstract class VoronoiGraph
 	{
 		for (Center center : centers)
 		{
-			double total = 0;
-			for (Corner c : center.corners)
-			{
-				total += c.elevation;
-			}
-			center.elevation = total / center.corners.size();
-			if (center.elevation > maxElevation)
-			{
-				maxElevation = center.elevation;
-			}
+			updateCenterElevationFromCorners(center);
+		}
+	}
+
+	/**
+	 * Sets a center's elevation to the average of the elevations of its corners, which is how a center's elevation is derived from the
+	 * terrain around it.
+	 */
+	public void updateCenterElevationFromCorners(Center center)
+	{
+		double total = 0;
+		for (Corner c : center.corners)
+		{
+			total += c.elevation;
+		}
+		center.elevation = total / center.corners.size();
+		if (center.elevation > maxElevation)
+		{
+			maxElevation = center.elevation;
 		}
 	}
 
