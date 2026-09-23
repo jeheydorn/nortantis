@@ -50,7 +50,15 @@ public class CollapsiblePanel extends JPanel
 	 * How far the title strip's color is moved from the panel's background toward its text color.
 	 */
 	private static final double titleTint = 0.08;
-	private static final double titleTintHighlighted = 0.16;
+	/**
+	 * The tint to use when the text color is darker than the background, since moving a light background that far toward dark text is a
+	 * bigger visible step than moving a dark background the same fraction toward light text.
+	 */
+	private static final double titleTintOnLightBackground = 0.05;
+	/**
+	 * How much stronger the tint is while the title strip is hovered or focused.
+	 */
+	private static final double highlightedTintMultiplier = 2.0;
 
 	private final String namespace;
 	private final String name;
@@ -230,7 +238,15 @@ public class CollapsiblePanel extends JPanel
 
 	private Color getTitleColor()
 	{
-		return blend(getBackground(), getForeground(), isHighlighted ? titleTintHighlighted : titleTint);
+		Color background = getBackground();
+		Color foreground = getForeground();
+		double tint = brightness(foreground) < brightness(background) ? titleTintOnLightBackground : titleTint;
+		return blend(background, foreground, isHighlighted ? tint * highlightedTintMultiplier : tint);
+	}
+
+	private static double brightness(Color color)
+	{
+		return 0.299 * color.getRed() + 0.587 * color.getGreen() + 0.114 * color.getBlue();
 	}
 
 	private static Color blend(Color from, Color to, double fractionOfTo)
