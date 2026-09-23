@@ -960,6 +960,19 @@ public class MapCreator implements WarningLogger
 			}
 		}
 
+		if (DebugFlags.highlightCarvedRiverMouths())
+		{
+			try (Painter p = map.createPainter())
+			{
+				p.setColor(Color.magenta);
+				int diameter = (int) (8.0 * settings.resolution);
+				for (Corner corner : graph.getCarvedRiverMouthCorners())
+				{
+					p.fillOval((int) corner.loc.x - diameter / 2, (int) corner.loc.y - diameter / 2, diameter, diameter);
+				}
+			}
+		}
+
 		if (DebugFlags.getIndexesOfEdgesToHighlight().length > 0)
 		{
 			try (Painter p = map.createPainter())

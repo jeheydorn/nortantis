@@ -1303,6 +1303,7 @@ class RiverAndLakeCreator
 		// A stretch of river is drawn only if the river stays big enough to draw all the way to water, so that drawn rivers never end on land.
 		// Going through the flood order forwards visits each corner after everything downstream of it.
 		boolean[] isDrawnToWater = new boolean[cornerCount];
+		Set<Corner> carvedRiverMouthCorners = new HashSet<>();
 		for (Corner corner : floodOrder)
 		{
 			Corner target = flowTarget[corner.index];
@@ -1310,16 +1311,33 @@ class RiverAndLakeCreator
 			{
 				continue;
 			}
-			if (waterBodyIndexOfCorner(target) != -1 || isDrawnToWater[target.index])
+			boolean targetIsWater = waterBodyIndexOfCorner(target) != -1;
+			if (targetIsWater || isDrawnToWater[target.index])
 			{
 				isDrawnToWater[corner.index] = true;
 				corner.lookupEdgeFromCorner(target).river = (int) Math.round(flow[corner.index]);
+				if (targetIsWater)
+				{
+					// Cut the shore a river crosses down below the river, so that its last step into the water runs downhill too. This
+					// only moves elevations. Which centers are water was settled before any of this ran, so the coastline stays put.
+					double mouthLevel = corner.elevation - siltSlopePerStep;
+					if (target.elevation > mouthLevel)
+					{
+						lowerTo(target, mouthLevel);
+						carvedRiverMouthCorners.add(target);
+					}
+				}
 			}
 		}
 
 		for (Corner corner : graph.corners)
 		{
 			corner.river = (int) Math.round(flow[corner.index]);
+		}
+
+		if (DebugFlags.highlightCarvedRiverMouths())
+		{
+			graph.setCarvedRiverMouthCorners(carvedRiverMouthCorners);
 		}
 	}
 

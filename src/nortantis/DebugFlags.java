@@ -77,6 +77,11 @@ public class DebugFlags
 	 * is tinted on them.
 	 */
 	private static boolean highlightSiltedUpLakes = false;
+	/**
+	 * Marks the shore corners that {@link RiverAndLakeCreator} cut down so that rivers run downhill into the water they empty into, on
+	 * newly generated maps. Maps opened from files don't have generated elevations, so nothing is marked on them.
+	 */
+	private static boolean highlightCarvedRiverMouths = false;
 
 	/**
 	 * New-graph corner indexes of the waypoints used by the most recent sub-map river re-routing, populated by {@link SubMapCreator} when
@@ -184,6 +189,11 @@ public class DebugFlags
 	public static boolean highlightSiltedUpLakes()
 	{
 		return !Assets.isRunningFromJar() && highlightSiltedUpLakes;
+	}
+
+	public static boolean highlightCarvedRiverMouths()
+	{
+		return !Assets.isRunningFromJar() && highlightCarvedRiverMouths;
 	}
 
 	/**

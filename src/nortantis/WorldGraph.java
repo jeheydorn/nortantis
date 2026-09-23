@@ -47,6 +47,7 @@ public class WorldGraph extends VoronoiGraph
 	private Double meanCenterWidthBetweenNeighbors;
 	private List<Set<Center>> lakes;
 	private Set<Center> siltedUpLakeCenters = new HashSet<>();
+	private Set<Corner> carvedRiverMouthCorners = new HashSet<>();
 
 	// Maps plate ids to plates.
 	Set<TectonicPlate> plates;
@@ -1808,6 +1809,20 @@ public class WorldGraph extends VoronoiGraph
 	void setSiltedUpLakeCenters(Set<Center> centers)
 	{
 		siltedUpLakeCenters = centers;
+	}
+
+	/**
+	 * The shore corners that were cut down so that rivers run downhill into the water they empty into. Only populated when
+	 * {@link DebugFlags#highlightCarvedRiverMouths()} is on.
+	 */
+	public Set<Corner> getCarvedRiverMouthCorners()
+	{
+		return carvedRiverMouthCorners;
+	}
+
+	void setCarvedRiverMouthCorners(Set<Corner> corners)
+	{
+		carvedRiverMouthCorners = corners;
 	}
 
 	public int getWidth()

@@ -353,8 +353,8 @@ public class WorldGraphTest
 				for (Map.Entry<Corner, List<Corner>> entry : riverNeighbors.entrySet())
 				{
 					Corner corner = entry.getKey();
-					// A river's last step is allowed to climb the shore it crosses to reach the water.
-					if (touchesWater(corner) || entry.getValue().stream().anyMatch(WorldGraphTest::touchesWater))
+					// A corner along a shore has only the rivers running into it, which all come from higher up.
+					if (touchesWater(corner))
 					{
 						continue;
 					}
