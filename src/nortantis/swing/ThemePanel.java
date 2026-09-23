@@ -1025,9 +1025,8 @@ public class ThemePanel extends JTabbedPane
 		organizer.addLabelAndComponentsVertical(Translation.get("theme.waveType.label"), Translation.get("theme.waveType.help"),
 				Arrays.asList(concentricWavesButton, waveLinesButton, waveDashesButton, ripplesRadioButton, noneRadioButton));
 
-		// The wave style options sit in their own bordered panel that spans the width of the tab, with labels beside their controls.
+		// The wave style options sit in their own collapsible card that spans the width of the tab, with labels beside their controls.
 		GridBagOrganizer styleOrganizer = new GridBagOrganizer();
-		styleOrganizer.panel.setBorder(BorderFactory.createTitledBorder(new DynamicLineBorder("controlShadow", 1), Translation.get("theme.styleOptions.title")));
 
 		concentricWaveLineWidthSlider = createWaveLineWidthSlider();
 		concentricStyleHider = addWaveLineWidthSlider(styleOrganizer, concentricWaveLineWidthSlider);
@@ -1071,7 +1070,8 @@ public class ThemePanel extends JTabbedPane
 		// Wave dashes already thin out away from the coast by getting shorter and sparser.
 		waveDashControls = new WaveRowStyleControls(styleOrganizer, false);
 
-		concentricWavesOptionsHider = organizer.addLeftAlignedComponent(styleOrganizer.panel, GridBagOrganizer.rowVerticalInset, GridBagOrganizer.rowVerticalInset, false);
+		CollapsiblePanel styleOptionsCard = new CollapsiblePanel("wave_style_options", Translation.get("theme.styleOptions.title"), styleOrganizer.panel);
+		concentricWavesOptionsHider = organizer.addLeftAlignedComponent(styleOptionsCard, GridBagOrganizer.rowVerticalInset, GridBagOrganizer.rowVerticalInset, false);
 
 		rippleWavesLevelSlider = new JSlider();
 		rippleWavesLevelSlider.setMinorTickSpacing(5);
