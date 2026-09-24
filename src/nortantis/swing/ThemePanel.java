@@ -994,7 +994,7 @@ public class ThemePanel extends JTabbedPane
 				boolean isConcentric = concentricWavesButton.isSelected();
 				boolean isWaveLines = waveLinesButton.isSelected();
 				boolean isWaveDashes = waveDashesButton.isSelected();
-				concentricWavesOptionsHider.setVisible(isConcentric || isWaveLines || isWaveDashes);
+				concentricWavesOptionsHider.setVisible(isConcentric || isWaveLines || isWaveDashes || ripplesRadioButton.isSelected());
 				concentricStyleHider.setVisible(isConcentric);
 				jitterLevelHider.setVisible(isConcentric && jitterWavesCheckbox.isSelected());
 				waveLineControls.setVisible(isWaveLines);
@@ -1070,9 +1070,6 @@ public class ThemePanel extends JTabbedPane
 		// Wave dashes already thin out away from the coast by getting shorter and sparser.
 		waveDashControls = new WaveRowStyleControls(styleOrganizer, false);
 
-		CollapsiblePanel styleOptionsCard = new CollapsiblePanel("wave_style_options", Translation.get("theme.styleOptions.title"), styleOrganizer.panel);
-		concentricWavesOptionsHider = organizer.addLeftAlignedComponent(styleOptionsCard, GridBagOrganizer.rowVerticalInset, GridBagOrganizer.rowVerticalInset, false);
-
 		rippleWavesLevelSlider = new JSlider();
 		rippleWavesLevelSlider.setMinorTickSpacing(5);
 		rippleWavesLevelSlider.setPaintTicks(true);
@@ -1080,7 +1077,10 @@ public class ThemePanel extends JTabbedPane
 		rippleWavesLevelSlider.setMajorTickSpacing(20);
 		rippleWavesLevelSlider.setMaximum(100);
 		createMapChangeListenerForTerrainChange(rippleWavesLevelSlider);
-		rippleWavesLevelSliderHider = organizer.addLabelAndComponent(Translation.get("theme.waveWidth.label"), Translation.get("theme.waveWidth.help"), rippleWavesLevelSlider);
+		rippleWavesLevelSliderHider = styleOrganizer.addLabelAndComponent(Translation.get("theme.waveWidth.label"), Translation.get("theme.waveWidth.help"), rippleWavesLevelSlider);
+
+		CollapsiblePanel styleOptionsCard = new CollapsiblePanel("wave_style_options", Translation.get("theme.styleOptions.title"), styleOrganizer.panel);
+		concentricWavesOptionsHider = organizer.addLeftAlignedComponent(styleOptionsCard, GridBagOrganizer.rowVerticalInset, GridBagOrganizer.rowVerticalInset, false);
 
 		{
 			oceanWavesColorDisplay = SwingHelper.createColorPickerPreviewPanel();

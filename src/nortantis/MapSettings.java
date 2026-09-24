@@ -3374,7 +3374,7 @@ public class MapSettings implements Serializable
 		@Deprecated
 		Blur,
 		/**
-		 * Shown as "Noise waves" in the editor.
+		 * Shown as "Sinc waves" in the editor.
 		 */
 		Ripples, ConcentricWaves, @Deprecated
 		FadingConcentricWaves, None, WaveLines,

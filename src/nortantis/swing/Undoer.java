@@ -5,7 +5,9 @@ import nortantis.editor.MapChange;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Stack;
 
@@ -54,6 +56,8 @@ public class Undoer
 	 *            The type of update that was last made.
 	 * @param tool
 	 *            The tool that is setting the undo point.
+	 * @param settingsBeforeJump
+	 *            The settings the editor showed before the jump.
 	 * @param preRun
 	 *            Code to run in the foreground thread before drawing if this change undone or redone.
 	 * @return Whether the change requires preview images to be re-created.
@@ -219,8 +223,7 @@ public class Undoer
 		}
 
 		MapSettings settings = copyOfSettingsWhenEditorWasOpened.deepCopy();
-		jumpTo(settings, new MapChange(latestSettings, combineUpdateTypes(changesUndone), null, combinePreRuns(changesUndone)),
-				doesChangeEffectsBackgroundImages(latestSettings, settings));
+		jumpTo(settings, latestSettings, combinePreRuns(changesUndone), doesChangeEffectsBackgroundImages(latestSettings, settings));
 	}
 
 	/**
@@ -243,68 +246,52 @@ public class Undoer
 		}
 
 		MapSettings newSettings = undoStack.peek().settings.deepCopy();
-		jumpTo(newSettings, new MapChange(currentSettings, combineUpdateTypes(changesRedone), null, combinePreRuns(changesRedone)),
-				doesChangeEffectsBackgroundImages(currentSettings, newSettings));
+		jumpTo(newSettings, currentSettings, combinePreRuns(changesRedone), doesChangeEffectsBackgroundImages(currentSettings, newSettings));
 	}
 
 	/**
-	 * Loads settings that are more than one change away from what the editor shows, and redraws what the changes between them touched.
+	 * Loads settings that are more than one change away from what the editor shows, and redraws the whole map in one full draw.
 	 *
-	 * @param changeFromCurrent
-	 *            A change holding the settings the editor showed before the jump, with an update type and pre-run that cover every change
-	 *            jumped over.
+	 * @param settingsBeforeJump
+	 *            The settings the editor showed before the jump.
+	 * @param preRun
+	 *            Code to run in the foreground thread before drawing, covering every change jumped over. May be null.
 	 */
-	private void jumpTo(MapSettings settings, MapChange changeFromCurrent, boolean refreshImagePreviews)
+	private void jumpTo(MapSettings settings, MapSettings settingsBeforeJump, Runnable preRun, boolean refreshImagePreviews)
 	{
 		mainWindow.loadSettingsAndEditsIntoThemeAndToolsPanels(settings, true, refreshImagePreviews);
 
 		// See the matching comment in undo().
 		mainWindow.toolsPanel.currentTool.onAfterUndoRedo();
 
-		if (changeFromCurrent.preRun != null)
+		if (preRun != null)
 		{
-			changeFromCurrent.preRun.run();
+			preRun.run();
 		}
-		mainWindow.updater.createAndShowMapFromChange(changeFromCurrent, true);
+		mainWindow.updater.createAndShowMapFromChange(new MapChange(settingsBeforeJump, UpdateType.Full, null, preRun), true);
 		mainWindow.updater.doWhenMapIsNotDrawing(() -> mainWindow.updater.createAndShowLowPriorityChanges(true));
 		updateUndoRedoEnabled();
 	}
 
 	/**
-	 * The update type that redraws everything the given changes affected: their shared type if they all have the same one, and a full
-	 * redraw otherwise.
-	 */
-	private static UpdateType combineUpdateTypes(List<MapChange> changes)
-	{
-		UpdateType first = changes.get(0).updateType;
-		for (MapChange change : changes)
-		{
-			if (change.updateType != first)
-			{
-				return UpdateType.Full;
-			}
-		}
-		return first;
-	}
-
-	/**
-	 * A pre-run that runs each of the given changes' pre-runs, or null if none of them has one.
+	 * A pre-run that runs the pre-runs of the given changes, or null if none of them has one. Pre-runs refresh the editor from its current
+	 * settings, so pre-runs that come from the same code do the same thing, and only one of each is run.
 	 */
 	private static Runnable combinePreRuns(List<MapChange> changes)
 	{
-		List<Runnable> preRuns = new ArrayList<>();
+		Map<Class<?>, Runnable> preRunsBySource = new LinkedHashMap<>();
 		for (MapChange change : changes)
 		{
 			if (change.preRun != null)
 			{
-				preRuns.add(change.preRun);
+				preRunsBySource.putIfAbsent(change.preRun.getClass(), change.preRun);
 			}
 		}
-		if (preRuns.isEmpty())
+		if (preRunsBySource.isEmpty())
 		{
 			return null;
 		}
-		return () -> preRuns.forEach(Runnable::run);
+		return () -> preRunsBySource.values().forEach(Runnable::run);
 	}
 
 	public void updateUndoRedoEnabled()

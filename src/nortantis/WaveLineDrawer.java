@@ -859,6 +859,11 @@ public class WaveLineDrawer
 				previousDistanceBeyondReach = distanceBeyondReach;
 			}
 
+			if (fadeLevels != null)
+			{
+				extendFadeLevelsPastRun(fadeLevels, classes, runStart, runEnd, overhang);
+			}
+
 			if (isInStretch)
 			{
 				double runEndInGraph = runEnd + drawBounds.x;
@@ -868,6 +873,26 @@ public class WaveLineDrawer
 			}
 
 			breakPattern = drawStretches(p, row, yInGraph, rowJitterAmplitude, stretches, breakPattern, drawBounds);
+		}
+	}
+
+	/**
+	 * A line that reaches the edge of the band ends in a cap that pokes out past it, where no fade levels were found, which would leave the
+	 * cap unfaded, as a dot past the faded tip. This gives the pixels just outside each free end of a run the fade level of that end.
+	 *
+	 * @param overhang
+	 *            How far past a run a stroke's cap can reach, in pixels.
+	 */
+	private static void extendFadeLevelsPastRun(byte[] fadeLevels, byte[] classes, int runStart, int runEnd, double overhang)
+	{
+		int capPixels = (int) Math.ceil(overhang);
+		for (int pixel = runEnd; pixel < Math.min(classes.length, runEnd + capPixels) && classes[pixel] == outsideClass; pixel++)
+		{
+			fadeLevels[pixel] = fadeLevels[runEnd - 1];
+		}
+		for (int pixel = runStart - 1; pixel >= Math.max(0, runStart - capPixels) && classes[pixel] == outsideClass; pixel--)
+		{
+			fadeLevels[pixel] = fadeLevels[runStart];
 		}
 	}
 
