@@ -866,7 +866,6 @@ public class WaveLineDrawer
 	{
 		int width = classes.length;
 		double overhang = calcOverhang(strokeWidth);
-		double minGap = calcMinBreakLength() * sizeMultiplier;
 		double rowJitterAmplitude = getRowJitterAmplitude(row);
 		BreakPattern breakPattern = null;
 
@@ -1324,9 +1323,34 @@ public class WaveLineDrawer
 
 		BreakPattern pattern = breakPattern == null ? new BreakPattern(row) : breakPattern;
 		pattern.extendTo(endInUnits);
+		List<double[]> pieces = new ArrayList<>();
 		for (double[] drawInterval : pattern.drawIntervals)
 		{
-			drawPiece(p, row, yInGraph, rowJitterAmplitude, Math.max(startInUnits, drawInterval[0]), Math.min(endInUnits, drawInterval[1]), drawBounds, taper);
+			double pieceStart = Math.max(startInUnits, drawInterval[0]);
+			double pieceEnd = Math.min(endInUnits, drawInterval[1]);
+			if (pieceEnd > pieceStart)
+			{
+				pieces.add(new double[] { pieceStart, pieceEnd });
+			}
+		}
+
+		// The row's breaks are cut off at the ends of this stroke, which can leave a piece far shorter than any break leaves, reading as a
+		// speck rather than as a stroke. Draw across the break beside such a piece instead. Only the first and last piece can be cut off.
+		double minPieceLengthAtStrokeEnd = minBreakDrawLengthInWavelengths * wavelength;
+		while (pieces.size() > 1 && pieces.get(0)[1] - pieces.get(0)[0] < minPieceLengthAtStrokeEnd)
+		{
+			pieces.get(1)[0] = pieces.get(0)[0];
+			pieces.remove(0);
+		}
+		while (pieces.size() > 1 && pieces.get(pieces.size() - 1)[1] - pieces.get(pieces.size() - 1)[0] < minPieceLengthAtStrokeEnd)
+		{
+			pieces.get(pieces.size() - 2)[1] = pieces.get(pieces.size() - 1)[1];
+			pieces.remove(pieces.size() - 1);
+		}
+
+		for (double[] piece : pieces)
+		{
+			drawPiece(p, row, yInGraph, rowJitterAmplitude, piece[0], piece[1], drawBounds, taper);
 		}
 		return pattern;
 	}
