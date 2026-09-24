@@ -71,8 +71,20 @@ public class WaveLineDrawer
 	 */
 	private static final double minGapBetweenRows = 0.5;
 	private static final double minPieceLength = 3.0;
+	/**
+	 * The shortest length a row's breaks leave drawn between them, in wavelengths. It doubles as the shortest piece allowed where a break
+	 * falls at the end of a stroke, which is the one place a shorter piece can appear, since the breaks are cut off there: a break beside a
+	 * piece shorter than this is drawn across instead, because such a piece reads as a speck beside the line rather than as a stroke.
+	 * Lowering this brings those specks back, so it is not the knob for making breaks more frequent; that is the break level, which sets how
+	 * long the drawn pieces are through {@link #maxBreakDrawLengthInWavelengthsByLevel}.
+	 */
 	private static final double minBreakDrawLengthInWavelengths = 0.75;
-	private static final double maxBreakDrawLengthInWavelengths = 5.0;
+	/**
+	 * The longest a piece between a row's breaks may be, in wavelengths, at each break level from 1 to
+	 * {@link MapSettings#maxWaveLineBreakLevel}. The steps shrink as the pieces get shorter, so that each level breaks the lines about as
+	 * much more often as the last, rather than shortening the pieces by the same amount.
+	 */
+	private static final double[] maxBreakDrawLengthInWavelengthsByLevel = { 13.1, 9.8, 7.7, 6.1, 5.0, 4.1, 3.4, 2.9, 2.4, 2.0 };
 	private static final double minBreakSkipLengthInWavelengths = 0.2;
 	private static final double maxBreakSkipLengthInWavelengths = 0.6;
 	/**
@@ -267,6 +279,14 @@ public class WaveLineDrawer
 	 * The bounds of the whole map, in graph coordinates.
 	 */
 	private Rectangle mapBounds;
+	/**
+	 * Whether the rows break at all, as though the pen were lifted.
+	 */
+	private final boolean hasBreaks;
+	/**
+	 * The longest a piece between a row's breaks may be, in wavelengths, at this map's break level.
+	 */
+	private final double maxBreakDrawLengthInWavelengths;
 
 	public WaveLineDrawer(MapSettings settings, double resolutionScale)
 	{
@@ -285,6 +305,9 @@ public class WaveLineDrawer
 		minRowSeparation = calcMinRowSeparation(settings);
 		maxRowShift = calcMaxRowShift(settings);
 		reachDistribution = ReachDistribution.create(settings);
+		hasBreaks = settings.waveLineBreakLevel > 0 && !isDashes;
+		maxBreakDrawLengthInWavelengths = maxBreakDrawLengthInWavelengthsByLevel[Math.max(0,
+				Math.min(maxBreakDrawLengthInWavelengthsByLevel.length - 1, settings.waveLineBreakLevel - 1))];
 		isFading = settings.fadeWaveLines && !isDashes;
 		double fadeVariation = Math.max(0, Math.min(MapSettings.maxWaveLineVariation, settings.waveLineFadeVariation)) / (double) MapSettings.maxWaveLineVariation;
 		fadeDistanceLogRange = maxLogFadeDistanceScale * fadeVariation;
@@ -1314,8 +1337,9 @@ public class WaveLineDrawer
 
 		double startInUnits = start / sizeMultiplier;
 		double endInUnits = end / sizeMultiplier;
-		// Wave dashes break up only past their unbroken part, into dashes, so they get none of wave lines' breaks.
-		if (DebugFlags.disableWaveLineBreaks() || isDashes)
+		// Either the break level is 0, or these are wave dashes, which break up only past their unbroken part, into dashes, so they get none
+		// of wave lines' breaks.
+		if (!hasBreaks)
 		{
 			drawPiece(p, row, yInGraph, rowJitterAmplitude, startInUnits, endInUnits, drawBounds, taper);
 			return breakPattern;

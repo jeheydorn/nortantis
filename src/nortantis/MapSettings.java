@@ -68,6 +68,11 @@ public class MapSettings implements Serializable
 	 */
 	public static final int maxWaveLineVariation = 10;
 	public static final int defaultWaveLineFadeVariation = 7;
+	/**
+	 * The most often wave lines can break, where 0 means they never do.
+	 */
+	public static final int maxWaveLineBreakLevel = 10;
+	public static final int defaultWaveLineBreakLevel = 6;
 	public static final WaveLineShape defaultWaveDashShape = WaveLineShape.Sine;
 	public static final int defaultWaveDashRowHeight = 6;
 	public static final int defaultWaveDashRowGap = 3;
@@ -137,6 +142,10 @@ public class MapSettings implements Serializable
 	 * How much the rate and curve of wave lines' fading differ from one line to the next, from 0 to maxWaveLineVariation.
 	 */
 	public int waveLineFadeVariation = defaultWaveLineFadeVariation;
+	/**
+	 * How often wave lines break, as though the pen were lifted, from 0 to maxWaveLineBreakLevel. At 0 they never break.
+	 */
+	public int waveLineBreakLevel = defaultWaveLineBreakLevel;
 	/**
 	 * What wave lines draw between their rows and the coast.
 	 */
@@ -525,6 +534,7 @@ public class MapSettings implements Serializable
 		root.put("waveLineJitterLevel", waveLineJitterLevel);
 		root.put("fadeWaveLines", fadeWaveLines);
 		root.put("waveLineFadeVariation", waveLineFadeVariation);
+		root.put("waveLineBreakLevel", waveLineBreakLevel);
 		root.put("waveLineShoreDetail", enumToJson(waveLineShoreDetail));
 		root.put("waveLineShoreJitterLevel", waveLineShoreJitterLevel);
 		root.put("concentricWaveLineWidth", concentricWaveLineWidth);
@@ -1280,6 +1290,7 @@ public class MapSettings implements Serializable
 		waveLineJitterLevel = root.containsKey("waveLineJitterLevel") ? (int) (long) root.get("waveLineJitterLevel") : defaultWaveRowJitterLevel;
 		fadeWaveLines = root.containsKey("fadeWaveLines") && (boolean) root.get("fadeWaveLines");
 		waveLineFadeVariation = root.containsKey("waveLineFadeVariation") ? (int) (long) root.get("waveLineFadeVariation") : defaultWaveLineFadeVariation;
+		waveLineBreakLevel = root.containsKey("waveLineBreakLevel") ? (int) (long) root.get("waveLineBreakLevel") : defaultWaveLineBreakLevel;
 		waveLineShoreDetail = root.containsKey("waveLineShoreDetail") ? ShoreDetail.valueOf((String) root.get("waveLineShoreDetail")) : ShoreDetail.ConcentricWave;
 		waveLineShoreJitterLevel = root.containsKey("waveLineShoreJitterLevel") ? (int) (long) root.get("waveLineShoreJitterLevel") : 0;
 		concentricWaveLineWidth = root.containsKey("concentricWaveLineWidth") ? (double) root.get("concentricWaveLineWidth") : defaultWaveLineWidth;
@@ -3616,6 +3627,8 @@ public class MapSettings implements Serializable
 			differences.add("fadeWaveLines: " + fadeWaveLines + " vs " + other.fadeWaveLines);
 		if (waveLineFadeVariation != other.waveLineFadeVariation)
 			differences.add("waveLineFadeVariation: " + waveLineFadeVariation + " vs " + other.waveLineFadeVariation);
+		if (waveLineBreakLevel != other.waveLineBreakLevel)
+			differences.add("waveLineBreakLevel: " + waveLineBreakLevel + " vs " + other.waveLineBreakLevel);
 		if (waveLineShoreDetail != other.waveLineShoreDetail)
 			differences.add("waveLineShoreDetail: " + waveLineShoreDetail + " vs " + other.waveLineShoreDetail);
 		if (waveLineShoreJitterLevel != other.waveLineShoreJitterLevel)
@@ -3775,7 +3788,7 @@ public class MapSettings implements Serializable
 				edits, fadeConcentricWaves, fillWithColorByType, flipHorizontally, flipVertically, frayedBorder, frayedBorderBlurLevel, frayedBorderColor, frayedBorderSeed,
 				frayedBorderSize, generateBackground, generateBackgroundFromTexture, generatedHeight, generatedWidth, gridOverlayColor, gridOverlayLayer, gridOverlayLineWidth,
 				gridOverlayRowOrColCount, gridOverlayShape, gridOverlayXOffset, gridOverlayYOffset, grungeWidth, heightmapExportPath, heightmapResolution, hillScale, hueRange, iconFillColorsByType,
-				iconFilterColorsByType, imageExportPath, jitterLevel, jitterToConcentricWaves, jitterToWaveLines, waveLineJitterLevel, fadeWaveLines, waveLineFadeVariation,
+				iconFilterColorsByType, imageExportPath, jitterLevel, jitterToConcentricWaves, jitterToWaveLines, waveLineJitterLevel, fadeWaveLines, waveLineFadeVariation, waveLineBreakLevel,
 				waveLineShoreDetail, waveLineShoreJitterLevel, concentricWaveLineWidth, waveLineWidth, waveDashShape, waveDashRowHeight, waveDashRowGap,
 				waveDashRowSpacingVariation, waveDashLength, waveDashLengthVariation, jitterToWaveDashes, waveDashJitterLevel, waveDashShoreDetail,
 				waveDashShoreJitterLevel, waveDashLineWidth, landColor, landShape, lineStyle, lloydRelaxationsScale, maximizeOpacityByType, mountainRangeFont, mountainScale,
@@ -3835,6 +3848,7 @@ public class MapSettings implements Serializable
 				&& Objects.equals(iconFilterColorsByType, other.iconFilterColorsByType) && Objects.equals(imageExportPath, other.imageExportPath)
 				&& jitterToConcentricWaves == other.jitterToConcentricWaves && jitterLevel == other.jitterLevel && jitterToWaveLines == other.jitterToWaveLines
 				&& waveLineJitterLevel == other.waveLineJitterLevel && fadeWaveLines == other.fadeWaveLines && waveLineFadeVariation == other.waveLineFadeVariation
+				&& waveLineBreakLevel == other.waveLineBreakLevel
 				&& waveLineShoreDetail == other.waveLineShoreDetail
 				&& waveLineShoreJitterLevel == other.waveLineShoreJitterLevel
 				&& Double.doubleToLongBits(concentricWaveLineWidth) == Double.doubleToLongBits(other.concentricWaveLineWidth)

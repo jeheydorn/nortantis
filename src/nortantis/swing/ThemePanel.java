@@ -1724,7 +1724,7 @@ public class ThemePanel extends JTabbedPane
 		waveLinesButton.setSelected(settings.oceanWavesType == OceanWaves.WaveLines);
 		waveDashesButton.setSelected(settings.oceanWavesType == OceanWaves.WaveDashes);
 		waveLineControls.load(settings.getWaveLineStyle());
-		waveLineControls.loadFade(settings.fadeWaveLines, settings.waveLineFadeVariation);
+		waveLineControls.loadWaveLineOptions(settings.fadeWaveLines, settings.waveLineFadeVariation, settings.waveLineBreakLevel);
 		waveDashControls.load(settings.getWaveDashStyle());
 		fadeWavesCheckbox.setSelected(settings.fadeConcentricWaves);
 		jitterWavesCheckbox.setSelected(settings.jitterToConcentricWaves);
@@ -1995,6 +1995,7 @@ public class ThemePanel extends JTabbedPane
 		settings.setWaveLineStyle(waveLineControls.getStyle());
 		settings.fadeWaveLines = waveLineControls.isFadeSelected();
 		settings.waveLineFadeVariation = waveLineControls.getFadeVariation();
+		settings.waveLineBreakLevel = waveLineControls.getBreakLevel();
 		settings.setWaveDashStyle(waveDashControls.getStyle());
 		settings.fadeConcentricWaves = fadeWavesCheckbox.isSelected();
 		settings.jitterToConcentricWaves = jitterWavesCheckbox.isSelected();
@@ -2222,6 +2223,10 @@ public class ThemePanel extends JTabbedPane
 		private final JSlider lineWidthSlider;
 		private final JSlider lengthSlider;
 		private final JSlider lengthVariationSlider;
+		/**
+		 * Null for styles that don't break.
+		 */
+		private final JSlider breakLevelSlider;
 		private final JCheckBox jitterCheckbox;
 		private final JSlider jitterLevelSlider;
 		/**
@@ -2245,10 +2250,11 @@ public class ThemePanel extends JTabbedPane
 		private boolean isVisible;
 
 		/**
-		 * @param hasFadeOptions
-		 *            Whether to include the options for fading wave lines out away from the coast.
+		 * @param isForWaveLines
+		 *            Whether these are the controls for wave lines, which have options that wave dashes do not: breaking, and fading out
+		 *            away from the coast.
 		 */
-		WaveRowStyleControls(GridBagOrganizer organizer, boolean hasFadeOptions)
+		WaveRowStyleControls(GridBagOrganizer organizer, boolean isForWaveLines)
 		{
 			shapeComboBox = new JComboBox<>();
 			shapeComboBox.setRenderer(new DefaultListCellRenderer()
@@ -2286,6 +2292,17 @@ public class ThemePanel extends JTabbedPane
 			rowsHider.add(new SliderWithDisplayedValue(lengthVariationSlider).addToOrganizer(organizer, Translation.get("theme.waveLineLengthVariation.label"),
 					Translation.get("theme.waveLineLengthVariation.help")));
 
+			if (isForWaveLines)
+			{
+				breakLevelSlider = createWaveLineSlider(0, MapSettings.maxWaveLineBreakLevel);
+				rowsHider.add(new SliderWithDisplayedValue(breakLevelSlider).addToOrganizer(organizer, Translation.get("theme.waveLineBreaks.label"),
+						Translation.get("theme.waveLineBreaks.help")));
+			}
+			else
+			{
+				breakLevelSlider = null;
+			}
+
 			jitterCheckbox = new JCheckBox(Translation.get("theme.jitterWaveLines"));
 			jitterCheckbox.addActionListener(e ->
 			{
@@ -2297,7 +2314,7 @@ public class ThemePanel extends JTabbedPane
 			jitterLevelHider = addCheckboxSlider(organizer, jitterLevelSlider, Translation.get("theme.jitterLevel.label"), Translation.get("theme.rowJitterLevel.help"));
 			rowsHider.add(jitterLevelHider);
 
-			if (hasFadeOptions)
+			if (isForWaveLines)
 			{
 				fadeCheckbox = new JCheckBox(Translation.get("theme.fadeOuterWaves"));
 				fadeCheckbox.addActionListener(e ->
@@ -2393,13 +2410,19 @@ public class ThemePanel extends JTabbedPane
 		}
 
 		/**
-		 * Loads the fade options, for controls that have them.
+		 * Loads the options only wave lines have.
 		 */
-		void loadFade(boolean fade, int fadeVariation)
+		void loadWaveLineOptions(boolean fade, int fadeVariation, int breakLevel)
 		{
 			fadeCheckbox.setSelected(fade);
 			fadeVariationSlider.setValue(fadeVariation);
+			breakLevelSlider.setValue(breakLevel);
 			updateVisibility();
+		}
+
+		int getBreakLevel()
+		{
+			return breakLevelSlider.getValue();
 		}
 
 		boolean isFadeSelected()

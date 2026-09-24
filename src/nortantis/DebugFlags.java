@@ -55,11 +55,6 @@ public class DebugFlags
 	private static boolean tintBorderRevealMask = false;
 
 	/**
-	 * Draws each wave line in the Wave lines ocean wave style as one unbroken stroke, which makes the full length of each stroke visible.
-	 */
-	private static boolean disableWaveLineBreaks = false;
-
-	/**
 	 * When true, the corners used as waypoints by the sub-map river re-routing (the "Choose" detail level) are highlighted on the rendered
 	 * sub-map. The waypoint corner indexes are recorded into {@link #subMapRiverWaypointCornerIndexes} by {@link SubMapCreator} as it
 	 * routes each river, and drawn by {@link MapCreator}. Because the sub-map's render graph is built with the same seed and parameters as
@@ -169,11 +164,6 @@ public class DebugFlags
 	public static boolean tintBorderRevealMask()
 	{
 		return !Assets.isRunningFromJar() && tintBorderRevealMask;
-	}
-
-	public static boolean disableWaveLineBreaks()
-	{
-		return !Assets.isRunningFromJar() && disableWaveLineBreaks;
 	}
 
 	public static boolean highlightSubMapRiverWaypoints()

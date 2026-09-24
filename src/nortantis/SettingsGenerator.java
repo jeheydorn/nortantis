@@ -47,6 +47,12 @@ public class SettingsGenerator
 	public static final int maxWaveLineRowGapToGenerate = 6;
 	public static final int minWaveLineLengthToGenerate = 7;
 	public static final int maxWaveLineLengthToGenerate = 16;
+	public static final int minWaveLineBreakLevelToGenerate = 3;
+	public static final int maxWaveLineBreakLevelToGenerate = 8;
+	/**
+	 * How often generated wave lines are unbroken instead of breaking at one of the levels above.
+	 */
+	public static final double probabilityOfUnbrokenWaveLines = 0.2;
 	/**
 	 * Generated wave lines don't use the lowest jitter levels because at those the lines barely wander at all, which looks like jitter is
 	 * off rather than like a choice.
@@ -119,6 +125,8 @@ public class SettingsGenerator
 			settings.waveLineRowSpacingVariation = rand.nextInt(MapSettings.maxWaveLineVariation + 1);
 			settings.waveLineLength = minWaveLineLengthToGenerate + rand.nextInt(maxWaveLineLengthToGenerate - minWaveLineLengthToGenerate + 1);
 			settings.waveLineLengthVariation = rand.nextInt(MapSettings.maxWaveLineVariation + 1);
+			settings.waveLineBreakLevel = rand.nextDouble() < probabilityOfUnbrokenWaveLines ? 0
+					: minWaveLineBreakLevelToGenerate + rand.nextInt(maxWaveLineBreakLevelToGenerate - minWaveLineBreakLevelToGenerate + 1);
 			settings.fadeWaveLines = rand.nextBoolean();
 		}
 		settings.concentricWaveCount = Math.max(minConcentricWaveCountToGenerate, Math.min(maxConcentricWaveCountToGenerate, Math.abs((rand.nextInt() % maxConcentricWaveCountInEditor)) + 1));
