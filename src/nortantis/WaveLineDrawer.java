@@ -29,8 +29,8 @@ import java.util.function.DoubleSupplier;
 import java.util.function.DoubleUnaryOperator;
 
 /**
- * Draws the rows of short horizontal wave lines that the "Wavy lines" ocean wave style stacks outside the concentric line around coastlines,
- * and the rows of wave dashes that the "Ripples" style draws there instead.
+ * Draws the rows of short horizontal wave lines that the "Wavy lines" and "Hatching" ocean wave styles stack outside the concentric line
+ * around coastlines, and the rows of wave dashes that the "Ripples" style draws there instead.
  *
  * Every random value used here is a function of the row index and a position along the row in resolution-invariant units, never of where
  * a coastline or a stroke starts. That keeps each stroke determined by what is near it, so an incremental draw produces the same strokes as
@@ -81,7 +81,7 @@ public class WaveLineDrawer
 	private static final double minBreakDrawLengthInWavelengths = 0.75;
 	/**
 	 * The longest a piece between a row's breaks may be, in wavelengths, at each break level from 1 to
-	 * {@link MapSettings#maxWavyLineBreakLevel}. The steps shrink as the pieces get shorter, so that each level breaks the lines about as
+	 * {@link MapSettings#maxWaveLineBreakLevel}. The steps shrink as the pieces get shorter, so that each level breaks the lines about as
 	 * much more often as the last, rather than shortening the pieces by the same amount.
 	 */
 	private static final double[] maxBreakDrawLengthInWavelengthsByLevel = { 13.1, 9.8, 7.7, 6.1, 5.0, 4.1, 3.4, 2.9, 2.4, 2.0 };
@@ -191,14 +191,14 @@ public class WaveLineDrawer
 	private static final double taperPressureNoiseSpacing = 12.0;
 	private static final int roundCapSegments = 6;
 	/**
-	 * At the highest fade variation, the most that a wavy line's fade distance is scaled up or down from its reach, as a natural log. This
-	 * ranges from about 0.4 to 2.5 times the reach, so some lines fade out well before their tips and others end while still plainly
+	 * At the highest fade variation, the most that a hatching line's fade distance is scaled up or down from its reach, as a natural log.
+	 * This ranges from about 0.4 to 2.5 times the reach, so some lines fade out well before their tips and others end while still plainly
 	 * visible.
 	 */
 	private static final double maxLogFadeDistanceScale = 0.9;
 	/**
-	 * At the highest fade variation, the most that the exponent of a wavy line's fade curve is scaled up or down from 1, as a natural log.
-	 * This ranges from about 0.45, which fades quickly and then lingers faintly, to 2.2, which holds its strength and then drops off.
+	 * At the highest fade variation, the most that the exponent of a hatching line's fade curve is scaled up or down from 1, as a natural
+	 * log. This ranges from about 0.45, which fades quickly and then lingers faintly, to 2.2, which holds its strength and then drops off.
 	 */
 	private static final double maxLogFadeExponent = 0.8;
 	private static final double fadeNoiseControlPointSpacingAsMultipleOfRowSpacing = 6.0;
@@ -240,7 +240,7 @@ public class WaveLineDrawer
 	private final double strokeWidth;
 	private final double strokeWidthInUnits;
 	/**
-	 * Whether to draw wave dashes rather than wavy lines.
+	 * Whether to draw wave dashes rather than wavy lines or hatching.
 	 */
 	private final boolean isDashes;
 	private final double rowSpacing;
@@ -261,15 +261,15 @@ public class WaveLineDrawer
 	private final double maxRowShift;
 	private final ReachDistribution reachDistribution;
 	/**
-	 * Whether wavy lines fade out as they get farther from the concentric line.
+	 * Whether hatching fades out as it gets farther from the concentric line.
 	 */
 	private final boolean isFading;
 	/**
-	 * The most that a wavy line's fade distance is scaled from its reach, as a natural log.
+	 * The most that a hatching line's fade distance is scaled from its reach, as a natural log.
 	 */
 	private final double fadeDistanceLogRange;
 	/**
-	 * The most that a wavy line's fade curve exponent is scaled from 1, as a natural log.
+	 * The most that a hatching line's fade curve exponent is scaled from 1, as a natural log.
 	 */
 	private final double fadeExponentLogRange;
 	/**
@@ -311,11 +311,11 @@ public class WaveLineDrawer
 		minRowSeparation = calcMinRowSeparation(settings);
 		maxRowShift = calcMaxRowShift(settings);
 		reachDistribution = ReachDistribution.create(settings);
-		hasBreaks = settings.wavyLineBreakLevel > 0 && !isDashes;
-		maxBreakDrawLengthInWavelengths = maxBreakDrawLengthInWavelengthsByLevel[Math.max(0,
-				Math.min(maxBreakDrawLengthInWavelengthsByLevel.length - 1, settings.wavyLineBreakLevel - 1))];
-		isFading = settings.fadeWavyLines && !isDashes;
-		double fadeVariation = Math.max(0, Math.min(MapSettings.maxWaveLineVariation, settings.wavyLineFadeVariation)) / (double) MapSettings.maxWaveLineVariation;
+		int breakLevel = settings.getWaveRowBreakLevel();
+		hasBreaks = breakLevel > 0;
+		maxBreakDrawLengthInWavelengths = maxBreakDrawLengthInWavelengthsByLevel[Math.max(0, Math.min(maxBreakDrawLengthInWavelengthsByLevel.length - 1, breakLevel - 1))];
+		isFading = settings.isWaveRowFading();
+		double fadeVariation = Math.max(0, Math.min(MapSettings.maxWaveLineVariation, settings.hatchingFadeVariation)) / (double) MapSettings.maxWaveLineVariation;
 		fadeDistanceLogRange = maxLogFadeDistanceScale * fadeVariation;
 		fadeExponentLogRange = maxLogFadeExponent * fadeVariation;
 	}
@@ -366,6 +366,7 @@ public class WaveLineDrawer
 	 */
 	private static double calcJitterAmplitude(MapSettings settings)
 	{
+		// Hatching's rows touch by default, which would leave its jitter no room at all, so it gets the same room as wavy lines.
 		int defaultRowGap = settings.oceanWavesType == OceanWaves.WaveDashes ? MapSettings.defaultWaveDashRowGap : MapSettings.defaultWavyLineRowGap;
 		double gap = Math.min(calcSpaceBetweenRowsWithoutJitter(settings), defaultRowGap);
 		double rowSpacing = calcMinRowSeparation(settings) + gap;
@@ -1369,7 +1370,7 @@ public class WaveLineDrawer
 		double startInUnits = start / sizeMultiplier;
 		double endInUnits = end / sizeMultiplier;
 		// Either the break level is 0, or these are wave dashes, which break up only past their unbroken part, into dashes, so they get none
-		// of wavy lines' breaks.
+		// of the breaks wavy lines and hatching get.
 		if (!hasBreaks)
 		{
 			drawPiece(p, row, yInGraph, rowJitterAmplitude, startInUnits, endInUnits, drawBounds, taper);

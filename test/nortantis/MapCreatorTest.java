@@ -285,7 +285,7 @@ public class MapCreatorTest
 	@Test
 	public void incrementalUpdateWithWavyLinesMatchesFullDrawWhenCentersChangeBetweenLandAndOcean()
 	{
-		runIncrementalLandWaterChangesWithWavyLines(MapSettings.OceanWaves.WavyLines);
+		runIncrementalLandWaterChangesWithWaveRows(MapSettings.OceanWaves.WavyLines);
 	}
 
 	/**
@@ -295,10 +295,10 @@ public class MapCreatorTest
 	@Test
 	public void incrementalUpdateWithWaveDashesMatchesFullDrawWhenCentersChangeBetweenLandAndOcean()
 	{
-		runIncrementalLandWaterChangesWithWavyLines(MapSettings.OceanWaves.WaveDashes);
+		runIncrementalLandWaterChangesWithWaveRows(MapSettings.OceanWaves.WaveDashes);
 	}
 
-	private void runIncrementalLandWaterChangesWithWavyLines(MapSettings.OceanWaves oceanWavesType)
+	private void runIncrementalLandWaterChangesWithWaveRows(MapSettings.OceanWaves oceanWavesType)
 	{
 		String settingsFileName = "simpleSmallWorld.nort";
 		MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", settingsFileName).toString());
@@ -328,7 +328,7 @@ public class MapCreatorTest
 	@Test
 	public void wavyLinesDrawnForPartOfTheMapMatchFullDraw()
 	{
-		assertWavyLinesDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves.WavyLines, null);
+		assertWaveRowsDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves.WavyLines, null);
 	}
 
 	/**
@@ -338,7 +338,7 @@ public class MapCreatorTest
 	@Test
 	public void waveDashesDrawnForPartOfTheMapMatchFullDraw()
 	{
-		assertWavyLinesDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves.WaveDashes, 30);
+		assertWaveRowsDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves.WaveDashes, 30);
 	}
 
 	/**
@@ -348,7 +348,7 @@ public class MapCreatorTest
 	@Test
 	public void wavyLinesWithShoreGapDrawnForPartOfTheMapMatchFullDraw()
 	{
-		assertWavyLinesDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves.WavyLines, null, MapSettings.ShoreDetail.Gap);
+		assertWaveRowsDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves.WavyLines, null, MapSettings.ShoreDetail.Gap);
 	}
 
 	/**
@@ -357,39 +357,42 @@ public class MapCreatorTest
 	@Test
 	public void waveDashesWithShoreGapDrawnForPartOfTheMapMatchFullDraw()
 	{
-		assertWavyLinesDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves.WaveDashes, 30, MapSettings.ShoreDetail.Gap);
+		assertWaveRowsDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves.WaveDashes, 30, MapSettings.ShoreDetail.Gap);
 	}
 
 	/**
-	 * Like {@link #wavyLinesDrawnForPartOfTheMapMatchFullDraw}, with wavy lines fading out away from the coast at randomly varying rates.
+	 * Like {@link #wavyLinesDrawnForPartOfTheMapMatchFullDraw}, for hatching fading out away from the coast at randomly varying rates.
 	 */
 	@Test
-	public void fadedWavyLinesDrawnForPartOfTheMapMatchFullDraw()
+	public void fadedHatchingDrawnForPartOfTheMapMatchFullDraw()
 	{
-		assertWavyLinesDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves.WavyLines, 14, MapSettings.ShoreDetail.ConcentricWave, true);
+		assertWaveRowsDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves.Hatching, 14, MapSettings.ShoreDetail.ConcentricWave, true);
 	}
 
-	private void assertWavyLinesDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves oceanWavesType, Integer wavyLineLength)
+	private void assertWaveRowsDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves oceanWavesType, Integer length)
 	{
-		assertWavyLinesDrawnForPartOfTheMapMatchFullDraw(oceanWavesType, wavyLineLength, MapSettings.ShoreDetail.ConcentricWave);
+		assertWaveRowsDrawnForPartOfTheMapMatchFullDraw(oceanWavesType, length, MapSettings.ShoreDetail.ConcentricWave);
 	}
 
-	private void assertWavyLinesDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves oceanWavesType, Integer wavyLineLength, MapSettings.ShoreDetail shoreDetail)
+	private void assertWaveRowsDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves oceanWavesType, Integer length, MapSettings.ShoreDetail shoreDetail)
 	{
-		assertWavyLinesDrawnForPartOfTheMapMatchFullDraw(oceanWavesType, wavyLineLength, shoreDetail, false);
+		assertWaveRowsDrawnForPartOfTheMapMatchFullDraw(oceanWavesType, length, shoreDetail, false);
 	}
 
-	private void assertWavyLinesDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves oceanWavesType, Integer wavyLineLength, MapSettings.ShoreDetail shoreDetail,
-			boolean fadeWavyLines)
+	/**
+	 * @param fade
+	 *            Whether hatching fades. Only hatching fades.
+	 */
+	private void assertWaveRowsDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves oceanWavesType, Integer length, MapSettings.ShoreDetail shoreDetail, boolean fade)
 	{
 		MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", "simpleSmallWorld.nort").toString());
 		settings.resolution = 0.75;
 		settings.oceanWavesType = oceanWavesType;
 		settings.oceanShadingLevel = 0;
-		settings.fadeWavyLines = fadeWavyLines;
-		settings.wavyLineFadeVariation = MapSettings.maxWaveLineVariation;
+		settings.fadeHatching = fade;
+		settings.hatchingFadeVariation = MapSettings.maxWaveLineVariation;
 		MapSettings.WaveRowStyle style = settings.getWaveRowStyle();
-		setWaveRowStyle(settings, new MapSettings.WaveRowStyle(style.shape(), style.lineWidth(), wavyLineLength != null ? wavyLineLength : style.length(),
+		setWaveRowStyle(settings, new MapSettings.WaveRowStyle(style.shape(), style.lineWidth(), length != null ? length : style.length(),
 				style.lengthVariation(), true, style.jitterLevel(), style.rowHeight(), style.rowGap(), 10, shoreDetail, MapSettings.defaultWaveRowJitterLevel));
 
 		MapParts mapParts = new MapParts();
@@ -454,13 +457,17 @@ public class MapCreatorTest
 	}
 
 	/**
-	 * Sets the style of whichever of wavy lines or wave dashes the settings' ocean waves are.
+	 * Sets the style of whichever of wavy lines, hatching or wave dashes the settings' ocean waves are.
 	 */
 	private static void setWaveRowStyle(MapSettings settings, MapSettings.WaveRowStyle style)
 	{
 		if (settings.oceanWavesType == MapSettings.OceanWaves.WaveDashes)
 		{
 			settings.setWaveDashStyle(style);
+		}
+		else if (settings.oceanWavesType == MapSettings.OceanWaves.Hatching)
+		{
+			settings.setHatchingStyle(style);
 		}
 		else
 		{

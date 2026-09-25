@@ -53,7 +53,7 @@ public class MapSettings implements Serializable
 	public static final int defaultJitterLevel = 10;
 	public static final int maxJitterLevel = 10;
 	/**
-	 * The jitter level of wavy lines and wave dashes in maps that don't store one.
+	 * The jitter level of wavy lines, hatching and wave dashes in maps that don't store one.
 	 */
 	public static final int defaultWaveRowJitterLevel = 5;
 	public static final WaveLineShape defaultWavyLineShape = WaveLineShape.Scallops;
@@ -67,12 +67,27 @@ public class MapSettings implements Serializable
 	 * room for.
 	 */
 	public static final int maxWaveLineVariation = 10;
-	public static final int defaultWavyLineFadeVariation = 7;
 	/**
-	 * The most often wavy lines can break, where 0 means they never do.
+	 * The most often wavy lines or hatching can break, where 0 means they never do.
 	 */
-	public static final int maxWavyLineBreakLevel = 10;
+	public static final int maxWaveLineBreakLevel = 10;
 	public static final int defaultWavyLineBreakLevel = 6;
+	/*
+	 * Hatching's defaults are its look: what new maps get, and what maps saved before hatching existed show when switched to it.
+	 */
+	public static final int defaultHatchingRowHeight = 6;
+	public static final int defaultHatchingRowGap = 0;
+	public static final int defaultHatchingRowSpacingVariation = 5;
+	public static final int defaultHatchingLength = 27;
+	public static final int defaultHatchingLengthVariation = 10;
+	public static final boolean defaultJitterToHatching = false;
+	public static final int defaultHatchingJitterLevel = 10;
+	public static final ShoreDetail defaultHatchingShoreDetail = ShoreDetail.ConcentricWave;
+	public static final int defaultHatchingShoreJitterLevel = 0;
+	public static final double defaultHatchingLineWidth = 2.0;
+	public static final int defaultHatchingBreakLevel = 5;
+	public static final boolean defaultFadeHatching = true;
+	public static final int defaultHatchingFadeVariation = 7;
 	public static final WaveLineShape defaultWaveDashShape = WaveLineShape.Sine;
 	public static final int defaultWaveDashRowHeight = 6;
 	public static final int defaultWaveDashRowGap = 3;
@@ -80,7 +95,8 @@ public class MapSettings implements Serializable
 	public static final int defaultWaveDashLength = 30;
 	public static final int defaultWaveDashLengthVariation = 4;
 	/**
-	 * The width, in pixels at resolution 1, of concentric waves' lines and of wavy lines in maps that don't store one.
+	 * The width, in pixels at resolution 1, of concentric waves' lines and of wavy lines, hatching and wave dashes in maps that don't store
+	 * one.
 	 */
 	public static final double defaultWaveLineWidth = 2.4;
 	public static final double minWaveLineWidth = 1.0;
@@ -135,15 +151,7 @@ public class MapSettings implements Serializable
 	public boolean jitterToWavyLines;
 	public int wavyLineJitterLevel = defaultWaveRowJitterLevel;
 	/**
-	 * Whether wavy lines fade out as they get farther from the coast.
-	 */
-	public boolean fadeWavyLines;
-	/**
-	 * How much the rate and curve of wavy lines' fading differ from one line to the next, from 0 to maxWaveLineVariation.
-	 */
-	public int wavyLineFadeVariation = defaultWavyLineFadeVariation;
-	/**
-	 * How often wavy lines break, as though the pen were lifted, from 0 to maxWavyLineBreakLevel. At 0 they never break.
+	 * How often wavy lines break, as though the pen were lifted, from 0 to maxWaveLineBreakLevel. At 0 they never break.
 	 */
 	public int wavyLineBreakLevel = defaultWavyLineBreakLevel;
 	/**
@@ -199,6 +207,29 @@ public class MapSettings implements Serializable
 	public ShoreDetail waveDashShoreDetail = ShoreDetail.ConcentricWave;
 	public int waveDashShoreJitterLevel;
 	public double waveDashLineWidth = defaultWaveLineWidth;
+	/*
+	 * Hatching has its own copies of the wavy lines' style settings too, except for the shape, since hatching is always straight. Each
+	 * means the same as the wavy lines setting of the same name.
+	 */
+	public int hatchingRowHeight = defaultHatchingRowHeight;
+	public int hatchingRowGap = defaultHatchingRowGap;
+	public int hatchingRowSpacingVariation = defaultHatchingRowSpacingVariation;
+	public int hatchingLength = defaultHatchingLength;
+	public int hatchingLengthVariation = defaultHatchingLengthVariation;
+	public boolean jitterToHatching = defaultJitterToHatching;
+	public int hatchingJitterLevel = defaultHatchingJitterLevel;
+	public ShoreDetail hatchingShoreDetail = defaultHatchingShoreDetail;
+	public int hatchingShoreJitterLevel = defaultHatchingShoreJitterLevel;
+	public double hatchingLineWidth = defaultHatchingLineWidth;
+	public int hatchingBreakLevel = defaultHatchingBreakLevel;
+	/**
+	 * Whether hatching fades out as it gets farther from the coast.
+	 */
+	public boolean fadeHatching = defaultFadeHatching;
+	/**
+	 * How much the rate and curve of hatching's fading differ from one line to the next, from 0 to maxWaveLineVariation.
+	 */
+	public int hatchingFadeVariation = defaultHatchingFadeVariation;
 	public boolean drawOceanEffectsInLakes;
 	public int worldSize;
 	public Color riverColor;
@@ -532,8 +563,6 @@ public class MapSettings implements Serializable
 		root.put("jitterLevel", jitterLevel);
 		root.put("jitterToWavyLines", jitterToWavyLines);
 		root.put("wavyLineJitterLevel", wavyLineJitterLevel);
-		root.put("fadeWavyLines", fadeWavyLines);
-		root.put("wavyLineFadeVariation", wavyLineFadeVariation);
 		root.put("wavyLineBreakLevel", wavyLineBreakLevel);
 		root.put("wavyLineShoreDetail", enumToJson(wavyLineShoreDetail));
 		root.put("wavyLineShoreJitterLevel", wavyLineShoreJitterLevel);
@@ -557,6 +586,19 @@ public class MapSettings implements Serializable
 		root.put("waveDashShoreDetail", enumToJson(waveDashShoreDetail));
 		root.put("waveDashShoreJitterLevel", waveDashShoreJitterLevel);
 		root.put("waveDashLineWidth", waveDashLineWidth);
+		root.put("hatchingRowHeight", hatchingRowHeight);
+		root.put("hatchingRowGap", hatchingRowGap);
+		root.put("hatchingRowSpacingVariation", hatchingRowSpacingVariation);
+		root.put("hatchingLength", hatchingLength);
+		root.put("hatchingLengthVariation", hatchingLengthVariation);
+		root.put("jitterToHatching", jitterToHatching);
+		root.put("hatchingJitterLevel", hatchingJitterLevel);
+		root.put("hatchingShoreDetail", enumToJson(hatchingShoreDetail));
+		root.put("hatchingShoreJitterLevel", hatchingShoreJitterLevel);
+		root.put("hatchingLineWidth", hatchingLineWidth);
+		root.put("hatchingBreakLevel", hatchingBreakLevel);
+		root.put("fadeHatching", fadeHatching);
+		root.put("hatchingFadeVariation", hatchingFadeVariation);
 		root.put("drawOceanEffectsInLakes", drawOceanEffectsInLakes);
 		root.put("worldSize", worldSize);
 		root.put("riverColor", colorToString(riverColor));
@@ -1288,8 +1330,6 @@ public class MapSettings implements Serializable
 		jitterLevel = root.containsKey("jitterLevel") ? (int) (long) root.get("jitterLevel") : defaultJitterLevel;
 		jitterToWavyLines = root.containsKey("jitterToWavyLines") && (boolean) root.get("jitterToWavyLines");
 		wavyLineJitterLevel = root.containsKey("wavyLineJitterLevel") ? (int) (long) root.get("wavyLineJitterLevel") : defaultWaveRowJitterLevel;
-		fadeWavyLines = root.containsKey("fadeWavyLines") && (boolean) root.get("fadeWavyLines");
-		wavyLineFadeVariation = root.containsKey("wavyLineFadeVariation") ? (int) (long) root.get("wavyLineFadeVariation") : defaultWavyLineFadeVariation;
 		wavyLineBreakLevel = root.containsKey("wavyLineBreakLevel") ? (int) (long) root.get("wavyLineBreakLevel") : defaultWavyLineBreakLevel;
 		wavyLineShoreDetail = root.containsKey("wavyLineShoreDetail") ? ShoreDetail.valueOf((String) root.get("wavyLineShoreDetail")) : ShoreDetail.ConcentricWave;
 		wavyLineShoreJitterLevel = root.containsKey("wavyLineShoreJitterLevel") ? (int) (long) root.get("wavyLineShoreJitterLevel") : 0;
@@ -1312,6 +1352,19 @@ public class MapSettings implements Serializable
 		waveDashShoreDetail = root.containsKey("waveDashShoreDetail") ? ShoreDetail.valueOf((String) root.get("waveDashShoreDetail")) : ShoreDetail.ConcentricWave;
 		waveDashShoreJitterLevel = root.containsKey("waveDashShoreJitterLevel") ? (int) (long) root.get("waveDashShoreJitterLevel") : 0;
 		waveDashLineWidth = root.containsKey("waveDashLineWidth") ? (double) root.get("waveDashLineWidth") : defaultWaveLineWidth;
+		hatchingRowHeight = root.containsKey("hatchingRowHeight") ? (int) (long) root.get("hatchingRowHeight") : defaultHatchingRowHeight;
+		hatchingRowGap = root.containsKey("hatchingRowGap") ? (int) (long) root.get("hatchingRowGap") : defaultHatchingRowGap;
+		hatchingRowSpacingVariation = root.containsKey("hatchingRowSpacingVariation") ? (int) (long) root.get("hatchingRowSpacingVariation") : defaultHatchingRowSpacingVariation;
+		hatchingLength = root.containsKey("hatchingLength") ? (int) (long) root.get("hatchingLength") : defaultHatchingLength;
+		hatchingLengthVariation = root.containsKey("hatchingLengthVariation") ? (int) (long) root.get("hatchingLengthVariation") : defaultHatchingLengthVariation;
+		jitterToHatching = root.containsKey("jitterToHatching") ? (boolean) root.get("jitterToHatching") : defaultJitterToHatching;
+		hatchingJitterLevel = root.containsKey("hatchingJitterLevel") ? (int) (long) root.get("hatchingJitterLevel") : defaultHatchingJitterLevel;
+		hatchingShoreDetail = root.containsKey("hatchingShoreDetail") ? ShoreDetail.valueOf((String) root.get("hatchingShoreDetail")) : defaultHatchingShoreDetail;
+		hatchingShoreJitterLevel = root.containsKey("hatchingShoreJitterLevel") ? (int) (long) root.get("hatchingShoreJitterLevel") : defaultHatchingShoreJitterLevel;
+		hatchingLineWidth = root.containsKey("hatchingLineWidth") ? (double) root.get("hatchingLineWidth") : defaultHatchingLineWidth;
+		hatchingBreakLevel = root.containsKey("hatchingBreakLevel") ? (int) (long) root.get("hatchingBreakLevel") : defaultHatchingBreakLevel;
+		fadeHatching = root.containsKey("fadeHatching") ? (boolean) root.get("fadeHatching") : defaultFadeHatching;
+		hatchingFadeVariation = root.containsKey("hatchingFadeVariation") ? (int) (long) root.get("hatchingFadeVariation") : defaultHatchingFadeVariation;
 		worldSize = (int) (long) root.get("worldSize");
 		riverColor = parseColor((String) root.get("riverColor"));
 		if (root.containsKey("roadColor"))
@@ -2813,19 +2866,53 @@ public class MapSettings implements Serializable
 	}
 
 	/**
-	 * Whether the ocean waves are one of the styles drawn as rows of strokes outside a line along the coast: wavy lines or wave dashes.
+	 * Whether the ocean waves are one of the styles drawn as rows of strokes outside a line along the coast: wavy lines, hatching or wave
+	 * dashes.
 	 */
-	public boolean hasWavyLinesOrWaveDashes()
+	public boolean hasWaveRows()
 	{
-		return oceanWavesType == OceanWaves.WavyLines || oceanWavesType == OceanWaves.WaveDashes;
+		return oceanWavesType == OceanWaves.WavyLines || oceanWavesType == OceanWaves.Hatching || oceanWavesType == OceanWaves.WaveDashes;
 	}
 
 	/**
-	 * The style settings of wave dashes if the ocean waves are wave dashes, and of wavy lines otherwise.
+	 * The style settings of whichever of wave dashes or hatching the ocean waves are, and of wavy lines otherwise.
 	 */
 	public WaveRowStyle getWaveRowStyle()
 	{
-		return oceanWavesType == OceanWaves.WaveDashes ? getWaveDashStyle() : getWavyLineStyle();
+		if (oceanWavesType == OceanWaves.WaveDashes)
+		{
+			return getWaveDashStyle();
+		}
+		if (oceanWavesType == OceanWaves.Hatching)
+		{
+			return getHatchingStyle();
+		}
+		return getWavyLineStyle();
+	}
+
+	/**
+	 * How often the rows break, as though the pen were lifted, from 0 to maxWaveLineBreakLevel. Only wavy lines and hatching break this
+	 * way, so this is 0 for any other ocean waves.
+	 */
+	public int getWaveRowBreakLevel()
+	{
+		if (oceanWavesType == OceanWaves.WavyLines)
+		{
+			return wavyLineBreakLevel;
+		}
+		if (oceanWavesType == OceanWaves.Hatching)
+		{
+			return hatchingBreakLevel;
+		}
+		return 0;
+	}
+
+	/**
+	 * Whether the rows fade out as they get farther from the coast. Only hatching fades.
+	 */
+	public boolean isWaveRowFading()
+	{
+		return oceanWavesType == OceanWaves.Hatching && fadeHatching;
 	}
 
 	public WaveRowStyle getWavyLineStyle()
@@ -2855,6 +2942,32 @@ public class MapSettings implements Serializable
 				waveDashRowGap, waveDashRowSpacingVariation, waveDashShoreDetail, waveDashShoreJitterLevel);
 	}
 
+	/**
+	 * Hatching's style settings. Its shape is always straight.
+	 */
+	public WaveRowStyle getHatchingStyle()
+	{
+		return new WaveRowStyle(WaveLineShape.Straight, hatchingLineWidth, hatchingLength, hatchingLengthVariation, jitterToHatching, hatchingJitterLevel, hatchingRowHeight,
+				hatchingRowGap, hatchingRowSpacingVariation, hatchingShoreDetail, hatchingShoreJitterLevel);
+	}
+
+	/**
+	 * Sets hatching's style settings from the given style, except for its shape, since hatching is always straight.
+	 */
+	public void setHatchingStyle(WaveRowStyle style)
+	{
+		hatchingRowHeight = style.rowHeight();
+		hatchingRowGap = style.rowGap();
+		hatchingRowSpacingVariation = style.rowSpacingVariation();
+		hatchingLength = style.length();
+		hatchingLengthVariation = style.lengthVariation();
+		jitterToHatching = style.jitter();
+		hatchingJitterLevel = style.jitterLevel();
+		hatchingLineWidth = style.lineWidth();
+		hatchingShoreDetail = style.shoreDetail();
+		hatchingShoreJitterLevel = style.shoreJitterLevel();
+	}
+
 	public void setWaveDashStyle(WaveRowStyle style)
 	{
 		waveDashShape = style.shape();
@@ -2871,7 +2984,8 @@ public class MapSettings implements Serializable
 	}
 
 	/**
-	 * The style settings shared by wavy lines and wave dashes, each of which keeps its own. See the wavy lines fields of the same names.
+	 * The style settings shared by wavy lines, hatching and wave dashes, each of which keeps its own. See the wavy lines fields of the same
+	 * names.
 	 *
 	 * @param jitter
 	 *            Whether the rows jitter.
@@ -2882,7 +2996,7 @@ public class MapSettings implements Serializable
 	}
 
 	/**
-	 * What the wavy lines and wave dashes styles draw between their rows and the coast.
+	 * What the wavy lines, hatching and wave dashes styles draw between their rows and the coast.
 	 */
 	public enum ShoreDetail
 	{
@@ -3381,11 +3495,16 @@ public class MapSettings implements Serializable
 		/**
 		 * Rows of lines that break into dashes farther from the coast. Shown as "Ripples" in the editor.
 		 */
-		WaveDashes
+		WaveDashes,
+		/**
+		 * Rows of straight lines.
+		 */
+		Hatching
 	}
 
 	/**
-	 * The shape each wave line follows as it runs from left to right. Both shapes repeat once per wavelength.
+	 * The shape each wave line follows as it runs from left to right. Scallops and Sine repeat once per wavelength. Straight is only for
+	 * hatching, so it isn't offered as a shape for wavy lines, hatching or wave dashes.
 	 */
 	public enum WaveLineShape
 	{
@@ -3623,10 +3742,6 @@ public class MapSettings implements Serializable
 			differences.add("jitterToWavyLines: " + jitterToWavyLines + " vs " + other.jitterToWavyLines);
 		if (wavyLineJitterLevel != other.wavyLineJitterLevel)
 			differences.add("wavyLineJitterLevel: " + wavyLineJitterLevel + " vs " + other.wavyLineJitterLevel);
-		if (fadeWavyLines != other.fadeWavyLines)
-			differences.add("fadeWavyLines: " + fadeWavyLines + " vs " + other.fadeWavyLines);
-		if (wavyLineFadeVariation != other.wavyLineFadeVariation)
-			differences.add("wavyLineFadeVariation: " + wavyLineFadeVariation + " vs " + other.wavyLineFadeVariation);
 		if (wavyLineBreakLevel != other.wavyLineBreakLevel)
 			differences.add("wavyLineBreakLevel: " + wavyLineBreakLevel + " vs " + other.wavyLineBreakLevel);
 		if (wavyLineShoreDetail != other.wavyLineShoreDetail)
@@ -3659,6 +3774,32 @@ public class MapSettings implements Serializable
 			differences.add("waveDashShoreJitterLevel: " + waveDashShoreJitterLevel + " vs " + other.waveDashShoreJitterLevel);
 		if (Double.doubleToLongBits(waveDashLineWidth) != Double.doubleToLongBits(other.waveDashLineWidth))
 			differences.add("waveDashLineWidth: " + waveDashLineWidth + " vs " + other.waveDashLineWidth);
+		if (hatchingRowHeight != other.hatchingRowHeight)
+			differences.add("hatchingRowHeight: " + hatchingRowHeight + " vs " + other.hatchingRowHeight);
+		if (hatchingRowGap != other.hatchingRowGap)
+			differences.add("hatchingRowGap: " + hatchingRowGap + " vs " + other.hatchingRowGap);
+		if (hatchingRowSpacingVariation != other.hatchingRowSpacingVariation)
+			differences.add("hatchingRowSpacingVariation: " + hatchingRowSpacingVariation + " vs " + other.hatchingRowSpacingVariation);
+		if (hatchingLength != other.hatchingLength)
+			differences.add("hatchingLength: " + hatchingLength + " vs " + other.hatchingLength);
+		if (hatchingLengthVariation != other.hatchingLengthVariation)
+			differences.add("hatchingLengthVariation: " + hatchingLengthVariation + " vs " + other.hatchingLengthVariation);
+		if (jitterToHatching != other.jitterToHatching)
+			differences.add("jitterToHatching: " + jitterToHatching + " vs " + other.jitterToHatching);
+		if (hatchingJitterLevel != other.hatchingJitterLevel)
+			differences.add("hatchingJitterLevel: " + hatchingJitterLevel + " vs " + other.hatchingJitterLevel);
+		if (hatchingShoreDetail != other.hatchingShoreDetail)
+			differences.add("hatchingShoreDetail: " + hatchingShoreDetail + " vs " + other.hatchingShoreDetail);
+		if (hatchingShoreJitterLevel != other.hatchingShoreJitterLevel)
+			differences.add("hatchingShoreJitterLevel: " + hatchingShoreJitterLevel + " vs " + other.hatchingShoreJitterLevel);
+		if (Double.doubleToLongBits(hatchingLineWidth) != Double.doubleToLongBits(other.hatchingLineWidth))
+			differences.add("hatchingLineWidth: " + hatchingLineWidth + " vs " + other.hatchingLineWidth);
+		if (hatchingBreakLevel != other.hatchingBreakLevel)
+			differences.add("hatchingBreakLevel: " + hatchingBreakLevel + " vs " + other.hatchingBreakLevel);
+		if (fadeHatching != other.fadeHatching)
+			differences.add("fadeHatching: " + fadeHatching + " vs " + other.fadeHatching);
+		if (hatchingFadeVariation != other.hatchingFadeVariation)
+			differences.add("hatchingFadeVariation: " + hatchingFadeVariation + " vs " + other.hatchingFadeVariation);
 		if (!Objects.equals(landColor, other.landColor))
 			differences.add("landColor: " + landColor + " vs " + other.landColor);
 		if (landShape != other.landShape)
@@ -3788,10 +3929,12 @@ public class MapSettings implements Serializable
 				edits, fadeConcentricWaves, fillWithColorByType, flipHorizontally, flipVertically, frayedBorder, frayedBorderBlurLevel, frayedBorderColor, frayedBorderSeed,
 				frayedBorderSize, generateBackground, generateBackgroundFromTexture, generatedHeight, generatedWidth, gridOverlayColor, gridOverlayLayer, gridOverlayLineWidth,
 				gridOverlayRowOrColCount, gridOverlayShape, gridOverlayXOffset, gridOverlayYOffset, grungeWidth, heightmapExportPath, heightmapResolution, hillScale, hueRange, iconFillColorsByType,
-				iconFilterColorsByType, imageExportPath, jitterLevel, jitterToConcentricWaves, jitterToWavyLines, wavyLineJitterLevel, fadeWavyLines, wavyLineFadeVariation, wavyLineBreakLevel,
+				iconFilterColorsByType, imageExportPath, jitterLevel, jitterToConcentricWaves, jitterToWavyLines, wavyLineJitterLevel, wavyLineBreakLevel,
 				wavyLineShoreDetail, wavyLineShoreJitterLevel, concentricWaveLineWidth, wavyLineWidth, waveDashShape, waveDashRowHeight, waveDashRowGap,
 				waveDashRowSpacingVariation, waveDashLength, waveDashLengthVariation, jitterToWaveDashes, waveDashJitterLevel, waveDashShoreDetail,
-				waveDashShoreJitterLevel, waveDashLineWidth, landColor, landShape, lineStyle, lloydRelaxationsScale, maximizeOpacityByType, mountainRangeFont, mountainScale,
+				waveDashShoreJitterLevel, waveDashLineWidth, hatchingRowHeight, hatchingRowGap, hatchingRowSpacingVariation, hatchingLength,
+				hatchingLengthVariation, jitterToHatching, hatchingJitterLevel, hatchingShoreDetail, hatchingShoreJitterLevel, hatchingLineWidth, hatchingBreakLevel,
+				fadeHatching, hatchingFadeVariation, landColor, landShape, lineStyle, lloydRelaxationsScale, maximizeOpacityByType, mountainRangeFont, mountainScale,
 				oceanColor, oceanEffectsColor, oceanEffectsLevel, oceanShadingColor, oceanShadingLevel, oceanWavesColor, oceanWavesLevel, oceanWavesType, otherMountainsFont, overlayImageDefaultScale,
 				overlayImageDefaultTransparency, overlayImagePath, overlayImageTransparency, overlayOffsetResolutionInvariant, overlayScale, pointPrecision, randomSeed, regionBaseColor,
 				regionBoundaryColor, regionBoundaryStyle, regionCount, regionFont, regionsRandomSeed, resolution, rightRotationCount, riverColor, riverFont, roadColor, roadFont, roadStyle, saturationRange,
@@ -3847,7 +3990,7 @@ public class MapSettings implements Serializable
 				&& Double.doubleToLongBits(hillScale) == Double.doubleToLongBits(other.hillScale) && hueRange == other.hueRange && Objects.equals(iconFillColorsByType, other.iconFillColorsByType)
 				&& Objects.equals(iconFilterColorsByType, other.iconFilterColorsByType) && Objects.equals(imageExportPath, other.imageExportPath)
 				&& jitterToConcentricWaves == other.jitterToConcentricWaves && jitterLevel == other.jitterLevel && jitterToWavyLines == other.jitterToWavyLines
-				&& wavyLineJitterLevel == other.wavyLineJitterLevel && fadeWavyLines == other.fadeWavyLines && wavyLineFadeVariation == other.wavyLineFadeVariation
+				&& wavyLineJitterLevel == other.wavyLineJitterLevel
 				&& wavyLineBreakLevel == other.wavyLineBreakLevel
 				&& wavyLineShoreDetail == other.wavyLineShoreDetail
 				&& wavyLineShoreJitterLevel == other.wavyLineShoreJitterLevel
@@ -3856,7 +3999,12 @@ public class MapSettings implements Serializable
 				&& waveDashRowHeight == other.waveDashRowHeight && waveDashRowGap == other.waveDashRowGap && waveDashRowSpacingVariation == other.waveDashRowSpacingVariation && waveDashLength == other.waveDashLength
 				&& waveDashLengthVariation == other.waveDashLengthVariation && jitterToWaveDashes == other.jitterToWaveDashes && waveDashJitterLevel == other.waveDashJitterLevel
 				&& waveDashShoreDetail == other.waveDashShoreDetail && waveDashShoreJitterLevel == other.waveDashShoreJitterLevel
-				&& Double.doubleToLongBits(waveDashLineWidth) == Double.doubleToLongBits(other.waveDashLineWidth) && Objects.equals(landColor, other.landColor) && landShape == other.landShape && lineStyle == other.lineStyle
+				&& Double.doubleToLongBits(waveDashLineWidth) == Double.doubleToLongBits(other.waveDashLineWidth) && hatchingRowHeight == other.hatchingRowHeight
+				&& hatchingRowGap == other.hatchingRowGap && hatchingRowSpacingVariation == other.hatchingRowSpacingVariation && hatchingLength == other.hatchingLength
+				&& hatchingLengthVariation == other.hatchingLengthVariation && jitterToHatching == other.jitterToHatching && hatchingJitterLevel == other.hatchingJitterLevel
+				&& hatchingShoreDetail == other.hatchingShoreDetail && hatchingShoreJitterLevel == other.hatchingShoreJitterLevel
+				&& Double.doubleToLongBits(hatchingLineWidth) == Double.doubleToLongBits(other.hatchingLineWidth) && hatchingBreakLevel == other.hatchingBreakLevel
+				&& fadeHatching == other.fadeHatching && hatchingFadeVariation == other.hatchingFadeVariation && Objects.equals(landColor, other.landColor) && landShape == other.landShape && lineStyle == other.lineStyle
 				&& Double.doubleToLongBits(lloydRelaxationsScale) == Double.doubleToLongBits(other.lloydRelaxationsScale) && Objects.equals(maximizeOpacityByType, other.maximizeOpacityByType)
 				&& Objects.equals(mountainRangeFont, other.mountainRangeFont) && Double.doubleToLongBits(mountainScale) == Double.doubleToLongBits(other.mountainScale)
 				&& Objects.equals(oceanColor, other.oceanColor) && Objects.equals(oceanEffectsColor, other.oceanEffectsColor) && oceanEffectsLevel == other.oceanEffectsLevel
