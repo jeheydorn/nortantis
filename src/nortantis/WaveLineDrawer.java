@@ -245,6 +245,11 @@ public class WaveLineDrawer
 	private final boolean isDashes;
 	private final double rowSpacing;
 	/**
+	 * The y coordinate of row 0's baseline before any shift, in units. Waves rise above their baseline, so this puts row 0's crests at the
+	 * top of the map rather than above it.
+	 */
+	private final double firstRowY;
+	/**
 	 * Whether rows stop at a gap instead of a concentric wave, so that their ends there show.
 	 */
 	private final boolean areLineEndsVisible;
@@ -299,6 +304,7 @@ public class WaveLineDrawer
 		rowSpacing = calcRowSpacing(settings);
 		areLineEndsVisible = settings.getWaveRowStyle().shoreDetail() == ShoreDetail.Gap;
 		amplitude = calcAmplitude(settings);
+		firstRowY = amplitude + strokeWidthInUnits / 2.0;
 		wavelength = calcWavelength(settings);
 		jitterAmplitude = calcJitterAmplitude(settings);
 		jitterFraction = calcJitterFraction(settings);
@@ -541,8 +547,8 @@ public class WaveLineDrawer
 				double rowReach = (amplitude + jitterAmplitude) * sizeMultiplier + strokeWidth;
 				byte[] classes = new byte[width];
 				boolean[] isLand = new boolean[width];
-				int firstRow = (int) Math.floor(((drawBounds.y - rowReach) / sizeMultiplier - maxRowShift) / rowSpacing);
-				int lastRow = (int) Math.ceil(((drawBounds.y + drawBounds.height + rowReach) / sizeMultiplier + maxRowShift) / rowSpacing);
+				int firstRow = (int) Math.floor(((drawBounds.y - rowReach) / sizeMultiplier - maxRowShift - firstRowY) / rowSpacing);
+				int lastRow = (int) Math.ceil(((drawBounds.y + drawBounds.height + rowReach) / sizeMultiplier + maxRowShift - firstRowY) / rowSpacing);
 				for (int row = firstRow; row <= lastRow; row++)
 				{
 					double yInGraph = getRowY(row) * sizeMultiplier;
@@ -750,7 +756,7 @@ public class WaveLineDrawer
 	{
 		if (maxRowShift == 0.0)
 		{
-			return row * rowSpacing;
+			return firstRowY + row * rowSpacing;
 		}
 
 		double y = getShiftedRowY(row);
@@ -765,7 +771,7 @@ public class WaveLineDrawer
 
 	private double getShiftedRowY(int row)
 	{
-		return row * rowSpacing + maxRowShift * (2.0 * uniform(rowShiftSalt, row, 0) - 1.0);
+		return firstRowY + row * rowSpacing + maxRowShift * (2.0 * uniform(rowShiftSalt, row, 0) - 1.0);
 	}
 
 	/**
