@@ -278,27 +278,27 @@ public class MapCreatorTest
 	}
 
 	/**
-	 * Changing land to water moves where wave lines can go across the whole band around the new coastline, which reaches much farther than
+	 * Changing land to water moves where wavy lines can go across the whole band around the new coastline, which reaches much farther than
 	 * the centers that changed. An incremental redraw must cover all of it. A large stretch of coast changing to water moves the most
 	 * coastline at once.
 	 */
 	@Test
-	public void incrementalUpdateWithWaveLinesMatchesFullDrawWhenCentersChangeBetweenLandAndOcean()
+	public void incrementalUpdateWithWavyLinesMatchesFullDrawWhenCentersChangeBetweenLandAndOcean()
 	{
-		runIncrementalLandWaterChangesWithWaveLines(MapSettings.OceanWaves.WaveLines);
+		runIncrementalLandWaterChangesWithWavyLines(MapSettings.OceanWaves.WavyLines);
 	}
 
 	/**
-	 * Like {@link #incrementalUpdateWithWaveLinesMatchesFullDrawWhenCentersChangeBetweenLandAndOcean}, for wave dashes, where changing land
+	 * Like {@link #incrementalUpdateWithWavyLinesMatchesFullDrawWhenCentersChangeBetweenLandAndOcean}, for wave dashes, where changing land
 	 * also changes the blurred land that shapes where the dashes end.
 	 */
 	@Test
 	public void incrementalUpdateWithWaveDashesMatchesFullDrawWhenCentersChangeBetweenLandAndOcean()
 	{
-		runIncrementalLandWaterChangesWithWaveLines(MapSettings.OceanWaves.WaveDashes);
+		runIncrementalLandWaterChangesWithWavyLines(MapSettings.OceanWaves.WaveDashes);
 	}
 
-	private void runIncrementalLandWaterChangesWithWaveLines(MapSettings.OceanWaves oceanWavesType)
+	private void runIncrementalLandWaterChangesWithWavyLines(MapSettings.OceanWaves oceanWavesType)
 	{
 		String settingsFileName = "simpleSmallWorld.nort";
 		MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", settingsFileName).toString());
@@ -306,7 +306,7 @@ public class MapCreatorTest
 		settings.regionBoundaryStyle = new Stroke(StrokeType.Solid, settings.regionBoundaryStyle.width);
 		settings.coastShadingLevel = 0;
 		settings.oceanShadingLevel = 0;
-		// Text is redrawn with slightly different anti-aliasing after a change, which says nothing about wave lines.
+		// Text is redrawn with slightly different anti-aliasing after a change, which says nothing about wavy lines.
 		settings.drawText = false;
 		settings.oceanWavesType = oceanWavesType;
 		MapSettings.WaveRowStyle style = settings.getWaveRowStyle();
@@ -321,75 +321,75 @@ public class MapCreatorTest
 	}
 
 	/**
-	 * Wave lines are placed using only what is near each stroke, so drawing them for part of the map must give the same result as drawing
+	 * Wavy lines are placed using only what is near each stroke, so drawing them for part of the map must give the same result as drawing
 	 * them for the whole map, everywhere at least the effects padding away from the edges of that part. This is what lets incremental draws
-	 * of wave lines stay local.
+	 * of wavy lines stay local.
 	 */
 	@Test
-	public void waveLinesDrawnForPartOfTheMapMatchFullDraw()
+	public void wavyLinesDrawnForPartOfTheMapMatchFullDraw()
 	{
-		assertWaveLinesDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves.WaveLines, null);
+		assertWavyLinesDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves.WavyLines, null);
 	}
 
 	/**
-	 * Like {@link #waveLinesDrawnForPartOfTheMapMatchFullDraw}, for wave dashes, whose blurred land and dash pattern must also come out the
+	 * Like {@link #wavyLinesDrawnForPartOfTheMapMatchFullDraw}, for wave dashes, whose blurred land and dash pattern must also come out the
 	 * same when only part of the map is drawn.
 	 */
 	@Test
 	public void waveDashesDrawnForPartOfTheMapMatchFullDraw()
 	{
-		assertWaveLinesDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves.WaveDashes, 30);
+		assertWavyLinesDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves.WaveDashes, 30);
 	}
 
 	/**
-	 * Like {@link #waveLinesDrawnForPartOfTheMapMatchFullDraw}, with a gap instead of a concentric wave, where the ends of the rows are pulled
+	 * Like {@link #wavyLinesDrawnForPartOfTheMapMatchFullDraw}, with a gap instead of a concentric wave, where the ends of the rows are pulled
 	 * back from the gap's edge by random amounts.
 	 */
 	@Test
-	public void waveLinesWithShoreGapDrawnForPartOfTheMapMatchFullDraw()
+	public void wavyLinesWithShoreGapDrawnForPartOfTheMapMatchFullDraw()
 	{
-		assertWaveLinesDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves.WaveLines, null, MapSettings.ShoreDetail.Gap);
+		assertWavyLinesDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves.WavyLines, null, MapSettings.ShoreDetail.Gap);
 	}
 
 	/**
-	 * Like {@link #waveLinesWithShoreGapDrawnForPartOfTheMapMatchFullDraw}, for wave dashes.
+	 * Like {@link #wavyLinesWithShoreGapDrawnForPartOfTheMapMatchFullDraw}, for wave dashes.
 	 */
 	@Test
 	public void waveDashesWithShoreGapDrawnForPartOfTheMapMatchFullDraw()
 	{
-		assertWaveLinesDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves.WaveDashes, 30, MapSettings.ShoreDetail.Gap);
+		assertWavyLinesDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves.WaveDashes, 30, MapSettings.ShoreDetail.Gap);
 	}
 
 	/**
-	 * Like {@link #waveLinesDrawnForPartOfTheMapMatchFullDraw}, with wave lines fading out away from the coast at randomly varying rates.
+	 * Like {@link #wavyLinesDrawnForPartOfTheMapMatchFullDraw}, with wavy lines fading out away from the coast at randomly varying rates.
 	 */
 	@Test
-	public void fadedWaveLinesDrawnForPartOfTheMapMatchFullDraw()
+	public void fadedWavyLinesDrawnForPartOfTheMapMatchFullDraw()
 	{
-		assertWaveLinesDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves.WaveLines, 14, MapSettings.ShoreDetail.ConcentricWave, true);
+		assertWavyLinesDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves.WavyLines, 14, MapSettings.ShoreDetail.ConcentricWave, true);
 	}
 
-	private void assertWaveLinesDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves oceanWavesType, Integer waveLineLength)
+	private void assertWavyLinesDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves oceanWavesType, Integer wavyLineLength)
 	{
-		assertWaveLinesDrawnForPartOfTheMapMatchFullDraw(oceanWavesType, waveLineLength, MapSettings.ShoreDetail.ConcentricWave);
+		assertWavyLinesDrawnForPartOfTheMapMatchFullDraw(oceanWavesType, wavyLineLength, MapSettings.ShoreDetail.ConcentricWave);
 	}
 
-	private void assertWaveLinesDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves oceanWavesType, Integer waveLineLength, MapSettings.ShoreDetail shoreDetail)
+	private void assertWavyLinesDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves oceanWavesType, Integer wavyLineLength, MapSettings.ShoreDetail shoreDetail)
 	{
-		assertWaveLinesDrawnForPartOfTheMapMatchFullDraw(oceanWavesType, waveLineLength, shoreDetail, false);
+		assertWavyLinesDrawnForPartOfTheMapMatchFullDraw(oceanWavesType, wavyLineLength, shoreDetail, false);
 	}
 
-	private void assertWaveLinesDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves oceanWavesType, Integer waveLineLength, MapSettings.ShoreDetail shoreDetail,
-			boolean fadeWaveLines)
+	private void assertWavyLinesDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves oceanWavesType, Integer wavyLineLength, MapSettings.ShoreDetail shoreDetail,
+			boolean fadeWavyLines)
 	{
 		MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", "simpleSmallWorld.nort").toString());
 		settings.resolution = 0.75;
 		settings.oceanWavesType = oceanWavesType;
 		settings.oceanShadingLevel = 0;
-		settings.fadeWaveLines = fadeWaveLines;
-		settings.waveLineFadeVariation = MapSettings.maxWaveLineVariation;
+		settings.fadeWavyLines = fadeWavyLines;
+		settings.wavyLineFadeVariation = MapSettings.maxWaveLineVariation;
 		MapSettings.WaveRowStyle style = settings.getWaveRowStyle();
-		setWaveRowStyle(settings, new MapSettings.WaveRowStyle(style.shape(), style.lineWidth(), waveLineLength != null ? waveLineLength : style.length(),
+		setWaveRowStyle(settings, new MapSettings.WaveRowStyle(style.shape(), style.lineWidth(), wavyLineLength != null ? wavyLineLength : style.length(),
 				style.lengthVariation(), true, style.jitterLevel(), style.rowHeight(), style.rowGap(), 10, shoreDetail, MapSettings.defaultWaveRowJitterLevel));
 
 		MapParts mapParts = new MapParts();
@@ -454,7 +454,7 @@ public class MapCreatorTest
 	}
 
 	/**
-	 * Sets the style of whichever of wave lines or wave dashes the settings' ocean waves are.
+	 * Sets the style of whichever of wavy lines or wave dashes the settings' ocean waves are.
 	 */
 	private static void setWaveRowStyle(MapSettings settings, MapSettings.WaveRowStyle style)
 	{
@@ -464,7 +464,7 @@ public class MapCreatorTest
 		}
 		else
 		{
-			settings.setWaveLineStyle(style);
+			settings.setWavyLineStyle(style);
 		}
 	}
 
@@ -1099,11 +1099,11 @@ public class MapCreatorTest
 	public void waveLinesWithJitterAndRowSpacingVariation()
 	{
 		MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", "simpleSmallWorld.nort").toString());
-		settings.oceanWavesType = MapSettings.OceanWaves.WaveLines;
-		settings.jitterToWaveLines = true;
-		settings.waveLineJitterLevel = MapSettings.maxJitterLevel;
-		settings.waveLineShoreJitterLevel = MapSettings.maxJitterLevel;
-		settings.waveLineRowSpacingVariation = 5;
+		settings.oceanWavesType = MapSettings.OceanWaves.WavyLines;
+		settings.jitterToWavyLines = true;
+		settings.wavyLineJitterLevel = MapSettings.maxJitterLevel;
+		settings.wavyLineShoreJitterLevel = MapSettings.maxJitterLevel;
+		settings.wavyLineRowSpacingVariation = 5;
 		try (Image actual = new MapCreator().createMap(settings, null, null))
 		{
 			MapTestUtil.compareToExpectedMap(actual, "waveLinesWithJitterAndRowSpacingVariation", expectedMapsFolderName, failedMapsFolderName, 0);

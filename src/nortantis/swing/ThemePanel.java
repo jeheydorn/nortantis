@@ -50,9 +50,9 @@ public class ThemePanel extends JTabbedPane
 	private JRadioButton ripplesRadioButton;
 	private JRadioButton noneRadioButton;
 	private JRadioButton concentricWavesButton;
-	private JRadioButton waveLinesButton;
+	private JRadioButton wavyLinesButton;
 	private JRadioButton waveDashesButton;
-	private WaveRowStyleControls waveLineControls;
+	private WaveRowStyleControls wavyLineControls;
 	private WaveRowStyleControls waveDashControls;
 	private JPanel coastShadingColorDisplay;
 	private JPanel coastlineColorDisplay;
@@ -992,12 +992,12 @@ public class ThemePanel extends JTabbedPane
 			public void actionPerformed(ActionEvent e)
 			{
 				boolean isConcentric = concentricWavesButton.isSelected();
-				boolean isWaveLines = waveLinesButton.isSelected();
+				boolean isWavyLines = wavyLinesButton.isSelected();
 				boolean isWaveDashes = waveDashesButton.isSelected();
-				concentricWavesOptionsHider.setVisible(isConcentric || isWaveLines || isWaveDashes || ripplesRadioButton.isSelected());
+				concentricWavesOptionsHider.setVisible(isConcentric || isWavyLines || isWaveDashes || ripplesRadioButton.isSelected());
 				concentricStyleHider.setVisible(isConcentric);
 				jitterLevelHider.setVisible(isConcentric && jitterWavesCheckbox.isSelected());
-				waveLineControls.setVisible(isWaveLines);
+				wavyLineControls.setVisible(isWavyLines);
 				waveDashControls.setVisible(isWaveDashes);
 				rippleWavesLevelSlider.setVisible(ripplesRadioButton.isSelected());
 				rippleWavesLevelSliderHider.setVisible(ripplesRadioButton.isSelected());
@@ -1007,9 +1007,9 @@ public class ThemePanel extends JTabbedPane
 		};
 		concentricWavesButton.addActionListener(oceanEffectsListener);
 
-		waveLinesButton = new JRadioButton(Translation.get("theme.waveType.waveLines"));
-		oceanEffectButtonGroup.add(waveLinesButton);
-		waveLinesButton.addActionListener(oceanEffectsListener);
+		wavyLinesButton = new JRadioButton(Translation.get("theme.waveType.wavyLines"));
+		oceanEffectButtonGroup.add(wavyLinesButton);
+		wavyLinesButton.addActionListener(oceanEffectsListener);
 
 		waveDashesButton = new JRadioButton(Translation.get("theme.waveType.waveDashes"));
 		oceanEffectButtonGroup.add(waveDashesButton);
@@ -1023,7 +1023,7 @@ public class ThemePanel extends JTabbedPane
 		oceanEffectButtonGroup.add(noneRadioButton);
 		noneRadioButton.addActionListener(oceanEffectsListener);
 		organizer.addLabelAndComponentsVertical(Translation.get("theme.waveType.label"), Translation.get("theme.waveType.help"),
-				Arrays.asList(concentricWavesButton, waveLinesButton, waveDashesButton, ripplesRadioButton, noneRadioButton));
+				Arrays.asList(concentricWavesButton, wavyLinesButton, waveDashesButton, ripplesRadioButton, noneRadioButton));
 
 		// The wave style options sit in their own collapsible card that spans the width of the tab, with labels beside their controls.
 		GridBagOrganizer styleOrganizer = new GridBagOrganizer();
@@ -1065,8 +1065,8 @@ public class ThemePanel extends JTabbedPane
 		jitterLevelSlider = createWaveLineSlider(0, MapSettings.maxJitterLevel);
 		jitterLevelHider = addCheckboxSlider(styleOrganizer, jitterLevelSlider, Translation.get("theme.jitterLevel.label"), Translation.get("theme.jitterLevel.help"));
 
-		// Wave lines and wave dashes each have their own style options, so that changing one style leaves the others' look alone.
-		waveLineControls = new WaveRowStyleControls(styleOrganizer, true);
+		// Wavy lines and wave dashes each have their own style options, so that changing one style leaves the others' look alone.
+		wavyLineControls = new WaveRowStyleControls(styleOrganizer, true);
 		// Wave dashes already thin out away from the coast by getting shorter and sparser.
 		waveDashControls = new WaveRowStyleControls(styleOrganizer, false);
 
@@ -1721,10 +1721,10 @@ public class ThemePanel extends JTabbedPane
 		ripplesRadioButton.setSelected(settings.oceanWavesType == OceanWaves.Ripples);
 		noneRadioButton.setSelected(settings.oceanWavesType == OceanWaves.None);
 		concentricWavesButton.setSelected(settings.oceanWavesType == OceanWaves.ConcentricWaves);
-		waveLinesButton.setSelected(settings.oceanWavesType == OceanWaves.WaveLines);
+		wavyLinesButton.setSelected(settings.oceanWavesType == OceanWaves.WavyLines);
 		waveDashesButton.setSelected(settings.oceanWavesType == OceanWaves.WaveDashes);
-		waveLineControls.load(settings.getWaveLineStyle());
-		waveLineControls.loadWaveLineOptions(settings.fadeWaveLines, settings.waveLineFadeVariation, settings.waveLineBreakLevel);
+		wavyLineControls.load(settings.getWavyLineStyle());
+		wavyLineControls.loadWavyLineOptions(settings.fadeWavyLines, settings.wavyLineFadeVariation, settings.wavyLineBreakLevel);
 		waveDashControls.load(settings.getWaveDashStyle());
 		fadeWavesCheckbox.setSelected(settings.fadeConcentricWaves);
 		jitterWavesCheckbox.setSelected(settings.jitterToConcentricWaves);
@@ -1980,9 +1980,9 @@ public class ThemePanel extends JTabbedPane
 		{
 			settings.oceanWavesType = OceanWaves.None;
 		}
-		else if (waveLinesButton.isSelected())
+		else if (wavyLinesButton.isSelected())
 		{
-			settings.oceanWavesType = OceanWaves.WaveLines;
+			settings.oceanWavesType = OceanWaves.WavyLines;
 		}
 		else if (waveDashesButton.isSelected())
 		{
@@ -1992,10 +1992,10 @@ public class ThemePanel extends JTabbedPane
 		{
 			settings.oceanWavesType = OceanWaves.ConcentricWaves;
 		}
-		settings.setWaveLineStyle(waveLineControls.getStyle());
-		settings.fadeWaveLines = waveLineControls.isFadeSelected();
-		settings.waveLineFadeVariation = waveLineControls.getFadeVariation();
-		settings.waveLineBreakLevel = waveLineControls.getBreakLevel();
+		settings.setWavyLineStyle(wavyLineControls.getStyle());
+		settings.fadeWavyLines = wavyLineControls.isFadeSelected();
+		settings.wavyLineFadeVariation = wavyLineControls.getFadeVariation();
+		settings.wavyLineBreakLevel = wavyLineControls.getBreakLevel();
 		settings.setWaveDashStyle(waveDashControls.getStyle());
 		settings.fadeConcentricWaves = fadeWavesCheckbox.isSelected();
 		settings.jitterToConcentricWaves = jitterWavesCheckbox.isSelected();
@@ -2171,7 +2171,7 @@ public class ThemePanel extends JTabbedPane
 	}
 
 	/**
-	 * Creates a slider for the width of wave lines or concentric waves' lines. Its values are tenths of a pixel.
+	 * Creates a slider for the width of the lines drawn by concentric waves, wavy lines or wave dashes. Its values are tenths of a pixel.
 	 */
 	private JSlider createWaveLineWidthSlider()
 	{
@@ -2213,8 +2213,8 @@ public class ThemePanel extends JTabbedPane
 	}
 
 	/**
-	 * The style options of one of the wave styles drawn as rows of strokes: wave lines or wave dashes. They are grouped as the shape, the
-	 * options for the wave lines themselves, the options for the rows they are stacked in, and the shore detail between the rows and the
+	 * The style options of one of the wave styles drawn as rows of strokes: wavy lines or wave dashes. They are grouped as the shape, the
+	 * options for the lines themselves, the options for the rows they are stacked in, and the shore detail between the rows and the
 	 * coast.
 	 */
 	private class WaveRowStyleControls
@@ -2250,11 +2250,11 @@ public class ThemePanel extends JTabbedPane
 		private boolean isVisible;
 
 		/**
-		 * @param isForWaveLines
-		 *            Whether these are the controls for wave lines, which have options that wave dashes do not: breaking, and fading out
+		 * @param isForWavyLines
+		 *            Whether these are the controls for wavy lines, which have options that wave dashes do not: breaking, and fading out
 		 *            away from the coast.
 		 */
-		WaveRowStyleControls(GridBagOrganizer organizer, boolean isForWaveLines)
+		WaveRowStyleControls(GridBagOrganizer organizer, boolean isForWavyLines)
 		{
 			shapeComboBox = new JComboBox<>();
 			shapeComboBox.setRenderer(new DefaultListCellRenderer()
@@ -2292,18 +2292,18 @@ public class ThemePanel extends JTabbedPane
 			rowsHider.add(new SliderWithDisplayedValue(lengthVariationSlider).addToOrganizer(organizer, Translation.get("theme.waveLineLengthVariation.label"),
 					Translation.get("theme.waveLineLengthVariation.help")));
 
-			if (isForWaveLines)
+			if (isForWavyLines)
 			{
-				breakLevelSlider = createWaveLineSlider(0, MapSettings.maxWaveLineBreakLevel);
-				rowsHider.add(new SliderWithDisplayedValue(breakLevelSlider).addToOrganizer(organizer, Translation.get("theme.waveLineBreaks.label"),
-						Translation.get("theme.waveLineBreaks.help")));
+				breakLevelSlider = createWaveLineSlider(0, MapSettings.maxWavyLineBreakLevel);
+				rowsHider.add(new SliderWithDisplayedValue(breakLevelSlider).addToOrganizer(organizer, Translation.get("theme.wavyLineBreaks.label"),
+						Translation.get("theme.wavyLineBreaks.help")));
 			}
 			else
 			{
 				breakLevelSlider = null;
 			}
 
-			jitterCheckbox = new JCheckBox(Translation.get("theme.jitterWaveLines"));
+			jitterCheckbox = new JCheckBox(Translation.get("theme.jitterRows"));
 			jitterCheckbox.addActionListener(e ->
 			{
 				updateVisibility();
@@ -2314,7 +2314,7 @@ public class ThemePanel extends JTabbedPane
 			jitterLevelHider = addCheckboxSlider(organizer, jitterLevelSlider, Translation.get("theme.jitterLevel.label"), Translation.get("theme.rowJitterLevel.help"));
 			rowsHider.add(jitterLevelHider);
 
-			if (isForWaveLines)
+			if (isForWavyLines)
 			{
 				fadeCheckbox = new JCheckBox(Translation.get("theme.fadeOuterWaves"));
 				fadeCheckbox.addActionListener(e ->
@@ -2410,9 +2410,9 @@ public class ThemePanel extends JTabbedPane
 		}
 
 		/**
-		 * Loads the options only wave lines have.
+		 * Loads the options only wavy lines have.
 		 */
-		void loadWaveLineOptions(boolean fade, int fadeVariation, int breakLevel)
+		void loadWavyLineOptions(boolean fade, int fadeVariation, int breakLevel)
 		{
 			fadeCheckbox.setSelected(fade);
 			fadeVariationSlider.setValue(fadeVariation);

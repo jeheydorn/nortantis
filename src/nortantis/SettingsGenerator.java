@@ -41,23 +41,23 @@ public class SettingsGenerator
 	}
 
 	public static final int minConcentricWaveCountToGenerate = 2;
-	public static final int minWaveLineRowHeightToGenerate = 4;
-	public static final int maxWaveLineRowHeightToGenerate = 10;
-	public static final int minWaveLineRowGapToGenerate = 1;
-	public static final int maxWaveLineRowGapToGenerate = 6;
-	public static final int minWaveLineLengthToGenerate = 7;
-	public static final int maxWaveLineLengthToGenerate = 16;
-	public static final int minWaveLineBreakLevelToGenerate = 3;
-	public static final int maxWaveLineBreakLevelToGenerate = 8;
+	public static final int minWavyLineRowHeightToGenerate = 4;
+	public static final int maxWavyLineRowHeightToGenerate = 10;
+	public static final int minWavyLineRowGapToGenerate = 1;
+	public static final int maxWavyLineRowGapToGenerate = 6;
+	public static final int minWavyLineLengthToGenerate = 7;
+	public static final int maxWavyLineLengthToGenerate = 16;
+	public static final int minWavyLineBreakLevelToGenerate = 3;
+	public static final int maxWavyLineBreakLevelToGenerate = 8;
 	/**
-	 * How often generated wave lines are unbroken instead of breaking at one of the levels above.
+	 * How often generated wavy lines are unbroken instead of breaking at one of the levels above.
 	 */
-	public static final double probabilityOfUnbrokenWaveLines = 0.2;
+	public static final double probabilityOfUnbrokenWavyLines = 0.2;
 	/**
-	 * Generated wave lines don't use the lowest jitter levels because at those the lines barely wander at all, which looks like jitter is
+	 * Generated wavy lines don't use the lowest jitter levels because at those the lines barely wander at all, which looks like jitter is
 	 * off rather than like a choice.
 	 */
-	public static final int minWaveLineJitterLevelToGenerate = 5;
+	public static final int minWavyLineJitterLevelToGenerate = 5;
 	public static final int defaultCoastShadingAlpha = 87;
 	public static final int defaultOceanShadingAlpha = 87;
 	public static final int defaultOceanRipplesAlpha = 204;
@@ -95,8 +95,9 @@ public class SettingsGenerator
 		settings.artPack = artPack;
 		settings.customImagesPath = customImagesFolder;
 
-		List<Tuple2<Double, OceanWaves>> oceanWaveOptions = new ArrayList<>(Arrays.asList(new Tuple2<Double, OceanWaves>(1.0, OceanWaves.None),
-				new Tuple2<Double, OceanWaves>(2.0, OceanWaves.ConcentricWaves), new Tuple2<Double, OceanWaves>(2.0, OceanWaves.WaveLines)));
+		// TODO Temporary: only generate wavy lines and wave dashes, to preview their randomized styles.
+		List<Tuple2<Double, OceanWaves>> oceanWaveOptions = new ArrayList<>(
+				Arrays.asList(new Tuple2<Double, OceanWaves>(1.0, OceanWaves.WavyLines), new Tuple2<Double, OceanWaves>(1.0, OceanWaves.WaveDashes)));
 
 		settings.oceanWavesType = ProbabilityHelper.sampleCategorical(rand, oceanWaveOptions);
 
@@ -112,22 +113,17 @@ public class SettingsGenerator
 			settings.jitterToConcentricWaves = rand.nextBoolean();
 			settings.brokenLinesForConcentricWaves = rand.nextBoolean();
 		}
-		if (settings.oceanWavesType == OceanWaves.WaveLines)
+		// TODO Temporary: fully randomize wavy lines and wave dashes styles across the editor's ranges to preview what they look like.
+		if (settings.oceanWavesType == OceanWaves.WavyLines)
 		{
-			settings.jitterToWaveLines = rand.nextBoolean();
-			settings.waveLineJitterLevel = minWaveLineJitterLevelToGenerate + rand.nextInt(MapSettings.maxJitterLevel - minWaveLineJitterLevelToGenerate + 1);
-			settings.waveLineShoreJitterLevel = rand.nextBoolean() ? 0
-					: minWaveLineJitterLevelToGenerate + rand.nextInt(MapSettings.maxJitterLevel - minWaveLineJitterLevelToGenerate + 1);
-			settings.waveLineShape = ProbabilityHelper.sampleCategorical(rand, Arrays.asList(new Tuple2<Double, WaveLineShape>(2.0, WaveLineShape.Scallops),
-					new Tuple2<Double, WaveLineShape>(1.0, WaveLineShape.Sine), new Tuple2<Double, WaveLineShape>(1.0, WaveLineShape.Straight)));
-			settings.waveLineRowHeight = minWaveLineRowHeightToGenerate + rand.nextInt(maxWaveLineRowHeightToGenerate - minWaveLineRowHeightToGenerate + 1);
-			settings.waveLineRowGap = minWaveLineRowGapToGenerate + rand.nextInt(maxWaveLineRowGapToGenerate - minWaveLineRowGapToGenerate + 1);
-			settings.waveLineRowSpacingVariation = rand.nextInt(MapSettings.maxWaveLineVariation + 1);
-			settings.waveLineLength = minWaveLineLengthToGenerate + rand.nextInt(maxWaveLineLengthToGenerate - minWaveLineLengthToGenerate + 1);
-			settings.waveLineLengthVariation = rand.nextInt(MapSettings.maxWaveLineVariation + 1);
-			settings.waveLineBreakLevel = rand.nextDouble() < probabilityOfUnbrokenWaveLines ? 0
-					: minWaveLineBreakLevelToGenerate + rand.nextInt(maxWaveLineBreakLevelToGenerate - minWaveLineBreakLevelToGenerate + 1);
-			settings.fadeWaveLines = rand.nextBoolean();
+			settings.setWavyLineStyle(generateFullyRandomWaveRowStyle(rand));
+			settings.wavyLineBreakLevel = rand.nextInt(MapSettings.maxWavyLineBreakLevel + 1);
+			settings.fadeWavyLines = rand.nextBoolean();
+			settings.wavyLineFadeVariation = rand.nextInt(MapSettings.maxWaveLineVariation + 1);
+		}
+		if (settings.oceanWavesType == OceanWaves.WaveDashes)
+		{
+			settings.setWaveDashStyle(generateFullyRandomWaveRowStyle(rand));
 		}
 		settings.concentricWaveCount = Math.max(minConcentricWaveCountToGenerate, Math.min(maxConcentricWaveCountToGenerate, Math.abs((rand.nextInt() % maxConcentricWaveCountInEditor)) + 1));
 		settings.coastShadingLevel = 15 + Math.abs(rand.nextInt(35));
@@ -430,6 +426,19 @@ public class SettingsGenerator
 		settings.oceanWavesLevel = randomSettings.oceanWavesLevel;
 		settings.concentricWaveCount = randomSettings.concentricWaveCount;
 		settings.oceanWavesType = randomSettings.oceanWavesType;
+		// TODO Temporary: take the fully randomized style of wavy lines or wave dashes too, to preview what they look like. Only the chosen
+		// type's style is randomized, so the other type's style is left alone.
+		if (randomSettings.oceanWavesType == OceanWaves.WavyLines)
+		{
+			settings.setWavyLineStyle(randomSettings.getWavyLineStyle());
+			settings.wavyLineBreakLevel = randomSettings.wavyLineBreakLevel;
+			settings.fadeWavyLines = randomSettings.fadeWavyLines;
+			settings.wavyLineFadeVariation = randomSettings.wavyLineFadeVariation;
+		}
+		else if (randomSettings.oceanWavesType == OceanWaves.WaveDashes)
+		{
+			settings.setWaveDashStyle(randomSettings.getWaveDashStyle());
+		}
 		settings.riverColor = randomSettings.riverColor;
 		settings.roadColor = randomSettings.roadColor;
 		settings.coastShadingLevel = randomSettings.coastShadingLevel;
@@ -483,4 +492,16 @@ public class SettingsGenerator
 		settings.randomSeed = randomSettings.randomSeed;
 	}
 
+	// TODO Temporary: see the call sites.
+	private static MapSettings.WaveRowStyle generateFullyRandomWaveRowStyle(Random rand)
+	{
+		MapSettings.WaveLineShape[] shapes = MapSettings.WaveLineShape.values();
+		MapSettings.ShoreDetail[] shoreDetails = MapSettings.ShoreDetail.values();
+		int minLineWidthTenths = (int) Math.round(MapSettings.minWaveLineWidth * 10.0);
+		int maxLineWidthTenths = (int) Math.round(MapSettings.maxWaveLineWidth * 10.0);
+		double lineWidth = (minLineWidthTenths + rand.nextInt(maxLineWidthTenths - minLineWidthTenths + 1)) / 10.0;
+		return new MapSettings.WaveRowStyle(shapes[rand.nextInt(shapes.length)], lineWidth, rand.nextInt(51), rand.nextInt(MapSettings.maxWaveLineVariation + 1),
+				rand.nextBoolean(), rand.nextInt(MapSettings.maxJitterLevel + 1), 2 + rand.nextInt(14), rand.nextInt(16), rand.nextInt(MapSettings.maxWaveLineVariation + 1),
+				shoreDetails[rand.nextInt(shoreDetails.length)], rand.nextInt(MapSettings.maxJitterLevel + 1));
+	}
 }
