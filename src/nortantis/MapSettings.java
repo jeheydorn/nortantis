@@ -77,7 +77,7 @@ public class MapSettings implements Serializable
 	 */
 	public static final int defaultHatchingRowHeight = 6;
 	public static final int defaultHatchingRowGap = 0;
-	public static final int defaultHatchingRowSpacingVariation = 5;
+	public static final int defaultHatchingRowSpacingVariation = 0;
 	public static final int defaultHatchingLength = 27;
 	public static final int defaultHatchingLengthVariation = 10;
 	public static final boolean defaultJitterToHatching = false;
