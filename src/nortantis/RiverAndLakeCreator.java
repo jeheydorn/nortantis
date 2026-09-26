@@ -2,6 +2,7 @@ package nortantis;
 
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Corner;
+import nortantis.graph.voronoi.Edge;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -42,10 +43,14 @@ class RiverAndLakeCreator
 	static final double evaporationPerLakeCenter = 2.0;
 
 	/**
-	 * The fewest centers a new lake may cover. A basin too small to hold a lake this big is treated as filled in, so water passes through
-	 * it, and a basin whose inflow can't sustain a lake this big dries up.
+	 * The fewest centers a basin's new lake may cover in total. A basin too small to hold a lake this big is treated as filled in, so water
+	 * passes through it, and a basin whose inflow can't sustain a lake this big dries up.
+	 * <p>
+	 * This is not a minimum for each body of water. A basin formed by joining smaller basins at a pass fills from the low points of all of
+	 * them at once, so its lake can be several separate pieces, and a piece can be smaller than this.
+	 * </p>
 	 */
-	static final int minLakeSize = 4;
+	static final int minBasinLakeSize = 4;
 
 	/**
 	 * How far a basin's rim must be above its lowest point for it to hold a lake. Shallower dips are treated as filled in with sediment, so
@@ -323,7 +328,7 @@ class RiverAndLakeCreator
 
 		boolean canHoldLakeOfSize(int area)
 		{
-			return existingLakeCenterCount > 0 || (area >= minLakeSize && centers.size() >= minLakeSize && basinDepth >= minLakeDepth);
+			return existingLakeCenterCount > 0 || (area >= minBasinLakeSize && centers.size() >= minBasinLakeSize && basinDepth >= minLakeDepth);
 		}
 	}
 
@@ -1311,11 +1316,18 @@ class RiverAndLakeCreator
 			{
 				continue;
 			}
+			Edge edge = corner.lookupEdgeFromCorner(target);
+			// An overflowing lake's outlet can be a single edge away from other water, along an edge that has water on one side. A river
+			// there would run along the shore rather than across land, so it isn't drawn.
+			if (edge.isCoastOrLakeShore() || edge.isWater())
+			{
+				continue;
+			}
 			boolean targetIsWater = waterBodyIndexOfCorner(target) != -1;
 			if (targetIsWater || isDrawnToWater[target.index])
 			{
 				isDrawnToWater[corner.index] = true;
-				corner.lookupEdgeFromCorner(target).river = (int) Math.round(flow[corner.index]);
+				edge.river = (int) Math.round(flow[corner.index]);
 				if (targetIsWater)
 				{
 					// Cut the shore a river crosses down below the river, so that its last step into the water runs downhill too. This

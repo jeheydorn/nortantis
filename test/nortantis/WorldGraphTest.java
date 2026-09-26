@@ -300,6 +300,32 @@ public class WorldGraphTest
 		}
 	}
 
+	/**
+	 * Large maps where the outflow of a lake once ran along the lake's own shore, because the lake's outlet sent its flow to another corner
+	 * on the same shore.
+	 */
+	@Test
+	public void riversLeavingLakesDoNotRunAlongTheirShores()
+	{
+		record Case(LandShape landShape, int worldSize, long seed)
+		{
+		}
+		for (Case testCase : List.of(new Case(LandShape.Coastline, 32000, 47838), new Case(LandShape.Landlocked, 20000, 27919)))
+		{
+			final double width = 2048;
+			final double height = 1536;
+			WorldGraph graph = GraphCreator.createGraph(width, height, testCase.worldSize(), new Random(testCase.seed()), width / 4096.0, MapSettings.LineStyle.Jagged,
+					MapSettings.defaultPointPrecision, true, MapSettings.defaultLloydRelaxationsScale, false, 0, false, false, testCase.landShape(), 8);
+			for (Edge edge : graph.edges)
+			{
+				if (edge.river > GraphRiver.RIVERS_THIS_SIZE_OR_SMALLER_WILL_NOT_BE_DRAWN)
+				{
+					assertFalse(edge.isWater() || edge.isCoastOrLakeShore(), "River edge " + edge.index + " in or along water: " + testCase.landShape().name() + ", world size " + testCase.worldSize() + ", seed " + testCase.seed());
+				}
+			}
+		}
+	}
+
 	@Test
 	public void newLakesAreLabeledAndNotTooBigAndDoNotTouchTheBorder()
 	{
