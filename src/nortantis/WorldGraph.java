@@ -144,16 +144,18 @@ public class WorldGraph extends VoronoiGraph
 
 		for (Corner corner : cornersToUpdate)
 		{
+			Point locBefore = corner.loc;
 			SmoothingResult coastlineResult = updateCornerLocationToSmoothEdges(corner, e -> e.isCoast());
-			boolean isCornerChanged = coastlineResult.isCornerChanged;
 			// Only smooth region boundaries for the corner if it is not a
 			// coastline, because otherwise we will clear the smoothing on that
 			// spot on the coastline.
 			if (!coastlineResult.isSmoothed && smoothRegionBoundaries)
 			{
-				SmoothingResult regionResult = updateCornerLocationToSmoothEdges(corner, e -> e.isRegionBoundary() && !e.isRiver());
-				isCornerChanged |= regionResult.isCornerChanged;
+				updateCornerLocationToSmoothEdges(corner, e -> e.isRegionBoundary() && !e.isRiver());
 			}
+			// Compared with where the corner started, since the coastline pass can reset a corner that the region boundary pass then moves
+			// back.
+			boolean isCornerChanged = !corner.loc.equals(locBefore);
 			if (isCornerChanged)
 			{
 				centersChanged.addAll(corner.touches);
@@ -219,9 +221,10 @@ public class WorldGraph extends VoronoiGraph
 			Corner otherCorner1 = edgesToSmooth.get(1).v0 == corner ? edgesToSmooth.get(1).v1 : edgesToSmooth.get(1).v0;
 			Point smoothedLoc = new Point((otherCorner0.originalLoc.x + otherCorner1.originalLoc.x) / 2, (otherCorner0.originalLoc.y + otherCorner1.originalLoc.y) / 2);
 
+			boolean isChanged = !corner.loc.equals(smoothedLoc);
 			corner.loc = smoothedLoc;
 
-			return new SmoothingResult(true, true);
+			return new SmoothingResult(isChanged, true);
 		}
 		else
 		{

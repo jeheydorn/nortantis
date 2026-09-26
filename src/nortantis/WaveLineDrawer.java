@@ -475,8 +475,9 @@ public class WaveLineDrawer
 			bandPadding += calcBandRadius(settings, resolutionScale) + maxDashLengthInWavelengths * calcWavelength(settings) * sizeMultiplier / 2.0
 					+ (lens == null ? 0.0 : 2.0 * lens.blockSize);
 		}
-		// How far a stroke's waves, jitter, row shift and width reach off its row.
-		double offRowPadding = (calcAmplitude(settings) + calcJitterAmplitude(settings) + calcMaxRowShift(settings)) * sizeMultiplier + calcStrokeWidth(settings, resolutionScale);
+		// How far a stroke's waves, jitter and width reach off the row it is placed by. A row's shift is part of where it is placed, and
+		// anti-aliasing can reach a pixel past the stroke's edge.
+		double offRowPadding = (calcAmplitude(settings) + calcJitterAmplitude(settings)) * sizeMultiplier + calcStrokeWidth(settings, resolutionScale) / 2.0 + 1.0;
 		return Math.max(concentricLinePadding, bandPadding + offRowPadding);
 	}
 
@@ -1967,22 +1968,35 @@ public class WaveLineDrawer
 			}
 
 			float[] values = new float[columns * rows];
-			for (int row = 0; row < rows; row++)
+			for (int i = 0; i < values.length; i++)
 			{
-				int sourceRow = Math.max(0, Math.min(rows - 1, Math.max(mapFirstRow, Math.min(mapLastRow, row))));
-				for (int column = 0; column < columns; column++)
-				{
-					int sourceColumn = Math.max(0, Math.min(columns - 1, Math.max(mapFirstColumn, Math.min(mapLastColumn, column))));
-					int source = sourceRow * columns + sourceColumn;
-					values[row * columns + column] = counts[source] == 0 ? 0f : sums[source] / counts[source];
-				}
+				values[i] = counts[i] == 0 ? 0f : sums[i] / counts[i];
+			}
+			// A drawing of the whole map blurs with its edge blocks repeated past its edges at every pass, so blocks past the map's edges
+			// are set the same way after each pass.
+			int firstColumnOnMap = Math.max(0, Math.min(columns - 1, mapFirstColumn));
+			int lastColumnOnMap = Math.max(0, Math.min(columns - 1, mapLastColumn));
+			int firstRowOnMap = Math.max(0, Math.min(rows - 1, mapFirstRow));
+			int lastRowOnMap = Math.max(0, Math.min(rows - 1, mapLastRow));
+			boolean isPastMapEdges = firstColumnOnMap > 0 || lastColumnOnMap < columns - 1 || firstRowOnMap > 0 || lastRowOnMap < rows - 1;
+			if (isPastMapEdges)
+			{
+				repeatEdgesPastMap(values, firstColumnOnMap, lastColumnOnMap, firstRowOnMap, lastRowOnMap);
 			}
 
 			float[] buffer = new float[values.length];
 			for (int pass = 0; pass < 3; pass++)
 			{
 				boxBlurRows(values, buffer, radiusX);
+				if (isPastMapEdges)
+				{
+					repeatEdgesPastMap(buffer, firstColumnOnMap, lastColumnOnMap, firstRowOnMap, lastRowOnMap);
+				}
 				boxBlurColumns(buffer, values, radiusY);
+				if (isPastMapEdges)
+				{
+					repeatEdgesPastMap(values, firstColumnOnMap, lastColumnOnMap, firstRowOnMap, lastRowOnMap);
+				}
 			}
 
 			equivalentDistances = new float[values.length];
@@ -1991,6 +2005,33 @@ public class WaveLineDrawer
 				double land = Math.max(1e-9, Math.min(1.0 - 1e-9, values[i]));
 				// A straight coast blurred by a Gaussian has this much land at a distance d from it: the chance a normal value exceeds d / sigmaX.
 				equivalentDistances[i] = (float) (sigmaX * inverseStandardNormalCumulativeDistribution(1.0 - land));
+			}
+		}
+
+		/**
+		 * Sets each block outside the given range of columns and rows to the value of the nearest block inside it.
+		 */
+		private void repeatEdgesPastMap(float[] values, int firstColumnOnMap, int lastColumnOnMap, int firstRowOnMap, int lastRowOnMap)
+		{
+			for (int row = firstRowOnMap; row <= lastRowOnMap; row++)
+			{
+				int offset = row * columns;
+				for (int column = 0; column < firstColumnOnMap; column++)
+				{
+					values[offset + column] = values[offset + firstColumnOnMap];
+				}
+				for (int column = lastColumnOnMap + 1; column < columns; column++)
+				{
+					values[offset + column] = values[offset + lastColumnOnMap];
+				}
+			}
+			for (int row = 0; row < firstRowOnMap; row++)
+			{
+				System.arraycopy(values, firstRowOnMap * columns, values, row * columns, columns);
+			}
+			for (int row = lastRowOnMap + 1; row < rows; row++)
+			{
+				System.arraycopy(values, lastRowOnMap * columns, values, row * columns, columns);
 			}
 		}
 

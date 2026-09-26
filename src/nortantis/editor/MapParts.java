@@ -65,8 +65,41 @@ public class MapParts
 	 */
 	public Image mapBeforeAddingText;
 
+	/**
+	 * The ocean waves and ocean shading masks of the whole map, kept so that incremental draws that can't change them copy them rather than
+	 * drawing them again, which lets those draws skip the padding ocean effects would otherwise need. Either can be null when the map has
+	 * none. Only meaningful when {@link #areOceanEffectsCached} is true.
+	 */
+	public Image oceanWaves;
+	public Image oceanShading;
+	public boolean areOceanEffectsCached;
+
+	public void setOceanEffects(Image oceanWaves, Image oceanShading)
+	{
+		closeOceanEffects();
+		this.oceanWaves = oceanWaves;
+		this.oceanShading = oceanShading;
+		areOceanEffectsCached = true;
+	}
+
+	public void closeOceanEffects()
+	{
+		if (oceanWaves != null)
+		{
+			oceanWaves.close();
+		}
+		oceanWaves = null;
+		if (oceanShading != null)
+		{
+			oceanShading.close();
+		}
+		oceanShading = null;
+		areOceanEffectsCached = false;
+	}
+
 	public void closeImages()
 	{
+		closeOceanEffects();
 		if (textBackground != null)
 		{
 			textBackground.close();
