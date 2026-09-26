@@ -1,6 +1,7 @@
 package nortantis;
 
 import nortantis.editor.*;
+import nortantis.geom.Dimension;
 import nortantis.geom.IntPoint;
 import nortantis.geom.IntRectangle;
 import nortantis.geom.Point;
@@ -399,7 +400,7 @@ public class MapCreatorTest
 		new MapCreator().createMap(settings, null, mapParts).close();
 		WorldGraph graph = mapParts.graph;
 		// Pad the same way an incremental redraw does.
-		double padding = MapCreator.calcEffectsPadding(settings);
+		Dimension padding = MapCreator.calcEffectsPaddingWidthAndHeight(settings, true, true);
 
 		try (Image fullLandMask = createLandMask(graph, null, graph.bounds); Image fullWaves = new MapCreator().createOceanWavesAndShading(settings, graph, settings.resolution, fullLandMask, null, null).getFirst())
 		{
@@ -411,7 +412,7 @@ public class MapCreatorTest
 			for (int i = 0; i < 25; i++)
 			{
 				Rectangle replaceBounds = new Rectangle(rand.nextInt((int) graph.bounds.width - size), rand.nextInt((int) graph.bounds.height - size), size, size);
-				Rectangle drawBounds = replaceBounds.pad(padding, padding).floor();
+				Rectangle drawBounds = replaceBounds.pad(padding.width, padding.height).floor();
 				Center searchStart = graph.findClosestCenter(drawBounds.getCenter());
 				Set<Center> centersToDraw = graph.breadthFirstSearch(c -> c.isInBoundsIncludingNoisyEdges(drawBounds), searchStart);
 

@@ -4,6 +4,7 @@ import nortantis.MapSettings.OceanWaves;
 import nortantis.MapSettings.ShoreDetail;
 import nortantis.MapSettings.WaveLineShape;
 import nortantis.WorldGraph.CoastlineCurve;
+import nortantis.geom.Dimension;
 import nortantis.geom.FloatPoint;
 import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
@@ -459,26 +460,36 @@ public class WaveLineDrawer
 	 * How far, in pixels, a change on the map can move what wave lines and their concentric line draw: the band around the changed part of the
 	 * coastline, and how far strokes in it reach off their rows. Incremental draws must pad each side of the area they draw by at least this
 	 * much.
+	 *
+	 * @return The padding for the left and right sides as the width, and for the top and bottom as the height.
 	 */
-	public static double calcEffectsPadding(MapSettings settings, double resolutionScale)
+	public static Dimension calcEffectsPadding(MapSettings settings, double resolutionScale)
 	{
 		double sizeMultiplier = MapCreator.calcSizeMultiplierFromResolutionScale(resolutionScale);
 		double concentricLinePadding = MapCreator.calcWaveLinesConcentricLineOuterWidth(settings, resolutionScale) + calcConcentricLineJitter(settings, resolutionScale);
+		double bandRadius = calcBandRadius(settings, resolutionScale);
+		// The map above and below a point changes what is drawn there only through how its row is classified at the row's height, by the band,
+		// the concentric line and the land there. Everything else a row draws depends on what is along the row, so it only needs padding to the
+		// sides.
+		double verticalBandPadding = bandRadius + calcConcentricLineJitter(settings, resolutionScale);
 		// Whether a row passes over a graze of the concentric line depends on the row up to a graze's length away.
-		double bandPadding = calcBandRadius(settings, resolutionScale) + calcConcentricLineJitter(settings, resolutionScale)
-				+ maxGrazeToPassOverInWavelengths * calcWavelength(settings) * sizeMultiplier;
+		double horizontalBandPadding = verticalBandPadding + maxGrazeToPassOverInWavelengths * calcWavelength(settings) * sizeMultiplier;
 		if (settings.oceanWavesType == OceanWaves.Ripples)
 		{
 			// How far out a point is depends on its run up to a band radius away, whether a dash is drawn depends on its middle, so a change
 			// can reach half a dash farther, and the blur is computed in blocks.
 			DashLens lens = DashLens.create(settings, resolutionScale);
-			bandPadding += calcBandRadius(settings, resolutionScale) + maxDashLengthInWavelengths * calcWavelength(settings) * sizeMultiplier / 2.0
+			horizontalBandPadding += bandRadius + maxDashLengthInWavelengths * calcWavelength(settings) * sizeMultiplier / 2.0
 					+ (lens == null ? 0.0 : 2.0 * lens.blockSize);
+			if (lens != null)
+			{
+				verticalBandPadding = Math.max(verticalBandPadding, lens.calcVerticalSupport() + 2.0 * lens.blockSize + calcConcentricLineJitter(settings, resolutionScale));
+			}
 		}
 		// How far a stroke's waves, jitter and width reach off the row it is placed by. A row's shift is part of where it is placed, and
 		// anti-aliasing can reach a pixel past the stroke's edge.
 		double offRowPadding = (calcAmplitude(settings) + calcJitterAmplitude(settings)) * sizeMultiplier + calcStrokeWidth(settings, resolutionScale) / 2.0 + 1.0;
-		return Math.max(concentricLinePadding, bandPadding + offRowPadding);
+		return new Dimension(Math.max(concentricLinePadding, horizontalBandPadding + offRowPadding), Math.max(concentricLinePadding, verticalBandPadding + offRowPadding));
 	}
 
 	/**
@@ -1917,6 +1928,14 @@ public class WaveLineDrawer
 		double calcSupport()
 		{
 			return (3 * radiusX + 1) * blockSize;
+		}
+
+		/**
+		 * How far, in pixels, land can be above or below a point and still change the blur there.
+		 */
+		double calcVerticalSupport()
+		{
+			return (3 * radiusY + 1) * blockSize;
 		}
 
 		/**

@@ -172,7 +172,7 @@ public class MapCreator implements WarningLogger
 		boolean useCachedOceanEffects = mapParts.areOceanEffectsCached;
 		boolean useCachedCoastShading = mapParts.isCoastShadingCached;
 		double effectsPadding = calcEffectsPadding(settings, false, !useCachedCoastShading);
-		double oceanEffectsPadding = useCachedOceanEffects ? 0.0 : calcEffectsPadding(settings, true, true);
+		Dimension oceanEffectsPadding = useCachedOceanEffects ? null : calcEffectsPaddingWidthAndHeight(settings, true, true);
 		mapParts.iconDrawer = new IconDrawer(mapParts.graph, new Random(), settings);
 
 		IntRectangle bounds = null;
@@ -287,7 +287,7 @@ public class MapCreator implements WarningLogger
 		boolean canChangeOceanEffects = canChangeOceanEffects(settings, coastlineCentersChanged, centersChangedThatAffectedLandOrRegionBoundaries, isLowPriorityChange);
 		boolean useCachedCoastShading = mapParts.isCoastShadingCached && !canChangeOceanEffects && !canChangeRegionBoundaryShading(settings, centersWithRebuiltNoisyEdges);
 		double effectsPadding = calcEffectsPadding(settings, false, !useCachedCoastShading);
-		double oceanEffectsPadding = 0.0;
+		Dimension oceanEffectsPadding = null;
 		OceanEffectsRedraw oceanEffectsRedraw = null;
 		// The bounds to replace in the original map.
 		Rectangle replaceBounds = centersChangedBounds.pad(effectsPadding, effectsPadding);
@@ -297,18 +297,18 @@ public class MapCreator implements WarningLogger
 			{
 				// Only the part of the map where the ocean effects actually changed needs to be replaced for them, which is usually much
 				// smaller than everywhere they could have.
-				double padding = calcEffectsPadding(settings, true, true);
-				oceanEffectsRedraw = redrawOceanEffects(settings, mapParts, centersChangedBounds.pad(padding, padding), padding);
+				Dimension padding = calcEffectsPaddingWidthAndHeight(settings, true, true);
+				oceanEffectsRedraw = redrawOceanEffects(settings, mapParts, centersChangedBounds.pad(padding.width, padding.height), padding);
 				replaceBounds = Rectangle.add(replaceBounds, oceanEffectsRedraw.changeBounds());
 			}
 		}
 		else
 		{
-			oceanEffectsPadding = calcEffectsPadding(settings, true, true);
+			oceanEffectsPadding = calcEffectsPaddingWidthAndHeight(settings, true, true);
 			if (canChangeOceanEffects)
 			{
 				// The ocean effects can change as far from the change as they need padding.
-				replaceBounds = centersChangedBounds.pad(oceanEffectsPadding, oceanEffectsPadding);
+				replaceBounds = centersChangedBounds.pad(oceanEffectsPadding.width, oceanEffectsPadding.height);
 			}
 		}
 
@@ -424,11 +424,12 @@ public class MapCreator implements WarningLogger
 	 * @param maxChangeBounds
 	 *            Everywhere the change can have changed the ocean effects.
 	 * @param padding
-	 *            How much to pad maxChangeBounds by to draw the ocean effects there. See {@link #calcEffectsPadding(MapSettings, boolean)}.
+	 *            How much to pad the width and height of maxChangeBounds by to draw the ocean effects there. See
+	 *            {@link #calcEffectsPaddingWidthAndHeight(MapSettings, boolean, boolean)}.
 	 */
-	private OceanEffectsRedraw redrawOceanEffects(MapSettings settings, MapParts mapParts, Rectangle maxChangeBounds, double padding)
+	private OceanEffectsRedraw redrawOceanEffects(MapSettings settings, MapParts mapParts, Rectangle maxChangeBounds, Dimension padding)
 	{
-		Rectangle drawBounds = maxChangeBounds.pad(padding, padding).floor();
+		Rectangle drawBounds = maxChangeBounds.pad(padding.width, padding.height).floor();
 		Rectangle changeBounds = maxChangeBounds.floor();
 		Center searchStart = mapParts.graph.findClosestCenter(drawBounds.getCenter());
 		Set<Center> centersToDraw = mapParts.graph.breadthFirstSearch(c -> c.isInBoundsIncludingNoisyEdges(drawBounds), searchStart);
@@ -562,10 +563,10 @@ public class MapCreator implements WarningLogger
 	/**
 	 * @param effectsPadding
 	 *            How much to pad replaceBounds by to draw everything other than ocean waves and ocean shading. See
-	 *            {@link #calcEffectsPadding(MapSettings, boolean)}.
+	 *            {@link #calcEffectsPadding(MapSettings, boolean, boolean)}.
 	 * @param oceanEffectsPadding
-	 *            How much to pad replaceBounds by to draw the ocean waves and ocean shading, which are drawn separately for that larger area
-	 *            when they need more padding than everything else. Unused if useCachedOceanEffects is true.
+	 *            How much to pad the width and height of replaceBounds by to draw the ocean waves and ocean shading, which are drawn separately
+	 *            for that larger area when they need more padding than everything else. Unused if useCachedOceanEffects is true.
 	 * @param useCachedOceanEffects
 	 *            Whether to copy the ocean waves and shading from {@link MapParts} rather than drawing them.
 	 * @param useCachedCoastShading
@@ -573,7 +574,7 @@ public class MapCreator implements WarningLogger
 	 *            updated, the part of it in replaceBounds is saved in mapParts if mapParts keeps it.
 	 */
 	private IntRectangle incrementalUpdateBounds(final MapSettings settings, MapParts mapParts, Image fullSizedMap, Rectangle replaceBounds, double effectsPadding,
-			double oceanEffectsPadding, TextDrawer textDrawer, boolean onlyTextChanged, boolean useCachedOceanEffects, boolean useCachedCoastShading)
+			Dimension oceanEffectsPadding, TextDrawer textDrawer, boolean onlyTextChanged, boolean useCachedOceanEffects, boolean useCachedCoastShading)
 	{
 		// The bounds of the snippet to draw. This is larger than the snippet to
 		// replace because ocean/land effects expand beyond the edges
@@ -688,7 +689,9 @@ public class MapCreator implements WarningLogger
 				}
 				else
 				{
-					Rectangle oceanDrawBounds = oceanEffectsPadding > effectsPadding ? replaceBounds.pad(oceanEffectsPadding, oceanEffectsPadding).floor() : drawBounds;
+					Rectangle oceanDrawBounds = oceanEffectsPadding.width > effectsPadding || oceanEffectsPadding.height > effectsPadding
+						? replaceBounds.pad(Math.max(oceanEffectsPadding.width, effectsPadding), Math.max(oceanEffectsPadding.height, effectsPadding)).floor()
+						: drawBounds;
 					Image oceanLandMask = landMask;
 					Set<Center> oceanCentersToDraw = centersToDraw;
 					if (oceanDrawBounds != drawBounds)
@@ -944,6 +947,16 @@ public class MapCreator implements WarningLogger
 	 */
 	static double calcEffectsPadding(final MapSettings settings, boolean includeOceanEffects, boolean includeCoastShading)
 	{
+		Dimension padding = calcEffectsPaddingWidthAndHeight(settings, includeOceanEffects, includeCoastShading);
+		return Math.max(padding.width, padding.height);
+	}
+
+	/**
+	 * Like {@link #calcEffectsPadding(MapSettings, boolean, boolean)}, but with separate padding for the width and the height, since some
+	 * ocean waves reach much farther to the sides than up and down.
+	 */
+	static Dimension calcEffectsPaddingWidthAndHeight(final MapSettings settings, boolean includeOceanEffects, boolean includeCoastShading)
+	{
 		double sizeMultiplier = calcSizeMultiplierFromResolutionScaleRounded(settings.resolution);
 
 		// To handle edge/effects changes outside centersChangedBounds box
@@ -955,22 +968,26 @@ public class MapCreator implements WarningLogger
 		double concentricWaveWidth = includeOceanEffects && settings.hasConcentricWaves()
 				? calcLargestConcentricWaveWidth(settings, settings.resolution) + calcJitter(settings, settings.resolution)
 				: 0;
-		// The effects padding is added to the total width and height of the bounds it pads, so half of it lands on each side. The wave rows'
-		// padding is a distance for each side.
-		double waveLinesWidth = includeOceanEffects && settings.hasWaveRows() ? 2.0 * WaveLineDrawer.calcEffectsPadding(settings, settings.resolution) : 0;
 		// The sinc kernel's size is its diameter, so padding by it puts its radius on each side.
 		double sincWaveWidth = includeOceanEffects && settings.hasSincWaves(settings.resolution) ? settings.oceanWavesLevel * sizeMultiplier : 0;
 		double oceanShadingWidth = includeOceanEffects ? calcVisibleShadingWidth(settings.oceanShadingLevel, sizeMultiplier) : 0;
 		double coastShadingWidth = includeCoastShading ? calcVisibleShadingWidth(settings.coastShadingLevel, sizeMultiplier) : 0;
 
-		double effectsPadding = Math.ceil(Math.max(Math.max(concentricWaveWidth, waveLinesWidth), Math.max(sincWaveWidth, Math.max(oceanShadingWidth, coastShadingWidth))));
+		double effectsPadding = Math.ceil(Math.max(Math.max(concentricWaveWidth, sincWaveWidth), Math.max(oceanShadingWidth, coastShadingWidth)));
 
 		// Make sure effectsPadding is at least half the width of the maximum with any line can be drawn, which would probably be a very
 		// wide river. Since there is no easy way to know what that will be, just guess.
 		double buffer = 10;
 		effectsPadding = Math.max(effectsPadding, Math.max((buffer / 2.0) * settings.resolution, (SettingsGenerator.maxLineWidthInEditor / 2.0) * settings.resolution));
 
-		return effectsPadding;
+		if (includeOceanEffects && settings.hasWaveRows())
+		{
+			// The effects padding is added to the total width and height of the bounds it pads, so half of it lands on each side. The wave rows'
+			// padding is a distance for each side.
+			Dimension waveLinesPadding = WaveLineDrawer.calcEffectsPadding(settings, settings.resolution);
+			return new Dimension(Math.max(effectsPadding, Math.ceil(2.0 * waveLinesPadding.width)), Math.max(effectsPadding, Math.ceil(2.0 * waveLinesPadding.height)));
+		}
+		return new Dimension(effectsPadding, effectsPadding);
 	}
 
 	/**
