@@ -74,14 +74,6 @@ public class SliderWithDisplayedValue
 	}
 
 	/**
-	 * Creates a panel with the label above the slider and its displayed value, for placing the slider among other components in one row.
-	 */
-	public JPanel createPanelWithLabelAbove(String label, String toolTip)
-	{
-		return createPanelWithLabelAbove(label, toolTip, true);
-	}
-
-	/**
 	 * @param separateFromAbove
 	 *            Whether to add extra space between the label and what is above it. See SwingHelper.createPanelWithLabelAbove.
 	 */
