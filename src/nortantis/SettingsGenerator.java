@@ -42,17 +42,17 @@ public class SettingsGenerator
 
 	public static final int minConcentricWaveCountToGenerate = 2;
 	/*
-	 * The looks new maps get for wavy lines, hatching and wave dashes. Only some combinations of their style settings look good, so new maps
+	 * The looks new maps get for wavy lines, hatching and ripples. Only some combinations of their style settings look good, so new maps
 	 * use these instead of varying each setting on its own.
 	 */
 	private static final MapSettings.WaveRowStyle wavyLinePreset = new MapSettings.WaveRowStyle(WaveLineShape.Scallops, 2.4, 14, 10, true, 3, 6, 3, 5,
 			MapSettings.ShoreDetail.ConcentricWave, 0);
 	private static final int wavyLinePresetBreakLevel = 6;
-	private static final MapSettings.WaveRowStyle waveDashPreset = new MapSettings.WaveRowStyle(WaveLineShape.Sine, 2.4, 30, 4, false, 1, 6, 3, 6,
+	private static final MapSettings.WaveRowStyle ripplePreset = new MapSettings.WaveRowStyle(WaveLineShape.Sine, 2.4, 30, 4, false, 1, 6, 3, 6,
 			MapSettings.ShoreDetail.ConcentricWave, 0);
 	public static final int defaultCoastShadingAlpha = 87;
 	public static final int defaultOceanShadingAlpha = 87;
-	public static final int defaultOceanRipplesAlpha = 204;
+	public static final int defaultSincWavesAlpha = 204;
 	public static final float maxLineWidthInEditor = 10f;
 
 	public static MapSettings generate(String customImageFolder)
@@ -89,7 +89,7 @@ public class SettingsGenerator
 
 		List<Tuple2<Double, OceanWaves>> oceanWaveOptions = new ArrayList<>(Arrays.asList(new Tuple2<Double, OceanWaves>(1.0, OceanWaves.None),
 				new Tuple2<Double, OceanWaves>(1.0, OceanWaves.ConcentricWaves), new Tuple2<Double, OceanWaves>(1.0, OceanWaves.WavyLines),
-				new Tuple2<Double, OceanWaves>(1.0, OceanWaves.Hatching), new Tuple2<Double, OceanWaves>(1.0, OceanWaves.WaveDashes)));
+				new Tuple2<Double, OceanWaves>(1.0, OceanWaves.Hatching), new Tuple2<Double, OceanWaves>(1.0, OceanWaves.Ripples)));
 
 		settings.oceanWavesType = ProbabilityHelper.sampleCategorical(rand, oceanWaveOptions);
 
@@ -137,11 +137,11 @@ public class SettingsGenerator
 			settings.oceanShadingLevel = 20 + Math.abs(rand.nextInt(40));
 		}
 
-		if (settings.oceanWavesType == OceanWaves.Ripples)
+		if (settings.oceanWavesType == OceanWaves.SincWaves)
 		{
-			double ripplesColorScale = 0.3;
-			settings.oceanWavesColor = Color.create((int) (settings.oceanColor.getRed() * ripplesColorScale), (int) (settings.oceanColor.getGreen() * ripplesColorScale),
-					(int) (settings.oceanColor.getBlue() * ripplesColorScale), defaultOceanRipplesAlpha);
+			double sincWavesColorScale = 0.3;
+			settings.oceanWavesColor = Color.create((int) (settings.oceanColor.getRed() * sincWavesColorScale), (int) (settings.oceanColor.getGreen() * sincWavesColorScale),
+					(int) (settings.oceanColor.getBlue() * sincWavesColorScale), defaultSincWavesAlpha);
 		}
 		else
 		{
@@ -414,7 +414,7 @@ public class SettingsGenerator
 		settings.hatchingBreakLevel = randomSettings.hatchingBreakLevel;
 		settings.fadeHatching = randomSettings.fadeHatching;
 		settings.hatchingFadeVariation = randomSettings.hatchingFadeVariation;
-		settings.setWaveDashStyle(randomSettings.getWaveDashStyle());
+		settings.setRippleStyle(randomSettings.getRippleStyle());
 		settings.riverColor = randomSettings.riverColor;
 		settings.roadColor = randomSettings.roadColor;
 		settings.coastShadingLevel = randomSettings.coastShadingLevel;
@@ -480,6 +480,6 @@ public class SettingsGenerator
 		settings.hatchingBreakLevel = MapSettings.defaultHatchingBreakLevel;
 		settings.fadeHatching = MapSettings.defaultFadeHatching;
 		settings.hatchingFadeVariation = MapSettings.defaultHatchingFadeVariation;
-		settings.setWaveDashStyle(waveDashPreset);
+		settings.setRippleStyle(ripplePreset);
 	}
 }

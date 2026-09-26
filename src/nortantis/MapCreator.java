@@ -35,7 +35,7 @@ public class MapCreator implements WarningLogger
 
 	static final double concentricWaveWidthBetweenWaves = 11;
 	/**
-	 * How far the concentric line in the wavy lines, hatching and wave dashes styles is from the coast, relative to the distance of the
+	 * How far the concentric line in the wavy lines, hatching and ripples styles is from the coast, relative to the distance of the
 	 * innermost concentric wave.
 	 */
 	private static final double waveLinesConcentricLineDistanceScale = 0.5;
@@ -692,11 +692,11 @@ public class MapCreator implements WarningLogger
 		// In theory, I shouldn't multiply by 0.75 below, but realistically there doesn't seem to be any visual difference and it helps a
 		// lot
 		// with performance.
-		double rippleWaveWidth = settings.hasRippleWaves(settings.resolution) ? (settings.oceanWavesLevel * sizeMultiplier) * 0.75 : 0;
+		double sincWaveWidth = settings.hasSincWaves(settings.resolution) ? (settings.oceanWavesLevel * sizeMultiplier) * 0.75 : 0;
 		double oceanShadingWidth = calcVisibleShadingWidth(settings.oceanShadingLevel, sizeMultiplier);
 		double coastShadingWidth = calcVisibleShadingWidth(settings.coastShadingLevel, sizeMultiplier);
 
-		double effectsPadding = Math.ceil(Math.max(Math.max(concentricWaveWidth, waveLinesWidth), Math.max(rippleWaveWidth, Math.max(oceanShadingWidth, coastShadingWidth))));
+		double effectsPadding = Math.ceil(Math.max(Math.max(concentricWaveWidth, waveLinesWidth), Math.max(sincWaveWidth, Math.max(oceanShadingWidth, coastShadingWidth))));
 
 		// Make sure effectsPadding is at least half the width of the maximum with any line can be drawn, which would probably be a very
 		// wide river. Since there is no easy way to know what that will be, just guess.
@@ -1650,11 +1650,11 @@ public class MapCreator implements WarningLogger
 
 		Image oceanWaves = null;
 		Image oceanShading = null;
-		if (settings.hasRippleWaves(resolutionScale) || settings.hasConcentricWaves() || settings.hasWaveRows() || settings.hasOceanShading(resolutionScale))
+		if (settings.hasSincWaves(resolutionScale) || settings.hasConcentricWaves() || settings.hasWaveRows() || settings.hasOceanShading(resolutionScale))
 		{
 			double targetStrokeWidth = sizeMultiplier;
 
-			if (settings.hasRippleWaves(resolutionScale))
+			if (settings.hasSincWaves(resolutionScale))
 			{
 				Image coastlineMask = createCoastlineMask(settings, graph, targetStrokeWidth, centersToDraw, drawBounds);
 				float[][] kernel = ImageHelper.getInstance().createPositiveSincKernel((int) (settings.oceanWavesLevel * sizeMultiplier), 1.0 / sizeMultiplier);
@@ -1828,7 +1828,7 @@ public class MapCreator implements WarningLogger
 	}
 
 	/**
-	 * Draws a single unbroken concentric line along coastlines, with rows of wavy lines, hatching or wave dashes outside it.
+	 * Draws a single unbroken concentric line along coastlines, with rows of wavy lines, hatching or ripples outside it.
 	 */
 	private Image createWaveLinesMask(MapSettings settings, WorldGraph graph, double resolutionScaled, Image landMask, Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
@@ -1890,7 +1890,7 @@ public class MapCreator implements WarningLogger
 	}
 
 	/**
-	 * The width, in pixels, of the stroke whose edge is the outside of the concentric line in the wavy lines, hatching and wave dashes
+	 * The width, in pixels, of the stroke whose edge is the outside of the concentric line in the wavy lines, hatching and ripples
 	 * styles.
 	 */
 	static double calcWaveLinesConcentricLineOuterWidth(MapSettings settings, double resolutionScaled)
@@ -1910,7 +1910,7 @@ public class MapCreator implements WarningLogger
 	}
 
 	/**
-	 * The width, in pixels, of a line drawn along the coast by concentric waves, or by wavy lines, hatching and wave dashes, which also
+	 * The width, in pixels, of a line drawn along the coast by concentric waves, or by wavy lines, hatching and ripples, which also
 	 * draw their rows of strokes this wide.
 	 */
 	static double calcConcentricWaveVisibleLineWidth(MapSettings settings, double resolutionScaled)

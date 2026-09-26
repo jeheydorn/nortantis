@@ -45,12 +45,12 @@ public class ThemePanel extends JTabbedPane
 {
 	private MainWindow mainWindow;
 	private JSlider coastShadingSlider;
-	private JSlider rippleWavesLevelSlider;
+	private JSlider sincWavesLevelSlider;
 	private JSlider concentricWavesLevelSlider;
 	private JComboBox<OceanWaves> waveTypeComboBox;
 	private WaveRowStyleControls wavyLineControls;
 	private WaveRowStyleControls hatchingControls;
-	private WaveRowStyleControls waveDashControls;
+	private WaveRowStyleControls rippleControls;
 	private JPanel coastShadingColorDisplay;
 	private JPanel coastlineColorDisplay;
 	private JSlider coastShadingTransparencySlider;
@@ -135,7 +135,7 @@ public class ThemePanel extends JTabbedPane
 	private JComboBox<NamedResource> textureImageComboBox;
 	private RowHider textureSourceButtonsHider;
 	private RowHider textureImageComboBoxHider;
-	private RowHider rippleWavesLevelSliderHider;
+	private RowHider sincWavesLevelSliderHider;
 	private RowHider oceanWavesColorHider;
 	private JCheckBox drawRoadsCheckbox;
 	private JComboBox<StrokeType> roadStyleComboBox;
@@ -979,8 +979,8 @@ public class ThemePanel extends JTabbedPane
 
 		organizer.addSeparator();
 
-		waveTypeComboBox = new JComboBox<>(new OceanWaves[] { OceanWaves.ConcentricWaves, OceanWaves.WavyLines, OceanWaves.Hatching, OceanWaves.WaveDashes,
-				OceanWaves.Ripples, OceanWaves.None });
+		waveTypeComboBox = new JComboBox<>(new OceanWaves[] { OceanWaves.ConcentricWaves, OceanWaves.WavyLines, OceanWaves.Hatching, OceanWaves.Ripples,
+				OceanWaves.SincWaves, OceanWaves.None });
 		waveTypeComboBox.setRenderer(new DefaultListCellRenderer()
 		{
 			public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus)
@@ -1000,15 +1000,15 @@ public class ThemePanel extends JTabbedPane
 			{
 				OceanWaves waveType = (OceanWaves) waveTypeComboBox.getSelectedItem();
 				boolean isConcentric = waveType == OceanWaves.ConcentricWaves;
-				boolean isRipples = waveType == OceanWaves.Ripples;
+				boolean isSincWaves = waveType == OceanWaves.SincWaves;
 				concentricWavesOptionsHider.setVisible(waveType != OceanWaves.None);
 				concentricStyleHider.setVisible(isConcentric);
 				jitterLevelHider.setVisible(isConcentric && jitterWavesCheckbox.isSelected());
 				wavyLineControls.setVisible(waveType == OceanWaves.WavyLines);
 				hatchingControls.setVisible(waveType == OceanWaves.Hatching);
-				waveDashControls.setVisible(waveType == OceanWaves.WaveDashes);
-				rippleWavesLevelSlider.setVisible(isRipples);
-				rippleWavesLevelSliderHider.setVisible(isRipples);
+				rippleControls.setVisible(waveType == OceanWaves.Ripples);
+				sincWavesLevelSlider.setVisible(isSincWaves);
+				sincWavesLevelSliderHider.setVisible(isSincWaves);
 				oceanWavesColorHider.setVisible(waveType != OceanWaves.None);
 				handleTerrainChange();
 			}
@@ -1056,19 +1056,19 @@ public class ThemePanel extends JTabbedPane
 		jitterLevelSlider = createWaveLineSlider(0, MapSettings.maxJitterLevel);
 		jitterLevelHider = addCheckboxSlider(styleOrganizer, jitterLevelSlider, Translation.get("theme.jitterLevel.label"), Translation.get("theme.jitterLevel.help"));
 
-		// Wavy lines, hatching and wave dashes each have their own style options, so that changing one style leaves the others' look alone.
+		// Wavy lines, hatching and ripples each have their own style options, so that changing one style leaves the others' look alone.
 		wavyLineControls = new WaveRowStyleControls(styleOrganizer, OceanWaves.WavyLines);
 		hatchingControls = new WaveRowStyleControls(styleOrganizer, OceanWaves.Hatching);
-		waveDashControls = new WaveRowStyleControls(styleOrganizer, OceanWaves.WaveDashes);
+		rippleControls = new WaveRowStyleControls(styleOrganizer, OceanWaves.Ripples);
 
-		rippleWavesLevelSlider = new JSlider();
-		rippleWavesLevelSlider.setMinorTickSpacing(5);
-		rippleWavesLevelSlider.setPaintTicks(true);
-		rippleWavesLevelSlider.setPaintLabels(true);
-		rippleWavesLevelSlider.setMajorTickSpacing(20);
-		rippleWavesLevelSlider.setMaximum(100);
-		createMapChangeListenerForTerrainChange(rippleWavesLevelSlider);
-		rippleWavesLevelSliderHider = styleOrganizer.addLabelAndComponent(Translation.get("theme.waveWidth.label"), Translation.get("theme.waveWidth.help"), rippleWavesLevelSlider);
+		sincWavesLevelSlider = new JSlider();
+		sincWavesLevelSlider.setMinorTickSpacing(5);
+		sincWavesLevelSlider.setPaintTicks(true);
+		sincWavesLevelSlider.setPaintLabels(true);
+		sincWavesLevelSlider.setMajorTickSpacing(20);
+		sincWavesLevelSlider.setMaximum(100);
+		createMapChangeListenerForTerrainChange(sincWavesLevelSlider);
+		sincWavesLevelSliderHider = styleOrganizer.addLabelAndComponent(Translation.get("theme.waveWidth.label"), Translation.get("theme.waveWidth.help"), sincWavesLevelSlider);
 
 		CollapsiblePanel styleOptionsCard = new CollapsiblePanel("wave_style_options", Translation.get("theme.styleOptions.title"), styleOrganizer.panel);
 		concentricWavesOptionsHider = organizer.addLeftAlignedComponent(styleOptionsCard, GridBagOrganizer.rowVerticalInset, GridBagOrganizer.rowVerticalInset, false);
@@ -1707,7 +1707,7 @@ public class ThemePanel extends JTabbedPane
 	{
 		coastShadingSlider.setValue(settings.coastShadingLevel);
 		oceanShadingSlider.setValue(settings.oceanShadingLevel);
-		rippleWavesLevelSlider.setValue(settings.oceanWavesLevel);
+		sincWavesLevelSlider.setValue(settings.oceanWavesLevel);
 		concentricWavesLevelSlider.setValue(settings.concentricWaveCount);
 		waveTypeComboBox.setSelectedItem(settings.oceanWavesType);
 		wavyLineControls.load(settings.getWavyLineStyle());
@@ -1715,7 +1715,7 @@ public class ThemePanel extends JTabbedPane
 		hatchingControls.load(settings.getHatchingStyle());
 		hatchingControls.loadBreakLevel(settings.hatchingBreakLevel);
 		hatchingControls.loadFade(settings.fadeHatching, settings.hatchingFadeVariation);
-		waveDashControls.load(settings.getWaveDashStyle());
+		rippleControls.load(settings.getRippleStyle());
 		fadeWavesCheckbox.setSelected(settings.fadeConcentricWaves);
 		jitterWavesCheckbox.setSelected(settings.jitterToConcentricWaves);
 		jitterLevelSlider.setValue(settings.jitterLevel);
@@ -1959,7 +1959,7 @@ public class ThemePanel extends JTabbedPane
 	public void getSettingsFromGUI(MapSettings settings)
 	{
 		settings.coastShadingLevel = coastShadingSlider.getValue();
-		settings.oceanWavesLevel = rippleWavesLevelSlider.getValue();
+		settings.oceanWavesLevel = sincWavesLevelSlider.getValue();
 		settings.oceanShadingLevel = oceanShadingSlider.getValue();
 		settings.concentricWaveCount = concentricWavesLevelSlider.getValue();
 		settings.oceanWavesType = (OceanWaves) waveTypeComboBox.getSelectedItem();
@@ -1969,7 +1969,7 @@ public class ThemePanel extends JTabbedPane
 		settings.hatchingBreakLevel = hatchingControls.getBreakLevel();
 		settings.fadeHatching = hatchingControls.isFadeSelected();
 		settings.hatchingFadeVariation = hatchingControls.getFadeVariation();
-		settings.setWaveDashStyle(waveDashControls.getStyle());
+		settings.setRippleStyle(rippleControls.getStyle());
 		settings.fadeConcentricWaves = fadeWavesCheckbox.isSelected();
 		settings.jitterToConcentricWaves = jitterWavesCheckbox.isSelected();
 		settings.jitterLevel = jitterLevelSlider.getValue();
@@ -2144,7 +2144,7 @@ public class ThemePanel extends JTabbedPane
 	}
 
 	/**
-	 * Creates a slider for the width of the lines drawn by concentric waves, wavy lines, hatching or wave dashes. Its values are tenths of
+	 * Creates a slider for the width of the lines drawn by concentric waves, wavy lines, hatching or ripples. Its values are tenths of
 	 * a pixel.
 	 */
 	private JSlider createWaveLineWidthSlider()
@@ -2196,17 +2196,17 @@ public class ThemePanel extends JTabbedPane
 				return Translation.get("theme.waveType.wavyLines");
 			case Hatching:
 				return Translation.get("theme.waveType.hatching");
-			case WaveDashes:
-				return Translation.get("theme.waveType.waveDashes");
 			case Ripples:
 				return Translation.get("theme.waveType.ripples");
+			case SincWaves:
+				return Translation.get("theme.waveType.sincWaves");
 			default:
 				return Translation.get("theme.waveType.none");
 		}
 	}
 
 	/**
-	 * The style options of one of the wave styles drawn as rows of strokes: wavy lines, hatching or wave dashes. They are grouped as the
+	 * The style options of one of the wave styles drawn as rows of strokes: wavy lines, hatching or ripples. They are grouped as the
 	 * shape, the options for the lines themselves, the options for the rows they are stacked in, and the shore detail between the rows and
 	 * the coast.
 	 */
@@ -2247,14 +2247,14 @@ public class ThemePanel extends JTabbedPane
 
 		/**
 		 * @param waveType
-		 *            Which of wavy lines, hatching or wave dashes these are the controls for. Hatching has no shape to choose, since it is
-		 *            always straight. Wavy lines and hatching break, and only hatching fades out away from the coast. Wave dashes already thin
+		 *            Which of wavy lines, hatching or ripples these are the controls for. Hatching has no shape to choose, since it is
+		 *            always straight. Wavy lines and hatching break, and only hatching fades out away from the coast. Ripples already thin
 		 *            out away from the coast by getting shorter and sparser.
 		 */
 		WaveRowStyleControls(GridBagOrganizer organizer, OceanWaves waveType)
 		{
 			boolean hasShape = waveType != OceanWaves.Hatching;
-			boolean hasBreaks = waveType != OceanWaves.WaveDashes;
+			boolean hasBreaks = waveType != OceanWaves.Ripples;
 			boolean hasFade = waveType == OceanWaves.Hatching;
 
 			RowHider firstRows = null;

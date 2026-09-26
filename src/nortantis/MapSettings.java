@@ -43,7 +43,7 @@ public class MapSettings implements Serializable
 	 * as "3.2", and is greater than "3.18"). Each new value here must have a numerically greater segment than every version that came
 	 * before it at the same position.
 	 */
-	public static final String currentVersion = "3.22";
+	public static final String currentVersion = "3.23";
 	public static final String fileExtension = "nort";
 	public static final String fileExtensionWithDot = "." + fileExtension;
 	public static final double defaultPointPrecision = 2.0;
@@ -53,7 +53,7 @@ public class MapSettings implements Serializable
 	public static final int defaultJitterLevel = 10;
 	public static final int maxJitterLevel = 10;
 	/**
-	 * The jitter level of wavy lines, hatching and wave dashes in maps that don't store one.
+	 * The jitter level of wavy lines, hatching and ripples in maps that don't store one.
 	 */
 	public static final int defaultWaveRowJitterLevel = 5;
 	public static final WaveLineShape defaultWavyLineShape = WaveLineShape.Scallops;
@@ -88,14 +88,14 @@ public class MapSettings implements Serializable
 	public static final int defaultHatchingBreakLevel = 5;
 	public static final boolean defaultFadeHatching = true;
 	public static final int defaultHatchingFadeVariation = 7;
-	public static final WaveLineShape defaultWaveDashShape = WaveLineShape.Sine;
-	public static final int defaultWaveDashRowHeight = 6;
-	public static final int defaultWaveDashRowGap = 3;
-	public static final int defaultWaveDashRowSpacingVariation = 0;
-	public static final int defaultWaveDashLength = 30;
-	public static final int defaultWaveDashLengthVariation = 4;
+	public static final WaveLineShape defaultRippleShape = WaveLineShape.Sine;
+	public static final int defaultRippleRowHeight = 6;
+	public static final int defaultRippleRowGap = 3;
+	public static final int defaultRippleRowSpacingVariation = 0;
+	public static final int defaultRippleLength = 30;
+	public static final int defaultRippleLengthVariation = 4;
 	/**
-	 * The width, in pixels at resolution 1, of concentric waves' lines and of wavy lines, hatching and wave dashes in maps that don't store
+	 * The width, in pixels at resolution 1, of concentric waves' lines and of wavy lines, hatching and ripples in maps that don't store
 	 * one.
 	 */
 	public static final double defaultWaveLineWidth = 2.4;
@@ -193,20 +193,20 @@ public class MapSettings implements Serializable
 	 */
 	public int wavyLineLengthVariation = defaultWavyLineLengthVariation;
 	/*
-	 * Wave dashes have their own copies of the wavy lines' style settings, so that switching between the two styles leaves each one's look
+	 * Ripples have their own copies of the wavy lines' style settings, so that switching between the two styles leaves each one's look
 	 * alone. Each means the same as the wavy lines setting of the same name.
 	 */
-	public WaveLineShape waveDashShape = defaultWaveDashShape;
-	public int waveDashRowHeight = defaultWaveDashRowHeight;
-	public int waveDashRowGap = defaultWaveDashRowGap;
-	public int waveDashRowSpacingVariation = defaultWaveDashRowSpacingVariation;
-	public int waveDashLength = defaultWaveDashLength;
-	public int waveDashLengthVariation = defaultWaveDashLengthVariation;
-	public boolean jitterToWaveDashes;
-	public int waveDashJitterLevel = defaultWaveRowJitterLevel;
-	public ShoreDetail waveDashShoreDetail = ShoreDetail.ConcentricWave;
-	public int waveDashShoreJitterLevel;
-	public double waveDashLineWidth = defaultWaveLineWidth;
+	public WaveLineShape rippleShape = defaultRippleShape;
+	public int rippleRowHeight = defaultRippleRowHeight;
+	public int rippleRowGap = defaultRippleRowGap;
+	public int rippleRowSpacingVariation = defaultRippleRowSpacingVariation;
+	public int rippleLength = defaultRippleLength;
+	public int rippleLengthVariation = defaultRippleLengthVariation;
+	public boolean jitterToRipples;
+	public int rippleJitterLevel = defaultWaveRowJitterLevel;
+	public ShoreDetail rippleShoreDetail = ShoreDetail.ConcentricWave;
+	public int rippleShoreJitterLevel;
+	public double rippleLineWidth = defaultWaveLineWidth;
 	/*
 	 * Hatching has its own copies of the wavy lines' style settings too, except for the shape, since hatching is always straight. Each
 	 * means the same as the wavy lines setting of the same name.
@@ -575,17 +575,17 @@ public class MapSettings implements Serializable
 		root.put("wavyLineRowSpacingVariation", wavyLineRowSpacingVariation);
 		root.put("wavyLineLength", wavyLineLength);
 		root.put("wavyLineLengthVariation", wavyLineLengthVariation);
-		root.put("waveDashShape", enumToJson(waveDashShape));
-		root.put("waveDashRowHeight", waveDashRowHeight);
-		root.put("waveDashRowGap", waveDashRowGap);
-		root.put("waveDashRowSpacingVariation", waveDashRowSpacingVariation);
-		root.put("waveDashLength", waveDashLength);
-		root.put("waveDashLengthVariation", waveDashLengthVariation);
-		root.put("jitterToWaveDashes", jitterToWaveDashes);
-		root.put("waveDashJitterLevel", waveDashJitterLevel);
-		root.put("waveDashShoreDetail", enumToJson(waveDashShoreDetail));
-		root.put("waveDashShoreJitterLevel", waveDashShoreJitterLevel);
-		root.put("waveDashLineWidth", waveDashLineWidth);
+		root.put("rippleShape", enumToJson(rippleShape));
+		root.put("rippleRowHeight", rippleRowHeight);
+		root.put("rippleRowGap", rippleRowGap);
+		root.put("rippleRowSpacingVariation", rippleRowSpacingVariation);
+		root.put("rippleLength", rippleLength);
+		root.put("rippleLengthVariation", rippleLengthVariation);
+		root.put("jitterToRipples", jitterToRipples);
+		root.put("rippleJitterLevel", rippleJitterLevel);
+		root.put("rippleShoreDetail", enumToJson(rippleShoreDetail));
+		root.put("rippleShoreJitterLevel", rippleShoreJitterLevel);
+		root.put("rippleLineWidth", rippleLineWidth);
 		root.put("hatchingRowHeight", hatchingRowHeight);
 		root.put("hatchingRowGap", hatchingRowGap);
 		root.put("hatchingRowSpacingVariation", hatchingRowSpacingVariation);
@@ -1341,17 +1341,17 @@ public class MapSettings implements Serializable
 		wavyLineRowSpacingVariation = root.containsKey("wavyLineRowSpacingVariation") ? (int) (long) root.get("wavyLineRowSpacingVariation") : defaultWavyLineRowSpacingVariation;
 		wavyLineLength = root.containsKey("wavyLineLength") ? (int) (long) root.get("wavyLineLength") : defaultWavyLineLength;
 		wavyLineLengthVariation = root.containsKey("wavyLineLengthVariation") ? (int) (long) root.get("wavyLineLengthVariation") : defaultWavyLineLengthVariation;
-		waveDashShape = root.containsKey("waveDashShape") ? WaveLineShape.valueOf((String) root.get("waveDashShape")) : defaultWaveDashShape;
-		waveDashRowHeight = root.containsKey("waveDashRowHeight") ? (int) (long) root.get("waveDashRowHeight") : defaultWaveDashRowHeight;
-		waveDashRowGap = root.containsKey("waveDashRowGap") ? (int) (long) root.get("waveDashRowGap") : defaultWaveDashRowGap;
-		waveDashRowSpacingVariation = root.containsKey("waveDashRowSpacingVariation") ? (int) (long) root.get("waveDashRowSpacingVariation") : defaultWaveDashRowSpacingVariation;
-		waveDashLength = root.containsKey("waveDashLength") ? (int) (long) root.get("waveDashLength") : defaultWaveDashLength;
-		waveDashLengthVariation = root.containsKey("waveDashLengthVariation") ? (int) (long) root.get("waveDashLengthVariation") : defaultWaveDashLengthVariation;
-		jitterToWaveDashes = root.containsKey("jitterToWaveDashes") && (boolean) root.get("jitterToWaveDashes");
-		waveDashJitterLevel = root.containsKey("waveDashJitterLevel") ? (int) (long) root.get("waveDashJitterLevel") : defaultWaveRowJitterLevel;
-		waveDashShoreDetail = root.containsKey("waveDashShoreDetail") ? ShoreDetail.valueOf((String) root.get("waveDashShoreDetail")) : ShoreDetail.ConcentricWave;
-		waveDashShoreJitterLevel = root.containsKey("waveDashShoreJitterLevel") ? (int) (long) root.get("waveDashShoreJitterLevel") : 0;
-		waveDashLineWidth = root.containsKey("waveDashLineWidth") ? (double) root.get("waveDashLineWidth") : defaultWaveLineWidth;
+		rippleShape = root.containsKey("rippleShape") ? WaveLineShape.valueOf((String) root.get("rippleShape")) : defaultRippleShape;
+		rippleRowHeight = root.containsKey("rippleRowHeight") ? (int) (long) root.get("rippleRowHeight") : defaultRippleRowHeight;
+		rippleRowGap = root.containsKey("rippleRowGap") ? (int) (long) root.get("rippleRowGap") : defaultRippleRowGap;
+		rippleRowSpacingVariation = root.containsKey("rippleRowSpacingVariation") ? (int) (long) root.get("rippleRowSpacingVariation") : defaultRippleRowSpacingVariation;
+		rippleLength = root.containsKey("rippleLength") ? (int) (long) root.get("rippleLength") : defaultRippleLength;
+		rippleLengthVariation = root.containsKey("rippleLengthVariation") ? (int) (long) root.get("rippleLengthVariation") : defaultRippleLengthVariation;
+		jitterToRipples = root.containsKey("jitterToRipples") && (boolean) root.get("jitterToRipples");
+		rippleJitterLevel = root.containsKey("rippleJitterLevel") ? (int) (long) root.get("rippleJitterLevel") : defaultWaveRowJitterLevel;
+		rippleShoreDetail = root.containsKey("rippleShoreDetail") ? ShoreDetail.valueOf((String) root.get("rippleShoreDetail")) : ShoreDetail.ConcentricWave;
+		rippleShoreJitterLevel = root.containsKey("rippleShoreJitterLevel") ? (int) (long) root.get("rippleShoreJitterLevel") : 0;
+		rippleLineWidth = root.containsKey("rippleLineWidth") ? (double) root.get("rippleLineWidth") : defaultWaveLineWidth;
 		hatchingRowHeight = root.containsKey("hatchingRowHeight") ? (int) (long) root.get("hatchingRowHeight") : defaultHatchingRowHeight;
 		hatchingRowGap = root.containsKey("hatchingRowGap") ? (int) (long) root.get("hatchingRowGap") : defaultHatchingRowGap;
 		hatchingRowSpacingVariation = root.containsKey("hatchingRowSpacingVariation") ? (int) (long) root.get("hatchingRowSpacingVariation") : defaultHatchingRowSpacingVariation;
@@ -1413,7 +1413,20 @@ public class MapSettings implements Serializable
 		{
 			coastlineWidth = MapCreator.calcSizeMultiplierFromResolutionScaleRounded(1.0);
 		}
-		oceanWavesType = OceanWaves.valueOf((String) root.get("oceanEffect"));
+		String oceanWavesTypeName = (String) root.get("oceanEffect");
+		// Maps saved before 3.23 call sinc waves "Ripples" and ripples "WaveDashes".
+		if (!isVersionGreaterThanOrEqualTo(version, "3.23"))
+		{
+			if (oceanWavesTypeName.equals("Ripples"))
+			{
+				oceanWavesTypeName = OceanWaves.SincWaves.name();
+			}
+			else if (oceanWavesTypeName.equals("WaveDashes"))
+			{
+				oceanWavesTypeName = OceanWaves.Ripples.name();
+			}
+		}
+		oceanWavesType = OceanWaves.valueOf(oceanWavesTypeName);
 
 		// oceanEffectsLevel was replaced by oceanShadingLevel and oceanWavesLevel, so convert the values here.
 		int deprecatedOceanEffectsLevel = root.containsKey("oceanEffectsLevel") ? (int) (long) root.get("oceanEffectsLevel") : 0;
@@ -2278,9 +2291,9 @@ public class MapSettings implements Serializable
 			oceanShadingColor = Color.create(oceanShadingColor.getRed(), oceanShadingColor.getGreen(), oceanShadingColor.getBlue(), SettingsGenerator.defaultOceanShadingAlpha);
 		}
 
-		if (oceanWavesType == OceanWaves.Ripples && oceanWavesColor.getAlpha() == 255)
+		if (oceanWavesType == OceanWaves.SincWaves && oceanWavesColor.getAlpha() == 255)
 		{
-			oceanWavesColor = Color.create(oceanWavesColor.getRed(), oceanWavesColor.getGreen(), oceanWavesColor.getBlue(), SettingsGenerator.defaultOceanRipplesAlpha);
+			oceanWavesColor = Color.create(oceanWavesColor.getRed(), oceanWavesColor.getGreen(), oceanWavesColor.getBlue(), SettingsGenerator.defaultSincWavesAlpha);
 		}
 	}
 
@@ -2852,12 +2865,12 @@ public class MapSettings implements Serializable
 		return (int) (sizeMultiplier * oceanShadingLevel) > 0;
 	}
 
-	public boolean hasRippleWaves(double resolutionScale)
+	public boolean hasSincWaves(double resolutionScale)
 	{
 		double sizeMultiplier = MapCreator.calcSizeMultiplierFromResolutionScaleRounded(resolutionScale);
-		// The cast must apply to the product so that this matches the kernel size the ripple drawing code derives from it. Testing the
-		// un-truncated product instead would report ripples for a kernel that truncates to size 0.
-		return oceanWavesType == OceanWaves.Ripples && ((int) (oceanWavesLevel * sizeMultiplier)) > 0;
+		// The cast must apply to the product so that this matches the kernel size the sinc wave drawing code derives from it. Testing the
+		// un-truncated product instead would report sinc waves for a kernel that truncates to size 0.
+		return oceanWavesType == OceanWaves.SincWaves && ((int) (oceanWavesLevel * sizeMultiplier)) > 0;
 	}
 
 	public boolean hasConcentricWaves()
@@ -2871,17 +2884,17 @@ public class MapSettings implements Serializable
 	 */
 	public boolean hasWaveRows()
 	{
-		return oceanWavesType == OceanWaves.WavyLines || oceanWavesType == OceanWaves.Hatching || oceanWavesType == OceanWaves.WaveDashes;
+		return oceanWavesType == OceanWaves.WavyLines || oceanWavesType == OceanWaves.Hatching || oceanWavesType == OceanWaves.Ripples;
 	}
 
 	/**
-	 * The style settings of whichever of wave dashes or hatching the ocean waves are, and of wavy lines otherwise.
+	 * The style settings of whichever of ripples or hatching the ocean waves are, and of wavy lines otherwise.
 	 */
 	public WaveRowStyle getWaveRowStyle()
 	{
-		if (oceanWavesType == OceanWaves.WaveDashes)
+		if (oceanWavesType == OceanWaves.Ripples)
 		{
-			return getWaveDashStyle();
+			return getRippleStyle();
 		}
 		if (oceanWavesType == OceanWaves.Hatching)
 		{
@@ -2936,10 +2949,10 @@ public class MapSettings implements Serializable
 		wavyLineShoreJitterLevel = style.shoreJitterLevel();
 	}
 
-	public WaveRowStyle getWaveDashStyle()
+	public WaveRowStyle getRippleStyle()
 	{
-		return new WaveRowStyle(waveDashShape, waveDashLineWidth, waveDashLength, waveDashLengthVariation, jitterToWaveDashes, waveDashJitterLevel, waveDashRowHeight,
-				waveDashRowGap, waveDashRowSpacingVariation, waveDashShoreDetail, waveDashShoreJitterLevel);
+		return new WaveRowStyle(rippleShape, rippleLineWidth, rippleLength, rippleLengthVariation, jitterToRipples, rippleJitterLevel, rippleRowHeight,
+				rippleRowGap, rippleRowSpacingVariation, rippleShoreDetail, rippleShoreJitterLevel);
 	}
 
 	/**
@@ -2968,23 +2981,23 @@ public class MapSettings implements Serializable
 		hatchingShoreJitterLevel = style.shoreJitterLevel();
 	}
 
-	public void setWaveDashStyle(WaveRowStyle style)
+	public void setRippleStyle(WaveRowStyle style)
 	{
-		waveDashShape = style.shape();
-		waveDashRowHeight = style.rowHeight();
-		waveDashRowGap = style.rowGap();
-		waveDashRowSpacingVariation = style.rowSpacingVariation();
-		waveDashLength = style.length();
-		waveDashLengthVariation = style.lengthVariation();
-		jitterToWaveDashes = style.jitter();
-		waveDashJitterLevel = style.jitterLevel();
-		waveDashLineWidth = style.lineWidth();
-		waveDashShoreDetail = style.shoreDetail();
-		waveDashShoreJitterLevel = style.shoreJitterLevel();
+		rippleShape = style.shape();
+		rippleRowHeight = style.rowHeight();
+		rippleRowGap = style.rowGap();
+		rippleRowSpacingVariation = style.rowSpacingVariation();
+		rippleLength = style.length();
+		rippleLengthVariation = style.lengthVariation();
+		jitterToRipples = style.jitter();
+		rippleJitterLevel = style.jitterLevel();
+		rippleLineWidth = style.lineWidth();
+		rippleShoreDetail = style.shoreDetail();
+		rippleShoreJitterLevel = style.shoreJitterLevel();
 	}
 
 	/**
-	 * The style settings shared by wavy lines, hatching and wave dashes, each of which keeps its own. See the wavy lines fields of the same
+	 * The style settings shared by wavy lines, hatching and ripples, each of which keeps its own. See the wavy lines fields of the same
 	 * names.
 	 *
 	 * @param jitter
@@ -2996,7 +3009,7 @@ public class MapSettings implements Serializable
 	}
 
 	/**
-	 * What the wavy lines, hatching and wave dashes styles draw between their rows and the coast.
+	 * What the wavy lines, hatching and ripples styles draw between their rows and the coast.
 	 */
 	public enum ShoreDetail
 	{
@@ -3487,15 +3500,12 @@ public class MapSettings implements Serializable
 	{
 		@Deprecated
 		Blur,
-		/**
-		 * Shown as "Sinc waves" in the editor.
-		 */
-		Ripples, ConcentricWaves, @Deprecated
+		SincWaves, ConcentricWaves, @Deprecated
 		FadingConcentricWaves, None, WavyLines,
 		/**
-		 * Rows of lines that break into dashes farther from the coast. Shown as "Ripples" in the editor.
+		 * Rows of lines that break into dashes farther from the coast.
 		 */
-		WaveDashes,
+		Ripples,
 		/**
 		 * Rows of straight lines.
 		 */
@@ -3504,7 +3514,7 @@ public class MapSettings implements Serializable
 
 	/**
 	 * The shape each wave line follows as it runs from left to right. Scallops and Sine repeat once per wavelength. Straight is only for
-	 * hatching, so it isn't offered as a shape for wavy lines, hatching or wave dashes.
+	 * hatching, so it isn't offered as a shape for wavy lines, hatching or ripples.
 	 */
 	public enum WaveLineShape
 	{
@@ -3752,28 +3762,28 @@ public class MapSettings implements Serializable
 			differences.add("concentricWaveLineWidth: " + concentricWaveLineWidth + " vs " + other.concentricWaveLineWidth);
 		if (Double.doubleToLongBits(wavyLineWidth) != Double.doubleToLongBits(other.wavyLineWidth))
 			differences.add("wavyLineWidth: " + wavyLineWidth + " vs " + other.wavyLineWidth);
-		if (waveDashShape != other.waveDashShape)
-			differences.add("waveDashShape: " + waveDashShape + " vs " + other.waveDashShape);
-		if (waveDashRowHeight != other.waveDashRowHeight)
-			differences.add("waveDashRowHeight: " + waveDashRowHeight + " vs " + other.waveDashRowHeight);
-		if (waveDashRowGap != other.waveDashRowGap)
-			differences.add("waveDashRowGap: " + waveDashRowGap + " vs " + other.waveDashRowGap);
-		if (waveDashRowSpacingVariation != other.waveDashRowSpacingVariation)
-			differences.add("waveDashRowSpacingVariation: " + waveDashRowSpacingVariation + " vs " + other.waveDashRowSpacingVariation);
-		if (waveDashLength != other.waveDashLength)
-			differences.add("waveDashLength: " + waveDashLength + " vs " + other.waveDashLength);
-		if (waveDashLengthVariation != other.waveDashLengthVariation)
-			differences.add("waveDashLengthVariation: " + waveDashLengthVariation + " vs " + other.waveDashLengthVariation);
-		if (jitterToWaveDashes != other.jitterToWaveDashes)
-			differences.add("jitterToWaveDashes: " + jitterToWaveDashes + " vs " + other.jitterToWaveDashes);
-		if (waveDashJitterLevel != other.waveDashJitterLevel)
-			differences.add("waveDashJitterLevel: " + waveDashJitterLevel + " vs " + other.waveDashJitterLevel);
-		if (waveDashShoreDetail != other.waveDashShoreDetail)
-			differences.add("waveDashShoreDetail: " + waveDashShoreDetail + " vs " + other.waveDashShoreDetail);
-		if (waveDashShoreJitterLevel != other.waveDashShoreJitterLevel)
-			differences.add("waveDashShoreJitterLevel: " + waveDashShoreJitterLevel + " vs " + other.waveDashShoreJitterLevel);
-		if (Double.doubleToLongBits(waveDashLineWidth) != Double.doubleToLongBits(other.waveDashLineWidth))
-			differences.add("waveDashLineWidth: " + waveDashLineWidth + " vs " + other.waveDashLineWidth);
+		if (rippleShape != other.rippleShape)
+			differences.add("rippleShape: " + rippleShape + " vs " + other.rippleShape);
+		if (rippleRowHeight != other.rippleRowHeight)
+			differences.add("rippleRowHeight: " + rippleRowHeight + " vs " + other.rippleRowHeight);
+		if (rippleRowGap != other.rippleRowGap)
+			differences.add("rippleRowGap: " + rippleRowGap + " vs " + other.rippleRowGap);
+		if (rippleRowSpacingVariation != other.rippleRowSpacingVariation)
+			differences.add("rippleRowSpacingVariation: " + rippleRowSpacingVariation + " vs " + other.rippleRowSpacingVariation);
+		if (rippleLength != other.rippleLength)
+			differences.add("rippleLength: " + rippleLength + " vs " + other.rippleLength);
+		if (rippleLengthVariation != other.rippleLengthVariation)
+			differences.add("rippleLengthVariation: " + rippleLengthVariation + " vs " + other.rippleLengthVariation);
+		if (jitterToRipples != other.jitterToRipples)
+			differences.add("jitterToRipples: " + jitterToRipples + " vs " + other.jitterToRipples);
+		if (rippleJitterLevel != other.rippleJitterLevel)
+			differences.add("rippleJitterLevel: " + rippleJitterLevel + " vs " + other.rippleJitterLevel);
+		if (rippleShoreDetail != other.rippleShoreDetail)
+			differences.add("rippleShoreDetail: " + rippleShoreDetail + " vs " + other.rippleShoreDetail);
+		if (rippleShoreJitterLevel != other.rippleShoreJitterLevel)
+			differences.add("rippleShoreJitterLevel: " + rippleShoreJitterLevel + " vs " + other.rippleShoreJitterLevel);
+		if (Double.doubleToLongBits(rippleLineWidth) != Double.doubleToLongBits(other.rippleLineWidth))
+			differences.add("rippleLineWidth: " + rippleLineWidth + " vs " + other.rippleLineWidth);
 		if (hatchingRowHeight != other.hatchingRowHeight)
 			differences.add("hatchingRowHeight: " + hatchingRowHeight + " vs " + other.hatchingRowHeight);
 		if (hatchingRowGap != other.hatchingRowGap)
@@ -3930,9 +3940,9 @@ public class MapSettings implements Serializable
 				frayedBorderSize, generateBackground, generateBackgroundFromTexture, generatedHeight, generatedWidth, gridOverlayColor, gridOverlayLayer, gridOverlayLineWidth,
 				gridOverlayRowOrColCount, gridOverlayShape, gridOverlayXOffset, gridOverlayYOffset, grungeWidth, heightmapExportPath, heightmapResolution, hillScale, hueRange, iconFillColorsByType,
 				iconFilterColorsByType, imageExportPath, jitterLevel, jitterToConcentricWaves, jitterToWavyLines, wavyLineJitterLevel, wavyLineBreakLevel,
-				wavyLineShoreDetail, wavyLineShoreJitterLevel, concentricWaveLineWidth, wavyLineWidth, waveDashShape, waveDashRowHeight, waveDashRowGap,
-				waveDashRowSpacingVariation, waveDashLength, waveDashLengthVariation, jitterToWaveDashes, waveDashJitterLevel, waveDashShoreDetail,
-				waveDashShoreJitterLevel, waveDashLineWidth, hatchingRowHeight, hatchingRowGap, hatchingRowSpacingVariation, hatchingLength,
+				wavyLineShoreDetail, wavyLineShoreJitterLevel, concentricWaveLineWidth, wavyLineWidth, rippleShape, rippleRowHeight, rippleRowGap,
+				rippleRowSpacingVariation, rippleLength, rippleLengthVariation, jitterToRipples, rippleJitterLevel, rippleShoreDetail,
+				rippleShoreJitterLevel, rippleLineWidth, hatchingRowHeight, hatchingRowGap, hatchingRowSpacingVariation, hatchingLength,
 				hatchingLengthVariation, jitterToHatching, hatchingJitterLevel, hatchingShoreDetail, hatchingShoreJitterLevel, hatchingLineWidth, hatchingBreakLevel,
 				fadeHatching, hatchingFadeVariation, landColor, landShape, lineStyle, lloydRelaxationsScale, maximizeOpacityByType, mountainRangeFont, mountainScale,
 				oceanColor, oceanEffectsColor, oceanEffectsLevel, oceanShadingColor, oceanShadingLevel, oceanWavesColor, oceanWavesLevel, oceanWavesType, otherMountainsFont, overlayImageDefaultScale,
@@ -3995,11 +4005,11 @@ public class MapSettings implements Serializable
 				&& wavyLineShoreDetail == other.wavyLineShoreDetail
 				&& wavyLineShoreJitterLevel == other.wavyLineShoreJitterLevel
 				&& Double.doubleToLongBits(concentricWaveLineWidth) == Double.doubleToLongBits(other.concentricWaveLineWidth)
-				&& Double.doubleToLongBits(wavyLineWidth) == Double.doubleToLongBits(other.wavyLineWidth) && waveDashShape == other.waveDashShape
-				&& waveDashRowHeight == other.waveDashRowHeight && waveDashRowGap == other.waveDashRowGap && waveDashRowSpacingVariation == other.waveDashRowSpacingVariation && waveDashLength == other.waveDashLength
-				&& waveDashLengthVariation == other.waveDashLengthVariation && jitterToWaveDashes == other.jitterToWaveDashes && waveDashJitterLevel == other.waveDashJitterLevel
-				&& waveDashShoreDetail == other.waveDashShoreDetail && waveDashShoreJitterLevel == other.waveDashShoreJitterLevel
-				&& Double.doubleToLongBits(waveDashLineWidth) == Double.doubleToLongBits(other.waveDashLineWidth) && hatchingRowHeight == other.hatchingRowHeight
+				&& Double.doubleToLongBits(wavyLineWidth) == Double.doubleToLongBits(other.wavyLineWidth) && rippleShape == other.rippleShape
+				&& rippleRowHeight == other.rippleRowHeight && rippleRowGap == other.rippleRowGap && rippleRowSpacingVariation == other.rippleRowSpacingVariation && rippleLength == other.rippleLength
+				&& rippleLengthVariation == other.rippleLengthVariation && jitterToRipples == other.jitterToRipples && rippleJitterLevel == other.rippleJitterLevel
+				&& rippleShoreDetail == other.rippleShoreDetail && rippleShoreJitterLevel == other.rippleShoreJitterLevel
+				&& Double.doubleToLongBits(rippleLineWidth) == Double.doubleToLongBits(other.rippleLineWidth) && hatchingRowHeight == other.hatchingRowHeight
 				&& hatchingRowGap == other.hatchingRowGap && hatchingRowSpacingVariation == other.hatchingRowSpacingVariation && hatchingLength == other.hatchingLength
 				&& hatchingLengthVariation == other.hatchingLengthVariation && jitterToHatching == other.jitterToHatching && hatchingJitterLevel == other.hatchingJitterLevel
 				&& hatchingShoreDetail == other.hatchingShoreDetail && hatchingShoreJitterLevel == other.hatchingShoreJitterLevel

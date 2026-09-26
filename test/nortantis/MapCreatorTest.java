@@ -289,13 +289,13 @@ public class MapCreatorTest
 	}
 
 	/**
-	 * Like {@link #incrementalUpdateWithWavyLinesMatchesFullDrawWhenCentersChangeBetweenLandAndOcean}, for wave dashes, where changing land
+	 * Like {@link #incrementalUpdateWithWavyLinesMatchesFullDrawWhenCentersChangeBetweenLandAndOcean}, for ripples, where changing land
 	 * also changes the blurred land that shapes where the dashes end.
 	 */
 	@Test
-	public void incrementalUpdateWithWaveDashesMatchesFullDrawWhenCentersChangeBetweenLandAndOcean()
+	public void incrementalUpdateWithRipplesMatchesFullDrawWhenCentersChangeBetweenLandAndOcean()
 	{
-		runIncrementalLandWaterChangesWithWaveRows(MapSettings.OceanWaves.WaveDashes);
+		runIncrementalLandWaterChangesWithWaveRows(MapSettings.OceanWaves.Ripples);
 	}
 
 	private void runIncrementalLandWaterChangesWithWaveRows(MapSettings.OceanWaves oceanWavesType)
@@ -332,13 +332,13 @@ public class MapCreatorTest
 	}
 
 	/**
-	 * Like {@link #wavyLinesDrawnForPartOfTheMapMatchFullDraw}, for wave dashes, whose blurred land and dash pattern must also come out the
+	 * Like {@link #wavyLinesDrawnForPartOfTheMapMatchFullDraw}, for ripples, whose blurred land and dash pattern must also come out the
 	 * same when only part of the map is drawn.
 	 */
 	@Test
-	public void waveDashesDrawnForPartOfTheMapMatchFullDraw()
+	public void ripplesDrawnForPartOfTheMapMatchFullDraw()
 	{
-		assertWaveRowsDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves.WaveDashes, 30);
+		assertWaveRowsDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves.Ripples, 30);
 	}
 
 	/**
@@ -352,12 +352,12 @@ public class MapCreatorTest
 	}
 
 	/**
-	 * Like {@link #wavyLinesWithShoreGapDrawnForPartOfTheMapMatchFullDraw}, for wave dashes.
+	 * Like {@link #wavyLinesWithShoreGapDrawnForPartOfTheMapMatchFullDraw}, for ripples.
 	 */
 	@Test
-	public void waveDashesWithShoreGapDrawnForPartOfTheMapMatchFullDraw()
+	public void ripplesWithShoreGapDrawnForPartOfTheMapMatchFullDraw()
 	{
-		assertWaveRowsDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves.WaveDashes, 30, MapSettings.ShoreDetail.Gap);
+		assertWaveRowsDrawnForPartOfTheMapMatchFullDraw(MapSettings.OceanWaves.Ripples, 30, MapSettings.ShoreDetail.Gap);
 	}
 
 	/**
@@ -457,13 +457,13 @@ public class MapCreatorTest
 	}
 
 	/**
-	 * Sets the style of whichever of wavy lines, hatching or wave dashes the settings' ocean waves are.
+	 * Sets the style of whichever of wavy lines, hatching or ripples the settings' ocean waves are.
 	 */
 	private static void setWaveRowStyle(MapSettings settings, MapSettings.WaveRowStyle style)
 	{
-		if (settings.oceanWavesType == MapSettings.OceanWaves.WaveDashes)
+		if (settings.oceanWavesType == MapSettings.OceanWaves.Ripples)
 		{
-			settings.setWaveDashStyle(style);
+			settings.setRippleStyle(style);
 		}
 		else if (settings.oceanWavesType == MapSettings.OceanWaves.Hatching)
 		{

@@ -30,7 +30,7 @@ import java.util.function.DoubleUnaryOperator;
 
 /**
  * Draws the rows of short horizontal wave lines that the "Wavy lines" and "Hatching" ocean wave styles stack outside the concentric line
- * around coastlines, and the rows of wave dashes that the "Ripples" style draws there instead.
+ * around coastlines, and the rows of dashes that ripples draw there instead.
  *
  * Every random value used here is a function of the row index and a position along the row in resolution-invariant units, never of where
  * a coastline or a stroke starts. That keeps each stroke determined by what is near it, so an incremental draw produces the same strokes as
@@ -101,12 +101,12 @@ public class WaveLineDrawer
 	private static final double maxLineEndPullBackInWavelengths = 1.5;
 
 	/**
-	 * For wave dashes, the Gaussian blur of the land that shapes where they end is this wide horizontally, as a fraction of the wave line
+	 * For ripples, the Gaussian blur of the land that shapes where they end is this wide horizontally, as a fraction of the wave line
 	 * length. See {@link DashLens}.
 	 */
 	private static final double dashLensSigmaAsFractionOfLength = 0.6;
 	/**
-	 * How many times wider the blur that shapes wave dashes is horizontally than vertically. The rows run horizontally, so this makes wave
+	 * How many times wider the blur that shapes ripples is horizontally than vertically. The rows run horizontally, so this makes wave
 	 * dashes reach much farther to the sides of land than above and below it.
 	 */
 	private static final double dashLensAnisotropy = 3.0;
@@ -117,7 +117,7 @@ public class WaveLineDrawer
 	private static final double dashLensBlocksPerVerticalSigma = 3.0;
 	private static final int minDashLensBlockSize = 2;
 	/**
-	 * Wave dashes always reach at least this fraction of their reach from the concentric line, measured directly, so that small islands, which
+	 * Ripples always reach at least this fraction of their reach from the concentric line, measured directly, so that small islands, which
 	 * the blur makes little of, still get some.
 	 */
 	private static final double minDashReachAsFractionOfReach = 0.45;
@@ -127,16 +127,16 @@ public class WaveLineDrawer
 	 */
 	private static final double maxGrazeToPassOverInWavelengths = 1.5;
 	/**
-	 * How far apart, as a multiple of the row spacing, the random values are that vary how far wave dashes reach.
+	 * How far apart, as a multiple of the row spacing, the random values are that vary how far ripples reach.
 	 */
 	private static final double dashReachNoiseSpacingAsMultipleOfRowSpacing = 3.0;
 	/**
-	 * The random value that varies how far wave dashes reach is scaled by this before it picks a reach, so that it spans the reach
+	 * The random value that varies how far ripples reach is scaled by this before it picks a reach, so that it spans the reach
 	 * distribution's range.
 	 */
 	private static final double dashReachNoiseScale = 2.5;
 	/**
-	 * Each row of wave dashes is one unbroken stroke out to between these fractions of the way to where the dashes end, and breaks into
+	 * Each row of ripples is one unbroken stroke out to between these fractions of the way to where the dashes end, and breaks into
 	 * dashes past that.
 	 */
 	private static final double minSolidDashFraction = 0.2;
@@ -149,7 +149,7 @@ public class WaveLineDrawer
 	private static final double minExtraDashGapInWavelengths = 0.1;
 	private static final double maxExtraDashGapInWavelengths = 0.6;
 	/**
-	 * At the far end of wave dashes, each dash is shortened by this fraction of its length.
+	 * At the far end of ripples, each dash is shortened by this fraction of its length.
 	 */
 	private static final double dashShrinkAtEnd = 0.55;
 	/**
@@ -173,7 +173,7 @@ public class WaveLineDrawer
 	 */
 	private static final double dashTaperAsFractionOfHalfLength = 0.35;
 	/**
-	 * The outer end of the unbroken part of a row of wave dashes narrows over this many wavelengths.
+	 * The outer end of the unbroken part of a row of ripples narrows over this many wavelengths.
 	 */
 	private static final double solidDashTaperInWavelengths = 0.4;
 	/**
@@ -240,9 +240,9 @@ public class WaveLineDrawer
 	private final double strokeWidth;
 	private final double strokeWidthInUnits;
 	/**
-	 * Whether to draw wave dashes rather than wavy lines or hatching.
+	 * Whether to draw ripples rather than wavy lines or hatching.
 	 */
-	private final boolean isDashes;
+	private final boolean isRipples;
 	private final double rowSpacing;
 	/**
 	 * The y coordinate of row 0's baseline before any shift, in units. Waves rise above their baseline, so this puts row 0's crests at the
@@ -277,7 +277,7 @@ public class WaveLineDrawer
 	 */
 	private final SegmentGrid.Nearest nearestOnCurve = new SegmentGrid.Nearest();
 	/**
-	 * For wave dashes, the blurred land that shapes where they end, built for the area being drawn.
+	 * For ripples, the blurred land that shapes where they end, built for the area being drawn.
 	 */
 	private DashLens dashLens;
 	/**
@@ -300,7 +300,7 @@ public class WaveLineDrawer
 		sizeMultiplier = MapCreator.calcSizeMultiplierFromResolutionScale(resolutionScale);
 		strokeWidth = calcStrokeWidth(settings, resolutionScale);
 		strokeWidthInUnits = calcStrokeWidthInUnits(settings);
-		isDashes = settings.oceanWavesType == OceanWaves.WaveDashes;
+		isRipples = settings.oceanWavesType == OceanWaves.Ripples;
 		rowSpacing = calcRowSpacing(settings);
 		areLineEndsVisible = settings.getWaveRowStyle().shoreDetail() == ShoreDetail.Gap;
 		amplitude = calcAmplitude(settings);
@@ -367,7 +367,7 @@ public class WaveLineDrawer
 	private static double calcJitterAmplitude(MapSettings settings)
 	{
 		// Hatching's rows touch by default, which would leave its jitter no room at all, so it gets the same room as wavy lines.
-		int defaultRowGap = settings.oceanWavesType == OceanWaves.WaveDashes ? MapSettings.defaultWaveDashRowGap : MapSettings.defaultWavyLineRowGap;
+		int defaultRowGap = settings.oceanWavesType == OceanWaves.Ripples ? MapSettings.defaultRippleRowGap : MapSettings.defaultWavyLineRowGap;
 		double gap = Math.min(calcSpaceBetweenRowsWithoutJitter(settings), defaultRowGap);
 		double rowSpacing = calcMinRowSeparation(settings) + gap;
 		// Jitter moves both neighboring rows, so each gets half of the space between them.
@@ -414,13 +414,13 @@ public class WaveLineDrawer
 	}
 
 	/**
-	 * The distance, in pixels, from a coastline curve to the farthest a wave line or wave dash can reach.
+	 * The distance, in pixels, from a coastline curve to the farthest a wave line or ripple can reach.
 	 */
 	private static double calcBandRadius(MapSettings settings, double resolutionScale)
 	{
-		if (settings.oceanWavesType == OceanWaves.WaveDashes)
+		if (settings.oceanWavesType == OceanWaves.Ripples)
 		{
-			// Past the blur's reach, no land adds to it, so wave dashes can't reach there.
+			// Past the blur's reach, no land adds to it, so ripples can't reach there.
 			DashLens lens = DashLens.create(settings, resolutionScale);
 			double lensRadius = lens == null ? 0.0 : lens.calcSupport() + calcConcentricLineJitter(settings, resolutionScale);
 			return Math.max(lensRadius, calcMinDashBandRadius(settings, resolutionScale));
@@ -442,7 +442,7 @@ public class WaveLineDrawer
 	}
 
 	/**
-	 * The distance, in pixels, from a coastline curve to the farthest wave dashes reach where only their minimum reach keeps them.
+	 * The distance, in pixels, from a coastline curve to the farthest ripples reach where only their minimum reach keeps them.
 	 */
 	private static double calcMinDashBandRadius(MapSettings settings, double resolutionScale)
 	{
@@ -467,7 +467,7 @@ public class WaveLineDrawer
 		// Whether a row passes over a graze of the concentric line depends on the row up to a graze's length away.
 		double bandPadding = calcBandRadius(settings, resolutionScale) + calcConcentricLineJitter(settings, resolutionScale)
 				+ maxGrazeToPassOverInWavelengths * calcWavelength(settings) * sizeMultiplier;
-		if (settings.oceanWavesType == OceanWaves.WaveDashes)
+		if (settings.oceanWavesType == OceanWaves.Ripples)
 		{
 			// How far out a point is depends on its run up to a band radius away, whether a dash is drawn depends on its middle, so a change
 			// can reach half a dash farther, and the blur is computed in blocks.
@@ -498,7 +498,7 @@ public class WaveLineDrawer
 	}
 
 	/**
-	 * Draws wave lines or wave dashes in white into target. Whether a point is part of one depends only on the coastlines and land within a
+	 * Draws wave lines or ripples in white into target. Whether a point is part of one depends only on the coastlines and land within a
 	 * band radius of it, so the strokes drawn depend only on the map, not on what area is drawn, except within {@link #calcEffectsPadding} of
 	 * the drawn area's edges.
 	 *
@@ -525,7 +525,7 @@ public class WaveLineDrawer
 		double concentricLineOuterRadius = calcInnerEdgeRadius(settings, resolutionScale);
 		mapBounds = graph.bounds;
 		double bandRadius = calcBandRadius(settings, resolutionScale);
-		if (isDashes)
+		if (isRipples)
 		{
 			dashLens = DashLens.create(settings, resolutionScale);
 			dashLens.build(landMask, drawBounds, graph.bounds);
@@ -586,7 +586,7 @@ public class WaveLineDrawer
 					}
 
 					passOverGrazedLine(classes, isLand, maxGrazeToPassOverInWavelengths * wavelength * sizeMultiplier);
-					if (isDashes)
+					if (isRipples)
 					{
 						drawDashRow(p, row, yInGraph, classes, segmentGrid, concentricLineOuterRadius, bandRadius, drawBounds);
 					}
@@ -904,7 +904,7 @@ public class WaveLineDrawer
 	}
 
 	/**
-	 * Draws one row of wave dashes: an unbroken stroke from the concentric line out to part of the way to where the dashes end, then dashes
+	 * Draws one row of ripples: an unbroken stroke from the concentric line out to part of the way to where the dashes end, then dashes
 	 * that get shorter, farther apart, and more often left out the farther out they are.
 	 *
 	 * How far out a point is, which decides where the unbroken part ends and which dashes are drawn, is measured along its run of the row,
@@ -912,7 +912,7 @@ public class WaveLineDrawer
 	 * within a band radius of each point, so that drawing part of the map gives the same dashes as drawing all of it.
 	 *
 	 * @param classes
-	 *            For each pixel along the row in drawBounds, whether it is outside the band, in it, or kept clear of wave dashes.
+	 *            For each pixel along the row in drawBounds, whether it is outside the band, in it, or kept clear of ripples.
 	 * @param bandRadius
 	 *            How far along a run to look for its ends.
 	 */
@@ -950,7 +950,7 @@ public class WaveLineDrawer
 			}
 			int runEnd = x;
 
-			// A run that starts or ends where wave dashes are kept out reaches the concentric line there, and one that starts or ends at the
+			// A run that starts or ends where ripples are kept out reaches the concentric line there, and one that starts or ends at the
 			// edge of the area being drawn continues past it.
 			boolean reachesLineAtStart = runStart == 0 || classes[runStart - 1] == keepOutClass;
 			boolean reachesLineAtEnd = runEnd == width || classes[runEnd] == keepOutClass;
@@ -1039,7 +1039,7 @@ public class WaveLineDrawer
 	}
 
 	/**
-	 * Draws the dashes in one run of a row of wave dashes.
+	 * Draws the dashes in one run of a row of ripples.
 	 */
 	private class RunDashes
 	{
@@ -1222,10 +1222,10 @@ public class WaveLineDrawer
 	}
 
 	/**
-	 * For wave dashes, how far out a point is by the measure that decides where they end: 0 at the concentric line, and 1 where wave dashes
+	 * For ripples, how far out a point is by the measure that decides where they end: 0 at the concentric line, and 1 where ripples
 	 * end. Past that it is more than 1.
 	 *
-	 * Where wave dashes end is shaped by {@link DashLens}, and varies randomly by position. They also always reach at least a fraction of
+	 * Where ripples end is shaped by {@link DashLens}, and varies randomly by position. They also always reach at least a fraction of
 	 * that directly from the line.
 	 */
 	private double calcDashFraction(double xInGraph, double yInGraph, SegmentGrid segmentGrid, double concentricLineOuterRadius)
@@ -1240,7 +1240,7 @@ public class WaveLineDrawer
 	}
 
 	/**
-	 * How far out a point in a run of wave dashes is, from 0 at the concentric line to 1 at the run's far end, measured along the run.
+	 * How far out a point in a run of ripples is, from 0 at the concentric line to 1 at the run's far end, measured along the run.
 	 *
 	 * A run that reaches the line at one end is measured from that end. One that reaches the line at both ends, such as across a narrow
 	 * channel, is measured from the nearer end to its middle, and one that reaches it at neither, such as just above or below an island, from
@@ -1285,7 +1285,7 @@ public class WaveLineDrawer
 	}
 
 	/**
-	 * How far out, as a fraction of the way to where wave dashes end, a row of wave dashes stays unbroken at a point along it.
+	 * How far out, as a fraction of the way to where ripples end, a row of ripples stays unbroken at a point along it.
 	 */
 	private double getSolidDashFraction(int row, double xInUnits)
 	{
@@ -1295,7 +1295,7 @@ public class WaveLineDrawer
 	}
 
 	/**
-	 * Finds where along a row the unbroken part of a row of wave dashes ends, between a point in it and one past it.
+	 * Finds where along a row the unbroken part of a row of ripples ends, between a point in it and one past it.
 	 *
 	 * @param differenceWithin
 	 *            How much farther out than the row's solid fraction the point in the unbroken part is, which is zero or less.
@@ -1344,7 +1344,7 @@ public class WaveLineDrawer
 				last = stretches.get(i);
 				end = last[1];
 			}
-			// Wave dashes' stretches say which of their ends are free, and those ends taper.
+			// Ripples' stretches say which of their ends are free, and those ends taper.
 			StrokeTaper taper = first.length < 4 ? null
 					: new StrokeTaper(first[0] / sizeMultiplier, end / sizeMultiplier, solidDashTaperInWavelengths * wavelength, first[2] > 0.0, last[3] > 0.0);
 			breakPattern = drawStretch(p, row, yInGraph, rowJitterAmplitude, first[0], end, taper, breakPattern, drawBounds);
@@ -1369,7 +1369,7 @@ public class WaveLineDrawer
 
 		double startInUnits = start / sizeMultiplier;
 		double endInUnits = end / sizeMultiplier;
-		// Either the break level is 0, or these are wave dashes, which break up only past their unbroken part, into dashes, so they get none
+		// Either the break level is 0, or these are ripples, which break up only past their unbroken part, into dashes, so they get none
 		// of the breaks wavy lines and hatching get.
 		if (!hasBreaks)
 		{
@@ -1854,8 +1854,8 @@ public class WaveLineDrawer
 	}
 
 	/**
-	 * Shapes where wave dashes end. The land is blurred with a Gaussian that is much wider horizontally than vertically, and wave dashes reach
-	 * out to where the blurred land drops below the level that a straight coast running north to south has at the wave dashes' reach. That
+	 * Shapes where ripples end. The land is blurred with a Gaussian that is much wider horizontally than vertically, and ripples reach
+	 * out to where the blurred land drops below the level that a straight coast running north to south has at the ripples' reach. That
 	 * rounds off headlands, fills small bays, gives small islands less than long coasts, and makes land sit in a wide, flat lens of wave
 	 * dashes, the way an artist sums up a shape.
 	 *

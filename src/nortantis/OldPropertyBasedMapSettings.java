@@ -143,10 +143,15 @@ public class OldPropertyBasedMapSettings implements Serializable
 				String str2 = props.getProperty("addWavesToOcean");
 				if (str2 == null || str2.isEmpty())
 				{
-					return OceanWaves.Ripples;
+					return OceanWaves.SincWaves;
 				}
 				// Blur is the deprecated value meaning the ocean is shaded rather than given waves.
-				return parseBoolean(str2) ? OceanWaves.Ripples : OceanWaves.Blur;
+				return parseBoolean(str2) ? OceanWaves.SincWaves : OceanWaves.Blur;
+			}
+			// This format called sinc waves "Ripples".
+			if (str.equals("Ripples"))
+			{
+				return OceanWaves.SincWaves;
 			}
 			return OceanWaves.valueOf(str);
 		});
