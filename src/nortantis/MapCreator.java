@@ -168,10 +168,11 @@ public class MapCreator implements WarningLogger
 	{
 		TextDrawer textDrawer = new TextDrawer(settings);
 		textDrawer.setMapTexts(settings.edits.text);
-		// These changes never move the coastline, so the ocean effects can be copied rather than drawn.
+		// These changes never move the coastline or region boundaries, so the ocean effects and coast shading can be copied rather than drawn.
 		boolean useCachedOceanEffects = mapParts.areOceanEffectsCached;
-		double effectsPadding = calcEffectsPadding(settings, false);
-		double oceanEffectsPadding = useCachedOceanEffects ? 0.0 : calcEffectsPadding(settings, true);
+		boolean useCachedCoastShading = mapParts.isCoastShadingCached;
+		double effectsPadding = calcEffectsPadding(settings, false, !useCachedCoastShading);
+		double oceanEffectsPadding = useCachedOceanEffects ? 0.0 : calcEffectsPadding(settings, true, true);
 		mapParts.iconDrawer = new IconDrawer(mapParts.graph, new Random(), settings);
 
 		IntRectangle bounds = null;
@@ -190,7 +191,7 @@ public class MapCreator implements WarningLogger
 			IntRectangle updateBounds;
 			mapParts.iconDrawer.addOrUpdateIconsFromEdits(settings.edits, Collections.emptySet(), padded, this);
 			updateBounds = incrementalUpdateBounds(settings, mapParts, fullSizeMap, padded, effectsPadding, oceanEffectsPadding, textDrawer, onlyTextChanged,
-					useCachedOceanEffects);
+					useCachedOceanEffects, useCachedCoastShading);
 			if (bounds == null)
 			{
 				bounds = updateBounds;
@@ -283,26 +284,27 @@ public class MapCreator implements WarningLogger
 		// smoothing would keep stale geometry and findClosestCenter would return the wrong center near the edited coastline.
 		mapParts.graph.updateCenterLookupTable(centersWithRebuiltNoisyEdges);
 
-		double effectsPadding = calcEffectsPadding(settings, false);
+		boolean canChangeOceanEffects = canChangeOceanEffects(settings, coastlineCentersChanged, centersChangedThatAffectedLandOrRegionBoundaries, isLowPriorityChange);
+		boolean useCachedCoastShading = mapParts.isCoastShadingCached && !canChangeOceanEffects && !canChangeRegionBoundaryShading(settings, centersWithRebuiltNoisyEdges);
+		double effectsPadding = calcEffectsPadding(settings, false, !useCachedCoastShading);
 		double oceanEffectsPadding = 0.0;
 		OceanEffectsRedraw oceanEffectsRedraw = null;
 		// The bounds to replace in the original map.
 		Rectangle replaceBounds = centersChangedBounds.pad(effectsPadding, effectsPadding);
-		boolean canChangeOceanEffects = canChangeOceanEffects(settings, coastlineCentersChanged, centersChangedThatAffectedLandOrRegionBoundaries, isLowPriorityChange);
 		if (mapParts.areOceanEffectsCached)
 		{
 			if (canChangeOceanEffects)
 			{
 				// Only the part of the map where the ocean effects actually changed needs to be replaced for them, which is usually much
 				// smaller than everywhere they could have.
-				double padding = calcEffectsPadding(settings, true);
+				double padding = calcEffectsPadding(settings, true, true);
 				oceanEffectsRedraw = redrawOceanEffects(settings, mapParts, centersChangedBounds.pad(padding, padding), padding);
 				replaceBounds = Rectangle.add(replaceBounds, oceanEffectsRedraw.changeBounds());
 			}
 		}
 		else
 		{
-			oceanEffectsPadding = calcEffectsPadding(settings, true);
+			oceanEffectsPadding = calcEffectsPadding(settings, true, true);
 			if (canChangeOceanEffects)
 			{
 				// The ocean effects can change as far from the change as they need padding.
@@ -381,7 +383,7 @@ public class MapCreator implements WarningLogger
 		try
 		{
 			return incrementalUpdateBounds(settings, mapParts, fullSizedMap, replaceBounds, effectsPadding, oceanEffectsPadding, textDrawer, false,
-					mapParts.areOceanEffectsCached);
+					mapParts.areOceanEffectsCached, useCachedCoastShading);
 		}
 		catch (RuntimeException e)
 		{
@@ -404,14 +406,14 @@ public class MapCreator implements WarningLogger
 	{
 		void saveToCache()
 		{
-			saveOceanEffectToCache(mapParts.oceanWaves, oceanWaves, savedBounds, savedBounds);
-			saveOceanEffectToCache(mapParts.oceanShading, oceanShading, savedBounds, savedBounds);
+			saveMaskToCache(mapParts.oceanWaves, oceanWaves, savedBounds, savedBounds);
+			saveMaskToCache(mapParts.oceanShading, oceanShading, savedBounds, savedBounds);
 		}
 
 		void restoreCache()
 		{
-			saveOceanEffectToCache(mapParts.oceanWaves, oldOceanWaves, savedBounds, savedBounds);
-			saveOceanEffectToCache(mapParts.oceanShading, oldOceanShading, savedBounds, savedBounds);
+			saveMaskToCache(mapParts.oceanWaves, oldOceanWaves, savedBounds, savedBounds);
+			saveMaskToCache(mapParts.oceanShading, oldOceanShading, savedBounds, savedBounds);
 		}
 	}
 
@@ -448,9 +450,9 @@ public class MapCreator implements WarningLogger
 		Rectangle changedBounds = changed == null ? null : new Rectangle(changed.x, changed.y, changed.width, changed.height);
 
 		Rectangle mapBounds = new Rectangle(0, 0, mapParts.graph.getWidth(), mapParts.graph.getHeight());
-		return new OceanEffectsRedraw(mapParts, changedBounds, changeBounds, copyOceanEffect(oceanTuple.getFirst(), drawBounds, changeBounds),
-				copyOceanEffect(oceanTuple.getSecond(), drawBounds, changeBounds), copyOceanEffect(mapParts.oceanWaves, mapBounds, changeBounds),
-				copyOceanEffect(mapParts.oceanShading, mapBounds, changeBounds));
+		return new OceanEffectsRedraw(mapParts, changedBounds, changeBounds, copyMask(oceanTuple.getFirst(), drawBounds, changeBounds),
+				copyMask(oceanTuple.getSecond(), drawBounds, changeBounds), copyMask(mapParts.oceanWaves, mapBounds, changeBounds),
+				copyMask(mapParts.oceanShading, mapBounds, changeBounds));
 	}
 
 	/**
@@ -487,6 +489,29 @@ public class MapCreator implements WarningLogger
 			}
 		}
 		return maxX < 0 ? null : new IntRectangle(minX, minY, maxX - minX + 1, maxY - minY + 1);
+	}
+
+	/**
+	 * Whether an incremental change to centers can change the shading along region boundaries, which is part of coast shading when region
+	 * boundaries are drawn: whether any center whose edges were rebuilt, which includes those whose rivers changed, is on a region boundary.
+	 */
+	private static boolean canChangeRegionBoundaryShading(MapSettings settings, Set<Center> centersWithRebuiltEdges)
+	{
+		if (!settings.drawRegionBoundaries)
+		{
+			return false;
+		}
+		for (Center center : centersWithRebuiltEdges)
+		{
+			for (Center neighbor : center.neighbors)
+			{
+				if (neighbor.region != center.region)
+				{
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -543,9 +568,12 @@ public class MapCreator implements WarningLogger
 	 *            when they need more padding than everything else. Unused if useCachedOceanEffects is true.
 	 * @param useCachedOceanEffects
 	 *            Whether to copy the ocean waves and shading from {@link MapParts} rather than drawing them.
+	 * @param useCachedCoastShading
+	 *            Whether to copy the coast shading from {@link MapParts} rather than drawing it. Otherwise it is drawn, and once the map is
+	 *            updated, the part of it in replaceBounds is saved in mapParts if mapParts keeps it.
 	 */
 	private IntRectangle incrementalUpdateBounds(final MapSettings settings, MapParts mapParts, Image fullSizedMap, Rectangle replaceBounds, double effectsPadding,
-			double oceanEffectsPadding, TextDrawer textDrawer, boolean onlyTextChanged, boolean useCachedOceanEffects)
+			double oceanEffectsPadding, TextDrawer textDrawer, boolean onlyTextChanged, boolean useCachedOceanEffects, boolean useCachedCoastShading)
 	{
 		// The bounds of the snippet to draw. This is larger than the snippet to
 		// replace because ocean/land effects expand beyond the edges
@@ -560,6 +588,9 @@ public class MapCreator implements WarningLogger
 		double sizeMultiplierRounded = calcSizeMultiplierFromResolutionScaleRounded(settings.resolution);
 
 		Set<Center> centersToDraw = null;
+		Rectangle mapBounds = new Rectangle(0, 0, mapParts.graph.getWidth(), mapParts.graph.getHeight());
+		// Drawn coast shading to save in mapParts once the map is updated.
+		Image coastShadingToSave = null;
 		if (!onlyTextChanged || mapParts.mapBeforeAddingText == null)
 		{
 			Center searchStart = mapParts.graph.findClosestCenter(drawBounds.getCenter());
@@ -593,14 +624,18 @@ public class MapCreator implements WarningLogger
 
 			checkForCancel();
 
-			Image coastShading;
+			Image coastShading = useCachedCoastShading ? copyMask(mapParts.coastShading, mapBounds, drawBounds) : null;
 			Image landColoredBeforeAddingIconColors = null;
 			Image landBackground = null;
 			{
-				Tuple2<Image, Image> tuple = darkenLandNearCoastlinesAndRegionBorders(settings, mapParts.graph, settings.resolution, landTextureSnippet, mapParts.background, null, centersToDraw,
-						drawBounds, false);
+				Tuple2<Image, Image> tuple = darkenLandNearCoastlinesAndRegionBorders(settings, mapParts.graph, settings.resolution, landTextureSnippet, mapParts.background, coastShading,
+						centersToDraw, drawBounds, false);
 				Image landBackgroundWithLandInOcean = tuple.getFirst();
 				coastShading = tuple.getSecond();
+				if (!useCachedCoastShading)
+				{
+					coastShadingToSave = coastShading;
+				}
 				mapSnippet = ImageHelper.getInstance().maskWithColor(landBackgroundWithLandInOcean, Color.black, landMask, false);
 
 				if (settings.drawRegionColors)
@@ -648,9 +683,8 @@ public class MapCreator implements WarningLogger
 			{
 				if (useCachedOceanEffects)
 				{
-					Rectangle mapBounds = new Rectangle(0, 0, mapParts.graph.getWidth(), mapParts.graph.getHeight());
-					oceanWaves = copyOceanEffect(mapParts.oceanWaves, mapBounds, drawBounds);
-					oceanShading = copyOceanEffect(mapParts.oceanShading, mapBounds, drawBounds);
+					oceanWaves = copyMask(mapParts.oceanWaves, mapBounds, drawBounds);
+					oceanShading = copyMask(mapParts.oceanShading, mapBounds, drawBounds);
 				}
 				else
 				{
@@ -674,8 +708,8 @@ public class MapCreator implements WarningLogger
 					}
 					else
 					{
-						oceanWaves = copyOceanEffect(oceanTuple.getFirst(), oceanDrawBounds, drawBounds);
-						oceanShading = copyOceanEffect(oceanTuple.getSecond(), oceanDrawBounds, drawBounds);
+						oceanWaves = copyMask(oceanTuple.getFirst(), oceanDrawBounds, drawBounds);
+						oceanShading = copyMask(oceanTuple.getSecond(), oceanDrawBounds, drawBounds);
 						oceanLandMask.close();
 					}
 				}
@@ -817,6 +851,10 @@ public class MapCreator implements WarningLogger
 			// Update the snippet in the main map.
 			ImageHelper.getInstance().copySnippetFromSourceAndPasteIntoTarget(fullSizedMap, mapSnippet, replaceBoundsUpperLeftCornerAdjustedForBorder, boundsInSourceToCopyFrom,
 					mapParts.background.getBorderPaddingScaledByResolution());
+			if (coastShadingToSave != null && mapParts.isCoastShadingCached)
+			{
+				saveMaskToCache(mapParts.coastShading, coastShadingToSave, replaceBounds, drawBounds);
+			}
 
 			if (DebugFlags.showIncrementalUpdateBounds())
 			{
@@ -893,15 +931,18 @@ public class MapCreator implements WarningLogger
 
 	static double calcEffectsPadding(final MapSettings settings)
 	{
-		return calcEffectsPadding(settings, true);
+		return calcEffectsPadding(settings, true, true);
 	}
 
 	/**
 	 * @param includeOceanEffects
 	 *            Whether to pad for ocean waves and ocean shading. Draws that copy those from {@link MapParts} rather than drawing them don't
 	 *            need to.
+	 * @param includeCoastShading
+	 *            Whether to pad for the shading of land along coastlines and region boundaries. Draws that copy it from {@link MapParts}
+	 *            rather than drawing it don't need to.
 	 */
-	static double calcEffectsPadding(final MapSettings settings, boolean includeOceanEffects)
+	static double calcEffectsPadding(final MapSettings settings, boolean includeOceanEffects, boolean includeCoastShading)
 	{
 		double sizeMultiplier = calcSizeMultiplierFromResolutionScaleRounded(settings.resolution);
 
@@ -920,7 +961,7 @@ public class MapCreator implements WarningLogger
 		// The sinc kernel's size is its diameter, so padding by it puts its radius on each side.
 		double sincWaveWidth = includeOceanEffects && settings.hasSincWaves(settings.resolution) ? settings.oceanWavesLevel * sizeMultiplier : 0;
 		double oceanShadingWidth = includeOceanEffects ? calcVisibleShadingWidth(settings.oceanShadingLevel, sizeMultiplier) : 0;
-		double coastShadingWidth = calcVisibleShadingWidth(settings.coastShadingLevel, sizeMultiplier);
+		double coastShadingWidth = includeCoastShading ? calcVisibleShadingWidth(settings.coastShadingLevel, sizeMultiplier) : 0;
 
 		double effectsPadding = Math.ceil(Math.max(Math.max(concentricWaveWidth, waveLinesWidth), Math.max(sincWaveWidth, Math.max(oceanShadingWidth, coastShadingWidth))));
 
@@ -1573,6 +1614,17 @@ public class MapCreator implements WarningLogger
 			Tuple2<Image, Image> tuple = darkenLandNearCoastlinesAndRegionBorders(settings, graph, settings.resolution, background.land, background, null, null, null, true);
 			Image landBackgroundWithLandAndOcean = tuple.getFirst();
 			coastShading = tuple.getSecond();
+			if (mapParts != null)
+			{
+				if (isLowMemoryMode)
+				{
+					mapParts.closeCoastShading();
+				}
+				else
+				{
+					mapParts.setCoastShading(coastShading);
+				}
+			}
 			map = ImageHelper.getInstance().maskWithColor(landBackgroundWithLandAndOcean, Color.black, landMask, false);
 
 			if (settings.drawRegionColors)
@@ -1878,13 +1930,13 @@ public class MapCreator implements WarningLogger
 	}
 
 	/**
-	 * Copies the part of an ocean effect mask that bounds covers. Parts of bounds the mask doesn't cover are left black.
+	 * Copies the part of a mask that bounds covers. Parts of bounds the mask doesn't cover are left black.
 	 *
 	 * @param sourceBounds
 	 *            The area of the map the mask covers.
 	 * @return The copy, or null if source is null.
 	 */
-	private static Image copyOceanEffect(Image source, Rectangle sourceBounds, Rectangle bounds)
+	private static Image copyMask(Image source, Rectangle sourceBounds, Rectangle bounds)
 	{
 		if (source == null)
 		{
@@ -1899,9 +1951,9 @@ public class MapCreator implements WarningLogger
 	}
 
 	/**
-	 * Writes the replaceBounds part of an ocean effect mask drawn for drawBounds into the whole-map mask.
+	 * Writes the replaceBounds part of a mask drawn for drawBounds into a whole-map mask.
 	 */
-	private static void saveOceanEffectToCache(Image cached, Image drawn, Rectangle replaceBounds, Rectangle drawBounds)
+	private static void saveMaskToCache(Image cached, Image drawn, Rectangle replaceBounds, Rectangle drawBounds)
 	{
 		if (cached == null || drawn == null)
 		{

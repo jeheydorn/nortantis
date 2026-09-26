@@ -97,9 +97,34 @@ public class MapParts
 		areOceanEffectsCached = false;
 	}
 
+	/**
+	 * The shading of land along coastlines, lake shores and region boundaries for the whole map, kept for the same reason as the ocean
+	 * effects. Null when the map has none. Only meaningful when {@link #isCoastShadingCached} is true.
+	 */
+	public Image coastShading;
+	public boolean isCoastShadingCached;
+
+	public void setCoastShading(Image coastShading)
+	{
+		closeCoastShading();
+		this.coastShading = coastShading;
+		isCoastShadingCached = true;
+	}
+
+	public void closeCoastShading()
+	{
+		if (coastShading != null)
+		{
+			coastShading.close();
+		}
+		coastShading = null;
+		isCoastShadingCached = false;
+	}
+
 	public void closeImages()
 	{
 		closeOceanEffects();
+		closeCoastShading();
 		if (textBackground != null)
 		{
 			textBackground.close();
