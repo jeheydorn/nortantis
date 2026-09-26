@@ -1874,21 +1874,14 @@ public class WorldGraph extends VoronoiGraph
 	{
 		double elevation = getBiomeElevation(p.elevation);
 
-		if (p.isWater)
+		if (p.isWater && !p.isLake)
 		{
 			return Biome.OCEAN;
 		}
 		else if (p.isWater)
 		{
-			if (elevation < 0.1)
-			{
-				return Biome.MARSH;
-			}
-			if (elevation > 0.8)
-			{
-				return Biome.ICE;
-			}
-			return Biome.LAKE;
+			// Only a lake above sea level has a biome elevation, since the scale starts there.
+			return p.elevation >= seaLevel && elevation > biomeElevationBandBottoms[0] ? Biome.ICE : Biome.LAKE;
 		}
 		else if (p.isCoast)
 		{
