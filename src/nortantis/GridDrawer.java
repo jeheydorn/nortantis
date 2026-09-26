@@ -92,7 +92,7 @@ public class GridDrawer
 				{
 					continue;
 				}
-				if (drawBounds != null && !drawBounds.overlaps(new Rectangle(x - hexWidth / 2.0, y - hexWidth / 2.0, hexWidth, hexHeight).pad(lineWidth, lineWidth)))
+				if (drawBounds != null && !drawBounds.overlaps(calcHexBoundsWithLine(x, y, hexWidth, hexHeight, lineWidth)))
 				{
 					continue;
 				}
@@ -120,13 +120,23 @@ public class GridDrawer
 				{
 					continue;
 				}
-				if (drawBounds != null && !drawBounds.overlaps(new Rectangle(x - hexWidth / 2.0, y - hexWidth / 2.0, hexWidth, hexHeight).pad(lineWidth, lineWidth)))
+				if (drawBounds != null && !drawBounds.overlaps(calcHexBoundsWithLine(x, y, hexWidth, hexHeight, lineWidth)))
 				{
 					continue;
 				}
 				drawHex(p, x, y, hexWidth / 2f, false);
 			}
 		}
+	}
+
+	/**
+	 * The area a hex centered at (cx, cy) draws in, including half its line's width and a pixel of anti-aliasing past its outline.
+	 */
+	private static Rectangle calcHexBoundsWithLine(float cx, float cy, float hexWidth, float hexHeight, float lineWidth)
+	{
+		// Rectangle.pad adds the padding to the total width and height, so half of it lands on each side.
+		double padding = lineWidth + 2.0;
+		return new Rectangle(cx - hexWidth / 2.0, cy - hexHeight / 2.0, hexWidth, hexHeight).pad(padding, padding);
 	}
 
 	private static void drawHex(Painter p, float cx, float cy, float size, boolean vertical)
