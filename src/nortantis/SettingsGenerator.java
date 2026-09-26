@@ -407,6 +407,12 @@ public class SettingsGenerator
 		settings.oceanShadingLevel = randomSettings.oceanShadingLevel;
 		settings.oceanWavesLevel = randomSettings.oceanWavesLevel;
 		settings.concentricWaveCount = randomSettings.concentricWaveCount;
+		settings.fadeConcentricWaves = randomSettings.fadeConcentricWaves;
+		settings.jitterToConcentricWaves = randomSettings.jitterToConcentricWaves;
+		settings.jitterLevel = randomSettings.jitterLevel;
+		settings.brokenLinesForConcentricWaves = randomSettings.brokenLinesForConcentricWaves;
+		settings.concentricWaveLineWidth = randomSettings.concentricWaveLineWidth;
+		settings.drawOceanEffectsInLakes = randomSettings.drawOceanEffectsInLakes;
 		settings.oceanWavesType = randomSettings.oceanWavesType;
 		settings.setWavyLineStyle(randomSettings.getWavyLineStyle());
 		settings.wavyLineBreakLevel = randomSettings.wavyLineBreakLevel;
