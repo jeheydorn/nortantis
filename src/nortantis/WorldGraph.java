@@ -3133,7 +3133,7 @@ public class WorldGraph extends VoronoiGraph
 		int count = 0;
 		for (Center center : centers)
 		{
-			double width = center.findWidth();
+			double width = center.findUnsmoothedWidth();
 
 			if (width > 0)
 			{

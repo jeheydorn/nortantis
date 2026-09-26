@@ -52,7 +52,7 @@ public class MapCreatorTest
 
 		// Settings files whose tests apply a pre-processing modification before rendering; their expected maps must
 		// be created by the first run of generateAndCompare (with the modification applied), not here without it.
-		Set<String> settingsFilesWithModifications = new HashSet<>(Arrays.asList("iconReplacements.nort", "iconReplacementsWithMissingIconTypes.nort"));
+		Set<String> settingsFilesWithModifications = new HashSet<>(Arrays.asList("iconReplacements.nort", "iconReplacementsWithMissingIconTypes.nort", "coastlineLandShape.nort"));
 
 		for (String settingsFileName : mapSettingsFileNames)
 		{
@@ -1090,31 +1090,26 @@ public class MapCreatorTest
 		generateAndCompare("supercontinentLandShape.nort");
 	}
 
+	/**
+	 * Also covers wavy lines with jitter and row spacing variation, since this map has a long coastline.
+	 */
 	@Test
 	public void coastlineLandShape()
 	{
-		generateAndCompare("coastlineLandShape.nort");
+		MapTestUtil.generateAndCompare("coastlineLandShape.nort", settings ->
+		{
+			settings.oceanWavesType = MapSettings.OceanWaves.WavyLines;
+			settings.jitterToWavyLines = true;
+			settings.wavyLineJitterLevel = MapSettings.maxJitterLevel;
+			settings.wavyLineShoreJitterLevel = MapSettings.maxJitterLevel;
+			settings.wavyLineRowSpacingVariation = 5;
+		}, expectedMapsFolderName, failedMapsFolderName, 0);
 	}
 
 	@Test
 	public void landlockedLandShape()
 	{
 		generateAndCompare("landlockedLandShape.nort");
-	}
-
-	@Test
-	public void waveLinesWithJitterAndRowSpacingVariation()
-	{
-		MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", "simpleSmallWorld.nort").toString());
-		settings.oceanWavesType = MapSettings.OceanWaves.WavyLines;
-		settings.jitterToWavyLines = true;
-		settings.wavyLineJitterLevel = MapSettings.maxJitterLevel;
-		settings.wavyLineShoreJitterLevel = MapSettings.maxJitterLevel;
-		settings.wavyLineRowSpacingVariation = 5;
-		try (Image actual = new MapCreator().createMap(settings, null, null))
-		{
-			MapTestUtil.compareToExpectedMap(actual, "waveLinesWithJitterAndRowSpacingVariation", expectedMapsFolderName, failedMapsFolderName, 0);
-		}
 	}
 
 	/**

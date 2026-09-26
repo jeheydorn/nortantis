@@ -77,7 +77,11 @@ public class Center implements Comparable<Center>
 		return new Point(xSum / corners.size(), ySum / corners.size());
 	}
 
-	public double findWidth()
+	/**
+	 * The width of this center measured at its corners' locations before coastline and region boundary smoothing moved any of them, so
+	 * that it doesn't depend on which centers are land.
+	 */
+	public double findUnsmoothedWidth()
 	{
 		double minX = Double.POSITIVE_INFINITY;
 		double maxX = Double.NEGATIVE_INFINITY;
@@ -87,13 +91,14 @@ public class Center implements Comparable<Center>
 
 		for (Corner corner : corners)
 		{
-			if (corner.loc.x < minX)
+			Point loc = corner.originalLoc != null ? corner.originalLoc : corner.loc;
+			if (loc.x < minX)
 			{
-				minX = corner.loc.x;
+				minX = loc.x;
 			}
-			if (corner.loc.x > maxX)
+			if (loc.x > maxX)
 			{
-				maxX = corner.loc.x;
+				maxX = loc.x;
 			}
 		}
 
