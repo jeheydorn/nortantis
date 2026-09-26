@@ -1091,7 +1091,7 @@ public class MapCreatorTest
 	}
 
 	/**
-	 * Also covers wavy lines with jitter and row spacing variation, since this map has a long coastline.
+	 * Also covers wavy lines as new maps draw them, with the jitter turned up to the maximum, since this map has a long coastline.
 	 */
 	@Test
 	public void coastlineLandShape()
@@ -1102,7 +1102,6 @@ public class MapCreatorTest
 			settings.jitterToWavyLines = true;
 			settings.wavyLineJitterLevel = MapSettings.maxJitterLevel;
 			settings.wavyLineShoreJitterLevel = MapSettings.maxJitterLevel;
-			settings.wavyLineRowSpacingVariation = 5;
 		}, expectedMapsFolderName, failedMapsFolderName, 0);
 	}
 
