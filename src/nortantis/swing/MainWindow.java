@@ -1537,10 +1537,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				if (toolsPanel.currentTool != null)
 				{
-					updater.doWhenMapIsNotDrawing(() ->
-					{
-						undoer.undo();
-					});
+					doWhenMapIsNotDrawingAndNoColorPickersAreOpen(() -> undoer.undo());
 				}
 			}
 		});
@@ -1556,10 +1553,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				if (toolsPanel.currentTool != null)
 				{
-					updater.doWhenMapIsNotDrawing(() ->
-					{
-						undoer.redo();
-					});
+					doWhenMapIsNotDrawingAndNoColorPickersAreOpen(() -> undoer.redo());
 				}
 			}
 		});
@@ -1574,10 +1568,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				if (toolsPanel.currentTool != null)
 				{
-					updater.doWhenMapIsNotDrawing(() ->
-					{
-						undoer.undoAll();
-					});
+					doWhenMapIsNotDrawingAndNoColorPickersAreOpen(() -> undoer.undoAll());
 				}
 			}
 		});
@@ -1592,10 +1583,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				if (toolsPanel.currentTool != null)
 				{
-					updater.doWhenMapIsNotDrawing(() ->
-					{
-						undoer.redoAll();
-					});
+					doWhenMapIsNotDrawingAndNoColorPickersAreOpen(() -> undoer.redoAll());
 				}
 			}
 		});
@@ -3032,8 +3020,36 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		}
 	}
 
+	/**
+	 * Runs action once the map isn't drawing, unless a color picker is open by then, in which case it tells the user to close it instead.
+	 * The check happens when the action would run, so a picker opened while waiting is caught too.
+	 */
+	private void doWhenMapIsNotDrawingAndNoColorPickersAreOpen(Runnable action)
+	{
+		updater.doWhenMapIsNotDrawing(() ->
+		{
+			if (!SwingHelper.showMessageIfColorPickersAreOpen(MainWindow.this))
+			{
+				action.run();
+			}
+		});
+	}
+
+	/**
+	 * Checks whether it's okay to navigate away from the current map, asking the user to close any open color pickers or to save unsaved
+	 * changes.
+	 *
+	 * @return True if the user should not navigate away.
+	 */
 	public boolean checkForUnsavedChanges()
 	{
+		// Checked before unsaved changes because a color picker's previewed color is already in the GUI, so the user would otherwise be
+		// asked about saving a color they haven't accepted.
+		if (SwingHelper.showMessageIfColorPickersAreOpen(this))
+		{
+			return true;
+		}
+
 		if (lastSettingsLoadedOrSaved == null)
 		{
 			return false;

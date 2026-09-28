@@ -839,7 +839,7 @@ public class MapCreator implements WarningLogger
 		// Add grunge
 		if (settings.drawGrunge && settings.grungeWidth > 0)
 		{
-			mapSnippet = ImageHelper.getInstance().maskWithColorInRegion(mapSnippet, settings.frayedBorderColor, mapParts.grunge, true, drawBoundsUpperLeftCornerAdjustedForBorder);
+			mapSnippet = ImageHelper.getInstance().maskWithColorInRegion(mapSnippet, settings.grungeColor, mapParts.grunge, true, drawBoundsUpperLeftCornerAdjustedForBorder);
 		}
 
 		if (DebugFlags.drawCorners())
@@ -1005,8 +1005,8 @@ public class MapCreator implements WarningLogger
 				: 0;
 		// The sinc kernel's size is its diameter, so padding by it puts its radius on each side.
 		double sincWaveWidth = includeOceanEffects && settings.hasSincWaves(settings.resolution) ? settings.oceanWavesLevel * sizeMultiplier : 0;
-		double oceanShadingWidth = includeOceanEffects ? calcVisibleShadingWidth(settings.oceanShadingLevel, sizeMultiplier) : 0;
-		double coastShadingWidth = includeCoastShading ? calcVisibleShadingWidth(settings.coastShadingLevel, sizeMultiplier) : 0;
+		double oceanShadingWidth = includeOceanEffects ? calcVisibleShadingWidth(settings.getDrawnOceanShadingLevel(), sizeMultiplier) : 0;
+		double coastShadingWidth = includeCoastShading ? calcVisibleShadingWidth(settings.getDrawnCoastShadingLevel(), sizeMultiplier) : 0;
 
 		double effectsPadding = Math.ceil(Math.max(Math.max(concentricWaveWidth, sincWaveWidth), Math.max(oceanShadingWidth, coastShadingWidth)));
 
@@ -1420,7 +1420,7 @@ public class MapCreator implements WarningLogger
 			}
 
 			// Add the grunge to the map.
-			map = ImageHelper.getInstance().maskWithColor(map, settings.frayedBorderColor, grunge, true);
+			map = ImageHelper.getInstance().maskWithColor(map, settings.grungeColor, grunge, true);
 		}
 
 		drawOverlayImageIfNeededAndUpdateMapParts(map, settings, borderPaddingAsDrawn);
@@ -1897,7 +1897,7 @@ public class MapCreator implements WarningLogger
 			Image coastShading, Collection<Center> centersToDraw, Rectangle drawBounds, boolean addLoggingEntry)
 	{
 		double sizeMultiplier = calcSizeMultiplierFromResolutionScale(resolutionScaled);
-		int blurLevel = (int) (settings.coastShadingLevel * sizeMultiplier);
+		int blurLevel = (int) (settings.getDrawnCoastShadingLevel() * sizeMultiplier);
 
 		final float scaleForDarkening = coastlineShadingScale;
 		int maxPixelValue = Image.getMaxPixelLevelForType(ImageType.Grayscale8Bit);

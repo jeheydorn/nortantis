@@ -43,7 +43,7 @@ public class MapSettings implements Serializable
 	 * as "3.2", and is greater than "3.18"). Each new value here must have a numerically greater segment than every version that came
 	 * before it at the same position.
 	 */
-	public static final String currentVersion = "3.23";
+	public static final String currentVersion = "3.24";
 	public static final String fileExtension = "nort";
 	public static final String fileExtensionWithDot = "." + fileExtension;
 	public static final double defaultPointPrecision = 2.0;
@@ -52,6 +52,11 @@ public class MapSettings implements Serializable
 	public static final double defaultHeightmapResolution = 1.0;
 	public static final int defaultJitterLevel = 10;
 	public static final int maxJitterLevel = 10;
+	/**
+	 * The coast and ocean shading widths given to maps whose shading is turned off, so that turning it on shows something.
+	 */
+	public static final int defaultCoastShadingLevel = 30;
+	public static final int defaultOceanShadingLevel = 40;
 	/*
 	 * The defaults of wavy lines, hatching and ripples are their looks: what new maps get, and what maps saved before those styles existed
 	 * show when switched to them.
@@ -132,10 +137,13 @@ public class MapSettings implements Serializable
 	 */
 	public double resolution = defaultResolution;
 	public int coastShadingLevel;
+	public boolean drawCoastShading = true;
 	@Deprecated
 	public int oceanEffectsLevel;
 	public int oceanWavesLevel;
 	public int oceanShadingLevel;
+	public boolean drawOceanShading = true;
+	public boolean drawOceanWaves = true;
 	public int concentricWaveCount;
 	public boolean jitterToConcentricWaves;
 	/**
@@ -250,11 +258,15 @@ public class MapSettings implements Serializable
 	public int regionCount;
 	public boolean frayedBorder;
 	public int frayedBorderSize;
+	/**
+	 * The color of the shading along frayed edges.
+	 */
 	public Color frayedBorderColor;
 	public int frayedBorderBlurLevel;
 	public long frayedBorderSeed;
 	public int grungeWidth;
 	public boolean drawGrunge;
+	public Color grungeColor;
 	/**
 	 * This setting actually means fractal generated as opposed to generated from texture. It is mutually exclusive with
 	 * generateBackgroundFromTexture
@@ -558,8 +570,11 @@ public class MapSettings implements Serializable
 		root.put("randomSeed", randomSeed);
 		root.put("resolution", resolution);
 		root.put("coastShadingLevel", coastShadingLevel);
+		root.put("drawCoastShading", drawCoastShading);
 		root.put("oceanWavesLevel", oceanWavesLevel);
 		root.put("oceanShadingLevel", oceanShadingLevel);
+		root.put("drawOceanShading", drawOceanShading);
+		root.put("drawOceanWaves", drawOceanWaves);
 		root.put("oceanEffectsLevel", oceanEffectsLevel);
 		root.put("concentricWaveCount", concentricWaveCount);
 		root.put("fadeConcentricWaves", fadeConcentricWaves);
@@ -628,6 +643,7 @@ public class MapSettings implements Serializable
 		root.put("frayedBorderBlurLevel", frayedBorderBlurLevel);
 		root.put("grungeWidth", grungeWidth);
 		root.put("drawGrunge", drawGrunge);
+		root.put("grungeColor", colorToString(grungeColor));
 		root.put("cityProbability", cityProbability);
 		root.put("lineStyle", enumToJson(lineStyle));
 		root.put("pointPrecision", pointPrecision);
@@ -1317,6 +1333,9 @@ public class MapSettings implements Serializable
 		randomSeed = (long) root.get("randomSeed");
 		resolution = (double) root.get("resolution");
 		coastShadingLevel = (int) (long) root.get("coastShadingLevel");
+		drawCoastShading = root.containsKey("drawCoastShading") ? (boolean) root.get("drawCoastShading") : true;
+		drawOceanShading = root.containsKey("drawOceanShading") ? (boolean) root.get("drawOceanShading") : true;
+		drawOceanWaves = root.containsKey("drawOceanWaves") ? (boolean) root.get("drawOceanWaves") : true;
 
 		concentricWaveCount = (int) (long) root.get("concentricWaveCount");
 		if (root.containsKey("fadeConcentricWaves"))
@@ -1453,11 +1472,6 @@ public class MapSettings implements Serializable
 			oceanWavesLevel = calcOceanWavesLevelFromOceanEffectsLevel(oceanWavesType, deprecatedOceanEffectsLevel);
 		}
 
-		if (oceanWavesType == OceanWaves.Blur)
-		{
-			oceanWavesType = OceanWaves.None;
-		}
-
 		drawOceanEffectsInLakes = root.containsKey("drawOceanEffectsInLakes") ? (boolean) root.get("drawOceanEffectsInLakes") : false;
 		// Only maps from before land shapes existed need these, to infer their land shape.
 		Double centerLandToWaterProbability = root.containsKey("centerLandToWaterProbability") ? ((Number) root.get("centerLandToWaterProbability")).doubleValue() : null;
@@ -1488,6 +1502,7 @@ public class MapSettings implements Serializable
 		{
 			drawGrunge = true;
 		}
+		grungeColor = root.containsKey("grungeColor") ? parseColor((String) root.get("grungeColor")) : frayedBorderColor;
 		cityProbability = (double) root.get("cityProbability");
 
 		String lineStyleString = (String) root.get("lineStyle");
@@ -1909,6 +1924,7 @@ public class MapSettings implements Serializable
 		runConversionOnBorderType();
 		runConversionToRemoveTrailingSpacesInImageNamesWithWidth();
 		runConversionOnFadingConcentricWaves();
+		runConversionForSectionCheckboxes();
 		runConversionToRemoveRegionIdsOfEditsThatAreWater();
 		runConversionForNewRangesForRandomRegionColorGeneratorSettings();
 		runConversionToFixCompassRosesGroupId();
@@ -2110,6 +2126,42 @@ public class MapSettings implements Serializable
 			{
 				edits.centerEdits.put(cEdit.index, cEdit.copyWithRegionId(null));
 			}
+		}
+	}
+
+	/**
+	 * Maps saved before 3.24 have no on/off settings for coast shading, ocean shading and ocean waves, and they color grunge with the
+	 * frayed edge color. In them, a width of 0 or the deprecated None or Blur wave types are what turn a section off. Blur's level was
+	 * converted to ocean shading when it was read. Sections that are off because their width is 0 get a default width, so turning them on
+	 * shows something.
+	 */
+	@SuppressWarnings("deprecation")
+	private void runConversionForSectionCheckboxes()
+	{
+		if (isVersionGreaterThanOrEqualTo(version, "3.24"))
+		{
+			return;
+		}
+
+		grungeColor = frayedBorderColor;
+
+		drawCoastShading = coastShadingLevel > 0;
+		if (!drawCoastShading)
+		{
+			coastShadingLevel = defaultCoastShadingLevel;
+		}
+
+		drawOceanShading = oceanShadingLevel > 0;
+		if (!drawOceanShading)
+		{
+			oceanShadingLevel = defaultOceanShadingLevel;
+		}
+
+		drawOceanWaves = oceanWavesType != OceanWaves.None && oceanWavesType != OceanWaves.Blur;
+		if (!drawOceanWaves)
+		{
+			oceanWavesType = OceanWaves.ConcentricWaves;
+			concentricWaveCount = Math.max(1, concentricWaveCount);
 		}
 	}
 
@@ -2747,6 +2799,7 @@ public class MapSettings implements Serializable
 		frayedBorderBlurLevel = old.frayedBorderBlurLevel;
 		grungeWidth = old.grungeWidth;
 		drawGrunge = true;
+		grungeColor = old.frayedBorderColor;
 		generateBackground = old.generateBackground;
 		generateBackgroundFromTexture = old.generateBackgroundFromTexture;
 		solidColorBackground = false;
@@ -2867,7 +2920,23 @@ public class MapSettings implements Serializable
 	public boolean hasOceanShading(double resolutionScale)
 	{
 		double sizeMultiplier = MapCreator.calcSizeMultiplierFromResolutionScaleRounded(resolutionScale);
-		return (int) (sizeMultiplier * oceanShadingLevel) > 0;
+		return (int) (sizeMultiplier * getDrawnOceanShadingLevel()) > 0;
+	}
+
+	/**
+	 * The ocean shading level to draw with, which is 0 when ocean shading is off.
+	 */
+	public int getDrawnOceanShadingLevel()
+	{
+		return drawOceanShading ? oceanShadingLevel : 0;
+	}
+
+	/**
+	 * The coast shading level to draw with, which is 0 when coast shading is off.
+	 */
+	public int getDrawnCoastShadingLevel()
+	{
+		return drawCoastShading ? coastShadingLevel : 0;
 	}
 
 	public boolean hasSincWaves(double resolutionScale)
@@ -2875,12 +2944,12 @@ public class MapSettings implements Serializable
 		double sizeMultiplier = MapCreator.calcSizeMultiplierFromResolutionScaleRounded(resolutionScale);
 		// The cast must apply to the product so that this matches the kernel size the sinc wave drawing code derives from it. Testing the
 		// un-truncated product instead would report sinc waves for a kernel that truncates to size 0.
-		return oceanWavesType == OceanWaves.SincWaves && ((int) (oceanWavesLevel * sizeMultiplier)) > 0;
+		return drawOceanWaves && oceanWavesType == OceanWaves.SincWaves && ((int) (oceanWavesLevel * sizeMultiplier)) > 0;
 	}
 
 	public boolean hasConcentricWaves()
 	{
-		return (oceanWavesType == OceanWaves.ConcentricWaves) && concentricWaveCount > 0;
+		return drawOceanWaves && oceanWavesType == OceanWaves.ConcentricWaves && concentricWaveCount > 0;
 	}
 
 	/**
@@ -2889,7 +2958,7 @@ public class MapSettings implements Serializable
 	 */
 	public boolean hasWaveRows()
 	{
-		return oceanWavesType == OceanWaves.WavyLines || oceanWavesType == OceanWaves.Hatching || oceanWavesType == OceanWaves.Ripples;
+		return drawOceanWaves && (oceanWavesType == OceanWaves.WavyLines || oceanWavesType == OceanWaves.Hatching || oceanWavesType == OceanWaves.Ripples);
 	}
 
 	/**
@@ -3527,7 +3596,8 @@ public class MapSettings implements Serializable
 		@Deprecated
 		Blur,
 		SincWaves, ConcentricWaves, @Deprecated
-		FadingConcentricWaves, None, WavyLines,
+		FadingConcentricWaves, @Deprecated
+		None, WavyLines,
 		/**
 		 * Rows of lines that break into dashes farther from the coast.
 		 */
@@ -3662,6 +3732,14 @@ public class MapSettings implements Serializable
 			differences.add("coastShadingColor: " + coastShadingColor + " vs " + other.coastShadingColor);
 		if (coastShadingLevel != other.coastShadingLevel)
 			differences.add("coastShadingLevel: " + coastShadingLevel + " vs " + other.coastShadingLevel);
+		if (drawCoastShading != other.drawCoastShading)
+			differences.add("drawCoastShading: " + drawCoastShading + " vs " + other.drawCoastShading);
+		if (drawOceanShading != other.drawOceanShading)
+			differences.add("drawOceanShading: " + drawOceanShading + " vs " + other.drawOceanShading);
+		if (drawOceanWaves != other.drawOceanWaves)
+			differences.add("drawOceanWaves: " + drawOceanWaves + " vs " + other.drawOceanWaves);
+		if (!Objects.equals(grungeColor, other.grungeColor))
+			differences.add("grungeColor: " + grungeColor + " vs " + other.grungeColor);
 		if (!Objects.equals(coastlineColor, other.coastlineColor))
 			differences.add("coastlineColor: " + coastlineColor + " vs " + other.coastlineColor);
 		if (Double.doubleToLongBits(coastlineWidth) != Double.doubleToLongBits(other.coastlineWidth))
@@ -3959,7 +4037,7 @@ public class MapSettings implements Serializable
 	{
 		return Objects.hash(artPack, backgroundRandomSeed, backgroundTextureImage, backgroundTextureResource, backgroundTextureSource, boldBackgroundColor, books, borderColor, borderColorOption,
 				borderPosition, borderResource, borderType, borderWidth, brightnessRange, brokenLinesForConcentricWaves, citiesFont, cityIconTypeName, cityProbability,
-				cityScale, coastShadingColor, coastShadingLevel, coastlineColor, coastlineWidth, colorizeLand, colorizeOcean, concentricWaveCount, customImagesPath, defaultDefaultExportAction,
+				cityScale, coastShadingColor, coastShadingLevel, drawCoastShading, drawOceanShading, drawOceanWaves, grungeColor, coastlineColor, coastlineWidth, colorizeLand, colorizeOcean, concentricWaveCount, customImagesPath, defaultDefaultExportAction,
 				defaultHeightmapExportAction, defaultMapExportAction, defaultRoadColor, defaultRoadStyle, defaultRoadWidth, defaultTreeHeightScaleForOldMaps, drawBoldBackground, drawBorder,
 				drawGridOverlay, drawGrunge, drawOceanEffectsInLakes, drawOverlayImage, drawRegionBoundaries, drawRegionColors, drawRoads, drawText, drawVoronoiGridOverlayOnlyOnLand, duneScale,
 				edits, fadeConcentricWaves, fillWithColorByType, flipHorizontally, flipVertically, frayedBorder, frayedBorderBlurLevel, frayedBorderColor, frayedBorderSeed,
@@ -4003,7 +4081,8 @@ public class MapSettings implements Serializable
 				&& Objects.equals(citiesFont, other.citiesFont)
 				&& Objects.equals(cityIconTypeName, other.cityIconTypeName) && Double.doubleToLongBits(cityProbability) == Double.doubleToLongBits(other.cityProbability)
 				&& Double.doubleToLongBits(cityScale) == Double.doubleToLongBits(other.cityScale) && Objects.equals(coastShadingColor, other.coastShadingColor)
-				&& coastShadingLevel == other.coastShadingLevel && Objects.equals(coastlineColor, other.coastlineColor)
+				&& coastShadingLevel == other.coastShadingLevel && drawCoastShading == other.drawCoastShading && drawOceanShading == other.drawOceanShading
+				&& drawOceanWaves == other.drawOceanWaves && Objects.equals(grungeColor, other.grungeColor) && Objects.equals(coastlineColor, other.coastlineColor)
 				&& Double.doubleToLongBits(coastlineWidth) == Double.doubleToLongBits(other.coastlineWidth) && colorizeLand == other.colorizeLand && colorizeOcean == other.colorizeOcean
 				&& concentricWaveCount == other.concentricWaveCount && Objects.equals(customImagesPath, other.customImagesPath) && defaultDefaultExportAction == other.defaultDefaultExportAction
 				&& defaultHeightmapExportAction == other.defaultHeightmapExportAction && defaultMapExportAction == other.defaultMapExportAction

@@ -22,6 +22,8 @@ import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
@@ -31,10 +33,14 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
 
 public class SwingHelper
 {
@@ -65,7 +71,7 @@ public class SwingHelper
 			case "es" -> 10;
 			case "fr" -> 0;
 			case "pt" -> 10;
-			case "ru" -> 50;
+			case "ru" -> 60;
 			default -> 0;
 		};
 		int total = base + osAddition + uiThemeAddition + languageAddition;
@@ -319,7 +325,24 @@ public class SwingHelper
 
 	public static JPanel createColorPickerPreviewPanel()
 	{
-		JPanel panel = new JPanel();
+		JPanel panel = new JPanel()
+		{
+			@Override
+			protected void paintComponent(Graphics g)
+			{
+				super.paintComponent(g);
+				if (!isEnabled())
+				{
+					// Fade the color toward the background so the swatch looks disabled, like the controls beside it.
+					Color background = getParent() == null ? UIManager.getColor("Panel.background") : getParent().getBackground();
+					if (background != null)
+					{
+						g.setColor(new Color(background.getRed(), background.getGreen(), background.getBlue(), 170));
+						g.fillRect(0, 0, getWidth(), getHeight());
+					}
+				}
+			}
+		};
 		panel.setPreferredSize(new Dimension(50, 25));
 		panel.setBackground(Color.BLACK);
 		panel.setBorder(new DynamicLineBorder("controlShadow", 1));
@@ -429,6 +452,11 @@ public class SwingHelper
 
 	public static void showColorPicker(JComponent parent, final JPanel colorDisplay, String title, Runnable okAction)
 	{
+		if (bringOpenColorPickerToFront(colorDisplay))
+		{
+			return;
+		}
+
 		final JColorChooser colorChooser = createColorChooserWithOnlyGoodPanels(colorDisplay.getBackground());
 
 		ActionListener okHandler = new ActionListener()
@@ -443,10 +471,147 @@ public class SwingHelper
 			}
 
 		};
-		Dialog dialog = JColorChooser.createDialog(colorDisplay, title, false, colorChooser, okHandler, null);
-		keepInsideOwnerWindow(dialog, colorDisplay);
-		dialog.setVisible(true);
+		showColorPickerDialog(colorDisplay, colorDisplay, title, colorChooser, okHandler, null);
+	}
 
+	/**
+	 * Shows a color picker for a map setting whose color is shown by a plain swatch. See
+	 * {@link #showColorPickerWithLiveMapPreview(Component, JComponent, String, JColorChooser, Color, Consumer, Runnable, Runnable)}.
+	 */
+	public static void showColorPickerWithLiveMapPreview(JPanel colorDisplay, String title, Runnable previewAction, Runnable commitAction)
+	{
+		if (bringOpenColorPickerToFront(colorDisplay))
+		{
+			return;
+		}
+
+		Color originalColor = colorDisplay.getBackground();
+		showColorPickerWithLiveMapPreview(colorDisplay, colorDisplay, title, createColorChooserWithOnlyGoodPanels(originalColor), originalColor, color ->
+		{
+			colorDisplay.setBackground(color);
+			colorDisplay.repaint();
+		}, previewAction, commitAction);
+	}
+
+	/**
+	 * Shows a color picker for a map setting. While it is open, each color change is written to the display with setColor, and
+	 * previewAction runs, throttled, to redraw the map from the GUI. previewAction must not set an undo point. OK writes the chosen color
+	 * and runs commitAction. Cancel, Escape, or the window's close button restore the original color and run commitAction, but only if the
+	 * color was changed.
+	 *
+	 * @param colorDisplay
+	 *            The component showing the color. Only one picker can be open per display, so if one is already open, it is brought to the
+	 *            front instead.
+	 */
+	public static void showColorPickerWithLiveMapPreview(Component dialogParent, JComponent colorDisplay, String title, JColorChooser colorChooser, Color originalColor,
+			Consumer<Color> setColor, Runnable previewAction, Runnable commitAction)
+	{
+		if (bringOpenColorPickerToFront(colorDisplay))
+		{
+			return;
+		}
+
+		// A throttle rather than a debounce: it is only started when it isn't running, so the map keeps redrawing while the user drags.
+		Timer previewTimer = new Timer(colorPickerPreviewIntervalMillis, e -> previewAction.run());
+		previewTimer.setRepeats(false);
+		boolean[] changed = { false };
+		colorChooser.getSelectionModel().addChangeListener(e ->
+		{
+			setColor.accept(colorChooser.getColor());
+			changed[0] = true;
+			if (!previewTimer.isRunning())
+			{
+				previewTimer.start();
+			}
+		});
+
+		ActionListener okHandler = e ->
+		{
+			previewTimer.stop();
+			setColor.accept(colorChooser.getColor());
+			commitAction.run();
+		};
+		ActionListener cancelHandler = e ->
+		{
+			previewTimer.stop();
+			if (changed[0])
+			{
+				setColor.accept(originalColor);
+				commitAction.run();
+			}
+		};
+		showColorPickerDialog(dialogParent, colorDisplay, title, colorChooser, okHandler, cancelHandler);
+	}
+
+	private static final int colorPickerPreviewIntervalMillis = 100;
+	private static final String openColorPickerProperty = "openColorPicker";
+	/**
+	 * The color pickers that are open. Only accessed on the event dispatch thread.
+	 */
+	private static final Set<Window> openColorPickers = new LinkedHashSet<>();
+
+	/**
+	 * If a color picker is already open for colorDisplay, brings it to the front.
+	 *
+	 * @return Whether a picker was already open.
+	 */
+	private static boolean bringOpenColorPickerToFront(JComponent colorDisplay)
+	{
+		if (colorDisplay.getClientProperty(openColorPickerProperty) instanceof Window openPicker)
+		{
+			openPicker.toFront();
+			return true;
+		}
+		return false;
+	}
+
+	private static void showColorPickerDialog(Component dialogParent, JComponent colorDisplay, String title, JColorChooser colorChooser, ActionListener okHandler,
+			ActionListener cancelHandler)
+	{
+		Dialog dialog = JColorChooser.createDialog(dialogParent, title, false, colorChooser, okHandler, cancelHandler);
+		keepInsideOwnerWindow(dialog, colorDisplay);
+		colorDisplay.putClientProperty(openColorPickerProperty, dialog);
+		openColorPickers.add(dialog);
+		// The dialog is hidden by OK, Cancel, Escape, and its close button.
+		dialog.addComponentListener(new ComponentAdapter()
+		{
+			@Override
+			public void componentHidden(ComponentEvent e)
+			{
+				openColorPickers.remove(dialog);
+				if (colorDisplay.getClientProperty(openColorPickerProperty) == dialog)
+				{
+					colorDisplay.putClientProperty(openColorPickerProperty, null);
+				}
+			}
+		});
+		dialog.setVisible(true);
+	}
+
+	public static boolean isAnyColorPickerOpen()
+	{
+		return !openColorPickers.isEmpty();
+	}
+
+	/**
+	 * If any color picker is open, tells the user to close them first and brings them to the front.
+	 *
+	 * @return Whether any color picker is open, in which case the caller should not continue.
+	 */
+	public static boolean showMessageIfColorPickersAreOpen(Component parent)
+	{
+		if (!isAnyColorPickerOpen())
+		{
+			return false;
+		}
+
+		showMessageDialog(parent, Translation.get("colorPicker.closeBeforeContinuing"), Translation.get("colorPicker.closeBeforeContinuing.title"),
+				JOptionPane.INFORMATION_MESSAGE);
+		for (Window picker : new ArrayList<>(openColorPickers))
+		{
+			picker.toFront();
+		}
+		return true;
 	}
 
 	/**

@@ -289,6 +289,77 @@ public class MapSettingsTest
 		}
 	}
 
+	@Test
+	public void aMapSavedWithNoWavesOrShadingLoadsWithThoseSectionsOff()
+	{
+		// Saved at 3.22 with the None wave type, ocean shading width 0, and coast shading on.
+		MapSettings settings = new MapSettings("unit test files/map settings/noText_WithCities_GoldenRatio_maskedBorder.nort");
+
+		assertFalse(settings.drawOceanWaves);
+		assertEquals(MapSettings.OceanWaves.ConcentricWaves, settings.oceanWavesType);
+		assertTrue(settings.concentricWaveCount >= 1);
+		assertFalse(settings.hasConcentricWaves());
+
+		assertFalse(settings.drawOceanShading);
+		assertEquals(MapSettings.defaultOceanShadingLevel, settings.oceanShadingLevel);
+		assertFalse(settings.hasOceanShading(settings.resolution));
+
+		assertTrue(settings.drawCoastShading);
+		assertEquals(28, settings.coastShadingLevel);
+
+		assertEquals(settings.frayedBorderColor, settings.grungeColor);
+	}
+
+	@Test
+	public void aMapSavedWithBlurLoadsWithWavesOffAndOceanShadingOn()
+	{
+		MapSettings settings = new MapSettings("unit test files/map settings/smallWorld_allTextDeletedByHand_shouldNotRegenerateText.nort");
+
+		assertFalse(settings.drawOceanWaves);
+		assertEquals(MapSettings.OceanWaves.ConcentricWaves, settings.oceanWavesType);
+		assertTrue(settings.drawOceanShading);
+		assertEquals(16, settings.oceanShadingLevel);
+	}
+
+	@Test
+	public void aMapSavedWithNoCoastShadingLoadsWithCoastShadingOff()
+	{
+		MapSettings settings = new MapSettings("unit test files/map settings/bottom right corner land gap.nort");
+
+		assertFalse(settings.drawCoastShading);
+		assertEquals(MapSettings.defaultCoastShadingLevel, settings.coastShadingLevel);
+		assertEquals(0, settings.getDrawnCoastShadingLevel());
+	}
+
+	@Test
+	public void sectionSettingsAndGrungeColorAreSavedAndReadBack() throws Exception
+	{
+		MapSettings settings = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
+		settings.drawCoastShading = false;
+		settings.drawOceanShading = true;
+		settings.drawOceanWaves = false;
+		settings.coastShadingLevel = 12;
+		settings.grungeColor = nortantis.platform.Color.create(1, 2, 3, 4);
+
+		Path temp = Files.createTempFile("sections", ".nort");
+		try
+		{
+			settings.writeToFile(temp.toString());
+			MapSettings reloaded = new MapSettings(temp.toString());
+			assertFalse(reloaded.drawCoastShading);
+			assertTrue(reloaded.drawOceanShading);
+			assertFalse(reloaded.drawOceanWaves);
+			assertEquals(12, reloaded.coastShadingLevel);
+			assertEquals(settings.grungeColor, reloaded.grungeColor);
+			assertEquals(settings.frayedBorderColor, reloaded.frayedBorderColor);
+			assertEquals(settings, reloaded);
+		}
+		finally
+		{
+			Files.deleteIfExists(temp);
+		}
+	}
+
 	private static MapSettings createSettingsWithAllThemeFonts(String family)
 	{
 		MapSettings settings = new MapSettings();

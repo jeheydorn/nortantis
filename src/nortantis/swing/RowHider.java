@@ -43,4 +43,15 @@ public class RowHider
 	{
 		return isVisible;
 	}
+
+	/**
+	 * Enables or disables every component in the row, including the components inside them.
+	 */
+	public void setEnabled(boolean enabled)
+	{
+		for (Component comp : components)
+		{
+			SwingHelper.setEnabled(comp, enabled);
+		}
+	}
 }

@@ -163,7 +163,7 @@ public class MapCreatorTest
 		settings.coastShadingLevel = 0;
 		settings.oceanShadingLevel = 0;
 		settings.oceanWavesLevel = 0;
-		settings.oceanWavesType = MapSettings.OceanWaves.None;
+		settings.drawOceanWaves = false;
 
 		// Each direction and location starts from its own freshly drawn map, so that a difference left behind by one cannot show up in
 		// another.

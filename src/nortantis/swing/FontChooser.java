@@ -36,7 +36,7 @@ public class FontChooser
 	private Supplier<String> textThatMustBeDrawable = () -> "";
 	private String nameOfTextThatMustBeDrawable;
 	private Supplier<List<String>> familiesUsedByThisMap = ArrayList::new;
-	final JButton chooseButton;
+	private final JButton chooseButton;
 	private Font font;
 	private final int maxFontDisplaySize;
 	private final int minPreviewHeight;

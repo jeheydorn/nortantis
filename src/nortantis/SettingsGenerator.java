@@ -81,9 +81,11 @@ public class SettingsGenerator
 		settings.artPack = artPack;
 		settings.customImagesPath = customImagesFolder;
 
-		List<Tuple2<Double, OceanWaves>> oceanWaveOptions = new ArrayList<>(Arrays.asList(new Tuple2<Double, OceanWaves>(1.0, OceanWaves.None),
-				new Tuple2<Double, OceanWaves>(1.0, OceanWaves.ConcentricWaves), new Tuple2<Double, OceanWaves>(1.0, OceanWaves.WavyLines),
-				new Tuple2<Double, OceanWaves>(1.0, OceanWaves.Hatching), new Tuple2<Double, OceanWaves>(1.0, OceanWaves.Ripples)));
+		// A wave type is chosen even when waves are off, so that turning them on in the editor starts from a good one.
+		settings.drawOceanWaves = rand.nextInt(5) != 0;
+		List<Tuple2<Double, OceanWaves>> oceanWaveOptions = new ArrayList<>(Arrays.asList(new Tuple2<Double, OceanWaves>(1.0, OceanWaves.ConcentricWaves),
+				new Tuple2<Double, OceanWaves>(1.0, OceanWaves.WavyLines), new Tuple2<Double, OceanWaves>(1.0, OceanWaves.Hatching),
+				new Tuple2<Double, OceanWaves>(1.0, OceanWaves.Ripples)));
 
 		settings.oceanWavesType = ProbabilityHelper.sampleCategorical(rand, oceanWaveOptions);
 
@@ -92,7 +94,6 @@ public class SettingsGenerator
 
 		settings.drawOceanEffectsInLakes = true;
 		settings.oceanWavesLevel = sincWaveWidth;
-		settings.oceanShadingLevel = 0;
 		if (settings.oceanWavesType == OceanWaves.ConcentricWaves)
 		{
 			settings.fadeConcentricWaves = rand.nextBoolean();
@@ -103,6 +104,7 @@ public class SettingsGenerator
 		applyWaveRowPresets(settings);
 		settings.concentricWaveCount = Math.max(minConcentricWaveCountToGenerate, Math.min(maxConcentricWaveCountToGenerate, Math.abs((rand.nextInt() % maxConcentricWaveCountInEditor)) + 1));
 		settings.coastShadingLevel = 15 + Math.abs(rand.nextInt(35));
+		settings.drawCoastShading = true;
 
 		int hueRange = 16;
 		int saturationRange = 10;
@@ -123,13 +125,11 @@ public class SettingsGenerator
 					(int) (settings.oceanColor.getBlue() * oceanShadingColorScale), defaultOceanShadingAlpha);
 		}
 
-		if (settings.oceanWavesType == OceanWaves.None)
-		{
-			// Use ocean shading instead.
-			// Not that I don't generate a map that uses both shading and waves because although it can look nice, it renders slowly, so I
-			// don't encourage it.
-			settings.oceanShadingLevel = 20 + Math.abs(rand.nextInt(40));
-		}
+		// Ocean shading is used instead of waves. I don't generate a map that uses both shading and waves because although it can look nice,
+		// it renders slowly, so I don't encourage it. The shading width is chosen even when shading is off, so that turning it on in the
+		// editor shows something.
+		settings.drawOceanShading = !settings.drawOceanWaves;
+		settings.oceanShadingLevel = 20 + Math.abs(rand.nextInt(40));
 
 		if (settings.oceanWavesType == OceanWaves.SincWaves)
 		{
@@ -148,6 +148,7 @@ public class SettingsGenerator
 		}
 		settings.riverColor = MapCreator.generateColorFromBaseColor(rand, settings.riverColor, hueRange, saturationRange, brightnessRange);
 		settings.frayedBorderColor = MapCreator.generateColorFromBaseColor(rand, settings.frayedBorderColor, hueRange, saturationRange, brightnessRange);
+		settings.grungeColor = settings.frayedBorderColor;
 
 		settings.worldSize = (rand.nextInt((maxWorldSize - minWorldSizeForRandomSettings) / worldSizePrecision) + minWorldSizeForRandomSettings / worldSizePrecision) * worldSizePrecision;
 
@@ -399,7 +400,9 @@ public class SettingsGenerator
 	{
 		MapSettings randomSettings = generate(new Random(), artPack, customImagesPath);
 		settings.oceanShadingLevel = randomSettings.oceanShadingLevel;
+		settings.drawOceanShading = randomSettings.drawOceanShading;
 		settings.oceanWavesLevel = randomSettings.oceanWavesLevel;
+		settings.drawOceanWaves = randomSettings.drawOceanWaves;
 		settings.concentricWaveCount = randomSettings.concentricWaveCount;
 		settings.fadeConcentricWaves = randomSettings.fadeConcentricWaves;
 		settings.jitterToConcentricWaves = randomSettings.jitterToConcentricWaves;
@@ -418,6 +421,7 @@ public class SettingsGenerator
 		settings.riverColor = randomSettings.riverColor;
 		settings.roadColor = randomSettings.roadColor;
 		settings.coastShadingLevel = randomSettings.coastShadingLevel;
+		settings.drawCoastShading = randomSettings.drawCoastShading;
 		settings.coastShadingColor = randomSettings.coastShadingColor;
 		settings.oceanWavesColor = randomSettings.oceanWavesColor;
 		settings.coastlineColor = randomSettings.coastlineColor;
@@ -427,6 +431,7 @@ public class SettingsGenerator
 		settings.frayedBorderBlurLevel = randomSettings.frayedBorderBlurLevel;
 		settings.frayedBorderSeed = randomSettings.frayedBorderSeed;
 		settings.grungeWidth = randomSettings.grungeWidth;
+		settings.grungeColor = randomSettings.grungeColor;
 		settings.generateBackground = randomSettings.generateBackground;
 		settings.generateBackgroundFromTexture = randomSettings.generateBackgroundFromTexture;
 		settings.solidColorBackground = randomSettings.solidColorBackground;

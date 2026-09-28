@@ -65,7 +65,16 @@ public class GridBagOrganizer
 
 	public static JLabel createWrappingLabel(String text, String tooltip)
 	{
-		JLabel label = new JLabel("<html>" + text + "</html>");
+		JLabel label = new JLabel("<html>" + text + "</html>")
+		{
+			@Override
+			public void setEnabled(boolean enabled)
+			{
+				super.setEnabled(enabled);
+				// Not every look and feel greys out HTML text in a disabled label.
+				setForeground(enabled ? null : UIManager.getColor("Label.disabledForeground"));
+			}
+		};
 		label.setToolTipText(tooltip);
 		return label;
 	}
@@ -74,6 +83,55 @@ public class GridBagOrganizer
 	{
 		JLabel label = createWrappingLabel(labelText, tooltip);
 		return addLabelAndComponents(label, BoxLayout.Y_AXIS, components, 0, 0, null);
+	}
+
+	/**
+	 * Adds a heading that starts a section: its title in bold, followed by a line filling the rest of the row.
+	 */
+	public RowHider addSectionHeading(String text)
+	{
+		JLabel label = new JLabel(text)
+		{
+			@Override
+			public void updateUI()
+			{
+				super.updateUI();
+				setFont(getFont().deriveFont(Font.BOLD));
+			}
+		};
+		return addSectionHeading(label);
+	}
+
+	/**
+	 * Adds a heading that starts a section, with the given component, such as a checkbox that turns the section on or off, in place of a
+	 * title. Its text is made bold to match other headings.
+	 */
+	public RowHider addSectionHeading(JComponent headingComponent)
+	{
+		headingComponent.setFont(headingComponent.getFont().deriveFont(Font.BOLD));
+
+		JPanel headingPanel = new JPanel(new GridBagLayout());
+		{
+			GridBagConstraints c = new GridBagConstraints();
+			c.gridx = 0;
+			c.gridy = 0;
+			c.anchor = GridBagConstraints.LINE_START;
+			headingPanel.add(headingComponent, c);
+		}
+		{
+			GridBagConstraints c = new GridBagConstraints();
+			c.gridx = 1;
+			c.gridy = 0;
+			c.weightx = 1;
+			c.fill = GridBagConstraints.HORIZONTAL;
+			c.anchor = GridBagConstraints.CENTER;
+			c.insets = new Insets(0, 6, 0, 0);
+			headingPanel.add(createHorizontalSeparator(2), c);
+		}
+
+		final int topInset = 8;
+		final int bottomInset = 2;
+		return addLeftAlignedComponent(headingPanel, topInset, bottomInset, false);
 	}
 
 	public <T extends Component> RowHider addLabelAndComponentsVerticalWithComponentPanel(String labelText, String tooltip, List<T> components, JPanel compPanel)
