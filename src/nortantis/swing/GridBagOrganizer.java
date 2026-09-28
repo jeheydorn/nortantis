@@ -83,55 +83,40 @@ public class GridBagOrganizer
 	}
 
 	/**
-	 * Whether a checkbox that turns a section on or off is drawn as a switch at the right end of the section's heading, rather than as a
-	 * checkbox in front of the title. With the switch, every section's title starts at the same place.
-	 */
-	public static boolean sectionHeadingSwitchesOnRight = true;
-
-	/**
 	 * Adds a heading that starts a section: its title in bold, followed by a line filling the rest of the row.
 	 */
 	public RowHider addSectionHeading(String text)
 	{
-		return addSectionHeadingRow(createSectionHeadingLabel(text), null, 0);
+		return addSectionHeadingRow(createSectionHeadingLabel(text), null);
 	}
 
 	/**
-	 * Adds a heading that starts a section, with a checkbox that turns the section on or off, whose text is the section's title. Depending
-	 * on {@link #sectionHeadingSwitchesOnRight}, the checkbox is either in front of the title or drawn as a switch at the end of the row.
+	 * Adds a heading that starts a section, with a checkbox that turns the section on or off, whose text is the section's title. The checkbox
+	 * is drawn as a switch at the end of the row, so every section's title starts at the same place.
 	 */
 	public RowHider addSectionHeading(AbstractButton checkbox)
 	{
-		if (sectionHeadingSwitchesOnRight)
+		JLabel title = createSectionHeadingLabel(checkbox.getText());
+		title.setToolTipText(checkbox.getToolTipText());
+		title.setLabelFor(checkbox);
+		// Clicking a checkbox's text toggles it, so the title does the same for the switch.
+		title.addMouseListener(new MouseAdapter()
 		{
-			JLabel title = createSectionHeadingLabel(checkbox.getText());
-			title.setToolTipText(checkbox.getToolTipText());
-			title.setLabelFor(checkbox);
-			// Clicking a checkbox's text toggles it, so the title does the same for the switch.
-			title.addMouseListener(new MouseAdapter()
+			@Override
+			public void mouseClicked(MouseEvent e)
 			{
-				@Override
-				public void mouseClicked(MouseEvent e)
+				if (checkbox.isEnabled())
 				{
-					if (checkbox.isEnabled())
-					{
-						checkbox.doClick();
-					}
+					checkbox.doClick();
 				}
-			});
-			checkbox.getAccessibleContext().setAccessibleName(checkbox.getText());
-			checkbox.setText("");
-			checkbox.setIcon(new ToggleSwitchIcon(checkbox));
-			Insets insets = checkbox.getInsets();
-			checkbox.setBorder(BorderFactory.createEmptyBorder(insets.top, 0, insets.bottom, 0));
-			return addSectionHeadingRow(title, checkbox, 0);
-		}
-
-		checkbox.setFont(checkbox.getFont().deriveFont(Font.BOLD));
-		// Line the checkbox's box up with the left edge of the labels below it.
+			}
+		});
+		checkbox.getAccessibleContext().setAccessibleName(checkbox.getText());
+		checkbox.setText("");
+		checkbox.setIcon(new ToggleSwitchIcon(checkbox));
 		Insets insets = checkbox.getInsets();
-		checkbox.setBorder(BorderFactory.createEmptyBorder(insets.top, 0, insets.bottom, insets.right));
-		return addSectionHeadingRow(checkbox, null, getBlankColumnsOnLeft(checkbox));
+		checkbox.setBorder(BorderFactory.createEmptyBorder(insets.top, 0, insets.bottom, 0));
+		return addSectionHeadingRow(title, checkbox);
 	}
 
 	private static JLabel createSectionHeadingLabel(String text)
@@ -149,11 +134,8 @@ public class GridBagOrganizer
 
 	/**
 	 * Adds a heading row: the title, a line filling the rest of the row, and optionally a component after the line.
-	 *
-	 * @param leftShift
-	 *            How far left of the rows' left edge to start the title, so that what it visibly draws lines up with the labels below it.
 	 */
-	private RowHider addSectionHeadingRow(JComponent title, JComponent trailingComponent, int leftShift)
+	private RowHider addSectionHeadingRow(JComponent title, JComponent trailingComponent)
 	{
 		final int gapBesideLine = 5;
 		JPanel headingPanel = new JPanel(new GridBagLayout());
@@ -186,45 +168,7 @@ public class GridBagOrganizer
 
 		final int topInset = 8;
 		final int bottomInset = 2;
-		return addFullWidthRow(headingPanel, topInset, bottomInset, rowSideInset - leftShift, false, 1.0);
-	}
-
-	/**
-	 * How many columns of empty space a button, such as a checkbox, paints on its left before its box, which some look and feels leave for a
-	 * focus ring.
-	 */
-	private static int getBlankColumnsOnLeft(AbstractButton button)
-	{
-		Dimension size = button.getPreferredSize();
-		if (size.width <= 0 || size.height <= 0)
-		{
-			return 0;
-		}
-
-		button.setSize(size);
-		BufferedImage image = new BufferedImage(size.width, size.height, BufferedImage.TYPE_INT_ARGB);
-		Graphics2D g = image.createGraphics();
-		try
-		{
-			button.paint(g);
-		}
-		finally
-		{
-			g.dispose();
-		}
-		int background = button.getBackground().getRGB();
-		for (int x = 0; x < image.getWidth(); x++)
-		{
-			for (int y = 0; y < image.getHeight(); y++)
-			{
-				int pixel = image.getRGB(x, y);
-				if ((pixel >>> 24) != 0 && (!button.isOpaque() || pixel != background))
-				{
-					return x;
-				}
-			}
-		}
-		return 0;
+		return addFullWidthRow(headingPanel, topInset, bottomInset, false, 1.0);
 	}
 
 	public <T extends Component> RowHider addLabelAndComponentsVerticalWithComponentPanel(String labelText, String tooltip, List<T> components, JPanel compPanel)
@@ -435,10 +379,10 @@ public class GridBagOrganizer
 
 	public RowHider addLeftAlignedComponent(Component component, int topInset, int bottomInset, boolean allowToExpandVertically, double verticalWeight)
 	{
-		return addFullWidthRow(component, topInset, bottomInset, rowSideInset, allowToExpandVertically, verticalWeight);
+		return addFullWidthRow(component, topInset, bottomInset, allowToExpandVertically, verticalWeight);
 	}
 
-	private RowHider addFullWidthRow(Component component, int topInset, int bottomInset, int leftInset, boolean allowToExpandVertically, double verticalWeight)
+	private RowHider addFullWidthRow(Component component, int topInset, int bottomInset, boolean allowToExpandVertically, double verticalWeight)
 	{
 		GridBagConstraints cc = new GridBagConstraints();
 		if (allowToExpandVertically)
@@ -462,7 +406,7 @@ public class GridBagOrganizer
 			cc.weighty = 0;
 		}
 		cc.anchor = GridBagConstraints.LINE_START;
-		cc.insets = new Insets(topInset, leftInset, bottomInset, rowSideInset);
+		cc.insets = new Insets(topInset, rowSideInset, bottomInset, rowSideInset);
 		panel.add(component, cc);
 
 		curY++;
