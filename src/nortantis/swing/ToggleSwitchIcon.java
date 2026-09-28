@@ -108,10 +108,11 @@ public class ToggleSwitchIcon implements Icon
 	@Override
 	public void paintIcon(Component c, Graphics g, int x, int y)
 	{
-		Color accent = getColor(new Color(0x2675BF), "Component.accentColor", "Slider.thumbColor", "CheckBox.icon.selectedBackground", "textHighlight");
+		// The sliders' blue, so the switches match the sliders beside them.
+		Color accent = getColor(new Color(0x2675BF), "Slider.thumbColor", "Component.accentColor", "CheckBox.icon.selectedBackground", "textHighlight");
 		Color border = getColor(Color.gray, "CheckBox.icon.borderColor", "Component.borderColor", "controlShadow");
 		Color offTrack = getColor(button.getBackground(), "CheckBox.icon.background", "control");
-		Color onKnob = getColor(Color.white, "CheckBox.icon.checkmarkColor");
+		Color onKnob = getOnKnobColor(accent);
 
 		Graphics2D g2 = (Graphics2D) g.create();
 		try
@@ -149,6 +150,29 @@ public class ToggleSwitchIcon implements Icon
 		{
 			g2.dispose();
 		}
+	}
+
+	/**
+	 * The knob's color when the switch is on: the look and feel's checkmark color, which dark themes make a soft light gray, unless it doesn't
+	 * stand out on the accent color, as in light themes whose checkmarks are the accent color, in which case white.
+	 */
+	private static Color getOnKnobColor(Color accent)
+	{
+		final double minBrightnessDifference = 60.0;
+		Color checkmark = UIManager.getColor("CheckBox.icon.checkmarkColor");
+		if (checkmark != null && getBrightness(checkmark) - getBrightness(accent) >= minBrightnessDifference)
+		{
+			return checkmark;
+		}
+		return Color.white;
+	}
+
+	/**
+	 * Perceived brightness, from 0 to 255.
+	 */
+	private static double getBrightness(Color color)
+	{
+		return 0.299 * color.getRed() + 0.587 * color.getGreen() + 0.114 * color.getBlue();
 	}
 
 	/**
