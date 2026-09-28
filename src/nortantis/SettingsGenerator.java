@@ -2,7 +2,6 @@ package nortantis;
 
 import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanWaves;
-import nortantis.MapSettings.WaveLineShape;
 import nortantis.platform.Color;
 import nortantis.platform.Font;
 import nortantis.swing.MapEdits;
@@ -41,15 +40,10 @@ public class SettingsGenerator
 	}
 
 	public static final int minConcentricWaveCountToGenerate = 2;
-	/*
-	 * The looks new maps get for wavy lines, hatching and ripples. Only some combinations of their style settings look good, so new maps
-	 * use these instead of varying each setting on its own.
+	/**
+	 * The width of the waves new maps get for sinc waves.
 	 */
-	private static final MapSettings.WaveRowStyle wavyLinePreset = new MapSettings.WaveRowStyle(WaveLineShape.Scallops, 2.4, 14, 10, true, 3, 6, 3, 5,
-			MapSettings.ShoreDetail.ConcentricWave, 0);
-	private static final int wavyLinePresetBreakLevel = 6;
-	private static final MapSettings.WaveRowStyle ripplePreset = new MapSettings.WaveRowStyle(WaveLineShape.Sine, 2.4, 30, 4, false, 1, 6, 3, 6,
-			MapSettings.ShoreDetail.ConcentricWave, 0);
+	private static final int sincWaveWidth = 30;
 	public static final int defaultCoastShadingAlpha = 87;
 	public static final int defaultOceanShadingAlpha = 87;
 	public static final int defaultSincWavesAlpha = 204;
@@ -97,7 +91,7 @@ public class SettingsGenerator
 		Color oceanColor = settings.oceanColor;
 
 		settings.drawOceanEffectsInLakes = true;
-		settings.oceanWavesLevel = 15 + Math.abs(rand.nextInt(35));
+		settings.oceanWavesLevel = sincWaveWidth;
 		settings.oceanShadingLevel = 0;
 		if (settings.oceanWavesType == OceanWaves.ConcentricWaves)
 		{
@@ -474,18 +468,18 @@ public class SettingsGenerator
 		settings.randomSeed = randomSettings.randomSeed;
 	}
 
+	/**
+	 * Gives wavy lines, hatching and ripples their looks, which are their defaults. Only some combinations of their style settings look good,
+	 * so new maps use these instead of varying each setting on its own.
+	 */
 	private static void applyWaveRowPresets(MapSettings settings)
 	{
-		settings.setWavyLineStyle(wavyLinePreset);
-		settings.wavyLineBreakLevel = wavyLinePresetBreakLevel;
-		// Hatching's look is its defaults.
-		settings.setHatchingStyle(new MapSettings.WaveRowStyle(WaveLineShape.Straight, MapSettings.defaultHatchingLineWidth, MapSettings.defaultHatchingLength,
-				MapSettings.defaultHatchingLengthVariation, MapSettings.defaultJitterToHatching, MapSettings.defaultHatchingJitterLevel,
-				MapSettings.defaultHatchingRowHeight, MapSettings.defaultHatchingRowGap, MapSettings.defaultHatchingRowSpacingVariation,
-				MapSettings.defaultHatchingShoreDetail, MapSettings.defaultHatchingShoreJitterLevel));
+		settings.setWavyLineStyle(MapSettings.getDefaultWavyLineStyle());
+		settings.wavyLineBreakLevel = MapSettings.defaultWavyLineBreakLevel;
+		settings.setHatchingStyle(MapSettings.getDefaultHatchingStyle());
 		settings.hatchingBreakLevel = MapSettings.defaultHatchingBreakLevel;
 		settings.fadeHatching = MapSettings.defaultFadeHatching;
 		settings.hatchingFadeVariation = MapSettings.defaultHatchingFadeVariation;
-		settings.setRippleStyle(ripplePreset);
+		settings.setRippleStyle(MapSettings.getDefaultRippleStyle());
 	}
 }

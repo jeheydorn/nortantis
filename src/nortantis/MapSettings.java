@@ -52,16 +52,20 @@ public class MapSettings implements Serializable
 	public static final double defaultHeightmapResolution = 1.0;
 	public static final int defaultJitterLevel = 10;
 	public static final int maxJitterLevel = 10;
-	/**
-	 * The jitter level of wavy lines, hatching and ripples in maps that don't store one.
+	/*
+	 * The defaults of wavy lines, hatching and ripples are their looks: what new maps get, and what maps saved before those styles existed
+	 * show when switched to them.
 	 */
-	public static final int defaultWaveRowJitterLevel = 5;
 	public static final WaveLineShape defaultWavyLineShape = WaveLineShape.Scallops;
 	public static final int defaultWavyLineRowHeight = 6;
 	public static final int defaultWavyLineRowGap = 3;
-	public static final int defaultWavyLineRowSpacingVariation = 0;
-	public static final int defaultWavyLineLength = 5;
-	public static final int defaultWavyLineLengthVariation = 6;
+	public static final int defaultWavyLineRowSpacingVariation = 5;
+	public static final int defaultWavyLineLength = 14;
+	public static final int defaultWavyLineLengthVariation = 10;
+	public static final boolean defaultJitterToWavyLines = true;
+	public static final int defaultWavyLineJitterLevel = 3;
+	public static final ShoreDetail defaultWavyLineShoreDetail = ShoreDetail.ConcentricWave;
+	public static final int defaultWavyLineShoreJitterLevel = 0;
 	/**
 	 * The highest value of the settings that say how much wave lines vary, which are scaled to a fraction of the most variation there is
 	 * room for.
@@ -72,9 +76,6 @@ public class MapSettings implements Serializable
 	 */
 	public static final int maxWaveLineBreakLevel = 10;
 	public static final int defaultWavyLineBreakLevel = 6;
-	/*
-	 * Hatching's defaults are its look: what new maps get, and what maps saved before hatching existed show when switched to it.
-	 */
 	public static final int defaultHatchingRowHeight = 6;
 	public static final int defaultHatchingRowGap = 0;
 	public static final int defaultHatchingRowSpacingVariation = 0;
@@ -91,9 +92,13 @@ public class MapSettings implements Serializable
 	public static final WaveLineShape defaultRippleShape = WaveLineShape.Sine;
 	public static final int defaultRippleRowHeight = 6;
 	public static final int defaultRippleRowGap = 3;
-	public static final int defaultRippleRowSpacingVariation = 0;
+	public static final int defaultRippleRowSpacingVariation = 6;
 	public static final int defaultRippleLength = 30;
 	public static final int defaultRippleLengthVariation = 4;
+	public static final boolean defaultJitterToRipples = false;
+	public static final int defaultRippleJitterLevel = 1;
+	public static final ShoreDetail defaultRippleShoreDetail = ShoreDetail.ConcentricWave;
+	public static final int defaultRippleShoreJitterLevel = 0;
 	/**
 	 * The width, in pixels at resolution 1, of concentric waves' lines and of wavy lines, hatching and ripples in maps that don't store
 	 * one.
@@ -148,8 +153,8 @@ public class MapSettings implements Serializable
 	 * Whether rows of wavy lines wander up and down. The wavy lines style keeps its own settings so that switching styles doesn't change
 	 * either one's look.
 	 */
-	public boolean jitterToWavyLines;
-	public int wavyLineJitterLevel = defaultWaveRowJitterLevel;
+	public boolean jitterToWavyLines = defaultJitterToWavyLines;
+	public int wavyLineJitterLevel = defaultWavyLineJitterLevel;
 	/**
 	 * How often wavy lines break, as though the pen were lifted, from 0 to maxWaveLineBreakLevel. At 0 they never break.
 	 */
@@ -157,11 +162,11 @@ public class MapSettings implements Serializable
 	/**
 	 * What wavy lines draw between their rows and the coast.
 	 */
-	public ShoreDetail wavyLineShoreDetail = ShoreDetail.ConcentricWave;
+	public ShoreDetail wavyLineShoreDetail = defaultWavyLineShoreDetail;
 	/**
 	 * How far the concentric wave, or the edge of the gap, between wavy lines and the coast wanders, from 0 to maxJitterLevel.
 	 */
-	public int wavyLineShoreJitterLevel;
+	public int wavyLineShoreJitterLevel = defaultWavyLineShoreJitterLevel;
 	/**
 	 * The width of wavy lines and of the line along the coast they are drawn outside of, in pixels at resolution 1.
 	 */
@@ -202,10 +207,10 @@ public class MapSettings implements Serializable
 	public int rippleRowSpacingVariation = defaultRippleRowSpacingVariation;
 	public int rippleLength = defaultRippleLength;
 	public int rippleLengthVariation = defaultRippleLengthVariation;
-	public boolean jitterToRipples;
-	public int rippleJitterLevel = defaultWaveRowJitterLevel;
-	public ShoreDetail rippleShoreDetail = ShoreDetail.ConcentricWave;
-	public int rippleShoreJitterLevel;
+	public boolean jitterToRipples = defaultJitterToRipples;
+	public int rippleJitterLevel = defaultRippleJitterLevel;
+	public ShoreDetail rippleShoreDetail = defaultRippleShoreDetail;
+	public int rippleShoreJitterLevel = defaultRippleShoreJitterLevel;
 	public double rippleLineWidth = defaultWaveLineWidth;
 	/*
 	 * Hatching has its own copies of the wavy lines' style settings too, except for the shape, since hatching is always straight. Each
@@ -1328,11 +1333,11 @@ public class MapSettings implements Serializable
 		}
 		// Maps made before jitter had an amount used the strongest one.
 		jitterLevel = root.containsKey("jitterLevel") ? (int) (long) root.get("jitterLevel") : defaultJitterLevel;
-		jitterToWavyLines = root.containsKey("jitterToWavyLines") && (boolean) root.get("jitterToWavyLines");
-		wavyLineJitterLevel = root.containsKey("wavyLineJitterLevel") ? (int) (long) root.get("wavyLineJitterLevel") : defaultWaveRowJitterLevel;
+		jitterToWavyLines = root.containsKey("jitterToWavyLines") ? (boolean) root.get("jitterToWavyLines") : defaultJitterToWavyLines;
+		wavyLineJitterLevel = root.containsKey("wavyLineJitterLevel") ? (int) (long) root.get("wavyLineJitterLevel") : defaultWavyLineJitterLevel;
 		wavyLineBreakLevel = root.containsKey("wavyLineBreakLevel") ? (int) (long) root.get("wavyLineBreakLevel") : defaultWavyLineBreakLevel;
-		wavyLineShoreDetail = root.containsKey("wavyLineShoreDetail") ? ShoreDetail.valueOf((String) root.get("wavyLineShoreDetail")) : ShoreDetail.ConcentricWave;
-		wavyLineShoreJitterLevel = root.containsKey("wavyLineShoreJitterLevel") ? (int) (long) root.get("wavyLineShoreJitterLevel") : 0;
+		wavyLineShoreDetail = root.containsKey("wavyLineShoreDetail") ? ShoreDetail.valueOf((String) root.get("wavyLineShoreDetail")) : defaultWavyLineShoreDetail;
+		wavyLineShoreJitterLevel = root.containsKey("wavyLineShoreJitterLevel") ? (int) (long) root.get("wavyLineShoreJitterLevel") : defaultWavyLineShoreJitterLevel;
 		concentricWaveLineWidth = root.containsKey("concentricWaveLineWidth") ? (double) root.get("concentricWaveLineWidth") : defaultWaveLineWidth;
 		wavyLineWidth = root.containsKey("wavyLineWidth") ? (double) root.get("wavyLineWidth") : defaultWaveLineWidth;
 		wavyLineShape = root.containsKey("wavyLineShape") ? WaveLineShape.valueOf((String) root.get("wavyLineShape")) : defaultWavyLineShape;
@@ -1347,10 +1352,10 @@ public class MapSettings implements Serializable
 		rippleRowSpacingVariation = root.containsKey("rippleRowSpacingVariation") ? (int) (long) root.get("rippleRowSpacingVariation") : defaultRippleRowSpacingVariation;
 		rippleLength = root.containsKey("rippleLength") ? (int) (long) root.get("rippleLength") : defaultRippleLength;
 		rippleLengthVariation = root.containsKey("rippleLengthVariation") ? (int) (long) root.get("rippleLengthVariation") : defaultRippleLengthVariation;
-		jitterToRipples = root.containsKey("jitterToRipples") && (boolean) root.get("jitterToRipples");
-		rippleJitterLevel = root.containsKey("rippleJitterLevel") ? (int) (long) root.get("rippleJitterLevel") : defaultWaveRowJitterLevel;
-		rippleShoreDetail = root.containsKey("rippleShoreDetail") ? ShoreDetail.valueOf((String) root.get("rippleShoreDetail")) : ShoreDetail.ConcentricWave;
-		rippleShoreJitterLevel = root.containsKey("rippleShoreJitterLevel") ? (int) (long) root.get("rippleShoreJitterLevel") : 0;
+		jitterToRipples = root.containsKey("jitterToRipples") ? (boolean) root.get("jitterToRipples") : defaultJitterToRipples;
+		rippleJitterLevel = root.containsKey("rippleJitterLevel") ? (int) (long) root.get("rippleJitterLevel") : defaultRippleJitterLevel;
+		rippleShoreDetail = root.containsKey("rippleShoreDetail") ? ShoreDetail.valueOf((String) root.get("rippleShoreDetail")) : defaultRippleShoreDetail;
+		rippleShoreJitterLevel = root.containsKey("rippleShoreJitterLevel") ? (int) (long) root.get("rippleShoreJitterLevel") : defaultRippleShoreJitterLevel;
 		rippleLineWidth = root.containsKey("rippleLineWidth") ? (double) root.get("rippleLineWidth") : defaultWaveLineWidth;
 		hatchingRowHeight = root.containsKey("hatchingRowHeight") ? (int) (long) root.get("hatchingRowHeight") : defaultHatchingRowHeight;
 		hatchingRowGap = root.containsKey("hatchingRowGap") ? (int) (long) root.get("hatchingRowGap") : defaultHatchingRowGap;
@@ -2994,6 +2999,27 @@ public class MapSettings implements Serializable
 		rippleLineWidth = style.lineWidth();
 		rippleShoreDetail = style.shoreDetail();
 		rippleShoreJitterLevel = style.shoreJitterLevel();
+	}
+
+	public static WaveRowStyle getDefaultWavyLineStyle()
+	{
+		return new WaveRowStyle(defaultWavyLineShape, defaultWaveLineWidth, defaultWavyLineLength, defaultWavyLineLengthVariation, defaultJitterToWavyLines,
+				defaultWavyLineJitterLevel, defaultWavyLineRowHeight, defaultWavyLineRowGap, defaultWavyLineRowSpacingVariation, defaultWavyLineShoreDetail,
+				defaultWavyLineShoreJitterLevel);
+	}
+
+	public static WaveRowStyle getDefaultHatchingStyle()
+	{
+		return new WaveRowStyle(WaveLineShape.Straight, defaultHatchingLineWidth, defaultHatchingLength, defaultHatchingLengthVariation, defaultJitterToHatching,
+				defaultHatchingJitterLevel, defaultHatchingRowHeight, defaultHatchingRowGap, defaultHatchingRowSpacingVariation, defaultHatchingShoreDetail,
+				defaultHatchingShoreJitterLevel);
+	}
+
+	public static WaveRowStyle getDefaultRippleStyle()
+	{
+		return new WaveRowStyle(defaultRippleShape, defaultWaveLineWidth, defaultRippleLength, defaultRippleLengthVariation, defaultJitterToRipples,
+				defaultRippleJitterLevel, defaultRippleRowHeight, defaultRippleRowGap, defaultRippleRowSpacingVariation, defaultRippleShoreDetail,
+				defaultRippleShoreJitterLevel);
 	}
 
 	/**

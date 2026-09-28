@@ -312,7 +312,7 @@ public class MapCreatorTest
 		settings.oceanWavesType = oceanWavesType;
 		MapSettings.WaveRowStyle style = settings.getWaveRowStyle();
 		setWaveRowStyle(settings, new MapSettings.WaveRowStyle(style.shape(), style.lineWidth(), 40, 10, true, style.jitterLevel(), 24, 17, 10, style.shoreDetail(),
-				MapSettings.defaultWaveRowJitterLevel));
+				5));
 
 		int failCount = runOneLandWaterChange(settings, settingsFileName, true, 0, graph -> findLandCluster(graph, true, 0), " large coastal");
 		if (failCount > 0)
@@ -394,7 +394,7 @@ public class MapCreatorTest
 		settings.hatchingFadeVariation = MapSettings.maxWaveLineVariation;
 		MapSettings.WaveRowStyle style = settings.getWaveRowStyle();
 		setWaveRowStyle(settings, new MapSettings.WaveRowStyle(style.shape(), style.lineWidth(), length != null ? length : style.length(),
-				style.lengthVariation(), true, style.jitterLevel(), style.rowHeight(), style.rowGap(), 10, shoreDetail, MapSettings.defaultWaveRowJitterLevel));
+				style.lengthVariation(), true, style.jitterLevel(), style.rowHeight(), style.rowGap(), 10, shoreDetail, 5));
 
 		MapParts mapParts = new MapParts();
 		new MapCreator().createMap(settings, null, mapParts).close();
