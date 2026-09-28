@@ -555,6 +555,9 @@ public class WaveLineDrawer
 			{
 				p.setColor(Color.white);
 				p.setBasicStroke((float) strokeWidth);
+				// Strokes are given in map coordinates, so that drawing part of the map rounds them the same way as drawing all of it, and moved
+				// into the target by a whole number of pixels, which anti-aliasing draws the same at any offset.
+				p.translate(-drawBounds.x, -drawBounds.y);
 
 				// Include rows whose waves, jitter and stroke width reach into the target from just outside it.
 				double rowReach = (amplitude + jitterAmplitude) * sizeMultiplier + strokeWidth;
@@ -1156,7 +1159,7 @@ public class WaveLineDrawer
 			boolean isStartFree = !(start <= runStartInGraph && isStartHidden);
 			boolean isEndFree = !(end >= runEndInGraph && isEndHidden);
 			double taperLength = dashTaperAsFractionOfHalfLength * (end - start) / 2.0 / sizeMultiplier;
-			drawPiece(p, row, yInGraph, rowJitterAmplitude, start / sizeMultiplier, end / sizeMultiplier, drawBounds,
+			drawPiece(p, row, yInGraph, rowJitterAmplitude, start / sizeMultiplier, end / sizeMultiplier,
 					new StrokeTaper(start / sizeMultiplier, end / sizeMultiplier, taperLength, isStartFree, isEndFree));
 		}
 	}
@@ -1385,7 +1388,7 @@ public class WaveLineDrawer
 		// of the breaks wavy lines and hatching get.
 		if (!hasBreaks)
 		{
-			drawPiece(p, row, yInGraph, rowJitterAmplitude, startInUnits, endInUnits, drawBounds, taper);
+			drawPiece(p, row, yInGraph, rowJitterAmplitude, startInUnits, endInUnits, taper);
 			return breakPattern;
 		}
 
@@ -1418,7 +1421,7 @@ public class WaveLineDrawer
 
 		for (double[] piece : pieces)
 		{
-			drawPiece(p, row, yInGraph, rowJitterAmplitude, piece[0], piece[1], drawBounds, taper);
+			drawPiece(p, row, yInGraph, rowJitterAmplitude, piece[0], piece[1], taper);
 		}
 		return pattern;
 	}
@@ -1595,7 +1598,7 @@ public class WaveLineDrawer
 	 * @param taper
 	 *            How the whole stroke this is part of narrows toward its ends, or null to draw it at the stroke width with round caps.
 	 */
-	private void drawPiece(Painter p, int row, double yInGraph, double rowJitterAmplitude, double startInUnits, double endInUnits, Rectangle drawBounds, StrokeTaper taper)
+	private void drawPiece(Painter p, int row, double yInGraph, double rowJitterAmplitude, double startInUnits, double endInUnits, StrokeTaper taper)
 	{
 		if (endInUnits - startInUnits < minPieceLength)
 		{
@@ -1624,7 +1627,7 @@ public class WaveLineDrawer
 			double xInUnits = samples.get(i);
 			double phase = getPhase(row, xInUnits);
 			double height = getWaveHeight(shape, row, phase);
-			double y = yInGraph - drawBounds.y + sampleJitter(row, rowJitterAmplitude, xInUnits) * sizeMultiplier;
+			double y = yInGraph + sampleJitter(row, rowJitterAmplitude, xInUnits) * sizeMultiplier;
 			if (taper != null)
 			{
 				double amount = taper.getAmount(xInUnits);
@@ -1633,7 +1636,7 @@ public class WaveLineDrawer
 				double pressure = 1.0 + taperPressureVariation * sampleSmoothNoise(taperPressureSalt, row, xInUnits, taperPressureNoiseSpacing);
 				widths[i] = strokeWidth * pressure * (1.0 - (1.0 - taperTipWidthFraction) * amount);
 			}
-			points.add(new FloatPoint((float) (xInUnits * sizeMultiplier - drawBounds.x), (float) (y - amplitudeInPixels * height)));
+			points.add(new FloatPoint((float) (xInUnits * sizeMultiplier), (float) (y - amplitudeInPixels * height)));
 		}
 
 		if (taper == null)

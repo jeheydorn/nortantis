@@ -19,6 +19,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.Lock;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.DoubleConsumer;
 import java.util.stream.Collectors;
@@ -418,6 +419,53 @@ public class MapCreator implements WarningLogger
 	}
 
 	/**
+	 * Creates a mask of part of the map that is white on land and black on water. See {@link #createMaskAtMapCoordinates}.
+	 */
+	static Image createLandMask(WorldGraph graph, Collection<Center> centersToDraw, Rectangle drawBounds)
+	{
+		return createMaskAtMapCoordinates(graph, drawBounds, ImageType.Binary, (p, bounds) -> graph.drawLandAndOceanBlackAndWhite(p, centersToDraw, bounds));
+	}
+
+	/**
+	 * Creates a mask of part of the map drawn without anti-aliasing.
+	 *
+	 * Drawing without anti-aliasing rounds shapes' edges differently depending on where in the image they are, so the part of the mask on the
+	 * map is drawn at the same coordinates a draw of the whole map uses, which makes it match that draw exactly.
+	 *
+	 * @param draw
+	 *            Draws the mask with a painter, given the bounds whose upper-left corner the painter's origin is at, or null if its origin is
+	 *            the map's.
+	 */
+	private static Image createMaskAtMapCoordinates(WorldGraph graph, Rectangle drawBounds, ImageType type, BiConsumer<Painter, Rectangle> draw)
+	{
+		Image mask = Image.create((int) drawBounds.width, (int) drawBounds.height, type);
+		boolean isAtMapOrigin = drawBounds.x == 0 && drawBounds.y == 0;
+		if (isAtMapOrigin || !graph.bounds.contains(drawBounds))
+		{
+			try (Painter p = mask.createPainter())
+			{
+				draw.accept(p, drawBounds);
+			}
+		}
+
+		IntRectangle onMap = drawBounds.toIntRectangle().findIntersection(graph.bounds.toIntRectangle());
+		if (!isAtMapOrigin && onMap != null)
+		{
+			try (Image atMapCoordinates = Image.create(onMap.x + onMap.width, onMap.y + onMap.height, type))
+			{
+				try (Painter p = atMapCoordinates.createPainter())
+				{
+					p.setClip(onMap.x, onMap.y, onMap.width, onMap.height);
+					draw.accept(p, null);
+				}
+				ImageHelper.getInstance().copySnippetFromSourceAndPasteIntoTarget(mask, atMapCoordinates, new IntPoint(onMap.x - (int) drawBounds.x, onMap.y - (int) drawBounds.y),
+						onMap, 0);
+			}
+		}
+		return mask;
+	}
+
+	/**
 	 * Draws the ocean waves and ocean shading again where a change can have changed them, and finds where they differ from the whole-map masks
 	 * in mapParts.
 	 *
@@ -435,12 +483,8 @@ public class MapCreator implements WarningLogger
 		Set<Center> centersToDraw = mapParts.graph.breadthFirstSearch(c -> c.isInBoundsIncludingNoisyEdges(drawBounds), searchStart);
 		checkForCancel();
 		Tuple2<Image, Image> oceanTuple;
-		try (Image landMask = Image.create((int) drawBounds.width, (int) drawBounds.height, ImageType.Binary))
+		try (Image landMask = createLandMask(mapParts.graph, centersToDraw, drawBounds))
 		{
-			try (Painter p = landMask.createPainter())
-			{
-				mapParts.graph.drawLandAndOceanBlackAndWhite(p, centersToDraw, drawBounds);
-			}
 			oceanTuple = createOceanWavesAndShading(settings, mapParts.graph, settings.resolution, landMask, centersToDraw, drawBounds);
 		}
 		checkForCancel();
@@ -604,12 +648,7 @@ public class MapCreator implements WarningLogger
 
 			checkForCancel();
 
-			// Draw mask for land vs ocean.
-			Image landMask = Image.create((int) drawBounds.width, (int) drawBounds.height, ImageType.Binary);
-			try (Painter p = landMask.createPainter())
-			{
-				mapParts.graph.drawLandAndOceanBlackAndWhite(p, centersToDraw, drawBounds);
-			}
+			Image landMask = createLandMask(mapParts.graph, centersToDraw, drawBounds);
 
 			checkForCancel();
 
@@ -697,11 +736,7 @@ public class MapCreator implements WarningLogger
 					if (oceanDrawBounds != drawBounds)
 					{
 						oceanCentersToDraw = mapParts.graph.breadthFirstSearch(c -> c.isInBoundsIncludingNoisyEdges(oceanDrawBounds), searchStart);
-						oceanLandMask = Image.create((int) oceanDrawBounds.width, (int) oceanDrawBounds.height, ImageType.Binary);
-						try (Painter p = oceanLandMask.createPainter())
-						{
-							mapParts.graph.drawLandAndOceanBlackAndWhite(p, oceanCentersToDraw, oceanDrawBounds);
-						}
+						oceanLandMask = createLandMask(mapParts.graph, oceanCentersToDraw, oceanDrawBounds);
 					}
 					Tuple2<Image, Image> oceanTuple = createOceanWavesAndShading(settings, mapParts.graph, settings.resolution, oceanLandMask, oceanCentersToDraw, oceanDrawBounds);
 					if (oceanDrawBounds == drawBounds)
@@ -2045,22 +2080,19 @@ public class MapCreator implements WarningLogger
 
 	private Image createCoastlineMask(MapSettings settings, WorldGraph graph, double targetStrokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
-		Image coastlineMask = Image.create((int) drawBounds.width, (int) drawBounds.height, ImageType.Binary);
-		try (Painter g = coastlineMask.createPainter())
+		return createMaskAtMapCoordinates(graph, drawBounds, ImageType.Binary, (g, bounds) ->
 		{
 			g.setColor(Color.white);
 
 			if (settings.drawOceanEffectsInLakes)
 			{
-				graph.drawCoastlineWithLakeShores(g, targetStrokeWidth, centersToDraw, drawBounds);
+				graph.drawCoastlineWithLakeShores(g, targetStrokeWidth, centersToDraw, bounds);
 			}
 			else
 			{
-				graph.drawCoastline(g, targetStrokeWidth, centersToDraw, drawBounds);
+				graph.drawCoastline(g, targetStrokeWidth, centersToDraw, bounds);
 			}
-		}
-
-		return coastlineMask;
+		});
 	}
 
 	private Image createConcentricWavesMask(MapSettings settings, WorldGraph graph, double resolutionScaled, Image landMask, Collection<Center> centersToDraw, Rectangle drawBounds)
@@ -2332,11 +2364,8 @@ public class MapCreator implements WarningLogger
 		// noisy edges for centers along the border (the edge of the map). Because of this, I need to draw border centers first, then draw
 		// centers with noisy edges over them. Thus I must draw both the land and lakes, and their ocean neighbors, so I need to do the
 		// drawing as a mask and then apply it onto oceanEffects.
-		Image landAndLakeMask = Image.create(oceanEffects.getWidth(), oceanEffects.getHeight(), ImageType.Grayscale8Bit);
-		try (Painter p = landAndLakeMask.createPainter())
-		{
-			graph.drawLandAndLakesBlackAndOceanWhite(p, centersToDraw, drawBounds);
-		}
+		Image landAndLakeMask = createMaskAtMapCoordinates(graph, drawBounds, ImageType.Binary,
+				(p, bounds) -> graph.drawLandAndLakesBlackAndOceanWhite(p, centersToDraw, bounds));
 		return ImageHelper.getInstance().maskWithColor(oceanEffects, Color.black, landAndLakeMask, false);
 	}
 
