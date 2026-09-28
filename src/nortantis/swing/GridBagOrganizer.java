@@ -65,16 +65,7 @@ public class GridBagOrganizer
 
 	public static JLabel createWrappingLabel(String text, String tooltip)
 	{
-		JLabel label = new JLabel("<html>" + text + "</html>")
-		{
-			@Override
-			public void setEnabled(boolean enabled)
-			{
-				super.setEnabled(enabled);
-				// Not every look and feel greys out HTML text in a disabled label.
-				setForeground(enabled ? null : UIManager.getColor("Label.disabledForeground"));
-			}
-		};
+		JLabel label = new JLabel("<html>" + text + "</html>");
 		label.setToolTipText(tooltip);
 		return label;
 	}
@@ -109,23 +100,46 @@ public class GridBagOrganizer
 	public RowHider addSectionHeading(JComponent headingComponent)
 	{
 		headingComponent.setFont(headingComponent.getFont().deriveFont(Font.BOLD));
+		if (headingComponent instanceof AbstractButton button)
+		{
+			// Start a checkbox's box where a plain heading's text starts.
+			Insets margin = button.getMargin();
+			if (margin != null)
+			{
+				button.setMargin(new Insets(margin.top, 0, margin.bottom, margin.right));
+			}
+		}
 
+		// The line starts at the left edge of the rows below, with the heading set just inside it, so the line marks where the section
+		// begins.
+		final int leadingLineWidth = 8;
+		final int gapAroundHeading = 5;
 		JPanel headingPanel = new JPanel(new GridBagLayout());
 		{
+			JComponent leadingLine = createHorizontalSeparator(2);
+			leadingLine.setPreferredSize(new Dimension(leadingLineWidth, leadingLine.getPreferredSize().height));
+			leadingLine.setMinimumSize(leadingLine.getPreferredSize());
 			GridBagConstraints c = new GridBagConstraints();
 			c.gridx = 0;
 			c.gridy = 0;
-			c.anchor = GridBagConstraints.LINE_START;
-			headingPanel.add(headingComponent, c);
+			c.anchor = GridBagConstraints.CENTER;
+			headingPanel.add(leadingLine, c);
 		}
 		{
 			GridBagConstraints c = new GridBagConstraints();
 			c.gridx = 1;
 			c.gridy = 0;
+			c.anchor = GridBagConstraints.LINE_START;
+			c.insets = new Insets(0, gapAroundHeading, 0, gapAroundHeading);
+			headingPanel.add(headingComponent, c);
+		}
+		{
+			GridBagConstraints c = new GridBagConstraints();
+			c.gridx = 2;
+			c.gridy = 0;
 			c.weightx = 1;
 			c.fill = GridBagConstraints.HORIZONTAL;
 			c.anchor = GridBagConstraints.CENTER;
-			c.insets = new Insets(0, 6, 0, 0);
 			headingPanel.add(createHorizontalSeparator(2), c);
 		}
 

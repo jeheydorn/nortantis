@@ -409,7 +409,7 @@ public class ThemePanel extends JTabbedPane
 		regionBoundaryRows.add(organizer.addLabelAndComponentsHorizontal(Translation.get("theme.color.label"), Translation.get("theme.regionBoundaryColor.help"),
 				Arrays.asList(regionBoundaryColorDisplay, buttonChooseRegionBoundaryColor), SwingHelper.colorPickerLeftPadding));
 
-		organizer.addSectionHeading(Translation.get("theme.section.land"));
+		organizer.addSectionHeading(Translation.get("theme.section.colors"));
 
 		colorizeLandCheckbox = new JCheckBox(Translation.get("theme.colorLand"));
 		colorizeLandCheckbox.setToolTipText(Translation.get("theme.colorLand.tooltip"));
@@ -430,7 +430,7 @@ public class ThemePanel extends JTabbedPane
 				handleFullRedraw();
 			}
 		});
-		organizer.addLabelAndComponent(Translation.get("theme.coloringMethod.label"), Translation.get("theme.landColoringMethod.help"), landColoringMethodComboBox);
+		organizer.addLabelAndComponent(Translation.get("theme.landColoringMethod.label"), Translation.get("theme.landColoringMethod.help"), landColoringMethodComboBox);
 
 		colorizeCheckboxListener = new ItemListener()
 		{
@@ -464,11 +464,10 @@ public class ThemePanel extends JTabbedPane
 			container.add(landDisplayPanel);
 			btnChooseLandColor.setAlignmentX(CENTER_ALIGNMENT);
 
-			landColorHider = organizer.addLabelAndComponentsVertical(Translation.get("theme.color.label"), Translation.get("theme.landColor.help"),
+			landColorHider = organizer.addLabelAndComponentsVertical(Translation.get("theme.landColor.label"), Translation.get("theme.landColor.help"),
 					Arrays.asList(container, Box.createVerticalStrut(5), btnChooseLandColor));
 		}
 
-		organizer.addSectionHeading(Translation.get("theme.section.ocean"));
 		colorizeOceanCheckbox = new JCheckBox(Translation.get("theme.colorOcean"));
 		colorizeOceanCheckbox.setToolTipText(Translation.get("theme.colorOcean.tooltip"));
 		colorizeOceanCheckboxHider = organizer.addLeftAlignedComponent(colorizeOceanCheckbox);
@@ -494,7 +493,7 @@ public class ThemePanel extends JTabbedPane
 			container.add(oceanDisplayPanel);
 			btnChooseOceanColor.setAlignmentX(CENTER_ALIGNMENT);
 
-			organizer.addLabelAndComponentsVertical(Translation.get("theme.color.label"), Translation.get("theme.oceanColor.help"),
+			organizer.addLabelAndComponentsVertical(Translation.get("theme.oceanColor.label"), Translation.get("theme.oceanColor.help"),
 					Arrays.asList(container, Box.createVerticalStrut(5), btnChooseOceanColor));
 		}
 
@@ -839,6 +838,8 @@ public class ThemePanel extends JTabbedPane
 		grungeSlider.setMinorTickSpacing(250);
 		grungeSlider.setMaximum(2000);
 		grungeSlider.setMajorTickSpacing(1000);
+		// The last tick label draws about a pixel wider than the slider measures it, which would clip its right edge.
+		grungeSlider.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 2));
 		createMapChangeListenerForFrayedEdgeOrGrungeChange(grungeSlider);
 		grungeRows = organizer.addLabelAndComponent(Translation.get("theme.width.label"), Translation.get("theme.grungeWidth.help"), grungeSlider);
 
