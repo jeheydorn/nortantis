@@ -17,6 +17,10 @@ public class GridBagOrganizer
 	private final double componentWeight = 0.6;
 	private int curY = 0;
 	public static final int rowVerticalInset = 10;
+	/**
+	 * The space between rows and the sides of the panel.
+	 */
+	private static final int rowSideInset = 5;
 	private final int defaultHorizontalSpaceBetweenComponentsAddAsList = 10;
 
 	public GridBagOrganizer()
@@ -45,7 +49,7 @@ public class GridBagOrganizer
 		lc.weightx = labelWeight;
 		lc.weighty = 0;
 		lc.anchor = GridBagConstraints.NORTHEAST;
-		lc.insets = new Insets(topInset, 5, rowVerticalInset, 5);
+		lc.insets = new Insets(topInset, rowSideInset, rowVerticalInset, 5);
 		panel.add(label, lc);
 
 		GridBagConstraints cc = new GridBagConstraints();
@@ -100,42 +104,28 @@ public class GridBagOrganizer
 	public RowHider addSectionHeading(JComponent headingComponent)
 	{
 		headingComponent.setFont(headingComponent.getFont().deriveFont(Font.BOLD));
+		// Line a checkbox's box up with the left edge of the labels below it.
+		int blankColumnsOnLeft = 0;
 		if (headingComponent instanceof AbstractButton button)
 		{
-			// Start a checkbox's box where a plain heading's text starts.
-			Insets margin = button.getMargin();
-			if (margin != null)
-			{
-				button.setMargin(new Insets(margin.top, 0, margin.bottom, margin.right));
-			}
+			Insets insets = button.getInsets();
+			button.setBorder(BorderFactory.createEmptyBorder(insets.top, 0, insets.bottom, insets.right));
+			blankColumnsOnLeft = getBlankColumnsOnLeft(button);
 		}
 
-		// The line starts at the left edge of the rows below, with the heading set just inside it, so the line marks where the section
-		// begins.
-		final int leadingLineWidth = 8;
-		final int gapAroundHeading = 5;
+		final int gapAfterHeading = 5;
 		JPanel headingPanel = new JPanel(new GridBagLayout());
 		{
-			JComponent leadingLine = createHorizontalSeparator(2);
-			leadingLine.setPreferredSize(new Dimension(leadingLineWidth, leadingLine.getPreferredSize().height));
-			leadingLine.setMinimumSize(leadingLine.getPreferredSize());
 			GridBagConstraints c = new GridBagConstraints();
 			c.gridx = 0;
 			c.gridy = 0;
-			c.anchor = GridBagConstraints.CENTER;
-			headingPanel.add(leadingLine, c);
-		}
-		{
-			GridBagConstraints c = new GridBagConstraints();
-			c.gridx = 1;
-			c.gridy = 0;
 			c.anchor = GridBagConstraints.LINE_START;
-			c.insets = new Insets(0, gapAroundHeading, 0, gapAroundHeading);
+			c.insets = new Insets(0, 0, 0, gapAfterHeading);
 			headingPanel.add(headingComponent, c);
 		}
 		{
 			GridBagConstraints c = new GridBagConstraints();
-			c.gridx = 2;
+			c.gridx = 1;
 			c.gridy = 0;
 			c.weightx = 1;
 			c.fill = GridBagConstraints.HORIZONTAL;
@@ -145,7 +135,45 @@ public class GridBagOrganizer
 
 		final int topInset = 8;
 		final int bottomInset = 2;
-		return addLeftAlignedComponent(headingPanel, topInset, bottomInset, false);
+		return addFullWidthRow(headingPanel, topInset, bottomInset, rowSideInset - blankColumnsOnLeft, false, 1.0);
+	}
+
+	/**
+	 * How many columns of empty space a button, such as a checkbox, paints on its left before its box, which some look and feels leave for a
+	 * focus ring.
+	 */
+	private static int getBlankColumnsOnLeft(AbstractButton button)
+	{
+		Dimension size = button.getPreferredSize();
+		if (size.width <= 0 || size.height <= 0)
+		{
+			return 0;
+		}
+
+		button.setSize(size);
+		BufferedImage image = new BufferedImage(size.width, size.height, BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g = image.createGraphics();
+		try
+		{
+			button.paint(g);
+		}
+		finally
+		{
+			g.dispose();
+		}
+		int background = button.getBackground().getRGB();
+		for (int x = 0; x < image.getWidth(); x++)
+		{
+			for (int y = 0; y < image.getHeight(); y++)
+			{
+				int pixel = image.getRGB(x, y);
+				if ((pixel >>> 24) != 0 && (!button.isOpaque() || pixel != background))
+				{
+					return x;
+				}
+			}
+		}
+		return 0;
 	}
 
 	public <T extends Component> RowHider addLabelAndComponentsVerticalWithComponentPanel(String labelText, String tooltip, List<T> components, JPanel compPanel)
@@ -356,6 +384,11 @@ public class GridBagOrganizer
 
 	public RowHider addLeftAlignedComponent(Component component, int topInset, int bottomInset, boolean allowToExpandVertically, double verticalWeight)
 	{
+		return addFullWidthRow(component, topInset, bottomInset, rowSideInset, allowToExpandVertically, verticalWeight);
+	}
+
+	private RowHider addFullWidthRow(Component component, int topInset, int bottomInset, int leftInset, boolean allowToExpandVertically, double verticalWeight)
+	{
 		GridBagConstraints cc = new GridBagConstraints();
 		if (allowToExpandVertically)
 		{
@@ -378,7 +411,7 @@ public class GridBagOrganizer
 			cc.weighty = 0;
 		}
 		cc.anchor = GridBagConstraints.LINE_START;
-		cc.insets = new Insets(topInset, 5, bottomInset, 5);
+		cc.insets = new Insets(topInset, leftInset, bottomInset, rowSideInset);
 		panel.add(component, cc);
 
 		curY++;
