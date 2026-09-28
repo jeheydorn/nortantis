@@ -1421,7 +1421,7 @@ public class ThemePanel extends JTabbedPane
 			}
 		});
 		boldBackgroundColorRow = organizer.addLabelAndComponentsHorizontal(Translation.get("theme.color.label"),
-				Translation.get("theme.boldBackgroundColor.help", drawBoldBackgroundCheckbox.getText()), Arrays.asList(boldBackgroundColorDisplay, btnChooseBoldBackgroundColor),
+				Translation.get("theme.boldBackgroundColor.help", Translation.get("theme.section.boldBackground")), Arrays.asList(boldBackgroundColorDisplay, btnChooseBoldBackgroundColor),
 				SwingHelper.colorPickerLeftPadding);
 
 		drawBoldBackgroundCheckbox.addActionListener(new ActionListener()

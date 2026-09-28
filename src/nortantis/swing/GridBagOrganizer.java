@@ -6,6 +6,8 @@ import nortantis.util.Tuple2;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.util.Collections;
 import java.util.List;
@@ -81,11 +83,60 @@ public class GridBagOrganizer
 	}
 
 	/**
+	 * Whether a checkbox that turns a section on or off is drawn as a switch at the right end of the section's heading, rather than as a
+	 * checkbox in front of the title. With the switch, every section's title starts at the same place.
+	 */
+	public static boolean sectionHeadingSwitchesOnRight = true;
+
+	/**
 	 * Adds a heading that starts a section: its title in bold, followed by a line filling the rest of the row.
 	 */
 	public RowHider addSectionHeading(String text)
 	{
-		JLabel label = new JLabel(text)
+		return addSectionHeadingRow(createSectionHeadingLabel(text), null, 0);
+	}
+
+	/**
+	 * Adds a heading that starts a section, with a checkbox that turns the section on or off, whose text is the section's title. Depending
+	 * on {@link #sectionHeadingSwitchesOnRight}, the checkbox is either in front of the title or drawn as a switch at the end of the row.
+	 */
+	public RowHider addSectionHeading(AbstractButton checkbox)
+	{
+		if (sectionHeadingSwitchesOnRight)
+		{
+			JLabel title = createSectionHeadingLabel(checkbox.getText());
+			title.setToolTipText(checkbox.getToolTipText());
+			title.setLabelFor(checkbox);
+			// Clicking a checkbox's text toggles it, so the title does the same for the switch.
+			title.addMouseListener(new MouseAdapter()
+			{
+				@Override
+				public void mouseClicked(MouseEvent e)
+				{
+					if (checkbox.isEnabled())
+					{
+						checkbox.doClick();
+					}
+				}
+			});
+			checkbox.getAccessibleContext().setAccessibleName(checkbox.getText());
+			checkbox.setText("");
+			checkbox.setIcon(new ToggleSwitchIcon(checkbox));
+			Insets insets = checkbox.getInsets();
+			checkbox.setBorder(BorderFactory.createEmptyBorder(insets.top, 0, insets.bottom, 0));
+			return addSectionHeadingRow(title, checkbox, 0);
+		}
+
+		checkbox.setFont(checkbox.getFont().deriveFont(Font.BOLD));
+		// Line the checkbox's box up with the left edge of the labels below it.
+		Insets insets = checkbox.getInsets();
+		checkbox.setBorder(BorderFactory.createEmptyBorder(insets.top, 0, insets.bottom, insets.right));
+		return addSectionHeadingRow(checkbox, null, getBlankColumnsOnLeft(checkbox));
+	}
+
+	private static JLabel createSectionHeadingLabel(String text)
+	{
+		return new JLabel(text)
 		{
 			@Override
 			public void updateUI()
@@ -94,34 +145,25 @@ public class GridBagOrganizer
 				setFont(getFont().deriveFont(Font.BOLD));
 			}
 		};
-		return addSectionHeading(label);
 	}
 
 	/**
-	 * Adds a heading that starts a section, with the given component, such as a checkbox that turns the section on or off, in place of a
-	 * title. Its text is made bold to match other headings.
+	 * Adds a heading row: the title, a line filling the rest of the row, and optionally a component after the line.
+	 *
+	 * @param leftShift
+	 *            How far left of the rows' left edge to start the title, so that what it visibly draws lines up with the labels below it.
 	 */
-	public RowHider addSectionHeading(JComponent headingComponent)
+	private RowHider addSectionHeadingRow(JComponent title, JComponent trailingComponent, int leftShift)
 	{
-		headingComponent.setFont(headingComponent.getFont().deriveFont(Font.BOLD));
-		// Line a checkbox's box up with the left edge of the labels below it.
-		int blankColumnsOnLeft = 0;
-		if (headingComponent instanceof AbstractButton button)
-		{
-			Insets insets = button.getInsets();
-			button.setBorder(BorderFactory.createEmptyBorder(insets.top, 0, insets.bottom, insets.right));
-			blankColumnsOnLeft = getBlankColumnsOnLeft(button);
-		}
-
-		final int gapAfterHeading = 5;
+		final int gapBesideLine = 5;
 		JPanel headingPanel = new JPanel(new GridBagLayout());
 		{
 			GridBagConstraints c = new GridBagConstraints();
 			c.gridx = 0;
 			c.gridy = 0;
 			c.anchor = GridBagConstraints.LINE_START;
-			c.insets = new Insets(0, 0, 0, gapAfterHeading);
-			headingPanel.add(headingComponent, c);
+			c.insets = new Insets(0, 0, 0, gapBesideLine);
+			headingPanel.add(title, c);
 		}
 		{
 			GridBagConstraints c = new GridBagConstraints();
@@ -132,10 +174,19 @@ public class GridBagOrganizer
 			c.anchor = GridBagConstraints.CENTER;
 			headingPanel.add(createHorizontalSeparator(2), c);
 		}
+		if (trailingComponent != null)
+		{
+			GridBagConstraints c = new GridBagConstraints();
+			c.gridx = 2;
+			c.gridy = 0;
+			c.anchor = GridBagConstraints.LINE_END;
+			c.insets = new Insets(0, gapBesideLine, 0, 0);
+			headingPanel.add(trailingComponent, c);
+		}
 
 		final int topInset = 8;
 		final int bottomInset = 2;
-		return addFullWidthRow(headingPanel, topInset, bottomInset, rowSideInset - blankColumnsOnLeft, false, 1.0);
+		return addFullWidthRow(headingPanel, topInset, bottomInset, rowSideInset - leftShift, false, 1.0);
 	}
 
 	/**
