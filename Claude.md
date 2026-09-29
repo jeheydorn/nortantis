@@ -147,9 +147,11 @@ This does not apply to translation file changes (`messages_*.properties`). Trans
 
 End every task report with these sections, after everything else, even if a section is "None":
 
-**Divergences** — every place the implementation differs from what I asked or designed, and every side effect on existing behavior. One bullet each, stated plainly. Leave out divergences I've already clearly acknowledged (e.g. a design change you raised during implementation and I agreed to).
+**Divergences** — every place the implementation differs in substance from what I asked or designed, and every side effect on existing behavior. One bullet each, stated plainly. Leave out divergences I've already clearly acknowledged (e.g. a design change you raised during implementation and I agreed to). How you carried out a request (e.g. splitting work into several commits) is not a divergence.
 
 **Follow-ups** — related problems found but not fixed (e.g. "the same bug exists in X and Y"), better approaches than the one requested, and anything left untested.
+
+Report each divergence and follow-up once. Don't repeat it in later reports, even if I didn't respond to it.
 
 ## Coding Conventions
 
