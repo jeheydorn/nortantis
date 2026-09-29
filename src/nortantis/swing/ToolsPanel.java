@@ -134,7 +134,7 @@ public class ToolsPanel extends JPanel
 		JLabel lblZoom = new JLabel(Translation.get("tools.zoom.label"));
 		lblZoom.setToolTipText(Translation.get("tools.zoom.tooltip"));
 
-		zoomLevels = Arrays.asList(new String[] { fitToWindowZoomLevel, "50%", "75%", "100%", "125%", "150%", "175%", "200%", "225%", "275%" });
+		zoomLevels = Arrays.asList(new String[] { fitToWindowZoomLevel, "50%", "67%", "83%", "100%", "125%", "150%", "175%", "200%", "235%", "275%" });
 		zoomComboBox = new JComboBoxFixed<>();
 		for (String level : zoomLevels)
 		{
