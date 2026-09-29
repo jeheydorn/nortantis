@@ -23,7 +23,7 @@ public class UserPreferences
 {
 	private final String userPrefsFileName = "user preferences";
 
-	public DisplayQuality editorImageQuality = DisplayQuality.Low;
+	public DisplayQuality editorImageQuality = DisplayQuality.Medium;
 	private ArrayDeque<String> recentMapFilePaths = new ArrayDeque<>();
 	private final int maxRecentMaps = 15;
 	public String defaultCustomImagesPath;
@@ -102,6 +102,11 @@ public class UserPreferences
 				String quality = props.getProperty("editorImageQuality").replace("Very High", "Ultra").replace(" ", "_");
 				editorImageQuality = DisplayQuality.valueOf(quality);
 			});
+		}
+		else
+		{
+			// Low was the default before new installs defaulted to Medium, so keep it for an existing preferences file without this setting.
+			editorImageQuality = DisplayQuality.Low;
 		}
 
 		if (props.containsKey("recentMapFilePaths"))
