@@ -1823,14 +1823,9 @@ public class MapCreator implements WarningLogger
 			coastShading = tuple.getSecond();
 			if (mapParts != null)
 			{
-				if (isLowMemoryMode)
-				{
-					mapParts.closeCoastShading();
-				}
-				else
-				{
-					mapParts.setCoastShading(coastShading);
-				}
+				// Kept even in low memory mode, like the ocean effects below: it is a grayscale mask, small next to the map, and without it
+				// incremental draws must draw it again.
+				mapParts.setCoastShading(coastShading);
 			}
 			map = ImageHelper.getInstance().maskWithColor(landBackgroundWithLandAndOcean, Color.black, landMask, false);
 
@@ -1881,14 +1876,9 @@ public class MapCreator implements WarningLogger
 		Image oceanShading = oceanTuple.getSecond();
 		if (mapParts != null)
 		{
-			if (isLowMemoryMode)
-			{
-				mapParts.closeOceanEffects();
-			}
-			else
-			{
-				mapParts.setOceanEffects(oceanWaves, oceanShading);
-			}
+			// Kept even in low memory mode. They are grayscale masks, small next to the map, and without them every incremental draw that can
+			// change them must draw everything as far from the change as ocean effects reach.
+			mapParts.setOceanEffects(oceanWaves, oceanShading);
 		}
 		Image oceanWithWavesAndShading = background.ocean;
 		if (oceanShading != null)
