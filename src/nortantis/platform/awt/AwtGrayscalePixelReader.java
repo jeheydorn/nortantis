@@ -5,10 +5,17 @@ import nortantis.platform.Color;
 
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
+import java.awt.image.MultiPixelPackedSampleModel;
 
 public class AwtGrayscalePixelReader extends AwtPixelReader
 {
 	protected final byte[] cachedByteArray;
+	/**
+	 * For a binary image, its packed bits, eight pixels to a byte with the leftmost in the highest bit, or null if the image doesn't store
+	 * them that way from the start of its data. Reading them directly is much faster than going through the raster.
+	 */
+	private final byte[] cachedBinaryArray;
+	private final int binaryScanlineStride;
 	protected final int imageSubType;
 
 	AwtGrayscalePixelReader(AwtImage image)
@@ -23,6 +30,19 @@ public class AwtGrayscalePixelReader extends AwtPixelReader
 		{
 			this.cachedByteArray = null;
 		}
+
+		if (imageSubType == BufferedImage.TYPE_BYTE_BINARY && raster.getSampleModel() instanceof MultiPixelPackedSampleModel sampleModel && sampleModel.getPixelBitStride() == 1
+				&& sampleModel.getDataBitOffset() == 0 && raster.getSampleModelTranslateX() == 0 && raster.getSampleModelTranslateY() == 0
+				&& raster.getDataBuffer() instanceof DataBufferByte dataBuffer && dataBuffer.getOffset() == 0)
+		{
+			cachedBinaryArray = dataBuffer.getData();
+			binaryScanlineStride = sampleModel.getScanlineStride();
+		}
+		else
+		{
+			cachedBinaryArray = null;
+			binaryScanlineStride = 0;
+		}
 	}
 
 	@Override
@@ -31,6 +51,10 @@ public class AwtGrayscalePixelReader extends AwtPixelReader
 		if (cachedByteArray != null)
 		{
 			return cachedByteArray[(y * image.getWidth()) + x] & 0xFF;
+		}
+		if (cachedBinaryArray != null)
+		{
+			return (cachedBinaryArray[y * binaryScanlineStride + (x >> 3)] >> (7 - (x & 7))) & 1;
 		}
 		return raster.getSample(x, y, 0);
 	}
@@ -60,7 +84,7 @@ public class AwtGrayscalePixelReader extends AwtPixelReader
 		}
 		else if (imageSubType == BufferedImage.TYPE_BYTE_BINARY)
 		{
-			gray = raster.getSample(x, y, 0) * 255;
+			gray = getGrayLevel(x, y) * 255;
 		}
 		else if (imageSubType == BufferedImage.TYPE_USHORT_GRAY)
 		{

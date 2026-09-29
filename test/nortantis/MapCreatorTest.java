@@ -381,6 +381,9 @@ public class MapCreatorTest
 	}
 
 	/**
+	 * Every other area tested is drawn told that only the part being compared will be used, which lets the drawing leave out rows and strokes
+	 * that can't reach it.
+	 *
 	 * @param fade
 	 *            Whether hatching fades. Only hatching fades.
 	 */
@@ -402,7 +405,7 @@ public class MapCreatorTest
 		// Pad the same way an incremental redraw does.
 		Dimension padding = MapCreator.calcEffectsPaddingWidthAndHeight(settings, true, true);
 
-		try (Image fullLandMask = createLandMask(graph, null, graph.bounds); Image fullWaves = new MapCreator().createOceanWavesAndShading(settings, graph, settings.resolution, fullLandMask, null, null).getFirst())
+		try (Image fullLandMask = createLandMask(graph, null, graph.bounds); Image fullWaves = new MapCreator().createOceanWavesAndShading(settings, graph, settings.resolution, fullLandMask, null, null, null).getFirst())
 		{
 			Random rand = new Random(3);
 			final int size = 250;
@@ -415,9 +418,10 @@ public class MapCreatorTest
 				Rectangle drawBounds = replaceBounds.pad(padding.width, padding.height).floor();
 				Center searchStart = graph.findClosestCenter(drawBounds.getCenter());
 				Set<Center> centersToDraw = graph.breadthFirstSearch(c -> c.isInBoundsIncludingNoisyEdges(drawBounds), searchStart);
+				Rectangle boundsToKeep = i % 2 == 1 ? replaceBounds : null;
 
 				try (Image landMask = createLandMask(graph, centersToDraw, drawBounds);
-						Image partWaves = new MapCreator().createOceanWavesAndShading(settings, graph, settings.resolution, landMask, centersToDraw, drawBounds).getFirst();
+						Image partWaves = new MapCreator().createOceanWavesAndShading(settings, graph, settings.resolution, landMask, centersToDraw, drawBounds, boundsToKeep).getFirst();
 						PixelReader fullPixels = fullWaves.createPixelReader();
 						PixelReader partPixels = partWaves.createPixelReader())
 				{

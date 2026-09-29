@@ -6,6 +6,7 @@ import nortantis.MapSettings.WaveLineShape;
 import nortantis.WorldGraph.CoastlineCurve;
 import nortantis.geom.Dimension;
 import nortantis.geom.FloatPoint;
+import nortantis.geom.IntRectangle;
 import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
@@ -17,17 +18,18 @@ import nortantis.platform.Painter;
 import nortantis.platform.PixelReader;
 import nortantis.platform.PixelReaderWriter;
 import nortantis.util.Helper;
+import nortantis.util.ThreadHelper;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.function.DoubleSupplier;
 import java.util.function.DoubleUnaryOperator;
+import java.util.function.LongToDoubleFunction;
 
 /**
  * Draws the rows of short horizontal wave lines that the "Wavy lines" and "Hatching" ocean wave styles stack outside the concentric line
@@ -207,6 +209,10 @@ public class WaveLineDrawer
 	 * The fade level that leaves a stroke as opaque as it was drawn.
 	 */
 	private static final int noFadeLevel = 255;
+	/**
+	 * How many rows are worked out in parallel before their strokes are drawn. This bounds the memory the strokes waiting to be drawn take.
+	 */
+	private static final int rowsPerBatch = 64;
 
 	private static final int outsideLevel = 0;
 	private static final int bandLevel = 128;
@@ -273,10 +279,6 @@ public class WaveLineDrawer
 	 * The most that a hatching line's fade curve exponent is scaled from 1, as a natural log.
 	 */
 	private final double fadeExponentLogRange;
-	/**
-	 * Reused by {@link #calcDistanceBeyondReach}, which is called for every pixel of every row's band.
-	 */
-	private final SegmentGrid.Nearest nearestOnCurve = new SegmentGrid.Nearest();
 	/**
 	 * For ripples, the blurred land that shapes where they end, built for the area being drawn.
 	 */
@@ -524,8 +526,11 @@ public class WaveLineDrawer
 	 *            The centers overlapping drawBounds, or null to use all centers.
 	 * @param drawBounds
 	 *            The area of the map the target covers, in graph coordinates.
+	 * @param boundsToKeep
+	 *            The part of drawBounds whose strokes will be used, or null for all of it. Strokes that can't reach it may be left out.
 	 */
-	public void drawWaveLines(Image target, WorldGraph graph, List<CoastlineCurve> curves, Image landMask, Collection<Center> centersToDraw, Rectangle drawBounds)
+	public void drawWaveLines(Image target, WorldGraph graph, List<CoastlineCurve> curves, Image landMask, Collection<Center> centersToDraw, Rectangle drawBounds,
+			Rectangle boundsToKeep)
 	{
 		if (reachDistribution == null)
 		{
@@ -543,9 +548,23 @@ public class WaveLineDrawer
 			dashLens.build(landMask, drawBounds, graph.bounds);
 		}
 
+		// Include rows whose waves, jitter and stroke width reach into the area kept from just outside it.
+		Rectangle rowBounds = boundsToKeep == null ? drawBounds : boundsToKeep;
+		double rowReach = (amplitude + jitterAmplitude) * sizeMultiplier + strokeWidth;
+		int firstRow = (int) Math.floor(((rowBounds.y - rowReach) / sizeMultiplier - maxRowShift - firstRowY) / rowSpacing);
+		int lastRow = (int) Math.ceil(((rowBounds.y + rowBounds.height + rowReach) / sizeMultiplier + maxRowShift - firstRowY) / rowSpacing);
+
 		try (Image guide = Image.create(width, height, ImageType.Grayscale8Bit))
 		{
-			drawGuide(guide, graph, curves, concentricLineOuterRadius, bandRadius, centersToDraw, drawBounds);
+			// The guide is only read along the rows of pixels that rows are placed by, which lie between those of the first and last row.
+			IntRectangle guideBounds = null;
+			if (boundsToKeep != null)
+			{
+				int firstPixelRow = Math.max(0, getPixelRow(firstRow, drawBounds));
+				int endPixelRow = Math.min(height, getPixelRow(lastRow, drawBounds) + 1);
+				guideBounds = new IntRectangle(0, firstPixelRow, width, Math.max(0, endPixelRow - firstPixelRow));
+			}
+			drawGuide(guide, graph, curves, concentricLineOuterRadius, bandRadius, centersToDraw, drawBounds, guideBounds);
 
 			SegmentGrid segmentGrid = new SegmentGrid(curves, drawBounds, bandRadius + 1.0);
 			List<Integer> fadedRows = isFading ? new ArrayList<>() : null;
@@ -559,63 +578,37 @@ public class WaveLineDrawer
 				// into the target by a whole number of pixels, which anti-aliasing draws the same at any offset.
 				p.translate(-drawBounds.x, -drawBounds.y);
 
-				// Include rows whose waves, jitter and stroke width reach into the target from just outside it.
-				double rowReach = (amplitude + jitterAmplitude) * sizeMultiplier + strokeWidth;
-				byte[] classes = new byte[width];
-				boolean[] isLand = new boolean[width];
-				int firstRow = (int) Math.floor(((drawBounds.y - rowReach) / sizeMultiplier - maxRowShift - firstRowY) / rowSpacing);
-				int lastRow = (int) Math.ceil(((drawBounds.y + drawBounds.height + rowReach) / sizeMultiplier + maxRowShift - firstRowY) / rowSpacing);
-				for (int row = firstRow; row <= lastRow; row++)
+				// Wave lines and hatching decide each point of a row from what is at that point, so a run of a row whose strokes can't reach the
+				// area kept can be left out. Ripples decide each point from its run, so they draw every run.
+				int firstPixelToKeep = 0;
+				int endPixelToKeep = width;
+				if (boundsToKeep != null)
 				{
-					double yInGraph = getRowY(row) * sizeMultiplier;
-					// A row just off the top or bottom of the map can still reach onto it, so it is placed using the nearest row of pixels on the
-					// map. That way a full draw, which has no pixels off the map, and an incremental draw that reaches past the map's edge place it
-					// the same way. What it draws off the map is clipped.
-					double yOnMap = Math.max(graph.bounds.y, Math.min(graph.bounds.y + graph.bounds.height - 1.0, yInGraph));
-					int pixelRow = (int) Math.floor(yOnMap - drawBounds.y);
-					if (pixelRow < 0 || pixelRow >= height)
-					{
-						continue;
-					}
+					double strokeReachPastRun = calcOverhang(strokeWidth) + strokeWidth / 2.0 + 1.0;
+					firstPixelToKeep = (int) Math.max(0, Math.floor(boundsToKeep.x - drawBounds.x - strokeReachPastRun));
+					endPixelToKeep = (int) Math.min(width, Math.ceil(boundsToKeep.x + boundsToKeep.width - drawBounds.x + strokeReachPastRun));
+				}
+				RowInputs inputs = new RowInputs(graph, drawBounds, guidePixels, landPixels, segmentGrid, concentricLineOuterRadius, bandRadius, firstPixelToKeep, endPixelToKeep);
 
-					for (int x = 0; x < width; x++)
+				// Rows are worked out in parallel, a batch at a time, and their strokes are drawn in order afterward, which draws the same as
+				// working out and drawing each row in turn.
+				for (int batchFirstRow = firstRow; batchFirstRow <= lastRow; batchFirstRow += rowsPerBatch)
+				{
+					int batchStart = batchFirstRow;
+					RowContext[] batch = new RowContext[Math.min(rowsPerBatch, lastRow - batchFirstRow + 1)];
+					ThreadHelper.forEachInParallel(0, batch.length, i -> batch[i] = findRowStrokes(batchStart + i, inputs));
+					for (RowContext context : batch)
 					{
-						double xInGraph = x + drawBounds.x;
-						isLand[x] = false;
-						if (xInGraph < graph.bounds.x || xInGraph >= graph.bounds.x + graph.bounds.width)
+						if (context == null)
 						{
-							// Strokes that reach the map's left or right edge continue past it, the same as at the edge of a full draw.
-							classes[x] = keepOutClass;
-							isLand[x] = true;
+							continue;
 						}
-						else if (landPixels.getNormalizedPixelLevel(x, pixelRow) > 0.5f)
+						context.draw(p);
+						if (context.fadeLevels != null)
 						{
-							classes[x] = keepOutClass;
-							isLand[x] = true;
+							fadedRows.add(context.row);
+							fadeLevelsByRow.add(context.fadeLevels);
 						}
-						else
-						{
-							int level = guidePixels.getGrayLevel(x, pixelRow);
-							classes[x] = level > (bandLevel + keepOutLevel) / 2 ? keepOutClass : level > (outsideLevel + bandLevel) / 2 ? bandClass : outsideClass;
-						}
-					}
-
-					passOverGrazedLine(classes, isLand, maxGrazeToPassOverInWavelengths * wavelength * sizeMultiplier);
-					if (isRipples)
-					{
-						drawDashRow(p, row, yInGraph, classes, segmentGrid, concentricLineOuterRadius, bandRadius, drawBounds);
-					}
-					else
-					{
-						byte[] fadeLevels = null;
-						if (fadedRows != null)
-						{
-							fadeLevels = new byte[width];
-							Arrays.fill(fadeLevels, (byte) noFadeLevel);
-							fadedRows.add(row);
-							fadeLevelsByRow.add(fadeLevels);
-						}
-						drawRow(p, row, yInGraph, classes, segmentGrid, concentricLineOuterRadius, drawBounds, fadeLevels);
 					}
 				}
 			}
@@ -623,6 +616,140 @@ public class WaveLineDrawer
 			if (fadedRows != null)
 			{
 				fadeRows(target, fadedRows, fadeLevelsByRow, drawBounds);
+			}
+		}
+	}
+
+	/**
+	 * What working out the strokes of a row reads, which is the same for every row.
+	 */
+	private record RowInputs(WorldGraph graph, Rectangle drawBounds, PixelReader guidePixels, PixelReader landPixels, SegmentGrid segmentGrid,
+			double concentricLineOuterRadius, double bandRadius, int firstPixelToKeep, int endPixelToKeep)
+	{
+	}
+
+	/**
+	 * Works out the strokes of one row, and its fade levels if it fades.
+	 *
+	 * @return The row's strokes, or null if the row is placed off the area being drawn.
+	 */
+	private RowContext findRowStrokes(int row, RowInputs inputs)
+	{
+		WorldGraph graph = inputs.graph();
+		Rectangle drawBounds = inputs.drawBounds();
+		int width = (int) drawBounds.width;
+		double yInGraph = getRowY(row) * sizeMultiplier;
+		int pixelRow = getPixelRow(row, drawBounds);
+		if (pixelRow < 0 || pixelRow >= (int) drawBounds.height)
+		{
+			return null;
+		}
+
+		byte[] classes = new byte[width];
+		boolean[] isLand = new boolean[width];
+		for (int x = 0; x < width; x++)
+		{
+			double xInGraph = x + drawBounds.x;
+			if (xInGraph < graph.bounds.x || xInGraph >= graph.bounds.x + graph.bounds.width)
+			{
+				// Strokes that reach the map's left or right edge continue past it, the same as at the edge of a full draw.
+				classes[x] = keepOutClass;
+				isLand[x] = true;
+			}
+			else if (inputs.landPixels().getNormalizedPixelLevel(x, pixelRow) > 0.5f)
+			{
+				classes[x] = keepOutClass;
+				isLand[x] = true;
+			}
+			else
+			{
+				int level = inputs.guidePixels().getGrayLevel(x, pixelRow);
+				classes[x] = level > (bandLevel + keepOutLevel) / 2 ? keepOutClass : level > (outsideLevel + bandLevel) / 2 ? bandClass : outsideClass;
+			}
+		}
+
+		passOverGrazedLine(classes, isLand, maxGrazeToPassOverInWavelengths * wavelength * sizeMultiplier);
+		RowContext context = new RowContext(row);
+		if (isRipples)
+		{
+			drawDashRow(context, row, yInGraph, classes, inputs.segmentGrid(), inputs.concentricLineOuterRadius(), inputs.bandRadius(), drawBounds);
+		}
+		else
+		{
+			if (isFading)
+			{
+				context.fadeLevels = new byte[width];
+				Arrays.fill(context.fadeLevels, (byte) noFadeLevel);
+			}
+			drawRow(context, row, yInGraph, classes, inputs.segmentGrid(), inputs.concentricLineOuterRadius(), drawBounds, context.fadeLevels, inputs.firstPixelToKeep(),
+					inputs.endPixelToKeep());
+		}
+		return context;
+	}
+
+	/**
+	 * The row of pixels in the area being drawn that a row is placed by, which can be outside it.
+	 *
+	 * A row just off the top or bottom of the map can still reach onto it, so it is placed using the nearest row of pixels on the map. That
+	 * way a full draw, which has no pixels off the map, and an incremental draw that reaches past the map's edge place it the same way. What
+	 * it draws off the map is clipped.
+	 */
+	private int getPixelRow(int row, Rectangle drawBounds)
+	{
+		double yInGraph = getRowY(row) * sizeMultiplier;
+		double yOnMap = Math.max(mapBounds.y, Math.min(mapBounds.y + mapBounds.height - 1.0, yInGraph));
+		return (int) Math.floor(yOnMap - drawBounds.y);
+	}
+
+	/**
+	 * One row's strokes, found before they are drawn, and scratch space for finding them.
+	 */
+	private static class RowContext
+	{
+		final int row;
+		/**
+		 * Reused for each point along the row whose nearest point on the concentric line's path is looked up.
+		 */
+		final SegmentGrid.Nearest nearestOnCurve = new SegmentGrid.Nearest();
+		private final List<List<FloatPoint>> strokes = new ArrayList<>();
+		/**
+		 * For each stroke, whether it is an outline to fill rather than a line to draw with the stroke width.
+		 */
+		private final List<Boolean> areOutlines = new ArrayList<>();
+		/**
+		 * If the row fades, how opaque its strokes are at each pixel along it, out of noFadeLevel. Otherwise null.
+		 */
+		byte[] fadeLevels;
+
+		RowContext(int row)
+		{
+			this.row = row;
+		}
+
+		void addLine(List<FloatPoint> points)
+		{
+			strokes.add(points);
+			areOutlines.add(false);
+		}
+
+		void addOutline(List<FloatPoint> outline)
+		{
+			strokes.add(outline);
+			areOutlines.add(true);
+		}
+
+		void draw(Painter p)
+		{
+			for (int i = 0; i < strokes.size(); i++)
+			{
+				if (areOutlines.get(i))
+				{
+					p.fillPolygonFloat(strokes.get(i));
+				}
+				else
+				{
+					p.drawPolylineFloat(strokes.get(i));
+				}
 			}
 		}
 	}
@@ -714,7 +841,7 @@ public class WaveLineDrawer
 	 * @param distanceBeyondReach
 	 *            How much farther the point is from the concentric line than the wave line there reaches, in pixels.
 	 */
-	private byte calcFadeLevel(int row, double xInGraph, double distancePastLine, double distanceBeyondReach)
+	private byte calcFadeLevel(SegmentGrid.Nearest nearestOnCurve, int row, double xInGraph, double distancePastLine, double distanceBeyondReach)
 	{
 		double reach = distancePastLine - distanceBeyondReach;
 		if (reach <= 0.0)
@@ -722,7 +849,7 @@ public class WaveLineDrawer
 			return 0;
 		}
 
-		double rightEndWeight = calcRightEndWeight(xInGraph);
+		double rightEndWeight = calcRightEndWeight(nearestOnCurve, xInGraph);
 		double xInUnits = xInGraph / sizeMultiplier;
 		double spacing = rowSpacing * fadeNoiseControlPointSpacingAsMultipleOfRowSpacing;
 		double distanceNoise = rightEndWeight * sampleSmoothNoise(rightEndFadeDistanceSalt, row, xInUnits, spacing)
@@ -739,12 +866,19 @@ public class WaveLineDrawer
 	/**
 	 * Draws where wave lines may go: a band reaching as far out from each coastline curve as a wave line can, and inside it, the area covered
 	 * by the concentric line and everything between it and the coast, which wave lines are kept out of.
+	 *
+	 * @param guideBounds
+	 *            The part of the guide to draw, in its pixels, or null for all of it.
 	 */
 	private void drawGuide(Image guide, WorldGraph graph, List<CoastlineCurve> curves, double concentricLineOuterRadius, double bandRadius, Collection<Center> centers,
-			Rectangle bounds)
+			Rectangle bounds, IntRectangle guideBounds)
 	{
 		try (Painter p = guide.createPainter())
 		{
+			if (guideBounds != null)
+			{
+				p.setClip(guideBounds.x, guideBounds.y, guideBounds.width, guideBounds.height);
+			}
 			p.setColor(Color.create(bandLevel, bandLevel, bandLevel));
 			p.setBasicStroke((float) (2.0 * bandRadius));
 			graph.drawCoastlineCurves(p, curves, 0, false, bounds, null);
@@ -808,15 +942,19 @@ public class WaveLineDrawer
 	}
 
 	/**
-	 * Draws the strokes of one row.
+	 * Finds the strokes of one row.
 	 *
 	 * @param classes
 	 *            For each pixel along the row in drawBounds, whether it is outside the band, in it, or kept clear of wave lines.
 	 * @param fadeLevels
 	 *            If not null, is filled in with how opaque the row's strokes are at each pixel along it, out of noFadeLevel.
+	 * @param firstPixelToKeep
+	 *            Runs of the band that end at or before this pixel along the row are left out, along with their fade levels.
+	 * @param endPixelToKeep
+	 *            Runs of the band that start at or after this pixel along the row are left out, along with their fade levels.
 	 */
-	private void drawRow(Painter p, int row, double yInGraph, byte[] classes, SegmentGrid segmentGrid, double concentricLineOuterRadius, Rectangle drawBounds,
-			byte[] fadeLevels)
+	private void drawRow(RowContext context, int row, double yInGraph, byte[] classes, SegmentGrid segmentGrid, double concentricLineOuterRadius, Rectangle drawBounds,
+			byte[] fadeLevels, int firstPixelToKeep, int endPixelToKeep)
 	{
 		int width = classes.length;
 		double overhang = calcOverhang(strokeWidth);
@@ -838,6 +976,10 @@ public class WaveLineDrawer
 				x++;
 			}
 			int runEnd = x;
+			if (runEnd <= firstPixelToKeep || runStart >= endPixelToKeep)
+			{
+				continue;
+			}
 
 			// A run that starts or ends where wave lines are kept out reaches the concentric line there, and one that starts or ends at the
 			// edge of the area being drawn continues past it.
@@ -854,10 +996,10 @@ public class WaveLineDrawer
 			for (int pixel = runStart; pixel < runEnd; pixel++)
 			{
 				double xInGraph = pixel + drawBounds.x;
-				double distanceBeyondReach = calcDistanceBeyondReach(row, xInGraph, yInGraph, segmentGrid, concentricLineOuterRadius, lengthNoise);
+				double distanceBeyondReach = calcDistanceBeyondReach(context.nearestOnCurve, row, xInGraph, yInGraph, segmentGrid, concentricLineOuterRadius, lengthNoise);
 				if (fadeLevels != null)
 				{
-					fadeLevels[pixel] = calcFadeLevel(row, xInGraph, nearestOnCurve.distance - concentricLineOuterRadius, distanceBeyondReach);
+					fadeLevels[pixel] = calcFadeLevel(context.nearestOnCurve, row, xInGraph, context.nearestOnCurve.distance - concentricLineOuterRadius, distanceBeyondReach);
 				}
 				boolean isTouchingLine = (pixel == runStart && reachesLineAtStart) || (pixel == runEnd - 1 && reachesLineAtEnd);
 				boolean isWithinReach = distanceBeyondReach <= 0.0 || isTouchingLine;
@@ -866,13 +1008,15 @@ public class WaveLineDrawer
 				{
 					stretchStart = pixel == runStart && reachesLineAtStart ? (isStartVisible ? xInGraph + calcLineEndPullBack(row, xInGraph) : xInGraph - overhang)
 							: Double.isNaN(previousX) || isTouchingLine ? xInGraph
-									: findReachCrossing(row, previousX, previousDistanceBeyondReach, xInGraph, distanceBeyondReach, yInGraph, segmentGrid, concentricLineOuterRadius, lengthNoise);
+									: findReachCrossing(context.nearestOnCurve, row, previousX, previousDistanceBeyondReach, xInGraph, distanceBeyondReach, yInGraph, segmentGrid,
+										concentricLineOuterRadius, lengthNoise);
 					isInStretch = true;
 				}
 				else if (!isWithinReach && isInStretch)
 				{
 					double stretchEnd = Double.isNaN(previousX) ? xInGraph
-							: findReachCrossing(row, previousX, previousDistanceBeyondReach, xInGraph, distanceBeyondReach, yInGraph, segmentGrid, concentricLineOuterRadius, lengthNoise);
+							: findReachCrossing(context.nearestOnCurve, row, previousX, previousDistanceBeyondReach, xInGraph, distanceBeyondReach, yInGraph, segmentGrid,
+										concentricLineOuterRadius, lengthNoise);
 					stretches.add(new double[] { stretchStart, stretchEnd });
 					isInStretch = false;
 				}
@@ -894,7 +1038,7 @@ public class WaveLineDrawer
 				stretches.add(new double[] { stretchStart, stretchEnd });
 			}
 
-			breakPattern = drawStretches(p, row, yInGraph, rowJitterAmplitude, stretches, breakPattern, drawBounds);
+			breakPattern = drawStretches(context, row, yInGraph, rowJitterAmplitude, stretches, breakPattern, drawBounds);
 		}
 	}
 
@@ -919,7 +1063,7 @@ public class WaveLineDrawer
 	}
 
 	/**
-	 * Draws one row of ripples: an unbroken stroke from the concentric line out to part of the way to where the dashes end, then dashes
+	 * Finds the strokes of one row of ripples: an unbroken stroke from the concentric line out to part of the way to where the dashes end, then dashes
 	 * that get shorter, farther apart, and more often left out the farther out they are.
 	 *
 	 * How far out a point is, which decides where the unbroken part ends and which dashes are drawn, is measured along its run of the row,
@@ -931,7 +1075,7 @@ public class WaveLineDrawer
 	 * @param bandRadius
 	 *            How far along a run to look for its ends.
 	 */
-	private void drawDashRow(Painter p, int row, double yInGraph, byte[] classes, SegmentGrid segmentGrid, double concentricLineOuterRadius, double bandRadius,
+	private void drawDashRow(RowContext context, int row, double yInGraph, byte[] classes, SegmentGrid segmentGrid, double concentricLineOuterRadius, double bandRadius,
 			Rectangle drawBounds)
 	{
 		int width = classes.length;
@@ -945,7 +1089,7 @@ public class WaveLineDrawer
 		{
 			if (classes[x] == bandClass)
 			{
-				fractions[x] = calcDashFraction(x + drawBounds.x, yInGraph, segmentGrid, concentricLineOuterRadius);
+				fractions[x] = calcDashFraction(context.nearestOnCurve, x + drawBounds.x, yInGraph, segmentGrid, concentricLineOuterRadius);
 				isInside[x] = fractions[x] < 1.0;
 			}
 		}
@@ -974,7 +1118,7 @@ public class WaveLineDrawer
 			double runStartInGraph = runStart + drawBounds.x;
 			double runEndInGraph = runEnd + drawBounds.x;
 			DoubleUnaryOperator runFraction = xInGraph -> calcRunFraction(xInGraph, runStartInGraph, runEndInGraph, reachesLineAtStart, reachesLineAtEnd, bandRadius,
-					() -> calcDashFraction(xInGraph, yInGraph, segmentGrid, concentricLineOuterRadius));
+					() -> calcDashFraction(context.nearestOnCurve, xInGraph, yInGraph, segmentGrid, concentricLineOuterRadius));
 			double[] runFractions = new double[runEnd - runStart];
 			for (int pixel = runStart; pixel < runEnd; pixel++)
 			{
@@ -1025,11 +1169,11 @@ public class WaveLineDrawer
 						: isEndVisible ? runEndInGraph - calcLineEndPullBack(row, runEndInGraph) : runEndInGraph + overhang;
 				stretches.add(new double[] { stretchStart, stretchEnd, isStretchStartFree ? 1.0 : 0.0, reachesLineAtEnd && !isEndVisible ? 0.0 : 1.0 });
 			}
-			breakPattern = drawStretches(p, row, yInGraph, rowJitterAmplitude, stretches, breakPattern, drawBounds);
+			breakPattern = drawStretches(context, row, yInGraph, rowJitterAmplitude, stretches, breakPattern, drawBounds);
 
 			// Dashes past the unbroken part. Each series of them starts just past a free end of the unbroken part and runs outward, the way a
 			// pen carries on across the water after lifting. The unbroken part's ends depend only on the map near them, so the dashes do too.
-			RunDashes runDashes = new RunDashes(p, row, yInGraph, rowJitterAmplitude, runStartInGraph, runEndInGraph, reachesLineAtStart && !isStartVisible,
+			RunDashes runDashes = new RunDashes(context, row, yInGraph, rowJitterAmplitude, runStartInGraph, runEndInGraph, reachesLineAtStart && !isStartVisible,
 					reachesLineAtEnd && !isEndVisible, reachesLineAtStart, reachesLineAtEnd, bandRadius, runFraction, drawBounds);
 			if (stretches.isEmpty())
 			{
@@ -1054,11 +1198,11 @@ public class WaveLineDrawer
 	}
 
 	/**
-	 * Draws the dashes in one run of a row of ripples.
+	 * Finds the dashes in one run of a row of ripples.
 	 */
 	private class RunDashes
 	{
-		private final Painter p;
+		private final RowContext context;
 		private final int row;
 		private final double yInGraph;
 		private final double rowJitterAmplitude;
@@ -1075,11 +1219,11 @@ public class WaveLineDrawer
 		private final DoubleUnaryOperator runFraction;
 		private final Rectangle drawBounds;
 
-		RunDashes(Painter p, int row, double yInGraph, double rowJitterAmplitude, double runStartInGraph, double runEndInGraph, boolean isStartHidden,
+		RunDashes(RowContext context, int row, double yInGraph, double rowJitterAmplitude, double runStartInGraph, double runEndInGraph, boolean isStartHidden,
 				boolean isEndHidden, boolean reachesLineAtStart, boolean reachesLineAtEnd, double searchDistance, DoubleUnaryOperator runFraction,
 				Rectangle drawBounds)
 		{
-			this.p = p;
+			this.context = context;
 			this.row = row;
 			this.yInGraph = yInGraph;
 			this.rowJitterAmplitude = rowJitterAmplitude;
@@ -1095,7 +1239,7 @@ public class WaveLineDrawer
 		}
 
 		/**
-		 * Draws dashes in a run that has no unbroken part, such as one just above or below an island. A short run gets one series from its
+		 * Finds the dashes in a run that has no unbroken part, such as one just above or below an island. A short run gets one series from its
 		 * start. A long one is split at fixed places on the map, with a series in each piece, so that its dashes don't depend on where its far
 		 * ends are.
 		 */
@@ -1115,7 +1259,7 @@ public class WaveLineDrawer
 		}
 
 		/**
-		 * Draws a series of dashes along the row from anchor toward limit, each shorter, farther from the last, and more likely left out than
+		 * Finds a series of dashes along the row from anchor toward limit, each shorter, farther from the last, and more likely left out than
 		 * the one before as they get farther out. The series is random, but depends only on the row and the anchor.
 		 *
 		 * @param direction
@@ -1151,7 +1295,7 @@ public class WaveLineDrawer
 		}
 
 		/**
-		 * Draws one dash, tapered at both ends, except an end cut off where the run reaches the line or the edge of the area being drawn,
+		 * Adds one dash, tapered at both ends, except an end cut off where the run reaches the line or the edge of the area being drawn,
 		 * since the stroke continues under the line or past the edge.
 		 */
 		private void drawDash(double start, double end)
@@ -1159,7 +1303,7 @@ public class WaveLineDrawer
 			boolean isStartFree = !(start <= runStartInGraph && isStartHidden);
 			boolean isEndFree = !(end >= runEndInGraph && isEndHidden);
 			double taperLength = dashTaperAsFractionOfHalfLength * (end - start) / 2.0 / sizeMultiplier;
-			drawPiece(p, row, yInGraph, rowJitterAmplitude, start / sizeMultiplier, end / sizeMultiplier,
+			drawPiece(context, row, yInGraph, rowJitterAmplitude, start / sizeMultiplier, end / sizeMultiplier,
 					new StrokeTaper(start / sizeMultiplier, end / sizeMultiplier, taperLength, isStartFree, isEndFree));
 		}
 	}
@@ -1243,7 +1387,7 @@ public class WaveLineDrawer
 	 * Where ripples end is shaped by {@link DashLens}, and varies randomly by position. They also always reach at least a fraction of
 	 * that directly from the line.
 	 */
-	private double calcDashFraction(double xInGraph, double yInGraph, SegmentGrid segmentGrid, double concentricLineOuterRadius)
+	private double calcDashFraction(SegmentGrid.Nearest nearestOnCurve, double xInGraph, double yInGraph, SegmentGrid segmentGrid, double concentricLineOuterRadius)
 	{
 		double noise = Helper.sampleSmoothNoise(hash(dashReachSalt, 0, 0), xInGraph / sizeMultiplier, yInGraph / sizeMultiplier,
 				rowSpacing * dashReachNoiseSpacingAsMultipleOfRowSpacing);
@@ -1339,12 +1483,12 @@ public class WaveLineDrawer
 	}
 
 	/**
-	 * Draws the strokes of one run, joining any that a dip in how far wave lines reach left separated by a space too small to read as the ends
+	 * Adds the strokes of one run, joining any that a dip in how far wave lines reach left separated by a space too small to read as the ends
 	 * of two strokes.
 	 *
 	 * @return The row's break pattern, created if it did not exist yet.
 	 */
-	private BreakPattern drawStretches(Painter p, int row, double yInGraph, double rowJitterAmplitude, List<double[]> stretches, BreakPattern breakPattern,
+	private BreakPattern drawStretches(RowContext context, int row, double yInGraph, double rowJitterAmplitude, List<double[]> stretches, BreakPattern breakPattern,
 			Rectangle drawBounds)
 	{
 		double minGap = calcMinBreakLength() * sizeMultiplier;
@@ -1362,20 +1506,20 @@ public class WaveLineDrawer
 			// Ripples' stretches say which of their ends are free, and those ends taper.
 			StrokeTaper taper = first.length < 4 ? null
 					: new StrokeTaper(first[0] / sizeMultiplier, end / sizeMultiplier, solidDashTaperInWavelengths * wavelength, first[2] > 0.0, last[3] > 0.0);
-			breakPattern = drawStretch(p, row, yInGraph, rowJitterAmplitude, first[0], end, taper, breakPattern, drawBounds);
+			breakPattern = drawStretch(context, row, yInGraph, rowJitterAmplitude, first[0], end, taper, breakPattern, drawBounds);
 		}
 		return breakPattern;
 	}
 
 	/**
-	 * Draws one stroke, in the pieces the row's breaks leave of it.
+	 * Adds one stroke, in the pieces the row's breaks leave of it.
 	 *
 	 * @param taper
 	 *            How the stroke's ends narrow, or null to draw it at its full width throughout.
 	 * @return The row's break pattern, created if it did not exist yet.
 	 */
-	private BreakPattern drawStretch(Painter p, int row, double yInGraph, double rowJitterAmplitude, double start, double end, StrokeTaper taper, BreakPattern breakPattern,
-			Rectangle drawBounds)
+	private BreakPattern drawStretch(RowContext context, int row, double yInGraph, double rowJitterAmplitude, double start, double end, StrokeTaper taper,
+			BreakPattern breakPattern, Rectangle drawBounds)
 	{
 		if (end <= start)
 		{
@@ -1388,7 +1532,7 @@ public class WaveLineDrawer
 		// of the breaks wavy lines and hatching get.
 		if (!hasBreaks)
 		{
-			drawPiece(p, row, yInGraph, rowJitterAmplitude, startInUnits, endInUnits, taper);
+			drawPiece(context, row, yInGraph, rowJitterAmplitude, startInUnits, endInUnits, taper);
 			return breakPattern;
 		}
 
@@ -1421,7 +1565,7 @@ public class WaveLineDrawer
 
 		for (double[] piece : pieces)
 		{
-			drawPiece(p, row, yInGraph, rowJitterAmplitude, piece[0], piece[1], taper);
+			drawPiece(context, row, yInGraph, rowJitterAmplitude, piece[0], piece[1], taper);
 		}
 		return pattern;
 	}
@@ -1434,10 +1578,11 @@ public class WaveLineDrawer
 	 * a stroke that runs rightward from the line, so it uses the reach of right ends. The two blend where the line is directly above or
 	 * below, which is the middle of a stroke rather than either of its ends.
 	 */
-	private double calcDistanceBeyondReach(int row, double xInGraph, double yInGraph, SegmentGrid segmentGrid, double concentricLineOuterRadius, RowLengthNoise lengthNoise)
+	private double calcDistanceBeyondReach(SegmentGrid.Nearest nearestOnCurve, int row, double xInGraph, double yInGraph, SegmentGrid segmentGrid, double concentricLineOuterRadius,
+			RowLengthNoise lengthNoise)
 	{
 		segmentGrid.findNearest(xInGraph, yInGraph, nearestOnCurve);
-		double rightEndWeight = calcRightEndWeight(xInGraph);
+		double rightEndWeight = calcRightEndWeight(nearestOnCurve, xInGraph);
 		double xInUnits = xInGraph / sizeMultiplier;
 		double noise = rightEndWeight * lengthNoise.sample(xInUnits, false) + (1.0 - rightEndWeight) * lengthNoise.sample(xInUnits, true);
 		return nearestOnCurve.distance - concentricLineOuterRadius - reachDistribution.getReach(noise) * sizeMultiplier;
@@ -1449,7 +1594,7 @@ public class WaveLineDrawer
 	 *
 	 * Expects nearestOnCurve to hold the point on the concentric line's path closest to the point.
 	 */
-	private double calcRightEndWeight(double xInGraph)
+	private static double calcRightEndWeight(SegmentGrid.Nearest nearestOnCurve, double xInGraph)
 	{
 		double alongRow = nearestOnCurve.distance <= 0.0 ? 0.0 : Math.max(-1.0, Math.min(1.0, (xInGraph - nearestOnCurve.pointX) / nearestOnCurve.distance));
 		return (1.0 + alongRow) / 2.0;
@@ -1458,8 +1603,8 @@ public class WaveLineDrawer
 	/**
 	 * Finds where along a row a wave line's reach ends, between a point within reach and one beyond it.
 	 */
-	private double findReachCrossing(int row, double xWithin, double distanceWithin, double xBeyond, double distanceBeyond, double yInGraph, SegmentGrid segmentGrid,
-			double concentricLineOuterRadius, RowLengthNoise lengthNoise)
+	private double findReachCrossing(SegmentGrid.Nearest nearestOnCurve, int row, double xWithin, double distanceWithin, double xBeyond, double distanceBeyond,
+			double yInGraph, SegmentGrid segmentGrid, double concentricLineOuterRadius, RowLengthNoise lengthNoise)
 	{
 		double within = distanceWithin <= 0.0 ? xWithin : xBeyond;
 		double beyond = distanceWithin <= 0.0 ? xBeyond : xWithin;
@@ -1470,7 +1615,7 @@ public class WaveLineDrawer
 		for (int i = 0; i < bisectionIterations; i++)
 		{
 			double middle = (within + beyond) / 2.0;
-			if (calcDistanceBeyondReach(row, middle, yInGraph, segmentGrid, concentricLineOuterRadius, lengthNoise) <= 0.0)
+			if (calcDistanceBeyondReach(nearestOnCurve, row, middle, yInGraph, segmentGrid, concentricLineOuterRadius, lengthNoise) <= 0.0)
 			{
 				within = middle;
 			}
@@ -1488,13 +1633,13 @@ public class WaveLineDrawer
 	 */
 	private class RowLengthNoise
 	{
-		private final int row;
-		private final Map<Long, Double> leftEndValues = new HashMap<>();
-		private final Map<Long, Double> rightEndValues = new HashMap<>();
+		private final ControlValues leftEndValues;
+		private final ControlValues rightEndValues;
 
 		RowLengthNoise(int row)
 		{
-			this.row = row;
+			leftEndValues = new ControlValues(index -> random(leftEndLengthSalt, row, index).nextGaussian());
+			rightEndValues = new ControlValues(index -> random(rightEndLengthSalt, row, index).nextGaussian());
 		}
 
 		double sample(double xInUnits, boolean isLeftEnd)
@@ -1511,8 +1656,58 @@ public class WaveLineDrawer
 
 		private double getControlValue(long index, boolean isLeftEnd)
 		{
-			Map<Long, Double> values = isLeftEnd ? leftEndValues : rightEndValues;
-			return values.computeIfAbsent(index, i -> random(isLeftEnd ? leftEndLengthSalt : rightEndLengthSalt, row, i).nextGaussian());
+			return (isLeftEnd ? leftEndValues : rightEndValues).get(index);
+		}
+	}
+
+	/**
+	 * Values at consecutive whole-number indexes, each computed the first time it is asked for and kept.
+	 */
+	private static class ControlValues
+	{
+		private final LongToDoubleFunction compute;
+		private long firstIndex;
+		private double[] values = new double[0];
+		private boolean[] isComputed = new boolean[0];
+
+		ControlValues(LongToDoubleFunction compute)
+		{
+			this.compute = compute;
+		}
+
+		double get(long index)
+		{
+			if (values.length == 0)
+			{
+				firstIndex = index;
+				values = new double[8];
+				isComputed = new boolean[8];
+			}
+			else if (index < firstIndex)
+			{
+				int shift = (int) Math.max(firstIndex - index, values.length);
+				double[] shiftedValues = new double[values.length + shift];
+				System.arraycopy(values, 0, shiftedValues, shift, values.length);
+				values = shiftedValues;
+				boolean[] shiftedIsComputed = new boolean[isComputed.length + shift];
+				System.arraycopy(isComputed, 0, shiftedIsComputed, shift, isComputed.length);
+				isComputed = shiftedIsComputed;
+				firstIndex -= shift;
+			}
+			else if (index - firstIndex >= values.length)
+			{
+				int length = (int) Math.max(index - firstIndex + 1, 2L * values.length);
+				values = Arrays.copyOf(values, length);
+				isComputed = Arrays.copyOf(isComputed, length);
+			}
+
+			int i = (int) (index - firstIndex);
+			if (!isComputed[i])
+			{
+				values[i] = compute.applyAsDouble(index);
+				isComputed[i] = true;
+			}
+			return values[i];
 		}
 	}
 
@@ -1593,12 +1788,12 @@ public class WaveLineDrawer
 	}
 
 	/**
-	 * Draws the part of a row's stroke from startInUnits to endInUnits, if it is long enough to draw.
+	 * Adds the part of a row's stroke from startInUnits to endInUnits to the row's strokes, if it is long enough to draw.
 	 *
 	 * @param taper
 	 *            How the whole stroke this is part of narrows toward its ends, or null to draw it at the stroke width with round caps.
 	 */
-	private void drawPiece(Painter p, int row, double yInGraph, double rowJitterAmplitude, double startInUnits, double endInUnits, StrokeTaper taper)
+	private void drawPiece(RowContext context, int row, double yInGraph, double rowJitterAmplitude, double startInUnits, double endInUnits, StrokeTaper taper)
 	{
 		if (endInUnits - startInUnits < minPieceLength)
 		{
@@ -1641,11 +1836,11 @@ public class WaveLineDrawer
 
 		if (taper == null)
 		{
-			p.drawPolylineFloat(points);
+			context.addLine(points);
 		}
 		else
 		{
-			p.fillPolygonFloat(createOutline(points, widths));
+			context.addOutline(createOutline(points, widths));
 		}
 	}
 
@@ -1963,30 +2158,48 @@ public class WaveLineDrawer
 			int mapFirstRow = Math.floorDiv((int) Math.floor(mapBounds.y), blockSize) - firstRow;
 			int mapLastRow = Math.floorDiv((int) Math.ceil(mapBounds.y + mapBounds.height) - 1, blockSize) - firstRow;
 
+			// The block column of each column of pixels, or -1 for columns off the map.
+			int[] columnOfPixel = new int[width];
+			for (int x = 0; x < width; x++)
+			{
+				double xInGraph = x + drawBounds.x;
+				boolean isOnMap = xInGraph >= mapBounds.x && xInGraph < mapBounds.x + mapBounds.width;
+				columnOfPixel[x] = isOnMap ? Math.floorDiv((int) Math.floor(xInGraph), blockSize) - firstColumn : -1;
+			}
+
 			float[] sums = new float[columns * rows];
 			int[] counts = new int[columns * rows];
+			int drawBoundsTop = (int) Math.floor(drawBounds.y);
 			try (PixelReader landPixels = landMask.createPixelReader())
 			{
-				for (int y = 0; y < height; y++)
+				// Each row of blocks sums only its own rows of pixels, so the rows of blocks are summed in parallel.
+				ThreadHelper.forEachInParallel(0, rows, blockRow ->
 				{
-					double yInGraph = y + drawBounds.y;
-					if (yInGraph < mapBounds.y || yInGraph >= mapBounds.y + mapBounds.height)
+					int rowOffset = blockRow * columns;
+					int firstPixelRow = Math.max(0, (firstRow + blockRow) * blockSize - drawBoundsTop);
+					int endPixelRow = Math.min(height, (firstRow + blockRow + 1) * blockSize - drawBoundsTop);
+					for (int y = firstPixelRow; y < endPixelRow; y++)
 					{
-						continue;
-					}
-					int row = Math.floorDiv((int) Math.floor(yInGraph), blockSize) - firstRow;
-					for (int x = 0; x < width; x++)
-					{
-						double xInGraph = x + drawBounds.x;
-						if (xInGraph < mapBounds.x || xInGraph >= mapBounds.x + mapBounds.width)
+						double yInGraph = y + drawBounds.y;
+						if (yInGraph < mapBounds.y || yInGraph >= mapBounds.y + mapBounds.height)
 						{
 							continue;
 						}
-						int index = row * columns + Math.floorDiv((int) Math.floor(xInGraph), blockSize) - firstColumn;
-						sums[index] += landPixels.getNormalizedPixelLevel(x, y) > 0.5f ? 1f : 0f;
-						counts[index]++;
+						for (int x = 0; x < width; x++)
+						{
+							int column = columnOfPixel[x];
+							if (column < 0)
+							{
+								continue;
+							}
+							if (landPixels.getNormalizedPixelLevel(x, y) > 0.5f)
+							{
+								sums[rowOffset + column] += 1f;
+							}
+							counts[rowOffset + column]++;
+						}
 					}
-				}
+				});
 			}
 
 			float[] values = new float[columns * rows];
@@ -2142,22 +2355,42 @@ public class WaveLineDrawer
 
 	/**
 	 * Finds the distance from a point to the nearest of a set of line segments, for points within a fixed distance of some segment.
+	 *
+	 * Each cell of the grid keeps a list of the segments that can be nearest to some point in it, built the first time a point in it is looked
+	 * up, so that a lookup checks only those rather than searching outward through the cells around it.
+	 *
+	 * Lookups can be made from several threads at once.
 	 */
 	private static class SegmentGrid
 	{
 		/**
-		 * Cells this size hold few enough segments that looking up a distance scans only a handful of them, while the grid stays small enough
+		 * Cells this size hold few enough segments that building a cell's list scans only a handful of them, while the grid stays small enough
 		 * to build quickly.
 		 */
 		private static final double cellSize = 16.0;
+		private static final double halfCellDiagonal = cellSize * Math.sqrt(2.0) / 2.0;
+		/**
+		 * Slack, in pixels, added to the distance a cell's list reaches, so that rounding can't leave out a segment that could be nearest.
+		 */
+		private static final double candidateDistanceSlack = 1e-3;
 
 		private final double maxDistance;
 		private final double originX;
 		private final double originY;
 		private final int columns;
 		private final int rows;
-		private final float[][] segmentsByCell;
+		/**
+		 * The segments, four floats each: the x and y of one end, then the other.
+		 */
+		private float[] segments = new float[64];
+		private int segmentCount;
+		private final int[][] segmentIdsByCell;
 		private final int[] segmentCountsByCell;
+		/**
+		 * For each cell, the segments that can be nearest to some point in it, in the order a search outward from the cell reaches them, or
+		 * null if not built yet. Threads that look up points in the same cell at once may each build its list, but they build the same one.
+		 */
+		private final AtomicReferenceArray<int[]> candidatesByCell;
 
 		/**
 		 * @param bounds
@@ -2172,8 +2405,9 @@ public class WaveLineDrawer
 			originY = bounds.y - maxDistance;
 			columns = (int) Math.ceil((bounds.width + 2.0 * maxDistance) / cellSize) + 1;
 			rows = (int) Math.ceil((bounds.height + 2.0 * maxDistance) / cellSize) + 1;
-			segmentsByCell = new float[columns * rows][];
+			segmentIdsByCell = new int[columns * rows][];
 			segmentCountsByCell = new int[columns * rows];
+			candidatesByCell = new AtomicReferenceArray<>(columns * rows);
 
 			for (CoastlineCurve curve : curves)
 			{
@@ -2195,27 +2429,40 @@ public class WaveLineDrawer
 			int maxColumn = Math.min(columns - 1, (int) Math.floor((Math.max(a.x, b.x) - originX) / cellSize));
 			int minRow = Math.max(0, (int) Math.floor((Math.min(a.y, b.y) - originY) / cellSize));
 			int maxRow = Math.min(rows - 1, (int) Math.floor((Math.max(a.y, b.y) - originY) / cellSize));
+			if (minColumn > maxColumn || minRow > maxRow)
+			{
+				return;
+			}
+
+			int id = segmentCount;
+			if ((id + 1) * 4 > segments.length)
+			{
+				segments = Arrays.copyOf(segments, segments.length * 2);
+			}
+			segments[id * 4] = (float) a.x;
+			segments[id * 4 + 1] = (float) a.y;
+			segments[id * 4 + 2] = (float) b.x;
+			segments[id * 4 + 3] = (float) b.y;
+			segmentCount++;
+
 			for (int row = minRow; row <= maxRow; row++)
 			{
 				for (int column = minColumn; column <= maxColumn; column++)
 				{
 					int cell = row * columns + column;
-					float[] segments = segmentsByCell[cell];
+					int[] ids = segmentIdsByCell[cell];
 					int count = segmentCountsByCell[cell];
-					if (segments == null)
+					if (ids == null)
 					{
-						segments = new float[16];
-						segmentsByCell[cell] = segments;
+						ids = new int[4];
+						segmentIdsByCell[cell] = ids;
 					}
-					else if ((count + 1) * 4 > segments.length)
+					else if (count == ids.length)
 					{
-						segments = Arrays.copyOf(segments, segments.length * 2);
-						segmentsByCell[cell] = segments;
+						ids = Arrays.copyOf(ids, ids.length * 2);
+						segmentIdsByCell[cell] = ids;
 					}
-					segments[count * 4] = (float) a.x;
-					segments[count * 4 + 1] = (float) a.y;
-					segments[count * 4 + 2] = (float) b.x;
-					segments[count * 4 + 3] = (float) b.y;
+					ids[count] = id;
 					segmentCountsByCell[cell] = count + 1;
 				}
 			}
@@ -2223,17 +2470,127 @@ public class WaveLineDrawer
 
 		/**
 		 * The nearest point on any segment, and its distance, for points within maxDistance of a segment. Farther points report maxDistance as
-		 * their distance, with the x of the nearest point found, if any.
+		 * their distance, with the x of the nearest point found, if any. Where several segments are equally near, the one a search outward
+		 * through the cells around the point reaches first is used.
 		 */
 		void findNearest(double x, double y, Nearest result)
 		{
 			int column = (int) Math.floor((x - originX) / cellSize);
 			int row = (int) Math.floor((y - originY) / cellSize);
+			if (column < 0 || column >= columns || row < 0 || row >= rows)
+			{
+				searchOutward(x, y, column, row, maxDistance, result);
+				return;
+			}
 			double minDistanceSquared = maxDistance * maxDistance;
 			result.distance = maxDistance;
 			result.pointX = x;
 
-			int maxRing = (int) Math.ceil(maxDistance / cellSize) + 1;
+			int cell = row * columns + column;
+			int[] candidates = candidatesByCell.get(cell);
+			if (candidates == null)
+			{
+				candidates = findCandidates(column, row);
+				candidatesByCell.set(cell, candidates);
+			}
+			for (int id : candidates)
+			{
+				int offset = id * 4;
+				double distanceSquared = distanceSquaredToSegment(x, y, segments[offset], segments[offset + 1], segments[offset + 2], segments[offset + 3]);
+				if (distanceSquared < minDistanceSquared)
+				{
+					minDistanceSquared = distanceSquared;
+					result.distance = Math.sqrt(distanceSquared);
+					result.pointX = closestPointXOnSegment(x, y, segments[offset], segments[offset + 1], segments[offset + 2], segments[offset + 3]);
+				}
+			}
+		}
+
+		/**
+		 * Finds the segments that can be nearest to some point in a cell, and closer than maxDistance to it.
+		 *
+		 * Every point in the cell is within halfCellDiagonal of its middle, so no point in it has a nearest segment farther than the nearest
+		 * distance from the middle plus halfCellDiagonal, and so no segment farther than that plus another halfCellDiagonal from the middle can
+		 * be nearest to any of them.
+		 *
+		 * @return The segments' ids, in the order that a search outward through the cells around the cell reaches them, so that of several
+		 *         segments equally near a point, the same one is found first no matter which are left out.
+		 */
+		private int[] findCandidates(int column, int row)
+		{
+			double middleX = originX + (column + 0.5) * cellSize;
+			double middleY = originY + (row + 0.5) * cellSize;
+			double farthestUseful = maxDistance + halfCellDiagonal;
+			Nearest nearestToMiddle = new Nearest();
+			searchOutward(middleX, middleY, column, row, farthestUseful, nearestToMiddle);
+			double reach = Math.min(nearestToMiddle.distance + 2.0 * halfCellDiagonal, farthestUseful) + candidateDistanceSlack;
+			double reachSquared = reach * reach;
+
+			int[] candidates = new int[8];
+			int count = 0;
+			int maxRing = (int) Math.ceil(reach / cellSize) + 1;
+			for (int ring = 0; ring <= maxRing; ring++)
+			{
+				for (int r = row - ring; r <= row + ring; r++)
+				{
+					if (r < 0 || r >= rows)
+					{
+						continue;
+					}
+					boolean isEdgeRow = r == row - ring || r == row + ring;
+					for (int c = column - ring; c <= column + ring; c += isEdgeRow ? 1 : 2 * ring)
+					{
+						if (c < 0 || c >= columns)
+						{
+							continue;
+						}
+						int cell = r * columns + c;
+						int[] ids = segmentIdsByCell[cell];
+						int cellCount = segmentCountsByCell[cell];
+						for (int i = 0; i < cellCount; i++)
+						{
+							int id = ids[i];
+							int offset = id * 4;
+							// A segment that crosses several cells is found in each of them, and kept only the first time.
+							if (distanceSquaredToSegment(middleX, middleY, segments[offset], segments[offset + 1], segments[offset + 2], segments[offset + 3]) <= reachSquared
+									&& !contains(candidates, count, id))
+							{
+								if (count == candidates.length)
+								{
+									candidates = Arrays.copyOf(candidates, count * 2);
+								}
+								candidates[count++] = id;
+							}
+						}
+					}
+				}
+			}
+			return Arrays.copyOf(candidates, count);
+		}
+
+		private static boolean contains(int[] array, int count, int value)
+		{
+			for (int i = 0; i < count; i++)
+			{
+				if (array[i] == value)
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+
+		/**
+		 * Finds the nearest point on any segment within limit of a point in the given cell by searching outward through the cells around it.
+		 * Farther points report limit as their distance, with the x of the nearest point found, if any.
+		 */
+		private void searchOutward(double x, double y, int column, int row, double limit, Nearest result)
+		{
+			double minDistanceSquared = limit * limit;
+			result.distance = limit;
+			result.pointX = x;
+
+			int maxRing = (int) Math.ceil(limit / cellSize) + 1;
 			for (int ring = 0; ring <= maxRing; ring++)
 			{
 				// Segments in cells this far out are at least this far away, so once something nearer has been found, the rest can't beat it.
@@ -2255,20 +2612,18 @@ public class WaveLineDrawer
 						{
 							continue;
 						}
-						float[] segments = segmentsByCell[r * columns + c];
-						if (segments == null)
+						int cell = r * columns + c;
+						int[] ids = segmentIdsByCell[cell];
+						int cellCount = segmentCountsByCell[cell];
+						for (int i = 0; i < cellCount; i++)
 						{
-							continue;
-						}
-						int count = segmentCountsByCell[r * columns + c];
-						for (int i = 0; i < count; i++)
-						{
-							double distanceSquared = distanceSquaredToSegment(x, y, segments[i * 4], segments[i * 4 + 1], segments[i * 4 + 2], segments[i * 4 + 3]);
+							int offset = ids[i] * 4;
+							double distanceSquared = distanceSquaredToSegment(x, y, segments[offset], segments[offset + 1], segments[offset + 2], segments[offset + 3]);
 							if (distanceSquared < minDistanceSquared)
 							{
 								minDistanceSquared = distanceSquared;
 								result.distance = Math.sqrt(distanceSquared);
-								result.pointX = closestPointXOnSegment(x, y, segments[i * 4], segments[i * 4 + 1], segments[i * 4 + 2], segments[i * 4 + 3]);
+								result.pointX = closestPointXOnSegment(x, y, segments[offset], segments[offset + 1], segments[offset + 2], segments[offset + 3]);
 							}
 						}
 					}

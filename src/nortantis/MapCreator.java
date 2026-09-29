@@ -19,7 +19,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.Lock;
-import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.DoubleConsumer;
 import java.util.stream.Collectors;
@@ -423,7 +422,7 @@ public class MapCreator implements WarningLogger
 	 */
 	static Image createLandMask(WorldGraph graph, Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
-		return createMaskAtMapCoordinates(graph, drawBounds, ImageType.Binary, (p, bounds) -> graph.drawLandAndOceanBlackAndWhite(p, centersToDraw, bounds));
+		return createMaskAtMapCoordinates(graph, centersToDraw, drawBounds, ImageType.Binary, graph::drawLandAndOceanBlackAndWhite);
 	}
 
 	/**
@@ -432,37 +431,192 @@ public class MapCreator implements WarningLogger
 	 * Drawing without anti-aliasing rounds shapes' edges differently depending on where in the image they are, so the part of the mask on the
 	 * map is drawn at the same coordinates a draw of the whole map uses, which makes it match that draw exactly.
 	 *
+	 * @param centersToDraw
+	 *            The centers overlapping drawBounds, or null to use all centers.
 	 * @param draw
-	 *            Draws the mask with a painter, given the bounds whose upper-left corner the painter's origin is at, or null if its origin is
-	 *            the map's.
+	 *            Draws the mask for some of centersToDraw.
 	 */
-	private static Image createMaskAtMapCoordinates(WorldGraph graph, Rectangle drawBounds, ImageType type, BiConsumer<Painter, Rectangle> draw)
+	private static Image createMaskAtMapCoordinates(WorldGraph graph, Collection<Center> centersToDraw, Rectangle drawBounds, ImageType type, MaskDrawer draw)
 	{
 		Image mask = Image.create((int) drawBounds.width, (int) drawBounds.height, type);
 		boolean isAtMapOrigin = drawBounds.x == 0 && drawBounds.y == 0;
-		if (isAtMapOrigin || !graph.bounds.contains(drawBounds))
+		boolean isDrawnIntoMask = isAtMapOrigin || !graph.bounds.contains(drawBounds);
+		IntRectangle onMap = drawBounds.toIntRectangle().findIntersection(graph.bounds.toIntRectangle());
+		if (isAtMapOrigin || onMap == null)
 		{
 			try (Painter p = mask.createPainter())
 			{
-				draw.accept(p, drawBounds);
+				draw.draw(p, centersToDraw, drawBounds);
 			}
+			return mask;
 		}
 
-		IntRectangle onMap = drawBounds.toIntRectangle().findIntersection(graph.bounds.toIntRectangle());
-		if (!isAtMapOrigin && onMap != null)
+		// The part on the map is drawn in horizontal strips, each into its own image at map coordinates, clipped to the strip, with only the
+		// centers that can reach the strip. Drawing the shapes is most of the work, and the strips and the mask are separate images, so they are
+		// all drawn at once.
+		int stripCount = Math.max(1, Math.min(Runtime.getRuntime().availableProcessors(), onMap.height / minMaskStripHeight));
+		IntRectangle[] strips = new IntRectangle[stripCount];
+		List<List<Center>> centersByStrip = new ArrayList<>(stripCount);
+		List<Center> centersToSplit = new ArrayList<>(centersToDraw == null ? graph.centers : centersToDraw);
+		Rectangle[] extents = new Rectangle[centersToSplit.size()];
+		for (int i = 0; i < extents.length; i++)
 		{
-			try (Image atMapCoordinates = Image.create(onMap.x + onMap.width, onMap.y + onMap.height, type))
+			extents[i] = findExtentIncludingNoisyEdges(centersToSplit.get(i));
+		}
+		for (int i = 0; i < stripCount; i++)
+		{
+			int top = onMap.y + (int) ((long) onMap.height * i / stripCount);
+			int bottom = onMap.y + (int) ((long) onMap.height * (i + 1) / stripCount);
+			strips[i] = new IntRectangle(onMap.x, top, onMap.width, bottom - top);
+			centersByStrip.add(findCentersThatCanReach(centersToSplit, extents, new Rectangle(strips[i].x, strips[i].y, strips[i].width, strips[i].height)));
+		}
+		// The rest of the mask, off the map, is drawn directly into it, in the rectangles around the part on the map.
+		IntRectangle onMapInMask = new IntRectangle(onMap.x - (int) drawBounds.x, onMap.y - (int) drawBounds.y, onMap.width, onMap.height);
+		List<IntRectangle> offMapRectangles = isDrawnIntoMask ? findRectanglesAround(new IntRectangle(0, 0, mask.getWidth(), mask.getHeight()), onMapInMask) : List.of();
+		List<List<Center>> centersByOffMapRectangle = new ArrayList<>(offMapRectangles.size());
+		for (IntRectangle rectangle : offMapRectangles)
+		{
+			centersByOffMapRectangle.add(
+					findCentersThatCanReach(centersToSplit, extents, new Rectangle(rectangle.x + drawBounds.x, rectangle.y + drawBounds.y, rectangle.width, rectangle.height)));
+		}
+
+		Image[] stripImages = new Image[stripCount];
+		try
+		{
+			ThreadHelper.forEachInParallel(offMapRectangles.isEmpty() ? 0 : -1, stripCount, i ->
 			{
+				if (i < 0)
+				{
+					try (Painter p = mask.createPainter())
+					{
+						for (int rectangleIndex = 0; rectangleIndex < offMapRectangles.size(); rectangleIndex++)
+						{
+							IntRectangle rectangle = offMapRectangles.get(rectangleIndex);
+							p.setClip(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
+							draw.draw(p, centersByOffMapRectangle.get(rectangleIndex), drawBounds);
+						}
+					}
+					return;
+				}
+				IntRectangle strip = strips[i];
+				Image atMapCoordinates = Image.create(strip.x + strip.width, strip.y + strip.height, type);
+				stripImages[i] = atMapCoordinates;
 				try (Painter p = atMapCoordinates.createPainter())
 				{
-					p.setClip(onMap.x, onMap.y, onMap.width, onMap.height);
-					draw.accept(p, null);
+					p.setClip(strip.x, strip.y, strip.width, strip.height);
+					draw.draw(p, centersByStrip.get(i), null);
 				}
-				ImageHelper.getInstance().copySnippetFromSourceAndPasteIntoTarget(mask, atMapCoordinates, new IntPoint(onMap.x - (int) drawBounds.x, onMap.y - (int) drawBounds.y),
-						onMap, 0);
+			});
+
+			for (int i = 0; i < stripCount; i++)
+			{
+				IntRectangle strip = strips[i];
+				ImageHelper.getInstance().copySnippetFromSourceAndPasteIntoTarget(mask, stripImages[i], new IntPoint(strip.x - (int) drawBounds.x, strip.y - (int) drawBounds.y),
+						strip, 0);
+			}
+		}
+		finally
+		{
+			for (Image stripImage : stripImages)
+			{
+				if (stripImage != null)
+				{
+					stripImage.close();
+				}
 			}
 		}
 		return mask;
+	}
+
+	/**
+	 * A box that contains everything drawn for a center: its polygon and its noisy edges, which can reach as far as the sites of its
+	 * neighbors.
+	 */
+	private static Rectangle findExtentIncludingNoisyEdges(Center center)
+	{
+		Rectangle extent = new Rectangle(center.loc.x, center.loc.y, 0, 0);
+		for (Corner corner : center.corners)
+		{
+			extent = extent.add(corner.loc);
+		}
+		for (Center neighbor : center.neighbors)
+		{
+			extent = extent.add(neighbor.loc);
+		}
+		return extent;
+	}
+
+	/**
+	 * The centers, in their order, that can draw into area in a mask: border centers, whose pieces along the edge of the map reach past
+	 * their polygons, and centers whose extents come within maskStripLineMargin of area.
+	 */
+	private static List<Center> findCentersThatCanReach(List<Center> centers, Rectangle[] extents, Rectangle area)
+	{
+		double left = area.x - maskStripLineMargin;
+		double top = area.y - maskStripLineMargin;
+		double right = area.x + area.width + maskStripLineMargin;
+		double bottom = area.y + area.height + maskStripLineMargin;
+		List<Center> result = new ArrayList<>();
+		for (int i = 0; i < centers.size(); i++)
+		{
+			Rectangle extent = extents[i];
+			boolean isNear = extent.x <= right && extent.x + extent.width >= left && extent.y <= bottom && extent.y + extent.height >= top;
+			if (centers.get(i).isBorder || isNear)
+			{
+				result.add(centers.get(i));
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * The non-empty rectangles that together cover the part of outer that isn't in inner, which must lie within outer.
+	 */
+	private static List<IntRectangle> findRectanglesAround(IntRectangle outer, IntRectangle inner)
+	{
+		List<IntRectangle> result = new ArrayList<>(4);
+		int innerRight = inner.x + inner.width;
+		int innerBottom = inner.y + inner.height;
+		int outerRight = outer.x + outer.width;
+		int outerBottom = outer.y + outer.height;
+		addIfNotEmpty(result, new IntRectangle(outer.x, outer.y, outer.width, inner.y - outer.y));
+		addIfNotEmpty(result, new IntRectangle(outer.x, innerBottom, outer.width, outerBottom - innerBottom));
+		addIfNotEmpty(result, new IntRectangle(outer.x, inner.y, inner.x - outer.x, inner.height));
+		addIfNotEmpty(result, new IntRectangle(innerRight, inner.y, outerRight - innerRight, inner.height));
+		return result;
+	}
+
+	private static void addIfNotEmpty(List<IntRectangle> rectangles, IntRectangle rectangle)
+	{
+		if (rectangle.width > 0 && rectangle.height > 0)
+		{
+			rectangles.add(rectangle);
+		}
+	}
+
+	/**
+	 * The shortest strip {@link #createMaskAtMapCoordinates} splits the part of a mask on the map into, in pixels. Each strip checks every
+	 * center for whether it reaches the strip, so shorter strips cost more in checks than they save in drawing.
+	 */
+	private static final int minMaskStripHeight = 96;
+	/**
+	 * How far, in pixels, the lines masks draw along the edges of centers can reach past the centers' extents. This must be more than half the
+	 * widest of them, which is the coastline mask's line of {@code calcSizeMultiplierFromResolutionScaleRounded} pixels.
+	 */
+	private static final double maskStripLineMargin = 16.0;
+
+	/**
+	 * Draws a mask, or a strip of one.
+	 */
+	private interface MaskDrawer
+	{
+		/**
+		 * @param centers
+		 *            The centers to draw, or null for all of them.
+		 * @param bounds
+		 *            The bounds whose upper-left corner the painter's origin is at, or null if its origin is the map's.
+		 */
+		void draw(Painter p, Collection<Center> centers, Rectangle bounds);
 	}
 
 	/**
@@ -485,7 +639,7 @@ public class MapCreator implements WarningLogger
 		Tuple2<Image, Image> oceanTuple;
 		try (Image landMask = createLandMask(mapParts.graph, centersToDraw, drawBounds))
 		{
-			oceanTuple = createOceanWavesAndShading(settings, mapParts.graph, settings.resolution, landMask, centersToDraw, drawBounds);
+			oceanTuple = createOceanWavesAndShading(settings, mapParts.graph, settings.resolution, landMask, centersToDraw, drawBounds, changeBounds);
 		}
 		checkForCancel();
 
@@ -738,7 +892,8 @@ public class MapCreator implements WarningLogger
 						oceanCentersToDraw = mapParts.graph.breadthFirstSearch(c -> c.isInBoundsIncludingNoisyEdges(oceanDrawBounds), searchStart);
 						oceanLandMask = createLandMask(mapParts.graph, oceanCentersToDraw, oceanDrawBounds);
 					}
-					Tuple2<Image, Image> oceanTuple = createOceanWavesAndShading(settings, mapParts.graph, settings.resolution, oceanLandMask, oceanCentersToDraw, oceanDrawBounds);
+					Tuple2<Image, Image> oceanTuple = createOceanWavesAndShading(settings, mapParts.graph, settings.resolution, oceanLandMask, oceanCentersToDraw, oceanDrawBounds,
+							oceanDrawBounds == drawBounds ? null : drawBounds);
 					if (oceanDrawBounds == drawBounds)
 					{
 						oceanWaves = oceanTuple.getFirst();
@@ -1721,7 +1876,7 @@ public class MapCreator implements WarningLogger
 
 		reportProgressAndCheckForCancel();
 
-		Tuple2<Image, Image> oceanTuple = createOceanWavesAndShading(settings, graph, settings.resolution, landMask, null, null);
+		Tuple2<Image, Image> oceanTuple = createOceanWavesAndShading(settings, graph, settings.resolution, landMask, null, null, null);
 		Image oceanWaves = oceanTuple.getFirst();
 		Image oceanShading = oceanTuple.getSecond();
 		if (mapParts != null)
@@ -2016,7 +2171,12 @@ public class MapCreator implements WarningLogger
 		ImageHelper.getInstance().copySnippetFromSourceAndPasteIntoTarget(cached, drawn, new IntPoint((int) replaceBounds.x, (int) replaceBounds.y), boundsInDrawn, 0);
 	}
 
-	Tuple2<Image, Image> createOceanWavesAndShading(MapSettings settings, WorldGraph graph, double resolutionScale, Image landMask, Collection<Center> centersToDraw, Rectangle drawBounds)
+	/**
+	 * @param boundsToKeep
+	 *            The part of drawBounds whose ocean waves will be used, or null for all of it. Wave rows that can't reach it may be left out.
+	 */
+	Tuple2<Image, Image> createOceanWavesAndShading(MapSettings settings, WorldGraph graph, double resolutionScale, Image landMask, Collection<Center> centersToDraw, Rectangle drawBounds,
+			Rectangle boundsToKeep)
 	{
 		if (drawBounds == null)
 		{
@@ -2054,7 +2214,7 @@ public class MapCreator implements WarningLogger
 			}
 			else if (settings.hasWaveRows())
 			{
-				oceanWaves = createWaveLinesMask(settings, graph, resolutionScale, landMask, centersToDraw, drawBounds);
+				oceanWaves = createWaveLinesMask(settings, graph, resolutionScale, landMask, centersToDraw, drawBounds, boundsToKeep);
 			}
 
 			if (settings.hasOceanShading(resolutionScale))
@@ -2080,17 +2240,17 @@ public class MapCreator implements WarningLogger
 
 	private Image createCoastlineMask(MapSettings settings, WorldGraph graph, double targetStrokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
-		return createMaskAtMapCoordinates(graph, drawBounds, ImageType.Binary, (g, bounds) ->
+		return createMaskAtMapCoordinates(graph, centersToDraw, drawBounds, ImageType.Binary, (g, centers, bounds) ->
 		{
 			g.setColor(Color.white);
 
 			if (settings.drawOceanEffectsInLakes)
 			{
-				graph.drawCoastlineWithLakeShores(g, targetStrokeWidth, centersToDraw, bounds);
+				graph.drawCoastlineWithLakeShores(g, targetStrokeWidth, centers, bounds);
 			}
 			else
 			{
-				graph.drawCoastline(g, targetStrokeWidth, centersToDraw, bounds);
+				graph.drawCoastline(g, targetStrokeWidth, centers, bounds);
 			}
 		});
 	}
@@ -2203,7 +2363,8 @@ public class MapCreator implements WarningLogger
 	/**
 	 * Draws a single unbroken concentric line along coastlines, with rows of wavy lines, hatching or ripples outside it.
 	 */
-	private Image createWaveLinesMask(MapSettings settings, WorldGraph graph, double resolutionScaled, Image landMask, Collection<Center> centersToDraw, Rectangle drawBounds)
+	private Image createWaveLinesMask(MapSettings settings, WorldGraph graph, double resolutionScaled, Image landMask, Collection<Center> centersToDraw, Rectangle drawBounds,
+			Rectangle boundsToKeep)
 	{
 		Image oceanEffects = Image.create((int) drawBounds.width, (int) drawBounds.height, ImageType.Grayscale8Bit);
 		double waveWidth = calcConcentricWaveStrokeWidthDifference(settings, resolutionScaled);
@@ -2215,13 +2376,18 @@ public class MapCreator implements WarningLogger
 		// The line is close enough to the coast that anywhere it strayed from the coastline as drawn, the coastline could reach it.
 		List<WorldGraph.CoastlineCurve> curves = graph.createCoastlineCurvesAlongDrawnCoastline(settings.backgroundRandomSeed, varianceRange, shoreEdges);
 
-		new WaveLineDrawer(settings, resolutionScaled).drawWaveLines(oceanEffects, graph, curves, landMask, centersToDraw, drawBounds);
+		new WaveLineDrawer(settings, resolutionScaled).drawWaveLines(oceanEffects, graph, curves, landMask, centersToDraw, drawBounds, boundsToKeep);
 
 		if (settings.getWaveRowStyle().shoreDetail() == ShoreDetail.ConcentricWave)
 		{
 			// Drawing the concentric line over the wavy lines also hides the wavy lines' inner ends, which run under it.
 			try (Painter p = oceanEffects.createPainter(DrawQuality.High))
 			{
+				if (boundsToKeep != null)
+				{
+					IntRectangle keep = new Rectangle(boundsToKeep.x - drawBounds.x, boundsToKeep.y - drawBounds.y, boundsToKeep.width, boundsToKeep.height).toIntRectangle();
+					p.setClip(keep.x, keep.y, keep.width, keep.height);
+				}
 				p.setColor(Color.white);
 				p.setStrokeToSolidLineWithNoEndDecorations((float) lineOuterWidth);
 				graph.drawCoastlineCurves(p, curves, settings.backgroundRandomSeed, false, drawBounds, null);
@@ -2364,8 +2530,7 @@ public class MapCreator implements WarningLogger
 		// noisy edges for centers along the border (the edge of the map). Because of this, I need to draw border centers first, then draw
 		// centers with noisy edges over them. Thus I must draw both the land and lakes, and their ocean neighbors, so I need to do the
 		// drawing as a mask and then apply it onto oceanEffects.
-		Image landAndLakeMask = createMaskAtMapCoordinates(graph, drawBounds, ImageType.Binary,
-				(p, bounds) -> graph.drawLandAndLakesBlackAndOceanWhite(p, centersToDraw, bounds));
+		Image landAndLakeMask = createMaskAtMapCoordinates(graph, centersToDraw, drawBounds, ImageType.Binary, graph::drawLandAndLakesBlackAndOceanWhite);
 		return ImageHelper.getInstance().maskWithColor(oceanEffects, Color.black, landAndLakeMask, false);
 	}
 

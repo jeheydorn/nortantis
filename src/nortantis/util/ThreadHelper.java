@@ -5,7 +5,10 @@ import nortantis.platform.ImageHelper;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.IntConsumer;
+import java.util.stream.IntStream;
 
 public class ThreadHelper
 {
@@ -182,5 +185,56 @@ public class ThreadHelper
 	public int getThreadCount()
 	{
 		return threadCount;
+	}
+
+	private static final ForkJoinPool parallelLoopPool = new ForkJoinPool(Math.max(1, Runtime.getRuntime().availableProcessors()));
+
+	/**
+	 * Runs action for each number from start (inclusive) to end (exclusive) in parallel, and returns once all of them have finished. If any
+	 * throw, the first exception is rethrown after the rest have finished, so that nothing is still running when the caller cleans up.
+	 *
+	 * This uses a fork-join pool, which runs a loop started from inside another of its loops by having the waiting thread help, so nesting
+	 * these needs no extra threads.
+	 */
+	public static void forEachInParallel(int start, int end, IntConsumer action)
+	{
+		if (end <= start)
+		{
+			return;
+		}
+		AtomicReference<Throwable> firstFailure = new AtomicReference<>();
+		IntConsumer guardedAction = i ->
+		{
+			try
+			{
+				action.accept(i);
+			}
+			catch (Throwable e)
+			{
+				firstFailure.compareAndSet(null, e);
+			}
+		};
+		if (ForkJoinTask.inForkJoinPool() && ForkJoinTask.getPool() == parallelLoopPool)
+		{
+			IntStream.range(start, end).parallel().forEach(guardedAction);
+		}
+		else
+		{
+			parallelLoopPool.submit(() -> IntStream.range(start, end).parallel().forEach(guardedAction)).join();
+		}
+
+		Throwable failure = firstFailure.get();
+		if (failure instanceof RuntimeException runtimeException)
+		{
+			throw runtimeException;
+		}
+		if (failure instanceof Error error)
+		{
+			throw error;
+		}
+		if (failure != null)
+		{
+			throw new RuntimeException(failure);
+		}
 	}
 }
