@@ -71,7 +71,7 @@ public class SwingHelper
 			case "es" -> 10;
 			case "fr" -> 0;
 			case "pt" -> 10;
-			case "ru" -> 60;
+			case "ru" -> 50;
 			default -> 0;
 		};
 		int total = base + osAddition + uiThemeAddition + languageAddition;
@@ -1190,15 +1190,6 @@ public class SwingHelper
 	{
 		int grayLevel = UserPreferences.getInstance().lookAndFeel == LookAndFeel.Dark ? 168 : 128;
 		return new Color(grayLevel, grayLevel, grayLevel);
-	}
-
-	/**
-	 * Creates a left-aligned panel with a label above a row of components, for fitting labeled components into a vertical list of other
-	 * components. Space above the label separates it from whatever is above, so that it's clear which components the label belongs to.
-	 */
-	public static JPanel createPanelWithLabelAbove(String label, String toolTip, List<? extends Component> components)
-	{
-		return createPanelWithLabelAbove(label, toolTip, components, true);
 	}
 
 	/**
