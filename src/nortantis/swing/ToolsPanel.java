@@ -177,6 +177,11 @@ public class ToolsPanel extends JPanel
 			public void actionPerformed(ActionEvent e)
 			{
 				DisplayQuality quality = (DisplayQuality) displayQualityComboBox.getSelectedItem();
+				// The combo box fires even when the already-selected quality is picked again, which needs no redraw.
+				if (quality == UserPreferences.getInstance().editorImageQuality)
+				{
+					return;
+				}
 				UserPreferences.getInstance().editorImageQuality = quality;
 				mainWindow.handleImageQualityChange(quality);
 			}
