@@ -139,7 +139,9 @@ Before changing how a class or method behaves, find its other users and subclass
 
 ### Review pass
 
-For any change beyond a few lines, run a review of the diff before reporting done — preferably a subagent, run in parallel with tests — checking that the change fits the existing design: right class/layer, no behavior changes to other users of the touched code, consistent with how similar things are done elsewhere.
+Before reporting done, re-read your own diff against the existing design: right class/layer, no behavior changes to other users of the touched code, consistent with how similar things are done elsewhere.
+
+Use a subagent for this review only for substantial changes — e.g. a new class or subsystem, changes to a shared base class or widely used helper, a multi-file refactor, or anything that changes how existing features behave. Run it in parallel with tests. Small, localized changes don't need one.
 
 This does not apply to translation file changes (`messages_*.properties`). Translate those yourself, and do not have a subagent review or edit them.
 
