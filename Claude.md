@@ -149,9 +149,9 @@ This does not apply to translation file changes (`messages_*.properties`). Trans
 
 When you've implemented something, end the report with these sections, after everything else. Include a section only when it has something in it; leave out an empty one rather than writing "None".
 
-**Divergences** — every place the implementation differs in substance from what I asked or designed, and every side effect on existing behavior. One bullet each, stated plainly. Leave out divergences I've already clearly acknowledged (e.g. a design change you raised during implementation and I agreed to). How you carried out a request (e.g. splitting work into several commits) is not a divergence.
+**Divergences** — every place the implementation differs in substance from what I asked or designed, and every side effect on existing behavior. One bullet each, stated plainly. Leave out divergences I've already clearly acknowledged (e.g. a design change you raised during implementation and I agreed to). How you carried out a request (e.g. splitting work into several commits) is not a divergence, and neither are implementation details such as new parameters, refactored signatures, helper methods, or call sites updated to match. List only what I might need to act on or be concerned about.
 
-**Follow-ups** — related problems found but not fixed (e.g. "the same bug exists in X and Y"), better approaches than the one requested, and anything left untested.
+**Follow-ups** — related problems found but not fixed (e.g. "the same bug exists in X and Y"), better approaches than the one requested, and anything left untested. Only suggest improvements that are practical with what exists today; leave out ones you're confident aren't worth doing or that would need infrastructure the project doesn't have.
 
 Report each divergence and follow-up once. Don't repeat it in later reports, even if I didn't respond to it.
 
