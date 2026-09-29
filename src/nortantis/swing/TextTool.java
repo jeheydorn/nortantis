@@ -1259,7 +1259,7 @@ public class TextTool extends EditorTool
 		if (brushDiameter > 1)
 		{
 			mapEditingPanel.showBrush(mouseLocation, brushDiameter);
-			mapTextsSelected = mainWindow.edits.findTextSelectedByBrush(getPointOnGraph(mouseLocation), (brushDiameter / mainWindow.zoom) * mapEditingPanel.osScale);
+			mapTextsSelected = mainWindow.edits.findTextSelectedByBrush(getPointOnGraph(mouseLocation), panelDistanceToGraphPixels(brushDiameter));
 		}
 		else
 		{

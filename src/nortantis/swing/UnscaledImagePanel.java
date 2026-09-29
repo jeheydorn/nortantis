@@ -73,7 +73,15 @@ public class UnscaledImagePanel extends JPanel
 		{
 			return super.getPreferredSize();
 		}
-		return new Dimension((int) Math.round(image.getWidth() / osScale), (int) Math.round(image.getHeight() / osScale));
+		return new Dimension(pixelsToPanelSize(image.getWidth(), osScale), pixelsToPanelSize(image.getHeight(), osScale));
+	}
+
+	/**
+	 * Converts a size in image pixels to this panel's preferred size along that dimension.
+	 */
+	static int pixelsToPanelSize(int sizeInPixels, double osScale)
+	{
+		return (int) Math.round(sizeInPixels / osScale);
 	}
 
 	@Override

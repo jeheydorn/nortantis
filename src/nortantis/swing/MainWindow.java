@@ -35,6 +35,7 @@ import javax.swing.filechooser.FileSystemView;
 import java.awt.*;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.*;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -2527,12 +2528,23 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			// change is still drawing. commitScaledMap commits the source map's own resolution (captured at submit), so overlays
 			// stay matched to the image actually shown rather than jumping to the in-flight target quality.
 			lastDisplayUpdateWasAsync = true;
-			fullRescale(targetZoom, updateScrollLocationIfZoomChanged, borderPadding, false, true);
+			java.awt.Point viewPositionShiftForZoom = null;
+			if (updateScrollLocationIfZoomChanged && targetZoom != zoom)
+			{
+				java.awt.Point viewPositionAfterZoom = getViewPositionForZoomChange(zoom, targetZoom);
+				java.awt.Point viewPosition = mapEditingScrollPane.getViewport().getViewPosition();
+				viewPositionShiftForZoom = new java.awt.Point(viewPositionAfterZoom.x - viewPosition.x, viewPositionAfterZoom.y - viewPosition.y);
+			}
+			showZoomPreview(targetZoom, viewPositionShiftForZoom);
+			fullRescale(targetZoom, viewPositionShiftForZoom, borderPadding, false, true);
 			return;
 		}
 
 		// A draw just finished.
 		Method method = targetZoom < 0.34 ? Method.QUALITY : Method.BALANCED;
+		// When a zoom change is still pending, this draw's rescale supersedes the zoom's own rescale and commits the new zoom in its place,
+		// so it carries the zoom's view position shift for the map to land where the zoom preview showed it.
+		java.awt.Point pendingZoomViewPositionShift = targetZoom != zoom ? mapEditingPanel.getZoomPreviewViewPositionShift() : null;
 		if (method == Method.BALANCED && incrementalChangeArea != null && targetZoom == zoom && mapEditingPanel.getImage() != null)
 		{
 			// Fast path: the displayed image is already at this zoom, so patch just the changed region directly into it, synchronously
@@ -2555,14 +2567,14 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			// generating on a background thread, so the added synchronous rescale is minor. The async path is kept for zoom changes (below)
 			// and incremental updates, where responsiveness matters and the graph/image are already consistent.
 			lastDisplayUpdateWasAsync = false;
-			fullRescale(targetZoom, false, borderPadding, true, false);
+			fullRescale(targetZoom, pendingZoomViewPositionShift, borderPadding, true, targetZoom != zoom);
 		}
 		else
 		{
 			// A QUALITY downscale of an incremental update, or the displayed zoom doesn't match the target yet (e.g. the first draw at
 			// fit-to-window). Do the (possibly slow) rescale on a background thread so it never blocks the EDT.
 			lastDisplayUpdateWasAsync = true;
-			fullRescale(targetZoom, false, borderPadding, false, false);
+			fullRescale(targetZoom, pendingZoomViewPositionShift, borderPadding, false, targetZoom != zoom);
 		}
 	}
 
@@ -2572,9 +2584,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	 * displayScaleGeneration (a request bails - before scaling, and again right after acquiring the map read lock - if a newer request has
 	 * since been submitted, and only commits if it's still the latest). When {@code synchronous} is true the scale and commit run inline on
 	 * the caller's (EDT) thread, so the image is committed in the same event as any panel state the caller set just before - used for full
-	 * draws so graph-derived overlays never draw against the new graph over the old image.
+	 * draws so graph-derived overlays never draw against the new graph over the old image. When viewPositionShiftForZoom is not null and the
+	 * zoom changes, the view position moves by that much (clamped to the panel) when the rescaled image is committed. It's a shift rather
+	 * than an absolute position so that panning while the rescale runs is kept.
 	 */
-	private void fullRescale(double targetZoom, boolean updateScrollLocationIfZoomChanged, int borderPadding, boolean synchronous, boolean isZoomChange)
+	private void fullRescale(double targetZoom, java.awt.Point viewPositionShiftForZoom, int borderPadding, boolean synchronous, boolean isZoomChange)
 	{
 		Image sourceMap = mapEditingPanel.mapFromMapCreator;
 		// Capture the resolution the source raw map was rendered at, together with the map itself. commitScaledMap must set the
@@ -2586,15 +2600,34 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		long generation = displayScaleGeneration.incrementAndGet();
 		if (synchronous)
 		{
-			runScaleMapFull(generation, sourceMap, committedResolution, targetZoom, updateScrollLocationIfZoomChanged, borderPadding, true, isZoomChange);
+			runScaleMapFull(generation, sourceMap, committedResolution, targetZoom, viewPositionShiftForZoom, borderPadding, true, isZoomChange);
 		}
 		else
 		{
-			displayScaleExecutor.submit(() -> runScaleMapFull(generation, sourceMap, committedResolution, targetZoom, updateScrollLocationIfZoomChanged, borderPadding, false, isZoomChange));
+			displayScaleExecutor.submit(() ->
+			{
+				try
+				{
+					runScaleMapFull(generation, sourceMap, committedResolution, targetZoom, viewPositionShiftForZoom, borderPadding, false, isZoomChange);
+				}
+				catch (Throwable e)
+				{
+					// Nothing will commit for this request, so drop the zoom preview rather than leave the map stretched. A newer request owns
+					// the preview if there is one, so leave it alone in that case.
+					Logger.printError("Error while rescaling the map for display:", e);
+					SwingUtilities.invokeLater(() ->
+					{
+						if (generation == displayScaleGeneration.get())
+						{
+							mapEditingPanel.clearZoomPreview();
+						}
+					});
+				}
+			});
 		}
 	}
 
-	private void runScaleMapFull(long generation, Image sourceMap, double committedResolution, double targetZoom, boolean updateScrollLocationIfZoomChanged, int borderPadding,
+	private void runScaleMapFull(long generation, Image sourceMap, double committedResolution, double targetZoom, java.awt.Point viewPositionShiftForZoom, int borderPadding,
 			boolean synchronous, boolean isZoomChange)
 	{
 		if (sourceMap == null || generation != displayScaleGeneration.get())
@@ -2604,12 +2637,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		}
 
 		Method method = targetZoom < 0.34 ? Method.QUALITY : Method.BALANCED;
-		int zoomedWidth = (int) (sourceMap.getWidth() * targetZoom);
-		if (zoomedWidth <= 0)
-		{
-			// Prevents a crash if someone collapses the map editing panel.
-			zoomedWidth = 600;
-		}
+		int zoomedWidth = getZoomedMapWidth(sourceMap, targetZoom);
 
 		BufferedImage scaledImage;
 		Lock mapReadLock = updater.getMapReadLock();
@@ -2632,12 +2660,26 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		{
 			// Already on the EDT (called inline for a full draw). Commit in this same event so the image lands together with the panel
 			// state the caller set just before.
-			commitScaledMap(generation, scaledImage, committedResolution, targetZoom, updateScrollLocationIfZoomChanged, borderPadding, isZoomChange);
+			commitScaledMap(generation, scaledImage, committedResolution, targetZoom, viewPositionShiftForZoom, borderPadding, isZoomChange);
 		}
 		else
 		{
-			SwingUtilities.invokeLater(() -> commitScaledMap(generation, scaledImage, committedResolution, targetZoom, updateScrollLocationIfZoomChanged, borderPadding, isZoomChange));
+			SwingUtilities.invokeLater(() -> commitScaledMap(generation, scaledImage, committedResolution, targetZoom, viewPositionShiftForZoom, borderPadding, isZoomChange));
 		}
+	}
+
+	/**
+	 * The width of the rescaled image that displays sourceMap at targetZoom.
+	 */
+	private static int getZoomedMapWidth(Image sourceMap, double targetZoom)
+	{
+		int zoomedWidth = (int) (sourceMap.getWidth() * targetZoom);
+		if (zoomedWidth <= 0)
+		{
+			// Prevents a crash if someone collapses the map editing panel.
+			zoomedWidth = 600;
+		}
+		return zoomedWidth;
 	}
 
 	/**
@@ -2673,7 +2715,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	 * rescale runs, the panel stays at the previously committed zoom, so overlays and the displayed image stay consistent; then
 	 * everything snaps to the new zoom at once.
 	 */
-	private void commitScaledMap(long generation, BufferedImage scaledImage, double committedResolution, double targetZoom, boolean updateScrollLocationIfZoomChanged, int borderPadding,
+	private void commitScaledMap(long generation, BufferedImage scaledImage, double committedResolution, double targetZoom, java.awt.Point viewPositionShiftForZoom, int borderPadding,
 			boolean isZoomChange)
 	{
 		if (generation != displayScaleGeneration.get() || mapEditingPanel.mapFromMapCreator == null)
@@ -2684,32 +2726,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		double oldZoom = zoom;
 		zoom = targetZoom;
-
-		java.awt.Rectangle scrollTo = null;
-		if (updateScrollLocationIfZoomChanged && zoom != oldZoom)
-		{
-			java.awt.Rectangle visible = mapEditingPanel.getVisibleRect();
-			double scale = zoom / oldZoom;
-			java.awt.Point mousePosition = mapEditingPanel.getMousePosition();
-			// Positions are scaled relative to the image rather than the panel, since the image is centered in the panel when it is smaller
-			// than the viewport. Along any dimension that scrolls after the zoom, the image fills the panel, so it lands at 0 there.
-			nortantis.geom.Point imageLocation = mapEditingPanel.getImageLocation();
-			if (mousePosition != null && (zoom > oldZoom))
-			{
-				// Zoom toward the mouse's position, keeping the point
-				// currently under the mouse the same if possible.
-				scrollTo = new java.awt.Rectangle((int) ((mousePosition.x - imageLocation.x) * scale) - mousePosition.x + visible.x,
-						(int) ((mousePosition.y - imageLocation.y) * scale) - mousePosition.y + visible.y, visible.width, visible.height);
-			}
-			else
-			{
-				// Zoom toward or away from the current center of the
-				// screen.
-				java.awt.Point currentCentroid = new java.awt.Point(visible.x + (visible.width / 2), visible.y + (visible.height / 2));
-				java.awt.Point targetCentroid = new java.awt.Point((int) ((currentCentroid.x - imageLocation.x) * scale), (int) ((currentCentroid.y - imageLocation.y) * scale));
-				scrollTo = new java.awt.Rectangle(targetCentroid.x - visible.width / 2, targetCentroid.y - visible.height / 2, visible.width, visible.height);
-			}
-		}
+		JViewport viewport = mapEditingScrollPane.getViewport();
+		java.awt.Point viewPositionBeforeCommit = viewport.getViewPosition();
 
 		// Commit the resolution and border padding together with the zoom and image, so overlays that read the panel's resolution, zoom,
 		// and border padding (such as the sub-map selection box) match the newly displayed image in the same frame. Committing any of them
@@ -2728,16 +2746,27 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			restartGarbageCollectAfterZoomTimer();
 		}
 
-		if (scrollTo != null)
+		if (viewPositionShiftForZoom != null && zoom != oldZoom)
 		{
-			// For some reason I have to do a bunch of revalidation or
-			// else scrollRectToVisible doesn't realize the map has changed
-			// size.
+			// The clamp below needs the viewport's view and extent sizes for the new image. JComponent.revalidate only queues a layout,
+			// but this.revalidate() is the frame's, which invalidates and validates the whole window immediately.
 			mapEditingPanel.revalidate();
 			mapEditingScrollPane.revalidate();
 			this.revalidate();
 
-			mapEditingPanel.scrollRectToVisible(scrollTo);
+			Dimension viewSize = viewport.getViewSize();
+			Dimension extent = viewport.getExtentSize();
+			viewport.setViewPosition(new java.awt.Point(clampViewPosition(viewPositionBeforeCommit.x + viewPositionShiftForZoom.x, viewSize.width, extent.width),
+					clampViewPosition(viewPositionBeforeCommit.y + viewPositionShiftForZoom.y, viewSize.height, extent.height)));
+
+			if (mouseLocationForMiddleButtonDrag != null)
+			{
+				// A pan in progress holds the point it grabbed in panel coordinates. Move that point along with the view so it stays at the
+				// same place in the viewport; otherwise the next drag would scroll by the whole distance the view just moved.
+				java.awt.Point viewPositionAfterCommit = viewport.getViewPosition();
+				mouseLocationForMiddleButtonDrag = new java.awt.Point(mouseLocationForMiddleButtonDrag.x + viewPositionAfterCommit.x - viewPositionBeforeCommit.x,
+						mouseLocationForMiddleButtonDrag.y + viewPositionAfterCommit.y - viewPositionBeforeCommit.y);
+			}
 		}
 
 		finishDisplayUpdate();
@@ -2759,6 +2788,150 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			garbageCollectAfterZoomTimer.setRepeats(false);
 		}
 		garbageCollectAfterZoomTimer.restart();
+	}
+
+	/**
+	 * The zoom the map is shown at on screen. It differs from {@code zoom} only while a zoom preview is stretching the displayed image.
+	 */
+	public double getDisplayedZoom()
+	{
+		return zoom * mapEditingPanel.getZoomPreviewScale();
+	}
+
+	/**
+	 * Returns the view position (the viewport's upper-left corner, in panel coordinates after the zoom change) that keeps the point under the
+	 * mouse fixed when zooming in from oldZoom to newZoom with the mouse over the panel, and otherwise keeps the center of the view fixed. The
+	 * result isn't clamped to the panel. Computed from the panel's current layout, so it must be called before the rescaled image is set.
+	 * While a zoom preview is showing, the point kept fixed is the part of the map the preview shows there.
+	 */
+	private java.awt.Point getViewPositionForZoomChange(double oldZoom, double newZoom)
+	{
+		java.awt.Rectangle visible = mapEditingPanel.getVisibleRect();
+		double scale = newZoom / oldZoom;
+		java.awt.Point mousePosition = mapEditingPanel.getMousePosition();
+		// Positions are scaled relative to the image rather than the panel, since the image is centered in the panel when it is smaller
+		// than the viewport. Along any dimension that scrolls after the zoom, the image fills the panel, so it lands at 0 there.
+		nortantis.geom.Point imageLocation = mapEditingPanel.getImageLocation();
+		if (mousePosition != null && (newZoom > oldZoom))
+		{
+			// Zoom toward the mouse's position, keeping the point
+			// currently under the mouse the same if possible.
+			java.awt.geom.Point2D mapPointUnderMouse = mapEditingPanel.toCommittedPanelPoint(mousePosition);
+			return new java.awt.Point((int) ((mapPointUnderMouse.getX() - imageLocation.x) * scale) - mousePosition.x + visible.x,
+					(int) ((mapPointUnderMouse.getY() - imageLocation.y) * scale) - mousePosition.y + visible.y);
+		}
+		else
+		{
+			// Zoom toward or away from the current center of the
+			// screen.
+			java.awt.Point currentCentroid = new java.awt.Point(visible.x + (visible.width / 2), visible.y + (visible.height / 2));
+			java.awt.geom.Point2D mapPointAtCentroid = mapEditingPanel.toCommittedPanelPoint(currentCentroid);
+			java.awt.Point targetCentroid = new java.awt.Point((int) ((mapPointAtCentroid.getX() - imageLocation.x) * scale), (int) ((mapPointAtCentroid.getY() - imageLocation.y) * scale));
+			return new java.awt.Point(targetCentroid.x - visible.width / 2, targetCentroid.y - visible.height / 2);
+		}
+	}
+
+	private static int clampViewPosition(int requestedPosition, int viewSize, int viewportExtent)
+	{
+		return Math.max(0, Math.min(requestedPosition, viewSize - viewportExtent));
+	}
+
+	/**
+	 * Immediately shows the displayed image stretched to targetZoom, placed where commitScaledMap will put the rescaled image, so a zoom
+	 * change is visible right away instead of after the rescale finishes. Predicts the committed layout from the rescaled image's size: which
+	 * scroll bars the scroll pane will show, the panel growing to fill the viewport when the image is smaller, the image centered in the panel
+	 * along those dimensions, and the view position clamped to the panel. viewPositionShiftForZoom is how far the view position moves, or
+	 * null when it isn't being changed.
+	 */
+	private void showZoomPreview(double targetZoom, java.awt.Point viewPositionShiftForZoom)
+	{
+		BufferedImage image = mapEditingPanel.getImage();
+		if (image == null || mapEditingPanel.mapFromMapCreator == null || zoom <= 0 || targetZoom == zoom)
+		{
+			mapEditingPanel.clearZoomPreview();
+			return;
+		}
+
+		double osScale = mapEditingPanel.osScale;
+		int newImageWidth = getZoomedMapWidth(mapEditingPanel.mapFromMapCreator, targetZoom);
+		int newImageHeight = ImageHelper.getInstance().getHeightWhenScaledByWidth(mapEditingPanel.mapFromMapCreator, newImageWidth);
+		int newPanelPreferredWidth = UnscaledImagePanel.pixelsToPanelSize(newImageWidth, osScale);
+		int newPanelPreferredHeight = UnscaledImagePanel.pixelsToPanelSize(newImageHeight, osScale);
+
+		java.awt.Rectangle visible = mapEditingPanel.getVisibleRect();
+		java.awt.Point requestedViewPosition = viewPositionShiftForZoom != null
+				? new java.awt.Point(visible.x + viewPositionShiftForZoom.x, visible.y + viewPositionShiftForZoom.y)
+				: visible.getLocation();
+		Dimension extent = getPredictedViewportExtent(newPanelPreferredWidth, newPanelPreferredHeight);
+		double newImageLocationInViewX = getPredictedImageLocationInView(newImageWidth, newPanelPreferredWidth, extent.width, requestedViewPosition.x, osScale);
+		double newImageLocationInViewY = getPredictedImageLocationInView(newImageHeight, newPanelPreferredHeight, extent.height, requestedViewPosition.y, osScale);
+
+		// Maps a point on the current image, in panel coordinates, to where the same point will be after the commit: the new image's location
+		// in the view, shifted by the current scroll position since the preview is still painted in the panel's current coordinates. The scale
+		// is the actual ratio of the image sizes, which can differ slightly from the ratio of the zooms because the sizes are whole pixels.
+		double scale = (double) newImageWidth / image.getWidth();
+		nortantis.geom.Point imageLocation = mapEditingPanel.getImageLocation();
+		AffineTransform transform = new AffineTransform();
+		transform.translate(visible.x + newImageLocationInViewX - imageLocation.x * scale, visible.y + newImageLocationInViewY - imageLocation.y * scale);
+		transform.scale(scale, scale);
+		mapEditingPanel.setZoomPreview(transform, viewPositionShiftForZoom);
+
+		// The preview changes which part of the map is under the cursor and how much of it the brush covers, without a mouse event, so have
+		// the tool recompute its hover highlights.
+		updater.doIfMapIsReadyForInteractions(() ->
+		{
+			if (!mapEditingPanel.isSelectionBoxActive())
+			{
+				toolsPanel.currentTool.onAfterShowMap();
+			}
+		});
+	}
+
+	/**
+	 * Returns the size the map editing viewport will have once the panel's preferred size becomes the given size, accounting for the scroll
+	 * bars the scroll pane shows or hides as needed. Follows the order ScrollPaneLayout decides them in, since each scroll bar takes space
+	 * that can make the other one necessary.
+	 */
+	private Dimension getPredictedViewportExtent(int panelPreferredWidth, int panelPreferredHeight)
+	{
+		Insets insets = mapEditingScrollPane.getInsets();
+		int availableWidth = mapEditingScrollPane.getWidth() - insets.left - insets.right;
+		int availableHeight = mapEditingScrollPane.getHeight() - insets.top - insets.bottom;
+		if (mapEditingScrollPane.getViewportBorder() != null)
+		{
+			Insets viewportBorderInsets = mapEditingScrollPane.getViewportBorder().getBorderInsets(mapEditingScrollPane.getViewport());
+			availableWidth -= viewportBorderInsets.left + viewportBorderInsets.right;
+			availableHeight -= viewportBorderInsets.top + viewportBorderInsets.bottom;
+		}
+		int verticalScrollBarWidth = mapEditingScrollPane.getVerticalScrollBar().getPreferredSize().width;
+		int horizontalScrollBarHeight = mapEditingScrollPane.getHorizontalScrollBar().getPreferredSize().height;
+
+		boolean needsVerticalScrollBar = panelPreferredHeight > availableHeight;
+		if (needsVerticalScrollBar)
+		{
+			availableWidth -= verticalScrollBarWidth;
+		}
+		if (panelPreferredWidth > availableWidth)
+		{
+			availableHeight -= horizontalScrollBarHeight;
+			if (!needsVerticalScrollBar && panelPreferredHeight > availableHeight)
+			{
+				availableWidth -= verticalScrollBarWidth;
+			}
+		}
+		return new Dimension(availableWidth, availableHeight);
+	}
+
+	/**
+	 * Along one dimension, returns where the upper-left corner of a newly committed image will be relative to the viewport's upper-left
+	 * corner, after the viewport lays out the panel and scrolls to the requested position.
+	 */
+	private static double getPredictedImageLocationInView(int imageSizeInPixels, int panelPreferredSize, int viewportExtent, int requestedViewPosition, double osScale)
+	{
+		// The viewport stretches the panel to fill it when the panel is smaller.
+		int panelSize = Math.max(panelPreferredSize, viewportExtent);
+		int imageOffsetInPixels = MapEditingPanel.getCenteredImageOffsetInPixels(panelSize, imageSizeInPixels, osScale);
+		return imageOffsetInPixels / osScale - clampViewPosition(requestedViewPosition, panelSize, viewportExtent);
 	}
 
 	private void finishDisplayUpdate()

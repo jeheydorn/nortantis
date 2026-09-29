@@ -1177,9 +1177,9 @@ public class LandWaterTool extends EditorTool
 		if (brushDiameter <= 1)
 		{
 			// Erase mode's brush=1 radius is in RI; convert to graph pixels here.
-			return ((double) singlePointRoadSelectionRadiusBeforeZoomAndScale / mainWindow.zoom) * mapEditingPanel.osScale * mainWindow.displayQualityScale;
+			return panelDistanceToGraphPixels(singlePointRoadSelectionRadiusBeforeZoomAndScale) * mainWindow.displayQualityScale;
 		}
-		return ((double) brushDiameter / mainWindow.zoom) * mapEditingPanel.osScale / 2.0;
+		return panelDistanceToGraphPixels(brushDiameter) / 2.0;
 	}
 
 	private Point computeSnapPointForType(java.awt.Point mouseLocation, LineType type)
@@ -2338,7 +2338,7 @@ public class LandWaterTool extends EditorTool
 		if (brushDiameter <= 1)
 		{
 			// Find the closest road point within a certain diameter.
-			int radius = (int) ((double) ((singlePointRoadSelectionRadiusBeforeZoomAndScale / mainWindow.zoom) * mapEditingPanel.osScale));
+			int radius = (int) panelDistanceToGraphPixels(singlePointRoadSelectionRadiusBeforeZoomAndScale);
 			List<Point> closest = findClosestRoadSegmentWithinRadius(graphPointResolutionInvariant, radius);
 
 			List<List<Point>> result = new ArrayList<>(1);
@@ -2350,7 +2350,7 @@ public class LandWaterTool extends EditorTool
 		}
 		else
 		{
-			double brushRadiusResolutionInvariant = (double) ((brushDiameter / mainWindow.zoom) * mapEditingPanel.osScale) / (2 * mainWindow.displayQualityScale);
+			double brushRadiusResolutionInvariant = panelDistanceToGraphPixels(brushDiameter) / (2 * mainWindow.displayQualityScale);
 			return findRoadSegmentsWithinRadius(graphPointResolutionInvariant, brushRadiusResolutionInvariant);
 		}
 	}
@@ -2513,7 +2513,7 @@ public class LandWaterTool extends EditorTool
 		List<List<Point>> riverPaths = mainWindow.edits.rivers.stream().map(r -> PathOperations.toLocationList(r.nodes)).toList();
 		if (brushDiameter <= 1)
 		{
-			int radius = (int) ((double) ((singlePointRoadSelectionRadiusBeforeZoomAndScale / mainWindow.zoom) * mapEditingPanel.osScale));
+			int radius = (int) panelDistanceToGraphPixels(singlePointRoadSelectionRadiusBeforeZoomAndScale);
 			List<Point> closest = findClosestSegmentWithinRadius(targetPoint, radius, riverPaths);
 			List<List<Point>> result = new ArrayList<>(1);
 			if (closest != null && !closest.isEmpty())
@@ -2524,7 +2524,7 @@ public class LandWaterTool extends EditorTool
 		}
 		else
 		{
-			double brushRadiusResolutionInvariant = (double) ((brushDiameter / mainWindow.zoom) * mapEditingPanel.osScale) / (2 * mainWindow.displayQualityScale);
+			double brushRadiusResolutionInvariant = panelDistanceToGraphPixels(brushDiameter) / (2 * mainWindow.displayQualityScale);
 			return findSegmentsWithinRadius(riverPaths, targetPoint, brushRadiusResolutionInvariant);
 		}
 	}
@@ -3004,7 +3004,7 @@ public class LandWaterTool extends EditorTool
 		java.util.function.BiConsumer<Object, Integer> removeExpanded = (line, idx) -> forEachCoincidentCP(line, idx, remove);
 
 		boolean brushIsSinglePoint = brushDiameter <= 1;
-		double brushRadiusGraphPixels = brushIsSinglePoint ? 0 : ((double) brushDiameter / mainWindow.zoom) * mapEditingPanel.osScale / 2.0;
+		double brushRadiusGraphPixels = brushIsSinglePoint ? 0 : panelDistanceToGraphPixels(brushDiameter) / 2.0;
 
 		// PRIORITY: a plain (no-Ctrl) press that lands on a selected CP/segment preserves the existing selection and arms a move-drag.
 		// The CP grab radius is at least the segment hit threshold (the same Erase-mode 10-RI radius); without that, a click slightly
@@ -3382,7 +3382,7 @@ public class LandWaterTool extends EditorTool
 		}
 		else
 		{
-			double brushRadius = ((double) brushDiameter / mainWindow.zoom) * mapEditingPanel.osScale / 2.0;
+			double brushRadius = panelDistanceToGraphPixels(brushDiameter) / 2.0;
 			cpThreshold = Math.max(controlPointRadius, brushRadius);
 		}
 

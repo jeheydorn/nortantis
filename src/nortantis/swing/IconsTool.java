@@ -2320,7 +2320,7 @@ public class IconsTool extends EditorTool
 		}
 		else
 		{
-			int brushRadius = (int) ((double) ((brushDiameter / mainWindow.zoom)) * mapEditingPanel.osScale) / 2;
+			int brushRadius = (int) panelDistanceToGraphPixels(brushDiameter) / 2;
 			if (!isSelectedType(icon))
 			{
 				return false;

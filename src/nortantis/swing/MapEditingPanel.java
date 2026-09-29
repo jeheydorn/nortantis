@@ -71,6 +71,12 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private java.awt.Point brushLocation;
 	private int brushDiameter;
 	private double zoom;
+	// While a zoom change is being rescaled, stretches the displayed image and its overlays (in panel coordinates, before OS scaling) toward
+	// where they will land once the rescaled image is committed. Null when no zoom preview is showing.
+	private AffineTransform zoomPreviewTransform;
+	// How far the view position moves when the previewed zoom is committed, or null if it doesn't move. Kept with the preview so that
+	// whichever rescale ends up committing the previewed zoom lands the map where the preview showed it.
+	private java.awt.Point zoomPreviewViewPositionShift;
 	private double resolution;
 	private int borderPadding;
 	private nortantis.geom.Rectangle iconToEditBounds;
@@ -647,9 +653,23 @@ public class MapEditingPanel extends UnscaledImagePanel
 	@Override
 	protected void paintComponent(Graphics g)
 	{
-		super.paintComponent(g);
-
 		Graphics2D g2 = ((Graphics2D) g);
+
+		if (zoomPreviewTransform != null && getImage() != null)
+		{
+			// The background is filled before applying the preview transform because a zoom-out preview shrinks the image and would
+			// otherwise leave the area around it unpainted.
+			java.awt.Rectangle clip = g2.getClipBounds();
+			if (clip != null)
+			{
+				g2.setColor(getBackground());
+				g2.fillRect(clip.x, clip.y, clip.width, clip.height);
+			}
+			g2.transform(zoomPreviewTransform);
+			g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+		}
+
+		super.paintComponent(g);
 
 		// Draw no highlights or overlays until a map image is actually on screen. Before the first draw of a map lands - including
 		// the fit-to-window zoom rescales MainWindow runs before it (see fullRescale) - the panel is blank. The graph,
@@ -663,8 +683,9 @@ public class MapEditingPanel extends UnscaledImagePanel
 		// While a display-quality change is still being processed, the image on screen is still at the previous resolution, so the
 		// mouse-hover highlights (positioned from the graph, following the cursor) would briefly appear misaligned with it. Hide only those
 		// until the new image is shown; MainWindow lowers this once the new full draw lands and the tool recomputes them from the mouse
-		// position. The persistent overlays below stay drawn. A top-level zoom change does not need this either: MainWindow keeps the
-		// committed zoom until the rescaled image is ready (see commitScaledMap), so overlays and the image stay consistent.
+		// position. The persistent overlays below stay drawn. A zoom change does not need this: MainWindow keeps the committed zoom until
+		// the rescaled image is ready (see commitScaledMap), the zoom preview transform stretches the image and overlays together, and mouse
+		// positions map through the preview (see panelToImagePixels), so hover highlights stay under the cursor.
 		boolean showHoverHighlights = hoverHighlightsSuppressedSupplier == null || !hoverHighlightsSuppressedSupplier.getAsBoolean();
 
 		if (brushLocation != null && showHoverHighlights)
@@ -922,6 +943,8 @@ public class MapEditingPanel extends UnscaledImagePanel
 		g2.setTransform(originalTransformCopy);
 	}
 
+	// The tool areas are recorded in device coordinates where they're displayed. transformWithOsScaling includes any zoom preview transform,
+	// so the isIn*Tool methods undo the preview on the point first, which takes it to where it's displayed in device coordinates.
 	public boolean isInRotateTool(java.awt.Point point)
 	{
 		if (rotateToolArea == null)
@@ -930,7 +953,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		}
 
 		java.awt.Point tPoint = new java.awt.Point();
-		transformWithOsScaling.transform(point, tPoint);
+		transformWithOsScaling.transform(toCommittedPanelPoint(point), tPoint);
 		return rotateToolArea.contains(tPoint);
 	}
 
@@ -942,7 +965,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		}
 
 		java.awt.Point tPoint = new java.awt.Point();
-		transformWithOsScaling.transform(point, tPoint);
+		transformWithOsScaling.transform(toCommittedPanelPoint(point), tPoint);
 		return moveToolArea.contains(tPoint);
 	}
 
@@ -954,7 +977,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		}
 
 		java.awt.Point tPoint = new java.awt.Point();
-		transformWithOsScaling.transform(point, tPoint);
+		transformWithOsScaling.transform(toCommittedPanelPoint(point), tPoint);
 		return scaleToolArea.contains(tPoint);
 	}
 
@@ -971,7 +994,10 @@ public class MapEditingPanel extends UnscaledImagePanel
 		// Clip the brush to the map image, which the incoming transform is in pixel coordinates of. The clip is kept in device space, so
 		// it still applies after switching to the mouse-coordinate transform below.
 		g.clipRect(0, 0, getImage().getWidth(), getImage().getHeight());
-		g.setTransform(transformWithOsScaling);
+		// transformWithOsScaling includes any zoom preview transform. Undo it so the ring stays under the cursor at the same size on screen.
+		AffineTransform panelTransform = new AffineTransform(transformWithOsScaling);
+		panelTransform.concatenate(getInverseZoomPreviewTransform());
+		g.setTransform(panelTransform);
 		g.drawOval(brushLocation.x - brushDiameter / 2, brushLocation.y - brushDiameter / 2, brushDiameter, brushDiameter);
 		g.setTransform(t);
 		g.setClip(originalClip);
@@ -1265,9 +1291,16 @@ public class MapEditingPanel extends UnscaledImagePanel
 		{
 			return new java.awt.Point(0, 0);
 		}
-		int x = Math.max(0, (int) ((getWidth() * osScale - image.getWidth()) / 2.0));
-		int y = Math.max(0, (int) ((getHeight() * osScale - image.getHeight()) / 2.0));
-		return new java.awt.Point(x, y);
+		return new java.awt.Point(getCenteredImageOffsetInPixels(getWidth(), image.getWidth(), osScale), getCenteredImageOffsetInPixels(getHeight(), image.getHeight(), osScale));
+	}
+
+	/**
+	 * Along one dimension, returns the offset in pixels that centers an image of the given size in a panel of the given size, or 0 when the
+	 * image is at least as large as the panel.
+	 */
+	static int getCenteredImageOffsetInPixels(int panelSize, int imageSizeInPixels, double osScale)
+	{
+		return Math.max(0, (int) ((panelSize * osScale - imageSizeInPixels) / 2.0));
 	}
 
 	/**
@@ -1280,17 +1313,96 @@ public class MapEditingPanel extends UnscaledImagePanel
 	}
 
 	/**
-	 * Converts a point in this panel's coordinates, such as a mouse location, to pixel coordinates in the map image.
+	 * Converts a point in this panel's coordinates, such as a mouse location, to pixel coordinates in the map image, as the map is shown on
+	 * screen. During a zoom preview, that's the pixel of the committed image that the preview shows at that point.
 	 */
 	public nortantis.geom.Point panelToImagePixels(java.awt.Point pointOnPanel)
 	{
+		java.awt.geom.Point2D committedPoint = toCommittedPanelPoint(pointOnPanel);
 		java.awt.Point offset = getImageOffsetInPixels();
-		return new nortantis.geom.Point(pointOnPanel.x * osScale - offset.x, pointOnPanel.y * osScale - offset.y);
+		return new nortantis.geom.Point(committedPoint.getX() * osScale - offset.x, committedPoint.getY() * osScale - offset.y);
+	}
+
+	/**
+	 * Maps a point on this panel, as displayed, to the panel point that shows the same part of the map in the committed layout. The two
+	 * only differ while a zoom preview is showing.
+	 */
+	java.awt.geom.Point2D toCommittedPanelPoint(java.awt.Point pointOnPanel)
+	{
+		return getInverseZoomPreviewTransform().transform(pointOnPanel, new java.awt.geom.Point2D.Double());
+	}
+
+	/**
+	 * Maps panel points as displayed to the committed layout. The identity when no zoom preview is showing.
+	 */
+	private AffineTransform getInverseZoomPreviewTransform()
+	{
+		if (zoomPreviewTransform != null)
+		{
+			try
+			{
+				return zoomPreviewTransform.createInverse();
+			}
+			catch (java.awt.geom.NoninvertibleTransformException e)
+			{
+				// Can't happen for a preview transform, which is only a positive scale and a translation.
+			}
+		}
+		return new AffineTransform();
 	}
 
 	public void setZoom(double zoom)
 	{
 		this.zoom = zoom;
+	}
+
+	/**
+	 * Shows the current image and its overlays stretched by the given transform, in panel coordinates, until the next call to
+	 * {@link #setImage(BufferedImage)} or {@link #clearZoomPreview()}. Mouse positions are mapped through the transform (see
+	 * {@link #panelToImagePixels(java.awt.Point)}), so input acts on the part of the map shown under the cursor. viewPositionShift is how
+	 * far the view position will move when the previewed zoom is committed, or null if it won't move.
+	 */
+	public void setZoomPreview(AffineTransform transform, java.awt.Point viewPositionShift)
+	{
+		zoomPreviewTransform = transform;
+		zoomPreviewViewPositionShift = viewPositionShift;
+		repaint();
+	}
+
+	/**
+	 * How far the view position will move when the zoom being previewed is committed. Null when no preview is showing or the view position
+	 * won't move.
+	 */
+	public java.awt.Point getZoomPreviewViewPositionShift()
+	{
+		return zoomPreviewViewPositionShift;
+	}
+
+	/**
+	 * How much the zoom preview currently stretches the committed image, or 1 when no preview is showing.
+	 */
+	public double getZoomPreviewScale()
+	{
+		return zoomPreviewTransform == null ? 1.0 : zoomPreviewTransform.getScaleX();
+	}
+
+	public void clearZoomPreview()
+	{
+		if (zoomPreviewTransform != null)
+		{
+			zoomPreviewTransform = null;
+			zoomPreviewViewPositionShift = null;
+			repaint();
+		}
+	}
+
+	@Override
+	public void setImage(BufferedImage image)
+	{
+		// A new image replaces whatever the preview was standing in for.
+		zoomPreviewTransform = null;
+		zoomPreviewViewPositionShift = null;
+		super.setImage(image);
 	}
 
 	/**

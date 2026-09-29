@@ -127,6 +127,15 @@ public abstract class EditorTool
 		return new nortantis.geom.Point(imagePoint.x / zoom - borderWidth, imagePoint.y / zoom - borderWidth);
 	}
 
+	/**
+	 * Converts a distance on screen in panel units, such as a brush diameter, to graph pixels at the zoom the map is currently shown at, so
+	 * that it covers the same part of the map as it does on screen.
+	 */
+	protected double panelDistanceToGraphPixels(double panelDistance)
+	{
+		return panelDistance / mainWindow.getDisplayedZoom() * mapEditingPanel.osScale;
+	}
+
 	protected Set<Center> getSelectedCenters(java.awt.Point pointFromMouse, int brushDiameter)
 	{
 		Set<Center> selected = new HashSet<Center>();
@@ -137,7 +146,7 @@ public abstract class EditorTool
 			return selected;
 		}
 
-		int brushRadius = (int) ((double) ((brushDiameter / mainWindow.zoom)) * mapEditingPanel.osScale) / 2;
+		int brushRadius = (int) panelDistanceToGraphPixels(brushDiameter) / 2;
 
 		if (!new RotatedRectangle(updater.mapParts.graph.bounds).overlapsCircle(getPointOnGraph(pointFromMouse), brushRadius))
 		{
