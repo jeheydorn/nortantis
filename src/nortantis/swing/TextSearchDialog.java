@@ -188,6 +188,8 @@ public class TextSearchDialog extends JDialog
 				double borderPadding = mainWindow.mapEditingPanel.getBorderPadding();
 				scrollTo = scrollTo.translate(borderPadding, borderPadding);
 				scrollTo = scrollTo.scaleAboutOrigin(mainWindow.zoom * (1.0 / mainWindow.mapEditingPanel.osScale));
+				nortantis.geom.Point imageLocation = mainWindow.mapEditingPanel.getImageLocation();
+				scrollTo = scrollTo.translate(imageLocation.x, imageLocation.y);
 				int padding = (int) (250 * (1.0 / mainWindow.mapEditingPanel.osScale));
 				scrollTo = scrollTo.pad(padding, padding);
 

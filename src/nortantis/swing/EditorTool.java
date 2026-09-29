@@ -123,9 +123,8 @@ public abstract class EditorTool
 
 		int borderWidth = updater.mapParts.background.getBorderPaddingScaledByResolution();
 		double zoom = mainWindow.zoom;
-		double osScale = mapEditingPanel.osScale;
-		return new nortantis.geom.Point((((pointOnMapEditingPanel.x - (borderWidth * zoom * (1.0 / osScale))) * (1.0 / zoom) * osScale)),
-				(((pointOnMapEditingPanel.y - (borderWidth * zoom) * (1.0 / osScale)) * (1.0 / zoom) * osScale)));
+		nortantis.geom.Point imagePoint = mapEditingPanel.panelToImagePixels(pointOnMapEditingPanel);
+		return new nortantis.geom.Point(imagePoint.x / zoom - borderWidth, imagePoint.y / zoom - borderWidth);
 	}
 
 	protected Set<Center> getSelectedCenters(java.awt.Point pointFromMouse, int brushDiameter)

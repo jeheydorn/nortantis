@@ -131,6 +131,26 @@ The benchmark creates maps using settings from `unit test files/map settings/sim
 
 Do NOT commit, and do NOT push, unless I ask you to in that message. Finish the work and leave the changes in the working tree. Asking me first is not a substitute — wait for me to ask. Being asked to commit once is not standing permission to commit later work; every commit needs its own request. The same goes for anything else that leaves this machine or changes shared branches: pushing, merging into `master` or `release`, opening pull requests, and creating tags.
 
+## Working Process
+
+### Before changing a class's behavior
+
+Before changing how a class or method behaves, find its other users and subclasses (grep) and what they rely on — including behavior that isn't obvious from the code you're editing (e.g. which component actually receives mouse events, who else paints through a base class). Put behavior at the narrowest level that needs it; don't add to a shared base class what only one subclass needs.
+
+### Review pass
+
+For any change beyond a few lines, run a review of the diff before reporting done — preferably a subagent, run in parallel with tests — checking that the change fits the existing design: right class/layer, no behavior changes to other users of the touched code, consistent with how similar things are done elsewhere.
+
+This does not apply to translation file changes (`messages_*.properties`). Translate those yourself, and do not have a subagent review or edit them.
+
+### Reporting results
+
+End every task report with these sections, after everything else, even if a section is "None":
+
+**Divergences** — every place the implementation differs from what I asked or designed, and every side effect on existing behavior. One bullet each, stated plainly. Leave out divergences I've already clearly acknowledged (e.g. a design change you raised during implementation and I agreed to).
+
+**Follow-ups** — related problems found but not fixed (e.g. "the same bug exists in X and Y"), better approaches than the one requested, and anything left untested.
+
 ## Coding Conventions
 
 - **Formatting:** Match the formatting of the surrounding code by hand (the project uses the Eclipse formatter config in `eclipse-formatter-config.xml`). Do NOT run `gradlew spotlessApply` to format your changes — the committed code has drifted from the current Spotless config, so a project-wide apply rewraps comments in many unrelated files and pollutes the diff.
@@ -179,6 +199,10 @@ In the editor, every redraw goes through `nortantis.editor.MapUpdater`, which is
 - **If a draw is already running** (`isMapBeingDrawn`), the new request is **queued** as a `MapUpdate` (in `nonIncrementalUpdatesToDraw` / `incrementalUpdatesToDraw` / `lowPriorityUpdatesToDraw`) instead of drawn now. When the current draw finishes, `done()` pulls the next via `combineAndGetNextUpdateToDraw()`, which **coalesces** queued updates (e.g. a queued Full supersedes everything; same-type updates merge via `MapUpdate.add()`). So the draw that completes may not correspond 1:1 to a single user action.
 - **Consequence:** a mutable field set right before calling a `createAndShowMap*` method is NOT a reliable way to tag "the resulting draw," because an earlier in-flight draw can finish first and consume it, or the request can be queued/coalesced. Likewise, **don't stash per-draw data in a `MapUpdater` field** to hand it to the completion callback — that is the same global-state shape and invites the same bugs. Instead, **carry per-draw state on the `MapUpdate`** (e.g. `isLowPriority`, `isUndoRedo`), thread it through `innerCreateAndShowMap` (whose params are captured by the background task and so are available, effectively final, in `done()` — like `updateType`), and **pass it as a parameter** of `onFinishedDrawingFull` / `onFinishedDrawingIncremental` (e.g. `citiesRemovedForWater`, `wasTriggeredByUndoRedo`). When adding such state, also merge it in `MapUpdate.add()` so coalesced draws keep it, and have each `createAndShow*` entry point pass the truthful value (don't hard-code a default that happens to be usually-right — e.g. `createAndShowLowPriorityChanges` is called both after forward edits and by the undoer).
 - `onFinishedDrawingFull` / `onFinishedDrawingIncremental` are the EDT completion callbacks (overridden by `MainWindow`, `SubMapDialog`, `NewSettingsDialog`); `anotherDrawIsQueued` tells you whether more draws are pending. `incrementalChangeArea == null` distinguishes a full draw from an incremental one.
+
+### Editor canvas (`MapEditingPanel`)
+
+`MapEditingPanel` sits directly in `mapEditingScrollPane`'s viewport, which stretches it to fill the viewport when the map is smaller. The empty space around the map is part of the panel: mouse events, drag-panning, and zoom-toward-cursor all work there, and a brush whose center is just off the map still acts on the part of it over the map. The brush ring is drawn clipped to the map image. The map image is drawn centered via `getImageOffsetInPixels()`; convert panel points with `panelToImagePixels()` / `getImageLocation()` rather than assuming the image starts at (0,0).
 
 
 ## Key Algorithms

@@ -51,8 +51,19 @@ public class UnscaledImagePanel extends JPanel
 			Graphics2D g2 = (Graphics2D) g;
 			transformWithOsScaling = g2.getTransform();
 			g2.scale(1.0 / osScale, 1.0 / osScale);
+			// The translation is left on the Graphics so that subclasses can draw overlays in image pixel coordinates.
+			java.awt.Point offset = getImageOffsetInPixels();
+			g2.translate(offset.x, offset.y);
 			g2.drawImage(image, 0, 0, null);
 		}
+	}
+
+	/**
+	 * Returns the offset, in image pixels, at which the image is drawn within this panel.
+	 */
+	protected java.awt.Point getImageOffsetInPixels()
+	{
+		return new java.awt.Point(0, 0);
 	}
 
 	@Override

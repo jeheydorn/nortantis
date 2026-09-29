@@ -967,9 +967,14 @@ public class MapEditingPanel extends UnscaledImagePanel
 			return;
 		}
 		AffineTransform t = g.getTransform();
+		Shape originalClip = g.getClip();
+		// Clip the brush to the map image, which the incoming transform is in pixel coordinates of. The clip is kept in device space, so
+		// it still applies after switching to the mouse-coordinate transform below.
+		g.clipRect(0, 0, getImage().getWidth(), getImage().getHeight());
 		g.setTransform(transformWithOsScaling);
 		g.drawOval(brushLocation.x - brushDiameter / 2, brushLocation.y - brushDiameter / 2, brushDiameter, brushDiameter);
 		g.setTransform(t);
+		g.setClip(originalClip);
 	}
 
 	private void drawAreas(Graphics g)
@@ -1248,6 +1253,41 @@ public class MapEditingPanel extends UnscaledImagePanel
 		g2.setStroke(prevStroke);
 	}
 
+	/**
+	 * Centers the map along any dimension in which the panel is larger than it. The offset is a whole number of pixels so the map isn't
+	 * resampled.
+	 */
+	@Override
+	protected java.awt.Point getImageOffsetInPixels()
+	{
+		BufferedImage image = getImage();
+		if (image == null)
+		{
+			return new java.awt.Point(0, 0);
+		}
+		int x = Math.max(0, (int) ((getWidth() * osScale - image.getWidth()) / 2.0));
+		int y = Math.max(0, (int) ((getHeight() * osScale - image.getHeight()) / 2.0));
+		return new java.awt.Point(x, y);
+	}
+
+	/**
+	 * Returns the location of the map image's upper-left corner in this panel's coordinates.
+	 */
+	public nortantis.geom.Point getImageLocation()
+	{
+		java.awt.Point offset = getImageOffsetInPixels();
+		return new nortantis.geom.Point(offset.x / osScale, offset.y / osScale);
+	}
+
+	/**
+	 * Converts a point in this panel's coordinates, such as a mouse location, to pixel coordinates in the map image.
+	 */
+	public nortantis.geom.Point panelToImagePixels(java.awt.Point pointOnPanel)
+	{
+		java.awt.Point offset = getImageOffsetInPixels();
+		return new nortantis.geom.Point(pointOnPanel.x * osScale - offset.x, pointOnPanel.y * osScale - offset.y);
+	}
+
 	public void setZoom(double zoom)
 	{
 		this.zoom = zoom;
@@ -1353,8 +1393,9 @@ public class MapEditingPanel extends UnscaledImagePanel
 	 */
 	public nortantis.geom.Point screenToRI(java.awt.Point screenPoint)
 	{
-		double graphX = screenPoint.x * osScale / zoom - borderPadding;
-		double graphY = screenPoint.y * osScale / zoom - borderPadding;
+		nortantis.geom.Point imagePoint = panelToImagePixels(screenPoint);
+		double graphX = imagePoint.x / zoom - borderPadding;
+		double graphY = imagePoint.y / zoom - borderPadding;
 		double res = resolution > 0 ? resolution : 1.0;
 		return new nortantis.geom.Point(graphX / res, graphY / res);
 	}

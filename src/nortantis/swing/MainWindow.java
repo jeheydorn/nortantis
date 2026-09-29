@@ -2691,19 +2691,22 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			java.awt.Rectangle visible = mapEditingPanel.getVisibleRect();
 			double scale = zoom / oldZoom;
 			java.awt.Point mousePosition = mapEditingPanel.getMousePosition();
+			// Positions are scaled relative to the image rather than the panel, since the image is centered in the panel when it is smaller
+			// than the viewport. Along any dimension that scrolls after the zoom, the image fills the panel, so it lands at 0 there.
+			nortantis.geom.Point imageLocation = mapEditingPanel.getImageLocation();
 			if (mousePosition != null && (zoom > oldZoom))
 			{
 				// Zoom toward the mouse's position, keeping the point
 				// currently under the mouse the same if possible.
-				scrollTo = new java.awt.Rectangle((int) (mousePosition.x * scale) - mousePosition.x + visible.x, (int) (mousePosition.y * scale) - mousePosition.y + visible.y, visible.width,
-						visible.height);
+				scrollTo = new java.awt.Rectangle((int) ((mousePosition.x - imageLocation.x) * scale) - mousePosition.x + visible.x,
+						(int) ((mousePosition.y - imageLocation.y) * scale) - mousePosition.y + visible.y, visible.width, visible.height);
 			}
 			else
 			{
 				// Zoom toward or away from the current center of the
 				// screen.
 				java.awt.Point currentCentroid = new java.awt.Point(visible.x + (visible.width / 2), visible.y + (visible.height / 2));
-				java.awt.Point targetCentroid = new java.awt.Point((int) (currentCentroid.x * scale), (int) (currentCentroid.y * scale));
+				java.awt.Point targetCentroid = new java.awt.Point((int) ((currentCentroid.x - imageLocation.x) * scale), (int) ((currentCentroid.y - imageLocation.y) * scale));
 				scrollTo = new java.awt.Rectangle(targetCentroid.x - visible.width / 2, targetCentroid.y - visible.height / 2, visible.width, visible.height);
 			}
 		}
