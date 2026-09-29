@@ -166,7 +166,6 @@ public class TextTool extends EditorTool
 		fontCoverageWarningHider.setVisible(false);
 
 		textTypeComboBox = new JComboBoxFixed<>();
-		textTypeComboBox.setSelectedItem(TextType.Other_mountains);
 		textTypeComboBox.addActionListener(new ActionListener()
 		{
 
@@ -188,12 +187,12 @@ public class TextTool extends EditorTool
 			}
 		});
 		textTypeHider = organizer.addLabelAndComponent(Translation.get("textTool.textType.label"), "", textTypeComboBox);
-		textTypeForAdds = TextType.City;
-
 		for (TextType type : TextType.values())
 		{
 			textTypeComboBox.addItem(type);
 		}
+		textTypeForAdds = TextType.Region;
+		textTypeComboBox.setSelectedItem(textTypeForAdds);
 
 		lineBreakComboBox = new JComboBoxFixed<>();
 		lineBreakHider = organizer.addLabelAndComponent(Translation.get("textTool.lineBreak.label"), "", lineBreakComboBox);
