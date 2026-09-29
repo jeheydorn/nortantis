@@ -145,7 +145,7 @@ This does not apply to translation file changes (`messages_*.properties`). Trans
 
 ### Reporting results
 
-End every task report with these sections, after everything else, even if a section is "None":
+When you've implemented something, end the report with these sections, after everything else. Include a section only when it has something in it; leave out an empty one rather than writing "None".
 
 **Divergences** — every place the implementation differs in substance from what I asked or designed, and every side effect on existing behavior. One bullet each, stated plainly. Leave out divergences I've already clearly acknowledged (e.g. a design change you raised during implementation and I agreed to). How you carried out a request (e.g. splitting work into several commits) is not a divergence.
 
