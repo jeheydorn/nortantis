@@ -52,17 +52,24 @@ public class SubMapCreator
 		// The largest dimension of the sub-map matches the largest dimension of the original map.
 		// Whichever axis of the selection box is larger gets that max value; the other is scaled proportionally.
 		int maxOriginalDimension = Math.max(originalSettings.generatedWidth, originalSettings.generatedHeight);
+		// A selection that matches a preset aspect ratio up to rounding it to whole pixels gets that preset's exact ratio, so the sub-map's
+		// dimensions are the preset's rather than a pixel or two off from them.
+		GeneratedDimension preset = GeneratedDimension.fromAspectRatio(selectionBoundsRI.width, selectionBoundsRI.height);
+		double longSideOverShortSide = preset == GeneratedDimension.Custom
+				? Math.max(selectionBoundsRI.width, selectionBoundsRI.height) / Math.min(selectionBoundsRI.width, selectionBoundsRI.height)
+				: preset.aspectRatio();
+		int shortSide = (int) Math.round(maxOriginalDimension / longSideOverShortSide);
 		int newGenWidth;
 		int newGenHeight;
 		if (selectionBoundsRI.width >= selectionBoundsRI.height)
 		{
 			newGenWidth = maxOriginalDimension;
-			newGenHeight = (int) Math.round((double) maxOriginalDimension * selectionBoundsRI.height / selectionBoundsRI.width);
+			newGenHeight = shortSide;
 		}
 		else
 		{
 			newGenHeight = maxOriginalDimension;
-			newGenWidth = (int) Math.round((double) maxOriginalDimension * selectionBoundsRI.width / selectionBoundsRI.height);
+			newGenWidth = shortSide;
 		}
 		newGenWidth = Math.max(1, newGenWidth);
 		newGenHeight = Math.max(1, newGenHeight);
