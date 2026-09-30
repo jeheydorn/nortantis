@@ -35,6 +35,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Enumeration;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
@@ -651,6 +652,19 @@ public class SwingHelper
 	public static void setEnabled(Component component, boolean enabled)
 	{
 		component.setEnabled(enabled);
+		if (component instanceof JSlider slider && slider.getLabelTable() != null)
+		{
+			// Some look and feels, such as GTK, make disabled labels wider, but the slider keeps the label sizes it measured before, which
+			// cuts their text to "...". Disable the labels now and have the slider measure them again.
+			for (Enumeration<?> labels = slider.getLabelTable().elements(); labels.hasMoreElements();)
+			{
+				if (labels.nextElement() instanceof Component label)
+				{
+					label.setEnabled(enabled);
+				}
+			}
+			slider.setLabelTable(slider.getLabelTable());
+		}
 		if (component instanceof Container)
 		{
 			for (Component child : ((Container) component).getComponents())
