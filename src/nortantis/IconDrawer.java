@@ -783,10 +783,7 @@ public class IconDrawer
 			return;
 		}
 
-		// Remove the icon if it is entirely off the map. I'm using the content bounds instead of the image bounds here because you can only
-		// select an icon if you can mouse over its content bounds, so if its content bounds are off the map, then you cannot select the
-		// icon, so it should be removed.
-		if (!graph.bounds.overlaps(task.getOrCreateContentBoundsPadded()))
+		if (isEntirelyOffMap(task))
 		{
 			toRemove.add(icon);
 			return;
@@ -2518,6 +2515,29 @@ public class IconDrawer
 	public boolean isContentBottomTouchingWater(FreeIcon icon)
 	{
 		return isContentBottomTouchingWater(toIconDrawTask(icon));
+	}
+
+	/**
+	 * Whether an icon placed in the editor at its current location and scale is kept when the map is drawn. It is removed if its content
+	 * is entirely off the map or, unless it is a decoration, if the bottom of its content touches water.
+	 */
+	public boolean isValidPosition(FreeIcon icon)
+	{
+		IconDrawTask task = toIconDrawTask(icon);
+		if (task != null && isEntirelyOffMap(task))
+		{
+			return false;
+		}
+		return icon.type == IconType.decorations || !isContentBottomTouchingWater(task);
+	}
+
+	/**
+	 * Whether an icon's content is entirely off the map. This uses the content bounds rather than the image bounds because an icon can
+	 * only be selected by mousing over its content, so an icon whose content is off the map can't be selected and should be removed.
+	 */
+	private boolean isEntirelyOffMap(IconDrawTask task)
+	{
+		return !graph.bounds.overlaps(task.getOrCreateContentBoundsPadded());
 	}
 
 	public IconDrawTask toIconDrawTask(FreeIcon icon)

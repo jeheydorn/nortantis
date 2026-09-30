@@ -451,7 +451,7 @@ public class IconsTool extends EditorTool
 						else if (e.getID() == KeyEvent.KEY_RELEASED)
 						{
 							addOrRemoveIconHoverHighlightSelection(false);
-							boolean isValidPosition = iconsToEdit.stream().anyMatch(icon -> icon.type == IconType.decorations || !updater.mapParts.iconDrawer.isContentBottomTouchingWater(icon));
+							boolean isValidPosition = iconsToEdit.stream().anyMatch(updater.mapParts.iconDrawer::isValidPosition);
 							mapEditingPanel.showIconEditToolsAt(iconsToEdit, isValidPosition);
 							mapEditingPanel.repaint();
 						}
@@ -577,7 +577,7 @@ public class IconsTool extends EditorTool
 				if (showEditTools)
 				{
 					boolean isValidPosition;
-					isValidPosition = iconsToEdit.stream().anyMatch(icon -> icon.type == IconType.decorations || !updater.mapParts.iconDrawer.isContentBottomTouchingWater(icon));
+					isValidPosition = iconsToEdit.stream().anyMatch(updater.mapParts.iconDrawer::isValidPosition);
 					mapEditingPanel.showIconEditToolsAt(iconsToEdit, isValidPosition);
 				}
 
@@ -602,7 +602,7 @@ public class IconsTool extends EditorTool
 				if (showEditTools)
 				{
 					boolean isValidPosition;
-					isValidPosition = iconsToEdit.stream().anyMatch(icon -> icon.type == IconType.decorations || !updater.mapParts.iconDrawer.isContentBottomTouchingWater(icon));
+					isValidPosition = iconsToEdit.stream().anyMatch(updater.mapParts.iconDrawer::isValidPosition);
 					mapEditingPanel.showIconEditToolsAt(iconsToEdit, isValidPosition);
 				}
 				typeLabel.setText(null);
@@ -1797,7 +1797,7 @@ public class IconsTool extends EditorTool
 		if (!updated.isEmpty())
 		{
 			mapEditingPanel.setHighlightedAreasFromIcons(updated, updater.mapParts.iconDrawer, false);
-			boolean isValidPosition = updated.stream().anyMatch(icon -> icon.type == IconType.decorations || !updater.mapParts.iconDrawer.isContentBottomTouchingWater(icon));
+			boolean isValidPosition = updated.stream().anyMatch(updater.mapParts.iconDrawer::isValidPosition);
 			mapEditingPanel.showIconEditToolsAt(updated, isValidPosition);
 		}
 
@@ -1878,7 +1878,7 @@ public class IconsTool extends EditorTool
 					iconsToEdit.clear();
 					iconsToEdit.addAll(updated);
 
-					boolean isValidPosition = updated.stream().anyMatch(icon -> icon.type == IconType.decorations || !updater.mapParts.iconDrawer.isContentBottomTouchingWater(icon));
+					boolean isValidPosition = updated.stream().anyMatch(updater.mapParts.iconDrawer::isValidPosition);
 					mapEditingPanel.showIconEditToolsAt(updated, isValidPosition);
 					if (SwingHelper.isCommandKeyDown(e))
 					{
@@ -1897,7 +1897,7 @@ public class IconsTool extends EditorTool
 			{
 				if (!SwingHelper.isCommandKeyDown(e))
 				{
-					boolean isValidPosition = iconsToEdit.stream().anyMatch(icon -> icon.type == IconType.decorations || !updater.mapParts.iconDrawer.isContentBottomTouchingWater(icon));
+					boolean isValidPosition = iconsToEdit.stream().anyMatch(updater.mapParts.iconDrawer::isValidPosition);
 					mapEditingPanel.showIconEditToolsAt(iconsToEdit, isValidPosition);
 					mapEditingPanel.clearHighlightedAreas();
 					mapEditingPanel.repaint();

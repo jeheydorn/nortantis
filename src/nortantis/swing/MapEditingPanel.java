@@ -493,7 +493,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		{
 			for (FreeIcon icon : icons)
 			{
-				boolean isValidPosition = icon.type == IconType.decorations || !iconDrawer.isContentBottomTouchingWater(icon);
+				boolean isValidPosition = iconDrawer.isValidPosition(icon);
 				if (isValidPosition)
 				{
 					valid.add(icon);
