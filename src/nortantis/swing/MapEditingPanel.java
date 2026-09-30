@@ -60,6 +60,8 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private EdgeType edgeTypeToHighlight;
 	private List<Point> roadControlPointCircles = null;
 	private List<Point> selectedRoadControlPointCircles = null;
+	private List<Point> controlPointsToBeRemoved = null;
+	private List<List<Point>> segmentsToBeRemoved = null;
 	private List<Point> hoveredRoadControlPoints = null;
 	// True when the hovered CPs are a decisive snap target (draw mode) and should be drawn with the yellow ring + dot selection glyph.
 	// False (default) draws them as orange rings (edit mode — a selection preview, distinct from the yellow selected/hovered glyph).
@@ -288,6 +290,16 @@ public class MapEditingPanel extends UnscaledImagePanel
 	public void clearSelectedRoadControlPointCircles()
 	{
 		this.selectedRoadControlPointCircles = null;
+	}
+
+	/**
+	 * Sets the river/road control points and segments, in graph pixels, to mark as ones that will be removed. They are drawn in the same
+	 * color as icons in an invalid position. Pass null or empty lists to clear.
+	 */
+	public void setControlPointsAndSegmentsToBeRemoved(List<Point> points, List<List<Point>> segments)
+	{
+		this.controlPointsToBeRemoved = points == null || points.isEmpty() ? null : points;
+		this.segmentsToBeRemoved = segments == null || segments.isEmpty() ? null : segments;
 	}
 
 	/**
@@ -758,6 +770,14 @@ public class MapEditingPanel extends UnscaledImagePanel
 			drawPolylines(g);
 			g.setColor(processingColor);
 			drawProcessingPolylines(g);
+			if (segmentsToBeRemoved != null)
+			{
+				g.setColor(getInvalidPositionColor());
+				for (List<Point> segment : segmentsToBeRemoved)
+				{
+					drawPolyline(g, segment);
+				}
+			}
 			drawRoadControlPoints((Graphics2D) g);
 
 			g.setColor(selectColor);
@@ -1154,7 +1174,8 @@ public class MapEditingPanel extends UnscaledImagePanel
 	{
 		boolean hasSelected = selectedRoadControlPointCircles != null && !selectedRoadControlPointCircles.isEmpty();
 		boolean hasHovered = hoveredRoadControlPoints != null && !hoveredRoadControlPoints.isEmpty();
-		if ((roadControlPointCircles == null || roadControlPointCircles.isEmpty()) && !hasSelected && !hasHovered && freeHandPreviewPath == null)
+		if ((roadControlPointCircles == null || roadControlPointCircles.isEmpty()) && !hasSelected && !hasHovered && controlPointsToBeRemoved == null
+				&& freeHandPreviewPath == null)
 		{
 			return;
 		}
@@ -1187,7 +1208,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		{
 			if (hoveredRoadControlPointsFilled)
 			{
-				drawSelectedControlPointGlyphs(g2, hoveredRoadControlPoints, r);
+				drawSelectedControlPointGlyphs(g2, hoveredRoadControlPoints, r, highlightEditColor);
 			}
 			else
 			{
@@ -1201,7 +1222,13 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 		if (hasSelected)
 		{
-			drawSelectedControlPointGlyphs(g2, selectedRoadControlPointCircles, r);
+			drawSelectedControlPointGlyphs(g2, selectedRoadControlPointCircles, r, highlightEditColor);
+		}
+
+		// Drawn over the selected glyph, since control points being dragged are selected.
+		if (controlPointsToBeRemoved != null)
+		{
+			drawSelectedControlPointGlyphs(g2, controlPointsToBeRemoved, r, getInvalidPositionColor());
 		}
 
 		if (freeHandPreviewPath != null && freeHandPreviewPath.size() >= 2)
@@ -1217,15 +1244,16 @@ public class MapEditingPanel extends UnscaledImagePanel
 	}
 
 	/**
-	 * Draws the "selected" control-point glyph for each point: a yellow open ring (same radius and stroke as the orange hover ring) with a
-	 * small solid center dot. Used both for selected CPs and for the decisive draw-mode hover so the two share one visual. Assumes the
-	 * caller has set the stroke to {@link #getRoadControlPointStrokeWidth()} and enabled antialiasing.
+	 * Draws the "selected" control-point glyph for each point: an open ring (same radius and stroke as the orange hover ring) with a small
+	 * solid center dot. Used in yellow both for selected CPs and for the decisive draw-mode hover so the two share one visual, and in red
+	 * for CPs that will be removed. Assumes the caller has set the stroke to {@link #getRoadControlPointStrokeWidth()} and enabled
+	 * antialiasing.
 	 */
-	private void drawSelectedControlPointGlyphs(Graphics2D g2, List<Point> points, int r)
+	private void drawSelectedControlPointGlyphs(Graphics2D g2, List<Point> points, int r, Color color)
 	{
 		// Center dot scales with the CP radius but stays well inside the open ring so the river/road still shows through.
 		int centerDotRadius = Math.max(1, Math.round(r * 0.3f));
-		g2.setColor(highlightEditColor);
+		g2.setColor(color);
 		for (Point p : points)
 		{
 			g2.drawOval((int) p.x - r, (int) p.y - r, r * 2, r * 2);
@@ -2062,6 +2090,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		clearProcessingPolylines();
 		clearRoadControlPointCircles();
 		clearSelectedRoadControlPointCircles();
+		setControlPointsAndSegmentsToBeRemoved(null, null);
 		clearHoveredControlPoint();
 		clearFreeHandRoadPreviewPath();
 		hideBrush();

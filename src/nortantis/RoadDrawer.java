@@ -587,6 +587,34 @@ public class RoadDrawer
 		return changed;
 	}
 
+	/** Road counterpart of {@link RiverDrawer#replaceWithFragments}. */
+	public static void replaceWithFragments(List<Road> roads, Road road, List<List<RoadPathNode>> fragments, List<Road> changed)
+	{
+		List<List<RoadPathNode>> cleaned = new ArrayList<>(fragments.size());
+		for (List<RoadPathNode> fragment : fragments)
+		{
+			List<RoadPathNode> normalized = PathOperations.normalizePath(fragment, ROAD_OPS);
+			if (normalized.size() >= 2)
+			{
+				cleaned.add(normalized);
+			}
+		}
+		if (cleaned.isEmpty())
+		{
+			// By identity, since roads compare equal by their nodes.
+			roads.removeIf(r -> r == road);
+			return;
+		}
+		road.nodes = new CopyOnWriteArrayList<>(cleaned.get(0));
+		changed.add(road);
+		for (int i = 1; i < cleaned.size(); i++)
+		{
+			Road newRoad = new Road(cleaned.get(i));
+			roads.add(newRoad);
+			changed.add(newRoad);
+		}
+	}
+
 	public static void removeEmptyOrSinglePointRoads(List<Road> roadList)
 	{
 		roadList.removeIf(road -> road.nodes.size() < 2);

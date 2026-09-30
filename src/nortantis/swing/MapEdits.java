@@ -72,6 +72,14 @@ public class MapEdits implements Serializable
 	 */
 	public boolean textBoundsNeedRefresh;
 
+	/**
+	 * Not stored or copied. Rivers and roads, by identity, that the editor is holding: their control points that can't stay where they are
+	 * (see {@link nortantis.ControlPointPlacement}) are kept, and shown as ones to be removed, until the user lets go of them. Drawing
+	 * removes such control points from every other line. Replaced rather than modified, so a draw on another thread can read it safely.
+	 * Excluded from {@link #equals(Object)}.
+	 */
+	public transient volatile Set<Object> linesExemptFromControlPointRemoval = Collections.emptySet();
+
 	public MapEdits()
 	{
 		text = new CopyOnWriteArrayList<>();

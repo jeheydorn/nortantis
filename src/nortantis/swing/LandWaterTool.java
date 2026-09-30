@@ -24,6 +24,7 @@ import java.awt.event.MouseEvent;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class LandWaterTool extends EditorTool
@@ -100,6 +101,11 @@ public class LandWaterTool extends EditorTool
 	// rebuilt to point at the new instances.
 	private Map<River, Set<Integer>> selectedRiverCPs = new java.util.IdentityHashMap<>();
 	private Map<Road, Set<Integer>> selectedRoadCPs = new java.util.IdentityHashMap<>();
+	// Rivers and roads that were moved or pasted in edit mode. Their control points that can't stay where they are (see
+	// ControlPointPlacement) are shown in red and kept, exempt from drawing's removal of them, while the line is selected, so the user can
+	// move them back first. They are removed once they are no longer selected. Keyed by identity for the same reason as the selection maps,
+	// and cleared on undo/redo for the same reason.
+	private Set<Object> linesAwaitingControlPointRemoval = Collections.newSetFromMap(new java.util.IdentityHashMap<>());
 
 	// Hover state — what's under the cursor right now, refreshed on every mouse-moved. Drives the
 	// hover ring on a control point and the right-click context menu's target. Cleared when the
@@ -478,6 +484,7 @@ public class LandWaterTool extends EditorTool
 			if (hadSelection || hadHover)
 			{
 				clearSelection();
+				removeUnselectedControlPointsThatCannotStay();
 				clearHoverState();
 				mapEditingPanel.clearHighlightedPolylines();
 				mapEditingPanel.setSelectedControlPointCircles(null);
@@ -860,6 +867,7 @@ public class LandWaterTool extends EditorTool
 		undoer.setUndoPoint(UpdateType.Incremental, this);
 		updater.createAndShowMapIncrementalUsingCenters(centersToRedraw);
 		updater.doWhenMapIsNotDrawing(() -> updater.createAndShowLowPriorityChanges(false));
+		removeUnselectedControlPointsThatCannotStay();
 		LineType activeType = riversButton.isSelected() ? LineType.RIVER : LineType.ROAD;
 		refreshSelectionVisuals(mapEditingPanel.getMousePosition(), activeType);
 	}
@@ -908,133 +916,34 @@ public class LandWaterTool extends EditorTool
 	 */
 	private void applyRiverFragments(River river, List<List<RiverPathNode>> fragments, List<River> changed)
 	{
-		List<List<RiverPathNode>> cleaned = new ArrayList<>(fragments.size());
-		for (List<RiverPathNode> fragment : fragments)
-		{
-			List<RiverPathNode> normalized = PathOperations.normalizePath(fragment, RiverDrawer.RIVER_OPS);
-			if (normalized.size() >= 2)
-			{
-				cleaned.add(normalized);
-			}
-		}
-		if (cleaned.isEmpty())
-		{
-			mainWindow.edits.rivers.remove(river);
-			return;
-		}
-		river.nodes = new java.util.concurrent.CopyOnWriteArrayList<>(cleaned.get(0));
-		changed.add(river);
-		for (int i = 1; i < cleaned.size(); i++)
-		{
-			River newRiver = new River(cleaned.get(i));
-			mainWindow.edits.rivers.add(newRiver);
-			changed.add(newRiver);
-		}
+		RiverDrawer.replaceWithFragments(mainWindow.edits.rivers, river, fragments, changed);
 	}
 
 	/** Road counterpart of {@link #applyRiverFragments}. */
 	private void applyRoadFragments(Road road, List<List<RoadPathNode>> fragments, List<Road> changed)
 	{
-		List<List<RoadPathNode>> cleaned = new ArrayList<>(fragments.size());
-		for (List<RoadPathNode> fragment : fragments)
+		RoadDrawer.replaceWithFragments(mainWindow.edits.roads, road, fragments, changed);
+	}
+
+	private static boolean containsByIdentity(Collection<?> collection, Object item)
+	{
+		for (Object element : collection)
 		{
-			List<RoadPathNode> normalized = PathOperations.normalizePath(fragment, RoadDrawer.ROAD_OPS);
-			if (normalized.size() >= 2)
+			if (element == item)
 			{
-				cleaned.add(normalized);
+				return true;
 			}
 		}
-		if (cleaned.isEmpty())
-		{
-			mainWindow.edits.roads.remove(road);
-			return;
-		}
-		road.nodes = new java.util.concurrent.CopyOnWriteArrayList<>(cleaned.get(0));
-		changed.add(road);
-		for (int i = 1; i < cleaned.size(); i++)
-		{
-			Road newRoad = new Road(cleaned.get(i));
-			mainWindow.edits.roads.add(newRoad);
-			changed.add(newRoad);
-		}
+		return false;
 	}
 
 	/**
-	 * Removes from the given rivers and roads every control point that is off the visible map (outside the map, or under its border
-	 * frame) and is not joined by a segment to a control point on the visible map. Removing a control point removes the segments touching
-	 * it, splitting its line if needed. The selection on any line this changes is cleared, since its indices no longer apply.
-	 *
-	 * @return The node locations the changed lines had before this removal, for computing the redraw area, plus the roads that changed
-	 *         and still exist.
+	 * Returns a test for whether a control point of the given line type, given in resolution-invariant coordinates, can stay where it is.
+	 * See {@link ControlPointPlacement}.
 	 */
-	private Tuple2<List<List<Point>>, List<Road>> removeControlPointsOffVisibleMap(Collection<River> rivers, Collection<Road> roads)
+	private Predicate<Point> createControlPointCanStayTest(LineType type)
 	{
-		nortantis.geom.Rectangle visibleBoundsRI = getVisibleMapBoundsRI();
-		List<List<Point>> beforePaths = new ArrayList<>();
-		for (River river : new ArrayList<>(rivers))
-		{
-			Set<Integer> edgesToRemove = findSegmentsTouchingControlPointsOffVisibleMap(river.nodes, visibleBoundsRI);
-			if (!edgesToRemove.isEmpty() && mainWindow.edits.rivers.contains(river))
-			{
-				beforePaths.add(PathOperations.toLocationList(river.nodes));
-				List<List<RiverPathNode>> fragments = PathOperations.applySelectionDeletes(river.nodes, Collections.emptySet(), edgesToRemove, RiverDrawer.RIVER_OPS);
-				applyRiverFragments(river, fragments, new ArrayList<>());
-				selectedRiverCPs.remove(river);
-			}
-		}
-		List<Road> changedRoads = new ArrayList<>();
-		for (Road road : new ArrayList<>(roads))
-		{
-			Set<Integer> edgesToRemove = findSegmentsTouchingControlPointsOffVisibleMap(road.nodes, visibleBoundsRI);
-			if (!edgesToRemove.isEmpty() && mainWindow.edits.roads.contains(road))
-			{
-				beforePaths.add(PathOperations.toLocationList(road.nodes));
-				List<List<RoadPathNode>> fragments = PathOperations.applySelectionDeletes(road.nodes, Collections.emptySet(), edgesToRemove, RoadDrawer.ROAD_OPS);
-				applyRoadFragments(road, fragments, changedRoads);
-				selectedRoadCPs.remove(road);
-			}
-		}
-		return new Tuple2<>(beforePaths, changedRoads);
-	}
-
-	/**
-	 * Returns the indices of the segments of {@code nodes} (index {@code i} is the segment from {@code nodes.get(i)} to
-	 * {@code nodes.get(i + 1)}) that touch a control point which is outside {@code visibleBoundsRI} and has no neighbor inside it.
-	 */
-	private static Set<Integer> findSegmentsTouchingControlPointsOffVisibleMap(List<? extends PathNode> nodes, nortantis.geom.Rectangle visibleBoundsRI)
-	{
-		Set<Integer> result = new HashSet<>();
-		int n = nodes.size();
-		for (int i = 0; i < n; i++)
-		{
-			boolean isOnMap = visibleBoundsRI.contains(nodes.get(i).getLoc());
-			boolean hasNeighborOnMap = (i > 0 && visibleBoundsRI.contains(nodes.get(i - 1).getLoc()))
-					|| (i < n - 1 && visibleBoundsRI.contains(nodes.get(i + 1).getLoc()));
-			if (!isOnMap && !hasNeighborOnMap)
-			{
-				if (i > 0)
-				{
-					result.add(i - 1);
-				}
-				if (i < n - 1)
-				{
-					result.add(i);
-				}
-			}
-		}
-		return result;
-	}
-
-	/**
-	 * Returns the part of the map not covered by the border frame, in resolution-invariant coordinates.
-	 */
-	private nortantis.geom.Rectangle getVisibleMapBoundsRI()
-	{
-		double scale = mainWindow.displayQualityScale;
-		Background background = updater.mapParts.background;
-		double borderOverMapRI = (background.getBorderWidthScaledByResolution() - background.getBorderPaddingScaledByResolution()) / scale;
-		// pad() splits the amount between the two sides, so this insets each side by borderOverMapRI.
-		return updater.mapParts.graph.bounds.scaleAboutOrigin(1.0 / scale).pad(-2.0 * borderOverMapRI);
+		return ControlPointPlacement.createCanStayTest(updater.mapParts.graph, mainWindow.edits, type == LineType.RIVER);
 	}
 
 	/**
@@ -1169,6 +1078,7 @@ public class LandWaterTool extends EditorTool
 		}
 
 		clearSelection();
+		removeUnselectedControlPointsThatCannotStay();
 		List<List<Point>> centersTouched = new ArrayList<>();
 		Set<Road> roadsToRephaseDashes = new HashSet<>();
 		List<River> pastedRivers = new ArrayList<>();
@@ -1221,9 +1131,10 @@ public class LandWaterTool extends EditorTool
 				roadsToRephaseDashes.add(newRoad);
 			}
 		}
-		Tuple2<List<List<Point>>, List<Road>> offMapRemoval = removeControlPointsOffVisibleMap(pastedRivers, new ArrayList<>(roadsToRephaseDashes));
-		roadsToRephaseDashes.addAll(offMapRemoval.getSecond());
-		roadsToRephaseDashes.removeIf(r -> !mainWindow.edits.roads.contains(r));
+		// The pasted lines are selected, so control points that can't stay are removed once they're unselected.
+		linesAwaitingControlPointRemoval.addAll(pastedRivers);
+		linesAwaitingControlPointRemoval.addAll(roadsToRephaseDashes);
+		publishLinesHeldForControlPointRemoval();
 		if (!roadsToRephaseDashes.isEmpty())
 		{
 			updater.addRoadsToRedrawLowPriority(new ArrayList<>(roadsToRephaseDashes), mainWindow.displayQualityScale);
@@ -1420,17 +1331,13 @@ public class LandWaterTool extends EditorTool
 				return;
 			}
 			pathsForCenters = newRivers.stream().map(r -> PathOperations.toLocationList(r.nodes)).collect(Collectors.toList());
-			removeControlPointsOffVisibleMap(newRivers, Collections.emptyList());
 		}
 		else
 		{
 			List<Road> changedList = RoadDrawer.addFreeHandRoadFromPoints(pathToCommit, mainWindow.edits.roads);
 			RoadDrawer.removeEmptyOrSinglePointRoads(mainWindow.edits.roads);
+			updater.addRoadsToRedrawLowPriority(changedList, mainWindow.displayQualityScale);
 			pathsForCenters = changedList.stream().map(r -> PathOperations.toLocationList(r.nodes)).collect(Collectors.toList());
-			List<Road> roadsToRedraw = new ArrayList<>(changedList);
-			roadsToRedraw.addAll(removeControlPointsOffVisibleMap(Collections.emptyList(), changedList).getSecond());
-			roadsToRedraw.removeIf(r -> !mainWindow.edits.roads.contains(r));
-			updater.addRoadsToRedrawLowPriority(roadsToRedraw, mainWindow.displayQualityScale);
 		}
 
 		updater.createAndShowMapIncrementalUsingCenters(getCentersTouchingPoints(pathsForCenters));
@@ -1680,7 +1587,7 @@ public class LandWaterTool extends EditorTool
 		if (mouseLocation != null)
 		{
 			boolean deselectMode = controlClickBehavior != null && controlClickBehavior.isUnselectMode();
-			PressOutcome preview = computePressOutcome(mouseLocation, ctrlDown, deselectMode, brushDiameter, type);
+			PressOutcome preview = computePressOutcome(mouseLocation, ctrlDown, deselectMode, brushDiameter, type, true);
 			List<Point> previewLocations = collectCPGraphLocations(preview.riverCPsAfter(), preview.roadCPsAfter(), type, scale);
 			Set<Point> selectedLocations = new HashSet<>(selectedCirclesGraphPixels);
 			// CPs that the press would ADD to the selection get the orange outline AND the yellow hover ring — they're the
@@ -2290,31 +2197,7 @@ public class LandWaterTool extends EditorTool
 			assert false;
 			return Collections.emptySet();
 		}
-
-		WorldGraph graph = updater.mapParts.graph;
-		Set<Center> result = new HashSet<>();
-		for (List<Point> points : pointLists)
-		{
-			for (Point point : points)
-			{
-				// Clamp the point into the map bounds before the lookup. A path (e.g. a freehand river)
-				// can have a node that lies beyond the map border; the segment leading to that node still
-				// needs to draw up to the edge, where it will be covered by the border. Dropping off-map
-				// nodes would leave the redraw bounds short, so the on-map part of the boundary-crossing
-				// segment would be clipped during an incremental update (a full draw is unaffected because
-				// it ignores these bounds). Clamping maps the off-map node to the border center where the
-				// segment exits the map, which extends the redraw bounds to the edge.
-				Point pixel = point.mult(mainWindow.displayQualityScale);
-				double clampedX = Math.min(Math.max(pixel.x, 0), graph.getWidth() - 1);
-				double clampedY = Math.min(Math.max(pixel.y, 0), graph.getHeight() - 1);
-				Center c = graph.findClosestCenter(new Point(clampedX, clampedY), true);
-				if (c != null)
-				{
-					result.add(c);
-				}
-			}
-		}
-		return result;
+		return ControlPointPlacement.findCentersAtPoints(updater.mapParts.graph, pointLists);
 	}
 
 	/**
@@ -2973,9 +2856,22 @@ public class LandWaterTool extends EditorTool
 		dragBeforeSnapshots = null;
 		dragStartLocRI = getPointOnGraph(e.getPoint()).mult(1.0 / mainWindow.displayQualityScale);
 
-		PressOutcome outcome = computePressOutcome(e.getPoint(), ctrlDown, deselectMode, brushDiameter, activeType);
+		PressOutcome outcome = computePressOutcome(e.getPoint(), ctrlDown, deselectMode, brushDiameter, activeType, true);
 		applyPressOutcome(outcome);
 		refreshSelectionVisuals(e.getPoint(), activeType, ctrlDown);
+	}
+
+	private void selectWhatWasClicked(MouseEvent e)
+	{
+		LineType activeType = riversButton.isSelected() ? LineType.RIVER : LineType.ROAD;
+		boolean deselectMode = controlClickBehavior != null && controlClickBehavior.isUnselectMode();
+		PressOutcome outcome = computePressOutcome(e.getPoint(), false, deselectMode, getEditBrushDiameter(), activeType, false);
+		selectedRiverCPs.clear();
+		selectedRiverCPs.putAll(outcome.riverCPsAfter());
+		selectedRoadCPs.clear();
+		selectedRoadCPs.putAll(outcome.roadCPsAfter());
+		removeUnselectedControlPointsThatCannotStay();
+		refreshSelectionVisuals(e.getPoint(), activeType);
 	}
 
 	/** Applies a press outcome to the live state: swaps the selection maps and arms either move-drag or paint-drag. */
@@ -2985,6 +2881,7 @@ public class LandWaterTool extends EditorTool
 		selectedRiverCPs.putAll(outcome.riverCPsAfter());
 		selectedRoadCPs.clear();
 		selectedRoadCPs.putAll(outcome.roadCPsAfter());
+		removeUnselectedControlPointsThatCannotStay();
 
 		if (outcome.isMoveDrag())
 		{
@@ -3020,8 +2917,13 @@ public class LandWaterTool extends EditorTool
 	 * hover-display handler uses it to render a preview that exactly matches what a press would actually do. Keeping a single source of
 	 * truth here is the whole point — otherwise the preview and the press can diverge (which previously led to "I see the segment
 	 * highlighted but the click selects the CP instead").
+	 *
+	 * @param canGrabSelection
+	 *            Whether a plain press on the existing selection keeps it and arms a move-drag. When false, such a press selects what it
+	 *            lands on as if it were not selected.
 	 */
-	private PressOutcome computePressOutcome(java.awt.Point point, boolean ctrlDown, boolean deselectMode, int brushDiameter, LineType activeType)
+	private PressOutcome computePressOutcome(java.awt.Point point, boolean ctrlDown, boolean deselectMode, int brushDiameter, LineType activeType,
+			boolean canGrabSelection)
 	{
 		// Identity-keyed to match selectedRiverCPs/selectedRoadCPs (Road/River hashCode is mutable; see field declarations).
 		Map<River, Set<Integer>> riverAfter = new java.util.IdentityHashMap<>();
@@ -3096,7 +2998,7 @@ public class LandWaterTool extends EditorTool
 		// The CP grab radius is at least the segment hit threshold (the same Erase-mode 10-RI radius); without that, a click slightly
 		// off a selected CP but still within typical mouse-aiming tolerance would resolve to the segment-hit branch and wipe the
 		// selection — making the user have to re-select before they could drag again.
-		if (!ctrlDown)
+		if (!ctrlDown && canGrabSelection)
 		{
 			double cpGrabRadius = Math.max(Math.max(mapEditingPanel.getRoadControlPointHitRadiusInGraphPixels(), getEditSegmentHitThresholdInGraphPixels()), brushRadiusGraphPixels);
 			double segGrabRadius = Math.max(getEditSegmentHitThresholdInGraphPixels(), brushRadiusGraphPixels);
@@ -3551,6 +3453,7 @@ public class LandWaterTool extends EditorTool
 	{
 		mapEditingPanel.clearHighlightedPolylines();
 		applySelectedSegmentsHighlight();
+		showControlPointsAndSegmentsToBeRemoved();
 		updateEditModeHoverDisplay(mouseLocation, activeType, ctrlDown);
 		refreshRiverWidthSliderVisibility();
 		syncSliderToSelectedSegment();
@@ -3648,10 +3551,207 @@ public class LandWaterTool extends EditorTool
 		// Refresh visuals at the new cursor position. During a move-drag we deliberately skip the hover preview (orange CP outlines,
 		// yellow rings, hover-color segment polylines) since nothing under the cursor is selectable while the drag is in flight —
 		// showing them would falsely suggest the user could pick something up.
+		linesAwaitingControlPointRemoval.addAll(movesByLine.keySet());
+		publishLinesHeldForControlPointRemoval();
 		mapEditingPanel.clearHighlightedPolylines();
 		renderSelectionOnlyVisuals(activeType);
 		updater.createAndShowMapIncrementalUsingCenters(getCentersTouchingPoints(centersTouched));
 		mapEditingPanel.repaint();
+	}
+
+	/**
+	 * Returns the indices of the control points of {@code line} that are selected or being dragged. Those are kept, if they can't stay where
+	 * they are, until the user lets go of them.
+	 */
+	private Set<Integer> findControlPointsHeldBack(Object line)
+	{
+		Set<Integer> result = new HashSet<>();
+		Set<Integer> selected = line instanceof River r ? selectedRiverCPs.get(r) : line instanceof Road r ? selectedRoadCPs.get(r) : null;
+		if (selected != null)
+		{
+			result.addAll(selected);
+		}
+		if (dragMovingCPs != null)
+		{
+			for (MovingCP moving : dragMovingCPs)
+			{
+				if (moving.line() == line)
+				{
+					result.add(moving.nodeIndex());
+				}
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * Tells drawing which lines to leave alone when it removes control points that can't stay. See
+	 * {@link MapEdits#linesExemptFromControlPointRemoval}.
+	 */
+	private void publishLinesHeldForControlPointRemoval()
+	{
+		if (mainWindow.edits == null)
+		{
+			return;
+		}
+		Set<Object> copy = Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+		copy.addAll(linesAwaitingControlPointRemoval);
+		mainWindow.edits.linesExemptFromControlPointRemoval = Collections.unmodifiableSet(copy);
+	}
+
+	/**
+	 * Shows in red the control points that can't stay on the lines awaiting their removal, along with the segments touching them.
+	 */
+	private void showControlPointsAndSegmentsToBeRemoved()
+	{
+		List<Point> points = new ArrayList<>();
+		List<List<Point>> segments = new ArrayList<>();
+		if (linesAwaitingControlPointRemoval != null && !linesAwaitingControlPointRemoval.isEmpty() && updater.mapParts != null && updater.mapParts.graph != null)
+		{
+			Predicate<Point> canRiverControlPointStay = createControlPointCanStayTest(LineType.RIVER);
+			Predicate<Point> canRoadControlPointStay = createControlPointCanStayTest(LineType.ROAD);
+			double scale = mainWindow.displayQualityScale;
+			for (Object line : linesAwaitingControlPointRemoval)
+			{
+				List<? extends PathNode> nodes = nodesOf(line);
+				Set<Integer> toRemove = ControlPointPlacement.findControlPointsThatCannotStay(nodes, line instanceof River ? canRiverControlPointStay : canRoadControlPointStay);
+				for (int i : toRemove)
+				{
+					points.add(nodes.get(i).getLoc().mult(scale));
+				}
+				for (int i : ControlPointPlacement.findSegmentsTouching(toRemove, nodes.size()))
+				{
+					segments.add(List.of(nodes.get(i).getLoc().mult(scale), nodes.get(i + 1).getLoc().mult(scale)));
+				}
+			}
+		}
+		mapEditingPanel.setControlPointsAndSegmentsToBeRemoved(points, segments);
+	}
+
+	/**
+	 * From each line awaiting removal of its control points that can't stay, removes those that are no longer selected or being dragged. The
+	 * selection on what remains of the line is kept. Like drawing's removal of such control points, this doesn't make an undo point. Also
+	 * updates which control points are shown as ones to be removed.
+	 *
+	 * @return Whether any control points were removed.
+	 */
+	private boolean removeUnselectedControlPointsThatCannotStay()
+	{
+		if (linesAwaitingControlPointRemoval == null)
+		{
+			// Called during construction, before the fields are initialized.
+			return false;
+		}
+		boolean removedAny = removeUnselectedControlPointsThatCannotStayWithoutUpdatingDisplay();
+		showControlPointsAndSegmentsToBeRemoved();
+		mapEditingPanel.repaint();
+		return removedAny;
+	}
+
+	private boolean removeUnselectedControlPointsThatCannotStayWithoutUpdatingDisplay()
+	{
+		if (linesAwaitingControlPointRemoval.isEmpty())
+		{
+			return false;
+		}
+		Predicate<Point> canRiverControlPointStay = createControlPointCanStayTest(LineType.RIVER);
+		Predicate<Point> canRoadControlPointStay = createControlPointCanStayTest(LineType.ROAD);
+		List<List<Point>> beforePaths = new ArrayList<>();
+		List<Road> roadsToRedraw = new ArrayList<>();
+		for (Object line : new ArrayList<>(linesAwaitingControlPointRemoval))
+		{
+			boolean isRiver = line instanceof River;
+			if (!(isRiver ? containsByIdentity(mainWindow.edits.rivers, line) : containsByIdentity(mainWindow.edits.roads, line)))
+			{
+				linesAwaitingControlPointRemoval.remove(line);
+				continue;
+			}
+			List<? extends PathNode> nodes = nodesOf(line);
+			Set<Integer> cannotStay = ControlPointPlacement.findControlPointsThatCannotStay(nodes, isRiver ? canRiverControlPointStay : canRoadControlPointStay);
+			Set<Integer> heldBack = findControlPointsHeldBack(line);
+			Set<Integer> toRemove = new HashSet<>(cannotStay);
+			toRemove.removeAll(heldBack);
+			// Keep the line exempt from drawing's removal while any of it is held, so drawing doesn't shift the indices of what is.
+			boolean isHeld = !heldBack.isEmpty();
+			if (!isHeld)
+			{
+				linesAwaitingControlPointRemoval.remove(line);
+			}
+			if (toRemove.isEmpty())
+			{
+				continue;
+			}
+
+			beforePaths.add(PathOperations.toLocationList(nodes));
+			// Removing control points can split the line, so reselect what remains of the selection by location.
+			Set<Point> selectedLocations = new HashSet<>();
+			Set<Integer> selected = isRiver ? selectedRiverCPs.remove(line) : selectedRoadCPs.remove(line);
+			if (selected != null)
+			{
+				for (int i : selected)
+				{
+					if (i >= 0 && i < nodes.size())
+					{
+						selectedLocations.add(nodes.get(i).getLoc());
+					}
+				}
+			}
+			Set<Integer> segmentsToRemove = ControlPointPlacement.findSegmentsTouching(toRemove, nodes.size());
+			List<Object> remainingLines = new ArrayList<>();
+			if (line instanceof River river)
+			{
+				List<River> changed = new ArrayList<>();
+				applyRiverFragments(river, PathOperations.applySelectionDeletes(river.nodes, Collections.emptySet(), segmentsToRemove, RiverDrawer.RIVER_OPS), changed);
+				remainingLines.addAll(changed);
+			}
+			else if (line instanceof Road road)
+			{
+				List<Road> changed = new ArrayList<>();
+				applyRoadFragments(road, PathOperations.applySelectionDeletes(road.nodes, Collections.emptySet(), segmentsToRemove, RoadDrawer.ROAD_OPS), changed);
+				remainingLines.addAll(changed);
+				roadsToRedraw.addAll(changed);
+			}
+			for (Object remaining : remainingLines)
+			{
+				List<? extends PathNode> remainingNodes = nodesOf(remaining);
+				Set<Integer> reselected = new HashSet<>();
+				for (int i = 0; i < remainingNodes.size(); i++)
+				{
+					if (selectedLocations.contains(remainingNodes.get(i).getLoc()))
+					{
+						reselected.add(i);
+					}
+				}
+				if (!reselected.isEmpty())
+				{
+					if (remaining instanceof River river)
+					{
+						selectedRiverCPs.put(river, reselected);
+					}
+					else if (remaining instanceof Road road)
+					{
+						selectedRoadCPs.put(road, reselected);
+					}
+				}
+				if (isHeld)
+				{
+					// The held control points may be in any of the pieces the line was split into.
+					linesAwaitingControlPointRemoval.add(remaining);
+				}
+			}
+		}
+		publishLinesHeldForControlPointRemoval();
+		if (beforePaths.isEmpty())
+		{
+			return false;
+		}
+		if (!roadsToRedraw.isEmpty())
+		{
+			updater.addRoadsToRedrawLowPriority(roadsToRedraw, mainWindow.displayQualityScale);
+		}
+		updater.createAndShowMapIncrementalUsingCenters(getCentersTouchingPoints(beforePaths));
+		updater.doWhenMapIsNotDrawing(() -> updater.createAndShowLowPriorityChanges(false));
+		return true;
 	}
 
 	/**
@@ -3668,6 +3768,7 @@ public class LandWaterTool extends EditorTool
 		mapEditingPanel.clearHoveredControlPoint();
 		mapEditingPanel.clearHoverPolylines();
 		applySelectedSegmentsHighlight();
+		showControlPointsAndSegmentsToBeRemoved();
 	}
 
 	/**
@@ -3749,23 +3850,6 @@ public class LandWaterTool extends EditorTool
 				roadsToRephaseDashes.add(r);
 			}
 		}
-		List<River> movedRivers = new ArrayList<>();
-		List<Road> movedRoads = new ArrayList<>();
-		for (Object line : indicesByLine.keySet())
-		{
-			if (line instanceof River r)
-			{
-				movedRivers.add(r);
-			}
-			else if (line instanceof Road r)
-			{
-				movedRoads.add(r);
-			}
-		}
-		Tuple2<List<List<Point>>, List<Road>> offMapRemoval = removeControlPointsOffVisibleMap(movedRivers, movedRoads);
-		centerPaths.addAll(offMapRemoval.getFirst());
-		roadsToRephaseDashes.addAll(offMapRemoval.getSecond());
-		roadsToRephaseDashes.removeIf(r -> !mainWindow.edits.roads.contains(r));
 		if (!roadsToRephaseDashes.isEmpty())
 		{
 			updater.addRoadsToRedrawLowPriority(new ArrayList<>(roadsToRephaseDashes), mainWindow.displayQualityScale);
@@ -3775,10 +3859,6 @@ public class LandWaterTool extends EditorTool
 		updater.doWhenMapIsNotDrawing(() -> updater.createAndShowLowPriorityChanges(false));
 		dragMovingCPs = null;
 		dragBeforeSnapshots = null;
-		if (!offMapRemoval.getFirst().isEmpty())
-		{
-			refreshSelectionVisuals(mapEditingPanel.getMousePosition(), riversButton.isSelected() ? LineType.RIVER : LineType.ROAD);
-		}
 	}
 
 	/**
@@ -4369,10 +4449,22 @@ public class LandWaterTool extends EditorTool
 			{
 				handleEditModeControlPointDragEnd();
 			}
+			// A press that grabbed the existing selection to move it, without the mouse moving, was a click.
+			boolean wasClickOnSelection = !wasDrag && !dragIsPaint;
 			dragIsPaint = false;
 			dragMovingCPs = null;
 			dragBeforeSnapshots = null;
 			dragStartLocRI = null;
+			if (wasClickOnSelection)
+			{
+				// Select just what was clicked, as a press on an unselected line would.
+				selectWhatWasClicked(e);
+			}
+			else if (removeUnselectedControlPointsThatCannotStay())
+			{
+				// A paint-drag can unselect control points that couldn't stay.
+				refreshSelectionVisuals(e.getPoint(), riversButton.isSelected() ? LineType.RIVER : LineType.ROAD);
+			}
 			return;
 		}
 
@@ -5039,6 +5131,12 @@ public class LandWaterTool extends EditorTool
 	@Override
 	protected void onAfterShowMap()
 	{
+		// Drawing can reshape the polygons near an edited line, which can change whether a control point near a coast is on water.
+		if (modeWidget.isEditMode() && (riversButton.isSelected() || roadsButton.isSelected()))
+		{
+			showControlPointsAndSegmentsToBeRemoved();
+			mapEditingPanel.repaint();
+		}
 		java.awt.Point mousePosition = mapEditingPanel.getMousePosition();
 		updateHighlightsForMousePosition(mousePosition);
 	}
@@ -5081,6 +5179,7 @@ public class LandWaterTool extends EditorTool
 		cancelFreeHandDrawing(LineType.ROAD);
 		cancelFreeHandDrawing(LineType.RIVER);
 		clearSelection();
+		removeUnselectedControlPointsThatCannotStay();
 		clearHoverState();
 		if (selectedRegion != null)
 		{
@@ -5096,6 +5195,8 @@ public class LandWaterTool extends EditorTool
 		cancelFreeHandDrawing(LineType.RIVER);
 		// Sticky/hover may reference river/road instances that no longer exist after undo/redo.
 		clearSelection();
+		// These also reference lines that undo/redo replaced. Drawing removes any control points of the restored lines that can't stay.
+		linesAwaitingControlPointRemoval.clear();
 		clearHoverState();
 		selectedRegion = null;
 		mapEditingPanel.clearSelectedCenters();
@@ -5150,6 +5251,7 @@ public class LandWaterTool extends EditorTool
 	@Override
 	public void onBeforeLoadingNewMap()
 	{
+		linesAwaitingControlPointRemoval.clear();
 	}
 
 	@Override

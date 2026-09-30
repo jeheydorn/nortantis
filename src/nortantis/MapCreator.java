@@ -291,6 +291,16 @@ public class MapCreator implements WarningLogger
 		}
 		mapParts.graph.updateCenterLookupTable(centersToUpdateLookupFor);
 
+		// Remove river and road control points that can't stay, now that the graph shows where land and water are. Redraw where they were.
+		Set<Center> centersChangedByControlPointRemoval = removeControlPointsThatCannotStayAndReapplyEdits(settings, mapParts.graph, settings.resolution, reshapedNeighborEdges);
+		if (!centersChangedByControlPointRemoval.isEmpty())
+		{
+			new RiverDrawer(settings, mapParts.graph).stampRiverCurvesOntoGraphEdges(centersChangedByControlPointRemoval);
+			mapParts.graph.updateCenterLookupTable(centersChangedByControlPointRemoval);
+			centersChanged.addAll(centersChangedByControlPointRemoval);
+			centersChangedBounds = centersChangedBounds.add(WorldGraph.getBoundingBox(centersChangedByControlPointRemoval));
+		}
+
 		boolean canChangeOceanEffects = canChangeOceanEffects(settings, coastlineCentersChanged, centersChangedThatAffectedLandOrRegionBoundaries, isLowPriorityChange);
 		boolean useCachedCoastShading = mapParts.isCoastShadingCached && !canChangeOceanEffects && !canChangeRegionBoundaryShading(settings, centersWithRebuiltNoisyEdges);
 		double effectsPadding = calcEffectsPadding(settings, false, !useCachedCoastShading);
@@ -2681,8 +2691,36 @@ public class MapCreator implements WarningLogger
 			applyEdgeEdits(graph, settings.edits, null);
 		}
 		applyCenterEdits(graph, settings.edits, null, settings.areRegionBoundariesVisible(), resolutionScale, null, null);
+		removeControlPointsThatCannotStayAndReapplyEdits(settings, graph, resolutionScale, null);
 
 		return graph;
+	}
+
+	/**
+	 * Removes river and road control points that can't stay where they are (see {@link ControlPointPlacement}), then applies the river and
+	 * center edits again where that changed the lines. Must be called after the edits have been applied to the graph, since whether a
+	 * control point is on water depends on the coastline as drawn.
+	 *
+	 * @param reshapedNeighborEdgesOut
+	 *            See {@link #applyCenterEdits}.
+	 * @return The centers where lines changed or whose noisy edges were rebuilt as a result.
+	 */
+	private static Set<Center> removeControlPointsThatCannotStayAndReapplyEdits(MapSettings settings, WorldGraph graph, double resolutionScale, Set<Edge> reshapedNeighborEdgesOut)
+	{
+		if (settings.edits == null || !settings.edits.hasInitializedRivers)
+		{
+			return Collections.emptySet();
+		}
+		List<List<Point>> removedFrom = ControlPointPlacement.removeControlPointsThatCannotStay(settings.edits, graph);
+		if (removedFrom.isEmpty())
+		{
+			return Collections.emptySet();
+		}
+		Set<Center> centersChanged = new HashSet<>(ControlPointPlacement.findCentersAtPoints(graph, removedFrom));
+		applyRiverEdits(graph, settings.edits, centersChanged);
+		centersChanged.addAll(applyCenterEdits(graph, settings.edits, getCenterEditsForCenters(settings.edits, centersChanged), settings.areRegionBoundariesVisible(), resolutionScale,
+				null, reshapedNeighborEdgesOut));
+		return centersChanged;
 	}
 
 	/*
@@ -2978,7 +3016,7 @@ public class MapCreator implements WarningLogger
 		return GraphCreator.createHeightMap(graph, new Random(settings.randomSeed));
 	}
 
-	private List<CenterEdit> getCenterEditsForCenters(MapEdits edits, Collection<Center> centers)
+	private static List<CenterEdit> getCenterEditsForCenters(MapEdits edits, Collection<Center> centers)
 	{
 		return centers.stream().map(center -> edits.centerEdits.get(center.index)).collect(Collectors.toList());
 	}

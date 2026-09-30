@@ -1231,6 +1231,38 @@ public class RiverDrawer
 		return match == null ? null : match.mergedNodes;
 	}
 
+	/**
+	 * Replaces {@code river}'s nodes with the first of {@code fragments} that has at least 2 nodes after normalizing, and adds the rest as new
+	 * rivers in {@code rivers}. Removes {@code river} from {@code rivers} if no fragment survives. Every river that survives, modified or new,
+	 * is appended to {@code changed}.
+	 */
+	public static void replaceWithFragments(List<River> rivers, River river, List<List<RiverPathNode>> fragments, List<River> changed)
+	{
+		List<List<RiverPathNode>> cleaned = new ArrayList<>(fragments.size());
+		for (List<RiverPathNode> fragment : fragments)
+		{
+			List<RiverPathNode> normalized = PathOperations.normalizePath(fragment, RIVER_OPS);
+			if (normalized.size() >= 2)
+			{
+				cleaned.add(normalized);
+			}
+		}
+		if (cleaned.isEmpty())
+		{
+			// By identity, since rivers compare equal by their nodes.
+			rivers.removeIf(r -> r == river);
+			return;
+		}
+		river.nodes = new CopyOnWriteArrayList<>(cleaned.get(0));
+		changed.add(river);
+		for (int i = 1; i < cleaned.size(); i++)
+		{
+			River newRiver = new River(cleaned.get(i));
+			rivers.add(newRiver);
+			changed.add(newRiver);
+		}
+	}
+
 	public static void removeEmptyOrShortRivers(List<River> riverList)
 	{
 		riverList.removeIf(river -> river.nodes.size() < 2);
