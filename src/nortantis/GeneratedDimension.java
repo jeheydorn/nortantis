@@ -14,8 +14,8 @@ public enum GeneratedDimension
 	public final int height;
 
 	/**
-	 * The longer side shared by every preset dimension. Arbitrary dimensions are normalized to this scale before being matched against the
-	 * presets (see {@link #normalizeToPresetScale}).
+	 * The longer side shared by every preset dimension. Custom aspect ratios are normalized to this scale (see
+	 * {@link #normalizeToPresetScale}).
 	 */
 	public static final int PRESET_LONG_SIDE = 4096;
 
@@ -72,8 +72,7 @@ public enum GeneratedDimension
 
 	/**
 	 * Scales (width, height) so its longer side equals {@link #PRESET_LONG_SIDE} (rounding the shorter side), matching the scale at which
-	 * preset dimensions are defined. This is the single normalization used both to produce the generated dimensions for a custom aspect
-	 * ratio and to classify arbitrary dimensions by aspect ratio (see {@link #fromAspectRatio}).
+	 * preset dimensions are defined. This is the normalization used to produce the generated dimensions for a custom aspect ratio.
 	 */
 	public static IntDimension normalizeToPresetScale(int width, int height)
 	{
@@ -86,10 +85,10 @@ public enum GeneratedDimension
 
 	/**
 	 * Returns the preset matching the given width:height aspect ratio (in either orientation), or {@link #Custom} if none match. Used to
-	 * label a selection box (or sub-map) by its aspect ratio. Matching is exact and as precise as {@link #fromDimensions} applied to a
-	 * generated map: the dimensions are normalized to the preset scale and looked up, so a ratio that is merely close to a preset normalizes
-	 * to a non-preset size and reads as Custom. Matching is orientation-independent (the longer side is always normalized to
-	 * {@link #PRESET_LONG_SIDE}), so a rotated (portrait) selection still maps to its named ratio.
+	 * label a selection box (or sub-map) by its aspect ratio. A selection matches a preset if its shorter side is within one pixel of the
+	 * shorter side that preset's ratio gives for its longer side. That tolerance absorbs the rounding of a ratio-locked selection to whole
+	 * pixels, while still being far tighter than the gaps between presets. Matching is orientation-independent, so a rotated (portrait)
+	 * selection still maps to its named ratio.
 	 */
 	public static GeneratedDimension fromAspectRatio(double width, double height)
 	{
@@ -97,8 +96,16 @@ public enum GeneratedDimension
 		{
 			return Custom;
 		}
-		IntDimension normalized = normalizeToPresetScale((int) Math.round(Math.max(width, height)), (int) Math.round(Math.min(width, height)));
-		return fromDimensions(normalized.width, normalized.height);
+		double longSide = Math.max(width, height);
+		double shortSide = Math.min(width, height);
+		for (GeneratedDimension d : presets())
+		{
+			if (Math.abs(longSide / d.aspectRatio() - shortSide) <= 1.0)
+			{
+				return d;
+			}
+		}
+		return Custom;
 	}
 
 	/**

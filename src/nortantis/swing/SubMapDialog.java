@@ -586,19 +586,17 @@ public class SubMapDialog
 	}
 
 	/**
-	 * Adjusts the selection box to match the given aspect ratio (width / height), keeping the top-left corner fixed and clamping to the map
-	 * bounds.
+	 * Adjusts the selection box to match the given aspect ratio (width / height), keeping the top-left corner fixed and the width unchanged
+	 * where possible. If the resulting box would extend past the map bounds, it is shrunk to the largest box of that ratio that fits, so the
+	 * ratio is kept exact rather than clipping each side independently.
 	 */
 	private Rectangle adjustSelectionBoxToAspectRatio(Rectangle box, double ratio)
 	{
-		double newHeight = box.width / ratio;
-		// Clamp height to map bounds.
-		newHeight = Math.min(newHeight, getMapDisplayHeight() - box.y);
+		double availableWidth = getMapDisplayWidth() - box.x;
+		double availableHeight = getMapDisplayHeight() - box.y;
+		double newHeight = Math.min(box.width / ratio, Math.min(availableHeight, availableWidth / ratio));
 		newHeight = Math.max(1, newHeight);
-		// If height was clamped, back-compute width to maintain ratio.
-		double newWidth = newHeight * ratio;
-		newWidth = Math.min(newWidth, getMapDisplayWidth() - box.x);
-		newWidth = Math.max(1, newWidth);
+		double newWidth = Math.max(1, newHeight * ratio);
 		return new Rectangle(box.x, box.y, newWidth, newHeight);
 	}
 
