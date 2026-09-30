@@ -960,6 +960,84 @@ public class LandWaterTool extends EditorTool
 	}
 
 	/**
+	 * Removes from the given rivers and roads every control point that is off the visible map (outside the map, or under its border
+	 * frame) and is not joined by a segment to a control point on the visible map. Removing a control point removes the segments touching
+	 * it, splitting its line if needed. The selection on any line this changes is cleared, since its indices no longer apply.
+	 *
+	 * @return The node locations the changed lines had before this removal, for computing the redraw area, plus the roads that changed
+	 *         and still exist.
+	 */
+	private Tuple2<List<List<Point>>, List<Road>> removeControlPointsOffVisibleMap(Collection<River> rivers, Collection<Road> roads)
+	{
+		nortantis.geom.Rectangle visibleBoundsRI = getVisibleMapBoundsRI();
+		List<List<Point>> beforePaths = new ArrayList<>();
+		for (River river : new ArrayList<>(rivers))
+		{
+			Set<Integer> edgesToRemove = findSegmentsTouchingControlPointsOffVisibleMap(river.nodes, visibleBoundsRI);
+			if (!edgesToRemove.isEmpty() && mainWindow.edits.rivers.contains(river))
+			{
+				beforePaths.add(PathOperations.toLocationList(river.nodes));
+				List<List<RiverPathNode>> fragments = PathOperations.applySelectionDeletes(river.nodes, Collections.emptySet(), edgesToRemove, RiverDrawer.RIVER_OPS);
+				applyRiverFragments(river, fragments, new ArrayList<>());
+				selectedRiverCPs.remove(river);
+			}
+		}
+		List<Road> changedRoads = new ArrayList<>();
+		for (Road road : new ArrayList<>(roads))
+		{
+			Set<Integer> edgesToRemove = findSegmentsTouchingControlPointsOffVisibleMap(road.nodes, visibleBoundsRI);
+			if (!edgesToRemove.isEmpty() && mainWindow.edits.roads.contains(road))
+			{
+				beforePaths.add(PathOperations.toLocationList(road.nodes));
+				List<List<RoadPathNode>> fragments = PathOperations.applySelectionDeletes(road.nodes, Collections.emptySet(), edgesToRemove, RoadDrawer.ROAD_OPS);
+				applyRoadFragments(road, fragments, changedRoads);
+				selectedRoadCPs.remove(road);
+			}
+		}
+		return new Tuple2<>(beforePaths, changedRoads);
+	}
+
+	/**
+	 * Returns the indices of the segments of {@code nodes} (index {@code i} is the segment from {@code nodes.get(i)} to
+	 * {@code nodes.get(i + 1)}) that touch a control point which is outside {@code visibleBoundsRI} and has no neighbor inside it.
+	 */
+	private static Set<Integer> findSegmentsTouchingControlPointsOffVisibleMap(List<? extends PathNode> nodes, nortantis.geom.Rectangle visibleBoundsRI)
+	{
+		Set<Integer> result = new HashSet<>();
+		int n = nodes.size();
+		for (int i = 0; i < n; i++)
+		{
+			boolean isOnMap = visibleBoundsRI.contains(nodes.get(i).getLoc());
+			boolean hasNeighborOnMap = (i > 0 && visibleBoundsRI.contains(nodes.get(i - 1).getLoc()))
+					|| (i < n - 1 && visibleBoundsRI.contains(nodes.get(i + 1).getLoc()));
+			if (!isOnMap && !hasNeighborOnMap)
+			{
+				if (i > 0)
+				{
+					result.add(i - 1);
+				}
+				if (i < n - 1)
+				{
+					result.add(i);
+				}
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * Returns the part of the map not covered by the border frame, in resolution-invariant coordinates.
+	 */
+	private nortantis.geom.Rectangle getVisibleMapBoundsRI()
+	{
+		double scale = mainWindow.displayQualityScale;
+		Background background = updater.mapParts.background;
+		double borderOverMapRI = (background.getBorderWidthScaledByResolution() - background.getBorderPaddingScaledByResolution()) / scale;
+		// pad() splits the amount between the two sides, so this insets each side by borderOverMapRI.
+		return updater.mapParts.graph.bounds.scaleAboutOrigin(1.0 / scale).pad(-2.0 * borderOverMapRI);
+	}
+
+	/**
 	 * Captures contiguous runs of selected-CP locations from the active line type into the clipboard. Each run becomes one paste-able
 	 * mini-line. Non-contiguous selections produce multiple runs.
 	 */
@@ -1093,6 +1171,7 @@ public class LandWaterTool extends EditorTool
 		clearSelection();
 		List<List<Point>> centersTouched = new ArrayList<>();
 		Set<Road> roadsToRephaseDashes = new HashSet<>();
+		List<River> pastedRivers = new ArrayList<>();
 		for (int runIdx = 0; runIdx < copiedCPRuns.size(); runIdx++)
 		{
 			List<Point> run = copiedCPRuns.get(runIdx);
@@ -1114,6 +1193,7 @@ public class LandWaterTool extends EditorTool
 				}
 				River newRiver = new River(newNodes);
 				mainWindow.edits.rivers.add(newRiver);
+				pastedRivers.add(newRiver);
 				Set<Integer> sel = new HashSet<>();
 				for (int i = 0; i < newNodes.size(); i++)
 				{
@@ -1141,6 +1221,9 @@ public class LandWaterTool extends EditorTool
 				roadsToRephaseDashes.add(newRoad);
 			}
 		}
+		Tuple2<List<List<Point>>, List<Road>> offMapRemoval = removeControlPointsOffVisibleMap(pastedRivers, new ArrayList<>(roadsToRephaseDashes));
+		roadsToRephaseDashes.addAll(offMapRemoval.getSecond());
+		roadsToRephaseDashes.removeIf(r -> !mainWindow.edits.roads.contains(r));
 		if (!roadsToRephaseDashes.isEmpty())
 		{
 			updater.addRoadsToRedrawLowPriority(new ArrayList<>(roadsToRephaseDashes), mainWindow.displayQualityScale);
@@ -1337,13 +1420,17 @@ public class LandWaterTool extends EditorTool
 				return;
 			}
 			pathsForCenters = newRivers.stream().map(r -> PathOperations.toLocationList(r.nodes)).collect(Collectors.toList());
+			removeControlPointsOffVisibleMap(newRivers, Collections.emptyList());
 		}
 		else
 		{
 			List<Road> changedList = RoadDrawer.addFreeHandRoadFromPoints(pathToCommit, mainWindow.edits.roads);
 			RoadDrawer.removeEmptyOrSinglePointRoads(mainWindow.edits.roads);
-			updater.addRoadsToRedrawLowPriority(changedList, mainWindow.displayQualityScale);
 			pathsForCenters = changedList.stream().map(r -> PathOperations.toLocationList(r.nodes)).collect(Collectors.toList());
+			List<Road> roadsToRedraw = new ArrayList<>(changedList);
+			roadsToRedraw.addAll(removeControlPointsOffVisibleMap(Collections.emptyList(), changedList).getSecond());
+			roadsToRedraw.removeIf(r -> !mainWindow.edits.roads.contains(r));
+			updater.addRoadsToRedrawLowPriority(roadsToRedraw, mainWindow.displayQualityScale);
 		}
 
 		updater.createAndShowMapIncrementalUsingCenters(getCentersTouchingPoints(pathsForCenters));
@@ -3662,6 +3749,23 @@ public class LandWaterTool extends EditorTool
 				roadsToRephaseDashes.add(r);
 			}
 		}
+		List<River> movedRivers = new ArrayList<>();
+		List<Road> movedRoads = new ArrayList<>();
+		for (Object line : indicesByLine.keySet())
+		{
+			if (line instanceof River r)
+			{
+				movedRivers.add(r);
+			}
+			else if (line instanceof Road r)
+			{
+				movedRoads.add(r);
+			}
+		}
+		Tuple2<List<List<Point>>, List<Road>> offMapRemoval = removeControlPointsOffVisibleMap(movedRivers, movedRoads);
+		centerPaths.addAll(offMapRemoval.getFirst());
+		roadsToRephaseDashes.addAll(offMapRemoval.getSecond());
+		roadsToRephaseDashes.removeIf(r -> !mainWindow.edits.roads.contains(r));
 		if (!roadsToRephaseDashes.isEmpty())
 		{
 			updater.addRoadsToRedrawLowPriority(new ArrayList<>(roadsToRephaseDashes), mainWindow.displayQualityScale);
@@ -3671,6 +3775,10 @@ public class LandWaterTool extends EditorTool
 		updater.doWhenMapIsNotDrawing(() -> updater.createAndShowLowPriorityChanges(false));
 		dragMovingCPs = null;
 		dragBeforeSnapshots = null;
+		if (!offMapRemoval.getFirst().isEmpty())
+		{
+			refreshSelectionVisuals(mapEditingPanel.getMousePosition(), riversButton.isSelected() ? LineType.RIVER : LineType.ROAD);
+		}
 	}
 
 	/**
