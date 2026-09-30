@@ -5179,7 +5179,9 @@ public class LandWaterTool extends EditorTool
 		cancelFreeHandDrawing(LineType.ROAD);
 		cancelFreeHandDrawing(LineType.RIVER);
 		clearSelection();
-		removeUnselectedControlPointsThatCannotStay();
+		// Deferred until the map is ready so that, when switching away because another map is being loaded (which clears the lines awaiting
+		// removal before the map is ready again), nothing is removed from the map being replaced.
+		updater.doWhenMapIsReadyForInteractions(this::removeUnselectedControlPointsThatCannotStay);
 		clearHoverState();
 		if (selectedRegion != null)
 		{
