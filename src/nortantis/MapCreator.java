@@ -250,8 +250,9 @@ public class MapCreator implements WarningLogger
 		migrateLegacyRiversIfNeeded(settings, mapParts.graph);
 		applyRiverEdits(mapParts.graph, settings.edits, centersChanged);
 		Set<Center> coastlineCentersChanged = new HashSet<>();
+		Set<Edge> reshapedNeighborEdges = new HashSet<>();
 		Set<Center> centersChangedThatAffectedLandOrRegionBoundaries = applyCenterEdits(mapParts.graph, settings.edits, getCenterEditsForCenters(settings.edits, centersChanged),
-				settings.areRegionBoundariesVisible(), settings.resolution, coastlineCentersChanged);
+				settings.areRegionBoundariesVisible(), settings.resolution, coastlineCentersChanged, reshapedNeighborEdges);
 
 		Rectangle centersChangedBounds = WorldGraph.getBoundingBox(centersChanged);
 
@@ -282,7 +283,13 @@ public class MapCreator implements WarningLogger
 		// Refresh the center lookup (grid slice polygons and, in pixel mode, the lookup table) for every center whose noisy edges were
 		// rebuilt; if we only refreshed the edited centers + their immediate neighbors, farther centers moved by coastline/region-boundary
 		// smoothing would keep stale geometry and findClosestCenter would return the wrong center near the edited coastline.
-		mapParts.graph.updateCenterLookupTable(centersWithRebuiltNoisyEdges);
+		Set<Center> centersToUpdateLookupFor = new HashSet<>(centersWithRebuiltNoisyEdges);
+		for (Edge edge : reshapedNeighborEdges)
+		{
+			centersToUpdateLookupFor.add(edge.d0);
+			centersToUpdateLookupFor.add(edge.d1);
+		}
+		mapParts.graph.updateCenterLookupTable(centersToUpdateLookupFor);
 
 		boolean canChangeOceanEffects = canChangeOceanEffects(settings, coastlineCentersChanged, centersChangedThatAffectedLandOrRegionBoundaries, isLowPriorityChange);
 		boolean useCachedCoastShading = mapParts.isCoastShadingCached && !canChangeOceanEffects && !canChangeRegionBoundaryShading(settings, centersWithRebuiltNoisyEdges);
@@ -309,6 +316,31 @@ public class MapCreator implements WarningLogger
 			{
 				// The ocean effects can change as far from the change as they need padding.
 				replaceBounds = centersChangedBounds.pad(oceanEffectsPadding.width, oceanEffectsPadding.height);
+			}
+		}
+
+		if (!reshapedNeighborEdges.isEmpty())
+		{
+			// With spline line styles, a change can reshape the curves of neighboring centers' edges, since a curve bends toward the edges
+			// that continue it past its corners. Cover those curves, padded only for line width. They shift by about a pixel, which doesn't
+			// visibly change the shading or waves drawn from them, so the effects padding above is only needed around the centers that
+			// changed.
+			Rectangle reshapedBounds = null;
+			for (Edge edge : reshapedNeighborEdges)
+			{
+				List<Point> shape = mapParts.graph.noisyEdges.getNoisyEdge(edge.index);
+				if (shape == null)
+				{
+					continue;
+				}
+				for (Point point : shape)
+				{
+					reshapedBounds = reshapedBounds == null ? new Rectangle(point.x, point.y, 0, 0) : reshapedBounds.add(point);
+				}
+			}
+			if (reshapedBounds != null)
+			{
+				replaceBounds = replaceBounds.add(reshapedBounds.pad(calcEffectsPadding(settings, false, false)));
 			}
 		}
 
@@ -2648,7 +2680,7 @@ public class MapCreator implements WarningLogger
 		{
 			applyEdgeEdits(graph, settings.edits, null);
 		}
-		applyCenterEdits(graph, settings.edits, null, settings.areRegionBoundariesVisible(), resolutionScale, null);
+		applyCenterEdits(graph, settings.edits, null, settings.areRegionBoundariesVisible(), resolutionScale, null, null);
 
 		return graph;
 	}
@@ -2714,9 +2746,12 @@ public class MapCreator implements WarningLogger
 	 *            If not null, this is populated with the centers whose land/water (or lake/ocean) status flipped - i.e. the edits that
 	 *            actually changed the coastline. This lets callers distinguish real coastline changes (which affect ocean waves) from
 	 *            region-boundary-only changes (e.g. drawing a river along a region boundary), which do not touch the coastline.
+	 * @param reshapedNeighborEdgesOut
+	 *            If not null, this is populated with the edges whose drawn shape changed when rebuilding a center's noisy edges also
+	 *            rebuilt its neighbors' (see {@link WorldGraph#rebuildNoisyEdgesForCenter(Center, Set, Set)}).
 	 */
 	private static Set<Center> applyCenterEdits(WorldGraph graph, MapEdits edits, Collection<CenterEdit> centerEditChanges, boolean areRegionBoundariesVisible, double resolutionScale,
-			Set<Center> coastlineCentersChangedOut)
+			Set<Center> coastlineCentersChangedOut, Set<Edge> reshapedNeighborEdgesOut)
 	{
 		if (edits == null || edits.centerEdits.isEmpty())
 		{
@@ -2791,7 +2826,7 @@ public class MapCreator implements WarningLogger
 
 		for (Center center : needsRebuildNoisyEdges)
 		{
-			graph.rebuildNoisyEdgesForCenter(center, needsRebuildNoisyEdges);
+			graph.rebuildNoisyEdgesForCenter(center, needsRebuildNoisyEdges, reshapedNeighborEdgesOut);
 		}
 
 		// Smoothing may have moved corners (a river edge no longer counts as a region boundary for

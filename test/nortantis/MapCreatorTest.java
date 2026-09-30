@@ -150,9 +150,33 @@ public class MapCreatorTest
 	@Test
 	public void incrementalUpdateMatchesFullDrawWhenCentersChangeBetweenLandAndOcean()
 	{
+		runIncrementalLandWaterChanges(null);
+	}
+
+	/**
+	 * Like {@link #incrementalUpdateMatchesFullDrawWhenCentersChangeBetweenLandAndOcean}, with splines whose coastlines aren't smoothed. There,
+	 * changing a center reshapes the coastline curves along its neighbors' edges without smoothing moving any of their corners.
+	 */
+	@Test
+	public void incrementalUpdateWithUnsmoothedSplinesMatchesFullDrawWhenCentersChangeBetweenLandAndOcean()
+	{
+		runIncrementalLandWaterChanges(MapSettings.LineStyle.Splines);
+	}
+
+	/**
+	 * @param lineStyle
+	 *            The line style to draw with, or null to use the one in the settings file.
+	 */
+	private void runIncrementalLandWaterChanges(MapSettings.LineStyle lineStyle)
+	{
 		String settingsFileName = "simpleSmallWorld.nort";
 		String settingsPath = Paths.get("unit test files", "map settings", settingsFileName).toString();
 		MapSettings settings = new MapSettings(settingsPath);
+		if (lineStyle != null)
+		{
+			settings.lineStyle = lineStyle;
+		}
+		String description = lineStyle == null ? "" : " " + lineStyle;
 		// Full resolution, because at half resolution a change moves enough sub-pixel geometry that a stray anti-aliased pixel or two
 		// survives the measurement below of what redrawing alone moves, and this test is only useful with no tolerance for stray pixels.
 		settings.resolution = 1.0;
@@ -170,8 +194,8 @@ public class MapCreatorTest
 		int failCount = 0;
 		for (int location = 0; location < 12; location++)
 		{
-			failCount += runOneLandWaterChange(settings.deepCopy(), settingsFileName, true, location);
-			failCount += runOneLandWaterChange(settings.deepCopy(), settingsFileName, false, location);
+			failCount += runOneLandWaterChange(settings.deepCopy(), settingsFileName, true, location, description);
+			failCount += runOneLandWaterChange(settings.deepCopy(), settingsFileName, false, location, description);
 		}
 
 		if (failCount > 0)
@@ -494,9 +518,9 @@ public class MapCreatorTest
 	 * Changes a cluster of centers to water or to land, redraws incrementally, and compares against a full draw of the same edits. Returns 1
 	 * if they differ and 0 if they match.
 	 */
-	private int runOneLandWaterChange(MapSettings settings, String settingsFileName, boolean changeToWater, int location)
+	private int runOneLandWaterChange(MapSettings settings, String settingsFileName, boolean changeToWater, int location, String description)
 	{
-		return runOneLandWaterChange(settings, settingsFileName, changeToWater, location, graph -> findCoastalCenters(graph, !changeToWater, location), "");
+		return runOneLandWaterChange(settings, settingsFileName, changeToWater, location, graph -> findCoastalCenters(graph, !changeToWater, location), description);
 	}
 
 	/**

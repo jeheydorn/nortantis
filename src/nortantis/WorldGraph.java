@@ -259,7 +259,17 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Rebuilds noisy edges for a center.
+	 * Whether {@link #rebuildNoisyEdgesForCenter} also rebuilds the noisy edges of the center's neighbors. That is the case for spline line
+	 * styles, where an edge's curve bends toward the edges that continue it past its corners, so a change to one center can change the
+	 * curves along its neighbors' edges.
+	 */
+	private boolean doesRebuildingNoisyEdgesChangeNeighbors()
+	{
+		return noisyEdges.getLineStyle() == LineStyle.Splines || noisyEdges.getLineStyle() == LineStyle.SplinesWithSmoothedCoastlines;
+	}
+
+	/**
+	 * Rebuilds noisy edges for a center, and also for its neighbors if {@link #doesRebuildingNoisyEdgesChangeNeighbors()}.
 	 *
 	 * @param center
 	 *            The center to rebuild noisy edges for.
@@ -269,15 +279,46 @@ public class WorldGraph extends VoronoiGraph
 	 */
 	public void rebuildNoisyEdgesForCenter(Center center, Set<Center> centersInLoop)
 	{
+		rebuildNoisyEdgesForCenter(center, centersInLoop, null);
+	}
+
+	/**
+	 * Like {@link #rebuildNoisyEdgesForCenter(Center, Set)}, and also reports which of the neighbors' edges changed shape.
+	 *
+	 * @param reshapedNeighborEdgesOut
+	 *            If not null, the edges of rebuilt neighbors whose drawn shape changed are added to this.
+	 */
+	public void rebuildNoisyEdgesForCenter(Center center, Set<Center> centersInLoop, Set<Edge> reshapedNeighborEdgesOut)
+	{
 		noisyEdges.buildNoisyEdgesForCenter(center, true);
 
-		if (noisyEdges.getLineStyle() == LineStyle.Splines || noisyEdges.getLineStyle() == LineStyle.SplinesWithSmoothedCoastlines)
+		if (doesRebuildingNoisyEdgesChangeNeighbors())
 		{
 			for (Center n : center.neighbors)
 			{
 				if (centersInLoop == null || !centersInLoop.contains(n))
 				{
+					List<List<Point>> shapesBefore = null;
+					if (reshapedNeighborEdgesOut != null)
+					{
+						shapesBefore = new ArrayList<>(n.borders.size());
+						for (Edge edge : n.borders)
+						{
+							shapesBefore.add(noisyEdges.getNoisyEdge(edge.index));
+						}
+					}
 					noisyEdges.buildNoisyEdgesForCenter(n, true);
+					if (reshapedNeighborEdgesOut != null)
+					{
+						for (int i = 0; i < n.borders.size(); i++)
+						{
+							Edge edge = n.borders.get(i);
+							if (!Objects.equals(shapesBefore.get(i), noisyEdges.getNoisyEdge(edge.index)))
+							{
+								reshapedNeighborEdgesOut.add(edge);
+							}
+						}
+					}
 				}
 			}
 		}
