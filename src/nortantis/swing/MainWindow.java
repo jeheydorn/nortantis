@@ -2365,6 +2365,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 			convertCustomImagesFolderIfNeeded(settings);
 
+			// Loading the new map's settings waits for any draw in progress to stop, and until then the window still holds the previous map's
+			// settings. Lock the fields that act on the map in the meantime, so that exporting or saving can't use the previous map's settings
+			// (saving would write them into the new map's file). They are unlocked once the new map is loaded.
+			enableOrDisableFieldsThatRequireMap(false, null, false);
 			updater.cancel();
 			final MapSettings unsavedChangesBaseline = settingsBeforeSubstitution;
 			updater.doWhenMapIsNotDrawing(() ->
