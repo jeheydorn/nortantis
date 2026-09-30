@@ -2149,7 +2149,6 @@ public class LandWaterTool extends EditorTool
 						}));
 					}
 					updater.doWhenMapIsNotDrawing(() -> updater.createAndShowLowPriorityChanges(false));
-					undoer.setUndoPoint(UpdateType.Incremental, this);
 				}
 			}
 		}
