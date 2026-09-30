@@ -2357,6 +2357,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 
 			openSettingsFilePath = Paths.get(absolutePath);
+			forceSaveAs = false;
 			if (!MapSettings.isOldPropertiesFile(absolutePath))
 			{
 				UserPreferences.getInstance().addRecentMapFilePath(absolutePath);
