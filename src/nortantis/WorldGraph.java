@@ -2180,7 +2180,7 @@ public class WorldGraph extends VoronoiGraph
 	@Override
 	protected void createRiversAndLakes()
 	{
-		new RiverAndLakeCreator(this, rand).createRiversAndLakes();
+		new RiverAndLakeCreator(this, rand, LandShapeParameters.forLandShape(landShape).minLakeDepth).createRiversAndLakes();
 		markLakes();
 		updateCoastAndCornerFlags();
 	}

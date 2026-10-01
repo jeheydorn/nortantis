@@ -402,6 +402,7 @@ public class WorldGraphTest
 	{
 		int carvedCount = 0;
 		int siltedCount = 0;
+		double minLakeDepth = LandShapeParameters.forLandShape(LandShape.Landlocked).minLakeDepth;
 		for (long seed = 1; seed <= 3; seed++)
 		{
 			double[][] elevationsBeforeRivers = new double[1][];
@@ -431,7 +432,7 @@ public class WorldGraphTest
 				else if (change > 0)
 				{
 					filledCount++;
-					if (change > RiverAndLakeCreator.minLakeDepth)
+					if (change > minLakeDepth)
 					{
 						deeplyFilledCount++;
 					}
@@ -440,7 +441,7 @@ public class WorldGraphTest
 			assertTrue(loweredCount < graph.corners.size() * 0.05, "Carving lowered " + loweredCount + " corners, seed " + seed);
 			// Most of what silting fills is dips too shallow to hold a lake, so filling one that deep should be rare.
 			assertTrue(deeplyFilledCount < graph.corners.size() * 0.02,
-					"Silting filled " + deeplyFilledCount + " corners by more than " + RiverAndLakeCreator.minLakeDepth + ", seed " + seed);
+					"Silting filled " + deeplyFilledCount + " corners by more than " + minLakeDepth + ", seed " + seed);
 			carvedCount += loweredCount;
 			siltedCount += filledCount;
 		}

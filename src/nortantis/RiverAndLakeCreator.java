@@ -53,13 +53,6 @@ class RiverAndLakeCreator
 	static final int minBasinLakeSize = 4;
 
 	/**
-	 * How far a basin's rim must be above its lowest point for it to hold a lake. Shallower dips are treated as filled in with sediment, so
-	 * water passes through them. Most basins that hold a lake are closed, with no outflow to carve their way out with, so this is the main
-	 * control over how many lakes a map has. For scale, sea level is 0.39 and land starts a little above it.
-	 */
-	static final double minLakeDepth = 0.04;
-
-	/**
 	 * An overflowing lake carves its outlet only when its outflow is at least this much, so that small streams never carve.
 	 */
 	private static final double minOutflowToCarve = 5.0;
@@ -106,14 +99,20 @@ class RiverAndLakeCreator
 	private final double[] rain;
 
 	/**
+	 * How far a basin's rim must be above its lowest point for it to hold a lake. See {@link LandShapeParameters#minLakeDepth}.
+	 */
+	private final double minLakeDepth;
+
+	/**
 	 * Index of the water body each center belongs to, or -1 for land. Recomputed when lakes are added.
 	 */
 	private int[] waterBodyOfCenter;
 	private List<WaterBody> waterBodies;
 
-	RiverAndLakeCreator(WorldGraph graph, Random rand)
+	RiverAndLakeCreator(WorldGraph graph, Random rand, double minLakeDepth)
 	{
 		this.graph = graph;
+		this.minLakeDepth = minLakeDepth;
 		findWaterBodies();
 
 		rain = new double[graph.corners.size()];
@@ -292,7 +291,7 @@ class RiverAndLakeCreator
 	/**
 	 * The centers a basin's lake covers as its water level rises, in the order they are covered.
 	 */
-	private static class LakeGrowth
+	private class LakeGrowth
 	{
 		final List<Center> centers = new ArrayList<>();
 		/**

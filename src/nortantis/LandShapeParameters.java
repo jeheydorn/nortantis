@@ -93,26 +93,33 @@ class LandShapeParameters
 	 */
 	final double edgeGuardDistance;
 
+	/**
+	 * How far a basin's rim must be above its lowest point for it to hold a lake. Shallower dips are treated as filled in with sediment, so
+	 * water passes through them. Most basins that hold a lake are closed, with no outflow to carve their way out with, so this is the main
+	 * control over how many lakes a map has. For scale, sea level is 0.39 and land starts a little above it.
+	 */
+	final double minLakeDepth;
+
 	private static final EnumMap<LandShape, LandShapeParameters> parametersByShape = new EnumMap<>(LandShape.class);
 
 	static
 	{
 		// Arguments: seed selection rule, max extra oceanic plate ratio, bias continental growth away from edges, continental rift scale at the
 		// minimum and maximum region counts, single oceanic plate probability, min continental plate fraction, min continental plate count,
-		// oceanic collision scale, min continental plates per region, edge guard distance.
-		parametersByShape.put(LandShape.Continents, new LandShapeParameters(SeedSelectionRule.FarthestFromEdge, 0.9, true, 1.0, 1.0, 0.0, 0.0, 8, 0.5, 1.25, 0.6));
-		parametersByShape.put(LandShape.Inland_Sea, new LandShapeParameters(SeedSelectionRule.ClosestToEdge, 0.0, false, 1.0, 1.0, 0.0, 0.0, 0, 1.0, 1.0, 0.0));
-		parametersByShape.put(LandShape.Scattered, new LandShapeParameters(SeedSelectionRule.Random, 0.9, false, 1.0, 1.0, 0.0, 0.0, 0, 1.0, 1.0, 0.0));
-		parametersByShape.put(LandShape.Supercontinent, new LandShapeParameters(SeedSelectionRule.NearestToCenterStadium, 0.0, true, 0.2, 0.2, 0.0, 0.0, 8, 0.5, 1.25, 1.0));
-		parametersByShape.put(LandShape.Coastline, new LandShapeParameters(SeedSelectionRule.FarthestAlongRandomDirection, 0.0, false, 0.2, 0.2, 0.0, 0.45, 0, 1.0, 1.0, 0.0));
-		parametersByShape.put(LandShape.Landlocked, new LandShapeParameters(SeedSelectionRule.AllContinental, 0.0, false, 0.15, 0.15, 0.2, 0.0, 0, 1.0, 1.0, 0.0));
+		// oceanic collision scale, min continental plates per region, edge guard distance, min lake depth.
+		parametersByShape.put(LandShape.Continents, new LandShapeParameters(SeedSelectionRule.FarthestFromEdge, 0.9, true, 1.0, 1.0, 0.0, 0.0, 8, 0.5, 1.25, 0.6, 0.04));
+		parametersByShape.put(LandShape.Inland_Sea, new LandShapeParameters(SeedSelectionRule.ClosestToEdge, 0.0, false, 1.0, 1.0, 0.0, 0.0, 0, 1.0, 1.0, 0.0, 0.04));
+		parametersByShape.put(LandShape.Scattered, new LandShapeParameters(SeedSelectionRule.Random, 0.9, false, 1.0, 1.0, 0.0, 0.0, 0, 1.0, 1.0, 0.0, 0.04));
+		parametersByShape.put(LandShape.Supercontinent, new LandShapeParameters(SeedSelectionRule.NearestToCenterStadium, 0.0, true, 0.2, 0.2, 0.0, 0.0, 8, 0.5, 1.25, 1.0, 0.04));
+		parametersByShape.put(LandShape.Coastline, new LandShapeParameters(SeedSelectionRule.FarthestAlongRandomDirection, 0.0, false, 0.2, 0.2, 0.0, 0.45, 0, 1.0, 1.0, 0.0, 0.04));
+		parametersByShape.put(LandShape.Landlocked, new LandShapeParameters(SeedSelectionRule.AllContinental, 0.0, false, 0.13, 0.13, 0.2, 0.0, 0, 1.0, 1.0, 0.0, 0.15));
 		assert parametersByShape.size() == LandShape.values().length;
 	}
 
 	private LandShapeParameters(SeedSelectionRule seedSelectionRule, double maxExtraOceanicPlateRatio, boolean biasContinentalGrowthAwayFromEdges,
 			double continentalRiftScaleAtMinRegionCount, double continentalRiftScaleAtMaxRegionCount, double singleOceanicPlateProbability,
 			double minContinentalPlateFraction, int minContinentalPlateCount, double oceanicCollisionScale, double minContinentalPlatesPerRegion,
-			double edgeGuardDistance)
+			double edgeGuardDistance, double minLakeDepth)
 	{
 		this.seedSelectionRule = seedSelectionRule;
 		this.maxExtraOceanicPlateRatio = maxExtraOceanicPlateRatio;
@@ -125,6 +132,7 @@ class LandShapeParameters
 		this.oceanicCollisionScale = oceanicCollisionScale;
 		this.minContinentalPlatesPerRegion = minContinentalPlatesPerRegion;
 		this.edgeGuardDistance = edgeGuardDistance;
+		this.minLakeDepth = minLakeDepth;
 	}
 
 	/**
