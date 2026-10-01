@@ -1,5 +1,6 @@
 package nortantis.swing;
 
+import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -7,6 +8,7 @@ import java.awt.FontMetrics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.Window;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -21,6 +23,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.SwingUtilities;
 
 import nortantis.FontFinder;
 import nortantis.MapFonts.FontProblem;
@@ -246,6 +249,7 @@ public class MissingFontDialog
 		preview.setPreferredSize(new Dimension(preview.getPreferredSize().width, height));
 		preview.setMinimumSize(new Dimension(0, height));
 		preview.revalidate();
+		growWindowToFit(preview);
 	}
 
 	/**
@@ -254,8 +258,38 @@ public class MissingFontDialog
 	 */
 	private static JComponent pinToPreferredHeight(JPanel panel)
 	{
-		panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, panel.getPreferredSize().height));
-		return panel;
+		// A wrapper rather than a fixed maximum, because choosing a taller font makes its preview, and so the rows, taller after the dialog
+		// is laid out.
+		JPanel pinned = new JPanel(new BorderLayout())
+		{
+			@Override
+			public Dimension getMaximumSize()
+			{
+				return new Dimension(Integer.MAX_VALUE, getPreferredSize().height);
+			}
+		};
+		pinned.add(panel, BorderLayout.CENTER);
+		return pinned;
+	}
+
+	/**
+	 * Makes the window holding the given component big enough for its contents again, so that a preview grown taller by choosing a different
+	 * font pushes the dialog's bottom edge down rather than squeezing the buttons. The window is never shrunk, so it does not jump about as
+	 * the user tries different fonts.
+	 */
+	private static void growWindowToFit(Component component)
+	{
+		Window window = SwingUtilities.getWindowAncestor(component);
+		if (window == null)
+		{
+			return;
+		}
+
+		Dimension preferred = window.getPreferredSize();
+		if (preferred.width > window.getWidth() || preferred.height > window.getHeight())
+		{
+			window.setSize(Math.max(preferred.width, window.getWidth()), Math.max(preferred.height, window.getHeight()));
+		}
 	}
 
 	/**
