@@ -324,30 +324,36 @@ public class SwingHelper
 		JPanel panel = new JPanel()
 		{
 			@Override
-			public void setBackground(Color color)
-			{
-				super.setBackground(color);
-				repaintIncludingEdges(this);
-			}
-
-			@Override
 			protected void paintComponent(Graphics g)
 			{
 				super.paintComponent(g);
 				// Filled here rather than by an opaque panel, because a color with transparency doesn't cover what was drawn before it, so
 				// whatever is behind the swatch has to be painted first.
-				g.setColor(getBackground());
+				g.setColor(isEnabled() ? getBackground() : fadeTowardBackground(getBackground()));
 				g.fillRect(0, 0, getWidth(), getHeight());
-				if (!isEnabled())
+			}
+
+			/**
+			 * Fades the color toward the background so the swatch looks disabled, like the controls beside it. This is done by computing
+			 * the faded color rather than by filling over the swatch with translucent background, because at fractional display scales, a
+			 * translucent fill doesn't always cover the same pixels as an opaque fill of the same rectangle, which leaves a line of the
+			 * unfaded color along an edge.
+			 */
+			private Color fadeTowardBackground(Color color)
+			{
+				Color background = getParent() == null ? UIManager.getColor("Panel.background") : getParent().getBackground();
+				if (background == null)
 				{
-					// Fade the color toward the background so the swatch looks disabled, like the controls beside it.
-					Color background = getParent() == null ? UIManager.getColor("Panel.background") : getParent().getBackground();
-					if (background != null)
-					{
-						g.setColor(new Color(background.getRed(), background.getGreen(), background.getBlue(), 170));
-						g.fillRect(0, 0, getWidth(), getHeight());
-					}
+					return color;
 				}
+				// The background, at fadeAlpha, composited over the color.
+				final float fadeAlpha = 170f / 255f;
+				float colorAlpha = color.getAlpha() / 255f;
+				float alpha = fadeAlpha + colorAlpha * (1f - fadeAlpha);
+				float colorWeight = colorAlpha * (1f - fadeAlpha);
+				return new Color(Math.round((background.getRed() * fadeAlpha + color.getRed() * colorWeight) / alpha),
+						Math.round((background.getGreen() * fadeAlpha + color.getGreen() * colorWeight) / alpha),
+						Math.round((background.getBlue() * fadeAlpha + color.getBlue() * colorWeight) / alpha), Math.round(alpha * 255f));
 			}
 		};
 		panel.setOpaque(false);
