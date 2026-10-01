@@ -9,11 +9,8 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -29,7 +26,6 @@ import nortantis.FontFinder;
 import nortantis.MapFonts.FontProblem;
 import nortantis.MapFonts.MissingFontInfo;
 import nortantis.MapSettings.ThemeFontType;
-import nortantis.platform.FontStyle;
 import nortantis.swing.translation.Translation;
 
 /**
@@ -38,12 +34,6 @@ import nortantis.swing.translation.Translation;
  */
 public class MissingFontDialog
 {
-	/**
-	 * Beyond this many distinct problem families, the dialog collapses to a single "replace all with" row rather than asking the user to
-	 * make one decision per font.
-	 */
-	private static final int maxRowsBeforeCollapsing = 5;
-
 	private static final int messageWidth = 460;
 	private static final int previewFontSize = 22;
 	private static final int previewVerticalPadding = 6;
@@ -117,8 +107,8 @@ public class MissingFontDialog
 		panel.add(createFullWidthWrappedLabel(Translation.get("mainWindow.missingFont.message", mapName)));
 		panel.add(Box.createVerticalStrut(12));
 
-		JComponent rows = info.problems.size() > maxRowsBeforeCollapsing ? createCollapsedRow(info, comboBoxesByFamily)
-				: createRowPerProblem(info, comboBoxesByFamily);
+		// Every missing font gets its own row, however many there are; the rows scroll once there are too many to fit.
+		JComponent rows = createRowPerProblem(info, comboBoxesByFamily);
 		rows.setAlignmentX(Component.LEFT_ALIGNMENT);
 		panel.add(rows);
 
@@ -167,7 +157,7 @@ public class MissingFontDialog
 						4);
 			}
 
-			JComboBox<Object> comboBox = createFontComboBox(problem, "mainWindow.missingFont.cannotDisplay");
+			JComboBox<Object> comboBox = createFontComboBox(problem);
 			comboBoxesByFamily.put(problem.family, comboBox);
 
 			JLabel preview = new JLabel();
@@ -185,91 +175,6 @@ public class MissingFontDialog
 		}
 
 		return wrapIfTall(panel);
-	}
-
-	/**
-	 * A single "replace all with" row. A map naming this many missing fonts does not want one decision per font, and the fonts it names are
-	 * in practice all the same kind of thing.
-	 */
-	private static JComponent createCollapsedRow(MissingFontInfo info, Map<String, JComboBox<Object>> comboBoxesByFamily)
-	{
-		JPanel panel = new JPanel(new GridBagLayout());
-		int row = 0;
-
-		List<String> familyNames = new ArrayList<>();
-		for (FontProblem problem : info.problems)
-		{
-			familyNames.add(problem.family);
-		}
-		JLabel familiesLabel = SwingHelper.createWrappedLabel("<html>" + SwingHelper.escapeHtml(String.join(", ", familyNames)) + "</html>",
-				messageWidth);
-		addToRow(panel, row++, familiesLabel, 0, 8);
-
-		// Collapsing hides the per-font rows, so the art packs to install are named once here instead of being lost.
-		Set<String> missingArtPacks = new LinkedHashSet<>();
-		for (FontProblem problem : info.problems)
-		{
-			if (problem.missingArtPack != null)
-			{
-				missingArtPacks.add(problem.missingArtPack);
-			}
-		}
-		if (!missingArtPacks.isEmpty())
-		{
-			addToRow(panel, row++, SwingHelper.createWrappedLabel("<html>" + SwingHelper.escapeHtml(
-					Translation.get("mainWindow.missingFont.fromMissingArtPacks", String.join(", ", missingArtPacks))) + "</html>",
-					messageWidth), 0, 8);
-		}
-
-		// Every font gets the same replacement, so the choices must be drawable for all of the text, and each family maps to the same combo.
-		FontProblem combined = combine(info);
-		JComboBox<Object> comboBox = createFontComboBox(combined, "mainWindow.missingFont.cannotDisplayAny");
-		for (FontProblem problem : info.problems)
-		{
-			comboBoxesByFamily.put(problem.family, comboBox);
-		}
-
-		JLabel preview = new JLabel();
-		updatePreview(preview, getSelectedFamily(comboBox));
-		comboBox.addActionListener(e -> updatePreview(preview, getSelectedFamily(comboBox)));
-
-		JPanel comboRow = new JPanel();
-		comboRow.setLayout(new BoxLayout(comboRow, BoxLayout.X_AXIS));
-		comboRow.add(new JLabel(Translation.get("mainWindow.missingFont.replaceAllWith")));
-		comboRow.add(Box.createHorizontalStrut(8));
-		comboRow.add(comboBox);
-		comboRow.add(Box.createHorizontalGlue());
-		addToRow(panel, row++, comboRow, 0, 2);
-		addToRow(panel, row++, preview, 0, 0);
-
-		return pinToPreferredHeight(panel);
-	}
-
-	private static FontProblem combine(MissingFontInfo info)
-	{
-		// Text stays under the style it is drawn in while the fonts are merged, so that one font's bold labels are still judged against a
-		// candidate's bold face rather than against whichever face the other fonts happened to use.
-		Map<FontStyle, StringBuilder> textToDrawByStyle = new LinkedHashMap<>();
-		Set<ThemeFontType> usedBy = new LinkedHashSet<>();
-		int individualLabelCount = 0;
-		for (FontProblem problem : info.problems)
-		{
-			for (Map.Entry<FontStyle, String> entry : problem.textToDrawByStyle.entrySet())
-			{
-				textToDrawByStyle.computeIfAbsent(entry.getKey(), key -> new StringBuilder()).append(entry.getValue());
-			}
-			usedBy.addAll(problem.usedByThemeFontTypes);
-			individualLabelCount += problem.individualLabelCount;
-		}
-
-		Map<FontStyle, String> combinedText = new LinkedHashMap<>();
-		for (Map.Entry<FontStyle, StringBuilder> entry : textToDrawByStyle.entrySet())
-		{
-			combinedText.put(entry.getKey(), entry.getValue().toString());
-		}
-
-		// The combined row offers one replacement for every font, so it carries no single art pack; the art packs are named per font above.
-		return new FontProblem(info.problems.get(0).family, new ArrayList<>(usedBy), individualLabelCount, combinedText, null);
 	}
 
 	/**
@@ -292,12 +197,7 @@ public class MissingFontDialog
 		return String.join(", ", parts);
 	}
 
-	/**
-	 * @param cannotDisplayKey
-	 *            The message shown for a family that cannot draw all of the text, which differs by whether the combo box replaces one
-	 *            missing font or all of them.
-	 */
-	private static JComboBox<Object> createFontComboBox(FontProblem problem, String cannotDisplayKey)
+	private static JComboBox<Object> createFontComboBox(FontProblem problem)
 	{
 		// Every family is offered, with the ones that have no glyphs for some of the labels the missing font was drawing greyed out, the same
 		// as in the font picker. Leaving those out instead would shorten the list with nothing to say why a font someone came looking for is
@@ -317,7 +217,7 @@ public class MissingFontDialog
 		Map<String, Boolean> canDrawTheTextByFamily = new HashMap<>();
 		return FontFamilySections.createFamilyComboBox(rows, suggested,
 				family -> canDrawTheTextByFamily.computeIfAbsent(family, key -> FontFinder.canDisplay(key, problem.textToDrawByStyle)) ? null
-						: Translation.get(cannotDisplayKey, family));
+						: Translation.get("mainWindow.missingFont.cannotDisplay", family));
 	}
 
 	/**
