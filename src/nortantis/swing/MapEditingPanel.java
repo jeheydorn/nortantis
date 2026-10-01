@@ -819,12 +819,9 @@ public class MapEditingPanel extends UnscaledImagePanel
 		}
 		Rectangle editBounds = AwtFactory.toAwtRectangle(iconToEditBounds.scaleAboutOrigin(resolution));
 
-		if (showEditBox)
+		if (showEditBox && !isEditingSingleHighlightedIcon())
 		{
-			if (highlightedAreas != null && highlightedAreas.size() != 1)
-			{
-				g.drawRect(editBounds.x, editBounds.y, editBounds.width, editBounds.height);
-			}
+			g.drawRect(editBounds.x, editBounds.y, editBounds.width, editBounds.height);
 		}
 
 		if (!isIconToEditInAValidPosition)
@@ -1541,6 +1538,15 @@ public class MapEditingPanel extends UnscaledImagePanel
 	}
 
 	/**
+	 * Whether exactly one icon is highlighted, whether in a valid position or not. The edit box isn't drawn then, because the icon's own
+	 * highlight already outlines it.
+	 */
+	private boolean isEditingSingleHighlightedIcon()
+	{
+		return highlightedAreas.size() + redHighlightedAreas.size() == 1;
+	}
+
+	/**
 	 * Returns true if the given screen point falls inside the multi-icon selection bounding box currently drawn around the icons being
 	 * edited. Returns false when no such box is visible (e.g. nothing selected, or a single icon is selected — that case shows a small tool
 	 * overlay rather than a group bounding box).
@@ -1551,8 +1557,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		{
 			return false;
 		}
-		// The bounding box rectangle is only actually drawn when more than one icon is highlighted (see drawIconEditBox).
-		if (highlightedAreas == null || highlightedAreas.size() == 1)
+		if (isEditingSingleHighlightedIcon())
 		{
 			return false;
 		}
