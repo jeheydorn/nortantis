@@ -61,6 +61,13 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	MapSettings lastSettingsLoadedOrSaved;
 	boolean hasDrawnCurrentMapAtLeastOnce;
 	/**
+	 * True when the map was opened with a substitution for a missing font or art pack that changed its edits, and has not been saved since.
+	 * The first draw replaces the edits in {@link #lastSettingsLoadedOrSaved} with the drawn ones, which would hide such a substitution from
+	 * the comparison against the file. Nothing but saving can undo the difference, since the undo history starts after the substitution and a
+	 * missing font or art pack cannot be chosen again.
+	 */
+	private boolean hasUnsavedSubstitutionInEdits;
+	/**
 	 * False until the first full draw after a map is loaded has completed. While false, a full draw that removes cities for landing on water
 	 * does not warn the user: opening a map (or creating a sub-map, which warns separately) can legitimately have cities sitting on water, and
 	 * that is not something the user just caused. Once true, a later full draw that removes cities for water (e.g. from changing the shore line
@@ -3235,7 +3242,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	private boolean settingsHaveUnsavedChanges()
 	{
-		if (lastSettingsLoadedOrSaved == null)
+		if (lastSettingsLoadedOrSaved == null || hasUnsavedSubstitutionInEdits)
 		{
 			return true;
 		}
@@ -3489,6 +3496,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		mapEditingPanel.clearAllSelectionsAndHighlights();
 
 		updateLastSettingsLoadedOrSaved(unsavedChangesBaseline != null ? unsavedChangesBaseline : settings);
+		// Nothing has been drawn yet, so any difference between the edits here is the substitution's.
+		hasUnsavedSubstitutionInEdits = unsavedChangesBaseline != null && !Objects.equals(unsavedChangesBaseline.edits, settings.edits);
 		toolsPanel.resetToolsForNewMap();
 		loadSettingsAndEditsIntoThemeAndToolsPanels(settings, false, false);
 
@@ -3550,6 +3559,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private void updateLastSettingsLoadedOrSaved(MapSettings settings)
 	{
 		lastSettingsLoadedOrSaved = settings.deepCopy();
+		hasUnsavedSubstitutionInEdits = false;
 	}
 
 	MapSettings getSettingsFromGUI(boolean deepCopyEdits)
