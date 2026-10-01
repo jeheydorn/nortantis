@@ -32,7 +32,7 @@ public class BGColorPreviewPanel extends ImagePanel
 		if (originalBackground != null)
 		{
 			colorizeImage(color);
-			repaint();
+			SwingHelper.repaintIncludingEdges(this);
 		}
 	}
 

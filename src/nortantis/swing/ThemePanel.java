@@ -67,6 +67,11 @@ public class ThemePanel extends JTabbedPane
 	private ActionListener backgroundImageButtonGroupListener;
 	private static final Dimension backgroundDisplaySize = new Dimension(150, 110);
 	/**
+	 * The size of the background generated for the land and ocean color pickers' preview, which is scaled to cover the preview's strip. Wide
+	 * enough to cover the strip at the width color choosers usually have.
+	 */
+	private static final IntDimension colorPickerPreviewSize = new IntDimension(640, 80);
+	/**
 	 * The space above and below each checkbox in the wave style options, which is less than other rows get so that checkboxes stack closely.
 	 */
 	private static final int waveStyleCheckboxInset = 4;
@@ -454,7 +459,7 @@ public class ThemePanel extends JTabbedPane
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				showBackgroundColorPicker(landDisplayPanel, Translation.get("theme.landColor.title"));
+				showBackgroundColorPicker(landDisplayPanel, Translation.get("theme.landColor.title"), false);
 			}
 		});
 
@@ -483,7 +488,7 @@ public class ThemePanel extends JTabbedPane
 		{
 			public void actionPerformed(ActionEvent arg0)
 			{
-				showBackgroundColorPicker(oceanDisplayPanel, Translation.get("theme.oceanColor.title"));
+				showBackgroundColorPicker(oceanDisplayPanel, Translation.get("theme.oceanColor.title"), true);
 			}
 		});
 
@@ -728,7 +733,7 @@ public class ThemePanel extends JTabbedPane
 		{
 			public void actionPerformed(ActionEvent arg0)
 			{
-				SwingHelper.showColorPickerWithLiveMapPreview(borderColorDisplay, Translation.get("theme.borderColor.title"), () -> redrawForFullChange(), () -> handleFullRedraw());
+				showColorPickerWithLiveMapPreview(borderColorDisplay, Translation.get("theme.borderColor.title"), () -> redrawForFullChange(), UpdateType.Full);
 			}
 		});
 		borderColorHider = organizer.addLabelAndComponentsHorizontal("", "", Arrays.asList(borderColorDisplay, borderColorChooseButton), SwingHelper.colorPickerLeftPadding);
@@ -941,15 +946,11 @@ public class ThemePanel extends JTabbedPane
 			{
 				public void actionPerformed(ActionEvent e)
 				{
-					SwingHelper.showColorPickerWithLiveMapPreview(coastShadingColorDisplay, Translation.get("theme.coastShadingColor.title"), () ->
+					showColorPickerWithLiveMapPreview(coastShadingColorDisplay, Translation.get("theme.coastShadingColor.title"), () ->
 					{
 						updateCoastShadingTransparencySliderFromColorPicker();
 						redrawForTerrainChange();
-					}, () ->
-					{
-						updateCoastShadingTransparencySliderFromColorPicker();
-						handleTerrainChange();
-					});
+					}, UpdateType.Terrain);
 				}
 			});
 			String coastShadingColorLabelText = Translation.get("theme.color.label");
@@ -1501,22 +1502,7 @@ public class ThemePanel extends JTabbedPane
 			@Override
 			protected Tuple4<Image, ImageHelper.ColorizeAlgorithm, Image, ImageHelper.ColorizeAlgorithm> doInBackground() throws Exception
 			{
-				MapSettings tempSettings = new MapSettings();
-				getSettingsFromGUI(tempSettings);
-				String texturePath;
-				Tuple2<Path, String> texturePathWithWarning = tempSettings.getBackgroundImagePath();
-				if (texturePathWithWarning != null && texturePathWithWarning.getFirst() != null)
-				{
-					texturePath = tempSettings.getBackgroundImagePath().getFirst().toString();
-				}
-				else
-				{
-					return null;
-				}
-
-				long seed = parseBackgroundSeed();
-				return createBackgroundImageDisplayImages(size, seed, colorizeOceanCheckbox.isSelected(), colorizeLandCheckbox.isSelected(), rdbtnFractal.isSelected(),
-						rdbtnGeneratedFromTexture.isSelected(), solidColorButton.isSelected(), texturePath);
+				return createBackgroundImageDisplayImagesFromGUI(size);
 			}
 
 			@Override
@@ -1553,6 +1539,29 @@ public class ThemePanel extends JTabbedPane
 		};
 
 		worker.execute();
+	}
+
+	/**
+	 * Creates the land and ocean backgrounds for the background settings in the GUI, or returns null if there is no background image.
+	 */
+	private Tuple4<Image, ImageHelper.ColorizeAlgorithm, Image, ImageHelper.ColorizeAlgorithm> createBackgroundImageDisplayImagesFromGUI(IntDimension size)
+	{
+		MapSettings tempSettings = new MapSettings();
+		getSettingsFromGUI(tempSettings);
+		String texturePath;
+		Tuple2<Path, String> texturePathWithWarning = tempSettings.getBackgroundImagePath();
+		if (texturePathWithWarning != null && texturePathWithWarning.getFirst() != null)
+		{
+			texturePath = tempSettings.getBackgroundImagePath().getFirst().toString();
+		}
+		else
+		{
+			return null;
+		}
+
+		long seed = parseBackgroundSeed();
+		return createBackgroundImageDisplayImages(size, seed, colorizeOceanCheckbox.isSelected(), colorizeLandCheckbox.isSelected(), rdbtnFractal.isSelected(),
+				rdbtnGeneratedFromTexture.isSelected(), solidColorButton.isSelected(), texturePath);
 	}
 
 	static Tuple4<Image, ImageHelper.ColorizeAlgorithm, Image, ImageHelper.ColorizeAlgorithm> createBackgroundImageDisplayImages(IntDimension size, long seed, boolean colorizeOcean,
@@ -2499,7 +2508,7 @@ public class ThemePanel extends JTabbedPane
 
 	private void showColorPickerForTerrainChange(JPanel colorDisplay, String title)
 	{
-		SwingHelper.showColorPickerWithLiveMapPreview(colorDisplay, title, () -> redrawForTerrainChange(), () -> handleTerrainChange());
+		showColorPickerWithLiveMapPreview(colorDisplay, title, () -> redrawForTerrainChange(), UpdateType.Terrain);
 	}
 
 	/**
@@ -2589,7 +2598,7 @@ public class ThemePanel extends JTabbedPane
 
 	private void showColorPickerForFontsChange(JPanel colorDisplay, String title)
 	{
-		SwingHelper.showColorPickerWithLiveMapPreview(colorDisplay, title, () -> redrawForFontsChange(), () -> handleFontsChange());
+		showColorPickerWithLiveMapPreview(colorDisplay, title, () -> redrawForFontsChange(), UpdateType.Fonts);
 	}
 
 	private void handleTextChange()
@@ -2625,14 +2634,41 @@ public class ThemePanel extends JTabbedPane
 	}
 
 	/**
-	 * Shows a color picker for the land or ocean color, parented to the main window, whose display previews the colored background.
+	 * Shows a color picker for the land or ocean color, parented to the main window. The map and displayPanel keep the old color until OK is
+	 * pressed, and the picker previews the colored background beside the old one.
 	 */
-	private void showBackgroundColorPicker(BGColorPreviewPanel displayPanel, String title)
+	private void showBackgroundColorPicker(BGColorPreviewPanel displayPanel, String title, boolean isOcean)
 	{
-		JColorChooser colorChooser = SwingHelper.createColorChooserWithOnlyGoodPanels(displayPanel.getColor());
-		colorChooser.setPreviewPanel(new JPanel());
-		SwingHelper.showColorPickerWithLiveMapPreview(mainWindow, displayPanel, title, colorChooser, displayPanel.getColor(), color -> displayPanel.setColor(color),
-				() -> redrawForFullChange(), () -> handleFullRedraw());
+		Color originalColor = displayPanel.getColor();
+		JColorChooser colorChooser = SwingHelper.createColorChooserWithOnlyGoodPanels(originalColor);
+		Tuple4<Image, ImageHelper.ColorizeAlgorithm, Image, ImageHelper.ColorizeAlgorithm> backgrounds = createBackgroundImageDisplayImagesFromGUI(colorPickerPreviewSize);
+		if (backgrounds != null)
+		{
+			BGColorBeforeAndAfterPanel preview = new BGColorBeforeAndAfterPanel(isOcean ? backgrounds.getFirst() : backgrounds.getThird(),
+					isOcean ? backgrounds.getSecond() : backgrounds.getFourth(), originalColor, colorPickerPreviewSize.height);
+			colorChooser.setPreviewPanel(preview);
+			colorChooser.getSelectionModel().addChangeListener(e -> preview.setAfterColor(colorChooser.getColor()));
+		}
+		SwingHelper.showModalColorPicker(mainWindow, title, colorChooser, e ->
+		{
+			if (!colorChooser.getColor().equals(originalColor))
+			{
+				displayPanel.setColor(colorChooser.getColor());
+				handleFullRedraw();
+			}
+		}, null);
+	}
+
+	/**
+	 * Shows a color picker that redraws the map with redrawAction as the color changes, and sets an undo point of updateType if OK is
+	 * pressed.
+	 */
+	private void showColorPickerWithLiveMapPreview(JPanel colorDisplay, String title, Runnable redrawAction, UpdateType updateType)
+	{
+		// An undo or edit that is waiting for the current draw to finish could otherwise run while the picker is open, while the GUI holds
+		// a color that hasn't been accepted.
+		mainWindow.updater.doAfterActionsWaitingForDrawing(() -> SwingUtilities.invokeLater(
+				() -> SwingHelper.showColorPickerWithLiveMapPreview(colorDisplay, title, redrawAction, () -> mainWindow.undoer.setUndoPoint(updateType, null))));
 	}
 
 	private void createMapChangeListenerForFrayedEdgeOrGrungeChange(Component component)
@@ -2657,7 +2693,7 @@ public class ThemePanel extends JTabbedPane
 
 	private void showColorPickerForFrayedEdgeOrGrungeChange(JPanel colorDisplay, String title)
 	{
-		SwingHelper.showColorPickerWithLiveMapPreview(colorDisplay, title, () -> redrawForFrayedEdgeOrGrungeChange(), () -> handleFrayedEdgeOrGrungeChange());
+		showColorPickerWithLiveMapPreview(colorDisplay, title, () -> redrawForFrayedEdgeOrGrungeChange(), UpdateType.GrungeAndFray);
 	}
 
 	/**

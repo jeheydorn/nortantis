@@ -1255,6 +1255,22 @@ public abstract class MapUpdater
 		}
 	}
 
+	/**
+	 * Runs action now if no action is waiting for a draw to finish, or else once those actions have run, so that it sees the changes they
+	 * make.
+	 */
+	public void doAfterActionsWaitingForDrawing(Runnable action)
+	{
+		if (tasksToRunWhenMapReady.isEmpty())
+		{
+			action.run();
+		}
+		else
+		{
+			tasksToRunWhenMapReady.add(action);
+		}
+	}
+
 	public boolean isMapBeingDrawn()
 	{
 		return isMapBeingDrawn;
