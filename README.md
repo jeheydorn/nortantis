@@ -1,7 +1,9 @@
 # nortantis
-Nortantis is a fantasy map generator and editor originally created as an academic project. It uses a simple tectonic plate simulation to create islands and continents with trees, rivers, and mountains. The result has the appearance of an old-fashioned hand-drawn map.
+Nortantis is a free, open-source fantasy map creator and editor, made by an author for authors. With it, you can quickly generate a random world, then fine-tune it to match your story's needs. Or, if you'd rather, you can start with a blank canvas (Edit -> Clear Entire Map) and draw your world exactly how you want it.
 
-For more information and examples of generated maps, see the project page <a href="https://jandjheydorn.com/nortantis">here</a>.
+Nortantis uses a polygon-based tectonic plate simulation to create continents and islands with lakes, trees, rivers, mountains, cities, and more. The editing tools allow drawing land/water, political regions, rivers, roads, icons, text, and image overlays, along with styling your own background textures, color themes, and ocean waves.
+
+For more information, examples, and pre-built installers, see the project page <a href="https://jandjheydorn.com/nortantis">here</a>.
 
 If you wish to build Nortantis from source rather than use the installers, do the following:
 <ol>
