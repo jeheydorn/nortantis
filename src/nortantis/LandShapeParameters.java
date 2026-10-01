@@ -105,7 +105,7 @@ class LandShapeParameters
 		parametersByShape.put(LandShape.Scattered, new LandShapeParameters(SeedSelectionRule.Random, 0.9, false, 1.0, 1.0, 0.0, 0.0, 0, 1.0, 1.0, 0.0));
 		parametersByShape.put(LandShape.Supercontinent, new LandShapeParameters(SeedSelectionRule.NearestToCenterStadium, 0.0, true, 0.2, 0.2, 0.0, 0.0, 8, 0.5, 1.25, 1.0));
 		parametersByShape.put(LandShape.Coastline, new LandShapeParameters(SeedSelectionRule.FarthestAlongRandomDirection, 0.0, false, 0.2, 0.2, 0.0, 0.45, 0, 1.0, 1.0, 0.0));
-		parametersByShape.put(LandShape.Landlocked, new LandShapeParameters(SeedSelectionRule.AllContinental, 0.0, false, 0.45, 0.25, 0.2, 0.0, 0, 1.0, 1.0, 0.0));
+		parametersByShape.put(LandShape.Landlocked, new LandShapeParameters(SeedSelectionRule.AllContinental, 0.0, false, 0.15, 0.15, 0.2, 0.0, 0, 1.0, 1.0, 0.0));
 		assert parametersByShape.size() == LandShape.values().length;
 	}
 
