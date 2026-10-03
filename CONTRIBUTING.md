@@ -18,7 +18,8 @@ Small, self-contained fixes are welcome without prior discussion. When in doubt,
 - The CLA ensures that:
   - You retain authorship credit for your work.
   - You grant the project owner an **exclusive copyright license** to your contributions.
-  - This allows the project to distribute code under open-source terms **and** to use contributions in future closed-source editions, if such should happen. It also allows us to change the license of Nortantis's code to any other open source license recognized by the The Free Software Organization (FSO).
+  - The project owner may license your contributions under any license, open source or closed source. For example, this allows Nortantis to be licensed for use in closed-source apps, released in a future closed-source edition, or moved to a different open source license.
+  - You receive a license back to use your own contribution however you like.
 
 ### Signing the CLA
 
@@ -29,7 +30,8 @@ Small, self-contained fixes are welcome without prior discussion. When in doubt,
 ### Notes
 
 - Even small changes (like typo fixes) require signing the CLA, since every contribution is legally significant.
-- If you are contributing on behalf of an organization, please ensure the **Entity Fiduciary Contributor License Agreement (EFCLA)** is signed by an authorized representative.
+- If you are contributing on behalf of an organization, please contact me before opening a pull request so the CLA can be accepted by someone authorized to act for that organization.
+- The CLA was replaced in October 2026. If you signed the earlier version (the FSFE Fiduciary License Agreement 2.0), CLA Assistant will ask you to sign the new version on your next pull request. Contributions made under the earlier version remain covered by that version.
 
 ## Contribution Workflow
 
