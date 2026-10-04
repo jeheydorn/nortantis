@@ -79,6 +79,8 @@ public class MapEditingPanel extends UnscaledImagePanel
 	// How far the view position moves when the previewed zoom is committed, or null if it doesn't move. Kept with the preview so that
 	// whichever rescale ends up committing the previewed zoom lands the map where the preview showed it.
 	private java.awt.Point zoomPreviewViewPositionShift;
+	// Guards mapFromMapCreator against incremental draws, which modify it in place on a background thread. Null if nothing modifies it.
+	private java.util.concurrent.locks.Lock mapReadLock;
 	private double resolution;
 	private int borderPadding;
 	private nortantis.geom.Rectangle iconToEditBounds;
@@ -265,6 +267,14 @@ public class MapEditingPanel extends UnscaledImagePanel
 	public void setHoverHighlightsSuppressedSupplier(java.util.function.BooleanSupplier supplier)
 	{
 		this.hoverHighlightsSuppressedSupplier = supplier;
+	}
+
+	/**
+	 * Sets the lock that incremental draws hold while they modify mapFromMapCreator in place.
+	 */
+	public void setMapReadLock(java.util.concurrent.locks.Lock mapReadLock)
+	{
+		this.mapReadLock = mapReadLock;
 	}
 
 	public void setControlPointCircles(List<Point> circles)
@@ -660,6 +670,65 @@ public class MapEditingPanel extends UnscaledImagePanel
 	public void setIconDrawer(IconDrawer iconDrawer)
 	{
 		this.iconDrawer = iconDrawer;
+	}
+
+	/**
+	 * During a zoom preview, draws the generated map in place of the displayed image, because the displayed image is rescaled for the
+	 * previous zoom and gets blurry when stretched far, while the generated map has all the detail any zoom level shows. Only the part of
+	 * the generated map inside the clip is drawn, so the cost depends on the size of the view rather than the size of the map.
+	 */
+	@Override
+	protected void drawImage(Graphics2D g2, BufferedImage image)
+	{
+		if (zoomPreviewTransform == null || mapFromMapCreator == null)
+		{
+			super.drawImage(g2, image);
+			return;
+		}
+
+		// An incremental draw may be modifying the generated map. Rather than wait for it on the EDT, stretch the displayed image for this paint.
+		if (mapReadLock != null && !mapReadLock.tryLock())
+		{
+			super.drawImage(g2, image);
+			return;
+		}
+		try
+		{
+			// Under the AwtFactory the editor uses, this is the generated map's own BufferedImage, not a copy.
+			BufferedImage source = AwtBridge.toBufferedImage(mapFromMapCreator);
+			double sourcePixelsPerImagePixelX = (double) source.getWidth() / image.getWidth();
+			double sourcePixelsPerImagePixelY = (double) source.getHeight() / image.getHeight();
+
+			// The clip is in the displayed image's pixel coordinates. Pad the source region a little so bilinear sampling at its edges reads
+			// real neighbors rather than clamping.
+			java.awt.Rectangle clip = g2.getClipBounds();
+			if (clip == null)
+			{
+				clip = new java.awt.Rectangle(0, 0, image.getWidth(), image.getHeight());
+			}
+			final int padding = 2;
+			int sourceX = Math.max(0, (int) Math.floor(clip.x * sourcePixelsPerImagePixelX) - padding);
+			int sourceY = Math.max(0, (int) Math.floor(clip.y * sourcePixelsPerImagePixelY) - padding);
+			int sourceMaxX = Math.min(source.getWidth(), (int) Math.ceil((clip.x + clip.width) * sourcePixelsPerImagePixelX) + padding);
+			int sourceMaxY = Math.min(source.getHeight(), (int) Math.ceil((clip.y + clip.height) * sourcePixelsPerImagePixelY) + padding);
+			if (sourceMaxX <= sourceX || sourceMaxY <= sourceY)
+			{
+				return;
+			}
+
+			// A sub-image shares the generated map's pixels, and passing only it keeps Java2D from processing or uploading the rest of the map.
+			BufferedImage visibleSource = source.getSubimage(sourceX, sourceY, sourceMaxX - sourceX, sourceMaxY - sourceY);
+			AffineTransform sourceToImage = AffineTransform.getScaleInstance(1.0 / sourcePixelsPerImagePixelX, 1.0 / sourcePixelsPerImagePixelY);
+			sourceToImage.translate(sourceX, sourceY);
+			g2.drawImage(visibleSource, sourceToImage, null);
+		}
+		finally
+		{
+			if (mapReadLock != null)
+			{
+				mapReadLock.unlock();
+			}
+		}
 	}
 
 	@Override

@@ -559,6 +559,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		themePanel = new ThemePanel(this);
 		createMapEditingPanel();
 		createMapUpdater();
+		mapEditingPanel.setMapReadLock(updater.getMapReadLock());
 		toolsPanel = new ToolsPanel(this, updater);
 		int toolsPanelWidth = SwingHelper.clampSidePanelWidthToMinimum(UserPreferences.getInstance().toolsPanelWidth);
 		toolsPanel.setPreferredSize(new Dimension(toolsPanelWidth, toolsPanel.getPreferredSize().height));
