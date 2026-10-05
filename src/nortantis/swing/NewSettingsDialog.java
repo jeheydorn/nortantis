@@ -866,6 +866,8 @@ public class NewSettingsDialog extends JDialog
 
 	private void restoreState(DialogState state)
 	{
+		boolean dimensionsChanged = committedState.settings.generatedWidth != state.settings.generatedWidth
+				|| committedState.settings.generatedHeight != state.settings.generatedHeight;
 		committedState = state;
 		boolean customImagesPathChanged = !Objects.equals(settings.customImagesPath, state.settings.customImagesPath);
 		MapSettings restored = state.settings.deepCopy();
@@ -889,6 +891,10 @@ public class NewSettingsDialog extends JDialog
 		themeWarningHider.setVisible(state.themeWarning != null);
 		updateUndoRedoButtons();
 
+		if (dimensionsChanged)
+		{
+			clearMapPreview();
+		}
 		if (customImagesPathChanged)
 		{
 			redrawWithClearedImageCache();
@@ -1119,6 +1125,11 @@ public class NewSettingsDialog extends JDialog
 
 	private void clearMapPreview()
 	{
+		// Loading settings into the controls fires the dimension controls' listeners even when the dimensions don't change.
+		if (!updater.isEnabled())
+		{
+			return;
+		}
 		updater.cancel();
 		mapEditingPanel.setImage(null);
 	}
