@@ -101,6 +101,41 @@ public class NewSettingsDialog extends JDialog
 	private ThemeChoice randomThemeChoice;
 	private ThemeChoice sameThemeChoice;
 
+	/**
+	 * Everything about the dialog that undo and redo restore.
+	 */
+	private static final class DialogState
+	{
+		final MapSettings settings;
+		final ThemeChoice themeChoice;
+		/**
+		 * The warning shown under the theme combo box, or null when none is shown.
+		 */
+		final String themeWarning;
+
+		DialogState(MapSettings settings, ThemeChoice themeChoice, String themeWarning)
+		{
+			this.settings = settings;
+			this.themeChoice = themeChoice;
+			this.themeWarning = themeWarning;
+		}
+
+		boolean matches(DialogState other)
+		{
+			return themeChoice == other.themeChoice && Objects.equals(themeWarning, other.themeWarning) && settings.equalsIgnoringEdits(other.settings);
+		}
+	}
+
+	private final Deque<DialogState> undoStack = new ArrayDeque<>();
+	private final Deque<DialogState> redoStack = new ArrayDeque<>();
+	/**
+	 * The dialog's state as of the most recent undo step, or null before the dialog has finished loading its initial settings.
+	 */
+	private DialogState committedState;
+	private boolean isUndoStepPending;
+	private JButton undoButton;
+	private JButton redoButton;
+
 	public NewSettingsDialog(MainWindow mainWindow, MapSettings settingsToKeepThemeFrom)
 	{
 		super(mainWindow, Translation.get("newSettingsDialog.title"), Dialog.ModalityType.APPLICATION_MODAL);
@@ -121,6 +156,7 @@ public class NewSettingsDialog extends JDialog
 		loadSettingsIntoGUI(settings);
 
 		updater.setEnabled(true);
+		committedState = captureState();
 	}
 
 	private void createGUI(MainWindow mainWindow)
@@ -185,7 +221,24 @@ public class NewSettingsDialog extends JDialog
 				}
 			});
 			bottomPanel.add(randomizeLandButton);
+			bottomPanel.add(Box.createHorizontalStrut(5));
+		}
+
+		{
+			undoButton = new JButton("\u21A9");
+			undoButton.setToolTipText(Translation.get("newSettingsDialog.undo.tooltip", SwingHelper.getCommandKeyName()));
+			undoButton.addActionListener(e -> undo());
+			SwingHelper.bindButtonShortcut(undoButton, KeyStroke.getKeyStroke(KeyEvent.VK_Z, SwingHelper.getMenuShortcutKeyMask()), "undoAction");
+			bottomPanel.add(undoButton);
+			bottomPanel.add(Box.createHorizontalStrut(5));
+
+			redoButton = new JButton("\u21AA");
+			redoButton.setToolTipText(Translation.get("newSettingsDialog.redo.tooltip", SwingHelper.getCommandKeyName()));
+			redoButton.addActionListener(e -> redo());
+			SwingHelper.bindButtonShortcut(redoButton, KeyStroke.getKeyStroke(KeyEvent.VK_Z, SwingHelper.getMenuShortcutKeyMask() | InputEvent.SHIFT_DOWN_MASK), "redoAction");
+			bottomPanel.add(redoButton);
 			bottomPanel.add(Box.createHorizontalStrut(40));
+			updateUndoRedoButtons();
 		}
 
 		{
@@ -470,11 +523,8 @@ public class NewSettingsDialog extends JDialog
 					settings.artPack = Assets.customArtPack;
 					initializeArtPackOptionsAndCityTypeOptions();
 
-					enableOrDisableProgressBar(true);
-					updater.createAndShowMapFull(() ->
-					{
-						ImageCache.clear();
-					});
+					redrawWithClearedImageCache();
+					scheduleUndoStep();
 				});
 				dialog.setLocationRelativeTo(NewSettingsDialog.this);
 				dialog.setVisible(true);
@@ -734,6 +784,15 @@ public class NewSettingsDialog extends JDialog
 		}
 		themeWarningHider.setVisible(missingArtPack != null);
 
+		loadSettingsIntoGUIWithoutApplyingTheme();
+		handleMapChange();
+	}
+
+	/**
+	 * Loads {@link #settings} into the controls without the change listeners redrawing the map or applying the theme combo box's choice.
+	 */
+	private void loadSettingsIntoGUIWithoutApplyingTheme()
+	{
 		updater.setEnabled(false);
 		isApplyingTheme = true;
 		try
@@ -745,7 +804,114 @@ public class NewSettingsDialog extends JDialog
 			isApplyingTheme = false;
 			updater.setEnabled(true);
 		}
-		handleMapChange();
+	}
+
+	private DialogState captureState()
+	{
+		return new DialogState(getSettingsFromGUI(), (ThemeChoice) themeComboBox.getSelectedItem(), themeWarningHider.isVisible() ? themeWarningLabel.getText() : null);
+	}
+
+	/**
+	 * Records an undo step for the changes made since the last one, once the current event has finished being handled. Deferring it
+	 * combines the changes one user action makes, such as choosing an art pack, which also changes the city icon type, into one step.
+	 */
+	private void scheduleUndoStep()
+	{
+		if (isUndoStepPending)
+		{
+			return;
+		}
+		isUndoStepPending = true;
+		SwingUtilities.invokeLater(() -> commitUndoStep());
+	}
+
+	private void commitUndoStep()
+	{
+		isUndoStepPending = false;
+		if (committedState == null)
+		{
+			return;
+		}
+		DialogState current = captureState();
+		if (!current.matches(committedState))
+		{
+			undoStack.push(committedState);
+			redoStack.clear();
+			committedState = current;
+			updateUndoRedoButtons();
+		}
+	}
+
+	private void undo()
+	{
+		commitUndoStep();
+		if (undoStack.isEmpty())
+		{
+			return;
+		}
+		redoStack.push(committedState);
+		restoreState(undoStack.pop());
+	}
+
+	private void redo()
+	{
+		commitUndoStep();
+		if (redoStack.isEmpty())
+		{
+			return;
+		}
+		undoStack.push(committedState);
+		restoreState(redoStack.pop());
+	}
+
+	private void restoreState(DialogState state)
+	{
+		committedState = state;
+		boolean customImagesPathChanged = !Objects.equals(settings.customImagesPath, state.settings.customImagesPath);
+		MapSettings restored = state.settings.deepCopy();
+		restored.edits = settings.edits;
+		settings = restored;
+
+		isApplyingTheme = true;
+		try
+		{
+			themeComboBox.setSelectedItem(state.themeChoice);
+		}
+		finally
+		{
+			isApplyingTheme = false;
+		}
+		loadSettingsIntoGUIWithoutApplyingTheme();
+		if (state.themeWarning != null)
+		{
+			themeWarningLabel.setText(state.themeWarning);
+		}
+		themeWarningHider.setVisible(state.themeWarning != null);
+		updateUndoRedoButtons();
+
+		if (customImagesPathChanged)
+		{
+			redrawWithClearedImageCache();
+		}
+		else
+		{
+			handleMapChange();
+		}
+	}
+
+	private void updateUndoRedoButtons()
+	{
+		undoButton.setEnabled(!undoStack.isEmpty());
+		redoButton.setEnabled(!redoStack.isEmpty());
+	}
+
+	private void redrawWithClearedImageCache()
+	{
+		enableOrDisableProgressBar(true);
+		updater.createAndShowMapFull(() ->
+		{
+			ImageCache.clear();
+		});
 	}
 
 	private void randomizeTheme()
@@ -1014,6 +1180,7 @@ public class NewSettingsDialog extends JDialog
 		{
 			return;
 		}
+		scheduleUndoStep();
 		// Defer to the next EDT cycle so that any row visibility changes (e.g. custom dimension
 		// spinners, rotation warning) have been laid out before we read the container size.
 		// Without this, getMapDrawingAreaSize() returns the stale pre-layout dimensions, causing
