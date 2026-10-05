@@ -48,7 +48,7 @@ Icon=nortantis
 Type=Application
 StartupWMClass=nortantis-swing-MainWindow
 Categories=Graphics;
-MimeType=application/x-nortantis;
+MimeType=application/x-nortantis;application/x-nortantis-theme;
 EOF
 
     install -dm755 "$pkgdir/usr/share/mime/packages"
@@ -58,6 +58,10 @@ EOF
   <mime-type type="application/x-nortantis">
     <comment>Nortantis Fantasy Map</comment>
     <glob pattern="*.nort"/>
+  </mime-type>
+  <mime-type type="application/x-nortantis-theme">
+    <comment>Nortantis Map Theme</comment>
+    <glob pattern="*.nortTheme" case-sensitive="false"/>
   </mime-type>
 </mime-info>
 EOF

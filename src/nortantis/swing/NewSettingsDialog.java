@@ -5,14 +5,16 @@ import nortantis.IconType;
 import nortantis.ImageCache;
 import nortantis.LandShape;
 import nortantis.MapSettings;
+import nortantis.NamedResource;
 import nortantis.SettingsGenerator;
+import nortantis.ThemeCatalog;
 import nortantis.editor.MapUpdater;
 import nortantis.editor.UserPreferences;
 import nortantis.geom.IntRectangle;
 import nortantis.platform.Image;
 import nortantis.platform.ImageHelper;
 import nortantis.platform.awt.AwtBridge;
-import nortantis.swing.ThemePanel.LandColoringMethod;
+import nortantis.LandColoringMethod;
 import nortantis.swing.translation.Translation;
 import nortantis.util.*;
 import org.apache.commons.lang3.StringUtils;
@@ -62,11 +64,48 @@ public class NewSettingsDialog extends JDialog
 	 * a redraw when the size has not actually changed, so the preview is not drawn twice while the dialog is first shown and laid out.
 	 */
 	private nortantis.geom.Dimension lastDrawnMapAreaSize;
+	private JComboBox<ThemeChoice> themeComboBox;
+	private JLabel themeWarningLabel;
+	private RowHider themeWarningHider;
+	/**
+	 * True while a theme is being applied, when the art pack combo box changing must not choose new resources from the art pack, which would
+	 * replace the theme's own border and background texture.
+	 */
+	private boolean isApplyingTheme;
+	/**
+	 * The map New Map With Same Theme was opened from, or null.
+	 */
+	private final MapSettings settingsToKeepThemeFrom;
+
+	/**
+	 * An entry in the theme combo box: Random, the theme of the map the dialog was opened from, or a theme the user has.
+	 */
+	private static final class ThemeChoice
+	{
+		final ThemeCatalog.Entry entry;
+		final String displayName;
+
+		ThemeChoice(ThemeCatalog.Entry entry, String displayName)
+		{
+			this.entry = entry;
+			this.displayName = displayName;
+		}
+
+		@Override
+		public String toString()
+		{
+			return displayName;
+		}
+	}
+
+	private ThemeChoice randomThemeChoice;
+	private ThemeChoice sameThemeChoice;
 
 	public NewSettingsDialog(MainWindow mainWindow, MapSettings settingsToKeepThemeFrom)
 	{
 		super(mainWindow, Translation.get("newSettingsDialog.title"), Dialog.ModalityType.APPLICATION_MODAL);
 		this.mainWindow = mainWindow;
+		this.settingsToKeepThemeFrom = settingsToKeepThemeFrom;
 
 		createGUI(mainWindow);
 
@@ -78,6 +117,7 @@ public class NewSettingsDialog extends JDialog
 		{
 			settings = SettingsGenerator.newMapWithSameTheme(settingsToKeepThemeFrom);
 		}
+		initializeThemeOptions();
 		loadSettingsIntoGUI(settings);
 
 		updater.setEnabled(true);
@@ -484,6 +524,20 @@ public class NewSettingsDialog extends JDialog
 		JPanel rightPanel = organizer.panel;
 		generatorSettingsPanel.add(rightPanel);
 
+		themeComboBox = new ShrinkableComboBox<ThemeChoice>();
+		themeComboBox.addActionListener(e ->
+		{
+			if (!isApplyingTheme)
+			{
+				applyThemeChoice();
+			}
+		});
+		organizer.addLabelAndComponent(Translation.get("newSettingsDialog.theme.label"), Translation.get("newSettingsDialog.theme.help"), themeComboBox);
+		themeWarningLabel = new JLabel();
+		themeWarningLabel.setForeground(SwingHelper.warningMessageColor);
+		themeWarningHider = organizer.addLabelAndComponent("", "", themeWarningLabel, 2);
+		themeWarningHider.setVisible(false);
+
 		artPackComboBox = new ShrinkableComboBox<String>();
 		JLabel artPackLabel = new JLabel(Translation.get("newSettingsDialog.artPack.label"));
 		artPackLabel.setToolTipText(Translation.get("newSettingsDialog.artPack.help"));
@@ -492,8 +546,13 @@ public class NewSettingsDialog extends JDialog
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				updateBackgroundTextureAndBorderToUseArtPackIfNeeded();
+				if (isApplyingTheme)
+				{
+					return;
+				}
+				useResourcesFromArtPack((String) artPackComboBox.getSelectedItem());
 				initializeCityTypeOptions();
+				chooseRandomCityType();
 				handleMapChange();
 			}
 		});
@@ -544,31 +603,167 @@ public class NewSettingsDialog extends JDialog
 		organizer.addVerticalFillerRow();
 	}
 
-	private void updateBackgroundTextureAndBorderToUseArtPackIfNeeded()
+	/**
+	 * Chooses a random border and background texture from the given art pack, for when the user picks an art pack after the theme.
+	 */
+	private void useResourcesFromArtPack(String artPack)
 	{
-		String artPack = (String) artPackComboBox.getSelectedItem();
-		boolean backgroundTextureNeedsUpdate = settings.backgroundTextureResource != null && !settings.backgroundTextureResource.artPack.equals(artPack);
-		boolean borderNeedsUpdate = settings.borderResource != null && !settings.borderResource.artPack.equals(artPack);
-
-		if (backgroundTextureNeedsUpdate || borderNeedsUpdate)
+		if (artPack == null)
 		{
-			MapSettings randomSettings = SettingsGenerator.generate(new Random(), artPack, settings.customImagesPath);
+			return;
+		}
+		Random rand = new Random();
+		List<NamedResource> textures = Assets.listBackgroundTexturesForArtPack(artPack, settings.customImagesPath);
+		if (!textures.isEmpty())
+		{
+			settings.backgroundTextureResource = ProbabilityHelper.sampleUniform(rand, textures);
+		}
+		List<NamedResource> borders = Assets.listBorderTypesForArtPack(artPack, settings.customImagesPath);
+		if (!borders.isEmpty())
+		{
+			settings.borderResource = ProbabilityHelper.sampleUniform(rand, borders);
+		}
+	}
 
-			if (backgroundTextureNeedsUpdate)
+	/**
+	 * Selects a random city icon type from the selected art pack, as choosing an art pack chooses its border and background texture at
+	 * random.
+	 */
+	private void chooseRandomCityType()
+	{
+		int count = cityIconsTypeComboBox.getItemCount();
+		if (count > 0)
+		{
+			cityIconsTypeComboBox.setSelectedIndex(new Random().nextInt(count));
+		}
+	}
+
+	private void initializeThemeOptions()
+	{
+		// Adding the first item selects it, which would apply a theme before the dialog's fields hold the settings it was opened with.
+		isApplyingTheme = true;
+		try
+		{
+			randomThemeChoice = new ThemeChoice(null, Translation.get("newSettingsDialog.theme.random"));
+			themeComboBox.addItem(randomThemeChoice);
+			if (settingsToKeepThemeFrom != null)
 			{
-				settings.backgroundTextureResource = randomSettings.backgroundTextureResource;
+				sameThemeChoice = new ThemeChoice(null, Translation.get("newSettingsDialog.theme.sameAsMap"));
+				themeComboBox.addItem(sameThemeChoice);
 			}
-			if (borderNeedsUpdate)
+			for (ThemeCatalog.Entry entry : ThemeCatalog.listAllThemes(settings.customImagesPath))
 			{
-				settings.borderResource = randomSettings.borderResource;
+				String displayName = entry.source == ThemeCatalog.Source.ArtPack ? Translation.get("newSettingsDialog.theme.inArtPack", entry.name, entry.artPack) : entry.name;
+				themeComboBox.addItem(new ThemeChoice(entry, displayName));
 			}
+			themeComboBox.setSelectedItem(sameThemeChoice != null ? sameThemeChoice : randomThemeChoice);
+		}
+		finally
+		{
+			isApplyingTheme = false;
+		}
+	}
+
+	/**
+	 * Applies the theme chosen in the theme combo box, keeping the world the user set up. The theme sets the art pack when it names one that
+	 * is installed or is inside one, and supplies the border and background texture.
+	 */
+	private void applyThemeChoice()
+	{
+		ThemeChoice choice = (ThemeChoice) themeComboBox.getSelectedItem();
+		if (choice == null)
+		{
+			return;
 		}
 
+		MapSettings current = getSettingsFromGUI();
+		Random rand = new Random();
+		String currentArtPack = (String) artPackComboBox.getSelectedItem();
+		MapSettings newSettings;
+		String missingArtPack = null;
+		if (choice == sameThemeChoice)
+		{
+			newSettings = SettingsGenerator.newMapWithSameTheme(settingsToKeepThemeFrom);
+		}
+		else
+		{
+			ThemeCatalog.Entry entry = choice.entry != null ? choice.entry : ThemeCatalog.chooseRandomTheme(rand, currentArtPack, settings.customImagesPath);
+			MapSettings theme;
+			try
+			{
+				theme = ThemeCatalog.load(entry);
+			}
+			catch (MapSettings.ThemeFromNewerVersionException e)
+			{
+				SwingHelper.showMessageDialog(this, Translation.get("theme.fromNewerVersion", e.themeVersion, MapSettings.currentVersion), Translation.get("theme.unableToLoad.title"),
+						JOptionPane.ERROR_MESSAGE);
+				return;
+			}
+			catch (Exception e)
+			{
+				SwingHelper.showMessageDialog(this, Translation.get("theme.unableToLoad", e.getMessage()), Translation.get("theme.unableToLoad.title"), JOptionPane.ERROR_MESSAGE);
+				return;
+			}
+			String resolvedArtPack = ThemeCatalog.resolveArtPack(entry, theme, settings.customImagesPath);
+			if (theme.themeGeneration != null && theme.themeGeneration.artPack != null && !Assets.artPackExists(theme.themeGeneration.artPack, settings.customImagesPath))
+			{
+				missingArtPack = theme.themeGeneration.artPack;
+			}
+			String artPack = resolvedArtPack != null ? resolvedArtPack : currentArtPack;
+			newSettings = SettingsGenerator.generateFromTheme(rand, artPack, theme, ThemeCatalog.isFromInstalledArtPack(entry), settings.customImagesPath);
+		}
+
+		// A theme is a look, so the world the user set up is kept.
+		newSettings.customImagesPath = current.customImagesPath;
+		newSettings.randomSeed = current.randomSeed;
+		newSettings.textRandomSeed = current.textRandomSeed;
+		newSettings.worldSize = current.worldSize;
+		newSettings.landShape = current.landShape;
+		newSettings.regionCount = current.regionCount;
+		newSettings.generatedWidth = current.generatedWidth;
+		newSettings.generatedHeight = current.generatedHeight;
+		newSettings.rightRotationCount = current.rightRotationCount;
+		newSettings.flipHorizontally = current.flipHorizontally;
+		newSettings.flipVertically = current.flipVertically;
+		newSettings.books = current.books;
+		settings = newSettings;
+
+		if (missingArtPack != null)
+		{
+			themeWarningLabel.setText(Translation.get("newSettingsDialog.theme.artPackMissing", missingArtPack, settings.artPack));
+		}
+		themeWarningHider.setVisible(missingArtPack != null);
+
+		updater.setEnabled(false);
+		isApplyingTheme = true;
+		try
+		{
+			loadSettingsIntoGUI(settings);
+		}
+		finally
+		{
+			isApplyingTheme = false;
+			updater.setEnabled(true);
+		}
+		handleMapChange();
 	}
 
 	private void randomizeTheme()
 	{
-		SettingsGenerator.randomizeTheme(settings, (String) artPackComboBox.getSelectedItem(), settings.customImagesPath);
+		settings.artPack = (String) artPackComboBox.getSelectedItem();
+		SettingsGenerator.randomizeTheme(settings, new Random());
+		updater.setEnabled(false);
+		isApplyingTheme = true;
+		try
+		{
+			landColoringMethodComboBox.setSelectedItem(settings.drawRegionColors ? LandColoringMethod.ColorPoliticalRegions : LandColoringMethod.SingleColor);
+			cityIconsTypeComboBox.setSelectedItem(settings.cityIconTypeName);
+		}
+		finally
+		{
+			isApplyingTheme = false;
+			updater.setEnabled(true);
+		}
 		handleMapChange();
 	}
 

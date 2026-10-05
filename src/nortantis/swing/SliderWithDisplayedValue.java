@@ -8,12 +8,21 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 public class SliderWithDisplayedValue
 {
 	JSlider slider;
 	JLabel valueDisplay;
+	private final Function<Integer, String> valueFormatter;
+	/**
+	 * True while the slider stands for several values that differ, in which case the value display shows a dash rather than the slider's
+	 * value. Moving the slider clears it.
+	 */
+	private boolean isMixed;
 
 	public SliderWithDisplayedValue(JSlider slider)
 	{
@@ -28,6 +37,7 @@ public class SliderWithDisplayedValue
 	public SliderWithDisplayedValue(JSlider slider, Function<Integer, String> valueFormatter, Runnable changeListener, Integer preferredWidth)
 	{
 		this.slider = slider;
+		this.valueFormatter = valueFormatter;
 
 		valueDisplay = new JLabel(getDisplayValue(valueFormatter));
 		if (preferredWidth != null)
@@ -39,6 +49,7 @@ public class SliderWithDisplayedValue
 			@Override
 			public void stateChanged(ChangeEvent e)
 			{
+				isMixed = false;
 				valueDisplay.setText(getDisplayValue(valueFormatter));
 
 				if (changeListener != null && !slider.getValueIsAdjusting())
@@ -61,8 +72,47 @@ public class SliderWithDisplayedValue
 		}
 	}
 
+	/**
+	 * Sets whether the slider stands for several values that differ. Call this after setting the slider's value, since setting the value
+	 * clears it.
+	 */
+	public void setMixed(boolean isMixed)
+	{
+		this.isMixed = isMixed;
+		valueDisplay.setText(getDisplayValue(valueFormatter));
+	}
+
+	/**
+	 * Shows values that the slider stands for together. When they differ, the slider sits on the most common one, or the first of the most
+	 * common ones, and the value display shows a dash.
+	 */
+	public void showValues(List<Integer> values)
+	{
+		Map<Integer, Integer> counts = new LinkedHashMap<>();
+		for (Integer value : values)
+		{
+			counts.merge(value, 1, Integer::sum);
+		}
+		int mostCommon = values.get(0);
+		int highestCount = 0;
+		for (Map.Entry<Integer, Integer> entry : counts.entrySet())
+		{
+			if (entry.getValue() > highestCount)
+			{
+				mostCommon = entry.getKey();
+				highestCount = entry.getValue();
+			}
+		}
+		slider.setValue(mostCommon);
+		setMixed(counts.size() > 1);
+	}
+
 	private String getDisplayValue(Function<Integer, String> valueFormatter)
 	{
+		if (isMixed)
+		{
+			return "–";
+		}
 		if (valueFormatter == null)
 		{
 			return slider.getValue() + "";

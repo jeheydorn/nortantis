@@ -43,9 +43,11 @@ public class MapSettings implements Serializable
 	 * as "3.2", and is greater than "3.18"). Each new value here must have a numerically greater segment than every version that came
 	 * before it at the same position.
 	 */
-	public static final String currentVersion = "3.24";
+	public static final String currentVersion = "3.25";
 	public static final String fileExtension = "nort";
 	public static final String fileExtensionWithDot = "." + fileExtension;
+	public static final String themeFileExtension = "nortTheme";
+	public static final String themeFileExtensionWithDot = "." + themeFileExtension;
 	public static final double defaultPointPrecision = 2.0;
 	public static final double defaultLloydRelaxationsScale = 0.1;
 	public static final double defaultResolution = 1.0;
@@ -128,6 +130,20 @@ public class MapSettings implements Serializable
 	 */
 	public static final Color defaultIconFillColorBeforeV3_20 = Color.create(155, 105, 49, (int) (255 * 0.7));
 	public static final HSBColor defaultIconFilterColor = new HSBColor(0, 0, 0, 0);
+	/**
+	 * The alpha of the black coast shading new maps without a theme get.
+	 */
+	public static final int defaultCoastShadingAlpha = 44;
+	/*
+	 * The alphas maps saved before version 2.0 are given when their shading colors were fully opaque.
+	 */
+	private static final int shadingAlphaForMapsBeforeV2_0 = 87;
+	private static final int sincWavesAlphaForMapsBeforeV2_0 = 204;
+	/**
+	 * How much maps saved before 3.25 scaled each region's color down to get the color of the coast shading drawn over it, when coloring
+	 * political regions.
+	 */
+	private static final double regionCoastShadingColorScaleBeforeV3_25 = 0.55;
 
 	public String version;
 	public long randomSeed;
@@ -247,7 +263,10 @@ public class MapSettings implements Serializable
 	public int worldSize;
 	public Color riverColor;
 	public Color roadColor;
-	public Color coastShadingColor;
+	/**
+	 * The alpha of the coast shading, which is black.
+	 */
+	public int coastShadingAlpha = defaultCoastShadingAlpha;
 	@Deprecated
 	public Color oceanEffectsColor;
 	public Color oceanWavesColor;
@@ -297,23 +316,18 @@ public class MapSettings implements Serializable
 	public boolean drawText;
 	public long textRandomSeed;
 	public Set<String> books;
-	public Font titleFont;
-	public Font regionFont;
-	public Font mountainRangeFont;
-	public Font otherMountainsFont;
-	public Font citiesFont;
-	public Font riverFont;
-	public Font roadFont;
+	/**
+	 * The style each kind of new text gets: text the generator places, text added with the Text tool, and what a theme carries. Changing
+	 * one doesn't restyle existing text, since every piece of text stores its own style.
+	 */
+	public EnumMap<TextType, TextStyle> textStyleDefaults;
 	/**
 	 * The art pack each font family this map uses came from, keyed by family name, for families that came from one. Recorded so that a map
 	 * opened on a machine without that art pack can say which art pack is missing, rather than only that a font is. Read back as written
 	 * rather than looked up when loading, since the machine opening the map is exactly the one that cannot answer the question.
 	 */
 	public Map<String, String> fontArtPacks;
-	public Color boldBackgroundColor;
-	public Color textColor;
 	public MapEdits edits;
-	public boolean drawBoldBackground;
 	public boolean drawRegionBoundaries;
 	public Stroke regionBoundaryStyle;
 	public Color regionBoundaryColor;
@@ -405,12 +419,22 @@ public class MapSettings implements Serializable
 	 */
 	public SubMapInfo subMapInfo;
 
+	/**
+	 * How new random maps vary this map's theme. Null means the built-in rules, which have no recorded base values.
+	 */
+	public ThemeGenerationSettings themeGeneration;
+	/**
+	 * Where this map's theme was last exported.
+	 */
+	public String themeExportPath;
+
 	public MapSettings()
 	{
 		iconFillColorsByType = new ConcurrentHashMap<>();
 		iconFilterColorsByType = new ConcurrentHashMap<>();
 		maximizeOpacityByType = new ConcurrentHashMap<>();
 		fillWithColorByType = new ConcurrentHashMap<>();
+		textStyleDefaults = new EnumMap<>(TextType.class);
 		edits = new MapEdits();
 	}
 
@@ -424,7 +448,8 @@ public class MapSettings implements Serializable
 	public MapSettings(String filePath)
 	{
 		this();
-		if (FilenameUtils.getExtension(filePath).toLowerCase().equals("nort"))
+		String extension = FilenameUtils.getExtension(filePath).toLowerCase();
+		if (extension.equals(fileExtension) || extension.equals(themeFileExtension.toLowerCase()))
 		{
 			String fileContents = Assets.readFileAsString(filePath);
 			parseFromJson(fileContents);
@@ -556,6 +581,181 @@ public class MapSettings implements Serializable
 		FileHelper.writeToFile(filePath, json);
 	}
 
+	/**
+	 * Writes this map's theme to a .nortTheme file: these settings without edits, and without the settings that only make sense on this
+	 * device, such as file paths.
+	 */
+	public void writeThemeToFile(String filePath) throws IOException
+	{
+		MapSettings theme = deepCopyExceptEdits();
+		theme.edits = new MapEdits();
+		theme.version = currentVersion;
+		theme.customImagesPath = null;
+		theme.imageExportPath = null;
+		theme.heightmapExportPath = null;
+		theme.themeExportPath = null;
+		theme.overlayImagePath = null;
+		theme.drawOverlayImage = false;
+		theme.subMapInfo = null;
+		// A texture file is a path on this device, so the theme uses an art pack texture instead.
+		if (theme.backgroundTextureSource == TextureSource.File)
+		{
+			theme.backgroundTextureSource = TextureSource.Assets;
+			if (theme.backgroundTextureResource == null)
+			{
+				List<NamedResource> textures = Assets.listBackgroundTexturesForArtPack(Assets.installedArtPack, null);
+				theme.backgroundTextureResource = textures.isEmpty() ? null : textures.get(0);
+			}
+		}
+		theme.backgroundTextureImage = null;
+		FileHelper.writeToFile(filePath, theme.toJson(true));
+	}
+
+	/**
+	 * Thrown when a theme file was made by a newer version of Nortantis.
+	 */
+	public static class ThemeFromNewerVersionException extends RuntimeException
+	{
+		public final String themeVersion;
+
+		public ThemeFromNewerVersionException(String themeVersion)
+		{
+			super("The theme was made in a newer version of Nortantis. Its version is " + themeVersion + ", and this version of Nortantis is " + currentVersion + ".");
+			this.themeVersion = themeVersion;
+		}
+	}
+
+	/**
+	 * Reads a .nortTheme file.
+	 *
+	 * @throws ThemeFromNewerVersionException
+	 *             If the theme was made by a newer version of Nortantis.
+	 */
+	public static MapSettings readThemeFile(String filePath)
+	{
+		String fileContents = Assets.readFileAsString(filePath);
+		JSONObject root;
+		try
+		{
+			root = (JSONObject) JSONValue.parseWithException(fileContents);
+		}
+		catch (ParseException e)
+		{
+			throw new RuntimeException(e);
+		}
+		String themeVersion = (String) root.get("version");
+		if (isVersionGreaterThanCurrent(themeVersion))
+		{
+			throw new ThemeFromNewerVersionException(themeVersion);
+		}
+		MapSettings theme = new MapSettings();
+		theme.parseFromJson(fileContents);
+		return theme;
+	}
+
+	/**
+	 * Copies everything describing how the map looks from the given theme: colors, background, border, coastline and ocean effects, region
+	 * colors and boundaries, rivers, roads, icon sizes and colors, the grid overlay's appearance, the styles for new text, and how new maps
+	 * vary the theme. Nothing about the map's land, edits, or files is copied, nor which art pack the Icons tool starts on.
+	 */
+	public void copyThemeFrom(MapSettings source)
+	{
+		landColor = source.landColor;
+		oceanColor = source.oceanColor;
+		regionBaseColor = source.regionBaseColor;
+		riverColor = source.riverColor;
+		roadColor = source.roadColor;
+		coastlineColor = source.coastlineColor;
+		oceanShadingColor = source.oceanShadingColor;
+		oceanWavesColor = source.oceanWavesColor;
+		frayedBorderColor = source.frayedBorderColor;
+		grungeColor = source.grungeColor;
+		regionBoundaryColor = source.regionBoundaryColor;
+		borderColor = source.borderColor;
+		borderColorOption = source.borderColorOption;
+
+		hueRange = source.hueRange;
+		saturationRange = source.saturationRange;
+		brightnessRange = source.brightnessRange;
+		drawRegionColors = source.drawRegionColors;
+		drawRegionBoundaries = source.drawRegionBoundaries;
+		regionBoundaryStyle = source.regionBoundaryStyle;
+
+		drawOceanWaves = source.drawOceanWaves;
+		oceanWavesType = source.oceanWavesType;
+		oceanWavesLevel = source.oceanWavesLevel;
+		drawOceanShading = source.drawOceanShading;
+		oceanShadingLevel = source.oceanShadingLevel;
+		concentricWaveCount = source.concentricWaveCount;
+		fadeConcentricWaves = source.fadeConcentricWaves;
+		jitterToConcentricWaves = source.jitterToConcentricWaves;
+		jitterLevel = source.jitterLevel;
+		brokenLinesForConcentricWaves = source.brokenLinesForConcentricWaves;
+		concentricWaveLineWidth = source.concentricWaveLineWidth;
+		setWavyLineStyle(source.getWavyLineStyle());
+		wavyLineBreakLevel = source.wavyLineBreakLevel;
+		setHatchingStyle(source.getHatchingStyle());
+		hatchingBreakLevel = source.hatchingBreakLevel;
+		fadeHatching = source.fadeHatching;
+		hatchingFadeVariation = source.hatchingFadeVariation;
+		setRippleStyle(source.getRippleStyle());
+		drawOceanEffectsInLakes = source.drawOceanEffectsInLakes;
+
+		drawCoastShading = source.drawCoastShading;
+		coastShadingLevel = source.coastShadingLevel;
+		coastShadingAlpha = source.coastShadingAlpha;
+		coastlineWidth = source.coastlineWidth;
+		lineStyle = source.lineStyle;
+
+		drawBorder = source.drawBorder;
+		borderResource = source.borderResource;
+		borderWidth = source.borderWidth;
+		borderPosition = source.borderPosition;
+		frayedBorder = source.frayedBorder;
+		frayedBorderSize = source.frayedBorderSize;
+		frayedBorderBlurLevel = source.frayedBorderBlurLevel;
+
+		generateBackground = source.generateBackground;
+		generateBackgroundFromTexture = source.generateBackgroundFromTexture;
+		solidColorBackground = source.solidColorBackground;
+		colorizeLand = source.colorizeLand;
+		colorizeOcean = source.colorizeOcean;
+		backgroundTextureSource = source.backgroundTextureSource;
+		backgroundTextureResource = source.backgroundTextureResource;
+		if (source.backgroundTextureSource == TextureSource.File)
+		{
+			backgroundTextureImage = source.backgroundTextureImage;
+		}
+
+		drawGrunge = source.drawGrunge;
+		grungeWidth = source.grungeWidth;
+
+		textStyleDefaults = source.copyTextStyleDefaults();
+
+		drawRoads = source.drawRoads;
+		roadStyle = source.roadStyle;
+
+		cityIconTypeName = source.cityIconTypeName;
+		cityProbability = source.cityProbability;
+		treeHeightScale = source.treeHeightScale;
+		mountainScale = source.mountainScale;
+		hillScale = source.hillScale;
+		duneScale = source.duneScale;
+		cityScale = source.cityScale;
+		iconFillColorsByType = new ConcurrentHashMap<>(source.iconFillColorsByType);
+		iconFilterColorsByType = new ConcurrentHashMap<>(source.iconFilterColorsByType);
+		maximizeOpacityByType = new ConcurrentHashMap<>(source.maximizeOpacityByType);
+		fillWithColorByType = new ConcurrentHashMap<>(source.fillWithColorByType);
+
+		gridOverlayShape = source.gridOverlayShape;
+		gridOverlayColor = source.gridOverlayColor;
+		gridOverlayLineWidth = source.gridOverlayLineWidth;
+		gridOverlayLayer = source.gridOverlayLayer;
+		drawVoronoiGridOverlayOnlyOnLand = source.drawVoronoiGridOverlayOnlyOnLand;
+
+		themeGeneration = source.themeGeneration == null ? null : source.themeGeneration.copy();
+	}
+
 	private String toJson()
 	{
 		return toJson(false);
@@ -624,7 +824,7 @@ public class MapSettings implements Serializable
 		root.put("riverColor", colorToString(riverColor));
 		root.put("roadColor", colorToString(roadColor));
 		root.put("roadStyle", strokeToJson(roadStyle));
-		root.put("coastShadingColor", colorToString(coastShadingColor));
+		root.put("coastShadingAlpha", coastShadingAlpha);
 		root.put("oceanEffectsColor", colorToString(oceanEffectsColor));
 		root.put("oceanWavesColor", colorToString(oceanWavesColor));
 		root.put("oceanShadingColor", colorToString(oceanShadingColor));
@@ -692,17 +892,15 @@ public class MapSettings implements Serializable
 		}
 		root.put("books", booksArray);
 
-		root.put("titleFont", fontToString(titleFont));
-		root.put("regionFont", fontToString(regionFont));
-		root.put("mountainRangeFont", fontToString(mountainRangeFont));
-		root.put("otherMountainsFont", fontToString(otherMountainsFont));
-		root.put("citiesFont", fontToString(citiesFont));
-		root.put("riverFont", fontToString(riverFont));
-		root.put("roadFont", fontToString(roadFont));
+		{
+			JSONObject textStyleDefaultsObj = new JSONObject();
+			for (Map.Entry<TextType, TextStyle> entry : textStyleDefaults.entrySet())
+			{
+				textStyleDefaultsObj.put(entry.getKey().name(), entry.getValue().toJson());
+			}
+			root.put("textStyleDefaults", textStyleDefaultsObj);
+		}
 		root.put("fontArtPacks", toJsonObject(gatherFontArtPacksToStore()));
-		root.put("boldBackgroundColor", colorToString(boldBackgroundColor));
-		root.put("drawBoldBackground", drawBoldBackground);
-		root.put("textColor", colorToString(textColor));
 
 		root.put("drawBorder", drawBorder);
 		if (borderResource != null)
@@ -716,6 +914,11 @@ public class MapSettings implements Serializable
 		root.put("frayedBorderSize", frayedBorderSize);
 		root.put("drawRoads", drawRoads);
 		root.put("imageExportPath", imageExportPath);
+		root.put("themeExportPath", themeExportPath);
+		if (themeGeneration != null)
+		{
+			root.put("themeGeneration", themeGeneration.toJson());
+		}
 		root.put("heightmapExportPath", heightmapExportPath);
 		root.put("heightmapResolution", heightmapResolution);
 		root.put("customImagesPath", customImagesPath);
@@ -854,14 +1057,6 @@ public class MapSettings implements Serializable
 			{
 				mpObj.put("lineBreak", enumToJson(text.lineBreak));
 			}
-			if (text.colorOverride != null)
-			{
-				mpObj.put("colorOverride", colorToString(text.colorOverride));
-			}
-			if (text.boldBackgroundColorOverride != null)
-			{
-				mpObj.put("boldBackgroundColorOverride", colorToString(text.boldBackgroundColorOverride));
-			}
 			if (text.curvature != 0.0)
 			{
 				mpObj.put("curvature", text.curvature);
@@ -870,14 +1065,8 @@ public class MapSettings implements Serializable
 			{
 				mpObj.put("spacing", text.spacing);
 			}
-			if (text.backgroundFade != MapText.defaultBackgroundFade)
-			{
-				mpObj.put("backgroundFade", text.backgroundFade);
-			}
-			if (text.fontOverride != null)
-			{
-				mpObj.put("fontOverride", fontToString(text.fontOverride));
-			}
+			mpObj.put("style", text.style.toJson());
+			mpObj.put("backgroundSeed", text.backgroundSeed);
 			list.add(mpObj);
 		}
 		return list;
@@ -1166,7 +1355,7 @@ public class MapSettings implements Serializable
 		return obj;
 	}
 
-	private String colorToString(Color c)
+	static String colorToString(Color c)
 	{
 		if (c != null)
 		{
@@ -1254,8 +1443,8 @@ public class MapSettings implements Serializable
 	}
 
 	/**
-	 * Creates the road font for maps that don't store one. Only the family and style come from the river font; the size is fixed at
-	 * {@link #defaultRoadFontSize} so that road labels are the same size in upgraded maps as in new ones.
+	 * Creates the road font for maps saved before road labels existed. Only the family and style come from the river font; the size is fixed
+	 * at {@link #defaultRoadFontSize} so that road labels are the same size in every upgraded map.
 	 */
 	private static Font createDefaultRoadFont(Font riverFont)
 	{
@@ -1263,49 +1452,64 @@ public class MapSettings implements Serializable
 	}
 
 	/**
-	 * The kinds of text a map's theme keeps a font for, as opposed to the per-text overrides in edits.
+	 * The style new text of the given kind gets.
 	 */
-	public enum ThemeFontType
+	public TextStyle getDefaultTextStyle(TextType type)
 	{
-		Title, Region, MountainRange, OtherMountains, Cities, River, Road
+		return textStyleDefaults.get(type);
 	}
 
-	public Font getThemeFont(ThemeFontType type)
+	public void setDefaultTextStyle(TextType type, TextStyle style)
 	{
-		return switch (type)
-		{
-			case Title -> titleFont;
-			case Region -> regionFont;
-			case MountainRange -> mountainRangeFont;
-			case OtherMountains -> otherMountainsFont;
-			case Cities -> citiesFont;
-			case River -> riverFont;
-			case Road -> roadFont;
-		};
+		textStyleDefaults.put(type, style);
 	}
 
-	public void setThemeFont(ThemeFontType type, Font font)
+	/**
+	 * A deep copy of {@link #textStyleDefaults}.
+	 */
+	public EnumMap<TextType, TextStyle> copyTextStyleDefaults()
 	{
-		switch (type)
+		EnumMap<TextType, TextStyle> result = new EnumMap<>(TextType.class);
+		for (Map.Entry<TextType, TextStyle> entry : textStyleDefaults.entrySet())
 		{
-		case Title -> titleFont = font;
-		case Region -> regionFont = font;
-		case MountainRange -> mountainRangeFont = font;
-		case OtherMountains -> otherMountainsFont = font;
-		case Cities -> citiesFont = font;
-		case River -> riverFont = font;
-		case Road -> roadFont = font;
+			result.put(entry.getKey(), entry.getValue().copy());
+		}
+		return result;
+	}
+
+	/**
+	 * The font of the style new text of the given kind gets.
+	 */
+	public Font getThemeFont(TextType type)
+	{
+		TextStyle style = textStyleDefaults.get(type);
+		return style == null ? null : style.font;
+	}
+
+	/**
+	 * Sets the font of the style new text of the given kind gets.
+	 */
+	public void setThemeFont(TextType type, Font font)
+	{
+		TextStyle style = textStyleDefaults.get(type);
+		if (style == null)
+		{
+			textStyleDefaults.put(type, new TextStyle(font, Color.black, TextBackground.createDefault()));
+		}
+		else
+		{
+			style.font = font;
 		}
 	}
 
 	/**
-	 * The map's theme fonts, keyed by the kind of text each one draws. Iterate this rather than listing the font fields by hand, so that
-	 * adding a kind of text doesn't require finding every place that enumerates them.
+	 * The fonts of the styles for new text, keyed by the kind of text each one draws. Iterate this rather than listing the kinds by hand, so
+	 * that adding a kind of text doesn't require finding every place that enumerates them.
 	 */
-	public Map<ThemeFontType, Font> getThemeFonts()
+	public Map<TextType, Font> getThemeFonts()
 	{
-		Map<ThemeFontType, Font> result = new LinkedHashMap<>();
-		for (ThemeFontType type : ThemeFontType.values())
+		Map<TextType, Font> result = new LinkedHashMap<>();
+		for (TextType type : TextType.values())
 		{
 			result.put(type, getThemeFont(type));
 		}
@@ -1407,7 +1611,12 @@ public class MapSettings implements Serializable
 		{
 			roadStyle = defaultRoadStyle;
 		}
-		coastShadingColor = parseColor((String) root.get("coastShadingColor"));
+		// Maps saved before 3.25 have a coast shading color instead of an alpha. It is converted once everything it depends on is read.
+		Color legacyCoastShadingColor = root.containsKey("coastShadingAlpha") ? null : parseColor((String) root.get("coastShadingColor"));
+		if (root.containsKey("coastShadingAlpha"))
+		{
+			coastShadingAlpha = (int) (long) root.get("coastShadingAlpha");
+		}
 
 		// oceanWavesColor and oceanShadingColor replaced oceanEffectsColor.
 		if (root.containsKey("oceanWavesColor") && !((String) root.get("oceanWavesColor")).isEmpty())
@@ -1611,19 +1820,50 @@ public class MapSettings implements Serializable
 			books.add(bookName);
 		}
 
-		titleFont = parseFont((String) root.get("titleFont"));
-		regionFont = parseFont((String) root.get("regionFont"));
-		mountainRangeFont = parseFont((String) root.get("mountainRangeFont"));
-		otherMountainsFont = parseFont((String) root.get("otherMountainsFont"));
-		citiesFont = root.containsKey("citiesFont") ? parseFont((String) root.get("citiesFont")) : otherMountainsFont;
-		riverFont = parseFont((String) root.get("riverFont"));
-		roadFont = root.containsKey("roadFont") ? parseFont((String) root.get("roadFont")) : createDefaultRoadFont(riverFont);
+		LegacyTextSettings legacyTextSettings = null;
+		textStyleDefaults = new EnumMap<>(TextType.class);
+		if (root.containsKey("textStyleDefaults"))
+		{
+			JSONObject textStyleDefaultsObj = (JSONObject) root.get("textStyleDefaults");
+			for (Object key : textStyleDefaultsObj.keySet())
+			{
+				textStyleDefaults.put(TextType.valueOf((String) key), TextStyle.fromJson((JSONObject) textStyleDefaultsObj.get(key)));
+			}
+			// Every kind of text needs a style for new text. A file can leave one out when it was saved before that kind had its own style, as
+			// lakes didn't, or was edited by hand. Lakes shared the river style, so the river style fills in.
+			if (!textStyleDefaults.isEmpty())
+			{
+				TextStyle styleForMissingTypes = textStyleDefaults.containsKey(TextType.River) ? textStyleDefaults.get(TextType.River)
+						: textStyleDefaults.values().iterator().next();
+				for (TextType type : TextType.values())
+				{
+					if (!textStyleDefaults.containsKey(type))
+					{
+						textStyleDefaults.put(type, styleForMissingTypes.copy());
+					}
+				}
+			}
+		}
+		else
+		{
+			// Maps saved before 3.25 have one font per kind of text, one text color, and a bold background for region and title text.
+			Map<TextType, Font> fonts = new EnumMap<>(TextType.class);
+			fonts.put(TextType.Title, parseFont((String) root.get("titleFont")));
+			fonts.put(TextType.Region, parseFont((String) root.get("regionFont")));
+			fonts.put(TextType.Mountain_range, parseFont((String) root.get("mountainRangeFont")));
+			fonts.put(TextType.Other_mountains, parseFont((String) root.get("otherMountainsFont")));
+			fonts.put(TextType.City,
+					root.containsKey("citiesFont") ? parseFont((String) root.get("citiesFont")) : fonts.get(TextType.Other_mountains));
+			fonts.put(TextType.River, parseFont((String) root.get("riverFont")));
+			// Lakes shared the river font before they had their own.
+			fonts.put(TextType.Lake, fonts.get(TextType.River));
+			fonts.put(TextType.Road,
+					root.containsKey("roadFont") ? parseFont((String) root.get("roadFont")) : createDefaultRoadFont(fonts.get(TextType.River)));
+			legacyTextSettings = new LegacyTextSettings(parseColor((String) root.get("textColor")), (boolean) root.get("drawBoldBackground"),
+					parseColor((String) root.get("boldBackgroundColor")));
+			setTextStyleDefaultsFromLegacySettings(fonts, legacyTextSettings);
+		}
 		fontArtPacks = parseFontArtPacks((JSONObject) root.get("fontArtPacks"));
-
-		boldBackgroundColor = parseColor((String) root.get("boldBackgroundColor"));
-		drawBoldBackground = (boolean) root.get("drawBoldBackground");
-
-		textColor = parseColor((String) root.get("textColor"));
 
 		drawBorder = (boolean) root.get("drawBorder");
 		if (root.containsKey("borderType"))
@@ -1686,6 +1926,8 @@ public class MapSettings implements Serializable
 		}
 
 		imageExportPath = (String) root.get("imageExportPath");
+		themeExportPath = (String) root.get("themeExportPath");
+		themeGeneration = root.containsKey("themeGeneration") ? ThemeGenerationSettings.fromJson((JSONObject) root.get("themeGeneration")) : null;
 		heightmapExportPath = (String) root.get("heightmapExportPath");
 		if (root.containsKey("heightmapResolution"))
 		{
@@ -1907,17 +2149,25 @@ public class MapSettings implements Serializable
 
 		boolean hasCustomImagesPath = !StringUtils.isEmpty(customImagesPath);
 		JSONObject editsJson = (JSONObject) root.get("edits");
-		edits.text = parseMapTexts(editsJson);
-		edits.freeIcons = parseIconEdits(editsJson, hasCustomImagesPath);
-		edits.centerEdits = parseCenterEdits(editsJson, hasCustomImagesPath);
-		edits.regionEdits = parseRegionEdits(editsJson);
-		edits.edgeEdits = parseEdgeEdits(editsJson);
-		edits.hasIconEdits = (boolean) editsJson.get("hasIconEdits");
-		edits.roads = parseRoads(editsJson);
-		edits.rivers = parseRivers(editsJson);
-		edits.hasInitializedRivers = editsJson.containsKey("hasInitializedRivers") && (boolean) editsJson.get("hasInitializedRivers");
+		// Theme files have no edits.
+		if (editsJson != null)
+		{
+			edits.text = parseMapTexts(editsJson, legacyTextSettings);
+			edits.freeIcons = parseIconEdits(editsJson, hasCustomImagesPath);
+			edits.centerEdits = parseCenterEdits(editsJson, hasCustomImagesPath);
+			edits.regionEdits = parseRegionEdits(editsJson);
+			edits.edgeEdits = parseEdgeEdits(editsJson);
+			edits.hasIconEdits = (boolean) editsJson.get("hasIconEdits");
+			edits.roads = parseRoads(editsJson);
+			edits.rivers = parseRivers(editsJson);
+			edits.hasInitializedRivers = editsJson.containsKey("hasInitializedRivers") && (boolean) editsJson.get("hasInitializedRivers");
+		}
 
 		runConversionForShadingAlphaChange();
+		if (legacyCoastShadingColor != null)
+		{
+			coastShadingAlpha = convertCoastShadingColorToAlpha(legacyCoastShadingColor, landColor, drawRegionBoundaries && drawRegionColors, version);
+		}
 		runConversionForAllowingMultipleCityTypesInOneMap();
 		runConversionToFixDunesGroupId();
 		runConversionOnBackgroundTextureImagePaths();
@@ -2338,23 +2588,108 @@ public class MapSettings implements Serializable
 			return;
 		}
 
-		if (coastShadingColor.getAlpha() == 255)
-		{
-			coastShadingColor = Color.create(coastShadingColor.getRed(), coastShadingColor.getGreen(), coastShadingColor.getBlue(), SettingsGenerator.defaultCoastShadingAlpha);
-		}
-
 		if (oceanShadingColor.getAlpha() == 255)
 		{
-			oceanShadingColor = Color.create(oceanShadingColor.getRed(), oceanShadingColor.getGreen(), oceanShadingColor.getBlue(), SettingsGenerator.defaultOceanShadingAlpha);
+			oceanShadingColor = Color.create(oceanShadingColor.getRed(), oceanShadingColor.getGreen(), oceanShadingColor.getBlue(), shadingAlphaForMapsBeforeV2_0);
 		}
 
 		if (oceanWavesType == OceanWaves.SincWaves && oceanWavesColor.getAlpha() == 255)
 		{
-			oceanWavesColor = Color.create(oceanWavesColor.getRed(), oceanWavesColor.getGreen(), oceanWavesColor.getBlue(), SettingsGenerator.defaultSincWavesAlpha);
+			oceanWavesColor = Color.create(oceanWavesColor.getRed(), oceanWavesColor.getGreen(), oceanWavesColor.getBlue(), sincWavesAlphaForMapsBeforeV2_0);
 		}
 	}
 
-	private CopyOnWriteArrayList<MapText> parseMapTexts(JSONObject editsJson)
+	/**
+	 * The text settings of maps saved before every piece of text stored its own style. In those maps, text with no color of its own uses
+	 * textColor, and region and title text get a bold background when drawBoldBackground is on.
+	 */
+	private record LegacyTextSettings(Color textColor, boolean drawBoldBackground, Color boldBackgroundColor)
+	{
+	}
+
+	/**
+	 * Sets the style for each kind of new text from the settings of a map saved before every piece of text stored its own style.
+	 */
+	private void setTextStyleDefaultsFromLegacySettings(Map<TextType, Font> fonts, LegacyTextSettings legacy)
+	{
+		textStyleDefaults = new EnumMap<>(TextType.class);
+		for (TextType type : TextType.values())
+		{
+			boolean hasBoldBackground = legacy.drawBoldBackground() && (type == TextType.Title || type == TextType.Region);
+			textStyleDefaults.put(type, createLegacyTextStyle(fonts.get(type), legacy.textColor(), hasBoldBackground, legacy.boldBackgroundColor(), TextBackground.defaultFade));
+		}
+	}
+
+	private static TextStyle createLegacyTextStyle(Font font, Color color, boolean hasBoldBackground, Color boldBackgroundColor, double fade)
+	{
+		TextBackground background = TextBackground.createDefault();
+		background.fade = fade;
+		if (boldBackgroundColor != null)
+		{
+			background.boldColor = boldBackgroundColor;
+		}
+		if (hasBoldBackground)
+		{
+			background.effect = TextBackgroundEffect.BoldBackground;
+		}
+		return new TextStyle(font, color, background);
+	}
+
+	/**
+	 * A seed for the hand-drawn wobble of a piece of text in a map that didn't store one, which is the same every time the map is loaded.
+	 */
+	private long createBackgroundSeedForLoadedText(int textIndex)
+	{
+		return Helper.mixSeed(textRandomSeed + textIndex);
+	}
+
+	/**
+	 * Gives a piece of text from a map saved before every piece of text stored its own style the style it was drawn with.
+	 */
+	private TextStyle createStyleForLegacyText(TextType type, Font fontOverride, Color colorOverride, Color boldBackgroundColorOverride, double backgroundFade,
+			LegacyTextSettings legacy)
+	{
+		Font font = fontOverride != null ? fontOverride : getThemeFont(type);
+		Color color = colorOverride != null ? colorOverride : legacy.textColor();
+		boolean hasBoldBackground = legacy.drawBoldBackground() && (type == TextType.Title || type == TextType.Region);
+		Color boldColor = boldBackgroundColorOverride != null ? boldBackgroundColorOverride : legacy.boldBackgroundColor();
+		return createLegacyTextStyle(font, color, hasBoldBackground, boldColor, backgroundFade);
+	}
+
+	/**
+	 * Gives the alpha of black coast shading that looks like the colored coast shading of a map saved before 3.25. That shading blended
+	 * toward a darkened copy of the color under it, which black at a lower alpha matches wherever the pixel under it is that color: the
+	 * alpha is scaled by one minus how much the color was darkened. With region colors, each region's color was scaled by a fixed amount.
+	 * Otherwise the shading color was chosen on its own, so how much it darkens the land color is measured from the two colors.
+	 */
+	static int convertCoastShadingColorToAlpha(Color coastShadingColor, Color landColor, boolean usedRegionColors, String version)
+	{
+		if (coastShadingColor == null)
+		{
+			return defaultCoastShadingAlpha;
+		}
+
+		int alpha = coastShadingColor.getAlpha();
+		if (!isVersionGreaterThanOrEqualTo(version, "2.0") && alpha == 255)
+		{
+			alpha = shadingAlphaForMapsBeforeV2_0;
+		}
+
+		double colorScale;
+		if (usedRegionColors)
+		{
+			colorScale = regionCoastShadingColorScaleBeforeV3_25;
+		}
+		else
+		{
+			int landSum = landColor == null ? 0 : landColor.getRed() + landColor.getGreen() + landColor.getBlue();
+			int shadingSum = coastShadingColor.getRed() + coastShadingColor.getGreen() + coastShadingColor.getBlue();
+			colorScale = landSum == 0 ? 0 : Math.max(0, Math.min(1, shadingSum / (double) landSum));
+		}
+		return (int) Math.round(alpha * (1 - colorScale));
+	}
+
+	private CopyOnWriteArrayList<MapText> parseMapTexts(JSONObject editsJson, LegacyTextSettings legacyTextSettings)
 	{
 		if (editsJson == null)
 		{
@@ -2371,13 +2706,24 @@ public class MapSettings implements Serializable
 			double angle = jsonObj.containsKey("angle") ? (Double) jsonObj.get("angle") : 0.0;
 			TextType type = Enum.valueOf(TextType.class, ((String) jsonObj.get("type")).replace(" ", "_"));
 			LineBreak lineBreak = jsonObj.containsKey("lineBreak") ? Enum.valueOf(LineBreak.class, ((String) jsonObj.get("lineBreak")).replace(" ", "_")) : LineBreak.Auto;
-			Color colorOverride = jsonObj.containsKey("colorOverride") ? parseColor((String) jsonObj.get("colorOverride")) : null;
-			Color boldBackgroundColorOverride = jsonObj.containsKey("boldBackgroundColorOverride") ? parseColor((String) jsonObj.get("boldBackgroundColorOverride")) : null;
 			double curvature = jsonObj.containsKey("curvature") ? (Double) jsonObj.get("curvature") : 0.0;
 			int spacing = jsonObj.containsKey("spacing") ? (int) (long) jsonObj.get("spacing") : 0;
-			Font fontOverride = jsonObj.containsKey("fontOverride") ? parseFont((String) jsonObj.get("fontOverride")) : null;
-			double backgroundFade = jsonObj.containsKey("backgroundFade") ? (Double) jsonObj.get("backgroundFade") : MapText.defaultBackgroundFade;
-			MapText mp = new MapText(text, location, angle, type, lineBreak, colorOverride, boldBackgroundColorOverride, curvature, spacing, fontOverride, backgroundFade);
+			TextStyle style;
+			if (jsonObj.containsKey("style"))
+			{
+				style = TextStyle.fromJson((JSONObject) jsonObj.get("style"));
+			}
+			else
+			{
+				Color colorOverride = jsonObj.containsKey("colorOverride") ? parseColor((String) jsonObj.get("colorOverride")) : null;
+				Color boldBackgroundColorOverride = jsonObj.containsKey("boldBackgroundColorOverride") ? parseColor((String) jsonObj.get("boldBackgroundColorOverride"))
+						: null;
+				Font fontOverride = jsonObj.containsKey("fontOverride") ? parseFont((String) jsonObj.get("fontOverride")) : null;
+				double backgroundFade = jsonObj.containsKey("backgroundFade") ? (Double) jsonObj.get("backgroundFade") : TextBackground.defaultFade;
+				style = createStyleForLegacyText(type, fontOverride, colorOverride, boldBackgroundColorOverride, backgroundFade, legacyTextSettings);
+			}
+			long backgroundSeed = jsonObj.containsKey("backgroundSeed") ? (long) jsonObj.get("backgroundSeed") : createBackgroundSeedForLoadedText(result.size());
+			MapText mp = new MapText(text, location, angle, type, lineBreak, curvature, spacing, style, backgroundSeed);
 			result.add(mp);
 		}
 
@@ -2721,7 +3067,7 @@ public class MapSettings implements Serializable
 		return result;
 	}
 
-	private static Color parseColor(String str)
+	static Color parseColor(String str)
 	{
 		if (str == null || str.isEmpty())
 		{
@@ -2788,7 +3134,7 @@ public class MapSettings implements Serializable
 		riverColor = old.riverColor;
 		roadColor = defaultRoadColor;
 		roadStyle = defaultRoadStyle;
-		coastShadingColor = old.coastShadingColor;
+		coastShadingAlpha = convertCoastShadingColorToAlpha(old.coastShadingColor, old.landColor, old.drawRegionColors, "0.0");
 		coastShadingLevel = old.coastShadingLevel;
 		oceanEffectsColor = old.oceanEffectsColor;
 		coastlineColor = old.coastlineColor;
@@ -2818,16 +3164,26 @@ public class MapSettings implements Serializable
 		drawText = old.drawText;
 		textRandomSeed = old.textRandomSeed;
 		books = old.books;
-		titleFont = old.titleFont;
-		regionFont = old.regionFont;
-		mountainRangeFont = old.mountainRangeFont;
-		otherMountainsFont = old.otherMountainsFont;
-		citiesFont = old.otherMountainsFont;
-		riverFont = old.riverFont;
-		roadFont = createDefaultRoadFont(riverFont);
-		boldBackgroundColor = old.boldBackgroundColor;
-		textColor = old.textColor;
-		drawBoldBackground = old.drawBoldBackground;
+		{
+			Map<TextType, Font> fonts = new EnumMap<>(TextType.class);
+			fonts.put(TextType.Title, old.titleFont);
+			fonts.put(TextType.Region, old.regionFont);
+			fonts.put(TextType.Mountain_range, old.mountainRangeFont);
+			fonts.put(TextType.Other_mountains, old.otherMountainsFont);
+			fonts.put(TextType.City, old.otherMountainsFont);
+			fonts.put(TextType.River, old.riverFont);
+			fonts.put(TextType.Lake, old.riverFont);
+			fonts.put(TextType.Road, createDefaultRoadFont(old.riverFont));
+			LegacyTextSettings legacy = new LegacyTextSettings(old.textColor, old.drawBoldBackground, old.boldBackgroundColor);
+			setTextStyleDefaultsFromLegacySettings(fonts, legacy);
+			for (MapText text : old.edits.text)
+			{
+				if (text.style == null)
+				{
+					text.style = createStyleForLegacyText(text.type, null, null, null, TextBackground.defaultFade, legacy);
+				}
+			}
+		}
 		drawRegionColors = old.drawRegionColors;
 		drawRegionBoundaries = old.drawRegionColors;
 		regionBoundaryStyle = parseRegionBoundaryStyle(null);
@@ -2907,7 +3263,7 @@ public class MapSettings implements Serializable
 		return false;
 	}
 
-	private boolean isVersionGreaterThanOrEqualTo(String version1, String version2)
+	private static boolean isVersionGreaterThanOrEqualTo(String version1, String version2)
 	{
 		if (Objects.equals(version1, version2))
 		{
@@ -3154,24 +3510,6 @@ public class MapSettings implements Serializable
 			// File
 			return new Tuple2<>(Paths.get(FileHelper.replaceHomeFolderPlaceholder(backgroundTextureImage)), null);
 		}
-	}
-
-	/**
-	 * The theme font a piece of text is drawn with when it has no font override of its own.
-	 */
-	public static ThemeFontType getThemeFontTypeForText(TextType type)
-	{
-		return switch (type)
-		{
-			case Title -> ThemeFontType.Title;
-			case Region -> ThemeFontType.Region;
-			case Mountain_range -> ThemeFontType.MountainRange;
-			case Other_mountains -> ThemeFontType.OtherMountains;
-			case City -> ThemeFontType.Cities;
-			// Lakes don't have their own font.
-			case Lake, River -> ThemeFontType.River;
-			case Road -> ThemeFontType.Road;
-		};
 	}
 
 	/**
@@ -3700,8 +4038,6 @@ public class MapSettings implements Serializable
 			differences.add("backgroundTextureResource: " + backgroundTextureResource + " vs " + other.backgroundTextureResource);
 		if (backgroundTextureSource != other.backgroundTextureSource)
 			differences.add("backgroundTextureSource: " + backgroundTextureSource + " vs " + other.backgroundTextureSource);
-		if (!Objects.equals(boldBackgroundColor, other.boldBackgroundColor))
-			differences.add("boldBackgroundColor: " + boldBackgroundColor + " vs " + other.boldBackgroundColor);
 		if (!Objects.equals(books, other.books))
 			differences.add("books: " + books + " vs " + other.books);
 		if (!Objects.equals(borderColor, other.borderColor))
@@ -3720,16 +4056,14 @@ public class MapSettings implements Serializable
 			differences.add("brightnessRange: " + brightnessRange + " vs " + other.brightnessRange);
 		if (brokenLinesForConcentricWaves != other.brokenLinesForConcentricWaves)
 			differences.add("brokenLinesForConcentricWaves: " + brokenLinesForConcentricWaves + " vs " + other.brokenLinesForConcentricWaves);
-		if (!Objects.equals(citiesFont, other.citiesFont))
-			differences.add("citiesFont: " + citiesFont + " vs " + other.citiesFont);
 		if (!Objects.equals(cityIconTypeName, other.cityIconTypeName))
 			differences.add("cityIconTypeName: " + cityIconTypeName + " vs " + other.cityIconTypeName);
 		if (Double.doubleToLongBits(cityProbability) != Double.doubleToLongBits(other.cityProbability))
 			differences.add("cityProbability: " + cityProbability + " vs " + other.cityProbability);
 		if (Double.doubleToLongBits(cityScale) != Double.doubleToLongBits(other.cityScale))
 			differences.add("cityScale: " + cityScale + " vs " + other.cityScale);
-		if (!Objects.equals(coastShadingColor, other.coastShadingColor))
-			differences.add("coastShadingColor: " + coastShadingColor + " vs " + other.coastShadingColor);
+		if (coastShadingAlpha != other.coastShadingAlpha)
+			differences.add("coastShadingAlpha: " + coastShadingAlpha + " vs " + other.coastShadingAlpha);
 		if (coastShadingLevel != other.coastShadingLevel)
 			differences.add("coastShadingLevel: " + coastShadingLevel + " vs " + other.coastShadingLevel);
 		if (drawCoastShading != other.drawCoastShading)
@@ -3766,8 +4100,6 @@ public class MapSettings implements Serializable
 			differences.add("defaultRoadWidth: " + defaultRoadWidth + " vs " + other.defaultRoadWidth);
 		if (Double.doubleToLongBits(defaultTreeHeightScaleForOldMaps) != Double.doubleToLongBits(other.defaultTreeHeightScaleForOldMaps))
 			differences.add("defaultTreeHeightScaleForOldMaps: " + defaultTreeHeightScaleForOldMaps + " vs " + other.defaultTreeHeightScaleForOldMaps);
-		if (drawBoldBackground != other.drawBoldBackground)
-			differences.add("drawBoldBackground: " + drawBoldBackground + " vs " + other.drawBoldBackground);
 		if (drawBorder != other.drawBorder)
 			differences.add("drawBorder: " + drawBorder + " vs " + other.drawBorder);
 		if (drawGridOverlay != other.drawGridOverlay)
@@ -3924,8 +4256,6 @@ public class MapSettings implements Serializable
 			differences.add("lloydRelaxationsScale: " + lloydRelaxationsScale + " vs " + other.lloydRelaxationsScale);
 		if (!Objects.equals(maximizeOpacityByType, other.maximizeOpacityByType))
 			differences.add("maximizeOpacityByType: " + maximizeOpacityByType + " vs " + other.maximizeOpacityByType);
-		if (!Objects.equals(mountainRangeFont, other.mountainRangeFont))
-			differences.add("mountainRangeFont: " + mountainRangeFont + " vs " + other.mountainRangeFont);
 		if (Double.doubleToLongBits(mountainScale) != Double.doubleToLongBits(other.mountainScale))
 			differences.add("mountainScale: " + mountainScale + " vs " + other.mountainScale);
 		if (!Objects.equals(oceanColor, other.oceanColor))
@@ -3956,8 +4286,6 @@ public class MapSettings implements Serializable
 			differences.add("wavyLineLength: " + wavyLineLength + " vs " + other.wavyLineLength);
 		if (wavyLineLengthVariation != other.wavyLineLengthVariation)
 			differences.add("wavyLineLengthVariation: " + wavyLineLengthVariation + " vs " + other.wavyLineLengthVariation);
-		if (!Objects.equals(otherMountainsFont, other.otherMountainsFont))
-			differences.add("otherMountainsFont: " + otherMountainsFont + " vs " + other.otherMountainsFont);
 		if (Double.doubleToLongBits(overlayImageDefaultScale) != Double.doubleToLongBits(other.overlayImageDefaultScale))
 			differences.add("overlayImageDefaultScale: " + overlayImageDefaultScale + " vs " + other.overlayImageDefaultScale);
 		if (overlayImageDefaultTransparency != other.overlayImageDefaultTransparency)
@@ -3982,8 +4310,6 @@ public class MapSettings implements Serializable
 			differences.add("regionBoundaryStyle: " + regionBoundaryStyle + " vs " + other.regionBoundaryStyle);
 		if (regionCount != other.regionCount)
 			differences.add("regionCount: " + regionCount + " vs " + other.regionCount);
-		if (!Objects.equals(regionFont, other.regionFont))
-			differences.add("regionFont: " + regionFont + " vs " + other.regionFont);
 		if (regionsRandomSeed != other.regionsRandomSeed)
 			differences.add("regionsRandomSeed: " + regionsRandomSeed + " vs " + other.regionsRandomSeed);
 		if (Double.doubleToLongBits(resolution) != Double.doubleToLongBits(other.resolution))
@@ -3992,10 +4318,6 @@ public class MapSettings implements Serializable
 			differences.add("rightRotationCount: " + rightRotationCount + " vs " + other.rightRotationCount);
 		if (!Objects.equals(riverColor, other.riverColor))
 			differences.add("riverColor: " + riverColor + " vs " + other.riverColor);
-		if (!Objects.equals(riverFont, other.riverFont))
-			differences.add("riverFont: " + riverFont + " vs " + other.riverFont);
-		if (!Objects.equals(roadFont, other.roadFont))
-			differences.add("roadFont: " + roadFont + " vs " + other.roadFont);
 		if (!Objects.equals(fontArtPacks, other.fontArtPacks))
 			differences.add("fontArtPacks: " + fontArtPacks + " vs " + other.fontArtPacks);
 		if (!Objects.equals(roadColor, other.roadColor))
@@ -4006,12 +4328,14 @@ public class MapSettings implements Serializable
 			differences.add("saturationRange: " + saturationRange + " vs " + other.saturationRange);
 		if (solidColorBackground != other.solidColorBackground)
 			differences.add("solidColorBackground: " + solidColorBackground + " vs " + other.solidColorBackground);
-		if (!Objects.equals(textColor, other.textColor))
-			differences.add("textColor: " + textColor + " vs " + other.textColor);
+		if (!Objects.equals(textStyleDefaults, other.textStyleDefaults))
+			differences.add("textStyleDefaults: " + textStyleDefaults + " vs " + other.textStyleDefaults);
+		if (!Objects.equals(themeGeneration, other.themeGeneration))
+			differences.add("themeGeneration: " + themeGeneration + " vs " + other.themeGeneration);
+		if (!Objects.equals(themeExportPath, other.themeExportPath))
+			differences.add("themeExportPath: " + themeExportPath + " vs " + other.themeExportPath);
 		if (textRandomSeed != other.textRandomSeed)
 			differences.add("textRandomSeed: " + textRandomSeed + " vs " + other.textRandomSeed);
-		if (!Objects.equals(titleFont, other.titleFont))
-			differences.add("titleFont: " + titleFont + " vs " + other.titleFont);
 		if (Double.doubleToLongBits(treeHeightScale) != Double.doubleToLongBits(other.treeHeightScale))
 			differences.add("treeHeightScale: " + treeHeightScale + " vs " + other.treeHeightScale);
 		if (!Objects.equals(version, other.version))
@@ -4035,10 +4359,10 @@ public class MapSettings implements Serializable
 	@Override
 	public int hashCode()
 	{
-		return Objects.hash(artPack, backgroundRandomSeed, backgroundTextureImage, backgroundTextureResource, backgroundTextureSource, boldBackgroundColor, books, borderColor, borderColorOption,
-				borderPosition, borderResource, borderType, borderWidth, brightnessRange, brokenLinesForConcentricWaves, citiesFont, cityIconTypeName, cityProbability,
-				cityScale, coastShadingColor, coastShadingLevel, drawCoastShading, drawOceanShading, drawOceanWaves, grungeColor, coastlineColor, coastlineWidth, colorizeLand, colorizeOcean, concentricWaveCount, customImagesPath, defaultDefaultExportAction,
-				defaultHeightmapExportAction, defaultMapExportAction, defaultRoadColor, defaultRoadStyle, defaultRoadWidth, defaultTreeHeightScaleForOldMaps, drawBoldBackground, drawBorder,
+		return Objects.hash(artPack, backgroundRandomSeed, backgroundTextureImage, backgroundTextureResource, backgroundTextureSource, books, borderColor, borderColorOption,
+				borderPosition, borderResource, borderType, borderWidth, brightnessRange, brokenLinesForConcentricWaves, cityIconTypeName, cityProbability,
+				cityScale, coastShadingAlpha, coastShadingLevel, drawCoastShading, drawOceanShading, drawOceanWaves, grungeColor, coastlineColor, coastlineWidth, colorizeLand, colorizeOcean, concentricWaveCount, customImagesPath, defaultDefaultExportAction,
+				defaultHeightmapExportAction, defaultMapExportAction, defaultRoadColor, defaultRoadStyle, defaultRoadWidth, defaultTreeHeightScaleForOldMaps, drawBorder,
 				drawGridOverlay, drawGrunge, drawOceanEffectsInLakes, drawOverlayImage, drawRegionBoundaries, drawRegionColors, drawRoads, drawText, drawVoronoiGridOverlayOnlyOnLand, duneScale,
 				edits, fadeConcentricWaves, fillWithColorByType, flipHorizontally, flipVertically, frayedBorder, frayedBorderBlurLevel, frayedBorderColor, frayedBorderSeed,
 				frayedBorderSize, generateBackground, generateBackgroundFromTexture, generatedHeight, generatedWidth, gridOverlayColor, gridOverlayLayer, gridOverlayLineWidth,
@@ -4048,11 +4372,11 @@ public class MapSettings implements Serializable
 				rippleRowSpacingVariation, rippleLength, rippleLengthVariation, jitterToRipples, rippleJitterLevel, rippleShoreDetail,
 				rippleShoreJitterLevel, rippleLineWidth, hatchingRowHeight, hatchingRowGap, hatchingRowSpacingVariation, hatchingLength,
 				hatchingLengthVariation, jitterToHatching, hatchingJitterLevel, hatchingShoreDetail, hatchingShoreJitterLevel, hatchingLineWidth, hatchingBreakLevel,
-				fadeHatching, hatchingFadeVariation, landColor, landShape, lineStyle, lloydRelaxationsScale, maximizeOpacityByType, mountainRangeFont, mountainScale,
-				oceanColor, oceanEffectsColor, oceanEffectsLevel, oceanShadingColor, oceanShadingLevel, oceanWavesColor, oceanWavesLevel, oceanWavesType, otherMountainsFont, overlayImageDefaultScale,
+				fadeHatching, hatchingFadeVariation, landColor, landShape, lineStyle, lloydRelaxationsScale, maximizeOpacityByType, mountainScale,
+				oceanColor, oceanEffectsColor, oceanEffectsLevel, oceanShadingColor, oceanShadingLevel, oceanWavesColor, oceanWavesLevel, oceanWavesType, overlayImageDefaultScale,
 				overlayImageDefaultTransparency, overlayImagePath, overlayImageTransparency, overlayOffsetResolutionInvariant, overlayScale, pointPrecision, randomSeed, regionBaseColor,
-				regionBoundaryColor, regionBoundaryStyle, regionCount, regionFont, regionsRandomSeed, resolution, rightRotationCount, riverColor, riverFont, roadColor, roadFont, roadStyle, saturationRange,
-				solidColorBackground, textColor, textRandomSeed, titleFont, treeHeightScale, version, wavyLineLength, wavyLineLengthVariation, wavyLineRowHeight,
+				regionBoundaryColor, regionBoundaryStyle, regionCount, regionsRandomSeed, resolution, rightRotationCount, riverColor, roadColor, roadStyle, saturationRange,
+				solidColorBackground, textStyleDefaults, themeGeneration, themeExportPath, textRandomSeed, treeHeightScale, version, wavyLineLength, wavyLineLengthVariation, wavyLineRowHeight,
 				wavyLineRowGap, wavyLineRowSpacingVariation, wavyLineShape, worldSize, fontArtPacks);
 	}
 
@@ -4074,13 +4398,12 @@ public class MapSettings implements Serializable
 		MapSettings other = (MapSettings) obj;
 		return Objects.equals(artPack, other.artPack) && backgroundRandomSeed == other.backgroundRandomSeed && Objects.equals(backgroundTextureImage, other.backgroundTextureImage)
 				&& Objects.equals(backgroundTextureResource, other.backgroundTextureResource) && backgroundTextureSource == other.backgroundTextureSource
-				&& Objects.equals(boldBackgroundColor, other.boldBackgroundColor) && Objects.equals(books, other.books) && Objects.equals(borderColor, other.borderColor)
+				&& Objects.equals(books, other.books) && Objects.equals(borderColor, other.borderColor)
 				&& borderColorOption == other.borderColorOption && borderPosition == other.borderPosition && Objects.equals(borderResource, other.borderResource)
 				&& Objects.equals(borderType, other.borderType) && borderWidth == other.borderWidth && brightnessRange == other.brightnessRange
 				&& brokenLinesForConcentricWaves == other.brokenLinesForConcentricWaves
-				&& Objects.equals(citiesFont, other.citiesFont)
 				&& Objects.equals(cityIconTypeName, other.cityIconTypeName) && Double.doubleToLongBits(cityProbability) == Double.doubleToLongBits(other.cityProbability)
-				&& Double.doubleToLongBits(cityScale) == Double.doubleToLongBits(other.cityScale) && Objects.equals(coastShadingColor, other.coastShadingColor)
+				&& Double.doubleToLongBits(cityScale) == Double.doubleToLongBits(other.cityScale) && coastShadingAlpha == other.coastShadingAlpha
 				&& coastShadingLevel == other.coastShadingLevel && drawCoastShading == other.drawCoastShading && drawOceanShading == other.drawOceanShading
 				&& drawOceanWaves == other.drawOceanWaves && Objects.equals(grungeColor, other.grungeColor) && Objects.equals(coastlineColor, other.coastlineColor)
 				&& Double.doubleToLongBits(coastlineWidth) == Double.doubleToLongBits(other.coastlineWidth) && colorizeLand == other.colorizeLand && colorizeOcean == other.colorizeOcean
@@ -4088,7 +4411,7 @@ public class MapSettings implements Serializable
 				&& defaultHeightmapExportAction == other.defaultHeightmapExportAction && defaultMapExportAction == other.defaultMapExportAction
 				&& Objects.equals(defaultRoadColor, other.defaultRoadColor) && Objects.equals(defaultRoadStyle, other.defaultRoadStyle)
 				&& Double.doubleToLongBits(defaultRoadWidth) == Double.doubleToLongBits(other.defaultRoadWidth)
-				&& Double.doubleToLongBits(defaultTreeHeightScaleForOldMaps) == Double.doubleToLongBits(other.defaultTreeHeightScaleForOldMaps) && drawBoldBackground == other.drawBoldBackground
+				&& Double.doubleToLongBits(defaultTreeHeightScaleForOldMaps) == Double.doubleToLongBits(other.defaultTreeHeightScaleForOldMaps)
 				&& drawBorder == other.drawBorder && drawGridOverlay == other.drawGridOverlay && drawGrunge == other.drawGrunge && drawOceanEffectsInLakes == other.drawOceanEffectsInLakes
 				&& drawOverlayImage == other.drawOverlayImage && drawRegionBoundaries == other.drawRegionBoundaries && drawRegionColors == other.drawRegionColors && drawRoads == other.drawRoads
 				&& drawText == other.drawText && drawVoronoiGridOverlayOnlyOnLand == other.drawVoronoiGridOverlayOnlyOnLand
@@ -4121,24 +4444,25 @@ public class MapSettings implements Serializable
 				&& Double.doubleToLongBits(hatchingLineWidth) == Double.doubleToLongBits(other.hatchingLineWidth) && hatchingBreakLevel == other.hatchingBreakLevel
 				&& fadeHatching == other.fadeHatching && hatchingFadeVariation == other.hatchingFadeVariation && Objects.equals(landColor, other.landColor) && landShape == other.landShape && lineStyle == other.lineStyle
 				&& Double.doubleToLongBits(lloydRelaxationsScale) == Double.doubleToLongBits(other.lloydRelaxationsScale) && Objects.equals(maximizeOpacityByType, other.maximizeOpacityByType)
-				&& Objects.equals(mountainRangeFont, other.mountainRangeFont) && Double.doubleToLongBits(mountainScale) == Double.doubleToLongBits(other.mountainScale)
+				&& Double.doubleToLongBits(mountainScale) == Double.doubleToLongBits(other.mountainScale)
 				&& Objects.equals(oceanColor, other.oceanColor) && Objects.equals(oceanEffectsColor, other.oceanEffectsColor) && oceanEffectsLevel == other.oceanEffectsLevel
 				&& Objects.equals(oceanShadingColor, other.oceanShadingColor) && oceanShadingLevel == other.oceanShadingLevel && Objects.equals(oceanWavesColor, other.oceanWavesColor)
 				&& oceanWavesLevel == other.oceanWavesLevel && oceanWavesType == other.oceanWavesType && wavyLineShape == other.wavyLineShape && wavyLineRowHeight == other.wavyLineRowHeight && wavyLineRowGap == other.wavyLineRowGap
 				&& wavyLineRowSpacingVariation == other.wavyLineRowSpacingVariation
-				&& wavyLineLength == other.wavyLineLength && wavyLineLengthVariation == other.wavyLineLengthVariation && Objects.equals(otherMountainsFont, other.otherMountainsFont)
+				&& wavyLineLength == other.wavyLineLength && wavyLineLengthVariation == other.wavyLineLengthVariation
 				&& Double.doubleToLongBits(overlayImageDefaultScale) == Double.doubleToLongBits(other.overlayImageDefaultScale)
 				&& overlayImageDefaultTransparency == other.overlayImageDefaultTransparency && Objects.equals(overlayImagePath, other.overlayImagePath)
 				&& overlayImageTransparency == other.overlayImageTransparency && Objects.equals(overlayOffsetResolutionInvariant, other.overlayOffsetResolutionInvariant)
 				&& Double.doubleToLongBits(overlayScale) == Double.doubleToLongBits(other.overlayScale) && Double.doubleToLongBits(pointPrecision) == Double.doubleToLongBits(other.pointPrecision)
 				&& randomSeed == other.randomSeed && Objects.equals(regionBaseColor, other.regionBaseColor) && Objects.equals(regionBoundaryColor, other.regionBoundaryColor)
-				&& Objects.equals(regionBoundaryStyle, other.regionBoundaryStyle) && regionCount == other.regionCount && Objects.equals(regionFont, other.regionFont)
+				&& Objects.equals(regionBoundaryStyle, other.regionBoundaryStyle) && regionCount == other.regionCount
 				&& regionsRandomSeed == other.regionsRandomSeed && Double.doubleToLongBits(resolution) == Double.doubleToLongBits(other.resolution) && rightRotationCount == other.rightRotationCount
-				&& Objects.equals(riverColor, other.riverColor) && Objects.equals(riverFont, other.riverFont) && Objects.equals(roadColor, other.roadColor)
-				&& Objects.equals(roadFont, other.roadFont) && Objects.equals(roadStyle, other.roadStyle) && Objects.equals(fontArtPacks, other.fontArtPacks)
+				&& Objects.equals(riverColor, other.riverColor) && Objects.equals(roadColor, other.roadColor)
+				&& Objects.equals(roadStyle, other.roadStyle) && Objects.equals(fontArtPacks, other.fontArtPacks)
 				&& saturationRange == other.saturationRange
 				&& solidColorBackground == other.solidColorBackground
-				&& Objects.equals(textColor, other.textColor) && textRandomSeed == other.textRandomSeed && Objects.equals(titleFont, other.titleFont)
+				&& Objects.equals(textStyleDefaults, other.textStyleDefaults) && Objects.equals(themeGeneration, other.themeGeneration)
+				&& Objects.equals(themeExportPath, other.themeExportPath) && textRandomSeed == other.textRandomSeed
 				&& Double.doubleToLongBits(treeHeightScale) == Double.doubleToLongBits(other.treeHeightScale) && Objects.equals(version, other.version) && worldSize == other.worldSize;
 	}
 

@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 
 public class MapCreator implements WarningLogger
 {
-	private final double regionBlurColorScale = 0.55;
 	/**
 	 * Controls how dark coastlines can get, for both the land and water. Higher values are lighter.
 	 */
@@ -864,7 +863,7 @@ public class MapCreator implements WarningLogger
 			Image landColoredBeforeAddingIconColors = null;
 			Image landBackground = null;
 			{
-				Tuple2<Image, Image> tuple = darkenLandNearCoastlinesAndRegionBorders(settings, mapParts.graph, settings.resolution, landTextureSnippet, mapParts.background, coastShading,
+				Tuple2<Image, Image> tuple = darkenLandNearCoastlinesAndRegionBorders(settings, mapParts.graph, settings.resolution, landTextureSnippet, coastShading,
 						centersToDraw, drawBounds, false);
 				Image landBackgroundWithLandInOcean = tuple.getFirst();
 				coastShading = tuple.getSecond();
@@ -877,7 +876,7 @@ public class MapCreator implements WarningLogger
 				if (settings.drawRegionColors)
 				{
 					landColoredBeforeAddingIconColors = mapParts.background.landColoredBeforeAddingIconColors.copySubImage(drawBounds.toIntRectangle());
-					landBackground = darkenLandNearCoastlinesAndRegionBorders(settings, mapParts.graph, settings.resolution, landColoredBeforeAddingIconColors, mapParts.background, coastShading,
+					landBackground = darkenLandNearCoastlinesAndRegionBorders(settings, mapParts.graph, settings.resolution, landColoredBeforeAddingIconColors, coastShading,
 							centersToDraw, drawBounds, false).getFirst();
 				}
 				else
@@ -1860,7 +1859,7 @@ public class MapCreator implements WarningLogger
 		Image landBackground = null;
 		Image map;
 		{
-			Tuple2<Image, Image> tuple = darkenLandNearCoastlinesAndRegionBorders(settings, graph, settings.resolution, background.land, background, null, null, null, true);
+			Tuple2<Image, Image> tuple = darkenLandNearCoastlinesAndRegionBorders(settings, graph, settings.resolution, background.land, null, null, null, true);
 			Image landBackgroundWithLandAndOcean = tuple.getFirst();
 			coastShading = tuple.getSecond();
 			if (mapParts != null)
@@ -1873,7 +1872,7 @@ public class MapCreator implements WarningLogger
 
 			if (settings.drawRegionColors)
 			{
-				landBackground = darkenLandNearCoastlinesAndRegionBorders(settings, graph, settings.resolution, background.landColoredBeforeAddingIconColors, background, coastShading, null, null,
+				landBackground = darkenLandNearCoastlinesAndRegionBorders(settings, graph, settings.resolution, background.landColoredBeforeAddingIconColors, coastShading, null, null,
 						true).getFirst();
 			}
 			else
@@ -2026,7 +2025,7 @@ public class MapCreator implements WarningLogger
 		iconDrawer.drawNondecorationContentMasksOntoLandMask(landMask, iconsThatDrew, drawBounds);
 
 		Image textBackground = ImageHelper.getInstance().maskWithColor(landTexture, Color.black, landMask, false);
-		textBackground = darkenLandNearCoastlinesAndRegionBorders(settings, graph, settings.resolution, textBackground, background, coastShading, centersToDraw, drawBounds, false).getFirst();
+		textBackground = darkenLandNearCoastlinesAndRegionBorders(settings, graph, settings.resolution, textBackground, coastShading, centersToDraw, drawBounds, false).getFirst();
 		textBackground = ImageHelper.getInstance().maskWithImage(textBackground, oceanTexture, landMask);
 		if (oceanShading != null)
 		{
@@ -2080,14 +2079,13 @@ public class MapCreator implements WarningLogger
 	 * Otherwise, it returns mapOrSnippet in the first piece of the tuple unchanged. The second piece is the coast shading mask, which can
 	 * be re-used for performance.
 	 */
-	private Tuple2<Image, Image> darkenLandNearCoastlinesAndRegionBorders(MapSettings settings, WorldGraph graph, double resolutionScaled, Image mapOrSnippet, Background background,
-			Image coastShading, Collection<Center> centersToDraw, Rectangle drawBounds, boolean addLoggingEntry)
+	private Tuple2<Image, Image> darkenLandNearCoastlinesAndRegionBorders(MapSettings settings, WorldGraph graph, double resolutionScaled, Image mapOrSnippet, Image coastShading,
+			Collection<Center> centersToDraw, Rectangle drawBounds, boolean addLoggingEntry)
 	{
 		double sizeMultiplier = calcSizeMultiplierFromResolutionScale(resolutionScaled);
 		int blurLevel = (int) (settings.getDrawnCoastShadingLevel() * sizeMultiplier);
 
 		final float scaleForDarkening = coastlineShadingScale;
-		int maxPixelValue = Image.getMaxPixelLevelForType(ImageType.Grayscale8Bit);
 		double targetStrokeWidth = sizeMultiplier;
 
 		if (blurLevel > 0)
@@ -2097,20 +2095,8 @@ public class MapCreator implements WarningLogger
 				Logger.println("Darkening land near shores.");
 			}
 
-			boolean drawRegionColorShading = settings.drawRegionBoundaries && settings.drawRegionColors;
-			float scale;
-
-			if (drawRegionColorShading)
-			{
-				scale = ((float) settings.coastShadingColor.getAlpha()) / ((float) (maxPixelValue)) * scaleForDarkening
-						* calcScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(settings.coastShadingLevel, sizeMultiplier)
-						* calcScaleCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
-			}
-			else
-			{
-				scale = scaleForDarkening * calcScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(settings.coastShadingLevel, sizeMultiplier)
-						* calcScaleCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
-			}
+			float scale = scaleForDarkening * calcScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(settings.coastShadingLevel, sizeMultiplier)
+					* calcScaleCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
 
 			// coastShading can be passed in to save time when calling this method a second time for the text background image.
 			if (coastShading == null)
@@ -2140,30 +2126,8 @@ public class MapCreator implements WarningLogger
 				}
 			}
 
-			if (drawRegionColorShading)
-			{
-				// Color the blur according to each region's blur color.
-				Map<Integer, Color> colors = new HashMap<>();
-				if (graph.regions.size() > 0)
-				{
-					for (Map.Entry<Integer, Region> regionEntry : graph.regions.entrySet())
-					{
-						Region reg = regionEntry.getValue();
-						Color color = Color.create((int) (reg.backgroundColor.getRed() * regionBlurColorScale), (int) (reg.backgroundColor.getGreen() * regionBlurColorScale),
-								(int) (reg.backgroundColor.getBlue() * regionBlurColorScale));
-						colors.put(reg.id, color);
-					}
-				}
-				else
-				{
-					colors.put(0, settings.landColor);
-				}
-				return new Tuple2<>(ImageHelper.getInstance().maskWithMultipleColors(mapOrSnippet, colors, background.regionIndexes, coastShading, true), coastShading);
-			}
-			else
-			{
-				return new Tuple2<>(ImageHelper.getInstance().maskWithColor(mapOrSnippet, settings.coastShadingColor, coastShading, true), coastShading);
-			}
+			// Coast shading darkens whatever is under it, whether land colors or region colors, so it keeps the texture visible.
+			return new Tuple2<>(ImageHelper.getInstance().maskWithColor(mapOrSnippet, Color.create(0, 0, 0, settings.coastShadingAlpha), coastShading, true), coastShading);
 		}
 		return new Tuple2<>(mapOrSnippet, null);
 	}

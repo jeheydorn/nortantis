@@ -5,7 +5,6 @@ import nortantis.MapSettings.GridOverlayLayer;
 import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanWaves;
 import nortantis.MapSettings.ShoreDetail;
-import nortantis.MapSettings.ThemeFontType;
 import nortantis.MapSettings.WaveLineShape;
 import nortantis.Stroke;
 import nortantis.editor.CenterEdit;
@@ -17,7 +16,6 @@ import nortantis.geom.IntDimension;
 import nortantis.geom.IntRectangle;
 import nortantis.geom.Point;
 import nortantis.graph.voronoi.Center;
-import nortantis.platform.Font;
 import nortantis.platform.Image;
 import nortantis.platform.ImageHelper;
 import nortantis.platform.ImageType;
@@ -37,7 +35,6 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 @SuppressWarnings("serial")
@@ -51,13 +48,11 @@ public class ThemePanel extends JTabbedPane
 	private WaveRowStyleControls wavyLineControls;
 	private WaveRowStyleControls hatchingControls;
 	private WaveRowStyleControls rippleControls;
-	private JPanel coastShadingColorDisplay;
 	private JPanel coastlineColorDisplay;
 	private JSlider coastShadingTransparencySlider;
 	private RowHider coastShadingTransparencyHider;
 	private JPanel oceanWavesColorDisplay;
 	private JPanel riverColorDisplay;
-	private JCheckBox enableTextCheckBox;
 	private JPanel grungeColorDisplay;
 	private JTextField backgroundSeedTextField;
 	private JRadioButton rdbtnGeneratedFromTexture;
@@ -92,24 +87,15 @@ public class ThemePanel extends JTabbedPane
 	private JSlider frayedEdgeSizeSlider;
 	private JSlider frayedEdgeShadingSlider;
 	private JCheckBox frayedEdgeCheckbox;
-	private JButton btnChooseCoastShadingColor;
 	private JRadioButton jaggedLinesButton;
 	private JRadioButton splinesLinesButton;
 	private JRadioButton splinesWithSmoothedCoastlinesButton;
 	private ActionListener oceanEffectsListener;
-	private final Map<ThemeFontType, FontChooser> fontChoosersByType = new LinkedHashMap<>();
-	private JPanel textColorDisplay;
-	private JPanel boldBackgroundColorDisplay;
-	private JCheckBox drawBoldBackgroundCheckbox;
 	private RowHider textureImageHider;
 	private RowHider colorizeOceanCheckboxHider;
 	private RowHider colorizeLandCheckboxHider;
 	private RowHider landColorHider;
-	private JButton btnChooseTextColor;
-	private ActionListener enableTextCheckboxActionListener;
 	private ActionListener frayedEdgeCheckboxActionListener;
-	private RowHider coastShadingColorHider;
-	private RowHider coastShadingColorDisabledMessageHider;
 	private JCheckBox drawGrungeCheckbox;
 	private ActionListener drawGrungeCheckboxActionListener;
 	private JCheckBox drawOceanEffectsInLakesCheckbox;
@@ -189,14 +175,14 @@ public class ThemePanel extends JTabbedPane
 	private RowHider oceanWavesRows;
 	private RowHider roadRows;
 	/**
-	 * Everything on the Fonts tab below the "Enable text" checkbox, except the bold background color row, which has its own checkbox too.
-	 */
-	private RowHider textRows;
-	private RowHider boldBackgroundColorRow;
-	/**
 	 * Set while the coast shading transparency slider is updated from the color display, so that its listener doesn't respond.
 	 */
 	private boolean disableCoastShadingTransparencySliderListener;
+	/**
+	 * The coast shading's alpha, kept apart from the transparency slider so that loading a map and saving it doesn't round the alpha to the
+	 * slider's steps.
+	 */
+	private int coastShadingAlpha;
 
 	public ThemePanel(MainWindow mainWindow)
 	{
@@ -208,8 +194,8 @@ public class ThemePanel extends JTabbedPane
 
 		addTab(Translation.get("theme.tab.background"), createBackgroundPanel(mainWindow));
 		addTab(Translation.get("theme.tab.border"), createBorderPanel());
-		addTab(Translation.get("theme.tab.effects"), createEffectsPanel());
-		addTab(Translation.get("theme.tab.fonts"), createFontsPanel());
+		addTab(Translation.get("theme.tab.shores"), createShoresPanel());
+		addTab(Translation.get("theme.tab.features"), createFeaturesPanel());
 
 		baseTabTitles = new String[getTabCount()];
 		for (int i = 0; i < getTabCount(); i++)
@@ -372,47 +358,6 @@ public class ThemePanel extends JTabbedPane
 		btnNewBackgroundSeed.setToolTipText(Translation.get("theme.newSeed.tooltip"));
 		organizer.addLabelAndComponentsHorizontal(Translation.get("theme.randomSeed.label"), Translation.get("theme.randomSeed.background.help"),
 				Arrays.asList(backgroundSeedTextField, btnNewBackgroundSeed));
-
-		drawRegionBoundariesCheckbox = new JCheckBox(Translation.get("theme.section.regionBoundaries"));
-		drawRegionBoundariesCheckbox.setToolTipText(Translation.get("theme.section.regionBoundaries.tooltip"));
-		drawRegionBoundariesCheckbox.addItemListener(new ItemListener()
-		{
-			@Override
-			public void itemStateChanged(ItemEvent e)
-			{
-				updateBackgroundAndRegionFieldStates();
-				handleTerrainChange();
-			}
-		});
-		organizer.addSectionHeading(drawRegionBoundariesCheckbox);
-
-		regionBoundaryTypeComboBox = new JComboBox<>(StrokeType.values());
-		regionBoundaryRows = organizer.addLabelAndComponent(Translation.get("theme.style.label"), Translation.get("theme.regionBoundaryStyle.help"), regionBoundaryTypeComboBox);
-		createMapChangeListenerForTerrainChange(regionBoundaryTypeComboBox);
-
-		{
-			regionBoundaryWidthSlider = new JSlider();
-			regionBoundaryWidthSlider.setPaintLabels(false);
-			regionBoundaryWidthSlider.setValue(10);
-			regionBoundaryWidthSlider.setMaximum(100);
-			regionBoundaryWidthSlider.setMinimum(10);
-			createMapChangeListenerForTerrainChange(regionBoundaryWidthSlider);
-			SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(regionBoundaryWidthSlider, (value) -> String.format("%.1f", value / SettingsGenerator.maxLineWidthInEditor),
-					null);
-			regionBoundaryRows.add(sliderWithDisplay.addToOrganizer(organizer, Translation.get("theme.width.label"), Translation.get("theme.regionBoundaryWidth.help")));
-		}
-
-		regionBoundaryColorDisplay = SwingHelper.createColorPickerPreviewPanel();
-		JButton buttonChooseRegionBoundaryColor = new JButton(Translation.get("theme.choose"));
-		buttonChooseRegionBoundaryColor.addActionListener(new ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				showColorPickerForTerrainChange(regionBoundaryColorDisplay, Translation.get("theme.regionBoundaryColor.title"));
-			}
-		});
-		regionBoundaryRows.add(organizer.addLabelAndComponentsHorizontal(Translation.get("theme.color.label"), Translation.get("theme.regionBoundaryColor.help"),
-				Arrays.asList(regionBoundaryColorDisplay, buttonChooseRegionBoundaryColor), SwingHelper.colorPickerLeftPadding));
 
 		organizer.addSectionHeading(Translation.get("theme.section.colors"));
 
@@ -865,7 +810,7 @@ public class ThemePanel extends JTabbedPane
 		return organizer.createScrollPane();
 	}
 
-	private Component createEffectsPanel()
+	private Component createShoresPanel()
 	{
 		GridBagOrganizer organizer = new GridBagOrganizer();
 
@@ -929,39 +874,13 @@ public class ThemePanel extends JTabbedPane
 			{
 				if (!disableCoastShadingTransparencySliderListener)
 				{
-					updateCoastShadingColorDisplayFromCoastShadingTransparencySlider();
+					coastShadingAlpha = (int) Math.round((1.0 - coastShadingTransparencySlider.getValue() / 100.0) * 255);
 					handleTerrainChange();
 				}
 			});
 			coastShadingTransparencyHider = sliderWithDisplay.addToOrganizer(organizer, Translation.get("theme.transparency.label"),
 					Translation.get("theme.coastShadingTransparency.help"));
 			coastShadingRows.add(coastShadingTransparencyHider);
-		}
-
-		{
-			coastShadingColorDisplay = SwingHelper.createColorPickerPreviewPanel();
-
-			btnChooseCoastShadingColor = new JButton(Translation.get("theme.choose"));
-			btnChooseCoastShadingColor.addActionListener(new ActionListener()
-			{
-				public void actionPerformed(ActionEvent e)
-				{
-					showColorPickerWithLiveMapPreview(coastShadingColorDisplay, Translation.get("theme.coastShadingColor.title"), () ->
-					{
-						updateCoastShadingTransparencySliderFromColorPicker();
-						redrawForTerrainChange();
-					}, UpdateType.Terrain);
-				}
-			});
-			String coastShadingColorLabelText = Translation.get("theme.color.label");
-			coastShadingColorHider = organizer.addLabelAndComponentsHorizontal(coastShadingColorLabelText, Translation.get("theme.coastShadingColor.help"),
-					Arrays.asList(coastShadingColorDisplay, btnChooseCoastShadingColor), SwingHelper.colorPickerLeftPadding);
-			coastShadingRows.add(coastShadingColorHider);
-
-			final String message = Translation.get("theme.coastShadingColor.disabled", LandColoringMethod.ColorPoliticalRegions.toString());
-			coastShadingColorDisabledMessageHider = organizer.addLabelAndComponent(coastShadingColorLabelText, "", new JLabel(message));
-			coastShadingColorDisabledMessageHider.setVisible(false);
-			coastShadingRows.add(coastShadingColorDisabledMessageHider);
 		}
 
 		drawOceanShadingCheckbox = createSectionCheckboxForTerrainChange("theme.section.oceanShading");
@@ -1082,7 +1001,7 @@ public class ThemePanel extends JTabbedPane
 		createMapChangeListenerForTerrainChange(sincWavesLevelSlider);
 		sincWavesLevelSliderHider = styleOrganizer.addLabelAndComponent(Translation.get("theme.width.label"), Translation.get("theme.waveWidth.help"), sincWavesLevelSlider);
 
-		CollapsiblePanel styleOptionsCard = new CollapsiblePanel("wave_style_options", Translation.get("theme.styleOptions.title"), styleOrganizer.panel);
+		CollapsiblePanel styleOptionsCard = new CollapsiblePanel("wave_style_options", "Style options", Translation.get("theme.styleOptions.title"), styleOrganizer.panel);
 		oceanWavesRows.add(organizer.addLeftAlignedComponent(styleOptionsCard, GridBagOrganizer.rowVerticalInset, GridBagOrganizer.rowVerticalInset, false));
 
 		{
@@ -1105,6 +1024,56 @@ public class ThemePanel extends JTabbedPane
 		drawOceanEffectsInLakesCheckbox = new JCheckBox(Translation.get("theme.drawOceanEffectsInLakes"));
 		createMapChangeListenerForTerrainChange(drawOceanEffectsInLakesCheckbox);
 		organizer.addLeftAlignedComponent(drawOceanEffectsInLakesCheckbox);
+
+		organizer.addVerticalFillerRow();
+		organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.6);
+		return organizer.createScrollPane();
+	}
+
+	private Component createFeaturesPanel()
+	{
+		GridBagOrganizer organizer = new GridBagOrganizer();
+
+		drawRegionBoundariesCheckbox = new JCheckBox(Translation.get("theme.section.regionBoundaries"));
+		drawRegionBoundariesCheckbox.setToolTipText(Translation.get("theme.section.regionBoundaries.tooltip"));
+		drawRegionBoundariesCheckbox.addItemListener(new ItemListener()
+		{
+			@Override
+			public void itemStateChanged(ItemEvent e)
+			{
+				updateBackgroundAndRegionFieldStates();
+				handleTerrainChange();
+			}
+		});
+		organizer.addSectionHeading(drawRegionBoundariesCheckbox);
+
+		regionBoundaryTypeComboBox = new JComboBox<>(StrokeType.values());
+		regionBoundaryRows = organizer.addLabelAndComponent(Translation.get("theme.style.label"), Translation.get("theme.regionBoundaryStyle.help"), regionBoundaryTypeComboBox);
+		createMapChangeListenerForTerrainChange(regionBoundaryTypeComboBox);
+
+		{
+			regionBoundaryWidthSlider = new JSlider();
+			regionBoundaryWidthSlider.setPaintLabels(false);
+			regionBoundaryWidthSlider.setValue(10);
+			regionBoundaryWidthSlider.setMaximum(100);
+			regionBoundaryWidthSlider.setMinimum(10);
+			createMapChangeListenerForTerrainChange(regionBoundaryWidthSlider);
+			SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(regionBoundaryWidthSlider, (value) -> String.format("%.1f", value / SettingsGenerator.maxLineWidthInEditor),
+					null);
+			regionBoundaryRows.add(sliderWithDisplay.addToOrganizer(organizer, Translation.get("theme.width.label"), Translation.get("theme.regionBoundaryWidth.help")));
+		}
+
+		regionBoundaryColorDisplay = SwingHelper.createColorPickerPreviewPanel();
+		JButton buttonChooseRegionBoundaryColor = new JButton(Translation.get("theme.choose"));
+		buttonChooseRegionBoundaryColor.addActionListener(new ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				showColorPickerForTerrainChange(regionBoundaryColorDisplay, Translation.get("theme.regionBoundaryColor.title"));
+			}
+		});
+		regionBoundaryRows.add(organizer.addLabelAndComponentsHorizontal(Translation.get("theme.color.label"), Translation.get("theme.regionBoundaryColor.help"),
+				Arrays.asList(regionBoundaryColorDisplay, buttonChooseRegionBoundaryColor), SwingHelper.colorPickerLeftPadding));
 
 		{
 			organizer.addSectionHeading(Translation.get("theme.section.rivers"));
@@ -1341,113 +1310,6 @@ public class ThemePanel extends JTabbedPane
 			}
 		});
 
-	}
-
-	private boolean disableCoastShadingColorDisplayHandler = false;
-
-	private void updateCoastShadingColorDisplayFromCoastShadingTransparencySlider()
-	{
-		if (!disableCoastShadingColorDisplayHandler)
-		{
-			Color background = coastShadingColorDisplay.getBackground();
-			int alpha = (int) ((1.0 - coastShadingTransparencySlider.getValue() / 100.0) * 255);
-			coastShadingColorDisplay.setBackground(new Color(background.getRed(), background.getGreen(), background.getBlue(), alpha));
-		}
-	}
-
-	private void updateCoastShadingTransparencySliderFromCoastShadingColorDisplay()
-	{
-		coastShadingTransparencySlider.setValue((int) (((1.0 - coastShadingColorDisplay.getBackground().getAlpha() / 255.0) * 100)));
-	}
-
-	/**
-	 * Shows the alpha of a color chosen in the coast shading color picker on the transparency slider. The slider's listener doesn't respond,
-	 * because the color display already holds the chosen color, and because the picker decides whether the change gets an undo point.
-	 */
-	private void updateCoastShadingTransparencySliderFromColorPicker()
-	{
-		disableCoastShadingTransparencySliderListener = true;
-		try
-		{
-			updateCoastShadingTransparencySliderFromCoastShadingColorDisplay();
-		}
-		finally
-		{
-			disableCoastShadingTransparencySliderListener = false;
-		}
-	}
-
-	private Component createFontsPanel()
-	{
-		GridBagOrganizer organizer = new GridBagOrganizer();
-
-		enableTextCheckBox = new JCheckBox(Translation.get("theme.enableText"));
-		enableTextCheckBox.setToolTipText(Translation.get("theme.enableText.tooltip"));
-		organizer.addLeftAlignedComponent(enableTextCheckBox);
-
-		textRows = organizer.addSectionHeading(Translation.get("theme.section.fonts"));
-		textRows.add(addFontChooser(organizer, ThemeFontType.Title, "theme.titleFont.label", 70, 50));
-		textRows.add(addFontChooser(organizer, ThemeFontType.Region, "theme.regionFont.label", 40, 50));
-		textRows.add(addFontChooser(organizer, ThemeFontType.MountainRange, "theme.mountainRangeFont.label", 30, 40));
-		textRows.add(addFontChooser(organizer, ThemeFontType.OtherMountains, "theme.otherMountainsFont.label", 30, 40));
-		textRows.add(addFontChooser(organizer, ThemeFontType.Cities, "theme.citiesFont.label", 30, 40));
-		textRows.add(addFontChooser(organizer, ThemeFontType.River, "theme.riverLakeFont.label", 30, 40));
-		textRows.add(addFontChooser(organizer, ThemeFontType.Road, "theme.roadFont.label", 30, 40));
-
-		textColorDisplay = SwingHelper.createColorPickerPreviewPanel();
-
-		btnChooseTextColor = new JButton(Translation.get("theme.choose"));
-		btnChooseTextColor.addActionListener(new ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				showColorPickerForFontsChange(textColorDisplay, Translation.get("theme.textColor.title"));
-			}
-		});
-		textRows.add(organizer.addLabelAndComponentsHorizontal(Translation.get("theme.color.label"), "", Arrays.asList(textColorDisplay, btnChooseTextColor),
-				SwingHelper.colorPickerLeftPadding));
-
-		drawBoldBackgroundCheckbox = new JCheckBox(Translation.get("theme.section.boldBackground"));
-		drawBoldBackgroundCheckbox.setToolTipText(Translation.get("theme.section.boldBackground.tooltip"));
-		textRows.add(organizer.addSectionHeading(drawBoldBackgroundCheckbox));
-
-		boldBackgroundColorDisplay = SwingHelper.createColorPickerPreviewPanel();
-
-		JButton btnChooseBoldBackgroundColor = new JButton(Translation.get("theme.choose"));
-		btnChooseBoldBackgroundColor.addActionListener(new ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				showColorPickerForFontsChange(boldBackgroundColorDisplay, Translation.get("theme.boldBackgroundColor.title"));
-			}
-		});
-		boldBackgroundColorRow = organizer.addLabelAndComponentsHorizontal(Translation.get("theme.color.label"),
-				Translation.get("theme.boldBackgroundColor.help", Translation.get("theme.section.boldBackground")), Arrays.asList(boldBackgroundColorDisplay, btnChooseBoldBackgroundColor),
-				SwingHelper.colorPickerLeftPadding);
-
-		drawBoldBackgroundCheckbox.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				handleEnablingAndDisabling();
-				handleFontsChange();
-			}
-		});
-
-		enableTextCheckboxActionListener = new ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				handleEnablingAndDisabling();
-				handleTextChange();
-			}
-		};
-
-		enableTextCheckBox.addActionListener(enableTextCheckboxActionListener);
-
-		organizer.addVerticalFillerRow();
-		return organizer.createScrollPane();
 	}
 
 	private boolean landSupportsColoring()
@@ -1703,9 +1565,6 @@ public class ThemePanel extends JTabbedPane
 		boolean colorRegions = areRegionColorsVisible();
 		handleEnablingAndDisabling();
 
-		coastShadingColorHider.setVisible(!colorRegions);
-		coastShadingColorDisabledMessageHider.setVisible(colorRegions);
-		coastShadingTransparencyHider.setVisible(colorRegions);
 
 		landColorHider.setVisible(!colorRegions);
 	}
@@ -1736,15 +1595,16 @@ public class ThemePanel extends JTabbedPane
 		brokenLinesCheckbox.setSelected(settings.brokenLinesForConcentricWaves);
 		drawOceanEffectsInLakesCheckbox.setSelected(settings.drawOceanEffectsInLakes);
 		oceanEffectsListener.actionPerformed(null);
-		coastShadingColorDisplay.setBackground(AwtBridge.toAwtColor(settings.coastShadingColor));
-
-		// Temporarily disable events on coastShadingColorDisplay while initially setting the value for coastShadingTransparencySlider so
-		// that
-		// the action listener on coastShadingTransparencySlider doesn't fire and then update coastShadingColorDisplay, because doing so can
-		// cause changes in the settings due to integer truncation of the alpha value.
-		disableCoastShadingColorDisplayHandler = true;
-		updateCoastShadingTransparencySliderFromCoastShadingColorDisplay();
-		disableCoastShadingColorDisplayHandler = false;
+		coastShadingAlpha = settings.coastShadingAlpha;
+		disableCoastShadingTransparencySliderListener = true;
+		try
+		{
+			coastShadingTransparencySlider.setValue((int) Math.round((1.0 - coastShadingAlpha / 255.0) * 100));
+		}
+		finally
+		{
+			disableCoastShadingTransparencySliderListener = false;
+		}
 
 		coastlineColorDisplay.setBackground(AwtBridge.toAwtColor(settings.coastlineColor));
 		coastlineWidthSlider.setValue((int) (settings.coastlineWidth * 10.0));
@@ -1846,19 +1706,6 @@ public class ThemePanel extends JTabbedPane
 		roadWidthSlider.setValue((int) (settings.roadStyle.width * 10f));
 		roadColorDisplay.setBackground(AwtBridge.toAwtColor(settings.roadColor));
 
-		// Do a click to update other components on the panel as enabled or
-		// disabled.
-		enableTextCheckBox.setSelected(settings.drawText);
-		enableTextCheckboxActionListener.actionPerformed(null);
-
-		for (Map.Entry<ThemeFontType, FontChooser> entry : fontChoosersByType.entrySet())
-		{
-			entry.getValue().setFont(AwtBridge.toAwtFont(settings.getThemeFont(entry.getKey())));
-		}
-		textColorDisplay.setBackground(AwtBridge.toAwtColor(settings.textColor));
-		boldBackgroundColorDisplay.setBackground(AwtBridge.toAwtColor(settings.boldBackgroundColor));
-		drawBoldBackgroundCheckbox.setSelected(settings.drawBoldBackground);
-		drawBoldBackgroundCheckbox.getActionListeners()[0].actionPerformed(null);
 
 		// Borders
 		initializeComboBoxItems(settings);
@@ -1992,13 +1839,12 @@ public class ThemePanel extends JTabbedPane
 		settings.concentricWaveLineWidth = fromWaveLineWidthSliderValue(concentricWaveLineWidthSlider.getValue());
 		settings.brokenLinesForConcentricWaves = brokenLinesCheckbox.isSelected();
 		settings.drawOceanEffectsInLakes = drawOceanEffectsInLakesCheckbox.isSelected();
-		settings.coastShadingColor = AwtBridge.fromAwtColor(coastShadingColorDisplay.getBackground());
+		settings.coastShadingAlpha = coastShadingAlpha;
 		settings.coastlineColor = AwtBridge.fromAwtColor(coastlineColorDisplay.getBackground());
 		settings.coastlineWidth = coastlineWidthSlider.getValue() / 10.0;
 		settings.oceanWavesColor = AwtBridge.fromAwtColor(oceanWavesColorDisplay.getBackground());
 		settings.oceanShadingColor = AwtBridge.fromAwtColor(oceanShadingColorDisplay.getBackground());
 		settings.riverColor = AwtBridge.fromAwtColor(riverColorDisplay.getBackground());
-		settings.drawText = enableTextCheckBox.isSelected();
 		settings.frayedBorder = frayedEdgeCheckbox.isSelected();
 		settings.frayedBorderColor = AwtBridge.fromAwtColor(frayedEdgeShadingColorDisplay.getBackground());
 		settings.frayedBorderBlurLevel = frayedEdgeShadingSlider.getValue();
@@ -2025,18 +1871,10 @@ public class ThemePanel extends JTabbedPane
 		settings.backgroundRandomSeed = parseBackgroundSeed();
 		settings.oceanColor = AwtBridge.fromAwtColor(oceanDisplayPanel.getColor());
 		settings.drawRegionColors = areRegionColorsVisible();
-		settings.drawRegionBoundaries = drawRegionBoundariesCheckbox.isSelected();
+		settings.drawRegionBoundaries = isDrawRegionBoundariesSelected();
 		settings.regionBoundaryStyle = new Stroke((StrokeType) regionBoundaryTypeComboBox.getSelectedItem(), regionBoundaryWidthSlider.getValue() / 10f);
 		settings.regionBoundaryColor = AwtBridge.fromAwtColor(regionBoundaryColorDisplay.getBackground());
 		settings.landColor = AwtBridge.fromAwtColor(landDisplayPanel.getColor());
-
-		for (Map.Entry<ThemeFontType, FontChooser> entry : fontChoosersByType.entrySet())
-		{
-			settings.setThemeFont(entry.getKey(), AwtBridge.fromAwtFont(entry.getValue().getFont()));
-		}
-		settings.textColor = AwtBridge.fromAwtColor(textColorDisplay.getBackground());
-		settings.boldBackgroundColor = AwtBridge.fromAwtColor(boldBackgroundColorDisplay.getBackground());
-		settings.drawBoldBackground = drawBoldBackgroundCheckbox.isSelected();
 
 		settings.drawBorder = drawBorderCheckbox.isSelected();
 		settings.borderResource = (NamedResource) borderTypeComboBox.getSelectedItem();
@@ -2066,46 +1904,6 @@ public class ThemePanel extends JTabbedPane
 		settings.drawVoronoiGridOverlayOnlyOnLand = drawGridOverlayOnlyOnLandCheckbox.isSelected();
 	}
 
-	public Font getThemeFont(ThemeFontType type)
-	{
-		return AwtBridge.fromAwtFont(fontChoosersByType.get(type).getFont());
-	}
-
-	public Font getTitleFont()
-	{
-		return getThemeFont(ThemeFontType.Title);
-	}
-
-	public Font getRegionFont()
-	{
-		return getThemeFont(ThemeFontType.Region);
-	}
-
-	public Font getMountainRangeFont()
-	{
-		return getThemeFont(ThemeFontType.MountainRange);
-	}
-
-	public Font getOtherMountainsFont()
-	{
-		return getThemeFont(ThemeFontType.OtherMountains);
-	}
-
-	public Font getCitiesFont()
-	{
-		return getThemeFont(ThemeFontType.Cities);
-	}
-
-	public Font getRiverFont()
-	{
-		return getThemeFont(ThemeFontType.River);
-	}
-
-	public Font getRoadFont()
-	{
-		return getThemeFont(ThemeFontType.Road);
-	}
-
 	private boolean areRegionColorsVisible()
 	{
 		return getLandColoringMethod().equals(LandColoringMethod.ColorPoliticalRegions);
@@ -2128,17 +1926,6 @@ public class ThemePanel extends JTabbedPane
 	public Color getLandColor()
 	{
 		return landDisplayPanel.getColor();
-	}
-
-	public enum LandColoringMethod
-	{
-		SingleColor, ColorPoliticalRegions;
-
-		@Override
-		public String toString()
-		{
-			return Translation.get("LandColoringMethod." + name());
-		}
 	}
 
 	private void createMapChangeListenerForGridOverlayChange(Component component)
@@ -2203,7 +1990,7 @@ public class ThemePanel extends JTabbedPane
 		return value / 10.0;
 	}
 
-	private static String getWaveTypeName(OceanWaves waveType)
+	static String getWaveTypeName(OceanWaves waveType)
 	{
 		switch (waveType)
 		{
@@ -2526,88 +2313,6 @@ public class ThemePanel extends JTabbedPane
 		return checkbox;
 	}
 
-	private RowHider addFontChooser(GridBagOrganizer organizer, ThemeFontType type, String labelKey, int minPreviewHeight, int maxFontSize)
-	{
-		FontChooser fontChooser = new FontChooser(Translation.get(labelKey), minPreviewHeight, maxFontSize, () -> handleFontsChange());
-		fontChooser.setFamiliesUsedByThisMap(this::getFontFamiliesUsedByThisMap);
-		fontChooser.setTextThatMustBeDrawable(() -> getTextDrawnByEachThemeFont().getOrDefault(type, ""));
-		// The same name the type is given everywhere else, lowered to sit inside a sentence. German keeps it capitalized, since German
-		// capitalizes nouns.
-		String typeName = Translation.get("themeFontType." + type.name());
-		Locale locale = Translation.getEffectiveLocale();
-		fontChooser.setNameOfTextThatMustBeDrawable(locale.getLanguage().equals("de") ? typeName : typeName.toLowerCase(locale));
-		fontChoosersByType.put(type, fontChooser);
-		return fontChooser.addToOrganizer(organizer);
-	}
-
-	private List<String> getFontFamiliesUsedByThisMap()
-	{
-		MapSettings settings = mainWindow.getSettingsFromGUI(false);
-		return settings == null ? new ArrayList<>() : MapFonts.getFamiliesUsed(settings);
-	}
-
-	/**
-	 * The characters each theme font has to be able to draw. Only the distinct ones are gathered: whether a font covers a map's text depends
-	 * on which characters appear in it, not how often, and checking a map's worth of labels character by character costs a hundred times
-	 * more than checking the few dozen distinct characters they are made of.
-	 */
-	private Map<ThemeFontType, String> getTextDrawnByEachThemeFont()
-	{
-		Map<ThemeFontType, Set<Integer>> codePointsByType = new HashMap<>();
-		if (mainWindow.edits != null && mainWindow.edits.text != null)
-		{
-			for (MapText text : mainWindow.edits.text)
-			{
-				if (text == null || text.fontOverride != null || StringUtils.isEmpty(text.value))
-				{
-					continue;
-				}
-				Set<Integer> codePoints = codePointsByType.computeIfAbsent(MapSettings.getThemeFontTypeForText(text.type),
-						key -> new LinkedHashSet<>());
-				text.value.codePoints().forEach(codePoints::add);
-			}
-		}
-
-		Map<ThemeFontType, String> result = new HashMap<>();
-		for (Map.Entry<ThemeFontType, Set<Integer>> entry : codePointsByType.entrySet())
-		{
-			StringBuilder builder = new StringBuilder();
-			for (int codePoint : entry.getValue())
-			{
-				builder.appendCodePoint(codePoint);
-			}
-			result.put(entry.getKey(), builder.toString());
-		}
-		return result;
-	}
-
-	private void handleFontsChange()
-	{
-		mainWindow.undoer.setUndoPoint(UpdateType.Fonts, null);
-		redrawForFontsChange();
-	}
-
-	/**
-	 * Redraws the map for a fonts change without setting an undo point.
-	 */
-	private void redrawForFontsChange()
-	{
-		mainWindow.handleThemeChange(false);
-		mainWindow.updater.createAndShowMapFontsChange();
-	}
-
-	private void showColorPickerForFontsChange(JPanel colorDisplay, String title)
-	{
-		showColorPickerWithLiveMapPreview(colorDisplay, title, () -> redrawForFontsChange(), UpdateType.Fonts);
-	}
-
-	private void handleTextChange()
-	{
-		mainWindow.undoer.setUndoPoint(UpdateType.Text, null);
-		mainWindow.handleThemeChange(false);
-		mainWindow.updater.createAndShowMapTextChange();
-	}
-
 	private void createMapChangeListenerForFullRedraw(Component component)
 	{
 		SwingHelper.addListener(component, () -> handleFullRedraw());
@@ -2714,15 +2419,9 @@ public class ThemePanel extends JTabbedPane
 		oceanWavesRows.setEnabled(drawOceanWavesCheckbox.isSelected());
 		roadRows.setEnabled(drawRoadsCheckbox.isSelected());
 
-		boolean isTextEnabled = enableTextCheckBox.isSelected();
-		textRows.setEnabled(isTextEnabled);
-		boldBackgroundColorRow.setEnabled(isTextEnabled && drawBoldBackgroundCheckbox.isSelected());
-
 		btnChooseOceanColor.setEnabled(oceanSupportsColoring());
 		btnChooseLandColor.setEnabled(landSupportsColoring());
 		landColoringMethodComboBox.setEnabled(landSupportsColoring());
-
-		btnChooseCoastShadingColor.setEnabled(drawCoastShadingCheckbox.isSelected() && !areRegionColorsVisible());
 
 		// Lakes get ocean waves and shading, so the lakes checkbox only matters when either is on.
 		drawOceanEffectsInLakesCheckbox.setEnabled(drawOceanShadingCheckbox.isSelected() || drawOceanWavesCheckbox.isSelected());
@@ -2808,5 +2507,10 @@ public class ThemePanel extends JTabbedPane
 			landColorizeAlgorithm = null;
 			generatedSize = null;
 		}
+	}
+
+	boolean isDrawRegionBoundariesSelected()
+	{
+		return drawRegionBoundariesCheckbox.isSelected();
 	}
 }

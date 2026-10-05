@@ -71,7 +71,7 @@ public class MapSettingsTest
 		assertEquals(1, info.problems.size(), "Every theme font names the same family, so there should be one problem.");
 		MapFonts.FontProblem problem = info.problems.get(0);
 		assertEquals("A Font That Does Not Exist", problem.family);
-		assertEquals(MapSettings.ThemeFontType.values().length, problem.usedByThemeFontTypes.size());
+		assertEquals(TextType.values().length, problem.newTextTypes.size());
 	}
 
 	@Test
@@ -90,7 +90,7 @@ public class MapSettingsTest
 		// and they will see it the moment the map draws, so opening the map must not stop to report it.
 		MapSettings settings = createSettingsWithAllThemeFonts(FontFinder.houseFontFamily);
 		settings.edits = new MapEdits();
-		settings.edits.text = new CopyOnWriteArrayList<>(List.of(createMapText(TextType.Title, "上海", null)));
+		settings.edits.text = new CopyOnWriteArrayList<>(List.of(createMapText(settings, TextType.Title, "上海", null)));
 
 		assertTrue(MapFonts.findProblems(settings).isEmpty());
 	}
@@ -101,7 +101,7 @@ public class MapSettingsTest
 		// The replacement offered has to be able to draw the map's labels, which means knowing what they were.
 		MapSettings settings = createSettingsWithAllThemeFonts("A Font That Does Not Exist");
 		settings.edits = new MapEdits();
-		settings.edits.text = new CopyOnWriteArrayList<>(List.of(createMapText(TextType.Title, "Atelan", null)));
+		settings.edits.text = new CopyOnWriteArrayList<>(List.of(createMapText(settings, TextType.Title, "Atelan", null)));
 
 		MapFonts.MissingFontInfo info = MapFonts.findProblems(settings);
 
@@ -114,11 +114,11 @@ public class MapSettingsTest
 	{
 		// A family's faces need not have the same glyphs, so which face has to draw which label decides whether a replacement will do.
 		MapSettings settings = createSettingsWithAllThemeFonts("A Font That Does Not Exist");
-		settings.setThemeFont(MapSettings.ThemeFontType.Title, Font.create("A Font That Does Not Exist", FontStyle.Bold, 20));
+		settings.setThemeFont(TextType.Title, Font.create("A Font That Does Not Exist", FontStyle.Bold, 20));
 		settings.edits = new MapEdits();
-		settings.edits.text = new CopyOnWriteArrayList<>(List.of(createMapText(TextType.Title, "Łódź", null),
-				createMapText(TextType.Region, "Atelan", null),
-				createMapText(TextType.City, "Vinx", Font.create("A Font That Does Not Exist", FontStyle.Italic, 12))));
+		settings.edits.text = new CopyOnWriteArrayList<>(List.of(createMapText(settings, TextType.Title, "Łódź", null),
+				createMapText(settings, TextType.Region, "Atelan", null),
+				createMapText(settings, TextType.City, "Vinx", Font.create("A Font That Does Not Exist", FontStyle.Italic, 12))));
 
 		MapFonts.MissingFontInfo info = MapFonts.findProblems(settings);
 
@@ -140,45 +140,47 @@ public class MapSettingsTest
 	public void substitutionPreservesStyleAndSizeAndRewritesOverrides()
 	{
 		MapSettings settings = new MapSettings();
-		settings.titleFont = Font.create("A Font That Does Not Exist", FontStyle.BoldItalic, 50);
-		settings.regionFont = Font.create("A Font That Does Not Exist", FontStyle.Plain, 20);
-		settings.mountainRangeFont = Font.create("Georgia", FontStyle.Plain, 14);
-		settings.otherMountainsFont = Font.create("Georgia", FontStyle.Plain, 11);
-		settings.citiesFont = Font.create("Georgia", FontStyle.Plain, 10);
-		settings.riverFont = Font.create("Georgia", FontStyle.Plain, 9);
-		settings.roadFont = Font.create("Georgia", FontStyle.Plain, 6);
+		settings.setThemeFont(TextType.Title, Font.create("A Font That Does Not Exist", FontStyle.BoldItalic, 50));
+		settings.setThemeFont(TextType.Region, Font.create("A Font That Does Not Exist", FontStyle.Plain, 20));
+		settings.setThemeFont(TextType.Mountain_range, Font.create("Georgia", FontStyle.Plain, 14));
+		settings.setThemeFont(TextType.Other_mountains, Font.create("Georgia", FontStyle.Plain, 11));
+		settings.setThemeFont(TextType.City, Font.create("Georgia", FontStyle.Plain, 10));
+		settings.setThemeFont(TextType.River, Font.create("Georgia", FontStyle.Plain, 9));
+		settings.setThemeFont(TextType.Road, Font.create("Georgia", FontStyle.Plain, 6));
 		settings.edits = new MapEdits();
 		settings.edits.text = new CopyOnWriteArrayList<>(
-				List.of(createMapText(TextType.Title, "Atelan", Font.create("A Font That Does Not Exist", FontStyle.Italic, 33)),
-						createMapText(TextType.Region, "Vinx", Font.create("Georgia", FontStyle.Plain, 12))));
+				List.of(createMapText(settings, TextType.Title, "Atelan", Font.create("A Font That Does Not Exist", FontStyle.Italic, 33)),
+						createMapText(settings, TextType.Region, "Vinx", Font.create("Georgia", FontStyle.Plain, 12))));
 
 		MapFonts.applySubstitution(settings, Map.of("A Font That Does Not Exist", FontFinder.houseFontFamily));
 
-		assertEquals(FontFinder.houseFontFamily, settings.titleFont.getName());
-		assertEquals(FontStyle.BoldItalic, settings.titleFont.getStyle());
-		assertEquals(50f, settings.titleFont.getSize());
+		Font titleFont = settings.getThemeFont(TextType.Title);
+		assertEquals(FontFinder.houseFontFamily, titleFont.getName());
+		assertEquals(FontStyle.BoldItalic, titleFont.getStyle());
+		assertEquals(50f, titleFont.getSize());
 
-		assertEquals(FontFinder.houseFontFamily, settings.regionFont.getName());
-		assertEquals(20f, settings.regionFont.getSize());
+		Font regionFont = settings.getThemeFont(TextType.Region);
+		assertEquals(FontFinder.houseFontFamily, regionFont.getName());
+		assertEquals(20f, regionFont.getSize());
 
-		assertEquals("Georgia", settings.mountainRangeFont.getName(), "A family that was not replaced must be left alone.");
+		assertEquals("Georgia", settings.getThemeFont(TextType.Mountain_range).getName(), "A family that was not replaced must be left alone.");
 
-		assertEquals(FontFinder.houseFontFamily, settings.edits.text.get(0).fontOverride.getName());
-		assertEquals(FontStyle.Italic, settings.edits.text.get(0).fontOverride.getStyle());
-		assertEquals(33f, settings.edits.text.get(0).fontOverride.getSize());
-		assertEquals("Georgia", settings.edits.text.get(1).fontOverride.getName());
+		assertEquals(FontFinder.houseFontFamily, settings.edits.text.get(0).style.font.getName());
+		assertEquals(FontStyle.Italic, settings.edits.text.get(0).style.font.getStyle());
+		assertEquals(33f, settings.edits.text.get(0).style.font.getSize());
+		assertEquals("Georgia", settings.edits.text.get(1).style.font.getName());
 	}
 
 	@Test
-	public void fontFamiliesUsedIncludeThemeFontsAndEveryOverride()
+	public void fontFamiliesUsedIncludeThemeFontsAndEveryLabelsFont()
 	{
 		MapSettings settings = createSettingsWithAllThemeFonts("Georgia");
-		settings.titleFont = Font.create("Palatino", FontStyle.Plain, 50);
+		settings.setThemeFont(TextType.Title, Font.create("Palatino", FontStyle.Plain, 50));
 		settings.edits = new MapEdits();
 		settings.edits.text = new CopyOnWriteArrayList<>(
-				List.of(createMapText(TextType.Title, "Atelan", Font.create("Tangerine", FontStyle.Plain, 20)),
-						createMapText(TextType.Region, "Vinx", Font.create("Tangerine", FontStyle.Plain, 30)),
-						createMapText(TextType.City, "Bree", null)));
+				List.of(createMapText(settings, TextType.Title, "Atelan", Font.create("Tangerine", FontStyle.Plain, 20)),
+						createMapText(settings, TextType.Region, "Vinx", Font.create("Tangerine", FontStyle.Plain, 30)),
+						createMapText(settings, TextType.City, "Bree", null)));
 
 		List<String> used = MapFonts.getFamiliesUsed(settings);
 
@@ -192,20 +194,11 @@ public class MapSettingsTest
 		MapSettings settings = createSettingsWithAllThemeFonts("Georgia");
 		settings.edits = new MapEdits();
 		settings.edits.text = new CopyOnWriteArrayList<>(
-				List.of(createMapText(TextType.Title, "Atelan", Font.create("georgia", FontStyle.Bold, 20)),
-						createMapText(TextType.Region, "Vinx", Font.create("GEORGIA", FontStyle.Plain, 30))));
+				List.of(createMapText(settings, TextType.Title, "Atelan", Font.create("georgia", FontStyle.Bold, 20)),
+						createMapText(settings, TextType.Region, "Vinx", Font.create("GEORGIA", FontStyle.Plain, 30))));
 
 		// The same family named three ways is one entry, keeping the picker from listing a font once per spelling.
 		assertEquals(List.of("Georgia"), MapFonts.getFamiliesUsed(settings));
-	}
-
-	@Test
-	public void everyTextTypeHasAThemeFont()
-	{
-		for (TextType type : TextType.values())
-		{
-			assertNotNull(MapSettings.getThemeFontTypeForText(type), "No theme font for text type " + type);
-		}
 	}
 
 	@Test
@@ -252,7 +245,7 @@ public class MapSettingsTest
 	public void theArtPackAFontCameFromIsSavedAndReadBack() throws Exception
 	{
 		MapSettings settings = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
-		settings.setThemeFont(MapSettings.ThemeFontType.Title, Font.create(FontFinder.houseFontFamily, FontStyle.Plain, 40));
+		settings.setThemeFont(TextType.Title, Font.create(FontFinder.houseFontFamily, FontStyle.Plain, 40));
 
 		Path temp = Files.createTempFile("fontArtPacks", ".nort");
 		try
@@ -273,7 +266,7 @@ public class MapSettingsTest
 		// Saving a map on a device that lacks the art pack must not erase which art pack to ask for, or the next person to open it loses
 		// the only explanation of why the font is missing.
 		MapSettings settings = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
-		settings.setThemeFont(MapSettings.ThemeFontType.Title, Font.create("A Font That Does Not Exist", FontStyle.Plain, 40));
+		settings.setThemeFont(TextType.Title, Font.create("A Font That Does Not Exist", FontStyle.Plain, 40));
 		settings.fontArtPacks = Map.of("A Font That Does Not Exist", "An Art Pack That Is Not Installed");
 
 		Path temp = Files.createTempFile("fontArtPacks", ".nort");
@@ -360,33 +353,117 @@ public class MapSettingsTest
 		}
 	}
 
+	@Test
+	public void oldTextSettingsConvertToAStyleOnEveryText()
+	{
+		// Saved before 3.25 with a bold background on, one text color, and per-text color, bold background color, and font overrides.
+		MapSettings settings = new MapSettings("unit test files/map settings/allTypesOfEdits.nort");
+
+		TextStyle regionDefault = settings.getDefaultTextStyle(TextType.Region);
+		assertEquals(TextBackgroundEffect.BoldBackground, regionDefault.background.effect);
+		assertEquals(nortantis.platform.Color.create(254, 230, 201, 255), regionDefault.background.boldColor);
+		assertEquals(nortantis.platform.Color.create(89, 71, 54, 255), regionDefault.color);
+		assertEquals("Gabriola", regionDefault.font.getName());
+		assertEquals(TextBackgroundEffect.None, settings.getDefaultTextStyle(TextType.River).background.effect,
+				"Bold background was only drawn behind region and title text.");
+		assertEquals(settings.getDefaultTextStyle(TextType.River), settings.getDefaultTextStyle(TextType.Lake),
+				"Lakes shared the river font before they had their own style.");
+
+		MapText boldCurved = findText(settings, "Bold background curved with negative spacing and custom colors");
+		assertEquals(TextBackgroundEffect.BoldBackground, boldCurved.style.background.effect);
+		assertEquals(nortantis.platform.Color.create(179, 190, 204, 255), boldCurved.style.background.boldColor);
+		assertEquals(nortantis.platform.Color.create(51, 133, 52, 255), boldCurved.style.color);
+		assertEquals("Gabriola", boldCurved.style.font.getName(), "Text without its own font gets its type's font.");
+
+		MapText riverWithColor = findText(settings, "Custom color with spacing");
+		assertEquals(TextBackgroundEffect.None, riverWithColor.style.background.effect);
+		assertEquals(nortantis.platform.Color.create(145, 64, 149, 255), riverWithColor.style.color);
+
+		MapText withFont = findText(settings, "Text with font override");
+		assertEquals("Jokerman", withFont.style.font.getName());
+		assertEquals(FontStyle.Bold, withFont.style.font.getStyle());
+		assertEquals(nortantis.platform.Color.create(89, 71, 54, 255), withFont.style.color, "Text without its own color gets the text color.");
+	}
+
+	@Test
+	public void textStylesAreSavedAndReadBack() throws Exception
+	{
+		MapSettings settings = new MapSettings("unit test files/map settings/allTypesOfEdits.nort");
+		TextStyle titleDefault = settings.getDefaultTextStyle(TextType.Title);
+		titleDefault.background.effect = TextBackgroundEffect.Scroll;
+		titleDefault.background.shapeJitter = 7;
+		titleDefault.background.haloColor = nortantis.platform.Color.create(1, 2, 3, 4);
+		MapText text = findText(settings, "Custom color with curve");
+		text.style.background.effect = TextBackgroundEffect.Glow;
+		text.style.background.haloSize = 13;
+		text.style.background.fade = 0.4;
+		text.backgroundSeed = 12345;
+
+		Path temp = Files.createTempFile("textStyles", ".nort");
+		try
+		{
+			settings.writeToFile(temp.toString());
+			MapSettings reloaded = new MapSettings(temp.toString());
+			assertEquals(settings.textStyleDefaults, reloaded.textStyleDefaults);
+			assertEquals(settings.edits.text, reloaded.edits.text);
+			MapText reloadedText = findText(reloaded, "Custom color with curve");
+			assertEquals(12345, reloadedText.backgroundSeed);
+			assertEquals(TextBackgroundEffect.Glow, reloadedText.style.background.effect);
+		}
+		finally
+		{
+			Files.deleteIfExists(temp);
+		}
+	}
+
+	@Test
+	public void oldTextGetsTheSameWobbleSeedEveryTimeItLoads()
+	{
+		MapSettings first = new MapSettings("unit test files/map settings/allTypesOfEdits.nort");
+		MapSettings second = new MapSettings("unit test files/map settings/allTypesOfEdits.nort");
+		assertEquals(first.edits.text, second.edits.text);
+	}
+
+	private static MapText findText(MapSettings settings, String value)
+	{
+		return settings.edits.text.stream().filter(text -> value.equals(text.value)).findFirst().orElseThrow();
+	}
+
 	private static MapSettings createSettingsWithAllThemeFonts(String family)
 	{
 		MapSettings settings = new MapSettings();
-		for (MapSettings.ThemeFontType type : MapSettings.ThemeFontType.values())
+		for (TextType type : TextType.values())
 		{
 			settings.setThemeFont(type, Font.create(family, FontStyle.Plain, 20));
 		}
 		return settings;
 	}
 
-	private static MapText createMapText(TextType type, String value, Font fontOverride)
+	/**
+	 * Creates text styled with the settings' style for new text of its type, except for the given font, if it isn't null.
+	 */
+	private static MapText createMapText(MapSettings settings, TextType type, String value, Font font)
 	{
-		return new MapText(value, new Point(0, 0), 0.0, type, LineBreak.Auto, null, null, 0.0, 0, fontOverride, MapText.defaultBackgroundFade);
+		TextStyle style = settings.getDefaultTextStyle(type).copy();
+		if (font != null)
+		{
+			style.font = font;
+		}
+		return new MapText(value, new Point(0, 0), 0.0, type, LineBreak.Auto, 0.0, 0, style, 0);
 	}
 
 	@Test
 	public void themeFontsCoverEveryFontField()
 	{
 		MapSettings settings = new MapSettings();
-		for (MapSettings.ThemeFontType type : MapSettings.ThemeFontType.values())
+		for (TextType type : TextType.values())
 		{
 			Font font = Font.create("Georgia", FontStyle.Plain, 10 + type.ordinal());
 			settings.setThemeFont(type, font);
 		}
 
-		assertEquals(MapSettings.ThemeFontType.values().length, settings.getThemeFonts().size());
-		for (MapSettings.ThemeFontType type : MapSettings.ThemeFontType.values())
+		assertEquals(TextType.values().length, settings.getThemeFonts().size());
+		for (TextType type : TextType.values())
 		{
 			assertEquals(10f + type.ordinal(), settings.getThemeFonts().get(type).getSize(), "Wrong font for " + type);
 		}

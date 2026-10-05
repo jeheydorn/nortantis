@@ -10,14 +10,14 @@ import nortantis.util.*;
 
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.function.Predicate;
 
 /**
- * For randomly generating settings with which to generate a map.
- *
+ * For randomly generating settings with which to generate a map. A new map starts from a theme, which supplies how it looks and the rules
+ * for how much to vary that look, and gets a random world.
  */
 public class SettingsGenerator
 {
-	private static String defaultSettingsFile = Paths.get(Assets.getAssetsPath(), "internal/old_paper.properties").toString();
 	public static int minWorldSize = 2000;
 	// This is larger than minWorldSize because, when someone opens the generator for the first time to a random map, very small world sizes
 	// can result to in a map that is all land or all ocean.
@@ -30,6 +30,11 @@ public class SettingsGenerator
 	public static final int maxConcentricWaveCountToGenerate = 3;
 	public static final int minRegionCount = 2;
 	public static int maxRegionCount = 20;
+	public static final float maxLineWidthInEditor = 10f;
+	public static final int minConcentricWaveCountToGenerate = 2;
+	private static final int maxGrungeWidthToGenerate = 2000;
+	private static final int maxFrayedBorderBlurLevelToGenerate = 150;
+	private static final int maxShadingLevelToGenerate = 100;
 
 	/**
 	 * The maximum number of regions in new, generated settings.
@@ -39,119 +44,147 @@ public class SettingsGenerator
 		return Math.min(maxRegionCount, Math.max(minRegionCount, worldSize / 200));
 	}
 
-	public static final int minConcentricWaveCountToGenerate = 2;
 	/**
-	 * The width of the waves new maps get for sinc waves.
+	 * Generates settings for a new random map with a random art pack and a theme chosen the way "Random" chooses one.
 	 */
-	private static final int sincWaveWidth = 30;
-	public static final int defaultCoastShadingAlpha = 87;
-	public static final int defaultOceanShadingAlpha = 87;
-	public static final int defaultSincWavesAlpha = 204;
-	public static final float maxLineWidthInEditor = 10f;
-
 	public static MapSettings generate(String customImageFolder)
 	{
 		Random rand = new Random();
 		String artPack = ProbabilityHelper.sampleUniform(rand, Assets.listArtPacksForNewRandomMaps(customImageFolder));
-		return generate(rand, artPack, customImageFolder);
+		return generate(rand, artPack, null, customImageFolder);
 	}
 
+	/**
+	 * Generates settings for a new random map with the given art pack and a theme chosen the way "Random" chooses one.
+	 */
 	public static MapSettings generate(Random rand, String artPack, String customImagesFolder)
 	{
+		return generate(rand, artPack, null, customImagesFolder);
+	}
+
+	/**
+	 * Generates settings for a new random map.
+	 *
+	 * @param theme
+	 *            The theme to use, or null to choose one the way "Random" does.
+	 */
+	public static MapSettings generate(Random rand, String artPack, ThemeCatalog.Entry theme, String customImagesFolder)
+	{
+		if (artPack == null)
+		{
+			throw new IllegalArgumentException("artPack cannot be null.");
+		}
+
 		// Prime the random number generator
 		for (int i = 0; i < 100; i++)
 		{
 			rand.nextInt();
 		}
 
-		MapSettings settings = new MapSettings(defaultSettingsFile);
-		// This is a brand-new map created in the current version. The default settings come from an old properties file (which loads as
-		// version "0.0"), so set the current version explicitly; otherwise the new map would be treated as one upgraded from an older version.
+		ThemeCatalog.Entry themeToUse = theme != null ? theme : ThemeCatalog.chooseRandomTheme(rand, artPack, customImagesFolder);
+		MapSettings themeSettings;
+		try
+		{
+			themeSettings = ThemeCatalog.load(themeToUse);
+		}
+		catch (RuntimeException e)
+		{
+			if (ThemeCatalog.isFromInstalledArtPack(themeToUse))
+			{
+				throw e;
+			}
+			// A broken theme file never stops a map from being generated.
+			Logger.printError("Unable to load the theme '" + themeToUse.path + "'. Using one from the installed art pack instead.", e);
+			themeToUse = ThemeCatalog.chooseRandomTheme(rand, Assets.installedArtPack, customImagesFolder);
+			themeSettings = ThemeCatalog.load(themeToUse);
+		}
+		return generateFromTheme(rand, artPack, themeSettings, ThemeCatalog.isFromInstalledArtPack(themeToUse), customImagesFolder);
+	}
+
+	/**
+	 * Generates settings for a new random map from a loaded theme.
+	 *
+	 * @param isThemeFromInstalledArtPack
+	 *            Whether the theme is one that comes with Nortantis, whose fonts are changed to ones that can draw the user's language. A theme someone
+	 *            chose fonts for keeps them.
+	 */
+	public static MapSettings generateFromTheme(Random rand, String artPack, MapSettings theme, boolean isThemeFromInstalledArtPack, String customImagesFolder)
+	{
+		MapSettings settings = theme.deepCopyExceptEdits();
+		settings.edits = new MapEdits();
+		// This is a brand-new map created in the current version, even if the theme was saved by an older one.
 		settings.version = MapSettings.currentVersion;
 		settings.pointPrecision = MapSettings.defaultPointPrecision;
 		settings.lloydRelaxationsScale = MapSettings.defaultLloydRelaxationsScale;
-		useADefaultFontThatCanDrawTheUsersLanguage(settings);
-
-		setRandomSeeds(settings, rand);
-
-		if (artPack == null)
-		{
-			throw new IllegalArgumentException("artPack cannot be null.");
-		}
 		settings.artPack = artPack;
 		settings.customImagesPath = customImagesFolder;
-
-		// A wave type is chosen even when waves are off, so that turning them on in the editor starts from a good one.
-		settings.drawOceanWaves = rand.nextInt(5) != 0;
-		List<Tuple2<Double, OceanWaves>> oceanWaveOptions = new ArrayList<>(Arrays.asList(new Tuple2<Double, OceanWaves>(1.0, OceanWaves.ConcentricWaves),
-				new Tuple2<Double, OceanWaves>(1.0, OceanWaves.WavyLines), new Tuple2<Double, OceanWaves>(1.0, OceanWaves.Hatching),
-				new Tuple2<Double, OceanWaves>(1.0, OceanWaves.Ripples)));
-
-		settings.oceanWavesType = ProbabilityHelper.sampleCategorical(rand, oceanWaveOptions);
-
-		Color landColor = rand.nextInt(2) == 1 ? settings.landColor : settings.oceanColor;
-		Color oceanColor = settings.oceanColor;
-
-		settings.drawOceanEffectsInLakes = true;
-		settings.oceanWavesLevel = sincWaveWidth;
-		if (settings.oceanWavesType == OceanWaves.ConcentricWaves)
+		clearSettingsThatBelongToAnotherMap(settings);
+		settings.drawText = true;
+		if (isThemeFromInstalledArtPack)
 		{
-			settings.fadeConcentricWaves = rand.nextBoolean();
-			settings.jitterToConcentricWaves = rand.nextBoolean();
-			settings.brokenLinesForConcentricWaves = rand.nextBoolean();
-		}
-		// Every style gets its look, not just the one chosen, so that switching to another in the editor starts from a good one.
-		applyWaveRowPresets(settings);
-		settings.concentricWaveCount = Math.max(minConcentricWaveCountToGenerate, Math.min(maxConcentricWaveCountToGenerate, Math.abs((rand.nextInt() % maxConcentricWaveCountInEditor)) + 1));
-		settings.coastShadingLevel = 15 + Math.abs(rand.nextInt(35));
-		settings.drawCoastShading = true;
-
-		int hueRange = 16;
-		int saturationRange = 10;
-		int brightnessRange = 10;
-		settings.landColor = MapCreator.generateColorFromBaseColor(rand, landColor, hueRange, saturationRange, brightnessRange);
-		settings.regionBaseColor = settings.landColor;
-		settings.borderColor = settings.landColor;
-
-		settings.oceanColor = MapCreator.generateColorFromBaseColor(rand, oceanColor, hueRange, saturationRange, brightnessRange);
-
-		double coastShadingColorScale = 0.5;
-		settings.coastShadingColor = Color.create((int) (settings.landColor.getRed() * coastShadingColorScale), (int) (settings.landColor.getGreen() * coastShadingColorScale),
-				(int) (settings.landColor.getBlue() * coastShadingColorScale), defaultCoastShadingAlpha);
-
-		{
-			double oceanShadingColorScale = 0.3;
-			settings.oceanShadingColor = Color.create((int) (settings.oceanColor.getRed() * oceanShadingColorScale), (int) (settings.oceanColor.getGreen() * oceanShadingColorScale),
-					(int) (settings.oceanColor.getBlue() * oceanShadingColorScale), defaultOceanShadingAlpha);
+			useADefaultFontThatCanDrawTheUsersLanguage(settings);
 		}
 
-		// Ocean shading is used instead of waves. I don't generate a map that uses both shading and waves because although it can look nice,
-		// it renders slowly, so I don't encourage it. The shading width is chosen even when shading is off, so that turning it on in the
-		// editor shows something.
-		settings.drawOceanShading = !settings.drawOceanWaves;
-		settings.oceanShadingLevel = 20 + Math.abs(rand.nextInt(40));
+		setRandomSeeds(settings, rand);
+		ThemeGenerationSettings gen = settings.themeGeneration != null ? settings.themeGeneration : ThemeGenerationSettings.createDefault();
+		applyThemeRandomness(settings, gen, rand);
+		applyWorldRandomness(settings, rand);
+		return settings;
+	}
 
-		if (settings.oceanWavesType == OceanWaves.SincWaves)
+	/**
+	 * Clears the settings a theme or another map carries that describe a particular map rather than how maps look.
+	 */
+	private static void clearSettingsThatBelongToAnotherMap(MapSettings settings)
+	{
+		settings.imageExportPath = null;
+		settings.heightmapExportPath = null;
+		settings.themeExportPath = null;
+		settings.subMapInfo = null;
+		settings.resolution = MapSettings.defaultResolution;
+		settings.heightmapResolution = MapSettings.defaultHeightmapResolution;
+		settings.drawOverlayImage = false;
+		settings.overlayImagePath = null;
+		settings.rightRotationCount = 0;
+		settings.flipHorizontally = false;
+		settings.flipVertically = false;
+		settings.drawGridOverlay = false;
+	}
+
+	/**
+	 * Points the fonts of a theme that comes with Nortantis at a bundled family that can draw the script of the user's language, so a brand new map doesn't lose
+	 * the place names its owner types. A character a font has no glyph for goes undrawn: most fonts mark the gap with a box, and some leave
+	 * nothing there at all.
+	 */
+	private static void useADefaultFontThatCanDrawTheUsersLanguage(MapSettings settings)
+	{
+		String family = FontFinder.getDefaultFamilyForLanguage(Translation.getEffectiveLocale().getLanguage());
+		for (TextType type : TextType.values())
 		{
-			double sincWavesColorScale = 0.3;
-			settings.oceanWavesColor = Color.create((int) (settings.oceanColor.getRed() * sincWavesColorScale), (int) (settings.oceanColor.getGreen() * sincWavesColorScale),
-					(int) (settings.oceanColor.getBlue() * sincWavesColorScale), defaultSincWavesAlpha);
+			Font font = settings.getThemeFont(type);
+			if (font != null && !font.getName().equals(family))
+			{
+				settings.setThemeFont(type, Font.create(family, font.getStyle(), font.getSize()));
+			}
 		}
-		else
-		{
-			// Lines drawn along coastlines
-			double wavesColorScale = 0.5;
-			int alpha = 255;
-			settings.oceanWavesColor = Color.create((int) (settings.oceanColor.getRed() * wavesColorScale), (int) (settings.oceanColor.getGreen() * wavesColorScale),
-					(int) (settings.oceanColor.getBlue() * wavesColorScale), alpha);
+	}
 
-		}
-		settings.riverColor = MapCreator.generateColorFromBaseColor(rand, settings.riverColor, hueRange, saturationRange, brightnessRange);
-		settings.frayedBorderColor = MapCreator.generateColorFromBaseColor(rand, settings.frayedBorderColor, hueRange, saturationRange, brightnessRange);
-		settings.grungeColor = settings.frayedBorderColor;
+	private static void setRandomSeeds(MapSettings settings, Random rand)
+	{
+		long seed = Helper.safeAbs(rand.nextInt());
+		settings.randomSeed = seed;
+		settings.regionsRandomSeed = seed;
+		settings.backgroundRandomSeed = seed;
+		settings.frayedBorderSeed = seed;
+		settings.textRandomSeed = seed;
+	}
 
+	/**
+	 * Randomizes the world: its size, land shape, regions, dimensions, and the books names come from. None of these are part of a theme.
+	 */
+	private static void applyWorldRandomness(MapSettings settings, Random rand)
+	{
 		settings.worldSize = (rand.nextInt((maxWorldSize - minWorldSizeForRandomSettings) / worldSizePrecision) + minWorldSizeForRandomSettings / worldSizePrecision) * worldSizePrecision;
-
 
 		List<Tuple3<LandShape, Integer, Integer>> ranges = Arrays.asList(new Tuple3<>(LandShape.Supercontinent, 11000, 18000), new Tuple3<>(LandShape.Continents, 8000, maxWorldSize),
 				new Tuple3<>(LandShape.Scattered, minWorldSize, 10000), new Tuple3<>(LandShape.Coastline, minWorldSize, 8000));
@@ -173,110 +206,16 @@ public class SettingsGenerator
 			settings.landShape = ProbabilityHelper.sampleUniform(rand, sampleDomain);
 		}
 
-
 		int rangeSize = maxGeneratedRegionCount(settings.worldSize) - minRegionCount;
 		int low = minRegionCount + rangeSize / 4;
 		int high = minRegionCount + (3 * rangeSize) / 4;
 		settings.regionCount = low + rand.nextInt(Math.max(1, high - low + 1));
 
-		settings.grungeWidth = 100 + rand.nextInt(1400);
-
-		settings.treeHeightScale = 0.4;
-		settings.mountainScale = 1.2;
-		settings.hillScale = 1.2;
-		settings.duneScale = 1.2;
-		settings.cityScale = 1.2;
-
-		final double drawBorderProbability = 0.75;
-		settings.drawBorder = rand.nextDouble() <= drawBorderProbability;
-		List<NamedResource> borderTypes = Assets.listBorderTypesForArtPack(artPack, customImagesFolder);
-		if (borderTypes.isEmpty())
-		{
-			borderTypes = Assets.listBorderTypesForArtPacks(Assets.listArtPacksForNewRandomMaps(customImagesFolder), customImagesFolder);
-		}
-		// Note- borderTypes shouldn't be empty since that would mean there's no border types, including installed ones.
-		if (!borderTypes.isEmpty())
-		{
-			// Random border type.
-			settings.borderResource = ProbabilityHelper.sampleUniform(rand, borderTypes);
-
-			if (settings.borderResource.name.equals("dashes"))
-			{
-				settings.borderWidth = Math.abs(rand.nextInt(50)) + 25;
-			}
-			else if (settings.borderResource.name.equals("dashes with inset corners"))
-			{
-				settings.borderWidth = Math.abs(rand.nextInt(75)) + 50;
-			}
-			else
-			{
-				settings.borderWidth = Math.abs(rand.nextInt(200)) + 100;
-			}
-		}
-
-		if (settings.drawBorder)
-		{
-			if (settings.borderResource.name.equals("dashes"))
-			{
-				settings.frayedBorder = false;
-			}
-			else
-			{
-				settings.frayedBorder = rand.nextDouble() > 0.5;
-			}
-		}
-		else
-		{
-			settings.frayedBorder = true;
-		}
-		settings.frayedBorderBlurLevel = Math.abs(rand.nextInt(150));
-		// Fray size is stored inverted with respect to the UI.
-		final int maxFraySize = 6;
-		settings.frayedBorderSize = maxFrayedEdgeSizeForUI - Math.abs(rand.nextInt(maxFraySize));
-
-		settings.cityProbability = 0.25 * maxCityProbability;
-
-		List<String> cityIconTypes = ImageCache.getInstance(settings.artPack, settings.customImagesPath).getIconGroupNames(IconType.cities);
-		if (cityIconTypes.size() > 0)
-		{
-			settings.cityIconTypeName = ProbabilityHelper.sampleUniform(rand, new ArrayList<>(cityIconTypes));
-		}
-
-		settings.drawRegionBoundaries = rand.nextDouble() > 0.25;
-		settings.drawRegionColors = true;
-		settings.regionBoundaryStyle = new Stroke(ProbabilityHelper.sampleEnumUniform(rand, StrokeType.class), settings.regionBoundaryStyle.width);
-
-		if (rand.nextDouble() > 0.75)
-		{
-			settings.generateBackground = true;
-			settings.generateBackgroundFromTexture = false;
-		}
-		else
-		{
-			settings.generateBackground = false;
-			settings.generateBackgroundFromTexture = true;
-		}
-		settings.solidColorBackground = false;
-
-		// Always set a background texture even if it is not used so that the editor doesn't give an error when switching
-		// to the background texture file path field.
-		List<NamedResource> textureFiles = Assets.listBackgroundTexturesForArtPack(artPack, settings.customImagesPath);
-		if (textureFiles.isEmpty())
-		{
-			textureFiles = Assets.listBackgroundTexturesForArtPacks(Assets.listArtPacksForNewRandomMaps(settings.customImagesPath), settings.customImagesPath);
-		}
-
-		settings.backgroundTextureResource = ProbabilityHelper.sampleUniform(rand, textureFiles);
-		settings.backgroundTextureSource = TextureSource.Assets;
-
-		settings.drawBoldBackground = rand.nextDouble() > 0.5;
-		settings.boldBackgroundColor = MapCreator.generateColorFromBaseColor(rand, settings.boldBackgroundColor, hueRange, saturationRange, brightnessRange);
-
 		GeneratedDimension dimension = ProbabilityHelper.sampleUniform(rand, Arrays.asList(GeneratedDimension.presets()));
 		settings.generatedWidth = dimension.width;
 		settings.generatedHeight = dimension.height;
 
-		settings.books.clear();
+		settings.books = new TreeSet<>();
 		List<String> allBooks = getAllBooks();
 		if (allBooks.size() < 3)
 		{
@@ -293,53 +232,232 @@ public class SettingsGenerator
 				booksRemaining.remove(index);
 			}
 		}
-
-		settings.lineStyle = ProbabilityHelper.sampleEnumUniform(rand, LineStyle.class);
-
-		settings.drawRoads = true;
-		// Make sure the road line style is sufficiently different from region boundary style.
-		if (settings.regionBoundaryStyle.type == StrokeType.Dashes || settings.regionBoundaryStyle.type == StrokeType.Rounded_Dashes)
-		{
-			settings.roadStyle = new Stroke(StrokeType.Dots, settings.roadStyle.width);
-		}
-		else if (settings.regionBoundaryStyle.type == StrokeType.Dots)
-		{
-			settings.roadStyle = new Stroke(ProbabilityHelper.sampleUniform(rand, Arrays.asList(StrokeType.Dashes, StrokeType.Rounded_Dashes)), settings.roadStyle.width);
-		}
-		else
-		{
-			settings.roadStyle = new Stroke(ProbabilityHelper.sampleUniform(rand, Arrays.asList(StrokeType.Dashes, StrokeType.Rounded_Dashes, StrokeType.Dots)), settings.roadStyle.width);
-		}
-
-		return settings;
 	}
 
 	/**
-	 * Points the built-in default fonts at a bundled family that can draw the script of the user's language, so a brand new map doesn't lose the place names its owner types. A character a font has no
-	 * glyph for goes undrawn: most fonts mark the gap with a box, and some leave nothing there at all. Every font field is rewritten, including the road font, which otherwise keeps the family it
-	 * derived from the river font.
+	 * Varies the look of the given settings within the theme's rules. Base values come from the rules where they are recorded, so that
+	 * varying a map's look again varies around the same theme rather than drifting from it.
 	 */
-	private static void useADefaultFontThatCanDrawTheUsersLanguage(MapSettings settings)
+	public static void applyThemeRandomness(MapSettings settings, ThemeGenerationSettings gen, Random rand)
 	{
-		String family = FontFinder.getDefaultFamilyForLanguage(Translation.getEffectiveLocale().getLanguage());
-		for (MapSettings.ThemeFontType type : MapSettings.ThemeFontType.values())
+		// Ocean
+		settings.drawOceanWaves = rand.nextDouble() < gen.drawOceanWavesProbability;
+		List<OceanWaves> waveTypes = new ArrayList<>(gen.allowedOceanWaveTypes);
+		if (waveTypes.isEmpty())
 		{
-			Font font = settings.getThemeFont(type);
-			if (font != null && !font.getName().equals(family))
-			{
-				settings.setThemeFont(type, Font.create(family, font.getStyle(), font.getSize()));
-			}
+			waveTypes = new ArrayList<>(ThemeGenerationSettings.createDefault().allowedOceanWaveTypes);
+		}
+		// A wave type is chosen even when waves are off, so that turning them on in the editor starts from a good one.
+		settings.oceanWavesType = ProbabilityHelper.sampleUniform(rand, waveTypes);
+		settings.oceanWavesLevel = vary(rand, gen.baseOceanWavesLevel, settings.oceanWavesLevel, gen.oceanWavesLevelVariation, 0, maxShadingLevelToGenerate);
+		if (settings.oceanWavesType == OceanWaves.ConcentricWaves)
+		{
+			settings.fadeConcentricWaves = rand.nextDouble() < gen.fadeConcentricWavesProbability;
+			settings.jitterToConcentricWaves = rand.nextDouble() < gen.jitterToConcentricWavesProbability;
+			settings.brokenLinesForConcentricWaves = rand.nextDouble() < gen.brokenLinesForConcentricWavesProbability;
+		}
+		settings.concentricWaveCount = vary(rand, gen.baseConcentricWaveCount, settings.concentricWaveCount, gen.concentricWaveCountVariation, minConcentricWaveCountToGenerate,
+				maxConcentricWaveCountToGenerate);
+		// Ocean shading is used instead of waves unless the theme says otherwise, because shading and waves together render slowly. The
+		// shading width is chosen even when shading is off, so that turning it on in the editor shows something.
+		settings.drawOceanShading = !settings.drawOceanWaves || rand.nextDouble() < gen.oceanShadingWithWavesProbability;
+		settings.oceanShadingLevel = vary(rand, gen.baseOceanShadingLevel, settings.oceanShadingLevel, gen.oceanShadingLevelVariation, 1, maxShadingLevelToGenerate);
+
+		// Land edges
+		settings.coastShadingLevel = vary(rand, gen.baseCoastShadingLevel, settings.coastShadingLevel, gen.coastShadingLevelVariation, 1, maxShadingLevelToGenerate);
+		List<LineStyle> lineStyles = gen.allowedLineStyles.isEmpty() ? Arrays.asList(LineStyle.values()) : new ArrayList<>(gen.allowedLineStyles);
+		settings.lineStyle = ProbabilityHelper.sampleUniform(rand, lineStyles);
+
+		// Colors that belong together move together, so that colors chosen to work together keep working together.
+		float[] oceanOffset = rollColorOffset(rand, gen);
+		settings.oceanColor = applyColorOffset(base(gen.baseOceanColor, settings.oceanColor), oceanOffset);
+		settings.oceanWavesColor = applyColorOffset(base(gen.baseOceanWavesColor, settings.oceanWavesColor), oceanOffset);
+		settings.oceanShadingColor = applyColorOffset(base(gen.baseOceanShadingColor, settings.oceanShadingColor), oceanOffset);
+		float[] landOffset = rollColorOffset(rand, gen);
+		settings.landColor = applyColorOffset(base(gen.baseLandColor, settings.landColor), landOffset);
+		settings.regionBaseColor = applyColorOffset(base(gen.baseRegionBaseColor, settings.regionBaseColor), landOffset);
+		settings.borderColor = applyColorOffset(base(gen.baseBorderColor, settings.borderColor), landOffset);
+		float[] edgeOffset = rollColorOffset(rand, gen);
+		settings.frayedBorderColor = applyColorOffset(base(gen.baseFrayedBorderColor, settings.frayedBorderColor), edgeOffset);
+		settings.grungeColor = applyColorOffset(base(gen.baseGrungeColor, settings.grungeColor), edgeOffset);
+		settings.riverColor = applyColorOffset(base(gen.baseRiverColor, settings.riverColor), rollColorOffset(rand, gen));
+
+		// Grunge and border
+		settings.grungeWidth = vary(rand, gen.baseGrungeWidth, settings.grungeWidth, gen.grungeWidthVariation, 0, maxGrungeWidthToGenerate);
+		settings.drawBorder = rand.nextDouble() < gen.drawBorderProbability;
+		// The map's art pack can differ from the theme's, in which case the theme's allowed borders may not be in it.
+		List<NamedResource> borderTypesInArtPack = Assets.listBorderTypesForArtPack(settings.artPack, settings.customImagesPath);
+		List<NamedResource> borderTypes = chooseAllowed(borderTypesInArtPack, border -> gen.allowedBorderNames.isEmpty() || gen.allowedBorderNames.contains(border.name));
+		if (borderTypes.isEmpty())
+		{
+			borderTypes = borderTypesInArtPack;
+		}
+		if (borderTypes.isEmpty())
+		{
+			borderTypes = Assets.listBorderTypesForArtPacks(Assets.listArtPacksForNewRandomMaps(settings.customImagesPath), settings.customImagesPath);
+		}
+		// borderTypes shouldn't be empty since that would mean there are no border types, including installed ones.
+		Assets.BorderMetadata borderMetadata = Assets.defaultBorderMetadata;
+		if (!borderTypes.isEmpty())
+		{
+			settings.borderResource = ProbabilityHelper.sampleUniform(rand, borderTypes);
+			borderMetadata = Assets.readBorderMetadata(settings.borderResource, settings.customImagesPath);
+			settings.borderWidth = borderMetadata.minWidth() + rand.nextInt(borderMetadata.maxWidth() - borderMetadata.minWidth());
+		}
+		if (settings.drawBorder)
+		{
+			settings.frayedBorder = borderMetadata.allowFrayedBorder() && rand.nextDouble() < gen.frayedBorderProbability;
+		}
+		else
+		{
+			settings.frayedBorder = true;
+		}
+		settings.frayedBorderBlurLevel = vary(rand, gen.baseFrayedBorderBlurLevel, settings.frayedBorderBlurLevel, gen.frayedBorderBlurLevelVariation, 0,
+				maxFrayedBorderBlurLevelToGenerate);
+		// Fray size is stored inverted with respect to the UI.
+		settings.frayedBorderSize = vary(rand, gen.baseFrayedBorderSize, settings.frayedBorderSize, gen.frayedBorderSizeVariation, 1, maxFrayedEdgeSizeForUI);
+
+		// City icons
+		List<String> cityIconTypes = chooseAllowed(new ArrayList<>(ImageCache.getInstance(settings.artPack, settings.customImagesPath).getIconGroupNames(IconType.cities)),
+				name -> gen.allowedCityIconTypeNames.isEmpty() || gen.allowedCityIconTypeNames.contains(name));
+		if (cityIconTypes.isEmpty())
+		{
+			cityIconTypes = new ArrayList<>(ImageCache.getInstance(settings.artPack, settings.customImagesPath).getIconGroupNames(IconType.cities));
+		}
+		if (!cityIconTypes.isEmpty())
+		{
+			settings.cityIconTypeName = ProbabilityHelper.sampleUniform(rand, cityIconTypes);
+		}
+
+		// Regions
+		boolean allowsRegionColors = gen.allowedLandColoringMethods.isEmpty() || gen.allowedLandColoringMethods.contains(LandColoringMethod.ColorPoliticalRegions);
+		boolean allowsSingleColor = gen.allowedLandColoringMethods.isEmpty() || gen.allowedLandColoringMethods.contains(LandColoringMethod.SingleColor);
+		final double colorPoliticalRegionsProbabilityWhenBothAreAllowed = 0.75;
+		settings.drawRegionColors = allowsRegionColors && (!allowsSingleColor || rand.nextDouble() < colorPoliticalRegionsProbabilityWhenBothAreAllowed);
+		settings.drawRegionBoundaries = rand.nextDouble() < gen.drawRegionBoundariesProbability;
+		List<StrokeType> boundaryTypes = gen.allowedRegionBoundaryStrokeTypes.isEmpty() ? Arrays.asList(StrokeType.values()) : new ArrayList<>(gen.allowedRegionBoundaryStrokeTypes);
+		settings.regionBoundaryStyle = new Stroke(ProbabilityHelper.sampleUniform(rand, boundaryTypes), settings.regionBoundaryStyle.width);
+
+		// Roads, with a style that is clearly different from the region boundaries' when the theme allows it.
+		List<StrokeType> roadTypes = gen.allowedRoadStrokeTypes.isEmpty() ? Arrays.asList(StrokeType.Dashes, StrokeType.Rounded_Dashes, StrokeType.Dots)
+				: new ArrayList<>(gen.allowedRoadStrokeTypes);
+		List<StrokeType> roadTypesDifferentFromBoundaries = chooseAllowed(roadTypes, type -> isRoadStyleDifferentEnoughFromBoundaries(type, settings.regionBoundaryStyle.type));
+		settings.roadStyle = new Stroke(ProbabilityHelper.sampleUniform(rand, roadTypesDifferentFromBoundaries.isEmpty() ? roadTypes : roadTypesDifferentFromBoundaries),
+				settings.roadStyle.width);
+
+		// Background
+		if (rand.nextDouble() < gen.fractalBackgroundProbability)
+		{
+			settings.generateBackground = true;
+			settings.generateBackgroundFromTexture = false;
+		}
+		else
+		{
+			settings.generateBackground = false;
+			settings.generateBackgroundFromTexture = true;
+		}
+		settings.solidColorBackground = false;
+		// Always set a background texture even if it is not used so that the editor doesn't give an error when switching to the background
+		// texture file path field.
+		List<NamedResource> texturesInArtPack = Assets.listBackgroundTexturesForArtPack(settings.artPack, settings.customImagesPath);
+		List<NamedResource> textures = chooseAllowed(texturesInArtPack,
+				texture -> gen.allowedBackgroundTextureNames.isEmpty() || gen.allowedBackgroundTextureNames.contains(texture.name));
+		if (textures.isEmpty())
+		{
+			textures = texturesInArtPack;
+		}
+		if (textures.isEmpty())
+		{
+			textures = Assets.listBackgroundTexturesForArtPacks(Assets.listArtPacksForNewRandomMaps(settings.customImagesPath), settings.customImagesPath);
+		}
+		if (!textures.isEmpty())
+		{
+			settings.backgroundTextureResource = ProbabilityHelper.sampleUniform(rand, textures);
+			settings.backgroundTextureSource = TextureSource.Assets;
 		}
 	}
 
-	private static void setRandomSeeds(MapSettings settings, Random rand)
+	private static boolean isRoadStyleDifferentEnoughFromBoundaries(StrokeType roadType, StrokeType boundaryType)
 	{
-		long seed = Helper.safeAbs(rand.nextInt());
-		settings.randomSeed = seed;
-		settings.regionsRandomSeed = seed;
-		settings.backgroundRandomSeed = seed;
-		settings.frayedBorderSeed = seed;
-		settings.textRandomSeed = seed;
+		boolean isRoadDashed = roadType == StrokeType.Dashes || roadType == StrokeType.Rounded_Dashes;
+		boolean isBoundaryDashed = boundaryType == StrokeType.Dashes || boundaryType == StrokeType.Rounded_Dashes;
+		if (isBoundaryDashed)
+		{
+			return roadType == StrokeType.Dots;
+		}
+		if (boundaryType == StrokeType.Dots)
+		{
+			return isRoadDashed;
+		}
+		return roadType != boundaryType;
+	}
+
+	private static <T> List<T> chooseAllowed(List<T> items, Predicate<T> isAllowed)
+	{
+		List<T> result = new ArrayList<>();
+		for (T item : items)
+		{
+			if (isAllowed.test(item))
+			{
+				result.add(item);
+			}
+		}
+		return result;
+	}
+
+	private static <T> T base(T recordedBase, T current)
+	{
+		return recordedBase != null ? recordedBase : current;
+	}
+
+	/**
+	 * A random value within variation of the base, clamped to [min, max].
+	 */
+	private static int vary(Random rand, Integer recordedBase, int current, int variation, int min, int max)
+	{
+		int baseValue = recordedBase != null ? recordedBase : current;
+		int value = baseValue + (variation > 0 ? rand.nextInt(variation * 2 + 1) - variation : 0);
+		return Math.max(min, Math.min(max, value));
+	}
+
+	/**
+	 * A random change to hue, in degrees, and to saturation and brightness, as fractions, within the theme's color variation.
+	 */
+	private static float[] rollColorOffset(Random rand, ThemeGenerationSettings gen)
+	{
+		float hue = (float) ((rand.nextDouble() - 0.5) * gen.hueVariation);
+		float saturation = (float) ((rand.nextDouble() - 0.5) * gen.saturationVariation / 100.0);
+		float brightness = (float) ((rand.nextDouble() - 0.5) * gen.brightnessVariation / 100.0);
+		return new float[] { hue, saturation, brightness };
+	}
+
+	/**
+	 * Changes a color by an offset from {@link #rollColorOffset}. Hue is an angle, so it is shifted and wraps around. Saturation and
+	 * brightness are bounded, so they are scaled toward their bound in the direction of the change, which keeps colors near a bound in step
+	 * with the others instead of clipping. Alpha is kept.
+	 */
+	static Color applyColorOffset(Color color, float[] offset)
+	{
+		if (color == null)
+		{
+			return null;
+		}
+		float[] hsb = color.getHSB();
+		float hue = hsb[0] + offset[0] / 360f;
+		hue = hue - (float) Math.floor(hue);
+		float saturation = scaleTowardBound(hsb[1], offset[1]);
+		float brightness = scaleTowardBound(hsb[2], offset[2]);
+		Color result = Color.createFromHSB(hue, saturation, brightness);
+		return Color.create(result.getRed(), result.getGreen(), result.getBlue(), color.getAlpha());
+	}
+
+	private static float scaleTowardBound(float value, float change)
+	{
+		if (change < 0)
+		{
+			return value * (1 + change);
+		}
+		return value + change * (1 - value);
 	}
 
 	public static List<String> getAllBooks()
@@ -356,7 +474,8 @@ public class SettingsGenerator
 	}
 
 	/**
-	 * Creates new map settings that keep the theme (colors, fonts, border, background, etc.) from the given settings but generate a new world layout and text names.
+	 * Creates new map settings that keep the theme (colors, fonts, border, background, etc.) from the given settings but generate a new world
+	 * layout and text names.
 	 */
 	public static MapSettings newMapWithSameTheme(MapSettings currentSettings)
 	{
@@ -364,6 +483,7 @@ public class SettingsGenerator
 		settings.edits = new MapEdits();
 		settings.imageExportPath = null;
 		settings.heightmapExportPath = null;
+		settings.themeExportPath = null;
 		// A brand new full-size map is created in the current version, even if its theme came from a map saved in an older version, so set the
 		// current version rather than inheriting the source map's (possibly older) version from the deep copy.
 		settings.version = MapSettings.currentVersion;
@@ -394,97 +514,25 @@ public class SettingsGenerator
 	}
 
 	/**
-	 * Randomizes only the theme (visual appearance) fields of the given settings, keeping the world layout (land seed, world size, probabilities, etc.) unchanged.
+	 * Varies the look of the given settings within their theme's rules, keeping the world layout (land seed, world size, probabilities, etc.)
+	 * unchanged. Settings with no recorded rules first record their current look as the base values to vary, so that varying them again
+	 * varies around the same look.
 	 */
-	public static void randomizeTheme(MapSettings settings, String artPack, String customImagesPath)
+	public static void randomizeTheme(MapSettings settings, Random rand)
 	{
-		MapSettings randomSettings = generate(new Random(), artPack, customImagesPath);
-		settings.oceanShadingLevel = randomSettings.oceanShadingLevel;
-		settings.drawOceanShading = randomSettings.drawOceanShading;
-		settings.oceanWavesLevel = randomSettings.oceanWavesLevel;
-		settings.drawOceanWaves = randomSettings.drawOceanWaves;
-		settings.concentricWaveCount = randomSettings.concentricWaveCount;
-		settings.fadeConcentricWaves = randomSettings.fadeConcentricWaves;
-		settings.jitterToConcentricWaves = randomSettings.jitterToConcentricWaves;
-		settings.jitterLevel = randomSettings.jitterLevel;
-		settings.brokenLinesForConcentricWaves = randomSettings.brokenLinesForConcentricWaves;
-		settings.concentricWaveLineWidth = randomSettings.concentricWaveLineWidth;
-		settings.drawOceanEffectsInLakes = randomSettings.drawOceanEffectsInLakes;
-		settings.oceanWavesType = randomSettings.oceanWavesType;
-		settings.setWavyLineStyle(randomSettings.getWavyLineStyle());
-		settings.wavyLineBreakLevel = randomSettings.wavyLineBreakLevel;
-		settings.setHatchingStyle(randomSettings.getHatchingStyle());
-		settings.hatchingBreakLevel = randomSettings.hatchingBreakLevel;
-		settings.fadeHatching = randomSettings.fadeHatching;
-		settings.hatchingFadeVariation = randomSettings.hatchingFadeVariation;
-		settings.setRippleStyle(randomSettings.getRippleStyle());
-		settings.riverColor = randomSettings.riverColor;
-		settings.roadColor = randomSettings.roadColor;
-		settings.coastShadingLevel = randomSettings.coastShadingLevel;
-		settings.drawCoastShading = randomSettings.drawCoastShading;
-		settings.coastShadingColor = randomSettings.coastShadingColor;
-		settings.oceanWavesColor = randomSettings.oceanWavesColor;
-		settings.coastlineColor = randomSettings.coastlineColor;
-		settings.frayedBorder = randomSettings.frayedBorder;
-		settings.frayedBorderSize = randomSettings.frayedBorderSize;
-		settings.frayedBorderColor = randomSettings.frayedBorderColor;
-		settings.frayedBorderBlurLevel = randomSettings.frayedBorderBlurLevel;
-		settings.frayedBorderSeed = randomSettings.frayedBorderSeed;
-		settings.grungeWidth = randomSettings.grungeWidth;
-		settings.grungeColor = randomSettings.grungeColor;
-		settings.generateBackground = randomSettings.generateBackground;
-		settings.generateBackgroundFromTexture = randomSettings.generateBackgroundFromTexture;
-		settings.solidColorBackground = randomSettings.solidColorBackground;
-		settings.colorizeOcean = randomSettings.colorizeOcean;
-		settings.colorizeLand = randomSettings.colorizeLand;
-		settings.backgroundTextureResource = randomSettings.backgroundTextureResource;
-		settings.backgroundTextureImage = randomSettings.backgroundTextureImage;
-		settings.backgroundRandomSeed = randomSettings.backgroundRandomSeed;
-		settings.oceanColor = randomSettings.oceanColor;
-		settings.borderColorOption = randomSettings.borderColorOption;
-		settings.borderColor = randomSettings.borderColor;
-		settings.landColor = randomSettings.landColor;
-		settings.regionBaseColor = randomSettings.regionBaseColor;
-		settings.hueRange = randomSettings.hueRange;
-		settings.saturationRange = randomSettings.saturationRange;
-		settings.brightnessRange = randomSettings.brightnessRange;
-		settings.titleFont = randomSettings.titleFont;
-		settings.regionFont = randomSettings.regionFont;
-		settings.mountainRangeFont = randomSettings.mountainRangeFont;
-		settings.otherMountainsFont = randomSettings.otherMountainsFont;
-		settings.riverFont = randomSettings.riverFont;
-		settings.roadFont = randomSettings.roadFont;
-		settings.boldBackgroundColor = randomSettings.boldBackgroundColor;
-		settings.textColor = randomSettings.textColor;
-		settings.drawBoldBackground = randomSettings.drawBoldBackground;
-		settings.drawRegionBoundaries = randomSettings.drawRegionBoundaries;
-		settings.regionBoundaryStyle = randomSettings.regionBoundaryStyle;
-		settings.drawRegionColors = randomSettings.drawRegionColors;
-		settings.regionsRandomSeed = randomSettings.regionsRandomSeed;
-		settings.drawBorder = randomSettings.drawBorder;
-		settings.borderResource = randomSettings.borderResource;
-		settings.borderWidth = randomSettings.borderWidth;
-		settings.lineStyle = randomSettings.lineStyle;
+		if (settings.themeGeneration == null)
+		{
+			settings.themeGeneration = ThemeGenerationSettings.createDefault();
+			settings.themeGeneration.setBaseValuesFrom(settings);
+		}
+		applyThemeRandomness(settings, settings.themeGeneration, rand);
+		settings.backgroundRandomSeed = Helper.safeAbs(rand.nextInt());
+		settings.regionsRandomSeed = Helper.safeAbs(rand.nextInt());
+		settings.frayedBorderSeed = Helper.safeAbs(rand.nextInt());
 	}
 
 	public static void randomizeLand(MapSettings settings)
 	{
-		MapSettings randomSettings = SettingsGenerator.generate(null);
-		settings.randomSeed = randomSettings.randomSeed;
-	}
-
-	/**
-	 * Gives wavy lines, hatching and ripples their looks, which are their defaults. Only some combinations of their style settings look good,
-	 * so new maps use these instead of varying each setting on its own.
-	 */
-	private static void applyWaveRowPresets(MapSettings settings)
-	{
-		settings.setWavyLineStyle(MapSettings.getDefaultWavyLineStyle());
-		settings.wavyLineBreakLevel = MapSettings.defaultWavyLineBreakLevel;
-		settings.setHatchingStyle(MapSettings.getDefaultHatchingStyle());
-		settings.hatchingBreakLevel = MapSettings.defaultHatchingBreakLevel;
-		settings.fadeHatching = MapSettings.defaultFadeHatching;
-		settings.hatchingFadeVariation = MapSettings.defaultHatchingFadeVariation;
-		settings.setRippleStyle(MapSettings.getDefaultRippleStyle());
+		settings.randomSeed = Helper.safeAbs(new Random().nextInt());
 	}
 }

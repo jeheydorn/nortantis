@@ -49,6 +49,15 @@ public class ControlClickBehaviorWidget
 
 	public RowHider addToOrganizer(GridBagOrganizer organizer)
 	{
+		return addToOrganizer(organizer, "iconsTool.ctrlClickBehavior.help");
+	}
+
+	/**
+	 * @param helpKey
+	 *            The translation key of the row's help text, which says what is selected. Its parameter is the name of the command key.
+	 */
+	public RowHider addToOrganizer(GridBagOrganizer organizer, String helpKey)
+	{
 		JPanel container = new JPanel();
 		container.setLayout(new WrapLayout(WrapLayout.LEFT));
 		// Remove the horizontal and vertical gaps from the border around the elements.
@@ -57,7 +66,7 @@ public class ControlClickBehaviorWidget
 		container.add(unselectModeButton);
 
 		String keyName = SwingHelper.getCommandKeyName();
-		return organizer.addLabelAndComponent(Translation.get("iconsTool.ctrlClickBehavior.label", keyName), Translation.get("iconsTool.ctrlClickBehavior.help", keyName), container);
+		return organizer.addLabelAndComponent(Translation.get("iconsTool.ctrlClickBehavior.label", keyName), Translation.get(helpKey, keyName), container);
 	}
 
 	public boolean isSelectMode()

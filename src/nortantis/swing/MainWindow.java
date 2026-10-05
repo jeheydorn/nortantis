@@ -9,6 +9,11 @@ import nortantis.GeneratedDimension;
 import nortantis.ImageCache;
 import nortantis.MapFonts;
 import nortantis.MapSettings;
+import nortantis.MapText;
+import nortantis.TextStyle;
+import nortantis.TextType;
+import nortantis.ThemeCatalog;
+import nortantis.ThemeGenerationSettings;
 import nortantis.editor.*;
 import nortantis.geom.IntDimension;
 import nortantis.geom.IntRectangle;
@@ -139,6 +144,12 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	 */
 	private static volatile MainWindow instance;
 	private static volatile String pendingFileToOpenFromAppleEvent;
+	/**
+	 * Whether the editor window has started being created, and whether it should not be, because Nortantis was launched only to install a
+	 * theme. Both are guarded by the MainWindow class's lock.
+	 */
+	private static boolean hasStartedCreatingMainWindow;
+	private static boolean isLaunchedOnlyToInstallTheme;
 	public MapEdits edits;
 
 	JScrollPane mapEditingScrollPane;
@@ -153,6 +164,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	JMenuItem undoAllButton;
 	JMenuItem redoAllButton;
 	private JMenuItem clearEntireMapButton;
+	private JCheckBoxMenuItem enableTextMenuItem;
 	public Undoer undoer;
 	// The zoom level currently reflected by mapEditingPanel's displayed image. Only updated when a rescaled image is actually
 	// committed to the panel (see commitScaledMap), so it always matches what's on screen, even while a background rescale
@@ -200,12 +212,24 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	ExportAction defaultMapExportAction;
 	ExportAction defaultHeightmapExportAction;
 	String imageExportPath;
+	/**
+	 * Where the open map's theme was last exported.
+	 */
+	String themeExportPath;
+	/**
+	 * How new random maps vary the open map's theme. Kept here rather than read from the saved settings, since exporting the theme changes
+	 * it.
+	 */
+	ThemeGenerationSettings themeGeneration;
 	double heightmapExportResolution;
 	String heightmapExportPath;
 	private JMenuItem saveMenuItem;
 	private JMenuItem saveAsMenItem;
 	private JMenuItem exportMapAsImageMenuItem;
 	private JMenuItem exportHeightmapMenuItem;
+	private JMenu fileThemeMenu;
+	private JMenuItem applyThemeMenuItem;
+	private JMenuItem exportThemeMenuItem;
 	private JMenu editMenu;
 	private JMenu viewMenu;
 	private JMenu recentSettingsMenuItem;
@@ -264,6 +288,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		// no map, and is restored if opening the command-line map is cancelled or fails.
 		enableOrDisableFieldsThatRequireMap(false, null, false);
 
+		// Theme files (.nortTheme) don't end with the map extension, so they are never opened as maps here.
 		boolean hasCommandLineMap = fileToOpen != null && !fileToOpen.isEmpty() && fileToOpen.endsWith(MapSettings.fileExtensionWithDot) && new File(fileToOpen).exists();
 		if (hasCommandLineMap)
 		{
@@ -452,6 +477,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		saveAsMenItem.setEnabled(enable);
 		exportMapAsImageMenuItem.setEnabled(enable);
 		exportHeightmapMenuItem.setEnabled(enable);
+		fileThemeMenu.setEnabled(enable);
+		applyThemeMenuItem.setEnabled(enable);
+		exportThemeMenuItem.setEnabled(enable);
 		mapInfoMenuItem.setEnabled(enable);
 
 		if (!enable || undoer == null)
@@ -466,6 +494,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			undoer.updateUndoRedoEnabled();
 		}
 		clearEntireMapButton.setEnabled(enable && hasDrawnCurrentMapAtLeastOnce);
+		enableTextMenuItem.setEnabled(enable);
 		customImagesMenuItem.setEnabled(enable);
 
 		nameGeneratorMenuItem.setEnabled(enable);
@@ -1507,6 +1536,18 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 
+		fileThemeMenu = new JMenu(Translation.get("menu.file.theme"));
+		fileThemeMenu.setEnabled(false);
+		fileMenu.add(fileThemeMenu);
+		applyThemeMenuItem = new JMenuItem(Translation.get("menu.file.theme.apply"));
+		applyThemeMenuItem.setEnabled(false);
+		fileThemeMenu.add(applyThemeMenuItem);
+		applyThemeMenuItem.addActionListener(e -> showApplyThemeDialog());
+		exportThemeMenuItem = new JMenuItem(Translation.get("menu.file.theme.export"));
+		exportThemeMenuItem.setEnabled(false);
+		fileThemeMenu.add(exportThemeMenuItem);
+		exportThemeMenuItem.addActionListener(e -> showExportThemeDialog());
+
 		fileMenu.addSeparator();
 
 		refreshMenuItem = new JMenuItem(Translation.get("menu.file.refreshImagesAndRedraw"));
@@ -1610,6 +1651,21 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 		clearEntireMapButton.setEnabled(false);
+
+		enableTextMenuItem = new JCheckBoxMenuItem(Translation.get("menu.edit.enableText"));
+		enableTextMenuItem.setToolTipText(Translation.get("menu.edit.enableText.tooltip"));
+		enableTextMenuItem.setEnabled(false);
+		editMenu.add(enableTextMenuItem);
+		enableTextMenuItem.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				undoer.setUndoPoint(UpdateType.Text, null);
+				handleThemeChange(false);
+				updater.createAndShowMapTextChange();
+			}
+		});
 
 		editMenu.addSeparator();
 
@@ -1829,7 +1885,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			public void actionPerformed(ActionEvent e)
 			{
 				String zoomModifierKey = OSHelper.isMac() ? "Cmd" : "Ctrl";
-				SwingHelper.showMessageDialog(MainWindow.this, Translation.get("keyboardShortcuts.message", zoomModifierKey), Translation.get("keyboardShortcuts.title"), JOptionPane.INFORMATION_MESSAGE);
+				String altKey = OSHelper.isMac() ? "Option" : "Alt";
+				SwingHelper.showMessageDialog(MainWindow.this, Translation.get("keyboardShortcuts.message", zoomModifierKey, altKey), Translation.get("keyboardShortcuts.title"),
+						JOptionPane.INFORMATION_MESSAGE);
 			}
 		});
 
@@ -3361,9 +3419,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		final boolean isSavingToDifferentFile = !savePath.equals(curPath);
 		if (isSavingToDifferentFile)
 		{
-			// Clear previous image export locations so that a new copy of a map doesn't export over the images from the older version.
+			// Clear previous export locations so that a new copy of a map doesn't export over the files from the older version.
 			settings.imageExportPath = null;
 			settings.heightmapExportPath = null;
+			settings.themeExportPath = null;
 		}
 
 		try
@@ -3385,6 +3444,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		{
 			imageExportPath = null;
 			heightmapExportPath = null;
+			themeExportPath = null;
 		}
 
 		updateFrameTitle(false, true);
@@ -3401,6 +3461,130 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	}
 
 	private boolean showUnsavedChangesSymbol = false;
+
+	private void showApplyThemeDialog()
+	{
+		if (lastSettingsLoadedOrSaved == null)
+		{
+			return;
+		}
+		ApplyThemeDialog dialog = new ApplyThemeDialog(this, customImagesPath, this::applyTheme);
+		dialog.setVisible(true);
+	}
+
+	private void showExportThemeDialog()
+	{
+		MapSettings settings = getSettingsFromGUI(false);
+		if (settings == null)
+		{
+			return;
+		}
+		String mapName = openSettingsFilePath == null ? null : FilenameUtils.getBaseName(openSettingsFilePath.toString());
+		ThemeExportDialog dialog = new ThemeExportDialog(this, settings, mapName, (themeGenerationToKeep, exportPath) ->
+		{
+			themeGeneration = themeGenerationToKeep;
+			themeExportPath = exportPath;
+			handleChangeWithoutRedraw();
+		});
+		dialog.setVisible(true);
+	}
+
+	/**
+	 * Restyles the open map with a theme: everything describing how the map looks, and the font, color, and background of every piece of
+	 * text and of the styles for new text. Text sizes and layout are kept.
+	 */
+	void applyTheme(ThemeCatalog.Entry entry)
+	{
+		MapSettings theme;
+		try
+		{
+			theme = ThemeCatalog.load(entry);
+		}
+		catch (MapSettings.ThemeFromNewerVersionException e)
+		{
+			SwingHelper.showMessageDialog(this, Translation.get("theme.fromNewerVersion", e.themeVersion, MapSettings.currentVersion), Translation.get("theme.unableToLoad.title"),
+					JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+		catch (Exception e)
+		{
+			Logger.printError("Unable to load the theme " + entry, e);
+			SwingHelper.showMessageDialog(this, Translation.get("theme.unableToLoad", e.getMessage()), Translation.get("theme.unableToLoad.title"), JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+
+		// A theme from an art pack comes with that art pack. One the user installed themselves may name art packs they don't have.
+		if (entry.source == ThemeCatalog.Source.User)
+		{
+			MapSettings.MissingArtPackInfo missingArtPacks = theme.findMissingArtPacks();
+			if (!missingArtPacks.isEmpty())
+			{
+				MissingArtPackDialog.Result response = MissingArtPackDialog.show(this, entry.name, missingArtPacks, customImagesPath);
+				if (response.cancelled)
+				{
+					return;
+				}
+				theme.applyMissingArtPackSubstitution(missingArtPacks.missingArtPacks, response.chosenArtPack);
+			}
+		}
+
+		MapFonts.MissingFontInfo fontProblems = MapFonts.findProblems(theme);
+		if (!fontProblems.isEmpty())
+		{
+			MissingFontDialog.Result response = MissingFontDialog.show(this, entry.name, fontProblems);
+			if (response.cancelled)
+			{
+				return;
+			}
+			MapFonts.applySubstitution(theme, response.replacements);
+		}
+
+		updater.doWhenMapIsNotDrawing(() ->
+		{
+			toolsPanel.currentTool.onBeforeUndoRedo();
+			MapSettings settings = getSettingsFromGUI(false);
+			EnumMap<TextType, TextStyle> previousTextStyleDefaults = settings.copyTextStyleDefaults();
+			settings.copyThemeFrom(theme);
+
+			// Sizes are kept, so that text added afterward matches the size of the text already on the map.
+			for (TextType type : TextType.values())
+			{
+				TextStyle themeStyle = theme.getDefaultTextStyle(type);
+				TextStyle previousStyle = previousTextStyleDefaults.get(type);
+				if (themeStyle != null && previousStyle != null)
+				{
+					TextStyle newStyle = themeStyle.copy();
+					newStyle.font = previousStyle.withFamilyAndStyleOf(themeStyle.font);
+					settings.setDefaultTextStyle(type, newStyle);
+				}
+			}
+			for (MapText text : settings.edits.text)
+			{
+				TextStyle themeStyle = theme.getDefaultTextStyle(text.type);
+				if (themeStyle != null)
+				{
+					text.style.font = text.style.withFamilyAndStyleOf(themeStyle.font);
+					text.style.color = themeStyle.color;
+					text.style.background = themeStyle.background.copy();
+				}
+			}
+
+			loadSettingsAndEditsIntoThemeAndToolsPanels(settings, true, true);
+			toolsPanel.currentTool.onAfterUndoRedo();
+			undoer.setApplyThemeUndoPoint(() -> handleImagesRefresh());
+			handleImagesRefresh();
+			updater.createAndShowMapFull();
+		});
+	}
+
+	/**
+	 * Updates the unsaved changes symbol in the title after a change to the map's settings that doesn't redraw the map.
+	 */
+	void handleChangeWithoutRedraw()
+	{
+		boolean isChange = settingsHaveUnsavedChanges();
+		updateFrameTitle(isChange, !isChange);
+	}
 
 	private void updateFrameTitle(boolean isTriggeredByChange, boolean clearUnsavedChangesSymbol)
 	{
@@ -3547,6 +3731,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		{
 			customImagesPath = settings.customImagesPath;
 			edits = settings.edits;
+			themeGeneration = settings.themeGeneration == null ? null : settings.themeGeneration.copy();
+			themeExportPath = settings.themeExportPath;
+			enableTextMenuItem.setSelected(settings.drawText);
 			themePanel.loadSettingsIntoGUI(settings, refreshImagePreviews);
 			toolsPanel.loadSettingsIntoGUI(settings, isUndoRedoOrAutomaticChange, refreshImagePreviews);
 		}
@@ -3589,6 +3776,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		settings.heightmapResolution = heightmapExportResolution;
 		settings.heightmapExportPath = heightmapExportPath;
 		settings.customImagesPath = customImagesPath;
+		settings.drawText = enableTextMenuItem.isSelected();
+		settings.themeGeneration = themeGeneration == null ? null : themeGeneration.copy();
+		settings.themeExportPath = themeExportPath;
 
 		themePanel.getSettingsFromGUI(settings);
 		toolsPanel.getSettingsFromGUI(settings);
@@ -3737,7 +3927,32 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					return;
 				}
 				String filePath = event.getFiles().get(0).getAbsolutePath();
-				if (instance != null)
+				if (ThemeInstaller.isThemeFile(filePath))
+				{
+					// Opening a theme installs it rather than opening a map. If the editor window hasn't started being created, Nortantis
+					// was launched to open the theme, so the window is never created.
+					synchronized (MainWindow.class)
+					{
+						if (!hasStartedCreatingMainWindow)
+						{
+							isLaunchedOnlyToInstallTheme = true;
+						}
+					}
+					EventQueue.invokeLater(() ->
+					{
+						ThemeInstaller.offerToInstall(instance, filePath);
+						boolean exit;
+						synchronized (MainWindow.class)
+						{
+							exit = isLaunchedOnlyToInstallTheme;
+						}
+						if (exit)
+						{
+							System.exit(0);
+						}
+					});
+				}
+				else if (instance != null)
 				{
 					launchNewInstanceForFile(filePath);
 				}
@@ -3749,10 +3964,28 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		}
 
 		String fileToOpen = args.length > 0 ? args[0] : "";
+		if (ThemeInstaller.isThemeFile(fileToOpen))
+		{
+			// Opening a theme installs it into the user's themes folder. No editor window is opened, since nothing in the editor is needed.
+			EventQueue.invokeLater(() ->
+			{
+				ThemeInstaller.offerToInstall(null, fileToOpen);
+				System.exit(0);
+			});
+			return;
+		}
 		EventQueue.invokeLater(new Runnable()
 		{
 			public void run()
 			{
+				synchronized (MainWindow.class)
+				{
+					if (isLaunchedOnlyToInstallTheme)
+					{
+						return;
+					}
+					hasStartedCreatingMainWindow = true;
+				}
 				try
 				{
 					String fileFromAppleEvent = pendingFileToOpenFromAppleEvent;

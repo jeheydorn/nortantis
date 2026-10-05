@@ -149,6 +149,15 @@ public class FontChooser
 		updatePreview();
 	}
 
+	/**
+	 * Shows that the chooser stands for several fonts that differ, by leaving the preview blank. The chooser opens on the font last set with
+	 * {@link #setFont}.
+	 */
+	public void setMixed()
+	{
+		fontDisplay.setText("");
+	}
+
 	private void updatePreview()
 	{
 		if (font == null)

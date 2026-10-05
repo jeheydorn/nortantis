@@ -1,6 +1,5 @@
 package nortantis;
 
-import nortantis.geom.Point;
 import nortantis.util.*;
 
 import java.util.*;
@@ -456,18 +455,5 @@ public class NameCreator
 			// This can happen if the selected books don't have enough names.
 			return "name";
 		}
-	}
-
-	/**
-	 * Adds text that the user is manually creating.
-	 */
-	public MapText createUserAddedText(TextType type, Point location, double resolutionScale)
-	{
-		String name = generateNameOfTypeForTextEditor(type);
-		// Getting the id must be done after calling generateNameOfType because
-		// said method increments textCounter
-		// before generating the name.
-		MapText mapText = TextDrawer.createMapText(name, location, 0.0, type, resolutionScale);
-		return mapText;
 	}
 }

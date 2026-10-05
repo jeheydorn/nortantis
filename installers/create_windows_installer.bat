@@ -27,6 +27,7 @@ jpackage ^
 --win-shortcut ^
 --icon "taskbar icon.ico" ^
 --file-associations file_associations_windows.txt ^
+--file-associations file_associations_windows_theme.txt ^
 --vendor "Joseph Heydorn" ^
 --app-version "%nortantis_version%" ^
 --java-options -XX:MaxRAMPercentage=50.0 ^

@@ -31,8 +31,10 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
@@ -319,6 +321,34 @@ public class SwingHelper
 		button.setMargin(new Insets(m.top, m.left - amountToReduce, m.bottom, m.right - amountToReduce));
 	}
 
+	private static final String mixedColorsProperty = "nortantis.mixedColors";
+	/**
+	 * The most stripes a swatch standing for several colors shows.
+	 */
+	private static final int maxMixedColorStripes = 4;
+
+	/**
+	 * Shows the colors that a swatch made by {@link #createColorPickerPreviewPanel()} stands for. When they differ, the swatch shows a stripe
+	 * of each, up to {@link #maxMixedColorStripes}. The swatch's background, which a color picker opened from it starts on, is set to the
+	 * first color.
+	 */
+	public static void showColorsInColorPickerPreview(JPanel colorDisplay, List<Color> colors)
+	{
+		List<Color> distinctColors = new ArrayList<>(new LinkedHashSet<>(colors));
+		colorDisplay.setBackground(colors.get(0));
+		colorDisplay.putClientProperty(mixedColorsProperty, distinctColors.size() > 1 ? distinctColors : null);
+		colorDisplay.repaint();
+	}
+
+	/**
+	 * Makes a swatch made by {@link #createColorPickerPreviewPanel()} show only its background color.
+	 */
+	public static void clearMixedColorsInColorPickerPreview(JPanel colorDisplay)
+	{
+		colorDisplay.putClientProperty(mixedColorsProperty, null);
+		colorDisplay.repaint();
+	}
+
 	public static JPanel createColorPickerPreviewPanel()
 	{
 		JPanel panel = new JPanel()
@@ -327,6 +357,28 @@ public class SwingHelper
 			protected void paintComponent(Graphics g)
 			{
 				super.paintComponent(g);
+				@SuppressWarnings("unchecked")
+				List<Color> mixedColors = (List<Color>) getClientProperty(mixedColorsProperty);
+				if (mixedColors != null)
+				{
+					// A swatch standing for several colors shows a stripe of each, with a line between stripes so that two similar colors
+					// still read as two.
+					int stripeCount = Math.min(mixedColors.size(), maxMixedColorStripes);
+					Color dividerColor = UIManager.getColor("Label.disabledForeground") != null ? UIManager.getColor("Label.disabledForeground") : Color.gray;
+					for (int i = 0; i < stripeCount; i++)
+					{
+						int left = i * getWidth() / stripeCount;
+						int right = (i + 1) * getWidth() / stripeCount;
+						g.setColor(isEnabled() ? mixedColors.get(i) : fadeTowardBackground(mixedColors.get(i)));
+						g.fillRect(left, 0, right - left, getHeight());
+						if (i > 0)
+						{
+							g.setColor(dividerColor);
+							g.drawLine(left, 0, left, getHeight() - 1);
+						}
+					}
+					return;
+				}
 				// Filled here rather than by an opaque panel, because a color with transparency doesn't cover what was drawn before it, so
 				// whatever is behind the swatch has to be painted first.
 				g.setColor(isEnabled() ? getBackground() : fadeTowardBackground(getBackground()));

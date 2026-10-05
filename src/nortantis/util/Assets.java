@@ -382,6 +382,77 @@ public class Assets
 		return borderTypes.stream().map(bt -> new NamedResource(artPack, bt)).collect(Collectors.toList());
 	}
 
+	/**
+	 * How the generator may use a border type, read from the border.properties file in the border's folder. A border without the file gets
+	 * {@link #defaultBorderMetadata}.
+	 *
+	 * @param minWidth
+	 *            The narrowest width new maps get with this border.
+	 * @param maxWidth
+	 *            One more than the widest width new maps get with this border.
+	 * @param allowFrayedBorder
+	 *            Whether new maps may get frayed edges with this border.
+	 */
+	public record BorderMetadata(int minWidth, int maxWidth, boolean allowFrayedBorder)
+	{
+	}
+
+	public static final BorderMetadata defaultBorderMetadata = new BorderMetadata(100, 300, true);
+
+	public static BorderMetadata readBorderMetadata(NamedResource borderResource, String customImagesFolder)
+	{
+		if (borderResource == null)
+		{
+			return defaultBorderMetadata;
+		}
+		Path artPackPath = getArtPackPath(borderResource.artPack, customImagesFolder);
+		if (artPackPath == null)
+		{
+			return defaultBorderMetadata;
+		}
+		String propertiesPath = Paths.get(artPackPath.toString(), "borders", borderResource.name, "border.properties").toString();
+		if (!exists(propertiesPath))
+		{
+			return defaultBorderMetadata;
+		}
+		try
+		{
+			Properties properties = loadPropertiesFile(propertiesPath);
+			int minWidth = Integer.parseInt(properties.getProperty("minWidth", String.valueOf(defaultBorderMetadata.minWidth())).trim());
+			int maxWidth = Integer.parseInt(properties.getProperty("maxWidth", String.valueOf(defaultBorderMetadata.maxWidth())).trim());
+			boolean allowFrayedBorder = Boolean.parseBoolean(properties.getProperty("allowFrayedBorder", String.valueOf(defaultBorderMetadata.allowFrayedBorder())).trim());
+			if (maxWidth <= minWidth)
+			{
+				maxWidth = minWidth + 1;
+			}
+			return new BorderMetadata(minWidth, maxWidth, allowFrayedBorder);
+		}
+		catch (IOException | NumberFormatException e)
+		{
+			Logger.printError("Unable to read the border settings in " + propertiesPath + ". Using the defaults.", e);
+			return defaultBorderMetadata;
+		}
+	}
+
+	/**
+	 * The folder an art pack's themes are in.
+	 */
+	public static Path getThemesFolderForArtPack(String artPack, String customImagesFolder)
+	{
+		Path artPackPath = getArtPackPath(artPack, customImagesFolder);
+		return artPackPath == null ? null : Paths.get(artPackPath.toString(), themesFolderName);
+	}
+
+	/**
+	 * The folder themes the user installed themselves are in.
+	 */
+	public static Path getUserThemesFolder()
+	{
+		return Paths.get(OSHelper.getAppDataPath().toString(), themesFolderName);
+	}
+
+	public static final String themesFolderName = "themes";
+
 	public static List<String> listFileNames(String path, Set<String> allowedExtensions)
 	{
 		return listFileNames(path, null, null, allowedExtensions);

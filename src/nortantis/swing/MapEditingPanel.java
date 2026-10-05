@@ -108,6 +108,20 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private BufferedImage scaleIconScaledLarge;
 	private IconEditToolsSize editToolsSize;
 	private RotatedRectangle textBoxBounds;
+	/**
+	 * The boxes of the individual texts in a multi-selection, drawn without the move and rotate handles, which are on the box around all of
+	 * them.
+	 */
+	private List<RotatedRectangle> selectedTextBoxes = new ArrayList<>();
+	/**
+	 * Outlines of the texts or icons Alt+click could select under the cursor, drawn below the selection's highlight.
+	 */
+	private List<Area> selectionCycleCandidateAreas = new ArrayList<>();
+	/**
+	 * A partly transparent picture of text about to be added, drawn in graph space with its upper left corner at textHoverPreviewLocation.
+	 */
+	private BufferedImage textHoverPreviewImage;
+	private java.awt.Point textHoverPreviewLocation;
 	private boolean showEditBox;
 	private boolean editBoxIsInMapSpace;
 	private final double smallIconScale = 0.2;
@@ -368,6 +382,49 @@ public class MapEditingPanel extends UnscaledImagePanel
 	public void clearTextBox()
 	{
 		this.textBoxBounds = null;
+		this.selectedTextBoxes = new ArrayList<>();
+	}
+
+	/**
+	 * Shows the box with the move and rotate handles around several selected texts, and a box without handles around each of them.
+	 */
+	public void setTextBoxesToDraw(RotatedRectangle groupBox, List<RotatedRectangle> individualBoxes)
+	{
+		this.textBoxBounds = groupBox;
+		this.selectedTextBoxes = new ArrayList<>(individualBoxes);
+	}
+
+	public void setSelectionCycleCandidateAreas(List<RotatedRectangle> areas)
+	{
+		List<Area> result = new ArrayList<>(areas.size());
+		for (RotatedRectangle area : areas)
+		{
+			result.add(AwtFactory.toAwtArea(area));
+		}
+		selectionCycleCandidateAreas = result;
+	}
+
+	public void clearSelectionCycleCandidateAreas()
+	{
+		selectionCycleCandidateAreas = new ArrayList<>();
+	}
+
+	/**
+	 * Shows a partly transparent picture of text about to be added.
+	 *
+	 * @param upperLeft
+	 *            Where the image's upper left corner goes, in graph coordinates.
+	 */
+	public void setTextHoverPreview(nortantis.platform.Image image, nortantis.geom.IntPoint upperLeft)
+	{
+		textHoverPreviewImage = image == null ? null : AwtBridge.toBufferedImage(image);
+		textHoverPreviewLocation = upperLeft == null ? null : new java.awt.Point(upperLeft.x, upperLeft.y);
+	}
+
+	public void clearTextHoverPreview()
+	{
+		textHoverPreviewImage = null;
+		textHoverPreviewLocation = null;
 	}
 
 	public void showIconEditToolsAt(Collection<FreeIcon> icons, boolean isValidPosition)
@@ -785,6 +842,33 @@ public class MapEditingPanel extends UnscaledImagePanel
 		// Handle drawing/highlighting
 
 		highlightArtPacksIfNeeded(g2);
+
+		if (textHoverPreviewImage != null && textHoverPreviewLocation != null && showHoverHighlights)
+		{
+			final float textHoverPreviewOpacity = 0.6f;
+			Composite originalComposite = g2.getComposite();
+			g2.setComposite(java.awt.AlphaComposite.getInstance(java.awt.AlphaComposite.SRC_OVER, textHoverPreviewOpacity));
+			g2.drawImage(textHoverPreviewImage, textHoverPreviewLocation.x, textHoverPreviewLocation.y, null);
+			g2.setComposite(originalComposite);
+		}
+
+		if (!selectionCycleCandidateAreas.isEmpty() && showHoverHighlights)
+		{
+			g.setColor(processingColor);
+			for (Area area : selectionCycleCandidateAreas)
+			{
+				g2.draw(area);
+			}
+		}
+
+		if (!selectedTextBoxes.isEmpty())
+		{
+			g.setColor(highlightEditColor);
+			for (RotatedRectangle box : selectedTextBoxes)
+			{
+				g2.draw(AwtFactory.toAwtArea(box));
+			}
+		}
 
 		if (textBoxBounds != null)
 		{
@@ -2155,6 +2239,8 @@ public class MapEditingPanel extends UnscaledImagePanel
 	public void clearAllToolSpecificSelectionsAndHighlights()
 	{
 		clearTextBox();
+		clearSelectionCycleCandidateAreas();
+		clearTextHoverPreview();
 		hideIconEditTools();
 		clearSelectedCenters();
 		clearHighlightedCenters();

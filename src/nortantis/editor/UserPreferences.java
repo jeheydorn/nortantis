@@ -31,12 +31,10 @@ public class UserPreferences
 	public boolean hideGridOverlaySeizureWarning;
 	public boolean hideThemeChangedMessage;
 	public boolean hideStartupSupportPanel;
-	public Set<String> collapsedPanels = new TreeSet<>();
 	/**
-	 * True when no preferences file existed at launch (a new install, or the user deleted the file to reset preferences). Used to apply
-	 * new-install-only defaults without changing existing users' choices.
+	 * Whether each collapsible panel the user has collapsed or expanded is collapsed. A panel missing from this uses its default.
 	 */
-	public final boolean isFirstRun;
+	public Map<String, Boolean> panelCollapsedStates = new TreeMap<>();
 	public String lastVersionFromCheck;
 	public LocalDateTime lastVersionCheckTime;
 	public LookAndFeel lookAndFeel = LookAndFeel.Dark;
@@ -75,10 +73,8 @@ public class UserPreferences
 		final Properties props = new Properties();
 		Path filePath = Paths.get(getSavePath().toString(), userPrefsFileName);
 
-		isFirstRun = !Files.exists(filePath);
-
 		// A missing file is expected (first launch, or the user deliberately deleted it to reset their preferences), so it is not an error.
-		if (isFirstRun)
+		if (!Files.exists(filePath))
 		{
 			return;
 		}
@@ -139,13 +135,32 @@ public class UserPreferences
 			});
 		}
 
-		if (props.containsKey("collapsedPanels"))
+		if (props.containsKey("panelCollapsedStates"))
 		{
+			tryLoad(props, "panelCollapsedStates", () ->
+			{
+				// Alternating panel names and states.
+				String[] parts = props.getProperty("panelCollapsedStates").split("\t");
+				panelCollapsedStates = new TreeMap<>();
+				for (int i = 0; i + 1 < parts.length; i += 2)
+				{
+					panelCollapsedStates.put(parts[i], Boolean.parseBoolean(parts[i + 1]));
+				}
+			});
+		}
+		else if (props.containsKey("collapsedPanels"))
+		{
+			// Older versions stored only the names of collapsed panels.
 			tryLoad(props, "collapsedPanels", () ->
 			{
-				String[] panelNames = props.getProperty("collapsedPanels").split("\t");
-				collapsedPanels = new TreeSet<>();
-				collapsedPanels.addAll(Arrays.asList(panelNames));
+				panelCollapsedStates = new TreeMap<>();
+				for (String panelName : props.getProperty("collapsedPanels").split("\t"))
+				{
+					if (!panelName.isEmpty())
+					{
+						panelCollapsedStates.put(panelName, true);
+					}
+				}
 			});
 		}
 
@@ -315,7 +330,13 @@ public class UserPreferences
 		props.setProperty("defaultCustomImagesPath", defaultCustomImagesPath == null ? "" : defaultCustomImagesPath);
 		props.setProperty("showNewMapWithSameThemeRegionColorsMessage", hideNewMapWithSameThemeRegionColorsMessage + "");
 		props.setProperty("hideGridOverlaySeizureWarning", hideGridOverlaySeizureWarning + "");
-		props.setProperty("collapsedPanels", String.join("\t", collapsedPanels));
+		List<String> panelCollapsedStateParts = new ArrayList<>();
+		for (Map.Entry<String, Boolean> entry : panelCollapsedStates.entrySet())
+		{
+			panelCollapsedStateParts.add(entry.getKey());
+			panelCollapsedStateParts.add(entry.getValue().toString());
+		}
+		props.setProperty("panelCollapsedStates", String.join("\t", panelCollapsedStateParts));
 		props.setProperty("lastVersionFromCheck", lastVersionFromCheck == null ? "" : lastVersionFromCheck);
 		props.setProperty("lastVersionCheckTime", (lastVersionCheckTime == null ? LocalDateTime.MIN : lastVersionCheckTime).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
 		props.setProperty("lookAndFeel", lookAndFeel.name());

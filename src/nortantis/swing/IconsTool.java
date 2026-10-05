@@ -383,7 +383,7 @@ public class IconsTool extends EditorTool
 					Arrays.asList(fillColorDisplay, chooseColorButton));
 		}
 
-		CollapsiblePanel colorPanel = new CollapsiblePanel("color_options", Translation.get("iconsTool.colorOptions"), colorOrganizer.panel, true);
+		CollapsiblePanel colorPanel = new CollapsiblePanel("color_options", "Color", Translation.get("iconsTool.colorOptions"), colorOrganizer.panel, true);
 		colorPickerHider = organizer.addLeftAlignedComponent(colorPanel);
 
 		brushAndEditOptionsSeparatorHider = organizer.addSeparator();
@@ -428,6 +428,15 @@ public class IconsTool extends EditorTool
 
 		organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.666);
 		organizer.addVerticalFillerRow();
+
+		SelectionCycling.addAltChangeListener(() ->
+		{
+			if (isSelected())
+			{
+				updateSelectionCycleCandidates(mapEditingPanel.getMousePosition());
+				mapEditingPanel.repaint();
+			}
+		});
 
 		// I'm using a KeyEventDispatcher instead of toolsPanel's input map because I need to capture control release events when the focus
 		// on is not on the main window. For example, when pressing ctrl+f to search text, the control release action happens when the focus
@@ -1283,7 +1292,7 @@ public class IconsTool extends EditorTool
 		return previewImage;
 	}
 
-	private static Image fadeEdges(Image image, int fadeWidth)
+	static Image fadeEdges(Image image, int fadeWidth)
 	{
 		try (Image box = Image.create(image.getWidth(), image.getHeight(), ImageType.Grayscale8Bit))
 		{
@@ -1717,6 +1726,23 @@ public class IconsTool extends EditorTool
 		{
 			updateMoveOrScalePreview(e.getPoint());
 		}
+		else if (e.isAltDown())
+		{
+			if (isPress)
+			{
+				SelectionCycling.recordAltClick();
+				FreeIcon next = SelectionCycling.chooseNext(getSelectionCycleCandidates(e.getPoint()), iconsToEdit);
+				mapEditingPanel.clearHighlightedAreas();
+				iconsToEdit.clear();
+				mapEditingPanel.hideIconEditTools();
+				if (next != null)
+				{
+					iconsToEdit.add(next);
+				}
+				handleIconSelectionChange(false);
+				updateSelectionCycleCandidates(e.getPoint());
+			}
+		}
 		else
 		{
 			// Not moving or scaling.
@@ -2008,6 +2034,7 @@ public class IconsTool extends EditorTool
 		{
 			highlightHoverIconsAndShowBrush(mouseLocation, isControlDown);
 		}
+		updateSelectionCycleCandidates(mouseLocation);
 		mapEditingPanel.repaint();
 	}
 
@@ -2186,6 +2213,7 @@ public class IconsTool extends EditorTool
 	protected void handleMouseExitedMap(MouseEvent e)
 	{
 		mapEditingPanel.clearHighlightedCenters();
+		mapEditingPanel.clearSelectionCycleCandidateAreas();
 		if (iconsToEdit != null && !iconsToEdit.isEmpty())
 		{
 			if (SwingHelper.isCommandKeyDown(e) || e.getButton() == MouseEvent.BUTTON1)
@@ -2333,6 +2361,64 @@ public class IconsTool extends EditorTool
 			RotatedRectangle rect = new RotatedRectangle(task.getOrCreateContentBoundsPadded());
 			return rect.overlapsCircle(graphPoint, brushRadius);
 		}
+	}
+
+	/**
+	 * The icons of the selected types under the given point, in the order Alt+click cycles through them: the one a plain click selects
+	 * first, then by lowest top. Ties keep their draw order.
+	 */
+	private List<FreeIcon> getSelectionCycleCandidates(java.awt.Point mouseLocation)
+	{
+		if (mouseLocation == null || updater.mapParts == null || updater.mapParts.iconDrawer == null)
+		{
+			return new ArrayList<>();
+		}
+		Point graphPoint = getPointOnGraph(mouseLocation);
+		List<Tuple2<FreeIcon, Double>> iconsAndTops = new ArrayList<>();
+		mainWindow.edits.freeIcons.doWithLock(() ->
+		{
+			for (FreeIcon icon : mainWindow.edits.freeIcons)
+			{
+				if (!isSelectedType(icon))
+				{
+					continue;
+				}
+				IconDrawTask task = updater.mapParts.iconDrawer.toIconDrawTask(icon);
+				if (task == null)
+				{
+					continue;
+				}
+				Rectangle bounds = task.getOrCreateContentBoundsPadded();
+				if (bounds.contains(graphPoint))
+				{
+					iconsAndTops.add(new Tuple2<>(icon, bounds.getTop()));
+				}
+			}
+		});
+		iconsAndTops.sort((first, second) -> -Double.compare(first.getSecond(), second.getSecond()));
+		return iconsAndTops.stream().map(Tuple2::getFirst).collect(Collectors.toList());
+	}
+
+	/**
+	 * Outlines what Alt+click can select under the mouse while Alt is held in Edit mode.
+	 */
+	private void updateSelectionCycleCandidates(java.awt.Point mouseLocation)
+	{
+		if (!SelectionCycling.isAltDown() || !modeWidget.isEditMode() || mouseLocation == null || !updater.isMapReadyForInteractions())
+		{
+			mapEditingPanel.clearSelectionCycleCandidateAreas();
+			return;
+		}
+		List<RotatedRectangle> areas = new ArrayList<>();
+		for (FreeIcon icon : getSelectionCycleCandidates(mouseLocation))
+		{
+			IconDrawTask task = updater.mapParts.iconDrawer.toIconDrawTask(icon);
+			if (task != null)
+			{
+				areas.add(new RotatedRectangle(task.getOrCreateContentBoundsPadded()));
+			}
+		}
+		mapEditingPanel.setSelectionCycleCandidateAreas(areas);
 	}
 
 	protected FreeIcon getLowestSelectedIcon(java.awt.Point mouseLocation, Collection<FreeIcon> allowList)

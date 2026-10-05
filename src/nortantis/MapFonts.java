@@ -1,6 +1,7 @@
 package nortantis;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -10,7 +11,6 @@ import java.util.Map.Entry;
 
 import org.apache.commons.lang3.StringUtils;
 
-import nortantis.MapSettings.ThemeFontType;
 import nortantis.platform.Font;
 import nortantis.platform.FontStyle;
 import nortantis.util.Assets;
@@ -30,10 +30,10 @@ public class MapFonts
 	public static class FontProblem
 	{
 		public final String family;
-		/** The kinds of text drawn in this family. */
-		public final List<ThemeFontType> usedByThemeFontTypes;
-		/** How many individual labels choose this family for themselves, or 0 when none do. */
-		public final int individualLabelCount;
+		/** How many of the map's labels are drawn in this family, by type, in type order. Holds only the types with at least one. */
+		public final Map<TextType, Integer> labelCountsByType;
+		/** The types of text whose style for new text uses this family. */
+		public final List<TextType> newTextTypes;
 		/**
 		 * The map's text this family was drawing, gathered under the style it is drawn in, which a replacement has to be able to draw too. A
 		 * family's faces need not have the same glyphs, so the text a map draws in bold has to be judged against a candidate's bold face
@@ -46,12 +46,12 @@ public class MapFonts
 		 */
 		public final String missingArtPack;
 
-		public FontProblem(String family, List<ThemeFontType> usedByThemeFontTypes, int individualLabelCount,
+		public FontProblem(String family, Map<TextType, Integer> labelCountsByType, List<TextType> newTextTypes,
 				Map<FontStyle, String> textToDrawByStyle, String missingArtPack)
 		{
 			this.family = family;
-			this.usedByThemeFontTypes = usedByThemeFontTypes;
-			this.individualLabelCount = individualLabelCount;
+			this.labelCountsByType = labelCountsByType;
+			this.newTextTypes = newTextTypes;
 			this.textToDrawByStyle = textToDrawByStyle;
 			this.missingArtPack = missingArtPack;
 		}
@@ -76,12 +76,12 @@ public class MapFonts
 	}
 
 	/**
-	 * Every font family the given map names, in the order they are first met, as written in the map. That is the theme fonts plus the font
-	 * of every individual label that overrides its type's font, so a family appears whether it is used once or everywhere.
+	 * Every font family the given map names, in the order they are first met, as written in the map. That is the fonts of the styles for new
+	 * text plus the font of every label, so a family appears whether it is used once or everywhere.
 	 */
 	public static List<String> getFamiliesUsed(MapSettings settings)
 	{
-		return new ArrayList<>(gatherUsage(settings).usedByByFamily.keySet());
+		return new ArrayList<>(gatherUsage(settings).newTextTypesByFamily.keySet());
 	}
 
 	/**
@@ -99,7 +99,7 @@ public class MapFonts
 		FontUsage usage = gatherUsage(settings);
 
 		List<FontProblem> problems = new ArrayList<>();
-		for (String family : usage.usedByByFamily.keySet())
+		for (String family : usage.newTextTypesByFamily.keySet())
 		{
 			if (FontFinder.isAvailable(FontFinder.resolveAlias(family)))
 			{
@@ -114,16 +114,16 @@ public class MapFonts
 
 			// The text this family was drawing is what a replacement has to be able to draw, so that swapping a missing font does not
 			// silently trade it for one with no glyphs for the map's labels.
-			problems.add(new FontProblem(family, new ArrayList<>(usage.usedByByFamily.get(family)),
-					usage.overrideCountByFamily.getOrDefault(family, 0), toTextByStyle(usage.textByFamilyAndStyle.get(family)), artPack));
+			problems.add(new FontProblem(family, new EnumMap<>(usage.labelCountsByFamily.get(family)), new ArrayList<>(usage.newTextTypesByFamily.get(family)),
+					toTextByStyle(usage.textByFamilyAndStyle.get(family)), artPack));
 		}
 
 		return new MissingFontInfo(problems);
 	}
 
 	/**
-	 * Replaces every theme font and every per-text font override whose family is a key in {@code replacements}, keeping each one's own style
-	 * and size.
+	 * Replaces every font, in the styles for new text and in every label, whose family is a key in {@code replacements}, keeping each one's
+	 * own bold/italic and size.
 	 */
 	public static void applySubstitution(MapSettings settings, Map<String, String> replacements)
 	{
@@ -136,7 +136,7 @@ public class MapFonts
 			}
 		}
 
-		for (ThemeFontType type : ThemeFontType.values())
+		for (TextType type : TextType.values())
 		{
 			Font replaced = replaceFamily(settings.getThemeFont(type), replacementsByLowerCase);
 			if (replaced != null)
@@ -149,12 +149,12 @@ public class MapFonts
 		{
 			for (MapText text : settings.edits.text)
 			{
-				if (text != null && text.fontOverride != null)
+				if (text != null && text.style != null)
 				{
-					Font replaced = replaceFamily(text.fontOverride, replacementsByLowerCase);
+					Font replaced = replaceFamily(text.style.font, replacementsByLowerCase);
 					if (replaced != null)
 					{
-						text.fontOverride = replaced;
+						text.style.font = replaced;
 					}
 				}
 			}
@@ -178,10 +178,10 @@ public class MapFonts
 	private static class FontUsage
 	{
 		final Map<String, String> familyAsWrittenByLowerCase = new LinkedHashMap<>();
-		final Map<String, List<ThemeFontType>> usedByByFamily = new LinkedHashMap<>();
+		final Map<String, List<TextType>> newTextTypesByFamily = new LinkedHashMap<>();
 		/** The text each family draws, kept apart by the style it is drawn in, since a family's faces need not have the same glyphs. */
 		final Map<String, Map<FontStyle, StringBuilder>> textByFamilyAndStyle = new LinkedHashMap<>();
-		final Map<String, Integer> overrideCountByFamily = new LinkedHashMap<>();
+		final Map<String, EnumMap<TextType, Integer>> labelCountsByFamily = new LinkedHashMap<>();
 	}
 
 	private static Map<FontStyle, String> toTextByStyle(Map<FontStyle, StringBuilder> textByStyle)
@@ -198,14 +198,14 @@ public class MapFonts
 	{
 		FontUsage usage = new FontUsage();
 
-		for (Entry<ThemeFontType, Font> entry : settings.getThemeFonts().entrySet())
+		for (Entry<TextType, Font> entry : settings.getThemeFonts().entrySet())
 		{
 			if (entry.getValue() == null)
 			{
 				continue;
 			}
 			String family = recordFamily(entry.getValue().getName(), usage);
-			usage.usedByByFamily.get(family).add(entry.getKey());
+			usage.newTextTypesByFamily.get(family).add(entry.getKey());
 		}
 
 		if (settings.edits != null && settings.edits.text != null)
@@ -217,23 +217,13 @@ public class MapFonts
 					continue;
 				}
 
-				String family;
-				Font font;
-				if (text.fontOverride != null)
+				if (text.style == null || text.style.font == null)
 				{
-					font = text.fontOverride;
-					family = recordFamily(font.getName(), usage);
-					usage.overrideCountByFamily.merge(family, 1, Integer::sum);
+					continue;
 				}
-				else
-				{
-					font = settings.getThemeFont(MapSettings.getThemeFontTypeForText(text.type));
-					if (font == null)
-					{
-						continue;
-					}
-					family = recordFamily(font.getName(), usage);
-				}
+				Font font = text.style.font;
+				String family = recordFamily(font.getName(), usage);
+				usage.labelCountsByFamily.get(family).merge(text.type, 1, Integer::sum);
 				usage.textByFamilyAndStyle.get(family).computeIfAbsent(font.getStyle(), key -> new StringBuilder()).append(text.value);
 			}
 		}
@@ -246,7 +236,8 @@ public class MapFonts
 		// Locale.ROOT because this key only ever groups two spellings of one family. The default locale would make that grouping depend on
 		// the machine: in Turkish, "Iosevka" and "iosevka" lower case to different strings and would be asked about twice.
 		String canonical = usage.familyAsWrittenByLowerCase.computeIfAbsent(familyAsWritten.toLowerCase(Locale.ROOT), key -> familyAsWritten);
-		usage.usedByByFamily.computeIfAbsent(canonical, key -> new ArrayList<>());
+		usage.newTextTypesByFamily.computeIfAbsent(canonical, key -> new ArrayList<>());
+		usage.labelCountsByFamily.computeIfAbsent(canonical, key -> new EnumMap<>(TextType.class));
 		usage.textByFamilyAndStyle.computeIfAbsent(canonical, key -> new LinkedHashMap<>());
 		return canonical;
 	}

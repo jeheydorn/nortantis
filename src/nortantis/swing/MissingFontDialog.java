@@ -28,7 +28,7 @@ import javax.swing.SwingUtilities;
 import nortantis.FontFinder;
 import nortantis.MapFonts.FontProblem;
 import nortantis.MapFonts.MissingFontInfo;
-import nortantis.MapSettings.ThemeFontType;
+import nortantis.TextType;
 import nortantis.swing.translation.Translation;
 
 /**
@@ -38,6 +38,8 @@ import nortantis.swing.translation.Translation;
 public class MissingFontDialog
 {
 	private static final int messageWidth = 460;
+	/** How far the lines under a font's name are indented. */
+	private static final int rowIndent = 12;
 	private static final int previewFontSize = 22;
 	private static final int previewVerticalPadding = 6;
 
@@ -136,6 +138,14 @@ public class MissingFontDialog
 		return label;
 	}
 
+	/**
+	 * A label for the lines under a font's name, wrapped to the width left beside the indent those lines are given.
+	 */
+	private static JLabel createIndentedWrappedLabel(String text)
+	{
+		return SwingHelper.createWrappedLabel("<html>" + SwingHelper.escapeHtml(text) + "</html>", messageWidth - rowIndent);
+	}
+
 	private static JComponent createRowPerProblem(MissingFontInfo info, Map<String, JComboBox<Object>> comboBoxesByFamily)
 	{
 		JPanel panel = new JPanel(new GridBagLayout());
@@ -151,12 +161,13 @@ public class MissingFontDialog
 			familyLabel.setFont(familyLabel.getFont().deriveFont(Font.BOLD));
 			addToRow(panel, row++, familyLabel, 0, 4);
 
-			addToRow(panel, row++, new JLabel(Translation.get("mainWindow.missingFont.usedBy", describeWhatUsesIt(problem))), 12,
+			// Wrapped, since a font can be used by every type of text, both on the map and for new text.
+			addToRow(panel, row++, createIndentedWrappedLabel(Translation.get("mainWindow.missingFont.usedBy", describeWhatUsesIt(problem))), rowIndent,
 					problem.missingArtPack == null ? 4 : 0);
 
 			if (problem.missingArtPack != null)
 			{
-				addToRow(panel, row++, new JLabel(Translation.get("mainWindow.missingFont.fromMissingArtPack", problem.missingArtPack)), 12,
+				addToRow(panel, row++, createIndentedWrappedLabel(Translation.get("mainWindow.missingFont.fromMissingArtPack", problem.missingArtPack)), rowIndent,
 						4);
 			}
 
@@ -173,29 +184,26 @@ public class MissingFontDialog
 			comboRow.add(Box.createHorizontalStrut(8));
 			comboRow.add(comboBox);
 			comboRow.add(Box.createHorizontalGlue());
-			addToRow(panel, row++, comboRow, 12, 2);
-			addToRow(panel, row++, preview, 12, 0);
+			addToRow(panel, row++, comboRow, rowIndent, 2);
+			addToRow(panel, row++, preview, rowIndent, 0);
 		}
 
 		return wrapIfTall(panel);
 	}
 
 	/**
-	 * Names what a missing family draws: the kinds of text whose theme font it is, and the labels that chose it for themselves.
+	 * Names what a missing family draws: how many labels of each type use it, then the types whose style for new text uses it.
 	 */
 	private static String describeWhatUsesIt(FontProblem problem)
 	{
 		List<String> parts = new ArrayList<>();
-		for (ThemeFontType type : problem.usedByThemeFontTypes)
+		for (Map.Entry<TextType, Integer> entry : problem.labelCountsByType.entrySet())
 		{
-			parts.add(Translation.get("themeFontType." + type.name()));
+			parts.add(Translation.get("mainWindow.missingFont.labels." + entry.getKey().name(), entry.getValue()));
 		}
-
-		if (problem.individualLabelCount > 0)
+		for (TextType type : problem.newTextTypes)
 		{
-			parts.add(Translation.get(
-					problem.individualLabelCount == 1 ? "mainWindow.missingFont.oneIndividualLabel" : "mainWindow.missingFont.individualLabels",
-					problem.individualLabelCount));
+			parts.add(Translation.get("mainWindow.missingFont.newText." + type.name()));
 		}
 		return String.join(", ", parts);
 	}

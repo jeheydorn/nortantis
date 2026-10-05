@@ -65,13 +65,11 @@ public class JFontChooser extends JComponent
 	private static final Font DEFAULT_SELECTED_FONT = new Font("Serif", Font.PLAIN, 12);
 	private static final Font DEFAULT_FONT = new Font("Dialog", Font.PLAIN, 10);
 	private static final int[] FONT_STYLE_CODES = { Font.PLAIN, Font.BOLD, Font.ITALIC, Font.BOLD | Font.ITALIC };
-	private static final String[] DEFAULT_FONT_SIZE_STRINGS = { "8", "9", "10", "11", "12", "14", "16", "18", "20", "22", "24", "26", "28", "36", "48", "72", "96", "120", "144", "168", "192", "216",
-			"240", };
 	private static final int sampleWidth = 300;
 	/**
-	 * The height the sample opens at. It does not change with the font being previewed: the sizes go up to 240 point, which no sample the
-	 * dialog could hold would show whole anyway, and a sample that resized itself would rearrange the dialog every time a size was clicked.
-	 * Someone who wants to see more of a large font makes the dialog taller, which the sample does grow with.
+	 * The height the sample opens at. It does not change with the font being previewed: a large font would not fit whole anyway, and a
+	 * sample that resized itself would rearrange the dialog every time a font was clicked. Someone who wants to see more of a large font
+	 * makes the dialog taller, which the sample does grow with.
 	 */
 	private static final int sampleHeight = 100;
 	/** The share of the height the dialog gains from being resized that goes to the lists rather than to the sample. */
@@ -90,7 +88,7 @@ public class JFontChooser extends JComponent
 	 */
 	private static final int familyRowHeight = 22;
 	private static final int minimumFamilyRowWidth = 120;
-	/** The height of the panels holding the family, style, and size lists. */
+	/** The height of the panels holding the family and style lists. */
 	private static final int listPanelHeight = 180;
 	/** Space between the name of the chosen family and the sample drawn in it. */
 	private static final int spaceUnderSelectedFamilyName = 5;
@@ -99,7 +97,11 @@ public class JFontChooser extends JComponent
 	protected int dialogResultValue = ERROR_OPTION;
 
 	private String[] fontStyleNames = null;
-	private String[] fontSizeStrings = null;
+	/**
+	 * The size of the font the dialog opened on. Size is chosen outside this dialog, so it is only carried through to the chosen font and
+	 * the sample.
+	 */
+	private int selectedFontSize = 12;
 
 	/**
 	 * The chosen family. Selection is held here rather than read back from the list because one family can occupy several rows - a font the
@@ -129,13 +131,10 @@ public class JFontChooser extends JComponent
 	private int previousSelectedIndex = -1;
 	private JTextField fontFamilyTextField = null;
 	private JTextField fontStyleTextField = null;
-	private JTextField fontSizeTextField = null;
 	private JList<?> fontNameList = null;
 	private JList<?> fontStyleList = null;
-	private JList<?> fontSizeList = null;
 	private JPanel fontNamePanel = null;
 	private JPanel fontStylePanel = null;
-	private JPanel fontSizePanel = null;
 	private JPanel samplePanel = null;
 	private JTextField sampleText = null;
 	private JTextField selectedFamilyText = null;
@@ -145,28 +144,10 @@ public class JFontChooser extends JComponent
 	 **/
 	public JFontChooser()
 	{
-		this(DEFAULT_FONT_SIZE_STRINGS);
-	}
-
-	/**
-	 * Constructs a <code>JFontChooser</code> object using the given font size array.
-	 * 
-	 * @param fontSizeStrings
-	 *            the array of font size string.
-	 **/
-	public JFontChooser(String[] fontSizeStrings)
-	{
-		if (fontSizeStrings == null)
-		{
-			fontSizeStrings = DEFAULT_FONT_SIZE_STRINGS;
-		}
-		this.fontSizeStrings = fontSizeStrings;
-
 		JPanel selectPanel = new JPanel();
 		selectPanel.setLayout(new BoxLayout(selectPanel, BoxLayout.X_AXIS));
 		selectPanel.add(getFontFamilyPanel());
 		selectPanel.add(getFontStylePanel());
-		selectPanel.add(getFontSizePanel());
 
 		// Both rows open at the height they ask for, and height the dialog is given beyond that is split by weight rather than evenly, so
 		// that making the dialog taller mostly lengthens the lists.
@@ -214,19 +195,6 @@ public class JFontChooser extends JComponent
 		return fontStyleTextField;
 	}
 
-	public JTextField getFontSizeTextField()
-	{
-		if (fontSizeTextField == null)
-		{
-			fontSizeTextField = new JTextField();
-			fontSizeTextField.addFocusListener(new TextFieldFocusHandlerForTextSelection(fontSizeTextField));
-			fontSizeTextField.addKeyListener(new TextFieldKeyHandlerForListSelectionUpDown(getFontSizeList()));
-			fontSizeTextField.getDocument().addDocumentListener(new ListSearchTextFieldDocumentHandler(getFontSizeList()));
-			fontSizeTextField.setFont(DEFAULT_FONT);
-		}
-		return fontSizeTextField;
-	}
-
 	public JList<?> getFontFamilyList()
 	{
 		if (fontNameList == null)
@@ -259,20 +227,6 @@ public class JFontChooser extends JComponent
 			fontStyleList.setFocusable(false);
 		}
 		return fontStyleList;
-	}
-
-	public JList<?> getFontSizeList()
-	{
-		if (fontSizeList == null)
-		{
-			fontSizeList = new JList<Object>(this.fontSizeStrings);
-			fontSizeList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-			fontSizeList.addListSelectionListener(new ListSelectionHandler(getFontSizeTextField()));
-			fontSizeList.setSelectedIndex(0);
-			fontSizeList.setFont(DEFAULT_FONT);
-			fontSizeList.setFocusable(false);
-		}
-		return fontSizeList;
 	}
 
 	/**
@@ -313,23 +267,7 @@ public class JFontChooser extends JComponent
 	 **/
 	public int getSelectedFontSize()
 	{
-		int fontSize = 1;
-		String fontSizeString = getFontSizeTextField().getText();
-		while (true)
-		{
-			try
-			{
-				fontSize = Integer.parseInt(fontSizeString);
-				break;
-			}
-			catch (NumberFormatException e)
-			{
-				fontSizeString = (String) getFontSizeList().getSelectedValue();
-				getFontSizeTextField().setText(fontSizeString);
-			}
-		}
-
-		return fontSize;
+		return selectedFontSize;
 	}
 
 	/**
@@ -407,16 +345,7 @@ public class JFontChooser extends JComponent
 	 **/
 	public void setSelectedFontSize(int size)
 	{
-		String sizeString = String.valueOf(size);
-		for (int i = 0; i < this.fontSizeStrings.length; i++)
-		{
-			if (this.fontSizeStrings[i].equals(sizeString))
-			{
-				getFontSizeList().setSelectedIndex(i);
-				break;
-			}
-		}
-		getFontSizeTextField().setText(sizeString);
+		selectedFontSize = size;
 		updateSample();
 	}
 
@@ -468,7 +397,7 @@ public class JFontChooser extends JComponent
 	}
 
 	/**
-	 * Copies the style or size the user picked into the text field above its list.
+	 * Copies the style the user picked into the text field above its list.
 	 */
 	protected class ListSelectionHandler implements ListSelectionListener
 	{
@@ -879,36 +808,6 @@ public class JFontChooser extends JComponent
 			fontStylePanel.add(p, BorderLayout.CENTER);
 		}
 		return fontStylePanel;
-	}
-
-	protected JPanel getFontSizePanel()
-	{
-		if (fontSizePanel == null)
-		{
-			fontSizePanel = new JPanel();
-			fontSizePanel.setLayout(new BorderLayout());
-			fontSizePanel.setPreferredSize(new Dimension(70, listPanelHeight));
-			fontSizePanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-
-			JScrollPane scrollPane = new JScrollPane(getFontSizeList());
-			scrollPane.getVerticalScrollBar().setFocusable(false);
-			scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-
-			JPanel p = new JPanel();
-			p.setLayout(new BorderLayout());
-			p.add(getFontSizeTextField(), BorderLayout.NORTH);
-			p.add(scrollPane, BorderLayout.CENTER);
-
-			JLabel label = new JLabel(Translation.get("fontChooser.fontSize"));
-			label.setHorizontalAlignment(JLabel.LEFT);
-			label.setHorizontalTextPosition(JLabel.LEFT);
-			label.setLabelFor(getFontSizeTextField());
-			label.setDisplayedMnemonic('S');
-
-			fontSizePanel.add(label, BorderLayout.NORTH);
-			fontSizePanel.add(p, BorderLayout.CENTER);
-		}
-		return fontSizePanel;
 	}
 
 	protected JPanel getSamplePanel()

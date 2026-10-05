@@ -61,7 +61,7 @@ public class CollapsiblePanel extends JPanel
 	private static final double highlightedTintMultiplier = 2.0;
 
 	private final String namespace;
-	private final String name;
+	private final String untranslatedName;
 	private final JPanel contentPanel;
 	private final JPanel titlePanel;
 	private final DisclosureArrow arrow;
@@ -72,36 +72,31 @@ public class CollapsiblePanel extends JPanel
 	 * Create a CollapsiblePanel with the given name and content.
 	 *
 	 * @param namespace
-	 *            A unique identifier to use when storing the name in user preferences to store the collapsed state. Name + namespace must
-	 *            be globally unique.
+	 *            A unique identifier to use when storing the name in user preferences to store the collapsed state. Untranslated name +
+	 *            namespace must be globally unique.
+	 * @param untranslatedName
+	 *            A name that is the same in every language, which the collapsed state is stored under so that it survives changing the
+	 *            language.
 	 * @param name
 	 *            Name to display
 	 * @param contentPanel
 	 *            Content to display when expanded
 	 */
-	public CollapsiblePanel(String namespace, String name, JPanel contentPanel)
+	public CollapsiblePanel(String namespace, String untranslatedName, String name, JPanel contentPanel)
 	{
-		this(namespace, name, contentPanel, false);
+		this(namespace, untranslatedName, name, contentPanel, false);
 	}
 
 	/**
 	 * @param defaultCollapsed
-	 *            Whether the panel starts collapsed for a new install. Only applies when there is no stored collapsed/expanded state for this
-	 *            panel and this is a first run (see {@link UserPreferences#isFirstRun}); existing users keep whatever state they have.
+	 *            Whether the panel starts collapsed when the user hasn't collapsed or expanded it.
 	 */
-	public CollapsiblePanel(String namespace, String name, JPanel contentPanel, boolean defaultCollapsed)
+	public CollapsiblePanel(String namespace, String untranslatedName, String name, JPanel contentPanel, boolean defaultCollapsed)
 	{
 		this.namespace = namespace;
-		this.name = name;
+		this.untranslatedName = untranslatedName;
 		this.contentPanel = contentPanel;
-
-		isCollapsed = UserPreferences.getInstance().collapsedPanels.contains(getNameKey());
-		if (!isCollapsed && defaultCollapsed && UserPreferences.getInstance().isFirstRun)
-		{
-			// New install: start collapsed and record it as the stored state so it persists and any later toggle by the user is remembered.
-			isCollapsed = true;
-			UserPreferences.getInstance().collapsedPanels.add(getNameKey());
-		}
+		isCollapsed = UserPreferences.getInstance().panelCollapsedStates.getOrDefault(getNameKey(), defaultCollapsed);
 
 		setLayout(new BorderLayout());
 		setOpaque(false);
@@ -215,19 +210,12 @@ public class CollapsiblePanel extends JPanel
 
 	private void storeCollapsedState()
 	{
-		if (isCollapsed)
-		{
-			UserPreferences.getInstance().collapsedPanels.add(getNameKey());
-		}
-		else
-		{
-			UserPreferences.getInstance().collapsedPanels.remove(getNameKey());
-		}
+		UserPreferences.getInstance().panelCollapsedStates.put(getNameKey(), isCollapsed);
 	}
 
 	private String getNameKey()
 	{
-		return namespace + "~" + name;
+		return namespace + "~" + untranslatedName;
 	}
 
 	private static Color getLineColor()

@@ -92,6 +92,7 @@ public class SubMapCreator
 		// Export and display settings are specific to the original map and should not carry over to a brand-new sub-map.
 		newSettings.imageExportPath = null;
 		newSettings.heightmapExportPath = null;
+		newSettings.themeExportPath = null;
 		newSettings.heightmapResolution = MapSettings.defaultHeightmapResolution;
 		newSettings.defaultMapExportAction = MapSettings.defaultDefaultExportAction;
 		newSettings.defaultHeightmapExportAction = MapSettings.defaultDefaultExportAction;
@@ -133,13 +134,10 @@ public class SubMapCreator
 		double oneXWorldSize = originalSettings.worldSize * selectionArea / originalMapArea;
 		double detailRatio = oneXWorldSize > 0 ? newWorldSize / oneXWorldSize : 1.0;
 		double fontScale = Math.max(1.0, zoomFactor / Math.max(1.0, Math.pow(detailRatio, 0.25)));
-		newSettings.titleFont = scaleFontSize(newSettings.titleFont, fontScale);
-		newSettings.regionFont = scaleFontSize(newSettings.regionFont, fontScale);
-		newSettings.mountainRangeFont = scaleFontSize(newSettings.mountainRangeFont, fontScale);
-		newSettings.otherMountainsFont = scaleFontSize(newSettings.otherMountainsFont, fontScale);
-		newSettings.citiesFont = scaleFontSize(newSettings.citiesFont, fontScale);
-		newSettings.riverFont = scaleFontSize(newSettings.riverFont, fontScale);
-		newSettings.roadFont = scaleFontSize(newSettings.roadFont, fontScale);
+		for (TextType type : TextType.values())
+		{
+			newSettings.setThemeFont(type, scaleFontSize(newSettings.getThemeFont(type), fontScale));
+		}
 		// Initialize fresh empty edits so createGraphForUnitTests will create elevation (isInitialized=false).
 		newSettings.edits = new MapEdits();
 		// The sub-map graph must be built at originalResolution so the RI ↔ pixel conversions used when transferring rivers and icons
@@ -187,12 +185,9 @@ public class SubMapCreator
 		// City labels are repositioned to stay attached to their city icon (see transferText). iconSizeRatio is how much city icons shrink
 		// in the sub-map (icon size scales with mean polygon width); sourceMeanPolygonWidthRI scales the label-to-icon association
 		// distance;
-		// sourceCityFontSize lets transferText estimate the label's text height so it can clear the icon.
 		double iconSizeRatio = newGraph.getMeanCenterWidthBetweenNeighbors() / originalGraph.getMeanCenterWidthBetweenNeighbors();
 		double sourceMeanPolygonWidthRI = originalGraph.getMeanCenterWidthBetweenNeighbors() / originalResolution;
-		double sourceCityFontSize = originalSettings.citiesFont.getSize();
-
-		transferText(originalSettings.edits, selectionBoundsRI, newEdits, newGenWidth, newGenHeight, fontScale, iconSizeRatio, sourceMeanPolygonWidthRI, sourceCityFontSize, originalResolution);
+		transferText(originalSettings.edits, selectionBoundsRI, newEdits, newGenWidth, newGenHeight, fontScale, iconSizeRatio, sourceMeanPolygonWidthRI, originalResolution);
 
 		// An IconDrawer over the source graph, used to compute each city/decoration icon's drawn bounds so icons that overlap the selection
 		// are kept even when their anchor point lies just outside it (city labels sit below their icon, so a city near the top edge has its
@@ -248,7 +243,7 @@ public class SubMapCreator
 	}
 
 	private static void transferText(MapEdits originalEdits, Rectangle selectionBoundsRI, MapEdits newEdits, int newGenWidth, int newGenHeight, double fontScale, double iconSizeRatio,
-			double sourceMeanPolygonWidthRI, double sourceCityFontSize, double originalResolution)
+			double sourceMeanPolygonWidthRI, double originalResolution)
 	{
 		// Copy MapText entries whose drawn extent intersects selectionBoundsRI.
 		newEdits.text = new CopyOnWriteArrayList<>();
@@ -278,7 +273,7 @@ public class SubMapCreator
 					double offsetLength = Math.sqrt(sourceOffsetRI.x * sourceOffsetRI.x + sourceOffsetRI.y * sourceOffsetRI.y);
 					if (offsetLength > 1e-6)
 					{
-						double sourceFontSize = text.fontOverride != null ? text.fontOverride.getSize() : sourceCityFontSize;
+						double sourceFontSize = text.style.font.getSize();
 						// Rendered line height in RI units (the font size stored in the file is multiplied by
 						// calcSizeMultiplierFromResolutionScale when drawn).
 						double sourceLineHeightRI = sourceFontSize * MapCreator.calcSizeMultiplierFromResolutionScale(1.0);
@@ -295,10 +290,7 @@ public class SubMapCreator
 				// Clear bounds since they'll be recomputed at the new resolution.
 				newText.line1Bounds = null;
 				newText.line2Bounds = null;
-				if (newText.fontOverride != null)
-				{
-					newText.fontOverride = scaleFontSize(newText.fontOverride, fontScale);
-				}
+				newText.style.font = scaleFontSize(newText.style.font, fontScale);
 				newEdits.text.add(newText);
 			}
 		}
