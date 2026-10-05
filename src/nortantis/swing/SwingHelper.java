@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public class SwingHelper
 {
@@ -323,9 +324,13 @@ public class SwingHelper
 
 	private static final String mixedColorsProperty = "nortantis.mixedColors";
 	/**
+	 * The look and feel color of the border around a swatch made by {@link #createColorPickerPreviewPanel()}.
+	 */
+	private static final String colorPickerPreviewBorderColorKey = "controlShadow";
+	/**
 	 * The most stripes a swatch standing for several colors shows.
 	 */
-	private static final int maxMixedColorStripes = 4;
+	private static final int maxMixedColorStripes = 8;
 
 	/**
 	 * Shows the colors that a swatch made by {@link #createColorPickerPreviewPanel()} stands for. When they differ, the swatch shows a stripe
@@ -362,9 +367,9 @@ public class SwingHelper
 				if (mixedColors != null)
 				{
 					// A swatch standing for several colors shows a stripe of each, with a line between stripes so that two similar colors
-					// still read as two.
+					// still read as two. The line matches the swatch's border.
 					int stripeCount = Math.min(mixedColors.size(), maxMixedColorStripes);
-					Color dividerColor = UIManager.getColor("Label.disabledForeground") != null ? UIManager.getColor("Label.disabledForeground") : Color.gray;
+					Color dividerColor = UIManager.getColor(colorPickerPreviewBorderColorKey) != null ? UIManager.getColor(colorPickerPreviewBorderColorKey) : Color.black;
 					for (int i = 0; i < stripeCount; i++)
 					{
 						int left = i * getWidth() / stripeCount;
@@ -411,7 +416,7 @@ public class SwingHelper
 		panel.setOpaque(false);
 		panel.setPreferredSize(new Dimension(50, 25));
 		panel.setBackground(Color.BLACK);
-		panel.setBorder(new DynamicLineBorder("controlShadow", 1));
+		panel.setBorder(new DynamicLineBorder(colorPickerPreviewBorderColorKey, 1));
 		return panel;
 	}
 
@@ -428,6 +433,109 @@ public class SwingHelper
 			return;
 		}
 		parent.repaint(component.getX() - 1, component.getY() - 1, component.getWidth() + 2, component.getHeight() + 2);
+	}
+
+	/**
+	 * Gives a color swatch a right-click menu that copies its color to the clipboard, and pastes a color from the clipboard into it. The
+	 * color is put on the clipboard as hex text, such as #8C6B4A, or #8C6B4A80 when it is partly transparent, so colors can be pasted
+	 * between maps and from other programs. Pasting is unavailable while the swatch is disabled.
+	 *
+	 * @param getColor
+	 *            The color to copy.
+	 * @param pasteColor
+	 *            Applies a pasted color, the same way choosing it in the swatch's color picker does.
+	 */
+	public static void addColorCopyAndPasteMenu(JComponent swatch, Supplier<Color> getColor, Consumer<Color> pasteColor)
+	{
+		if (swatch.getToolTipText() == null)
+		{
+			swatch.setToolTipText(Translation.get("colorSwatch.tooltip"));
+		}
+		swatch.addMouseListener(new MouseAdapter()
+		{
+			@Override
+			public void mousePressed(MouseEvent e)
+			{
+				showMenuIfTriggered(e);
+			}
+
+			@Override
+			public void mouseReleased(MouseEvent e)
+			{
+				showMenuIfTriggered(e);
+			}
+
+			private void showMenuIfTriggered(MouseEvent e)
+			{
+				if (!e.isPopupTrigger())
+				{
+					return;
+				}
+				JPopupMenu menu = new JPopupMenu();
+				JMenuItem copyItem = new JMenuItem(Translation.get("colorSwatch.copy"));
+				copyItem.addActionListener(event -> copyColorToClipboard(getColor.get()));
+				menu.add(copyItem);
+				Color clipboardColor = readColorFromClipboard();
+				JMenuItem pasteItem = new JMenuItem(Translation.get("colorSwatch.paste"));
+				pasteItem.setEnabled(clipboardColor != null && swatch.isEnabled());
+				pasteItem.addActionListener(event -> pasteColor.accept(clipboardColor));
+				menu.add(pasteItem);
+				menu.show(swatch, e.getX(), e.getY());
+			}
+		});
+	}
+
+	private static void copyColorToClipboard(Color color)
+	{
+		String hex = String.format("#%02X%02X%02X", color.getRed(), color.getGreen(), color.getBlue());
+		if (color.getAlpha() != 255)
+		{
+			hex += String.format("%02X", color.getAlpha());
+		}
+		try
+		{
+			Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new java.awt.datatransfer.StringSelection(hex), null);
+		}
+		catch (IllegalStateException e)
+		{
+			// The clipboard is briefly unavailable while another program uses it.
+			Logger.printError("Unable to copy a color to the clipboard.", e);
+		}
+	}
+
+	/**
+	 * Reads a color written as hex text, with or without a leading #, as #RRGGBB or #RRGGBBAA. Returns null if the clipboard holds anything
+	 * else.
+	 */
+	private static Color readColorFromClipboard()
+	{
+		String text;
+		try
+		{
+			Object data = Toolkit.getDefaultToolkit().getSystemClipboard().getData(java.awt.datatransfer.DataFlavor.stringFlavor);
+			text = data == null ? null : data.toString().trim();
+		}
+		catch (Exception e)
+		{
+			return null;
+		}
+		if (text == null)
+		{
+			return null;
+		}
+		if (text.startsWith("#"))
+		{
+			text = text.substring(1);
+		}
+		if (!text.matches("[0-9a-fA-F]{6}([0-9a-fA-F]{2})?"))
+		{
+			return null;
+		}
+		int red = Integer.parseInt(text.substring(0, 2), 16);
+		int green = Integer.parseInt(text.substring(2, 4), 16);
+		int blue = Integer.parseInt(text.substring(4, 6), 16);
+		int alpha = text.length() == 8 ? Integer.parseInt(text.substring(6, 8), 16) : 255;
+		return new Color(red, green, blue, alpha);
 	}
 
 	public static void showColorPickerWithPreviewPanel(JComponent parent, final JPanel colorDisplay, String title)

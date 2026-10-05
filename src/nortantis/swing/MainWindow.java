@@ -3490,8 +3490,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	}
 
 	/**
-	 * Restyles the open map with a theme: everything describing how the map looks, and the font, color, and background of every piece of
-	 * text and of the styles for new text. Text sizes and layout are kept.
+	 * Restyles the open map with a theme: everything describing how the map looks, the font, color, and background of every piece of text
+	 * and of the styles for new text, and the layouts for new text. Text sizes and the layout of existing text are kept.
 	 */
 	void applyTheme(ThemeCatalog.Entry entry)
 	{

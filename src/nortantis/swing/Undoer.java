@@ -1,6 +1,7 @@
 package nortantis.swing;
 
 import nortantis.MapSettings;
+import nortantis.TextLayoutSettings;
 import nortantis.TextStyle;
 import nortantis.TextType;
 import nortantis.ThemeGenerationSettings;
@@ -72,7 +73,7 @@ public class Undoer
 	}
 
 	/**
-	 * Sets an undo point for applying a theme. Undoing or redoing it restores the styles for new text along with everything else.
+	 * Sets an undo point for applying a theme. Undoing or redoing it restores the styles and layouts for new text along with everything else.
 	 */
 	public boolean setApplyThemeUndoPoint(Runnable preRun)
 	{
@@ -336,9 +337,9 @@ public class Undoer
 	}
 
 	/**
-	 * Undo and redo leave the settings that change without setting an undo point as they are: the styles for new text, the theme's rules for
-	 * generating maps, and where the theme was last exported. The exception is undoing or redoing a change that applied a theme, which
-	 * changes the styles and rules along with everything else.
+	 * Undo and redo leave the settings that change without setting an undo point as they are: the styles and layouts for new text, the theme's
+	 * rules for generating maps, and where the theme was last exported. The exception is undoing or redoing a change that applied a theme, which
+	 * changes the styles, layouts, and rules along with everything else.
 	 *
 	 * @param settingsToRestore
 	 *            The settings undo or redo is about to load, which get the current values of those settings.
@@ -354,6 +355,7 @@ public class Undoer
 		if (!isApplyTheme)
 		{
 			settingsToRestore.textStyleDefaults = currentSettings.copyTextStyleDefaults();
+			settingsToRestore.textLayoutDefaults = currentSettings.copyTextLayoutDefaults();
 			settingsToRestore.themeGeneration = currentSettings.themeGeneration == null ? null : currentSettings.themeGeneration.copy();
 		}
 		settingsToRestore.themeExportPath = currentSettings.themeExportPath;
@@ -366,11 +368,13 @@ public class Undoer
 	private static boolean equalsIgnoringSettingsWithoutUndoPoints(MapSettings settings, MapSettings other)
 	{
 		EnumMap<TextType, TextStyle> textStyleDefaults = settings.textStyleDefaults;
+		EnumMap<TextType, TextLayoutSettings> textLayoutDefaults = settings.textLayoutDefaults;
 		ThemeGenerationSettings themeGeneration = settings.themeGeneration;
 		String themeExportPath = settings.themeExportPath;
 		try
 		{
 			settings.textStyleDefaults = other.textStyleDefaults;
+			settings.textLayoutDefaults = other.textLayoutDefaults;
 			settings.themeGeneration = other.themeGeneration;
 			settings.themeExportPath = other.themeExportPath;
 			return settings.equals(other);
@@ -378,6 +382,7 @@ public class Undoer
 		finally
 		{
 			settings.textStyleDefaults = textStyleDefaults;
+			settings.textLayoutDefaults = textLayoutDefaults;
 			settings.themeGeneration = themeGeneration;
 			settings.themeExportPath = themeExportPath;
 		}

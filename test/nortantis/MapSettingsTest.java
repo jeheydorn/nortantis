@@ -393,6 +393,11 @@ public class MapSettingsTest
 		titleDefault.background.effect = TextBackgroundEffect.Scroll;
 		titleDefault.background.shapeJitter = 7;
 		titleDefault.background.haloColor = nortantis.platform.Color.create(1, 2, 3, 4);
+		assertEquals(TextLayoutSettings.createDefault(), settings.getDefaultTextLayout(TextType.Region),
+				"A map saved before new text had a layout gives every kind of new text the default layout.");
+		settings.getDefaultTextLayout(TextType.Region).curvature = 0.35;
+		settings.getDefaultTextLayout(TextType.Region).spacing = 7;
+		settings.getDefaultTextLayout(TextType.Title).lineBreak = LineBreak.One_line;
 		MapText text = findText(settings, "Custom color with curve");
 		text.style.background.effect = TextBackgroundEffect.Glow;
 		text.style.background.haloSize = 13;
@@ -405,6 +410,7 @@ public class MapSettingsTest
 			settings.writeToFile(temp.toString());
 			MapSettings reloaded = new MapSettings(temp.toString());
 			assertEquals(settings.textStyleDefaults, reloaded.textStyleDefaults);
+			assertEquals(settings.textLayoutDefaults, reloaded.textLayoutDefaults);
 			assertEquals(settings.edits.text, reloaded.edits.text);
 			MapText reloadedText = findText(reloaded, "Custom color with curve");
 			assertEquals(12345, reloadedText.backgroundSeed);

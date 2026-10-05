@@ -375,16 +375,23 @@ public class IconsTool extends EditorTool
 				{
 					SwingHelper.showColorPicker(organizer.panel, fillColorDisplay, Translation.get("iconsTool.fillColor.title"), () ->
 					{
+						SwingHelper.clearMixedColorsInColorPickerPreview(fillColorDisplay);
 						handleColorChange(WhatHSBColorFieldChanged.FillColor);
 					});
 				}
+			});
+			SwingHelper.addColorCopyAndPasteMenu(fillColorDisplay, fillColorDisplay::getBackground, color ->
+			{
+				fillColorDisplay.setBackground(color);
+				SwingHelper.clearMixedColorsInColorPickerPreview(fillColorDisplay);
+				handleColorChange(WhatHSBColorFieldChanged.FillColor);
 			});
 			fillColorHider = colorOrganizer.addLabelAndComponentsHorizontal(Translation.get("iconsTool.fillColor.label"), Translation.get("iconsTool.fillColor.help"),
 					Arrays.asList(fillColorDisplay, chooseColorButton));
 		}
 
 		CollapsiblePanel colorPanel = new CollapsiblePanel("color_options", "Color", Translation.get("iconsTool.colorOptions"), colorOrganizer.panel, true);
-		colorPickerHider = organizer.addLeftAlignedComponent(colorPanel);
+		colorPickerHider = organizer.addLeftAlignedComponent(colorPanel, GridBagOrganizer.rowVerticalInset, GridBagOrganizer.rowVerticalInset, false);
 
 		brushAndEditOptionsSeparatorHider = organizer.addSeparator();
 
@@ -650,6 +657,15 @@ public class IconsTool extends EditorTool
 
 				setColorFieldsWithoutRunningListeners(iconColorMode, filterColorMode, maximizeOpacityMode, fillWithColorMode);
 
+				// The most common fill color comes first, so that it is the one the color picker starts on.
+				List<java.awt.Color> fillColors = new ArrayList<>();
+				fillColors.add(AwtBridge.toAwtColor(iconColorMode == null ? MapSettings.defaultIconFillColor : iconColorMode));
+				for (FreeIcon iconToEdit : iconsToEdit)
+				{
+					fillColors.add(AwtBridge.toAwtColor(iconToEdit.fillColor == null ? MapSettings.defaultIconFillColor : iconToEdit.fillColor));
+				}
+				SwingHelper.showColorsInColorPickerPreview(fillColorDisplay, fillColors);
+
 			}
 
 			if (DebugFlags.printIconsBeingEdited())
@@ -802,7 +818,7 @@ public class IconsTool extends EditorTool
 			disableColorChangeHandlers = true;
 
 			fillColorDisplay.setBackground(AwtBridge.toAwtColor(iconColor));
-			fillColorDisplay.repaint();
+			SwingHelper.clearMixedColorsInColorPickerPreview(fillColorDisplay);
 
 			hueSlider.setValue(filterColor.hue);
 			saturationSlider.setValue(filterColor.saturation);

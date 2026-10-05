@@ -36,10 +36,16 @@ public class ThemeGenerationSettings implements Serializable
 	/*
 	 * How far colors vary between generated maps. Hue is in degrees, and saturation and brightness in percent. Each is the width of the
 	 * range a color can move across, so a color moves at most half of it either way.
+	 *
+	 * The ocean variation moves the ocean color, and the ocean's wave and shading colors with it. The land variation moves the land color,
+	 * or the region base color when the theme colors political regions, and the border color with it. No other color varies.
 	 */
-	public int hueVariation = 16;
-	public int saturationVariation = 10;
-	public int brightnessVariation = 10;
+	public int oceanHueVariation = 16;
+	public int oceanSaturationVariation = 10;
+	public int oceanBrightnessVariation = 10;
+	public int landHueVariation = 16;
+	public int landSaturationVariation = 10;
+	public int landBrightnessVariation = 10;
 
 	/*
 	 * Base values.
@@ -93,7 +99,6 @@ public class ThemeGenerationSettings implements Serializable
 	/*
 	 * Regions, roads, background, icons, and text.
 	 */
-	public Set<LandColoringMethod> allowedLandColoringMethods = new LinkedHashSet<>(Arrays.asList(LandColoringMethod.ColorPoliticalRegions));
 	public double drawRegionBoundariesProbability = 0.75;
 	public Set<StrokeType> allowedRegionBoundaryStrokeTypes = new LinkedHashSet<>();
 	public Set<StrokeType> allowedRoadStrokeTypes = new LinkedHashSet<>();
@@ -143,9 +148,12 @@ public class ThemeGenerationSettings implements Serializable
 	{
 		JSONObject obj = new JSONObject();
 		obj.put("artPack", artPack);
-		obj.put("hueVariation", hueVariation);
-		obj.put("saturationVariation", saturationVariation);
-		obj.put("brightnessVariation", brightnessVariation);
+		obj.put("oceanHueVariation", oceanHueVariation);
+		obj.put("oceanSaturationVariation", oceanSaturationVariation);
+		obj.put("oceanBrightnessVariation", oceanBrightnessVariation);
+		obj.put("landHueVariation", landHueVariation);
+		obj.put("landSaturationVariation", landSaturationVariation);
+		obj.put("landBrightnessVariation", landBrightnessVariation);
 
 		putColor(obj, "baseLandColor", baseLandColor);
 		putColor(obj, "baseOceanColor", baseOceanColor);
@@ -182,7 +190,6 @@ public class ThemeGenerationSettings implements Serializable
 		obj.put("frayedBorderBlurLevelVariation", frayedBorderBlurLevelVariation);
 		obj.put("frayedBorderSizeVariation", frayedBorderSizeVariation);
 
-		obj.put("allowedLandColoringMethods", toJsonArray(allowedLandColoringMethods, Enum::name));
 		obj.put("drawRegionBoundariesProbability", drawRegionBoundariesProbability);
 		obj.put("allowedRegionBoundaryStrokeTypes", toJsonArray(allowedRegionBoundaryStrokeTypes, Enum::name));
 		obj.put("allowedRoadStrokeTypes", toJsonArray(allowedRoadStrokeTypes, Enum::name));
@@ -205,9 +212,12 @@ public class ThemeGenerationSettings implements Serializable
 		}
 
 		result.artPack = (String) obj.get("artPack");
-		result.hueVariation = getInt(obj, "hueVariation", result.hueVariation);
-		result.saturationVariation = getInt(obj, "saturationVariation", result.saturationVariation);
-		result.brightnessVariation = getInt(obj, "brightnessVariation", result.brightnessVariation);
+		result.oceanHueVariation = getInt(obj, "oceanHueVariation", result.oceanHueVariation);
+		result.oceanSaturationVariation = getInt(obj, "oceanSaturationVariation", result.oceanSaturationVariation);
+		result.oceanBrightnessVariation = getInt(obj, "oceanBrightnessVariation", result.oceanBrightnessVariation);
+		result.landHueVariation = getInt(obj, "landHueVariation", result.landHueVariation);
+		result.landSaturationVariation = getInt(obj, "landSaturationVariation", result.landSaturationVariation);
+		result.landBrightnessVariation = getInt(obj, "landBrightnessVariation", result.landBrightnessVariation);
 
 		result.baseLandColor = getColor(obj, "baseLandColor");
 		result.baseOceanColor = getColor(obj, "baseOceanColor");
@@ -244,7 +254,6 @@ public class ThemeGenerationSettings implements Serializable
 		result.frayedBorderBlurLevelVariation = getInt(obj, "frayedBorderBlurLevelVariation", result.frayedBorderBlurLevelVariation);
 		result.frayedBorderSizeVariation = getInt(obj, "frayedBorderSizeVariation", result.frayedBorderSizeVariation);
 
-		result.allowedLandColoringMethods = getEnumSet(obj, "allowedLandColoringMethods", LandColoringMethod.class, result.allowedLandColoringMethods);
 		result.drawRegionBoundariesProbability = getDouble(obj, "drawRegionBoundariesProbability", result.drawRegionBoundariesProbability);
 		result.allowedRegionBoundaryStrokeTypes = getEnumSet(obj, "allowedRegionBoundaryStrokeTypes", StrokeType.class, result.allowedRegionBoundaryStrokeTypes);
 		result.allowedRoadStrokeTypes = getEnumSet(obj, "allowedRoadStrokeTypes", StrokeType.class, result.allowedRoadStrokeTypes);

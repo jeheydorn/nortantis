@@ -394,6 +394,11 @@ public class ThemePanel extends JTabbedPane
 		};
 
 		landDisplayPanel = new BGColorPreviewPanel();
+		SwingHelper.addColorCopyAndPasteMenu(landDisplayPanel, landDisplayPanel::getColor, color ->
+		{
+			landDisplayPanel.setColor(color);
+			handleFullRedraw();
+		});
 		landDisplayPanel.setLayout(null);
 		landDisplayPanel.setPreferredSize(backgroundDisplaySize);
 		landDisplayPanel.setMinimumSize(backgroundDisplaySize);
@@ -423,6 +428,11 @@ public class ThemePanel extends JTabbedPane
 		colorizeOceanCheckboxHider = organizer.addLeftAlignedComponent(colorizeOceanCheckbox);
 
 		oceanDisplayPanel = new BGColorPreviewPanel();
+		SwingHelper.addColorCopyAndPasteMenu(oceanDisplayPanel, oceanDisplayPanel::getColor, color ->
+		{
+			oceanDisplayPanel.setColor(color);
+			handleFullRedraw();
+		});
 		oceanDisplayPanel.setLayout(null);
 		oceanDisplayPanel.setPreferredSize(backgroundDisplaySize);
 		oceanDisplayPanel.setMinimumSize(backgroundDisplaySize);
@@ -512,6 +522,7 @@ public class ThemePanel extends JTabbedPane
 			{
 
 				gridOverlayColorDisplay = SwingHelper.createColorPickerPreviewPanel();
+				addColorCopyAndPasteMenuForTerrainChange(gridOverlayColorDisplay);
 				JButton chooseButton = new JButton(Translation.get("theme.choose"));
 				chooseButton.addActionListener(new ActionListener()
 				{
@@ -672,6 +683,7 @@ public class ThemePanel extends JTabbedPane
 		borderRows.add(organizer.addLabelAndComponent(Translation.get("theme.borderColor.label"), Translation.get("theme.borderColor.help"), borderColorOptionComboBox));
 
 		borderColorDisplay = SwingHelper.createColorPickerPreviewPanel();
+		addColorCopyAndPasteMenuForFullChange(borderColorDisplay);
 
 		JButton borderColorChooseButton = new JButton(Translation.get("theme.choose"));
 		borderColorChooseButton.addActionListener(new ActionListener()
@@ -711,6 +723,7 @@ public class ThemePanel extends JTabbedPane
 		frayedEdgeRows = organizer.addLabelAndComponent(Translation.get("theme.shadingWidth.label"), Translation.get("theme.shadingWidth.help"), frayedEdgeShadingSlider);
 
 		frayedEdgeShadingColorDisplay = SwingHelper.createColorPickerPreviewPanel();
+		addColorCopyAndPasteMenuForFrayedEdgeOrGrungeChange(frayedEdgeShadingColorDisplay);
 		JButton frayedEdgeShadingColorChooseButton = new JButton(Translation.get("theme.choose"));
 		frayedEdgeShadingColorChooseButton.addActionListener(new ActionListener()
 		{
@@ -794,6 +807,7 @@ public class ThemePanel extends JTabbedPane
 		grungeRows = organizer.addLabelAndComponent(Translation.get("theme.width.label"), Translation.get("theme.grungeWidth.help"), grungeSlider);
 
 		grungeColorDisplay = SwingHelper.createColorPickerPreviewPanel();
+		addColorCopyAndPasteMenuForFrayedEdgeOrGrungeChange(grungeColorDisplay);
 
 		JButton grungeColorChooseButton = new JButton(Translation.get("theme.choose"));
 		grungeColorChooseButton.addActionListener(new ActionListener()
@@ -841,6 +855,7 @@ public class ThemePanel extends JTabbedPane
 		}
 
 		coastlineColorDisplay = SwingHelper.createColorPickerPreviewPanel();
+		addColorCopyAndPasteMenuForTerrainChange(coastlineColorDisplay);
 
 		JButton buttonChooseCoastlineColor = new JButton(Translation.get("theme.choose"));
 		buttonChooseCoastlineColor.addActionListener(new ActionListener()
@@ -897,6 +912,7 @@ public class ThemePanel extends JTabbedPane
 
 		{
 			oceanShadingColorDisplay = SwingHelper.createColorPickerPreviewPanel();
+			addColorCopyAndPasteMenuForTerrainChange(oceanShadingColorDisplay);
 			btnChooseOceanShadingColor = new JButton(Translation.get("theme.choose"));
 			btnChooseOceanShadingColor.addActionListener(new ActionListener()
 			{
@@ -1006,6 +1022,7 @@ public class ThemePanel extends JTabbedPane
 
 		{
 			oceanWavesColorDisplay = SwingHelper.createColorPickerPreviewPanel();
+			addColorCopyAndPasteMenuForTerrainChange(oceanWavesColorDisplay);
 
 			JButton btnChooseOceanEffectsColor = new JButton(Translation.get("theme.choose"));
 			btnChooseOceanEffectsColor.addActionListener(new ActionListener()
@@ -1064,6 +1081,7 @@ public class ThemePanel extends JTabbedPane
 		}
 
 		regionBoundaryColorDisplay = SwingHelper.createColorPickerPreviewPanel();
+		addColorCopyAndPasteMenuForTerrainChange(regionBoundaryColorDisplay);
 		JButton buttonChooseRegionBoundaryColor = new JButton(Translation.get("theme.choose"));
 		buttonChooseRegionBoundaryColor.addActionListener(new ActionListener()
 		{
@@ -1078,6 +1096,7 @@ public class ThemePanel extends JTabbedPane
 		{
 			organizer.addSectionHeading(Translation.get("theme.section.rivers"));
 			riverColorDisplay = SwingHelper.createColorPickerPreviewPanel();
+			addColorCopyAndPasteMenuForTerrainChange(riverColorDisplay);
 
 			JButton riverColorChooseButton = new JButton(Translation.get("theme.choose"));
 			riverColorChooseButton.addActionListener(new ActionListener()
@@ -1121,6 +1140,7 @@ public class ThemePanel extends JTabbedPane
 			}
 
 			roadColorDisplay = SwingHelper.createColorPickerPreviewPanel();
+			addColorCopyAndPasteMenuForTerrainChange(roadColorDisplay);
 			JButton buttonRoadColor = new JButton(Translation.get("theme.choose"));
 			buttonRoadColor.addActionListener(new ActionListener()
 			{
@@ -2291,6 +2311,35 @@ public class ThemePanel extends JTabbedPane
 	{
 		mainWindow.handleThemeChange(false);
 		mainWindow.updater.createAndShowMapTerrainChange();
+	}
+
+	private void addColorCopyAndPasteMenuForTerrainChange(JPanel colorDisplay)
+	{
+		addColorCopyAndPasteMenu(colorDisplay, () -> redrawForTerrainChange(), UpdateType.Terrain);
+	}
+
+	private void addColorCopyAndPasteMenuForFrayedEdgeOrGrungeChange(JPanel colorDisplay)
+	{
+		addColorCopyAndPasteMenu(colorDisplay, () -> redrawForFrayedEdgeOrGrungeChange(), UpdateType.GrungeAndFray);
+	}
+
+	private void addColorCopyAndPasteMenuForFullChange(JPanel colorDisplay)
+	{
+		addColorCopyAndPasteMenu(colorDisplay, () -> redrawForFullChange(), UpdateType.Full);
+	}
+
+	/**
+	 * Lets the swatch's color be copied and pasted. Pasting sets an undo point of updateType and redraws the map with redrawAction.
+	 */
+	private void addColorCopyAndPasteMenu(JPanel colorDisplay, Runnable redrawAction, UpdateType updateType)
+	{
+		SwingHelper.addColorCopyAndPasteMenu(colorDisplay, colorDisplay::getBackground, color ->
+		{
+			colorDisplay.setBackground(color);
+			colorDisplay.repaint();
+			mainWindow.undoer.setUndoPoint(updateType, null);
+			redrawAction.run();
+		});
 	}
 
 	private void showColorPickerForTerrainChange(JPanel colorDisplay, String title)

@@ -268,19 +268,21 @@ public class SettingsGenerator
 		List<LineStyle> lineStyles = gen.allowedLineStyles.isEmpty() ? Arrays.asList(LineStyle.values()) : new ArrayList<>(gen.allowedLineStyles);
 		settings.lineStyle = ProbabilityHelper.sampleUniform(rand, lineStyles);
 
-		// Colors that belong together move together, so that colors chosen to work together keep working together.
-		float[] oceanOffset = rollColorOffset(rand, gen);
+		// Colors that belong together move together, so that colors chosen to work together keep working together. Only the ocean color and
+		// the land color, or the region base color when regions are colored, are varied; the others either follow one of them or are the
+		// theme's.
+		float[] oceanOffset = rollColorOffset(rand, gen.oceanHueVariation, gen.oceanSaturationVariation, gen.oceanBrightnessVariation);
 		settings.oceanColor = applyColorOffset(base(gen.baseOceanColor, settings.oceanColor), oceanOffset);
 		settings.oceanWavesColor = applyColorOffset(base(gen.baseOceanWavesColor, settings.oceanWavesColor), oceanOffset);
 		settings.oceanShadingColor = applyColorOffset(base(gen.baseOceanShadingColor, settings.oceanShadingColor), oceanOffset);
-		float[] landOffset = rollColorOffset(rand, gen);
-		settings.landColor = applyColorOffset(base(gen.baseLandColor, settings.landColor), landOffset);
-		settings.regionBaseColor = applyColorOffset(base(gen.baseRegionBaseColor, settings.regionBaseColor), landOffset);
+		float[] landOffset = rollColorOffset(rand, gen.landHueVariation, gen.landSaturationVariation, gen.landBrightnessVariation);
+		float[] noOffset = { 0f, 0f, 0f };
+		settings.landColor = applyColorOffset(base(gen.baseLandColor, settings.landColor), settings.drawRegionColors ? noOffset : landOffset);
+		settings.regionBaseColor = applyColorOffset(base(gen.baseRegionBaseColor, settings.regionBaseColor), settings.drawRegionColors ? landOffset : noOffset);
 		settings.borderColor = applyColorOffset(base(gen.baseBorderColor, settings.borderColor), landOffset);
-		float[] edgeOffset = rollColorOffset(rand, gen);
-		settings.frayedBorderColor = applyColorOffset(base(gen.baseFrayedBorderColor, settings.frayedBorderColor), edgeOffset);
-		settings.grungeColor = applyColorOffset(base(gen.baseGrungeColor, settings.grungeColor), edgeOffset);
-		settings.riverColor = applyColorOffset(base(gen.baseRiverColor, settings.riverColor), rollColorOffset(rand, gen));
+		settings.frayedBorderColor = base(gen.baseFrayedBorderColor, settings.frayedBorderColor);
+		settings.grungeColor = base(gen.baseGrungeColor, settings.grungeColor);
+		settings.riverColor = base(gen.baseRiverColor, settings.riverColor);
 
 		// Grunge and border
 		settings.grungeWidth = vary(rand, gen.baseGrungeWidth, settings.grungeWidth, gen.grungeWidthVariation, 0, maxGrungeWidthToGenerate);
@@ -330,10 +332,6 @@ public class SettingsGenerator
 		}
 
 		// Regions
-		boolean allowsRegionColors = gen.allowedLandColoringMethods.isEmpty() || gen.allowedLandColoringMethods.contains(LandColoringMethod.ColorPoliticalRegions);
-		boolean allowsSingleColor = gen.allowedLandColoringMethods.isEmpty() || gen.allowedLandColoringMethods.contains(LandColoringMethod.SingleColor);
-		final double colorPoliticalRegionsProbabilityWhenBothAreAllowed = 0.75;
-		settings.drawRegionColors = allowsRegionColors && (!allowsSingleColor || rand.nextDouble() < colorPoliticalRegionsProbabilityWhenBothAreAllowed);
 		settings.drawRegionBoundaries = rand.nextDouble() < gen.drawRegionBoundariesProbability;
 		List<StrokeType> boundaryTypes = gen.allowedRegionBoundaryStrokeTypes.isEmpty() ? Arrays.asList(StrokeType.values()) : new ArrayList<>(gen.allowedRegionBoundaryStrokeTypes);
 		settings.regionBoundaryStyle = new Stroke(ProbabilityHelper.sampleUniform(rand, boundaryTypes), settings.regionBoundaryStyle.width);
@@ -423,11 +421,11 @@ public class SettingsGenerator
 	/**
 	 * A random change to hue, in degrees, and to saturation and brightness, as fractions, within the theme's color variation.
 	 */
-	private static float[] rollColorOffset(Random rand, ThemeGenerationSettings gen)
+	private static float[] rollColorOffset(Random rand, int hueVariation, int saturationVariation, int brightnessVariation)
 	{
-		float hue = (float) ((rand.nextDouble() - 0.5) * gen.hueVariation);
-		float saturation = (float) ((rand.nextDouble() - 0.5) * gen.saturationVariation / 100.0);
-		float brightness = (float) ((rand.nextDouble() - 0.5) * gen.brightnessVariation / 100.0);
+		float hue = (float) ((rand.nextDouble() - 0.5) * hueVariation);
+		float saturation = (float) ((rand.nextDouble() - 0.5) * saturationVariation / 100.0);
+		float brightness = (float) ((rand.nextDouble() - 0.5) * brightnessVariation / 100.0);
 		return new float[] { hue, saturation, brightness };
 	}
 

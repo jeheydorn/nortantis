@@ -34,9 +34,17 @@ import java.util.function.Supplier;
 class ThemeExportDialog extends JDialog
 {
 	private static final Object destinationChooseLocation = new Object();
-	private static final long sampleMapLandSeed = 72;
-	private static final int sampleMapWorldSize = 6000;
-	private static final int sampleMapRegionCount = 6;
+	/*
+	 * The sample map's land, which is a small world so that the theme shows clearly in the preview.
+	 */
+	private static final long sampleMapLandSeed = 1837591079;
+	private static final long sampleMapRegionsSeed = 795652108;
+	private static final long sampleMapTextSeed = 618525952;
+	private static final int sampleMapWorldSize = 2000;
+	private static final LandShape sampleMapLandShape = LandShape.Coastline;
+	private static final int sampleMapRegionCount = 10;
+	private static final GeneratedDimension sampleMapDimension = GeneratedDimension.Square;
+	private static final int sampleMapPreviewWidth = 520;
 
 	private final MapSettings mapSettings;
 	private final ThemeGenerationSettings gen;
@@ -46,6 +54,7 @@ class ThemeExportDialog extends JDialog
 	private JComboBox<Object> destinationComboBox;
 	private JTextField fileNameField;
 	private UnscaledImagePanel previewPanel;
+	private JProgressBar previewProgressBar;
 	private JLabel previewStatusLabel;
 	private long rollSeed = new Random().nextLong();
 	/**
@@ -133,10 +142,19 @@ class ThemeExportDialog extends JDialog
 		});
 		organizer.addLabelAndComponent(Translation.get("exportTheme.artPack.label"), Translation.get("exportTheme.artPack.help"), artPackComboBox);
 
-		organizer.addSectionHeading(Translation.get("exportTheme.section.colors"));
-		addVariationSlider(organizer, "exportTheme.hueVariation", 0, 90, gen.hueVariation, value -> gen.hueVariation = value);
-		addVariationSlider(organizer, "exportTheme.saturationVariation", 0, 60, gen.saturationVariation, value -> gen.saturationVariation = value);
-		addVariationSlider(organizer, "exportTheme.brightnessVariation", 0, 60, gen.brightnessVariation, value -> gen.brightnessVariation = value);
+		organizer.addSectionHeading(Translation.get("exportTheme.section.oceanColorVariation"));
+		String oceanHelp = "exportTheme.oceanColorVariation.help";
+		addVariationSlider(organizer, "exportTheme.hueVariation.label", oceanHelp, 0, 90, gen.oceanHueVariation, value -> gen.oceanHueVariation = value);
+		addVariationSlider(organizer, "exportTheme.saturationVariation.label", oceanHelp, 0, 60, gen.oceanSaturationVariation, value -> gen.oceanSaturationVariation = value);
+		addVariationSlider(organizer, "exportTheme.brightnessVariation.label", oceanHelp, 0, 60, gen.oceanBrightnessVariation, value -> gen.oceanBrightnessVariation = value);
+
+		// The land variation moves whichever of the land and region base colors the theme draws land with.
+		boolean colorsRegions = mapSettings.drawRegionColors;
+		organizer.addSectionHeading(Translation.get(colorsRegions ? "exportTheme.section.regionColorVariation" : "exportTheme.section.landColorVariation"));
+		String landHelp = colorsRegions ? "exportTheme.regionColorVariation.help" : "exportTheme.landColorVariation.help";
+		addVariationSlider(organizer, "exportTheme.hueVariation.label", landHelp, 0, 90, gen.landHueVariation, value -> gen.landHueVariation = value);
+		addVariationSlider(organizer, "exportTheme.saturationVariation.label", landHelp, 0, 60, gen.landSaturationVariation, value -> gen.landSaturationVariation = value);
+		addVariationSlider(organizer, "exportTheme.brightnessVariation.label", landHelp, 0, 60, gen.landBrightnessVariation, value -> gen.landBrightnessVariation = value);
 
 		organizer.addSectionHeading(Translation.get("exportTheme.section.ocean"));
 		addProbabilitySlider(organizer, "exportTheme.drawOceanWavesProbability", gen.drawOceanWavesProbability, value -> gen.drawOceanWavesProbability = value);
@@ -166,7 +184,6 @@ class ThemeExportDialog extends JDialog
 		addVariationSlider(organizer, "exportTheme.frayedBorderSizeVariation", 0, 7, gen.frayedBorderSizeVariation, value -> gen.frayedBorderSizeVariation = value);
 
 		organizer.addSectionHeading(Translation.get("exportTheme.section.regionsRoadsAndBackground"));
-		addEnumCheckboxes(organizer, "exportTheme.allowedLandColoringMethods", Arrays.asList(LandColoringMethod.values()), gen.allowedLandColoringMethods, Object::toString);
 		addProbabilitySlider(organizer, "exportTheme.drawRegionBoundariesProbability", gen.drawRegionBoundariesProbability, value -> gen.drawRegionBoundariesProbability = value);
 		addEnumCheckboxes(organizer, "exportTheme.allowedRegionBoundaryStrokeTypes", Arrays.asList(StrokeType.values()), gen.allowedRegionBoundaryStrokeTypes, Object::toString);
 		addEnumCheckboxes(organizer, "exportTheme.allowedRoadStrokeTypes", Arrays.asList(StrokeType.values()), gen.allowedRoadStrokeTypes, Object::toString);
@@ -188,15 +205,25 @@ class ThemeExportDialog extends JDialog
 
 	private String createTooltip(String key)
 	{
-		return "<html>" + Translation.get(key + ".help") + "<br>" + Translation.get("exportTheme.zeroNeverChanges") + "</html>";
+		return createTooltipFromHelpKey(key + ".help");
+	}
+
+	private String createTooltipFromHelpKey(String helpKey)
+	{
+		return "<html>" + Translation.get(helpKey) + "<br>" + Translation.get("exportTheme.zeroNeverChanges") + "</html>";
 	}
 
 	private void addVariationSlider(GridBagOrganizer organizer, String key, int min, int max, int value, IntConsumer setValue)
 	{
+		addVariationSlider(organizer, key + ".label", key + ".help", min, max, value, setValue);
+	}
+
+	private void addVariationSlider(GridBagOrganizer organizer, String labelKey, String helpKey, int min, int max, int value, IntConsumer setValue)
+	{
 		JSlider slider = new JSlider(min, max, Math.max(min, Math.min(max, value)));
 		slider.setPaintLabels(false);
 		SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(slider, null, () -> setValue.accept(slider.getValue()), 44);
-		sliderWithDisplay.addToOrganizer(organizer, Translation.get(key + ".label"), createTooltip(key));
+		sliderWithDisplay.addToOrganizer(organizer, Translation.get(labelKey), createTooltipFromHelpKey(helpKey));
 	}
 
 	private void addProbabilitySlider(GridBagOrganizer organizer, String key, double value, Consumer<Double> setValue)
@@ -297,7 +324,8 @@ class ThemeExportDialog extends JDialog
 	private JComponent createPreviewPanel()
 	{
 		JPanel panel = new JPanel(new BorderLayout(0, 6));
-		JLabel explanation = new JLabel("<html>" + Translation.get("exportTheme.sampleExplanation") + "</html>");
+		JLabel explanation = new JLabel("<html>" + Translation.get("exportTheme.sampleExplanation", Translation.get("menu.file"), Translation.get("menu.file.theme"),
+				Translation.get("menu.file.theme.apply")) + "</html>");
 		panel.add(explanation, BorderLayout.NORTH);
 		previewPanel = new UnscaledImagePanel();
 		JPanel previewHolder = new JPanel(new GridBagLayout());
@@ -312,7 +340,14 @@ class ThemeExportDialog extends JDialog
 			drawSampleMap();
 		});
 		buttons.add(rollButton);
-		previewStatusLabel = new JLabel();
+		previewProgressBar = new JProgressBar();
+		previewProgressBar.setIndeterminate(true);
+		previewProgressBar.setStringPainted(true);
+		previewProgressBar.setString(Translation.get("exportTheme.drawingSample"));
+		previewProgressBar.setVisible(false);
+		buttons.add(previewProgressBar);
+		previewStatusLabel = new JLabel(Translation.get("exportTheme.sampleFailed"));
+		previewStatusLabel.setVisible(false);
 		buttons.add(previewStatusLabel);
 		panel.add(buttons, BorderLayout.SOUTH);
 		return panel;
@@ -397,7 +432,8 @@ class ThemeExportDialog extends JDialog
 			return;
 		}
 		isSampleBeingDrawn = true;
-		previewStatusLabel.setText(Translation.get("exportTheme.drawingSample"));
+		previewProgressBar.setVisible(true);
+		previewStatusLabel.setVisible(false);
 		MapSettings theme = createThemeSettings();
 		String artPack = gen.artPack != null && Assets.artPackExists(gen.artPack, mapSettings.customImagesPath) ? gen.artPack : Assets.installedArtPack;
 		long seed = rollSeed;
@@ -408,21 +444,23 @@ class ThemeExportDialog extends JDialog
 			{
 				MapSettings sample = SettingsGenerator.generateFromTheme(new Random(seed), artPack, theme, false, mapSettings.customImagesPath);
 				sample.randomSeed = sampleMapLandSeed;
-				sample.regionsRandomSeed = sampleMapLandSeed;
-				sample.textRandomSeed = sampleMapLandSeed;
+				sample.regionsRandomSeed = sampleMapRegionsSeed;
+				sample.textRandomSeed = sampleMapTextSeed;
 				sample.worldSize = sampleMapWorldSize;
-				sample.landShape = LandShape.Continents;
+				sample.landShape = sampleMapLandShape;
 				sample.regionCount = sampleMapRegionCount;
-				sample.generatedWidth = GeneratedDimension.Sixteen_by_9.width;
-				sample.generatedHeight = GeneratedDimension.Sixteen_by_9.height;
+				sample.generatedWidth = sampleMapDimension.width;
+				sample.generatedHeight = sampleMapDimension.height;
 				double osScale = SwingHelper.getOSScale();
-				return new MapCreator().createMap(sample, new Dimension(560 * osScale, 315 * osScale), null);
+				double previewHeight = sampleMapPreviewWidth * sampleMapDimension.height / (double) sampleMapDimension.width;
+				return new MapCreator().createMap(sample, new Dimension(sampleMapPreviewWidth * osScale, previewHeight * osScale), null);
 			}
 
 			@Override
 			protected void done()
 			{
 				isSampleBeingDrawn = false;
+				previewProgressBar.setVisible(false);
 				if (!isDisplayable())
 				{
 					return;
@@ -437,12 +475,11 @@ class ThemeExportDialog extends JDialog
 				{
 					Image map = get();
 					previewPanel.setImage(AwtBridge.toBufferedImage(map));
-					previewStatusLabel.setText(Translation.get("exportTheme.sampleNotExported"));
 				}
 				catch (Exception e)
 				{
 					Logger.printError("Unable to draw the sample map for the theme.", e);
-					previewStatusLabel.setText(Translation.get("exportTheme.sampleFailed"));
+					previewStatusLabel.setVisible(true);
 				}
 			}
 		};

@@ -29,7 +29,8 @@ public class ThemeTest
 	{
 		ThemeGenerationSettings gen = ThemeGenerationSettings.createDefault();
 		gen.artPack = "Some Art Pack";
-		gen.hueVariation = 3;
+		gen.oceanHueVariation = 3;
+		gen.landBrightnessVariation = 7;
 		gen.baseLandColor = Color.create(1, 2, 3, 4);
 		gen.baseGrungeWidth = 123;
 		gen.allowedBorderNames.add("dashes");
@@ -84,6 +85,42 @@ public class ThemeTest
 	}
 
 	@Test
+	public void onlyTheOceanAndLandOrRegionColorsVary()
+	{
+		for (boolean drawRegionColors : new boolean[] { true, false })
+		{
+			MapSettings settings = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
+			settings.drawRegionColors = drawRegionColors;
+			settings.themeGeneration = ThemeGenerationSettings.createDefault();
+			settings.themeGeneration.setBaseValuesFrom(settings);
+			settings.themeGeneration.oceanHueVariation = 90;
+			settings.themeGeneration.landHueVariation = 90;
+			MapSettings before = settings.deepCopyExceptEdits();
+
+			SettingsGenerator.applyThemeRandomness(settings, settings.themeGeneration, new Random(11));
+
+			assertNotEquals(before.oceanColor, settings.oceanColor);
+			assertNotEquals(before.oceanWavesColor, settings.oceanWavesColor, "Ocean waves move with the ocean.");
+			assertNotEquals(before.oceanShadingColor, settings.oceanShadingColor, "Ocean shading moves with the ocean.");
+			assertNotEquals(before.borderColor, settings.borderColor, "The border moves with the land or regions.");
+			if (drawRegionColors)
+			{
+				assertNotEquals(before.regionBaseColor, settings.regionBaseColor);
+				assertEquals(before.landColor, settings.landColor, "With region colors, the land color is the theme's.");
+			}
+			else
+			{
+				assertNotEquals(before.landColor, settings.landColor);
+				assertEquals(before.regionBaseColor, settings.regionBaseColor, "Without region colors, the region base color is the theme's.");
+			}
+			assertEquals(drawRegionColors, settings.drawRegionColors, "The land coloring method is the theme's.");
+			assertEquals(before.riverColor, settings.riverColor);
+			assertEquals(before.frayedBorderColor, settings.frayedBorderColor);
+			assertEquals(before.grungeColor, settings.grungeColor);
+		}
+	}
+
+	@Test
 	public void colorOffsetsKeepAlphaAndStayInRange()
 	{
 		Color color = Color.create(250, 250, 250, 61);
@@ -100,6 +137,7 @@ public class ThemeTest
 		settings.themeGeneration = ThemeGenerationSettings.createDefault();
 		settings.themeGeneration.setBaseValuesFrom(settings);
 		settings.themeExportPath = "somewhere";
+		settings.getDefaultTextLayout(TextType.Region).spacing = 9;
 
 		Path temp = Files.createTempFile("theme", MapSettings.themeFileExtensionWithDot);
 		try
@@ -114,6 +152,7 @@ public class ThemeTest
 			assertEquals(settings.landColor, target.landColor);
 			assertEquals(settings.coastShadingAlpha, target.coastShadingAlpha);
 			assertEquals(settings.textStyleDefaults, target.textStyleDefaults);
+			assertEquals(settings.textLayoutDefaults, target.textLayoutDefaults);
 			assertEquals(settings.themeGeneration, target.themeGeneration);
 			assertNotEquals(settings.edits.text.size(), target.edits.text.size(), "Applying a theme keeps the map's own text.");
 		}

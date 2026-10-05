@@ -1517,16 +1517,19 @@ public class TextDrawer
 	private MapText createMapText(String text, Point location, double angle, TextType type)
 	{
 		long backgroundSeed = Helper.mixSeed(settings.textRandomSeed + generatedTextCount++);
-		return createMapText(text, location, angle, type, settings.resolution, settings.getDefaultTextStyle(type).copy(), backgroundSeed);
+		return createMapText(text, location, angle, type, settings.resolution, settings.getDefaultTextStyle(type).copy(), settings.getDefaultTextLayout(type),
+				backgroundSeed);
 	}
 
 	/**
 	 * Creates a new MapText, taking the resolution its location is given at into account.
 	 */
-	public static MapText createMapText(String text, Point location, double angle, TextType type, double resolution, TextStyle style, long backgroundSeed)
+	public static MapText createMapText(String text, Point location, double angle, TextType type, double resolution, TextStyle style, TextLayoutSettings layout,
+			long backgroundSeed)
 	{
 		// Divide by resolution so that the location does not depend on the resolution we're drawing at.
-		return new MapText(text, new Point(location.x / resolution, location.y / resolution), angle, type, LineBreak.Auto, 0.0, 0, style, backgroundSeed);
+		return new MapText(text, new Point(location.x / resolution, location.y / resolution), angle, type, layout.lineBreak, layout.curvature, layout.spacing, style,
+				backgroundSeed);
 	}
 
 	public void setMapTexts(CopyOnWriteArrayList<MapText> text)

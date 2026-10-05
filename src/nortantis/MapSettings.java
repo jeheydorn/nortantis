@@ -322,6 +322,11 @@ public class MapSettings implements Serializable
 	 */
 	public EnumMap<TextType, TextStyle> textStyleDefaults;
 	/**
+	 * The layout each kind of new text gets, which holds every kind of text. Like {@link #textStyleDefaults}, changing one doesn't change
+	 * existing text.
+	 */
+	public EnumMap<TextType, TextLayoutSettings> textLayoutDefaults;
+	/**
 	 * The art pack each font family this map uses came from, keyed by family name, for families that came from one. Recorded so that a map
 	 * opened on a machine without that art pack can say which art pack is missing, rather than only that a font is. Read back as written
 	 * rather than looked up when loading, since the machine opening the map is exactly the one that cannot answer the question.
@@ -435,7 +440,18 @@ public class MapSettings implements Serializable
 		maximizeOpacityByType = new ConcurrentHashMap<>();
 		fillWithColorByType = new ConcurrentHashMap<>();
 		textStyleDefaults = new EnumMap<>(TextType.class);
+		textLayoutDefaults = createDefaultTextLayouts();
 		edits = new MapEdits();
+	}
+
+	private static EnumMap<TextType, TextLayoutSettings> createDefaultTextLayouts()
+	{
+		EnumMap<TextType, TextLayoutSettings> result = new EnumMap<>(TextType.class);
+		for (TextType type : TextType.values())
+		{
+			result.put(type, TextLayoutSettings.createDefault());
+		}
+		return result;
 	}
 
 	/**
@@ -655,8 +671,8 @@ public class MapSettings implements Serializable
 
 	/**
 	 * Copies everything describing how the map looks from the given theme: colors, background, border, coastline and ocean effects, region
-	 * colors and boundaries, rivers, roads, icon sizes and colors, the grid overlay's appearance, the styles for new text, and how new maps
-	 * vary the theme. Nothing about the map's land, edits, or files is copied, nor which art pack the Icons tool starts on.
+	 * colors and boundaries, rivers, roads, icon sizes and colors, the grid overlay's appearance, the styles and layouts for new text, and
+	 * how new maps vary the theme. Nothing about the map's land, edits, or files is copied, nor which art pack the Icons tool starts on.
 	 */
 	public void copyThemeFrom(MapSettings source)
 	{
@@ -731,6 +747,7 @@ public class MapSettings implements Serializable
 		grungeWidth = source.grungeWidth;
 
 		textStyleDefaults = source.copyTextStyleDefaults();
+		textLayoutDefaults = source.copyTextLayoutDefaults();
 
 		drawRoads = source.drawRoads;
 		roadStyle = source.roadStyle;
@@ -899,6 +916,13 @@ public class MapSettings implements Serializable
 				textStyleDefaultsObj.put(entry.getKey().name(), entry.getValue().toJson());
 			}
 			root.put("textStyleDefaults", textStyleDefaultsObj);
+
+			JSONObject textLayoutDefaultsObj = new JSONObject();
+			for (Map.Entry<TextType, TextLayoutSettings> entry : textLayoutDefaults.entrySet())
+			{
+				textLayoutDefaultsObj.put(entry.getKey().name(), entry.getValue().toJson());
+			}
+			root.put("textLayoutDefaults", textLayoutDefaultsObj);
 		}
 		root.put("fontArtPacks", toJsonObject(gatherFontArtPacksToStore()));
 
@@ -1478,6 +1502,27 @@ public class MapSettings implements Serializable
 	}
 
 	/**
+	 * The layout new text of the given kind gets.
+	 */
+	public TextLayoutSettings getDefaultTextLayout(TextType type)
+	{
+		return textLayoutDefaults.get(type);
+	}
+
+	/**
+	 * A deep copy of {@link #textLayoutDefaults}.
+	 */
+	public EnumMap<TextType, TextLayoutSettings> copyTextLayoutDefaults()
+	{
+		EnumMap<TextType, TextLayoutSettings> result = new EnumMap<>(TextType.class);
+		for (Map.Entry<TextType, TextLayoutSettings> entry : textLayoutDefaults.entrySet())
+		{
+			result.put(entry.getKey(), entry.getValue().copy());
+		}
+		return result;
+	}
+
+	/**
 	 * The font of the style new text of the given kind gets.
 	 */
 	public Font getThemeFont(TextType type)
@@ -1862,6 +1907,16 @@ public class MapSettings implements Serializable
 			legacyTextSettings = new LegacyTextSettings(parseColor((String) root.get("textColor")), (boolean) root.get("drawBoldBackground"),
 					parseColor((String) root.get("boldBackgroundColor")));
 			setTextStyleDefaultsFromLegacySettings(fonts, legacyTextSettings);
+		}
+		// Kinds of text missing here, as every kind is in files saved before new text had a layout, get the default layout.
+		textLayoutDefaults = createDefaultTextLayouts();
+		if (root.containsKey("textLayoutDefaults"))
+		{
+			JSONObject textLayoutDefaultsObj = (JSONObject) root.get("textLayoutDefaults");
+			for (Object key : textLayoutDefaultsObj.keySet())
+			{
+				textLayoutDefaults.put(TextType.valueOf((String) key), TextLayoutSettings.fromJson((JSONObject) textLayoutDefaultsObj.get(key)));
+			}
 		}
 		fontArtPacks = parseFontArtPacks((JSONObject) root.get("fontArtPacks"));
 
@@ -4330,6 +4385,8 @@ public class MapSettings implements Serializable
 			differences.add("solidColorBackground: " + solidColorBackground + " vs " + other.solidColorBackground);
 		if (!Objects.equals(textStyleDefaults, other.textStyleDefaults))
 			differences.add("textStyleDefaults: " + textStyleDefaults + " vs " + other.textStyleDefaults);
+		if (!Objects.equals(textLayoutDefaults, other.textLayoutDefaults))
+			differences.add("textLayoutDefaults: " + textLayoutDefaults + " vs " + other.textLayoutDefaults);
 		if (!Objects.equals(themeGeneration, other.themeGeneration))
 			differences.add("themeGeneration: " + themeGeneration + " vs " + other.themeGeneration);
 		if (!Objects.equals(themeExportPath, other.themeExportPath))
@@ -4376,7 +4433,7 @@ public class MapSettings implements Serializable
 				oceanColor, oceanEffectsColor, oceanEffectsLevel, oceanShadingColor, oceanShadingLevel, oceanWavesColor, oceanWavesLevel, oceanWavesType, overlayImageDefaultScale,
 				overlayImageDefaultTransparency, overlayImagePath, overlayImageTransparency, overlayOffsetResolutionInvariant, overlayScale, pointPrecision, randomSeed, regionBaseColor,
 				regionBoundaryColor, regionBoundaryStyle, regionCount, regionsRandomSeed, resolution, rightRotationCount, riverColor, roadColor, roadStyle, saturationRange,
-				solidColorBackground, textStyleDefaults, themeGeneration, themeExportPath, textRandomSeed, treeHeightScale, version, wavyLineLength, wavyLineLengthVariation, wavyLineRowHeight,
+				solidColorBackground, textStyleDefaults, textLayoutDefaults, themeGeneration, themeExportPath, textRandomSeed, treeHeightScale, version, wavyLineLength, wavyLineLengthVariation, wavyLineRowHeight,
 				wavyLineRowGap, wavyLineRowSpacingVariation, wavyLineShape, worldSize, fontArtPacks);
 	}
 
@@ -4461,7 +4518,8 @@ public class MapSettings implements Serializable
 				&& Objects.equals(roadStyle, other.roadStyle) && Objects.equals(fontArtPacks, other.fontArtPacks)
 				&& saturationRange == other.saturationRange
 				&& solidColorBackground == other.solidColorBackground
-				&& Objects.equals(textStyleDefaults, other.textStyleDefaults) && Objects.equals(themeGeneration, other.themeGeneration)
+				&& Objects.equals(textStyleDefaults, other.textStyleDefaults) && Objects.equals(textLayoutDefaults, other.textLayoutDefaults)
+				&& Objects.equals(themeGeneration, other.themeGeneration)
 				&& Objects.equals(themeExportPath, other.themeExportPath) && textRandomSeed == other.textRandomSeed
 				&& Double.doubleToLongBits(treeHeightScale) == Double.doubleToLongBits(other.treeHeightScale) && Objects.equals(version, other.version) && worldSize == other.worldSize;
 	}

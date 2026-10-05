@@ -197,12 +197,18 @@ class TextStyleControls
 
 	private RowHider addColorRow(GridBagOrganizer organizer, String label, String help, JPanel display, String pickerTitle, Function<Color, StyleEdit> createEdit)
 	{
-		JButton chooseButton = new JButton(Translation.get("common.choose"));
-		chooseButton.addActionListener(e -> SwingHelper.showColorPicker(organizer.panel, display, pickerTitle, () ->
+		Runnable applyDisplayedColor = () ->
 		{
 			SwingHelper.clearMixedColorsInColorPickerPreview(display);
 			reportEdit(createEdit.apply(AwtBridge.fromAwtColor(display.getBackground())));
-		}));
+		};
+		JButton chooseButton = new JButton(Translation.get("common.choose"));
+		chooseButton.addActionListener(e -> SwingHelper.showColorPicker(organizer.panel, display, pickerTitle, applyDisplayedColor));
+		SwingHelper.addColorCopyAndPasteMenu(display, display::getBackground, color ->
+		{
+			display.setBackground(color);
+			applyDisplayedColor.run();
+		});
 		return organizer.addLabelAndComponentsHorizontal(label, help, Arrays.asList(display, chooseButton), SwingHelper.colorPickerLeftPadding);
 	}
 

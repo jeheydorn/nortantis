@@ -406,6 +406,11 @@ public class LandWaterTool extends EditorTool
 				SwingHelper.showColorPickerWithPreviewPanel(toolOptionsPanel, colorDisplay, Translation.get("landWaterTool.regionColor.title"));
 			}
 		});
+		SwingHelper.addColorCopyAndPasteMenu(colorDisplay, colorDisplay::getBackground, color ->
+		{
+			cancelSelectColorFromMap();
+			colorDisplay.setBackground(color);
+		});
 		colorChooserHider = organizer.addLabelAndComponentsHorizontal(Translation.get("landWaterTool.color.label"), "", Arrays.asList(colorDisplay, chooseButton), SwingHelper.colorPickerLeftPadding);
 
 		selectColorFromMapButton = new JToggleButton(Translation.get("landWaterTool.selectColorFromMap"));
@@ -1361,6 +1366,7 @@ public class LandWaterTool extends EditorTool
 				});
 			}
 		});
+		SwingHelper.addColorCopyAndPasteMenu(baseColorPanel, baseColorPanel::getBackground, baseColorPanel::setBackground);
 		organizer.addLabelAndComponentsHorizontal(Translation.get("landWaterTool.baseColor.label"), Translation.get("landWaterTool.baseColor.help"),
 				Arrays.asList(baseColorPanel, baseColorChooseButton), SwingHelper.borderWidthBetweenComponents);
 

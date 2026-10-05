@@ -35,7 +35,7 @@ class ApplyTextStyleDialog extends JDialog
 	 * What the user chose.
 	 *
 	 * @param alsoUseForNewText
-	 *            Whether to also use the chosen parts of the style, but not the layout, for new text of the chosen types.
+	 *            Whether to also use the chosen parts for new text of the chosen types.
 	 */
 	record Choice(Set<Part> parts, Set<TextType> types, boolean alsoUseForNewText)
 	{
@@ -47,8 +47,7 @@ class ApplyTextStyleDialog extends JDialog
 
 	/**
 	 * @param includeLayout
-	 *            Whether curvature and spacing can be applied, which is only when the source is a piece of text rather than the style for new
-	 *            text.
+	 *            Whether curvature and spacing can be applied.
 	 * @param offerUsingForNewText
 	 *            Whether to show the checkbox for also using the style for new text.
 	 * @param initialType

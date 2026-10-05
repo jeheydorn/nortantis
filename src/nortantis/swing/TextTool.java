@@ -6,6 +6,7 @@ import nortantis.MapFonts;
 import nortantis.MapSettings;
 import nortantis.MapText;
 import nortantis.TextDrawer;
+import nortantis.TextLayoutSettings;
 import nortantis.TextStyle;
 import nortantis.TextType;
 import nortantis.editor.MapUpdater;
@@ -57,6 +58,7 @@ public class TextTool extends EditorTool
 	private RowHider addStyleHeadingHider;
 	private TextStyleControls addStyleControls;
 	private RowHider addStyleButtonsHider;
+	private JLabel addLayoutHeadingTitle;
 	private RowHider addLayoutRows;
 	private SliderWithDisplayedValue curvatureForAddsSlider;
 	private SliderWithDisplayedValue spacingForAddsSlider;
@@ -107,6 +109,10 @@ public class TextTool extends EditorTool
 	 * True while the edit controls are being set from the selection, when their listeners must not change the selected texts.
 	 */
 	private boolean isLoadingEditControls;
+	/**
+	 * True while Add mode's layout controls are being set from the layout for new text, when their listeners must not change it.
+	 */
+	private boolean isLoadingAddLayoutControls;
 
 	/**
 	 * The selected texts, in the order they were selected. Compared by identity, since two texts can be equal.
@@ -121,6 +127,10 @@ public class TextTool extends EditorTool
 	 * The style each kind of new text gets, which Add mode's style controls edit.
 	 */
 	private EnumMap<TextType, TextStyle> textStyleDefaults;
+	/**
+	 * The layout each kind of new text gets, which Add mode's layout controls edit.
+	 */
+	private EnumMap<TextType, TextLayoutSettings> textLayoutDefaults;
 
 	/**
 	 * The location where the mouse was pressed to begin moving or rotating text, stored in graph coordinates rather than panel pixels so it
@@ -157,6 +167,7 @@ public class TextTool extends EditorTool
 		textTypeForAdds = TextType.Region;
 		selectedTexts = new ArrayList<>();
 		textStyleDefaults = new EnumMap<>(TextType.class);
+		textLayoutDefaults = new EnumMap<>(TextType.class);
 		backgroundSeedForNextAdd = new Random().nextLong();
 
 		GridBagOrganizer organizer = new GridBagOrganizer();
@@ -188,7 +199,9 @@ public class TextTool extends EditorTool
 		{
 			updater.reprocessBooks();
 		});
-		booksHider = organizer.addLeftAlignedComponent(new CollapsiblePanel("text_tool_books", "Books for generating text", Translation.get("textTool.booksForText.title"), booksWidget.getContentPanel(), true));
+		CollapsiblePanel booksPanel = new CollapsiblePanel("text_tool_books", "Books for generating text", Translation.get("textTool.booksForText.title"),
+				booksWidget.getContentPanel(), true);
+		booksHider = organizer.addLeftAlignedComponent(booksPanel, GridBagOrganizer.rowVerticalInset, GridBagOrganizer.rowVerticalInset, false);
 
 		SelectionCycling.addAltChangeListener(() ->
 		{
@@ -252,7 +265,9 @@ public class TextTool extends EditorTool
 				Arrays.asList(addNameField, regenerateButton), 0, 4);
 
 		addPreviewPanel = new UnscaledImagePanel();
-		addPreviewHider = organizer.addLeftAlignedComponent(addPreviewPanel);
+		JPanel addPreviewHolder = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+		addPreviewHolder.add(addPreviewPanel);
+		addPreviewHider = organizer.addLeftAlignedComponent(addPreviewHolder);
 
 		Tuple2<JLabel, RowHider> heading = organizer.addSectionHeadingWithTitle("");
 		addStyleHeadingTitle = heading.getFirst();
@@ -268,16 +283,17 @@ public class TextTool extends EditorTool
 		applyToButton.addActionListener(e -> showApplyDialogForDefaults());
 		addStyleButtonsHider = organizer.addLeftAlignedComponents(Arrays.asList(useFontForAllTypesButton, applyToButton));
 
-		addLayoutRows = organizer.addSectionHeading(Translation.get("textTool.section.layout"));
-		Tuple2<SliderWithDisplayedValue, RowHider> curvature = addCurvatureRow(organizer, value -> updateAddPreview());
+		Tuple2<JLabel, RowHider> layoutHeading = organizer.addSectionHeadingWithTitle("");
+		addLayoutHeadingTitle = layoutHeading.getFirst();
+		addLayoutRows = layoutHeading.getSecond();
+		Tuple2<SliderWithDisplayedValue, RowHider> curvature = addCurvatureRow(organizer, value -> editLayoutForAdds(layout -> layout.curvature = value));
 		curvatureForAddsSlider = curvature.getFirst();
 		addLayoutRows.add(curvature.getSecond());
-		Tuple2<SliderWithDisplayedValue, RowHider> spacing = addSpacingRow(organizer, value -> updateAddPreview());
+		Tuple2<SliderWithDisplayedValue, RowHider> spacing = addSpacingRow(organizer, value -> editLayoutForAdds(layout -> layout.spacing = value));
 		spacingForAddsSlider = spacing.getFirst();
 		addLayoutRows.add(spacing.getSecond());
-		Tuple2<JComboBoxFixed<LineBreak>, RowHider> lineBreak = addLineBreakRow(organizer, value -> updateAddPreview());
+		Tuple2<JComboBoxFixed<LineBreak>, RowHider> lineBreak = addLineBreakRow(organizer, value -> editLayoutForAdds(layout -> layout.lineBreak = value));
 		lineBreakForAddsComboBox = lineBreak.getFirst();
-		lineBreakForAddsComboBox.setSelectedItem(LineBreak.Auto);
 		addLayoutRows.add(lineBreak.getSecond());
 	}
 
@@ -963,24 +979,23 @@ public class TextTool extends EditorTool
 		}
 		commitNameEdit();
 		MapText source = selectedTexts.get(0).deepCopy();
-		ApplyTextStyleDialog dialog = new ApplyTextStyleDialog(mainWindow, true, true, source.type, choice -> applyToTextsOfTypes(source.style, source, choice));
+		ApplyTextStyleDialog dialog = new ApplyTextStyleDialog(mainWindow, true, true, source.type,
+				choice -> applyToTextsOfTypes(source.style, TextLayoutSettings.of(source), choice));
 		dialog.setVisible(true);
 	}
 
 	private void showApplyDialogForDefaults()
 	{
 		TextStyle source = getDefaultStyleForAdds().copy();
-		ApplyTextStyleDialog dialog = new ApplyTextStyleDialog(mainWindow, false, false, textTypeForAdds, choice -> applyToTextsOfTypes(source, null, choice));
+		TextLayoutSettings sourceLayout = getDefaultLayoutForAdds().copy();
+		ApplyTextStyleDialog dialog = new ApplyTextStyleDialog(mainWindow, true, false, textTypeForAdds, choice -> applyToTextsOfTypes(source, sourceLayout, choice));
 		dialog.setVisible(true);
 	}
 
 	/**
-	 * Applies the chosen parts of a style, and of a text's layout, to every text of the chosen types.
-	 *
-	 * @param sourceText
-	 *            The text whose curvature and spacing to apply, or null when only style is applied.
+	 * Applies the chosen parts of a style and layout to every text of the chosen types.
 	 */
-	private void applyToTextsOfTypes(TextStyle sourceStyle, MapText sourceText, ApplyTextStyleDialog.Choice choice)
+	private void applyToTextsOfTypes(TextStyle sourceStyle, TextLayoutSettings sourceLayout, ApplyTextStyleDialog.Choice choice)
 	{
 		for (MapText text : mainWindow.edits.text)
 		{
@@ -989,13 +1004,13 @@ public class TextTool extends EditorTool
 				continue;
 			}
 			ApplyTextStyleDialog.applyStyleParts(sourceStyle, text.style, choice.parts());
-			if (sourceText != null && choice.parts().contains(ApplyTextStyleDialog.Part.Curvature))
+			if (choice.parts().contains(ApplyTextStyleDialog.Part.Curvature))
 			{
-				text.curvature = sourceText.curvature;
+				text.curvature = sourceLayout.curvature;
 			}
-			if (sourceText != null && choice.parts().contains(ApplyTextStyleDialog.Part.Spacing))
+			if (choice.parts().contains(ApplyTextStyleDialog.Part.Spacing))
 			{
-				text.spacing = sourceText.spacing;
+				text.spacing = sourceLayout.spacing;
 			}
 		}
 
@@ -1007,6 +1022,15 @@ public class TextTool extends EditorTool
 				if (defaultStyle != null)
 				{
 					ApplyTextStyleDialog.applyStyleParts(sourceStyle, defaultStyle, choice.parts());
+				}
+				TextLayoutSettings defaultLayout = textLayoutDefaults.get(type);
+				if (defaultLayout != null && choice.parts().contains(ApplyTextStyleDialog.Part.Curvature))
+				{
+					defaultLayout.curvature = sourceLayout.curvature;
+				}
+				if (defaultLayout != null && choice.parts().contains(ApplyTextStyleDialog.Part.Spacing))
+				{
+					defaultLayout.spacing = sourceLayout.spacing;
 				}
 			}
 		}
@@ -1029,8 +1053,13 @@ public class TextTool extends EditorTool
 		return textStyleDefaults.get(textTypeForAdds);
 	}
 
+	private TextLayoutSettings getDefaultLayoutForAdds()
+	{
+		return textLayoutDefaults.getOrDefault(textTypeForAdds, TextLayoutSettings.createDefault());
+	}
+
 	/**
-	 * Shows the style for new text of the type Add mode adds, and the preview.
+	 * Shows the style and layout for new text of the type Add mode adds, and the preview.
 	 */
 	private void showAddModeStyle()
 	{
@@ -1040,6 +1069,36 @@ public class TextTool extends EditorTool
 		{
 			addStyleControls.showStyles(Arrays.asList(style));
 		}
+
+		TextLayoutSettings layout = getDefaultLayoutForAdds();
+		addLayoutHeadingTitle.setText(Translation.get("textTool.section.layoutForNewText", textTypeForAdds.toString()));
+		isLoadingAddLayoutControls = true;
+		try
+		{
+			curvatureForAddsSlider.showValues(Arrays.asList((int) Math.round(layout.curvature * curvatureSliderDivider)));
+			spacingForAddsSlider.showValues(Arrays.asList(layout.spacing));
+			lineBreakForAddsComboBox.setSelectedItem(layout.lineBreak);
+		}
+		finally
+		{
+			isLoadingAddLayoutControls = false;
+		}
+		updateAddPreview();
+	}
+
+	private void editLayoutForAdds(Consumer<TextLayoutSettings> edit)
+	{
+		if (isLoadingAddLayoutControls)
+		{
+			return;
+		}
+		TextLayoutSettings layout = textLayoutDefaults.get(textTypeForAdds);
+		if (layout == null)
+		{
+			return;
+		}
+		edit.accept(layout);
+		mainWindow.handleChangeWithoutRedraw();
 		updateAddPreview();
 	}
 
@@ -1100,7 +1159,7 @@ public class TextTool extends EditorTool
 		}
 
 		double osScale = SwingHelper.getOSScale();
-		final int previewWidth = 230;
+		final int previewWidth = 270;
 		final int previewHeight = 70;
 		final int margin = 8;
 		IntDimension size = new IntDimension((int) (previewWidth * osScale), (int) (previewHeight * osScale));
@@ -1118,8 +1177,9 @@ public class TextTool extends EditorTool
 			return;
 		}
 
-		MapText text = new MapText(name, new nortantis.geom.Point(0, 0), 0.0, textTypeForAdds, LineBreak.Auto, 0.0, 0, style.copy(), backgroundSeedForNextAdd);
-		applyLayoutForAdds(text);
+		TextLayoutSettings layout = getDefaultLayoutForAdds();
+		MapText text = new MapText(name, new nortantis.geom.Point(0, 0), 0.0, textTypeForAdds, layout.lineBreak, layout.curvature, layout.spacing, style.copy(),
+				backgroundSeedForNextAdd);
 		double resolution = osScale;
 		Tuple2<Image, IntPoint> drawn = createPreviewTextDrawer(resolution, false).drawTextOntoNewImage(text, null);
 		int maxWidth = size.width - (int) (margin * osScale * 2);
@@ -1201,8 +1261,7 @@ public class TextTool extends EditorTool
 		}
 
 		nortantis.geom.Point graphPoint = getPointOnGraph(mouseLocation);
-		MapText text = TextDrawer.createMapText(name, graphPoint, 0.0, textTypeForAdds, resolution, style.copy(), backgroundSeedForNextAdd);
-		applyLayoutForAdds(text);
+		MapText text = TextDrawer.createMapText(name, graphPoint, 0.0, textTypeForAdds, resolution, style.copy(), getDefaultLayoutForAdds(), backgroundSeedForNextAdd);
 		Tuple2<Image, IntPoint> drawn = hoverPreviewTextDrawer.drawTextOntoNewImage(text, updater.mapParts.graph);
 		if (drawn == null)
 		{
@@ -1213,13 +1272,6 @@ public class TextTool extends EditorTool
 		{
 			mapEditingPanel.setTextHoverPreview(image, drawn.getSecond());
 		}
-	}
-
-	private void applyLayoutForAdds(MapText text)
-	{
-		text.curvature = curvatureForAddsSlider.slider.getValue() / ((double) curvatureSliderDivider);
-		text.spacing = spacingForAddsSlider.slider.getValue();
-		text.lineBreak = (LineBreak) lineBreakForAddsComboBox.getSelectedItem();
 	}
 
 	private void addTextAt(java.awt.Point mouseLocation)
@@ -1239,8 +1291,7 @@ public class TextTool extends EditorTool
 				return;
 			}
 			MapText addedText = TextDrawer.createMapText(name, getPointOnGraph(mouseLocation), 0.0, textTypeForAdds, mainWindow.displayQualityScale, style.copy(),
-					backgroundSeedForNextAdd);
-			applyLayoutForAdds(addedText);
+					getDefaultLayoutForAdds(), backgroundSeedForNextAdd);
 			mainWindow.edits.text.add(addedText);
 			undoer.setUndoPoint(UpdateType.Incremental, this);
 			updater.createAndShowMapIncrementalUsingText(Arrays.asList(addedText));
@@ -1958,6 +2009,7 @@ public class TextTool extends EditorTool
 		}
 
 		textStyleDefaults = settings.copyTextStyleDefaults();
+		textLayoutDefaults = settings.copyTextLayoutDefaults();
 		if (modeWidget.isDrawMode())
 		{
 			showAddModeStyle();
@@ -1989,6 +2041,15 @@ public class TextTool extends EditorTool
 		if (!defaults.isEmpty())
 		{
 			settings.textStyleDefaults = defaults;
+		}
+		EnumMap<TextType, TextLayoutSettings> layoutDefaults = new EnumMap<>(TextType.class);
+		for (Map.Entry<TextType, TextLayoutSettings> entry : textLayoutDefaults.entrySet())
+		{
+			layoutDefaults.put(entry.getKey(), entry.getValue().copy());
+		}
+		if (!layoutDefaults.isEmpty())
+		{
+			settings.textLayoutDefaults = layoutDefaults;
 		}
 	}
 
