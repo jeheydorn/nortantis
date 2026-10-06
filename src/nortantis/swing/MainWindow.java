@@ -3718,6 +3718,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		defaultHeightmapExportAction = settings.defaultHeightmapExportAction;
 
 		updater.createAndShowMapFull();
+		toolsPanel.onAfterLoadingNewMap();
 		updateFrameTitle(false, true);
 	}
 

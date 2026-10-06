@@ -208,6 +208,13 @@ public abstract class EditorTool
 
 	public abstract void onBeforeLoadingNewMap();
 
+	/**
+	 * Called once a newly loaded map's settings are in the GUI and its first draw has been requested.
+	 */
+	public void onAfterLoadingNewMap()
+	{
+	}
+
 	public void handleImagesRefresh(MapSettings settings)
 	{
 	}

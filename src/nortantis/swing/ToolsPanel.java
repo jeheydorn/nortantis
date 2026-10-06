@@ -234,6 +234,14 @@ public class ToolsPanel extends JPanel
 		mainWindow.mapEditingPanel.clearAllToolSpecificSelectionsAndHighlights();
 	}
 
+	public void onAfterLoadingNewMap()
+	{
+		for (EditorTool tool : tools)
+		{
+			tool.onAfterLoadingNewMap();
+		}
+	}
+
 	public void getSettingsFromGUI(MapSettings settings)
 	{
 		for (EditorTool tool : tools)

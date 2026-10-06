@@ -51,6 +51,8 @@ public class TextTool extends EditorTool
 	private RowHider addTextTypeHider;
 	private TextType textTypeForAdds;
 	private JTextField addNameField;
+	/** The name most recently generated into addNameField, used to tell a generated name from one the user typed. */
+	private String lastGeneratedNameForAdds;
 	private RowHider addNameHider;
 	private UnscaledImagePanel addPreviewPanel;
 	private RowHider addPreviewHider;
@@ -1135,7 +1137,24 @@ public class TextTool extends EditorTool
 		{
 			if (updater.mapParts != null && updater.mapParts.nameCreator != null)
 			{
-				addNameField.setText(updater.mapParts.nameCreator.generateNameOfTypeForTextEditor(textTypeForAdds));
+				lastGeneratedNameForAdds = updater.mapParts.nameCreator.generateNameOfTypeForTextEditor(textTypeForAdds);
+				addNameField.setText(lastGeneratedNameForAdds);
+			}
+		});
+	}
+
+	/**
+	 * Replaces the name to add with a newly generated one, unless the user typed it. The check happens when the name is generated, which
+	 * waits for any draw in progress or queued, so that the name comes from the books of the map being drawn.
+	 */
+	private void regenerateNameForAddsUnlessTyped()
+	{
+		updater.doWhenMapIsNotDrawing(() ->
+		{
+			String name = addNameField.getText();
+			if (name.trim().isEmpty() || name.equals(lastGeneratedNameForAdds))
+			{
+				generateNameForAdds();
 			}
 		});
 	}
@@ -2064,8 +2083,13 @@ public class TextTool extends EditorTool
 	{
 		selectedTexts = new ArrayList<>();
 		textClipboard = null;
-		addNameField.setText("");
 		hideTextEditComponents();
+	}
+
+	@Override
+	public void onAfterLoadingNewMap()
+	{
+		regenerateNameForAddsUnlessTyped();
 	}
 
 	/**
