@@ -20,7 +20,7 @@ public class TextBackground implements Serializable
 	public static final int maxGlowSize = 30;
 	public static final int defaultGlowSize = 8;
 	public static final int maxOutlineWidth = 30;
-	public static final int defaultOutlineWidth = 2;
+	public static final int defaultOutlineWidth = 3;
 	public static final int maxShapeLineWidth = 10;
 	public static final int defaultShapeLineWidth = 4;
 	public static final int maxShapeJitter = 10;

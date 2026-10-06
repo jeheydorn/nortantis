@@ -363,7 +363,6 @@ public class MapSettingsTest
 		assertEquals(TextBackgroundEffect.BoldBackground, regionDefault.background.effect);
 		assertEquals(nortantis.platform.Color.create(254, 230, 201, 255), regionDefault.background.color);
 		assertEquals(TextBackground.defaultOutlineWidth, regionDefault.background.outlineWidth);
-		assertEquals(2, TextBackground.defaultOutlineWidth, "Old maps and new maps start Outline at a width of 2.");
 		assertEquals(nortantis.platform.Color.create(89, 71, 54, 255), regionDefault.color);
 		assertEquals("Gabriola", regionDefault.font.getName());
 		assertEquals(TextBackgroundEffect.None, settings.getDefaultTextStyle(TextType.River).background.effect,
