@@ -2626,7 +2626,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		}
 
 		// A draw just finished.
-		Method method = targetZoom < 0.34 ? Method.QUALITY : Method.BALANCED;
+		Method method = getScalingMethodForZoom(targetZoom);
 		// When a zoom change is still pending, this draw's rescale supersedes the zoom's own rescale and commits the new zoom in its place,
 		// so it carries the zoom's view position shift for the map to land where the zoom preview showed it.
 		java.awt.Point pendingZoomViewPositionShift = targetZoom != zoom ? mapEditingPanel.getZoomPreviewViewPositionShift() : null;
@@ -2712,6 +2712,14 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		}
 	}
 
+	/**
+	 * The method for scaling the displayed map, or anything drawn to match it, by the given zoom.
+	 */
+	static Method getScalingMethodForZoom(double zoom)
+	{
+		return zoom < 0.34 ? Method.QUALITY : Method.BALANCED;
+	}
+
 	private void runScaleMapFull(long generation, Image sourceMap, double committedResolution, double targetZoom, java.awt.Point viewPositionShiftForZoom, int borderPadding,
 			boolean synchronous, boolean isZoomChange)
 	{
@@ -2721,7 +2729,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			return;
 		}
 
-		Method method = targetZoom < 0.34 ? Method.QUALITY : Method.BALANCED;
+		Method method = getScalingMethodForZoom(targetZoom);
 		int zoomedWidth = getZoomedMapWidth(sourceMap, targetZoom);
 
 		BufferedImage scaledImage;
