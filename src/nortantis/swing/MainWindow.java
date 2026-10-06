@@ -227,7 +227,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private JMenuItem saveAsMenItem;
 	private JMenuItem exportMapAsImageMenuItem;
 	private JMenuItem exportHeightmapMenuItem;
-	private JMenu fileThemeMenu;
 	private JMenuItem applyThemeMenuItem;
 	private JMenuItem exportThemeMenuItem;
 	private JMenu editMenu;
@@ -477,7 +476,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		saveAsMenItem.setEnabled(enable);
 		exportMapAsImageMenuItem.setEnabled(enable);
 		exportHeightmapMenuItem.setEnabled(enable);
-		fileThemeMenu.setEnabled(enable);
 		applyThemeMenuItem.setEnabled(enable);
 		exportThemeMenuItem.setEnabled(enable);
 		mapInfoMenuItem.setEnabled(enable);
@@ -1536,8 +1534,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 
-		fileThemeMenu = new JMenu(Translation.get("menu.file.theme"));
-		fileThemeMenu.setEnabled(false);
+		JMenu fileThemeMenu = new JMenu(Translation.get("menu.file.theme"));
 		fileMenu.add(fileThemeMenu);
 		applyThemeMenuItem = new JMenuItem(Translation.get("menu.file.theme.apply"));
 		applyThemeMenuItem.setEnabled(false);
@@ -1547,6 +1544,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		exportThemeMenuItem.setEnabled(false);
 		fileThemeMenu.add(exportThemeMenuItem);
 		exportThemeMenuItem.addActionListener(e -> showExportThemeDialog());
+		JMenuItem openThemesFolderMenuItem = new JMenuItem(Translation.get("menu.file.theme.openFolder"));
+		fileThemeMenu.add(openThemesFolderMenuItem);
+		openThemesFolderMenuItem.addActionListener(e -> handleOpenThemesFolder());
 
 		fileMenu.addSeparator();
 
@@ -2056,13 +2056,27 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	private void handleOpenArtPacksFolder()
 	{
-		Path artPacksPath = Assets.getArtPacksFolder();
+		openFolderInFileExplorer(Assets.getArtPacksFolder());
+	}
 
-		if (!artPacksPath.toFile().exists())
+	/**
+	 * Opens the folder themes the user installed are in, where they can be removed.
+	 */
+	private void handleOpenThemesFolder()
+	{
+		openFolderInFileExplorer(Assets.getUserThemesFolder());
+	}
+
+	/**
+	 * Opens a folder in the system's file explorer, creating it first if it doesn't exist.
+	 */
+	private void openFolderInFileExplorer(Path folder)
+	{
+		if (!folder.toFile().exists())
 		{
 			try
 			{
-				Files.createDirectories(artPacksPath);
+				Files.createDirectories(folder);
 			}
 			catch (IOException ex)
 			{
@@ -2073,7 +2087,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		}
 
-		OSHelper.openFileExplorerTo(artPacksPath.toFile());
+		OSHelper.openFileExplorerTo(folder.toFile());
 	}
 
 	private void handleAddArtPack()

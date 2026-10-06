@@ -343,20 +343,8 @@ public class SettingsGenerator
 		settings.roadStyle = new Stroke(ProbabilityHelper.sampleUniform(rand, roadTypesDifferentFromBoundaries.isEmpty() ? roadTypes : roadTypesDifferentFromBoundaries),
 				settings.roadStyle.width);
 
-		// Background
-		if (rand.nextDouble() < gen.fractalBackgroundProbability)
-		{
-			settings.generateBackground = true;
-			settings.generateBackgroundFromTexture = false;
-		}
-		else
-		{
-			settings.generateBackground = false;
-			settings.generateBackgroundFromTexture = true;
-		}
-		settings.solidColorBackground = false;
-		// Always set a background texture even if it is not used so that the editor doesn't give an error when switching to the background
-		// texture file path field.
+		// Background. A fractal background, when the theme allows it, is one more choice alongside the allowed background textures, and all of
+		// them are equally likely.
 		List<NamedResource> texturesInArtPack = Assets.listBackgroundTexturesForArtPack(settings.artPack, settings.customImagesPath);
 		List<NamedResource> textures = chooseAllowed(texturesInArtPack,
 				texture -> gen.allowedBackgroundTextureNames.isEmpty() || gen.allowedBackgroundTextureNames.contains(texture.name));
@@ -368,6 +356,13 @@ public class SettingsGenerator
 		{
 			textures = Assets.listBackgroundTexturesForArtPacks(Assets.listArtPacksForNewRandomMaps(settings.customImagesPath), settings.customImagesPath);
 		}
+		// With no texture to draw a background from, the background is fractal.
+		boolean useFractalBackground = textures.isEmpty() || (gen.allowFractalBackground && rand.nextInt(textures.size() + 1) == 0);
+		settings.generateBackground = useFractalBackground;
+		settings.generateBackgroundFromTexture = !useFractalBackground;
+		settings.solidColorBackground = false;
+		// Always set a background texture even if it is not used so that the editor doesn't give an error when switching to the background
+		// texture file path field.
 		if (!textures.isEmpty())
 		{
 			settings.backgroundTextureResource = ProbabilityHelper.sampleUniform(rand, textures);

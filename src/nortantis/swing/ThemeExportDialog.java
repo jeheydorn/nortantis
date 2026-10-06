@@ -14,6 +14,8 @@ import org.apache.commons.io.FilenameUtils;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.nio.file.Files;
@@ -44,7 +46,6 @@ class ThemeExportDialog extends JDialog
 	private static final LandShape sampleMapLandShape = LandShape.Coastline;
 	private static final int sampleMapRegionCount = 10;
 	private static final GeneratedDimension sampleMapDimension = GeneratedDimension.Square;
-	private static final int sampleMapPreviewWidth = 520;
 
 	private final MapSettings mapSettings;
 	private final ThemeGenerationSettings gen;
@@ -54,6 +55,9 @@ class ThemeExportDialog extends JDialog
 	private JComboBox<Object> destinationComboBox;
 	private JTextField fileNameField;
 	private UnscaledImagePanel previewPanel;
+	private JPanel previewHolder;
+	/** The size the last sample map was drawn to fit, so that it's drawn again only when that changes. */
+	private Dimension lastRequestedPreviewSize;
 	private JProgressBar previewProgressBar;
 	private JLabel previewStatusLabel;
 	private long rollSeed = new Random().nextLong();
@@ -93,7 +97,6 @@ class ThemeExportDialog extends JDialog
 		getRootPane().registerKeyboardAction(e -> dispose(), KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
 		setSize(new java.awt.Dimension(1100, 760));
 		setLocationRelativeTo(owner);
-		drawSampleMap();
 	}
 
 	/**
@@ -188,7 +191,11 @@ class ThemeExportDialog extends JDialog
 		addEnumCheckboxes(organizer, "exportTheme.allowedRegionBoundaryStrokeTypes", Arrays.asList(StrokeType.values()), gen.allowedRegionBoundaryStrokeTypes, Object::toString);
 		addEnumCheckboxes(organizer, "exportTheme.allowedRoadStrokeTypes", Arrays.asList(StrokeType.values()), gen.allowedRoadStrokeTypes, Object::toString);
 		addEnumCheckboxes(organizer, "exportTheme.allowedLineStyles", Arrays.asList(LineStyle.values()), gen.allowedLineStyles, ThemeExportDialog::getLineStyleName);
-		addProbabilitySlider(organizer, "exportTheme.fractalBackgroundProbability", gen.fractalBackgroundProbability, value -> gen.fractalBackgroundProbability = value);
+		JCheckBox allowFractalBackgroundCheckBox = new JCheckBox(Translation.get("exportTheme.allowFractalBackground"));
+		allowFractalBackgroundCheckBox.setToolTipText(Translation.get("exportTheme.allowFractalBackground.help"));
+		allowFractalBackgroundCheckBox.setSelected(gen.allowFractalBackground);
+		allowFractalBackgroundCheckBox.addActionListener(e -> gen.allowFractalBackground = allowFractalBackgroundCheckBox.isSelected());
+		organizer.addLeftAlignedComponent(allowFractalBackgroundCheckBox);
 		addResourceCheckboxes(organizer, "exportTheme.allowedBackgroundTextures",
 				() -> Assets.listBackgroundTexturesForArtPack(gen.artPack, mapSettings.customImagesPath).stream().map(texture -> texture.name).toList(),
 				gen.allowedBackgroundTextureNames, FilenameUtils::getBaseName);
@@ -328,29 +335,81 @@ class ThemeExportDialog extends JDialog
 				Translation.get("menu.file.theme.apply")) + "</html>");
 		panel.add(explanation, BorderLayout.NORTH);
 		previewPanel = new UnscaledImagePanel();
-		JPanel previewHolder = new JPanel(new GridBagLayout());
+		previewHolder = new JPanel(new GridBagLayout());
 		previewHolder.add(previewPanel);
+		// The sample map is drawn to fit the space it's shown in, so it's drawn again when that space changes size, which includes when the
+		// dialog is first shown.
+		previewHolder.addComponentListener(new ComponentAdapter()
+		{
+			@Override
+			public void componentResized(ComponentEvent e)
+			{
+				Dimension size = getPreviewSize();
+				if (size != null && !size.equals(lastRequestedPreviewSize))
+				{
+					drawSampleMap();
+				}
+			}
+		});
 		panel.add(previewHolder, BorderLayout.CENTER);
-		JPanel buttons = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+
+		JPanel buttons = new JPanel(new BorderLayout(5, 0));
 		JButton rollButton = new JButton(Translation.get("exportTheme.rollTheme"));
 		rollButton.setToolTipText(Translation.get("exportTheme.rollTheme.tooltip"));
+		SwingHelper.bindAltMnemonic(rollButton, KeyEvent.VK_R);
 		rollButton.addActionListener(e ->
 		{
 			rollSeed = new Random().nextLong();
 			drawSampleMap();
 		});
-		buttons.add(rollButton);
+		buttons.add(rollButton, BorderLayout.WEST);
+		// Only one of the progress bar and the status label shows at a time, in the rest of the row, at its own height and centered
+		// vertically. The row keeps the same height whichever shows, so that showing one doesn't resize the preview and start another draw.
+		JPanel status = new JPanel(new GridBagLayout())
+		{
+			@Override
+			public java.awt.Dimension getPreferredSize()
+			{
+				java.awt.Dimension size = super.getPreferredSize();
+				return new java.awt.Dimension(size.width, Math.max(previewProgressBar.getPreferredSize().height, previewStatusLabel.getPreferredSize().height));
+			}
+		};
 		previewProgressBar = new JProgressBar();
 		previewProgressBar.setIndeterminate(true);
 		previewProgressBar.setStringPainted(true);
 		previewProgressBar.setString(Translation.get("exportTheme.drawingSample"));
 		previewProgressBar.setVisible(false);
-		buttons.add(previewProgressBar);
+		GridBagConstraints c = new GridBagConstraints();
+		c.gridx = 0;
+		c.gridy = 0;
+		c.weightx = 1;
+		c.fill = GridBagConstraints.HORIZONTAL;
+		final int progressBarSidePadding = 20;
+		c.insets = new Insets(0, progressBarSidePadding, 0, progressBarSidePadding);
+		status.add(previewProgressBar, c);
+		c.insets = new Insets(0, 0, 0, 0);
 		previewStatusLabel = new JLabel(Translation.get("exportTheme.sampleFailed"));
 		previewStatusLabel.setVisible(false);
-		buttons.add(previewStatusLabel);
+		c.gridx = 1;
+		status.add(previewStatusLabel, c);
+		buttons.add(status, BorderLayout.CENTER);
 		panel.add(buttons, BorderLayout.SOUTH);
 		return panel;
+	}
+
+	/**
+	 * The most room the sample map can take up, in pixels of the map image, or null if the preview hasn't been laid out yet.
+	 */
+	private Dimension getPreviewSize()
+	{
+		int width = previewHolder.getWidth();
+		int height = previewHolder.getHeight();
+		if (width <= 0 || height <= 0)
+		{
+			return null;
+		}
+		double osScale = SwingHelper.getOSScale();
+		return new Dimension(width * osScale, height * osScale);
 	}
 
 	private JComponent createBottomPanel(String mapName)
@@ -363,7 +422,16 @@ class ThemeExportDialog extends JDialog
 		c.gridx = 0;
 		c.gridy = 0;
 		panel.add(new JLabel(Translation.get("exportTheme.name.label")), c);
-		fileNameField = new JTextField(mapName != null && !mapName.isEmpty() ? mapName : Translation.get("exportTheme.defaultName"), 24);
+		String defaultName;
+		if (mapSettings.themeExportPath != null)
+		{
+			defaultName = FilenameUtils.getBaseName(mapSettings.themeExportPath);
+		}
+		else
+		{
+			defaultName = mapName != null && !mapName.isEmpty() ? mapName : Translation.get("exportTheme.defaultName");
+		}
+		fileNameField = new JTextField(defaultName, 24);
 		c.gridx = 1;
 		panel.add(fileNameField, c);
 
@@ -396,10 +464,7 @@ class ThemeExportDialog extends JDialog
 				return this;
 			}
 		});
-		if (gen.artPack != null && !gen.artPack.equals(Assets.installedArtPack) && !gen.artPack.equals(Assets.customArtPack))
-		{
-			destinationComboBox.setSelectedItem(gen.artPack);
-		}
+		selectDefaultDestination();
 		destinationComboBox.setToolTipText(Translation.get("exportTheme.destination.help"));
 		c.gridx = 3;
 		panel.add(destinationComboBox, c);
@@ -422,6 +487,59 @@ class ThemeExportDialog extends JDialog
 	}
 
 	/**
+	 * Selects where the theme was last exported to, or, if it hasn't been, the theme's art pack when it's one themes can be exported into.
+	 */
+	private void selectDefaultDestination()
+	{
+		Path lastFolder = getLastExportFolder();
+		if (lastFolder == null)
+		{
+			if (gen.artPack != null && !gen.artPack.equals(Assets.installedArtPack) && !gen.artPack.equals(Assets.customArtPack))
+			{
+				destinationComboBox.setSelectedItem(gen.artPack);
+			}
+			return;
+		}
+
+		for (int i = 0; i < destinationComboBox.getItemCount(); i++)
+		{
+			Path folder = getDestinationFolder(i);
+			if (folder != null && folder.toAbsolutePath().normalize().equals(lastFolder))
+			{
+				destinationComboBox.setSelectedIndex(i);
+				return;
+			}
+		}
+		destinationComboBox.setSelectedItem(destinationChooseLocation);
+	}
+
+	/**
+	 * The folder the theme was last exported to, or null if it hasn't been.
+	 */
+	private Path getLastExportFolder()
+	{
+		if (mapSettings.themeExportPath == null)
+		{
+			return null;
+		}
+		Path parent = Paths.get(mapSettings.themeExportPath).getParent();
+		return parent == null ? null : parent.toAbsolutePath().normalize();
+	}
+
+	/**
+	 * The folder a destination in the destination combo box exports to, or null for the one that asks where to export.
+	 */
+	private Path getDestinationFolder(int index)
+	{
+		Object destination = destinationComboBox.getItemAt(index);
+		if (destination == destinationChooseLocation)
+		{
+			return null;
+		}
+		return index == 0 ? Assets.getUserThemesFolder() : Assets.getThemesFolderForArtPack((String) destination, mapSettings.customImagesPath);
+	}
+
+	/**
 	 * Draws the sample map: always the same small world, so that only the theme differs between rolls, and so that themes can be compared.
 	 */
 	private void drawSampleMap()
@@ -431,6 +549,12 @@ class ThemeExportDialog extends JDialog
 			isAnotherSampleRequested = true;
 			return;
 		}
+		Dimension previewSize = getPreviewSize();
+		if (previewSize == null)
+		{
+			return;
+		}
+		lastRequestedPreviewSize = previewSize;
 		isSampleBeingDrawn = true;
 		previewProgressBar.setVisible(true);
 		previewStatusLabel.setVisible(false);
@@ -451,9 +575,7 @@ class ThemeExportDialog extends JDialog
 				sample.regionCount = sampleMapRegionCount;
 				sample.generatedWidth = sampleMapDimension.width;
 				sample.generatedHeight = sampleMapDimension.height;
-				double osScale = SwingHelper.getOSScale();
-				double previewHeight = sampleMapPreviewWidth * sampleMapDimension.height / (double) sampleMapDimension.width;
-				return new MapCreator().createMap(sample, new Dimension(sampleMapPreviewWidth * osScale, previewHeight * osScale), null);
+				return new MapCreator().createMap(sample, previewSize, null);
 			}
 
 			@Override
@@ -513,11 +635,11 @@ class ThemeExportDialog extends JDialog
 		if (destination == destinationChooseLocation)
 		{
 			JFileChooser fileChooser = new JFileChooser();
-			if (mapSettings.themeExportPath != null && new File(mapSettings.themeExportPath).getParentFile() != null)
-			{
-				fileChooser.setCurrentDirectory(new File(mapSettings.themeExportPath).getParentFile());
-			}
-			fileChooser.setSelectedFile(new File(name + MapSettings.themeFileExtensionWithDot));
+			// The selected file is given a folder because a file without one would move the chooser to the user's home folder.
+			Path lastFolder = getLastExportFolder();
+			File folder = lastFolder != null && Files.isDirectory(lastFolder) ? lastFolder.toFile() : fileChooser.getCurrentDirectory();
+			fileChooser.setCurrentDirectory(folder);
+			fileChooser.setSelectedFile(new File(folder, name + MapSettings.themeFileExtensionWithDot));
 			fileChooser.setFileFilter(new javax.swing.filechooser.FileFilter()
 			{
 				@Override
@@ -540,7 +662,7 @@ class ThemeExportDialog extends JDialog
 		}
 		else
 		{
-			Path folder = destinationComboBox.getSelectedIndex() == 0 ? Assets.getUserThemesFolder() : Assets.getThemesFolderForArtPack((String) destination, mapSettings.customImagesPath);
+			Path folder = getDestinationFolder(destinationComboBox.getSelectedIndex());
 			path = Paths.get(folder.toString(), name);
 		}
 		if (!ThemeCatalog.isThemeFile(path))

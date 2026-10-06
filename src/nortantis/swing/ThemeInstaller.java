@@ -46,22 +46,25 @@ class ThemeInstaller
 			return false;
 		}
 
-		String install = Translation.get("themeInstaller.install");
-		String cancel = Translation.get("common.cancel");
-		int choice = SwingHelper.showOptionDialog(parent,
-				Translation.get("themeInstaller.message", themeName, Translation.get("menu.file"), Translation.get("menu.file.theme"), Translation.get("menu.file.theme.apply")),
-				Translation.get("themeInstaller.title"), JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, new Object[] { install, cancel }, install);
-		if (choice != 0)
-		{
-			return false;
-		}
-
 		Path destination = Paths.get(Assets.getUserThemesFolder().toString(), FilenameUtils.getName(themeFilePath));
 		if (Files.exists(destination))
 		{
 			int replace = SwingHelper.showConfirmDialog(parent, Translation.get("themeInstaller.replace", themeName), Translation.get("themeInstaller.title"),
 					JOptionPane.YES_NO_OPTION);
 			if (replace != JOptionPane.YES_OPTION)
+			{
+				return false;
+			}
+		}
+		else
+		{
+			String install = Translation.get("themeInstaller.install");
+			String cancel = Translation.get("common.cancel");
+			String message = Translation.get("themeInstaller.question", themeName) + "\n\n"
+					+ Translation.get("themeInstaller.explanation", Translation.get("menu.file"), Translation.get("menu.file.theme"), Translation.get("menu.file.theme.apply"));
+			int choice = SwingHelper.showOptionDialog(parent, message, Translation.get("themeInstaller.title"), JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null,
+					new Object[] { install, cancel }, install);
+			if (choice != 0)
 			{
 				return false;
 			}

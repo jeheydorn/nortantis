@@ -91,15 +91,6 @@ public class GridBagOrganizer
 	}
 
 	/**
-	 * Adds a heading like {@link #addSectionHeading(String)}, and returns its title along with it, so that the title's text can be changed.
-	 */
-	public Tuple2<JLabel, RowHider> addSectionHeadingWithTitle(String text)
-	{
-		JLabel title = createSectionHeadingLabel(text);
-		return new Tuple2<>(title, addSectionHeadingRow(title, null));
-	}
-
-	/**
 	 * Adds a heading that starts a section, with a checkbox that turns the section on or off, whose text is the section's title. The checkbox
 	 * is drawn as a switch at the end of the row, so every section's title starts at the same place.
 	 */

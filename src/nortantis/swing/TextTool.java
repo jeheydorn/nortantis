@@ -56,11 +56,9 @@ public class TextTool extends EditorTool
 	private RowHider addNameHider;
 	private UnscaledImagePanel addPreviewPanel;
 	private RowHider addPreviewHider;
-	private JLabel addStyleHeadingTitle;
 	private RowHider addStyleHeadingHider;
 	private TextStyleControls addStyleControls;
 	private RowHider addStyleButtonsHider;
-	private JLabel addLayoutHeadingTitle;
 	private RowHider addLayoutRows;
 	private SliderWithDisplayedValue curvatureForAddsSlider;
 	private SliderWithDisplayedValue spacingForAddsSlider;
@@ -295,9 +293,7 @@ public class TextTool extends EditorTool
 		addPreviewHolder.add(addPreviewPanel);
 		addPreviewHider = organizer.addLeftAlignedComponent(addPreviewHolder);
 
-		Tuple2<JLabel, RowHider> heading = organizer.addSectionHeadingWithTitle("");
-		addStyleHeadingTitle = heading.getFirst();
-		addStyleHeadingHider = heading.getSecond();
+		addStyleHeadingHider = organizer.addSectionHeading(Translation.get("textTool.section.style"));
 
 		addStyleControls = new TextStyleControls(organizer, this::applyStyleEditToDefaultsForAdds, this::getFontFamiliesUsedByThisMap, () -> addNameField.getText());
 
@@ -309,9 +305,7 @@ public class TextTool extends EditorTool
 		applyToButton.addActionListener(e -> showApplyDialogForDefaults());
 		addStyleButtonsHider = organizer.addLeftAlignedComponents(Arrays.asList(useFontForAllTypesButton, applyToButton));
 
-		Tuple2<JLabel, RowHider> layoutHeading = organizer.addSectionHeadingWithTitle("");
-		addLayoutHeadingTitle = layoutHeading.getFirst();
-		addLayoutRows = layoutHeading.getSecond();
+		addLayoutRows = organizer.addSectionHeading(Translation.get("textTool.section.layout"));
 		Tuple2<SliderWithDisplayedValue, RowHider> curvature = addCurvatureRow(organizer, value -> editLayoutForAdds(layout -> layout.curvature = value));
 		curvatureForAddsSlider = curvature.getFirst();
 		addLayoutRows.add(curvature.getSecond());
@@ -1090,14 +1084,12 @@ public class TextTool extends EditorTool
 	private void showAddModeStyle()
 	{
 		TextStyle style = getDefaultStyleForAdds();
-		addStyleHeadingTitle.setText(Translation.get("textTool.section.styleForNewText", textTypeForAdds.toString()));
 		if (style != null)
 		{
 			addStyleControls.showStyles(Arrays.asList(style));
 		}
 
 		TextLayoutSettings layout = getDefaultLayoutForAdds();
-		addLayoutHeadingTitle.setText(Translation.get("textTool.section.layoutForNewText", textTypeForAdds.toString()));
 		isLoadingAddLayoutControls = true;
 		try
 		{

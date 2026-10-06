@@ -32,7 +32,7 @@ class TextStyleControls
 		void apply(TextStyle style);
 	}
 
-	static final Integer[] fontSizes = { 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 32, 36, 40, 44, 48, 54, 60, 66, 72, 84, 96 };
+	static final Integer[] fontSizes = { 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72, 96, 120, 144, 168, 192, 216, 240 };
 	private static final int fadeSliderDivider = 10;
 
 	private final Consumer<StyleEdit> onEdit;
@@ -40,11 +40,11 @@ class TextStyleControls
 	private final JComboBox<Integer> sizeComboBox;
 	private final JPanel colorDisplay;
 	private final JComboBox<TextBackgroundEffect> effectComboBox;
-	private final JPanel haloColorDisplay;
-	private final JSlider haloSizeSlider;
-	private final SliderWithDisplayedValue haloSizeSliderWithDisplay;
-	private final JLabel haloSizeLabel;
-	private final JPanel boldColorDisplay;
+	private final JPanel backgroundColorDisplay;
+	private final JSlider glowSizeSlider;
+	private final SliderWithDisplayedValue glowSizeSliderWithDisplay;
+	private final JSlider outlineWidthSlider;
+	private final SliderWithDisplayedValue outlineWidthSliderWithDisplay;
 	private final JPanel shapeFillColorDisplay;
 	private final JPanel shapeLineColorDisplay;
 	private final JSlider shapeLineWidthSlider;
@@ -55,8 +55,9 @@ class TextStyleControls
 	private final SliderWithDisplayedValue fadeSliderWithDisplay;
 	private final JButton clearFadeButton;
 	private final RowHider allRows;
-	private final RowHider haloRows;
-	private final RowHider boldRows;
+	private final RowHider backgroundColorRow;
+	private final RowHider glowSizeRow;
+	private final RowHider outlineWidthRow;
 	private final RowHider shapeRows;
 	private final RowHider fadeRow;
 	/**
@@ -124,22 +125,24 @@ class TextStyleControls
 		});
 		allRows.add(organizer.addLabelAndComponent(Translation.get("textTool.background.label"), Translation.get("textTool.background.help"), effectComboBox));
 
-		haloColorDisplay = SwingHelper.createColorPickerPreviewPanel();
-		haloRows = addColorRow(organizer, Translation.get("textTool.backgroundColor.label"), Translation.get("textTool.haloColor.help"), haloColorDisplay,
-				Translation.get("textTool.backgroundColor.title"), color -> style -> style.background.haloColor = color);
-		haloSizeSlider = createSlider(1, TextBackground.maxHaloSize);
-		haloSizeSliderWithDisplay = new SliderWithDisplayedValue(haloSizeSlider, null, () ->
+		backgroundColorDisplay = SwingHelper.createColorPickerPreviewPanel();
+		backgroundColorRow = addColorRow(organizer, Translation.get("textTool.backgroundColor.label"), Translation.get("textTool.backgroundColor.help"),
+				backgroundColorDisplay, Translation.get("textTool.backgroundColor.title"), color -> style -> style.background.color = color);
+		glowSizeSlider = createSlider(1, TextBackground.maxGlowSize);
+		glowSizeSliderWithDisplay = new SliderWithDisplayedValue(glowSizeSlider, null, () ->
 		{
-			int value = haloSizeSlider.getValue();
-			reportEdit(style -> style.background.haloSize = value);
+			int value = glowSizeSlider.getValue();
+			reportEdit(style -> style.background.glowSize = value);
 		});
-		haloSizeLabel = new JLabel(Translation.get("textTool.glowSize.label"));
-		haloSizeLabel.setToolTipText(Translation.get("textTool.haloSize.help"));
-		haloRows.add(haloSizeSliderWithDisplay.addToOrganizer(organizer, haloSizeLabel));
-
-		boldColorDisplay = SwingHelper.createColorPickerPreviewPanel();
-		boldRows = addColorRow(organizer, Translation.get("textTool.backgroundColor.label"), Translation.get("textTool.boldBackgroundColor.help"), boldColorDisplay,
-				Translation.get("textTool.backgroundColor.title"), color -> style -> style.background.boldColor = color);
+		glowSizeRow = glowSizeSliderWithDisplay.addToOrganizer(organizer, Translation.get("textTool.glowSize.label"), Translation.get("textTool.glowSize.help"));
+		outlineWidthSlider = createSlider(1, TextBackground.maxOutlineWidth);
+		outlineWidthSliderWithDisplay = new SliderWithDisplayedValue(outlineWidthSlider, null, () ->
+		{
+			int value = outlineWidthSlider.getValue();
+			reportEdit(style -> style.background.outlineWidth = value);
+		});
+		outlineWidthRow = outlineWidthSliderWithDisplay.addToOrganizer(organizer, Translation.get("textTool.outlineWidth.label"),
+				Translation.get("textTool.outlineWidth.help"));
 
 		shapeFillColorDisplay = SwingHelper.createColorPickerPreviewPanel();
 		shapeRows = addColorRow(organizer, Translation.get("textTool.fillColor.label"), Translation.get("textTool.fillColor.help"), shapeFillColorDisplay,
@@ -174,8 +177,9 @@ class TextStyleControls
 		fadeRow = fadeSliderWithDisplay.addToOrganizer(organizer, Translation.get("textTool.backgroundFade.label"), Translation.get("textTool.backgroundFade.help"),
 				clearFadeButton, 0, 0);
 
-		allRows.add(haloRows);
-		allRows.add(boldRows);
+		allRows.add(backgroundColorRow);
+		allRows.add(glowSizeRow);
+		allRows.add(outlineWidthRow);
 		allRows.add(shapeRows);
 		allRows.add(fadeRow);
 	}
@@ -283,14 +287,14 @@ class TextStyleControls
 			boolean isEffectSame = allSame(styles, style -> style.background.effect);
 			effectComboBox.setSelectedItem(isEffectSame ? first.background.effect : null);
 
-			showColor(haloColorDisplay, styles, style -> style.background.haloColor);
-			showSlider(haloSizeSlider, haloSizeSliderWithDisplay, styles, style -> style.background.haloSize);
-			showColor(boldColorDisplay, styles, style -> style.background.boldColor);
+			showColor(backgroundColorDisplay, styles, style -> style.background.color);
+			showSlider(glowSizeSliderWithDisplay, styles, style -> style.background.glowSize);
+			showSlider(outlineWidthSliderWithDisplay, styles, style -> style.background.outlineWidth);
 			showColor(shapeFillColorDisplay, styles, style -> style.background.shapeFillColor);
 			showColor(shapeLineColorDisplay, styles, style -> style.background.shapeLineColor);
-			showSlider(shapeLineWidthSlider, shapeLineWidthSliderWithDisplay, styles, style -> style.background.shapeLineWidth);
-			showSlider(shapeJitterSlider, shapeJitterSliderWithDisplay, styles, style -> style.background.shapeJitter);
-			showSlider(fadeSlider, fadeSliderWithDisplay, styles, style -> (int) Math.round(style.background.fade * fadeSliderDivider));
+			showSlider(shapeLineWidthSliderWithDisplay, styles, style -> style.background.shapeLineWidth);
+			showSlider(shapeJitterSliderWithDisplay, styles, style -> style.background.shapeJitter);
+			showSlider(fadeSliderWithDisplay, styles, style -> (int) Math.round(style.background.fade * fadeSliderDivider));
 		}
 		finally
 		{
@@ -309,8 +313,9 @@ class TextStyleControls
 			return;
 		}
 		TextBackgroundEffect effect = (TextBackgroundEffect) effectComboBox.getSelectedItem();
-		haloRows.setVisible(effect != null && effect.isHalo());
-		boldRows.setVisible(effect == TextBackgroundEffect.BoldBackground);
+		backgroundColorRow.setVisible(effect != null && (effect.isHalo() || effect == TextBackgroundEffect.BoldBackground));
+		glowSizeRow.setVisible(effect == TextBackgroundEffect.Glow);
+		outlineWidthRow.setVisible(effect == TextBackgroundEffect.Outline);
 		shapeRows.setVisible(effect != null && effect.isShape());
 		fadeRow.setVisible(true);
 		boolean allowsFade = effect == null || effect.allowsFade();
@@ -318,10 +323,6 @@ class TextStyleControls
 		String fadeTooltip = allowsFade ? null : Translation.get("textTool.backgroundFade.disabledForShape");
 		fadeSlider.setToolTipText(fadeTooltip);
 		clearFadeButton.setToolTipText(allowsFade ? Translation.get("textTool.clearBackgroundFade.tooltip") : fadeTooltip);
-		if (effect != null && effect.isHalo())
-		{
-			haloSizeLabel.setText(Translation.get(effect == TextBackgroundEffect.Outline ? "textTool.outlineWidth.label" : "textTool.glowSize.label"));
-		}
 	}
 
 	void setVisible(boolean isVisible)
@@ -356,7 +357,7 @@ class TextStyleControls
 		SwingHelper.showColorsInColorPickerPreview(display, colors);
 	}
 
-	private static void showSlider(JSlider slider, SliderWithDisplayedValue sliderWithDisplay, List<TextStyle> styles, Function<TextStyle, Integer> getValue)
+	private static void showSlider(SliderWithDisplayedValue sliderWithDisplay, List<TextStyle> styles, Function<TextStyle, Integer> getValue)
 	{
 		List<Integer> values = new ArrayList<>(styles.size());
 		for (TextStyle style : styles)

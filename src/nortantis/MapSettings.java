@@ -2681,7 +2681,7 @@ public class MapSettings implements Serializable
 		background.fade = fade;
 		if (boldBackgroundColor != null)
 		{
-			background.boldColor = boldBackgroundColor;
+			background.color = boldBackgroundColor;
 		}
 		if (hasBoldBackground)
 		{

@@ -166,6 +166,8 @@ public class CollapsiblePanel extends JPanel
 		});
 
 		contentPanel.setBorder(new EmptyBorder(4, 7, 7, 7));
+		// The card's rounded bottom corners curve into the content's area, so content that painted its own background would cover them.
+		contentPanel.setOpaque(false);
 
 		add(titlePanel, BorderLayout.NORTH);
 		add(contentPanel, BorderLayout.CENTER);
@@ -263,6 +265,22 @@ public class CollapsiblePanel extends JPanel
 	}
 
 	/**
+	 * The device x of the center of the outline's left side, for a card whose left edge is at x.
+	 */
+	private static double getOutlineLeft(AffineTransform transform, double x)
+	{
+		return Math.ceil(toDeviceX(transform, x + cardMargin)) + 0.5;
+	}
+
+	/**
+	 * The device x of the center of the outline's right side, for a card whose left edge is at x.
+	 */
+	private static double getOutlineRight(AffineTransform transform, double x, double width)
+	{
+		return Math.floor(toDeviceX(transform, x + width - cardMargin)) - 0.5;
+	}
+
+	/**
 	 * Draws the title strip's background, and the line under it when the card is expanded. The card paints this itself, rather than the
 	 * title strip painting its own background, so that the fill can run under the card's border instead of stopping a fraction of a pixel
 	 * short of it.
@@ -276,9 +294,13 @@ public class CollapsiblePanel extends JPanel
 		try
 		{
 			// When the card is collapsed the title strip is the whole card, so it rounds its bottom corners too. Otherwise it is filled tall
-			// enough for its bottom corners to fall past the part that shows.
+			// enough for its bottom corners to fall past the strip, and clipped to the strip.
 			int stripBottom = titlePanel.getY() + titlePanel.getHeight();
 			int height = (isCollapsed ? getHeight() - cardMargin : stripBottom + cornerArc) - cardMargin;
+			if (!isCollapsed)
+			{
+				g2.clipRect(0, 0, getWidth(), stripBottom);
+			}
 			g2.setColor(getTitleColor());
 			g2.fillRoundRect(cardMargin, cardMargin, getWidth() - cardMargin * 2, height, cornerArc, cornerArc);
 
@@ -286,8 +308,9 @@ public class CollapsiblePanel extends JPanel
 			{
 				AffineTransform transform = g2.getTransform();
 				double lineY = Math.floor(toDeviceY(transform, stripBottom)) - 0.5;
-				double left = toDeviceX(transform, cardMargin);
-				double right = toDeviceX(transform, getWidth() - cardMargin);
+				// The line ends where the outline's sides are drawn, so it doesn't stick out past them.
+				double left = getOutlineLeft(transform, 0);
+				double right = getOutlineRight(transform, 0, getWidth());
 				g2.setTransform(new AffineTransform());
 				g2.setStroke(new BasicStroke(1f));
 				g2.setColor(getLineColor());
@@ -359,9 +382,9 @@ public class CollapsiblePanel extends JPanel
 			try
 			{
 				AffineTransform transform = g2.getTransform();
-				double left = Math.ceil(toDeviceX(transform, x + cardMargin)) + 0.5;
+				double left = getOutlineLeft(transform, x);
 				double top = Math.ceil(toDeviceY(transform, y + cardMargin)) + 0.5;
-				double right = Math.floor(toDeviceX(transform, x + width - cardMargin)) - 0.5;
+				double right = getOutlineRight(transform, x, width);
 				double bottom = Math.floor(toDeviceY(transform, y + height - cardMargin)) - 0.5;
 				double arcWidth = cornerArc * transform.getScaleX();
 				double arcHeight = cornerArc * transform.getScaleY();

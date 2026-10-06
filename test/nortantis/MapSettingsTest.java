@@ -361,7 +361,9 @@ public class MapSettingsTest
 
 		TextStyle regionDefault = settings.getDefaultTextStyle(TextType.Region);
 		assertEquals(TextBackgroundEffect.BoldBackground, regionDefault.background.effect);
-		assertEquals(nortantis.platform.Color.create(254, 230, 201, 255), regionDefault.background.boldColor);
+		assertEquals(nortantis.platform.Color.create(254, 230, 201, 255), regionDefault.background.color);
+		assertEquals(TextBackground.defaultOutlineWidth, regionDefault.background.outlineWidth);
+		assertEquals(2, TextBackground.defaultOutlineWidth, "Old maps and new maps start Outline at a width of 2.");
 		assertEquals(nortantis.platform.Color.create(89, 71, 54, 255), regionDefault.color);
 		assertEquals("Gabriola", regionDefault.font.getName());
 		assertEquals(TextBackgroundEffect.None, settings.getDefaultTextStyle(TextType.River).background.effect,
@@ -371,7 +373,7 @@ public class MapSettingsTest
 
 		MapText boldCurved = findText(settings, "Bold background curved with negative spacing and custom colors");
 		assertEquals(TextBackgroundEffect.BoldBackground, boldCurved.style.background.effect);
-		assertEquals(nortantis.platform.Color.create(179, 190, 204, 255), boldCurved.style.background.boldColor);
+		assertEquals(nortantis.platform.Color.create(179, 190, 204, 255), boldCurved.style.background.color);
 		assertEquals(nortantis.platform.Color.create(51, 133, 52, 255), boldCurved.style.color);
 		assertEquals("Gabriola", boldCurved.style.font.getName(), "Text without its own font gets its type's font.");
 
@@ -386,13 +388,23 @@ public class MapSettingsTest
 	}
 
 	@Test
+	public void boldBackgroundColorFromBeforeGlowAndOutlineSharedItIsRead()
+	{
+		org.json.simple.JSONObject json = TextBackground.createDefault().toJson();
+		json.remove("color");
+		json.put("boldColor", MapSettings.colorToString(nortantis.platform.Color.create(10, 20, 30, 255)));
+		assertEquals(nortantis.platform.Color.create(10, 20, 30, 255), TextBackground.fromJson(json).color);
+	}
+
+	@Test
 	public void textStylesAreSavedAndReadBack() throws Exception
 	{
 		MapSettings settings = new MapSettings("unit test files/map settings/allTypesOfEdits.nort");
 		TextStyle titleDefault = settings.getDefaultTextStyle(TextType.Title);
 		titleDefault.background.effect = TextBackgroundEffect.Scroll;
 		titleDefault.background.shapeJitter = 7;
-		titleDefault.background.haloColor = nortantis.platform.Color.create(1, 2, 3, 4);
+		titleDefault.background.color = nortantis.platform.Color.create(1, 2, 3, 4);
+		titleDefault.background.outlineWidth = 5;
 		assertEquals(TextLayoutSettings.createDefault(), settings.getDefaultTextLayout(TextType.Region),
 				"A map saved before new text had a layout gives every kind of new text the default layout.");
 		settings.getDefaultTextLayout(TextType.Region).curvature = 0.35;
@@ -400,7 +412,7 @@ public class MapSettingsTest
 		settings.getDefaultTextLayout(TextType.Title).lineBreak = LineBreak.One_line;
 		MapText text = findText(settings, "Custom color with curve");
 		text.style.background.effect = TextBackgroundEffect.Glow;
-		text.style.background.haloSize = 13;
+		text.style.background.glowSize = 13;
 		text.style.background.fade = 0.4;
 		text.backgroundSeed = 12345;
 

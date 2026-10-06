@@ -1,6 +1,5 @@
 package nortantis.swing;
 
-import nortantis.TextBackgroundEffect;
 import nortantis.TextStyle;
 import nortantis.TextType;
 import nortantis.swing.translation.Translation;
@@ -174,10 +173,7 @@ class ApplyTextStyleDialog extends JDialog
 		if (parts.contains(Part.Background))
 		{
 			target.background.effect = source.background.effect;
-			for (TextBackgroundEffect family : new TextBackgroundEffect[] { TextBackgroundEffect.Glow, TextBackgroundEffect.BoldBackground, TextBackgroundEffect.Box })
-			{
-				target.background.copyFamilySettingsFrom(source.background, family);
-			}
+			target.background.copyEffectSettingsFrom(source.background);
 		}
 
 		if (parts.contains(Part.BackgroundFade))

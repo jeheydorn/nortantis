@@ -36,6 +36,7 @@ public class ThemeTest
 		gen.allowedBorderNames.add("dashes");
 		gen.allowedLineStyles.add(MapSettings.LineStyle.Splines);
 		gen.oceanShadingWithWavesProbability = 0.25;
+		gen.allowFractalBackground = false;
 
 		ThemeGenerationSettings reloaded = ThemeGenerationSettings.fromJson(gen.toJson());
 		assertEquals(gen, reloaded);
@@ -117,6 +118,35 @@ public class ThemeTest
 			assertEquals(before.riverColor, settings.riverColor);
 			assertEquals(before.frayedBorderColor, settings.frayedBorderColor);
 			assertEquals(before.grungeColor, settings.grungeColor);
+		}
+	}
+
+	@Test
+	public void fractalBackgroundsAreOneChoiceAmongTheTexturesWhenAllowed()
+	{
+		MapSettings settings = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
+		settings.themeGeneration = ThemeGenerationSettings.createDefault();
+		settings.themeGeneration.setBaseValuesFrom(settings);
+		int textureCount = Assets.listBackgroundTexturesForArtPack(settings.artPack, settings.customImagesPath).size();
+		assertTrue(textureCount > 0);
+
+		int fractalCount = 0;
+		final int tries = 400;
+		Random rand = new Random(13);
+		for (int i = 0; i < tries; i++)
+		{
+			SettingsGenerator.applyThemeRandomness(settings, settings.themeGeneration, rand);
+			assertNotEquals(settings.generateBackground, settings.generateBackgroundFromTexture);
+			fractalCount += settings.generateBackground ? 1 : 0;
+		}
+		double expected = tries / (double) (textureCount + 1);
+		assertTrue(Math.abs(fractalCount - expected) < expected * 0.5, "A fractal background is as likely as each texture: " + fractalCount + " of " + tries);
+
+		settings.themeGeneration.allowFractalBackground = false;
+		for (int i = 0; i < 50; i++)
+		{
+			SettingsGenerator.applyThemeRandomness(settings, settings.themeGeneration, rand);
+			assertFalse(settings.generateBackground);
 		}
 	}
 

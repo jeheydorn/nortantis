@@ -7,8 +7,8 @@ import java.io.Serializable;
 import java.util.Objects;
 
 /**
- * What is drawn behind a piece of text: one effect, plus background fade. Each family of effects (see {@link TextBackgroundEffect}) keeps its
- * own settings, so switching to an effect in another family and back restores what the user had.
+ * What is drawn behind a piece of text: one effect, plus background fade. Effects keep their own settings, except where they share them, so
+ * switching to another effect and back restores what the user had.
  *
  * <p>
  * Sizes and widths are levels that are multiplied by the font's height when drawing, so an effect looks the same at every resolution.
@@ -17,14 +17,19 @@ import java.util.Objects;
 public class TextBackground implements Serializable
 {
 	public static final double defaultFade = 1.0;
-	public static final int maxHaloSize = 30;
-	public static final int defaultHaloSize = 8;
+	public static final int maxGlowSize = 30;
+	public static final int defaultGlowSize = 8;
+	public static final int maxOutlineWidth = 30;
+	public static final int defaultOutlineWidth = 2;
 	public static final int maxShapeLineWidth = 10;
 	public static final int defaultShapeLineWidth = 4;
 	public static final int maxShapeJitter = 10;
 	public static final int defaultShapeJitter = 4;
-	public static final Color defaultHaloColor = Color.create(244, 232, 204, 255);
-	public static final Color defaultBoldColor = Color.create(244, 226, 194, 255);
+	/**
+	 * Rarely used in practice: new random maps get their background color from their theme, and maps saved before text had styles get
+	 * theirs from the bold background color they stored.
+	 */
+	public static final Color defaultColor = Color.create(244, 232, 204, 255);
 	public static final Color defaultShapeFillColor = Color.create(238, 224, 189, 255);
 	public static final Color defaultShapeLineColor = Color.create(64, 46, 30, 255);
 
@@ -34,12 +39,12 @@ public class TextBackground implements Serializable
 	 */
 	public double fade;
 
-	/** The color of Glow and Outline. */
-	public Color haloColor;
-	/** Glow's size and Outline's width, from 1 to {@link #maxHaloSize}. */
-	public int haloSize;
-
-	public Color boldColor;
+	/** The color of Glow, Outline, and Bold background. */
+	public Color color;
+	/** From 1 to {@link #maxGlowSize}. */
+	public int glowSize;
+	/** From 1 to {@link #maxOutlineWidth}. */
+	public int outlineWidth;
 
 	/** The fill color of Box, Scroll, and Banner. */
 	public Color shapeFillColor;
@@ -49,14 +54,14 @@ public class TextBackground implements Serializable
 	/** How far the outline of a shape wanders, from 0 to {@link #maxShapeJitter}. */
 	public int shapeJitter;
 
-	public TextBackground(TextBackgroundEffect effect, double fade, Color haloColor, int haloSize, Color boldColor, Color shapeFillColor, Color shapeLineColor, int shapeLineWidth,
+	public TextBackground(TextBackgroundEffect effect, double fade, Color color, int glowSize, int outlineWidth, Color shapeFillColor, Color shapeLineColor, int shapeLineWidth,
 			int shapeJitter)
 	{
 		this.effect = effect;
 		this.fade = fade;
-		this.haloColor = haloColor;
-		this.haloSize = haloSize;
-		this.boldColor = boldColor;
+		this.color = color;
+		this.glowSize = glowSize;
+		this.outlineWidth = outlineWidth;
 		this.shapeFillColor = shapeFillColor;
 		this.shapeLineColor = shapeLineColor;
 		this.shapeLineWidth = shapeLineWidth;
@@ -68,36 +73,27 @@ public class TextBackground implements Serializable
 	 */
 	public static TextBackground createDefault()
 	{
-		return new TextBackground(TextBackgroundEffect.None, defaultFade, defaultHaloColor, defaultHaloSize, defaultBoldColor, defaultShapeFillColor, defaultShapeLineColor,
+		return new TextBackground(TextBackgroundEffect.None, defaultFade, defaultColor, defaultGlowSize, defaultOutlineWidth, defaultShapeFillColor, defaultShapeLineColor,
 				defaultShapeLineWidth, defaultShapeJitter);
 	}
 
 	public TextBackground copy()
 	{
-		return new TextBackground(effect, fade, haloColor, haloSize, boldColor, shapeFillColor, shapeLineColor, shapeLineWidth, shapeJitter);
+		return new TextBackground(effect, fade, color, glowSize, outlineWidth, shapeFillColor, shapeLineColor, shapeLineWidth, shapeJitter);
 	}
 
 	/**
-	 * Copies the settings of the given family of effects from another background, leaving the effect and the other families alone.
+	 * Copies the settings of every effect from another background, leaving the effect and fade alone.
 	 */
-	public void copyFamilySettingsFrom(TextBackground other, TextBackgroundEffect family)
+	public void copyEffectSettingsFrom(TextBackground other)
 	{
-		if (family.isHalo())
-		{
-			haloColor = other.haloColor;
-			haloSize = other.haloSize;
-		}
-		else if (family.isShape())
-		{
-			shapeFillColor = other.shapeFillColor;
-			shapeLineColor = other.shapeLineColor;
-			shapeLineWidth = other.shapeLineWidth;
-			shapeJitter = other.shapeJitter;
-		}
-		else if (family == TextBackgroundEffect.BoldBackground)
-		{
-			boldColor = other.boldColor;
-		}
+		color = other.color;
+		glowSize = other.glowSize;
+		outlineWidth = other.outlineWidth;
+		shapeFillColor = other.shapeFillColor;
+		shapeLineColor = other.shapeLineColor;
+		shapeLineWidth = other.shapeLineWidth;
+		shapeJitter = other.shapeJitter;
 	}
 
 	/**
@@ -114,9 +110,9 @@ public class TextBackground implements Serializable
 		JSONObject obj = new JSONObject();
 		obj.put("effect", effect.name());
 		obj.put("fade", fade);
-		obj.put("haloColor", MapSettings.colorToString(haloColor));
-		obj.put("haloSize", haloSize);
-		obj.put("boldColor", MapSettings.colorToString(boldColor));
+		obj.put("color", MapSettings.colorToString(color));
+		obj.put("glowSize", glowSize);
+		obj.put("outlineWidth", outlineWidth);
 		obj.put("shapeFillColor", MapSettings.colorToString(shapeFillColor));
 		obj.put("shapeLineColor", MapSettings.colorToString(shapeLineColor));
 		obj.put("shapeLineWidth", shapeLineWidth);
@@ -139,12 +135,16 @@ public class TextBackground implements Serializable
 		{
 			result.fade = ((Number) obj.get("fade")).doubleValue();
 		}
-		result.haloColor = parseColorOrDefault(obj, "haloColor", result.haloColor);
-		if (obj.containsKey("haloSize"))
+		// Bold background's color was stored as boldColor before Glow and Outline shared it.
+		result.color = parseColorOrDefault(obj, "color", parseColorOrDefault(obj, "boldColor", result.color));
+		if (obj.containsKey("glowSize"))
 		{
-			result.haloSize = ((Number) obj.get("haloSize")).intValue();
+			result.glowSize = ((Number) obj.get("glowSize")).intValue();
 		}
-		result.boldColor = parseColorOrDefault(obj, "boldColor", result.boldColor);
+		if (obj.containsKey("outlineWidth"))
+		{
+			result.outlineWidth = ((Number) obj.get("outlineWidth")).intValue();
+		}
 		result.shapeFillColor = parseColorOrDefault(obj, "shapeFillColor", result.shapeFillColor);
 		result.shapeLineColor = parseColorOrDefault(obj, "shapeLineColor", result.shapeLineColor);
 		if (obj.containsKey("shapeLineWidth"))
@@ -167,7 +167,7 @@ public class TextBackground implements Serializable
 	@Override
 	public int hashCode()
 	{
-		return Objects.hash(effect, fade, haloColor, haloSize, boldColor, shapeFillColor, shapeLineColor, shapeLineWidth, shapeJitter);
+		return Objects.hash(effect, fade, color, glowSize, outlineWidth, shapeFillColor, shapeLineColor, shapeLineWidth, shapeJitter);
 	}
 
 	@Override
@@ -182,8 +182,8 @@ public class TextBackground implements Serializable
 			return false;
 		}
 		TextBackground other = (TextBackground) obj;
-		return effect == other.effect && Double.doubleToLongBits(fade) == Double.doubleToLongBits(other.fade) && Objects.equals(haloColor, other.haloColor)
-				&& haloSize == other.haloSize && Objects.equals(boldColor, other.boldColor) && Objects.equals(shapeFillColor, other.shapeFillColor)
+		return effect == other.effect && Double.doubleToLongBits(fade) == Double.doubleToLongBits(other.fade) && Objects.equals(color, other.color)
+				&& glowSize == other.glowSize && outlineWidth == other.outlineWidth && Objects.equals(shapeFillColor, other.shapeFillColor)
 				&& Objects.equals(shapeLineColor, other.shapeLineColor) && shapeLineWidth == other.shapeLineWidth && shapeJitter == other.shapeJitter;
 	}
 

@@ -48,7 +48,8 @@ class TextBackgroundDrawer
 	private static final float shadeScale = 0.82f;
 	private static final float darkShadeScale = 0.66f;
 	/*
-	 * Glow and Outline sizes, as fractions of the font's height per level of TextBackground.haloSize.
+	 * Outline's width and Glow's reach, as fractions of the font's height per level of TextBackground.outlineWidth and
+	 * TextBackground.glowSize.
 	 */
 	private static final double outlineWidthPerLevel = 0.0125;
 	private static final double glowReachPerLevel = 0.03;
@@ -242,12 +243,12 @@ class TextBackgroundDrawer
 
 	private static double getOutlineWidth(TextBackground background, int fontHeight)
 	{
-		return background.haloSize * outlineWidthPerLevel * fontHeight;
+		return background.outlineWidth * outlineWidthPerLevel * fontHeight;
 	}
 
 	private static double getGlowReach(TextBackground background, int fontHeight)
 	{
-		return background.haloSize * glowReachPerLevel * fontHeight;
+		return background.glowSize * glowReachPerLevel * fontHeight;
 	}
 
 	/**
@@ -378,13 +379,13 @@ class TextBackgroundDrawer
 				alpha = ImageHelper.getInstance().blurAndScale(mask, blurLevel, glowStrength, true);
 			}
 
-			try (Image overlay = createColoredImage(background.haloColor, alpha))
+			try (Image overlay = createColoredImage(background.color, alpha))
 			{
 				Transform transform = p.getTransform();
 				try
 				{
 					p.setTransform(unrotatedTransform);
-					p.setAlphaComposite(AlphaComposite.SrcOver, background.haloColor.getAlpha() / 255f);
+					p.setAlphaComposite(AlphaComposite.SrcOver, background.color.getAlpha() / 255f);
 					p.drawImage(overlay, originX, originY);
 				}
 				finally

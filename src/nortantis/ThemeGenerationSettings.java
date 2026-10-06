@@ -102,7 +102,10 @@ public class ThemeGenerationSettings implements Serializable
 	public double drawRegionBoundariesProbability = 0.75;
 	public Set<StrokeType> allowedRegionBoundaryStrokeTypes = new LinkedHashSet<>();
 	public Set<StrokeType> allowedRoadStrokeTypes = new LinkedHashSet<>();
-	public double fractalBackgroundProbability = 0.25;
+	/**
+	 * Whether a fractal background is one of the backgrounds generated maps choose among, as likely as each background texture.
+	 */
+	public boolean allowFractalBackground = true;
 	public Set<String> allowedBackgroundTextureNames = new LinkedHashSet<>();
 	public Set<String> allowedCityIconTypeNames = new LinkedHashSet<>();
 	public Set<LineStyle> allowedLineStyles = new LinkedHashSet<>();
@@ -193,7 +196,7 @@ public class ThemeGenerationSettings implements Serializable
 		obj.put("drawRegionBoundariesProbability", drawRegionBoundariesProbability);
 		obj.put("allowedRegionBoundaryStrokeTypes", toJsonArray(allowedRegionBoundaryStrokeTypes, Enum::name));
 		obj.put("allowedRoadStrokeTypes", toJsonArray(allowedRoadStrokeTypes, Enum::name));
-		obj.put("fractalBackgroundProbability", fractalBackgroundProbability);
+		obj.put("allowFractalBackground", allowFractalBackground);
 		obj.put("allowedBackgroundTextureNames", toJsonArray(allowedBackgroundTextureNames, name -> name));
 		obj.put("allowedCityIconTypeNames", toJsonArray(allowedCityIconTypeNames, name -> name));
 		obj.put("allowedLineStyles", toJsonArray(allowedLineStyles, Enum::name));
@@ -257,7 +260,10 @@ public class ThemeGenerationSettings implements Serializable
 		result.drawRegionBoundariesProbability = getDouble(obj, "drawRegionBoundariesProbability", result.drawRegionBoundariesProbability);
 		result.allowedRegionBoundaryStrokeTypes = getEnumSet(obj, "allowedRegionBoundaryStrokeTypes", StrokeType.class, result.allowedRegionBoundaryStrokeTypes);
 		result.allowedRoadStrokeTypes = getEnumSet(obj, "allowedRoadStrokeTypes", StrokeType.class, result.allowedRoadStrokeTypes);
-		result.fractalBackgroundProbability = getDouble(obj, "fractalBackgroundProbability", result.fractalBackgroundProbability);
+		if (obj.containsKey("allowFractalBackground"))
+		{
+			result.allowFractalBackground = (Boolean) obj.get("allowFractalBackground");
+		}
 		result.allowedBackgroundTextureNames = getStringSet(obj, "allowedBackgroundTextureNames", result.allowedBackgroundTextureNames);
 		result.allowedCityIconTypeNames = getStringSet(obj, "allowedCityIconTypeNames", result.allowedCityIconTypeNames);
 		result.allowedLineStyles = getEnumSet(obj, "allowedLineStyles", LineStyle.class, result.allowedLineStyles);

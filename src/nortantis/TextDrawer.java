@@ -1235,7 +1235,7 @@ public class TextDrawer
 			}
 			for (LineLayout layout : geometry.layouts)
 			{
-				TextBackgroundDrawer.drawLetters(p, layout, boldFont, background.boldColor);
+				TextBackgroundDrawer.drawLetters(p, layout, boldFont, background.color);
 			}
 		}
 		finally
