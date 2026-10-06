@@ -41,8 +41,8 @@ class TextBackgroundDrawer
 	private static final double scrollCurlWidth = 0.42;
 	private static final double scrollCurlOverhang = 0.16;
 	private static final double scrollCapHeight = 0.22;
-	private static final double bannerTailDrop = 0.2;
-	private static final double bannerTailLength = 0.5;
+	private static final double bannerTailDrop = 0.15;
+	private static final double bannerTailLength = 0.4;
 	private static final double bannerFoldWidth = 0.2;
 	private static final double bannerNotchDepth = 0.22;
 	private static final float shadeScale = 0.82f;
