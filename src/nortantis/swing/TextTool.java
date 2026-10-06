@@ -1178,9 +1178,10 @@ public class TextTool extends EditorTool
 	}
 
 	/**
-	 * Redraws the preview of the name to add, drawn in the style for new text over the map's land background. The background is sized to
-	 * fit the text and its text background, within a minimum and maximum size. Text too large for the maximum is scaled down to fit, so the
-	 * preview shows the font, color, and background rather than the size.
+	 * Redraws the preview of the name to add, drawn in the style for new text over the map's land background. The preview has a fixed
+	 * width, and its height fits the text and its text background at full size, within a minimum and maximum height. Text too large for the
+	 * preview is scaled down to fit, without changing the preview's height, so the preview shows the font, color, and background rather than
+	 * the size.
 	 */
 	private void updateAddPreview()
 	{
@@ -1197,13 +1198,12 @@ public class TextTool extends EditorTool
 		}
 
 		double osScale = SwingHelper.getOSScale();
-		final int maxPreviewWidth = 270;
+		final int previewWidth = 270;
 		final int maxPreviewHeight = 70;
-		final int minPreviewWidth = 120;
 		final int minPreviewHeight = 36;
 		final int margin = 8;
-		IntDimension maxSize = new IntDimension((int) (maxPreviewWidth * osScale), (int) (maxPreviewHeight * osScale));
-		IntDimension minSize = new IntDimension((int) (minPreviewWidth * osScale), (int) (minPreviewHeight * osScale));
+		IntDimension maxSize = new IntDimension((int) (previewWidth * osScale), (int) (maxPreviewHeight * osScale));
+		int minHeight = (int) (minPreviewHeight * osScale);
 		int marginInPixels = (int) (margin * osScale);
 		Image fullBackground = getAddPreviewBackground(settings, maxSize);
 		if (fullBackground == null)
@@ -1213,6 +1213,7 @@ public class TextTool extends EditorTool
 		}
 
 		Tuple2<Image, IntPoint> drawn = null;
+		IntDimension size = new IntDimension(maxSize.width, minHeight);
 		String name = addNameField.getText().trim();
 		if (!name.isEmpty())
 		{
@@ -1221,22 +1222,20 @@ public class TextTool extends EditorTool
 					style.copy(), backgroundSeedForNextAdd);
 			double resolution = osScale;
 			drawn = createPreviewTextDrawer(resolution, false).drawTextOntoNewImage(text, null);
-			int maxWidth = maxSize.width - marginInPixels * 2;
-			int maxHeight = maxSize.height - marginInPixels * 2;
-			if (drawn != null && (drawn.getFirst().getWidth() > maxWidth || drawn.getFirst().getHeight() > maxHeight))
+			if (drawn != null)
 			{
-				double scale = Math.min(maxWidth / (double) drawn.getFirst().getWidth(), maxHeight / (double) drawn.getFirst().getHeight());
-				drawn.getFirst().close();
-				drawn = createPreviewTextDrawer(resolution * scale, false).drawTextOntoNewImage(text, null);
+				size = new IntDimension(maxSize.width, Math.min(maxSize.height, Math.max(minHeight, drawn.getFirst().getHeight() + marginInPixels * 2)));
+				int maxWidth = size.width - marginInPixels * 2;
+				int maxHeight = size.height - marginInPixels * 2;
+				if (drawn.getFirst().getWidth() > maxWidth || drawn.getFirst().getHeight() > maxHeight)
+				{
+					double scale = Math.min(maxWidth / (double) drawn.getFirst().getWidth(), maxHeight / (double) drawn.getFirst().getHeight());
+					drawn.getFirst().close();
+					drawn = createPreviewTextDrawer(resolution * scale, false).drawTextOntoNewImage(text, null);
+				}
 			}
 		}
 
-		IntDimension size = minSize;
-		if (drawn != null)
-		{
-			size = new IntDimension(Math.min(maxSize.width, Math.max(minSize.width, drawn.getFirst().getWidth() + marginInPixels * 2)),
-					Math.min(maxSize.height, Math.max(minSize.height, drawn.getFirst().getHeight() + marginInPixels * 2)));
-		}
 		Image result;
 		try (Image cropped = fullBackground.copySubImage(new IntRectangle((fullBackground.getWidth() - size.width) / 2,
 				(fullBackground.getHeight() - size.height) / 2, size.width, size.height)))
