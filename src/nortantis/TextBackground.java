@@ -83,20 +83,6 @@ public class TextBackground implements Serializable
 	}
 
 	/**
-	 * Copies the settings of every effect from another background, leaving the effect and fade alone.
-	 */
-	public void copyEffectSettingsFrom(TextBackground other)
-	{
-		color = other.color;
-		glowSize = other.glowSize;
-		outlineWidth = other.outlineWidth;
-		shapeFillColor = other.shapeFillColor;
-		shapeLineColor = other.shapeLineColor;
-		shapeLineWidth = other.shapeLineWidth;
-		shapeJitter = other.shapeJitter;
-	}
-
-	/**
 	 * The fade to draw with, which is 0 when the effect doesn't allow fade.
 	 */
 	public double getFadeToDraw()

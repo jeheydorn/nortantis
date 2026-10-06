@@ -97,14 +97,13 @@ public class TextTool extends EditorTool
 	private RowHider editTextTypeHider;
 	private RowHider editStyleHeadingHider;
 	private TextStyleControls editStyleControls;
-	private JButton useStyleForNewTextButton;
-	private RowHider useStyleForNewTextHider;
+	private JButton useStyleForAllTextOfTypeButton;
+	private RowHider useStyleForAllTextOfTypeHider;
 	private RowHider editLayoutRows;
 	private static final int curvatureSliderDivider = 100;
 	private SliderWithDisplayedValue curvatureSliderWithDisplay;
 	private SliderWithDisplayedValue spacingSliderWithDisplay;
 	private JComboBoxFixed<LineBreak> lineBreakComboBox;
-	private RowHider applyStyleToHider;
 	private RowHider copyPasteDeleteButtonsHider;
 	private RowHider copyPasteDeleteButtonsSeparatorHider;
 	/**
@@ -302,10 +301,7 @@ public class TextTool extends EditorTool
 		JButton useFontForAllTypesButton = new JButton(Translation.get("textTool.useFontForAllTypes"));
 		useFontForAllTypesButton.setToolTipText(Translation.get("textTool.useFontForAllTypes.tooltip"));
 		useFontForAllTypesButton.addActionListener(e -> useFontForAllTextTypes());
-		JButton applyToButton = new JButton(Translation.get("textTool.applyStyleForNewTextTo"));
-		applyToButton.setToolTipText(Translation.get("textTool.applyStyleForNewTextTo.tooltip"));
-		applyToButton.addActionListener(e -> showApplyDialogForDefaults());
-		addStyleButtonsHider = organizer.addLeftAlignedComponents(Arrays.asList(useFontForAllTypesButton, applyToButton));
+		addStyleButtonsHider = organizer.addLeftAlignedComponents(Arrays.asList(useFontForAllTypesButton));
 
 		addLayoutRows = organizer.addSectionHeading(Translation.get("textTool.section.layout"));
 		Tuple2<SliderWithDisplayedValue, RowHider> curvature = addCurvatureRow(organizer, value -> editLayoutForAdds(layout -> layout.curvature = value));
@@ -442,10 +438,9 @@ public class TextTool extends EditorTool
 		editStyleControls = new TextStyleControls(organizer, edit -> applyToSelectedTexts(text -> edit.apply(text.style)), this::getFontFamiliesUsedByThisMap,
 				() -> selectedTexts.size() == 1 ? editTextField.getText() : "");
 
-		useStyleForNewTextButton = new JButton();
-		useStyleForNewTextButton.setToolTipText(Translation.get("textTool.useStyleForNewText.tooltip"));
-		useStyleForNewTextButton.addActionListener(e -> useSelectedStyleForNewText());
-		useStyleForNewTextHider = organizer.addLeftAlignedComponents(Arrays.asList(useStyleForNewTextButton));
+		useStyleForAllTextOfTypeButton = new JButton();
+		useStyleForAllTextOfTypeButton.addActionListener(e -> useSelectedStyleForAllTextOfType());
+		useStyleForAllTextOfTypeHider = organizer.addLeftAlignedComponents(Arrays.asList(useStyleForAllTextOfTypeButton));
 
 		editLayoutRows = organizer.addSectionHeading(Translation.get("textTool.section.layout"));
 		Tuple2<SliderWithDisplayedValue, RowHider> curvature = addCurvatureRow(organizer, value ->
@@ -482,11 +477,6 @@ public class TextTool extends EditorTool
 		clearRotationButton.setToolTipText(Translation.get("textTool.rotateToHorizontal.tooltip"));
 		clearRotationButton.addActionListener(ev -> rotateSelectedTextToHorizontal());
 		editLayoutRows.add(organizer.addLeftAlignedComponents(Arrays.asList(clearRotationButton)));
-
-		JButton applyStyleToButton = new JButton(Translation.get("textTool.applyStyleTo"));
-		applyStyleToButton.setToolTipText(Translation.get("textTool.applyStyleTo.tooltip"));
-		applyStyleToButton.addActionListener(e -> showApplyDialogForSelectedText());
-		applyStyleToHider = organizer.addLeftAlignedComponents(Arrays.asList(applyStyleToButton));
 
 		copyPasteDeleteButtonsSeparatorHider = organizer.addSeparator();
 
@@ -765,9 +755,11 @@ public class TextTool extends EditorTool
 			editStyleControls.showStyles(getSelectedStyles());
 			if (isSingle)
 			{
-				useStyleForNewTextButton.setText(Translation.get("textTool.useStyleForNewText", selectedTexts.get(0).type.toString()));
+				String type = selectedTexts.get(0).type.toString();
+				useStyleForAllTextOfTypeButton.setText(Translation.get("textTool.useStyleForAllTextOfType", type));
+				useStyleForAllTextOfTypeButton.setToolTipText(Translation.get("textTool.useStyleForAllTextOfType.tooltip", type));
 			}
-			useStyleForNewTextHider.setVisible(isSingle);
+			useStyleForAllTextOfTypeHider.setVisible(isSingle);
 
 			editLayoutRows.setVisible(true);
 			MapText first = selectedTexts.get(0);
@@ -777,7 +769,6 @@ public class TextTool extends EditorTool
 			spacingSliderWithDisplay.showValues(getValuesOfSelectedTexts(text -> text.spacing));
 			lineBreakComboBox.setSelectedItem(allTextsShare(text -> text.lineBreak) ? first.lineBreak : null);
 
-			applyStyleToHider.setVisible(isSingle);
 			copyPasteDeleteButtonsSeparatorHider.setVisible(true);
 		}
 		finally
@@ -854,9 +845,8 @@ public class TextTool extends EditorTool
 		editTextTypeHider.setVisible(false);
 		editStyleHeadingHider.setVisible(false);
 		editStyleControls.setVisible(false);
-		useStyleForNewTextHider.setVisible(false);
+		useStyleForAllTextOfTypeHider.setVisible(false);
 		editLayoutRows.setVisible(false);
-		applyStyleToHider.setVisible(false);
 		copyPasteDeleteButtonsSeparatorHider.setVisible(false);
 	}
 
@@ -982,87 +972,29 @@ public class TextTool extends EditorTool
 		applyToSelectedTexts(text -> text.angle = 0);
 	}
 
-	private void useSelectedStyleForNewText()
-	{
-		if (selectedTexts.size() != 1)
-		{
-			return;
-		}
-		MapText text = selectedTexts.get(0);
-		textStyleDefaults.put(text.type, text.style.copy());
-		mainWindow.handleChangeWithoutRedraw();
-	}
-
-	private void showApplyDialogForSelectedText()
+	/**
+	 * Gives every text of the selected text's type the selected text's style, including its size, and uses that style for new text of the
+	 * type. Layout isn't changed, since it is usually fitted to each piece of text.
+	 */
+	private void useSelectedStyleForAllTextOfType()
 	{
 		if (selectedTexts.size() != 1)
 		{
 			return;
 		}
 		commitNameEdit();
-		MapText source = selectedTexts.get(0).deepCopy();
-		ApplyTextStyleDialog dialog = new ApplyTextStyleDialog(mainWindow, true, true, source.type,
-				choice -> applyToTextsOfTypes(source.style, TextLayoutSettings.of(source), choice));
-		dialog.setVisible(true);
-	}
-
-	private void showApplyDialogForDefaults()
-	{
-		TextStyle source = getDefaultStyleForAdds().copy();
-		TextLayoutSettings sourceLayout = getDefaultLayoutForAdds().copy();
-		ApplyTextStyleDialog dialog = new ApplyTextStyleDialog(mainWindow, true, false, textTypeForAdds, choice -> applyToTextsOfTypes(source, sourceLayout, choice));
-		dialog.setVisible(true);
-	}
-
-	/**
-	 * Applies the chosen parts of a style and layout to every text of the chosen types.
-	 */
-	private void applyToTextsOfTypes(TextStyle sourceStyle, TextLayoutSettings sourceLayout, ApplyTextStyleDialog.Choice choice)
-	{
+		MapText source = selectedTexts.get(0);
 		for (MapText text : mainWindow.edits.text)
 		{
-			if (!choice.types().contains(text.type))
+			if (text.type == source.type && text != source)
 			{
-				continue;
-			}
-			ApplyTextStyleDialog.applyStyleParts(sourceStyle, text.style, choice.parts());
-			if (choice.parts().contains(ApplyTextStyleDialog.Part.Curvature))
-			{
-				text.curvature = sourceLayout.curvature;
-			}
-			if (choice.parts().contains(ApplyTextStyleDialog.Part.Spacing))
-			{
-				text.spacing = sourceLayout.spacing;
+				text.style = source.style.copy();
 			}
 		}
-
-		if (choice.alsoUseForNewText())
-		{
-			for (TextType type : choice.types())
-			{
-				TextStyle defaultStyle = textStyleDefaults.get(type);
-				if (defaultStyle != null)
-				{
-					ApplyTextStyleDialog.applyStyleParts(sourceStyle, defaultStyle, choice.parts());
-				}
-				TextLayoutSettings defaultLayout = textLayoutDefaults.get(type);
-				if (defaultLayout != null && choice.parts().contains(ApplyTextStyleDialog.Part.Curvature))
-				{
-					defaultLayout.curvature = sourceLayout.curvature;
-				}
-				if (defaultLayout != null && choice.parts().contains(ApplyTextStyleDialog.Part.Spacing))
-				{
-					defaultLayout.spacing = sourceLayout.spacing;
-				}
-			}
-		}
+		textStyleDefaults.put(source.type, source.style.copy());
 
 		undoer.setUndoPoint(UpdateType.Text, this);
 		updater.createAndShowMapTextChange();
-		if (!selectedTexts.isEmpty())
-		{
-			showEditComponentsForSelection(SelectionFocus.Leave);
-		}
 		showAddModeStyle();
 	}
 

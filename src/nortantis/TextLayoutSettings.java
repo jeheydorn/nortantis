@@ -34,14 +34,6 @@ public class TextLayoutSettings implements Serializable
 	}
 
 	/**
-	 * The layout of the given text.
-	 */
-	public static TextLayoutSettings of(MapText text)
-	{
-		return new TextLayoutSettings(text.curvature, text.spacing, text.lineBreak);
-	}
-
-	/**
 	 * Gives the text this layout.
 	 */
 	public void applyTo(MapText text)

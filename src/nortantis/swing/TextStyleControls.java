@@ -32,7 +32,7 @@ class TextStyleControls
 		void apply(TextStyle style);
 	}
 
-	static final Integer[] fontSizes = { 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72, 96, 120, 144, 168, 192, 216, 240 };
+	static final Integer[] fontSizes = { 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72, 96, 120, 144, 168, 192, 216, 240 };
 	private static final int fadeSliderDivider = 10;
 
 	private final Consumer<StyleEdit> onEdit;
@@ -53,7 +53,6 @@ class TextStyleControls
 	private final SliderWithDisplayedValue shapeJitterSliderWithDisplay;
 	private final JSlider fadeSlider;
 	private final SliderWithDisplayedValue fadeSliderWithDisplay;
-	private final JButton clearFadeButton;
 	private final RowHider allRows;
 	private final RowHider backgroundColorRow;
 	private final RowHider glowSizeRow;
@@ -171,7 +170,7 @@ class TextStyleControls
 			double value = fadeSlider.getValue() / (double) fadeSliderDivider;
 			reportEdit(style -> style.background.fade = value);
 		}, 34);
-		clearFadeButton = new JButton("x");
+		JButton clearFadeButton = new JButton("x");
 		clearFadeButton.setToolTipText(Translation.get("textTool.clearBackgroundFade.tooltip"));
 		SwingHelper.addListener(clearFadeButton, () -> fadeSlider.setValue(0));
 		fadeRow = fadeSliderWithDisplay.addToOrganizer(organizer, Translation.get("textTool.backgroundFade.label"), Translation.get("textTool.backgroundFade.help"),
@@ -304,7 +303,7 @@ class TextStyleControls
 	}
 
 	/**
-	 * Shows or hides the background settings for the effect shown, and enables or disables background fade.
+	 * Shows the background settings that apply to the effect shown, and hides the rest.
 	 */
 	private void updateBackgroundRows()
 	{
@@ -317,12 +316,8 @@ class TextStyleControls
 		glowSizeRow.setVisible(effect == TextBackgroundEffect.Glow);
 		outlineWidthRow.setVisible(effect == TextBackgroundEffect.Outline);
 		shapeRows.setVisible(effect != null && effect.isShape());
-		fadeRow.setVisible(true);
-		boolean allowsFade = effect == null || effect.allowsFade();
-		fadeRow.setEnabled(allowsFade);
-		String fadeTooltip = allowsFade ? null : Translation.get("textTool.backgroundFade.disabledForShape");
-		fadeSlider.setToolTipText(fadeTooltip);
-		clearFadeButton.setToolTipText(allowsFade ? Translation.get("textTool.clearBackgroundFade.tooltip") : fadeTooltip);
+		// With mixed effects, fade is shown, since it applies to some of them.
+		fadeRow.setVisible(effect == null || effect.allowsFade());
 	}
 
 	void setVisible(boolean isVisible)
