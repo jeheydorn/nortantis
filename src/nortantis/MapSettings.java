@@ -2671,14 +2671,14 @@ public class MapSettings implements Serializable
 		for (TextType type : TextType.values())
 		{
 			boolean hasBoldBackground = legacy.drawBoldBackground() && (type == TextType.Title || type == TextType.Region);
-			textStyleDefaults.put(type, createLegacyTextStyle(fonts.get(type), legacy.textColor(), hasBoldBackground, legacy.boldBackgroundColor(), TextBackground.defaultFade));
+			textStyleDefaults.put(type, createLegacyTextStyle(fonts.get(type), legacy.textColor(), hasBoldBackground, legacy.boldBackgroundColor(), TextBackground.defaultFadeBehind));
 		}
 	}
 
 	private static TextStyle createLegacyTextStyle(Font font, Color color, boolean hasBoldBackground, Color boldBackgroundColor, double fade)
 	{
 		TextBackground background = TextBackground.createDefault();
-		background.fade = fade;
+		background.fadeBehind = fade;
 		if (boldBackgroundColor != null)
 		{
 			background.color = boldBackgroundColor;
@@ -2774,7 +2774,7 @@ public class MapSettings implements Serializable
 				Color boldBackgroundColorOverride = jsonObj.containsKey("boldBackgroundColorOverride") ? parseColor((String) jsonObj.get("boldBackgroundColorOverride"))
 						: null;
 				Font fontOverride = jsonObj.containsKey("fontOverride") ? parseFont((String) jsonObj.get("fontOverride")) : null;
-				double backgroundFade = jsonObj.containsKey("backgroundFade") ? (Double) jsonObj.get("backgroundFade") : TextBackground.defaultFade;
+				double backgroundFade = jsonObj.containsKey("backgroundFade") ? (Double) jsonObj.get("backgroundFade") : TextBackground.defaultFadeBehind;
 				style = createStyleForLegacyText(type, fontOverride, colorOverride, boldBackgroundColorOverride, backgroundFade, legacyTextSettings);
 			}
 			long backgroundSeed = jsonObj.containsKey("backgroundSeed") ? (long) jsonObj.get("backgroundSeed") : createBackgroundSeedForLoadedText(result.size());
@@ -3235,7 +3235,7 @@ public class MapSettings implements Serializable
 			{
 				if (text.style == null)
 				{
-					text.style = createStyleForLegacyText(text.type, null, null, null, TextBackground.defaultFade, legacy);
+					text.style = createStyleForLegacyText(text.type, null, null, null, TextBackground.defaultFadeBehind, legacy);
 				}
 			}
 		}

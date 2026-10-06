@@ -7,7 +7,7 @@ import java.io.Serializable;
 import java.util.Objects;
 
 /**
- * What is drawn behind a piece of text: one effect, plus background fade. Effects keep their own settings, except where they share them, so
+ * What is drawn behind a piece of text: one effect, plus how much to fade the map behind it. Effects keep their own settings, except where they share them, so
  * switching to another effect and back restores what the user had.
  *
  * <p>
@@ -16,7 +16,7 @@ import java.util.Objects;
 @SuppressWarnings("serial")
 public class TextBackground implements Serializable
 {
-	public static final double defaultFade = 1.0;
+	public static final double defaultFadeBehind = 1.0;
 	public static final int maxGlowSize = 30;
 	public static final int defaultGlowSize = 8;
 	public static final int maxOutlineWidth = 30;
@@ -35,9 +35,9 @@ public class TextBackground implements Serializable
 
 	public TextBackgroundEffect effect;
 	/**
-	 * How much to fade out icons, rivers, roads, and coastlines around the text. Only used when {@link TextBackgroundEffect#allowsFade()}.
+	 * How much to fade out icons, rivers, roads, and coastlines behind the text. Only used when {@link TextBackgroundEffect#allowsFadeBehind()}.
 	 */
-	public double fade;
+	public double fadeBehind;
 
 	/** The color of Glow, Outline, and Bold background. */
 	public Color color;
@@ -54,11 +54,11 @@ public class TextBackground implements Serializable
 	/** How far the outline of a shape wanders, from 0 to {@link #maxShapeJitter}. */
 	public int shapeJitter;
 
-	public TextBackground(TextBackgroundEffect effect, double fade, Color color, int glowSize, int outlineWidth, Color shapeFillColor, Color shapeLineColor, int shapeLineWidth,
+	public TextBackground(TextBackgroundEffect effect, double fadeBehind, Color color, int glowSize, int outlineWidth, Color shapeFillColor, Color shapeLineColor, int shapeLineWidth,
 			int shapeJitter)
 	{
 		this.effect = effect;
-		this.fade = fade;
+		this.fadeBehind = fadeBehind;
 		this.color = color;
 		this.glowSize = glowSize;
 		this.outlineWidth = outlineWidth;
@@ -69,25 +69,25 @@ public class TextBackground implements Serializable
 	}
 
 	/**
-	 * No effect, the default fade, and the default settings for every effect.
+	 * No effect, the default fade behind, and the default settings for every effect.
 	 */
 	public static TextBackground createDefault()
 	{
-		return new TextBackground(TextBackgroundEffect.None, defaultFade, defaultColor, defaultGlowSize, defaultOutlineWidth, defaultShapeFillColor, defaultShapeLineColor,
+		return new TextBackground(TextBackgroundEffect.None, defaultFadeBehind, defaultColor, defaultGlowSize, defaultOutlineWidth, defaultShapeFillColor, defaultShapeLineColor,
 				defaultShapeLineWidth, defaultShapeJitter);
 	}
 
 	public TextBackground copy()
 	{
-		return new TextBackground(effect, fade, color, glowSize, outlineWidth, shapeFillColor, shapeLineColor, shapeLineWidth, shapeJitter);
+		return new TextBackground(effect, fadeBehind, color, glowSize, outlineWidth, shapeFillColor, shapeLineColor, shapeLineWidth, shapeJitter);
 	}
 
 	/**
-	 * The fade to draw with, which is 0 when the effect doesn't allow fade.
+	 * The fade behind to draw with, which is 0 when the effect doesn't allow it.
 	 */
-	public double getFadeToDraw()
+	public double getFadeBehindToDraw()
 	{
-		return effect.allowsFade() ? fade : 0.0;
+		return effect.allowsFadeBehind() ? fadeBehind : 0.0;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -95,7 +95,8 @@ public class TextBackground implements Serializable
 	{
 		JSONObject obj = new JSONObject();
 		obj.put("effect", effect.name());
-		obj.put("fade", fade);
+		// Stored under "fade", the key saved maps already use for it.
+		obj.put("fade", fadeBehind);
 		obj.put("color", MapSettings.colorToString(color));
 		obj.put("glowSize", glowSize);
 		obj.put("outlineWidth", outlineWidth);
@@ -119,7 +120,7 @@ public class TextBackground implements Serializable
 		}
 		if (obj.containsKey("fade"))
 		{
-			result.fade = ((Number) obj.get("fade")).doubleValue();
+			result.fadeBehind = ((Number) obj.get("fade")).doubleValue();
 		}
 		// Bold background's color was stored as boldColor before Glow and Outline shared it.
 		result.color = parseColorOrDefault(obj, "color", parseColorOrDefault(obj, "boldColor", result.color));
@@ -153,7 +154,7 @@ public class TextBackground implements Serializable
 	@Override
 	public int hashCode()
 	{
-		return Objects.hash(effect, fade, color, glowSize, outlineWidth, shapeFillColor, shapeLineColor, shapeLineWidth, shapeJitter);
+		return Objects.hash(effect, fadeBehind, color, glowSize, outlineWidth, shapeFillColor, shapeLineColor, shapeLineWidth, shapeJitter);
 	}
 
 	@Override
@@ -168,7 +169,7 @@ public class TextBackground implements Serializable
 			return false;
 		}
 		TextBackground other = (TextBackground) obj;
-		return effect == other.effect && Double.doubleToLongBits(fade) == Double.doubleToLongBits(other.fade) && Objects.equals(color, other.color)
+		return effect == other.effect && Double.doubleToLongBits(fadeBehind) == Double.doubleToLongBits(other.fadeBehind) && Objects.equals(color, other.color)
 				&& glowSize == other.glowSize && outlineWidth == other.outlineWidth && Objects.equals(shapeFillColor, other.shapeFillColor)
 				&& Objects.equals(shapeLineColor, other.shapeLineColor) && shapeLineWidth == other.shapeLineWidth && shapeJitter == other.shapeJitter;
 	}
@@ -176,6 +177,6 @@ public class TextBackground implements Serializable
 	@Override
 	public String toString()
 	{
-		return "TextBackground [effect=" + effect + ", fade=" + fade + "]";
+		return "TextBackground [effect=" + effect + ", fadeBehind=" + fadeBehind + "]";
 	}
 }

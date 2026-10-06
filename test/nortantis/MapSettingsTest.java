@@ -413,7 +413,7 @@ public class MapSettingsTest
 		MapText text = findText(settings, "Custom color with curve");
 		text.style.background.effect = TextBackgroundEffect.Glow;
 		text.style.background.glowSize = 13;
-		text.style.background.fade = 0.4;
+		text.style.background.fadeBehind = 0.4;
 		text.backgroundSeed = 12345;
 
 		Path temp = Files.createTempFile("textStyles", ".nort");

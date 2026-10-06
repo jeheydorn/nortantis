@@ -640,7 +640,7 @@ public class TextDrawer
 	{
 		// This magic number below is a result of trial and error to get the
 		// blur levels to look right.
-		int kernelSize = (int) ((13.0 / 54.0) * text.style.background.getFadeToDraw() * fontHeight);
+		int kernelSize = (int) ((13.0 / 54.0) * text.style.background.getFadeBehindToDraw() * fontHeight);
 		return kernelSize;
 	}
 
@@ -1200,7 +1200,7 @@ public class TextDrawer
 		{
 			// Draw background blending before drawing any lines of text so that the background blending for line 2 cannot erase the text
 			// from line 1.
-			if (drawFade && background.getFadeToDraw() > 0)
+			if (drawFade && background.getFadeBehindToDraw() > 0)
 			{
 				p.rotate(text.angle, pivotMinusDrawOffset.x, pivotMinusDrawOffset.y);
 				Point textStartLine1 = new Point(geometry.bounds1WithoutCurvature.x - drawOffset.x, geometry.bounds1WithoutCurvature.y - drawOffset.y + p.getFontAscent());

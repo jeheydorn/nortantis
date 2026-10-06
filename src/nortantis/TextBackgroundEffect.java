@@ -26,9 +26,9 @@ public enum TextBackgroundEffect
 	}
 
 	/**
-	 * Whether background fade applies along with this effect. A shape covers what fade would erase, so fade is not used with one.
+	 * Whether fade behind applies along with this effect. A shape covers what fade behind would erase, so it is not used with one.
 	 */
-	public boolean allowsFade()
+	public boolean allowsFadeBehind()
 	{
 		return !isShape();
 	}

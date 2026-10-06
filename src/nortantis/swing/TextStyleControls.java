@@ -168,12 +168,12 @@ class TextStyleControls
 		fadeSliderWithDisplay = new SliderWithDisplayedValue(fadeSlider, (value) -> String.format("%.1f", value / ((double) fadeSliderDivider)), () ->
 		{
 			double value = fadeSlider.getValue() / (double) fadeSliderDivider;
-			reportEdit(style -> style.background.fade = value);
+			reportEdit(style -> style.background.fadeBehind = value);
 		}, 34);
 		JButton clearFadeButton = new JButton("x");
-		clearFadeButton.setToolTipText(Translation.get("textTool.clearBackgroundFade.tooltip"));
+		clearFadeButton.setToolTipText(Translation.get("textTool.clearFadeBehind.tooltip"));
 		SwingHelper.addListener(clearFadeButton, () -> fadeSlider.setValue(0));
-		fadeRow = fadeSliderWithDisplay.addToOrganizer(organizer, Translation.get("textTool.backgroundFade.label"), Translation.get("textTool.backgroundFade.help"),
+		fadeRow = fadeSliderWithDisplay.addToOrganizer(organizer, Translation.get("textTool.fadeBehind.label"), Translation.get("textTool.fadeBehind.help"),
 				clearFadeButton, 0, 0);
 
 		allRows.add(backgroundColorRow);
@@ -293,7 +293,7 @@ class TextStyleControls
 			showColor(shapeLineColorDisplay, styles, style -> style.background.shapeLineColor);
 			showSlider(shapeLineWidthSliderWithDisplay, styles, style -> style.background.shapeLineWidth);
 			showSlider(shapeJitterSliderWithDisplay, styles, style -> style.background.shapeJitter);
-			showSlider(fadeSliderWithDisplay, styles, style -> (int) Math.round(style.background.fade * fadeSliderDivider));
+			showSlider(fadeSliderWithDisplay, styles, style -> (int) Math.round(style.background.fadeBehind * fadeSliderDivider));
 		}
 		finally
 		{
@@ -317,7 +317,7 @@ class TextStyleControls
 		outlineWidthRow.setVisible(effect == TextBackgroundEffect.Outline);
 		shapeRows.setVisible(effect != null && effect.isShape());
 		// With mixed effects, fade is shown, since it applies to some of them.
-		fadeRow.setVisible(effect == null || effect.allowsFade());
+		fadeRow.setVisible(effect == null || effect.allowsFadeBehind());
 	}
 
 	void setVisible(boolean isVisible)
