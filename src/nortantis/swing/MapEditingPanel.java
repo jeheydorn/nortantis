@@ -118,12 +118,10 @@ public class MapEditingPanel extends UnscaledImagePanel
 	 */
 	private List<Area> selectionCycleCandidateAreas = new ArrayList<>();
 	/**
-	 * A partly transparent picture of text about to be added, scaled by textHoverPreviewZoom from graph space, with its upper left corner at
-	 * textHoverPreviewLocation in graph space.
+	 * A partly transparent picture of text about to be added, drawn in graph space with its upper left corner at textHoverPreviewLocation.
 	 */
 	private BufferedImage textHoverPreviewImage;
 	private java.awt.Point textHoverPreviewLocation;
-	private double textHoverPreviewZoom;
 	private boolean showEditBox;
 	private boolean editBoxIsInMapSpace;
 	private final double smallIconScale = 0.2;
@@ -419,27 +417,8 @@ public class MapEditingPanel extends UnscaledImagePanel
 	 */
 	public void setTextHoverPreview(nortantis.platform.Image image, nortantis.geom.IntPoint upperLeft)
 	{
-		if (image == null || upperLeft == null)
-		{
-			clearTextHoverPreview();
-			return;
-		}
-		// Scale the image to the zoom the same way the map is scaled, so it isn't pixelated by the Graphics transform.
-		if (zoom > 0 && zoom != 1.0)
-		{
-			int width = Math.max(1, (int) Math.round(image.getWidth() * zoom));
-			int height = Math.max(1, (int) Math.round(image.getHeight() * zoom));
-			try (Image scaled = ImageHelper.getInstance().scale(image, width, height, MainWindow.getScalingMethodForZoom(zoom)))
-			{
-				textHoverPreviewImage = AwtBridge.toBufferedImage(scaled);
-			}
-		}
-		else
-		{
-			textHoverPreviewImage = AwtBridge.toBufferedImage(image);
-		}
-		textHoverPreviewZoom = zoom > 0 ? zoom : 1.0;
-		textHoverPreviewLocation = new java.awt.Point(upperLeft.x, upperLeft.y);
+		textHoverPreviewImage = image == null ? null : AwtBridge.toBufferedImage(image);
+		textHoverPreviewLocation = upperLeft == null ? null : new java.awt.Point(upperLeft.x, upperLeft.y);
 	}
 
 	public void clearTextHoverPreview()
@@ -869,19 +848,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 			final float textHoverPreviewOpacity = 0.6f;
 			Composite originalComposite = g2.getComposite();
 			g2.setComposite(java.awt.AlphaComposite.getInstance(java.awt.AlphaComposite.SRC_OVER, textHoverPreviewOpacity));
-			AffineTransform originalTransform = g2.getTransform();
-			Object originalInterpolation = g2.getRenderingHint(RenderingHints.KEY_INTERPOLATION);
-			g2.translate(textHoverPreviewLocation.x, textHoverPreviewLocation.y);
-			g2.scale(1.0 / textHoverPreviewZoom, 1.0 / textHoverPreviewZoom);
-			if (textHoverPreviewZoom != zoom)
-			{
-				// The zoom changed since the image was scaled, so it is stretched until the tool replaces it.
-				g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-			}
-			g2.drawImage(textHoverPreviewImage, 0, 0, null);
-			g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
-					originalInterpolation == null ? RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR : originalInterpolation);
-			g2.setTransform(originalTransform);
+			g2.drawImage(textHoverPreviewImage, textHoverPreviewLocation.x, textHoverPreviewLocation.y, null);
 			g2.setComposite(originalComposite);
 		}
 

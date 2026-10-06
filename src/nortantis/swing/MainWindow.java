@@ -2713,9 +2713,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	}
 
 	/**
-	 * The method for scaling the displayed map, or anything drawn to match it, by the given zoom.
+	 * The method for scaling the displayed map by the given zoom.
 	 */
-	static Method getScalingMethodForZoom(double zoom)
+	private static Method getScalingMethodForZoom(double zoom)
 	{
 		return zoom < 0.34 ? Method.QUALITY : Method.BALANCED;
 	}
