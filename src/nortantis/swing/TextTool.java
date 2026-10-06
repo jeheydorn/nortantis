@@ -12,6 +12,7 @@ import nortantis.TextType;
 import nortantis.editor.MapUpdater;
 import nortantis.geom.IntDimension;
 import nortantis.geom.IntPoint;
+import nortantis.geom.IntRectangle;
 import nortantis.geom.Rectangle;
 import nortantis.geom.RotatedRectangle;
 import nortantis.platform.Color;
@@ -74,11 +75,12 @@ public class TextTool extends EditorTool
 	private RowHider booksHider;
 	private BooksWidget booksWidget;
 	/**
-	 * The land background the Add mode preview draws text over, and the settings it was made from, so that it is only remade when they
-	 * change.
+	 * The land background the Add mode preview draws text over, at the preview's maximum size, and the settings it was made from, so that
+	 * it is only remade when they change. The preview crops it to the size it needs.
 	 */
 	private Image addPreviewBackground;
 	private List<Object> addPreviewBackgroundKey;
+	private static final int addPreviewFadeWidth = 6;
 
 	/*
 	 * Edit and Erase modes.
@@ -1176,8 +1178,9 @@ public class TextTool extends EditorTool
 	}
 
 	/**
-	 * Redraws the preview of the name to add, drawn in the style for new text over the map's land background. Large text is scaled down to
-	 * fit, so the preview shows the font, color, and background rather than the size.
+	 * Redraws the preview of the name to add, drawn in the style for new text over the map's land background. The background is sized to
+	 * fit the text and its text background, within a minimum and maximum size. Text too large for the maximum is scaled down to fit, so the
+	 * preview shows the font, color, and background rather than the size.
 	 */
 	private void updateAddPreview()
 	{
@@ -1194,39 +1197,52 @@ public class TextTool extends EditorTool
 		}
 
 		double osScale = SwingHelper.getOSScale();
-		final int previewWidth = 270;
-		final int previewHeight = 70;
+		final int maxPreviewWidth = 270;
+		final int maxPreviewHeight = 70;
+		final int minPreviewWidth = 120;
+		final int minPreviewHeight = 36;
 		final int margin = 8;
-		IntDimension size = new IntDimension((int) (previewWidth * osScale), (int) (previewHeight * osScale));
-		Image background = getAddPreviewBackground(settings, size);
-		if (background == null)
+		IntDimension maxSize = new IntDimension((int) (maxPreviewWidth * osScale), (int) (maxPreviewHeight * osScale));
+		IntDimension minSize = new IntDimension((int) (minPreviewWidth * osScale), (int) (minPreviewHeight * osScale));
+		int marginInPixels = (int) (margin * osScale);
+		Image fullBackground = getAddPreviewBackground(settings, maxSize);
+		if (fullBackground == null)
 		{
 			addPreviewPanel.setImage(null);
 			return;
 		}
 
+		Tuple2<Image, IntPoint> drawn = null;
 		String name = addNameField.getText().trim();
-		if (name.isEmpty())
+		if (!name.isEmpty())
 		{
-			addPreviewPanel.setImage(AwtBridge.toBufferedImage(background));
-			return;
+			TextLayoutSettings layout = getDefaultLayoutForAdds();
+			MapText text = new MapText(name, new nortantis.geom.Point(0, 0), 0.0, textTypeForAdds, layout.lineBreak, layout.curvature, layout.spacing,
+					style.copy(), backgroundSeedForNextAdd);
+			double resolution = osScale;
+			drawn = createPreviewTextDrawer(resolution, false).drawTextOntoNewImage(text, null);
+			int maxWidth = maxSize.width - marginInPixels * 2;
+			int maxHeight = maxSize.height - marginInPixels * 2;
+			if (drawn != null && (drawn.getFirst().getWidth() > maxWidth || drawn.getFirst().getHeight() > maxHeight))
+			{
+				double scale = Math.min(maxWidth / (double) drawn.getFirst().getWidth(), maxHeight / (double) drawn.getFirst().getHeight());
+				drawn.getFirst().close();
+				drawn = createPreviewTextDrawer(resolution * scale, false).drawTextOntoNewImage(text, null);
+			}
 		}
 
-		TextLayoutSettings layout = getDefaultLayoutForAdds();
-		MapText text = new MapText(name, new nortantis.geom.Point(0, 0), 0.0, textTypeForAdds, layout.lineBreak, layout.curvature, layout.spacing, style.copy(),
-				backgroundSeedForNextAdd);
-		double resolution = osScale;
-		Tuple2<Image, IntPoint> drawn = createPreviewTextDrawer(resolution, false).drawTextOntoNewImage(text, null);
-		int maxWidth = size.width - (int) (margin * osScale * 2);
-		int maxHeight = size.height - (int) (margin * osScale * 2);
-		if (drawn != null && (drawn.getFirst().getWidth() > maxWidth || drawn.getFirst().getHeight() > maxHeight))
+		IntDimension size = minSize;
+		if (drawn != null)
 		{
-			double scale = Math.min(maxWidth / (double) drawn.getFirst().getWidth(), maxHeight / (double) drawn.getFirst().getHeight());
-			drawn.getFirst().close();
-			drawn = createPreviewTextDrawer(resolution * scale, false).drawTextOntoNewImage(text, null);
+			size = new IntDimension(Math.min(maxSize.width, Math.max(minSize.width, drawn.getFirst().getWidth() + marginInPixels * 2)),
+					Math.min(maxSize.height, Math.max(minSize.height, drawn.getFirst().getHeight() + marginInPixels * 2)));
 		}
-
-		Image result = background.deepCopy();
+		Image result;
+		try (Image cropped = fullBackground.copySubImage(new IntRectangle((fullBackground.getWidth() - size.width) / 2,
+				(fullBackground.getHeight() - size.height) / 2, size.width, size.height)))
+		{
+			result = IconsTool.fadeEdges(cropped, (int) (addPreviewFadeWidth * osScale));
+		}
 		if (drawn != null)
 		{
 			try (Image textImage = drawn.getFirst(); Painter p = result.createPainter(DrawQuality.High))
@@ -1266,9 +1282,7 @@ public class TextTool extends EditorTool
 		{
 			return null;
 		}
-		Image land = ImageHelper.getInstance().colorize(backgrounds.getThird(), settings.landColor, backgrounds.getFourth());
-		final int fadeWidth = (int) (6 * SwingHelper.getOSScale());
-		addPreviewBackground = IconsTool.fadeEdges(land, fadeWidth);
+		addPreviewBackground = ImageHelper.getInstance().colorize(backgrounds.getThird(), settings.landColor, backgrounds.getFourth());
 		addPreviewBackgroundKey = key;
 		return addPreviewBackground;
 	}
