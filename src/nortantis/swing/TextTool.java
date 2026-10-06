@@ -260,11 +260,35 @@ public class TextTool extends EditorTool
 				updateAddPreview();
 			}
 		});
-		JButton regenerateButton = new JButton(Translation.get("textTool.regenerateName"));
-		regenerateButton.setToolTipText(Translation.get("textTool.regenerateName.tooltip"));
-		regenerateButton.addActionListener(e -> generateNameForAdds());
+		// The button is kept square at the name field's height so that it doesn't make the row taller.
+		JButton generateNameButton = new JButton()
+		{
+			@Override
+			public Dimension getPreferredSize()
+			{
+				int height = addNameField.getPreferredSize().height;
+				return new Dimension(height, height);
+			}
+
+			@Override
+			public Dimension getMinimumSize()
+			{
+				return getPreferredSize();
+			}
+
+			@Override
+			public Dimension getMaximumSize()
+			{
+				return getPreferredSize();
+			}
+		};
+		generateNameButton.setMargin(new Insets(0, 0, 0, 0));
+		// A clockwise open circle arrow, enlarged because it draws much smaller than letters at the same font size.
+		generateNameButton.setIcon(new CenteredSymbolIcon("↻", 1.5f));
+		generateNameButton.setToolTipText(Translation.get("textTool.generateName.tooltip"));
+		generateNameButton.addActionListener(e -> generateNameForAdds());
 		addNameHider = organizer.addLabelAndComponentsHorizontal(Translation.get("textTool.name.label"), Translation.get("textTool.name.help"),
-				Arrays.asList(addNameField, regenerateButton), 0, 4);
+				Arrays.asList(addNameField, generateNameButton), 0, 4);
 
 		addPreviewPanel = new UnscaledImagePanel();
 		JPanel addPreviewHolder = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
