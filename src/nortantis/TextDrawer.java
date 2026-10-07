@@ -442,8 +442,13 @@ public class TextDrawer
 		return willBeTwoLines != isCurrentlyTwoLines;
 	}
 
+	/**
+	 * Draws text and updates its bounds. Text whose bounds turn out to be entirely off the map is removed from the edits, since it can't be
+	 * seen or selected.
+	 */
 	private void drawText(Image map, WorldGraph graph, List<MapText> textToDraw, Rectangle drawBounds)
 	{
+		List<MapText> offMap = new ArrayList<>();
 		try (Painter p = map.createPainter(DrawQuality.High))
 		{
 			Point drawOffset = drawBounds == null ? null : drawBounds.upperLeftCorner();
@@ -451,7 +456,15 @@ public class TextDrawer
 			doForEachTextInBounds(textToDraw, drawBounds, ((text, ignored) ->
 			{
 				drawNameSplitIfNeeded(map, p, graph, 0.0, false, null, text, true, drawOffset);
+				if (text.line1Bounds != null && isEntirelyOffMap(text.line1Bounds.addRotatedRectangleThatHasTheSameAngleAndPivot(text.line2Bounds), graph))
+				{
+					offMap.add(text);
+				}
 			}));
+		}
+		if (!offMap.isEmpty() && settings.edits != null)
+		{
+			settings.edits.text.removeIf(text -> offMap.stream().anyMatch(removed -> removed == text));
 		}
 
 		// Only clear this flag if we drew every text (drawBounds null or equal to graph bounds);
@@ -1530,6 +1543,14 @@ public class TextDrawer
 		// Divide by resolution so that the location does not depend on the resolution we're drawing at.
 		return new MapText(text, new Point(location.x / resolution, location.y / resolution), angle, type, layout.lineBreak, layout.curvature, layout.spacing, style,
 				backgroundSeed);
+	}
+
+	/**
+	 * Whether a text's box, from its line bounds, lies entirely off the map. Such text is removed when it is drawn.
+	 */
+	public static boolean isEntirelyOffMap(RotatedRectangle textBox, WorldGraph graph)
+	{
+		return textBox != null && !textBox.overlaps(new RotatedRectangle(graph.bounds));
 	}
 
 	public void setMapTexts(CopyOnWriteArrayList<MapText> text)

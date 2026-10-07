@@ -635,6 +635,7 @@ public class TextTool extends EditorTool
 	@Override
 	protected void onAfterShowMap()
 	{
+		unselectTextsNotInEdits();
 		if ((isMoving || isRotating) && mousePressedLocation != null)
 		{
 			// A move or rotate is in progress. Reposition the preview from the current mouse location so it follows a zoom change made
@@ -690,16 +691,7 @@ public class TextTool extends EditorTool
 				newSelection.add(text);
 			}
 		}
-		List<MapText> unselected = new ArrayList<>();
-		for (MapText text : selectedTexts)
-		{
-			if (!containsByIdentity(newSelection, text))
-			{
-				unselected.add(text);
-			}
-		}
 		selectedTexts = newSelection;
-		deleteTextsEntirelyOffMap(unselected);
 
 		mapEditingPanel.clearHighlightedAreas();
 		if (selectedTexts.isEmpty())
@@ -717,47 +709,43 @@ public class TextTool extends EditorTool
 	}
 
 	/**
-	 * Deletes the given texts that are entirely off the map, where they can't be seen or selected.
-	 */
-	private void deleteTextsEntirelyOffMap(List<MapText> texts)
-	{
-		if (mainWindow.edits == null)
-		{
-			return;
-		}
-		boolean isAnyDeleted = false;
-		for (MapText text : texts)
-		{
-			// Texts no longer in the edits, such as ones an undo replaced with copies, are skipped.
-			if (!text.value.isEmpty() && containsByIdentity(mainWindow.edits.text, text) && isEntirelyOffMap(getTextBox(text)))
-			{
-				text.value = "";
-				isAnyDeleted = true;
-			}
-		}
-		if (isAnyDeleted)
-		{
-			// The texts aren't on the map, so there's nothing to redraw.
-			undoer.setUndoPoint(UpdateType.Incremental, this);
-			triggerPurgeEmptyText();
-		}
-	}
-
-	/**
-	 * Whether a text box lies entirely off the map. Text there is deleted when it is unselected.
+	 * Whether a text box lies entirely off the map, where drawing the text deletes it.
 	 */
 	private boolean isEntirelyOffMap(RotatedRectangle box)
 	{
-		if (box == null || updater.mapParts == null || updater.mapParts.graph == null)
+		if (updater.mapParts == null || updater.mapParts.graph == null)
 		{
 			return false;
 		}
-		return !box.overlaps(new RotatedRectangle(updater.mapParts.graph.bounds));
+		return TextDrawer.isEntirelyOffMap(box, updater.mapParts.graph);
+	}
+
+	/**
+	 * Drops from the selection texts that are no longer in the edits, such as ones a draw removed for being off the map.
+	 */
+	private void unselectTextsNotInEdits()
+	{
+		if (selectedTexts.isEmpty() || mainWindow.edits == null)
+		{
+			return;
+		}
+		List<MapText> remaining = new ArrayList<>();
+		for (MapText text : selectedTexts)
+		{
+			if (containsByIdentity(mainWindow.edits.text, text))
+			{
+				remaining.add(text);
+			}
+		}
+		if (remaining.size() != selectedTexts.size())
+		{
+			setSelection(remaining, SelectionFocus.Leave);
+		}
 	}
 
 	/**
 	 * Shows the box with the move and rotate handles around the given text boxes, and, when there are several, a box around each of them.
-	 * Boxes entirely off the map are drawn in red, since their texts will be deleted when unselected.
+	 * Boxes entirely off the map are drawn in red, since drawing their texts there will delete them.
 	 */
 	private void showTextBoxes(RotatedRectangle groupBox, List<RotatedRectangle> boxes)
 	{
