@@ -41,18 +41,6 @@ public class ToolsPanel extends JPanel
 	private JPanel toolSelectPanel;
 	private CardLayout toolOptionsCardLayout;
 
-	LandWaterTool getLandWaterTool()
-	{
-		for (EditorTool tool : tools)
-		{
-			if (tool instanceof LandWaterTool landWaterTool)
-			{
-				return landWaterTool;
-			}
-		}
-		throw new IllegalStateException("The Land and Water tool is missing.");
-	}
-
 	public ToolsPanel(MainWindow mainWindow, MapUpdater updater)
 	{
 		this.mainWindow = mainWindow;

@@ -1,15 +1,10 @@
 package nortantis.swing;
 
 import nortantis.MapSettings;
-import nortantis.TextLayoutSettings;
-import nortantis.TextStyle;
-import nortantis.TextType;
-import nortantis.ThemeGenerationSettings;
 import nortantis.editor.MapChange;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -69,19 +64,6 @@ public class Undoer
 	 */
 	public boolean setUndoPoint(UpdateType updateType, EditorTool tool, Runnable preRun)
 	{
-		return setUndoPoint(updateType, tool, preRun, false);
-	}
-
-	/**
-	 * Sets an undo point for applying a theme. Undoing or redoing it restores the styles and layouts for new text along with everything else.
-	 */
-	public boolean setApplyThemeUndoPoint(Runnable preRun)
-	{
-		return setUndoPoint(UpdateType.Full, null, preRun, true);
-	}
-
-	private boolean setUndoPoint(UpdateType updateType, EditorTool tool, Runnable preRun, boolean isApplyTheme)
-	{
 		if (!enabled)
 		{
 			return false;
@@ -97,14 +79,14 @@ public class Undoer
 
 		MapSettings prevSettings = undoStack.isEmpty() ? copyOfSettingsWhenEditorWasOpened : undoStack.peek().settings;
 		MapSettings currentSettings = mainWindow.getSettingsFromGUI(true);
-		if (equalsIgnoringSettingsWithoutUndoPoints(currentSettings, prevSettings))
+		if (currentSettings.equals(prevSettings))
 		{
 			// Don't create an undo point if nothing changed.
 			return false;
 		}
 
 		redoStack.clear();
-		undoStack.push(new MapChange(currentSettings, updateType, tool, preRun, isApplyTheme));
+		undoStack.push(new MapChange(currentSettings, updateType, tool, preRun));
 
 		// Limit the size of undoStack to prevent memory errors. Each undo point is about 2 MBs.
 		while (undoStack.size() > maxUndoLevels)
@@ -154,7 +136,6 @@ public class Undoer
 		{
 			settings = undoStack.peek().settings.deepCopy();
 		}
-		keepCurrentSettingsWithoutUndoPoints(changeToUndo.isApplyTheme, settings, changeToUndo.settings);
 		boolean refreshImagePreviews = doesChangeEffectsBackgroundImages(changeToUndo.settings, settings);
 		mainWindow.loadSettingsAndEditsIntoThemeAndToolsPanels(settings, true, refreshImagePreviews);
 
@@ -196,7 +177,6 @@ public class Undoer
 		MapChange changeToRedo = redoStack.pop();
 		undoStack.push(changeToRedo);
 		MapSettings newSettings = changeToRedo.settings.deepCopy();
-		keepCurrentSettingsWithoutUndoPoints(changeToRedo.isApplyTheme, newSettings, mainWindow.getSettingsFromGUI(false));
 		boolean refreshImagePreviews = doesChangeEffectsBackgroundImages(currentSettings, newSettings);
 		mainWindow.loadSettingsAndEditsIntoThemeAndToolsPanels(newSettings, true, refreshImagePreviews);
 
@@ -243,7 +223,6 @@ public class Undoer
 		}
 
 		MapSettings settings = copyOfSettingsWhenEditorWasOpened.deepCopy();
-		keepCurrentSettingsWithoutUndoPoints(changesUndone.stream().anyMatch(change -> change.isApplyTheme), settings, latestSettings);
 		jumpTo(settings, latestSettings, combinePreRuns(changesUndone), doesChangeEffectsBackgroundImages(latestSettings, settings));
 	}
 
@@ -267,7 +246,6 @@ public class Undoer
 		}
 
 		MapSettings newSettings = undoStack.peek().settings.deepCopy();
-		keepCurrentSettingsWithoutUndoPoints(changesRedone.stream().anyMatch(change -> change.isApplyTheme), newSettings, mainWindow.getSettingsFromGUI(false));
 		jumpTo(newSettings, currentSettings, combinePreRuns(changesRedone), doesChangeEffectsBackgroundImages(currentSettings, newSettings));
 	}
 
@@ -334,54 +312,6 @@ public class Undoer
 	public void setEnabled(boolean enabled)
 	{
 		this.enabled = enabled;
-	}
-
-	/**
-	 * Undo and redo leave the settings that change without setting an undo point as they are: the styles and layouts for new text, and the
-	 * theme's rules for varying it. The exception is undoing or redoing a change that applied a theme, which changes the styles, layouts, and
-	 * rules along with everything else.
-	 *
-	 * @param settingsToRestore
-	 *            The settings undo or redo is about to load, which get the current values of those settings.
-	 * @param currentSettings
-	 *            The settings the editor shows now.
-	 */
-	private static void keepCurrentSettingsWithoutUndoPoints(boolean isApplyTheme, MapSettings settingsToRestore, MapSettings currentSettings)
-	{
-		if (currentSettings == null)
-		{
-			return;
-		}
-		if (!isApplyTheme)
-		{
-			settingsToRestore.textStyleDefaults = currentSettings.copyTextStyleDefaults();
-			settingsToRestore.textLayoutDefaults = currentSettings.copyTextLayoutDefaults();
-			settingsToRestore.themeGeneration = currentSettings.themeGeneration == null ? null : currentSettings.themeGeneration.copy();
-		}
-	}
-
-	/**
-	 * Whether the settings are equal apart from the settings that change without setting an undo point, so that a difference in those alone
-	 * isn't a change to undo.
-	 */
-	private static boolean equalsIgnoringSettingsWithoutUndoPoints(MapSettings settings, MapSettings other)
-	{
-		EnumMap<TextType, TextStyle> textStyleDefaults = settings.textStyleDefaults;
-		EnumMap<TextType, TextLayoutSettings> textLayoutDefaults = settings.textLayoutDefaults;
-		ThemeGenerationSettings themeGeneration = settings.themeGeneration;
-		try
-		{
-			settings.textStyleDefaults = other.textStyleDefaults;
-			settings.textLayoutDefaults = other.textLayoutDefaults;
-			settings.themeGeneration = other.themeGeneration;
-			return settings.equals(other);
-		}
-		finally
-		{
-			settings.textStyleDefaults = textStyleDefaults;
-			settings.textLayoutDefaults = textLayoutDefaults;
-			settings.themeGeneration = themeGeneration;
-		}
 	}
 
 	private boolean doesChangeEffectsBackgroundImages(MapSettings previous, MapSettings change)

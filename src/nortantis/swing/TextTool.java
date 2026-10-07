@@ -1109,6 +1109,7 @@ public class TextTool extends EditorTool
 			return;
 		}
 		edit.accept(layout);
+		undoer.setUndoPoint(UpdateType.NoDraw, this);
 		mainWindow.handleChangeWithoutRedraw();
 		updateAddPreview();
 	}
@@ -1121,6 +1122,7 @@ public class TextTool extends EditorTool
 			return;
 		}
 		edit.apply(style);
+		undoer.setUndoPoint(UpdateType.NoDraw, this);
 		mainWindow.handleChangeWithoutRedraw();
 		showAddModeStyle();
 	}
@@ -1136,11 +1138,21 @@ public class TextTool extends EditorTool
 		{
 			style.font = style.withFamilyAndStyleOf(source.font);
 		}
+		undoer.setUndoPoint(UpdateType.NoDraw, this);
 		mainWindow.handleChangeWithoutRedraw();
 		showAddModeStyle();
 	}
 
 	private void generateNameForAdds()
+	{
+		generateNameForAdds(null);
+	}
+
+	/**
+	 * @param onGenerated
+	 *            Called with the name once it is generated, or null.
+	 */
+	private void generateNameForAdds(Consumer<String> onGenerated)
 	{
 		updater.doWhenMapIsNotDrawing(() ->
 		{
@@ -1148,8 +1160,58 @@ public class TextTool extends EditorTool
 			{
 				lastGeneratedNameForAdds = updater.mapParts.nameCreator.generateNameOfTypeForTextEditor(textTypeForAdds);
 				addNameField.setText(lastGeneratedNameForAdds);
+				if (onGenerated != null)
+				{
+					onGenerated.accept(lastGeneratedNameForAdds);
+				}
 			}
 		});
+	}
+
+	/**
+	 * A piece of text that was added, with the name to add before adding it and the name generated after, so that undoing the add brings back
+	 * the name it added, and redoing it brings back the name generated after.
+	 */
+	private static final class NamesAroundAdd
+	{
+		/** A copy of the text added, which equals the text on the map while the add isn't undone. */
+		final MapText addedText;
+		final String before;
+		final boolean wasBeforeGenerated;
+		/** Null until the name is generated. */
+		String after;
+
+		NamesAroundAdd(MapText addedText, String before, boolean wasBeforeGenerated)
+		{
+			this.addedText = addedText;
+			this.before = before;
+			this.wasBeforeGenerated = wasBeforeGenerated;
+		}
+	}
+
+	/**
+	 * Shows the name to add that goes with whether the added text is on the map: the name generated after it if so, and the name it added if
+	 * not. Only a name to add that shows the other of the two is changed, so a name the user typed since is left alone, and running this
+	 * again changes nothing.
+	 */
+	private void showNameForAddsAround(NamesAroundAdd names)
+	{
+		if (names.after == null)
+		{
+			return;
+		}
+		boolean isAdded = mainWindow.edits.text.contains(names.addedText);
+		String current = addNameField.getText();
+		if (isAdded && current.equals(names.before))
+		{
+			lastGeneratedNameForAdds = names.after;
+			addNameField.setText(names.after);
+		}
+		else if (!isAdded && current.equals(names.after))
+		{
+			lastGeneratedNameForAdds = names.wasBeforeGenerated ? names.before : null;
+			addNameField.setText(names.before);
+		}
 	}
 
 	/**
@@ -1332,11 +1394,12 @@ public class TextTool extends EditorTool
 			MapText addedText = TextDrawer.createMapText(name, getPointOnGraph(mouseLocation), 0.0, textTypeForAdds, mainWindow.displayQualityScale, style.copy(),
 					getDefaultLayoutForAdds(), backgroundSeedForNextAdd);
 			mainWindow.edits.text.add(addedText);
-			undoer.setUndoPoint(UpdateType.Incremental, this);
+			NamesAroundAdd names = new NamesAroundAdd(addedText.deepCopy(), addNameField.getText(), addNameField.getText().equals(lastGeneratedNameForAdds));
+			undoer.setUndoPoint(UpdateType.Incremental, this, () -> showNameForAddsAround(names));
 			updater.createAndShowMapIncrementalUsingText(Arrays.asList(addedText));
 			backgroundSeedForNextAdd = new Random().nextLong();
 			// The next name is generated right away so that clicking again doesn't add the same name twice.
-			generateNameForAdds();
+			generateNameForAdds(generatedName -> names.after = generatedName);
 		});
 	}
 

@@ -1361,12 +1361,14 @@ public class LandWaterTool extends EditorTool
 		{
 			public void actionPerformed(ActionEvent arg0)
 			{
-				SwingHelper.showColorPicker(toolOptionsPanel, baseColorPanel, Translation.get("landWaterTool.baseColor.title"), () ->
-				{
-				});
+				SwingHelper.showColorPicker(toolOptionsPanel, baseColorPanel, Translation.get("landWaterTool.baseColor.title"), () -> handleRegionColorSettingChanged());
 			}
 		});
-		SwingHelper.addColorCopyAndPasteMenu(baseColorPanel, baseColorPanel::getBackground, baseColorPanel::setBackground);
+		SwingHelper.addColorCopyAndPasteMenu(baseColorPanel, baseColorPanel::getBackground, color ->
+		{
+			baseColorPanel.setBackground(color);
+			handleRegionColorSettingChanged();
+		});
 		organizer.addLabelAndComponentsHorizontal(Translation.get("landWaterTool.baseColor.label"), Translation.get("landWaterTool.baseColor.help"),
 				Arrays.asList(baseColorPanel, baseColorChooseButton), SwingHelper.borderWidthBetweenComponents);
 
@@ -1374,20 +1376,29 @@ public class LandWaterTool extends EditorTool
 
 		hueSlider = new JSlider();
 		hueSlider.setMaximum(360);
-		SliderWithDisplayedValue hueSliderWithDisplay = new SliderWithDisplayedValue(hueSlider, null, null, labelWidth);
+		SliderWithDisplayedValue hueSliderWithDisplay = new SliderWithDisplayedValue(hueSlider, null, () -> handleRegionColorSettingChanged(), labelWidth);
 		hueSliderWithDisplay.addToOrganizer(organizer, Translation.get("landWaterTool.hueRange.label"), Translation.get("landWaterTool.hueRange.help"));
 
 		saturationSlider = new JSlider();
 		saturationSlider.setMaximum(100);
-		SliderWithDisplayedValue saturationSliderWithDisplay = new SliderWithDisplayedValue(saturationSlider, null, null, labelWidth);
+		SliderWithDisplayedValue saturationSliderWithDisplay = new SliderWithDisplayedValue(saturationSlider, null, () -> handleRegionColorSettingChanged(), labelWidth);
 		saturationSliderWithDisplay.addToOrganizer(organizer, Translation.get("landWaterTool.saturationRange.label"), Translation.get("landWaterTool.saturationRange.help"));
 
 		brightnessSlider = new JSlider();
 		brightnessSlider.setMaximum(100);
-		SliderWithDisplayedValue brightnessSliderWithDisplay = new SliderWithDisplayedValue(brightnessSlider, null, null, labelWidth);
+		SliderWithDisplayedValue brightnessSliderWithDisplay = new SliderWithDisplayedValue(brightnessSlider, null, () -> handleRegionColorSettingChanged(), labelWidth);
 		brightnessSliderWithDisplay.addToOrganizer(organizer, Translation.get("landWaterTool.brightnessRange.label"), Translation.get("landWaterTool.brightnessRange.help"));
 
 		return organizer.panel;
+	}
+
+	/**
+	 * Sets an undo point for a change to the region base color or the ranges for generating region colors, which don't change the map.
+	 */
+	private void handleRegionColorSettingChanged()
+	{
+		undoer.setUndoPoint(UpdateType.NoDraw, this);
+		mainWindow.handleChangeWithoutRedraw();
 	}
 
 	private void showOrHideBrushOptions()
@@ -5220,11 +5231,15 @@ public class LandWaterTool extends EditorTool
 		areRegionBoundariesVisible = settings.drawRegionBoundaries;
 		areRoadsVisible = settings.drawRoads;
 
-		// These settings are part of MapSettings, so they get pulled in by undo/redo, but I exclude them here
-		// because it feels weird to me to have them change with undo/redo since they don't directly affect the map.
+		baseColorPanel.setBackground(AwtBridge.toAwtColor(settings.regionBaseColor));
+		hueSlider.setValue(settings.hueRange);
+		saturationSlider.setValue(settings.saturationRange);
+		brightnessSlider.setValue(settings.brightnessRange);
 		if (!isUndoRedoOrAutomaticChange)
 		{
-			loadRegionColorSettings(settings);
+			// I'm setting this color here because I only want it to change when you create new settings or load settings from a file,
+			// not on undo/redo or in response to the ThemePanel changing.
+			colorDisplay.setBackground(AwtBridge.toAwtColor(settings.regionBaseColor));
 		}
 
 		// Clear any selection
@@ -5232,22 +5247,6 @@ public class LandWaterTool extends EditorTool
 		mapEditingPanel.clearSelectedCenters();
 
 		showOrHideBrushOptions();
-	}
-
-	/**
-	 * Loads the region base color and the ranges for generating region colors, which {@link #loadSettingsIntoGUI} leaves alone on undo, redo,
-	 * and automatic changes.
-	 */
-	void loadRegionColorSettings(MapSettings settings)
-	{
-		baseColorPanel.setBackground(AwtBridge.toAwtColor(settings.regionBaseColor));
-		hueSlider.setValue(settings.hueRange);
-		saturationSlider.setValue(settings.saturationRange);
-		brightnessSlider.setValue(settings.brightnessRange);
-
-		// I'm setting this color here because I only want it to change when you create new settings or load settings from a file,
-		// not on undo/redo or in response to the ThemePanel changing.
-		colorDisplay.setBackground(AwtBridge.toAwtColor(settings.regionBaseColor));
 	}
 
 	@Override

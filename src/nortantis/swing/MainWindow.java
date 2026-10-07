@@ -3735,16 +3735,21 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	{
 		themeGeneration = source.themeGeneration == null ? null : source.themeGeneration.copy();
 		MapSettings settings = getSettingsFromGUI(false);
-		settings.hueRange = source.hueRange;
-		settings.saturationRange = source.saturationRange;
-		settings.brightnessRange = source.brightnessRange;
-		toolsPanel.getLandWaterTool().loadRegionColorSettings(settings);
+		if (settings.hueRange != source.hueRange || settings.saturationRange != source.saturationRange || settings.brightnessRange != source.brightnessRange)
+		{
+			toolsPanel.currentTool.onBeforeUndoRedo();
+			settings.hueRange = source.hueRange;
+			settings.saturationRange = source.saturationRange;
+			settings.brightnessRange = source.brightnessRange;
+			loadSettingsAndEditsIntoThemeAndToolsPanels(settings, true, false);
+			toolsPanel.currentTool.onAfterUndoRedo();
+		}
+		undoer.setUndoPoint(UpdateType.NoDraw, null);
 		handleChangeWithoutRedraw();
 	}
 
 	/**
-	 * Changes how the open map looks, once it isn't drawing, as one step that undo restores along with the styles and layouts for new text
-	 * and the theme's rules for varying.
+	 * Changes how the open map looks, once it isn't drawing, as one step that undo restores.
 	 *
 	 * @param change
 	 *            Changes the open map's settings, and its edits, which are the open map's own.
@@ -3757,10 +3762,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			MapSettings settings = getSettingsFromGUI(false);
 			change.accept(settings);
 			loadSettingsAndEditsIntoThemeAndToolsPanels(settings, true, true);
-			// Undo leaves the region color settings alone, so they're loaded separately.
-			toolsPanel.getLandWaterTool().loadRegionColorSettings(settings);
 			toolsPanel.currentTool.onAfterUndoRedo();
-			undoer.setApplyThemeUndoPoint(() -> handleImagesRefresh());
+			undoer.setUndoPoint(UpdateType.Full, null, () -> handleImagesRefresh());
 			handleImagesRefresh();
 			updater.createAndShowMapFull();
 		});
