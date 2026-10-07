@@ -635,7 +635,6 @@ public class TextTool extends EditorTool
 	@Override
 	protected void onAfterShowMap()
 	{
-		unselectTextsNotInEdits();
 		if ((isMoving || isRotating) && mousePressedLocation != null)
 		{
 			// A move or rotate is in progress. Reposition the preview from the current mouse location so it follows a zoom change made
@@ -721,31 +720,24 @@ public class TextTool extends EditorTool
 	}
 
 	/**
-	 * Drops from the selection texts that are no longer in the edits, such as ones a draw removed for being off the map.
+	 * Puts back into the edits any selected texts that a draw removed for being off the map, so that a change to them, such as moving them
+	 * back onto the map, keeps them. A text still off the map after the change is removed again when it is drawn, so it is only gone for
+	 * good once it is unselected there.
 	 */
-	private void unselectTextsNotInEdits()
+	private void restoreSelectedTextsRemovedFromEdits()
 	{
-		if (selectedTexts.isEmpty() || mainWindow.edits == null)
-		{
-			return;
-		}
-		List<MapText> remaining = new ArrayList<>();
 		for (MapText text : selectedTexts)
 		{
-			if (containsByIdentity(mainWindow.edits.text, text))
+			if (!containsByIdentity(mainWindow.edits.text, text))
 			{
-				remaining.add(text);
+				mainWindow.edits.text.add(text);
 			}
-		}
-		if (remaining.size() != selectedTexts.size())
-		{
-			setSelection(remaining, SelectionFocus.Leave);
 		}
 	}
 
 	/**
 	 * Shows the box with the move and rotate handles around the given text boxes, and, when there are several, a box around each of them.
-	 * Boxes entirely off the map are drawn in red, since drawing their texts there will delete them.
+	 * Boxes entirely off the map are drawn in red, since their texts will be deleted if unselected there.
 	 */
 	private void showTextBoxes(RotatedRectangle groupBox, List<RotatedRectangle> boxes)
 	{
@@ -798,6 +790,7 @@ public class TextTool extends EditorTool
 		String value = editTextField.getText().trim();
 		if (!value.equals(text.value))
 		{
+			restoreSelectedTextsRemovedFromEdits();
 			MapText before = text.deepCopy();
 			text.value = value;
 			undoer.setUndoPoint(UpdateType.Incremental, this);
@@ -1015,6 +1008,7 @@ public class TextTool extends EditorTool
 			return;
 		}
 		commitNameEdit();
+		restoreSelectedTextsRemovedFromEdits();
 		List<MapText> textsToRedraw = new ArrayList<>(selectedTexts.size() * 2);
 		for (MapText text : selectedTexts)
 		{
