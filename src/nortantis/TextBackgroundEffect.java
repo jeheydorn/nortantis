@@ -26,11 +26,12 @@ public enum TextBackgroundEffect
 	}
 
 	/**
-	 * Whether fade behind applies along with this effect. A shape covers what fade behind would erase, so it is not used with one.
+	 * Whether fade behind applies along with this effect. A shape covers what fade behind would erase, so it is not used with one. Glow
+	 * doesn't use it either, because the two don't look good together.
 	 */
 	public boolean allowsFadeBehind()
 	{
-		return !isShape();
+		return !isShape() && this != Glow;
 	}
 
 	@Override

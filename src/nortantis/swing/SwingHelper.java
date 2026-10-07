@@ -379,7 +379,7 @@ public class SwingHelper
 						if (i > 0)
 						{
 							g.setColor(dividerColor);
-							g.drawLine(left, 0, left, getHeight() - 1);
+							g.fillRect(left, 0, 1, getHeight());
 						}
 					}
 					return;

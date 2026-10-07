@@ -202,7 +202,8 @@ public class TextTool extends EditorTool
 		});
 		CollapsiblePanel booksPanel = new CollapsiblePanel("text_tool_books", "Books for generating text", Translation.get("textTool.booksForText.title"),
 				booksWidget.getContentPanel(), true);
-		booksHider = organizer.addLeftAlignedComponent(booksPanel, GridBagOrganizer.rowVerticalInset, GridBagOrganizer.rowVerticalInset, false);
+		booksHider = organizer.addSeparator();
+		booksHider.add(organizer.addLeftAlignedComponent(booksPanel, GridBagOrganizer.rowVerticalInset, GridBagOrganizer.rowVerticalInset, false));
 
 		SelectionCycling.addAltChangeListener(() ->
 		{
@@ -689,7 +690,16 @@ public class TextTool extends EditorTool
 				newSelection.add(text);
 			}
 		}
+		List<MapText> unselected = new ArrayList<>();
+		for (MapText text : selectedTexts)
+		{
+			if (!containsByIdentity(newSelection, text))
+			{
+				unselected.add(text);
+			}
+		}
 		selectedTexts = newSelection;
+		deleteTextsEntirelyOffMap(unselected);
 
 		mapEditingPanel.clearHighlightedAreas();
 		if (selectedTexts.isEmpty())
@@ -704,6 +714,75 @@ public class TextTool extends EditorTool
 			updateSelectionBoxes();
 		}
 		mapEditingPanel.repaint();
+	}
+
+	/**
+	 * Deletes the given texts that are entirely off the map, where they can't be seen or selected.
+	 */
+	private void deleteTextsEntirelyOffMap(List<MapText> texts)
+	{
+		if (mainWindow.edits == null)
+		{
+			return;
+		}
+		boolean isAnyDeleted = false;
+		for (MapText text : texts)
+		{
+			// Texts no longer in the edits, such as ones an undo replaced with copies, are skipped.
+			if (!text.value.isEmpty() && containsByIdentity(mainWindow.edits.text, text) && isEntirelyOffMap(getTextBox(text)))
+			{
+				text.value = "";
+				isAnyDeleted = true;
+			}
+		}
+		if (isAnyDeleted)
+		{
+			// The texts aren't on the map, so there's nothing to redraw.
+			undoer.setUndoPoint(UpdateType.Incremental, this);
+			triggerPurgeEmptyText();
+		}
+	}
+
+	/**
+	 * Whether a text box lies entirely off the map. Text there is deleted when it is unselected.
+	 */
+	private boolean isEntirelyOffMap(RotatedRectangle box)
+	{
+		if (box == null || updater.mapParts == null || updater.mapParts.graph == null)
+		{
+			return false;
+		}
+		return !box.overlaps(new RotatedRectangle(updater.mapParts.graph.bounds));
+	}
+
+	/**
+	 * Shows the box with the move and rotate handles around the given text boxes, and, when there are several, a box around each of them.
+	 * Boxes entirely off the map are drawn in red, since their texts will be deleted when unselected.
+	 */
+	private void showTextBoxes(RotatedRectangle groupBox, List<RotatedRectangle> boxes)
+	{
+		List<RotatedRectangle> boxesOnMap = new ArrayList<>();
+		List<RotatedRectangle> boxesOffMap = new ArrayList<>();
+		for (RotatedRectangle box : boxes)
+		{
+			if (isEntirelyOffMap(box))
+			{
+				boxesOffMap.add(box);
+			}
+			else
+			{
+				boxesOnMap.add(box);
+			}
+		}
+		boolean isGroupBoxInAValidPosition = !boxesOnMap.isEmpty() || boxes.isEmpty();
+		if (boxes.size() == 1)
+		{
+			mapEditingPanel.setTextBoxesToDraw(groupBox, isGroupBoxInAValidPosition, new ArrayList<>(), new ArrayList<>());
+		}
+		else
+		{
+			mapEditingPanel.setTextBoxesToDraw(groupBox, isGroupBoxInAValidPosition, boxesOnMap, boxesOffMap);
+		}
 	}
 
 	private static boolean containsByIdentity(List<MapText> texts, MapText text)
@@ -861,13 +940,6 @@ public class TextTool extends EditorTool
 			return;
 		}
 
-		if (selectedTexts.size() == 1)
-		{
-			mapEditingPanel.clearTextBox();
-			mapEditingPanel.setTextBoxToDraw(selectedTexts.get(0));
-			return;
-		}
-
 		List<RotatedRectangle> boxes = new ArrayList<>();
 		for (MapText text : selectedTexts)
 		{
@@ -877,8 +949,13 @@ public class TextTool extends EditorTool
 				boxes.add(box);
 			}
 		}
+		if (selectedTexts.size() == 1)
+		{
+			showTextBoxes(boxes.isEmpty() ? null : boxes.get(0), boxes);
+			return;
+		}
 		Rectangle groupBounds = getGroupBounds();
-		mapEditingPanel.setTextBoxesToDraw(groupBounds == null ? null : new RotatedRectangle(groupBounds), boxes);
+		showTextBoxes(groupBounds == null ? null : new RotatedRectangle(groupBounds), boxes);
 	}
 
 	private static RotatedRectangle getTextBox(MapText text)
@@ -1710,7 +1787,7 @@ public class TextTool extends EditorTool
 		}
 		if (previewBoxes.size() == 1)
 		{
-			mapEditingPanel.setTextBoxesToDraw(previewBoxes.get(0), new ArrayList<>());
+			showTextBoxes(previewBoxes.get(0), previewBoxes);
 		}
 		else
 		{
@@ -1729,7 +1806,7 @@ public class TextTool extends EditorTool
 				}
 				groupBox = new RotatedRectangle(bounds);
 			}
-			mapEditingPanel.setTextBoxesToDraw(groupBox, previewBoxes);
+			showTextBoxes(groupBox, previewBoxes);
 		}
 		mapEditingPanel.repaint();
 	}

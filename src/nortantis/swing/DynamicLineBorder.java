@@ -25,10 +25,12 @@ public class DynamicLineBorder extends AbstractBorder
 			color = Color.BLACK; // Fallback color
 		}
 		g.setColor(color);
-		for (int i = 0; i < thickness; i++)
-		{
-			g.drawRect(x + i, y + i, width - 1 - i - i, height - 1 - i - i);
-		}
+		// Drawn with fills rather than lines because at fractional display scales, a line can land up to half a screen pixel away from a
+		// fill of the same rectangle, which leaves a line of whatever the component filled its edge with showing beside the border.
+		g.fillRect(x, y, width, thickness);
+		g.fillRect(x, y + height - thickness, width, thickness);
+		g.fillRect(x, y + thickness, thickness, height - thickness * 2);
+		g.fillRect(x + width - thickness, y + thickness, thickness, height - thickness * 2);
 	}
 
 	@Override

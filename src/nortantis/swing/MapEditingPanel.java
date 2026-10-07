@@ -86,6 +86,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private nortantis.geom.Rectangle iconToEditBounds;
 	private boolean isIconToEditInAValidPosition;
 	private BufferedImage rotateIconScaled;
+	private BufferedImage redRotateIconScaled;
 	private Area rotateToolArea;
 	private Area scaleToolArea;
 	private BufferedImage moveIconScaledSmall;
@@ -109,10 +110,18 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private IconEditToolsSize editToolsSize;
 	private RotatedRectangle textBoxBounds;
 	/**
+	 * False to draw the box with the move and rotate handles in red, to show that its texts would be deleted where they are.
+	 */
+	private boolean isTextBoxInAValidPosition = true;
+	/**
 	 * The boxes of the individual texts in a multi-selection, drawn without the move and rotate handles, which are on the box around all of
 	 * them.
 	 */
 	private List<RotatedRectangle> selectedTextBoxes = new ArrayList<>();
+	/**
+	 * Like {@link #selectedTextBoxes}, but for texts that would be deleted where they are, and so are drawn in red.
+	 */
+	private List<RotatedRectangle> selectedTextBoxesInInvalidPositions = new ArrayList<>();
 	/**
 	 * Outlines of the texts or icons Alt+click could select under the cursor, drawn below the selection's highlight.
 	 */
@@ -368,30 +377,34 @@ public class MapEditingPanel extends UnscaledImagePanel
 		if (line1Bounds != null)
 		{
 			this.textBoxBounds = line1Bounds.addRotatedRectangleThatHasTheSameAngleAndPivot(line2Bounds);
-		}
-	}
-
-	public void setTextBoxToDraw(MapText text)
-	{
-		if (text.line1Bounds != null)
-		{
-			this.textBoxBounds = text.line1Bounds.addRotatedRectangleThatHasTheSameAngleAndPivot(text.line2Bounds);
+			this.isTextBoxInAValidPosition = true;
 		}
 	}
 
 	public void clearTextBox()
 	{
 		this.textBoxBounds = null;
+		this.isTextBoxInAValidPosition = true;
 		this.selectedTextBoxes = new ArrayList<>();
+		this.selectedTextBoxesInInvalidPositions = new ArrayList<>();
 	}
 
 	/**
-	 * Shows the box with the move and rotate handles around several selected texts, and a box without handles around each of them.
+	 * Shows the box with the move and rotate handles around the selected texts, and, when there are several, a box without handles around
+	 * each of them.
+	 *
+	 * @param isGroupBoxInAValidPosition
+	 *            False to draw the box with the handles in red, to show that its texts would be deleted where they are.
+	 * @param individualBoxesInInvalidPositions
+	 *            Boxes around texts that would be deleted where they are, which are drawn in red.
 	 */
-	public void setTextBoxesToDraw(RotatedRectangle groupBox, List<RotatedRectangle> individualBoxes)
+	public void setTextBoxesToDraw(RotatedRectangle groupBox, boolean isGroupBoxInAValidPosition, List<RotatedRectangle> individualBoxes,
+			List<RotatedRectangle> individualBoxesInInvalidPositions)
 	{
 		this.textBoxBounds = groupBox;
+		this.isTextBoxInAValidPosition = isGroupBoxInAValidPosition;
 		this.selectedTextBoxes = new ArrayList<>(individualBoxes);
+		this.selectedTextBoxesInInvalidPositions = new ArrayList<>(individualBoxesInInvalidPositions);
 	}
 
 	public void setSelectionCycleCandidateAreas(List<RotatedRectangle> areas)
@@ -869,6 +882,14 @@ public class MapEditingPanel extends UnscaledImagePanel
 				g2.draw(AwtFactory.toAwtArea(box));
 			}
 		}
+		if (!selectedTextBoxesInInvalidPositions.isEmpty())
+		{
+			g.setColor(getInvalidPositionColor());
+			for (RotatedRectangle box : selectedTextBoxesInInvalidPositions)
+			{
+				g2.draw(AwtFactory.toAwtArea(box));
+			}
+		}
 
 		if (textBoxBounds != null)
 		{
@@ -974,7 +995,9 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 		if (showEditBox && !isEditingSingleHighlightedIcon())
 		{
-			g.drawRect(editBounds.x, editBounds.y, editBounds.width, editBounds.height);
+			// Drawn as an Area, like icon highlights, because under the zoom transform drawRect can land a pixel away from an Area of the
+			// same rectangle, which would make the box visibly change shape when a highlight replaces it.
+			g.draw(new Area(editBounds));
 		}
 
 		if (!isIconToEditInAValidPosition)
@@ -1083,7 +1106,9 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 	private void drawTextBox(Graphics2D g2)
 	{
-		g2.setColor(highlightEditColor);
+		g2.setColor(isTextBoxInAValidPosition ? highlightEditColor : getInvalidPositionColor());
+		BufferedImage rotateIcon = isTextBoxInAValidPosition ? rotateIconScaled : redRotateIconScaled;
+		BufferedImage moveIcon = isTextBoxInAValidPosition ? moveIconScaledSmall : redMoveIconScaledSmall;
 		AffineTransform originalTransformCopy = g2.getTransform();
 
 		int padding = (int) (9 * resolution);
@@ -1094,19 +1119,19 @@ public class MapEditingPanel extends UnscaledImagePanel
 		{
 			int x = (int) ((textBoxBounds.x) + textBoxBounds.width + padding);
 
-			int y = (int) (textBoxBounds.y + (textBoxBounds.height / 2)) - (rotateIconScaled.getHeight() / 2);
+			int y = (int) (textBoxBounds.y + (textBoxBounds.height / 2)) - (rotateIcon.getHeight() / 2);
 
-			g2.drawImage(rotateIconScaled, x, y, null);
-			rotateToolArea = new Area(new Ellipse2D.Double(x, y, rotateIconScaled.getWidth(), rotateIconScaled.getHeight()));
+			g2.drawImage(rotateIcon, x, y, null);
+			rotateToolArea = new Area(new Ellipse2D.Double(x, y, rotateIcon.getWidth(), rotateIcon.getHeight()));
 			rotateToolArea.transform(g2.getTransform());
 		}
 
 		// Place the image for the move tool.
 		{
-			int x = (int) (textBoxBounds.x) + (int) (Math.round(textBoxBounds.width / 2.0)) - (int) (Math.round(moveIconScaledSmall.getWidth() / 2.0));
-			int y = (int) (textBoxBounds.y) - (moveIconScaledSmall.getHeight()) - padding;
-			g2.drawImage(moveIconScaledSmall, x, y, null);
-			moveToolArea = new Area(new Ellipse2D.Double(x, y, moveIconScaledSmall.getWidth(), moveIconScaledSmall.getHeight()));
+			int x = (int) (textBoxBounds.x) + (int) (Math.round(textBoxBounds.width / 2.0)) - (int) (Math.round(moveIcon.getWidth() / 2.0));
+			int y = (int) (textBoxBounds.y) - (moveIcon.getHeight()) - padding;
+			g2.drawImage(moveIcon, x, y, null);
+			moveToolArea = new Area(new Ellipse2D.Double(x, y, moveIcon.getWidth(), moveIcon.getHeight()));
 			moveToolArea.transform(g2.getTransform());
 		}
 
@@ -1614,44 +1639,39 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 			// Determines the size at which the rotation and move tool icons appear.
 
-			BufferedImage rotateIcon = AwtBridge.toBufferedImage(Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "rotate text.png").toString()));
-			rotateIconScaled = AwtBridge.toBufferedImage(
-					ImageHelper.getInstance().scaleByWidth(AwtBridge.fromBufferedImage(rotateIcon), (int) (rotateIcon.getWidth() * resolution * smallIconScale), Method.ULTRA_QUALITY));
+			try (Image rotateIcon = Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "rotate text.png").toString());
+					Image rotateIconScaledWrapped = ImageHelper.getInstance().scaleByWidth(rotateIcon, (int) (rotateIcon.getWidth() * resolution * smallIconScale), Method.ULTRA_QUALITY))
+			{
+				rotateIconScaled = AwtBridge.toBufferedImage(rotateIconScaledWrapped);
+				redRotateIconScaled = createInvalidPositionCopy(rotateIconScaledWrapped);
+			}
 
 			try (Image moveIcon = Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "move text.png").toString());
 					Image moveIconScaledWrapped = ImageHelper.getInstance().scaleByWidth(moveIcon, (int) (moveIcon.getWidth() * resolution * smallIconScale), Method.ULTRA_QUALITY))
 			{
 				moveIconScaledSmall = AwtBridge.toBufferedImage(moveIconScaledWrapped);
-				redMoveIconScaledSmall = AwtBridge
-						.toBufferedImage(ImageHelper.getInstance().copyAlphaTo(ImageHelper.getInstance().colorize(ImageHelper.getInstance().convertToGrayscale(moveIconScaledWrapped),
-								AwtBridge.fromAwtColor(getInvalidPositionColor()), ColorizeAlgorithm.algorithm2), moveIconScaledWrapped));
+				redMoveIconScaledSmall = createInvalidPositionCopy(moveIconScaledWrapped);
 			}
 
 			try (Image scaleIcon = Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "scale.png").toString());
 					Image scaleIconScaledWrapped = ImageHelper.getInstance().scaleByWidth(scaleIcon, (int) (scaleIcon.getWidth() * resolution * smallIconScale), Method.ULTRA_QUALITY))
 			{
 				scaleIconScaledSmall = AwtBridge.toBufferedImage(scaleIconScaledWrapped);
-				redScaleIconScaledSmall = AwtBridge
-						.toBufferedImage(ImageHelper.getInstance().copyAlphaTo(ImageHelper.getInstance().colorize(ImageHelper.getInstance().convertToGrayscale(scaleIconScaledWrapped),
-								AwtBridge.fromAwtColor(getInvalidPositionColor()), ColorizeAlgorithm.algorithm2), scaleIconScaledWrapped));
+				redScaleIconScaledSmall = createInvalidPositionCopy(scaleIconScaledWrapped);
 			}
 
 			try (Image moveIcon = Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "move text.png").toString());
 					Image moveIconScaledWrapped = ImageHelper.getInstance().scaleByWidth(moveIcon, (int) (moveIcon.getWidth() * resolution * mediumIconScale), Method.ULTRA_QUALITY))
 			{
 				moveIconScaledMedium = AwtBridge.toBufferedImage(moveIconScaledWrapped);
-				redMoveIconScaledMedium = AwtBridge
-						.toBufferedImage(ImageHelper.getInstance().copyAlphaTo(ImageHelper.getInstance().colorize(ImageHelper.getInstance().convertToGrayscale(moveIconScaledWrapped),
-								AwtBridge.fromAwtColor(getInvalidPositionColor()), ColorizeAlgorithm.algorithm2), moveIconScaledWrapped));
+				redMoveIconScaledMedium = createInvalidPositionCopy(moveIconScaledWrapped);
 			}
 
 			try (Image scaleIcon = Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "scale.png").toString());
 					Image scaleIconScaledWrapped = ImageHelper.getInstance().scaleByWidth(scaleIcon, (int) (scaleIcon.getWidth() * resolution * mediumIconScale), Method.ULTRA_QUALITY))
 			{
 				scaleIconScaledMedium = AwtBridge.toBufferedImage(scaleIconScaledWrapped);
-				redScaleIconScaledMedium = AwtBridge
-						.toBufferedImage(ImageHelper.getInstance().copyAlphaTo(ImageHelper.getInstance().colorize(ImageHelper.getInstance().convertToGrayscale(scaleIconScaledWrapped),
-								AwtBridge.fromAwtColor(getInvalidPositionColor()), ColorizeAlgorithm.algorithm2), scaleIconScaledWrapped));
+				redScaleIconScaledMedium = createInvalidPositionCopy(scaleIconScaledWrapped);
 			}
 
 			try (Image moveIcon = Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "move text.png").toString());
@@ -1666,6 +1686,15 @@ public class MapEditingPanel extends UnscaledImagePanel
 				scaleIconScaledLarge = AwtBridge.toBufferedImage(scaleIconScaledWrapped);
 			}
 		}
+	}
+
+	/**
+	 * A copy of an edit tool's image in the color that shows an invalid position.
+	 */
+	private BufferedImage createInvalidPositionCopy(Image image)
+	{
+		return AwtBridge.toBufferedImage(ImageHelper.getInstance().copyAlphaTo(
+				ImageHelper.getInstance().colorize(ImageHelper.getInstance().convertToGrayscale(image), AwtBridge.fromAwtColor(getInvalidPositionColor()), ColorizeAlgorithm.algorithm2), image));
 	}
 
 	public void setBorderPadding(int borderPadding)
