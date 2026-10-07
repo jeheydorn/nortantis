@@ -443,14 +443,6 @@ public class Assets
 		return artPackPath == null ? null : Paths.get(artPackPath.toString(), themesFolderName);
 	}
 
-	/**
-	 * The folder themes the user installed themselves are in.
-	 */
-	public static Path getUserThemesFolder()
-	{
-		return Paths.get(OSHelper.getAppDataPath().toString(), themesFolderName);
-	}
-
 	public static final String themesFolderName = "themes";
 
 	public static List<String> listFileNames(String path, Set<String> allowedExtensions)

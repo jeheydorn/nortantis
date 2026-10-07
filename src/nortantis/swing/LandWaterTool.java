@@ -5224,14 +5224,7 @@ public class LandWaterTool extends EditorTool
 		// because it feels weird to me to have them change with undo/redo since they don't directly affect the map.
 		if (!isUndoRedoOrAutomaticChange)
 		{
-			baseColorPanel.setBackground(AwtBridge.toAwtColor(settings.regionBaseColor));
-			hueSlider.setValue(settings.hueRange);
-			saturationSlider.setValue(settings.saturationRange);
-			brightnessSlider.setValue(settings.brightnessRange);
-
-			// I'm setting this color here because I only want it to change when you create new settings or load settings from a file,
-			// not on undo/redo or in response to the ThemePanel changing.
-			colorDisplay.setBackground(AwtBridge.toAwtColor(settings.regionBaseColor));
+			loadRegionColorSettings(settings);
 		}
 
 		// Clear any selection
@@ -5239,6 +5232,22 @@ public class LandWaterTool extends EditorTool
 		mapEditingPanel.clearSelectedCenters();
 
 		showOrHideBrushOptions();
+	}
+
+	/**
+	 * Loads the region base color and the ranges for generating region colors, which {@link #loadSettingsIntoGUI} leaves alone on undo, redo,
+	 * and automatic changes.
+	 */
+	void loadRegionColorSettings(MapSettings settings)
+	{
+		baseColorPanel.setBackground(AwtBridge.toAwtColor(settings.regionBaseColor));
+		hueSlider.setValue(settings.hueRange);
+		saturationSlider.setValue(settings.saturationRange);
+		brightnessSlider.setValue(settings.brightnessRange);
+
+		// I'm setting this color here because I only want it to change when you create new settings or load settings from a file,
+		// not on undo/redo or in response to the ThemePanel changing.
+		colorDisplay.setBackground(AwtBridge.toAwtColor(settings.regionBaseColor));
 	}
 
 	@Override

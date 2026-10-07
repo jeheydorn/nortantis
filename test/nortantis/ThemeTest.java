@@ -1,5 +1,6 @@
 package nortantis;
 
+import nortantis.editor.RegionEdit;
 import nortantis.platform.Color;
 import nortantis.platform.PlatformFactory;
 import nortantis.platform.awt.AwtFactory;
@@ -7,7 +8,6 @@ import nortantis.util.Assets;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Random;
@@ -31,8 +31,6 @@ public class ThemeTest
 		gen.artPack = "Some Art Pack";
 		gen.oceanHueVariation = 3;
 		gen.landBrightnessVariation = 7;
-		gen.baseLandColor = Color.create(1, 2, 3, 4);
-		gen.baseGrungeWidth = 123;
 		gen.allowedBorderNames.add("dashes");
 		gen.allowedLineStyles.add(MapSettings.LineStyle.Splines);
 		gen.oceanShadingWithWavesProbability = 0.25;
@@ -48,10 +46,7 @@ public class ThemeTest
 	{
 		List<ThemeCatalog.Entry> themes = ThemeCatalog.listThemesForArtPack(Assets.installedArtPack, null);
 		assertFalse(themes.isEmpty(), "New random maps need a theme in the installed art pack to fall back to.");
-		MapSettings theme = ThemeCatalog.load(themes.get(0));
-		assertNotNull(theme.themeGeneration);
-		assertNotNull(theme.themeGeneration.baseLandColor);
-		assertTrue(theme.edits.text.isEmpty());
+		ThemeCatalog.load(themes.get(0));
 
 		MapSettings settings = SettingsGenerator.generate(new Random(5), Assets.installedArtPack, null);
 		assertEquals(MapSettings.currentVersion, settings.version);
@@ -61,28 +56,48 @@ public class ThemeTest
 	}
 
 	@Test
-	public void randomizingAThemeRepeatedlyStaysNearItsBaseValues()
+	public void randomizingAThemeRepeatedlyStaysNearTheBase()
 	{
-		MapSettings settings = SettingsGenerator.generate(new Random(7), Assets.installedArtPack, null);
+		MapSettings settings = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
+		settings.themeGeneration = ThemeGenerationSettings.createDefault();
+		MapSettings base = settings.deepCopy();
 		ThemeGenerationSettings gen = settings.themeGeneration;
 		Random rand = new Random(11);
 		for (int i = 0; i < 50; i++)
 		{
-			SettingsGenerator.randomizeTheme(settings, rand);
+			SettingsGenerator.randomizeTheme(settings, base, settings.artPack, rand);
 		}
-		assertTrue(Math.abs(settings.grungeWidth - gen.baseGrungeWidth) <= gen.grungeWidthVariation, "Re-rolling must vary around the base, not drift from it.");
-		assertTrue(Math.abs(settings.coastShadingLevel - gen.baseCoastShadingLevel) <= gen.coastShadingLevelVariation);
+		assertTrue(Math.abs(settings.grungeWidth - base.grungeWidth) <= gen.grungeWidthVariation, "Randomizing must vary around the base, not drift from it.");
+		assertTrue(Math.abs(settings.coastShadingLevel - base.coastShadingLevel) <= gen.coastShadingLevelVariation);
 	}
 
 	@Test
-	public void randomizingAMapWithNoRulesRecordsItsLookFirst()
+	public void randomizingGeneratesRegionColorsAroundTheRegionBaseColor()
 	{
 		MapSettings settings = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
-		settings.themeGeneration = null;
-		int grungeWidth = settings.grungeWidth;
-		SettingsGenerator.randomizeTheme(settings, new Random(3));
-		assertNotNull(settings.themeGeneration);
-		assertEquals(grungeWidth, settings.themeGeneration.baseGrungeWidth);
+		settings.drawRegionColors = true;
+		settings.regionBaseColor = Color.create(180, 140, 90);
+		settings.hueRange = 30;
+		settings.saturationRange = 20;
+		settings.brightnessRange = 20;
+		settings.edits.regionEdits.put(1, new RegionEdit(1, Color.create(10, 10, 200)));
+		settings.edits.regionEdits.put(2, new RegionEdit(2, Color.create(10, 200, 10)));
+		settings.themeGeneration = ThemeGenerationSettings.createDefault();
+		MapSettings base = settings.deepCopy();
+
+		SettingsGenerator.randomizeTheme(settings, base, settings.artPack, new Random(5));
+
+		assertEquals(base.regionBaseColor, settings.regionBaseColor);
+		float baseHue = base.regionBaseColor.getHSB()[0] * 360f;
+		for (int regionId : new int[] { 1, 2 })
+		{
+			Color after = settings.edits.regionEdits.get(regionId).color;
+			assertNotEquals(base.edits.regionEdits.get(regionId).color, after, "Region colors are kept in the edits, so they must be generated again.");
+			float hueDifference = Math.abs(after.getHSB()[0] * 360f - baseHue);
+			hueDifference = Math.min(hueDifference, 360f - hueDifference);
+			assertTrue(hueDifference <= settings.hueRange / 2f + 1f, "A region's hue stays within the hue range around the base: " + hueDifference);
+		}
+		assertEquals(Color.create(10, 10, 200), base.edits.regionEdits.get(1).color, "The base is not changed.");
 	}
 
 	@Test
@@ -93,26 +108,25 @@ public class ThemeTest
 			MapSettings settings = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
 			settings.drawRegionColors = drawRegionColors;
 			settings.themeGeneration = ThemeGenerationSettings.createDefault();
-			settings.themeGeneration.setBaseValuesFrom(settings);
 			settings.themeGeneration.oceanHueVariation = 90;
 			settings.themeGeneration.landHueVariation = 90;
 			MapSettings before = settings.deepCopyExceptEdits();
 
-			SettingsGenerator.applyThemeRandomness(settings, settings.themeGeneration, new Random(11));
+			SettingsGenerator.applyThemeRandomness(settings, before, settings.themeGeneration, settings.artPack, new Random(11));
 
 			assertNotEquals(before.oceanColor, settings.oceanColor);
 			assertNotEquals(before.oceanWavesColor, settings.oceanWavesColor, "Ocean waves move with the ocean.");
 			assertNotEquals(before.oceanShadingColor, settings.oceanShadingColor, "Ocean shading moves with the ocean.");
-			assertNotEquals(before.borderColor, settings.borderColor, "The border moves with the land or regions.");
+			assertEquals(before.regionBaseColor, settings.regionBaseColor, "The region base color is the theme's.");
 			if (drawRegionColors)
 			{
-				assertNotEquals(before.regionBaseColor, settings.regionBaseColor);
 				assertEquals(before.landColor, settings.landColor, "With region colors, the land color is the theme's.");
+				assertEquals(before.borderColor, settings.borderColor, "With region colors, the border color is the theme's.");
 			}
 			else
 			{
 				assertNotEquals(before.landColor, settings.landColor);
-				assertEquals(before.regionBaseColor, settings.regionBaseColor, "Without region colors, the region base color is the theme's.");
+				assertNotEquals(before.borderColor, settings.borderColor, "The border moves with the land.");
 			}
 			assertEquals(drawRegionColors, settings.drawRegionColors, "The land coloring method is the theme's.");
 			assertEquals(before.riverColor, settings.riverColor);
@@ -126,7 +140,6 @@ public class ThemeTest
 	{
 		MapSettings settings = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
 		settings.themeGeneration = ThemeGenerationSettings.createDefault();
-		settings.themeGeneration.setBaseValuesFrom(settings);
 		int textureCount = Assets.listBackgroundTexturesForArtPack(settings.artPack, settings.customImagesPath).size();
 		assertTrue(textureCount > 0);
 
@@ -135,7 +148,7 @@ public class ThemeTest
 		Random rand = new Random(13);
 		for (int i = 0; i < tries; i++)
 		{
-			SettingsGenerator.applyThemeRandomness(settings, settings.themeGeneration, rand);
+			SettingsGenerator.applyThemeRandomness(settings, settings, settings.themeGeneration, settings.artPack, rand);
 			assertNotEquals(settings.generateBackground, settings.generateBackgroundFromTexture);
 			fractalCount += settings.generateBackground ? 1 : 0;
 		}
@@ -145,7 +158,7 @@ public class ThemeTest
 		settings.themeGeneration.allowFractalBackground = false;
 		for (int i = 0; i < 50; i++)
 		{
-			SettingsGenerator.applyThemeRandomness(settings, settings.themeGeneration, rand);
+			SettingsGenerator.applyThemeRandomness(settings, settings, settings.themeGeneration, settings.artPack, rand);
 			assertFalse(settings.generateBackground);
 		}
 	}
@@ -161,57 +174,29 @@ public class ThemeTest
 	}
 
 	@Test
-	public void themeFilesAreWrittenAndReadBack() throws Exception
+	public void copyingAThemeKeepsTheMapsOwnText()
 	{
-		MapSettings settings = new MapSettings("unit test files/map settings/allTypesOfEdits.nort");
-		settings.themeGeneration = ThemeGenerationSettings.createDefault();
-		settings.themeGeneration.setBaseValuesFrom(settings);
-		settings.themeExportPath = "somewhere";
-		settings.getDefaultTextLayout(TextType.Region).spacing = 9;
+		MapSettings source = new MapSettings("unit test files/map settings/allTypesOfEdits.nort");
+		source.themeGeneration = ThemeGenerationSettings.createDefault();
+		source.themeGeneration.landHueVariation = 3;
+		source.getDefaultTextLayout(TextType.Region).spacing = 9;
 
-		Path temp = Files.createTempFile("theme", MapSettings.themeFileExtensionWithDot);
-		try
-		{
-			settings.writeThemeToFile(temp.toString());
-			MapSettings theme = MapSettings.readThemeFile(temp.toString());
-			assertTrue(theme.edits.text.isEmpty(), "A theme has no edits.");
-			assertNull(theme.themeExportPath, "A theme must not carry a path from the author's machine.");
-
-			MapSettings target = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
-			target.copyThemeFrom(theme);
-			assertEquals(settings.landColor, target.landColor);
-			assertEquals(settings.coastShadingAlpha, target.coastShadingAlpha);
-			assertEquals(settings.textStyleDefaults, target.textStyleDefaults);
-			assertEquals(settings.textLayoutDefaults, target.textLayoutDefaults);
-			assertEquals(settings.themeGeneration, target.themeGeneration);
-			assertNotEquals(settings.edits.text.size(), target.edits.text.size(), "Applying a theme keeps the map's own text.");
-		}
-		finally
-		{
-			Files.deleteIfExists(temp);
-		}
+		MapSettings target = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
+		int targetTextCount = target.edits.text.size();
+		target.copyThemeFrom(source);
+		assertEquals(source.landColor, target.landColor);
+		assertEquals(source.coastShadingAlpha, target.coastShadingAlpha);
+		assertEquals(source.textStyleDefaults, target.textStyleDefaults);
+		assertEquals(source.textLayoutDefaults, target.textLayoutDefaults);
+		assertEquals(source.themeGeneration, target.themeGeneration);
+		assertEquals(targetTextCount, target.edits.text.size(), "Copying a theme keeps the map's own text.");
 	}
 
 	@Test
-	public void themeFilesDropABackgroundTextureFilePath() throws Exception
+	public void artPackThemesAreMapFiles()
 	{
-		MapSettings settings = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
-		settings.backgroundTextureSource = TextureSource.File;
-		settings.backgroundTextureImage = "C:/somewhere/texture.png";
-
-		Path temp = Files.createTempFile("theme", MapSettings.themeFileExtensionWithDot);
-		try
-		{
-			settings.writeThemeToFile(temp.toString());
-			MapSettings theme = MapSettings.readThemeFile(temp.toString());
-			assertNull(theme.backgroundTextureImage, "A theme must not carry a path from the author's machine.");
-			assertEquals(TextureSource.Assets, theme.backgroundTextureSource);
-			assertNotNull(theme.backgroundTextureResource);
-		}
-		finally
-		{
-			Files.deleteIfExists(temp);
-		}
+		assertTrue(ThemeCatalog.isThemeFile(Path.of("themes", "Parchment" + MapSettings.fileExtensionWithDot)));
+		assertFalse(ThemeCatalog.isThemeFile(Path.of("themes", "Parchment.png")));
 	}
 
 	@Test

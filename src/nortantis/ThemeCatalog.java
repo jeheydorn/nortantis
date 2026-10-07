@@ -11,35 +11,25 @@ import java.util.Objects;
 import java.util.Random;
 
 /**
- * The themes the user has: themes inside art packs, including the installed art pack, and themes the user installed in their own themes
- * folder. The lists are read from disk each time they are asked for, since a theme can be installed by another instance of Nortantis while
- * this one is running.
+ * The themes in art packs, including the installed art pack. A theme is a map (.nort) file in an art pack's themes folder, with or without
+ * edits, whose look new random maps are made from. The lists are read from disk each time they are asked for, since an art pack can be
+ * added while Nortantis is running.
  */
 public class ThemeCatalog
 {
-	/**
-	 * Where a theme comes from.
-	 */
-	public enum Source
-	{
-		ArtPack, User
-	}
-
 	/**
 	 * A theme that can be loaded.
 	 */
 	public static final class Entry
 	{
-		public final Source source;
-		/** The art pack the theme is inside, or null if it isn't in one. */
+		/** The art pack the theme is inside. */
 		public final String artPack;
-		/** The theme file. */
+		/** The theme's map file. */
 		public final Path path;
 		public final String name;
 
-		private Entry(Source source, String artPack, Path path, String name)
+		private Entry(String artPack, Path path, String name)
 		{
-			this.source = source;
 			this.artPack = artPack;
 			this.path = path;
 			this.name = name;
@@ -62,13 +52,13 @@ public class ThemeCatalog
 			{
 				return false;
 			}
-			return source == other.source && Objects.equals(artPack, other.artPack) && Objects.equals(path, other.path);
+			return Objects.equals(artPack, other.artPack) && Objects.equals(path, other.path);
 		}
 
 		@Override
 		public int hashCode()
 		{
-			return Objects.hash(source, artPack, path);
+			return Objects.hash(artPack, path);
 		}
 	}
 
@@ -77,7 +67,7 @@ public class ThemeCatalog
 	 */
 	public static boolean isFromInstalledArtPack(Entry entry)
 	{
-		return entry != null && entry.source == Source.ArtPack && Assets.installedArtPack.equals(entry.artPack);
+		return entry != null && Assets.installedArtPack.equals(entry.artPack);
 	}
 
 	public static List<Entry> listThemesForArtPack(String artPack, String customImagesFolder)
@@ -92,26 +82,7 @@ public class ThemeCatalog
 		{
 			if (isThemeFile(path))
 			{
-				result.add(new Entry(Source.ArtPack, artPack, path, FilenameUtils.getBaseName(path.toString())));
-			}
-		}
-		result.sort((first, second) -> first.name.compareToIgnoreCase(second.name));
-		return result;
-	}
-
-	public static List<Entry> listUserThemes()
-	{
-		List<Entry> result = new ArrayList<>();
-		Path folder = Assets.getUserThemesFolder();
-		if (!folder.toFile().isDirectory())
-		{
-			return result;
-		}
-		for (Path path : Assets.listFiles(folder.toString(), null, null, null))
-		{
-			if (isThemeFile(path))
-			{
-				result.add(new Entry(Source.User, null, path, FilenameUtils.getBaseName(path.toString())));
+				result.add(new Entry(artPack, path, FilenameUtils.getBaseName(path.toString())));
 			}
 		}
 		result.sort((first, second) -> first.name.compareToIgnoreCase(second.name));
@@ -131,36 +102,22 @@ public class ThemeCatalog
 		return result;
 	}
 
-	/**
-	 * Every theme the user has: art pack themes grouped by art pack, then the user's own themes.
-	 */
-	public static List<Entry> listAllThemes(String customImagesFolder)
-	{
-		List<Entry> result = new ArrayList<>();
-		result.addAll(listArtPackThemes(customImagesFolder));
-		result.addAll(listUserThemes());
-		return result;
-	}
-
 	public static boolean isThemeFile(Path path)
 	{
-		return path != null && FilenameUtils.getExtension(path.toString()).equalsIgnoreCase(MapSettings.themeFileExtension);
+		return path != null && FilenameUtils.getExtension(path.toString()).equalsIgnoreCase(MapSettings.fileExtension);
 	}
 
 	/**
 	 * Loads a theme.
-	 *
-	 * @throws MapSettings.ThemeFromNewerVersionException
-	 *             If the theme was made in a newer version of Nortantis.
 	 */
 	public static MapSettings load(Entry entry)
 	{
-		return MapSettings.readThemeFile(entry.path.toString());
+		return new MapSettings(entry.path.toString());
 	}
 
 	/**
 	 * Chooses the theme "Random" means: one of the given art pack's themes when it has any, which were designed alongside its art, and
-	 * otherwise one of the installed art pack's themes. The user's own themes are only used when chosen.
+	 * otherwise one of the installed art pack's themes.
 	 *
 	 * @throws IllegalStateException
 	 *             If neither art pack has a theme.
@@ -181,7 +138,7 @@ public class ThemeCatalog
 
 	/**
 	 * The art pack generating a map from the given theme should use: the theme's own art pack if it is installed, otherwise the art pack the
-	 * theme file is inside, otherwise null.
+	 * theme file is inside.
 	 */
 	public static String resolveArtPack(Entry entry, MapSettings theme, String customImagesFolder)
 	{
@@ -189,10 +146,6 @@ public class ThemeCatalog
 		{
 			return theme.themeGeneration.artPack;
 		}
-		if (entry != null && entry.artPack != null)
-		{
-			return entry.artPack;
-		}
-		return null;
+		return entry == null ? null : entry.artPack;
 	}
 }

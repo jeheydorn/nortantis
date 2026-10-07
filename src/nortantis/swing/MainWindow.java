@@ -10,9 +10,10 @@ import nortantis.ImageCache;
 import nortantis.MapFonts;
 import nortantis.MapSettings;
 import nortantis.MapText;
+import nortantis.SettingsGenerator;
 import nortantis.TextStyle;
 import nortantis.TextType;
-import nortantis.ThemeCatalog;
+import nortantis.TextureSource;
 import nortantis.ThemeGenerationSettings;
 import nortantis.editor.*;
 import nortantis.geom.IntDimension;
@@ -56,6 +57,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.locks.Lock;
+import java.util.function.Consumer;
 
 @SuppressWarnings("serial")
 public class MainWindow extends JFrame implements ILoggerTarget
@@ -144,12 +146,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	 */
 	private static volatile MainWindow instance;
 	private static volatile String pendingFileToOpenFromAppleEvent;
-	/**
-	 * Whether the editor window has started being created, and whether it should not be, because Nortantis was launched only to install a
-	 * theme. Both are guarded by the MainWindow class's lock.
-	 */
-	private static boolean hasStartedCreatingMainWindow;
-	private static boolean isLaunchedOnlyToInstallTheme;
 	public MapEdits edits;
 
 	JScrollPane mapEditingScrollPane;
@@ -213,12 +209,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	ExportAction defaultHeightmapExportAction;
 	String imageExportPath;
 	/**
-	 * Where the open map's theme was last exported.
-	 */
-	String themeExportPath;
-	/**
-	 * How new random maps vary the open map's theme. Kept here rather than read from the saved settings, since exporting the theme changes
-	 * it.
+	 * How Randomize Theme varies the open map's look. No panel shows it, so it is kept here for building the settings from the GUI.
 	 */
 	ThemeGenerationSettings themeGeneration;
 	double heightmapExportResolution;
@@ -227,8 +218,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private JMenuItem saveAsMenItem;
 	private JMenuItem exportMapAsImageMenuItem;
 	private JMenuItem exportHeightmapMenuItem;
-	private JMenuItem applyThemeMenuItem;
-	private JMenuItem exportThemeMenuItem;
+	private JMenuItem saveCopyWithoutEditsMenuItem;
+	private JMenuItem copyThemeFromMapMenuItem;
+	private JMenuItem randomizeThemeMenuItem;
 	private JMenu editMenu;
 	private JMenu viewMenu;
 	private JMenu recentSettingsMenuItem;
@@ -287,7 +279,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		// no map, and is restored if opening the command-line map is cancelled or fails.
 		enableOrDisableFieldsThatRequireMap(false, null, false);
 
-		// Theme files (.nortTheme) don't end with the map extension, so they are never opened as maps here.
 		boolean hasCommandLineMap = fileToOpen != null && !fileToOpen.isEmpty() && fileToOpen.endsWith(MapSettings.fileExtensionWithDot) && new File(fileToOpen).exists();
 		if (hasCommandLineMap)
 		{
@@ -476,8 +467,12 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		saveAsMenItem.setEnabled(enable);
 		exportMapAsImageMenuItem.setEnabled(enable);
 		exportHeightmapMenuItem.setEnabled(enable);
-		applyThemeMenuItem.setEnabled(enable);
-		exportThemeMenuItem.setEnabled(enable);
+		if (saveCopyWithoutEditsMenuItem != null)
+		{
+			saveCopyWithoutEditsMenuItem.setEnabled(enable);
+		}
+		copyThemeFromMapMenuItem.setEnabled(enable);
+		randomizeThemeMenuItem.setEnabled(enable);
 		mapInfoMenuItem.setEnabled(enable);
 
 		if (!enable || undoer == null)
@@ -1510,6 +1505,14 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 
+		if (DebugFlags.showSaveCopyWithoutEdits())
+		{
+			saveCopyWithoutEditsMenuItem = new JMenuItem(Translation.get("menu.file.saveCopyWithoutEdits"));
+			saveCopyWithoutEditsMenuItem.setEnabled(false);
+			fileMenu.add(saveCopyWithoutEditsMenuItem);
+			saveCopyWithoutEditsMenuItem.addActionListener(e -> saveCopyWithoutEdits());
+		}
+
 		fileMenu.addSeparator();
 
 		exportMapAsImageMenuItem = new JMenuItem(Translation.get("menu.file.exportAsImage"));
@@ -1534,19 +1537,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 
-		JMenu fileThemeMenu = new JMenu(Translation.get("menu.file.theme"));
-		fileMenu.add(fileThemeMenu);
-		applyThemeMenuItem = new JMenuItem(Translation.get("menu.file.theme.apply"));
-		applyThemeMenuItem.setEnabled(false);
-		fileThemeMenu.add(applyThemeMenuItem);
-		applyThemeMenuItem.addActionListener(e -> showApplyThemeDialog());
-		exportThemeMenuItem = new JMenuItem(Translation.get("menu.file.theme.export"));
-		exportThemeMenuItem.setEnabled(false);
-		fileThemeMenu.add(exportThemeMenuItem);
-		exportThemeMenuItem.addActionListener(e -> showExportThemeDialog());
-		JMenuItem openThemesFolderMenuItem = new JMenuItem(Translation.get("menu.file.theme.openFolder"));
-		fileThemeMenu.add(openThemesFolderMenuItem);
-		openThemesFolderMenuItem.addActionListener(e -> handleOpenThemesFolder());
+		copyThemeFromMapMenuItem = new JMenuItem(Translation.get("menu.file.copyThemeFromMap"));
+		copyThemeFromMapMenuItem.setEnabled(false);
+		fileMenu.add(copyThemeFromMapMenuItem);
+		copyThemeFromMapMenuItem.addActionListener(e -> handleCopyThemeFromMap());
 
 		fileMenu.addSeparator();
 
@@ -1651,6 +1645,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 		clearEntireMapButton.setEnabled(false);
+
+		randomizeThemeMenuItem = new JMenuItem(Translation.get("menu.edit.randomizeTheme"));
+		randomizeThemeMenuItem.setEnabled(false);
+		editMenu.add(randomizeThemeMenuItem);
+		randomizeThemeMenuItem.addActionListener(e -> showRandomizeThemeDialog());
 
 		enableTextMenuItem = new JCheckBoxMenuItem(Translation.get("menu.edit.enableText"));
 		enableTextMenuItem.setToolTipText(Translation.get("menu.edit.enableText.tooltip"));
@@ -2057,14 +2056,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private void handleOpenArtPacksFolder()
 	{
 		openFolderInFileExplorer(Assets.getArtPacksFolder());
-	}
-
-	/**
-	 * Opens the folder themes the user installed are in, where they can be removed.
-	 */
-	private void handleOpenThemesFolder()
-	{
-		openFolderInFileExplorer(Assets.getUserThemesFolder());
 	}
 
 	/**
@@ -3444,7 +3435,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			// Clear previous export locations so that a new copy of a map doesn't export over the files from the older version.
 			settings.imageExportPath = null;
 			settings.heightmapExportPath = null;
-			settings.themeExportPath = null;
 		}
 
 		try
@@ -3466,7 +3456,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		{
 			imageExportPath = null;
 			heightmapExportPath = null;
-			themeExportPath = null;
 		}
 
 		updateFrameTitle(false, true);
@@ -3484,94 +3473,147 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	private boolean showUnsavedChangesSymbol = false;
 
-	private void showApplyThemeDialog()
-	{
-		if (lastSettingsLoadedOrSaved == null)
-		{
-			return;
-		}
-		ApplyThemeDialog dialog = new ApplyThemeDialog(this, customImagesPath, this::applyTheme);
-		dialog.setVisible(true);
-	}
-
-	private void showExportThemeDialog()
+	/**
+	 * Prompts for a file, then saves a copy of the open map there without its edits, leaving the settings a map is generated from. The open
+	 * map is not changed, and keeps saving where it did.
+	 */
+	private void saveCopyWithoutEdits()
 	{
 		MapSettings settings = getSettingsFromGUI(false);
 		if (settings == null)
 		{
 			return;
 		}
-		String mapName = openSettingsFilePath == null ? null : FilenameUtils.getBaseName(openSettingsFilePath.toString());
-		ThemeExportDialog dialog = new ThemeExportDialog(this, settings, mapName, (themeGenerationToKeep, exportPath) ->
+		JFileChooser fileChooser = createMapFileChooser();
+		if (fileChooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION)
 		{
-			themeGeneration = themeGenerationToKeep;
-			themeExportPath = exportPath;
-			handleChangeWithoutRedraw();
-		});
-		dialog.setVisible(true);
-	}
-
-	/**
-	 * Restyles the open map with a theme: everything describing how the map looks, the font, color, and background of every piece of text
-	 * and of the styles for new text, and the layouts for new text. Text sizes and the layout of existing text are kept.
-	 */
-	void applyTheme(ThemeCatalog.Entry entry)
-	{
-		MapSettings theme;
-		try
-		{
-			theme = ThemeCatalog.load(entry);
+			return;
 		}
-		catch (MapSettings.ThemeFromNewerVersionException e)
+		Path savePath = fileChooser.getSelectedFile().toPath().toAbsolutePath();
+		if (!savePath.getFileName().toString().endsWith(MapSettings.fileExtensionWithDot))
 		{
-			SwingHelper.showMessageDialog(this, Translation.get("theme.fromNewerVersion", e.themeVersion, MapSettings.currentVersion), Translation.get("theme.unableToLoad.title"),
+			savePath = Paths.get(savePath.toString() + MapSettings.fileExtensionWithDot);
+		}
+		if (openSettingsFilePath != null && savePath.equals(openSettingsFilePath.toAbsolutePath()))
+		{
+			SwingHelper.showMessageDialog(this, Translation.get("mainWindow.saveCopyWithoutEdits.sameFile"), Translation.get("mainWindow.unableToSaveSettings"),
 					JOptionPane.ERROR_MESSAGE);
 			return;
 		}
+
+		MapSettings copy = settings.deepCopyExceptEdits();
+		copy.edits = new MapEdits();
+		try
+		{
+			copy.writeToFile(savePath.toString());
+			Logger.println("Saved a copy without edits to " + savePath);
+		}
 		catch (Exception e)
 		{
-			Logger.printError("Unable to load the theme " + entry, e);
-			SwingHelper.showMessageDialog(this, Translation.get("theme.unableToLoad", e.getMessage()), Translation.get("theme.unableToLoad.title"), JOptionPane.ERROR_MESSAGE);
+			Logger.printError("Error while saving a copy without edits:", e);
+			SwingHelper.showMessageDialog(this, e.getMessage(), Translation.get("mainWindow.unableToSaveSettings"), JOptionPane.ERROR_MESSAGE);
+		}
+	}
+
+	/**
+	 * A file chooser for map files that starts in the open map's folder.
+	 */
+	private JFileChooser createMapFileChooser()
+	{
+		JFileChooser fileChooser = new JFileChooser();
+		if (openSettingsFilePath != null && openSettingsFilePath.getParent() != null)
+		{
+			fileChooser.setCurrentDirectory(openSettingsFilePath.getParent().toFile());
+		}
+		fileChooser.setFileFilter(new FileFilter()
+		{
+			@Override
+			public String getDescription()
+			{
+				return null;
+			}
+
+			@Override
+			public boolean accept(File f)
+			{
+				return f.isDirectory() || f.getName().toLowerCase().endsWith(MapSettings.fileExtensionWithDot);
+			}
+		});
+		return fileChooser;
+	}
+
+	/**
+	 * Prompts for a map, then restyles the open map with that map's theme.
+	 */
+	private void handleCopyThemeFromMap()
+	{
+		if (lastSettingsLoadedOrSaved == null)
+		{
+			return;
+		}
+		JFileChooser fileChooser = createMapFileChooser();
+		if (fileChooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION)
+		{
+			return;
+		}
+		String path = fileChooser.getSelectedFile().getAbsolutePath();
+		String mapName = FilenameUtils.getBaseName(path);
+
+		MapSettings source;
+		try
+		{
+			source = new MapSettings(path);
+		}
+		catch (Exception e)
+		{
+			Logger.printError("Unable to load the map to copy a theme from: " + path, e);
+			SwingHelper.showMessageDialog(this, Translation.get("copyTheme.unableToLoad", mapName, e.getMessage()), Translation.get("copyTheme.title"), JOptionPane.ERROR_MESSAGE);
 			return;
 		}
 
-		// A theme from an art pack comes with that art pack. One the user installed themselves may name art packs they don't have.
-		if (entry.source == ThemeCatalog.Source.User)
+		// Images from the custom art pack come from a map's custom images folder. A map without one takes the source's along with the theme.
+		String customImagesFolder = customImagesPath;
+		if (usesCustomImages(source) && !StringUtils.isEmpty(source.customImagesPath))
 		{
-			MapSettings.MissingArtPackInfo missingArtPacks = theme.findMissingArtPacks();
-			if (!missingArtPacks.isEmpty())
+			if (StringUtils.isEmpty(customImagesPath))
 			{
-				MissingArtPackDialog.Result response = MissingArtPackDialog.show(this, entry.name, missingArtPacks, customImagesPath);
-				if (response.cancelled)
-				{
-					return;
-				}
-				theme.applyMissingArtPackSubstitution(missingArtPacks.missingArtPacks, response.chosenArtPack);
+				customImagesFolder = source.customImagesPath;
 			}
-		}
-
-		MapFonts.MissingFontInfo fontProblems = MapFonts.findProblems(theme);
-		if (!fontProblems.isEmpty())
-		{
-			MissingFontDialog.Result response = MissingFontDialog.show(this, entry.name, fontProblems);
-			if (response.cancelled)
+			else if (!isSameFolder(customImagesPath, source.customImagesPath))
 			{
+				SwingHelper.showMessageDialog(this, Translation.get("copyTheme.differentCustomImagesFolder", mapName, FileHelper.replaceHomeFolderPlaceholder(source.customImagesPath),
+						FileHelper.replaceHomeFolderPlaceholder(customImagesPath)), Translation.get("copyTheme.title"), JOptionPane.ERROR_MESSAGE);
 				return;
 			}
-			MapFonts.applySubstitution(theme, response.replacements);
 		}
 
-		updater.doWhenMapIsNotDrawing(() ->
+		List<String> missing = findMissingThemeDependencies(source, customImagesFolder);
+		if (!missing.isEmpty())
 		{
-			toolsPanel.currentTool.onBeforeUndoRedo();
-			MapSettings settings = getSettingsFromGUI(false);
+			SwingHelper.showMessageDialog(this, Translation.get("copyTheme.missingDependencies", mapName) + "\n\n" + String.join("\n", missing), Translation.get("copyTheme.title"),
+					JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+
+		final String newCustomImagesFolder = customImagesFolder;
+		applyThemeChange(settings ->
+		{
+			if (!Objects.equals(newCustomImagesFolder, settings.customImagesPath))
+			{
+				settings.customImagesPath = newCustomImagesFolder;
+				toolsPanel.handleCustomImagesPathChanged(newCustomImagesFolder);
+			}
 			EnumMap<TextType, TextStyle> previousTextStyleDefaults = settings.copyTextStyleDefaults();
-			settings.copyThemeFrom(theme);
+			settings.copyThemeFrom(source);
+			if (settings.drawRegionColors)
+			{
+				SettingsGenerator.generateRegionColors(settings, new Random());
+			}
 
 			// Sizes are kept, so that text added afterward matches the size of the text already on the map.
 			for (TextType type : TextType.values())
 			{
-				TextStyle themeStyle = theme.getDefaultTextStyle(type);
+				TextStyle themeStyle = source.getDefaultTextStyle(type);
 				TextStyle previousStyle = previousTextStyleDefaults.get(type);
 				if (themeStyle != null && previousStyle != null)
 				{
@@ -3582,7 +3624,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 			for (MapText text : settings.edits.text)
 			{
-				TextStyle themeStyle = theme.getDefaultTextStyle(text.type);
+				TextStyle themeStyle = source.getDefaultTextStyle(text.type);
 				if (themeStyle != null)
 				{
 					text.style.font = text.style.withFamilyAndStyleOf(themeStyle.font);
@@ -3590,8 +3632,133 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					text.style.background = themeStyle.background.copy();
 				}
 			}
+		});
+	}
 
+	/**
+	 * Whether the given map's theme uses images or fonts from the custom art pack, which come from the map's custom images folder.
+	 */
+	private static boolean usesCustomImages(MapSettings source)
+	{
+		if (source.drawBorder && source.borderResource != null && Assets.customArtPack.equals(source.borderResource.artPack))
+		{
+			return true;
+		}
+		if (source.generateBackgroundFromTexture && source.backgroundTextureSource == TextureSource.Assets && source.backgroundTextureResource != null
+				&& Assets.customArtPack.equals(source.backgroundTextureResource.artPack))
+		{
+			return true;
+		}
+		MapSettings theme = source.deepCopyExceptEdits();
+		theme.edits = new MapEdits();
+		return MapFonts.getFamiliesUsed(theme).stream().anyMatch(family -> Assets.customArtPack.equals(source.getFontArtPack(family)));
+	}
+
+	private static boolean isSameFolder(String folder1, String folder2)
+	{
+		Path path1 = Paths.get(FileHelper.replaceHomeFolderPlaceholder(folder1)).toAbsolutePath().normalize();
+		Path path2 = Paths.get(FileHelper.replaceHomeFolderPlaceholder(folder2)).toAbsolutePath().normalize();
+		return path1.equals(path2);
+	}
+
+	/**
+	 * Describes each thing the given map's theme uses that the open map can't: borders and background textures that aren't in the open map's
+	 * art packs, a background texture file that doesn't exist, and fonts this machine doesn't have.
+	 *
+	 * @param customImagesFolder
+	 *            The custom images folder the open map will have.
+	 */
+	private List<String> findMissingThemeDependencies(MapSettings source, String customImagesFolder)
+	{
+		List<String> result = new ArrayList<>();
+		if (source.drawBorder && source.borderResource != null && (!Assets.artPackExists(source.borderResource.artPack, customImagesFolder)
+				|| Assets.listBorderTypesForArtPack(source.borderResource.artPack, customImagesFolder).stream().noneMatch(border -> border.name.equals(source.borderResource.name))))
+		{
+			result.add(Translation.get("copyTheme.missing.border", source.borderResource.name, source.borderResource.artPack));
+		}
+		if (source.generateBackgroundFromTexture)
+		{
+			if (source.backgroundTextureSource == TextureSource.Assets && source.backgroundTextureResource != null
+					&& (!Assets.artPackExists(source.backgroundTextureResource.artPack, customImagesFolder)
+							|| Assets.listBackgroundTexturesForArtPack(source.backgroundTextureResource.artPack, customImagesFolder).stream()
+									.noneMatch(texture -> texture.name.equals(source.backgroundTextureResource.name))))
+			{
+				result.add(Translation.get("copyTheme.missing.backgroundTexture", FilenameUtils.getBaseName(source.backgroundTextureResource.name),
+						source.backgroundTextureResource.artPack));
+			}
+			else if (source.backgroundTextureSource == TextureSource.File && source.backgroundTextureImage != null
+					&& !new File(FileHelper.replaceHomeFolderPlaceholder(source.backgroundTextureImage)).isFile())
+			{
+				result.add(Translation.get("copyTheme.missing.backgroundTextureFile", FileHelper.replaceHomeFolderPlaceholder(source.backgroundTextureImage)));
+			}
+		}
+		// Only the fonts of the styles for new text are part of the theme, so the source's labels are left out.
+		MapSettings theme = source.deepCopyExceptEdits();
+		theme.edits = new MapEdits();
+		for (MapFonts.FontProblem problem : MapFonts.findProblems(theme).problems)
+		{
+			result.add(Translation.get("copyTheme.missing.font", problem.family));
+		}
+		return result;
+	}
+
+	private void showRandomizeThemeDialog()
+	{
+		MapSettings settings = getSettingsFromGUI(false);
+		if (settings == null)
+		{
+			return;
+		}
+		RandomizeThemeDialog dialog = new RandomizeThemeDialog(this, settings, variation -> applyThemeChange(current ->
+		{
+			current.copyThemeFrom(variation);
+			current.backgroundRandomSeed = variation.backgroundRandomSeed;
+			current.regionsRandomSeed = variation.regionsRandomSeed;
+			current.frayedBorderSeed = variation.frayedBorderSeed;
+			for (RegionEdit edit : variation.edits.regionEdits.values())
+			{
+				RegionEdit currentEdit = current.edits.regionEdits.get(edit.regionId);
+				if (currentEdit != null)
+				{
+					currentEdit.color = edit.color;
+				}
+			}
+		}), this::keepThemeRulesAndRegionColorRanges);
+		dialog.setVisible(true);
+	}
+
+	/**
+	 * Keeps the rules for varying the open map's theme, and its region color ranges, from the given settings, without changing how the map
+	 * looks.
+	 */
+	private void keepThemeRulesAndRegionColorRanges(MapSettings source)
+	{
+		themeGeneration = source.themeGeneration == null ? null : source.themeGeneration.copy();
+		MapSettings settings = getSettingsFromGUI(false);
+		settings.hueRange = source.hueRange;
+		settings.saturationRange = source.saturationRange;
+		settings.brightnessRange = source.brightnessRange;
+		toolsPanel.getLandWaterTool().loadRegionColorSettings(settings);
+		handleChangeWithoutRedraw();
+	}
+
+	/**
+	 * Changes how the open map looks, once it isn't drawing, as one step that undo restores along with the styles and layouts for new text
+	 * and the theme's rules for varying.
+	 *
+	 * @param change
+	 *            Changes the open map's settings, and its edits, which are the open map's own.
+	 */
+	private void applyThemeChange(Consumer<MapSettings> change)
+	{
+		updater.doWhenMapIsNotDrawing(() ->
+		{
+			toolsPanel.currentTool.onBeforeUndoRedo();
+			MapSettings settings = getSettingsFromGUI(false);
+			change.accept(settings);
 			loadSettingsAndEditsIntoThemeAndToolsPanels(settings, true, true);
+			// Undo leaves the region color settings alone, so they're loaded separately.
+			toolsPanel.getLandWaterTool().loadRegionColorSettings(settings);
 			toolsPanel.currentTool.onAfterUndoRedo();
 			undoer.setApplyThemeUndoPoint(() -> handleImagesRefresh());
 			handleImagesRefresh();
@@ -3755,7 +3922,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			customImagesPath = settings.customImagesPath;
 			edits = settings.edits;
 			themeGeneration = settings.themeGeneration == null ? null : settings.themeGeneration.copy();
-			themeExportPath = settings.themeExportPath;
 			enableTextMenuItem.setSelected(settings.drawText);
 			themePanel.loadSettingsIntoGUI(settings, refreshImagePreviews);
 			toolsPanel.loadSettingsIntoGUI(settings, isUndoRedoOrAutomaticChange, refreshImagePreviews);
@@ -3801,7 +3967,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		settings.customImagesPath = customImagesPath;
 		settings.drawText = enableTextMenuItem.isSelected();
 		settings.themeGeneration = themeGeneration == null ? null : themeGeneration.copy();
-		settings.themeExportPath = themeExportPath;
 
 		themePanel.getSettingsFromGUI(settings);
 		toolsPanel.getSettingsFromGUI(settings);
@@ -3950,32 +4115,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					return;
 				}
 				String filePath = event.getFiles().get(0).getAbsolutePath();
-				if (ThemeInstaller.isThemeFile(filePath))
-				{
-					// Opening a theme installs it rather than opening a map. If the editor window hasn't started being created, Nortantis
-					// was launched to open the theme, so the window is never created.
-					synchronized (MainWindow.class)
-					{
-						if (!hasStartedCreatingMainWindow)
-						{
-							isLaunchedOnlyToInstallTheme = true;
-						}
-					}
-					EventQueue.invokeLater(() ->
-					{
-						ThemeInstaller.offerToInstall(instance, filePath);
-						boolean exit;
-						synchronized (MainWindow.class)
-						{
-							exit = isLaunchedOnlyToInstallTheme;
-						}
-						if (exit)
-						{
-							System.exit(0);
-						}
-					});
-				}
-				else if (instance != null)
+				if (instance != null)
 				{
 					launchNewInstanceForFile(filePath);
 				}
@@ -3987,28 +4127,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		}
 
 		String fileToOpen = args.length > 0 ? args[0] : "";
-		if (ThemeInstaller.isThemeFile(fileToOpen))
-		{
-			// Opening a theme installs it into the user's themes folder. No editor window is opened, since nothing in the editor is needed.
-			EventQueue.invokeLater(() ->
-			{
-				ThemeInstaller.offerToInstall(null, fileToOpen);
-				System.exit(0);
-			});
-			return;
-		}
 		EventQueue.invokeLater(new Runnable()
 		{
 			public void run()
 			{
-				synchronized (MainWindow.class)
-				{
-					if (isLaunchedOnlyToInstallTheme)
-					{
-						return;
-					}
-					hasStartedCreatingMainWindow = true;
-				}
 				try
 				{
 					String fileFromAppleEvent = pendingFileToOpenFromAppleEvent;

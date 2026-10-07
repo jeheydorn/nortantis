@@ -92,7 +92,6 @@ public class SubMapCreator
 		// Export and display settings are specific to the original map and should not carry over to a brand-new sub-map.
 		newSettings.imageExportPath = null;
 		newSettings.heightmapExportPath = null;
-		newSettings.themeExportPath = null;
 		newSettings.heightmapResolution = MapSettings.defaultHeightmapResolution;
 		newSettings.defaultMapExportAction = MapSettings.defaultDefaultExportAction;
 		newSettings.defaultHeightmapExportAction = MapSettings.defaultDefaultExportAction;

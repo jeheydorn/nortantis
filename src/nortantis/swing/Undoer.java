@@ -337,9 +337,9 @@ public class Undoer
 	}
 
 	/**
-	 * Undo and redo leave the settings that change without setting an undo point as they are: the styles and layouts for new text, the theme's
-	 * rules for generating maps, and where the theme was last exported. The exception is undoing or redoing a change that applied a theme, which
-	 * changes the styles, layouts, and rules along with everything else.
+	 * Undo and redo leave the settings that change without setting an undo point as they are: the styles and layouts for new text, and the
+	 * theme's rules for varying it. The exception is undoing or redoing a change that applied a theme, which changes the styles, layouts, and
+	 * rules along with everything else.
 	 *
 	 * @param settingsToRestore
 	 *            The settings undo or redo is about to load, which get the current values of those settings.
@@ -358,7 +358,6 @@ public class Undoer
 			settingsToRestore.textLayoutDefaults = currentSettings.copyTextLayoutDefaults();
 			settingsToRestore.themeGeneration = currentSettings.themeGeneration == null ? null : currentSettings.themeGeneration.copy();
 		}
-		settingsToRestore.themeExportPath = currentSettings.themeExportPath;
 	}
 
 	/**
@@ -370,13 +369,11 @@ public class Undoer
 		EnumMap<TextType, TextStyle> textStyleDefaults = settings.textStyleDefaults;
 		EnumMap<TextType, TextLayoutSettings> textLayoutDefaults = settings.textLayoutDefaults;
 		ThemeGenerationSettings themeGeneration = settings.themeGeneration;
-		String themeExportPath = settings.themeExportPath;
 		try
 		{
 			settings.textStyleDefaults = other.textStyleDefaults;
 			settings.textLayoutDefaults = other.textLayoutDefaults;
 			settings.themeGeneration = other.themeGeneration;
-			settings.themeExportPath = other.themeExportPath;
 			return settings.equals(other);
 		}
 		finally
@@ -384,7 +381,6 @@ public class Undoer
 			settings.textStyleDefaults = textStyleDefaults;
 			settings.textLayoutDefaults = textLayoutDefaults;
 			settings.themeGeneration = themeGeneration;
-			settings.themeExportPath = themeExportPath;
 		}
 	}
 

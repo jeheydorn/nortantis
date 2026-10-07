@@ -46,8 +46,6 @@ public class MapSettings implements Serializable
 	public static final String currentVersion = "3.25";
 	public static final String fileExtension = "nort";
 	public static final String fileExtensionWithDot = "." + fileExtension;
-	public static final String themeFileExtension = "nortTheme";
-	public static final String themeFileExtensionWithDot = "." + themeFileExtension;
 	public static final double defaultPointPrecision = 2.0;
 	public static final double defaultLloydRelaxationsScale = 0.1;
 	public static final double defaultResolution = 1.0;
@@ -425,13 +423,10 @@ public class MapSettings implements Serializable
 	public SubMapInfo subMapInfo;
 
 	/**
-	 * How new random maps vary this map's theme. Null means the built-in rules, which have no recorded base values.
+	 * How Randomize Theme varies this map's look, and how new random maps vary it when this map is a theme in an art pack. Null means the
+	 * built-in rules.
 	 */
 	public ThemeGenerationSettings themeGeneration;
-	/**
-	 * Where this map's theme was last exported.
-	 */
-	public String themeExportPath;
 
 	public MapSettings()
 	{
@@ -465,7 +460,7 @@ public class MapSettings implements Serializable
 	{
 		this();
 		String extension = FilenameUtils.getExtension(filePath).toLowerCase();
-		if (extension.equals(fileExtension) || extension.equals(themeFileExtension.toLowerCase()))
+		if (extension.equals(fileExtension))
 		{
 			String fileContents = Assets.readFileAsString(filePath);
 			parseFromJson(fileContents);
@@ -595,78 +590,6 @@ public class MapSettings implements Serializable
 		version = currentVersion;
 		String json = toJson();
 		FileHelper.writeToFile(filePath, json);
-	}
-
-	/**
-	 * Writes this map's theme to a .nortTheme file: these settings without edits, and without the settings that only make sense on this
-	 * device, such as file paths.
-	 */
-	public void writeThemeToFile(String filePath) throws IOException
-	{
-		MapSettings theme = deepCopyExceptEdits();
-		theme.edits = new MapEdits();
-		theme.version = currentVersion;
-		theme.customImagesPath = null;
-		theme.imageExportPath = null;
-		theme.heightmapExportPath = null;
-		theme.themeExportPath = null;
-		theme.overlayImagePath = null;
-		theme.drawOverlayImage = false;
-		theme.subMapInfo = null;
-		// A texture file is a path on this device, so the theme uses an art pack texture instead.
-		if (theme.backgroundTextureSource == TextureSource.File)
-		{
-			theme.backgroundTextureSource = TextureSource.Assets;
-			if (theme.backgroundTextureResource == null)
-			{
-				List<NamedResource> textures = Assets.listBackgroundTexturesForArtPack(Assets.installedArtPack, null);
-				theme.backgroundTextureResource = textures.isEmpty() ? null : textures.get(0);
-			}
-		}
-		theme.backgroundTextureImage = null;
-		FileHelper.writeToFile(filePath, theme.toJson(true));
-	}
-
-	/**
-	 * Thrown when a theme file was made by a newer version of Nortantis.
-	 */
-	public static class ThemeFromNewerVersionException extends RuntimeException
-	{
-		public final String themeVersion;
-
-		public ThemeFromNewerVersionException(String themeVersion)
-		{
-			super("The theme was made in a newer version of Nortantis. Its version is " + themeVersion + ", and this version of Nortantis is " + currentVersion + ".");
-			this.themeVersion = themeVersion;
-		}
-	}
-
-	/**
-	 * Reads a .nortTheme file.
-	 *
-	 * @throws ThemeFromNewerVersionException
-	 *             If the theme was made by a newer version of Nortantis.
-	 */
-	public static MapSettings readThemeFile(String filePath)
-	{
-		String fileContents = Assets.readFileAsString(filePath);
-		JSONObject root;
-		try
-		{
-			root = (JSONObject) JSONValue.parseWithException(fileContents);
-		}
-		catch (ParseException e)
-		{
-			throw new RuntimeException(e);
-		}
-		String themeVersion = (String) root.get("version");
-		if (isVersionGreaterThanCurrent(themeVersion))
-		{
-			throw new ThemeFromNewerVersionException(themeVersion);
-		}
-		MapSettings theme = new MapSettings();
-		theme.parseFromJson(fileContents);
-		return theme;
 	}
 
 	/**
@@ -938,7 +861,6 @@ public class MapSettings implements Serializable
 		root.put("frayedBorderSize", frayedBorderSize);
 		root.put("drawRoads", drawRoads);
 		root.put("imageExportPath", imageExportPath);
-		root.put("themeExportPath", themeExportPath);
 		if (themeGeneration != null)
 		{
 			root.put("themeGeneration", themeGeneration.toJson());
@@ -1981,7 +1903,6 @@ public class MapSettings implements Serializable
 		}
 
 		imageExportPath = (String) root.get("imageExportPath");
-		themeExportPath = (String) root.get("themeExportPath");
 		themeGeneration = root.containsKey("themeGeneration") ? ThemeGenerationSettings.fromJson((JSONObject) root.get("themeGeneration")) : null;
 		heightmapExportPath = (String) root.get("heightmapExportPath");
 		if (root.containsKey("heightmapResolution"))
@@ -4389,8 +4310,6 @@ public class MapSettings implements Serializable
 			differences.add("textLayoutDefaults: " + textLayoutDefaults + " vs " + other.textLayoutDefaults);
 		if (!Objects.equals(themeGeneration, other.themeGeneration))
 			differences.add("themeGeneration: " + themeGeneration + " vs " + other.themeGeneration);
-		if (!Objects.equals(themeExportPath, other.themeExportPath))
-			differences.add("themeExportPath: " + themeExportPath + " vs " + other.themeExportPath);
 		if (textRandomSeed != other.textRandomSeed)
 			differences.add("textRandomSeed: " + textRandomSeed + " vs " + other.textRandomSeed);
 		if (Double.doubleToLongBits(treeHeightScale) != Double.doubleToLongBits(other.treeHeightScale))
@@ -4433,7 +4352,7 @@ public class MapSettings implements Serializable
 				oceanColor, oceanEffectsColor, oceanEffectsLevel, oceanShadingColor, oceanShadingLevel, oceanWavesColor, oceanWavesLevel, oceanWavesType, overlayImageDefaultScale,
 				overlayImageDefaultTransparency, overlayImagePath, overlayImageTransparency, overlayOffsetResolutionInvariant, overlayScale, pointPrecision, randomSeed, regionBaseColor,
 				regionBoundaryColor, regionBoundaryStyle, regionCount, regionsRandomSeed, resolution, rightRotationCount, riverColor, roadColor, roadStyle, saturationRange,
-				solidColorBackground, textStyleDefaults, textLayoutDefaults, themeGeneration, themeExportPath, textRandomSeed, treeHeightScale, version, wavyLineLength, wavyLineLengthVariation, wavyLineRowHeight,
+				solidColorBackground, textStyleDefaults, textLayoutDefaults, themeGeneration, textRandomSeed, treeHeightScale, version, wavyLineLength, wavyLineLengthVariation, wavyLineRowHeight,
 				wavyLineRowGap, wavyLineRowSpacingVariation, wavyLineShape, worldSize, fontArtPacks);
 	}
 
@@ -4519,8 +4438,7 @@ public class MapSettings implements Serializable
 				&& saturationRange == other.saturationRange
 				&& solidColorBackground == other.solidColorBackground
 				&& Objects.equals(textStyleDefaults, other.textStyleDefaults) && Objects.equals(textLayoutDefaults, other.textLayoutDefaults)
-				&& Objects.equals(themeGeneration, other.themeGeneration)
-				&& Objects.equals(themeExportPath, other.themeExportPath) && textRandomSeed == other.textRandomSeed
+				&& Objects.equals(themeGeneration, other.themeGeneration) && textRandomSeed == other.textRandomSeed
 				&& Double.doubleToLongBits(treeHeightScale) == Double.doubleToLongBits(other.treeHeightScale) && Objects.equals(version, other.version) && worldSize == other.worldSize;
 	}
 

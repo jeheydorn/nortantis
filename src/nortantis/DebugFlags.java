@@ -77,6 +77,11 @@ public class DebugFlags
 	 * newly generated maps. Maps opened from files don't have generated elevations, so nothing is marked on them.
 	 */
 	private static boolean highlightCarvedRiverMouths = false;
+	/**
+	 * Adds File > Save a Copy Without Edits, which saves the settings a map is generated from. That is how a map becomes a theme for an art
+	 * pack's themes folder without carrying its edits, and how a map can be regenerated from its settings.
+	 */
+	private static boolean showSaveCopyWithoutEdits = false;
 
 	/**
 	 * New-graph corner indexes of the waypoints used by the most recent sub-map river re-routing, populated by {@link SubMapCreator} when
@@ -134,6 +139,11 @@ public class DebugFlags
 	public static boolean shouldWriteBeforeAndAfterJsonWhenSavePromptShows()
 	{
 		return !Assets.isRunningFromJar() && writeBeforeAndAfterJsonWhenSavePromptShows;
+	}
+
+	public static boolean showSaveCopyWithoutEdits()
+	{
+		return !Assets.isRunningFromJar() && showSaveCopyWithoutEdits;
 	}
 
 	public static boolean printIconsBeingEdited()

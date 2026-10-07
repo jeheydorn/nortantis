@@ -76,9 +76,14 @@ public class NewSettingsDialog extends JDialog
 	 * The map New Map With Same Theme was opened from, or null.
 	 */
 	private final MapSettings settingsToKeepThemeFrom;
+	/**
+	 * The theme chosen in the theme combo box, before it was varied, which Randomize Theme varies around so that randomizing repeatedly
+	 * doesn't drift away from it.
+	 */
+	private MapSettings themeBase;
 
 	/**
-	 * An entry in the theme combo box: Random, the theme of the map the dialog was opened from, or a theme the user has.
+	 * An entry in the theme combo box: Random, the theme of the map the dialog was opened from, or a theme in an art pack.
 	 */
 	private static final class ThemeChoice
 	{
@@ -108,21 +113,24 @@ public class NewSettingsDialog extends JDialog
 	{
 		final MapSettings settings;
 		final ThemeChoice themeChoice;
+		final MapSettings themeBase;
 		/**
 		 * The warning shown under the theme combo box, or null when none is shown.
 		 */
 		final String themeWarning;
 
-		DialogState(MapSettings settings, ThemeChoice themeChoice, String themeWarning)
+		DialogState(MapSettings settings, ThemeChoice themeChoice, MapSettings themeBase, String themeWarning)
 		{
 			this.settings = settings;
 			this.themeChoice = themeChoice;
+			this.themeBase = themeBase;
 			this.themeWarning = themeWarning;
 		}
 
 		boolean matches(DialogState other)
 		{
-			return themeChoice == other.themeChoice && Objects.equals(themeWarning, other.themeWarning) && settings.equalsIgnoringEdits(other.settings);
+			return themeChoice == other.themeChoice && themeBase == other.themeBase && Objects.equals(themeWarning, other.themeWarning)
+					&& settings.equalsIgnoringEdits(other.settings);
 		}
 	}
 
@@ -146,11 +154,14 @@ public class NewSettingsDialog extends JDialog
 
 		if (settingsToKeepThemeFrom == null)
 		{
-			settings = SettingsGenerator.generate(UserPreferences.getInstance().defaultCustomImagesPath);
+			Tuple2<MapSettings, MapSettings> generated = SettingsGenerator.generateWithTheme(UserPreferences.getInstance().defaultCustomImagesPath);
+			settings = generated.getFirst();
+			themeBase = generated.getSecond();
 		}
 		else
 		{
 			settings = SettingsGenerator.newMapWithSameTheme(settingsToKeepThemeFrom);
+			themeBase = settingsToKeepThemeFrom;
 		}
 		initializeThemeOptions();
 		loadSettingsIntoGUI(settings);
@@ -701,10 +712,9 @@ public class NewSettingsDialog extends JDialog
 				sameThemeChoice = new ThemeChoice(null, Translation.get("newSettingsDialog.theme.sameAsMap"));
 				themeComboBox.addItem(sameThemeChoice);
 			}
-			for (ThemeCatalog.Entry entry : ThemeCatalog.listAllThemes(settings.customImagesPath))
+			for (ThemeCatalog.Entry entry : ThemeCatalog.listArtPackThemes(settings.customImagesPath))
 			{
-				String displayName = entry.source == ThemeCatalog.Source.ArtPack ? Translation.get("newSettingsDialog.theme.inArtPack", entry.name, entry.artPack) : entry.name;
-				themeComboBox.addItem(new ThemeChoice(entry, displayName));
+				themeComboBox.addItem(new ThemeChoice(entry, Translation.get("newSettingsDialog.theme.inArtPack", entry.name, entry.artPack)));
 			}
 			themeComboBox.setSelectedItem(sameThemeChoice != null ? sameThemeChoice : randomThemeChoice);
 		}
@@ -730,10 +740,12 @@ public class NewSettingsDialog extends JDialog
 		Random rand = new Random();
 		String currentArtPack = (String) artPackComboBox.getSelectedItem();
 		MapSettings newSettings;
+		MapSettings newThemeBase;
 		String missingArtPack = null;
 		if (choice == sameThemeChoice)
 		{
 			newSettings = SettingsGenerator.newMapWithSameTheme(settingsToKeepThemeFrom);
+			newThemeBase = settingsToKeepThemeFrom;
 		}
 		else
 		{
@@ -742,12 +754,6 @@ public class NewSettingsDialog extends JDialog
 			try
 			{
 				theme = ThemeCatalog.load(entry);
-			}
-			catch (MapSettings.ThemeFromNewerVersionException e)
-			{
-				SwingHelper.showMessageDialog(this, Translation.get("theme.fromNewerVersion", e.themeVersion, MapSettings.currentVersion), Translation.get("theme.unableToLoad.title"),
-						JOptionPane.ERROR_MESSAGE);
-				return;
 			}
 			catch (Exception e)
 			{
@@ -761,6 +767,7 @@ public class NewSettingsDialog extends JDialog
 			}
 			String artPack = resolvedArtPack != null ? resolvedArtPack : currentArtPack;
 			newSettings = SettingsGenerator.generateFromTheme(rand, artPack, theme, ThemeCatalog.isFromInstalledArtPack(entry), settings.customImagesPath);
+			newThemeBase = theme;
 		}
 
 		// A theme is a look, so the world the user set up is kept.
@@ -777,6 +784,7 @@ public class NewSettingsDialog extends JDialog
 		newSettings.flipVertically = current.flipVertically;
 		newSettings.books = current.books;
 		settings = newSettings;
+		themeBase = newThemeBase;
 
 		if (missingArtPack != null)
 		{
@@ -808,7 +816,7 @@ public class NewSettingsDialog extends JDialog
 
 	private DialogState captureState()
 	{
-		return new DialogState(getSettingsFromGUI(), (ThemeChoice) themeComboBox.getSelectedItem(), themeWarningHider.isVisible() ? themeWarningLabel.getText() : null);
+		return new DialogState(getSettingsFromGUI(), (ThemeChoice) themeComboBox.getSelectedItem(), themeBase, themeWarningHider.isVisible() ? themeWarningLabel.getText() : null);
 	}
 
 	/**
@@ -873,6 +881,7 @@ public class NewSettingsDialog extends JDialog
 		MapSettings restored = state.settings.deepCopy();
 		restored.edits = settings.edits;
 		settings = restored;
+		themeBase = state.themeBase;
 
 		isApplyingTheme = true;
 		try
@@ -923,7 +932,7 @@ public class NewSettingsDialog extends JDialog
 	private void randomizeTheme()
 	{
 		settings.artPack = (String) artPackComboBox.getSelectedItem();
-		SettingsGenerator.randomizeTheme(settings, new Random());
+		SettingsGenerator.randomizeTheme(settings, themeBase, settings.artPack, new Random());
 		updater.setEnabled(false);
 		isApplyingTheme = true;
 		try

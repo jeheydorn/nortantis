@@ -2,6 +2,7 @@ package nortantis;
 
 import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanWaves;
+import nortantis.editor.RegionEdit;
 import nortantis.platform.Color;
 import nortantis.platform.Font;
 import nortantis.swing.MapEdits;
@@ -27,11 +28,9 @@ public class SettingsGenerator
 	public static double maxCityProbability = 1.0 / 40.0;
 	public static int maxFrayedEdgeSizeForUI = 15;
 	public static final int maxConcentricWaveCountInEditor = 5;
-	public static final int maxConcentricWaveCountToGenerate = 3;
 	public static final int minRegionCount = 2;
 	public static int maxRegionCount = 20;
 	public static final float maxLineWidthInEditor = 10f;
-	public static final int minConcentricWaveCountToGenerate = 2;
 	private static final int maxGrungeWidthToGenerate = 2000;
 	private static final int maxFrayedBorderBlurLevelToGenerate = 150;
 	private static final int maxShadingLevelToGenerate = 100;
@@ -49,9 +48,19 @@ public class SettingsGenerator
 	 */
 	public static MapSettings generate(String customImageFolder)
 	{
+		return generateWithTheme(customImageFolder).getFirst();
+	}
+
+	/**
+	 * Generates settings for a new random map with a random art pack and a theme chosen the way "Random" chooses one.
+	 *
+	 * @return The settings, and the theme they were generated from, before it was varied.
+	 */
+	public static Tuple2<MapSettings, MapSettings> generateWithTheme(String customImageFolder)
+	{
 		Random rand = new Random();
 		String artPack = ProbabilityHelper.sampleUniform(rand, Assets.listArtPacksForNewRandomMaps(customImageFolder));
-		return generate(rand, artPack, null, customImageFolder);
+		return generateWithTheme(rand, artPack, null, customImageFolder);
 	}
 
 	/**
@@ -69,6 +78,18 @@ public class SettingsGenerator
 	 *            The theme to use, or null to choose one the way "Random" does.
 	 */
 	public static MapSettings generate(Random rand, String artPack, ThemeCatalog.Entry theme, String customImagesFolder)
+	{
+		return generateWithTheme(rand, artPack, theme, customImagesFolder).getFirst();
+	}
+
+	/**
+	 * Generates settings for a new random map.
+	 *
+	 * @param theme
+	 *            The theme to use, or null to choose one the way "Random" does.
+	 * @return The settings, and the theme they were generated from, before it was varied.
+	 */
+	public static Tuple2<MapSettings, MapSettings> generateWithTheme(Random rand, String artPack, ThemeCatalog.Entry theme, String customImagesFolder)
 	{
 		if (artPack == null)
 		{
@@ -98,7 +119,7 @@ public class SettingsGenerator
 			themeToUse = ThemeCatalog.chooseRandomTheme(rand, Assets.installedArtPack, customImagesFolder);
 			themeSettings = ThemeCatalog.load(themeToUse);
 		}
-		return generateFromTheme(rand, artPack, themeSettings, ThemeCatalog.isFromInstalledArtPack(themeToUse), customImagesFolder);
+		return new Tuple2<>(generateFromTheme(rand, artPack, themeSettings, ThemeCatalog.isFromInstalledArtPack(themeToUse), customImagesFolder), themeSettings);
 	}
 
 	/**
@@ -127,7 +148,8 @@ public class SettingsGenerator
 
 		setRandomSeeds(settings, rand);
 		ThemeGenerationSettings gen = settings.themeGeneration != null ? settings.themeGeneration : ThemeGenerationSettings.createDefault();
-		applyThemeRandomness(settings, gen, rand);
+		applyThemeRandomness(settings, theme, gen, artPack, rand);
+		chooseCityIconType(settings, rand);
 		applyWorldRandomness(settings, rand);
 		return settings;
 	}
@@ -139,7 +161,6 @@ public class SettingsGenerator
 	{
 		settings.imageExportPath = null;
 		settings.heightmapExportPath = null;
-		settings.themeExportPath = null;
 		settings.subMapInfo = null;
 		settings.resolution = MapSettings.defaultResolution;
 		settings.heightmapResolution = MapSettings.defaultHeightmapResolution;
@@ -166,6 +187,18 @@ public class SettingsGenerator
 			{
 				settings.setThemeFont(type, Font.create(family, font.getStyle(), font.getSize()));
 			}
+		}
+	}
+
+	/**
+	 * Chooses one of the city icon types in the settings' art pack, since the theme's may not be in it.
+	 */
+	private static void chooseCityIconType(MapSettings settings, Random rand)
+	{
+		List<String> cityIconTypes = new ArrayList<>(ImageCache.getInstance(settings.artPack, settings.customImagesPath).getIconGroupNames(IconType.cities));
+		if (!cityIconTypes.isEmpty())
+		{
+			settings.cityIconTypeName = ProbabilityHelper.sampleUniform(rand, cityIconTypes);
 		}
 	}
 
@@ -235,10 +268,16 @@ public class SettingsGenerator
 	}
 
 	/**
-	 * Varies the look of the given settings within the theme's rules. Base values come from the rules where they are recorded, so that
-	 * varying a map's look again varies around the same theme rather than drifting from it.
+	 * Varies the look of the given settings within the theme's rules, around the look of the given base. The colors that never vary are set
+	 * to the base's, and when regions are colored, the region colors in the settings' edits are generated again.
+	 *
+	 * @param base
+	 *            The look to vary around, which can be the settings themselves. Varying around a base that doesn't change, rather than around
+	 *            the result of the last variation, keeps varying repeatedly from drifting away from it. Not changed.
+	 * @param artPack
+	 *            The art pack borders and background textures are chosen from.
 	 */
-	public static void applyThemeRandomness(MapSettings settings, ThemeGenerationSettings gen, Random rand)
+	public static void applyThemeRandomness(MapSettings settings, MapSettings base, ThemeGenerationSettings gen, String artPack, Random rand)
 	{
 		// Ocean
 		settings.drawOceanWaves = rand.nextDouble() < gen.drawOceanWavesProbability;
@@ -249,54 +288,49 @@ public class SettingsGenerator
 		}
 		// A wave type is chosen even when waves are off, so that turning them on in the editor starts from a good one.
 		settings.oceanWavesType = ProbabilityHelper.sampleUniform(rand, waveTypes);
-		settings.oceanWavesLevel = vary(rand, gen.baseOceanWavesLevel, settings.oceanWavesLevel, gen.oceanWavesLevelVariation, 0, maxShadingLevelToGenerate);
-		if (settings.oceanWavesType == OceanWaves.ConcentricWaves)
-		{
-			settings.fadeConcentricWaves = rand.nextDouble() < gen.fadeConcentricWavesProbability;
-			settings.jitterToConcentricWaves = rand.nextDouble() < gen.jitterToConcentricWavesProbability;
-			settings.brokenLinesForConcentricWaves = rand.nextDouble() < gen.brokenLinesForConcentricWavesProbability;
-		}
-		settings.concentricWaveCount = vary(rand, gen.baseConcentricWaveCount, settings.concentricWaveCount, gen.concentricWaveCountVariation, minConcentricWaveCountToGenerate,
-				maxConcentricWaveCountToGenerate);
 		// Ocean shading is used instead of waves unless the theme says otherwise, because shading and waves together render slowly. The
 		// shading width is chosen even when shading is off, so that turning it on in the editor shows something.
 		settings.drawOceanShading = !settings.drawOceanWaves || rand.nextDouble() < gen.oceanShadingWithWavesProbability;
-		settings.oceanShadingLevel = vary(rand, gen.baseOceanShadingLevel, settings.oceanShadingLevel, gen.oceanShadingLevelVariation, 1, maxShadingLevelToGenerate);
+		settings.oceanShadingLevel = vary(rand, base.oceanShadingLevel, gen.oceanShadingLevelVariation, 1, maxShadingLevelToGenerate);
 
 		// Land edges
-		settings.coastShadingLevel = vary(rand, gen.baseCoastShadingLevel, settings.coastShadingLevel, gen.coastShadingLevelVariation, 1, maxShadingLevelToGenerate);
+		settings.coastShadingLevel = vary(rand, base.coastShadingLevel, gen.coastShadingLevelVariation, 1, maxShadingLevelToGenerate);
 		List<LineStyle> lineStyles = gen.allowedLineStyles.isEmpty() ? Arrays.asList(LineStyle.values()) : new ArrayList<>(gen.allowedLineStyles);
 		settings.lineStyle = ProbabilityHelper.sampleUniform(rand, lineStyles);
 
 		// Colors that belong together move together, so that colors chosen to work together keep working together. Only the ocean color and
-		// the land color, or the region base color when regions are colored, are varied; the others either follow one of them or are the
-		// theme's.
+		// the land color are varied, and the others either follow one of them or are the base's. When regions are colored, they get new
+		// colors around the region base color instead, and the land and border colors are the base's.
 		float[] oceanOffset = rollColorOffset(rand, gen.oceanHueVariation, gen.oceanSaturationVariation, gen.oceanBrightnessVariation);
-		settings.oceanColor = applyColorOffset(base(gen.baseOceanColor, settings.oceanColor), oceanOffset);
-		settings.oceanWavesColor = applyColorOffset(base(gen.baseOceanWavesColor, settings.oceanWavesColor), oceanOffset);
-		settings.oceanShadingColor = applyColorOffset(base(gen.baseOceanShadingColor, settings.oceanShadingColor), oceanOffset);
-		float[] landOffset = rollColorOffset(rand, gen.landHueVariation, gen.landSaturationVariation, gen.landBrightnessVariation);
-		float[] noOffset = { 0f, 0f, 0f };
-		settings.landColor = applyColorOffset(base(gen.baseLandColor, settings.landColor), settings.drawRegionColors ? noOffset : landOffset);
-		settings.regionBaseColor = applyColorOffset(base(gen.baseRegionBaseColor, settings.regionBaseColor), settings.drawRegionColors ? landOffset : noOffset);
-		settings.borderColor = applyColorOffset(base(gen.baseBorderColor, settings.borderColor), landOffset);
-		settings.frayedBorderColor = base(gen.baseFrayedBorderColor, settings.frayedBorderColor);
-		settings.grungeColor = base(gen.baseGrungeColor, settings.grungeColor);
-		settings.riverColor = base(gen.baseRiverColor, settings.riverColor);
+		settings.oceanColor = applyColorOffset(base.oceanColor, oceanOffset);
+		settings.oceanWavesColor = applyColorOffset(base.oceanWavesColor, oceanOffset);
+		settings.oceanShadingColor = applyColorOffset(base.oceanShadingColor, oceanOffset);
+		settings.regionBaseColor = base.regionBaseColor;
+		if (settings.drawRegionColors)
+		{
+			settings.landColor = base.landColor;
+			settings.borderColor = base.borderColor;
+			generateRegionColors(settings, rand);
+		}
+		else
+		{
+			float[] landOffset = rollColorOffset(rand, gen.landHueVariation, gen.landSaturationVariation, gen.landBrightnessVariation);
+			settings.landColor = applyColorOffset(base.landColor, landOffset);
+			settings.borderColor = applyColorOffset(base.borderColor, landOffset);
+		}
+		settings.frayedBorderColor = base.frayedBorderColor;
+		settings.grungeColor = base.grungeColor;
+		settings.riverColor = base.riverColor;
 
 		// Grunge and border
-		settings.grungeWidth = vary(rand, gen.baseGrungeWidth, settings.grungeWidth, gen.grungeWidthVariation, 0, maxGrungeWidthToGenerate);
+		settings.grungeWidth = vary(rand, base.grungeWidth, gen.grungeWidthVariation, 0, maxGrungeWidthToGenerate);
 		settings.drawBorder = rand.nextDouble() < gen.drawBorderProbability;
-		// The map's art pack can differ from the theme's, in which case the theme's allowed borders may not be in it.
-		List<NamedResource> borderTypesInArtPack = Assets.listBorderTypesForArtPack(settings.artPack, settings.customImagesPath);
-		List<NamedResource> borderTypes = chooseAllowed(borderTypesInArtPack, border -> gen.allowedBorderNames.isEmpty() || gen.allowedBorderNames.contains(border.name));
+		// The art pack can differ from the one the theme's rules were made with, in which case the rules' allowed borders may not be in it.
+		List<NamedResource> borderChoices = listBorderChoices(artPack, settings.customImagesPath);
+		List<NamedResource> borderTypes = chooseAllowed(borderChoices, border -> gen.allowedBorderNames.isEmpty() || gen.allowedBorderNames.contains(border.name));
 		if (borderTypes.isEmpty())
 		{
-			borderTypes = borderTypesInArtPack;
-		}
-		if (borderTypes.isEmpty())
-		{
-			borderTypes = Assets.listBorderTypesForArtPacks(Assets.listArtPacksForNewRandomMaps(settings.customImagesPath), settings.customImagesPath);
+			borderTypes = borderChoices;
 		}
 		// borderTypes shouldn't be empty since that would mean there are no border types, including installed ones.
 		Assets.BorderMetadata borderMetadata = Assets.defaultBorderMetadata;
@@ -314,22 +348,10 @@ public class SettingsGenerator
 		{
 			settings.frayedBorder = true;
 		}
-		settings.frayedBorderBlurLevel = vary(rand, gen.baseFrayedBorderBlurLevel, settings.frayedBorderBlurLevel, gen.frayedBorderBlurLevelVariation, 0,
+		settings.frayedBorderBlurLevel = vary(rand, base.frayedBorderBlurLevel, gen.frayedBorderBlurLevelVariation, 0,
 				maxFrayedBorderBlurLevelToGenerate);
 		// Fray size is stored inverted with respect to the UI.
-		settings.frayedBorderSize = vary(rand, gen.baseFrayedBorderSize, settings.frayedBorderSize, gen.frayedBorderSizeVariation, 1, maxFrayedEdgeSizeForUI);
-
-		// City icons
-		List<String> cityIconTypes = chooseAllowed(new ArrayList<>(ImageCache.getInstance(settings.artPack, settings.customImagesPath).getIconGroupNames(IconType.cities)),
-				name -> gen.allowedCityIconTypeNames.isEmpty() || gen.allowedCityIconTypeNames.contains(name));
-		if (cityIconTypes.isEmpty())
-		{
-			cityIconTypes = new ArrayList<>(ImageCache.getInstance(settings.artPack, settings.customImagesPath).getIconGroupNames(IconType.cities));
-		}
-		if (!cityIconTypes.isEmpty())
-		{
-			settings.cityIconTypeName = ProbabilityHelper.sampleUniform(rand, cityIconTypes);
-		}
+		settings.frayedBorderSize = vary(rand, base.frayedBorderSize, gen.frayedBorderSizeVariation, 1, maxFrayedEdgeSizeForUI);
 
 		// Regions
 		settings.drawRegionBoundaries = rand.nextDouble() < gen.drawRegionBoundariesProbability;
@@ -345,16 +367,12 @@ public class SettingsGenerator
 
 		// Background. A fractal background, when the theme allows it, is one more choice alongside the allowed background textures, and all of
 		// them are equally likely.
-		List<NamedResource> texturesInArtPack = Assets.listBackgroundTexturesForArtPack(settings.artPack, settings.customImagesPath);
-		List<NamedResource> textures = chooseAllowed(texturesInArtPack,
+		List<NamedResource> textureChoices = listBackgroundTextureChoices(artPack, settings.customImagesPath);
+		List<NamedResource> textures = chooseAllowed(textureChoices,
 				texture -> gen.allowedBackgroundTextureNames.isEmpty() || gen.allowedBackgroundTextureNames.contains(texture.name));
 		if (textures.isEmpty())
 		{
-			textures = texturesInArtPack;
-		}
-		if (textures.isEmpty())
-		{
-			textures = Assets.listBackgroundTexturesForArtPacks(Assets.listArtPacksForNewRandomMaps(settings.customImagesPath), settings.customImagesPath);
+			textures = textureChoices;
 		}
 		// With no texture to draw a background from, the background is fractal.
 		boolean useFractalBackground = textures.isEmpty() || (gen.allowFractalBackground && rand.nextInt(textures.size() + 1) == 0);
@@ -368,6 +386,26 @@ public class SettingsGenerator
 			settings.backgroundTextureResource = ProbabilityHelper.sampleUniform(rand, textures);
 			settings.backgroundTextureSource = TextureSource.Assets;
 		}
+	}
+
+	/**
+	 * The borders a theme chooses among for the given art pack: the art pack's own, or when it has none, those of the art packs new random
+	 * maps use.
+	 */
+	public static List<NamedResource> listBorderChoices(String artPack, String customImagesFolder)
+	{
+		List<NamedResource> result = Assets.listBorderTypesForArtPack(artPack, customImagesFolder);
+		return result.isEmpty() ? Assets.listBorderTypesForArtPacks(Assets.listArtPacksForNewRandomMaps(customImagesFolder), customImagesFolder) : result;
+	}
+
+	/**
+	 * The background textures a theme chooses among for the given art pack: the art pack's own, or when it has none, those of the art packs
+	 * new random maps use.
+	 */
+	public static List<NamedResource> listBackgroundTextureChoices(String artPack, String customImagesFolder)
+	{
+		List<NamedResource> result = Assets.listBackgroundTexturesForArtPack(artPack, customImagesFolder);
+		return result.isEmpty() ? Assets.listBackgroundTexturesForArtPacks(Assets.listArtPacksForNewRandomMaps(customImagesFolder), customImagesFolder) : result;
 	}
 
 	private static boolean isRoadStyleDifferentEnoughFromBoundaries(StrokeType roadType, StrokeType boundaryType)
@@ -398,18 +436,31 @@ public class SettingsGenerator
 		return result;
 	}
 
-	private static <T> T base(T recordedBase, T current)
+	/**
+	 * Gives each of the map's political regions a new color generated from the region base color, within the map's region color ranges.
+	 * A map keeps its region colors in its edits once it has been drawn, so changing the region base color alone wouldn't change them.
+	 */
+	public static void generateRegionColors(MapSettings settings, Random rand)
 	{
-		return recordedBase != null ? recordedBase : current;
+		if (settings.edits == null)
+		{
+			return;
+		}
+		List<Integer> regionIds = new ArrayList<>(settings.edits.regionEdits.keySet());
+		Collections.sort(regionIds);
+		for (int regionId : regionIds)
+		{
+			RegionEdit edit = settings.edits.regionEdits.get(regionId);
+			edit.color = MapCreator.generateColorFromBaseColor(rand, settings.regionBaseColor, settings.hueRange, settings.saturationRange, settings.brightnessRange);
+		}
 	}
 
 	/**
 	 * A random value within variation of the base, clamped to [min, max].
 	 */
-	private static int vary(Random rand, Integer recordedBase, int current, int variation, int min, int max)
+	private static int vary(Random rand, int base, int variation, int min, int max)
 	{
-		int baseValue = recordedBase != null ? recordedBase : current;
-		int value = baseValue + (variation > 0 ? rand.nextInt(variation * 2 + 1) - variation : 0);
+		int value = base + (variation > 0 ? rand.nextInt(variation * 2 + 1) - variation : 0);
 		return Math.max(min, Math.min(max, value));
 	}
 
@@ -476,7 +527,6 @@ public class SettingsGenerator
 		settings.edits = new MapEdits();
 		settings.imageExportPath = null;
 		settings.heightmapExportPath = null;
-		settings.themeExportPath = null;
 		// A brand new full-size map is created in the current version, even if its theme came from a map saved in an older version, so set the
 		// current version rather than inheriting the source map's (possibly older) version from the deep copy.
 		settings.version = MapSettings.currentVersion;
@@ -507,18 +557,18 @@ public class SettingsGenerator
 	}
 
 	/**
-	 * Varies the look of the given settings within their theme's rules, keeping the world layout (land seed, world size, probabilities, etc.)
-	 * unchanged. Settings with no recorded rules first record their current look as the base values to vary, so that varying them again
-	 * varies around the same look.
+	 * Varies the look of the given settings within the rules in their {@link MapSettings#themeGeneration}, around the look of the given base,
+	 * keeping the world and everything on it unchanged.
+	 *
+	 * @param base
+	 *            The look to vary around. Not changed.
+	 * @param artPack
+	 *            The art pack borders and background textures are chosen from.
 	 */
-	public static void randomizeTheme(MapSettings settings, Random rand)
+	public static void randomizeTheme(MapSettings settings, MapSettings base, String artPack, Random rand)
 	{
-		if (settings.themeGeneration == null)
-		{
-			settings.themeGeneration = ThemeGenerationSettings.createDefault();
-			settings.themeGeneration.setBaseValuesFrom(settings);
-		}
-		applyThemeRandomness(settings, settings.themeGeneration, rand);
+		ThemeGenerationSettings gen = settings.themeGeneration != null ? settings.themeGeneration : ThemeGenerationSettings.createDefault();
+		applyThemeRandomness(settings, base, gen, artPack, rand);
 		settings.backgroundRandomSeed = Helper.safeAbs(rand.nextInt());
 		settings.regionsRandomSeed = Helper.safeAbs(rand.nextInt());
 		settings.frayedBorderSeed = Helper.safeAbs(rand.nextInt());

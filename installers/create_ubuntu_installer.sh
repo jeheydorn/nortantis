@@ -26,7 +26,6 @@ jpackage \
 --icon "taskbar icon.png" \
 --resource-dir "linux_resources" \
 --file-associations file_associations_linux.txt \
---file-associations file_associations_linux_theme.txt \
 --vendor "Joseph Heydorn" \
 --app-version "$nortantis_version" \
 --java-options -XX:MaxRAMPercentage=50.0 \

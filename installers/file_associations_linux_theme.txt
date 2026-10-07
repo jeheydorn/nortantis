@@ -1,4 +1,0 @@
-extension=norttheme
-mime-type=application/x-nortantis-theme
-icon=taskbar icon.png
-description=Nortantis Map Theme
