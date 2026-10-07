@@ -242,6 +242,12 @@ public abstract class MapUpdater
 		if (change.updateType != UpdateType.Incremental)
 		{
 			createAndShowMap(change.updateType, null, null, null, null, change.preRun, null, isUndoRedo);
+			if (change.updateType == UpdateType.NoDraw)
+			{
+				// The restored texts' bounds may be stale, and a change that draws nothing won't refresh them. An incremental update with
+				// no changes does.
+				createAndShowMapUsingIds(UpdateType.Incremental, new HashSet<>(), null, new ArrayList<>(), new ArrayList<>(), null, null, isUndoRedo);
+			}
 		}
 		else
 		{
@@ -637,6 +643,15 @@ public abstract class MapUpdater
 								{
 									incrementalUpdateTimer.printElapsedTime();
 								}
+							}
+
+							// Undo and redo restore copies of the texts whose bounds may be stale, such as from before the text last moved or the
+							// display quality changed. The updates above refresh them, but when nothing changed that needs drawing, none of
+							// them runs.
+							if (settings.edits.textBoundsNeedRefresh)
+							{
+								currentMapCreator = new MapCreator();
+								currentMapCreator.updateTextBoundsIfNeeded(settings, mapParts);
 							}
 
 							return new UpdateResult(map, combinedReplaceBounds, new ArrayList<>());

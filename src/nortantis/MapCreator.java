@@ -104,6 +104,17 @@ public class MapCreator implements WarningLogger
 		centersToRedrawLowPriority = new ConcurrentHashMap<>();
 	}
 
+	/**
+	 * Recomputes the bounds of every text at the current resolution if {@link MapEdits#textBoundsNeedRefresh} says they can't be trusted,
+	 * without drawing anything.
+	 */
+	public void updateTextBoundsIfNeeded(final MapSettings settings, MapParts mapParts)
+	{
+		TextDrawer textDrawer = new TextDrawer(settings);
+		textDrawer.setMapTexts(settings.edits.text);
+		textDrawer.updateTextBoundsIfNeeded(mapParts.graph);
+	}
+
 	public IntRectangle incrementalUpdateText(final MapSettings settings, MapParts mapParts, Image fullSizeMap, List<MapText> textChanged)
 	{
 		migrateLegacyRiversIfNeeded(settings, mapParts.graph);
