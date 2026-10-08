@@ -3632,6 +3632,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					text.style.background = themeStyle.background.copy();
 				}
 			}
+			SettingsGenerator.shuffleTextBackgrounds(settings, settings.themeGeneration, new Random());
 		});
 	}
 
@@ -3709,7 +3710,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		{
 			return;
 		}
-		RandomizeThemeDialog dialog = new RandomizeThemeDialog(this, settings, variation -> applyThemeChange(current ->
+		RandomizeThemeDialog dialog = new RandomizeThemeDialog(this, settings, (variation, areTextBackgroundsVaried) -> applyThemeChange(current ->
 		{
 			current.copyThemeFrom(variation);
 			current.backgroundRandomSeed = variation.backgroundRandomSeed;
@@ -3721,6 +3722,17 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				if (currentEdit != null)
 				{
 					currentEdit.color = edit.color;
+				}
+			}
+			if (areTextBackgroundsVaried)
+			{
+				for (TextType type : new TextType[] { TextType.Title, TextType.Region })
+				{
+					TextStyle style = variation.getDefaultTextStyle(type);
+					if (style != null)
+					{
+						SettingsGenerator.setTextBackground(current, type, style.background);
+					}
 				}
 			}
 		}), this::keepThemeRulesAndRegionColorSettings);

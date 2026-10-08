@@ -39,6 +39,9 @@ public class ThemeTest
 		gen.allowedLineStyles.add(MapSettings.LineStyle.Splines);
 		gen.oceanShadingWithWavesProbability = 0.25;
 		gen.allowedBackgroundTypes = new LinkedHashSet<>(List.of(ThemeGenerationSettings.BackgroundType.SolidColor));
+		gen.allowedTitleBackgroundEffects = new LinkedHashSet<>(List.of(TextBackgroundEffect.Scroll, TextBackgroundEffect.Glow));
+		gen.allowedRegionBackgroundEffects = new LinkedHashSet<>(List.of(TextBackgroundEffect.None));
+		gen.shuffleTextBackgrounds = true;
 
 		ThemeGenerationSettings reloaded = ThemeGenerationSettings.fromJson(gen.toJson());
 		assertEquals(gen, reloaded);
@@ -193,6 +196,81 @@ public class ThemeTest
 			assertTrue(settings.generateBackgroundFromTexture);
 			assertEquals(Assets.installedArtPack, settings.backgroundTextureResource.artPack, "An art pack with no textures uses the installed art pack's.");
 		}
+	}
+
+	@Test
+	public void titleAndRegionTextGetAnAllowedBackgroundEffect()
+	{
+		MapSettings settings = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
+		settings.themeGeneration = ThemeGenerationSettings.createDefault();
+		settings.themeGeneration.allowedTitleBackgroundEffects = new LinkedHashSet<>(List.of(TextBackgroundEffect.Scroll));
+		settings.themeGeneration.allowedRegionBackgroundEffects = new LinkedHashSet<>(List.of(TextBackgroundEffect.Glow, TextBackgroundEffect.Outline));
+		settings.themeGeneration.shuffleTextBackgrounds = true;
+		assertTrue(settings.edits.text.stream().anyMatch(text -> text.type == TextType.Title));
+		assertTrue(settings.edits.text.stream().anyMatch(text -> text.type == TextType.Region));
+		settings.getDefaultTextStyle(TextType.Region).background.outlineWidth = 3;
+		for (MapText text : settings.edits.text)
+		{
+			text.style.background.outlineWidth = 2;
+		}
+		MapSettings base = settings.deepCopy();
+
+		SettingsGenerator.randomizeTheme(settings, base, settings.artPack, new Random(7));
+
+		assertEquals(TextBackgroundEffect.Scroll, settings.getDefaultTextStyle(TextType.Title).background.effect);
+		TextBackgroundEffect regionEffect = settings.getDefaultTextStyle(TextType.Region).background.effect;
+		assertTrue(regionEffect == TextBackgroundEffect.Glow || regionEffect == TextBackgroundEffect.Outline);
+		assertEquals(base.getDefaultTextStyle(TextType.City), settings.getDefaultTextStyle(TextType.City), "Other types of text keep their style.");
+		for (int i = 0; i < settings.edits.text.size(); i++)
+		{
+			MapText text = settings.edits.text.get(i);
+			MapText baseText = base.edits.text.get(i);
+			if (text.type == TextType.Title)
+			{
+				assertEquals(TextBackgroundEffect.Scroll, text.style.background.effect, "The title on the map changes too.");
+			}
+			else if (text.type == TextType.Region)
+			{
+				assertEquals(regionEffect, text.style.background.effect, "Region names on the map change too.");
+				assertEquals(3, text.style.background.outlineWidth, "Region names take the effect's settings from the style for new region text.");
+			}
+			else
+			{
+				assertEquals(baseText.style, text.style, "Other text on the map keeps its style.");
+			}
+		}
+	}
+
+	@Test
+	public void textBackgroundsStayTheSameWhenNotShuffled()
+	{
+		MapSettings settings = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
+		settings.themeGeneration = ThemeGenerationSettings.createDefault();
+		settings.themeGeneration.allowedTitleBackgroundEffects = new LinkedHashSet<>(List.of(TextBackgroundEffect.Scroll));
+		settings.themeGeneration.allowedRegionBackgroundEffects = new LinkedHashSet<>(List.of(TextBackgroundEffect.Banner));
+		MapSettings base = settings.deepCopy();
+
+		SettingsGenerator.randomizeTheme(settings, base, settings.artPack, new Random(7));
+
+		assertEquals(base.textStyleDefaults, settings.textStyleDefaults);
+		for (int i = 0; i < settings.edits.text.size(); i++)
+		{
+			assertEquals(base.edits.text.get(i).style, settings.edits.text.get(i).style);
+		}
+	}
+
+	@Test
+	public void aNewMapWithTheSameThemeShufflesTextBackgroundsOnlyWhenTheThemeDoes()
+	{
+		MapSettings settings = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
+		settings.themeGeneration = ThemeGenerationSettings.createDefault();
+		settings.themeGeneration.allowedTitleBackgroundEffects = new LinkedHashSet<>(List.of(TextBackgroundEffect.Scroll));
+		settings.getDefaultTextStyle(TextType.Title).background.effect = TextBackgroundEffect.Glow;
+
+		assertEquals(TextBackgroundEffect.Glow, SettingsGenerator.newMapWithSameTheme(settings).getDefaultTextStyle(TextType.Title).background.effect,
+				"Without shuffling, new text keeps the theme's background.");
+		settings.themeGeneration.shuffleTextBackgrounds = true;
+		assertEquals(TextBackgroundEffect.Scroll, SettingsGenerator.newMapWithSameTheme(settings).getDefaultTextStyle(TextType.Title).background.effect);
 	}
 
 	@Test

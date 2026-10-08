@@ -97,8 +97,7 @@ public class TextTool extends EditorTool
 	private RowHider editTextTypeHider;
 	private RowHider editStyleHeadingHider;
 	private TextStyleControls editStyleControls;
-	private JButton useStyleForAllTextOfTypeButton;
-	private RowHider useStyleForAllTextOfTypeHider;
+	private RowHider applyStyleToHider;
 	private RowHider editLayoutRows;
 	private static final int curvatureSliderDivider = 100;
 	private SliderWithDisplayedValue curvatureSliderWithDisplay;
@@ -302,7 +301,10 @@ public class TextTool extends EditorTool
 		JButton useFontForAllTypesButton = new JButton(Translation.get("textTool.useFontForAllTypes"));
 		useFontForAllTypesButton.setToolTipText(Translation.get("textTool.useFontForAllTypes.tooltip"));
 		useFontForAllTypesButton.addActionListener(e -> useFontForAllTextTypes());
-		addStyleButtonsHider = organizer.addLeftAlignedComponents(Arrays.asList(useFontForAllTypesButton));
+		JButton applyToButton = new JButton(Translation.get("textTool.applyStyleTo"));
+		applyToButton.setToolTipText(Translation.get("textTool.applyStyleForNewTextTo.tooltip"));
+		applyToButton.addActionListener(e -> showApplyDialogForDefaults());
+		addStyleButtonsHider = organizer.addLeftAlignedComponents(Arrays.asList(useFontForAllTypesButton, applyToButton));
 
 		addLayoutRows = organizer.addSectionHeading(Translation.get("textTool.section.layout"));
 		Tuple2<SliderWithDisplayedValue, RowHider> curvature = addCurvatureRow(organizer, value -> editLayoutForAdds(layout -> layout.curvature = value));
@@ -439,9 +441,10 @@ public class TextTool extends EditorTool
 		editStyleControls = new TextStyleControls(organizer, edit -> applyToSelectedTexts(text -> edit.apply(text.style)), this::getFontFamiliesUsedByThisMap,
 				() -> selectedTexts.size() == 1 ? editTextField.getText() : "");
 
-		useStyleForAllTextOfTypeButton = new JButton();
-		useStyleForAllTextOfTypeButton.addActionListener(e -> useSelectedStyleForAllTextOfType());
-		useStyleForAllTextOfTypeHider = organizer.addLeftAlignedComponents(Arrays.asList(useStyleForAllTextOfTypeButton));
+		JButton applyStyleToButton = new JButton(Translation.get("textTool.applyStyleTo"));
+		applyStyleToButton.setToolTipText(Translation.get("textTool.applyStyleTo.tooltip"));
+		applyStyleToButton.addActionListener(e -> showApplyDialogForSelectedText());
+		applyStyleToHider = organizer.addLeftAlignedComponents(Arrays.asList(applyStyleToButton));
 
 		editLayoutRows = organizer.addSectionHeading(Translation.get("textTool.section.layout"));
 		Tuple2<SliderWithDisplayedValue, RowHider> curvature = addCurvatureRow(organizer, value ->
@@ -813,13 +816,7 @@ public class TextTool extends EditorTool
 			editStyleHeadingHider.setVisible(true);
 			editStyleControls.setVisible(true);
 			editStyleControls.showStyles(getSelectedStyles());
-			if (isSingle)
-			{
-				String type = selectedTexts.get(0).type.toString();
-				useStyleForAllTextOfTypeButton.setText(Translation.get("textTool.useStyleForAllTextOfType", type));
-				useStyleForAllTextOfTypeButton.setToolTipText(Translation.get("textTool.useStyleForAllTextOfType.tooltip", type));
-			}
-			useStyleForAllTextOfTypeHider.setVisible(isSingle);
+			applyStyleToHider.setVisible(isSingle);
 
 			editLayoutRows.setVisible(true);
 			MapText first = selectedTexts.get(0);
@@ -905,7 +902,7 @@ public class TextTool extends EditorTool
 		editTextTypeHider.setVisible(false);
 		editStyleHeadingHider.setVisible(false);
 		editStyleControls.setVisible(false);
-		useStyleForAllTextOfTypeHider.setVisible(false);
+		applyStyleToHider.setVisible(false);
 		editLayoutRows.setVisible(false);
 		copyPasteDeleteButtonsSeparatorHider.setVisible(false);
 	}
@@ -1031,11 +1028,7 @@ public class TextTool extends EditorTool
 		applyToSelectedTexts(text -> text.angle = 0);
 	}
 
-	/**
-	 * Gives every text of the selected text's type the selected text's style, including its size, and uses that style for new text of the
-	 * type. Layout isn't changed, since it is usually fitted to each piece of text.
-	 */
-	private void useSelectedStyleForAllTextOfType()
+	private void showApplyDialogForSelectedText()
 	{
 		if (selectedTexts.size() != 1)
 		{
@@ -1043,17 +1036,56 @@ public class TextTool extends EditorTool
 		}
 		commitNameEdit();
 		MapText source = selectedTexts.get(0);
-		for (MapText text : mainWindow.edits.text)
+		TextStyle sourceStyle = source.style.copy();
+		ApplyTextStyleDialog dialog = new ApplyTextStyleDialog(mainWindow, false, source.type, choice -> applyStyleToTextsOfTypes(sourceStyle, choice));
+		dialog.setVisible(true);
+	}
+
+	private void showApplyDialogForDefaults()
+	{
+		TextStyle sourceStyle = getDefaultStyleForAdds().copy();
+		ApplyTextStyleDialog dialog = new ApplyTextStyleDialog(mainWindow, true, textTypeForAdds, choice -> applyStyleToTextsOfTypes(sourceStyle, choice));
+		dialog.setVisible(true);
+	}
+
+	/**
+	 * Applies the chosen parts of a style to the chosen types of text, on the map, for new text, or both.
+	 */
+	private void applyStyleToTextsOfTypes(TextStyle sourceStyle, ApplyTextStyleDialog.Choice choice)
+	{
+		if (choice.appliesToExistingText())
 		{
-			if (text.type == source.type && text != source)
+			for (MapText text : mainWindow.edits.text)
 			{
-				text.style = source.style.copy();
+				if (choice.types().contains(text.type))
+				{
+					TextStyle style = text.style.copy();
+					ApplyTextStyleDialog.applyStyleParts(sourceStyle, style, choice.parts());
+					text.style = style;
+				}
 			}
 		}
-		textStyleDefaults.put(source.type, source.style.copy());
+
+		if (choice.appliesToNewText())
+		{
+			for (TextType type : choice.types())
+			{
+				TextStyle defaultStyle = textStyleDefaults.get(type);
+				if (defaultStyle != null)
+				{
+					TextStyle style = defaultStyle.copy();
+					ApplyTextStyleDialog.applyStyleParts(sourceStyle, style, choice.parts());
+					textStyleDefaults.put(type, style);
+				}
+			}
+		}
 
 		undoer.setUndoPoint(UpdateType.Text, this);
 		updater.createAndShowMapTextChange();
+		if (!selectedTexts.isEmpty())
+		{
+			showEditComponentsForSelection(SelectionFocus.Leave);
+		}
 		showAddModeStyle();
 	}
 

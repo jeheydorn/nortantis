@@ -20,6 +20,7 @@ import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.util.*;
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntConsumer;
@@ -38,21 +39,24 @@ class RandomizeThemeDialog extends JDialog
 	private static final class Variation
 	{
 		final MapSettings settings;
+		/** Whether the backgrounds of title and region text were varied, including on the text already on the map. */
+		final boolean areTextBackgroundsVaried;
 		/** The preview, or null if it hasn't been drawn or couldn't be. */
 		BufferedImage preview;
 		/** The size the preview was last drawn to fit, or null if it hasn't been drawn. */
 		Dimension previewSize;
 
-		Variation(MapSettings settings)
+		Variation(MapSettings settings, boolean areTextBackgroundsVaried)
 		{
 			this.settings = settings;
+			this.areTextBackgroundsVaried = areTextBackgroundsVaried;
 		}
 	}
 
 	/** The open map's settings, which every variation varies. */
 	private final MapSettings base;
 	private final ThemeGenerationSettings gen;
-	private final Consumer<MapSettings> onApply;
+	private final BiConsumer<MapSettings, Boolean> onApply;
 	private final Consumer<MapSettings> onClose;
 	/** The open map as it is, followed by each variation rolled, in the order they were rolled. */
 	private final List<Variation> variations = new ArrayList<>();
@@ -71,13 +75,13 @@ class RandomizeThemeDialog extends JDialog
 	 * @param mapSettings
 	 *            The open map's settings. Not changed.
 	 * @param onApply
-	 *            Called with the variation shown when the user applies it. It carries the rules in its {@link MapSettings#themeGeneration}, and
-	 *            the region color ranges.
+	 *            Called with the variation shown when the user applies it, and whether the backgrounds of its title and region text were
+	 *            varied. It carries the rules in its {@link MapSettings#themeGeneration}, and the region color ranges.
 	 * @param onClose
 	 *            Called when the user closes the dialog without applying a variation, with the open map's settings carrying the rules, region
 	 *            base color, and region color ranges to keep.
 	 */
-	RandomizeThemeDialog(Window owner, MapSettings mapSettings, Consumer<MapSettings> onApply, Consumer<MapSettings> onClose)
+	RandomizeThemeDialog(Window owner, MapSettings mapSettings, BiConsumer<MapSettings, Boolean> onApply, Consumer<MapSettings> onClose)
 	{
 		super(owner, Translation.get("randomizeTheme.title"), ModalityType.APPLICATION_MODAL);
 		base = mapSettings.deepCopy();
@@ -88,7 +92,7 @@ class RandomizeThemeDialog extends JDialog
 		{
 			gen.artPack = chooseDefaultArtPack(base);
 		}
-		variations.add(new Variation(base));
+		variations.add(new Variation(base, false));
 
 		JPanel content = new JPanel(new BorderLayout(10, 10));
 		content.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -202,6 +206,22 @@ class RandomizeThemeDialog extends JDialog
 		addEnumCheckboxes(organizer, "randomizeTheme.allowedBackgroundTypes", Arrays.asList(BackgroundType.values()), gen.allowedBackgroundTypes,
 				RandomizeThemeDialog::getBackgroundTypeName);
 
+		organizer.addSectionHeading(Translation.get("randomizeTheme.section.text"));
+		JCheckBox shuffleTextBackgroundsCheckBox = new JCheckBox(Translation.get("randomizeTheme.shuffleTextBackgrounds"));
+		shuffleTextBackgroundsCheckBox.setToolTipText("<html>" + Translation.get("randomizeTheme.shuffleTextBackgrounds.help") + "</html>");
+		shuffleTextBackgroundsCheckBox.setSelected(gen.shuffleTextBackgrounds);
+		organizer.addLeftAlignedComponent(shuffleTextBackgroundsCheckBox);
+		RowHider textBackgroundRows = addEnumCheckboxes(organizer, "randomizeTheme.allowedTitleBackgroundEffects", Arrays.asList(TextBackgroundEffect.values()),
+				gen.allowedTitleBackgroundEffects, TextBackgroundEffect::toString);
+		textBackgroundRows.add(addEnumCheckboxes(organizer, "randomizeTheme.allowedRegionBackgroundEffects", Arrays.asList(TextBackgroundEffect.values()),
+				gen.allowedRegionBackgroundEffects, TextBackgroundEffect::toString));
+		textBackgroundRows.setEnabled(gen.shuffleTextBackgrounds);
+		shuffleTextBackgroundsCheckBox.addActionListener(e ->
+		{
+			gen.shuffleTextBackgrounds = shuffleTextBackgroundsCheckBox.isSelected();
+			textBackgroundRows.setEnabled(gen.shuffleTextBackgrounds);
+		});
+
 		organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.55);
 		organizer.addVerticalFillerRow();
 		JScrollPane scrollPane = organizer.createScrollPane();
@@ -309,7 +329,7 @@ class RandomizeThemeDialog extends JDialog
 	 * Adds a checkbox for each choice. Checking every choice is stored as an empty set, which means every choice, including ones added in
 	 * later versions.
 	 */
-	private <E> void addEnumCheckboxes(GridBagOrganizer organizer, String key, List<E> choices, Set<E> allowed, Function<E, String> getName)
+	private <E> RowHider addEnumCheckboxes(GridBagOrganizer organizer, String key, List<E> choices, Set<E> allowed, Function<E, String> getName)
 	{
 		JPanel panel = new JPanel(new WrapLayout(WrapLayout.LEFT, 4, 0));
 		Map<E, JCheckBox> checkboxes = new LinkedHashMap<>();
@@ -336,7 +356,7 @@ class RandomizeThemeDialog extends JDialog
 			checkboxes.put(choice, checkbox);
 			panel.add(checkbox);
 		}
-		organizer.addLeftAlignedComponentWithStackedLabel(Translation.get(key + ".label"), "<html>" + Translation.get(key + ".help") + "</html>", panel);
+		return organizer.addLeftAlignedComponentWithStackedLabel(Translation.get(key + ".label"), "<html>" + Translation.get(key + ".help") + "</html>", panel);
 	}
 
 	/**
@@ -501,7 +521,7 @@ class RandomizeThemeDialog extends JDialog
 		MapSettings variation = base.deepCopy();
 		variation.themeGeneration = gen.copy();
 		SettingsGenerator.randomizeTheme(variation, base, getArtPackToChooseFrom(), new Random());
-		variations.add(new Variation(variation));
+		variations.add(new Variation(variation, gen.shuffleTextBackgrounds));
 		showVariation(variations.size() - 1);
 	}
 
@@ -586,9 +606,9 @@ class RandomizeThemeDialog extends JDialog
 
 	private void apply()
 	{
-		MapSettings variation = variations.get(shownIndex).settings;
-		keepRulesAndRanges(variation);
-		onApply.accept(variation);
+		Variation variation = variations.get(shownIndex);
+		keepRulesAndRanges(variation.settings);
+		onApply.accept(variation.settings, variation.areTextBackgroundsVaried);
 		dispose();
 	}
 

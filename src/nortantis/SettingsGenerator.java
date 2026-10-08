@@ -151,6 +151,7 @@ public class SettingsGenerator
 		setRandomSeeds(settings, rand);
 		ThemeGenerationSettings gen = settings.themeGeneration != null ? settings.themeGeneration : ThemeGenerationSettings.createDefault();
 		applyThemeRandomness(settings, theme, gen, artPack, rand);
+		shuffleTextBackgrounds(settings, gen, rand);
 		chooseCityIconType(settings, rand);
 		applyWorldRandomness(settings, rand);
 		return settings;
@@ -273,7 +274,8 @@ public class SettingsGenerator
 
 	/**
 	 * Varies the look of the given settings within the theme's rules, around the look of the given base. The colors that never vary are set
-	 * to the base's, and when regions are colored, the region colors in the settings' edits are generated again.
+	 * to the base's, and when regions are colored, the region colors in the settings' edits are generated again. Text backgrounds are varied
+	 * separately, by {@link #shuffleTextBackgrounds}.
 	 *
 	 * @param base
 	 *            The look to vary around, which can be the settings themselves. Varying around a base that doesn't change, rather than around
@@ -396,6 +398,63 @@ public class SettingsGenerator
 		{
 			settings.backgroundTextureResource = ProbabilityHelper.sampleUniform(rand, textures);
 			settings.backgroundTextureSource = TextureSource.Assets;
+		}
+	}
+
+	/**
+	 * When the theme's rules say to shuffle them, chooses the effects drawn behind title and region text within the rules, both for new text
+	 * and for the title and region text already on the map. Otherwise does nothing.
+	 *
+	 * @param gen
+	 *            The theme's rules, or null for a theme without any, which doesn't shuffle.
+	 */
+	public static void shuffleTextBackgrounds(MapSettings settings, ThemeGenerationSettings gen, Random rand)
+	{
+		if (gen == null || !gen.shuffleTextBackgrounds)
+		{
+			return;
+		}
+		chooseTextBackgroundEffect(settings, TextType.Title, gen.allowedTitleBackgroundEffects, rand);
+		chooseTextBackgroundEffect(settings, TextType.Region, gen.allowedRegionBackgroundEffects, rand);
+	}
+
+	/**
+	 * Chooses the effect drawn behind the given type of text, both for new text and for the text of that type already on the map. The
+	 * effect's settings, such as an outline's width, are the ones the style for new text of the type has.
+	 */
+	private static void chooseTextBackgroundEffect(MapSettings settings, TextType type, Set<TextBackgroundEffect> allowed, Random rand)
+	{
+		TextStyle currentStyle = settings.getDefaultTextStyle(type);
+		if (currentStyle == null)
+		{
+			return;
+		}
+		List<TextBackgroundEffect> effects = allowed.isEmpty() ? Arrays.asList(TextBackgroundEffect.values()) : new ArrayList<>(allowed);
+		TextBackgroundEffect effect = ProbabilityHelper.sampleUniform(rand, effects);
+		TextStyle style = currentStyle.copy();
+		style.background.effect = effect;
+		settings.setDefaultTextStyle(type, style);
+		setTextBackground(settings, type, style.background);
+	}
+
+	/**
+	 * Gives the given type of text on the map the given background's effect and the settings of every effect. Each text keeps its own fade
+	 * behind.
+	 */
+	public static void setTextBackground(MapSettings settings, TextType type, TextBackground background)
+	{
+		if (settings.edits == null)
+		{
+			return;
+		}
+		for (MapText text : settings.edits.text)
+		{
+			if (text.type == type && text.style != null)
+			{
+				text.style = text.style.copy();
+				text.style.background.effect = background.effect;
+				text.style.background.copyEffectSettingsFrom(background);
+			}
 		}
 	}
 
@@ -556,6 +615,7 @@ public class SettingsGenerator
 		// A brand new full-size map is not a sub-map, even if the theme came from one.
 		settings.subMapInfo = null;
 		Random seedRandom = new Random();
+		shuffleTextBackgrounds(settings, settings.themeGeneration, seedRandom);
 		settings.randomSeed = Helper.safeAbs(seedRandom.nextInt());
 		settings.textRandomSeed = Helper.safeAbs(seedRandom.nextInt());
 		settings.backgroundRandomSeed = Helper.safeAbs(seedRandom.nextInt());
@@ -579,7 +639,8 @@ public class SettingsGenerator
 
 	/**
 	 * Varies the look of the given settings within the rules in their {@link MapSettings#themeGeneration}, around the look of the given base,
-	 * keeping the world and everything on it unchanged.
+	 * keeping the world and what is on it unchanged apart from the region colors, and the backgrounds of title and region text when the rules
+	 * shuffle them.
 	 *
 	 * @param base
 	 *            The look to vary around. Not changed.
@@ -590,6 +651,7 @@ public class SettingsGenerator
 	{
 		ThemeGenerationSettings gen = settings.themeGeneration != null ? settings.themeGeneration : ThemeGenerationSettings.createDefault();
 		applyThemeRandomness(settings, base, gen, artPack, rand);
+		shuffleTextBackgrounds(settings, gen, rand);
 		settings.backgroundRandomSeed = Helper.safeAbs(rand.nextInt());
 		settings.regionsRandomSeed = Helper.safeAbs(rand.nextInt());
 		settings.frayedBorderSeed = Helper.safeAbs(rand.nextInt());

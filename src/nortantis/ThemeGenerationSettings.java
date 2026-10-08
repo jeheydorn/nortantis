@@ -86,6 +86,23 @@ public class ThemeGenerationSettings implements Serializable
 	public Set<BackgroundType> allowedBackgroundTypes = new LinkedHashSet<>(Arrays.asList(BackgroundType.Fractal, BackgroundType.GeneratedFromTexture));
 	public Set<LineStyle> allowedLineStyles = new LinkedHashSet<>();
 
+	/*
+	 * Text. Only the effect drawn behind title and region text varies, and each effect keeps the settings the theme has for it.
+	 */
+	/**
+	 * Whether the effects drawn behind title and region text are shuffled whenever the theme is used. When false, they are the theme's own.
+	 */
+	public boolean shuffleTextBackgrounds = false;
+	public Set<TextBackgroundEffect> allowedTitleBackgroundEffects = createDefaultAllowedTextBackgroundEffects();
+	public Set<TextBackgroundEffect> allowedRegionBackgroundEffects = createDefaultAllowedTextBackgroundEffects();
+
+	private static Set<TextBackgroundEffect> createDefaultAllowedTextBackgroundEffects()
+	{
+		Set<TextBackgroundEffect> result = new LinkedHashSet<>(Arrays.asList(TextBackgroundEffect.values()));
+		result.remove(TextBackgroundEffect.BoldBackground);
+		return result;
+	}
+
 	public enum BackgroundType
 	{
 		Fractal, GeneratedFromTexture, SolidColor
@@ -138,6 +155,10 @@ public class ThemeGenerationSettings implements Serializable
 		obj.put("allowedRoadStrokeTypes", toJsonArray(allowedRoadStrokeTypes, Enum::name));
 		obj.put("allowedBackgroundTypes", toJsonArray(allowedBackgroundTypes, Enum::name));
 		obj.put("allowedLineStyles", toJsonArray(allowedLineStyles, Enum::name));
+
+		obj.put("shuffleTextBackgrounds", shuffleTextBackgrounds);
+		obj.put("allowedTitleBackgroundEffects", toJsonArray(allowedTitleBackgroundEffects, Enum::name));
+		obj.put("allowedRegionBackgroundEffects", toJsonArray(allowedRegionBackgroundEffects, Enum::name));
 		return obj;
 	}
 
@@ -182,6 +203,13 @@ public class ThemeGenerationSettings implements Serializable
 		result.allowedRoadStrokeTypes = getEnumSet(obj, "allowedRoadStrokeTypes", StrokeType.class, result.allowedRoadStrokeTypes);
 		result.allowedBackgroundTypes = getEnumSet(obj, "allowedBackgroundTypes", BackgroundType.class, result.allowedBackgroundTypes);
 		result.allowedLineStyles = getEnumSet(obj, "allowedLineStyles", LineStyle.class, result.allowedLineStyles);
+
+		if (obj.containsKey("shuffleTextBackgrounds"))
+		{
+			result.shuffleTextBackgrounds = (Boolean) obj.get("shuffleTextBackgrounds");
+		}
+		result.allowedTitleBackgroundEffects = getEnumSet(obj, "allowedTitleBackgroundEffects", TextBackgroundEffect.class, result.allowedTitleBackgroundEffects);
+		result.allowedRegionBackgroundEffects = getEnumSet(obj, "allowedRegionBackgroundEffects", TextBackgroundEffect.class, result.allowedRegionBackgroundEffects);
 		return result;
 	}
 
