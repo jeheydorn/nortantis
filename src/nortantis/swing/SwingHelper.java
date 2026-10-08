@@ -975,7 +975,12 @@ public class SwingHelper
 	}
 
 	private static final double labelTipFontScale = 0.92;
-	private static final double labelTipFadeTowardBackground = 0.3;
+	/**
+	 * How far a label tip's color moves from the label's toward the background. Dark text on a light background stays prominent at the
+	 * same fade that dims light text on a dark background enough, so light backgrounds fade further.
+	 */
+	private static final double labelTipFadeTowardDarkBackground = 0.3;
+	private static final double labelTipFadeTowardLightBackground = 0.45;
 
 	/**
 	 * Creates a wrapping label with a short tip on a line under it, in a smaller font and a color closer to the background so the tip stands
@@ -1000,7 +1005,12 @@ public class SwingHelper
 	{
 		Color foreground = UIManager.getColor("Label.foreground");
 		Color background = UIManager.getColor("Panel.background");
-		Color tipColor = foreground != null && background != null ? blend(foreground, background, labelTipFadeTowardBackground) : Color.gray;
+		Color tipColor = Color.gray;
+		if (foreground != null && background != null)
+		{
+			boolean isBackgroundLight = Color.RGBtoHSB(background.getRed(), background.getGreen(), background.getBlue(), null)[2] > 0.5f;
+			tipColor = blend(foreground, background, isBackgroundLight ? labelTipFadeTowardLightBackground : labelTipFadeTowardDarkBackground);
+		}
 		int tipFontSize = font == null ? 10 : (int) Math.round(font.getSize2D() * labelTipFontScale);
 		return "<html>" + labelText + "<br><span style='font-size:" + tipFontSize + "pt; color:" + String.format("#%06x", tipColor.getRGB() & 0xffffff) + "'>"
 				+ tipText + "</span></html>";
