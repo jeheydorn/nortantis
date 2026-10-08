@@ -341,20 +341,19 @@ public class SettingsGenerator
 			borderTypes = borderChoices;
 		}
 		// borderTypes shouldn't be empty since that would mean there are no border types, including installed ones.
-		Assets.BorderMetadata borderMetadata = Assets.defaultBorderMetadata;
 		if (!borderTypes.isEmpty())
 		{
 			settings.borderResource = ProbabilityHelper.sampleUniform(rand, borderTypes);
-			borderMetadata = Assets.readBorderMetadata(settings.borderResource, settings.customImagesPath);
-			// The base's width may not suit another border, so a border other than the base's gets any width in the range its art pack gives it.
-			if (settings.borderResource.equals(base.borderResource))
-			{
-				settings.borderWidth = vary(rand, base.borderWidth, gen.borderWidthVariation, 1, maxBorderWidthInEditor);
-			}
-			else
-			{
-				settings.borderWidth = borderMetadata.minWidth() + rand.nextInt(Math.max(1, borderMetadata.maxWidth() - borderMetadata.minWidth()));
-			}
+		}
+		// A border's own width range, from its art pack, overrides the theme's border width.
+		Assets.BorderMetadata borderMetadata = Assets.readBorderMetadata(settings.borderResource, settings.customImagesPath);
+		if (borderMetadata.hasWidthRange())
+		{
+			settings.borderWidth = borderMetadata.minWidth() + rand.nextInt(borderMetadata.maxWidth() - borderMetadata.minWidth());
+		}
+		else
+		{
+			settings.borderWidth = vary(rand, base.borderWidth, gen.borderWidthVariation, 1, maxBorderWidthInEditor);
 		}
 		if (settings.drawBorder)
 		{
@@ -381,14 +380,22 @@ public class SettingsGenerator
 		settings.roadStyle = new Stroke(ProbabilityHelper.sampleUniform(rand, roadTypesDifferentFromBoundaries.isEmpty() ? roadTypes : roadTypesDifferentFromBoundaries),
 				settings.roadStyle.width);
 
-		// Background
+		// Background. Each texture is a choice of its own, and a fractal or solid color background is as likely as each texture.
 		List<NamedResource> textures = listBackgroundTextureChoices(artPack, settings.customImagesPath);
-		List<BackgroundType> backgroundTypes = new ArrayList<>(gen.allowedBackgroundTypes.isEmpty() ? Arrays.asList(BackgroundType.values()) : gen.allowedBackgroundTypes);
-		if (textures.isEmpty())
+		Set<BackgroundType> allowedBackgroundTypes = gen.allowedBackgroundTypes.isEmpty() ? EnumSet.allOf(BackgroundType.class) : gen.allowedBackgroundTypes;
+		List<BackgroundType> backgroundChoices = new ArrayList<>();
+		for (BackgroundType type : allowedBackgroundTypes)
 		{
-			backgroundTypes.remove(BackgroundType.GeneratedFromTexture);
+			if (type == BackgroundType.GeneratedFromTexture)
+			{
+				backgroundChoices.addAll(Collections.nCopies(textures.size(), type));
+			}
+			else
+			{
+				backgroundChoices.add(type);
+			}
 		}
-		BackgroundType backgroundType = backgroundTypes.isEmpty() ? BackgroundType.Fractal : ProbabilityHelper.sampleUniform(rand, backgroundTypes);
+		BackgroundType backgroundType = backgroundChoices.isEmpty() ? BackgroundType.Fractal : ProbabilityHelper.sampleUniform(rand, backgroundChoices);
 		settings.generateBackground = backgroundType == BackgroundType.Fractal;
 		settings.generateBackgroundFromTexture = backgroundType == BackgroundType.GeneratedFromTexture;
 		settings.solidColorBackground = backgroundType == BackgroundType.SolidColor;

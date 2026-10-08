@@ -387,18 +387,25 @@ public class Assets
 	 * {@link #defaultBorderMetadata}.
 	 *
 	 * @param minWidth
-	 *            The narrowest width new maps get with this border.
+	 *            The narrowest width new maps get with this border, or null if the border doesn't set a width range.
 	 * @param maxWidth
-	 *            One more than the widest width new maps get with this border.
+	 *            One more than the widest width new maps get with this border, or null if the border doesn't set a width range.
 	 * @param allowFrayedBorder
 	 *            Whether new maps may get frayed edges with this border.
 	 */
-	public record BorderMetadata(int minWidth, int maxWidth, boolean allowFrayedBorder)
+	public record BorderMetadata(Integer minWidth, Integer maxWidth, boolean allowFrayedBorder)
 	{
+		public boolean hasWidthRange()
+		{
+			return minWidth != null && maxWidth != null;
+		}
 	}
 
-	public static final BorderMetadata defaultBorderMetadata = new BorderMetadata(100, 300, true);
+	public static final BorderMetadata defaultBorderMetadata = new BorderMetadata(null, null, true);
 
+	/**
+	 * Reads a border's border.properties file. The file sets a width range only when it has both minWidth and maxWidth.
+	 */
 	public static BorderMetadata readBorderMetadata(NamedResource borderResource, String customImagesFolder)
 	{
 		if (borderResource == null)
@@ -418,13 +425,16 @@ public class Assets
 		try
 		{
 			Properties properties = loadPropertiesFile(propertiesPath);
-			int minWidth = Integer.parseInt(properties.getProperty("minWidth", String.valueOf(defaultBorderMetadata.minWidth())).trim());
-			int maxWidth = Integer.parseInt(properties.getProperty("maxWidth", String.valueOf(defaultBorderMetadata.maxWidth())).trim());
-			boolean allowFrayedBorder = Boolean.parseBoolean(properties.getProperty("allowFrayedBorder", String.valueOf(defaultBorderMetadata.allowFrayedBorder())).trim());
-			if (maxWidth <= minWidth)
+			String minWidthText = properties.getProperty("minWidth");
+			String maxWidthText = properties.getProperty("maxWidth");
+			Integer minWidth = null;
+			Integer maxWidth = null;
+			if (minWidthText != null && maxWidthText != null)
 			{
-				maxWidth = minWidth + 1;
+				minWidth = Integer.parseInt(minWidthText.trim());
+				maxWidth = Math.max(minWidth + 1, Integer.parseInt(maxWidthText.trim()));
 			}
+			boolean allowFrayedBorder = Boolean.parseBoolean(properties.getProperty("allowFrayedBorder", String.valueOf(defaultBorderMetadata.allowFrayedBorder())).trim());
 			return new BorderMetadata(minWidth, maxWidth, allowFrayedBorder);
 		}
 		catch (IOException | NumberFormatException e)

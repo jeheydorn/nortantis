@@ -3494,12 +3494,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		{
 			savePath = Paths.get(savePath.toString() + MapSettings.fileExtensionWithDot);
 		}
-		if (openSettingsFilePath != null && savePath.equals(openSettingsFilePath.toAbsolutePath()))
-		{
-			SwingHelper.showMessageDialog(this, Translation.get("mainWindow.saveCopyWithoutEdits.sameFile"), Translation.get("mainWindow.unableToSaveSettings"),
-					JOptionPane.ERROR_MESSAGE);
-			return;
-		}
 
 		MapSettings copy = settings.deepCopyExceptEdits();
 		copy.edits = new MapEdits();

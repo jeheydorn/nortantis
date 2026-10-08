@@ -66,7 +66,7 @@ public class ThemeGenerationSettings implements Serializable
 	public double drawBorderProbability = 0.75;
 	public Set<String> allowedBorderNames = new LinkedHashSet<>();
 	/**
-	 * How far the border width can move either way. A border other than the theme's gets any width in the range its art pack gives it.
+	 * How far the border width can move either way from the theme's, unless the chosen border's art pack gives it a width range.
 	 */
 	public int borderWidthVariation = 100;
 	public double frayedBorderProbability = 0.5;
@@ -80,8 +80,8 @@ public class ThemeGenerationSettings implements Serializable
 	public Set<StrokeType> allowedRegionBoundaryStrokeTypes = new LinkedHashSet<>();
 	public Set<StrokeType> allowedRoadStrokeTypes = new LinkedHashSet<>();
 	/**
-	 * The kinds of background generated maps choose among, each as likely as the others. A background generated from a texture uses any of
-	 * the art pack's background textures.
+	 * The kinds of background generated maps choose among. Each of the art pack's background textures is a choice of its own when
+	 * backgrounds generated from a texture are allowed, and a fractal or solid color background is as likely as each texture.
 	 */
 	public Set<BackgroundType> allowedBackgroundTypes = new LinkedHashSet<>(Arrays.asList(BackgroundType.Fractal, BackgroundType.GeneratedFromTexture));
 	public Set<LineStyle> allowedLineStyles = new LinkedHashSet<>();

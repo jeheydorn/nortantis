@@ -144,11 +144,11 @@ public class ThemeTest
 	}
 
 	@Test
-	public void theBorderWidthVariesAroundTheBaseWhenTheBorderIsKept()
+	public void theBorderWidthVariesAroundTheBaseForABorderWithoutItsOwnWidthRange()
 	{
 		MapSettings settings = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
 		settings.themeGeneration = ThemeGenerationSettings.createDefault();
-		settings.themeGeneration.allowedBorderNames.add(settings.borderResource.name);
+		settings.themeGeneration.allowedBorderNames.add("lines");
 		settings.themeGeneration.borderWidthVariation = 20;
 		MapSettings base = settings.deepCopyExceptEdits();
 		Random rand = new Random(3);
@@ -156,7 +156,7 @@ public class ThemeTest
 		for (int i = 0; i < 30; i++)
 		{
 			SettingsGenerator.applyThemeRandomness(settings, base, settings.themeGeneration, base.artPack, rand);
-			assertEquals(base.borderResource, settings.borderResource);
+			assertEquals("lines", settings.borderResource.name);
 			assertTrue(Math.abs(settings.borderWidth - base.borderWidth) <= 20, "The border width stays within its variation: " + settings.borderWidth);
 			changed |= settings.borderWidth != base.borderWidth;
 		}
@@ -168,14 +168,37 @@ public class ThemeTest
 	}
 
 	@Test
+	public void aBordersOwnSettingsOverrideTheTheme()
+	{
+		MapSettings settings = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
+		settings.themeGeneration = ThemeGenerationSettings.createDefault();
+		settings.themeGeneration.allowedBorderNames.add("dashes");
+		settings.themeGeneration.borderWidthVariation = 0;
+		settings.themeGeneration.drawBorderProbability = 1.0;
+		settings.themeGeneration.frayedBorderProbability = 1.0;
+		settings.borderWidth = 200;
+		MapSettings base = settings.deepCopyExceptEdits();
+		Random rand = new Random(5);
+		for (int i = 0; i < 30; i++)
+		{
+			SettingsGenerator.applyThemeRandomness(settings, base, settings.themeGeneration, base.artPack, rand);
+			assertEquals("dashes", settings.borderResource.name);
+			assertTrue(settings.borderWidth >= 25 && settings.borderWidth < 75, "The width comes from the border's range: " + settings.borderWidth);
+			assertFalse(settings.frayedBorder, "The border rules out frayed edges.");
+		}
+	}
+
+	@Test
 	public void backgroundTypesAreEquallyLikelyAmongThoseAllowed()
 	{
 		MapSettings settings = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
 		settings.themeGeneration = ThemeGenerationSettings.createDefault();
 		settings.themeGeneration.allowedBackgroundTypes.clear();
 
+		int textureCount = Assets.listBackgroundTexturesForArtPack(settings.artPack, settings.customImagesPath).size();
+		assertTrue(textureCount > 1);
 		int[] counts = new int[3];
-		final int tries = 300;
+		final int tries = 600;
 		Random rand = new Random(13);
 		for (int i = 0; i < tries; i++)
 		{
@@ -184,10 +207,10 @@ public class ThemeTest
 			assertEquals(1, typeCount, "Exactly one kind of background is chosen.");
 			counts[settings.generateBackground ? 0 : settings.generateBackgroundFromTexture ? 1 : 2]++;
 		}
-		for (int count : counts)
-		{
-			assertTrue(Math.abs(count - tries / 3.0) < tries / 3.0 * 0.3, "Each kind of background is as likely as the others: " + Arrays.toString(counts));
-		}
+		double expectedPerChoice = tries / (double) (textureCount + 2);
+		assertTrue(Math.abs(counts[0] - expectedPerChoice) < expectedPerChoice * 0.4, "Fractal is as likely as each texture: " + Arrays.toString(counts));
+		assertTrue(Math.abs(counts[2] - expectedPerChoice) < expectedPerChoice * 0.4, "Solid color is as likely as each texture: " + Arrays.toString(counts));
+		assertTrue(Math.abs(counts[1] - expectedPerChoice * textureCount) < expectedPerChoice * textureCount * 0.2, "Textures: " + Arrays.toString(counts));
 
 		settings.themeGeneration.allowedBackgroundTypes.add(ThemeGenerationSettings.BackgroundType.GeneratedFromTexture);
 		for (int i = 0; i < 30; i++)
@@ -345,9 +368,12 @@ public class ThemeTest
 	public void borderMetadataComesFromTheBordersFolder()
 	{
 		Assets.BorderMetadata dashes = Assets.readBorderMetadata(new NamedResource(Assets.installedArtPack, "dashes"), null);
+		assertTrue(dashes.hasWidthRange());
 		assertEquals(25, dashes.minWidth());
 		assertEquals(75, dashes.maxWidth());
 		assertFalse(dashes.allowFrayedBorder());
-		assertEquals(Assets.defaultBorderMetadata, Assets.readBorderMetadata(new NamedResource(Assets.installedArtPack, "lines"), null));
+		Assets.BorderMetadata lines = Assets.readBorderMetadata(new NamedResource(Assets.installedArtPack, "lines"), null);
+		assertEquals(Assets.defaultBorderMetadata, lines);
+		assertFalse(lines.hasWidthRange());
 	}
 }
