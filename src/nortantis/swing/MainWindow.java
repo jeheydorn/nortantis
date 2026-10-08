@@ -3723,21 +3723,23 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					currentEdit.color = edit.color;
 				}
 			}
-		}), this::keepThemeRulesAndRegionColorRanges);
+		}), this::keepThemeRulesAndRegionColorSettings);
 		dialog.setVisible(true);
 	}
 
 	/**
-	 * Keeps the rules for varying the open map's theme, and its region color ranges, from the given settings, without changing how the map
-	 * looks.
+	 * Keeps the rules for varying the open map's theme, and its region base color and region color ranges, from the given settings, without
+	 * changing how the map looks.
 	 */
-	private void keepThemeRulesAndRegionColorRanges(MapSettings source)
+	private void keepThemeRulesAndRegionColorSettings(MapSettings source)
 	{
 		themeGeneration = source.themeGeneration == null ? null : source.themeGeneration.copy();
 		MapSettings settings = getSettingsFromGUI(false);
-		if (settings.hueRange != source.hueRange || settings.saturationRange != source.saturationRange || settings.brightnessRange != source.brightnessRange)
+		if (!Objects.equals(settings.regionBaseColor, source.regionBaseColor) || settings.hueRange != source.hueRange || settings.saturationRange != source.saturationRange
+				|| settings.brightnessRange != source.brightnessRange)
 		{
 			toolsPanel.currentTool.onBeforeUndoRedo();
+			settings.regionBaseColor = source.regionBaseColor;
 			settings.hueRange = source.hueRange;
 			settings.saturationRange = source.saturationRange;
 			settings.brightnessRange = source.brightnessRange;

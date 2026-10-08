@@ -2,6 +2,7 @@ package nortantis;
 
 import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanWaves;
+import nortantis.ThemeGenerationSettings.BackgroundType;
 import nortantis.editor.RegionEdit;
 import nortantis.platform.Color;
 import nortantis.platform.Font;
@@ -31,6 +32,7 @@ public class SettingsGenerator
 	public static final int minRegionCount = 2;
 	public static int maxRegionCount = 20;
 	public static final float maxLineWidthInEditor = 10f;
+	public static final int maxBorderWidthInEditor = 600;
 	private static final int maxGrungeWidthToGenerate = 2000;
 	private static final int maxFrayedBorderBlurLevelToGenerate = 150;
 	private static final int maxShadingLevelToGenerate = 100;
@@ -164,6 +166,8 @@ public class SettingsGenerator
 		settings.subMapInfo = null;
 		settings.resolution = MapSettings.defaultResolution;
 		settings.heightmapResolution = MapSettings.defaultHeightmapResolution;
+		settings.defaultMapExportAction = MapSettings.defaultDefaultExportAction;
+		settings.defaultHeightmapExportAction = MapSettings.defaultDefaultExportAction;
 		settings.drawOverlayImage = false;
 		settings.overlayImagePath = null;
 		settings.rightRotationCount = 0;
@@ -299,21 +303,23 @@ public class SettingsGenerator
 		settings.lineStyle = ProbabilityHelper.sampleUniform(rand, lineStyles);
 
 		// Colors that belong together move together, so that colors chosen to work together keep working together. Only the ocean color and
-		// the land color are varied, and the others either follow one of them or are the base's. When regions are colored, they get new
-		// colors around the region base color instead, and the land and border colors are the base's.
+		// either the land color or the region base color are varied, and the others either follow one of them or are the base's. When regions
+		// are colored, they get new colors around the varied region base color, and the land and border colors are the base's.
 		float[] oceanOffset = rollColorOffset(rand, gen.oceanHueVariation, gen.oceanSaturationVariation, gen.oceanBrightnessVariation);
 		settings.oceanColor = applyColorOffset(base.oceanColor, oceanOffset);
 		settings.oceanWavesColor = applyColorOffset(base.oceanWavesColor, oceanOffset);
 		settings.oceanShadingColor = applyColorOffset(base.oceanShadingColor, oceanOffset);
-		settings.regionBaseColor = base.regionBaseColor;
 		if (settings.drawRegionColors)
 		{
+			float[] regionBaseOffset = rollColorOffset(rand, gen.regionBaseHueVariation, gen.regionBaseSaturationVariation, gen.regionBaseBrightnessVariation);
+			settings.regionBaseColor = applyColorOffset(base.regionBaseColor, regionBaseOffset);
 			settings.landColor = base.landColor;
 			settings.borderColor = base.borderColor;
 			generateRegionColors(settings, rand);
 		}
 		else
 		{
+			settings.regionBaseColor = base.regionBaseColor;
 			float[] landOffset = rollColorOffset(rand, gen.landHueVariation, gen.landSaturationVariation, gen.landBrightnessVariation);
 			settings.landColor = applyColorOffset(base.landColor, landOffset);
 			settings.borderColor = applyColorOffset(base.borderColor, landOffset);
@@ -338,7 +344,15 @@ public class SettingsGenerator
 		{
 			settings.borderResource = ProbabilityHelper.sampleUniform(rand, borderTypes);
 			borderMetadata = Assets.readBorderMetadata(settings.borderResource, settings.customImagesPath);
-			settings.borderWidth = borderMetadata.minWidth() + rand.nextInt(borderMetadata.maxWidth() - borderMetadata.minWidth());
+			// The base's width may not suit another border, so a border other than the base's gets any width in the range its art pack gives it.
+			if (settings.borderResource.equals(base.borderResource))
+			{
+				settings.borderWidth = vary(rand, base.borderWidth, gen.borderWidthVariation, 1, maxBorderWidthInEditor);
+			}
+			else
+			{
+				settings.borderWidth = borderMetadata.minWidth() + rand.nextInt(Math.max(1, borderMetadata.maxWidth() - borderMetadata.minWidth()));
+			}
 		}
 		if (settings.drawBorder)
 		{
@@ -365,20 +379,17 @@ public class SettingsGenerator
 		settings.roadStyle = new Stroke(ProbabilityHelper.sampleUniform(rand, roadTypesDifferentFromBoundaries.isEmpty() ? roadTypes : roadTypesDifferentFromBoundaries),
 				settings.roadStyle.width);
 
-		// Background. A fractal background, when the theme allows it, is one more choice alongside the allowed background textures, and all of
-		// them are equally likely.
-		List<NamedResource> textureChoices = listBackgroundTextureChoices(artPack, settings.customImagesPath);
-		List<NamedResource> textures = chooseAllowed(textureChoices,
-				texture -> gen.allowedBackgroundTextureNames.isEmpty() || gen.allowedBackgroundTextureNames.contains(texture.name));
+		// Background
+		List<NamedResource> textures = listBackgroundTextureChoices(artPack, settings.customImagesPath);
+		List<BackgroundType> backgroundTypes = new ArrayList<>(gen.allowedBackgroundTypes.isEmpty() ? Arrays.asList(BackgroundType.values()) : gen.allowedBackgroundTypes);
 		if (textures.isEmpty())
 		{
-			textures = textureChoices;
+			backgroundTypes.remove(BackgroundType.GeneratedFromTexture);
 		}
-		// With no texture to draw a background from, the background is fractal.
-		boolean useFractalBackground = textures.isEmpty() || (gen.allowFractalBackground && rand.nextInt(textures.size() + 1) == 0);
-		settings.generateBackground = useFractalBackground;
-		settings.generateBackgroundFromTexture = !useFractalBackground;
-		settings.solidColorBackground = false;
+		BackgroundType backgroundType = backgroundTypes.isEmpty() ? BackgroundType.Fractal : ProbabilityHelper.sampleUniform(rand, backgroundTypes);
+		settings.generateBackground = backgroundType == BackgroundType.Fractal;
+		settings.generateBackgroundFromTexture = backgroundType == BackgroundType.GeneratedFromTexture;
+		settings.solidColorBackground = backgroundType == BackgroundType.SolidColor;
 		// Always set a background texture even if it is not used so that the editor doesn't give an error when switching to the background
 		// texture file path field.
 		if (!textures.isEmpty())
@@ -399,13 +410,13 @@ public class SettingsGenerator
 	}
 
 	/**
-	 * The background textures a theme chooses among for the given art pack: the art pack's own, or when it has none, those of the art packs
-	 * new random maps use.
+	 * The background textures a theme chooses among for the given art pack: the art pack's own, or when it has none, the installed art
+	 * pack's.
 	 */
-	public static List<NamedResource> listBackgroundTextureChoices(String artPack, String customImagesFolder)
+	private static List<NamedResource> listBackgroundTextureChoices(String artPack, String customImagesFolder)
 	{
 		List<NamedResource> result = Assets.listBackgroundTexturesForArtPack(artPack, customImagesFolder);
-		return result.isEmpty() ? Assets.listBackgroundTexturesForArtPacks(Assets.listArtPacksForNewRandomMaps(customImagesFolder), customImagesFolder) : result;
+		return result.isEmpty() ? Assets.listBackgroundTexturesForArtPack(Assets.installedArtPack, customImagesFolder) : result;
 	}
 
 	private static boolean isRoadStyleDifferentEnoughFromBoundaries(StrokeType roadType, StrokeType boundaryType)
@@ -527,6 +538,14 @@ public class SettingsGenerator
 		settings.edits = new MapEdits();
 		settings.imageExportPath = null;
 		settings.heightmapExportPath = null;
+		settings.defaultMapExportAction = MapSettings.defaultDefaultExportAction;
+		settings.defaultHeightmapExportAction = MapSettings.defaultDefaultExportAction;
+		settings.resolution = MapSettings.defaultResolution;
+		settings.heightmapResolution = MapSettings.defaultHeightmapResolution;
+		// The built-in land shapes have no bias toward either side of the map, so a flip only means something for the map it was chosen for.
+		// Rotation is kept because it changes the map's dimensions.
+		settings.flipHorizontally = false;
+		settings.flipVertically = false;
 		// A brand new full-size map is created in the current version, even if its theme came from a map saved in an older version, so set the
 		// current version rather than inheriting the source map's (possibly older) version from the deep copy.
 		settings.version = MapSettings.currentVersion;
@@ -536,10 +555,12 @@ public class SettingsGenerator
 		settings.lloydRelaxationsScale = MapSettings.defaultLloydRelaxationsScale;
 		// A brand new full-size map is not a sub-map, even if the theme came from one.
 		settings.subMapInfo = null;
-		// Randomize only land seed
-		settings.randomSeed = Helper.safeAbs(new Random().nextInt());
-		// Separately randomize text seed for new names
-		settings.textRandomSeed = Helper.safeAbs(new Random().nextInt());
+		Random seedRandom = new Random();
+		settings.randomSeed = Helper.safeAbs(seedRandom.nextInt());
+		settings.textRandomSeed = Helper.safeAbs(seedRandom.nextInt());
+		settings.backgroundRandomSeed = Helper.safeAbs(seedRandom.nextInt());
+		settings.regionsRandomSeed = Helper.safeAbs(seedRandom.nextInt());
+		settings.frayedBorderSeed = Helper.safeAbs(seedRandom.nextInt());
 		// Randomize city icon type
 		try
 		{

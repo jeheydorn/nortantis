@@ -257,7 +257,7 @@ public abstract class MapUpdater
 			// I haven't bothered to add roads to the changes that can be passed in to createAndShowMapUsingIds, so I'm just passing in the
 			// id's of centers under those roads. The downside to doing this is that it will do a little extra drawing.
 			centersChanged.addAll(getCentersIdsOfRoadsChanged(change.settings.edits, getSettingsFromGUI().resolution));
-			centersChanged.addAll(getCentersIdsOfRiversChanged(change.settings.edits, getSettingsFromGUI().resolution));
+			centersChanged.addAll(getCentersIdsOfRiversChanged(change.settings.edits));
 			createAndShowMapUsingIds(UpdateType.Incremental, centersChanged, null, textChanged, iconsChanged, change.preRun, null, isUndoRedo);
 		}
 	}
@@ -271,7 +271,7 @@ public abstract class MapUpdater
 		return diffCenterIds;
 	}
 
-	private Collection<Integer> getCentersIdsOfRiversChanged(MapEdits edits, double resolutionScale)
+	private Collection<Integer> getCentersIdsOfRiversChanged(MapEdits edits)
 	{
 		// Use the full RiverPathNode lists (not just locations) so that width-only or seed-only
 		// changes — e.g. drawing a different-width river over an existing one — are still detected
@@ -279,19 +279,9 @@ public abstract class MapUpdater
 		Set<List<RiverPathNode>> changeNodes = edits.rivers.stream().map(river -> (List<RiverPathNode>) new ArrayList<>(river.nodes)).collect(Collectors.toSet());
 		Set<List<RiverPathNode>> currentNodes = getEdits().rivers.stream().map(river -> (List<RiverPathNode>) new ArrayList<>(river.nodes)).collect(Collectors.toSet());
 		Set<List<RiverPathNode>> diff = Helper.getElementsNotInIntersection(changeNodes, currentNodes);
-		Set<Integer> result = new HashSet<>();
-		for (List<RiverPathNode> nodes : diff)
-		{
-			for (RiverPathNode node : nodes)
-			{
-				Center center = mapParts.graph.findClosestCenter(node.getLoc().mult(resolutionScale), true);
-				if (center != null)
-				{
-					result.add(center.index);
-				}
-			}
-		}
-		return result;
+		// The lookup clamps nodes beyond the map border to the edge, so the redraw still reaches the edge for a river that goes off the map.
+		List<List<Point>> paths = diff.stream().map(PathOperations::toLocationList).collect(Collectors.toList());
+		return ControlPointPlacement.findCentersAtPoints(mapParts.graph, paths).stream().map(center -> center.index).collect(Collectors.toSet());
 	}
 
 	public static Set<Point> pointListsToPointSet(Set<List<Point>> listSet)

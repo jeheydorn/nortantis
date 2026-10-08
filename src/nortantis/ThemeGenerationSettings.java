@@ -32,8 +32,8 @@ public class ThemeGenerationSettings implements Serializable
 	 * range a color can move across, so a color moves at most half of it either way.
 	 *
 	 * The ocean variation moves the ocean color, and the ocean's wave and shading colors with it. The land variation moves the land color,
-	 * and the border color with it, when the theme doesn't color political regions. Political regions get colors generated from the region
-	 * base color using the map's own region color ranges instead. No other color varies.
+	 * and the border color with it, when the theme doesn't color political regions. When it does, the region base variation moves the region
+	 * base color instead, and political regions get colors generated from it using the map's own region color ranges. No other color varies.
 	 */
 	public int oceanHueVariation = 16;
 	public int oceanSaturationVariation = 10;
@@ -41,6 +41,9 @@ public class ThemeGenerationSettings implements Serializable
 	public int landHueVariation = 16;
 	public int landSaturationVariation = 10;
 	public int landBrightnessVariation = 10;
+	public int regionBaseHueVariation = 16;
+	public int regionBaseSaturationVariation = 10;
+	public int regionBaseBrightnessVariation = 10;
 
 	/*
 	 * Ocean.
@@ -62,6 +65,10 @@ public class ThemeGenerationSettings implements Serializable
 	public int grungeWidthVariation = 700;
 	public double drawBorderProbability = 0.75;
 	public Set<String> allowedBorderNames = new LinkedHashSet<>();
+	/**
+	 * How far the border width can move either way. A border other than the theme's gets any width in the range its art pack gives it.
+	 */
+	public int borderWidthVariation = 100;
 	public double frayedBorderProbability = 0.5;
 	public int frayedBorderBlurLevelVariation = 75;
 	public int frayedBorderSizeVariation = 3;
@@ -73,11 +80,16 @@ public class ThemeGenerationSettings implements Serializable
 	public Set<StrokeType> allowedRegionBoundaryStrokeTypes = new LinkedHashSet<>();
 	public Set<StrokeType> allowedRoadStrokeTypes = new LinkedHashSet<>();
 	/**
-	 * Whether a fractal background is one of the backgrounds generated maps choose among, as likely as each background texture.
+	 * The kinds of background generated maps choose among, each as likely as the others. A background generated from a texture uses any of
+	 * the art pack's background textures.
 	 */
-	public boolean allowFractalBackground = true;
-	public Set<String> allowedBackgroundTextureNames = new LinkedHashSet<>();
+	public Set<BackgroundType> allowedBackgroundTypes = new LinkedHashSet<>(Arrays.asList(BackgroundType.Fractal, BackgroundType.GeneratedFromTexture));
 	public Set<LineStyle> allowedLineStyles = new LinkedHashSet<>();
+
+	public enum BackgroundType
+	{
+		Fractal, GeneratedFromTexture, SolidColor
+	}
 
 	/**
 	 * The rules that reproduce how new random maps were generated before themes existed.
@@ -103,6 +115,9 @@ public class ThemeGenerationSettings implements Serializable
 		obj.put("landHueVariation", landHueVariation);
 		obj.put("landSaturationVariation", landSaturationVariation);
 		obj.put("landBrightnessVariation", landBrightnessVariation);
+		obj.put("regionBaseHueVariation", regionBaseHueVariation);
+		obj.put("regionBaseSaturationVariation", regionBaseSaturationVariation);
+		obj.put("regionBaseBrightnessVariation", regionBaseBrightnessVariation);
 
 		obj.put("allowedOceanWaveTypes", toJsonArray(allowedOceanWaveTypes, Enum::name));
 		obj.put("drawOceanWavesProbability", drawOceanWavesProbability);
@@ -113,6 +128,7 @@ public class ThemeGenerationSettings implements Serializable
 		obj.put("grungeWidthVariation", grungeWidthVariation);
 		obj.put("drawBorderProbability", drawBorderProbability);
 		obj.put("allowedBorderNames", toJsonArray(allowedBorderNames, name -> name));
+		obj.put("borderWidthVariation", borderWidthVariation);
 		obj.put("frayedBorderProbability", frayedBorderProbability);
 		obj.put("frayedBorderBlurLevelVariation", frayedBorderBlurLevelVariation);
 		obj.put("frayedBorderSizeVariation", frayedBorderSizeVariation);
@@ -120,8 +136,7 @@ public class ThemeGenerationSettings implements Serializable
 		obj.put("drawRegionBoundariesProbability", drawRegionBoundariesProbability);
 		obj.put("allowedRegionBoundaryStrokeTypes", toJsonArray(allowedRegionBoundaryStrokeTypes, Enum::name));
 		obj.put("allowedRoadStrokeTypes", toJsonArray(allowedRoadStrokeTypes, Enum::name));
-		obj.put("allowFractalBackground", allowFractalBackground);
-		obj.put("allowedBackgroundTextureNames", toJsonArray(allowedBackgroundTextureNames, name -> name));
+		obj.put("allowedBackgroundTypes", toJsonArray(allowedBackgroundTypes, Enum::name));
 		obj.put("allowedLineStyles", toJsonArray(allowedLineStyles, Enum::name));
 		return obj;
 	}
@@ -144,6 +159,9 @@ public class ThemeGenerationSettings implements Serializable
 		result.landHueVariation = getInt(obj, "landHueVariation", result.landHueVariation);
 		result.landSaturationVariation = getInt(obj, "landSaturationVariation", result.landSaturationVariation);
 		result.landBrightnessVariation = getInt(obj, "landBrightnessVariation", result.landBrightnessVariation);
+		result.regionBaseHueVariation = getInt(obj, "regionBaseHueVariation", result.regionBaseHueVariation);
+		result.regionBaseSaturationVariation = getInt(obj, "regionBaseSaturationVariation", result.regionBaseSaturationVariation);
+		result.regionBaseBrightnessVariation = getInt(obj, "regionBaseBrightnessVariation", result.regionBaseBrightnessVariation);
 
 		result.allowedOceanWaveTypes = getEnumSet(obj, "allowedOceanWaveTypes", OceanWaves.class, result.allowedOceanWaveTypes);
 		result.drawOceanWavesProbability = getDouble(obj, "drawOceanWavesProbability", result.drawOceanWavesProbability);
@@ -154,6 +172,7 @@ public class ThemeGenerationSettings implements Serializable
 		result.grungeWidthVariation = getInt(obj, "grungeWidthVariation", result.grungeWidthVariation);
 		result.drawBorderProbability = getDouble(obj, "drawBorderProbability", result.drawBorderProbability);
 		result.allowedBorderNames = getStringSet(obj, "allowedBorderNames", result.allowedBorderNames);
+		result.borderWidthVariation = getInt(obj, "borderWidthVariation", result.borderWidthVariation);
 		result.frayedBorderProbability = getDouble(obj, "frayedBorderProbability", result.frayedBorderProbability);
 		result.frayedBorderBlurLevelVariation = getInt(obj, "frayedBorderBlurLevelVariation", result.frayedBorderBlurLevelVariation);
 		result.frayedBorderSizeVariation = getInt(obj, "frayedBorderSizeVariation", result.frayedBorderSizeVariation);
@@ -161,11 +180,7 @@ public class ThemeGenerationSettings implements Serializable
 		result.drawRegionBoundariesProbability = getDouble(obj, "drawRegionBoundariesProbability", result.drawRegionBoundariesProbability);
 		result.allowedRegionBoundaryStrokeTypes = getEnumSet(obj, "allowedRegionBoundaryStrokeTypes", StrokeType.class, result.allowedRegionBoundaryStrokeTypes);
 		result.allowedRoadStrokeTypes = getEnumSet(obj, "allowedRoadStrokeTypes", StrokeType.class, result.allowedRoadStrokeTypes);
-		if (obj.containsKey("allowFractalBackground"))
-		{
-			result.allowFractalBackground = (Boolean) obj.get("allowFractalBackground");
-		}
-		result.allowedBackgroundTextureNames = getStringSet(obj, "allowedBackgroundTextureNames", result.allowedBackgroundTextureNames);
+		result.allowedBackgroundTypes = getEnumSet(obj, "allowedBackgroundTypes", BackgroundType.class, result.allowedBackgroundTypes);
 		result.allowedLineStyles = getEnumSet(obj, "allowedLineStyles", LineStyle.class, result.allowedLineStyles);
 		return result;
 	}

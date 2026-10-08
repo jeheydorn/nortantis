@@ -135,6 +135,11 @@ public class LandWaterTool extends EditorTool
 	// A press on an already-selected CP/segment always arms a move-drag regardless of this flag.
 	private static final boolean moveLineOnFreshPress = false;
 
+	/** The largest hue range, in degrees, and saturation and brightness ranges, in percent, of the color generator settings. */
+	static final int maxHueRange = 360;
+	static final int maxSaturationRange = 100;
+	static final int maxBrightnessRange = 100;
+
 	// UI widget that exposes "Select" vs "Unselect" behavior for Ctrl-click. Shared pattern with IconsTool.
 	private ControlClickBehaviorWidget controlClickBehavior;
 	private RowHider controlClickBehaviorHider;
@@ -1375,17 +1380,17 @@ public class LandWaterTool extends EditorTool
 		final int labelWidth = 30;
 
 		hueSlider = new JSlider();
-		hueSlider.setMaximum(360);
+		hueSlider.setMaximum(maxHueRange);
 		SliderWithDisplayedValue hueSliderWithDisplay = new SliderWithDisplayedValue(hueSlider, null, () -> handleRegionColorSettingChanged(), labelWidth);
 		hueSliderWithDisplay.addToOrganizer(organizer, Translation.get("landWaterTool.hueRange.label"), Translation.get("landWaterTool.hueRange.help"));
 
 		saturationSlider = new JSlider();
-		saturationSlider.setMaximum(100);
+		saturationSlider.setMaximum(maxSaturationRange);
 		SliderWithDisplayedValue saturationSliderWithDisplay = new SliderWithDisplayedValue(saturationSlider, null, () -> handleRegionColorSettingChanged(), labelWidth);
 		saturationSliderWithDisplay.addToOrganizer(organizer, Translation.get("landWaterTool.saturationRange.label"), Translation.get("landWaterTool.saturationRange.help"));
 
 		brightnessSlider = new JSlider();
-		brightnessSlider.setMaximum(100);
+		brightnessSlider.setMaximum(maxBrightnessRange);
 		SliderWithDisplayedValue brightnessSliderWithDisplay = new SliderWithDisplayedValue(brightnessSlider, null, () -> handleRegionColorSettingChanged(), labelWidth);
 		brightnessSliderWithDisplay.addToOrganizer(organizer, Translation.get("landWaterTool.brightnessRange.label"), Translation.get("landWaterTool.brightnessRange.help"));
 

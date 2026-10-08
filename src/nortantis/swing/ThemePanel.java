@@ -647,7 +647,7 @@ public class ThemePanel extends JTabbedPane
 			borderWidthSlider.setPaintTicks(true);
 			borderWidthSlider.setPaintLabels(true);
 			borderWidthSlider.setMinorTickSpacing(50);
-			borderWidthSlider.setMaximum(600);
+			borderWidthSlider.setMaximum(SettingsGenerator.maxBorderWidthInEditor);
 			borderWidthSlider.setMajorTickSpacing(200);
 			createMapChangeListenerForFullRedraw(borderWidthSlider);
 			borderRows.add(organizer.addLabelAndComponent(Translation.get("theme.borderWidth.label"), Translation.get("theme.borderWidth.help"), borderWidthSlider));
@@ -955,7 +955,6 @@ public class ThemePanel extends JTabbedPane
 				wavyLineControls.setVisible(waveType == OceanWaves.WavyLines);
 				hatchingControls.setVisible(waveType == OceanWaves.Hatching);
 				rippleControls.setVisible(waveType == OceanWaves.Ripples);
-				sincWavesLevelSlider.setVisible(isSincWaves);
 				sincWavesLevelSliderHider.setVisible(isSincWaves);
 				handleTerrainChange();
 			}
@@ -1008,14 +1007,9 @@ public class ThemePanel extends JTabbedPane
 		hatchingControls = new WaveRowStyleControls(styleOrganizer, OceanWaves.Hatching);
 		rippleControls = new WaveRowStyleControls(styleOrganizer, OceanWaves.Ripples);
 
-		sincWavesLevelSlider = new JSlider();
-		sincWavesLevelSlider.setMinorTickSpacing(5);
-		sincWavesLevelSlider.setPaintTicks(true);
-		sincWavesLevelSlider.setPaintLabels(true);
-		sincWavesLevelSlider.setMajorTickSpacing(20);
-		sincWavesLevelSlider.setMaximum(100);
-		createMapChangeListenerForTerrainChange(sincWavesLevelSlider);
-		sincWavesLevelSliderHider = styleOrganizer.addLabelAndComponent(Translation.get("theme.width.label"), Translation.get("theme.waveWidth.help"), sincWavesLevelSlider);
+		sincWavesLevelSlider = createWaveLineSlider(0, 100);
+		sincWavesLevelSliderHider = new SliderWithDisplayedValue(sincWavesLevelSlider).addToOrganizer(styleOrganizer, Translation.get("theme.width.label"),
+				Translation.get("theme.waveWidth.help"));
 
 		CollapsiblePanel styleOptionsCard = new CollapsiblePanel("wave_style_options", "Style options", Translation.get("theme.styleOptions.title"), styleOrganizer.panel);
 		oceanWavesRows.add(organizer.addLeftAlignedComponent(styleOptionsCard, GridBagOrganizer.rowVerticalInset, GridBagOrganizer.rowVerticalInset, false));

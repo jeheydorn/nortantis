@@ -3,6 +3,7 @@ package nortantis.swing;
 import nortantis.*;
 import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanWaves;
+import nortantis.ThemeGenerationSettings.BackgroundType;
 import nortantis.editor.FreeIcon;
 import nortantis.geom.Dimension;
 import nortantis.platform.Image;
@@ -10,7 +11,6 @@ import nortantis.platform.awt.AwtBridge;
 import nortantis.swing.translation.Translation;
 import nortantis.util.Assets;
 import nortantis.util.Logger;
-import org.apache.commons.io.FilenameUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -74,8 +74,8 @@ class RandomizeThemeDialog extends JDialog
 	 *            Called with the variation shown when the user applies it. It carries the rules in its {@link MapSettings#themeGeneration}, and
 	 *            the region color ranges.
 	 * @param onClose
-	 *            Called when the user closes the dialog without applying a variation, with the open map's settings carrying the rules and
-	 *            region color ranges to keep.
+	 *            Called when the user closes the dialog without applying a variation, with the open map's settings carrying the rules, region
+	 *            base color, and region color ranges to keep.
 	 */
 	RandomizeThemeDialog(Window owner, MapSettings mapSettings, Consumer<MapSettings> onApply, Consumer<MapSettings> onClose)
 	{
@@ -149,26 +149,29 @@ class RandomizeThemeDialog extends JDialog
 
 		organizer.addSectionHeading(Translation.get("randomizeTheme.section.oceanColorVariation"));
 		String oceanHelp = "randomizeTheme.oceanColorVariation.help";
-		addVariationSlider(organizer, "randomizeTheme.hueVariation.label", oceanHelp, 0, 90, gen.oceanHueVariation, value -> gen.oceanHueVariation = value);
-		addVariationSlider(organizer, "randomizeTheme.saturationVariation.label", oceanHelp, 0, 60, gen.oceanSaturationVariation, value -> gen.oceanSaturationVariation = value);
-		addVariationSlider(organizer, "randomizeTheme.brightnessVariation.label", oceanHelp, 0, 60, gen.oceanBrightnessVariation, value -> gen.oceanBrightnessVariation = value);
+		addColorVariationSliders(organizer, oceanHelp, gen.oceanHueVariation, value -> gen.oceanHueVariation = value, gen.oceanSaturationVariation,
+				value -> gen.oceanSaturationVariation = value, gen.oceanBrightnessVariation, value -> gen.oceanBrightnessVariation = value);
 
 		if (base.drawRegionColors)
 		{
 			// Region colors are generated around the region base color with the map's own region color ranges, which the Land and Water
 			// tool also edits.
+			organizer.addSectionHeading(Translation.get("randomizeTheme.section.regionBaseColorVariation"));
+			addRegionBaseColorChooser(organizer);
+			addColorVariationSliders(organizer, "randomizeTheme.regionBaseColorVariation.help", gen.regionBaseHueVariation, value -> gen.regionBaseHueVariation = value,
+					gen.regionBaseSaturationVariation, value -> gen.regionBaseSaturationVariation = value, gen.regionBaseBrightnessVariation,
+					value -> gen.regionBaseBrightnessVariation = value);
+
 			organizer.addSectionHeading(Translation.get("randomizeTheme.section.regionColorVariation"));
-			addRangeSlider(organizer, "landWaterTool.hueRange", 360, base.hueRange, value -> base.hueRange = value);
-			addRangeSlider(organizer, "landWaterTool.saturationRange", 100, base.saturationRange, value -> base.saturationRange = value);
-			addRangeSlider(organizer, "landWaterTool.brightnessRange", 100, base.brightnessRange, value -> base.brightnessRange = value);
+			addRangeSlider(organizer, "landWaterTool.hueRange", LandWaterTool.maxHueRange, base.hueRange, value -> base.hueRange = value);
+			addRangeSlider(organizer, "landWaterTool.saturationRange", LandWaterTool.maxSaturationRange, base.saturationRange, value -> base.saturationRange = value);
+			addRangeSlider(organizer, "landWaterTool.brightnessRange", LandWaterTool.maxBrightnessRange, base.brightnessRange, value -> base.brightnessRange = value);
 		}
 		else
 		{
 			organizer.addSectionHeading(Translation.get("randomizeTheme.section.landColorVariation"));
-			String landHelp = "randomizeTheme.landColorVariation.help";
-			addVariationSlider(organizer, "randomizeTheme.hueVariation.label", landHelp, 0, 90, gen.landHueVariation, value -> gen.landHueVariation = value);
-			addVariationSlider(organizer, "randomizeTheme.saturationVariation.label", landHelp, 0, 60, gen.landSaturationVariation, value -> gen.landSaturationVariation = value);
-			addVariationSlider(organizer, "randomizeTheme.brightnessVariation.label", landHelp, 0, 60, gen.landBrightnessVariation, value -> gen.landBrightnessVariation = value);
+			addColorVariationSliders(organizer, "randomizeTheme.landColorVariation.help", gen.landHueVariation, value -> gen.landHueVariation = value,
+					gen.landSaturationVariation, value -> gen.landSaturationVariation = value, gen.landBrightnessVariation, value -> gen.landBrightnessVariation = value);
 		}
 
 		organizer.addSectionHeading(Translation.get("randomizeTheme.section.ocean"));
@@ -186,6 +189,7 @@ class RandomizeThemeDialog extends JDialog
 		addProbabilitySlider(organizer, "randomizeTheme.drawBorderProbability", gen.drawBorderProbability, value -> gen.drawBorderProbability = value);
 		addResourceCheckboxes(organizer, "randomizeTheme.allowedBorders", () -> SettingsGenerator.listBorderChoices(getArtPackToChooseFrom(), base.customImagesPath),
 				gen.allowedBorderNames, name -> name);
+		addVariationSlider(organizer, "randomizeTheme.borderWidthVariation", 0, 300, gen.borderWidthVariation, value -> gen.borderWidthVariation = value);
 		addProbabilitySlider(organizer, "randomizeTheme.frayedBorderProbability", gen.frayedBorderProbability, value -> gen.frayedBorderProbability = value);
 		addVariationSlider(organizer, "randomizeTheme.frayedBorderBlurLevelVariation", 0, 150, gen.frayedBorderBlurLevelVariation, value -> gen.frayedBorderBlurLevelVariation = value);
 		addVariationSlider(organizer, "randomizeTheme.frayedBorderSizeVariation", 0, 7, gen.frayedBorderSizeVariation, value -> gen.frayedBorderSizeVariation = value);
@@ -195,14 +199,8 @@ class RandomizeThemeDialog extends JDialog
 		addEnumCheckboxes(organizer, "randomizeTheme.allowedRegionBoundaryStrokeTypes", Arrays.asList(StrokeType.values()), gen.allowedRegionBoundaryStrokeTypes, Object::toString);
 		addEnumCheckboxes(organizer, "randomizeTheme.allowedRoadStrokeTypes", Arrays.asList(StrokeType.values()), gen.allowedRoadStrokeTypes, Object::toString);
 		addEnumCheckboxes(organizer, "randomizeTheme.allowedLineStyles", Arrays.asList(LineStyle.values()), gen.allowedLineStyles, RandomizeThemeDialog::getLineStyleName);
-		JCheckBox allowFractalBackgroundCheckBox = new JCheckBox(Translation.get("randomizeTheme.allowFractalBackground"));
-		allowFractalBackgroundCheckBox.setToolTipText(Translation.get("randomizeTheme.allowFractalBackground.help"));
-		allowFractalBackgroundCheckBox.setSelected(gen.allowFractalBackground);
-		allowFractalBackgroundCheckBox.addActionListener(e -> gen.allowFractalBackground = allowFractalBackgroundCheckBox.isSelected());
-		organizer.addLeftAlignedComponent(allowFractalBackgroundCheckBox);
-		addResourceCheckboxes(organizer, "randomizeTheme.allowedBackgroundTextures",
-				() -> SettingsGenerator.listBackgroundTextureChoices(getArtPackToChooseFrom(), base.customImagesPath), gen.allowedBackgroundTextureNames,
-				FilenameUtils::getBaseName);
+		addEnumCheckboxes(organizer, "randomizeTheme.allowedBackgroundTypes", Arrays.asList(BackgroundType.values()), gen.allowedBackgroundTypes,
+				RandomizeThemeDialog::getBackgroundTypeName);
 
 		organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.55);
 		organizer.addVerticalFillerRow();
@@ -239,6 +237,36 @@ class RandomizeThemeDialog extends JDialog
 	}
 
 	/**
+	 * Adds hue, saturation, and brightness variation sliders, which go as high as the Land and Water tool's color generator ranges.
+	 */
+	private void addColorVariationSliders(GridBagOrganizer organizer, String helpKey, int hueVariation, IntConsumer setHueVariation, int saturationVariation,
+			IntConsumer setSaturationVariation, int brightnessVariation, IntConsumer setBrightnessVariation)
+	{
+		addVariationSlider(organizer, "landWaterTool.hueRange.label", helpKey, 0, LandWaterTool.maxHueRange, hueVariation, setHueVariation);
+		addVariationSlider(organizer, "landWaterTool.saturationRange.label", helpKey, 0, LandWaterTool.maxSaturationRange, saturationVariation, setSaturationVariation);
+		addVariationSlider(organizer, "landWaterTool.brightnessRange.label", helpKey, 0, LandWaterTool.maxBrightnessRange, brightnessVariation, setBrightnessVariation);
+	}
+
+	/**
+	 * Adds a chooser for the map's region base color, which is a setting of the map rather than a rule for varying it.
+	 */
+	private void addRegionBaseColorChooser(GridBagOrganizer organizer)
+	{
+		JPanel colorDisplay = SwingHelper.createColorPickerPreviewPanel();
+		colorDisplay.setBackground(AwtBridge.toAwtColor(base.regionBaseColor));
+		JButton chooseButton = new JButton(Translation.get("common.choose"));
+		chooseButton.addActionListener(e -> SwingHelper.showColorPicker(organizer.panel, colorDisplay, Translation.get("landWaterTool.baseColor.title"),
+				() -> base.regionBaseColor = AwtBridge.fromAwtColor(colorDisplay.getBackground())));
+		SwingHelper.addColorCopyAndPasteMenu(colorDisplay, colorDisplay::getBackground, color ->
+		{
+			colorDisplay.setBackground(color);
+			base.regionBaseColor = AwtBridge.fromAwtColor(color);
+		});
+		organizer.addLabelAndComponentsHorizontal(Translation.get("landWaterTool.baseColor.label"), Translation.get("landWaterTool.baseColor.help"),
+				Arrays.asList(colorDisplay, chooseButton), SwingHelper.borderWidthBetweenComponents);
+	}
+
+	/**
 	 * Adds a slider for one of the map's region color ranges, which are settings of the map rather than rules for varying it.
 	 */
 	private void addRangeSlider(GridBagOrganizer organizer, String key, int max, int value, IntConsumer setValue)
@@ -264,6 +292,16 @@ class RandomizeThemeDialog extends JDialog
 			case Jagged -> Translation.get("theme.lineStyle.jagged");
 			case Splines -> Translation.get("theme.lineStyle.splines");
 			case SplinesWithSmoothedCoastlines -> Translation.get("theme.lineStyle.splinesSmoothed");
+		};
+	}
+
+	private static String getBackgroundTypeName(BackgroundType backgroundType)
+	{
+		return switch (backgroundType)
+		{
+			case Fractal -> Translation.get("theme.background.fractalNoise");
+			case GeneratedFromTexture -> Translation.get("theme.background.generatedFromTexture");
+			case SolidColor -> Translation.get("theme.background.solidColor");
 		};
 	}
 
