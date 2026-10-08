@@ -423,7 +423,8 @@ public class NewSettingsDialog extends JDialog
 		{
 			dimensionsComboBox.addItem(dimension);
 		}
-		organizer.addLabelAndComponent(Translation.get("newSettingsDialog.dimensions.label"), Translation.get("newSettingsDialog.dimensions.help"), dimensionsComboBox);
+		organizer.addLabelAndComponent(SwingHelper.createLabelWithTip(Translation.get("newSettingsDialog.dimensions.label"), Translation.get("newSettingsDialog.cannotBeChangedInEditor"),
+				Translation.get("newSettingsDialog.dimensions.help")), dimensionsComboBox, GridBagOrganizer.rowVerticalInset);
 
 		customWidthSpinner = new JSpinner(new SpinnerNumberModel(16, 1, 32768, 1));
 		customHeightSpinner = new JSpinner(new SpinnerNumberModel(9, 1, 32768, 1));
@@ -476,7 +477,8 @@ public class NewSettingsDialog extends JDialog
 		worldSizeSlider.setMinimum(SettingsGenerator.minWorldSize);
 		worldSizeSlider.setMaximum(SettingsGenerator.maxWorldSize);
 		createMapChangeListener(worldSizeSlider);
-		organizer.addLabelAndComponent(Translation.get("newSettingsDialog.worldSize.label"), Translation.get("newSettingsDialog.worldSize.help"), worldSizeSlider);
+		organizer.addLabelAndComponent(SwingHelper.createLabelWithTip(Translation.get("newSettingsDialog.worldSize.label"), Translation.get("newSettingsDialog.cannotBeChangedInEditor"),
+				Translation.get("newSettingsDialog.worldSize.help")), worldSizeSlider, GridBagOrganizer.rowVerticalInset);
 
 		landShapeComboBox = new JComboBox<LandShape>();
 		// Alphabetical by displayed name in the user's language.

@@ -974,6 +974,48 @@ public class SwingHelper
 		label.setPreferredSize(new Dimension(Math.min(preferredWidth, width), preferredHeight));
 	}
 
+	private static final double labelTipFontScale = 0.92;
+	private static final double labelTipFadeTowardBackground = 0.3;
+
+	/**
+	 * Creates a wrapping label with a short tip on a line under it, in a smaller font and a color closer to the background so the tip stands
+	 * out less than the label. The tip's size and color follow the look and feel when it changes.
+	 */
+	public static JLabel createLabelWithTip(String labelText, String tipText, String tooltip)
+	{
+		JLabel label = new JLabel()
+		{
+			@Override
+			public void updateUI()
+			{
+				super.updateUI();
+				setText(createLabelWithTipHtml(labelText, tipText, getFont()));
+			}
+		};
+		label.setToolTipText(tooltip);
+		return label;
+	}
+
+	private static String createLabelWithTipHtml(String labelText, String tipText, Font font)
+	{
+		Color foreground = UIManager.getColor("Label.foreground");
+		Color background = UIManager.getColor("Panel.background");
+		Color tipColor = foreground != null && background != null ? blend(foreground, background, labelTipFadeTowardBackground) : Color.gray;
+		int tipFontSize = font == null ? 10 : (int) Math.round(font.getSize2D() * labelTipFontScale);
+		return "<html>" + labelText + "<br><span style='font-size:" + tipFontSize + "pt; color:" + String.format("#%06x", tipColor.getRGB() & 0xffffff) + "'>"
+				+ tipText + "</span></html>";
+	}
+
+	/**
+	 * Mixes two opaque colors, from all of the first at 0 to all of the second at 1.
+	 */
+	public static Color blend(Color from, Color to, double amountTowardsTo)
+	{
+		return new Color((int) Math.round(from.getRed() + (to.getRed() - from.getRed()) * amountTowardsTo),
+				(int) Math.round(from.getGreen() + (to.getGreen() - from.getGreen()) * amountTowardsTo),
+				(int) Math.round(from.getBlue() + (to.getBlue() - from.getBlue()) * amountTowardsTo));
+	}
+
 	/**
 	 * A label's whole border, sized so that its text sits on a baseline {@code baselineFromBottom} pixels up from the bottom of a label
 	 * {@code height} tall, instead of wherever the font's own metrics would put it.

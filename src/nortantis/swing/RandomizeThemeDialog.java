@@ -193,8 +193,8 @@ class RandomizeThemeDialog extends JDialog
 		addProbabilitySlider(organizer, "randomizeTheme.drawBorderProbability", gen.drawBorderProbability, value -> gen.drawBorderProbability = value);
 		addResourceCheckboxes(organizer, "randomizeTheme.allowedBorders", () -> SettingsGenerator.listBorderChoices(getArtPackToChooseFrom(), base.customImagesPath),
 				gen.allowedBorderNames, name -> name);
-		addVariationSlider(organizer, "randomizeTheme.borderWidthVariation", 0, 300, gen.borderWidthVariation, value -> gen.borderWidthVariation = value);
-		addProbabilitySlider(organizer, "randomizeTheme.frayedBorderProbability", gen.frayedBorderProbability, value -> gen.frayedBorderProbability = value);
+		addVariationSliderWithTip(organizer, "randomizeTheme.borderWidthVariation", 0, 300, gen.borderWidthVariation, value -> gen.borderWidthVariation = value);
+		addProbabilitySliderWithTip(organizer, "randomizeTheme.frayedBorderProbability", gen.frayedBorderProbability, value -> gen.frayedBorderProbability = value);
 		addVariationSlider(organizer, "randomizeTheme.frayedBorderBlurLevelVariation", 0, 150, gen.frayedBorderBlurLevelVariation, value -> gen.frayedBorderBlurLevelVariation = value);
 		addVariationSlider(organizer, "randomizeTheme.frayedBorderSizeVariation", 0, 7, gen.frayedBorderSizeVariation, value -> gen.frayedBorderSizeVariation = value);
 
@@ -245,15 +245,40 @@ class RandomizeThemeDialog extends JDialog
 
 	private void addVariationSlider(GridBagOrganizer organizer, String key, int min, int max, int value, IntConsumer setValue)
 	{
-		addVariationSlider(organizer, key + ".label", key + ".help", min, max, value, setValue);
+		addVariationSlider(organizer, key + ".label", null, key + ".help", min, max, value, setValue);
+	}
+
+	/**
+	 * Adds a variation slider whose label has the tip from the key's ".tip" translation under it.
+	 */
+	private void addVariationSliderWithTip(GridBagOrganizer organizer, String key, int min, int max, int value, IntConsumer setValue)
+	{
+		addVariationSlider(organizer, key + ".label", key + ".tip", key + ".help", min, max, value, setValue);
 	}
 
 	private void addVariationSlider(GridBagOrganizer organizer, String labelKey, String helpKey, int min, int max, int value, IntConsumer setValue)
 	{
+		addVariationSlider(organizer, labelKey, null, helpKey, min, max, value, setValue);
+	}
+
+	private void addVariationSlider(GridBagOrganizer organizer, String labelKey, String tipKey, String helpKey, int min, int max, int value, IntConsumer setValue)
+	{
 		JSlider slider = new JSlider(min, max, Math.max(min, Math.min(max, value)));
 		slider.setPaintLabels(false);
 		SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(slider, null, () -> setValue.accept(slider.getValue()), 44);
-		sliderWithDisplay.addToOrganizer(organizer, Translation.get(labelKey), createTooltipFromHelpKey(helpKey));
+		addSliderToOrganizer(organizer, sliderWithDisplay, labelKey, tipKey, createTooltipFromHelpKey(helpKey));
+	}
+
+	private static void addSliderToOrganizer(GridBagOrganizer organizer, SliderWithDisplayedValue sliderWithDisplay, String labelKey, String tipKey, String tooltip)
+	{
+		if (tipKey == null)
+		{
+			sliderWithDisplay.addToOrganizer(organizer, Translation.get(labelKey), tooltip);
+		}
+		else
+		{
+			sliderWithDisplay.addToOrganizer(organizer, SwingHelper.createLabelWithTip(Translation.get(labelKey), Translation.get(tipKey), tooltip));
+		}
 	}
 
 	/**
@@ -299,10 +324,23 @@ class RandomizeThemeDialog extends JDialog
 
 	private void addProbabilitySlider(GridBagOrganizer organizer, String key, double value, Consumer<Double> setValue)
 	{
+		addProbabilitySlider(organizer, key, null, value, setValue);
+	}
+
+	/**
+	 * Adds a probability slider whose label has the tip from the key's ".tip" translation under it.
+	 */
+	private void addProbabilitySliderWithTip(GridBagOrganizer organizer, String key, double value, Consumer<Double> setValue)
+	{
+		addProbabilitySlider(organizer, key, key + ".tip", value, setValue);
+	}
+
+	private void addProbabilitySlider(GridBagOrganizer organizer, String key, String tipKey, double value, Consumer<Double> setValue)
+	{
 		JSlider slider = new JSlider(0, 100, (int) Math.round(value * 100));
 		slider.setPaintLabels(false);
 		SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(slider, (sliderValue) -> sliderValue + "%", () -> setValue.accept(slider.getValue() / 100.0), 44);
-		sliderWithDisplay.addToOrganizer(organizer, Translation.get(key + ".label"), "<html>" + Translation.get(key + ".help") + "</html>");
+		addSliderToOrganizer(organizer, sliderWithDisplay, key + ".label", tipKey, "<html>" + Translation.get(key + ".help") + "</html>");
 	}
 
 	private static String getLineStyleName(LineStyle lineStyle)
