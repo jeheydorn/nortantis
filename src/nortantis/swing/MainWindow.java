@@ -3474,8 +3474,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private boolean showUnsavedChangesSymbol = false;
 
 	/**
-	 * Prompts for a file, then saves a copy of the open map there without its edits, leaving the settings a map is generated from. The open
-	 * map is not changed, and keeps saving where it did.
+	 * Prompts for a file, then saves a copy of the open map there without its edits or export paths, leaving the settings a map is generated
+	 * from. The open map is not changed, and keeps saving where it did.
 	 */
 	private void saveCopyWithoutEdits()
 	{
@@ -3503,6 +3503,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		MapSettings copy = settings.deepCopyExceptEdits();
 		copy.edits = new MapEdits();
+		// Export paths point into the folders of whoever saved the copy, which a copy shared as a theme shouldn't carry.
+		copy.imageExportPath = null;
+		copy.heightmapExportPath = null;
 		try
 		{
 			copy.writeToFile(savePath.toString());
