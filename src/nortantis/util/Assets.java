@@ -46,6 +46,7 @@ public class Assets
 	 * The optional properties file at the top level of an art pack.
 	 */
 	private static final String artPackSettingsFileName = "settings.txt";
+	private static final String borderSettingsFileName = "border_settings.txt";
 	private static final String includeInNewRandomMapsKey = "includeInNewRandomMaps";
 	private static final String requiredVersionKey = "requiredVersion";
 	public static final String installedArtPack = "nortantis";
@@ -383,7 +384,7 @@ public class Assets
 	}
 
 	/**
-	 * How the generator may use a border type, read from the border.properties file in the border's folder. A border without the file gets
+	 * How the generator may use a border type, read from the border_settings.txt file in the border's folder. A border without the file gets
 	 * {@link #defaultBorderMetadata}.
 	 *
 	 * @param minWidth
@@ -404,7 +405,7 @@ public class Assets
 	public static final BorderMetadata defaultBorderMetadata = new BorderMetadata(null, null, true);
 
 	/**
-	 * Reads a border's border.properties file. The file sets a width range only when it has both minWidth and maxWidth.
+	 * Reads a border's border_settings.txt file. The file sets a width range only when it has both minWidth and maxWidth.
 	 */
 	public static BorderMetadata readBorderMetadata(NamedResource borderResource, String customImagesFolder)
 	{
@@ -417,14 +418,14 @@ public class Assets
 		{
 			return defaultBorderMetadata;
 		}
-		String propertiesPath = Paths.get(artPackPath.toString(), "borders", borderResource.name, "border.properties").toString();
-		if (!exists(propertiesPath))
+		String settingsPath = Paths.get(artPackPath.toString(), "borders", borderResource.name, borderSettingsFileName).toString();
+		if (!exists(settingsPath))
 		{
 			return defaultBorderMetadata;
 		}
 		try
 		{
-			Properties properties = loadPropertiesFile(propertiesPath);
+			Properties properties = loadPropertiesFile(settingsPath);
 			String minWidthText = properties.getProperty("minWidth");
 			String maxWidthText = properties.getProperty("maxWidth");
 			Integer minWidth = null;
@@ -439,7 +440,7 @@ public class Assets
 		}
 		catch (IOException | NumberFormatException e)
 		{
-			Logger.printError("Unable to read the border settings in " + propertiesPath + ". Using the defaults.", e);
+			Logger.printError("Unable to read the border settings in " + settingsPath + ". Using the defaults.", e);
 			return defaultBorderMetadata;
 		}
 	}

@@ -1581,7 +1581,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				if (toolsPanel.currentTool != null)
 				{
-					updater.doWhenMapIsNotDrawing(() -> undoer.undo());
+					requestUndoOrRedo(-1);
 				}
 			}
 		});
@@ -1597,7 +1597,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				if (toolsPanel.currentTool != null)
 				{
-					updater.doWhenMapIsNotDrawing(() -> undoer.redo());
+					requestUndoOrRedo(1);
 				}
 			}
 		});
@@ -3698,6 +3698,53 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			result.add(Translation.get("copyTheme.missing.font", problem.family));
 		}
 		return result;
+	}
+
+	/**
+	 * Undo and redo steps waiting for a draw to finish, which run together when it does.
+	 */
+	private class PendingUndoOrRedo implements Runnable
+	{
+		/** Redo steps if positive, or undo steps if negative. */
+		int steps;
+
+		@Override
+		public void run()
+		{
+			if (steps < 0)
+			{
+				undoer.undo(-steps);
+			}
+			else if (steps > 0)
+			{
+				undoer.redo(steps);
+			}
+		}
+	}
+
+	private PendingUndoOrRedo pendingUndoOrRedo;
+
+	/**
+	 * Undoes (negative) or redoes (positive) the given number of steps once the map isn't drawing. Requests made in a row while a draw is
+	 * running are combined so that they redraw the map once, instead of once per request.
+	 */
+	private void requestUndoOrRedo(int steps)
+	{
+		// The stacks don't change while the steps wait, so keeping the total within them stops at their ends the way running each request on
+		// its own would.
+		if (pendingUndoOrRedo != null && updater.isLastWaitingToRun(pendingUndoOrRedo))
+		{
+			pendingUndoOrRedo.steps = clampToUndoAndRedoStacks(pendingUndoOrRedo.steps + steps);
+			return;
+		}
+		pendingUndoOrRedo = new PendingUndoOrRedo();
+		pendingUndoOrRedo.steps = clampToUndoAndRedoStacks(steps);
+		updater.doWhenMapIsNotDrawing(pendingUndoOrRedo);
+	}
+
+	private int clampToUndoAndRedoStacks(int steps)
+	{
+		return Math.max(-undoer.getUndoCount(), Math.min(undoer.getRedoCount(), steps));
 	}
 
 	private void showRandomizeThemeDialog()

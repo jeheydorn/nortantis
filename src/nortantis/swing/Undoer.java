@@ -9,7 +9,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.Stack;
+import java.util.stream.Collectors;
 
 public class Undoer
 {
@@ -201,7 +203,23 @@ public class Undoer
 	 */
 	public void undoAll()
 	{
-		if (!enabled || undoStack == null || undoStack.isEmpty())
+		if (undoStack != null)
+		{
+			undo(undoStack.size());
+		}
+	}
+
+	/**
+	 * Undoes up to {@code count} changes with a single redraw.
+	 */
+	public void undo(int count)
+	{
+		if (count == 1)
+		{
+			undo();
+			return;
+		}
+		if (!enabled || undoStack == null || undoStack.isEmpty() || count < 1)
 		{
 			return;
 		}
@@ -211,7 +229,7 @@ public class Undoer
 		// As in undo, the most recent change is recorded with the latest settings, which catches changes made after the latest undo point.
 		MapSettings latestSettings = mainWindow.getSettingsFromGUI(true);
 		List<MapChange> changesUndone = new ArrayList<>();
-		while (!undoStack.isEmpty())
+		while (!undoStack.isEmpty() && changesUndone.size() < count)
 		{
 			MapChange change = undoStack.pop();
 			if (changesUndone.isEmpty())
@@ -222,8 +240,8 @@ public class Undoer
 			redoStack.push(change);
 		}
 
-		MapSettings settings = copyOfSettingsWhenEditorWasOpened.deepCopy();
-		jumpTo(settings, latestSettings, combinePreRuns(changesUndone), doesChangeEffectsBackgroundImages(latestSettings, settings));
+		MapSettings settings = undoStack.isEmpty() ? copyOfSettingsWhenEditorWasOpened.deepCopy() : undoStack.peek().settings.deepCopy();
+		jumpTo(settings, latestSettings, changesUndone, doesChangeEffectsBackgroundImages(latestSettings, settings));
 	}
 
 	/**
@@ -231,14 +249,30 @@ public class Undoer
 	 */
 	public void redoAll()
 	{
-		if (!enabled || redoStack == null || redoStack.isEmpty())
+		if (redoStack != null)
+		{
+			redo(redoStack.size());
+		}
+	}
+
+	/**
+	 * Redoes up to {@code count} changes with a single redraw.
+	 */
+	public void redo(int count)
+	{
+		if (count == 1)
+		{
+			redo();
+			return;
+		}
+		if (!enabled || redoStack == null || redoStack.isEmpty() || count < 1)
 		{
 			return;
 		}
 
 		MapSettings currentSettings = undoStack.isEmpty() ? copyOfSettingsWhenEditorWasOpened.deepCopy() : undoStack.peek().settings;
 		List<MapChange> changesRedone = new ArrayList<>();
-		while (!redoStack.isEmpty())
+		while (!redoStack.isEmpty() && changesRedone.size() < count)
 		{
 			MapChange change = redoStack.pop();
 			changesRedone.add(change);
@@ -246,19 +280,21 @@ public class Undoer
 		}
 
 		MapSettings newSettings = undoStack.peek().settings.deepCopy();
-		jumpTo(newSettings, currentSettings, combinePreRuns(changesRedone), doesChangeEffectsBackgroundImages(currentSettings, newSettings));
+		jumpTo(newSettings, currentSettings, changesRedone, doesChangeEffectsBackgroundImages(currentSettings, newSettings));
 	}
 
 	/**
-	 * Loads settings that are more than one change away from what the editor shows, and redraws the whole map in one full draw.
+	 * Loads settings that are more than one change away from what the editor shows, and redraws the map once for all the changes jumped
+	 * over.
 	 *
 	 * @param settingsBeforeJump
 	 *            The settings the editor showed before the jump.
-	 * @param preRun
-	 *            Code to run in the foreground thread before drawing, covering every change jumped over. May be null.
+	 * @param changesJumpedOver
+	 *            The changes between the two settings.
 	 */
-	private void jumpTo(MapSettings settings, MapSettings settingsBeforeJump, Runnable preRun, boolean refreshImagePreviews)
+	private void jumpTo(MapSettings settings, MapSettings settingsBeforeJump, List<MapChange> changesJumpedOver, boolean refreshImagePreviews)
 	{
+		Runnable preRun = combinePreRuns(changesJumpedOver);
 		mainWindow.loadSettingsAndEditsIntoThemeAndToolsPanels(settings, true, refreshImagePreviews);
 
 		// See the matching comment in undo().
@@ -268,9 +304,28 @@ public class Undoer
 		{
 			preRun.run();
 		}
-		mainWindow.updater.createAndShowMapFromChange(new MapChange(settingsBeforeJump, UpdateType.Full, null, preRun), true);
+		mainWindow.updater.createAndShowMapFromChange(new MapChange(settingsBeforeJump, getUpdateTypeCovering(changesJumpedOver), null, preRun), true);
 		mainWindow.updater.doWhenMapIsNotDrawing(() -> mainWindow.updater.createAndShowLowPriorityChanges(true));
 		updateUndoRedoEnabled();
+	}
+
+	/**
+	 * A kind of redraw that covers all the given changes: the kind they share, an incremental redraw if they only need incremental redraws or
+	 * none, or else a full redraw. An incremental redraw finds what to redraw by comparing the edits before and after, so one covers any
+	 * number of incremental changes.
+	 */
+	private static UpdateType getUpdateTypeCovering(List<MapChange> changes)
+	{
+		Set<UpdateType> types = changes.stream().map(change -> change.updateType).collect(Collectors.toSet());
+		if (types.size() == 1)
+		{
+			return types.iterator().next();
+		}
+		if (Set.of(UpdateType.Incremental, UpdateType.NoDraw).containsAll(types))
+		{
+			return UpdateType.Incremental;
+		}
+		return UpdateType.Full;
 	}
 
 	/**
@@ -292,6 +347,16 @@ public class Undoer
 			return null;
 		}
 		return () -> preRunsBySource.values().forEach(Runnable::run);
+	}
+
+	public int getUndoCount()
+	{
+		return undoStack == null ? 0 : undoStack.size();
+	}
+
+	public int getRedoCount()
+	{
+		return redoStack == null ? 0 : redoStack.size();
 	}
 
 	public void updateUndoRedoEnabled()

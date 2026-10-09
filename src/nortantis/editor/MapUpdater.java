@@ -1276,6 +1276,19 @@ public abstract class MapUpdater
 		}
 	}
 
+	/**
+	 * Whether the given action is the last of the actions queued to run when the map is ready, and hasn't run yet.
+	 */
+	public boolean isLastWaitingToRun(Runnable action)
+	{
+		Runnable last = null;
+		for (Runnable task : tasksToRunWhenMapReady)
+		{
+			last = task;
+		}
+		return last == action;
+	}
+
 	public boolean isMapBeingDrawn()
 	{
 		return isMapBeingDrawn;

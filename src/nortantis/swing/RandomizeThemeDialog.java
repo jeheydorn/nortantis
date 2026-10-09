@@ -225,8 +225,12 @@ class RandomizeThemeDialog extends JDialog
 		organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.55);
 		organizer.addVerticalFillerRow();
 		JScrollPane scrollPane = organizer.createScrollPane();
-		scrollPane.setPreferredSize(new java.awt.Dimension(470, 600));
-		return scrollPane;
+		scrollPane.setBorder(BorderFactory.createEmptyBorder());
+		JPanel titledPanel = new JPanel(new BorderLayout());
+		titledPanel.setBorder(BorderFactory.createTitledBorder(new DynamicLineBorder("controlShadow", 1), Translation.get("randomizeTheme.settingsTitle")));
+		titledPanel.add(scrollPane, BorderLayout.CENTER);
+		titledPanel.setPreferredSize(new java.awt.Dimension(470, 600));
+		return titledPanel;
 	}
 
 	/**
@@ -448,7 +452,8 @@ class RandomizeThemeDialog extends JDialog
 	private JComponent createPreviewPanel()
 	{
 		JPanel panel = new JPanel(new BorderLayout(0, 6));
-		JLabel explanation = new JLabel("<html>" + Translation.get("randomizeTheme.explanation") + "</html>");
+		JLabel explanation = new JLabel("<html>" + Translation.get("randomizeTheme.explanation", Translation.get("newSettingsDialog.randomizeTheme"),
+				Translation.get("newSettingsDialog.title")) + "</html>");
 		panel.add(explanation, BorderLayout.NORTH);
 		previewPanel = new UnscaledImagePanel();
 		previewHolder = new JPanel(new GridBagLayout());

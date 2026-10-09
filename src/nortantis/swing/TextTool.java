@@ -298,13 +298,10 @@ public class TextTool extends EditorTool
 
 		addStyleControls = new TextStyleControls(organizer, this::applyStyleEditToDefaultsForAdds, this::getFontFamiliesUsedByThisMap, () -> addNameField.getText());
 
-		JButton useFontForAllTypesButton = new JButton(Translation.get("textTool.useFontForAllTypes"));
-		useFontForAllTypesButton.setToolTipText(Translation.get("textTool.useFontForAllTypes.tooltip"));
-		useFontForAllTypesButton.addActionListener(e -> useFontForAllTextTypes());
 		JButton applyToButton = new JButton(Translation.get("textTool.applyStyleTo"));
 		applyToButton.setToolTipText(Translation.get("textTool.applyStyleForNewTextTo.tooltip"));
 		applyToButton.addActionListener(e -> showApplyDialogForDefaults());
-		addStyleButtonsHider = organizer.addLeftAlignedComponents(Arrays.asList(useFontForAllTypesButton, applyToButton));
+		addStyleButtonsHider = organizer.addLeftAlignedComponents(Arrays.asList(applyToButton));
 
 		addLayoutRows = organizer.addSectionHeading(Translation.get("textTool.section.layout"));
 		Tuple2<SliderWithDisplayedValue, RowHider> curvature = addCurvatureRow(organizer, value -> editLayoutForAdds(layout -> layout.curvature = value));
@@ -1154,22 +1151,6 @@ public class TextTool extends EditorTool
 			return;
 		}
 		edit.apply(style);
-		undoer.setUndoPoint(UpdateType.NoDraw, this);
-		mainWindow.handleChangeWithoutRedraw();
-		showAddModeStyle();
-	}
-
-	private void useFontForAllTextTypes()
-	{
-		TextStyle source = getDefaultStyleForAdds();
-		if (source == null)
-		{
-			return;
-		}
-		for (TextStyle style : textStyleDefaults.values())
-		{
-			style.font = style.withFamilyAndStyleOf(source.font);
-		}
 		undoer.setUndoPoint(UpdateType.NoDraw, this);
 		mainWindow.handleChangeWithoutRedraw();
 		showAddModeStyle();
