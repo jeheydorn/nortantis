@@ -845,7 +845,7 @@ public class NewSettingsDialog extends JDialog
 		DialogState current = captureState();
 		if (!current.matches(committedState))
 		{
-			undoStack.push(committedState);
+			pushUndoStep(committedState);
 			redoStack.clear();
 			committedState = current;
 			updateUndoRedoButtons();
@@ -870,8 +870,17 @@ public class NewSettingsDialog extends JDialog
 		{
 			return;
 		}
-		undoStack.push(committedState);
+		pushUndoStep(committedState);
 		restoreState(redoStack.pop());
+	}
+
+	private void pushUndoStep(DialogState state)
+	{
+		undoStack.push(state);
+		while (undoStack.size() > Undoer.maxUndoLevels)
+		{
+			undoStack.removeLast();
+		}
 	}
 
 	private void restoreState(DialogState state)

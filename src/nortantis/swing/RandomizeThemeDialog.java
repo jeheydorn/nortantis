@@ -58,8 +58,18 @@ class RandomizeThemeDialog extends JDialog
 	private final ThemeGenerationSettings gen;
 	private final BiConsumer<MapSettings, Boolean> onApply;
 	private final Consumer<MapSettings> onClose;
-	/** The open map as it is, followed by each variation rolled, in the order they were rolled. */
+	/**
+	 * The open map as it is, followed by the variations rolled, in the order they were rolled. Only the most recent
+	 * {@link Undoer#maxUndoLevels} variations are kept, since each holds a copy of the map's edits.
+	 */
 	private final List<Variation> variations = new ArrayList<>();
+	/**
+	 * The most variations whose previews are kept, so that going back and forth between recent variations doesn't redraw them. Older
+	 * previews are drawn again if shown again.
+	 */
+	private static final int maxPreviewsKept = 5;
+	/** The variations with previews kept, from least to most recently drawn. */
+	private final ArrayDeque<Variation> variationsWithPreviews = new ArrayDeque<>();
 	private int shownIndex;
 	private JComboBox<String> artPackComboBox;
 	private final List<Runnable> resourceListRebuilders = new ArrayList<>();
@@ -565,6 +575,11 @@ class RandomizeThemeDialog extends JDialog
 		variation.themeGeneration = gen.copy();
 		SettingsGenerator.randomizeTheme(variation, base, getArtPackToChooseFrom(), new Random());
 		variations.add(new Variation(variation, gen.shuffleTextBackgrounds));
+		// The open map stays first, so the oldest variation rolled is the one dropped.
+		while (variations.size() > Undoer.maxUndoLevels + 1)
+		{
+			forgetPreview(variations.remove(1));
+		}
 		showVariation(variations.size() - 1);
 	}
 
@@ -641,10 +656,28 @@ class RandomizeThemeDialog extends JDialog
 					Logger.printError("Unable to draw the preview of the theme's variation.", e);
 					variation.preview = null;
 				}
+				keepPreview(variation);
 				showPreview();
 			}
 		};
 		worker.execute();
+	}
+
+	private void keepPreview(Variation variation)
+	{
+		variationsWithPreviews.remove(variation);
+		variationsWithPreviews.addLast(variation);
+		while (variationsWithPreviews.size() > maxPreviewsKept)
+		{
+			forgetPreview(variationsWithPreviews.peekFirst());
+		}
+	}
+
+	private void forgetPreview(Variation variation)
+	{
+		variationsWithPreviews.remove(variation);
+		variation.preview = null;
+		variation.previewSize = null;
 	}
 
 	private void apply()
