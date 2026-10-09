@@ -142,6 +142,12 @@ public class TextTool extends EditorTool
 	 * The point, in graph coordinates, that several selected texts rotate about together. Fixed when the rotation starts.
 	 */
 	private nortantis.geom.Point groupRotationCenter;
+	/**
+	 * The box around several selected texts after they were moved or rotated together, in resolution-invariant coordinates. It keeps the
+	 * box, and so the rotation handle, where the drag left it rather than snapping to the axis-aligned box around the texts' new positions.
+	 * Null means the box is the axis-aligned one. Cleared when the selection changes or the selected texts change in any other way.
+	 */
+	private RotatedRectangle groupBoxRI;
 	private boolean isRotating;
 	private boolean isMoving;
 	/**
@@ -691,6 +697,7 @@ public class TextTool extends EditorTool
 			}
 		}
 		selectedTexts = newSelection;
+		groupBoxRI = null;
 
 		mapEditingPanel.clearHighlightedAreas();
 		if (selectedTexts.isEmpty())
@@ -929,8 +936,26 @@ public class TextTool extends EditorTool
 			showTextBoxes(boxes.isEmpty() ? null : boxes.get(0), boxes);
 			return;
 		}
+		showTextBoxes(getGroupBox(), boxes);
+	}
+
+	/**
+	 * The box with the move and rotate handles around several selected texts, in graph coordinates, or null when none of them has been
+	 * drawn. Its pivot is its center.
+	 */
+	private RotatedRectangle getGroupBox()
+	{
+		if (groupBoxRI != null)
+		{
+			return scaleBox(groupBoxRI, mainWindow.displayQualityScale);
+		}
 		Rectangle groupBounds = getGroupBounds();
-		showTextBoxes(groupBounds == null ? null : new RotatedRectangle(groupBounds), boxes);
+		return groupBounds == null ? null : new RotatedRectangle(groupBounds);
+	}
+
+	private static RotatedRectangle scaleBox(RotatedRectangle box, double scale)
+	{
+		return new RotatedRectangle(box.x * scale, box.y * scale, box.width * scale, box.height * scale, box.angle, box.pivotX * scale, box.pivotY * scale);
 	}
 
 	private static RotatedRectangle getTextBox(MapText text)
@@ -1003,6 +1028,7 @@ public class TextTool extends EditorTool
 		}
 		commitNameEdit();
 		restoreSelectedTextsRemovedFromEdits();
+		groupBoxRI = null;
 		List<MapText> textsToRedraw = new ArrayList<>(selectedTexts.size() * 2);
 		for (MapText text : selectedTexts)
 		{
@@ -1449,8 +1475,8 @@ public class TextTool extends EditorTool
 			{
 				isRotating = true;
 				mousePressedLocation = getPointOnGraph(e.getPoint());
-				Rectangle groupBounds = getGroupBounds();
-				groupRotationCenter = groupBounds == null ? null : groupBounds.getCenter();
+				RotatedRectangle groupBox = getGroupBox();
+				groupRotationCenter = groupBox == null ? null : groupBox.getPivot();
 			}
 			else if (!selectedTexts.isEmpty() && mapEditingPanel.isInMoveTool(e.getPoint()))
 			{
@@ -1717,8 +1743,8 @@ public class TextTool extends EditorTool
 			}
 			else if (selectedTexts.size() > 1)
 			{
-				Rectangle groupBounds = getGroupBounds();
-				insideSelectionBox = groupBounds != null && groupBounds.contains(graphPoint);
+				RotatedRectangle groupBox = getGroupBox();
+				insideSelectionBox = groupBox != null && groupBox.contains(graphPoint);
 			}
 		}
 		if (!insideSelectionBox)
@@ -1799,19 +1825,22 @@ public class TextTool extends EditorTool
 		}
 
 		List<RotatedRectangle> previewBoxes = new ArrayList<>();
+		RotatedRectangle previewGroupBox = getGroupBox();
 		if (isMoving)
 		{
 			nortantis.geom.Point graphPointMouseLocation = getPointOnGraph(mouseLocation);
 			int deltaX = (int) (graphPointMouseLocation.x - mousePressedLocation.x);
 			int deltaY = (int) (graphPointMouseLocation.y - mousePressedLocation.y);
+			nortantis.geom.Point delta = new nortantis.geom.Point(deltaX, deltaY);
 			for (MapText text : selectedTexts)
 			{
 				RotatedRectangle box = getTextBox(text);
 				if (box != null)
 				{
-					previewBoxes.add(box.translate(new nortantis.geom.Point(deltaX, deltaY)));
+					previewBoxes.add(box.translate(delta));
 				}
 			}
+			previewGroupBox = previewGroupBox == null ? null : previewGroupBox.translate(delta);
 		}
 		else if (isRotating)
 		{
@@ -1836,6 +1865,7 @@ public class TextTool extends EditorTool
 						previewBoxes.add(rotateBoxAbout(box, groupRotationCenter, delta));
 					}
 				}
+				previewGroupBox = previewGroupBox == null ? null : rotateBoxAbout(previewGroupBox, groupRotationCenter, delta);
 			}
 		}
 
@@ -1849,22 +1879,7 @@ public class TextTool extends EditorTool
 		}
 		else
 		{
-			RotatedRectangle groupBox;
-			if (isRotating && groupRotationCenter != null)
-			{
-				Rectangle groupBounds = getGroupBounds();
-				groupBox = groupBounds == null ? null : new RotatedRectangle(groupBounds, calcGroupRotationAngle(mouseLocation), groupRotationCenter);
-			}
-			else
-			{
-				Rectangle bounds = null;
-				for (RotatedRectangle box : previewBoxes)
-				{
-					bounds = box.getBounds().add(bounds);
-				}
-				groupBox = new RotatedRectangle(bounds);
-			}
-			showTextBoxes(groupBox, previewBoxes);
+			showTextBoxes(previewGroupBox, previewBoxes);
 		}
 		mapEditingPanel.repaint();
 	}
@@ -1938,7 +1953,9 @@ public class TextTool extends EditorTool
 				nortantis.geom.Point translation = new nortantis.geom.Point((int) ((graphPointMouseLocation.x - mousePressedLocation.x) / mainWindow.displayQualityScale),
 						(int) ((graphPointMouseLocation.y - mousePressedLocation.y) / mainWindow.displayQualityScale));
 				isMoving = false;
+				RotatedRectangle movedGroupBoxRI = groupBoxRI == null ? null : groupBoxRI.translate(translation);
 				applyToSelectedTexts(text -> text.location = new nortantis.geom.Point(text.location.x + translation.x, text.location.y + translation.y), false);
+				groupBoxRI = movedGroupBoxRI;
 			}
 			else if (isRotating)
 			{
@@ -1953,11 +1970,14 @@ public class TextTool extends EditorTool
 					double delta = calcGroupRotationAngle(e.getPoint());
 					double scale = mainWindow.displayQualityScale;
 					nortantis.geom.Point centerRI = new nortantis.geom.Point(groupRotationCenter.x / scale, groupRotationCenter.y / scale);
+					RotatedRectangle groupBox = getGroupBox();
+					RotatedRectangle rotatedGroupBoxRI = groupBox == null ? null : scaleBox(rotateBoxAbout(groupBox, groupRotationCenter, delta), 1.0 / scale);
 					applyToSelectedTexts(text ->
 					{
 						text.location = text.location.rotate(centerRI, delta);
 						text.angle += delta;
 					}, false);
+					groupBoxRI = rotatedGroupBoxRI;
 				}
 			}
 		}
@@ -2017,6 +2037,7 @@ public class TextTool extends EditorTool
 	{
 		// The undo replaced the texts with copies, so the selected ones no longer exist.
 		selectedTexts = new ArrayList<>();
+		groupBoxRI = null;
 		hideTextEditComponents();
 		mapEditingPanel.clearTextBox();
 		showAddModeStyle();
@@ -2178,6 +2199,7 @@ public class TextTool extends EditorTool
 	public void onBeforeLoadingNewMap()
 	{
 		selectedTexts = new ArrayList<>();
+		groupBoxRI = null;
 		textClipboard = null;
 		hideTextEditComponents();
 	}
