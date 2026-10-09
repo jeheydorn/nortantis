@@ -5,7 +5,6 @@ import nortantis.IconType;
 import nortantis.ImageCache;
 import nortantis.LandShape;
 import nortantis.MapSettings;
-import nortantis.NamedResource;
 import nortantis.SettingsGenerator;
 import nortantis.ThemeCatalog;
 import nortantis.editor.MapUpdater;
@@ -65,13 +64,15 @@ public class NewSettingsDialog extends JDialog
 	 */
 	private nortantis.geom.Dimension lastDrawnMapAreaSize;
 	private JComboBox<ThemeChoice> themeComboBox;
-	private JLabel themeWarningLabel;
-	private RowHider themeWarningHider;
 	/**
-	 * True while a theme is being applied, when the art pack combo box changing must not choose new resources from the art pack, which would
-	 * replace the theme's own border and background texture.
+	 * True while a theme is being applied or the dialog's controls are being loaded, when the art pack and theme combo boxes changing must
+	 * not choose and apply a theme.
 	 */
 	private boolean isApplyingTheme;
+	/**
+	 * The theme choice the map was last made from, which the theme combo box goes back to when a theme chosen in it can't be loaded.
+	 */
+	private ThemeChoice appliedThemeChoice;
 	/**
 	 * The map New Map With Same Theme was opened from, or null.
 	 */
@@ -83,10 +84,12 @@ public class NewSettingsDialog extends JDialog
 	private MapSettings themeBase;
 
 	/**
-	 * An entry in the theme combo box: Random, the theme of the map the dialog was opened from, or a theme in an art pack.
+	 * An entry in the theme combo box: the theme of the map the dialog was opened from, or a theme in an art pack. Choices for the same theme
+	 * are equal, so that a choice still matches after the combo box's list is rebuilt.
 	 */
 	private static final class ThemeChoice
 	{
+		/** The theme in an art pack, or null for the theme of the map the dialog was opened from. */
 		final ThemeCatalog.Entry entry;
 		final String displayName;
 
@@ -101,9 +104,21 @@ public class NewSettingsDialog extends JDialog
 		{
 			return displayName;
 		}
+
+		@Override
+		public boolean equals(Object obj)
+		{
+			return obj instanceof ThemeChoice other && Objects.equals(entry, other.entry);
+		}
+
+		@Override
+		public int hashCode()
+		{
+			return Objects.hashCode(entry);
+		}
 	}
 
-	private ThemeChoice randomThemeChoice;
+	/** The theme of the map the dialog was opened from, or null when it wasn't opened from a map. */
 	private ThemeChoice sameThemeChoice;
 
 	/**
@@ -114,23 +129,17 @@ public class NewSettingsDialog extends JDialog
 		final MapSettings settings;
 		final ThemeChoice themeChoice;
 		final MapSettings themeBase;
-		/**
-		 * The warning shown under the theme combo box, or null when none is shown.
-		 */
-		final String themeWarning;
 
-		DialogState(MapSettings settings, ThemeChoice themeChoice, MapSettings themeBase, String themeWarning)
+		DialogState(MapSettings settings, ThemeChoice themeChoice, MapSettings themeBase)
 		{
 			this.settings = settings;
 			this.themeChoice = themeChoice;
 			this.themeBase = themeBase;
-			this.themeWarning = themeWarning;
 		}
 
 		boolean matches(DialogState other)
 		{
-			return themeChoice == other.themeChoice && themeBase == other.themeBase && Objects.equals(themeWarning, other.themeWarning)
-					&& settings.equalsIgnoringEdits(other.settings);
+			return Objects.equals(themeChoice, other.themeChoice) && themeBase == other.themeBase && settings.equalsIgnoringEdits(other.settings);
 		}
 	}
 
@@ -154,16 +163,22 @@ public class NewSettingsDialog extends JDialog
 
 		if (settingsToKeepThemeFrom == null)
 		{
-			Tuple2<MapSettings, MapSettings> generated = SettingsGenerator.generateWithTheme(UserPreferences.getInstance().defaultCustomImagesPath);
-			settings = generated.getFirst();
-			themeBase = generated.getSecond();
+			String customImagesPath = UserPreferences.getInstance().defaultCustomImagesPath;
+			Random rand = new Random();
+			String artPack = ProbabilityHelper.sampleUniform(rand, Assets.listArtPacksForNewRandomMaps(customImagesPath));
+			Tuple2<ThemeChoice, MapSettings> chosen = chooseRandomThemeThatLoads(rand, artPack, customImagesPath);
+			themeBase = chosen.getSecond();
+			settings = SettingsGenerator.generateFromTheme(rand, artPack, themeBase, ThemeCatalog.isFromInstalledArtPack(chosen.getFirst().entry), customImagesPath);
+			selectThemeChoice(chosen.getFirst());
 		}
 		else
 		{
 			settings = SettingsGenerator.newMapWithSameTheme(settingsToKeepThemeFrom);
 			themeBase = settingsToKeepThemeFrom;
+			sameThemeChoice = new ThemeChoice(null, Translation.get("newSettingsDialog.theme.sameAsMap"));
+			initializeThemeOptions(ThemeCatalog.listThemesToChooseFrom(settings.artPack, settings.customImagesPath));
+			selectThemeChoice(sameThemeChoice);
 		}
-		initializeThemeOptions();
 		loadSettingsIntoGUI(settings);
 
 		updater.setEnabled(true);
@@ -535,6 +550,8 @@ public class NewSettingsDialog extends JDialog
 					updatePathDisplay();
 					settings.artPack = Assets.customArtPack;
 					initializeArtPackOptionsAndCityTypeOptions();
+					// The custom art pack's themes come from the new folder.
+					useThemeForArtPack();
 
 					redrawWithClearedImageCache();
 					scheduleUndoStep();
@@ -587,20 +604,6 @@ public class NewSettingsDialog extends JDialog
 		JPanel rightPanel = organizer.panel;
 		generatorSettingsPanel.add(rightPanel);
 
-		themeComboBox = new ShrinkableComboBox<ThemeChoice>();
-		themeComboBox.addActionListener(e ->
-		{
-			if (!isApplyingTheme)
-			{
-				applyThemeChoice();
-			}
-		});
-		organizer.addLabelAndComponent(Translation.get("newSettingsDialog.theme.label"), Translation.get("newSettingsDialog.theme.help"), themeComboBox);
-		themeWarningLabel = new JLabel();
-		themeWarningLabel.setForeground(SwingHelper.warningMessageColor);
-		themeWarningHider = organizer.addLabelAndComponent("", "", themeWarningLabel, 2);
-		themeWarningHider.setVisible(false);
-
 		artPackComboBox = new ShrinkableComboBox<String>();
 		JLabel artPackLabel = new JLabel(Translation.get("newSettingsDialog.artPack.label"));
 		artPackLabel.setToolTipText(Translation.get("newSettingsDialog.artPack.help"));
@@ -609,14 +612,11 @@ public class NewSettingsDialog extends JDialog
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				if (isApplyingTheme)
+				if (isApplyingTheme || Objects.equals(artPackComboBox.getSelectedItem(), settings.artPack))
 				{
 					return;
 				}
-				useResourcesFromArtPack((String) artPackComboBox.getSelectedItem());
-				initializeCityTypeOptions();
-				chooseRandomCityType();
-				handleMapChange();
+				useThemeForArtPack();
 			}
 		});
 
@@ -638,6 +638,16 @@ public class NewSettingsDialog extends JDialog
 		rowPanel.add(cityIconTypeLabel);
 		rowPanel.add(Box.createHorizontalStrut(5));
 		rowPanel.add(cityIconsTypeComboBox);
+
+		themeComboBox = new ShrinkableComboBox<ThemeChoice>();
+		themeComboBox.addActionListener(e ->
+		{
+			if (!isApplyingTheme)
+			{
+				applyThemeChoice();
+			}
+		});
+		organizer.addLabelAndComponent(Translation.get("newSettingsDialog.theme.label"), Translation.get("newSettingsDialog.theme.help"), themeComboBox);
 
 		cityFrequencySlider = new JSlider();
 		cityFrequencySlider.setPaintLabels(true);
@@ -667,58 +677,23 @@ public class NewSettingsDialog extends JDialog
 	}
 
 	/**
-	 * Chooses a random border and background texture from the given art pack, for when the user picks an art pack after the theme.
+	 * Lists the given themes in the theme combo box, after the theme of the map the dialog was opened from, if there is one. Doesn't select
+	 * one.
 	 */
-	private void useResourcesFromArtPack(String artPack)
+	private void initializeThemeOptions(List<ThemeCatalog.Entry> entries)
 	{
-		if (artPack == null)
-		{
-			return;
-		}
-		Random rand = new Random();
-		List<NamedResource> textures = Assets.listBackgroundTexturesForArtPack(artPack, settings.customImagesPath);
-		if (!textures.isEmpty())
-		{
-			settings.backgroundTextureResource = ProbabilityHelper.sampleUniform(rand, textures);
-		}
-		List<NamedResource> borders = Assets.listBorderTypesForArtPack(artPack, settings.customImagesPath);
-		if (!borders.isEmpty())
-		{
-			settings.borderResource = ProbabilityHelper.sampleUniform(rand, borders);
-		}
-	}
-
-	/**
-	 * Selects a random city icon type from the selected art pack, as choosing an art pack chooses its border and background texture at
-	 * random.
-	 */
-	private void chooseRandomCityType()
-	{
-		int count = cityIconsTypeComboBox.getItemCount();
-		if (count > 0)
-		{
-			cityIconsTypeComboBox.setSelectedIndex(new Random().nextInt(count));
-		}
-	}
-
-	private void initializeThemeOptions()
-	{
-		// Adding the first item selects it, which would apply a theme before the dialog's fields hold the settings it was opened with.
 		isApplyingTheme = true;
 		try
 		{
-			randomThemeChoice = new ThemeChoice(null, Translation.get("newSettingsDialog.theme.random"));
-			themeComboBox.addItem(randomThemeChoice);
-			if (settingsToKeepThemeFrom != null)
+			themeComboBox.removeAllItems();
+			if (sameThemeChoice != null)
 			{
-				sameThemeChoice = new ThemeChoice(null, Translation.get("newSettingsDialog.theme.sameAsMap"));
 				themeComboBox.addItem(sameThemeChoice);
 			}
-			for (ThemeCatalog.Entry entry : ThemeCatalog.listArtPackThemes(settings.customImagesPath))
+			for (ThemeCatalog.Entry entry : entries)
 			{
-				themeComboBox.addItem(new ThemeChoice(entry, Translation.get("newSettingsDialog.theme.inArtPack", entry.name, entry.artPack)));
+				themeComboBox.addItem(new ThemeChoice(entry, entry.name));
 			}
-			themeComboBox.setSelectedItem(sameThemeChoice != null ? sameThemeChoice : randomThemeChoice);
 		}
 		finally
 		{
@@ -727,8 +702,140 @@ public class NewSettingsDialog extends JDialog
 	}
 
 	/**
-	 * Applies the theme chosen in the theme combo box, keeping the world the user set up. The theme sets the art pack when it names one that
-	 * is installed or is inside one, and supplies the border and background texture.
+	 * Selects the given choice in the theme combo box without applying it.
+	 */
+	private void selectThemeChoice(ThemeChoice choice)
+	{
+		isApplyingTheme = true;
+		try
+		{
+			themeComboBox.setSelectedItem(choice);
+		}
+		finally
+		{
+			isApplyingTheme = false;
+		}
+		appliedThemeChoice = choice;
+	}
+
+	/**
+	 * Lists the themes the given art pack can use in the theme combo box, and loads one of them chosen at random. A theme that can't be
+	 * loaded is skipped, and the problems are reported together once a theme has loaded. If none of them load, the installed art pack's
+	 * themes are listed and used instead.
+	 *
+	 * @return The choice for the theme, which this doesn't select, and the theme.
+	 */
+	private Tuple2<ThemeChoice, MapSettings> chooseRandomThemeThatLoads(Random rand, String artPack, String customImagesPath)
+	{
+		List<ThemeLoadError> errors = new ArrayList<>();
+		List<ThemeCatalog.Entry> entries = ThemeCatalog.listThemesToChooseFrom(artPack, customImagesPath);
+		Tuple2<ThemeCatalog.Entry, MapSettings> loaded = loadFirstThemeThatLoads(rand, entries, errors);
+		List<ThemeCatalog.Entry> installedEntries = ThemeCatalog.listThemesForArtPack(Assets.installedArtPack, customImagesPath);
+		if (loaded == null && !entries.equals(installedEntries))
+		{
+			entries = installedEntries;
+			loaded = loadFirstThemeThatLoads(rand, entries, errors);
+		}
+		showThemeLoadErrors(errors);
+		if (loaded == null)
+		{
+			throw new IllegalStateException("None of the installed art pack's themes could be loaded.");
+		}
+		initializeThemeOptions(entries);
+		return new Tuple2<>(new ThemeChoice(loaded.getFirst(), loaded.getFirst().name), loaded.getSecond());
+	}
+
+	/**
+	 * Tries the given themes in random order, and returns the first that loads, or null if none do.
+	 *
+	 * @param errors
+	 *            Gets why each theme tried couldn't be loaded.
+	 */
+	private Tuple2<ThemeCatalog.Entry, MapSettings> loadFirstThemeThatLoads(Random rand, List<ThemeCatalog.Entry> entries, List<ThemeLoadError> errors)
+	{
+		List<ThemeCatalog.Entry> shuffled = new ArrayList<>(entries);
+		Collections.shuffle(shuffled, rand);
+		for (ThemeCatalog.Entry entry : shuffled)
+		{
+			MapSettings theme = loadTheme(entry, errors);
+			if (theme != null)
+			{
+				return new Tuple2<>(entry, theme);
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Why a theme couldn't be loaded.
+	 *
+	 * @param isInvalid
+	 *            Whether the theme loaded but relies on an art pack it may not, rather than failing to load.
+	 */
+	private record ThemeLoadError(String message, boolean isInvalid)
+	{
+	}
+
+	/**
+	 * Loads a theme, or adds why it can't be loaded to {@code errors} and returns null.
+	 */
+	private MapSettings loadTheme(ThemeCatalog.Entry entry, List<ThemeLoadError> errors)
+	{
+		try
+		{
+			return ThemeCatalog.load(entry);
+		}
+		catch (ThemeCatalog.InvalidThemeException e)
+		{
+			errors.add(new ThemeLoadError(e.getMessage(), true));
+		}
+		catch (Exception e)
+		{
+			Logger.printError("Unable to load the theme '" + entry.path + "'.", e);
+			errors.add(new ThemeLoadError(Translation.get("theme.unableToLoad", e.getMessage()), false));
+		}
+		return null;
+	}
+
+	/**
+	 * Tells the user why themes couldn't be loaded, in one message, if there were any.
+	 */
+	private void showThemeLoadErrors(List<ThemeLoadError> errors)
+	{
+		if (errors.isEmpty())
+		{
+			return;
+		}
+		String title = errors.stream().allMatch(ThemeLoadError::isInvalid) ? Translation.get("theme.invalid.title") : Translation.get("theme.unableToLoad.title");
+		String message = String.join("\n\n", errors.stream().map(ThemeLoadError::message).toList());
+		SwingHelper.showMessageDialog(isVisible() ? this : mainWindow, message, title, JOptionPane.ERROR_MESSAGE);
+	}
+
+	/**
+	 * Lists the themes the chosen art pack can use, and uses one of them chosen at random, or keeps the theme of the map the dialog was
+	 * opened from when that's chosen.
+	 */
+	private void useThemeForArtPack()
+	{
+		String artPack = (String) artPackComboBox.getSelectedItem();
+		if (artPack == null)
+		{
+			return;
+		}
+		if (sameThemeChoice != null && sameThemeChoice.equals(themeComboBox.getSelectedItem()))
+		{
+			initializeThemeOptions(ThemeCatalog.listThemesToChooseFrom(artPack, settings.customImagesPath));
+			selectThemeChoice(sameThemeChoice);
+			applyTheme(sameThemeChoice, null);
+			return;
+		}
+		Tuple2<ThemeChoice, MapSettings> chosen = chooseRandomThemeThatLoads(new Random(), artPack, settings.customImagesPath);
+		selectThemeChoice(chosen.getFirst());
+		applyTheme(chosen.getFirst(), chosen.getSecond());
+	}
+
+	/**
+	 * Applies the theme chosen in the theme combo box. If it can't be loaded, the combo box goes back to the theme the map was made from.
 	 */
 	private void applyThemeChoice()
 	{
@@ -737,38 +844,48 @@ public class NewSettingsDialog extends JDialog
 		{
 			return;
 		}
+		MapSettings theme = null;
+		if (!choice.equals(sameThemeChoice))
+		{
+			List<ThemeLoadError> errors = new ArrayList<>();
+			theme = loadTheme(choice.entry, errors);
+			showThemeLoadErrors(errors);
+			if (theme == null)
+			{
+				selectThemeChoice(appliedThemeChoice);
+				return;
+			}
+		}
+		appliedThemeChoice = choice;
+		applyTheme(choice, theme);
+	}
 
+	/**
+	 * Makes the map from the given theme with the chosen art pack, keeping the world the user set up.
+	 *
+	 * @param theme
+	 *            The loaded theme, or null for the theme of the map the dialog was opened from.
+	 */
+	private void applyTheme(ThemeChoice choice, MapSettings theme)
+	{
 		MapSettings current = getSettingsFromGUI();
 		Random rand = new Random();
-		String currentArtPack = (String) artPackComboBox.getSelectedItem();
+		String artPack = (String) artPackComboBox.getSelectedItem();
 		MapSettings newSettings;
 		MapSettings newThemeBase;
-		String missingArtPack = null;
-		if (choice == sameThemeChoice)
+		if (choice.equals(sameThemeChoice))
 		{
 			newSettings = SettingsGenerator.newMapWithSameTheme(settingsToKeepThemeFrom);
 			newThemeBase = settingsToKeepThemeFrom;
+			if (!Objects.equals(newSettings.artPack, artPack))
+			{
+				newSettings.artPack = artPack;
+				SettingsGenerator.chooseCityIconType(newSettings, rand);
+			}
 		}
 		else
 		{
-			ThemeCatalog.Entry entry = choice.entry != null ? choice.entry : ThemeCatalog.chooseRandomTheme(rand, currentArtPack, settings.customImagesPath);
-			MapSettings theme;
-			try
-			{
-				theme = ThemeCatalog.load(entry);
-			}
-			catch (Exception e)
-			{
-				SwingHelper.showMessageDialog(this, Translation.get("theme.unableToLoad", e.getMessage()), Translation.get("theme.unableToLoad.title"), JOptionPane.ERROR_MESSAGE);
-				return;
-			}
-			String resolvedArtPack = ThemeCatalog.resolveArtPack(entry, theme, settings.customImagesPath);
-			if (theme.themeGeneration != null && theme.themeGeneration.artPack != null && !Assets.artPackExists(theme.themeGeneration.artPack, settings.customImagesPath))
-			{
-				missingArtPack = theme.themeGeneration.artPack;
-			}
-			String artPack = resolvedArtPack != null ? resolvedArtPack : currentArtPack;
-			newSettings = SettingsGenerator.generateFromTheme(rand, artPack, theme, ThemeCatalog.isFromInstalledArtPack(entry), settings.customImagesPath);
+			newSettings = SettingsGenerator.generateFromTheme(rand, artPack, theme, ThemeCatalog.isFromInstalledArtPack(choice.entry), settings.customImagesPath);
 			newThemeBase = theme;
 		}
 
@@ -787,12 +904,6 @@ public class NewSettingsDialog extends JDialog
 		newSettings.books = current.books;
 		settings = newSettings;
 		themeBase = newThemeBase;
-
-		if (missingArtPack != null)
-		{
-			themeWarningLabel.setText(Translation.get("newSettingsDialog.theme.artPackMissing", missingArtPack, settings.artPack));
-		}
-		themeWarningHider.setVisible(missingArtPack != null);
 
 		loadSettingsIntoGUIWithoutApplyingTheme();
 		handleMapChange();
@@ -818,7 +929,7 @@ public class NewSettingsDialog extends JDialog
 
 	private DialogState captureState()
 	{
-		return new DialogState(getSettingsFromGUI(), (ThemeChoice) themeComboBox.getSelectedItem(), themeBase, themeWarningHider.isVisible() ? themeWarningLabel.getText() : null);
+		return new DialogState(getSettingsFromGUI(), (ThemeChoice) themeComboBox.getSelectedItem(), themeBase);
 	}
 
 	/**
@@ -894,21 +1005,15 @@ public class NewSettingsDialog extends JDialog
 		settings = restored;
 		themeBase = state.themeBase;
 
-		isApplyingTheme = true;
-		try
+		List<ThemeCatalog.Entry> entries = ThemeCatalog.listThemesToChooseFrom(state.settings.artPack, state.settings.customImagesPath);
+		if (state.themeChoice.entry != null && !entries.contains(state.themeChoice.entry))
 		{
-			themeComboBox.setSelectedItem(state.themeChoice);
+			// The art pack's own themes couldn't be loaded, so the installed art pack's were listed instead.
+			entries = ThemeCatalog.listThemesForArtPack(Assets.installedArtPack, state.settings.customImagesPath);
 		}
-		finally
-		{
-			isApplyingTheme = false;
-		}
+		initializeThemeOptions(entries);
+		selectThemeChoice(state.themeChoice);
 		loadSettingsIntoGUIWithoutApplyingTheme();
-		if (state.themeWarning != null)
-		{
-			themeWarningLabel.setText(state.themeWarning);
-		}
-		themeWarningHider.setVisible(state.themeWarning != null);
 		updateUndoRedoButtons();
 
 		if (dimensionsChanged)
@@ -943,7 +1048,8 @@ public class NewSettingsDialog extends JDialog
 	private void randomizeTheme()
 	{
 		settings.artPack = (String) artPackComboBox.getSelectedItem();
-		SettingsGenerator.randomizeTheme(settings, themeBase, settings.artPack, new Random());
+		SettingsGenerator.randomizeTheme(settings, themeBase, SettingsGenerator.getRandomizationArtPack(settings.themeGeneration, settings.artPack, settings.customImagesPath),
+				new Random());
 		updater.setEnabled(false);
 		isApplyingTheme = true;
 		try

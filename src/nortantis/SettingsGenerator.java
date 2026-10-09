@@ -46,27 +46,7 @@ public class SettingsGenerator
 	}
 
 	/**
-	 * Generates settings for a new random map with a random art pack and a theme chosen the way "Random" chooses one.
-	 */
-	public static MapSettings generate(String customImageFolder)
-	{
-		return generateWithTheme(customImageFolder).getFirst();
-	}
-
-	/**
-	 * Generates settings for a new random map with a random art pack and a theme chosen the way "Random" chooses one.
-	 *
-	 * @return The settings, and the theme they were generated from, before it was varied.
-	 */
-	public static Tuple2<MapSettings, MapSettings> generateWithTheme(String customImageFolder)
-	{
-		Random rand = new Random();
-		String artPack = ProbabilityHelper.sampleUniform(rand, Assets.listArtPacksForNewRandomMaps(customImageFolder));
-		return generateWithTheme(rand, artPack, null, customImageFolder);
-	}
-
-	/**
-	 * Generates settings for a new random map with the given art pack and a theme chosen the way "Random" chooses one.
+	 * Generates settings for a new random map with the given art pack and one of the themes it can use, chosen at random.
 	 */
 	public static MapSettings generate(Random rand, String artPack, String customImagesFolder)
 	{
@@ -77,7 +57,7 @@ public class SettingsGenerator
 	 * Generates settings for a new random map.
 	 *
 	 * @param theme
-	 *            The theme to use, or null to choose one the way "Random" does.
+	 *            The theme to use, or null to choose one of those the art pack can use at random.
 	 */
 	public static MapSettings generate(Random rand, String artPack, ThemeCatalog.Entry theme, String customImagesFolder)
 	{
@@ -88,7 +68,7 @@ public class SettingsGenerator
 	 * Generates settings for a new random map.
 	 *
 	 * @param theme
-	 *            The theme to use, or null to choose one the way "Random" does.
+	 *            The theme to use, or null to choose one of those the art pack can use at random.
 	 * @return The settings, and the theme they were generated from, before it was varied.
 	 */
 	public static Tuple2<MapSettings, MapSettings> generateWithTheme(Random rand, String artPack, ThemeCatalog.Entry theme, String customImagesFolder)
@@ -110,6 +90,10 @@ public class SettingsGenerator
 		{
 			themeSettings = ThemeCatalog.load(themeToUse);
 		}
+		catch (ThemeCatalog.InvalidThemeException e)
+		{
+			throw e;
+		}
 		catch (RuntimeException e)
 		{
 			if (ThemeCatalog.isFromInstalledArtPack(themeToUse))
@@ -125,8 +109,20 @@ public class SettingsGenerator
 	}
 
 	/**
+	 * The art pack theme randomness chooses borders and background textures from: the rules' art pack if they have one that's installed,
+	 * otherwise the given one.
+	 */
+	public static String getRandomizationArtPack(ThemeGenerationSettings gen, String otherwise, String customImagesFolder)
+	{
+		return gen != null && gen.artPack != null && Assets.artPackExists(gen.artPack, customImagesFolder) ? gen.artPack : otherwise;
+	}
+
+	/**
 	 * Generates settings for a new random map from a loaded theme.
 	 *
+	 * @param artPack
+	 *            The art pack the map's icons come from. Its border and background texture come from the theme's randomization art pack
+	 *            when the theme has one that's installed, and otherwise from this art pack.
 	 * @param isThemeFromInstalledArtPack
 	 *            Whether the theme is one that comes with Nortantis, whose fonts are changed to ones that can draw the user's language. A theme someone
 	 *            chose fonts for keeps them.
@@ -150,7 +146,7 @@ public class SettingsGenerator
 
 		setRandomSeeds(settings, rand);
 		ThemeGenerationSettings gen = settings.themeGeneration != null ? settings.themeGeneration : ThemeGenerationSettings.createDefault();
-		applyThemeRandomness(settings, theme, gen, artPack, rand);
+		applyThemeRandomness(settings, theme, gen, getRandomizationArtPack(gen, artPack, customImagesFolder), rand);
 		shuffleTextBackgrounds(settings, gen, rand);
 		chooseCityIconType(settings, rand);
 		applyWorldRandomness(settings, rand);
@@ -198,7 +194,7 @@ public class SettingsGenerator
 	/**
 	 * Chooses one of the city icon types in the settings' art pack, since the theme's may not be in it.
 	 */
-	private static void chooseCityIconType(MapSettings settings, Random rand)
+	public static void chooseCityIconType(MapSettings settings, Random rand)
 	{
 		List<String> cityIconTypes = new ArrayList<>(ImageCache.getInstance(settings.artPack, settings.customImagesPath).getIconGroupNames(IconType.cities));
 		if (!cityIconTypes.isEmpty())

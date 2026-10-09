@@ -1,22 +1,42 @@
 package nortantis;
 
+import nortantis.swing.translation.Translation;
 import nortantis.util.Assets;
 import nortantis.util.ProbabilityHelper;
 import org.apache.commons.io.FilenameUtils;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
+import java.util.Set;
 
 /**
  * The themes in art packs, including the installed art pack. A theme is a map (.nort) file in an art pack's themes folder, with or without
  * edits, whose look new random maps are made from. The lists are read from disk each time they are asked for, since an art pack can be
  * added while Nortantis is running.
+ *
+ * <p>
+ * A theme may only rely on its own art pack and the installed art pack, so that it works the same whichever other art packs are installed.
+ * Loading a theme that relies on another art pack fails with an {@link InvalidThemeException}.
  */
 public class ThemeCatalog
 {
+	/**
+	 * Thrown when loading a theme that relies on an art pack other than its own and the installed one. Its message is translated, and says
+	 * what is wrong for whoever made the theme.
+	 */
+	public static class InvalidThemeException extends RuntimeException
+	{
+		public InvalidThemeException(String message)
+		{
+			super(message);
+		}
+	}
+
 	/**
 	 * A theme that can be loaded.
 	 */
@@ -90,16 +110,16 @@ public class ThemeCatalog
 	}
 
 	/**
-	 * Every theme from every installed art pack, in art pack order.
+	 * The themes new maps with the given art pack can use: the art pack's own, or the installed art pack's if it has none.
 	 */
-	public static List<Entry> listArtPackThemes(String customImagesFolder)
+	public static List<Entry> listThemesToChooseFrom(String artPack, String customImagesFolder)
 	{
-		List<Entry> result = new ArrayList<>();
-		for (String artPack : Assets.listArtPacks(customImagesFolder != null && !customImagesFolder.isEmpty()))
+		List<Entry> themes = artPack == null ? new ArrayList<>() : listThemesForArtPack(artPack, customImagesFolder);
+		if (themes.isEmpty())
 		{
-			result.addAll(listThemesForArtPack(artPack, customImagesFolder));
+			themes = listThemesForArtPack(Assets.installedArtPack, customImagesFolder);
 		}
-		return result;
+		return themes;
 	}
 
 	public static boolean isThemeFile(Path path)
@@ -109,43 +129,74 @@ public class ThemeCatalog
 
 	/**
 	 * Loads a theme.
+	 *
+	 * @throws InvalidThemeException
+	 *             If the theme relies on an art pack other than its own and the installed one.
 	 */
 	public static MapSettings load(Entry entry)
 	{
-		return new MapSettings(entry.path.toString());
+		MapSettings theme = new MapSettings(entry.path.toString());
+		List<String> problems = findArtPackProblems(entry.artPack, theme);
+		if (!problems.isEmpty())
+		{
+			throw new InvalidThemeException(Translation.get("theme.invalid", entry.name, entry.artPack, entry.path) + "\n\n" + String.join("\n\n", problems));
+		}
+		return theme;
 	}
 
 	/**
-	 * Chooses the theme "Random" means: one of the given art pack's themes when it has any, which were designed alongside its art, and
-	 * otherwise one of the installed art pack's themes.
+	 * Describes each way the given theme relies on an art pack other than the one it's in and the installed one: its theme randomization
+	 * art pack, and the art packs of the fonts for new text. The fonts of text already in the theme don't matter, since new maps don't
+	 * keep it.
+	 *
+	 * @return The translated descriptions, or an empty list if there are none.
+	 */
+	public static List<String> findArtPackProblems(String themeArtPack, MapSettings theme)
+	{
+		List<String> problems = new ArrayList<>();
+		if (theme.themeGeneration != null && theme.themeGeneration.artPack != null && !isAllowedArtPack(theme.themeGeneration.artPack, themeArtPack))
+		{
+			problems.add(Translation.get("theme.invalid.randomizationArtPack", theme.themeGeneration.artPack, themeArtPack, Assets.installedArtPack,
+					Translation.get("menu.edit"), Translation.get("randomizeTheme.title")));
+		}
+		if (theme.textStyleDefaults != null)
+		{
+			Set<String> familiesReported = new LinkedHashSet<>();
+			for (Map.Entry<TextType, TextStyle> entry : theme.textStyleDefaults.entrySet())
+			{
+				if (entry.getValue() == null || entry.getValue().font == null)
+				{
+					continue;
+				}
+				String family = entry.getValue().font.getFamily();
+				String fontArtPack = theme.getFontArtPack(family);
+				if (fontArtPack != null && !isAllowedArtPack(fontArtPack, themeArtPack) && familiesReported.add(family))
+				{
+					problems.add(Translation.get("theme.invalid.fontArtPack", family, fontArtPack, themeArtPack, Assets.installedArtPack));
+				}
+			}
+		}
+		return problems;
+	}
+
+	private static boolean isAllowedArtPack(String artPack, String themeArtPack)
+	{
+		return artPack.equals(themeArtPack) || artPack.equals(Assets.installedArtPack);
+	}
+
+	/**
+	 * Chooses one of the themes new maps with the given art pack can use (see {@link #listThemesToChooseFrom}).
 	 *
 	 * @throws IllegalStateException
 	 *             If neither art pack has a theme.
 	 */
 	public static Entry chooseRandomTheme(Random rand, String artPack, String customImagesFolder)
 	{
-		List<Entry> themes = artPack == null ? new ArrayList<>() : listThemesForArtPack(artPack, customImagesFolder);
-		if (themes.isEmpty())
-		{
-			themes = listThemesForArtPack(Assets.installedArtPack, customImagesFolder);
-		}
+		List<Entry> themes = listThemesToChooseFrom(artPack, customImagesFolder);
 		if (themes.isEmpty())
 		{
 			throw new IllegalStateException("The installed art pack has no themes, so there is no theme to generate a map from.");
 		}
 		return ProbabilityHelper.sampleUniform(rand, themes);
-	}
-
-	/**
-	 * The art pack generating a map from the given theme should use: the theme's own art pack if it is installed, otherwise the art pack the
-	 * theme file is inside.
-	 */
-	public static String resolveArtPack(Entry entry, MapSettings theme, String customImagesFolder)
-	{
-		if (theme != null && theme.themeGeneration != null && theme.themeGeneration.artPack != null && Assets.artPackExists(theme.themeGeneration.artPack, customImagesFolder))
-		{
-			return theme.themeGeneration.artPack;
-		}
-		return entry == null ? null : entry.artPack;
 	}
 }

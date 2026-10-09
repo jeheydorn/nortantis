@@ -376,4 +376,57 @@ public class ThemeTest
 		assertEquals(Assets.defaultBorderMetadata, lines);
 		assertFalse(lines.hasWidthRange());
 	}
+
+	@Test
+	public void everyThemeInTheInstalledArtPackLoads()
+	{
+		List<ThemeCatalog.Entry> themes = ThemeCatalog.listThemesForArtPack(Assets.installedArtPack, null);
+		assertFalse(themes.isEmpty());
+		for (ThemeCatalog.Entry entry : themes)
+		{
+			ThemeCatalog.load(entry);
+		}
+	}
+
+	@Test
+	public void aThemesRandomizationArtPackMustBeItsOwnOrTheInstalledOne()
+	{
+		MapSettings theme = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
+		theme.themeGeneration = ThemeGenerationSettings.createDefault();
+
+		theme.themeGeneration.artPack = null;
+		assertTrue(ThemeCatalog.findArtPackProblems("Some Art Pack", theme).isEmpty(), "A theme without a randomization art pack is fine.");
+		theme.themeGeneration.artPack = "Some Art Pack";
+		assertTrue(ThemeCatalog.findArtPackProblems("Some Art Pack", theme).isEmpty());
+		theme.themeGeneration.artPack = Assets.installedArtPack;
+		assertTrue(ThemeCatalog.findArtPackProblems("Some Art Pack", theme).isEmpty());
+		theme.themeGeneration.artPack = "Another Art Pack";
+		assertEquals(1, ThemeCatalog.findArtPackProblems("Some Art Pack", theme).size());
+	}
+
+	@Test
+	public void aThemesFontsForNewTextMustComeFromItsOwnArtPackOrTheInstalledOne()
+	{
+		MapSettings theme = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
+		theme.themeGeneration = null;
+		String titleFamily = theme.getDefaultTextStyle(TextType.Title).font.getFamily();
+		String regionFamily = theme.getDefaultTextStyle(TextType.Region).font.getFamily();
+
+		theme.fontArtPacks = new java.util.TreeMap<>();
+		assertTrue(ThemeCatalog.findArtPackProblems("Some Art Pack", theme).isEmpty(), "Fonts from the device aren't from an art pack.");
+		theme.fontArtPacks.put(titleFamily, "Some Art Pack");
+		theme.fontArtPacks.put(regionFamily, Assets.installedArtPack);
+		assertTrue(ThemeCatalog.findArtPackProblems("Some Art Pack", theme).isEmpty());
+
+		theme.fontArtPacks.put(titleFamily, "Another Art Pack");
+		List<String> problems = ThemeCatalog.findArtPackProblems("Some Art Pack", theme);
+		assertEquals(1, problems.size(), "Each font is reported once, however many kinds of text use it: " + problems);
+		assertTrue(problems.get(0).contains(titleFamily));
+	}
+
+	@Test
+	public void anArtPackWithoutThemesUsesTheInstalledArtPacksThemes()
+	{
+		assertEquals(ThemeCatalog.listThemesForArtPack(Assets.installedArtPack, null), ThemeCatalog.listThemesToChooseFrom("An Art Pack That Isn't Installed", null));
+	}
 }

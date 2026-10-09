@@ -23,7 +23,8 @@ public class ThemeGenerationSettings implements Serializable
 {
 	/**
 	 * The art pack this theme's art comes from, or null if it has never been chosen. Separate from {@link MapSettings#artPack}, which is
-	 * which art pack the Icons tool starts on.
+	 * which art pack the Icons tool starts on. A theme in an art pack may only set it to that art pack or the installed one (see
+	 * {@link ThemeCatalog}).
 	 */
 	public String artPack;
 
