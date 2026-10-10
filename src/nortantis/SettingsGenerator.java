@@ -3,6 +3,7 @@ package nortantis;
 import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanWaves;
 import nortantis.ThemeGenerationSettings.BackgroundType;
+import nortantis.editor.FreeIcon;
 import nortantis.editor.RegionEdit;
 import nortantis.platform.Color;
 import nortantis.platform.Font;
@@ -109,6 +110,50 @@ public class SettingsGenerator
 	}
 
 	/**
+	 * The art pack most of the map's icons come from, which is the art pack whose art is really on the map. Falls back to the art pack the
+	 * Icons tool shows, and then the installed one.
+	 */
+	public static String chooseArtPackOfMapsArt(MapSettings settings)
+	{
+		Map<String, Integer> counts = new HashMap<>();
+		if (settings.edits != null && settings.edits.freeIcons != null)
+		{
+			settings.edits.freeIcons.doWithLock(() ->
+			{
+				for (FreeIcon icon : settings.edits.freeIcons)
+				{
+					if (icon.artPack != null)
+					{
+						counts.merge(icon.artPack, 1, Integer::sum);
+					}
+				}
+			});
+		}
+		Optional<Map.Entry<String, Integer>> mostCommon = counts.entrySet().stream().max(Map.Entry.comparingByValue());
+		if (mostCommon.isPresent())
+		{
+			return mostCommon.get().getKey();
+		}
+		return settings.artPack != null ? settings.artPack : Assets.installedArtPack;
+	}
+
+	/**
+	 * The settings' rules for varying their theme.
+	 *
+	 * @throws IllegalStateException
+	 *             If the settings have none, which they always should: maps from before maps had rules are given them when loaded, and new
+	 *             maps get them from their theme.
+	 */
+	private static ThemeGenerationSettings requireThemeRules(MapSettings settings)
+	{
+		if (settings.themeGeneration == null)
+		{
+			throw new IllegalStateException("The map has no rules for randomizing its theme.");
+		}
+		return settings.themeGeneration;
+	}
+
+	/**
 	 * The art pack theme randomness chooses borders and background textures from: the rules' art pack if they have one that's installed,
 	 * otherwise the given one.
 	 */
@@ -145,8 +190,11 @@ public class SettingsGenerator
 		}
 
 		setRandomSeeds(settings, rand);
-		ThemeGenerationSettings gen = settings.themeGeneration != null ? settings.themeGeneration : ThemeGenerationSettings.createDefault();
-		applyThemeRandomness(settings, theme, gen, getRandomizationArtPack(gen, artPack, customImagesFolder), rand);
+		// The new map keeps the rules it was made with, so that randomizing its theme later uses them, and records the art pack they chose
+		// its border and background from.
+		ThemeGenerationSettings gen = requireThemeRules(settings);
+		gen.artPack = getRandomizationArtPack(gen, artPack, customImagesFolder);
+		applyThemeRandomness(settings, theme, gen, gen.artPack, rand);
 		shuffleTextBackgrounds(settings, gen, rand);
 		chooseCityIconType(settings, rand);
 		applyWorldRandomness(settings, rand);
@@ -283,11 +331,7 @@ public class SettingsGenerator
 	{
 		// Ocean
 		settings.drawOceanWaves = rand.nextDouble() < gen.drawOceanWavesProbability;
-		List<OceanWaves> waveTypes = new ArrayList<>(gen.allowedOceanWaveTypes);
-		if (waveTypes.isEmpty())
-		{
-			waveTypes = new ArrayList<>(ThemeGenerationSettings.createDefault().allowedOceanWaveTypes);
-		}
+		List<OceanWaves> waveTypes = new ArrayList<>(gen.allowedOceanWaveTypes.isEmpty() ? ThemeGenerationSettings.oceanWaveTypesToChooseFrom : gen.allowedOceanWaveTypes);
 		// A wave type is chosen even when waves are off, so that turning them on in the editor starts from a good one.
 		settings.oceanWavesType = ProbabilityHelper.sampleUniform(rand, waveTypes);
 		// Ocean shading is used instead of waves unless the theme says otherwise, because shading and waves together render slowly. The
@@ -370,8 +414,7 @@ public class SettingsGenerator
 		settings.regionBoundaryStyle = new Stroke(ProbabilityHelper.sampleUniform(rand, boundaryTypes), settings.regionBoundaryStyle.width);
 
 		// Roads, with a style that is clearly different from the region boundaries' when the theme allows it.
-		List<StrokeType> roadTypes = gen.allowedRoadStrokeTypes.isEmpty() ? Arrays.asList(StrokeType.Dashes, StrokeType.Rounded_Dashes, StrokeType.Dots)
-				: new ArrayList<>(gen.allowedRoadStrokeTypes);
+		List<StrokeType> roadTypes = gen.allowedRoadStrokeTypes.isEmpty() ? Arrays.asList(StrokeType.values()) : new ArrayList<>(gen.allowedRoadStrokeTypes);
 		List<StrokeType> roadTypesDifferentFromBoundaries = chooseAllowed(roadTypes, type -> isRoadStyleDifferentEnoughFromBoundaries(type, settings.regionBoundaryStyle.type));
 		settings.roadStyle = new Stroke(ProbabilityHelper.sampleUniform(rand, roadTypesDifferentFromBoundaries.isEmpty() ? roadTypes : roadTypesDifferentFromBoundaries),
 				settings.roadStyle.width);
@@ -617,6 +660,9 @@ public class SettingsGenerator
 		settings.lloydRelaxationsScale = MapSettings.defaultLloydRelaxationsScale;
 		// A brand new full-size map is not a sub-map, even if the theme came from one.
 		settings.subMapInfo = null;
+		requireThemeRules(settings);
+		// The art pack the map's art comes from, rather than whichever art pack the Icons tool was last left on.
+		settings.artPack = getRandomizationArtPack(settings.themeGeneration, settings.artPack, currentSettings.customImagesPath);
 		Random seedRandom = new Random();
 		shuffleTextBackgrounds(settings, settings.themeGeneration, seedRandom);
 		settings.randomSeed = Helper.safeAbs(seedRandom.nextInt());
@@ -652,7 +698,7 @@ public class SettingsGenerator
 	 */
 	public static void randomizeTheme(MapSettings settings, MapSettings base, String artPack, Random rand)
 	{
-		ThemeGenerationSettings gen = settings.themeGeneration != null ? settings.themeGeneration : ThemeGenerationSettings.createDefault();
+		ThemeGenerationSettings gen = requireThemeRules(settings);
 		applyThemeRandomness(settings, base, gen, artPack, rand);
 		shuffleTextBackgrounds(settings, gen, rand);
 		settings.backgroundRandomSeed = Helper.safeAbs(rand.nextInt());

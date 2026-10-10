@@ -395,20 +395,23 @@ public class ThemeTest
 		theme.themeGeneration = ThemeGenerationSettings.createDefault();
 
 		theme.themeGeneration.artPack = null;
-		assertTrue(ThemeCatalog.findArtPackProblems("Some Art Pack", theme).isEmpty(), "A theme without a randomization art pack is fine.");
+		assertEquals(1, ThemeCatalog.findArtPackProblems("Some Art Pack", theme).size(), "A theme's rules must name an art pack.");
 		theme.themeGeneration.artPack = "Some Art Pack";
 		assertTrue(ThemeCatalog.findArtPackProblems("Some Art Pack", theme).isEmpty());
 		theme.themeGeneration.artPack = Assets.installedArtPack;
 		assertTrue(ThemeCatalog.findArtPackProblems("Some Art Pack", theme).isEmpty());
 		theme.themeGeneration.artPack = "Another Art Pack";
 		assertEquals(1, ThemeCatalog.findArtPackProblems("Some Art Pack", theme).size());
+
+		theme.themeGeneration = null;
+		assertEquals(1, ThemeCatalog.findArtPackProblems("Some Art Pack", theme).size(), "A theme must have rules.");
 	}
 
 	@Test
 	public void aThemesFontsForNewTextMustComeFromItsOwnArtPackOrTheInstalledOne()
 	{
 		MapSettings theme = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
-		theme.themeGeneration = null;
+		theme.themeGeneration.artPack = "Some Art Pack";
 		String titleFamily = theme.getDefaultTextStyle(TextType.Title).font.getFamily();
 		String regionFamily = theme.getDefaultTextStyle(TextType.Region).font.getFamily();
 
@@ -428,5 +431,42 @@ public class ThemeTest
 	public void anArtPackWithoutThemesUsesTheInstalledArtPacksThemes()
 	{
 		assertEquals(ThemeCatalog.listThemesForArtPack(Assets.installedArtPack, null), ThemeCatalog.listThemesToChooseFrom("An Art Pack That Isn't Installed", null));
+	}
+
+	@Test
+	public void aMapMadeFromAThemeKeepsRulesThatNameTheirArtPack()
+	{
+		MapSettings theme = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
+		theme.themeGeneration = ThemeGenerationSettings.createDefault();
+		theme.themeGeneration.grungeWidthVariation = 123;
+		MapSettings settings = SettingsGenerator.generateFromTheme(new Random(1), Assets.installedArtPack, theme, false, null);
+		assertEquals(123, settings.themeGeneration.grungeWidthVariation, "The map keeps the theme's rules.");
+		assertEquals(Assets.installedArtPack, settings.themeGeneration.artPack, "Rules without an art pack get the one they chose from.");
+		assertNull(theme.themeGeneration.artPack, "The theme itself doesn't change.");
+
+		theme.themeGeneration = null;
+		assertThrows(IllegalStateException.class, () -> SettingsGenerator.generateFromTheme(new Random(1), Assets.installedArtPack, theme, false, null));
+	}
+
+	@Test
+	public void mapsFromBeforeThemeRandomizationGetTheInstalledThemesRulesWhenLoaded()
+	{
+		MapSettings oldMap = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
+		assertTrue(oldMap.isFromBeforeThemeRandomization());
+		assertNotNull(oldMap.themeGeneration);
+		assertEquals(SettingsGenerator.chooseArtPackOfMapsArt(oldMap), oldMap.themeGeneration.artPack, "The art pack is the one the map's icons come from.");
+		ThemeGenerationSettings parchmentRules = ThemeCatalog.getRulesForMapsWithoutThem();
+		parchmentRules.artPack = oldMap.themeGeneration.artPack;
+		assertEquals(parchmentRules.toJson(), oldMap.themeGeneration.toJson());
+	}
+
+	@Test
+	public void aNewMapWithTheSameThemeUsesTheArtPackOfItsRulesRatherThanTheIconsTools()
+	{
+		MapSettings map = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
+		map.themeGeneration = ThemeGenerationSettings.createDefault();
+		map.themeGeneration.artPack = Assets.installedArtPack;
+		map.artPack = "An Art Pack That Isn't Installed";
+		assertEquals(Assets.installedArtPack, SettingsGenerator.newMapWithSameTheme(map).artPack);
 	}
 }

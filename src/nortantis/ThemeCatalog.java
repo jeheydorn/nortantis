@@ -122,6 +122,45 @@ public class ThemeCatalog
 		return themes;
 	}
 
+	/**
+	 * The installed theme whose rules for randomizing a theme are given to maps from before maps had them.
+	 */
+	private static final String themeWithRulesForMapsWithoutThem = "Parchment";
+	private static ThemeGenerationSettings rulesForMapsWithoutThem;
+	private static boolean isLoadingRulesForMapsWithoutThem;
+
+	/**
+	 * A copy of the rules for randomizing the installed art pack's Parchment theme, which maps from before maps had rules are given.
+	 */
+	public static synchronized ThemeGenerationSettings getRulesForMapsWithoutThem()
+	{
+		if (rulesForMapsWithoutThem == null)
+		{
+			if (isLoadingRulesForMapsWithoutThem)
+			{
+				// Loading the theme would give it these rules, which would load it again.
+				throw new IllegalStateException("The installed theme '" + themeWithRulesForMapsWithoutThem + "' was saved by a version from before maps had rules for randomizing their theme.");
+			}
+			isLoadingRulesForMapsWithoutThem = true;
+			MapSettings theme;
+			try
+			{
+				Path folder = Assets.getThemesFolderForArtPack(Assets.installedArtPack, null);
+				theme = new MapSettings(folder.resolve(themeWithRulesForMapsWithoutThem + MapSettings.fileExtensionWithDot).toString());
+			}
+			finally
+			{
+				isLoadingRulesForMapsWithoutThem = false;
+			}
+			if (theme.themeGeneration == null)
+			{
+				throw new IllegalStateException("The installed theme '" + themeWithRulesForMapsWithoutThem + "' has no rules for randomizing a theme.");
+			}
+			rulesForMapsWithoutThem = theme.themeGeneration;
+		}
+		return rulesForMapsWithoutThem.copy();
+	}
+
 	public static boolean isThemeFile(Path path)
 	{
 		return path != null && FilenameUtils.getExtension(path.toString()).equalsIgnoreCase(MapSettings.fileExtension);
@@ -136,6 +175,11 @@ public class ThemeCatalog
 	public static MapSettings load(Entry entry)
 	{
 		MapSettings theme = new MapSettings(entry.path.toString());
+		if (theme.isFromBeforeThemeRandomization() && theme.themeGeneration != null)
+		{
+			// The rules were given to the theme when it loaded, and a theme's art comes from the art pack it's in.
+			theme.themeGeneration.artPack = entry.artPack;
+		}
 		List<String> problems = findArtPackProblems(entry.artPack, theme);
 		if (!problems.isEmpty())
 		{
@@ -154,7 +198,11 @@ public class ThemeCatalog
 	public static List<String> findArtPackProblems(String themeArtPack, MapSettings theme)
 	{
 		List<String> problems = new ArrayList<>();
-		if (theme.themeGeneration != null && theme.themeGeneration.artPack != null && !isAllowedArtPack(theme.themeGeneration.artPack, themeArtPack))
+		if (theme.themeGeneration == null || theme.themeGeneration.artPack == null)
+		{
+			problems.add(Translation.get("theme.invalid.noRandomizationRules", Translation.get("menu.edit"), Translation.get("randomizeTheme.title")));
+		}
+		else if (!isAllowedArtPack(theme.themeGeneration.artPack, themeArtPack))
 		{
 			problems.add(Translation.get("theme.invalid.randomizationArtPack", theme.themeGeneration.artPack, themeArtPack, Assets.installedArtPack,
 					Translation.get("menu.edit"), Translation.get("randomizeTheme.title")));

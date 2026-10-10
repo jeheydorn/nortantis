@@ -978,7 +978,16 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	private void launchNewSettingsDialog(MapSettings settingsToKeepThemeFrom)
 	{
-		NewSettingsDialog dialog = new NewSettingsDialog(this, settingsToKeepThemeFrom);
+		NewSettingsDialog dialog;
+		try
+		{
+			dialog = new NewSettingsDialog(this, settingsToKeepThemeFrom);
+		}
+		catch (RuntimeException e)
+		{
+			SwingHelper.handleException(e, this, false);
+			return;
+		}
 		dialog.setLocationRelativeTo(this);
 		dialog.setVisible(true);
 	}
@@ -3629,7 +3638,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					text.style.background = themeStyle.background.copy();
 				}
 			}
-			SettingsGenerator.shuffleTextBackgrounds(settings, settings.themeGeneration, new Random());
 		});
 	}
 
@@ -3754,7 +3762,22 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		{
 			return;
 		}
-		RandomizeThemeDialog dialog = new RandomizeThemeDialog(this, settings, (variation, areTextBackgroundsVaried) -> applyThemeChange(current ->
+		RandomizeThemeDialog dialog;
+		try
+		{
+			dialog = createRandomizeThemeDialog(settings);
+		}
+		catch (RuntimeException e)
+		{
+			SwingHelper.handleException(e, this, false);
+			return;
+		}
+		dialog.setVisible(true);
+	}
+
+	private RandomizeThemeDialog createRandomizeThemeDialog(MapSettings settings)
+	{
+		return new RandomizeThemeDialog(this, settings, (variation, areTextBackgroundsVaried) -> applyThemeChange(current ->
 		{
 			current.copyThemeFrom(variation);
 			current.backgroundRandomSeed = variation.backgroundRandomSeed;
@@ -3780,7 +3803,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				}
 			}
 		}), this::keepThemeRulesAndRegionColorSettings);
-		dialog.setVisible(true);
 	}
 
 	/**

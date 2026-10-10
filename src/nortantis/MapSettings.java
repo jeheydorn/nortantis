@@ -2158,6 +2158,29 @@ public class MapSettings implements Serializable
 		runConversionForRegionCount();
 		runConversionForIconFillColorDefaultChange();
 		runConversionOnFillWithColorByType();
+		runConversionToAddThemeRandomizationRules();
+	}
+
+	/**
+	 * Whether the map was saved by a version from before maps had rules for randomizing their theme.
+	 */
+	public boolean isFromBeforeThemeRandomization()
+	{
+		return !isVersionGreaterThanOrEqualTo(version, "3.25");
+	}
+
+	/**
+	 * Gives maps from before maps had rules for randomizing their theme the rules of the installed art pack's theme, so that every map has
+	 * rules. Their art pack is the one most of the map's icons come from.
+	 */
+	private void runConversionToAddThemeRandomizationRules()
+	{
+		if (!isFromBeforeThemeRandomization() || themeGeneration != null)
+		{
+			return;
+		}
+		themeGeneration = ThemeCatalog.getRulesForMapsWithoutThem();
+		themeGeneration.artPack = SettingsGenerator.chooseArtPackOfMapsArt(this);
 	}
 
 	/**

@@ -4,7 +4,6 @@ import nortantis.*;
 import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanWaves;
 import nortantis.ThemeGenerationSettings.BackgroundType;
-import nortantis.editor.FreeIcon;
 import nortantis.geom.Dimension;
 import nortantis.platform.Image;
 import nortantis.platform.awt.AwtBridge;
@@ -97,11 +96,11 @@ class RandomizeThemeDialog extends JDialog
 		base = mapSettings.deepCopy();
 		this.onApply = onApply;
 		this.onClose = onClose;
-		gen = base.themeGeneration != null ? base.themeGeneration.copy() : ThemeGenerationSettings.createDefault();
-		if (gen.artPack == null)
+		if (base.themeGeneration == null || base.themeGeneration.artPack == null)
 		{
-			gen.artPack = chooseDefaultArtPack(base);
+			throw new IllegalStateException("The map has no rules for randomizing its theme, or they don't name an art pack.");
 		}
+		gen = base.themeGeneration.copy();
 		variations.add(new Variation(base, false));
 
 		JPanel content = new JPanel(new BorderLayout(10, 10));
@@ -114,34 +113,6 @@ class RandomizeThemeDialog extends JDialog
 		updatePreviousAndNextButtons();
 		setSize(new java.awt.Dimension(1100, 760));
 		setLocationRelativeTo(owner);
-	}
-
-	/**
-	 * The art pack most of the map's icons come from, which is the art pack whose art is really on the map. Falls back to the art pack the
-	 * Icons tool shows, and then the installed one.
-	 */
-	private static String chooseDefaultArtPack(MapSettings settings)
-	{
-		Map<String, Integer> counts = new HashMap<>();
-		if (settings.edits != null && settings.edits.freeIcons != null)
-		{
-			settings.edits.freeIcons.doWithLock(() ->
-			{
-				for (FreeIcon icon : settings.edits.freeIcons)
-				{
-					if (icon.artPack != null)
-					{
-						counts.merge(icon.artPack, 1, Integer::sum);
-					}
-				}
-			});
-		}
-		Optional<Map.Entry<String, Integer>> mostCommon = counts.entrySet().stream().max(Map.Entry.comparingByValue());
-		if (mostCommon.isPresent())
-		{
-			return mostCommon.get().getKey();
-		}
-		return settings.artPack != null ? settings.artPack : Assets.installedArtPack;
 	}
 
 	private JComponent createSettingsPanel()
@@ -191,7 +162,7 @@ class RandomizeThemeDialog extends JDialog
 		organizer.addSectionHeading(Translation.get("randomizeTheme.section.ocean"));
 		addProbabilitySlider(organizer, "randomizeTheme.drawOceanWavesProbability", gen.drawOceanWavesProbability, value -> gen.drawOceanWavesProbability = value);
 		addEnumCheckboxes(organizer, "randomizeTheme.allowedOceanWaveTypes",
-				Arrays.asList(OceanWaves.ConcentricWaves, OceanWaves.WavyLines, OceanWaves.Hatching, OceanWaves.Ripples, OceanWaves.SincWaves), gen.allowedOceanWaveTypes,
+				ThemeGenerationSettings.oceanWaveTypesToChooseFrom, gen.allowedOceanWaveTypes,
 				ThemePanel::getWaveTypeName);
 		addVariationSlider(organizer, "randomizeTheme.oceanShadingLevelVariation", 0, 50, gen.oceanShadingLevelVariation, value -> gen.oceanShadingLevelVariation = value);
 		addProbabilitySlider(organizer, "randomizeTheme.oceanShadingWithWavesProbability", gen.oceanShadingWithWavesProbability,

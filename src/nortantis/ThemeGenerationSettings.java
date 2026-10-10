@@ -49,6 +49,11 @@ public class ThemeGenerationSettings implements Serializable
 	/*
 	 * Ocean.
 	 */
+	/**
+	 * The ocean wave types themes can choose among. An empty {@link #allowedOceanWaveTypes} allows all of them.
+	 */
+	public static final List<OceanWaves> oceanWaveTypesToChooseFrom = List.of(OceanWaves.ConcentricWaves, OceanWaves.WavyLines, OceanWaves.Hatching,
+			OceanWaves.Ripples, OceanWaves.SincWaves);
 	public Set<OceanWaves> allowedOceanWaveTypes = new LinkedHashSet<>(
 			Arrays.asList(OceanWaves.ConcentricWaves, OceanWaves.WavyLines, OceanWaves.Hatching, OceanWaves.Ripples));
 	public double drawOceanWavesProbability = 0.8;
@@ -79,7 +84,7 @@ public class ThemeGenerationSettings implements Serializable
 	 */
 	public double drawRegionBoundariesProbability = 0.75;
 	public Set<StrokeType> allowedRegionBoundaryStrokeTypes = new LinkedHashSet<>();
-	public Set<StrokeType> allowedRoadStrokeTypes = new LinkedHashSet<>();
+	public Set<StrokeType> allowedRoadStrokeTypes = new LinkedHashSet<>(Arrays.asList(StrokeType.Dashes, StrokeType.Rounded_Dashes, StrokeType.Dots));
 	/**
 	 * The kinds of background generated maps choose among. Each of the art pack's background textures is a choice of its own when
 	 * backgrounds generated from a texture are allowed, and a fractal or solid color background is as likely as each texture.
@@ -166,7 +171,7 @@ public class ThemeGenerationSettings implements Serializable
 	/**
 	 * Reads what {@link #toJson()} wrote. Settings missing from the JSON keep their defaults, so a file written by an older version loads.
 	 */
-	public static ThemeGenerationSettings fromJson(JSONObject obj)
+	public static ThemeGenerationSettings  fromJson(JSONObject obj)
 	{
 		ThemeGenerationSettings result = createDefault();
 		if (obj == null)

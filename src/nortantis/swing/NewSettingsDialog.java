@@ -873,20 +873,28 @@ public class NewSettingsDialog extends JDialog
 		String artPack = (String) artPackComboBox.getSelectedItem();
 		MapSettings newSettings;
 		MapSettings newThemeBase;
-		if (choice.equals(sameThemeChoice))
+		try
 		{
-			newSettings = SettingsGenerator.newMapWithSameTheme(settingsToKeepThemeFrom);
-			newThemeBase = settingsToKeepThemeFrom;
-			if (!Objects.equals(newSettings.artPack, artPack))
+			if (choice.equals(sameThemeChoice))
 			{
-				newSettings.artPack = artPack;
-				SettingsGenerator.chooseCityIconType(newSettings, rand);
+				newSettings = SettingsGenerator.newMapWithSameTheme(settingsToKeepThemeFrom);
+				newThemeBase = settingsToKeepThemeFrom;
+				if (!Objects.equals(newSettings.artPack, artPack))
+				{
+					newSettings.artPack = artPack;
+					SettingsGenerator.chooseCityIconType(newSettings, rand);
+				}
+			}
+			else
+			{
+				newSettings = SettingsGenerator.generateFromTheme(rand, artPack, theme, ThemeCatalog.isFromInstalledArtPack(choice.entry), settings.customImagesPath);
+				newThemeBase = theme;
 			}
 		}
-		else
+		catch (RuntimeException e)
 		{
-			newSettings = SettingsGenerator.generateFromTheme(rand, artPack, theme, ThemeCatalog.isFromInstalledArtPack(choice.entry), settings.customImagesPath);
-			newThemeBase = theme;
+			SwingHelper.handleException(e, this, false);
+			return;
 		}
 
 		// A theme is a look, so the world the user set up is kept.
@@ -1048,8 +1056,16 @@ public class NewSettingsDialog extends JDialog
 	private void randomizeTheme()
 	{
 		settings.artPack = (String) artPackComboBox.getSelectedItem();
-		SettingsGenerator.randomizeTheme(settings, themeBase, SettingsGenerator.getRandomizationArtPack(settings.themeGeneration, settings.artPack, settings.customImagesPath),
-				new Random());
+		try
+		{
+			SettingsGenerator.randomizeTheme(settings, themeBase,
+					SettingsGenerator.getRandomizationArtPack(settings.themeGeneration, settings.artPack, settings.customImagesPath), new Random());
+		}
+		catch (RuntimeException e)
+		{
+			SwingHelper.handleException(e, this, false);
+			return;
+		}
 		updater.setEnabled(false);
 		isApplyingTheme = true;
 		try
