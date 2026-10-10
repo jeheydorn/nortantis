@@ -30,12 +30,10 @@ public class ThemeTest
 	public void themeGenerationSettingsRoundTripThroughJson()
 	{
 		ThemeGenerationSettings gen = ThemeCatalog.getDefaultThemeRules();
-		gen.artPack = "Some Art Pack";
 		gen.oceanHueVariation = 3;
 		gen.landBrightnessVariation = 7;
 		gen.regionBaseSaturationVariation = 4;
 		gen.borderWidthVariation = 30;
-		gen.allowedBorderNames.add("dashes");
 		gen.allowedLineStyles.add(MapSettings.LineStyle.Splines);
 		gen.oceanShadingWithWavesProbability = 0.25;
 		gen.allowedBackgroundTypes = new LinkedHashSet<>(List.of(ThemeGenerationSettings.BackgroundType.SolidColor));
@@ -72,7 +70,7 @@ public class ThemeTest
 		Random rand = new Random(11);
 		for (int i = 0; i < 50; i++)
 		{
-			SettingsGenerator.randomizeTheme(settings, base, settings.artPack, rand);
+			SettingsGenerator.randomizeTheme(settings, base, settings.artPack, settings.artPack, rand);
 		}
 		assertTrue(Math.abs(settings.grungeWidth - base.grungeWidth) <= gen.grungeWidthVariation, "Randomizing must vary around the base, not drift from it.");
 		assertTrue(Math.abs(settings.coastShadingLevel - base.coastShadingLevel) <= gen.coastShadingLevelVariation);
@@ -92,7 +90,7 @@ public class ThemeTest
 		settings.themeGeneration = ThemeCatalog.getDefaultThemeRules();
 		MapSettings base = settings.deepCopy();
 
-		SettingsGenerator.randomizeTheme(settings, base, settings.artPack, new Random(5));
+		SettingsGenerator.randomizeTheme(settings, base, settings.artPack, settings.artPack, new Random(5));
 
 		float baseHue = settings.regionBaseColor.getHSB()[0] * 360f;
 		for (int regionId : new int[] { 1, 2 })
@@ -119,7 +117,7 @@ public class ThemeTest
 			settings.themeGeneration.regionBaseHueVariation = 90;
 			MapSettings before = settings.deepCopyExceptEdits();
 
-			SettingsGenerator.applyThemeRandomness(settings, before, settings.themeGeneration, settings.artPack, new Random(11));
+			SettingsGenerator.applyThemeRandomness(settings, before, settings.themeGeneration, settings.artPack, settings.artPack, new Random(11));
 
 			assertNotEquals(before.oceanColor, settings.oceanColor);
 			assertNotEquals(before.oceanWavesColor, settings.oceanWavesColor, "Ocean waves move with the ocean.");
@@ -148,22 +146,30 @@ public class ThemeTest
 	{
 		MapSettings settings = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
 		settings.themeGeneration = ThemeCatalog.getDefaultThemeRules();
-		settings.themeGeneration.allowedBorderNames.add("lines");
 		settings.themeGeneration.borderWidthVariation = 20;
 		MapSettings base = settings.deepCopyExceptEdits();
 		Random rand = new Random(3);
+		int linesCount = 0;
 		boolean changed = false;
-		for (int i = 0; i < 30; i++)
+		for (int i = 0; i < 60; i++)
 		{
-			SettingsGenerator.applyThemeRandomness(settings, base, settings.themeGeneration, base.artPack, rand);
-			assertEquals("lines", settings.borderResource.name);
-			assertTrue(Math.abs(settings.borderWidth - base.borderWidth) <= 20, "The border width stays within its variation: " + settings.borderWidth);
-			changed |= settings.borderWidth != base.borderWidth;
+			SettingsGenerator.applyThemeRandomness(settings, base, settings.themeGeneration, Assets.installedArtPack, Assets.installedArtPack, rand);
+			if (settings.borderResource.name.equals("lines"))
+			{
+				linesCount++;
+				assertTrue(Math.abs(settings.borderWidth - base.borderWidth) <= 20, "The border width stays within its variation: " + settings.borderWidth);
+				changed |= settings.borderWidth != base.borderWidth;
+			}
 		}
+		assertTrue(linesCount > 0);
 		assertTrue(changed);
 
 		settings.themeGeneration.borderWidthVariation = 0;
-		SettingsGenerator.applyThemeRandomness(settings, base, settings.themeGeneration, base.artPack, rand);
+		do
+		{
+			SettingsGenerator.applyThemeRandomness(settings, base, settings.themeGeneration, Assets.installedArtPack, Assets.installedArtPack, rand);
+		}
+		while (!settings.borderResource.name.equals("lines"));
 		assertEquals(base.borderWidth, settings.borderWidth, "At 0, the border width never changes.");
 	}
 
@@ -172,20 +178,24 @@ public class ThemeTest
 	{
 		MapSettings settings = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
 		settings.themeGeneration = ThemeCatalog.getDefaultThemeRules();
-		settings.themeGeneration.allowedBorderNames.add("dashes");
 		settings.themeGeneration.borderWidthVariation = 0;
 		settings.themeGeneration.drawBorderProbability = 1.0;
 		settings.themeGeneration.frayedBorderProbability = 1.0;
 		settings.borderWidth = 200;
 		MapSettings base = settings.deepCopyExceptEdits();
 		Random rand = new Random(5);
-		for (int i = 0; i < 30; i++)
+		int dashesCount = 0;
+		for (int i = 0; i < 60; i++)
 		{
-			SettingsGenerator.applyThemeRandomness(settings, base, settings.themeGeneration, base.artPack, rand);
-			assertEquals("dashes", settings.borderResource.name);
-			assertTrue(settings.borderWidth >= 25 && settings.borderWidth < 75, "The width comes from the border's range: " + settings.borderWidth);
-			assertFalse(settings.frayedBorder, "The border rules out frayed edges.");
+			SettingsGenerator.applyThemeRandomness(settings, base, settings.themeGeneration, Assets.installedArtPack, Assets.installedArtPack, rand);
+			if (settings.borderResource.name.equals("dashes"))
+			{
+				dashesCount++;
+				assertTrue(settings.borderWidth >= 25 && settings.borderWidth < 75, "The width comes from the border's range: " + settings.borderWidth);
+				assertFalse(settings.frayedBorder, "The border rules out frayed edges.");
+			}
 		}
+		assertTrue(dashesCount > 0);
 	}
 
 	@Test
@@ -202,7 +212,7 @@ public class ThemeTest
 		Random rand = new Random(13);
 		for (int i = 0; i < tries; i++)
 		{
-			SettingsGenerator.applyThemeRandomness(settings, settings, settings.themeGeneration, settings.artPack, rand);
+			SettingsGenerator.applyThemeRandomness(settings, settings, settings.themeGeneration, settings.artPack, settings.artPack, rand);
 			int typeCount = (settings.generateBackground ? 1 : 0) + (settings.generateBackgroundFromTexture ? 1 : 0) + (settings.solidColorBackground ? 1 : 0);
 			assertEquals(1, typeCount, "Exactly one kind of background is chosen.");
 			counts[settings.generateBackground ? 0 : settings.generateBackgroundFromTexture ? 1 : 2]++;
@@ -215,9 +225,10 @@ public class ThemeTest
 		settings.themeGeneration.allowedBackgroundTypes.add(ThemeGenerationSettings.BackgroundType.GeneratedFromTexture);
 		for (int i = 0; i < 30; i++)
 		{
-			SettingsGenerator.applyThemeRandomness(settings, settings, settings.themeGeneration, "An art pack with no textures", rand);
+			SettingsGenerator.applyThemeRandomness(settings, settings, settings.themeGeneration, Assets.installedArtPack, "An art pack with no textures", rand);
 			assertTrue(settings.generateBackgroundFromTexture);
-			assertEquals(Assets.installedArtPack, settings.backgroundTextureResource.artPack, "An art pack with no textures uses the installed art pack's.");
+			assertTrue(Assets.listArtPacksForNewRandomMaps(null).contains(settings.backgroundTextureResource.artPack),
+					"An art pack with no textures uses those of the art packs new random maps use.");
 		}
 	}
 
@@ -238,7 +249,7 @@ public class ThemeTest
 		}
 		MapSettings base = settings.deepCopy();
 
-		SettingsGenerator.randomizeTheme(settings, base, settings.artPack, new Random(7));
+		SettingsGenerator.randomizeTheme(settings, base, settings.artPack, settings.artPack, new Random(7));
 
 		assertEquals(TextBackgroundEffect.Scroll, settings.getDefaultTextStyle(TextType.Title).background.effect);
 		TextBackgroundEffect regionEffect = settings.getDefaultTextStyle(TextType.Region).background.effect;
@@ -274,7 +285,7 @@ public class ThemeTest
 		settings.themeGeneration.shuffleTextBackgrounds = false;
 		MapSettings base = settings.deepCopy();
 
-		SettingsGenerator.randomizeTheme(settings, base, settings.artPack, new Random(7));
+		SettingsGenerator.randomizeTheme(settings, base, settings.artPack, settings.artPack, new Random(7));
 
 		assertEquals(base.textStyleDefaults, settings.textStyleDefaults);
 		for (int i = 0; i < settings.edits.text.size(); i++)
@@ -391,29 +402,19 @@ public class ThemeTest
 	}
 
 	@Test
-	public void aThemesRandomizationArtPackMustBeItsOwnOrTheInstalledOne()
+	public void aThemeMustHaveRules()
 	{
 		MapSettings theme = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
-		theme.themeGeneration = ThemeCatalog.getDefaultThemeRules();
-
-		theme.themeGeneration.artPack = null;
-		assertEquals(1, ThemeCatalog.findArtPackProblems("Some Art Pack", theme).size(), "A theme's rules must name an art pack.");
-		theme.themeGeneration.artPack = "Some Art Pack";
+		theme.fontArtPacks = new java.util.TreeMap<>();
 		assertTrue(ThemeCatalog.findArtPackProblems("Some Art Pack", theme).isEmpty());
-		theme.themeGeneration.artPack = Assets.installedArtPack;
-		assertTrue(ThemeCatalog.findArtPackProblems("Some Art Pack", theme).isEmpty());
-		theme.themeGeneration.artPack = "Another Art Pack";
-		assertEquals(1, ThemeCatalog.findArtPackProblems("Some Art Pack", theme).size());
-
 		theme.themeGeneration = null;
-		assertEquals(1, ThemeCatalog.findArtPackProblems("Some Art Pack", theme).size(), "A theme must have rules.");
+		assertEquals(1, ThemeCatalog.findArtPackProblems("Some Art Pack", theme).size());
 	}
 
 	@Test
 	public void aThemesFontsForNewTextMustComeFromItsOwnArtPackOrTheInstalledOne()
 	{
 		MapSettings theme = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
-		theme.themeGeneration.artPack = "Some Art Pack";
 		String titleFamily = theme.getDefaultTextStyle(TextType.Title).font.getFamily();
 		String regionFamily = theme.getDefaultTextStyle(TextType.Region).font.getFamily();
 
@@ -436,16 +437,14 @@ public class ThemeTest
 	}
 
 	@Test
-	public void aMapMadeFromAThemeKeepsRulesThatNameTheirArtPack()
+	public void aMapMadeFromAThemeKeepsItsRules()
 	{
 		MapSettings theme = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
 		theme.themeGeneration = ThemeCatalog.getDefaultThemeRules();
 		theme.themeGeneration.grungeWidthVariation = 123;
-		theme.themeGeneration.artPack = null;
 		MapSettings settings = SettingsGenerator.generateFromTheme(new Random(1), Assets.installedArtPack, theme, false, null);
 		assertEquals(123, settings.themeGeneration.grungeWidthVariation, "The map keeps the theme's rules.");
-		assertEquals(Assets.installedArtPack, settings.themeGeneration.artPack, "Rules without an art pack get the one they chose from.");
-		assertNull(theme.themeGeneration.artPack, "The theme itself doesn't change.");
+		assertEquals(Assets.installedArtPack, settings.borderResource.artPack, "The border comes from the chosen art pack.");
 
 		theme.themeGeneration = null;
 		assertThrows(IllegalStateException.class, () -> SettingsGenerator.generateFromTheme(new Random(1), Assets.installedArtPack, theme, false, null));
@@ -457,19 +456,31 @@ public class ThemeTest
 		MapSettings oldMap = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
 		assertTrue(oldMap.isFromBeforeThemeRandomization());
 		assertNotNull(oldMap.themeGeneration);
-		assertEquals(SettingsGenerator.chooseArtPackOfMapsArt(oldMap), oldMap.themeGeneration.artPack, "The art pack is the one the map's icons come from.");
-		ThemeGenerationSettings parchmentRules = ThemeCatalog.getDefaultThemeRules();
-		parchmentRules.artPack = oldMap.themeGeneration.artPack;
-		assertEquals(parchmentRules.toJson(), oldMap.themeGeneration.toJson());
+		assertEquals(ThemeCatalog.getDefaultThemeRules().toJson(), oldMap.themeGeneration.toJson());
 	}
 
 	@Test
-	public void aNewMapWithTheSameThemeUsesTheArtPackOfItsRulesRatherThanTheIconsTools()
+	public void aNewMapWithTheSameThemeUsesTheArtPackOfTheMapsIconsRatherThanTheIconsTools()
 	{
 		MapSettings map = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
-		map.themeGeneration = ThemeCatalog.getDefaultThemeRules();
-		map.themeGeneration.artPack = Assets.installedArtPack;
 		map.artPack = "An Art Pack That Isn't Installed";
-		assertEquals(Assets.installedArtPack, SettingsGenerator.newMapWithSameTheme(map).artPack);
+		assertEquals(SettingsGenerator.chooseArtPackOfMapsIcons(map), SettingsGenerator.newMapWithSameTheme(map).artPack);
+		assertNotEquals(map.artPack, SettingsGenerator.newMapWithSameTheme(map).artPack);
+	}
+
+	@Test
+	public void randomizingAMapsThemeChoosesFromTheArtPacksOfItsBorderAndBackgroundTexture()
+	{
+		MapSettings map = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
+		map.borderResource = new NamedResource(Assets.installedArtPack, "lines");
+		assertEquals(Assets.installedArtPack, SettingsGenerator.getArtPackOfBorder(map));
+		map.backgroundTextureSource = TextureSource.Assets;
+		map.backgroundTextureResource = new NamedResource(Assets.installedArtPack, "texture.png");
+		assertEquals(Assets.installedArtPack, SettingsGenerator.getArtPackOfBackgroundTexture(map));
+		map.backgroundTextureSource = TextureSource.File;
+		assertEquals(Assets.installedArtPack, SettingsGenerator.getArtPackOfBackgroundTexture(map), "A texture from a file uses the border's art pack.");
+
+		map.borderResource = new NamedResource("An Art Pack That Isn't Installed", "lines");
+		assertEquals(SettingsGenerator.chooseArtPackOfMapsIcons(map), SettingsGenerator.getArtPackOfBorder(map), "A border from an art pack that isn't installed uses the icons' art pack.");
 	}
 }

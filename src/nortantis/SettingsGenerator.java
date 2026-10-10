@@ -110,10 +110,10 @@ public class SettingsGenerator
 	}
 
 	/**
-	 * The art pack most of the map's icons come from, which is the art pack whose art is really on the map. Falls back to the art pack the
-	 * Icons tool shows, and then the installed one.
+	 * The installed art pack most of the map's icons come from. A map without icons from an installed art pack uses its border's art pack if
+	 * that's installed, and otherwise the installed art pack.
 	 */
-	public static String chooseArtPackOfMapsArt(MapSettings settings)
+	public static String chooseArtPackOfMapsIcons(MapSettings settings)
 	{
 		Map<String, Integer> counts = new HashMap<>();
 		if (settings.edits != null && settings.edits.freeIcons != null)
@@ -122,7 +122,7 @@ public class SettingsGenerator
 			{
 				for (FreeIcon icon : settings.edits.freeIcons)
 				{
-					if (icon.artPack != null)
+					if (icon.artPack != null && Assets.artPackExists(icon.artPack, settings.customImagesPath))
 					{
 						counts.merge(icon.artPack, 1, Integer::sum);
 					}
@@ -134,7 +134,34 @@ public class SettingsGenerator
 		{
 			return mostCommon.get().getKey();
 		}
-		return settings.artPack != null ? settings.artPack : Assets.installedArtPack;
+		return isInstalledArtPackOf(settings.borderResource, settings.customImagesPath) ? settings.borderResource.artPack : Assets.installedArtPack;
+	}
+
+	/**
+	 * The art pack Randomize Theme chooses a map's border from: the art pack of the map's border, or when that isn't installed, the one
+	 * {@link #chooseArtPackOfMapsIcons} gives.
+	 */
+	public static String getArtPackOfBorder(MapSettings settings)
+	{
+		return isInstalledArtPackOf(settings.borderResource, settings.customImagesPath) ? settings.borderResource.artPack : chooseArtPackOfMapsIcons(settings);
+	}
+
+	/**
+	 * The art pack Randomize Theme chooses a map's background texture from: the art pack of the map's background texture, or of its border
+	 * when its texture isn't from an installed art pack.
+	 */
+	public static String getArtPackOfBackgroundTexture(MapSettings settings)
+	{
+		if (settings.backgroundTextureSource == TextureSource.Assets && isInstalledArtPackOf(settings.backgroundTextureResource, settings.customImagesPath))
+		{
+			return settings.backgroundTextureResource.artPack;
+		}
+		return getArtPackOfBorder(settings);
+	}
+
+	private static boolean isInstalledArtPackOf(NamedResource resource, String customImagesFolder)
+	{
+		return resource != null && resource.artPack != null && Assets.artPackExists(resource.artPack, customImagesFolder);
 	}
 
 	/**
@@ -154,20 +181,10 @@ public class SettingsGenerator
 	}
 
 	/**
-	 * The art pack theme randomness chooses borders and background textures from: the rules' art pack if they have one that's installed,
-	 * otherwise the given one.
-	 */
-	public static String getRandomizationArtPack(ThemeGenerationSettings gen, String otherwise, String customImagesFolder)
-	{
-		return gen != null && gen.artPack != null && Assets.artPackExists(gen.artPack, customImagesFolder) ? gen.artPack : otherwise;
-	}
-
-	/**
 	 * Generates settings for a new random map from a loaded theme.
 	 *
 	 * @param artPack
-	 *            The art pack the map's icons come from. Its border and background texture come from the theme's randomization art pack
-	 *            when the theme has one that's installed, and otherwise from this art pack.
+	 *            The art pack the map's icons, border, and background texture come from.
 	 * @param isThemeFromInstalledArtPack
 	 *            Whether the theme is one that comes with Nortantis, whose fonts are changed to ones that can draw the user's language. A theme someone
 	 *            chose fonts for keeps them.
@@ -190,11 +207,9 @@ public class SettingsGenerator
 		}
 
 		setRandomSeeds(settings, rand);
-		// The new map keeps the rules it was made with, so that randomizing its theme later uses them, and records the art pack they chose
-		// its border and background from.
+		// The new map keeps the rules it was made with, so that randomizing its theme later uses them.
 		ThemeGenerationSettings gen = requireThemeRules(settings);
-		gen.artPack = getRandomizationArtPack(gen, artPack, customImagesFolder);
-		applyThemeRandomness(settings, theme, gen, gen.artPack, rand);
+		applyThemeRandomness(settings, theme, gen, artPack, artPack, rand);
 		shuffleTextBackgrounds(settings, gen, rand);
 		chooseCityIconType(settings, rand);
 		applyWorldRandomness(settings, rand);
@@ -324,10 +339,13 @@ public class SettingsGenerator
 	 * @param base
 	 *            The look to vary around, which can be the settings themselves. Varying around a base that doesn't change, rather than around
 	 *            the result of the last variation, keeps varying repeatedly from drifting away from it. Not changed.
-	 * @param artPack
-	 *            The art pack borders and background textures are chosen from.
+	 * @param borderArtPack
+	 *            The art pack the border is chosen from.
+	 * @param textureArtPack
+	 *            The art pack the background texture is chosen from.
 	 */
-	public static void applyThemeRandomness(MapSettings settings, MapSettings base, ThemeGenerationSettings gen, String artPack, Random rand)
+	public static void applyThemeRandomness(MapSettings settings, MapSettings base, ThemeGenerationSettings gen, String borderArtPack, String textureArtPack,
+			Random rand)
 	{
 		// Ocean
 		settings.drawOceanWaves = rand.nextDouble() < gen.drawOceanWavesProbability;
@@ -373,13 +391,7 @@ public class SettingsGenerator
 		// Grunge and border
 		settings.grungeWidth = vary(rand, base.grungeWidth, gen.grungeWidthVariation, 0, maxGrungeWidthToGenerate);
 		settings.drawBorder = rand.nextDouble() < gen.drawBorderProbability;
-		// The art pack can differ from the one the theme's rules were made with, in which case the rules' allowed borders may not be in it.
-		List<NamedResource> borderChoices = listBorderChoices(artPack, settings.customImagesPath);
-		List<NamedResource> borderTypes = chooseAllowed(borderChoices, border -> gen.allowedBorderNames.isEmpty() || gen.allowedBorderNames.contains(border.name));
-		if (borderTypes.isEmpty())
-		{
-			borderTypes = borderChoices;
-		}
+		List<NamedResource> borderTypes = listBorderChoices(borderArtPack, settings.customImagesPath);
 		// borderTypes shouldn't be empty since that would mean there are no border types, including installed ones.
 		if (!borderTypes.isEmpty())
 		{
@@ -420,7 +432,7 @@ public class SettingsGenerator
 				settings.roadStyle.width);
 
 		// Background. Each texture is a choice of its own, and a fractal or solid color background is as likely as each texture.
-		List<NamedResource> textures = listBackgroundTextureChoices(artPack, settings.customImagesPath);
+		List<NamedResource> textures = listBackgroundTextureChoices(textureArtPack, settings.customImagesPath);
 		Set<BackgroundType> allowedBackgroundTypes = gen.allowedBackgroundTypes.isEmpty() ? EnumSet.allOf(BackgroundType.class) : gen.allowedBackgroundTypes;
 		List<BackgroundType> backgroundChoices = new ArrayList<>();
 		for (BackgroundType type : allowedBackgroundTypes)
@@ -515,13 +527,13 @@ public class SettingsGenerator
 	}
 
 	/**
-	 * The background textures a theme chooses among for the given art pack: the art pack's own, or when it has none, the installed art
-	 * pack's.
+	 * The background textures a theme chooses among for the given art pack: the art pack's own, or when it has none, those of the art packs
+	 * new random maps use.
 	 */
 	private static List<NamedResource> listBackgroundTextureChoices(String artPack, String customImagesFolder)
 	{
 		List<NamedResource> result = Assets.listBackgroundTexturesForArtPack(artPack, customImagesFolder);
-		return result.isEmpty() ? Assets.listBackgroundTexturesForArtPack(Assets.installedArtPack, customImagesFolder) : result;
+		return result.isEmpty() ? Assets.listBackgroundTexturesForArtPacks(Assets.listArtPacksForNewRandomMaps(customImagesFolder), customImagesFolder) : result;
 	}
 
 	private static boolean isRoadStyleDifferentEnoughFromBoundaries(StrokeType roadType, StrokeType boundaryType)
@@ -662,7 +674,7 @@ public class SettingsGenerator
 		settings.subMapInfo = null;
 		requireThemeRules(settings);
 		// The art pack the map's art comes from, rather than whichever art pack the Icons tool was last left on.
-		settings.artPack = getRandomizationArtPack(settings.themeGeneration, settings.artPack, currentSettings.customImagesPath);
+		settings.artPack = chooseArtPackOfMapsIcons(currentSettings);
 		Random seedRandom = new Random();
 		shuffleTextBackgrounds(settings, settings.themeGeneration, seedRandom);
 		settings.randomSeed = Helper.safeAbs(seedRandom.nextInt());
@@ -693,13 +705,15 @@ public class SettingsGenerator
 	 *
 	 * @param base
 	 *            The look to vary around. Not changed.
-	 * @param artPack
-	 *            The art pack borders and background textures are chosen from.
+	 * @param borderArtPack
+	 *            The art pack the border is chosen from.
+	 * @param textureArtPack
+	 *            The art pack the background texture is chosen from.
 	 */
-	public static void randomizeTheme(MapSettings settings, MapSettings base, String artPack, Random rand)
+	public static void randomizeTheme(MapSettings settings, MapSettings base, String borderArtPack, String textureArtPack, Random rand)
 	{
 		ThemeGenerationSettings gen = requireThemeRules(settings);
-		applyThemeRandomness(settings, base, gen, artPack, rand);
+		applyThemeRandomness(settings, base, gen, borderArtPack, textureArtPack, rand);
 		shuffleTextBackgrounds(settings, gen, rand);
 		settings.backgroundRandomSeed = Helper.safeAbs(rand.nextInt());
 		settings.regionsRandomSeed = Helper.safeAbs(rand.nextInt());

@@ -8,7 +8,6 @@ import nortantis.geom.Dimension;
 import nortantis.platform.Image;
 import nortantis.platform.awt.AwtBridge;
 import nortantis.swing.translation.Translation;
-import nortantis.util.Assets;
 import nortantis.util.Logger;
 
 import javax.swing.*;
@@ -23,7 +22,6 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntConsumer;
-import java.util.function.Supplier;
 
 /**
  * Varies the open map's theme within rules the user can change, showing the map with each variation. Every variation varies the map's look
@@ -70,8 +68,6 @@ class RandomizeThemeDialog extends JDialog
 	/** The variations with previews kept, from least to most recently drawn. */
 	private final ArrayDeque<Variation> variationsWithPreviews = new ArrayDeque<>();
 	private int shownIndex;
-	private JComboBox<String> artPackComboBox;
-	private final List<Runnable> resourceListRebuilders = new ArrayList<>();
 	private UnscaledImagePanel previewPanel;
 	private JPanel previewHolder;
 	private JProgressBar previewProgressBar;
@@ -96,9 +92,9 @@ class RandomizeThemeDialog extends JDialog
 		base = mapSettings.deepCopy();
 		this.onApply = onApply;
 		this.onClose = onClose;
-		if (base.themeGeneration == null || base.themeGeneration.artPack == null)
+		if (base.themeGeneration == null)
 		{
-			throw new IllegalStateException("The map has no rules for randomizing its theme, or they don't name an art pack.");
+			throw new IllegalStateException("The map has no rules for randomizing its theme.");
 		}
 		gen = base.themeGeneration.copy();
 		variations.add(new Variation(base, false));
@@ -118,19 +114,6 @@ class RandomizeThemeDialog extends JDialog
 	private JComponent createSettingsPanel()
 	{
 		GridBagOrganizer organizer = new GridBagOrganizer();
-
-		artPackComboBox = new JComboBoxFixed<>();
-		for (String artPack : Assets.listArtPacks(base.customImagesPath != null && !base.customImagesPath.isEmpty()))
-		{
-			artPackComboBox.addItem(artPack);
-		}
-		artPackComboBox.setSelectedItem(gen.artPack);
-		artPackComboBox.addActionListener(e ->
-		{
-			gen.artPack = (String) artPackComboBox.getSelectedItem();
-			resourceListRebuilders.forEach(Runnable::run);
-		});
-		organizer.addLabelAndComponent(Translation.get("randomizeTheme.artPack.label"), Translation.get("randomizeTheme.artPack.help"), artPackComboBox);
 
 		organizer.addSectionHeading(Translation.get("randomizeTheme.section.oceanColorVariation"));
 		String oceanHelp = "randomizeTheme.oceanColorVariation.help";
@@ -172,8 +155,6 @@ class RandomizeThemeDialog extends JDialog
 		addVariationSlider(organizer, "randomizeTheme.coastShadingLevelVariation", 0, 50, gen.coastShadingLevelVariation, value -> gen.coastShadingLevelVariation = value);
 		addVariationSlider(organizer, "randomizeTheme.grungeWidthVariation", 0, 1000, gen.grungeWidthVariation, value -> gen.grungeWidthVariation = value);
 		addProbabilitySlider(organizer, "randomizeTheme.drawBorderProbability", gen.drawBorderProbability, value -> gen.drawBorderProbability = value);
-		addResourceCheckboxes(organizer, "randomizeTheme.allowedBorders", () -> SettingsGenerator.listBorderChoices(getArtPackToChooseFrom(), base.customImagesPath),
-				gen.allowedBorderNames, name -> name);
 		addVariationSliderWithTip(organizer, "randomizeTheme.borderWidthVariation", 0, 300, gen.borderWidthVariation, value -> gen.borderWidthVariation = value);
 		addProbabilitySliderWithTip(organizer, "randomizeTheme.frayedBorderProbability", gen.frayedBorderProbability, value -> gen.frayedBorderProbability = value);
 		addVariationSlider(organizer, "randomizeTheme.frayedBorderBlurLevelVariation", 0, 150, gen.frayedBorderBlurLevelVariation, value -> gen.frayedBorderBlurLevelVariation = value);
@@ -212,15 +193,6 @@ class RandomizeThemeDialog extends JDialog
 		titledPanel.add(scrollPane, BorderLayout.CENTER);
 		titledPanel.setPreferredSize(new java.awt.Dimension(470, 600));
 		return titledPanel;
-	}
-
-	/**
-	 * The art pack borders and background textures are chosen from: the one chosen in the dialog, or the installed one if the chosen one
-	 * isn't installed.
-	 */
-	private String getArtPackToChooseFrom()
-	{
-		return gen.artPack != null && Assets.artPackExists(gen.artPack, base.customImagesPath) ? gen.artPack : Assets.installedArtPack;
 	}
 
 	private String createTooltipFromHelpKey(String helpKey)
@@ -382,54 +354,6 @@ class RandomizeThemeDialog extends JDialog
 		return organizer.addLeftAlignedComponentWithStackedLabel(Translation.get(key + ".label"), "<html>" + Translation.get(key + ".help") + "</html>", panel);
 	}
 
-	/**
-	 * Adds a checkbox for each resource to choose among, rebuilt when the art pack changes. Checking every one is stored as an empty set.
-	 */
-	private void addResourceCheckboxes(GridBagOrganizer organizer, String key, Supplier<List<NamedResource>> listResources, Set<String> allowed,
-			Function<String, String> getDisplayName)
-	{
-		JPanel panel = new JPanel(new WrapLayout(WrapLayout.LEFT, 4, 0));
-		Runnable rebuild = () ->
-		{
-			panel.removeAll();
-			// Resources from several art packs can share a name, and the rules allow them by name.
-			Set<String> names = new LinkedHashSet<>();
-			for (NamedResource resource : listResources.get())
-			{
-				names.add(resource.name);
-			}
-			// A name the art pack doesn't have, such as from rules for another art pack, isn't kept.
-			allowed.retainAll(names);
-			Map<JCheckBox, String> checkboxes = new LinkedHashMap<>();
-			for (String name : names)
-			{
-				JCheckBox checkbox = new JCheckBox(getDisplayName.apply(name));
-				checkbox.setSelected(allowed.isEmpty() || allowed.contains(name));
-				checkbox.addActionListener(e ->
-				{
-					allowed.clear();
-					if (!checkboxes.keySet().stream().allMatch(JCheckBox::isSelected))
-					{
-						checkboxes.forEach((box, boxName) ->
-						{
-							if (box.isSelected())
-							{
-								allowed.add(boxName);
-							}
-						});
-					}
-				});
-				checkboxes.put(checkbox, name);
-				panel.add(checkbox);
-			}
-			panel.revalidate();
-			panel.repaint();
-		};
-		rebuild.run();
-		resourceListRebuilders.add(rebuild);
-		organizer.addLeftAlignedComponentWithStackedLabel(Translation.get(key + ".label"), "<html>" + Translation.get(key + ".help") + "</html>", panel);
-	}
-
 	private JComponent createPreviewPanel()
 	{
 		JPanel panel = new JPanel(new BorderLayout(0, 6));
@@ -544,7 +468,8 @@ class RandomizeThemeDialog extends JDialog
 	{
 		MapSettings variation = base.deepCopy();
 		variation.themeGeneration = gen.copy();
-		SettingsGenerator.randomizeTheme(variation, base, getArtPackToChooseFrom(), new Random());
+		// The border and background texture are chosen from the art packs the map's own come from.
+		SettingsGenerator.randomizeTheme(variation, base, SettingsGenerator.getArtPackOfBorder(base), SettingsGenerator.getArtPackOfBackgroundTexture(base), new Random());
 		variations.add(new Variation(variation, gen.shuffleTextBackgrounds));
 		// The open map stays first, so the oldest variation rolled is the one dropped.
 		while (variations.size() > Undoer.maxUndoLevels + 1)

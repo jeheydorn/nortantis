@@ -2170,8 +2170,7 @@ public class MapSettings implements Serializable
 	}
 
 	/**
-	 * Gives maps from before maps had rules for randomizing their theme the rules of the installed art pack's theme, so that every map has
-	 * rules. Their art pack is the one most of the map's icons come from.
+	 * Gives maps from before maps had rules for randomizing their theme the default rules, so that every map has rules.
 	 */
 	private void runConversionToAddThemeRandomizationRules()
 	{
@@ -2180,7 +2179,6 @@ public class MapSettings implements Serializable
 			return;
 		}
 		themeGeneration = ThemeCatalog.getDefaultThemeRules();
-		themeGeneration.artPack = SettingsGenerator.chooseArtPackOfMapsArt(this);
 	}
 
 	/**

@@ -1,5 +1,6 @@
 package nortantis;
 
+import nortantis.platform.Font;
 import nortantis.swing.translation.Translation;
 import nortantis.util.Assets;
 import nortantis.util.ProbabilityHelper;
@@ -7,12 +8,11 @@ import org.apache.commons.io.FilenameUtils;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * The themes in art packs, including the installed art pack. A theme is a map (.nort) file in an art pack's themes folder, with or without
@@ -176,11 +176,6 @@ public class ThemeCatalog
 	public static MapSettings load(Entry entry)
 	{
 		MapSettings theme = new MapSettings(entry.path.toString());
-		if (theme.isFromBeforeThemeRandomization() && theme.themeGeneration != null)
-		{
-			// The rules were given to the theme when it loaded, and a theme's art comes from the art pack it's in.
-			theme.themeGeneration.artPack = entry.artPack;
-		}
 		List<String> problems = findArtPackProblems(entry.artPack, theme);
 		if (!problems.isEmpty())
 		{
@@ -190,8 +185,8 @@ public class ThemeCatalog
 	}
 
 	/**
-	 * Describes each way the given theme relies on an art pack other than the one it's in and the installed one: its theme randomization
-	 * art pack, and the art packs of the fonts for new text. The fonts of text already in the theme don't matter, since new maps don't
+	 * Describes each way the given theme can't be used: it has no rules for randomizing it, or a font for new text comes from an art pack
+	 * other than the one the theme is in and the installed one. The fonts of text already in the theme don't matter, since new maps don't
 	 * keep it.
 	 *
 	 * @return The translated descriptions, or an empty list if there are none.
@@ -199,30 +194,24 @@ public class ThemeCatalog
 	public static List<String> findArtPackProblems(String themeArtPack, MapSettings theme)
 	{
 		List<String> problems = new ArrayList<>();
-		if (theme.themeGeneration == null || theme.themeGeneration.artPack == null)
+		if (theme.themeGeneration == null)
 		{
 			problems.add(Translation.get("theme.invalid.noRandomizationRules", Translation.get("menu.edit"), Translation.get("randomizeTheme.title")));
 		}
-		else if (!isAllowedArtPack(theme.themeGeneration.artPack, themeArtPack))
+		// Families as the theme names them, rather than as this machine resolves them, since a font from an art pack that isn't installed
+		// resolves to a fallback font.
+		Set<String> familiesReported = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+		for (Font font : theme.getThemeFonts().values())
 		{
-			problems.add(Translation.get("theme.invalid.randomizationArtPack", theme.themeGeneration.artPack, themeArtPack, Assets.installedArtPack,
-					Translation.get("menu.edit"), Translation.get("randomizeTheme.title")));
-		}
-		if (theme.textStyleDefaults != null)
-		{
-			Set<String> familiesReported = new LinkedHashSet<>();
-			for (Map.Entry<TextType, TextStyle> entry : theme.textStyleDefaults.entrySet())
+			if (font == null)
 			{
-				if (entry.getValue() == null || entry.getValue().font == null)
-				{
-					continue;
-				}
-				String family = entry.getValue().font.getFamily();
-				String fontArtPack = theme.getFontArtPack(family);
-				if (fontArtPack != null && !isAllowedArtPack(fontArtPack, themeArtPack) && familiesReported.add(family))
-				{
-					problems.add(Translation.get("theme.invalid.fontArtPack", family, fontArtPack, themeArtPack, Assets.installedArtPack));
-				}
+				continue;
+			}
+			String family = font.getName();
+			String fontArtPack = theme.getFontArtPack(family);
+			if (fontArtPack != null && !isAllowedArtPack(fontArtPack, themeArtPack) && familiesReported.add(family))
+			{
+				problems.add(Translation.get("theme.invalid.fontArtPack", family, fontArtPack, themeArtPack, Assets.installedArtPack));
 			}
 		}
 		return problems;

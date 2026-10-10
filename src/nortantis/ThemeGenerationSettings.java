@@ -22,13 +22,6 @@ import java.util.function.Function;
 @SuppressWarnings("serial")
 public class ThemeGenerationSettings implements Serializable
 {
-	/**
-	 * The art pack this theme's art comes from, or null if it has never been chosen. Separate from {@link MapSettings#artPack}, which is
-	 * which art pack the Icons tool starts on. A theme in an art pack may only set it to that art pack or the installed one (see
-	 * {@link ThemeCatalog}).
-	 */
-	public String artPack;
-
 	/*
 	 * How far colors vary between generated maps. Hue is in degrees, and saturation and brightness in percent. Each is the width of the
 	 * range a color can move across, so a color moves at most half of it either way.
@@ -70,7 +63,6 @@ public class ThemeGenerationSettings implements Serializable
 	public int coastShadingLevelVariation;
 	public int grungeWidthVariation;
 	public double drawBorderProbability;
-	public Set<String> allowedBorderNames;
 	/**
 	 * How far the border width can move either way from the theme's, unless the chosen border's art pack gives it a width range.
 	 */
@@ -120,7 +112,6 @@ public class ThemeGenerationSettings implements Serializable
 	public JSONObject toJson()
 	{
 		JSONObject obj = new JSONObject();
-		obj.put("artPack", artPack);
 		obj.put("oceanHueVariation", oceanHueVariation);
 		obj.put("oceanSaturationVariation", oceanSaturationVariation);
 		obj.put("oceanBrightnessVariation", oceanBrightnessVariation);
@@ -139,7 +130,6 @@ public class ThemeGenerationSettings implements Serializable
 		obj.put("coastShadingLevelVariation", coastShadingLevelVariation);
 		obj.put("grungeWidthVariation", grungeWidthVariation);
 		obj.put("drawBorderProbability", drawBorderProbability);
-		obj.put("allowedBorderNames", toJsonArray(allowedBorderNames, name -> name));
 		obj.put("borderWidthVariation", borderWidthVariation);
 		obj.put("frayedBorderProbability", frayedBorderProbability);
 		obj.put("frayedBorderBlurLevelVariation", frayedBorderBlurLevelVariation);
@@ -171,7 +161,6 @@ public class ThemeGenerationSettings implements Serializable
 	public static ThemeGenerationSettings fromJson(JSONObject obj)
 	{
 		ThemeGenerationSettings result = new ThemeGenerationSettings();
-		result.artPack = (String) get(obj, "artPack");
 		result.oceanHueVariation = getInt(obj, "oceanHueVariation");
 		result.oceanSaturationVariation = getInt(obj, "oceanSaturationVariation");
 		result.oceanBrightnessVariation = getInt(obj, "oceanBrightnessVariation");
@@ -190,7 +179,6 @@ public class ThemeGenerationSettings implements Serializable
 		result.coastShadingLevelVariation = getInt(obj, "coastShadingLevelVariation");
 		result.grungeWidthVariation = getInt(obj, "grungeWidthVariation");
 		result.drawBorderProbability = getDouble(obj, "drawBorderProbability");
-		result.allowedBorderNames = getStringSet(obj, "allowedBorderNames");
 		result.borderWidthVariation = getInt(obj, "borderWidthVariation");
 		result.frayedBorderProbability = getDouble(obj, "frayedBorderProbability");
 		result.frayedBorderBlurLevelVariation = getInt(obj, "frayedBorderBlurLevelVariation");
@@ -236,16 +224,6 @@ public class ThemeGenerationSettings implements Serializable
 	private static double getDouble(JSONObject obj, String key)
 	{
 		return ((Number) get(obj, key)).doubleValue();
-	}
-
-	private static Set<String> getStringSet(JSONObject obj, String key)
-	{
-		Set<String> result = new LinkedHashSet<>();
-		for (Object value : (JSONArray) get(obj, key))
-		{
-			result.add((String) value);
-		}
-		return result;
 	}
 
 	private static <E extends Enum<E>> Set<E> getEnumSet(JSONObject obj, String key, Class<E> enumType)
