@@ -2,7 +2,6 @@ package nortantis.swing;
 
 import nortantis.IconType;
 import nortantis.MapSettings;
-import nortantis.editor.UserPreferences;
 import nortantis.util.Assets;
 import nortantis.util.FileHelper;
 import nortantis.swing.translation.Translation;
@@ -180,9 +179,6 @@ public class CustomImagesDialog extends JDialog
 
 		organizer.addLeftAlignedComponent(panel, false);
 
-		JCheckBox makeDefaultCheckbox = new JCheckBox(Translation.get("customImages.makeDefault"));
-		organizer.addLeftAlignedComponent(makeDefaultCheckbox);
-
 		organizer.addVerticalFillerRow();
 
 		JPanel bottomPanel = new JPanel();
@@ -226,11 +222,6 @@ public class CustomImagesDialog extends JDialog
 				if (pathChanged || folderContentsChanged)
 				{
 					storeResult.accept(FileHelper.replaceHomeFolderWithPlaceholder(customImagesFolderField.getText()));
-				}
-
-				if (makeDefaultCheckbox.isSelected())
-				{
-					UserPreferences.getInstance().defaultCustomImagesPath = FileHelper.replaceHomeFolderWithPlaceholder(customImagesFolderField.getText());
 				}
 
 				dispose();

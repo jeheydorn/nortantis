@@ -26,7 +26,6 @@ public class UserPreferences
 	public DisplayQuality editorImageQuality = DisplayQuality.Medium;
 	private ArrayDeque<String> recentMapFilePaths = new ArrayDeque<>();
 	private final int maxRecentMaps = 15;
-	public String defaultCustomImagesPath;
 	public boolean hideNewMapWithSameThemeRegionColorsMessage;
 	public boolean hideGridOverlaySeizureWarning;
 	public boolean hideThemeChangedMessage;
@@ -118,10 +117,6 @@ public class UserPreferences
 					}
 				}
 			});
-		}
-		if (props.containsKey("defaultCustomImagesPath"))
-		{
-			tryLoad(props, "defaultCustomImagesPath", () -> defaultCustomImagesPath = FileHelper.replaceHomeFolderWithPlaceholder(props.getProperty("defaultCustomImagesPath")));
 		}
 
 		// I used the wrong name when creating this property, but changing it now would make the popup show up for existing users,
@@ -327,7 +322,6 @@ public class UserPreferences
 		Properties props = new Properties();
 		props.setProperty("editorImageQuality", editorImageQuality.name().replace("_", " "));
 		props.setProperty("recentMapFilePaths", String.join("\t", recentMapFilePaths));
-		props.setProperty("defaultCustomImagesPath", defaultCustomImagesPath == null ? "" : defaultCustomImagesPath);
 		props.setProperty("showNewMapWithSameThemeRegionColorsMessage", hideNewMapWithSameThemeRegionColorsMessage + "");
 		props.setProperty("hideGridOverlaySeizureWarning", hideGridOverlaySeizureWarning + "");
 		List<String> panelCollapsedStateParts = new ArrayList<>();

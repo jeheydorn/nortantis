@@ -282,6 +282,11 @@ public class Assets
 	public static List<NamedResource> listBackgroundTexturesForArtPack(String artPack, String customImagesFolder)
 	{
 		Path artPackPath = getArtPackPath(artPack, customImagesFolder);
+		if (artPackPath == null)
+		{
+			// The custom art pack has no folder chosen yet.
+			return new ArrayList<>();
+		}
 
 		List<String> textureFiles;
 		textureFiles = listFileNames(Paths.get(artPackPath.toString(), "background textures").toString(), allowedImageExtensions);
@@ -378,6 +383,11 @@ public class Assets
 	public static List<NamedResource> listBorderTypesForArtPack(String artPack, String customImagesFolder)
 	{
 		Path artPackPath = getArtPackPath(artPack, customImagesFolder);
+		if (artPackPath == null)
+		{
+			// The custom art pack has no folder chosen yet.
+			return new ArrayList<>();
+		}
 		List<String> borderTypes = listNonEmptySubFolders(Paths.get(artPackPath.toString(), "borders").toString());
 		Collections.sort(borderTypes);
 		return borderTypes.stream().map(bt -> new NamedResource(artPack, bt)).collect(Collectors.toList());

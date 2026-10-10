@@ -259,6 +259,10 @@ public class SettingsGenerator
 	 */
 	public static void chooseCityIconType(MapSettings settings, Random rand)
 	{
+		if (!Assets.artPackExists(settings.artPack, settings.customImagesPath))
+		{
+			return;
+		}
 		List<String> cityIconTypes = new ArrayList<>(ImageCache.getInstance(settings.artPack, settings.customImagesPath).getIconGroupNames(IconType.cities));
 		if (!cityIconTypes.isEmpty())
 		{

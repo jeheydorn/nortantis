@@ -8,7 +8,6 @@ import nortantis.MapSettings;
 import nortantis.SettingsGenerator;
 import nortantis.ThemeCatalog;
 import nortantis.editor.MapUpdater;
-import nortantis.editor.UserPreferences;
 import nortantis.geom.IntRectangle;
 import nortantis.platform.Image;
 import nortantis.platform.ImageHelper;
@@ -56,6 +55,8 @@ public class NewSettingsDialog extends JDialog
 	MainWindow mainWindow;
 	private JTextField pathDisplay;
 	private JComboBox<String> artPackComboBox;
+	/** The custom images folder row, shown only when the custom art pack is chosen. */
+	private RowHider customImagesFolderHider;
 	private JLabel rotationWarningLabel;
 	private RowHider rotationWarningHider;
 	/**
@@ -167,7 +168,8 @@ public class NewSettingsDialog extends JDialog
 
 		if (settingsToKeepThemeFrom == null)
 		{
-			String customImagesPath = UserPreferences.getInstance().defaultCustomImagesPath;
+			// New random maps don't use a custom images folder unless the custom art pack is chosen.
+			String customImagesPath = null;
 			Random rand = new Random();
 			String artPack = ProbabilityHelper.sampleUniform(rand, Assets.listArtPacksForNewRandomMaps(customImagesPath));
 			ThemeChoice choice = chooseRandomTheme(rand, artPack, customImagesPath);
@@ -420,6 +422,12 @@ public class NewSettingsDialog extends JDialog
 			showThemeLoadError();
 			return;
 		}
+		if (isCustomArtPackWithoutFolder())
+		{
+			SwingHelper.showMessageDialog(this, Translation.get("newSettingsDialog.chooseCustomImagesFolder"), Translation.get("newSettingsDialog.title"),
+					JOptionPane.INFORMATION_MESSAGE);
+			return;
+		}
 
 		// Cancel and disable the dialog's own updater to stop it from submitting new GPU jobs
 		updater.cancel();
@@ -506,17 +514,15 @@ public class NewSettingsDialog extends JDialog
 			handleMapChange();
 		});
 
-		worldSizeSlider = new JSlider();
+		worldSizeSlider = new JSlider(SettingsGenerator.minWorldSize, SettingsGenerator.maxWorldSize);
+		// The slider snaps to its tick spacing even though the ticks aren't drawn.
 		worldSizeSlider.setSnapToTicks(true);
-		worldSizeSlider.setMajorTickSpacing(8000);
 		worldSizeSlider.setMinorTickSpacing(SettingsGenerator.worldSizePrecision);
-		worldSizeSlider.setPaintLabels(true);
-		worldSizeSlider.setPaintTicks(true);
-		worldSizeSlider.setMinimum(SettingsGenerator.minWorldSize);
-		worldSizeSlider.setMaximum(SettingsGenerator.maxWorldSize);
+		worldSizeSlider.setPaintLabels(false);
 		createMapChangeListener(worldSizeSlider);
-		organizer.addLabelAndComponent(SwingHelper.createLabelWithTip(Translation.get("newSettingsDialog.worldSize.label"), Translation.get("newSettingsDialog.cannotBeChangedInEditor"),
-				Translation.get("newSettingsDialog.worldSize.help")), worldSizeSlider, GridBagOrganizer.rowVerticalInset);
+		// Wide enough for the largest world size.
+		new SliderWithDisplayedValue(worldSizeSlider, null, null, 44).addToOrganizer(organizer, SwingHelper.createLabelWithTip(
+				Translation.get("newSettingsDialog.worldSize.label"), Translation.get("newSettingsDialog.cannotBeChangedInEditor"), Translation.get("newSettingsDialog.worldSize.help")));
 
 		landShapeComboBox = new JComboBox<LandShape>();
 		// Alphabetical by displayed name in the user's language.
@@ -553,14 +559,33 @@ public class NewSettingsDialog extends JDialog
 		createMapChangeListener(landColoringMethodComboBox);
 		organizer.addLabelAndComponent(Translation.get("theme.landColoringMethod.label"), Translation.get("theme.landColoringMethod.help"), landColoringMethodComboBox);
 
+		artPackComboBox = new ShrinkableComboBox<String>();
+		artPackComboBox.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				if (isApplyingTheme)
+				{
+					return;
+				}
+				updateCustomImagesFolderVisibility();
+				if (Objects.equals(artPackComboBox.getSelectedItem(), settings.artPack))
+				{
+					return;
+				}
+				useThemeForArtPack();
+			}
+		});
+		organizer.addLabelAndComponent(Translation.get("newSettingsDialog.artPack.label"), Translation.get("newSettingsDialog.artPack.help"), artPackComboBox);
+
 		JButton changeButton = new JButton(Translation.get("newSettingsDialog.change"));
 		pathDisplay = new JTextField();
-		pathDisplay.setText(FileHelper.replaceHomeFolderPlaceholder(UserPreferences.getInstance().defaultCustomImagesPath));
 		pathDisplay.setEditable(false);
 		pathDisplay.setMinimumSize(new Dimension(0, pathDisplay.getMinimumSize().height));
 		pathDisplay.setPreferredSize(new Dimension(0, pathDisplay.getPreferredSize().height));
-		organizer.addLabelAndComponentsHorizontal(Translation.get("newSettingsDialog.customImagesFolder.label"), Translation.get("newSettingsDialog.customImagesFolder.help"),
-				Arrays.asList(pathDisplay, changeButton));
+		customImagesFolderHider = organizer.addLabelAndComponentsHorizontal(Translation.get("newSettingsDialog.customImagesFolder.label"),
+				Translation.get("newSettingsDialog.customImagesFolder.help"), Arrays.asList(pathDisplay, changeButton));
 
 		changeButton.addActionListener(new ActionListener()
 		{
@@ -571,9 +596,7 @@ public class NewSettingsDialog extends JDialog
 				{
 					settings.customImagesPath = value;
 					updatePathDisplay();
-					settings.artPack = Assets.customArtPack;
-					initializeArtPackOptionsAndCityTypeOptions();
-					// The custom art pack's themes come from the new folder.
+					// The custom art pack's themes and images come from the new folder.
 					useThemeForArtPack();
 
 					redrawWithClearedImageCache();
@@ -590,16 +613,35 @@ public class NewSettingsDialog extends JDialog
 		organizer.addVerticalFillerRow();
 	}
 
+	/**
+	 * Whether the custom art pack is chosen but has no folder yet, in which case there is nothing to draw it from.
+	 */
+	private boolean isCustomArtPackWithoutFolder()
+	{
+		return artPackComboBox != null && Assets.customArtPack.equals(artPackComboBox.getSelectedItem()) && (settings == null || StringUtils.isEmpty(settings.customImagesPath));
+	}
+
+	/**
+	 * Shows the custom images folder row only when the custom art pack is chosen. A folder the map has keeps its value while the row is
+	 * hidden, so that a map whose theme uses custom images keeps them.
+	 */
+	private void updateCustomImagesFolderVisibility()
+	{
+		customImagesFolderHider.setVisible(Assets.customArtPack.equals(artPackComboBox.getSelectedItem()));
+	}
+
 	private void initializeCityTypeOptions()
 	{
-		SwingHelper.initializeComboBoxItems(cityIconsTypeComboBox,
-				ImageCache.getInstance((String) artPackComboBox.getSelectedItem(), (String) settings.customImagesPath).getIconGroupNames(IconType.cities),
-				(String) cityIconsTypeComboBox.getSelectedItem(), false);
+		List<String> cityIconTypes = isCustomArtPackWithoutFolder() ? new ArrayList<>()
+				: new ArrayList<>(ImageCache.getInstance((String) artPackComboBox.getSelectedItem(), (String) settings.customImagesPath).getIconGroupNames(IconType.cities));
+		SwingHelper.initializeComboBoxItems(cityIconsTypeComboBox, cityIconTypes, (String) cityIconsTypeComboBox.getSelectedItem(), false);
 	}
 
 	private void initializeArtPackOptionsAndCityTypeOptions()
 	{
-		SwingHelper.initializeComboBoxItems(artPackComboBox, Assets.listArtPacks(!StringUtils.isEmpty(settings.customImagesPath)), settings.artPack, false);
+		// The custom art pack is always listed, and choosing it shows the row for choosing its folder.
+		SwingHelper.initializeComboBoxItems(artPackComboBox, Assets.listArtPacks(true), settings.artPack, false);
+		updateCustomImagesFolderVisibility();
 		initializeCityTypeOptions();
 	}
 
@@ -627,23 +669,6 @@ public class NewSettingsDialog extends JDialog
 		JPanel rightPanel = organizer.panel;
 		generatorSettingsPanel.add(rightPanel);
 
-		artPackComboBox = new ShrinkableComboBox<String>();
-		JLabel artPackLabel = GridBagOrganizer.createWrappingLabel(Translation.get("newSettingsDialog.artPack.label"), Translation.get("newSettingsDialog.artPack.help"));
-		artPackComboBox.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				if (isApplyingTheme || Objects.equals(artPackComboBox.getSelectedItem(), settings.artPack))
-				{
-					return;
-				}
-				useThemeForArtPack();
-			}
-		});
-
-		organizer.addLabelAndComponent(artPackLabel, artPackComboBox, GridBagOrganizer.rowVerticalInset);
-
 		themeComboBox = new ShrinkableComboBox<ThemeChoice>();
 		themeComboBox.addActionListener(e ->
 		{
@@ -652,40 +677,19 @@ public class NewSettingsDialog extends JDialog
 				applyThemeChoice();
 			}
 		});
-		JLabel themeLabel = new JLabel(Translation.get("newSettingsDialog.theme.label"));
-		themeLabel.setToolTipText(Translation.get("newSettingsDialog.theme.help"));
+		organizer.addLabelAndComponent(Translation.get("newSettingsDialog.theme.label"), Translation.get("newSettingsDialog.theme.help"), themeComboBox);
 
 		cityIconsTypeComboBox = new ShrinkableComboBox<String>();
 		createMapChangeListener(cityIconsTypeComboBox);
-		JLabel cityIconTypeLabel = new JLabel(Translation.get("newSettingsDialog.cityIconType.label"));
-		cityIconTypeLabel.setToolTipText(Translation.get("newSettingsDialog.cityIconType.help"));
+		organizer.addLabelAndComponent(Translation.get("newSettingsDialog.cityIconType.label"), Translation.get("newSettingsDialog.cityIconType.help"),
+				cityIconsTypeComboBox);
 
-		JPanel rowPanel = new JPanel();
-		rowPanel.setLayout(new BoxLayout(rowPanel, BoxLayout.X_AXIS));
-		organizer.addLeftAlignedComponent(rowPanel);
-		// The same gap GridBagOrganizer leaves between a label and its control, as in the art pack row above.
-		final int labelToControlGap = 10;
-		rowPanel.add(themeLabel);
-		rowPanel.add(Box.createHorizontalStrut(labelToControlGap));
-		rowPanel.add(themeComboBox);
-		// The strut keeps a gap between the two halves of the row when the combo boxes have shrunk as far as they will go. The glue holds
-		// them apart when there is more room than that.
-		rowPanel.add(Box.createHorizontalStrut(15));
-		rowPanel.add(Box.createHorizontalGlue());
-		rowPanel.add(cityIconTypeLabel);
-		rowPanel.add(Box.createHorizontalStrut(labelToControlGap));
-		rowPanel.add(cityIconsTypeComboBox);
-
-		cityFrequencySlider = new JSlider();
-		cityFrequencySlider.setPaintLabels(true);
-		cityFrequencySlider.setSnapToTicks(false);
-		cityFrequencySlider.setPaintTicks(true);
-		cityFrequencySlider.setMinorTickSpacing(10);
-		cityFrequencySlider.setMinimum(0);
-		cityFrequencySlider.setMaximum(100);
-		cityFrequencySlider.setMajorTickSpacing(25);
+		cityFrequencySlider = new JSlider(0, 100);
+		cityFrequencySlider.setPaintLabels(false);
 		createMapChangeListener(cityFrequencySlider);
-		organizer.addLabelAndComponent(Translation.get("newSettingsDialog.cityFrequency.label"), Translation.get("newSettingsDialog.cityFrequency.help"), cityFrequencySlider);
+		// Wide enough for 100.
+		new SliderWithDisplayedValue(cityFrequencySlider, null, null, 30).addToOrganizer(organizer, Translation.get("newSettingsDialog.cityFrequency.label"),
+				Translation.get("newSettingsDialog.cityFrequency.help"));
 
 		booksWidget = new BooksWidget(true, () -> handleMapChange());
 		Dimension booksSize = new Dimension(360, 180);
@@ -798,18 +802,35 @@ public class NewSettingsDialog extends JDialog
 	}
 
 	/**
-	 * Shows the preview as failed to draw, as when the map can't be drawn.
+	 * What the preview shows instead of the map when the map can't be drawn: that the chosen theme couldn't be loaded, or that the custom
+	 * art pack needs a folder. Null when the map can be drawn.
 	 */
-	private void showPreviewFailedToDraw()
+	private String getReasonPreviewCannotBeDrawn()
+	{
+		if (themeLoadError != null)
+		{
+			return Translation.get("newSettingsDialog.previewFailedToDraw");
+		}
+		if (isCustomArtPackWithoutFolder())
+		{
+			return Translation.get("newSettingsDialog.chooseCustomImagesFolder");
+		}
+		return null;
+	}
+
+	/**
+	 * Stops drawing the preview and shows the given message in its place.
+	 */
+	private void showPreviewCannotBeDrawn(String message)
 	{
 		updater.cancel();
 		enableOrDisableProgressBar(false);
-		showPreviewFailedToDrawImage();
+		showMessageInPreview(message);
 	}
 
-	private void showPreviewFailedToDrawImage()
+	private void showMessageInPreview(String message)
 	{
-		mapEditingPanel.setImage(AwtBridge.toBufferedImage(ImageHelper.getInstance().createPlaceholderImage(new String[] { Translation.get("newSettingsDialog.previewFailedToDraw") },
+		mapEditingPanel.setImage(AwtBridge.toBufferedImage(ImageHelper.getInstance().createPlaceholderImage(new String[] { message },
 				AwtBridge.fromAwtColor(SwingHelper.getTextColorForPlaceholderImages()))));
 	}
 
@@ -1055,6 +1076,13 @@ public class NewSettingsDialog extends JDialog
 
 	private void redrawWithClearedImageCache()
 	{
+		String reasonPreviewCannotBeDrawn = getReasonPreviewCannotBeDrawn();
+		if (reasonPreviewCannotBeDrawn != null)
+		{
+			ImageCache.clear();
+			showPreviewCannotBeDrawn(reasonPreviewCannotBeDrawn);
+			return;
+		}
 		enableOrDisableProgressBar(true);
 		updater.createAndShowMapFull(() ->
 		{
@@ -1153,10 +1181,11 @@ public class NewSettingsDialog extends JDialog
 
 			private void onFinishedDrawingCommon(boolean anotherDrawIsQueued)
 			{
-				// A draw that was already running or queued when the chosen theme failed to load drew the previous theme.
-				if (themeLoadError != null)
+				// A draw that was already running or queued when the map stopped being drawable drew settings that no longer apply.
+				String reasonPreviewCannotBeDrawn = getReasonPreviewCannotBeDrawn();
+				if (reasonPreviewCannotBeDrawn != null)
 				{
-					showPreviewFailedToDrawImage();
+					showMessageInPreview(reasonPreviewCannotBeDrawn);
 				}
 				else
 				{
@@ -1178,7 +1207,7 @@ public class NewSettingsDialog extends JDialog
 				enableOrDisableProgressBar(false);
 				if (exception != null)
 				{
-					showPreviewFailedToDrawImage();
+					showMessageInPreview(Translation.get("newSettingsDialog.previewFailedToDraw"));
 					SwingHelper.handleException(exception, NewSettingsDialog.this, false);
 				}
 			}
@@ -1354,9 +1383,10 @@ public class NewSettingsDialog extends JDialog
 			return;
 		}
 		scheduleUndoStep();
-		if (themeLoadError != null)
+		String reasonPreviewCannotBeDrawn = getReasonPreviewCannotBeDrawn();
+		if (reasonPreviewCannotBeDrawn != null)
 		{
-			showPreviewFailedToDraw();
+			showPreviewCannotBeDrawn(reasonPreviewCannotBeDrawn);
 			return;
 		}
 		// Defer to the next EDT cycle so that any row visibility changes (e.g. custom dimension
@@ -1382,9 +1412,10 @@ public class NewSettingsDialog extends JDialog
 	 */
 	private void handleResize()
 	{
-		if (themeLoadError != null)
+		String reasonPreviewCannotBeDrawn = getReasonPreviewCannotBeDrawn();
+		if (reasonPreviewCannotBeDrawn != null)
 		{
-			showPreviewFailedToDraw();
+			showPreviewCannotBeDrawn(reasonPreviewCannotBeDrawn);
 			return;
 		}
 		SwingUtilities.invokeLater(() ->
