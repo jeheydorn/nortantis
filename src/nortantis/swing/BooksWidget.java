@@ -15,8 +15,19 @@ public class BooksWidget
 	private JPanel booksPanel;
 	private JScrollPane booksScrollPane;
 	private JPanel content;
+	private JPanel buttonsPanel;
 
 	public BooksWidget(boolean createScrollPane, Runnable actionToRunWhenSelectionChanges)
+	{
+		this(createScrollPane, true, actionToRunWhenSelectionChanges);
+	}
+
+	/**
+	 * @param putButtonsBelowBooks
+	 *            Whether the Check All and Uncheck All buttons go below the books in {@link #getContentPanel()}. When false, they're left out
+	 *            of it, for the caller to place from {@link #getButtonsPanel()}.
+	 */
+	public BooksWidget(boolean createScrollPane, boolean putButtonsBelowBooks, Runnable actionToRunWhenSelectionChanges)
 	{
 		booksPanel = createBooksPanel(actionToRunWhenSelectionChanges);
 
@@ -26,8 +37,8 @@ public class BooksWidget
 			booksScrollPane.getVerticalScrollBar().setUnitIncrement(SwingHelper.sidePanelScrollSpeed);
 		}
 
-		JPanel buttonsPanel = new JPanel();
-		buttonsPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
+		buttonsPanel = new JPanel();
+		buttonsPanel.setLayout(putButtonsBelowBooks ? new FlowLayout(FlowLayout.CENTER) : new FlowLayout(FlowLayout.RIGHT, 5, 0));
 		JButton checkAll = new JButton(Translation.get("books.checkAll"));
 		checkAll.addActionListener(new ActionListener()
 		{
@@ -68,7 +79,18 @@ public class BooksWidget
 		{
 			content.add(booksPanel);
 		}
-		content.add(buttonsPanel);
+		if (putButtonsBelowBooks)
+		{
+			content.add(buttonsPanel);
+		}
+	}
+
+	/**
+	 * The Check All and Uncheck All buttons.
+	 */
+	public JPanel getButtonsPanel()
+	{
+		return buttonsPanel;
 	}
 
 	private JPanel createBooksPanel(Runnable actionToRunWhenSelectionChanges)

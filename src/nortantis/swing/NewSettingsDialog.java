@@ -559,53 +559,12 @@ public class NewSettingsDialog extends JDialog
 		createMapChangeListener(landColoringMethodComboBox);
 		organizer.addLabelAndComponent(Translation.get("theme.landColoringMethod.label"), Translation.get("theme.landColoringMethod.help"), landColoringMethodComboBox);
 
-		artPackComboBox = new ShrinkableComboBox<String>();
-		artPackComboBox.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				if (isApplyingTheme)
-				{
-					return;
-				}
-				updateCustomImagesFolderVisibility();
-				if (Objects.equals(artPackComboBox.getSelectedItem(), settings.artPack))
-				{
-					return;
-				}
-				useThemeForArtPack();
-			}
-		});
-		organizer.addLabelAndComponent(Translation.get("newSettingsDialog.artPack.label"), Translation.get("newSettingsDialog.artPack.help"), artPackComboBox);
-
-		JButton changeButton = new JButton(Translation.get("newSettingsDialog.change"));
-		pathDisplay = new JTextField();
-		pathDisplay.setEditable(false);
-		pathDisplay.setMinimumSize(new Dimension(0, pathDisplay.getMinimumSize().height));
-		pathDisplay.setPreferredSize(new Dimension(0, pathDisplay.getPreferredSize().height));
-		customImagesFolderHider = organizer.addLabelAndComponentsHorizontal(Translation.get("newSettingsDialog.customImagesFolder.label"),
-				Translation.get("newSettingsDialog.customImagesFolder.help"), Arrays.asList(pathDisplay, changeButton));
-
-		changeButton.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				CustomImagesDialog dialog = new CustomImagesDialog(mainWindow, settings.customImagesPath, (value) ->
-				{
-					settings.customImagesPath = value;
-					updatePathDisplay();
-					// The custom art pack's themes and images come from the new folder.
-					useThemeForArtPack();
-
-					redrawWithClearedImageCache();
-					scheduleUndoStep();
-				});
-				dialog.setLocationRelativeTo(NewSettingsDialog.this);
-				dialog.setVisible(true);
-			}
-		});
+		cityFrequencySlider = new JSlider(0, 100);
+		cityFrequencySlider.setPaintLabels(false);
+		createMapChangeListener(cityFrequencySlider);
+		// Wide enough for 100.
+		new SliderWithDisplayedValue(cityFrequencySlider, null, null, 30).addToOrganizer(organizer, Translation.get("newSettingsDialog.cityFrequency.label"),
+				Translation.get("newSettingsDialog.cityFrequency.help"));
 
 		organizer.addLeftAlignedComponent(Box.createRigidArea(new Dimension((defaultSize.width / 2) - amountToSubtractFromLeftAndRightPanels, 0)));
 
@@ -669,6 +628,54 @@ public class NewSettingsDialog extends JDialog
 		JPanel rightPanel = organizer.panel;
 		generatorSettingsPanel.add(rightPanel);
 
+		artPackComboBox = new ShrinkableComboBox<String>();
+		artPackComboBox.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				if (isApplyingTheme)
+				{
+					return;
+				}
+				updateCustomImagesFolderVisibility();
+				if (Objects.equals(artPackComboBox.getSelectedItem(), settings.artPack))
+				{
+					return;
+				}
+				useThemeForArtPack();
+			}
+		});
+		organizer.addLabelAndComponent(Translation.get("newSettingsDialog.artPack.label"), Translation.get("newSettingsDialog.artPack.help"), artPackComboBox);
+
+		JButton changeButton = new JButton(Translation.get("newSettingsDialog.change"));
+		pathDisplay = new JTextField();
+		pathDisplay.setEditable(false);
+		pathDisplay.setMinimumSize(new Dimension(0, pathDisplay.getMinimumSize().height));
+		pathDisplay.setPreferredSize(new Dimension(0, pathDisplay.getPreferredSize().height));
+		customImagesFolderHider = organizer.addLabelAndComponentsHorizontal(Translation.get("newSettingsDialog.customImagesFolder.label"),
+				Translation.get("newSettingsDialog.customImagesFolder.help"), Arrays.asList(pathDisplay, changeButton));
+
+		changeButton.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				CustomImagesDialog dialog = new CustomImagesDialog(mainWindow, settings.customImagesPath, (value) ->
+				{
+					settings.customImagesPath = value;
+					updatePathDisplay();
+					// The custom art pack's themes and images come from the new folder.
+					useThemeForArtPack();
+
+					redrawWithClearedImageCache();
+					scheduleUndoStep();
+				});
+				dialog.setLocationRelativeTo(NewSettingsDialog.this);
+				dialog.setVisible(true);
+			}
+		});
+
 		themeComboBox = new ShrinkableComboBox<ThemeChoice>();
 		themeComboBox.addActionListener(e ->
 		{
@@ -684,22 +691,21 @@ public class NewSettingsDialog extends JDialog
 		organizer.addLabelAndComponent(Translation.get("newSettingsDialog.cityIconType.label"), Translation.get("newSettingsDialog.cityIconType.help"),
 				cityIconsTypeComboBox);
 
-		cityFrequencySlider = new JSlider(0, 100);
-		cityFrequencySlider.setPaintLabels(false);
-		createMapChangeListener(cityFrequencySlider);
-		// Wide enough for 100.
-		new SliderWithDisplayedValue(cityFrequencySlider, null, null, 30).addToOrganizer(organizer, Translation.get("newSettingsDialog.cityFrequency.label"),
-				Translation.get("newSettingsDialog.cityFrequency.help"));
-
-		booksWidget = new BooksWidget(true, () -> handleMapChange());
-		Dimension booksSize = new Dimension(360, 180);
+		// The Check All and Uncheck All buttons go beside the label rather than below the books, which saves a row.
+		booksWidget = new BooksWidget(true, false, () -> handleMapChange());
+		Dimension booksSize = new Dimension(360, 100);
 		booksWidget.getContentPanel().setPreferredSize(booksSize);
 		// Give the books widget a firm minimum height so that when vertical space is tight, the enclosing GridBagLayout doesn't shrink it to
 		// its scroll pane's tiny minimum (collapsing it to about two rows). It keeps a usable height and its own scroll bar handles overflow,
 		// while still growing to use extra space when it is available.
 		booksWidget.getContentPanel().setMinimumSize(booksSize);
-		organizer.addLeftAlignedComponentWithStackedLabel(Translation.get("newSettingsDialog.booksForText.label"), Translation.get("newSettingsDialog.booksForText.help"),
-				booksWidget.getContentPanel());
+		JLabel booksLabel = new JLabel(Translation.get("newSettingsDialog.booksForText.label"));
+		booksLabel.setToolTipText(Translation.get("newSettingsDialog.booksForText.help"));
+		JPanel booksHeader = new JPanel(new BorderLayout());
+		booksHeader.add(booksLabel, BorderLayout.WEST);
+		booksHeader.add(booksWidget.getButtonsPanel(), BorderLayout.EAST);
+		organizer.addLeftAlignedComponent(booksHeader, GridBagOrganizer.rowVerticalInset, 2, false);
+		organizer.addLeftAlignedComponent(booksWidget.getContentPanel(), 0, GridBagOrganizer.rowVerticalInset, true, 1.0);
 
 		organizer.addLeftAlignedComponent(Box.createRigidArea(new Dimension((defaultSize.width / 2) - amountToSubtractFromLeftAndRightPanels, 0)));
 
