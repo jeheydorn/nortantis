@@ -16,7 +16,8 @@ import java.util.function.Function;
  * pack's themes folder, vary the same way.
  *
  * <p>
- * An empty allowed set allows every choice.
+ * An empty allowed set allows every choice. There are no built-in rules: the default rules are the installed Parchment theme's (see
+ * {@link ThemeCatalog#getDefaultThemeRules()}).
  */
 @SuppressWarnings("serial")
 public class ThemeGenerationSettings implements Serializable
@@ -36,15 +37,15 @@ public class ThemeGenerationSettings implements Serializable
 	 * and the border color with it, when the theme doesn't color political regions. When it does, the region base variation moves the region
 	 * base color instead, and political regions get colors generated from it using the map's own region color ranges. No other color varies.
 	 */
-	public int oceanHueVariation = 16;
-	public int oceanSaturationVariation = 10;
-	public int oceanBrightnessVariation = 10;
-	public int landHueVariation = 16;
-	public int landSaturationVariation = 10;
-	public int landBrightnessVariation = 10;
-	public int regionBaseHueVariation = 16;
-	public int regionBaseSaturationVariation = 10;
-	public int regionBaseBrightnessVariation = 10;
+	public int oceanHueVariation;
+	public int oceanSaturationVariation;
+	public int oceanBrightnessVariation;
+	public int landHueVariation;
+	public int landSaturationVariation;
+	public int landBrightnessVariation;
+	public int regionBaseHueVariation;
+	public int regionBaseSaturationVariation;
+	public int regionBaseBrightnessVariation;
 
 	/*
 	 * Ocean.
@@ -54,43 +55,42 @@ public class ThemeGenerationSettings implements Serializable
 	 */
 	public static final List<OceanWaves> oceanWaveTypesToChooseFrom = List.of(OceanWaves.ConcentricWaves, OceanWaves.WavyLines, OceanWaves.Hatching,
 			OceanWaves.Ripples, OceanWaves.SincWaves);
-	public Set<OceanWaves> allowedOceanWaveTypes = new LinkedHashSet<>(
-			Arrays.asList(OceanWaves.ConcentricWaves, OceanWaves.WavyLines, OceanWaves.Hatching, OceanWaves.Ripples));
-	public double drawOceanWavesProbability = 0.8;
-	public int oceanShadingLevelVariation = 20;
+	public Set<OceanWaves> allowedOceanWaveTypes;
+	public double drawOceanWavesProbability;
+	public int oceanShadingLevelVariation;
 	/**
 	 * The probability of ocean shading on a map that also has ocean waves. A map without waves always gets shading. Shading and waves
-	 * together render slowly, so this is 0 by default.
+	 * together render slowly.
 	 */
-	public double oceanShadingWithWavesProbability = 0.0;
+	public double oceanShadingWithWavesProbability;
 
 	/*
 	 * Land edges, grunge, and border.
 	 */
-	public int coastShadingLevelVariation = 17;
-	public int grungeWidthVariation = 700;
-	public double drawBorderProbability = 0.75;
-	public Set<String> allowedBorderNames = new LinkedHashSet<>();
+	public int coastShadingLevelVariation;
+	public int grungeWidthVariation;
+	public double drawBorderProbability;
+	public Set<String> allowedBorderNames;
 	/**
 	 * How far the border width can move either way from the theme's, unless the chosen border's art pack gives it a width range.
 	 */
-	public int borderWidthVariation = 100;
-	public double frayedBorderProbability = 0.5;
-	public int frayedBorderBlurLevelVariation = 75;
-	public int frayedBorderSizeVariation = 3;
+	public int borderWidthVariation;
+	public double frayedBorderProbability;
+	public int frayedBorderBlurLevelVariation;
+	public int frayedBorderSizeVariation;
 
 	/*
 	 * Regions, roads, and background.
 	 */
-	public double drawRegionBoundariesProbability = 0.75;
-	public Set<StrokeType> allowedRegionBoundaryStrokeTypes = new LinkedHashSet<>();
-	public Set<StrokeType> allowedRoadStrokeTypes = new LinkedHashSet<>(Arrays.asList(StrokeType.Dashes, StrokeType.Rounded_Dashes, StrokeType.Dots));
+	public double drawRegionBoundariesProbability;
+	public Set<StrokeType> allowedRegionBoundaryStrokeTypes;
+	public Set<StrokeType> allowedRoadStrokeTypes;
 	/**
 	 * The kinds of background generated maps choose among. Each of the art pack's background textures is a choice of its own when
 	 * backgrounds generated from a texture are allowed, and a fractal or solid color background is as likely as each texture.
 	 */
-	public Set<BackgroundType> allowedBackgroundTypes = new LinkedHashSet<>(Arrays.asList(BackgroundType.Fractal, BackgroundType.GeneratedFromTexture));
-	public Set<LineStyle> allowedLineStyles = new LinkedHashSet<>();
+	public Set<BackgroundType> allowedBackgroundTypes;
+	public Set<LineStyle> allowedLineStyles;
 
 	/*
 	 * Text. Only the effect drawn behind title and region text varies, and each effect keeps the settings the theme has for it.
@@ -98,28 +98,17 @@ public class ThemeGenerationSettings implements Serializable
 	/**
 	 * Whether the effects drawn behind title and region text are shuffled whenever the theme is used. When false, they are the theme's own.
 	 */
-	public boolean shuffleTextBackgrounds = false;
-	public Set<TextBackgroundEffect> allowedTitleBackgroundEffects = createDefaultAllowedTextBackgroundEffects();
-	public Set<TextBackgroundEffect> allowedRegionBackgroundEffects = createDefaultAllowedTextBackgroundEffects();
-
-	private static Set<TextBackgroundEffect> createDefaultAllowedTextBackgroundEffects()
-	{
-		Set<TextBackgroundEffect> result = new LinkedHashSet<>(Arrays.asList(TextBackgroundEffect.values()));
-		result.remove(TextBackgroundEffect.BoldBackground);
-		return result;
-	}
+	public boolean shuffleTextBackgrounds;
+	public Set<TextBackgroundEffect> allowedTitleBackgroundEffects;
+	public Set<TextBackgroundEffect> allowedRegionBackgroundEffects;
 
 	public enum BackgroundType
 	{
 		Fractal, GeneratedFromTexture, SolidColor
 	}
 
-	/**
-	 * The rules that reproduce how new random maps were generated before themes existed.
-	 */
-	public static ThemeGenerationSettings createDefault()
+	private ThemeGenerationSettings()
 	{
-		return new ThemeGenerationSettings();
 	}
 
 	public ThemeGenerationSettings copy()
@@ -169,53 +158,53 @@ public class ThemeGenerationSettings implements Serializable
 	}
 
 	/**
-	 * Reads what {@link #toJson()} wrote. Settings missing from the JSON keep their defaults, so a file written by an older version loads.
+	 * Reads what {@link #toJson()} wrote. Every rule is required, since every version that wrote these rules wrote all of them.
+	 *
+	 * <p>
+	 * A rule added after the version that introduced these rules is missing from maps and themes saved before it existed, including themes
+	 * in users' art packs. Such a rule needs a default for those files, for example by reading it as optional here or by setting it in a
+	 * conversion in {@link MapSettings} for maps from before the version that added it, rather than being required like the others.
+	 *
+	 * @throws IllegalArgumentException
+	 *             If a rule is missing.
 	 */
-	public static ThemeGenerationSettings  fromJson(JSONObject obj)
+	public static ThemeGenerationSettings fromJson(JSONObject obj)
 	{
-		ThemeGenerationSettings result = createDefault();
-		if (obj == null)
-		{
-			return result;
-		}
+		ThemeGenerationSettings result = new ThemeGenerationSettings();
+		result.artPack = (String) get(obj, "artPack");
+		result.oceanHueVariation = getInt(obj, "oceanHueVariation");
+		result.oceanSaturationVariation = getInt(obj, "oceanSaturationVariation");
+		result.oceanBrightnessVariation = getInt(obj, "oceanBrightnessVariation");
+		result.landHueVariation = getInt(obj, "landHueVariation");
+		result.landSaturationVariation = getInt(obj, "landSaturationVariation");
+		result.landBrightnessVariation = getInt(obj, "landBrightnessVariation");
+		result.regionBaseHueVariation = getInt(obj, "regionBaseHueVariation");
+		result.regionBaseSaturationVariation = getInt(obj, "regionBaseSaturationVariation");
+		result.regionBaseBrightnessVariation = getInt(obj, "regionBaseBrightnessVariation");
 
-		result.artPack = (String) obj.get("artPack");
-		result.oceanHueVariation = getInt(obj, "oceanHueVariation", result.oceanHueVariation);
-		result.oceanSaturationVariation = getInt(obj, "oceanSaturationVariation", result.oceanSaturationVariation);
-		result.oceanBrightnessVariation = getInt(obj, "oceanBrightnessVariation", result.oceanBrightnessVariation);
-		result.landHueVariation = getInt(obj, "landHueVariation", result.landHueVariation);
-		result.landSaturationVariation = getInt(obj, "landSaturationVariation", result.landSaturationVariation);
-		result.landBrightnessVariation = getInt(obj, "landBrightnessVariation", result.landBrightnessVariation);
-		result.regionBaseHueVariation = getInt(obj, "regionBaseHueVariation", result.regionBaseHueVariation);
-		result.regionBaseSaturationVariation = getInt(obj, "regionBaseSaturationVariation", result.regionBaseSaturationVariation);
-		result.regionBaseBrightnessVariation = getInt(obj, "regionBaseBrightnessVariation", result.regionBaseBrightnessVariation);
+		result.allowedOceanWaveTypes = getEnumSet(obj, "allowedOceanWaveTypes", OceanWaves.class);
+		result.drawOceanWavesProbability = getDouble(obj, "drawOceanWavesProbability");
+		result.oceanShadingLevelVariation = getInt(obj, "oceanShadingLevelVariation");
+		result.oceanShadingWithWavesProbability = getDouble(obj, "oceanShadingWithWavesProbability");
 
-		result.allowedOceanWaveTypes = getEnumSet(obj, "allowedOceanWaveTypes", OceanWaves.class, result.allowedOceanWaveTypes);
-		result.drawOceanWavesProbability = getDouble(obj, "drawOceanWavesProbability", result.drawOceanWavesProbability);
-		result.oceanShadingLevelVariation = getInt(obj, "oceanShadingLevelVariation", result.oceanShadingLevelVariation);
-		result.oceanShadingWithWavesProbability = getDouble(obj, "oceanShadingWithWavesProbability", result.oceanShadingWithWavesProbability);
+		result.coastShadingLevelVariation = getInt(obj, "coastShadingLevelVariation");
+		result.grungeWidthVariation = getInt(obj, "grungeWidthVariation");
+		result.drawBorderProbability = getDouble(obj, "drawBorderProbability");
+		result.allowedBorderNames = getStringSet(obj, "allowedBorderNames");
+		result.borderWidthVariation = getInt(obj, "borderWidthVariation");
+		result.frayedBorderProbability = getDouble(obj, "frayedBorderProbability");
+		result.frayedBorderBlurLevelVariation = getInt(obj, "frayedBorderBlurLevelVariation");
+		result.frayedBorderSizeVariation = getInt(obj, "frayedBorderSizeVariation");
 
-		result.coastShadingLevelVariation = getInt(obj, "coastShadingLevelVariation", result.coastShadingLevelVariation);
-		result.grungeWidthVariation = getInt(obj, "grungeWidthVariation", result.grungeWidthVariation);
-		result.drawBorderProbability = getDouble(obj, "drawBorderProbability", result.drawBorderProbability);
-		result.allowedBorderNames = getStringSet(obj, "allowedBorderNames", result.allowedBorderNames);
-		result.borderWidthVariation = getInt(obj, "borderWidthVariation", result.borderWidthVariation);
-		result.frayedBorderProbability = getDouble(obj, "frayedBorderProbability", result.frayedBorderProbability);
-		result.frayedBorderBlurLevelVariation = getInt(obj, "frayedBorderBlurLevelVariation", result.frayedBorderBlurLevelVariation);
-		result.frayedBorderSizeVariation = getInt(obj, "frayedBorderSizeVariation", result.frayedBorderSizeVariation);
+		result.drawRegionBoundariesProbability = getDouble(obj, "drawRegionBoundariesProbability");
+		result.allowedRegionBoundaryStrokeTypes = getEnumSet(obj, "allowedRegionBoundaryStrokeTypes", StrokeType.class);
+		result.allowedRoadStrokeTypes = getEnumSet(obj, "allowedRoadStrokeTypes", StrokeType.class);
+		result.allowedBackgroundTypes = getEnumSet(obj, "allowedBackgroundTypes", BackgroundType.class);
+		result.allowedLineStyles = getEnumSet(obj, "allowedLineStyles", LineStyle.class);
 
-		result.drawRegionBoundariesProbability = getDouble(obj, "drawRegionBoundariesProbability", result.drawRegionBoundariesProbability);
-		result.allowedRegionBoundaryStrokeTypes = getEnumSet(obj, "allowedRegionBoundaryStrokeTypes", StrokeType.class, result.allowedRegionBoundaryStrokeTypes);
-		result.allowedRoadStrokeTypes = getEnumSet(obj, "allowedRoadStrokeTypes", StrokeType.class, result.allowedRoadStrokeTypes);
-		result.allowedBackgroundTypes = getEnumSet(obj, "allowedBackgroundTypes", BackgroundType.class, result.allowedBackgroundTypes);
-		result.allowedLineStyles = getEnumSet(obj, "allowedLineStyles", LineStyle.class, result.allowedLineStyles);
-
-		if (obj.containsKey("shuffleTextBackgrounds"))
-		{
-			result.shuffleTextBackgrounds = (Boolean) obj.get("shuffleTextBackgrounds");
-		}
-		result.allowedTitleBackgroundEffects = getEnumSet(obj, "allowedTitleBackgroundEffects", TextBackgroundEffect.class, result.allowedTitleBackgroundEffects);
-		result.allowedRegionBackgroundEffects = getEnumSet(obj, "allowedRegionBackgroundEffects", TextBackgroundEffect.class, result.allowedRegionBackgroundEffects);
+		result.shuffleTextBackgrounds = (Boolean) get(obj, "shuffleTextBackgrounds");
+		result.allowedTitleBackgroundEffects = getEnumSet(obj, "allowedTitleBackgroundEffects", TextBackgroundEffect.class);
+		result.allowedRegionBackgroundEffects = getEnumSet(obj, "allowedRegionBackgroundEffects", TextBackgroundEffect.class);
 		return result;
 	}
 
@@ -230,38 +219,39 @@ public class ThemeGenerationSettings implements Serializable
 		return array;
 	}
 
-	private static int getInt(JSONObject obj, String key, int defaultValue)
-	{
-		return obj.containsKey(key) ? ((Number) obj.get(key)).intValue() : defaultValue;
-	}
-
-	private static double getDouble(JSONObject obj, String key, double defaultValue)
-	{
-		return obj.containsKey(key) ? ((Number) obj.get(key)).doubleValue() : defaultValue;
-	}
-
-	private static Set<String> getStringSet(JSONObject obj, String key, Set<String> defaultValue)
+	private static Object get(JSONObject obj, String key)
 	{
 		if (!obj.containsKey(key))
 		{
-			return defaultValue;
+			throw new IllegalArgumentException("The rules for randomizing the theme have no '" + key + "'.");
 		}
+		return obj.get(key);
+	}
+
+	private static int getInt(JSONObject obj, String key)
+	{
+		return ((Number) get(obj, key)).intValue();
+	}
+
+	private static double getDouble(JSONObject obj, String key)
+	{
+		return ((Number) get(obj, key)).doubleValue();
+	}
+
+	private static Set<String> getStringSet(JSONObject obj, String key)
+	{
 		Set<String> result = new LinkedHashSet<>();
-		for (Object value : (JSONArray) obj.get(key))
+		for (Object value : (JSONArray) get(obj, key))
 		{
 			result.add((String) value);
 		}
 		return result;
 	}
 
-	private static <E extends Enum<E>> Set<E> getEnumSet(JSONObject obj, String key, Class<E> enumType, Set<E> defaultValue)
+	private static <E extends Enum<E>> Set<E> getEnumSet(JSONObject obj, String key, Class<E> enumType)
 	{
-		if (!obj.containsKey(key))
-		{
-			return defaultValue;
-		}
 		Set<E> result = new LinkedHashSet<>();
-		for (Object value : (JSONArray) obj.get(key))
+		for (Object value : (JSONArray) get(obj, key))
 		{
 			try
 			{

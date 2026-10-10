@@ -123,42 +123,43 @@ public class ThemeCatalog
 	}
 
 	/**
-	 * The installed theme whose rules for randomizing a theme are given to maps from before maps had them.
+	 * The installed theme whose rules for randomizing a theme are the default rules.
 	 */
-	private static final String themeWithRulesForMapsWithoutThem = "Parchment";
-	private static ThemeGenerationSettings rulesForMapsWithoutThem;
-	private static boolean isLoadingRulesForMapsWithoutThem;
+	private static final String themeWithDefaultRules = "Parchment";
+	private static ThemeGenerationSettings defaultRules;
+	private static boolean isLoadingDefaultRules;
 
 	/**
-	 * A copy of the rules for randomizing the installed art pack's Parchment theme, which maps from before maps had rules are given.
+	 * A copy of the default rules for randomizing a theme, which are the installed art pack's Parchment theme's. Maps from before maps had
+	 * rules are given them.
 	 */
-	public static synchronized ThemeGenerationSettings getRulesForMapsWithoutThem()
+	public static synchronized ThemeGenerationSettings getDefaultThemeRules()
 	{
-		if (rulesForMapsWithoutThem == null)
+		if (defaultRules == null)
 		{
-			if (isLoadingRulesForMapsWithoutThem)
+			if (isLoadingDefaultRules)
 			{
 				// Loading the theme would give it these rules, which would load it again.
-				throw new IllegalStateException("The installed theme '" + themeWithRulesForMapsWithoutThem + "' was saved by a version from before maps had rules for randomizing their theme.");
+				throw new IllegalStateException("The installed theme '" + themeWithDefaultRules + "' was saved by a version from before maps had rules for randomizing their theme.");
 			}
-			isLoadingRulesForMapsWithoutThem = true;
+			isLoadingDefaultRules = true;
 			MapSettings theme;
 			try
 			{
 				Path folder = Assets.getThemesFolderForArtPack(Assets.installedArtPack, null);
-				theme = new MapSettings(folder.resolve(themeWithRulesForMapsWithoutThem + MapSettings.fileExtensionWithDot).toString());
+				theme = new MapSettings(folder.resolve(themeWithDefaultRules + MapSettings.fileExtensionWithDot).toString());
 			}
 			finally
 			{
-				isLoadingRulesForMapsWithoutThem = false;
+				isLoadingDefaultRules = false;
 			}
 			if (theme.themeGeneration == null)
 			{
-				throw new IllegalStateException("The installed theme '" + themeWithRulesForMapsWithoutThem + "' has no rules for randomizing a theme.");
+				throw new IllegalStateException("The installed theme '" + themeWithDefaultRules + "' has no rules for randomizing a theme.");
 			}
-			rulesForMapsWithoutThem = theme.themeGeneration;
+			defaultRules = theme.themeGeneration;
 		}
-		return rulesForMapsWithoutThem.copy();
+		return defaultRules.copy();
 	}
 
 	public static boolean isThemeFile(Path path)

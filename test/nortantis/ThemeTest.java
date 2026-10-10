@@ -29,7 +29,7 @@ public class ThemeTest
 	@Test
 	public void themeGenerationSettingsRoundTripThroughJson()
 	{
-		ThemeGenerationSettings gen = ThemeGenerationSettings.createDefault();
+		ThemeGenerationSettings gen = ThemeCatalog.getDefaultThemeRules();
 		gen.artPack = "Some Art Pack";
 		gen.oceanHueVariation = 3;
 		gen.landBrightnessVariation = 7;
@@ -66,7 +66,7 @@ public class ThemeTest
 	public void randomizingAThemeRepeatedlyStaysNearTheBase()
 	{
 		MapSettings settings = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
-		settings.themeGeneration = ThemeGenerationSettings.createDefault();
+		settings.themeGeneration = ThemeCatalog.getDefaultThemeRules();
 		MapSettings base = settings.deepCopy();
 		ThemeGenerationSettings gen = settings.themeGeneration;
 		Random rand = new Random(11);
@@ -89,7 +89,7 @@ public class ThemeTest
 		settings.brightnessRange = 20;
 		settings.edits.regionEdits.put(1, new RegionEdit(1, Color.create(10, 10, 200)));
 		settings.edits.regionEdits.put(2, new RegionEdit(2, Color.create(10, 200, 10)));
-		settings.themeGeneration = ThemeGenerationSettings.createDefault();
+		settings.themeGeneration = ThemeCatalog.getDefaultThemeRules();
 		MapSettings base = settings.deepCopy();
 
 		SettingsGenerator.randomizeTheme(settings, base, settings.artPack, new Random(5));
@@ -113,7 +113,7 @@ public class ThemeTest
 		{
 			MapSettings settings = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
 			settings.drawRegionColors = drawRegionColors;
-			settings.themeGeneration = ThemeGenerationSettings.createDefault();
+			settings.themeGeneration = ThemeCatalog.getDefaultThemeRules();
 			settings.themeGeneration.oceanHueVariation = 90;
 			settings.themeGeneration.landHueVariation = 90;
 			settings.themeGeneration.regionBaseHueVariation = 90;
@@ -147,7 +147,7 @@ public class ThemeTest
 	public void theBorderWidthVariesAroundTheBaseForABorderWithoutItsOwnWidthRange()
 	{
 		MapSettings settings = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
-		settings.themeGeneration = ThemeGenerationSettings.createDefault();
+		settings.themeGeneration = ThemeCatalog.getDefaultThemeRules();
 		settings.themeGeneration.allowedBorderNames.add("lines");
 		settings.themeGeneration.borderWidthVariation = 20;
 		MapSettings base = settings.deepCopyExceptEdits();
@@ -171,7 +171,7 @@ public class ThemeTest
 	public void aBordersOwnSettingsOverrideTheTheme()
 	{
 		MapSettings settings = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
-		settings.themeGeneration = ThemeGenerationSettings.createDefault();
+		settings.themeGeneration = ThemeCatalog.getDefaultThemeRules();
 		settings.themeGeneration.allowedBorderNames.add("dashes");
 		settings.themeGeneration.borderWidthVariation = 0;
 		settings.themeGeneration.drawBorderProbability = 1.0;
@@ -192,7 +192,7 @@ public class ThemeTest
 	public void backgroundTypesAreEquallyLikelyAmongThoseAllowed()
 	{
 		MapSettings settings = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
-		settings.themeGeneration = ThemeGenerationSettings.createDefault();
+		settings.themeGeneration = ThemeCatalog.getDefaultThemeRules();
 		settings.themeGeneration.allowedBackgroundTypes.clear();
 
 		int textureCount = Assets.listBackgroundTexturesForArtPack(settings.artPack, settings.customImagesPath).size();
@@ -225,7 +225,7 @@ public class ThemeTest
 	public void titleAndRegionTextGetAnAllowedBackgroundEffect()
 	{
 		MapSettings settings = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
-		settings.themeGeneration = ThemeGenerationSettings.createDefault();
+		settings.themeGeneration = ThemeCatalog.getDefaultThemeRules();
 		settings.themeGeneration.allowedTitleBackgroundEffects = new LinkedHashSet<>(List.of(TextBackgroundEffect.Scroll));
 		settings.themeGeneration.allowedRegionBackgroundEffects = new LinkedHashSet<>(List.of(TextBackgroundEffect.Glow, TextBackgroundEffect.Outline));
 		settings.themeGeneration.shuffleTextBackgrounds = true;
@@ -268,9 +268,10 @@ public class ThemeTest
 	public void textBackgroundsStayTheSameWhenNotShuffled()
 	{
 		MapSettings settings = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
-		settings.themeGeneration = ThemeGenerationSettings.createDefault();
+		settings.themeGeneration = ThemeCatalog.getDefaultThemeRules();
 		settings.themeGeneration.allowedTitleBackgroundEffects = new LinkedHashSet<>(List.of(TextBackgroundEffect.Scroll));
 		settings.themeGeneration.allowedRegionBackgroundEffects = new LinkedHashSet<>(List.of(TextBackgroundEffect.Banner));
+		settings.themeGeneration.shuffleTextBackgrounds = false;
 		MapSettings base = settings.deepCopy();
 
 		SettingsGenerator.randomizeTheme(settings, base, settings.artPack, new Random(7));
@@ -286,8 +287,9 @@ public class ThemeTest
 	public void aNewMapWithTheSameThemeShufflesTextBackgroundsOnlyWhenTheThemeDoes()
 	{
 		MapSettings settings = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
-		settings.themeGeneration = ThemeGenerationSettings.createDefault();
+		settings.themeGeneration = ThemeCatalog.getDefaultThemeRules();
 		settings.themeGeneration.allowedTitleBackgroundEffects = new LinkedHashSet<>(List.of(TextBackgroundEffect.Scroll));
+		settings.themeGeneration.shuffleTextBackgrounds = false;
 		settings.getDefaultTextStyle(TextType.Title).background.effect = TextBackgroundEffect.Glow;
 
 		assertEquals(TextBackgroundEffect.Glow, SettingsGenerator.newMapWithSameTheme(settings).getDefaultTextStyle(TextType.Title).background.effect,
@@ -332,7 +334,7 @@ public class ThemeTest
 	public void copyingAThemeKeepsTheMapsOwnText()
 	{
 		MapSettings source = new MapSettings("unit test files/map settings/allTypesOfEdits.nort");
-		source.themeGeneration = ThemeGenerationSettings.createDefault();
+		source.themeGeneration = ThemeCatalog.getDefaultThemeRules();
 		source.themeGeneration.landHueVariation = 3;
 		source.getDefaultTextLayout(TextType.Region).spacing = 9;
 
@@ -392,7 +394,7 @@ public class ThemeTest
 	public void aThemesRandomizationArtPackMustBeItsOwnOrTheInstalledOne()
 	{
 		MapSettings theme = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
-		theme.themeGeneration = ThemeGenerationSettings.createDefault();
+		theme.themeGeneration = ThemeCatalog.getDefaultThemeRules();
 
 		theme.themeGeneration.artPack = null;
 		assertEquals(1, ThemeCatalog.findArtPackProblems("Some Art Pack", theme).size(), "A theme's rules must name an art pack.");
@@ -437,8 +439,9 @@ public class ThemeTest
 	public void aMapMadeFromAThemeKeepsRulesThatNameTheirArtPack()
 	{
 		MapSettings theme = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
-		theme.themeGeneration = ThemeGenerationSettings.createDefault();
+		theme.themeGeneration = ThemeCatalog.getDefaultThemeRules();
 		theme.themeGeneration.grungeWidthVariation = 123;
+		theme.themeGeneration.artPack = null;
 		MapSettings settings = SettingsGenerator.generateFromTheme(new Random(1), Assets.installedArtPack, theme, false, null);
 		assertEquals(123, settings.themeGeneration.grungeWidthVariation, "The map keeps the theme's rules.");
 		assertEquals(Assets.installedArtPack, settings.themeGeneration.artPack, "Rules without an art pack get the one they chose from.");
@@ -455,7 +458,7 @@ public class ThemeTest
 		assertTrue(oldMap.isFromBeforeThemeRandomization());
 		assertNotNull(oldMap.themeGeneration);
 		assertEquals(SettingsGenerator.chooseArtPackOfMapsArt(oldMap), oldMap.themeGeneration.artPack, "The art pack is the one the map's icons come from.");
-		ThemeGenerationSettings parchmentRules = ThemeCatalog.getRulesForMapsWithoutThem();
+		ThemeGenerationSettings parchmentRules = ThemeCatalog.getDefaultThemeRules();
 		parchmentRules.artPack = oldMap.themeGeneration.artPack;
 		assertEquals(parchmentRules.toJson(), oldMap.themeGeneration.toJson());
 	}
@@ -464,7 +467,7 @@ public class ThemeTest
 	public void aNewMapWithTheSameThemeUsesTheArtPackOfItsRulesRatherThanTheIconsTools()
 	{
 		MapSettings map = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
-		map.themeGeneration = ThemeGenerationSettings.createDefault();
+		map.themeGeneration = ThemeCatalog.getDefaultThemeRules();
 		map.themeGeneration.artPack = Assets.installedArtPack;
 		map.artPack = "An Art Pack That Isn't Installed";
 		assertEquals(Assets.installedArtPack, SettingsGenerator.newMapWithSameTheme(map).artPack);

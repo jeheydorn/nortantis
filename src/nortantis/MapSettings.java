@@ -2179,7 +2179,7 @@ public class MapSettings implements Serializable
 		{
 			return;
 		}
-		themeGeneration = ThemeCatalog.getRulesForMapsWithoutThem();
+		themeGeneration = ThemeCatalog.getDefaultThemeRules();
 		themeGeneration.artPack = SettingsGenerator.chooseArtPackOfMapsArt(this);
 	}
 
