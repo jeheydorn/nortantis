@@ -545,7 +545,7 @@ public class TextTool extends EditorTool
 	@Override
 	public int getMnemonic()
 	{
-		return KeyEvent.VK_C;
+		return KeyEvent.VK_3;
 	}
 
 	@Override

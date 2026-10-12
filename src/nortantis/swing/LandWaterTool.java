@@ -208,7 +208,7 @@ public class LandWaterTool extends EditorTool
 	@Override
 	public int getMnemonic()
 	{
-		return KeyEvent.VK_Z;
+		return KeyEvent.VK_1;
 	}
 
 	@Override

@@ -157,7 +157,7 @@ public class SwingHelper
 		button.setMnemonic(keyCode);
 
 		// Not KeyEvent.getKeyText, which is localized from the JDK's own bundle and so follows the system locale rather than Nortantis's
-		// language setting. Every mnemonic in the app is VK_A through VK_Z, where this cast is exact.
+		// language setting. Every mnemonic in the app is VK_A through VK_Z or VK_0 through VK_9, where this cast is exact.
 		String shortcut = Translation.get("common.shortcut", getAltKeyName(), String.valueOf((char) keyCode));
 		String existing = button.getToolTipText();
 		button.setToolTipText(existing == null || existing.isBlank() ? shortcut : existing + " (" + shortcut + ")");

@@ -131,7 +131,7 @@ public class IconsTool extends EditorTool
 	@Override
 	public int getMnemonic()
 	{
-		return KeyEvent.VK_X;
+		return KeyEvent.VK_2;
 	}
 
 	@Override

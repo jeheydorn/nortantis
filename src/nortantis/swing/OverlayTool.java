@@ -65,7 +65,7 @@ public class OverlayTool extends EditorTool
 	@Override
 	public int getMnemonic()
 	{
-		return KeyEvent.VK_V;
+		return KeyEvent.VK_4;
 	}
 
 	@Override
