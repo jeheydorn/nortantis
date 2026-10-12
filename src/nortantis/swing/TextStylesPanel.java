@@ -9,6 +9,7 @@ import nortantis.TextStyle;
 import nortantis.TextStylePart;
 import nortantis.TextType;
 import nortantis.geom.IntDimension;
+import nortantis.geom.IntRectangle;
 import nortantis.platform.DrawQuality;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
@@ -262,32 +263,37 @@ class TextStylesPanel
 		SamplePanel samplePanel = samplesByType.get(type);
 		TextStyle style = styles.get(type);
 		Image sample = style == null ? null : createSample(type, style);
-		samplePanel.chipColor = mainWindow.themePanel.getLandColor();
+		// A shape is its own backdrop.
+		samplePanel.chipColor = style != null && style.background.effect.isShape() ? null : mainWindow.themePanel.getLandColor();
 		samplePanel.setImage(sample == null ? null : AwtBridge.toBufferedImage(sample));
 	}
 
 	/**
 	 * Draws the name of the type of text in its style, centered vertically in an image the sample's height. Text with a font size of
 	 * {@link #fontSizeThatFillsSample} or more is scaled so that its tallest and lowest letters fill the sample's height, and smaller text is
-	 * scaled down from that in proportion to its font size. Background effects can reach past the sample's height, and are cropped.
+	 * scaled down from that in proportion to its font size. A shape behind the text, such as a scroll, is scaled with the text so that it
+	 * fits whole in the sample. Other background effects can reach past the sample's height, and are cropped.
 	 */
 	private static Image createSample(TextType type, TextStyle style)
 	{
 		double osScale = SwingHelper.getOSScale();
 		IntDimension size = new IntDimension((int) (sampleWidth * osScale), (int) (sampleHeight * osScale));
-		int availableHeight = size.height - 2 * (int) Math.ceil(sampleVerticalInset * osScale);
+		boolean isShape = style.background.effect.isShape();
+		int availableHeight = isShape ? size.height : size.height - 2 * (int) Math.ceil(sampleVerticalInset * osScale);
 
 		double scale;
-		TextStyle styleWithoutBackground = style.copy();
-		styleWithoutBackground.background.effect = TextBackgroundEffect.None;
-		try (Image reference = drawSampleText("Hgy", type, styleWithoutBackground, osScale))
+		TextStyle referenceStyle = style.copy();
+		if (!isShape)
+		{
+			referenceStyle.background.effect = TextBackgroundEffect.None;
+		}
+		try (Image reference = drawSampleText("Hgy", type, referenceStyle, osScale))
 		{
 			if (reference == null)
 			{
 				return null;
 			}
-			Tuple2<Integer, Integer> referenceRows = findVisibleRows(reference);
-			scale = availableHeight / (double) (referenceRows.getSecond() - referenceRows.getFirst() + 1);
+			scale = availableHeight / (double) findVisibleBounds(reference).height;
 		}
 		scale *= Math.min(1.0, style.font.getSize() / fontSizeThatFillsSample);
 
@@ -296,25 +302,38 @@ class TextStylesPanel
 		{
 			return null;
 		}
-		if (textImage.getWidth() > size.width)
+		IntRectangle visibleBounds = findVisibleBounds(textImage);
+		double fitScale;
+		if (isShape)
 		{
-			scale *= size.width / (double) textImage.getWidth();
+			// The shape around the name can be a little taller than the one around the reference.
+			fitScale = Math.min(size.width / (double) visibleBounds.width, size.height / (double) visibleBounds.height);
+		}
+		else
+		{
+			fitScale = size.width / (double) textImage.getWidth();
+		}
+		if (fitScale < 1.0)
+		{
+			scale *= fitScale;
 			textImage.close();
 			textImage = drawSampleText(type.toString(), type, style, osScale * scale);
 			if (textImage == null)
 			{
 				return null;
 			}
+			visibleBounds = findVisibleBounds(textImage);
 		}
-		Tuple2<Integer, Integer> visibleRows = findVisibleRows(textImage);
 
 		try (Image toClose = textImage)
 		{
-			int visibleHeight = visibleRows.getSecond() - visibleRows.getFirst() + 1;
-			Image result = Image.create(Math.min(textImage.getWidth(), size.width), size.height, ImageType.ARGB);
+			// A shape is cropped to its edges. Other text keeps its transparent margin on the sides, which pads it from the edges of the chip.
+			int left = isShape ? visibleBounds.x : 0;
+			int width = isShape ? visibleBounds.width : textImage.getWidth();
+			Image result = Image.create(Math.min(width, size.width), size.height, ImageType.ARGB);
 			try (Painter p = result.createPainter(DrawQuality.High))
 			{
-				p.drawImage(textImage, 0, (size.height - visibleHeight) / 2 - visibleRows.getFirst());
+				p.drawImage(textImage, -left, (size.height - visibleBounds.height) / 2 - visibleBounds.y);
 			}
 			return result;
 		}
@@ -328,37 +347,36 @@ class TextStylesPanel
 	}
 
 	/**
-	 * The first and last rows of an image that aren't fully transparent. The drawn text has a transparent margin that isn't the same above
-	 * and below it.
+	 * The bounds of the part of an image that isn't fully transparent. The drawn text has a transparent margin that isn't the same on every
+	 * side.
 	 */
-	private static Tuple2<Integer, Integer> findVisibleRows(Image image)
+	private static IntRectangle findVisibleBounds(Image image)
 	{
-		int top = 0;
-		int bottom = image.getHeight() - 1;
+		int left = image.getWidth();
+		int right = -1;
+		int top = image.getHeight();
+		int bottom = -1;
 		try (PixelReader pixels = image.createPixelReader())
 		{
-			while (top < bottom && isRowTransparent(pixels, top, image.getWidth()))
+			for (int y = 0; y < image.getHeight(); y++)
 			{
-				top++;
-			}
-			while (bottom > top && isRowTransparent(pixels, bottom, image.getWidth()))
-			{
-				bottom--;
+				for (int x = 0; x < image.getWidth(); x++)
+				{
+					if (pixels.getAlpha(x, y) > 0)
+					{
+						left = Math.min(left, x);
+						right = Math.max(right, x);
+						top = Math.min(top, y);
+						bottom = Math.max(bottom, y);
+					}
+				}
 			}
 		}
-		return new Tuple2<>(top, bottom);
-	}
-
-	private static boolean isRowTransparent(PixelReader pixels, int y, int width)
-	{
-		for (int x = 0; x < width; x++)
+		if (right < 0)
 		{
-			if (pixels.getAlpha(x, y) > 0)
-			{
-				return false;
-			}
+			return new IntRectangle(0, 0, image.getWidth(), image.getHeight());
 		}
-		return true;
+		return new IntRectangle(left, top, right - left + 1, bottom - top + 1);
 	}
 
 	private static TextDrawer createSampleTextDrawer(TextType type, TextStyle style, double resolution)
