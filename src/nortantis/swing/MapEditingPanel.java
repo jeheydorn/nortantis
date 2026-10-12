@@ -81,9 +81,10 @@ public class MapEditingPanel extends UnscaledImagePanel
 	// While a zoom change is being rescaled, stretches the displayed image and its overlays (in panel coordinates, before OS scaling) toward
 	// where they will land once the rescaled image is committed. Null when no zoom preview is showing.
 	private AffineTransform zoomPreviewTransform;
-	// How far the view position moves when the previewed zoom is committed, or null if it doesn't move. Kept with the preview so that
-	// whichever rescale ends up committing the previewed zoom lands the map where the preview showed it.
-	private java.awt.Point zoomPreviewViewPositionShift;
+	// While a zoom change is being rescaled, the size in pixels the rescaled image will have. The panel takes the size that image will give
+	// it, so that the scroll bars and how far the map can be panned match the preview rather than the image it stretches. Null when no zoom
+	// preview is showing.
+	private Dimension zoomPreviewImageSize;
 	// Guards mapFromMapCreator against incremental draws, which modify it in place on a background thread. Null if nothing modifies it.
 	private java.util.concurrent.locks.Lock mapReadLock;
 	private double resolution;
@@ -1591,25 +1592,30 @@ public class MapEditingPanel extends UnscaledImagePanel
 	}
 
 	/**
-	 * Shows the current image and its overlays stretched by the given transform, in panel coordinates, until the next call to
-	 * {@link #setImage(BufferedImage)} or {@link #clearZoomPreview()}. Mouse positions are mapped through the transform (see
-	 * {@link #panelToImagePixels(java.awt.Point)}), so input acts on the part of the map shown under the cursor. viewPositionShift is how
-	 * far the view position will move when the previewed zoom is committed, or null if it won't move.
+	 * Sizes this panel for an image of the given size in pixels, which a zoom preview stands in for, until the next call to
+	 * {@link #setImage(BufferedImage)} or {@link #clearZoomPreview()}. The current image keeps being drawn where it was relative to this
+	 * panel's size until {@link #setZoomPreviewTransform(AffineTransform)} says how to stretch it.
 	 */
-	public void setZoomPreview(AffineTransform transform, java.awt.Point viewPositionShift)
+	public void setZoomPreviewImageSize(Dimension sizeInPixels)
 	{
-		zoomPreviewTransform = transform;
-		zoomPreviewViewPositionShift = viewPositionShift;
-		repaint();
+		zoomPreviewImageSize = sizeInPixels;
+		revalidate();
 	}
 
 	/**
-	 * How far the view position will move when the zoom being previewed is committed. Null when no preview is showing or the view position
-	 * won't move.
+	 * Shows the current image and its overlays stretched by the given transform, in panel coordinates, until the next call to
+	 * {@link #setImage(BufferedImage)} or {@link #clearZoomPreview()}. Mouse positions are mapped through the transform (see
+	 * {@link #panelToImagePixels(java.awt.Point)}), so input acts on the part of the map shown under the cursor.
 	 */
-	public java.awt.Point getZoomPreviewViewPositionShift()
+	public void setZoomPreviewTransform(AffineTransform transform)
 	{
-		return zoomPreviewViewPositionShift;
+		zoomPreviewTransform = transform;
+		repaint();
+	}
+
+	public boolean isShowingZoomPreview()
+	{
+		return zoomPreviewTransform != null;
 	}
 
 	/**
@@ -1622,10 +1628,11 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 	public void clearZoomPreview()
 	{
-		if (zoomPreviewTransform != null)
+		if (zoomPreviewTransform != null || zoomPreviewImageSize != null)
 		{
 			zoomPreviewTransform = null;
-			zoomPreviewViewPositionShift = null;
+			zoomPreviewImageSize = null;
+			revalidate();
 			repaint();
 		}
 	}
@@ -1635,8 +1642,18 @@ public class MapEditingPanel extends UnscaledImagePanel
 	{
 		// A new image replaces whatever the preview was standing in for.
 		zoomPreviewTransform = null;
-		zoomPreviewViewPositionShift = null;
+		zoomPreviewImageSize = null;
 		super.setImage(image);
+	}
+
+	@Override
+	public Dimension getPreferredSize()
+	{
+		if (zoomPreviewImageSize != null && getImage() != null)
+		{
+			return new Dimension(pixelsToPanelSize(zoomPreviewImageSize.width, osScale), pixelsToPanelSize(zoomPreviewImageSize.height, osScale));
+		}
+		return super.getPreferredSize();
 	}
 
 	/**
