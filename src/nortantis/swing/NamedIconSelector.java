@@ -67,6 +67,10 @@ public class NamedIconSelector
 			if (getTypes().contains(groupId))
 			{
 				CollapsiblePanel collapsiblePanel = new CollapsiblePanel(type.toString() + "Type", groupId, groupId, buttonsPanel);
+				if (container.getComponentCount() > 0)
+				{
+					container.add(Box.createVerticalStrut(CollapsiblePanel.spaceBetweenStackedCards));
+				}
 				container.add(collapsiblePanel);
 			}
 

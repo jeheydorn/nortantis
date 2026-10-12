@@ -59,6 +59,14 @@ public class CollapsiblePanel extends JPanel
 	 * How much stronger the tint is while the title strip is hovered or focused.
 	 */
 	private static final double highlightedTintMultiplier = 2.0;
+	/**
+	 * The space between the parts of the title strip.
+	 */
+	private static final int titleSpacing = 6;
+	/**
+	 * The space between cards stacked one above another.
+	 */
+	public static final int spaceBetweenStackedCards = 5;
 
 	private final String namespace;
 	private final String untranslatedName;
@@ -113,7 +121,7 @@ public class CollapsiblePanel extends JPanel
 		titlePanel.setBorder(new EmptyBorder(4, 7, 4, 7));
 		titlePanel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 		titlePanel.add(arrow);
-		titlePanel.add(Box.createHorizontalStrut(6));
+		titlePanel.add(Box.createHorizontalStrut(titleSpacing));
 		titlePanel.add(titleLabel);
 		titlePanel.add(Box.createHorizontalGlue());
 		titlePanel.addMouseListener(new MouseAdapter()
@@ -193,6 +201,7 @@ public class CollapsiblePanel extends JPanel
 	public void setTitleAccessory(JComponent accessory)
 	{
 		accessory.setOpaque(false);
+		titlePanel.add(Box.createHorizontalStrut(titleSpacing));
 		titlePanel.add(accessory);
 		titlePanel.revalidate();
 	}

@@ -92,7 +92,8 @@ class TextStylesPanel
 			card.setTitleAccessory(sample);
 			samplesByType.put(type, sample);
 			cardsByType.put(type, card);
-			organizer.addLeftAlignedComponent(card, GridBagOrganizer.rowVerticalInset, GridBagOrganizer.rowVerticalInset, false);
+			int topInset = type == TextType.values()[0] ? GridBagOrganizer.rowVerticalInset : CollapsiblePanel.spaceBetweenStackedCards;
+			organizer.addLeftAlignedComponent(card, topInset, 0, false);
 		}
 
 		organizer.addVerticalFillerRow();
