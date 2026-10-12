@@ -41,6 +41,10 @@ class TextBackgroundDrawer
 	private static final double scrollCurlWidth = 0.42;
 	private static final double scrollCurlOverhang = 0.16;
 	private static final double scrollCapHeight = 0.22;
+	/**
+	 * How much of a scroll curl's width sits over the end of the paper rather than past it.
+	 */
+	private static final double curlInnerFraction = 0.4;
 	private static final double bannerTailDrop = 0.15;
 	private static final double bannerTailLength = 0.4;
 	private static final double bannerFoldWidth = 0.2;
@@ -835,12 +839,17 @@ class TextBackgroundDrawer
 		pieces.add(new ShapePiece(builder.finish(builder.line(band.left, band.bottom - o, band.left, band.top + o), false), false, null, true));
 	}
 
-	private static void addScrollPieces(ShapeBuilder builder, Band band, Color fill, Color shade, Color darkShade, List<ShapePiece> pieces)
+	private static void addScrollPieces(ShapeBuilder builder, Band textBand, Color fill, Color shade, Color darkShade, List<ShapePiece> pieces)
 	{
-		double height = band.height();
+		double height = textBand.height();
 		double curlWidth = scrollCurlWidth * height;
 		double overhang = scrollCurlOverhang * height;
 		double capHeight = scrollCapHeight * curlWidth;
+
+		// Each curl covers the end of the paper, and grows with the band's height, so the paper is lengthened by the part the curl covers. That
+		// keeps the curls the band's padding away from the text however many lines it has.
+		double lengthening = curlInnerFraction * curlWidth;
+		Band band = new Band(textBand.left - lengthening, textBand.right + lengthening, textBand.bottom, textBand.top);
 
 		pieces.add(new ShapePiece(builder.finish(builder.polygon(new double[] { band.left, band.top }, new double[] { band.right, band.top }, new double[] { band.right, band.bottom },
 				new double[] { band.left, band.bottom }), true), true, fill, true));
@@ -848,8 +857,8 @@ class TextBackgroundDrawer
 		for (boolean isLeft : new boolean[] { true, false })
 		{
 			// Each end of the paper is rolled into a curl that sits over the end of the band, a little taller than it.
-			double inner = isLeft ? band.left + curlWidth * 0.4 : band.right - curlWidth * 0.4;
-			double outer = isLeft ? band.left - curlWidth * 0.6 : band.right + curlWidth * 0.6;
+			double inner = isLeft ? band.left + curlWidth * curlInnerFraction : band.right - curlWidth * curlInnerFraction;
+			double outer = isLeft ? band.left - curlWidth * (1 - curlInnerFraction) : band.right + curlWidth * (1 - curlInnerFraction);
 			double left = Math.min(inner, outer);
 			double right = Math.max(inner, outer);
 			double middle = (left + right) / 2.0;

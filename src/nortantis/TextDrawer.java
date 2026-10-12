@@ -1093,8 +1093,10 @@ public class TextDrawer
 		}
 
 		// The letters' drawn shapes can reach past the lines' bounds, such as a script font's swashes.
-		Rectangle letters1 = bounds1.add(TextBackgroundDrawer.getLetterShapeBounds(p, layouts.get(0)));
-		Rectangle letters2 = bounds2 == null ? null : bounds2.add(TextBackgroundDrawer.getLetterShapeBounds(p, layouts.get(1)));
+		Rectangle shapeBounds1 = TextBackgroundDrawer.getLetterShapeBounds(p, layouts.get(0));
+		Rectangle shapeBounds2 = bounds2 == null ? null : TextBackgroundDrawer.getLetterShapeBounds(p, layouts.get(1));
+		Rectangle letters1 = bounds1.add(shapeBounds1);
+		Rectangle letters2 = bounds2 == null ? null : bounds2.add(shapeBounds2);
 
 		TextBackground background = settings.resolveTextStyle(text).background;
 		TextBackgroundDrawer.Shape shape = null;
@@ -1102,7 +1104,9 @@ public class TextDrawer
 		Rectangle extent2 = letters2;
 		if (background.effect.isShape())
 		{
-			shape = TextBackgroundDrawer.createShape(background, layouts, Arrays.asList(bounds1, bounds2), fontHeight, pivot, text.backgroundSeed);
+			shape = TextBackgroundDrawer.createShape(background, layouts,
+					Arrays.asList(fitWidthToLetterShapes(bounds1, shapeBounds1), fitWidthToLetterShapes(bounds2, shapeBounds2)), fontHeight, pivot,
+					text.backgroundSeed);
 			if (shape != null && shape.bounds != null)
 			{
 				// The shape surrounds both lines, so the first line's extent holds all of it.
@@ -1116,6 +1120,20 @@ public class TextDrawer
 		}
 
 		return new TextGeometry(pivot, bounds1WithoutCurvature, bounds1, bounds2WithoutCurvature, bounds2, layouts, shape, extent1, extent2, fontHeight);
+	}
+
+	/**
+	 * A line's bounds with the left and right sides moved to those of its letters' drawn shapes, so that a shape behind the text is centered
+	 * on what is drawn rather than on the space the letters take up, which a slanted font fills unevenly. The top and bottom stay those of the
+	 * line, so that every line of a font is as tall.
+	 */
+	private static Rectangle fitWidthToLetterShapes(Rectangle lineBounds, Rectangle letterShapeBounds)
+	{
+		if (lineBounds == null || letterShapeBounds == null)
+		{
+			return lineBounds;
+		}
+		return new Rectangle(letterShapeBounds.x, lineBounds.y, letterShapeBounds.width, lineBounds.height);
 	}
 
 	private boolean drawNameRotated(Image map, Painter p, WorldGraph graph, double riseOffset, boolean enableBoundsChecking, RotatedRectangle areaToIgnoreInBoundsChecks, MapText text,
