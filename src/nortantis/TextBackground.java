@@ -17,9 +17,9 @@ import java.util.Objects;
 public class TextBackground implements Serializable
 {
 	public static final double defaultFadeBehind = 1.0;
-	public static final int maxGlowSize = 30;
+	public static final int maxGlowSize = 20;
 	public static final int defaultGlowSize = 3;
-	public static final int maxOutlineWidth = 30;
+	public static final int maxOutlineWidth = 10;
 	public static final int defaultOutlineWidth = 3;
 	public static final int maxShapeLineWidth = 10;
 	public static final int defaultShapeLineWidth = 4;

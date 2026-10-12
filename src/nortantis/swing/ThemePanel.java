@@ -1041,6 +1041,24 @@ public class ThemePanel extends JTabbedPane
 		return organizer.createScrollPane();
 	}
 
+	private static void addStrokeTypeIcons(JComboBox<StrokeType> comboBox)
+	{
+		comboBox.setRenderer(new DefaultListCellRenderer()
+		{
+			public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus)
+			{
+				super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+				if (value instanceof StrokeType type)
+				{
+					StrokeTypeIcon icon = new StrokeTypeIcon(type);
+					setIcon(icon);
+					setDisabledIcon(icon);
+				}
+				return this;
+			}
+		});
+	}
+
 	private Component createFeaturesPanel()
 	{
 		GridBagOrganizer organizer = new GridBagOrganizer();
@@ -1059,6 +1077,7 @@ public class ThemePanel extends JTabbedPane
 		organizer.addSectionHeading(drawRegionBoundariesCheckbox);
 
 		regionBoundaryTypeComboBox = new JComboBox<>(StrokeType.values());
+		addStrokeTypeIcons(regionBoundaryTypeComboBox);
 		regionBoundaryRows = organizer.addLabelAndComponent(Translation.get("theme.style.label"), Translation.get("theme.regionBoundaryStyle.help"), regionBoundaryTypeComboBox);
 		createMapChangeListenerForTerrainChange(regionBoundaryTypeComboBox);
 
@@ -1119,6 +1138,7 @@ public class ThemePanel extends JTabbedPane
 			organizer.addSectionHeading(drawRoadsCheckbox);
 
 			roadStyleComboBox = new JComboBox<>(StrokeType.values());
+			addStrokeTypeIcons(roadStyleComboBox);
 			roadRows = organizer.addLabelAndComponent(Translation.get("theme.roadStyle.label"), Translation.get("theme.roadStyle.help"), roadStyleComboBox);
 			createMapChangeListenerForTerrainChange(roadStyleComboBox);
 

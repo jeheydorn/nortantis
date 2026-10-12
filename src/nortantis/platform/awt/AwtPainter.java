@@ -1,13 +1,11 @@
 package nortantis.platform.awt;
 
-import nortantis.StrokeType;
 import nortantis.geom.FloatPoint;
 import nortantis.geom.Rectangle;
 import nortantis.platform.*;
 import nortantis.platform.Color;
 import nortantis.platform.Font;
 import nortantis.platform.Image;
-import org.apache.commons.lang3.NotImplementedException;
 
 import java.awt.*;
 import java.awt.AlphaComposite;
@@ -249,8 +247,7 @@ class AwtPainter extends Painter
 	@Override
 	public void setBasicStroke(float width)
 	{
-		// Use CAP_ROUND to avoid corners sticking out of the sides of thick lines (like rivers) when drawn piecewise.
-		g.setStroke(new BasicStroke(width, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1f, null, 0f));
+		g.setStroke(AwtBridge.createBasicStroke(width));
 	}
 
 	@Override
@@ -262,35 +259,7 @@ class AwtPainter extends Painter
 	@Override
 	public void setStroke(nortantis.Stroke stroke, double resolutionScale)
 	{
-		if (stroke.type == StrokeType.Solid)
-		{
-			setBasicStroke(stroke.width * (float) resolutionScale);
-		}
-		else
-		{
-			float scale = ((float) resolutionScale) * stroke.width;
-			if (stroke.type == StrokeType.Dashes)
-			{
-				Stroke dashed = new BasicStroke(stroke.width * (float) resolutionScale, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 1f, new float[] { 6f * (float) scale, 3f * (float) scale }, 0f);
-				g.setStroke(dashed);
-			}
-			else if (stroke.type == StrokeType.Rounded_Dashes)
-			{
-				Stroke dashed = new BasicStroke(stroke.width * (float) resolutionScale, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1f, new float[] { 6f * (float) scale, 4f * (float) scale }, 0f);
-				g.setStroke(dashed);
-			}
-			else if (stroke.type == StrokeType.Dots)
-			{
-				final float scaleBecauseDotsLookSmallerThanDashes = (3.9f / 2.7f);
-				Stroke dashed = new BasicStroke(stroke.width * (float) resolutionScale * scaleBecauseDotsLookSmallerThanDashes, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1f,
-						new float[] { 0f * (float) scale * scaleBecauseDotsLookSmallerThanDashes, 2.0f * (float) scale * scaleBecauseDotsLookSmallerThanDashes }, 0f);
-				g.setStroke(dashed);
-			}
-			else
-			{
-				throw new NotImplementedException("Unrecognized stroke type: " + stroke);
-			}
-		}
+		g.setStroke(AwtBridge.toAwtStroke(stroke, resolutionScale));
 	}
 
 	@Override

@@ -1,9 +1,11 @@
 package nortantis.platform.awt;
 
+import nortantis.StrokeType;
 import nortantis.platform.*;
 import nortantis.platform.Color;
 import nortantis.platform.Font;
 import nortantis.platform.Image;
+import org.apache.commons.lang3.NotImplementedException;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -163,5 +165,42 @@ public class AwtBridge
 		}
 
 		return new AwtFont(font);
+	}
+
+	/**
+	 * Converts a {@link nortantis.Stroke} to a java.awt.BasicStroke at the given resolution scale.
+	 */
+	public static BasicStroke toAwtStroke(nortantis.Stroke stroke, double resolutionScale)
+	{
+		if (stroke.type == StrokeType.Solid)
+		{
+			return createBasicStroke(stroke.width * (float) resolutionScale);
+		}
+
+		float scale = ((float) resolutionScale) * stroke.width;
+		if (stroke.type == StrokeType.Dashes)
+		{
+			return new BasicStroke(stroke.width * (float) resolutionScale, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 1f, new float[] { 6f * (float) scale, 3f * (float) scale }, 0f);
+		}
+		else if (stroke.type == StrokeType.Rounded_Dashes)
+		{
+			return new BasicStroke(stroke.width * (float) resolutionScale, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1f, new float[] { 6f * (float) scale, 4f * (float) scale }, 0f);
+		}
+		else if (stroke.type == StrokeType.Dots)
+		{
+			final float scaleBecauseDotsLookSmallerThanDashes = (3.9f / 2.7f);
+			return new BasicStroke(stroke.width * (float) resolutionScale * scaleBecauseDotsLookSmallerThanDashes, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1f,
+					new float[] { 0f * (float) scale * scaleBecauseDotsLookSmallerThanDashes, 2.0f * (float) scale * scaleBecauseDotsLookSmallerThanDashes }, 0f);
+		}
+		else
+		{
+			throw new NotImplementedException("Unrecognized stroke type: " + stroke);
+		}
+	}
+
+	static BasicStroke createBasicStroke(float width)
+	{
+		// Use CAP_ROUND to avoid corners sticking out of the sides of thick lines (like rivers) when drawn piecewise.
+		return new BasicStroke(width, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1f, null, 0f);
 	}
 }
