@@ -37,6 +37,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private final Color highlightEditColor = new Color(255, 227, 74);
 	private final Color waterHighlightColor = new Color(0, 193, 245);
 	private final Color artPackHighlightColor = Color.CYAN;
+	private final Color ownTextStyleHighlightColor = new Color(232, 85, 232);
 	private final Color processingColor = Color.orange;
 	private final Color selectColor = Color.orange;
 	private Set<Center> highlightedCenters;
@@ -69,6 +70,10 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private List<Point> freeHandPreviewPath = null;
 	private boolean highlightLakes;
 	private boolean highlightRivers;
+	/**
+	 * The text to outline when it has its own values for part of its style, or null to outline none.
+	 */
+	private List<MapText> textToHighlightIfItHasItsOwnStyle;
 	public Image mapFromMapCreator;
 	private java.awt.Point brushLocation;
 	private int brushDiameter;
@@ -711,6 +716,31 @@ public class MapEditingPanel extends UnscaledImagePanel
 		this.highlightRivers = enabled;
 	}
 
+	/**
+	 * Outlines the given text that has its own values for part of its style. Null outlines none.
+	 */
+	public void setTextToHighlightIfItHasItsOwnStyle(List<MapText> texts)
+	{
+		textToHighlightIfItHasItsOwnStyle = texts;
+	}
+
+	private void highlightTextWithOwnStyleIfNeeded(Graphics2D g)
+	{
+		if (textToHighlightIfItHasItsOwnStyle == null)
+		{
+			return;
+		}
+		g.setColor(ownTextStyleHighlightColor);
+		for (MapText text : textToHighlightIfItHasItsOwnStyle)
+		{
+			RotatedRectangle line1Bounds = text.line1Bounds;
+			if (line1Bounds != null && !text.styleOverrides.isEmpty() && text.value != null && !text.value.isEmpty())
+			{
+				g.draw(AwtFactory.toAwtArea(line1Bounds.addRotatedRectangleThatHasTheSameAngleAndPivot(text.line2Bounds)));
+			}
+		}
+	}
+
 	public void setGraph(WorldGraph graph)
 	{
 		this.graph = graph;
@@ -855,6 +885,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		// Handle drawing/highlighting
 
 		highlightArtPacksIfNeeded(g2);
+		highlightTextWithOwnStyleIfNeeded(g2);
 
 		if (textHoverPreviewImage != null && textHoverPreviewLocation != null && showHoverHighlights)
 		{
@@ -2261,6 +2292,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		clearAllToolSpecificSelectionsAndHighlights();
 		setHighlightRivers(false);
 		setHighlightLakes(false);
+		setTextToHighlightIfItHasItsOwnStyle(null);
 		freeIcons = null;
 		repaint();
 	}

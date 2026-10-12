@@ -351,8 +351,7 @@ public class OldPropertyBasedMapSettings implements Serializable
 				Point location = new Point((Double) jsonObj.get("locationX"), (Double) jsonObj.get("locationY"));
 				double angle = (Double) jsonObj.get("angle");
 				TextType type = Enum.valueOf(TextType.class, ((String) jsonObj.get("type")).replace(" ", "_"));
-				// The style is filled in from the map's text settings once they are all read.
-				MapText mp = new MapText(text, location, angle, type, LineBreak.Auto, 0.0, 0, null, Helper.mixSeed(result.size()));
+				MapText mp = new MapText(text, location, angle, type, LineBreak.Auto, 0.0, 0, new TextStyleOverrides(), Helper.mixSeed(result.size()));
 				result.add(mp);
 			}
 

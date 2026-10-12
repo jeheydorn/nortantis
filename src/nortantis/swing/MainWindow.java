@@ -9,7 +9,6 @@ import nortantis.GeneratedDimension;
 import nortantis.ImageCache;
 import nortantis.MapFonts;
 import nortantis.MapSettings;
-import nortantis.MapText;
 import nortantis.SettingsGenerator;
 import nortantis.TextStyle;
 import nortantis.TextType;
@@ -203,6 +202,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	MapUpdater updater;
 	private JCheckBoxMenuItem highlightLakesButton;
 	private JCheckBoxMenuItem highlightRiversButton;
+	private JCheckBoxMenuItem highlightTextWithOwnStyleButton;
 	private JScrollPane consoleOutputPane;
 	double exportResolution;
 	ExportAction defaultMapExportAction;
@@ -495,6 +495,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		highlightLakesButton.setEnabled(enable);
 		highlightRiversButton.setEnabled(enable);
+		highlightTextWithOwnStyleButton.setEnabled(enable);
 
 		refreshMenuItem.setEnabled(enable);
 
@@ -1299,6 +1300,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 				mapEditingPanel.setHighlightRivers(highlightRiversButton.isSelected());
 				mapEditingPanel.setHighlightLakes(highlightLakesButton.isSelected());
+				updateHighlightTextWithOwnStyle();
 
 				// Tell the scroll pane to update itself.
 				mapEditingPanel.revalidate();
@@ -1716,6 +1718,15 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 		viewMenu.add(highlightRiversButton);
+
+		highlightTextWithOwnStyleButton = new JCheckBoxMenuItem(Translation.get("menu.view.highlightTextWithOwnStyle"));
+		highlightTextWithOwnStyleButton.setToolTipText(Translation.get("menu.view.highlightTextWithOwnStyle.tooltip"));
+		highlightTextWithOwnStyleButton.addActionListener(e ->
+		{
+			updateHighlightTextWithOwnStyle();
+			mapEditingPanel.repaint();
+		});
+		viewMenu.add(highlightTextWithOwnStyleButton);
 
 		viewMenu.addSeparator();
 
@@ -3616,7 +3627,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				SettingsGenerator.generateRegionColors(settings, new Random());
 			}
 
-			// Sizes are kept, so that text added afterward matches the size of the text already on the map.
+			// Sizes are kept, so that the text on the map keeps its size.
 			for (TextType type : TextType.values())
 			{
 				TextStyle themeStyle = source.getDefaultTextStyle(type);
@@ -3626,16 +3637,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					TextStyle newStyle = themeStyle.copy();
 					newStyle.font = previousStyle.withFamilyAndStyleOf(themeStyle.font);
 					settings.setDefaultTextStyle(type, newStyle);
-				}
-			}
-			for (MapText text : settings.edits.text)
-			{
-				TextStyle themeStyle = source.getDefaultTextStyle(text.type);
-				if (themeStyle != null)
-				{
-					text.style.font = text.style.withFamilyAndStyleOf(themeStyle.font);
-					text.style.color = themeStyle.color;
-					text.style.background = themeStyle.background.copy();
 				}
 			}
 		});
@@ -3698,7 +3699,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				result.add(Translation.get("copyTheme.missing.backgroundTextureFile", FileHelper.replaceHomeFolderPlaceholder(source.backgroundTextureImage)));
 			}
 		}
-		// Only the fonts of the styles for new text are part of the theme, so the source's labels are left out.
+		// Only the fonts of the type styles are part of the theme, so the fonts of the source's text that has its own font are left out.
 		MapSettings theme = source.deepCopyExceptEdits();
 		theme.edits = new MapEdits();
 		for (MapFonts.FontProblem problem : MapFonts.findProblems(theme).problems)
@@ -3777,7 +3778,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	private RandomizeThemeDialog createRandomizeThemeDialog(MapSettings settings)
 	{
-		return new RandomizeThemeDialog(this, settings, (variation, areTextBackgroundsVaried) -> applyThemeChange(current ->
+		return new RandomizeThemeDialog(this, settings, variation -> applyThemeChange(current ->
 		{
 			current.copyThemeFrom(variation);
 			current.backgroundRandomSeed = variation.backgroundRandomSeed;
@@ -3789,17 +3790,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				if (currentEdit != null)
 				{
 					currentEdit.color = edit.color;
-				}
-			}
-			if (areTextBackgroundsVaried)
-			{
-				for (TextType type : new TextType[] { TextType.Title, TextType.Region })
-				{
-					TextStyle style = variation.getDefaultTextStyle(type);
-					if (style != null)
-					{
-						SettingsGenerator.setTextBackground(current, type, style.background);
-					}
 				}
 			}
 		}), this::keepThemeRulesAndRegionColorSettings);
@@ -4112,6 +4102,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		showCanvasMessage(Translation.get("mainWindow.welcome"));
 		boolean showAskCard = !UserPreferences.getInstance().hideStartupSupportPanel;
 		mapCanvasOverlay.setSupportPanel(true, SupportPanel.defaultContentWidth, showAskCard);
+	}
+
+	private void updateHighlightTextWithOwnStyle()
+	{
+		mapEditingPanel.setTextToHighlightIfItHasItsOwnStyle(highlightTextWithOwnStyleButton.isSelected() && edits != null ? edits.text : null);
 	}
 
 	void handleThemeChange(boolean refreshImagePreviews)

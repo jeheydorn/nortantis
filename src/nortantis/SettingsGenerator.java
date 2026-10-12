@@ -464,8 +464,8 @@ public class SettingsGenerator
 	}
 
 	/**
-	 * When the theme's rules say to shuffle them, chooses the effects drawn behind title and region text within the rules, both for new text
-	 * and for the title and region text already on the map. Otherwise does nothing.
+	 * When the theme's rules say to shuffle them, chooses the effects drawn behind title and region text within the rules. Otherwise does
+	 * nothing.
 	 *
 	 * @param gen
 	 *            The theme's rules, or null for a theme without any, which doesn't shuffle.
@@ -481,8 +481,8 @@ public class SettingsGenerator
 	}
 
 	/**
-	 * Chooses the effect drawn behind the given type of text, both for new text and for the text of that type already on the map. The
-	 * effect's settings, such as an outline's width, are the ones the style for new text of the type has.
+	 * Chooses the effect drawn behind the given type of text. The effect's settings, such as an outline's width, are the ones the type's
+	 * style already has.
 	 */
 	private static void chooseTextBackgroundEffect(MapSettings settings, TextType type, Set<TextBackgroundEffect> allowed, Random rand)
 	{
@@ -496,28 +496,6 @@ public class SettingsGenerator
 		TextStyle style = currentStyle.copy();
 		style.background.effect = effect;
 		settings.setDefaultTextStyle(type, style);
-		setTextBackground(settings, type, style.background);
-	}
-
-	/**
-	 * Gives the given type of text on the map the given background's effect and the settings of every effect. Each text keeps its own fade
-	 * behind.
-	 */
-	public static void setTextBackground(MapSettings settings, TextType type, TextBackground background)
-	{
-		if (settings.edits == null)
-		{
-			return;
-		}
-		for (MapText text : settings.edits.text)
-		{
-			if (text.type == type && text.style != null)
-			{
-				text.style = text.style.copy();
-				text.style.background.effect = background.effect;
-				text.style.background.copyEffectSettingsFrom(background);
-			}
-		}
 	}
 
 	/**

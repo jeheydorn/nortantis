@@ -1,5 +1,6 @@
 package nortantis.swing;
 
+import javax.swing.JLabel;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,6 +43,14 @@ public class RowHider
 	public boolean isVisible()
 	{
 		return isVisible;
+	}
+
+	/**
+	 * The row's label, or null when its first component isn't a label.
+	 */
+	public JLabel getLabel()
+	{
+		return !components.isEmpty() && components.get(0) instanceof JLabel label ? label : null;
 	}
 
 	/**

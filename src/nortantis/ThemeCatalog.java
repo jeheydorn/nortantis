@@ -185,9 +185,9 @@ public class ThemeCatalog
 	}
 
 	/**
-	 * Describes each way the given theme can't be used: it has no rules for randomizing it, or a font for new text comes from an art pack
-	 * other than the one the theme is in and the installed one. The fonts of text already in the theme don't matter, since new maps don't
-	 * keep it.
+	 * Describes each way the given theme can't be used: it has no rules for randomizing it, or the style of a type of text uses a font from
+	 * an art pack other than the one the theme is in and the installed one. The fonts of text already in the theme don't matter, since new
+	 * maps don't keep it.
 	 *
 	 * @return The translated descriptions, or an empty list if there are none.
 	 */

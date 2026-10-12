@@ -161,7 +161,7 @@ public class MissingFontDialog
 			familyLabel.setFont(familyLabel.getFont().deriveFont(Font.BOLD));
 			addToRow(panel, row++, familyLabel, 0, 4);
 
-			// Wrapped, since a font can be used by every type of text, both on the map and for new text.
+			// Wrapped, since a font can be used by every type of text.
 			addToRow(panel, row++, createIndentedWrappedLabel(Translation.get("mainWindow.missingFont.usedBy", describeWhatUsesIt(problem))), rowIndent,
 					problem.missingArtPack == null ? 4 : 0);
 
@@ -192,7 +192,7 @@ public class MissingFontDialog
 	}
 
 	/**
-	 * Names what a missing family draws: how many labels of each type use it, then the types whose style for new text uses it.
+	 * Names what a missing family draws: how many labels of each type use it, then the types whose style uses it.
 	 */
 	private static String describeWhatUsesIt(FontProblem problem)
 	{
@@ -201,9 +201,9 @@ public class MissingFontDialog
 		{
 			parts.add(Translation.get("mainWindow.missingFont.labels." + entry.getKey().name(), entry.getValue()));
 		}
-		for (TextType type : problem.newTextTypes)
+		for (TextType type : problem.typesWhoseStyleUsesIt)
 		{
-			parts.add(Translation.get("mainWindow.missingFont.newText." + type.name()));
+			parts.add(Translation.get("mainWindow.missingFont.typeStyle", type.toString()));
 		}
 		return String.join(", ", parts);
 	}

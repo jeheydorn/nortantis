@@ -186,7 +186,7 @@ public class SubMapCreator
 		// distance;
 		double iconSizeRatio = newGraph.getMeanCenterWidthBetweenNeighbors() / originalGraph.getMeanCenterWidthBetweenNeighbors();
 		double sourceMeanPolygonWidthRI = originalGraph.getMeanCenterWidthBetweenNeighbors() / originalResolution;
-		transferText(originalSettings.edits, selectionBoundsRI, newEdits, newGenWidth, newGenHeight, fontScale, iconSizeRatio, sourceMeanPolygonWidthRI, originalResolution);
+		transferText(originalSettings, selectionBoundsRI, newEdits, newGenWidth, newGenHeight, fontScale, iconSizeRatio, sourceMeanPolygonWidthRI, originalResolution);
 
 		// An IconDrawer over the source graph, used to compute each city/decoration icon's drawn bounds so icons that overlap the selection
 		// are kept even when their anchor point lies just outside it (city labels sit below their icon, so a city near the top edge has its
@@ -241,12 +241,13 @@ public class SubMapCreator
 		}
 	}
 
-	private static void transferText(MapEdits originalEdits, Rectangle selectionBoundsRI, MapEdits newEdits, int newGenWidth, int newGenHeight, double fontScale, double iconSizeRatio,
+	private static void transferText(MapSettings originalSettings, Rectangle selectionBoundsRI, MapEdits newEdits, int newGenWidth, int newGenHeight, double fontScale, double iconSizeRatio,
 			double sourceMeanPolygonWidthRI, double originalResolution)
 	{
 		// Copy MapText entries whose drawn extent intersects selectionBoundsRI.
 		newEdits.text = new CopyOnWriteArrayList<>();
 		double maxCityLabelAssociationDistanceRI = sourceMeanPolygonWidthRI * cityLabelToIconMaxAssociationWidths;
+		MapEdits originalEdits = originalSettings.edits;
 		for (MapText text : originalEdits.text)
 		{
 			if (doesTextOverlapSelection(text, selectionBoundsRI, originalResolution))
@@ -272,7 +273,7 @@ public class SubMapCreator
 					double offsetLength = Math.sqrt(sourceOffsetRI.x * sourceOffsetRI.x + sourceOffsetRI.y * sourceOffsetRI.y);
 					if (offsetLength > 1e-6)
 					{
-						double sourceFontSize = text.style.font.getSize();
+						double sourceFontSize = originalSettings.resolveTextStyle(text).font.getSize();
 						// Rendered line height in RI units (the font size stored in the file is multiplied by
 						// calcSizeMultiplierFromResolutionScale when drawn).
 						double sourceLineHeightRI = sourceFontSize * MapCreator.calcSizeMultiplierFromResolutionScale(1.0);
@@ -289,7 +290,11 @@ public class SubMapCreator
 				// Clear bounds since they'll be recomputed at the new resolution.
 				newText.line1Bounds = null;
 				newText.line2Bounds = null;
-				newText.style.font = scaleFontSize(newText.style.font, fontScale);
+				// Text that follows its type's size gets the scaled size from the sub-map's type styles.
+				if (newText.styleOverrides.size != null)
+				{
+					newText.styleOverrides.size = scaleFontSize(newText.styleOverrides.size, fontScale);
+				}
 				newEdits.text.add(newText);
 			}
 		}
@@ -1746,8 +1751,15 @@ public class SubMapCreator
 	 */
 	private static Font scaleFontSize(Font font, double factor)
 	{
-		float newSize = Math.min(maxFontSize, (float) (font.getSize() * factor));
-		return font.deriveFont(font.getStyle(), newSize);
+		return font.deriveFont(font.getStyle(), scaleFontSize(font.getSize(), factor));
+	}
+
+	/**
+	 * Returns the given font size multiplied by {@code factor}, capped at {@link #maxFontSize}.
+	 */
+	private static float scaleFontSize(float size, double factor)
+	{
+		return Math.min(maxFontSize, (float) (size * factor));
 	}
 
 	/**

@@ -365,7 +365,7 @@ public class TextDrawer
 	 */
 	private Rectangle addBackgroundPadding(Rectangle textBounds, int fontHeight, MapText text)
 	{
-		double padding = getBackgroundBlendingPadding(fontHeight, text) + TextBackgroundDrawer.getMaxReach(text.style.background, fontHeight);
+		double padding = getBackgroundBlendingPadding(fontHeight, text) + TextBackgroundDrawer.getMaxReach(settings.resolveTextStyle(text).background, fontHeight);
 		return new Rectangle(textBounds.x - padding, textBounds.y - padding, textBounds.width + padding * 2, textBounds.height + padding * 2);
 	}
 
@@ -477,7 +477,7 @@ public class TextDrawer
 
 	private void setFontForText(Painter p, MapText text)
 	{
-		p.setFont(scaledFontsByStyleFont.computeIfAbsent(text.style.font, font -> scaleAndResolve(font, sizeMultiplier)));
+		p.setFont(scaledFontsByStyleFont.computeIfAbsent(settings.resolveTextStyle(text).font, font -> scaleAndResolve(font, sizeMultiplier)));
 	}
 
 	private void addTitle(Image map, WorldGraph graph, NameCreator nameCreator, Painter p)
@@ -653,7 +653,7 @@ public class TextDrawer
 	{
 		// This magic number below is a result of trial and error to get the
 		// blur levels to look right.
-		int kernelSize = (int) ((13.0 / 54.0) * text.style.background.getFadeBehindToDraw() * fontHeight);
+		int kernelSize = (int) ((13.0 / 54.0) * settings.resolveTextStyle(text).background.getFadeBehindToDraw() * fontHeight);
 		return kernelSize;
 	}
 
@@ -1096,7 +1096,7 @@ public class TextDrawer
 		Rectangle letters1 = bounds1.add(TextBackgroundDrawer.getLetterShapeBounds(p, layouts.get(0)));
 		Rectangle letters2 = bounds2 == null ? null : bounds2.add(TextBackgroundDrawer.getLetterShapeBounds(p, layouts.get(1)));
 
-		TextBackground background = text.style.background;
+		TextBackground background = settings.resolveTextStyle(text).background;
 		TextBackgroundDrawer.Shape shape = null;
 		Rectangle extent1 = letters1;
 		Rectangle extent2 = letters2;
@@ -1206,7 +1206,8 @@ public class TextDrawer
 	 */
 	private void drawTextAndBackground(Image map, Painter p, MapText text, TextGeometry geometry, Point drawOffset, boolean drawFade)
 	{
-		TextBackground background = text.style.background;
+		TextStyle style = settings.resolveTextStyle(text);
+		TextBackground background = style.background;
 		Point pivotMinusDrawOffset = geometry.pivot.subtract(drawOffset);
 		Transform orig = p.getTransform();
 		try
@@ -1239,7 +1240,7 @@ public class TextDrawer
 				geometry.shape.draw(p);
 			}
 
-			p.setColor(text.style.color);
+			p.setColor(style.color);
 			Font boldFont = null;
 			if (background.effect == TextBackgroundEffect.BoldBackground)
 			{
@@ -1525,23 +1526,22 @@ public class TextDrawer
 	}
 
 	/**
-	 * Creates a new MapText for generated text, styled with the map's style for new text of its type.
+	 * Creates a new MapText for generated text.
 	 */
 	private MapText createMapText(String text, Point location, double angle, TextType type)
 	{
 		long backgroundSeed = Helper.mixSeed(settings.textRandomSeed + generatedTextCount++);
-		return createMapText(text, location, angle, type, settings.resolution, settings.getDefaultTextStyle(type).copy(), settings.getDefaultTextLayout(type),
-				backgroundSeed);
+		return createMapText(text, location, angle, type, settings.resolution, backgroundSeed);
 	}
 
 	/**
-	 * Creates a new MapText, taking the resolution its location is given at into account.
+	 * Creates a new MapText with the default layout that follows the style of its type, taking the resolution its location is given at into
+	 * account.
 	 */
-	public static MapText createMapText(String text, Point location, double angle, TextType type, double resolution, TextStyle style, TextLayoutSettings layout,
-			long backgroundSeed)
+	public static MapText createMapText(String text, Point location, double angle, TextType type, double resolution, long backgroundSeed)
 	{
 		// Divide by resolution so that the location does not depend on the resolution we're drawing at.
-		return new MapText(text, new Point(location.x / resolution, location.y / resolution), angle, type, layout.lineBreak, layout.curvature, layout.spacing, style,
+		return new MapText(text, new Point(location.x / resolution, location.y / resolution), angle, type, LineBreak.Auto, 0.0, 0, new TextStyleOverrides(),
 				backgroundSeed);
 	}
 

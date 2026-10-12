@@ -18,7 +18,6 @@ import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.util.*;
 import java.util.List;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntConsumer;
@@ -36,24 +35,21 @@ class RandomizeThemeDialog extends JDialog
 	private static final class Variation
 	{
 		final MapSettings settings;
-		/** Whether the backgrounds of title and region text were varied, including on the text already on the map. */
-		final boolean areTextBackgroundsVaried;
 		/** The preview, or null if it hasn't been drawn or couldn't be. */
 		BufferedImage preview;
 		/** The size the preview was last drawn to fit, or null if it hasn't been drawn. */
 		Dimension previewSize;
 
-		Variation(MapSettings settings, boolean areTextBackgroundsVaried)
+		Variation(MapSettings settings)
 		{
 			this.settings = settings;
-			this.areTextBackgroundsVaried = areTextBackgroundsVaried;
 		}
 	}
 
 	/** The open map's settings, which every variation varies. */
 	private final MapSettings base;
 	private final ThemeGenerationSettings gen;
-	private final BiConsumer<MapSettings, Boolean> onApply;
+	private final Consumer<MapSettings> onApply;
 	private final Consumer<MapSettings> onClose;
 	/**
 	 * The open map as it is, followed by the variations rolled, in the order they were rolled. Only the most recent
@@ -80,13 +76,13 @@ class RandomizeThemeDialog extends JDialog
 	 * @param mapSettings
 	 *            The open map's settings. Not changed.
 	 * @param onApply
-	 *            Called with the variation shown when the user applies it, and whether the backgrounds of its title and region text were
-	 *            varied. It carries the rules in its {@link MapSettings#themeGeneration}, and the region color ranges.
+	 *            Called with the variation shown when the user applies it. It carries the rules in its
+	 *            {@link MapSettings#themeGeneration}, and the region color ranges.
 	 * @param onClose
 	 *            Called when the user closes the dialog without applying a variation, with the open map's settings carrying the rules, region
 	 *            base color, and region color ranges to keep.
 	 */
-	RandomizeThemeDialog(Window owner, MapSettings mapSettings, BiConsumer<MapSettings, Boolean> onApply, Consumer<MapSettings> onClose)
+	RandomizeThemeDialog(Window owner, MapSettings mapSettings, Consumer<MapSettings> onApply, Consumer<MapSettings> onClose)
 	{
 		super(owner, Translation.get("randomizeTheme.title"), ModalityType.APPLICATION_MODAL);
 		base = mapSettings.deepCopy();
@@ -97,7 +93,7 @@ class RandomizeThemeDialog extends JDialog
 			throw new IllegalStateException("The map has no rules for randomizing its theme.");
 		}
 		gen = base.themeGeneration.copy();
-		variations.add(new Variation(base, false));
+		variations.add(new Variation(base));
 
 		JPanel content = new JPanel(new BorderLayout(10, 10));
 		content.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -470,7 +466,7 @@ class RandomizeThemeDialog extends JDialog
 		variation.themeGeneration = gen.copy();
 		// The border and background texture are chosen from the art packs the map's own come from.
 		SettingsGenerator.randomizeTheme(variation, base, SettingsGenerator.getArtPackOfBorder(base), SettingsGenerator.getArtPackOfBackgroundTexture(base), new Random());
-		variations.add(new Variation(variation, gen.shuffleTextBackgrounds));
+		variations.add(new Variation(variation));
 		// The open map stays first, so the oldest variation rolled is the one dropped.
 		while (variations.size() > Undoer.maxUndoLevels + 1)
 		{
@@ -580,7 +576,7 @@ class RandomizeThemeDialog extends JDialog
 	{
 		Variation variation = variations.get(shownIndex);
 		keepRulesAndRanges(variation.settings);
-		onApply.accept(variation.settings, variation.areTextBackgroundsVaried);
+		onApply.accept(variation.settings);
 		dispose();
 	}
 

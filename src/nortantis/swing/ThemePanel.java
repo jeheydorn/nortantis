@@ -183,6 +183,7 @@ public class ThemePanel extends JTabbedPane
 	 * slider's steps.
 	 */
 	private int coastShadingAlpha;
+	private TextStylesPanel textStylesPanel;
 
 	public ThemePanel(MainWindow mainWindow)
 	{
@@ -196,6 +197,8 @@ public class ThemePanel extends JTabbedPane
 		addTab(Translation.get("theme.tab.border"), createBorderPanel());
 		addTab(Translation.get("theme.tab.shores"), createShoresPanel());
 		addTab(Translation.get("theme.tab.features"), createFeaturesPanel());
+		textStylesPanel = new TextStylesPanel(mainWindow);
+		addTab(Translation.get("theme.tab.fonts"), textStylesPanel.getScrollPane());
 
 		baseTabTitles = new String[getTabCount()];
 		for (int i = 0; i < getTabCount(); i++)
@@ -1252,6 +1255,11 @@ public class ThemePanel extends JTabbedPane
 		return organizer.createScrollPane();
 	}
 
+	TextStylesPanel getTextStylesPanel()
+	{
+		return textStylesPanel;
+	}
+
 	private void unselectAnyIconBeingEdited()
 	{
 		if (mainWindow.toolsPanel != null && mainWindow.toolsPanel.currentTool != null && mainWindow.toolsPanel.currentTool instanceof IconsTool)
@@ -1608,6 +1616,7 @@ public class ThemePanel extends JTabbedPane
 	 */
 	public void loadSettingsIntoGUI(MapSettings settings, boolean refreshImagePreviews)
 	{
+		textStylesPanel.loadSettingsIntoGUI(settings);
 		coastShadingSlider.setValue(settings.coastShadingLevel);
 		drawCoastShadingCheckbox.setSelected(settings.drawCoastShading);
 		oceanShadingSlider.setValue(settings.oceanShadingLevel);
@@ -1852,6 +1861,7 @@ public class ThemePanel extends JTabbedPane
 
 	public void getSettingsFromGUI(MapSettings settings)
 	{
+		textStylesPanel.getSettingsFromGUI(settings);
 		settings.coastShadingLevel = coastShadingSlider.getValue();
 		settings.drawCoastShading = drawCoastShadingCheckbox.isSelected();
 		settings.oceanWavesLevel = sincWavesLevelSlider.getValue();

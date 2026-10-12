@@ -243,14 +243,16 @@ public class ThemeTest
 		assertTrue(settings.edits.text.stream().anyMatch(text -> text.type == TextType.Title));
 		assertTrue(settings.edits.text.stream().anyMatch(text -> text.type == TextType.Region));
 		settings.getDefaultTextStyle(TextType.Region).background.outlineWidth = 3;
-		for (MapText text : settings.edits.text)
-		{
-			text.style.background.outlineWidth = 2;
-		}
+		// One region name has its own background, which the theme doesn't change.
+		MapText regionWithOwnBackground = settings.edits.text.stream().filter(text -> text.type == TextType.Region).findFirst().get();
+		TextStyle ownStyle = settings.resolveTextStyle(regionWithOwnBackground).copy();
+		ownStyle.background.effect = TextBackgroundEffect.Banner;
+		regionWithOwnBackground.styleOverrides.set(TextStylePart.Background, ownStyle);
 		MapSettings base = settings.deepCopy();
 
 		SettingsGenerator.randomizeTheme(settings, base, settings.artPack, settings.artPack, new Random(7));
 
+		assertEquals(TextBackgroundEffect.Banner, settings.resolveTextStyle(regionWithOwnBackground).background.effect, "A region name with its own background keeps it.");
 		assertEquals(TextBackgroundEffect.Scroll, settings.getDefaultTextStyle(TextType.Title).background.effect);
 		TextBackgroundEffect regionEffect = settings.getDefaultTextStyle(TextType.Region).background.effect;
 		assertTrue(regionEffect == TextBackgroundEffect.Glow || regionEffect == TextBackgroundEffect.Outline);
@@ -259,18 +261,24 @@ public class ThemeTest
 		{
 			MapText text = settings.edits.text.get(i);
 			MapText baseText = base.edits.text.get(i);
-			if (text.type == TextType.Title)
+			TextStyle style = settings.resolveTextStyle(text);
+			assertEquals(baseText.styleOverrides, text.styleOverrides, "Text's own style is left alone.");
+			if (text.styleOverrides.has(TextStylePart.Background))
 			{
-				assertEquals(TextBackgroundEffect.Scroll, text.style.background.effect, "The title on the map changes too.");
+				assertEquals(base.resolveTextStyle(baseText).background, style.background, "Text with its own background keeps it.");
+			}
+			else if (text.type == TextType.Title)
+			{
+				assertEquals(TextBackgroundEffect.Scroll, style.background.effect, "The title on the map follows its style.");
 			}
 			else if (text.type == TextType.Region)
 			{
-				assertEquals(regionEffect, text.style.background.effect, "Region names on the map change too.");
-				assertEquals(3, text.style.background.outlineWidth, "Region names take the effect's settings from the style for new region text.");
+				assertEquals(regionEffect, style.background.effect, "Region names on the map follow their style.");
+				assertEquals(3, style.background.outlineWidth, "Region names take the effect's settings from the region style.");
 			}
 			else
 			{
-				assertEquals(baseText.style, text.style, "Other text on the map keeps its style.");
+				assertEquals(base.resolveTextStyle(baseText), style, "Other text on the map keeps its style.");
 			}
 		}
 	}
@@ -290,7 +298,7 @@ public class ThemeTest
 		assertEquals(base.textStyleDefaults, settings.textStyleDefaults);
 		for (int i = 0; i < settings.edits.text.size(); i++)
 		{
-			assertEquals(base.edits.text.get(i).style, settings.edits.text.get(i).style);
+			assertEquals(base.edits.text.get(i).styleOverrides, settings.edits.text.get(i).styleOverrides);
 		}
 	}
 
@@ -304,7 +312,7 @@ public class ThemeTest
 		settings.getDefaultTextStyle(TextType.Title).background.effect = TextBackgroundEffect.Glow;
 
 		assertEquals(TextBackgroundEffect.Glow, SettingsGenerator.newMapWithSameTheme(settings).getDefaultTextStyle(TextType.Title).background.effect,
-				"Without shuffling, new text keeps the theme's background.");
+				"Without shuffling, the title style keeps the theme's background.");
 		settings.themeGeneration.shuffleTextBackgrounds = true;
 		assertEquals(TextBackgroundEffect.Scroll, SettingsGenerator.newMapWithSameTheme(settings).getDefaultTextStyle(TextType.Title).background.effect);
 	}
@@ -347,7 +355,6 @@ public class ThemeTest
 		MapSettings source = new MapSettings("unit test files/map settings/allTypesOfEdits.nort");
 		source.themeGeneration = ThemeCatalog.getDefaultThemeRules();
 		source.themeGeneration.landHueVariation = 3;
-		source.getDefaultTextLayout(TextType.Region).spacing = 9;
 
 		MapSettings target = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
 		int targetTextCount = target.edits.text.size();
@@ -355,7 +362,6 @@ public class ThemeTest
 		assertEquals(source.landColor, target.landColor);
 		assertEquals(source.coastShadingAlpha, target.coastShadingAlpha);
 		assertEquals(source.textStyleDefaults, target.textStyleDefaults);
-		assertEquals(source.textLayoutDefaults, target.textLayoutDefaults);
 		assertEquals(source.themeGeneration, target.themeGeneration);
 		assertEquals(targetTextCount, target.edits.text.size(), "Copying a theme keeps the map's own text.");
 	}

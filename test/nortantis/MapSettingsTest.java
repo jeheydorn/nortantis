@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -71,7 +72,7 @@ public class MapSettingsTest
 		assertEquals(1, info.problems.size(), "Every theme font names the same family, so there should be one problem.");
 		MapFonts.FontProblem problem = info.problems.get(0);
 		assertEquals("A Font That Does Not Exist", problem.family);
-		assertEquals(TextType.values().length, problem.newTextTypes.size());
+		assertEquals(TextType.values().length, problem.typesWhoseStyleUsesIt.size());
 	}
 
 	@Test
@@ -165,10 +166,11 @@ public class MapSettingsTest
 
 		assertEquals("Georgia", settings.getThemeFont(TextType.Mountain_range).getName(), "A family that was not replaced must be left alone.");
 
-		assertEquals(FontFinder.houseFontFamily, settings.edits.text.get(0).style.font.getName());
-		assertEquals(FontStyle.Italic, settings.edits.text.get(0).style.font.getStyle());
-		assertEquals(33f, settings.edits.text.get(0).style.font.getSize());
-		assertEquals("Georgia", settings.edits.text.get(1).style.font.getName());
+		Font ownFont = settings.resolveTextStyle(settings.edits.text.get(0)).font;
+		assertEquals(FontFinder.houseFontFamily, ownFont.getName());
+		assertEquals(FontStyle.Italic, ownFont.getStyle());
+		assertEquals(33f, ownFont.getSize());
+		assertEquals("Georgia", settings.resolveTextStyle(settings.edits.text.get(1)).font.getName());
 	}
 
 	@Test
@@ -354,7 +356,7 @@ public class MapSettingsTest
 	}
 
 	@Test
-	public void oldTextSettingsConvertToAStyleOnEveryText()
+	public void oldTextSettingsConvertToTypeStylesAndTextsOwnParts()
 	{
 		// Saved before 3.25 with a bold background on, one text color, and per-text color, bold background color, and font overrides.
 		MapSettings settings = new MapSettings("unit test files/map settings/allTypesOfEdits.nort");
@@ -371,19 +373,26 @@ public class MapSettingsTest
 				"Lakes shared the river font before they had their own style.");
 
 		MapText boldCurved = findText(settings, "Bold background curved with negative spacing and custom colors");
-		assertEquals(TextBackgroundEffect.BoldBackground, boldCurved.style.background.effect);
-		assertEquals(nortantis.platform.Color.create(179, 190, 204, 255), boldCurved.style.background.color);
-		assertEquals(nortantis.platform.Color.create(51, 133, 52, 255), boldCurved.style.color);
-		assertEquals("Gabriola", boldCurved.style.font.getName(), "Text without its own font gets its type's font.");
+		TextStyle boldCurvedStyle = settings.resolveTextStyle(boldCurved);
+		assertEquals(TextBackgroundEffect.BoldBackground, boldCurvedStyle.background.effect);
+		assertEquals(nortantis.platform.Color.create(179, 190, 204, 255), boldCurvedStyle.background.color);
+		assertEquals(nortantis.platform.Color.create(51, 133, 52, 255), boldCurvedStyle.color);
+		assertEquals("Gabriola", boldCurvedStyle.font.getName(), "Text without its own font gets its type's font.");
+		assertEquals(EnumSet.of(TextStylePart.Color, TextStylePart.Background), boldCurved.styleOverrides.getParts());
 
 		MapText riverWithColor = findText(settings, "Custom color with spacing");
-		assertEquals(TextBackgroundEffect.None, riverWithColor.style.background.effect);
-		assertEquals(nortantis.platform.Color.create(145, 64, 149, 255), riverWithColor.style.color);
+		TextStyle riverWithColorStyle = settings.resolveTextStyle(riverWithColor);
+		assertEquals(TextBackgroundEffect.None, riverWithColorStyle.background.effect);
+		assertEquals(nortantis.platform.Color.create(145, 64, 149, 255), riverWithColorStyle.color);
 
 		MapText withFont = findText(settings, "Text with font override");
-		assertEquals("Jokerman", withFont.style.font.getName());
-		assertEquals(FontStyle.Bold, withFont.style.font.getStyle());
-		assertEquals(nortantis.platform.Color.create(89, 71, 54, 255), withFont.style.color, "Text without its own color gets the text color.");
+		TextStyle withFontStyle = settings.resolveTextStyle(withFont);
+		assertEquals("Jokerman", withFontStyle.font.getName());
+		assertEquals(FontStyle.Bold, withFontStyle.font.getStyle());
+		assertEquals(nortantis.platform.Color.create(89, 71, 54, 255), withFontStyle.color, "Text without its own color gets the text color.");
+		assertEquals(EnumSet.of(TextStylePart.Font, TextStylePart.Size), withFont.styleOverrides.getParts());
+
+		assertTrue(settings.edits.text.stream().anyMatch(text -> text.styleOverrides.isEmpty()), "Text with no settings of its own follows its type's style.");
 	}
 
 	@Test
@@ -404,15 +413,15 @@ public class MapSettingsTest
 		titleDefault.background.shapeJitter = 7;
 		titleDefault.background.color = nortantis.platform.Color.create(1, 2, 3, 4);
 		titleDefault.background.outlineWidth = 5;
-		assertEquals(TextLayoutSettings.createDefault(), settings.getDefaultTextLayout(TextType.Region),
-				"A map saved before new text had a layout gives every kind of new text the default layout.");
-		settings.getDefaultTextLayout(TextType.Region).curvature = 0.35;
-		settings.getDefaultTextLayout(TextType.Region).spacing = 7;
-		settings.getDefaultTextLayout(TextType.Title).lineBreak = LineBreak.One_line;
 		MapText text = findText(settings, "Custom color with curve");
-		text.style.background.effect = TextBackgroundEffect.Glow;
-		text.style.background.glowSize = 13;
-		text.style.background.fadeBehind = 0.4;
+		TextStyle ownStyle = settings.resolveTextStyle(text).copy();
+		ownStyle.background.effect = TextBackgroundEffect.Glow;
+		ownStyle.background.glowSize = 13;
+		ownStyle.background.fadeBehind = 0.4;
+		ownStyle.font = ownStyle.font.deriveFont(FontStyle.Italic, 31);
+		text.styleOverrides.set(TextStylePart.Background, ownStyle);
+		text.styleOverrides.set(TextStylePart.Font, ownStyle);
+		text.styleOverrides.set(TextStylePart.Size, ownStyle);
 		text.backgroundSeed = 12345;
 
 		Path temp = Files.createTempFile("textStyles", ".nort");
@@ -421,11 +430,14 @@ public class MapSettingsTest
 			settings.writeToFile(temp.toString());
 			MapSettings reloaded = new MapSettings(temp.toString());
 			assertEquals(settings.textStyleDefaults, reloaded.textStyleDefaults);
-			assertEquals(settings.textLayoutDefaults, reloaded.textLayoutDefaults);
 			assertEquals(settings.edits.text, reloaded.edits.text);
 			MapText reloadedText = findText(reloaded, "Custom color with curve");
 			assertEquals(12345, reloadedText.backgroundSeed);
-			assertEquals(TextBackgroundEffect.Glow, reloadedText.style.background.effect);
+			TextStyle reloadedStyle = reloaded.resolveTextStyle(reloadedText);
+			assertEquals(TextBackgroundEffect.Glow, reloadedStyle.background.effect);
+			assertEquals(0.4, reloadedStyle.background.fadeBehind);
+			assertEquals(FontStyle.Italic, reloadedStyle.font.getStyle());
+			assertEquals(31f, reloadedStyle.font.getSize());
 		}
 		finally
 		{
@@ -457,16 +469,19 @@ public class MapSettingsTest
 	}
 
 	/**
-	 * Creates text styled with the settings' style for new text of its type, except for the given font, if it isn't null.
+	 * Creates text that follows the style of its type, except that it has its own font when the given font isn't null.
 	 */
 	private static MapText createMapText(MapSettings settings, TextType type, String value, Font font)
 	{
-		TextStyle style = settings.getDefaultTextStyle(type).copy();
+		TextStyleOverrides overrides = new TextStyleOverrides();
 		if (font != null)
 		{
-			style.font = font;
+			TextStyle ownStyle = settings.getDefaultTextStyle(type).copy();
+			ownStyle.font = font;
+			overrides.set(TextStylePart.Font, ownStyle);
+			overrides.set(TextStylePart.Size, ownStyle);
 		}
-		return new MapText(value, new Point(0, 0), 0.0, type, LineBreak.Auto, 0.0, 0, style, 0);
+		return new MapText(value, new Point(0, 0), 0.0, type, LineBreak.Auto, 0.0, 0, overrides, 0);
 	}
 
 	@Test

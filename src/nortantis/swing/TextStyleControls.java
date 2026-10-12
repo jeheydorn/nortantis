@@ -3,6 +3,7 @@ package nortantis.swing;
 import nortantis.TextBackground;
 import nortantis.TextBackgroundEffect;
 import nortantis.TextStyle;
+import nortantis.TextStylePart;
 import nortantis.platform.Color;
 import nortantis.platform.Font;
 import nortantis.platform.awt.AwtBridge;
@@ -11,25 +12,32 @@ import nortantis.swing.translation.Translation;
 import javax.swing.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
  * The controls for a text style: font, size, color, and background. They show one or more styles, and each change the user makes is
- * reported as an edit of only the part of the style they changed, so that it can be applied to several styles without changing the parts
- * that differ between them.
+ * reported as an edit of only the setting they changed, so that it can be applied to several styles without changing the settings that
+ * differ between them.
  */
 class TextStyleControls
 {
 	/**
-	 * A change to one part of a text style.
+	 * A change to one setting of a text style, which belongs to the given part of the style.
 	 */
-	interface StyleEdit
+	record StyleEdit(TextStylePart part, Consumer<TextStyle> change)
 	{
-		void apply(TextStyle style);
+		void apply(TextStyle style)
+		{
+			change.accept(style);
+		}
 	}
 
 	static final Integer[] fontSizes = { 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72, 96, 120, 144, 168, 192, 216, 240 };
@@ -63,7 +71,10 @@ class TextStyleControls
 	 * True while the controls are being set from styles, when their listeners must not report edits.
 	 */
 	private boolean isLoading;
-	private List<TextStyle> shownStyles = new ArrayList<>();
+	private final Map<TextStylePart, List<JLabel>> labelsByPart = new EnumMap<>(TextStylePart.class);
+	/** The help each part's label shows when it isn't marked. */
+	private final Map<JLabel, String> helpByLabel = new HashMap<>();
+	private static final java.awt.Color ownPartFallbackColor = new java.awt.Color(26, 113, 228);
 
 	/**
 	 * Adds the controls to the organizer.
@@ -83,6 +94,7 @@ class TextStyleControls
 		fontChooser.setFamiliesUsedByThisMap(familiesUsedByThisMap);
 		fontChooser.setTextThatMustBeDrawable(textThatMustBeDrawable);
 		allRows = fontChooser.addToOrganizer(organizer);
+		addPartLabel(TextStylePart.Font, allRows);
 
 		sizeComboBox = new JComboBoxFixed<>();
 		for (Integer size : fontSizes)
@@ -100,14 +112,18 @@ class TextStyleControls
 			Integer size = parseSize(sizeComboBox.getSelectedItem());
 			if (size != null)
 			{
-				reportEdit(style -> style.font = style.font.deriveFont(style.font.getStyle(), size));
+				reportEdit(TextStylePart.Size, style -> style.font = style.font.deriveFont(style.font.getStyle(), size));
 			}
 		});
-		allRows.add(organizer.addLabelAndComponent(Translation.get("textTool.size.label"), Translation.get("textTool.size.help"), sizeComboBox));
+		RowHider sizeRow = organizer.addLabelAndComponent(Translation.get("textTool.size.label"), Translation.get("textTool.size.help"), sizeComboBox);
+		allRows.add(sizeRow);
+		addPartLabel(TextStylePart.Size, sizeRow);
 
 		colorDisplay = SwingHelper.createColorPickerPreviewPanel();
-		allRows.add(addColorRow(organizer, Translation.get("textTool.color.label"), Translation.get("textTool.color.help"), colorDisplay, Translation.get("textTool.color.title"),
-				color -> style -> style.color = color));
+		RowHider colorRow = addColorRow(organizer, Translation.get("textTool.color.label"), Translation.get("textTool.color.help"), colorDisplay,
+				Translation.get("textTool.color.title"), TextStylePart.Color, color -> style -> style.color = color);
+		allRows.add(colorRow);
+		addPartLabel(TextStylePart.Color, colorRow);
 
 		effectComboBox = new JComboBoxFixed<>();
 		for (TextBackgroundEffect effect : TextBackgroundEffect.values())
@@ -119,62 +135,75 @@ class TextStyleControls
 			TextBackgroundEffect effect = (TextBackgroundEffect) effectComboBox.getSelectedItem();
 			if (effect != null)
 			{
-				reportEdit(style -> style.background.effect = effect);
+				reportEdit(TextStylePart.Background, style -> style.background.effect = effect);
 			}
 		});
-		allRows.add(organizer.addLabelAndComponent(Translation.get("textTool.background.label"), Translation.get("textTool.background.help"), effectComboBox));
+		RowHider effectRow = organizer.addLabelAndComponent(Translation.get("textTool.background.label"), Translation.get("textTool.background.help"), effectComboBox);
+		allRows.add(effectRow);
+		addPartLabel(TextStylePart.Background, effectRow);
 
 		backgroundColorDisplay = SwingHelper.createColorPickerPreviewPanel();
 		backgroundColorRow = addColorRow(organizer, Translation.get("textTool.backgroundColor.label"), Translation.get("textTool.backgroundColor.help"),
-				backgroundColorDisplay, Translation.get("textTool.backgroundColor.title"), color -> style -> style.background.color = color);
+				backgroundColorDisplay, Translation.get("textTool.backgroundColor.title"), TextStylePart.Background, color -> style -> style.background.color = color);
+		addPartLabel(TextStylePart.Background, backgroundColorRow);
 		glowSizeSlider = createSlider(1, TextBackground.maxGlowSize);
 		glowSizeSliderWithDisplay = new SliderWithDisplayedValue(glowSizeSlider, null, () ->
 		{
 			int value = glowSizeSlider.getValue();
-			reportEdit(style -> style.background.glowSize = value);
+			reportEdit(TextStylePart.Background, style -> style.background.glowSize = value);
 		});
 		glowSizeRow = glowSizeSliderWithDisplay.addToOrganizer(organizer, Translation.get("textTool.glowSize.label"), Translation.get("textTool.glowSize.help"));
+		addPartLabel(TextStylePart.Background, glowSizeRow);
 		outlineWidthSlider = createSlider(1, TextBackground.maxOutlineWidth);
 		outlineWidthSliderWithDisplay = new SliderWithDisplayedValue(outlineWidthSlider, null, () ->
 		{
 			int value = outlineWidthSlider.getValue();
-			reportEdit(style -> style.background.outlineWidth = value);
+			reportEdit(TextStylePart.Background, style -> style.background.outlineWidth = value);
 		});
 		outlineWidthRow = outlineWidthSliderWithDisplay.addToOrganizer(organizer, Translation.get("textTool.outlineWidth.label"),
 				Translation.get("textTool.outlineWidth.help"));
+		addPartLabel(TextStylePart.Background, outlineWidthRow);
 
 		shapeFillColorDisplay = SwingHelper.createColorPickerPreviewPanel();
 		shapeRows = addColorRow(organizer, Translation.get("textTool.fillColor.label"), Translation.get("textTool.fillColor.help"), shapeFillColorDisplay,
-				Translation.get("textTool.fillColor.title"), color -> style -> style.background.shapeFillColor = color);
+				Translation.get("textTool.fillColor.title"), TextStylePart.Background, color -> style -> style.background.shapeFillColor = color);
+		addPartLabel(TextStylePart.Background, shapeRows);
 		shapeLineColorDisplay = SwingHelper.createColorPickerPreviewPanel();
-		shapeRows.add(addColorRow(organizer, Translation.get("textTool.lineColor.label"), Translation.get("textTool.lineColor.help"), shapeLineColorDisplay,
-				Translation.get("textTool.lineColor.title"), color -> style -> style.background.shapeLineColor = color));
+		RowHider lineColorRow = addColorRow(organizer, Translation.get("textTool.lineColor.label"), Translation.get("textTool.lineColor.help"), shapeLineColorDisplay,
+				Translation.get("textTool.lineColor.title"), TextStylePart.Background, color -> style -> style.background.shapeLineColor = color);
+		shapeRows.add(lineColorRow);
+		addPartLabel(TextStylePart.Background, lineColorRow);
 		shapeLineWidthSlider = createSlider(0, TextBackground.maxShapeLineWidth);
 		shapeLineWidthSliderWithDisplay = new SliderWithDisplayedValue(shapeLineWidthSlider, null, () ->
 		{
 			int value = shapeLineWidthSlider.getValue();
-			reportEdit(style -> style.background.shapeLineWidth = value);
+			reportEdit(TextStylePart.Background, style -> style.background.shapeLineWidth = value);
 		});
-		shapeRows.add(shapeLineWidthSliderWithDisplay.addToOrganizer(organizer, Translation.get("textTool.lineWidth.label"), Translation.get("textTool.lineWidth.help")));
+		RowHider lineWidthRow = shapeLineWidthSliderWithDisplay.addToOrganizer(organizer, Translation.get("textTool.lineWidth.label"), Translation.get("textTool.lineWidth.help"));
+		shapeRows.add(lineWidthRow);
+		addPartLabel(TextStylePart.Background, lineWidthRow);
 		shapeJitterSlider = createSlider(0, TextBackground.maxShapeJitter);
 		shapeJitterSliderWithDisplay = new SliderWithDisplayedValue(shapeJitterSlider, null, () ->
 		{
 			int value = shapeJitterSlider.getValue();
-			reportEdit(style -> style.background.shapeJitter = value);
+			reportEdit(TextStylePart.Background, style -> style.background.shapeJitter = value);
 		});
-		shapeRows.add(shapeJitterSliderWithDisplay.addToOrganizer(organizer, Translation.get("textTool.jitter.label"), Translation.get("textTool.jitter.help")));
+		RowHider jitterRow = shapeJitterSliderWithDisplay.addToOrganizer(organizer, Translation.get("textTool.jitter.label"), Translation.get("textTool.jitter.help"));
+		shapeRows.add(jitterRow);
+		addPartLabel(TextStylePart.Background, jitterRow);
 
 		fadeSlider = createSlider(0, fadeSliderDivider);
 		fadeSliderWithDisplay = new SliderWithDisplayedValue(fadeSlider, (value) -> String.format("%.1f", value / ((double) fadeSliderDivider)), () ->
 		{
 			double value = fadeSlider.getValue() / (double) fadeSliderDivider;
-			reportEdit(style -> style.background.fadeBehind = value);
+			reportEdit(TextStylePart.Background, style -> style.background.fadeBehind = value);
 		}, 34);
 		JButton clearFadeButton = new JButton("x");
 		clearFadeButton.setToolTipText(Translation.get("textTool.clearFadeBehind.tooltip"));
 		SwingHelper.addListener(clearFadeButton, () -> fadeSlider.setValue(0));
 		fadeRow = fadeSliderWithDisplay.addToOrganizer(organizer, Translation.get("textTool.fadeBehind.label"), Translation.get("textTool.fadeBehind.help"),
 				clearFadeButton, 0, 0);
+		addPartLabel(TextStylePart.Background, fadeRow);
 
 		allRows.add(backgroundColorRow);
 		allRows.add(glowSizeRow);
@@ -186,7 +215,7 @@ class TextStyleControls
 	private void handleFontChosen()
 	{
 		Font chosen = AwtBridge.fromAwtFont(fontChooser.getFont());
-		reportEdit(style -> style.font = style.withFamilyAndStyleOf(chosen));
+		reportEdit(TextStylePart.Font, style -> style.font = style.withFamilyAndStyleOf(chosen));
 	}
 
 	private static JSlider createSlider(int min, int max)
@@ -198,12 +227,13 @@ class TextStyleControls
 		return slider;
 	}
 
-	private RowHider addColorRow(GridBagOrganizer organizer, String label, String help, JPanel display, String pickerTitle, Function<Color, StyleEdit> createEdit)
+	private RowHider addColorRow(GridBagOrganizer organizer, String label, String help, JPanel display, String pickerTitle, TextStylePart part,
+			Function<Color, Consumer<TextStyle>> createChange)
 	{
 		Runnable applyDisplayedColor = () ->
 		{
 			SwingHelper.clearMixedColorsInColorPickerPreview(display);
-			reportEdit(createEdit.apply(AwtBridge.fromAwtColor(display.getBackground())));
+			reportEdit(part, createChange.apply(AwtBridge.fromAwtColor(display.getBackground())));
 		};
 		JButton chooseButton = new JButton(Translation.get("common.choose"));
 		chooseButton.addActionListener(e -> SwingHelper.showColorPicker(organizer.panel, display, pickerTitle, applyDisplayedColor));
@@ -236,13 +266,48 @@ class TextStyleControls
 		return null;
 	}
 
-	private void reportEdit(StyleEdit edit)
+	private void reportEdit(TextStylePart part, Consumer<TextStyle> change)
 	{
 		if (isLoading)
 		{
 			return;
 		}
-		onEdit.accept(edit);
+		onEdit.accept(new StyleEdit(part, change));
+	}
+
+	private void addPartLabel(TextStylePart part, RowHider row)
+	{
+		JLabel label = row.getLabel();
+		if (label != null)
+		{
+			labelsByPart.computeIfAbsent(part, key -> new ArrayList<>()).add(label);
+			helpByLabel.put(label, label.getToolTipText());
+		}
+	}
+
+	/**
+	 * Marks the labels of the given parts, to show that the text shown has its own values for them rather than following its type's style.
+	 *
+	 * @param tooltips
+	 *            The tooltip of each marked part's labels.
+	 */
+	void showOwnParts(Set<TextStylePart> parts, Map<TextStylePart, String> tooltips)
+	{
+		for (Map.Entry<TextStylePart, List<JLabel>> entry : labelsByPart.entrySet())
+		{
+			boolean isOwn = parts.contains(entry.getKey());
+			for (JLabel label : entry.getValue())
+			{
+				label.setForeground(isOwn ? getOwnPartColor() : null);
+				label.setToolTipText(isOwn ? tooltips.get(entry.getKey()) : helpByLabel.get(label));
+			}
+		}
+	}
+
+	private static java.awt.Color getOwnPartColor()
+	{
+		java.awt.Color accent = UIManager.getColor("Component.accentColor");
+		return accent != null ? accent : ownPartFallbackColor;
 	}
 
 	RowHider getRows()
@@ -255,7 +320,6 @@ class TextStyleControls
 	 */
 	void showStyles(List<TextStyle> styles)
 	{
-		shownStyles = new ArrayList<>(styles);
 		if (styles.isEmpty())
 		{
 			return;

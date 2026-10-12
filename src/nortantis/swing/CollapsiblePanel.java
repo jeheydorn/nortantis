@@ -177,9 +177,24 @@ public class CollapsiblePanel extends JPanel
 
 	public void toggleCollapsed()
 	{
-		isCollapsed = !isCollapsed;
+		setCollapsed(!isCollapsed);
+	}
+
+	public void setCollapsed(boolean isCollapsed)
+	{
+		this.isCollapsed = isCollapsed;
 		updateCollapsed();
 		storeCollapsedState();
+	}
+
+	/**
+	 * Shows a component at the right end of the title strip, such as a summary of what the card holds.
+	 */
+	public void setTitleAccessory(JComponent accessory)
+	{
+		accessory.setOpaque(false);
+		titlePanel.add(accessory);
+		titlePanel.revalidate();
 	}
 
 	public boolean isCollapsed()

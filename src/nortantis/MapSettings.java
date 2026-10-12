@@ -315,15 +315,10 @@ public class MapSettings implements Serializable
 	public long textRandomSeed;
 	public Set<String> books;
 	/**
-	 * The style each kind of new text gets: text the generator places, text added with the Text tool, and what a theme carries. Changing
-	 * one doesn't restyle existing text, since every piece of text stores its own style.
+	 * The style of each kind of text. Text follows the style of its kind, except for the parts it has its own values for (see
+	 * {@link MapText#styleOverrides}), so changing one restyles the text of that kind on the map.
 	 */
 	public EnumMap<TextType, TextStyle> textStyleDefaults;
-	/**
-	 * The layout each kind of new text gets, which holds every kind of text. Like {@link #textStyleDefaults}, changing one doesn't change
-	 * existing text.
-	 */
-	public EnumMap<TextType, TextLayoutSettings> textLayoutDefaults;
 	/**
 	 * The art pack each font family this map uses came from, keyed by family name, for families that came from one. Recorded so that a map
 	 * opened on a machine without that art pack can say which art pack is missing, rather than only that a font is. Read back as written
@@ -435,18 +430,7 @@ public class MapSettings implements Serializable
 		maximizeOpacityByType = new ConcurrentHashMap<>();
 		fillWithColorByType = new ConcurrentHashMap<>();
 		textStyleDefaults = new EnumMap<>(TextType.class);
-		textLayoutDefaults = createDefaultTextLayouts();
 		edits = new MapEdits();
-	}
-
-	private static EnumMap<TextType, TextLayoutSettings> createDefaultTextLayouts()
-	{
-		EnumMap<TextType, TextLayoutSettings> result = new EnumMap<>(TextType.class);
-		for (TextType type : TextType.values())
-		{
-			result.put(type, TextLayoutSettings.createDefault());
-		}
-		return result;
 	}
 
 	/**
@@ -594,7 +578,7 @@ public class MapSettings implements Serializable
 
 	/**
 	 * Copies everything describing how the map looks from the given theme: colors, background, border, coastline and ocean effects, region
-	 * colors and boundaries, rivers, roads, icon sizes and colors, the grid overlay's appearance, the styles and layouts for new text, and
+	 * colors and boundaries, rivers, roads, icon sizes and colors, the grid overlay's appearance, the style of each type of text, and
 	 * how new maps vary the theme. Nothing about the map's land, edits, or files is copied, nor which art pack the Icons tool starts on.
 	 */
 	public void copyThemeFrom(MapSettings source)
@@ -670,7 +654,6 @@ public class MapSettings implements Serializable
 		grungeWidth = source.grungeWidth;
 
 		textStyleDefaults = source.copyTextStyleDefaults();
-		textLayoutDefaults = source.copyTextLayoutDefaults();
 
 		drawRoads = source.drawRoads;
 		roadStyle = source.roadStyle;
@@ -839,13 +822,6 @@ public class MapSettings implements Serializable
 				textStyleDefaultsObj.put(entry.getKey().name(), entry.getValue().toJson());
 			}
 			root.put("textStyleDefaults", textStyleDefaultsObj);
-
-			JSONObject textLayoutDefaultsObj = new JSONObject();
-			for (Map.Entry<TextType, TextLayoutSettings> entry : textLayoutDefaults.entrySet())
-			{
-				textLayoutDefaultsObj.put(entry.getKey().name(), entry.getValue().toJson());
-			}
-			root.put("textLayoutDefaults", textLayoutDefaultsObj);
 		}
 		root.put("fontArtPacks", toJsonObject(gatherFontArtPacksToStore()));
 
@@ -1011,7 +987,10 @@ public class MapSettings implements Serializable
 			{
 				mpObj.put("spacing", text.spacing);
 			}
-			mpObj.put("style", text.style.toJson());
+			if (!text.styleOverrides.isEmpty())
+			{
+				mpObj.put("styleOverrides", text.styleOverrides.toJson());
+			}
 			mpObj.put("backgroundSeed", text.backgroundSeed);
 			list.add(mpObj);
 		}
@@ -1398,7 +1377,7 @@ public class MapSettings implements Serializable
 	}
 
 	/**
-	 * The style new text of the given kind gets.
+	 * The style of the given kind of text, which text of that kind follows except for the parts it has its own values for.
 	 */
 	public TextStyle getDefaultTextStyle(TextType type)
 	{
@@ -1424,28 +1403,16 @@ public class MapSettings implements Serializable
 	}
 
 	/**
-	 * The layout new text of the given kind gets.
+	 * The style the given text is drawn with: the style of its type, with the parts it has its own values for. When it has none, this is the
+	 * type's style itself, so the result must not be modified.
 	 */
-	public TextLayoutSettings getDefaultTextLayout(TextType type)
+	public TextStyle resolveTextStyle(MapText text)
 	{
-		return textLayoutDefaults.get(type);
+		return text.styleOverrides.resolve(textStyleDefaults.get(text.type));
 	}
 
 	/**
-	 * A deep copy of {@link #textLayoutDefaults}.
-	 */
-	public EnumMap<TextType, TextLayoutSettings> copyTextLayoutDefaults()
-	{
-		EnumMap<TextType, TextLayoutSettings> result = new EnumMap<>(TextType.class);
-		for (Map.Entry<TextType, TextLayoutSettings> entry : textLayoutDefaults.entrySet())
-		{
-			result.put(entry.getKey(), entry.getValue().copy());
-		}
-		return result;
-	}
-
-	/**
-	 * The font of the style new text of the given kind gets.
+	 * The font of the style of the given kind of text.
 	 */
 	public Font getThemeFont(TextType type)
 	{
@@ -1454,7 +1421,7 @@ public class MapSettings implements Serializable
 	}
 
 	/**
-	 * Sets the font of the style new text of the given kind gets.
+	 * Sets the font of the style of the given kind of text.
 	 */
 	public void setThemeFont(TextType type, Font font)
 	{
@@ -1470,7 +1437,7 @@ public class MapSettings implements Serializable
 	}
 
 	/**
-	 * The fonts of the styles for new text, keyed by the kind of text each one draws. Iterate this rather than listing the kinds by hand, so
+	 * The fonts of the style of each kind of text, keyed by that kind. Iterate this rather than listing the kinds by hand, so
 	 * that adding a kind of text doesn't require finding every place that enumerates them.
 	 */
 	public Map<TextType, Font> getThemeFonts()
@@ -1796,7 +1763,7 @@ public class MapSettings implements Serializable
 			{
 				textStyleDefaults.put(TextType.valueOf((String) key), TextStyle.fromJson((JSONObject) textStyleDefaultsObj.get(key)));
 			}
-			// Every kind of text needs a style for new text. A file can leave one out when it was saved before that kind had its own style, as
+			// Every kind of text needs a style. A file can leave one out when it was saved before that kind had its own style, as
 			// lakes didn't, or was edited by hand. Lakes shared the river style, so the river style fills in.
 			if (!textStyleDefaults.isEmpty())
 			{
@@ -1829,16 +1796,6 @@ public class MapSettings implements Serializable
 			legacyTextSettings = new LegacyTextSettings(parseColor((String) root.get("textColor")), (boolean) root.get("drawBoldBackground"),
 					parseColor((String) root.get("boldBackgroundColor")));
 			setTextStyleDefaultsFromLegacySettings(fonts, legacyTextSettings);
-		}
-		// Kinds of text missing here, as every kind is in files saved before new text had a layout, get the default layout.
-		textLayoutDefaults = createDefaultTextLayouts();
-		if (root.containsKey("textLayoutDefaults"))
-		{
-			JSONObject textLayoutDefaultsObj = (JSONObject) root.get("textLayoutDefaults");
-			for (Object key : textLayoutDefaultsObj.keySet())
-			{
-				textLayoutDefaults.put(TextType.valueOf((String) key), TextLayoutSettings.fromJson((JSONObject) textLayoutDefaultsObj.get(key)));
-			}
 		}
 		fontArtPacks = parseFontArtPacks((JSONObject) root.get("fontArtPacks"));
 
@@ -2128,7 +2085,7 @@ public class MapSettings implements Serializable
 		// Theme files have no edits.
 		if (editsJson != null)
 		{
-			edits.text = parseMapTexts(editsJson, legacyTextSettings);
+			edits.text = parseMapTexts(editsJson, legacyTextSettings != null);
 			edits.freeIcons = parseIconEdits(editsJson, hasCustomImagesPath);
 			edits.centerEdits = parseCenterEdits(editsJson, hasCustomImagesPath);
 			edits.regionEdits = parseRegionEdits(editsJson);
@@ -2597,7 +2554,7 @@ public class MapSettings implements Serializable
 	}
 
 	/**
-	 * The text settings of maps saved before every piece of text stored its own style. In those maps, text with no color of its own uses
+	 * The text settings of maps saved before 3.25. In those maps, text with no color of its own uses
 	 * textColor, and region and title text get a bold background when drawBoldBackground is on.
 	 */
 	private record LegacyTextSettings(Color textColor, boolean drawBoldBackground, Color boldBackgroundColor)
@@ -2605,7 +2562,7 @@ public class MapSettings implements Serializable
 	}
 
 	/**
-	 * Sets the style for each kind of new text from the settings of a map saved before every piece of text stored its own style.
+	 * Sets the style of each kind of text from the settings of a map saved before 3.25.
 	 */
 	private void setTextStyleDefaultsFromLegacySettings(Map<TextType, Font> fonts, LegacyTextSettings legacy)
 	{
@@ -2641,16 +2598,36 @@ public class MapSettings implements Serializable
 	}
 
 	/**
-	 * Gives a piece of text from a map saved before every piece of text stored its own style the style it was drawn with.
+	 * Gives a piece of text from a map saved before 3.25 its own values for the parts of its style it had its own settings for. Its own bold
+	 * background color only counts when its type has a bold background, since that is the only time the color was drawn.
 	 */
-	private TextStyle createStyleForLegacyText(TextType type, Font fontOverride, Color colorOverride, Color boldBackgroundColorOverride, double backgroundFade,
-			LegacyTextSettings legacy)
+	private TextStyleOverrides createOverridesForLegacyText(TextType type, Font fontOverride, Color colorOverride, Color boldBackgroundColorOverride,
+			double backgroundFade)
 	{
-		Font font = fontOverride != null ? fontOverride : getThemeFont(type);
-		Color color = colorOverride != null ? colorOverride : legacy.textColor();
-		boolean hasBoldBackground = legacy.drawBoldBackground() && (type == TextType.Title || type == TextType.Region);
-		Color boldColor = boldBackgroundColorOverride != null ? boldBackgroundColorOverride : legacy.boldBackgroundColor();
-		return createLegacyTextStyle(font, color, hasBoldBackground, boldColor, backgroundFade);
+		TextStyleOverrides result = new TextStyleOverrides();
+		TextStyle typeStyle = textStyleDefaults.get(type);
+		if (fontOverride != null)
+		{
+			TextStyle fontSource = new TextStyle(fontOverride, typeStyle.color, typeStyle.background);
+			result.set(TextStylePart.Font, fontSource);
+			result.set(TextStylePart.Size, fontSource);
+		}
+		if (colorOverride != null)
+		{
+			result.color = colorOverride;
+		}
+		boolean hasOwnBoldBackgroundColor = boldBackgroundColorOverride != null && typeStyle.background.effect == TextBackgroundEffect.BoldBackground;
+		if (hasOwnBoldBackgroundColor || backgroundFade != TextBackground.defaultFadeBehind)
+		{
+			TextBackground background = typeStyle.background.copy();
+			if (hasOwnBoldBackgroundColor)
+			{
+				background.color = boldBackgroundColorOverride;
+			}
+			background.fadeBehind = backgroundFade;
+			result.background = background;
+		}
+		return result;
 	}
 
 	/**
@@ -2686,7 +2663,11 @@ public class MapSettings implements Serializable
 		return (int) Math.round(alpha * (1 - colorScale));
 	}
 
-	private CopyOnWriteArrayList<MapText> parseMapTexts(JSONObject editsJson, LegacyTextSettings legacyTextSettings)
+	/**
+	 * @param isSavedBefore3_25
+	 *            Whether the map was saved before 3.25, when text stored its own font, color, and bold background color in other fields.
+	 */
+	private CopyOnWriteArrayList<MapText> parseMapTexts(JSONObject editsJson, boolean isSavedBefore3_25)
 	{
 		if (editsJson == null)
 		{
@@ -2705,22 +2686,26 @@ public class MapSettings implements Serializable
 			LineBreak lineBreak = jsonObj.containsKey("lineBreak") ? Enum.valueOf(LineBreak.class, ((String) jsonObj.get("lineBreak")).replace(" ", "_")) : LineBreak.Auto;
 			double curvature = jsonObj.containsKey("curvature") ? (Double) jsonObj.get("curvature") : 0.0;
 			int spacing = jsonObj.containsKey("spacing") ? (int) (long) jsonObj.get("spacing") : 0;
-			TextStyle style;
-			if (jsonObj.containsKey("style"))
+			TextStyleOverrides styleOverrides;
+			if (jsonObj.containsKey("styleOverrides"))
 			{
-				style = TextStyle.fromJson((JSONObject) jsonObj.get("style"));
+				styleOverrides = TextStyleOverrides.fromJson((JSONObject) jsonObj.get("styleOverrides"));
 			}
-			else
+			else if (isSavedBefore3_25)
 			{
 				Color colorOverride = jsonObj.containsKey("colorOverride") ? parseColor((String) jsonObj.get("colorOverride")) : null;
 				Color boldBackgroundColorOverride = jsonObj.containsKey("boldBackgroundColorOverride") ? parseColor((String) jsonObj.get("boldBackgroundColorOverride"))
 						: null;
 				Font fontOverride = jsonObj.containsKey("fontOverride") ? parseFont((String) jsonObj.get("fontOverride")) : null;
 				double backgroundFade = jsonObj.containsKey("backgroundFade") ? (Double) jsonObj.get("backgroundFade") : TextBackground.defaultFadeBehind;
-				style = createStyleForLegacyText(type, fontOverride, colorOverride, boldBackgroundColorOverride, backgroundFade, legacyTextSettings);
+				styleOverrides = createOverridesForLegacyText(type, fontOverride, colorOverride, boldBackgroundColorOverride, backgroundFade);
+			}
+			else
+			{
+				styleOverrides = new TextStyleOverrides();
 			}
 			long backgroundSeed = jsonObj.containsKey("backgroundSeed") ? (long) jsonObj.get("backgroundSeed") : createBackgroundSeedForLoadedText(result.size());
-			MapText mp = new MapText(text, location, angle, type, lineBreak, curvature, spacing, style, backgroundSeed);
+			MapText mp = new MapText(text, location, angle, type, lineBreak, curvature, spacing, styleOverrides, backgroundSeed);
 			result.add(mp);
 		}
 
@@ -3173,13 +3158,6 @@ public class MapSettings implements Serializable
 			fonts.put(TextType.Road, createDefaultRoadFont(old.riverFont));
 			LegacyTextSettings legacy = new LegacyTextSettings(old.textColor, old.drawBoldBackground, old.boldBackgroundColor);
 			setTextStyleDefaultsFromLegacySettings(fonts, legacy);
-			for (MapText text : old.edits.text)
-			{
-				if (text.style == null)
-				{
-					text.style = createStyleForLegacyText(text.type, null, null, null, TextBackground.defaultFadeBehind, legacy);
-				}
-			}
 		}
 		drawRegionColors = old.drawRegionColors;
 		drawRegionBoundaries = old.drawRegionColors;
@@ -4327,8 +4305,6 @@ public class MapSettings implements Serializable
 			differences.add("solidColorBackground: " + solidColorBackground + " vs " + other.solidColorBackground);
 		if (!Objects.equals(textStyleDefaults, other.textStyleDefaults))
 			differences.add("textStyleDefaults: " + textStyleDefaults + " vs " + other.textStyleDefaults);
-		if (!Objects.equals(textLayoutDefaults, other.textLayoutDefaults))
-			differences.add("textLayoutDefaults: " + textLayoutDefaults + " vs " + other.textLayoutDefaults);
 		if (!Objects.equals(themeGeneration, other.themeGeneration))
 			differences.add("themeGeneration: " + themeGeneration + " vs " + other.themeGeneration);
 		if (textRandomSeed != other.textRandomSeed)
@@ -4373,7 +4349,7 @@ public class MapSettings implements Serializable
 				oceanColor, oceanEffectsColor, oceanEffectsLevel, oceanShadingColor, oceanShadingLevel, oceanWavesColor, oceanWavesLevel, oceanWavesType, overlayImageDefaultScale,
 				overlayImageDefaultTransparency, overlayImagePath, overlayImageTransparency, overlayOffsetResolutionInvariant, overlayScale, pointPrecision, randomSeed, regionBaseColor,
 				regionBoundaryColor, regionBoundaryStyle, regionCount, regionsRandomSeed, resolution, rightRotationCount, riverColor, roadColor, roadStyle, saturationRange,
-				solidColorBackground, textStyleDefaults, textLayoutDefaults, themeGeneration, textRandomSeed, treeHeightScale, version, wavyLineLength, wavyLineLengthVariation, wavyLineRowHeight,
+				solidColorBackground, textStyleDefaults, themeGeneration, textRandomSeed, treeHeightScale, version, wavyLineLength, wavyLineLengthVariation, wavyLineRowHeight,
 				wavyLineRowGap, wavyLineRowSpacingVariation, wavyLineShape, worldSize, fontArtPacks);
 	}
 
@@ -4458,7 +4434,7 @@ public class MapSettings implements Serializable
 				&& Objects.equals(roadStyle, other.roadStyle) && Objects.equals(fontArtPacks, other.fontArtPacks)
 				&& saturationRange == other.saturationRange
 				&& solidColorBackground == other.solidColorBackground
-				&& Objects.equals(textStyleDefaults, other.textStyleDefaults) && Objects.equals(textLayoutDefaults, other.textLayoutDefaults)
+				&& Objects.equals(textStyleDefaults, other.textStyleDefaults)
 				&& Objects.equals(themeGeneration, other.themeGeneration) && textRandomSeed == other.textRandomSeed
 				&& Double.doubleToLongBits(treeHeightScale) == Double.doubleToLongBits(other.treeHeightScale) && Objects.equals(version, other.version) && worldSize == other.worldSize;
 	}

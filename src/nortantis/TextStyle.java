@@ -6,10 +6,11 @@ import org.json.simple.JSONObject;
 
 import java.io.Serializable;
 import java.util.Objects;
+import java.util.Set;
 
 /**
- * How a piece of text looks, apart from its layout: its font (family, bold/italic, and size), color, and background. Every piece of text
- * stores one, and a map keeps one per kind of text as the style for new text.
+ * How a piece of text looks, apart from its layout: its font (family, bold/italic, and size), color, and background. A map keeps one per
+ * kind of text, which text of that kind follows except for the parts it has its own values for (see {@link TextStyleOverrides}).
  */
 @SuppressWarnings("serial")
 public class TextStyle implements Serializable
@@ -36,6 +37,35 @@ public class TextStyle implements Serializable
 	public Font withFamilyAndStyleOf(Font familyAndStyle)
 	{
 		return Font.create(familyAndStyle.getName(), familyAndStyle.getStyle(), font.getSize());
+	}
+
+	/**
+	 * Copies the given parts from another style. Background includes fade behind.
+	 */
+	public void copyPartsFrom(TextStyle source, Set<TextStylePart> parts)
+	{
+		if (parts.contains(TextStylePart.Font) && parts.contains(TextStylePart.Size))
+		{
+			font = source.font;
+		}
+		else if (parts.contains(TextStylePart.Font))
+		{
+			font = withFamilyAndStyleOf(source.font);
+		}
+		else if (parts.contains(TextStylePart.Size))
+		{
+			font = font.deriveFont(font.getStyle(), source.font.getSize());
+		}
+
+		if (parts.contains(TextStylePart.Color))
+		{
+			color = source.color;
+		}
+
+		if (parts.contains(TextStylePart.Background))
+		{
+			background = source.background.copy();
+		}
 	}
 
 	@SuppressWarnings("unchecked")

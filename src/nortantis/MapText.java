@@ -53,7 +53,10 @@ public class MapText implements Serializable
 	public double curvature;
 	public int spacing;
 
-	public TextStyle style;
+	/**
+	 * The parts of this text's style that it has its own values for. The rest come from the style of its type. Never null.
+	 */
+	public TextStyleOverrides styleOverrides;
 
 	/**
 	 * Seeds the hand-drawn wobble of shape backgrounds. Stored so the wobble stays the same when the text is moved, rotated, or edited.
@@ -61,7 +64,7 @@ public class MapText implements Serializable
 	public long backgroundSeed;
 
 	private MapText(String text, Point location, double angle, TextType type, RotatedRectangle line1Bounds, RotatedRectangle line2Bounds, LineBreak lineBreak, double curvature,
-			int spacing, TextStyle style, long backgroundSeed)
+			int spacing, TextStyleOverrides styleOverrides, long backgroundSeed)
 	{
 		this.value = text;
 		this.line1Bounds = line1Bounds;
@@ -72,18 +75,19 @@ public class MapText implements Serializable
 		this.lineBreak = lineBreak;
 		this.curvature = curvature;
 		this.spacing = spacing;
-		this.style = style;
+		this.styleOverrides = styleOverrides;
 		this.backgroundSeed = backgroundSeed;
 	}
 
-	public MapText(String text, Point location, double angle, TextType type, LineBreak lineBreak, double curvature, int spacing, TextStyle style, long backgroundSeed)
+	public MapText(String text, Point location, double angle, TextType type, LineBreak lineBreak, double curvature, int spacing, TextStyleOverrides styleOverrides,
+			long backgroundSeed)
 	{
-		this(text, location, angle, type, null, null, lineBreak, curvature, spacing, style, backgroundSeed);
+		this(text, location, angle, type, null, null, lineBreak, curvature, spacing, styleOverrides, backgroundSeed);
 	}
 
 	public MapText deepCopy()
 	{
-		return new MapText(value, new Point(location.x, location.y), angle, type, line1Bounds, line2Bounds, lineBreak, curvature, spacing, style.copy(), backgroundSeed);
+		return new MapText(value, new Point(location.x, location.y), angle, type, line1Bounds, line2Bounds, lineBreak, curvature, spacing, styleOverrides.copy(), backgroundSeed);
 	}
 
 	/**
@@ -92,7 +96,7 @@ public class MapText implements Serializable
 	@Override
 	public int hashCode()
 	{
-		return Objects.hash(angle, backgroundSeed, curvature, lineBreak, location, spacing, style, type, value);
+		return Objects.hash(angle, backgroundSeed, curvature, lineBreak, location, spacing, styleOverrides, type, value);
 	}
 
 	/**
@@ -116,14 +120,14 @@ public class MapText implements Serializable
 		MapText other = (MapText) obj;
 		return Double.doubleToLongBits(angle) == Double.doubleToLongBits(other.angle) && backgroundSeed == other.backgroundSeed
 				&& Double.doubleToLongBits(curvature) == Double.doubleToLongBits(other.curvature) && lineBreak == other.lineBreak && Objects.equals(location, other.location)
-				&& spacing == other.spacing && Objects.equals(style, other.style) && type == other.type && Objects.equals(value, other.value);
+				&& spacing == other.spacing && Objects.equals(styleOverrides, other.styleOverrides) && type == other.type && Objects.equals(value, other.value);
 	}
 
 	@Override
 	public String toString()
 	{
 		return "MapText [value=" + value + ", line1Bounds=" + line1Bounds + ", line2Bounds=" + line2Bounds + ", type=" + type + ", angle=" + angle + ", location=" + location + ", lineBreak="
-				+ lineBreak + ", curvature=" + curvature + ", spacing=" + spacing + ", style=" + style + "]";
+				+ lineBreak + ", curvature=" + curvature + ", spacing=" + spacing + ", styleOverrides=" + styleOverrides + "]";
 	}
 
 }

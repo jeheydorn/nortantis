@@ -6,33 +6,26 @@ import nortantis.MapFonts;
 import nortantis.MapSettings;
 import nortantis.MapText;
 import nortantis.TextDrawer;
-import nortantis.TextLayoutSettings;
 import nortantis.TextStyle;
+import nortantis.TextStylePart;
 import nortantis.TextType;
 import nortantis.editor.MapUpdater;
-import nortantis.geom.IntDimension;
 import nortantis.geom.IntPoint;
-import nortantis.geom.IntRectangle;
 import nortantis.geom.Rectangle;
 import nortantis.geom.RotatedRectangle;
 import nortantis.platform.Color;
 import nortantis.platform.DrawQuality;
 import nortantis.platform.Font;
 import nortantis.platform.Image;
-import nortantis.platform.ImageHelper;
-import nortantis.platform.Painter;
-import nortantis.platform.awt.AwtBridge;
 import nortantis.swing.translation.Translation;
 import nortantis.util.Assets;
 import nortantis.util.Tuple2;
-import nortantis.util.Tuple4;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.*;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.List;
@@ -55,17 +48,8 @@ public class TextTool extends EditorTool
 	/** The name most recently generated into addNameField, used to tell a generated name from one the user typed. */
 	private String lastGeneratedNameForAdds;
 	private RowHider addNameHider;
-	private UnscaledImagePanel addPreviewPanel;
-	private RowHider addPreviewHider;
-	private RowHider addStyleHeadingHider;
-	private TextStyleControls addStyleControls;
-	private RowHider addStyleButtonsHider;
-	private RowHider addLayoutRows;
-	private SliderWithDisplayedValue curvatureForAddsSlider;
-	private SliderWithDisplayedValue spacingForAddsSlider;
-	private JComboBoxFixed<LineBreak> lineBreakForAddsComboBox;
 	/**
-	 * The seed for the background of the next text added, chosen ahead of time so that the previews of that text match it.
+	 * The seed for the background of the next text added, chosen ahead of time so that the preview of that text matches it.
 	 */
 	private long backgroundSeedForNextAdd;
 	/**
@@ -74,13 +58,6 @@ public class TextTool extends EditorTool
 	private boolean isAddModeHoverPreviewHidden;
 	private RowHider booksHider;
 	private BooksWidget booksWidget;
-	/**
-	 * The land background the Add mode preview draws text over, at the preview's maximum size, and the settings it was made from, so that
-	 * it is only remade when they change. The preview crops it to the size it needs.
-	 */
-	private Image addPreviewBackground;
-	private List<Object> addPreviewBackgroundKey;
-	private static final int addPreviewFadeWidth = 6;
 
 	/*
 	 * Edit and Erase modes.
@@ -96,8 +73,12 @@ public class TextTool extends EditorTool
 	private JComboBox<TextType> editTextTypeComboBox;
 	private RowHider editTextTypeHider;
 	private RowHider editStyleHeadingHider;
+	private JLabel styleSummaryLabel;
+	private RowHider styleSummaryHider;
+	private JButton resetStyleButton;
+	private RowHider resetStyleHider;
 	private TextStyleControls editStyleControls;
-	private RowHider applyStyleToHider;
+	private RowHider copyStyleToHider;
 	private RowHider editLayoutRows;
 	private static final int curvatureSliderDivider = 100;
 	private SliderWithDisplayedValue curvatureSliderWithDisplay;
@@ -110,9 +91,9 @@ public class TextTool extends EditorTool
 	 */
 	private boolean isLoadingEditControls;
 	/**
-	 * True while Add mode's layout controls are being set from the layout for new text, when their listeners must not change it.
+	 * The type styles as of the last time settings were loaded, used to tell when they change.
 	 */
-	private boolean isLoadingAddLayoutControls;
+	private EnumMap<TextType, TextStyle> typeStylesShown;
 
 	/**
 	 * The selected texts, in the order they were selected. Compared by identity, since two texts can be equal.
@@ -123,14 +104,6 @@ public class TextTool extends EditorTool
 	 * other apps doesn't translate to a MapText with its full set of properties (type, color, font, rotation, etc.).
 	 */
 	private List<MapText> textClipboard;
-	/**
-	 * The style each kind of new text gets, which Add mode's style controls edit.
-	 */
-	private EnumMap<TextType, TextStyle> textStyleDefaults;
-	/**
-	 * The layout each kind of new text gets, which Add mode's layout controls edit.
-	 */
-	private EnumMap<TextType, TextLayoutSettings> textLayoutDefaults;
 
 	/**
 	 * The location where the mouse was pressed to begin moving or rotating text, stored in graph coordinates rather than panel pixels so it
@@ -158,6 +131,8 @@ public class TextTool extends EditorTool
 	 * Draws the picture of text about to be added that follows the mouse, at the resolution it was made for.
 	 */
 	private TextDrawer hoverPreviewTextDrawer;
+	/** The settings hoverPreviewTextDrawer draws with, which hold the style of the type of text Add mode adds. */
+	private MapSettings hoverPreviewSettings;
 	private double hoverPreviewTextDrawerResolution;
 	private boolean hoverPreviewTextDrawerDrawsRegionBoundaries;
 
@@ -172,8 +147,6 @@ public class TextTool extends EditorTool
 		// Field initializers would run after this method, which the superclass constructor calls.
 		textTypeForAdds = TextType.Region;
 		selectedTexts = new ArrayList<>();
-		textStyleDefaults = new EnumMap<>(TextType.class);
-		textLayoutDefaults = new EnumMap<>(TextType.class);
 		backgroundSeedForNextAdd = new Random().nextLong();
 
 		GridBagOrganizer organizer = new GridBagOrganizer();
@@ -239,32 +212,11 @@ public class TextTool extends EditorTool
 			if (addTextTypeComboBox.getSelectedItem() != null)
 			{
 				textTypeForAdds = (TextType) addTextTypeComboBox.getSelectedItem();
-				showAddModeStyle();
 			}
 		});
 		addTextTypeHider = organizer.addLabelAndComponent(Translation.get("textTool.textType.label"), "", addTextTypeComboBox);
 
 		addNameField = new JTextField();
-		addNameField.getDocument().addDocumentListener(new DocumentListener()
-		{
-			@Override
-			public void insertUpdate(DocumentEvent e)
-			{
-				updateAddPreview();
-			}
-
-			@Override
-			public void removeUpdate(DocumentEvent e)
-			{
-				updateAddPreview();
-			}
-
-			@Override
-			public void changedUpdate(DocumentEvent e)
-			{
-				updateAddPreview();
-			}
-		});
 		// The button is kept square at the name field's height so that it doesn't make the row taller.
 		JButton generateNameButton = new JButton()
 		{
@@ -294,31 +246,6 @@ public class TextTool extends EditorTool
 		generateNameButton.addActionListener(e -> generateNameForAdds());
 		addNameHider = organizer.addLabelAndComponentsHorizontal(Translation.get("textTool.name.label"), Translation.get("textTool.name.help"),
 				Arrays.asList(addNameField, generateNameButton), 0, 4);
-
-		addPreviewPanel = new UnscaledImagePanel();
-		JPanel addPreviewHolder = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
-		addPreviewHolder.add(addPreviewPanel);
-		addPreviewHider = organizer.addLeftAlignedComponent(addPreviewHolder);
-
-		addStyleHeadingHider = organizer.addSectionHeading(Translation.get("textTool.section.style"));
-
-		addStyleControls = new TextStyleControls(organizer, this::applyStyleEditToDefaultsForAdds, this::getFontFamiliesUsedByThisMap, () -> addNameField.getText());
-
-		JButton applyToButton = new JButton(Translation.get("textTool.applyStyleTo"));
-		applyToButton.setToolTipText(Translation.get("textTool.applyStyleForNewTextTo.tooltip"));
-		applyToButton.addActionListener(e -> showApplyDialogForDefaults());
-		addStyleButtonsHider = organizer.addLeftAlignedComponents(Arrays.asList(applyToButton));
-
-		addLayoutRows = organizer.addSectionHeading(Translation.get("textTool.section.layout"));
-		Tuple2<SliderWithDisplayedValue, RowHider> curvature = addCurvatureRow(organizer, value -> editLayoutForAdds(layout -> layout.curvature = value));
-		curvatureForAddsSlider = curvature.getFirst();
-		addLayoutRows.add(curvature.getSecond());
-		Tuple2<SliderWithDisplayedValue, RowHider> spacing = addSpacingRow(organizer, value -> editLayoutForAdds(layout -> layout.spacing = value));
-		spacingForAddsSlider = spacing.getFirst();
-		addLayoutRows.add(spacing.getSecond());
-		Tuple2<JComboBoxFixed<LineBreak>, RowHider> lineBreak = addLineBreakRow(organizer, value -> editLayoutForAdds(layout -> layout.lineBreak = value));
-		lineBreakForAddsComboBox = lineBreak.getFirst();
-		addLayoutRows.add(lineBreak.getSecond());
 	}
 
 	private static Tuple2<SliderWithDisplayedValue, RowHider> addCurvatureRow(GridBagOrganizer organizer, Consumer<Double> onChange)
@@ -441,13 +368,24 @@ public class TextTool extends EditorTool
 		editTextTypeHider = organizer.addLabelAndComponent(Translation.get("textTool.textType.label"), "", editTextTypeComboBox);
 
 		editStyleHeadingHider = organizer.addSectionHeading(Translation.get("textTool.section.style"));
-		editStyleControls = new TextStyleControls(organizer, edit -> applyToSelectedTexts(text -> edit.apply(text.style)), this::getFontFamiliesUsedByThisMap,
-				() -> selectedTexts.size() == 1 ? editTextField.getText() : "");
+		styleSummaryLabel = new JLabel();
+		styleSummaryHider = organizer.addLeftAlignedComponent(styleSummaryLabel);
+		resetStyleButton = new JButton();
+		resetStyleButton.setToolTipText(Translation.get("textTool.resetStyle.tooltip"));
+		resetStyleButton.addActionListener(e -> showResetStyleDialog());
+		resetStyleHider = organizer.addLeftAlignedComponents(Arrays.asList(resetStyleButton));
 
-		JButton applyStyleToButton = new JButton(Translation.get("textTool.applyStyleTo"));
-		applyStyleToButton.setToolTipText(Translation.get("textTool.applyStyleTo.tooltip"));
-		applyStyleToButton.addActionListener(e -> showApplyDialogForSelectedText());
-		applyStyleToHider = organizer.addLeftAlignedComponents(Arrays.asList(applyStyleToButton));
+		editStyleControls = new TextStyleControls(organizer, edit -> applyToSelectedTexts(text ->
+		{
+			TextStyle style = resolveStyle(text).copy();
+			edit.apply(style);
+			text.styleOverrides.set(edit.part(), style);
+		}), this::getFontFamiliesUsedByThisMap, () -> selectedTexts.size() == 1 ? editTextField.getText() : "");
+
+		JButton copyStyleToButton = new JButton(Translation.get("textTool.copyStyleTo"));
+		copyStyleToButton.setToolTipText(Translation.get("textTool.copyStyleTo.tooltip"));
+		copyStyleToButton.addActionListener(e -> showCopyStyleDialog());
+		copyStyleToHider = organizer.addLeftAlignedComponents(Arrays.asList(copyStyleToButton));
 
 		editLayoutRows = organizer.addSectionHeading(Translation.get("textTool.section.layout"));
 		Tuple2<SliderWithDisplayedValue, RowHider> curvature = addCurvatureRow(organizer, value ->
@@ -530,7 +468,7 @@ public class TextTool extends EditorTool
 		}
 
 		String text = trimTrailingUnpairedSurrogate(editTextField.getText());
-		Font font = selectedTexts.get(0).style.font;
+		Font font = resolveStyle(selectedTexts.get(0)).font;
 		if (font == null || FontFinder.canDisplay(font.getName(), font.getStyle(), text))
 		{
 			fontCoverageWarningHider.setVisible(false);
@@ -567,11 +505,6 @@ public class TextTool extends EditorTool
 		boolean isEditMode = modeWidget.isEditMode();
 		addTextTypeHider.setVisible(isAddMode);
 		addNameHider.setVisible(isAddMode);
-		addPreviewHider.setVisible(isAddMode);
-		addStyleHeadingHider.setVisible(isAddMode);
-		addStyleControls.setVisible(isAddMode);
-		addStyleButtonsHider.setVisible(isAddMode);
-		addLayoutRows.setVisible(isAddMode);
 		booksHider.setVisible(isAddMode);
 		brushSizeHider.setVisible(modeWidget.isEraseMode() || isEditMode);
 		controlClickBehaviorHider.setVisible(isEditMode);
@@ -590,7 +523,6 @@ public class TextTool extends EditorTool
 			{
 				generateNameForAdds();
 			}
-			showAddModeStyle();
 		}
 		else
 		{
@@ -818,9 +750,12 @@ public class TextTool extends EditorTool
 			editTextTypeHider.setVisible(true);
 
 			editStyleHeadingHider.setVisible(true);
+			styleSummaryHider.setVisible(true);
+			resetStyleHider.setVisible(true);
 			editStyleControls.setVisible(true);
 			editStyleControls.showStyles(getSelectedStyles());
-			applyStyleToHider.setVisible(isSingle);
+			showOwnStyleParts();
+			copyStyleToHider.setVisible(isSingle);
 
 			editLayoutRows.setVisible(true);
 			MapText first = selectedTexts.get(0);
@@ -885,9 +820,98 @@ public class TextTool extends EditorTool
 		List<TextStyle> styles = new ArrayList<>(selectedTexts.size());
 		for (MapText text : selectedTexts)
 		{
-			styles.add(text.style);
+			styles.add(resolveStyle(text));
 		}
 		return styles;
+	}
+
+	/**
+	 * The style of the given type of text, from the Fonts tab. It must not be modified.
+	 */
+	private TextStyle getTypeStyle(TextType type)
+	{
+		return mainWindow.themePanel.getTextStylesPanel().getStyle(type);
+	}
+
+	/**
+	 * The style the given text is drawn with. It must not be modified.
+	 */
+	private TextStyle resolveStyle(MapText text)
+	{
+		return text.styleOverrides.resolve(getTypeStyle(text.type));
+	}
+
+	/**
+	 * The parts of the style that any of the selected texts has its own values for.
+	 */
+	private Set<TextStylePart> getOwnPartsOfSelection()
+	{
+		Set<TextStylePart> parts = EnumSet.noneOf(TextStylePart.class);
+		for (MapText text : selectedTexts)
+		{
+			parts.addAll(text.styleOverrides.getParts());
+		}
+		return parts;
+	}
+
+	/**
+	 * Shows which parts of their style the selected texts have their own values for: in the summary under the Style heading, on the reset
+	 * button, and by marking those parts' controls.
+	 */
+	private void showOwnStyleParts()
+	{
+		Set<TextStylePart> ownParts = getOwnPartsOfSelection();
+		boolean isSameType = allTextsShare(text -> text.type);
+		String typeName = selectedTexts.get(0).type.toString();
+		boolean doAllHaveOwnParts = selectedTexts.stream().noneMatch(text -> text.styleOverrides.isEmpty());
+
+		String summary;
+		if (ownParts.isEmpty())
+		{
+			summary = isSameType ? Translation.get("textTool.styleSummary.followsType", typeName) : Translation.get("textTool.styleSummary.followsTypes");
+		}
+		else if (!doAllHaveOwnParts)
+		{
+			summary = Translation.get("textTool.styleSummary.someOwn");
+		}
+		else if (ownParts.size() == TextStylePart.values().length)
+		{
+			summary = Translation.get("textTool.styleSummary.allOwn");
+		}
+		else
+		{
+			List<String> partNames = new ArrayList<>();
+			for (TextStylePart part : ownParts)
+			{
+				partNames.add(Translation.get("textStylePart.inSentence." + part.name()));
+			}
+			String joined = String.join(Translation.get("textTool.styleSummary.listSeparator"), partNames);
+			summary = isSameType ? Translation.get("textTool.styleSummary.ownParts", joined, typeName) : Translation.get("textTool.styleSummary.ownPartsMixedTypes", joined);
+		}
+		styleSummaryLabel.setText("<html>" + summary + "</html>");
+
+		resetStyleButton.setText(isSameType ? Translation.get("textTool.resetStyle", typeName) : Translation.get("textTool.resetStyle.mixedTypes"));
+		resetStyleButton.setEnabled(!ownParts.isEmpty());
+
+		Map<TextStylePart, String> tooltips = new EnumMap<>(TextStylePart.class);
+		for (TextStylePart part : ownParts)
+		{
+			MapText owner = selectedTexts.stream().filter(text -> text.styleOverrides.has(part)).findFirst().get();
+			tooltips.put(part, getOwnPartTooltip(part, owner.type));
+		}
+		editStyleControls.showOwnParts(ownParts, tooltips);
+	}
+
+	private String getOwnPartTooltip(TextStylePart part, TextType type)
+	{
+		TextStyle typeStyle = getTypeStyle(type);
+		return switch (part)
+		{
+			case Font -> Translation.get("textTool.ownFont.tooltip", type.toString(), typeStyle.font.getName());
+			case Size -> Translation.get("textTool.ownSize.tooltip", type.toString(), Math.round(typeStyle.font.getSize()));
+			case Color -> Translation.get("textTool.ownColor.tooltip", type.toString());
+			case Background -> Translation.get("textTool.ownBackground.tooltip", type.toString());
+		};
 	}
 
 	private void hideTextEditComponents()
@@ -905,8 +929,10 @@ public class TextTool extends EditorTool
 		fontCoverageWarningHider.setVisible(false);
 		editTextTypeHider.setVisible(false);
 		editStyleHeadingHider.setVisible(false);
+		styleSummaryHider.setVisible(false);
+		resetStyleHider.setVisible(false);
 		editStyleControls.setVisible(false);
-		applyStyleToHider.setVisible(false);
+		copyStyleToHider.setVisible(false);
 		editLayoutRows.setVisible(false);
 		copyPasteDeleteButtonsSeparatorHider.setVisible(false);
 	}
@@ -1051,7 +1077,24 @@ public class TextTool extends EditorTool
 		applyToSelectedTexts(text -> text.angle = 0);
 	}
 
-	private void showApplyDialogForSelectedText()
+	private void showResetStyleDialog()
+	{
+		Set<TextStylePart> ownParts = getOwnPartsOfSelection();
+		if (selectedTexts.isEmpty() || ownParts.isEmpty())
+		{
+			return;
+		}
+		commitNameEdit();
+		new ResetTextStyleDialog(mainWindow, ownParts, parts -> applyToSelectedTexts(text ->
+		{
+			for (TextStylePart part : parts)
+			{
+				text.styleOverrides.clear(part);
+			}
+		})).setVisible(true);
+	}
+
+	private void showCopyStyleDialog()
 	{
 		if (selectedTexts.size() != 1)
 		{
@@ -1059,128 +1102,17 @@ public class TextTool extends EditorTool
 		}
 		commitNameEdit();
 		MapText source = selectedTexts.get(0);
-		TextStyle sourceStyle = source.style.copy();
-		ApplyTextStyleDialog dialog = new ApplyTextStyleDialog(mainWindow, false, source.type, choice -> applyStyleToTextsOfTypes(sourceStyle, choice));
-		dialog.setVisible(true);
-	}
-
-	private void showApplyDialogForDefaults()
-	{
-		TextStyle sourceStyle = getDefaultStyleForAdds().copy();
-		ApplyTextStyleDialog dialog = new ApplyTextStyleDialog(mainWindow, true, textTypeForAdds, choice -> applyStyleToTextsOfTypes(sourceStyle, choice));
-		dialog.setVisible(true);
-	}
-
-	/**
-	 * Applies the chosen parts of a style to the chosen types of text, on the map, for new text, or both.
-	 */
-	private void applyStyleToTextsOfTypes(TextStyle sourceStyle, ApplyTextStyleDialog.Choice choice)
-	{
-		if (choice.appliesToExistingText())
+		TextStyle sourceStyle = resolveStyle(source).copy();
+		new CopyTextStyleDialog(mainWindow, source.type, choice ->
 		{
-			for (MapText text : mainWindow.edits.text)
-			{
-				if (choice.types().contains(text.type))
-				{
-					TextStyle style = text.style.copy();
-					ApplyTextStyleDialog.applyStyleParts(sourceStyle, style, choice.parts());
-					text.style = style;
-				}
-			}
-		}
-
-		if (choice.appliesToNewText())
-		{
-			for (TextType type : choice.types())
-			{
-				TextStyle defaultStyle = textStyleDefaults.get(type);
-				if (defaultStyle != null)
-				{
-					TextStyle style = defaultStyle.copy();
-					ApplyTextStyleDialog.applyStyleParts(sourceStyle, style, choice.parts());
-					textStyleDefaults.put(type, style);
-				}
-			}
-		}
-
-		undoer.setUndoPoint(UpdateType.Text, this);
-		updater.createAndShowMapTextChange();
-		if (!selectedTexts.isEmpty())
-		{
-			showEditComponentsForSelection(SelectionFocus.Leave);
-		}
-		showAddModeStyle();
+			restoreSelectedTextsRemovedFromEdits();
+			mainWindow.themePanel.getTextStylesPanel().copyStyle(sourceStyle, choice);
+		}).setVisible(true);
 	}
 
 	/*
 	 * Add mode
 	 */
-
-	private TextStyle getDefaultStyleForAdds()
-	{
-		return textStyleDefaults.get(textTypeForAdds);
-	}
-
-	private TextLayoutSettings getDefaultLayoutForAdds()
-	{
-		return textLayoutDefaults.getOrDefault(textTypeForAdds, TextLayoutSettings.createDefault());
-	}
-
-	/**
-	 * Shows the style and layout for new text of the type Add mode adds, and the preview.
-	 */
-	private void showAddModeStyle()
-	{
-		TextStyle style = getDefaultStyleForAdds();
-		if (style != null)
-		{
-			addStyleControls.showStyles(Arrays.asList(style));
-		}
-
-		TextLayoutSettings layout = getDefaultLayoutForAdds();
-		isLoadingAddLayoutControls = true;
-		try
-		{
-			curvatureForAddsSlider.showValues(Arrays.asList((int) Math.round(layout.curvature * curvatureSliderDivider)));
-			spacingForAddsSlider.showValues(Arrays.asList(layout.spacing));
-			lineBreakForAddsComboBox.setSelectedItem(layout.lineBreak);
-		}
-		finally
-		{
-			isLoadingAddLayoutControls = false;
-		}
-		updateAddPreview();
-	}
-
-	private void editLayoutForAdds(Consumer<TextLayoutSettings> edit)
-	{
-		if (isLoadingAddLayoutControls)
-		{
-			return;
-		}
-		TextLayoutSettings layout = textLayoutDefaults.get(textTypeForAdds);
-		if (layout == null)
-		{
-			return;
-		}
-		edit.accept(layout);
-		undoer.setUndoPoint(UpdateType.NoDraw, this);
-		mainWindow.handleChangeWithoutRedraw();
-		updateAddPreview();
-	}
-
-	private void applyStyleEditToDefaultsForAdds(TextStyleControls.StyleEdit edit)
-	{
-		TextStyle style = getDefaultStyleForAdds();
-		if (style == null)
-		{
-			return;
-		}
-		edit.apply(style);
-		undoer.setUndoPoint(UpdateType.NoDraw, this);
-		mainWindow.handleChangeWithoutRedraw();
-		showAddModeStyle();
-	}
 
 	private void generateNameForAdds()
 	{
@@ -1270,120 +1202,11 @@ public class TextTool extends EditorTool
 	}
 
 	/**
-	 * Redraws the preview of the name to add, drawn in the style for new text over the map's land background. The preview has a fixed
-	 * width, and its height fits the text and its text background at full size, within a minimum and maximum height. Text too large for the
-	 * preview is scaled down to fit, without changing the preview's height, so the preview shows the font, color, and background rather than
-	 * the size.
-	 */
-	private void updateAddPreview()
-	{
-		if (addPreviewPanel == null || !addPreviewHider.isVisible())
-		{
-			return;
-		}
-		MapSettings settings = mainWindow.getSettingsFromGUI(false);
-		TextStyle style = getDefaultStyleForAdds();
-		if (settings == null || style == null)
-		{
-			addPreviewPanel.setImage(null);
-			return;
-		}
-
-		double osScale = SwingHelper.getOSScale();
-		final int previewWidth = 270;
-		final int maxPreviewHeight = 70;
-		final int minPreviewHeight = 36;
-		final int margin = 8;
-		IntDimension maxSize = new IntDimension((int) (previewWidth * osScale), (int) (maxPreviewHeight * osScale));
-		int minHeight = (int) (minPreviewHeight * osScale);
-		int marginInPixels = (int) (margin * osScale);
-		Image fullBackground = getAddPreviewBackground(settings, maxSize);
-		if (fullBackground == null)
-		{
-			addPreviewPanel.setImage(null);
-			return;
-		}
-
-		Tuple2<Image, IntPoint> drawn = null;
-		IntDimension size = new IntDimension(maxSize.width, minHeight);
-		String name = addNameField.getText().trim();
-		if (!name.isEmpty())
-		{
-			TextLayoutSettings layout = getDefaultLayoutForAdds();
-			MapText text = new MapText(name, new nortantis.geom.Point(0, 0), 0.0, textTypeForAdds, layout.lineBreak, layout.curvature, layout.spacing,
-					style.copy(), backgroundSeedForNextAdd);
-			double resolution = osScale;
-			drawn = createPreviewTextDrawer(resolution, false).drawTextOntoNewImage(text, null);
-			if (drawn != null)
-			{
-				size = new IntDimension(maxSize.width, Math.min(maxSize.height, Math.max(minHeight, drawn.getFirst().getHeight() + marginInPixels * 2)));
-				int maxWidth = size.width - marginInPixels * 2;
-				int maxHeight = size.height - marginInPixels * 2;
-				if (drawn.getFirst().getWidth() > maxWidth || drawn.getFirst().getHeight() > maxHeight)
-				{
-					double scale = Math.min(maxWidth / (double) drawn.getFirst().getWidth(), maxHeight / (double) drawn.getFirst().getHeight());
-					drawn.getFirst().close();
-					drawn = createPreviewTextDrawer(resolution * scale, false).drawTextOntoNewImage(text, null);
-				}
-			}
-		}
-
-		Image result;
-		try (Image cropped = fullBackground.copySubImage(new IntRectangle((fullBackground.getWidth() - size.width) / 2,
-				(fullBackground.getHeight() - size.height) / 2, size.width, size.height)))
-		{
-			result = IconsTool.fadeEdges(cropped, (int) (addPreviewFadeWidth * osScale));
-		}
-		if (drawn != null)
-		{
-			try (Image textImage = drawn.getFirst(); Painter p = result.createPainter(DrawQuality.High))
-			{
-				p.drawImage(textImage, (result.getWidth() - textImage.getWidth()) / 2, (result.getHeight() - textImage.getHeight()) / 2);
-			}
-		}
-		addPreviewPanel.setImage(AwtBridge.toBufferedImage(result));
-	}
-
-	/**
-	 * @param drawRegionBoundaries
-	 *            Whether the map draws region boundaries, which decides whether region text is split onto two lines where it would cross one.
-	 */
-	private static TextDrawer createPreviewTextDrawer(double resolution, boolean drawRegionBoundaries)
-	{
-		MapSettings previewSettings = new MapSettings();
-		previewSettings.resolution = resolution;
-		previewSettings.drawRegionBoundaries = drawRegionBoundaries;
-		return new TextDrawer(previewSettings);
-	}
-
-	private Image getAddPreviewBackground(MapSettings settings, IntDimension size)
-	{
-		Path backgroundImagePath = settings.getBackgroundImagePath().getFirst();
-		List<Object> key = Arrays.asList(size, settings.backgroundRandomSeed, settings.colorizeOcean, settings.colorizeLand, settings.generateBackground,
-				settings.generateBackgroundFromTexture, settings.solidColorBackground, backgroundImagePath, settings.landColor);
-		if (addPreviewBackground != null && key.equals(addPreviewBackgroundKey))
-		{
-			return addPreviewBackground;
-		}
-
-		Tuple4<Image, ImageHelper.ColorizeAlgorithm, Image, ImageHelper.ColorizeAlgorithm> backgrounds = ThemePanel.createBackgroundImageDisplayImages(size, settings.backgroundRandomSeed,
-				settings.colorizeOcean, settings.colorizeLand, settings.generateBackground, settings.generateBackgroundFromTexture, settings.solidColorBackground,
-				backgroundImagePath == null ? null : backgroundImagePath.toString());
-		if (backgrounds == null)
-		{
-			return null;
-		}
-		addPreviewBackground = ImageHelper.getInstance().colorize(backgrounds.getThird(), settings.landColor, backgrounds.getFourth());
-		addPreviewBackgroundKey = key;
-		return addPreviewBackground;
-	}
-
-	/**
 	 * Shows the name to add where it would be placed under the mouse.
 	 */
 	private void updateAddModeHoverPreview(java.awt.Point mouseLocation)
 	{
-		TextStyle style = getDefaultStyleForAdds();
+		TextStyle style = getTypeStyle(textTypeForAdds);
 		String name = addNameField.getText().trim();
 		if (mouseLocation == null || style == null || name.isEmpty() || updater.mapParts == null || updater.mapParts.graph == null)
 		{
@@ -1395,13 +1218,18 @@ public class TextTool extends EditorTool
 		boolean drawRegionBoundaries = mainWindow.themePanel.isDrawRegionBoundariesSelected();
 		if (hoverPreviewTextDrawer == null || hoverPreviewTextDrawerResolution != resolution || hoverPreviewTextDrawerDrawsRegionBoundaries != drawRegionBoundaries)
 		{
-			hoverPreviewTextDrawer = createPreviewTextDrawer(resolution, drawRegionBoundaries);
+			hoverPreviewSettings = new MapSettings();
+			hoverPreviewSettings.resolution = resolution;
+			// Whether the map draws region boundaries decides whether region text is split onto two lines where it would cross one.
+			hoverPreviewSettings.drawRegionBoundaries = drawRegionBoundaries;
+			hoverPreviewTextDrawer = new TextDrawer(hoverPreviewSettings);
 			hoverPreviewTextDrawerResolution = resolution;
 			hoverPreviewTextDrawerDrawsRegionBoundaries = drawRegionBoundaries;
 		}
+		hoverPreviewSettings.textStyleDefaults.put(textTypeForAdds, style);
 
 		nortantis.geom.Point graphPoint = getPointOnGraph(mouseLocation);
-		MapText text = TextDrawer.createMapText(name, graphPoint, 0.0, textTypeForAdds, resolution, style.copy(), getDefaultLayoutForAdds(), backgroundSeedForNextAdd);
+		MapText text = TextDrawer.createMapText(name, graphPoint, 0.0, textTypeForAdds, resolution, backgroundSeedForNextAdd);
 		Tuple2<Image, IntPoint> drawn = hoverPreviewTextDrawer.drawTextOntoNewImage(text, updater.mapParts.graph);
 		if (drawn == null)
 		{
@@ -1424,20 +1252,20 @@ public class TextTool extends EditorTool
 			{
 				return;
 			}
-			TextStyle style = getDefaultStyleForAdds();
 			String name = addNameField.getText().trim();
-			if (style == null || name.isEmpty())
+			if (name.isEmpty())
 			{
 				return;
 			}
-			MapText addedText = TextDrawer.createMapText(name, getPointOnGraph(mouseLocation), 0.0, textTypeForAdds, mainWindow.displayQualityScale, style.copy(),
-					getDefaultLayoutForAdds(), backgroundSeedForNextAdd);
+			MapText addedText = TextDrawer.createMapText(name, getPointOnGraph(mouseLocation), 0.0, textTypeForAdds, mainWindow.displayQualityScale,
+					backgroundSeedForNextAdd);
 			mainWindow.edits.text.add(addedText);
 			NamesAroundAdd names = new NamesAroundAdd(addedText.deepCopy(), addNameField.getText(), addNameField.getText().equals(lastGeneratedNameForAdds));
 			undoer.setUndoPoint(UpdateType.Incremental, this, () -> showNameForAddsAround(names));
+			changeToEditModeAndSelectText(addedText, SelectionFocus.EditField);
 			updater.createAndShowMapIncrementalUsingText(Arrays.asList(addedText));
 			backgroundSeedForNextAdd = new Random().nextLong();
-			// The next name is generated right away so that clicking again doesn't add the same name twice.
+			// The next name is generated right away so that adding again doesn't add the same name twice.
 			generateNameForAdds(generatedName -> names.after = generatedName);
 		});
 	}
@@ -2040,7 +1868,6 @@ public class TextTool extends EditorTool
 		groupBoxRI = null;
 		hideTextEditComponents();
 		mapEditingPanel.clearTextBox();
-		showAddModeStyle();
 	}
 
 	@Override
@@ -2144,11 +1971,14 @@ public class TextTool extends EditorTool
 			booksWidget.checkSelectedBooks(settings.books);
 		}
 
-		textStyleDefaults = settings.copyTextStyleDefaults();
-		textLayoutDefaults = settings.copyTextLayoutDefaults();
-		if (modeWidget.isDrawMode())
+		// A change to the type styles changes the styles of the selected texts.
+		if (!Objects.equals(settings.textStyleDefaults, typeStylesShown))
 		{
-			showAddModeStyle();
+			typeStylesShown = settings.copyTextStyleDefaults();
+			if (modeWidget.isEditMode() && !selectedTexts.isEmpty())
+			{
+				showEditComponentsForSelection(SelectionFocus.Leave);
+			}
 		}
 
 		handleEnablingAndDisabling(settings);
@@ -2169,24 +1999,6 @@ public class TextTool extends EditorTool
 	public void getSettingsFromGUI(MapSettings settings)
 	{
 		settings.books = booksWidget.getSelectedBooks();
-		EnumMap<TextType, TextStyle> defaults = new EnumMap<>(TextType.class);
-		for (Map.Entry<TextType, TextStyle> entry : textStyleDefaults.entrySet())
-		{
-			defaults.put(entry.getKey(), entry.getValue().copy());
-		}
-		if (!defaults.isEmpty())
-		{
-			settings.textStyleDefaults = defaults;
-		}
-		EnumMap<TextType, TextLayoutSettings> layoutDefaults = new EnumMap<>(TextType.class);
-		for (Map.Entry<TextType, TextLayoutSettings> entry : textLayoutDefaults.entrySet())
-		{
-			layoutDefaults.put(entry.getKey(), entry.getValue().copy());
-		}
-		if (!layoutDefaults.isEmpty())
-		{
-			settings.textLayoutDefaults = layoutDefaults;
-		}
 	}
 
 	@Override

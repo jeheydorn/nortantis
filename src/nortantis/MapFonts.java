@@ -32,8 +32,8 @@ public class MapFonts
 		public final String family;
 		/** How many of the map's labels are drawn in this family, by type, in type order. Holds only the types with at least one. */
 		public final Map<TextType, Integer> labelCountsByType;
-		/** The types of text whose style for new text uses this family. */
-		public final List<TextType> newTextTypes;
+		/** The types of text whose style uses this family. */
+		public final List<TextType> typesWhoseStyleUsesIt;
 		/**
 		 * The map's text this family was drawing, gathered under the style it is drawn in, which a replacement has to be able to draw too. A
 		 * family's faces need not have the same glyphs, so the text a map draws in bold has to be judged against a candidate's bold face
@@ -46,12 +46,12 @@ public class MapFonts
 		 */
 		public final String missingArtPack;
 
-		public FontProblem(String family, Map<TextType, Integer> labelCountsByType, List<TextType> newTextTypes,
+		public FontProblem(String family, Map<TextType, Integer> labelCountsByType, List<TextType> typesWhoseStyleUsesIt,
 				Map<FontStyle, String> textToDrawByStyle, String missingArtPack)
 		{
 			this.family = family;
 			this.labelCountsByType = labelCountsByType;
-			this.newTextTypes = newTextTypes;
+			this.typesWhoseStyleUsesIt = typesWhoseStyleUsesIt;
 			this.textToDrawByStyle = textToDrawByStyle;
 			this.missingArtPack = missingArtPack;
 		}
@@ -81,7 +81,7 @@ public class MapFonts
 	 */
 	public static List<String> getFamiliesUsed(MapSettings settings)
 	{
-		return new ArrayList<>(gatherUsage(settings).newTextTypesByFamily.keySet());
+		return new ArrayList<>(gatherUsage(settings).typesWhoseStyleUsesFamily.keySet());
 	}
 
 	/**
@@ -99,7 +99,7 @@ public class MapFonts
 		FontUsage usage = gatherUsage(settings);
 
 		List<FontProblem> problems = new ArrayList<>();
-		for (String family : usage.newTextTypesByFamily.keySet())
+		for (String family : usage.typesWhoseStyleUsesFamily.keySet())
 		{
 			if (FontFinder.isAvailable(FontFinder.resolveAlias(family)))
 			{
@@ -114,7 +114,7 @@ public class MapFonts
 
 			// The text this family was drawing is what a replacement has to be able to draw, so that swapping a missing font does not
 			// silently trade it for one with no glyphs for the map's labels.
-			problems.add(new FontProblem(family, new EnumMap<>(usage.labelCountsByFamily.get(family)), new ArrayList<>(usage.newTextTypesByFamily.get(family)),
+			problems.add(new FontProblem(family, new EnumMap<>(usage.labelCountsByFamily.get(family)), new ArrayList<>(usage.typesWhoseStyleUsesFamily.get(family)),
 					toTextByStyle(usage.textByFamilyAndStyle.get(family)), artPack));
 		}
 
@@ -122,8 +122,8 @@ public class MapFonts
 	}
 
 	/**
-	 * Replaces every font, in the styles for new text and in every label, whose family is a key in {@code replacements}, keeping each one's
-	 * own bold/italic and size.
+	 * Replaces every font, in the style of each type of text and in the text that has its own font, whose family is a key in
+	 * {@code replacements}, keeping each one's own bold/italic and size.
 	 */
 	public static void applySubstitution(MapSettings settings, Map<String, String> replacements)
 	{
@@ -149,12 +149,12 @@ public class MapFonts
 		{
 			for (MapText text : settings.edits.text)
 			{
-				if (text != null && text.style != null)
+				if (text != null && text.styleOverrides.fontFamily != null)
 				{
-					Font replaced = replaceFamily(text.style.font, replacementsByLowerCase);
-					if (replaced != null)
+					String replacement = replacementsByLowerCase.get(text.styleOverrides.fontFamily.toLowerCase(Locale.ROOT));
+					if (replacement != null)
 					{
-						text.style.font = replaced;
+						text.styleOverrides.fontFamily = replacement;
 					}
 				}
 			}
@@ -178,7 +178,7 @@ public class MapFonts
 	private static class FontUsage
 	{
 		final Map<String, String> familyAsWrittenByLowerCase = new LinkedHashMap<>();
-		final Map<String, List<TextType>> newTextTypesByFamily = new LinkedHashMap<>();
+		final Map<String, List<TextType>> typesWhoseStyleUsesFamily = new LinkedHashMap<>();
 		/** The text each family draws, kept apart by the style it is drawn in, since a family's faces need not have the same glyphs. */
 		final Map<String, Map<FontStyle, StringBuilder>> textByFamilyAndStyle = new LinkedHashMap<>();
 		final Map<String, EnumMap<TextType, Integer>> labelCountsByFamily = new LinkedHashMap<>();
@@ -205,7 +205,7 @@ public class MapFonts
 				continue;
 			}
 			String family = recordFamily(entry.getValue().getName(), usage);
-			usage.newTextTypesByFamily.get(family).add(entry.getKey());
+			usage.typesWhoseStyleUsesFamily.get(family).add(entry.getKey());
 		}
 
 		if (settings.edits != null && settings.edits.text != null)
@@ -217,11 +217,12 @@ public class MapFonts
 					continue;
 				}
 
-				if (text.style == null || text.style.font == null)
+				TextStyle style = settings.resolveTextStyle(text);
+				if (style == null || style.font == null)
 				{
 					continue;
 				}
-				Font font = text.style.font;
+				Font font = style.font;
 				String family = recordFamily(font.getName(), usage);
 				usage.labelCountsByFamily.get(family).merge(text.type, 1, Integer::sum);
 				usage.textByFamilyAndStyle.get(family).computeIfAbsent(font.getStyle(), key -> new StringBuilder()).append(text.value);
@@ -236,7 +237,7 @@ public class MapFonts
 		// Locale.ROOT because this key only ever groups two spellings of one family. The default locale would make that grouping depend on
 		// the machine: in Turkish, "Iosevka" and "iosevka" lower case to different strings and would be asked about twice.
 		String canonical = usage.familyAsWrittenByLowerCase.computeIfAbsent(familyAsWritten.toLowerCase(Locale.ROOT), key -> familyAsWritten);
-		usage.newTextTypesByFamily.computeIfAbsent(canonical, key -> new ArrayList<>());
+		usage.typesWhoseStyleUsesFamily.computeIfAbsent(canonical, key -> new ArrayList<>());
 		usage.labelCountsByFamily.computeIfAbsent(canonical, key -> new EnumMap<>(TextType.class));
 		usage.textByFamilyAndStyle.computeIfAbsent(canonical, key -> new LinkedHashMap<>());
 		return canonical;
