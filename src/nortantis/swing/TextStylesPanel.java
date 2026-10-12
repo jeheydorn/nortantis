@@ -59,7 +59,7 @@ class TextStylesPanel
 	/**
 	 * The font size at and above which samples are drawn at the largest size.
 	 */
-	private static final float fontSizeOfLargestSamples = 24f;
+	private static final float fontSizeOfLargestSamples = 26f;
 
 	TextStylesPanel(MainWindow mainWindow)
 	{
