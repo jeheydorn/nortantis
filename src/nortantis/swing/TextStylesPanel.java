@@ -39,6 +39,7 @@ class TextStylesPanel
 {
 	private final MainWindow mainWindow;
 	private final JScrollPane scrollPane;
+	private final JCheckBox enableTextCheckBox;
 	private final EnumMap<TextType, TextStyle> styles = new EnumMap<>(TextType.class);
 	private final EnumMap<TextType, TextStyleControls> controlsByType = new EnumMap<>(TextType.class);
 	private final EnumMap<TextType, CollapsiblePanel> cardsByType = new EnumMap<>(TextType.class);
@@ -66,6 +67,17 @@ class TextStylesPanel
 		this.mainWindow = mainWindow;
 
 		GridBagOrganizer organizer = new GridBagOrganizer();
+
+		enableTextCheckBox = new JCheckBox(Translation.get("theme.enableText"));
+		enableTextCheckBox.setToolTipText(Translation.get("theme.enableText.tooltip"));
+		enableTextCheckBox.addActionListener(e ->
+		{
+			handleEnablingAndDisabling();
+			handleStylesChange();
+		});
+		organizer.addLeftAlignedComponent(enableTextCheckBox);
+
+		organizer.addSectionHeading(Translation.get("textStyles.section.styles"));
 
 		JButton expandAllButton = new JButton(Translation.get("textStyles.expandAll"));
 		expandAllButton.addActionListener(e -> setAllCollapsed(false));
@@ -112,6 +124,17 @@ class TextStylesPanel
 	JScrollPane getScrollPane()
 	{
 		return scrollPane;
+	}
+
+	/**
+	 * Enables the style cards only while text is enabled. Expanding and collapsing them still works either way.
+	 */
+	void handleEnablingAndDisabling()
+	{
+		for (CollapsiblePanel card : cardsByType.values())
+		{
+			SwingHelper.setEnabled(card, enableTextCheckBox.isSelected());
+		}
 	}
 
 	private void setAllCollapsed(boolean isCollapsed)
@@ -181,7 +204,7 @@ class TextStylesPanel
 			return;
 		}
 		TextStyle sourceCopy = source.copy();
-		new CopyTextStyleDialog(mainWindow, sourceType, choice -> copyStyle(sourceCopy, choice)).setVisible(true);
+		new CopyTextStyleDialog(mainWindow, sourceType, CopyTextStyleDialog.defaultParts, choice -> copyStyle(sourceCopy, choice)).setVisible(true);
 	}
 
 	/**
@@ -239,6 +262,8 @@ class TextStylesPanel
 
 	void loadSettingsIntoGUI(MapSettings settings)
 	{
+		enableTextCheckBox.setSelected(settings.drawText);
+		handleEnablingAndDisabling();
 		styles.clear();
 		styles.putAll(settings.copyTextStyleDefaults());
 		for (Map.Entry<TextType, TextStyle> entry : styles.entrySet())
@@ -251,6 +276,7 @@ class TextStylesPanel
 
 	void getSettingsFromGUI(MapSettings settings)
 	{
+		settings.drawText = enableTextCheckBox.isSelected();
 		if (!styles.isEmpty())
 		{
 			settings.textStyleDefaults = copyStyles();

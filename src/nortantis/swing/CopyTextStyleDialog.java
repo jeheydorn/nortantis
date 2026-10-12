@@ -28,14 +28,21 @@ class CopyTextStyleDialog extends JDialog
 	{
 	}
 
+	/**
+	 * The parts checked when the dialog opens, unless it's given others.
+	 */
+	static final Set<TextStylePart> defaultParts = EnumSet.of(TextStylePart.Font, TextStylePart.Color);
+
 	private final Map<TextStylePart, JCheckBox> partCheckboxes = new EnumMap<>(TextStylePart.class);
 	private final Map<TextType, JCheckBox> typeCheckboxes = new EnumMap<>(TextType.class);
 
 	/**
 	 * @param initialType
 	 *            The type of text checked when the dialog opens.
+	 * @param initialParts
+	 *            The parts checked when the dialog opens. If empty, {@link #defaultParts} are checked.
 	 */
-	CopyTextStyleDialog(Window owner, TextType initialType, Consumer<Choice> onCopy)
+	CopyTextStyleDialog(Window owner, TextType initialType, Set<TextStylePart> initialParts, Consumer<Choice> onCopy)
 	{
 		super(owner, Translation.get("copyTextStyle.title"), ModalityType.APPLICATION_MODAL);
 
@@ -49,7 +56,7 @@ class CopyTextStyleDialog extends JDialog
 		for (TextStylePart part : TextStylePart.values())
 		{
 			JCheckBox checkbox = new JCheckBox(Translation.get("textStylePart." + part.name()));
-			checkbox.setSelected(part == TextStylePart.Font || part == TextStylePart.Color);
+			checkbox.setSelected((initialParts.isEmpty() ? defaultParts : initialParts).contains(part));
 			partCheckboxes.put(part, checkbox);
 			partsPanel.add(checkbox);
 		}

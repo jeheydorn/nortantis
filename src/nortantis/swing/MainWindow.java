@@ -159,7 +159,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	JMenuItem undoAllButton;
 	JMenuItem redoAllButton;
 	private JMenuItem clearEntireMapButton;
-	private JCheckBoxMenuItem enableTextMenuItem;
 	public Undoer undoer;
 	// The zoom level currently reflected by mapEditingPanel's displayed image. Only updated when a rescaled image is actually
 	// committed to the panel (see commitScaledMap), so it always matches what's on screen, even while a background rescale
@@ -487,7 +486,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			undoer.updateUndoRedoEnabled();
 		}
 		clearEntireMapButton.setEnabled(enable && hasDrawnCurrentMapAtLeastOnce);
-		enableTextMenuItem.setEnabled(enable);
 		customImagesMenuItem.setEnabled(enable);
 
 		nameGeneratorMenuItem.setEnabled(enable);
@@ -1661,21 +1659,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		randomizeThemeMenuItem.setEnabled(false);
 		editMenu.add(randomizeThemeMenuItem);
 		randomizeThemeMenuItem.addActionListener(e -> showRandomizeThemeDialog());
-
-		enableTextMenuItem = new JCheckBoxMenuItem(Translation.get("menu.edit.enableText"));
-		enableTextMenuItem.setToolTipText(Translation.get("menu.edit.enableText.tooltip"));
-		enableTextMenuItem.setEnabled(false);
-		editMenu.add(enableTextMenuItem);
-		enableTextMenuItem.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				undoer.setUndoPoint(UpdateType.Text, null);
-				handleThemeChange(false);
-				updater.createAndShowMapTextChange();
-			}
-		});
 
 		editMenu.addSeparator();
 
@@ -3995,7 +3978,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			customImagesPath = settings.customImagesPath;
 			edits = settings.edits;
 			themeGeneration = settings.themeGeneration == null ? null : settings.themeGeneration.copy();
-			enableTextMenuItem.setSelected(settings.drawText);
 			themePanel.loadSettingsIntoGUI(settings, refreshImagePreviews);
 			toolsPanel.loadSettingsIntoGUI(settings, isUndoRedoOrAutomaticChange, refreshImagePreviews);
 		}
@@ -4038,7 +4020,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		settings.heightmapResolution = heightmapExportResolution;
 		settings.heightmapExportPath = heightmapExportPath;
 		settings.customImagesPath = customImagesPath;
-		settings.drawText = enableTextMenuItem.isSelected();
 		settings.themeGeneration = themeGeneration == null ? null : themeGeneration.copy();
 
 		themePanel.getSettingsFromGUI(settings);

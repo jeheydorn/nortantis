@@ -73,12 +73,10 @@ public class TextTool extends EditorTool
 	private JComboBox<TextType> editTextTypeComboBox;
 	private RowHider editTextTypeHider;
 	private RowHider editStyleHeadingHider;
-	private JLabel styleSummaryLabel;
-	private RowHider styleSummaryHider;
 	private JButton resetStyleButton;
-	private RowHider resetStyleHider;
 	private TextStyleControls editStyleControls;
-	private RowHider copyStyleToHider;
+	private JButton copyStyleToButton;
+	private RowHider styleButtonsHider;
 	private RowHider editLayoutRows;
 	private static final int curvatureSliderDivider = 100;
 	private SliderWithDisplayedValue curvatureSliderWithDisplay;
@@ -154,7 +152,7 @@ public class TextTool extends EditorTool
 		JPanel toolOptionsPanel = organizer.panel;
 		toolOptionsPanel.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
 
-		drawTextDisabledLabel = new JLabel("<html>" + Translation.get("textTool.disabled", Translation.get("menu.edit"), Translation.get("menu.edit.enableText")) + "</html>");
+		drawTextDisabledLabel = new JLabel("<html>" + Translation.get("textTool.disabled") + "</html>");
 		drawTextDisabledLabelHider = organizer.addLeftAlignedComponent(drawTextDisabledLabel);
 		drawTextDisabledLabelHider.setVisible(false);
 
@@ -368,13 +366,6 @@ public class TextTool extends EditorTool
 		editTextTypeHider = organizer.addLabelAndComponent(Translation.get("textTool.textType.label"), "", editTextTypeComboBox);
 
 		editStyleHeadingHider = organizer.addSectionHeading(Translation.get("textTool.section.style"));
-		styleSummaryLabel = new JLabel();
-		styleSummaryHider = organizer.addLeftAlignedComponent(styleSummaryLabel);
-		resetStyleButton = new JButton();
-		resetStyleButton.setToolTipText(Translation.get("textTool.resetStyle.tooltip"));
-		resetStyleButton.addActionListener(e -> showResetStyleDialog());
-		resetStyleHider = organizer.addLeftAlignedComponents(Arrays.asList(resetStyleButton));
-
 		editStyleControls = new TextStyleControls(organizer, edit -> applyToSelectedTexts(text ->
 		{
 			TextStyle style = resolveStyle(text).copy();
@@ -382,10 +373,13 @@ public class TextTool extends EditorTool
 			text.styleOverrides.set(edit.part(), style);
 		}), this::getFontFamiliesUsedByThisMap, () -> selectedTexts.size() == 1 ? editTextField.getText() : "");
 
-		JButton copyStyleToButton = new JButton(Translation.get("textTool.copyStyleTo"));
+		copyStyleToButton = new JButton(Translation.get("textTool.copyStyleTo"));
 		copyStyleToButton.setToolTipText(Translation.get("textTool.copyStyleTo.tooltip"));
 		copyStyleToButton.addActionListener(e -> showCopyStyleDialog());
-		copyStyleToHider = organizer.addLeftAlignedComponents(Arrays.asList(copyStyleToButton));
+		resetStyleButton = new JButton();
+		resetStyleButton.setToolTipText(Translation.get("textTool.resetStyle.tooltip"));
+		resetStyleButton.addActionListener(e -> showResetStyleDialog());
+		styleButtonsHider = organizer.addLeftAlignedComponents(Arrays.asList(copyStyleToButton, resetStyleButton));
 
 		editLayoutRows = organizer.addSectionHeading(Translation.get("textTool.section.layout"));
 		Tuple2<SliderWithDisplayedValue, RowHider> curvature = addCurvatureRow(organizer, value ->
@@ -750,12 +744,11 @@ public class TextTool extends EditorTool
 			editTextTypeHider.setVisible(true);
 
 			editStyleHeadingHider.setVisible(true);
-			styleSummaryHider.setVisible(true);
-			resetStyleHider.setVisible(true);
 			editStyleControls.setVisible(true);
 			editStyleControls.showStyles(getSelectedStyles());
 			showOwnStyleParts();
-			copyStyleToHider.setVisible(isSingle);
+			copyStyleToButton.setVisible(isSingle);
+			styleButtonsHider.setVisible(true);
 
 			editLayoutRows.setVisible(true);
 			MapText first = selectedTexts.get(0);
@@ -855,40 +848,14 @@ public class TextTool extends EditorTool
 	}
 
 	/**
-	 * Shows which parts of their style the selected texts have their own values for: in the summary under the Style heading, on the reset
-	 * button, and by marking those parts' controls.
+	 * Shows which parts of their style the selected texts have their own values for, on the reset button and by marking those parts'
+	 * controls.
 	 */
 	private void showOwnStyleParts()
 	{
 		Set<TextStylePart> ownParts = getOwnPartsOfSelection();
 		boolean isSameType = allTextsShare(text -> text.type);
 		String typeName = selectedTexts.get(0).type.toString();
-		boolean doAllHaveOwnParts = selectedTexts.stream().noneMatch(text -> text.styleOverrides.isEmpty());
-
-		String summary;
-		if (ownParts.isEmpty())
-		{
-			summary = isSameType ? Translation.get("textTool.styleSummary.followsType", typeName) : Translation.get("textTool.styleSummary.followsTypes");
-		}
-		else if (!doAllHaveOwnParts)
-		{
-			summary = Translation.get("textTool.styleSummary.someOwn");
-		}
-		else if (ownParts.size() == TextStylePart.values().length)
-		{
-			summary = Translation.get("textTool.styleSummary.allOwn");
-		}
-		else
-		{
-			List<String> partNames = new ArrayList<>();
-			for (TextStylePart part : ownParts)
-			{
-				partNames.add(Translation.get("textStylePart.inSentence." + part.name()));
-			}
-			String joined = String.join(Translation.get("textTool.styleSummary.listSeparator"), partNames);
-			summary = isSameType ? Translation.get("textTool.styleSummary.ownParts", joined, typeName) : Translation.get("textTool.styleSummary.ownPartsMixedTypes", joined);
-		}
-		styleSummaryLabel.setText("<html>" + summary + "</html>");
 
 		resetStyleButton.setText(isSameType ? Translation.get("textTool.resetStyle", typeName) : Translation.get("textTool.resetStyle.mixedTypes"));
 		resetStyleButton.setEnabled(!ownParts.isEmpty());
@@ -929,10 +896,8 @@ public class TextTool extends EditorTool
 		fontCoverageWarningHider.setVisible(false);
 		editTextTypeHider.setVisible(false);
 		editStyleHeadingHider.setVisible(false);
-		styleSummaryHider.setVisible(false);
-		resetStyleHider.setVisible(false);
 		editStyleControls.setVisible(false);
-		copyStyleToHider.setVisible(false);
+		styleButtonsHider.setVisible(false);
 		editLayoutRows.setVisible(false);
 		copyPasteDeleteButtonsSeparatorHider.setVisible(false);
 	}
@@ -1103,7 +1068,7 @@ public class TextTool extends EditorTool
 		commitNameEdit();
 		MapText source = selectedTexts.get(0);
 		TextStyle sourceStyle = resolveStyle(source).copy();
-		new CopyTextStyleDialog(mainWindow, source.type, choice ->
+		new CopyTextStyleDialog(mainWindow, source.type, source.styleOverrides.getParts(), choice ->
 		{
 			restoreSelectedTextsRemovedFromEdits();
 			mainWindow.themePanel.getTextStylesPanel().copyStyle(sourceStyle, choice);

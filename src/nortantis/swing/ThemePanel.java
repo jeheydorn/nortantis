@@ -2498,6 +2498,8 @@ public class ThemePanel extends JTabbedPane
 
 		// Lakes get ocean waves and shading, so the lakes checkbox only matters when either is on.
 		drawOceanEffectsInLakesCheckbox.setEnabled(drawOceanShadingCheckbox.isSelected() || drawOceanWavesCheckbox.isSelected());
+
+		textStylesPanel.handleEnablingAndDisabling();
 	}
 
 	void enableOrDisableEverything(boolean enable)

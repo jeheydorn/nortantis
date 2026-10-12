@@ -234,6 +234,17 @@ public class CollapsiblePanel extends JPanel
 		return new Dimension(super.getMaximumSize().width, getPreferredSize().height);
 	}
 
+	/**
+	 * Keeps the card from being squeezed shorter than its content. GridBagLayout lays out every row at its minimum height when its container
+	 * is narrower than it prefers, which an expanded card's content can cause, and without this the cards would shift and shrink by a few
+	 * pixels when one is expanded.
+	 */
+	@Override
+	public Dimension getMinimumSize()
+	{
+		return new Dimension(super.getMinimumSize().width, getPreferredSize().height);
+	}
+
 	private void storeCollapsedState()
 	{
 		UserPreferences.getInstance().panelCollapsedStates.put(getNameKey(), isCollapsed);
