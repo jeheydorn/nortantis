@@ -39,6 +39,8 @@ public class UserPreferences
 	public LookAndFeel lookAndFeel = LookAndFeel.Dark;
 	public int toolsPanelWidth;
 	public int themePanelWidth;
+	public boolean isToolsPanelCollapsed;
+	public boolean isThemePanelCollapsed;
 	public String language;
 	/**
 	 * The bounds of the main window the last time it was closed while not maximized, or null if they are unknown.
@@ -181,6 +183,16 @@ public class UserPreferences
 		if (props.containsKey("themePanelWidth"))
 		{
 			tryLoad(props, "themePanelWidth", () -> themePanelWidth = Integer.parseInt(props.getProperty("themePanelWidth")));
+		}
+
+		if (props.containsKey("isToolsPanelCollapsed"))
+		{
+			tryLoad(props, "isToolsPanelCollapsed", () -> isToolsPanelCollapsed = Boolean.parseBoolean(props.getProperty("isToolsPanelCollapsed")));
+		}
+
+		if (props.containsKey("isThemePanelCollapsed"))
+		{
+			tryLoad(props, "isThemePanelCollapsed", () -> isThemePanelCollapsed = Boolean.parseBoolean(props.getProperty("isThemePanelCollapsed")));
 		}
 
 		if (props.containsKey("hideGridOverlaySeizureWarning"))
@@ -336,6 +348,8 @@ public class UserPreferences
 		props.setProperty("lookAndFeel", lookAndFeel.name());
 		props.setProperty("toolsPanelWidth", toolsPanelWidth + "");
 		props.setProperty("themePanelWidth", themePanelWidth + "");
+		props.setProperty("isToolsPanelCollapsed", isToolsPanelCollapsed + "");
+		props.setProperty("isThemePanelCollapsed", isThemePanelCollapsed + "");
 		props.setProperty("language", language == null ? "" : language);
 		props.setProperty("hideThemeChangedMessage", hideThemeChangedMessage + "");
 		props.setProperty("hideStartupSupportPanel", hideStartupSupportPanel + "");

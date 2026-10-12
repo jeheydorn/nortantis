@@ -37,6 +37,7 @@ import org.json.simple.parser.JSONParser;
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileSystemView;
+import javax.swing.plaf.basic.BasicSplitPaneUI;
 import java.awt.*;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.*;
@@ -132,6 +133,13 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private JSplitPane themePanelSplitPane;
 	private JSplitPane toolsPanelSplitPane;
 	private JSplitPane consoleOutputSplitPane;
+	/**
+	 * The width of each side panel the last time it was not collapsed, which is the width it expands back to.
+	 */
+	private int themePanelWidthWhenExpanded;
+	private int toolsPanelWidthWhenExpanded;
+	private JCheckBoxMenuItem themePanelMenuItem;
+	private JCheckBoxMenuItem toolsPanelMenuItem;
 	/**
 	 * A divider location far below the bottom of the window, which hides the console output. The console output is hidden by default and is
 	 * only seen when the user drags it open.
@@ -534,8 +542,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					boolean cancelPressed = checkForUnsavedChanges();
 					if (!cancelPressed)
 					{
-						UserPreferences.getInstance().toolsPanelWidth = toolsPanel.getWidth();
-						UserPreferences.getInstance().themePanelWidth = themePanel.getWidth();
+						UserPreferences.getInstance().toolsPanelWidth = toolsPanelWidthWhenExpanded;
+						UserPreferences.getInstance().themePanelWidth = themePanelWidthWhenExpanded;
+						UserPreferences.getInstance().isToolsPanelCollapsed = isToolsPanelCollapsed();
+						UserPreferences.getInstance().isThemePanelCollapsed = isThemePanelCollapsed();
 						storeWindowPlacementInPreferences();
 						UserPreferences.getInstance().save();
 						dispose();
@@ -597,6 +607,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		toolsPanelSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, themePanelSplitPane, toolsPanel);
 		toolsPanelSplitPane.setResizeWeight(1.0);
 		toolsPanelSplitPane.setOneTouchExpandable(true);
+
+		themePanelSplitPane.addPropertyChangeListener(JSplitPane.DIVIDER_LOCATION_PROPERTY, e -> handleSidePanelDividerMoved());
+		toolsPanelSplitPane.addPropertyChangeListener(JSplitPane.DIVIDER_LOCATION_PROPERTY, e -> handleSidePanelDividerMoved());
 
 		getContentPane().add(toolsPanelSplitPane, BorderLayout.CENTER);
 
@@ -694,6 +707,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		// The side panels are given their widths after that layout, since the width a split pane has is what its divider position is measured
 		// from, and before now the window had only been laid out at the size it was packed at.
 		applyStoredSidePanelWidths();
+
+		// Collapsed after the widths are laid out, so that a panel collapses from, and later expands back to, its stored width.
+		validate();
+		setThemePanelCollapsed(UserPreferences.getInstance().isThemePanelCollapsed);
+		setToolsPanelCollapsed(UserPreferences.getInstance().isToolsPanelCollapsed);
 	}
 
 	/**
@@ -739,10 +757,125 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		// The tools panel divider is moved first because it decides the width the theme panel's split pane then divides. That layout is done
 		// before the theme panel's divider is moved, since otherwise the theme panel's divider would be limited by the width its split pane
 		// had while the window was still smaller. The split pane is marked invalid first because an already valid one lays out nothing.
-		setToolsPanelWidth(SwingHelper.clampSidePanelWidthToMinimum(UserPreferences.getInstance().toolsPanelWidth));
+		toolsPanelWidthWhenExpanded = SwingHelper.clampSidePanelWidthToMinimum(UserPreferences.getInstance().toolsPanelWidth);
+		themePanelWidthWhenExpanded = SwingHelper.clampSidePanelWidthToMinimum(UserPreferences.getInstance().themePanelWidth);
+		setToolsPanelWidth(toolsPanelWidthWhenExpanded);
 		toolsPanelSplitPane.invalidate();
 		toolsPanelSplitPane.validate();
-		setThemePanelWidth(SwingHelper.clampSidePanelWidthToMinimum(UserPreferences.getInstance().themePanelWidth));
+		setThemePanelWidth(themePanelWidthWhenExpanded);
+	}
+
+	/**
+	 * Keeps track of the width each side panel expands back to, and keeps the View menu's checkboxes for the side panels showing whether
+	 * they are expanded, however their dividers were moved.
+	 */
+	private void handleSidePanelDividerMoved()
+	{
+		if (themePanelSplitPane.getWidth() > 0)
+		{
+			boolean isCollapsed = isThemePanelCollapsed();
+			if (!isCollapsed)
+			{
+				themePanelWidthWhenExpanded = themePanelSplitPane.getDividerLocation();
+			}
+			themePanelMenuItem.setSelected(!isCollapsed);
+		}
+		if (toolsPanelSplitPane.getWidth() > 0)
+		{
+			boolean isCollapsed = isToolsPanelCollapsed();
+			if (!isCollapsed)
+			{
+				toolsPanelWidthWhenExpanded = toolsPanelSplitPane.getWidth() - toolsPanelSplitPane.getDividerLocation() - toolsPanelSplitPane.getDividerSize();
+			}
+			toolsPanelMenuItem.setSelected(!isCollapsed);
+		}
+	}
+
+	private boolean isThemePanelCollapsed()
+	{
+		return themePanelSplitPane.getDividerLocation() <= themePanelSplitPane.getInsets().left;
+	}
+
+	private boolean isToolsPanelCollapsed()
+	{
+		return toolsPanelSplitPane.getDividerLocation() >= getCollapsedToolsPanelDividerLocation();
+	}
+
+	private int getCollapsedToolsPanelDividerLocation()
+	{
+		return toolsPanelSplitPane.getWidth() - toolsPanelSplitPane.getInsets().right - toolsPanelSplitPane.getDividerSize();
+	}
+
+	private void setThemePanelCollapsed(boolean isCollapsed)
+	{
+		if (isCollapsed == isThemePanelCollapsed())
+		{
+			return;
+		}
+		if (isCollapsed)
+		{
+			collapseSidePanel(themePanelSplitPane, true, themePanelSplitPane.getInsets().left);
+		}
+		else
+		{
+			setThemePanelWidth(SwingHelper.clampSidePanelWidthToMinimum(themePanelWidthWhenExpanded));
+		}
+	}
+
+	private void setToolsPanelCollapsed(boolean isCollapsed)
+	{
+		if (isCollapsed == isToolsPanelCollapsed())
+		{
+			return;
+		}
+		if (isCollapsed)
+		{
+			collapseSidePanel(toolsPanelSplitPane, false, getCollapsedToolsPanelDividerLocation());
+		}
+		else
+		{
+			setToolsPanelWidth(SwingHelper.clampSidePanelWidthToMinimum(toolsPanelWidthWhenExpanded));
+		}
+	}
+
+	/**
+	 * Collapses a side panel by pressing the arrow on its split pane's divider that points toward it, which keeps the panel collapsed when the
+	 * window is resized. Moving the divider directly would let the panel's minimum width push it back open on the next resize.
+	 *
+	 * @param isLeftPanel
+	 *            Whether the panel is on the left of its split pane rather than the right.
+	 * @param collapsedDividerLocation
+	 *            Where the divider goes if the look and feel's divider has no arrows to press.
+	 */
+	private static void collapseSidePanel(JSplitPane splitPane, boolean isLeftPanel, int collapsedDividerLocation)
+	{
+		if (splitPane.getUI() instanceof BasicSplitPaneUI ui && ui.getDivider() != null)
+		{
+			List<AbstractButton> arrows = new ArrayList<>();
+			for (Component component : ui.getDivider().getComponents())
+			{
+				if (component instanceof AbstractButton button)
+				{
+					arrows.add(button);
+				}
+			}
+			// The divider adds its left arrow first.
+			if (arrows.size() == 2)
+			{
+				arrows.get(isLeftPanel ? 0 : 1).doClick(0);
+			}
+			else
+			{
+				splitPane.setDividerLocation(collapsedDividerLocation);
+			}
+		}
+		else
+		{
+			splitPane.setDividerLocation(collapsedDividerLocation);
+		}
+		// A split pane resized before it lays out the new divider location divides its new size by the old one instead, which would undo the
+		// collapse, such as when collapsing the other side panel resizes it.
+		splitPane.validate();
 	}
 
 	private void setThemePanelWidth(int width)
@@ -1712,6 +1845,19 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		viewMenu.add(highlightTextWithOwnStyleButton);
 
 		viewMenu.addSeparator();
+
+		themePanelMenuItem = new JCheckBoxMenuItem(Translation.get("menu.view.themePanel"), true);
+		themePanelMenuItem.setToolTipText(Translation.get("menu.view.themePanel.tooltip", Translation.get("theme.tab.canvas"), Translation.get("theme.tab.shores"),
+				Translation.get("theme.tab.features"), Translation.get("theme.tab.fonts")));
+		themePanelMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_1, SwingHelper.getMenuShortcutKeyMask() | InputEvent.SHIFT_DOWN_MASK));
+		themePanelMenuItem.addActionListener(e -> setThemePanelCollapsed(!themePanelMenuItem.isSelected()));
+		viewMenu.add(themePanelMenuItem);
+
+		toolsPanelMenuItem = new JCheckBoxMenuItem(Translation.get("menu.view.toolsPanel"), true);
+		toolsPanelMenuItem.setToolTipText(Translation.get("menu.view.toolsPanel.tooltip"));
+		toolsPanelMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_2, SwingHelper.getMenuShortcutKeyMask() | InputEvent.SHIFT_DOWN_MASK));
+		toolsPanelMenuItem.addActionListener(e -> setToolsPanelCollapsed(!toolsPanelMenuItem.isSelected()));
+		viewMenu.add(toolsPanelMenuItem);
 
 		JMenuItem resetWindowLayoutMenuItem = new JMenuItem(Translation.get("menu.view.resetWindowLayout"));
 		resetWindowLayoutMenuItem.setToolTipText(Translation.get("menu.view.resetWindowLayout.tooltip"));
