@@ -193,8 +193,7 @@ public class ThemePanel extends JTabbedPane
 		setPreferredSize(new Dimension(width, mainWindow.getContentPane().getHeight()));
 		setMinimumSize(new Dimension(SwingHelper.sidePanelMinimumWidth, getMinimumSize().height));
 
-		addTab(Translation.get("theme.tab.background"), createBackgroundPanel(mainWindow));
-		addTab(Translation.get("theme.tab.border"), createBorderPanel());
+		addTab(Translation.get("theme.tab.canvas"), createCanvasPanel(mainWindow));
 		addTab(Translation.get("theme.tab.shores"), createShoresPanel());
 		addTab(Translation.get("theme.tab.features"), createFeaturesPanel());
 		textStylesPanel = new TextStylesPanel(mainWindow);
@@ -208,9 +207,21 @@ public class ThemePanel extends JTabbedPane
 
 	}
 
-	private Component createBackgroundPanel(MainWindow mainWindow)
+	/**
+	 * The Canvas tab: the background, and the border and wear around and over the map.
+	 */
+	private Component createCanvasPanel(MainWindow mainWindow)
 	{
 		GridBagOrganizer organizer = new GridBagOrganizer();
+		addBackgroundSections(organizer, mainWindow);
+		addBorderSections(organizer);
+		organizer.addVerticalFillerRow();
+		updateBackgroundFieldVisibility();
+		return organizer.createScrollPane();
+	}
+
+	private void addBackgroundSections(GridBagOrganizer organizer, MainWindow mainWindow)
+	{
 		JPanel backgroundPanel = organizer.panel;
 
 		backgroundImageButtonGroupListener = new ActionListener()
@@ -613,17 +624,10 @@ public class ThemePanel extends JTabbedPane
 
 			updateGridOverlayFieldVisibilityAndLabelText();
 		}
-
-		organizer.addVerticalFillerRow();
-		updateBackgroundFieldVisibility();
-
-		return organizer.createScrollPane();
 	}
 
-	private Component createBorderPanel()
+	private void addBorderSections(GridBagOrganizer organizer)
 	{
-		GridBagOrganizer organizer = new GridBagOrganizer();
-
 		drawBorderCheckbox = new JCheckBox(Translation.get("theme.section.border"));
 		drawBorderCheckbox.setToolTipText(Translation.get("theme.section.border.tooltip"));
 		drawBorderCheckbox.addActionListener(new ActionListener()
@@ -822,9 +826,6 @@ public class ThemePanel extends JTabbedPane
 		});
 		grungeRows.add(organizer.addLabelAndComponentsHorizontal(Translation.get("theme.color.label"), Translation.get("theme.grungeColor.help"),
 				Arrays.asList(grungeColorDisplay, grungeColorChooseButton), SwingHelper.colorPickerLeftPadding));
-
-		organizer.addVerticalFillerRow();
-		return organizer.createScrollPane();
 	}
 
 	private Component createShoresPanel()

@@ -115,7 +115,7 @@ class TextStylesPanel
 			@Override
 			public void componentShown(java.awt.event.ComponentEvent e)
 			{
-				// The samples sit on the land color, which the Background tab changes.
+				// The samples sit on the land color, which the Canvas tab changes.
 				updateSamples();
 			}
 		});
