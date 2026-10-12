@@ -42,6 +42,15 @@ class TextBackgroundDrawer
 	private static final double scrollCurlOverhang = 0.16;
 	private static final double scrollCapHeight = 0.22;
 	/**
+	 * The size of the spiral on top of a scroll curl, as a fraction of the size of the curl's top.
+	 */
+	private static final double scrollSpiralSize = 0.55;
+	/**
+	 * The most the ellipses on top of a scroll curl wobble, as a fraction of their height, so that jitter reshapes them without flattening
+	 * them into slivers.
+	 */
+	private static final double scrollCapMaxJitterFraction = 0.4;
+	/**
 	 * How much of a scroll curl's width sits over the end of the paper rather than past it.
 	 */
 	private static final double curlInnerFraction = 0.4;
@@ -756,6 +765,16 @@ class TextBackgroundDrawer
 		 */
 		List<Point> finish(List<double[]> bandPoints, boolean isClosed)
 		{
+			return finish(bandPoints, isClosed, jitter);
+		}
+
+		/**
+		 * Like {@link #finish(List, boolean)}, but wobbles the points by at most maxJitter, for outlines too small to wobble by the full
+		 * amount without losing their shape.
+		 */
+		List<Point> finish(List<double[]> bandPoints, boolean isClosed, double maxJitter)
+		{
+			double jitter = Math.min(this.jitter, maxJitter);
 			long lineSeed = Helper.mixSeed(seed + nextLineIndex++);
 			List<Point> result = new ArrayList<>(bandPoints.size());
 			int count = bandPoints.size();
@@ -885,9 +904,12 @@ class TextBackgroundDrawer
 			pieces.add(new ShapePiece(builder.finish(silhouette, true), true, null, true));
 
 			// The top of the roll shows the spiral of rolled paper.
-			pieces.add(new ShapePiece(builder.finish(builder.arc(middle, top, radius, capHeight, 0, 2 * Math.PI), true), true, darkShade, true));
+			pieces.add(new ShapePiece(builder.finish(builder.arc(middle, top, radius, capHeight, 0, 2 * Math.PI), true, scrollCapMaxJitterFraction * capHeight), true,
+					darkShade, true));
 			double spiralOffset = (isLeft ? 1 : -1) * radius * 0.2;
-			pieces.add(new ShapePiece(builder.finish(builder.arc(middle + spiralOffset, top, radius * 0.45, capHeight * 0.45, 0, 2 * Math.PI), true), true, null, true));
+			double spiralHeight = capHeight * scrollSpiralSize;
+			pieces.add(new ShapePiece(builder.finish(builder.arc(middle + spiralOffset, top, radius * scrollSpiralSize, spiralHeight, 0, 2 * Math.PI), true,
+					scrollCapMaxJitterFraction * spiralHeight), true, null, true));
 		}
 	}
 
