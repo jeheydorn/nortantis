@@ -44,16 +44,26 @@ class TextStylesPanel
 	private final EnumMap<TextType, CollapsiblePanel> cardsByType = new EnumMap<>(TextType.class);
 	private final EnumMap<TextType, SamplePanel> samplesByType = new EnumMap<>(TextType.class);
 
-	private static final int sampleWidth = 180;
-	private static final int sampleHeight = 22;
 	/**
-	 * The font size at and above which samples fill their height. Smaller text is drawn smaller.
+	 * The height of a sample's chip, and the least height of a sample.
 	 */
-	private static final float fontSizeThatFillsSample = 12f;
+	private static final int sampleChipHeight = 36;
 	/**
-	 * The space between the top or bottom of a sample and its visible text.
+	 * The space between the sides of a sample's chip and its text.
 	 */
-	private static final int sampleVerticalInset = 2;
+	private static final int sampleChipHorizontalPadding = 6;
+	/**
+	 * How tall the tallest and lowest letters of the largest samples are.
+	 */
+	private static final int largestSampleTextHeight = 26;
+	/**
+	 * The font size at and above which samples are drawn at the largest size.
+	 */
+	private static final float fontSizeOfLargestSamples = 24f;
+	/**
+	 * The widest a sample's text can be. Longer text is shrunk to fit.
+	 */
+	private static final int maxSampleTextWidth = 120;
 
 	TextStylesPanel(MainWindow mainWindow)
 	{
@@ -269,71 +279,60 @@ class TextStylesPanel
 	}
 
 	/**
-	 * Draws the name of the type of text in its style, centered vertically in an image the sample's height. Text with a font size of
-	 * {@link #fontSizeThatFillsSample} or more is scaled so that its tallest and lowest letters fill the sample's height, and smaller text is
-	 * scaled down from that in proportion to its font size. A shape behind the text, such as a scroll, is scaled with the text so that it
-	 * fits whole in the sample. Other background effects can reach past the sample's height, and are cropped.
+	 * Draws the name of the type of text in its style. Text with a font size of {@link #fontSizeOfLargestSamples} or more is drawn at the
+	 * largest size, and smaller text is drawn smaller in proportion to its font size. The size of the text doesn't depend on its
+	 * background. A shape behind the text, such as a scroll, is drawn whole and cropped to its edges.
+	 * Other text is centered on a chip the height of {@link #sampleChipHeight}, or taller if a glow or outline needs it.
 	 */
 	private static Image createSample(TextType type, TextStyle style)
 	{
 		double osScale = SwingHelper.getOSScale();
-		IntDimension size = new IntDimension((int) (sampleWidth * osScale), (int) (sampleHeight * osScale));
-		boolean isShape = style.background.effect.isShape();
-		int availableHeight = isShape ? size.height : size.height - 2 * (int) Math.ceil(sampleVerticalInset * osScale);
+		TextStyle styleWithoutBackground = style.copy();
+		styleWithoutBackground.background.effect = TextBackgroundEffect.None;
 
 		double scale;
-		TextStyle referenceStyle = style.copy();
-		if (!isShape)
-		{
-			referenceStyle.background.effect = TextBackgroundEffect.None;
-		}
-		try (Image reference = drawSampleText("Hgy", type, referenceStyle, osScale))
+		try (Image reference = drawSampleText("Hgy", type, styleWithoutBackground, osScale))
 		{
 			if (reference == null)
 			{
 				return null;
 			}
-			scale = availableHeight / (double) findVisibleBounds(reference).height;
+			scale = largestSampleTextHeight * osScale / findVisibleBounds(reference).height;
 		}
-		scale *= Math.min(1.0, style.font.getSize() / fontSizeThatFillsSample);
+		scale *= Math.min(1.0, style.font.getSize() / fontSizeOfLargestSamples);
 
-		Image textImage = drawSampleText(type.toString(), type, style, osScale * scale);
-		if (textImage == null)
+		try (Image textWithoutBackground = drawSampleText(type.toString(), type, styleWithoutBackground, osScale * scale))
 		{
-			return null;
+			if (textWithoutBackground == null)
+			{
+				return null;
+			}
+			int textWidth = findVisibleBounds(textWithoutBackground).width;
+			double maxWidth = maxSampleTextWidth * osScale;
+			if (textWidth > maxWidth)
+			{
+				scale *= maxWidth / textWidth;
+			}
 		}
-		IntRectangle visibleBounds = findVisibleBounds(textImage);
-		double fitScale;
-		if (isShape)
+
+		try (Image textImage = drawSampleText(type.toString(), type, style, osScale * scale))
 		{
-			// The shape around the name can be a little taller than the one around the reference.
-			fitScale = Math.min(size.width / (double) visibleBounds.width, size.height / (double) visibleBounds.height);
-		}
-		else
-		{
-			fitScale = size.width / (double) textImage.getWidth();
-		}
-		if (fitScale < 1.0)
-		{
-			scale *= fitScale;
-			textImage.close();
-			textImage = drawSampleText(type.toString(), type, style, osScale * scale);
 			if (textImage == null)
 			{
 				return null;
 			}
-			visibleBounds = findVisibleBounds(textImage);
-		}
+			IntRectangle visibleBounds = findVisibleBounds(textImage);
+			if (style.background.effect.isShape())
+			{
+				return textImage.copySubImage(visibleBounds);
+			}
 
-		try (Image toClose = textImage)
-		{
-			// A shape is cropped to its edges. Other text keeps its transparent margin on the sides, which pads it from the edges of the chip.
-			int left = isShape ? visibleBounds.x : 0;
-			int width = isShape ? visibleBounds.width : textImage.getWidth();
-			Image result = Image.create(Math.min(width, size.width), size.height, ImageType.ARGB);
+			int horizontalPadding = (int) Math.round(sampleChipHorizontalPadding * osScale);
+			int height = Math.max((int) (sampleChipHeight * osScale), visibleBounds.height + 2 * horizontalPadding);
+			Image result = Image.create(visibleBounds.width + 2 * horizontalPadding, height, ImageType.ARGB);
 			try (Painter p = result.createPainter(DrawQuality.High))
 			{
-				p.drawImage(textImage, -left, (size.height - visibleBounds.height) / 2 - visibleBounds.y);
+				p.drawImage(textImage, horizontalPadding - visibleBounds.x, (height - visibleBounds.height) / 2 - visibleBounds.y);
 			}
 			return result;
 		}
@@ -388,7 +387,9 @@ class TextStylesPanel
 	}
 
 	/**
-	 * Shows a sample on a rounded chip of the map's land color, without the OS's display scaling, so that the text is drawn crisply.
+	 * Shows a sample, on a rounded chip of the map's land color if it has a chip color, without the OS's display scaling so that the text is
+	 * drawn crisply. Samples are at least as tall as a chip, and centered vertically, so that the cards' title strips are the same height
+	 * unless a sample is taller.
 	 */
 	@SuppressWarnings("serial")
 	private static class SamplePanel extends UnscaledImagePanel
@@ -406,6 +407,21 @@ class TextStylesPanel
 				g2.fillRoundRect(0, 0, image.getWidth(), image.getHeight(), arc, arc);
 			}
 			g2.drawImage(image, 0, 0, null);
+		}
+
+		@Override
+		protected java.awt.Point getImageOffsetInPixels()
+		{
+			BufferedImage image = getImage();
+			int height = (int) Math.round(getHeight() * osScale);
+			return new java.awt.Point(0, image == null ? 0 : Math.max(0, (height - image.getHeight()) / 2));
+		}
+
+		@Override
+		public Dimension getPreferredSize()
+		{
+			Dimension size = super.getPreferredSize();
+			return new Dimension(size.width, Math.max(size.height, sampleChipHeight));
 		}
 	}
 }
