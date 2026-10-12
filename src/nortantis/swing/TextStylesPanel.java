@@ -45,25 +45,21 @@ class TextStylesPanel
 	private final EnumMap<TextType, SamplePanel> samplesByType = new EnumMap<>(TextType.class);
 
 	/**
-	 * The height of a sample's chip, and the least height of a sample.
-	 */
-	private static final int sampleChipHeight = 36;
-	/**
 	 * The space between the sides of a sample's chip and its text.
 	 */
 	private static final int sampleChipHorizontalPadding = 6;
 	/**
+	 * The space between the top or bottom of a sample's chip and its text's tallest or lowest letters.
+	 */
+	private static final int sampleChipVerticalPadding = 4;
+	/**
 	 * How tall the tallest and lowest letters of the largest samples are.
 	 */
-	private static final int largestSampleTextHeight = 26;
+	private static final int largestSampleTextHeight = 39;
 	/**
 	 * The font size at and above which samples are drawn at the largest size.
 	 */
 	private static final float fontSizeOfLargestSamples = 24f;
-	/**
-	 * The widest a sample's text can be. Longer text is shrunk to fit.
-	 */
-	private static final int maxSampleTextWidth = 120;
 
 	TextStylesPanel(MainWindow mainWindow)
 	{
@@ -280,9 +276,9 @@ class TextStylesPanel
 
 	/**
 	 * Draws the name of the type of text in its style. Text with a font size of {@link #fontSizeOfLargestSamples} or more is drawn at the
-	 * largest size, and smaller text is drawn smaller in proportion to its font size. The size of the text doesn't depend on its
-	 * background. A shape behind the text, such as a scroll, is drawn whole and cropped to its edges.
-	 * Other text is centered on a chip the height of {@link #sampleChipHeight}, or taller if a glow or outline needs it.
+	 * largest size, and smaller text is drawn smaller in proportion to its font size. The size of the text depends on nothing else, such as
+	 * its background or how long the name is. A shape behind the text, such as a scroll, is drawn whole and cropped to its edges.
+	 * Other text is centered on a chip that fits the text's tallest and lowest letters, or taller if a glow or outline needs it.
 	 */
 	private static Image createSample(TextType type, TextStyle style)
 	{
@@ -290,30 +286,18 @@ class TextStylesPanel
 		TextStyle styleWithoutBackground = style.copy();
 		styleWithoutBackground.background.effect = TextBackgroundEffect.None;
 
-		double scale;
+		// The tallest and lowest letters, so that the size doesn't depend on which letters the name has.
+		int referenceHeight;
 		try (Image reference = drawSampleText("Hgy", type, styleWithoutBackground, osScale))
 		{
 			if (reference == null)
 			{
 				return null;
 			}
-			scale = largestSampleTextHeight * osScale / findVisibleBounds(reference).height;
+			referenceHeight = findVisibleBounds(reference).height;
 		}
+		double scale = largestSampleTextHeight * osScale / referenceHeight;
 		scale *= Math.min(1.0, style.font.getSize() / fontSizeOfLargestSamples);
-
-		try (Image textWithoutBackground = drawSampleText(type.toString(), type, styleWithoutBackground, osScale * scale))
-		{
-			if (textWithoutBackground == null)
-			{
-				return null;
-			}
-			int textWidth = findVisibleBounds(textWithoutBackground).width;
-			double maxWidth = maxSampleTextWidth * osScale;
-			if (textWidth > maxWidth)
-			{
-				scale *= maxWidth / textWidth;
-			}
-		}
 
 		try (Image textImage = drawSampleText(type.toString(), type, style, osScale * scale))
 		{
@@ -328,7 +312,8 @@ class TextStylesPanel
 			}
 
 			int horizontalPadding = (int) Math.round(sampleChipHorizontalPadding * osScale);
-			int height = Math.max((int) (sampleChipHeight * osScale), visibleBounds.height + 2 * horizontalPadding);
+			int verticalPadding = (int) Math.round(sampleChipVerticalPadding * osScale);
+			int height = Math.max((int) Math.round(referenceHeight * scale), visibleBounds.height) + 2 * verticalPadding;
 			Image result = Image.create(visibleBounds.width + 2 * horizontalPadding, height, ImageType.ARGB);
 			try (Painter p = result.createPainter(DrawQuality.High))
 			{
@@ -388,8 +373,7 @@ class TextStylesPanel
 
 	/**
 	 * Shows a sample, on a rounded chip of the map's land color if it has a chip color, without the OS's display scaling so that the text is
-	 * drawn crisply. Samples are at least as tall as a chip, and centered vertically, so that the cards' title strips are the same height
-	 * unless a sample is taller.
+	 * drawn crisply. A sample wider than the space left for it is cut off on the right.
 	 */
 	@SuppressWarnings("serial")
 	private static class SamplePanel extends UnscaledImagePanel
@@ -410,18 +394,9 @@ class TextStylesPanel
 		}
 
 		@Override
-		protected java.awt.Point getImageOffsetInPixels()
+		public Dimension getMinimumSize()
 		{
-			BufferedImage image = getImage();
-			int height = (int) Math.round(getHeight() * osScale);
-			return new java.awt.Point(0, image == null ? 0 : Math.max(0, (height - image.getHeight()) / 2));
-		}
-
-		@Override
-		public Dimension getPreferredSize()
-		{
-			Dimension size = super.getPreferredSize();
-			return new Dimension(size.width, Math.max(size.height, sampleChipHeight));
+			return new Dimension(0, getPreferredSize().height);
 		}
 	}
 }
