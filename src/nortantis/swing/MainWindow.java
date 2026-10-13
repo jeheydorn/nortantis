@@ -2884,15 +2884,16 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			mapReadLock.unlock();
 		}
 
+		int sourceWidth = sourceMap.getWidth();
 		if (synchronous)
 		{
 			// Already on the EDT (called inline for a full draw). Commit in this same event so the image lands together with the panel
 			// state the caller set just before.
-			commitScaledMap(generation, scaledImage, committedResolution, targetZoom, borderPadding, isZoomChange);
+			commitScaledMap(generation, scaledImage, sourceWidth, committedResolution, targetZoom, borderPadding, isZoomChange);
 		}
 		else
 		{
-			SwingUtilities.invokeLater(() -> commitScaledMap(generation, scaledImage, committedResolution, targetZoom, borderPadding, isZoomChange));
+			SwingUtilities.invokeLater(() -> commitScaledMap(generation, scaledImage, sourceWidth, committedResolution, targetZoom, borderPadding, isZoomChange));
 		}
 	}
 
@@ -2944,7 +2945,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	 * everything snaps to the new zoom at once. A zoom preview has already given the panel the size and view position of the rescaled image,
 	 * so the map doesn't move when it's committed.
 	 */
-	private void commitScaledMap(long generation, BufferedImage scaledImage, double committedResolution, double targetZoom, int borderPadding, boolean isZoomChange)
+	private void commitScaledMap(long generation, BufferedImage scaledImage, int sourceWidth, double committedResolution, double targetZoom, int borderPadding,
+			boolean isZoomChange)
 	{
 		if (generation != displayScaleGeneration.get() || mapEditingPanel.mapFromMapCreator == null)
 		{
@@ -2962,7 +2964,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		// is the previous raw map, so this keeps the panel reporting the resolution that matches the image actually on screen.
 		mapEditingPanel.setResolution(committedResolution);
 		mapEditingPanel.setBorderPadding(borderPadding);
-		mapEditingPanel.setZoom(zoom);
+		// The rescaled image is a whole number of pixels wide, so the scale it was actually drawn at differs slightly from the zoom. Overlays
+		// use the actual scale so that they line up with the image, and so that they land where a zoom preview, which stretches by the ratio
+		// of the image sizes, already put them.
+		mapEditingPanel.setZoom((double) scaledImage.getWidth() / sourceWidth);
 		mapEditingPanel.setImage(scaledImage);
 
 		if (isZoomChange)

@@ -873,6 +873,23 @@ public class MapEditingPanel extends UnscaledImagePanel
 	{
 		Graphics2D g2 = ((Graphics2D) g);
 
+		// Under fractional display scaling the panel's origin can land between device pixels. Java2D rounds an unscaled image to whole
+		// pixels, but a stretched one, as during a zoom preview, is placed at the exact fraction, so the map would shift by up to half a pixel
+		// when the rescaled image replaces the preview. Snapping the origin to a whole pixel puts the map in the same place in both.
+		AffineTransform deviceTransform = g2.getTransform();
+		if (deviceTransform.getScaleX() > 0 && deviceTransform.getScaleY() > 0)
+		{
+			double snapX = Math.round(deviceTransform.getTranslateX()) - deviceTransform.getTranslateX();
+			double snapY = Math.round(deviceTransform.getTranslateY()) - deviceTransform.getTranslateY();
+			g2.translate(snapX / deviceTransform.getScaleX(), snapY / deviceTransform.getScaleY());
+		}
+
+		Object originalInterpolation = g2.getRenderingHint(RenderingHints.KEY_INTERPOLATION);
+		if (originalInterpolation == null)
+		{
+			// No hint means Java2D's default, nearest neighbor.
+			originalInterpolation = RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR;
+		}
 		if (zoomPreviewTransform != null && getImage() != null)
 		{
 			// The background is filled before applying the preview transform because a zoom-out preview shrinks the image and would
@@ -888,6 +905,9 @@ public class MapEditingPanel extends UnscaledImagePanel
 		}
 
 		super.paintComponent(g);
+		// Only the map image is smoothed while stretched. Overlay images such as the edit tool icons keep the interpolation they're drawn with
+		// once the zoom is committed, so they don't change appearance for the length of the preview.
+		g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, originalInterpolation);
 
 		// Draw no highlights or overlays until a map image is actually on screen. Before the first draw of a map lands - including
 		// the fit-to-window zoom rescales MainWindow runs before it (see fullRescale) - the panel is blank. The graph,
@@ -1660,6 +1680,14 @@ public class MapEditingPanel extends UnscaledImagePanel
 	public void setZoom(double zoom)
 	{
 		this.zoom = zoom;
+	}
+
+	/**
+	 * How many pixels of the displayed image one graph pixel covers, once any zoom preview is committed.
+	 */
+	public double getZoom()
+	{
+		return zoom;
 	}
 
 	/**

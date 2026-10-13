@@ -122,7 +122,7 @@ public abstract class EditorTool
 		}
 
 		int borderWidth = updater.mapParts.background.getBorderPaddingScaledByResolution();
-		double zoom = mainWindow.zoom;
+		double zoom = mapEditingPanel.getZoom();
 		nortantis.geom.Point imagePoint = mapEditingPanel.panelToImagePixels(pointOnMapEditingPanel);
 		return new nortantis.geom.Point(imagePoint.x / zoom - borderWidth, imagePoint.y / zoom - borderWidth);
 	}
