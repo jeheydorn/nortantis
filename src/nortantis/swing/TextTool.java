@@ -176,15 +176,15 @@ public class TextTool extends EditorTool
 		modeWidget.configureDrawButton(Translation.get("textTool.add"), Translation.get("textTool.addMode"), KeyEvent.VK_A);
 		modeWidget.addToOrganizer(organizer, "");
 
-		actionsSeparatorHider = organizer.addSeparator();
-
-		createAddModeControls(organizer);
-		createEditModeControls(organizer);
-
 		brushSelector = organizer.addBrushSelector(brushSizes, Translation.get("gridBagOrganizer.brush.label"));
 
 		controlClickBehavior = new ControlClickBehaviorWidget();
 		controlClickBehaviorHider = controlClickBehavior.addToOrganizer(organizer, "textTool.ctrlClickBehavior.help");
+
+		actionsSeparatorHider = organizer.addSeparator();
+
+		createAddModeControls(organizer);
+		createEditModeControls(organizer);
 
 		booksWidget = new BooksWidget(false, () ->
 		{
@@ -530,12 +530,14 @@ public class TextTool extends EditorTool
 		endRectangleSelect();
 		controlClickBehaviorHider.setVisible(isEditMode);
 		copyPasteDeleteButtonsHider.setVisible(isEditMode);
-		// With nothing selected, no edit controls sit between this separator and the one above.
-		copyPasteDeleteButtonsSeparatorHider.setVisible(isEditMode && !selectedTexts.isEmpty());
-		actionsSeparatorHider.setVisible(true);
+		copyPasteDeleteButtonsSeparatorHider.setVisible(isEditMode);
 		if (!isEditMode || selectedTexts.isEmpty())
 		{
 			hideTextEditComponents();
+		}
+		else
+		{
+			actionsSeparatorHider.setVisible(true);
 		}
 
 		if (isAddMode)
@@ -791,7 +793,7 @@ public class TextTool extends EditorTool
 			spacingSliderWithDisplay.showValues(getValuesOfSelectedTexts(text -> text.spacing));
 			lineBreakComboBox.setSelectedItem(allTextsShare(text -> text.lineBreak) ? first.lineBreak : null);
 
-			copyPasteDeleteButtonsSeparatorHider.setVisible(true);
+			actionsSeparatorHider.setVisible(true);
 		}
 		finally
 		{
@@ -932,7 +934,9 @@ public class TextTool extends EditorTool
 		editStyleControls.setVisible(false);
 		styleButtonsHider.setVisible(false);
 		editLayoutRows.setVisible(false);
-		copyPasteDeleteButtonsSeparatorHider.setVisible(false);
+		// In Edit mode with nothing selected, no edit controls sit between this separator and the one above the copy, paste, and delete
+		// buttons. In Erase mode, nothing follows the brush.
+		actionsSeparatorHider.setVisible(modeWidget.isDrawMode());
 	}
 
 	/**
