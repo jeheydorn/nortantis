@@ -25,6 +25,7 @@ import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.Ellipse2D;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.nio.file.Paths;
 import java.util.*;
@@ -89,6 +90,8 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private java.util.concurrent.locks.Lock mapReadLock;
 	private double resolution;
 	private int borderPadding;
+	/** The rectangle being dragged out to select things in Edit mode, in resolution-invariant coordinates. Null when there is none. */
+	private nortantis.geom.Rectangle rectangleSelectionRI;
 	private nortantis.geom.Rectangle iconToEditBounds;
 	private boolean isIconToEditInAValidPosition;
 	private BufferedImage rotateIconScaled;
@@ -393,12 +396,24 @@ public class MapEditingPanel extends UnscaledImagePanel
 		this.isTextBoxInAValidPosition = true;
 		this.selectedTextBoxes = new ArrayList<>();
 		this.selectedTextBoxesInInvalidPositions = new ArrayList<>();
+		clearTextBoxHandleAreas();
+	}
+
+	/**
+	 * Forgets where the text box's move and rotate handles were drawn, so that pressing there no longer grabs them once they aren't shown.
+	 */
+	private void clearTextBoxHandleAreas()
+	{
+		rotateToolArea = null;
+		moveToolArea = null;
 	}
 
 	/**
 	 * Shows the box with the move and rotate handles around the selected texts, and, when there are several, a box without handles around
 	 * each of them.
 	 *
+	 * @param groupBox
+	 *            The box with the handles, or null to show only the boxes around each text.
 	 * @param isGroupBoxInAValidPosition
 	 *            False to draw the box with the handles in red, to show that its texts would be deleted where they are.
 	 * @param individualBoxesInInvalidPositions
@@ -411,6 +426,10 @@ public class MapEditingPanel extends UnscaledImagePanel
 		this.isTextBoxInAValidPosition = isGroupBoxInAValidPosition;
 		this.selectedTextBoxes = new ArrayList<>(individualBoxes);
 		this.selectedTextBoxesInInvalidPositions = new ArrayList<>(individualBoxesInInvalidPositions);
+		if (groupBox == null)
+		{
+			clearTextBoxHandleAreas();
+		}
 	}
 
 	public void setSelectionCycleCandidateAreas(List<RotatedRectangle> areas)
@@ -426,6 +445,22 @@ public class MapEditingPanel extends UnscaledImagePanel
 	public void clearSelectionCycleCandidateAreas()
 	{
 		selectionCycleCandidateAreas = new ArrayList<>();
+	}
+
+	/**
+	 * Shows the rectangle being dragged out to select things.
+	 *
+	 * @param rectangleRI
+	 *            The rectangle in resolution-invariant coordinates.
+	 */
+	public void setRectangleSelection(nortantis.geom.Rectangle rectangleRI)
+	{
+		rectangleSelectionRI = rectangleRI;
+	}
+
+	public void clearRectangleSelection()
+	{
+		rectangleSelectionRI = null;
 	}
 
 	/**
@@ -990,6 +1025,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 			drawCenterOutlines(g, selectedCenters);
 		}
 
+		drawRectangleSelection(g2);
 		drawSelectionBox((Graphics2D) g);
 	}
 
@@ -1260,6 +1296,31 @@ public class MapEditingPanel extends UnscaledImagePanel
 			}
 		}
 
+	}
+
+	/**
+	 * Draws the rectangle being dragged out to select things, as a lightly filled box with a dashed outline. Expects g to be in graph
+	 * coordinates.
+	 */
+	private void drawRectangleSelection(Graphics2D g)
+	{
+		if (rectangleSelectionRI == null)
+		{
+			return;
+		}
+		nortantis.geom.Rectangle scaled = rectangleSelectionRI.scaleAboutOrigin(resolution);
+		Rectangle2D rectangle = new Rectangle2D.Double(scaled.x, scaled.y, scaled.width, scaled.height);
+		// Size the outline in device pixels so it looks the same at every zoom level.
+		double graphToDeviceScale = g.getTransform().getScaleX();
+		float devicePixel = graphToDeviceScale > 0 ? (float) (1.0 / graphToDeviceScale) : 1f;
+		Stroke originalStroke = g.getStroke();
+		Color highlightColor = getHighlightColor();
+		g.setColor(new Color(highlightColor.getRed(), highlightColor.getGreen(), highlightColor.getBlue(), 40));
+		g.fill(rectangle);
+		g.setColor(highlightColor);
+		g.setStroke(new BasicStroke(1.5f * devicePixel, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10f, new float[] { 6f * devicePixel, 4f * devicePixel }, 0f));
+		g.draw(rectangle);
+		g.setStroke(originalStroke);
 	}
 
 	private Color getHighlightColor()
@@ -2317,6 +2378,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 	public void clearAllToolSpecificSelectionsAndHighlights()
 	{
 		clearTextBox();
+		clearRectangleSelection();
 		clearSelectionCycleCandidateAreas();
 		clearTextHoverPreview();
 		hideIconEditTools();

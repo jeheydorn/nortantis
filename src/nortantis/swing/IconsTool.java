@@ -31,8 +31,19 @@ public class IconsTool extends EditorTool
 {
 	private JToggleButton mountainsButton;
 	private JToggleButton treesButton;
-	private JComboBox<ImageIcon> brushSizeComboBox;
-	private RowHider brushSizeHider;
+	private BrushSelector brushSelector;
+	/**
+	 * The press being held with rectangle selection in Edit mode, or null if there is none.
+	 */
+	private RectangleSelectDrag rectangleSelectDrag;
+	/**
+	 * The selection when the current rectangle selection began, which a rectangle drawn with the command key held adds to or removes from.
+	 */
+	private Set<FreeIcon> selectionBeforeRectangleSelect;
+	/**
+	 * Whether the command key was held during the latest press or drag of the current rectangle selection.
+	 */
+	private boolean isCommandKeyDownDuringRectangleSelect;
 	private JToggleButton hillsButton;
 	private JToggleButton dunesButton;
 	private IconTypeButtons mountainTypes;
@@ -150,6 +161,7 @@ public class IconsTool extends EditorTool
 	@Override
 	public void onSwitchingAway()
 	{
+		endRectangleSelect();
 		mapEditingPanel.clearAllToolSpecificSelectionsAndHighlights();
 		unselectAnyIconsBeingEdited();
 		mapEditingPanel.repaint();
@@ -227,9 +239,7 @@ public class IconsTool extends EditorTool
 			iconTypeCheckboxesHider.setVisible(false);
 		}
 
-		Tuple2<JComboBox<ImageIcon>, RowHider> brushSizeTuple = organizer.addBrushSizeComboBox(brushSizes);
-		brushSizeComboBox = brushSizeTuple.getFirst();
-		brushSizeHider = brushSizeTuple.getSecond();
+		brushSelector = organizer.addBrushSelector(brushSizes, Translation.get("gridBagOrganizer.brush.label"));
 
 		{
 			controlClickBehavior = new ControlClickBehaviorWidget();
@@ -454,7 +464,8 @@ public class IconsTool extends EditorTool
 			@Override
 			public boolean dispatchKeyEvent(KeyEvent e)
 			{
-				if (isSelected() && modeWidget.isEditMode() && !isMoving && !isScaling && SwingHelper.isCommandModifierKeyCode(e.getKeyCode()))
+				if (isSelected() && modeWidget.isEditMode() && !isMoving && !isScaling && rectangleSelectDrag == null
+						&& SwingHelper.isCommandModifierKeyCode(e.getKeyCode()))
 				{
 					updater.doIfMapIsReadyForInteractions(() ->
 					{
@@ -852,10 +863,12 @@ public class IconsTool extends EditorTool
 
 	private void handleModeChanged()
 	{
+		endRectangleSelect();
 		unselectAnyIconsBeingEdited();
+		// Update the panels first, since they choose the brush the hover highlight below uses.
+		updateTypePanels();
 		innerHandleMouseMovedOnMap(mapEditingPanel.getMousePosition(), false);
 		mapEditingPanel.repaint();
-		updateTypePanels();
 	}
 
 	private void showOrHideEditComponents()
@@ -891,7 +904,8 @@ public class IconsTool extends EditorTool
 		cityButtons.hider.setVisible(citiesButton.isSelected() && (modeWidget.isDrawMode() || modeWidget.isReplaceMode()));
 		decorationButtons.hider.setVisible(decorationsButton.isSelected() && (modeWidget.isDrawMode() || modeWidget.isReplaceMode()));
 		densityHider.setVisible(treesButton.isSelected() && (modeWidget.isDrawMode()));
-		brushSizeHider.setVisible(
+		brushSelector.setOffersRectangleSelect(modeWidget.isEditMode());
+		brushSelector.setVisible(
 				(modeWidget.isDrawMode() && !citiesButton.isSelected() && !decorationsButton.isSelected()) || modeWidget.isReplaceMode() || modeWidget.isEraseMode() || modeWidget.isEditMode());
 		// Disable color change handlers so they don't set undo points because of automatic changes.
 		setColorForSelectedType();
@@ -1759,9 +1773,21 @@ public class IconsTool extends EditorTool
 				updateSelectionCycleCandidates(e.getPoint());
 			}
 		}
+		else if (!isPress && rectangleSelectDrag != null)
+		{
+			isCommandKeyDownDuringRectangleSelect = SwingHelper.isCommandKeyDown(e);
+			updateRectangleSelect(e.getPoint());
+		}
 		else
 		{
 			// Not moving or scaling.
+
+			if (isPress && brushSelector.isRectangleSelect())
+			{
+				rectangleSelectDrag = new RectangleSelectDrag(e.getPoint(), getPointRI(e.getPoint()));
+				selectionBeforeRectangleSelect = new HashSet<>(iconsToEdit);
+				isCommandKeyDownDuringRectangleSelect = SwingHelper.isCommandKeyDown(e);
+			}
 
 			if (!SwingHelper.isCommandKeyDown(e) && isPress)
 			{
@@ -1793,6 +1819,129 @@ public class IconsTool extends EditorTool
 		}
 
 		mapEditingPanel.repaint();
+	}
+
+	/**
+	 * Selects the icons the selection rectangle touches, once the mouse has moved far enough from the press for it to be a rectangle rather
+	 * than a click. With the command key held, adds them to or removes them from the selection the rectangle began with, depending on the
+	 * Ctrl+click setting. Without it, they replace the selection.
+	 */
+	private void updateRectangleSelect(java.awt.Point mouseLocation)
+	{
+		if (rectangleSelectDrag == null || mouseLocation == null)
+		{
+			return;
+		}
+		if (!rectangleSelectDrag.update(mouseLocation))
+		{
+			// Still a click. Restore the selection's highlight, which the hover highlight clears on each drag event.
+			handleIconSelectionChange(false);
+			return;
+		}
+
+		Rectangle rectangleRI = rectangleSelectDrag.getRectangleRI(getPointRI(mouseLocation));
+		mapEditingPanel.setRectangleSelection(rectangleRI);
+		List<FreeIcon> touched = getIconsTouchingRectangle(rectangleRI.scaleAboutOrigin(mainWindow.displayQualityScale));
+		mapEditingPanel.hideIconEditTools();
+		iconsToEdit.clear();
+		if (isCommandKeyDownDuringRectangleSelect)
+		{
+			iconsToEdit.addAll(selectionBeforeRectangleSelect);
+			if (controlClickBehavior.isSelectMode())
+			{
+				iconsToEdit.addAll(touched);
+			}
+			else
+			{
+				touched.forEach(iconsToEdit::remove);
+			}
+		}
+		else
+		{
+			iconsToEdit.addAll(touched);
+		}
+		handleIconSelectionChange(false);
+		mapEditingPanel.repaint();
+	}
+
+	private void endRectangleSelect()
+	{
+		rectangleSelectDrag = null;
+		selectionBeforeRectangleSelect = null;
+		mapEditingPanel.clearRectangleSelection();
+	}
+
+	/**
+	 * The icons of the selected types whose bounds touch the given rectangle, which is in graph coordinates.
+	 */
+	private List<FreeIcon> getIconsTouchingRectangle(Rectangle rectangle)
+	{
+		List<FreeIcon> result = new ArrayList<>();
+		mainWindow.edits.freeIcons.doWithLock(() ->
+		{
+			for (FreeIcon icon : mainWindow.edits.freeIcons)
+			{
+				if (!isSelectedType(icon))
+				{
+					continue;
+				}
+				IconDrawTask task = updater.mapParts.iconDrawer.toIconDrawTask(icon);
+				if (task == null)
+				{
+					continue;
+				}
+				Rectangle bounds = task.getOrCreateContentBoundsPadded();
+				// A direct bounds comparison rather than Rectangle.overlaps, which builds polygons for each test and is slow across
+				// the thousands of icons a map can have, on every drag event.
+				if (bounds.x <= rectangle.getRight() && bounds.getRight() >= rectangle.x && bounds.y <= rectangle.getBottom() && bounds.getBottom() >= rectangle.y)
+				{
+					result.add(icon);
+				}
+			}
+		});
+		return result;
+	}
+
+	/**
+	 * The icon a click at the given point selects with rectangle selection: the lowest one whose bounds contain the point, and otherwise
+	 * the one whose bounds are closest to the point, if they are close enough. Null if there is none.
+	 */
+	private FreeIcon getIconClicked(java.awt.Point mouseLocation, Collection<FreeIcon> allowList)
+	{
+		FreeIcon lowest = getLowestSelectedIcon(mouseLocation, allowList);
+		if (lowest != null)
+		{
+			return lowest;
+		}
+
+		Point graphPoint = getPointOnGraph(mouseLocation);
+		double maxDistance = panelDistanceToGraphPixels(RectangleSelectDrag.clickToleranceInPanelPixels);
+		List<FreeIcon> closest = new ArrayList<>();
+		double[] closestDistance = { maxDistance };
+		mainWindow.edits.freeIcons.doWithLock(() ->
+		{
+			Iterable<FreeIcon> iterable = allowList == null ? mainWindow.edits.freeIcons : allowList;
+			for (FreeIcon icon : iterable)
+			{
+				if (!isSelectedType(icon))
+				{
+					continue;
+				}
+				IconDrawTask task = updater.mapParts.iconDrawer.toIconDrawTask(icon);
+				if (task == null)
+				{
+					continue;
+				}
+				double distance = new RotatedRectangle(task.getOrCreateContentBoundsPadded()).distanceTo(graphPoint);
+				if (distance <= closestDistance[0])
+				{
+					closestDistance[0] = distance;
+					closest.clear();
+					closest.add(icon);
+				}
+			}
+		});
+		return closest.isEmpty() ? null : closest.get(0);
 	}
 
 	/**
@@ -2004,6 +2153,7 @@ public class IconsTool extends EditorTool
 	@Override
 	protected void handleMousePressedOnMap(MouseEvent e)
 	{
+		endRectangleSelect();
 		// A new press starts a new stroke with no previous-event selection, so the pressed polygons/icons are drawn or replaced (reshuffled).
 		centerIndicesUnderBrushInPreviousDragEvent.clear();
 		iconsUnderBrushInPreviousDragEvent.clear();
@@ -2015,6 +2165,11 @@ public class IconsTool extends EditorTool
 	{
 		if (modeWidget.isEditMode())
 		{
+			if (rectangleSelectDrag != null)
+			{
+				endRectangleSelect();
+				mapEditingPanel.repaint();
+			}
 			handleFinishSelectingOrEditingIconsIfNeeded(e);
 		}
 		else
@@ -2255,6 +2410,12 @@ public class IconsTool extends EditorTool
 			updateMoveOrScalePreview(mapEditingPanel.getMousePosition());
 			mapEditingPanel.repaint();
 		}
+		else if (rectangleSelectDrag != null && rectangleSelectDrag.isDragging())
+		{
+			// Keep the selection rectangle's moving corner under the mouse after a zoom change made mid-drag, which repaints the map without
+			// generating a mouse-drag event.
+			updateRectangleSelect(mapEditingPanel.getMousePosition());
+		}
 		else
 		{
 			updateHighlightsForMousePosition();
@@ -2288,6 +2449,7 @@ public class IconsTool extends EditorTool
 	@Override
 	protected void onAfterUndoRedo()
 	{
+		endRectangleSelect();
 		mapEditingPanel.clearHighlightedCenters();
 		unselectAnyIconsBeingEdited();
 		mapEditingPanel.repaint();
@@ -2305,6 +2467,12 @@ public class IconsTool extends EditorTool
 
 	private List<FreeIcon> getSelectedIcons(java.awt.Point mouseLocation, Collection<FreeIcon> allowList)
 	{
+		if (modeWidget.isEditMode() && brushSelector.isRectangleSelect())
+		{
+			FreeIcon clicked = getIconClicked(mouseLocation, allowList);
+			return clicked == null ? Collections.emptyList() : Arrays.asList(clicked);
+		}
+
 		int brushDiameter = getBrushDiameter();
 
 		if (brushDiameter <= 1)
@@ -2466,9 +2634,9 @@ public class IconsTool extends EditorTool
 
 	private int getBrushDiameter()
 	{
-		if (brushSizeHider.isVisible())
+		if (brushSelector.isVisible())
 		{
-			return brushSizes.get(brushSizeComboBox.getSelectedIndex());
+			return brushSelector.getBrushDiameter();
 		}
 
 		return brushSizes.get(0);

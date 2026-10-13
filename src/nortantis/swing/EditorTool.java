@@ -128,6 +128,14 @@ public abstract class EditorTool
 	}
 
 	/**
+	 * The point on the map under the given panel point, in resolution-invariant coordinates.
+	 */
+	protected nortantis.geom.Point getPointRI(java.awt.Point pointOnMapEditingPanel)
+	{
+		return getPointOnGraph(pointOnMapEditingPanel).mult(1.0 / mainWindow.displayQualityScale);
+	}
+
+	/**
 	 * Converts a distance on screen in panel units, such as a brush diameter, to graph pixels at the zoom the map is currently shown at, so
 	 * that it covers the same part of the map as it does on screen.
 	 */

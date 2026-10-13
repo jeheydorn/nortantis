@@ -1,15 +1,11 @@
 package nortantis.swing;
 
-import nortantis.geom.Point;
 import nortantis.swing.translation.Translation;
-import nortantis.util.Tuple2;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.image.BufferedImage;
-import java.util.Collections;
 import java.util.List;
 
 public class GridBagOrganizer
@@ -527,52 +523,32 @@ public class GridBagOrganizer
 		return line;
 	}
 
-	public Tuple2<JComboBox<ImageIcon>, RowHider> addBrushSizeComboBox(List<Integer> brushSizes)
+	/**
+	 * Adds the combo box for choosing a brush.
+	 *
+	 * @param labelText
+	 *            The row's label.
+	 */
+	public BrushSelector addBrushSelector(List<Integer> brushSizes, String labelText)
 	{
-		final int maxBrushSizeDisplay = 70;
-		JComboBox<ImageIcon> brushSizeComboBox = new JComboBox<>();
-		int displaySize = Math.min(maxBrushSizeDisplay, Collections.max(brushSizes));
-		for (int brushSize : brushSizes)
-		{
-			if (brushSize == 1)
-			{
-				brushSize = 4; // Needed to make it visible
-			}
-			BufferedImage image = new BufferedImage(displaySize, displaySize, BufferedImage.TYPE_INT_ARGB);
-			Graphics2D g = image.createGraphics();
-
-			g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-			g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-			g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-
-			g.setColor(Color.black);
-			int sizeToDraw = Math.min(maxBrushSizeDisplay, brushSize);
-			g.fillOval(displaySize / 2 - sizeToDraw / 2, displaySize / 2 - sizeToDraw / 2, sizeToDraw, sizeToDraw);
-			brushSizeComboBox.addItem(new ImageIcon(image));
-			if (brushSize > maxBrushSizeDisplay)
-			{
-				g.setColor(new Color(187, 187, 187));
-				g.setFont(new Font("default", Font.BOLD, 24));
-				String text = (brushSize / maxBrushSizeDisplay) + "x";
-				drawCenteredString(g, text, new Point(sizeToDraw / 2.0, sizeToDraw / 2.0));
-			}
-		}
-		Dimension brushSizeComboBoxSize = new Dimension(displaySize + 40, getBrushSizeComboBoxHeight(brushSizeComboBox));
-		brushSizeComboBox.setPreferredSize(brushSizeComboBoxSize);
-		brushSizeComboBox.setMinimumSize(brushSizeComboBoxSize);
-		JPanel brushSizeContainer = new JPanel();
-		brushSizeContainer.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
-		brushSizeContainer.add(brushSizeComboBox);
-		RowHider brushSizeHider = addLabelAndComponent(Translation.get("gridBagOrganizer.brushSize.label"), "", brushSizeContainer);
-
-		return new Tuple2<>(brushSizeComboBox, brushSizeHider);
+		JComboBox<Icon> brushComboBox = new JComboBox<>();
+		BrushSelector brushSelector = new BrushSelector(brushSizes, brushComboBox);
+		Dimension brushComboBoxSize = new Dimension(BrushSelector.getIconDisplaySize(brushSizes) + 40, getBrushComboBoxHeight(brushComboBox));
+		brushComboBox.setPreferredSize(brushComboBoxSize);
+		brushComboBox.setMinimumSize(brushComboBoxSize);
+		JPanel brushContainer = new JPanel();
+		brushContainer.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
+		brushContainer.add(brushComboBox);
+		RowHider brushHider = addLabelAndComponent(labelText, "", brushContainer);
+		brushSelector.setHider(brushHider);
+		return brushSelector;
 	}
 
-	private int getBrushSizeComboBoxHeight(JComboBox<ImageIcon> brushSizeComboBox)
+	private int getBrushComboBoxHeight(JComboBox<Icon> brushComboBox)
 	{
 		if (!SwingHelper.isMacSystemLookAndFeel())
 		{
-			return brushSizeComboBox.getPreferredSize().height;
+			return brushComboBox.getPreferredSize().height;
 		}
 
 		// The native macOS System theme combo box always paints its closed-box current-value icon cropped to a short, fixed height,
@@ -582,13 +558,4 @@ public class GridBagOrganizer
 		JComboBox<String> reference = new JComboBox<>(new String[] { " " });
 		return reference.getPreferredSize().height;
 	}
-
-	private void drawCenteredString(Graphics2D g, String text, Point point)
-	{
-		FontMetrics metrics = g.getFontMetrics(g.getFont());
-		int x = (int) (point.x - metrics.stringWidth(text) / 2.0);
-		int y = (int) (point.y - metrics.getHeight() / 2.0 + metrics.getAscent());
-		g.drawString(text, x, y);
-	}
-
 }

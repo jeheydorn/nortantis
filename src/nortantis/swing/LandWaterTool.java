@@ -13,7 +13,6 @@ import nortantis.swing.translation.Translation;
 import nortantis.util.Assets;
 import nortantis.util.GeometryHelper;
 import nortantis.util.Helper;
-import nortantis.util.Tuple2;
 
 import javax.swing.*;
 import java.awt.*;
@@ -48,8 +47,7 @@ public class LandWaterTool extends EditorTool
 	private Region selectedRegion;
 	private JToggleButton selectColorFromMapButton;
 
-	private JComboBox<ImageIcon> brushSizeComboBox;
-	private RowHider brushSizeHider;
+	private BrushSelector brushSelector;
 	private RowHider selectColorHider;
 	private JCheckBox onlyUpdateLandCheckbox;
 
@@ -123,6 +121,15 @@ public class LandWaterTool extends EditorTool
 	private List<MovingCP> dragMovingCPs = null;
 	// Before-drag snapshots of every line that has any moving CP. Used to compute redraw bounds covering the pre-drag curve shape.
 	private Map<Object, List<Point>> dragBeforeSnapshots = null;
+	// The press being held with rectangle selection in edit mode, or null if there is none. It arms a paint-drag, whose drag ticks then
+	// select with the rectangle instead of the brush.
+	private RectangleSelectDrag rectangleSelectDrag = null;
+	// The selection when the current rectangle selection began, which a rectangle drawn with the command key held adds to or removes from.
+	// IdentityHashMap for the same reason as selectedRiverCPs/selectedRoadCPs.
+	private Map<River, Set<Integer>> riverCPsBeforeRectangleSelect = null;
+	private Map<Road, Set<Integer>> roadCPsBeforeRectangleSelect = null;
+	// Whether the command key was held during the latest press or drag of the current rectangle selection.
+	private boolean isCommandKeyDownDuringRectangleSelect = false;
 
 	/** A control point participating in a move-drag — line + index, plus its position at drag-start so we can apply the cursor delta. */
 	private record MovingCP(Object line, int nodeIndex, Point startLocRI)
@@ -250,11 +257,12 @@ public class LandWaterTool extends EditorTool
 				showOrHideNewRegionButton();
 				newRegionButton.setSelected(false);
 
-				if (brushSizeComboBox != null)
+				if (brushSelector != null)
 				{
 					boolean riversOrRoads = riversButton.isSelected() || roadsButton.isSelected();
 					boolean inBrushFamily = oceanButton.isSelected() || lakesButton.isSelected() || landButton.isSelected();
-					brushSizeHider.setVisible(inBrushFamily || (riversOrRoads && (modeWidget.isEraseMode() || modeWidget.isEditMode())));
+					brushSelector.setOffersRectangleSelect(riversOrRoads && modeWidget.isEditMode());
+					brushSelector.setVisible(inBrushFamily || (riversOrRoads && (modeWidget.isEraseMode() || modeWidget.isEditMode())));
 				}
 
 				showOrHideRoadAndRiverOptions();
@@ -291,7 +299,7 @@ public class LandWaterTool extends EditorTool
 
 		oceanButton.setSelected(true); // Selected by default
 		brushTypeWidget = new SegmentedButtonWidget(List.of(oceanButton, lakesButton, riversButton, landButton, fillRegionColorButton, mergeRegionsButton, roadsButton));
-		brushTypeWidget.addToOrganizer(organizer, Translation.get("landWaterTool.brush.label"), "");
+		brushTypeWidget.addToOrganizer(organizer, Translation.get("landWaterTool.type.label"), "");
 
 		// River options
 		{
@@ -377,9 +385,7 @@ public class LandWaterTool extends EditorTool
 			});
 		}
 
-		Tuple2<JComboBox<ImageIcon>, RowHider> brushSizeTuple = organizer.addBrushSizeComboBox(brushSizes);
-		brushSizeComboBox = brushSizeTuple.getFirst();
-		brushSizeHider = brushSizeTuple.getSecond();
+		brushSelector = organizer.addBrushSelector(brushSizes, Translation.get("gridBagOrganizer.brush.label"));
 
 		// Edit-mode multi-select UI: Ctrl-click behavior toggle, then a separator, then Copy/Paste/Delete buttons. All visible only in
 		// edit mode for rivers/roads (toggled together in showOrHideRoadAndRiverOptions).
@@ -487,6 +493,11 @@ public class LandWaterTool extends EditorTool
 		boolean hasSelectedRivers = selectedRiverCPs != null && !selectedRiverCPs.isEmpty();
 		boolean hasSelectedRoads = selectedRoadCPs != null && !selectedRoadCPs.isEmpty();
 		boolean selectionTypeMismatch = (hasSelectedRivers && !riversButton.isSelected()) || (hasSelectedRoads && !roadsButton.isSelected());
+		if ((leftEditMode || selectionTypeMismatch) && rectangleSelectDrag != null)
+		{
+			endRectangleSelect();
+			mapEditingPanel.repaint();
+		}
 		if (leftEditMode || selectionTypeMismatch)
 		{
 			boolean hadSelection = hasSelectedRivers || hasSelectedRoads;
@@ -2325,7 +2336,7 @@ public class LandWaterTool extends EditorTool
 	private List<List<Point>> getSelectedRoadSegments(java.awt.Point pointFromMouse)
 	{
 		nortantis.geom.Point graphPointResolutionInvariant = getPointOnGraph(pointFromMouse).mult(1.0 / mainWindow.displayQualityScale);
-		int brushDiameter = brushSizes.get(brushSizeComboBox.getSelectedIndex());
+		int brushDiameter = brushSelector.getBrushDiameter();
 		if (brushDiameter <= 1)
 		{
 			// Find the closest road point within a certain diameter.
@@ -2500,7 +2511,7 @@ public class LandWaterTool extends EditorTool
 	private List<List<Point>> getSelectedRiverSegments(java.awt.Point pointFromMouse)
 	{
 		Point targetPoint = getPointOnGraph(pointFromMouse).mult(1.0 / mainWindow.displayQualityScale);
-		int brushDiameter = brushSizes.get(brushSizeComboBox.getSelectedIndex());
+		int brushDiameter = brushSelector.getBrushDiameter();
 		List<List<Point>> riverPaths = mainWindow.edits.rivers.stream().map(r -> PathOperations.toLocationList(r.nodes)).toList();
 		if (brushDiameter <= 1)
 		{
@@ -2715,7 +2726,7 @@ public class LandWaterTool extends EditorTool
 
 	private Set<Center> getSelectedCenters(java.awt.Point point)
 	{
-		return getSelectedCenters(point, brushSizes.get(brushSizeComboBox.getSelectedIndex()));
+		return getSelectedCenters(point, brushSelector.getBrushDiameter());
 	}
 
 	/**
@@ -2880,7 +2891,90 @@ public class LandWaterTool extends EditorTool
 
 		PressOutcome outcome = computePressOutcome(e.getPoint(), ctrlDown, deselectMode, brushDiameter, activeType, true);
 		applyPressOutcome(outcome);
+		endRectangleSelect();
+		if (!outcome.isMoveDrag() && brushSelector.isRectangleSelect())
+		{
+			// Taken after the press is applied, since applying it can remove control points, which renumbers the ones after them.
+			rectangleSelectDrag = new RectangleSelectDrag(e.getPoint(), dragStartLocRI);
+			riverCPsBeforeRectangleSelect = copySelection(selectedRiverCPs);
+			roadCPsBeforeRectangleSelect = copySelection(selectedRoadCPs);
+			isCommandKeyDownDuringRectangleSelect = ctrlDown;
+		}
 		refreshSelectionVisuals(e.getPoint(), activeType, ctrlDown);
+	}
+
+	/** Returns a copy of a selection map whose sets can be changed without changing the original. */
+	private static <T> Map<T, Set<Integer>> copySelection(Map<T, Set<Integer>> selection)
+	{
+		Map<T, Set<Integer>> copy = new java.util.IdentityHashMap<>();
+		for (Map.Entry<T, Set<Integer>> entry : selection.entrySet())
+		{
+			copy.put(entry.getKey(), new HashSet<>(entry.getValue()));
+		}
+		return copy;
+	}
+
+	/**
+	 * Selects the control points inside the selection rectangle and both ends of the segments it touches, once the mouse has moved far
+	 * enough from the press for it to be a rectangle rather than a click. With the command key held, adds them to or removes them from the
+	 * selection the rectangle began with, depending on the Ctrl+click setting. Without it, they replace the selection.
+	 */
+	private void updateRectangleSelect(java.awt.Point mouseLocation, LineType activeType)
+	{
+		if (rectangleSelectDrag == null || mouseLocation == null || !rectangleSelectDrag.update(mouseLocation))
+		{
+			return;
+		}
+
+		nortantis.geom.Rectangle rectangleRI = rectangleSelectDrag.getRectangleRI(getPointRI(mouseLocation));
+		mapEditingPanel.setRectangleSelection(rectangleRI);
+
+		clearSelection();
+		boolean removing = false;
+		if (isCommandKeyDownDuringRectangleSelect)
+		{
+			selectedRiverCPs.putAll(copySelection(riverCPsBeforeRectangleSelect));
+			selectedRoadCPs.putAll(copySelection(roadCPsBeforeRectangleSelect));
+			removing = controlClickBehavior != null && controlClickBehavior.isUnselectMode();
+		}
+
+		// Control points are stored in resolution-invariant coordinates, so test against the rectangle in those coordinates.
+		java.awt.geom.Rectangle2D rectangle = new java.awt.geom.Rectangle2D.Double(rectangleRI.x, rectangleRI.y, rectangleRI.width, rectangleRI.height);
+		List<? extends Object> lines = activeType == LineType.RIVER ? mainWindow.edits.rivers : mainWindow.edits.roads;
+		for (Object line : lines)
+		{
+			List<? extends PathNode> nodes = nodesOf(line);
+			for (int i = 0; i < nodes.size(); i++)
+			{
+				Point loc = nodes.get(i).getLoc();
+				if (rectangle.contains(loc.x, loc.y))
+				{
+					applySelectionDelta(line, i, removing);
+				}
+			}
+			for (int i = 0; i < nodes.size() - 1; i++)
+			{
+				Point a = nodes.get(i).getLoc();
+				Point b = nodes.get(i + 1).getLoc();
+				if (rectangle.intersectsLine(a.x, a.y, b.x, b.y))
+				{
+					applySelectionDelta(line, i, removing);
+					applySelectionDelta(line, i + 1, removing);
+				}
+			}
+		}
+
+		mapEditingPanel.hideBrush();
+		// No hover preview while the rectangle is being dragged, since a click isn't what the drag will do.
+		refreshSelectionVisuals(null, activeType, isCommandKeyDownDuringRectangleSelect);
+	}
+
+	private void endRectangleSelect()
+	{
+		rectangleSelectDrag = null;
+		riverCPsBeforeRectangleSelect = null;
+		roadCPsBeforeRectangleSelect = null;
+		mapEditingPanel.clearRectangleSelection();
 	}
 
 	private void selectWhatWasClicked(MouseEvent e)
@@ -3445,19 +3539,17 @@ public class LandWaterTool extends EditorTool
 		return hits;
 	}
 
-	/** Returns the edit-mode brush diameter (in panel pixels). Defaults to 1 (single-point) when the dropdown isn't available. */
+	/**
+	 * Returns the edit-mode brush diameter (in panel pixels). Defaults to 1 (single-point) when the dropdown isn't available. Rectangle
+	 * selection is 1, since its presses select what a single-point click would.
+	 */
 	private int getEditBrushDiameter()
 	{
-		if (brushSizeComboBox == null)
+		if (brushSelector == null)
 		{
 			return 1;
 		}
-		int idx = brushSizeComboBox.getSelectedIndex();
-		if (idx < 0 || idx >= brushSizes.size())
-		{
-			return 1;
-		}
-		return brushSizes.get(idx);
+		return brushSelector.getBrushDiameter();
 	}
 
 	/** Refreshes the selection-related visuals: highlighted segments, control-point circles, and the slider value+visibility. */
@@ -3501,6 +3593,17 @@ public class LandWaterTool extends EditorTool
 		if (brushDiameter > 1)
 		{
 			mapEditingPanel.showBrush(e.getPoint(), brushDiameter);
+		}
+		if (dragIsPaint && rectangleSelectDrag != null)
+		{
+			isCommandKeyDownDuringRectangleSelect = SwingHelper.isCommandKeyDown(e);
+			updateRectangleSelect(e.getPoint(), activeType);
+			return;
+		}
+		if (dragIsPaint && brushSelector.isRectangleSelect())
+		{
+			// The rectangle was ended mid-drag, such as by an undo. The rest of the drag selects nothing.
+			return;
 		}
 		if (dragIsPaint)
 		{
@@ -4465,6 +4568,11 @@ public class LandWaterTool extends EditorTool
 			boolean wasDrag = dragOccurred;
 			dragInProgress = false;
 			dragOccurred = false;
+			if (rectangleSelectDrag != null)
+			{
+				endRectangleSelect();
+				mapEditingPanel.repaint();
+			}
 			// Only commit when the user actually moved the cursor; a click-without-drag is just a select and shouldn't push an undo point.
 			// Paint-drags don't modify geometry, so they have no commit step either way.
 			if (wasDrag && !dragIsPaint)
@@ -4896,7 +5004,7 @@ public class LandWaterTool extends EditorTool
 		}
 		else if (riversButton.isSelected() && modeWidget.isEraseMode())
 		{
-			int brushDiameter = brushSizes.get(brushSizeComboBox.getSelectedIndex());
+			int brushDiameter = brushSelector.getBrushDiameter();
 			if (brushDiameter > 1)
 			{
 				mapEditingPanel.showBrush(mouseLocation, brushDiameter);
@@ -4925,7 +5033,7 @@ public class LandWaterTool extends EditorTool
 		}
 		else if (roadsButton.isSelected() && modeWidget.isEraseMode())
 		{
-			int brushDiameter = brushSizes.get(brushSizeComboBox.getSelectedIndex());
+			int brushDiameter = brushSelector.getBrushDiameter();
 			if (brushDiameter > 1)
 			{
 				mapEditingPanel.showBrush(mouseLocation, brushDiameter);
@@ -5160,6 +5268,13 @@ public class LandWaterTool extends EditorTool
 			mapEditingPanel.repaint();
 		}
 		java.awt.Point mousePosition = mapEditingPanel.getMousePosition();
+		if (rectangleSelectDrag != null && rectangleSelectDrag.isDragging())
+		{
+			// Keep the selection rectangle's moving corner under the mouse after a zoom change made mid-drag, which repaints the map without
+			// generating a mouse-drag event.
+			updateRectangleSelect(mousePosition, riversButton.isSelected() ? LineType.RIVER : LineType.ROAD);
+			return;
+		}
 		updateHighlightsForMousePosition(mousePosition);
 	}
 
@@ -5200,6 +5315,7 @@ public class LandWaterTool extends EditorTool
 	{
 		cancelFreeHandDrawing(LineType.ROAD);
 		cancelFreeHandDrawing(LineType.RIVER);
+		endRectangleSelect();
 		clearSelection();
 		// Deferred until the map is ready so that, when switching away because another map is being loaded (which clears the lines awaiting
 		// removal before the map is ready again), nothing is removed from the map being replaced.
@@ -5218,6 +5334,7 @@ public class LandWaterTool extends EditorTool
 		cancelFreeHandDrawing(LineType.ROAD);
 		cancelFreeHandDrawing(LineType.RIVER);
 		// Sticky/hover may reference river/road instances that no longer exist after undo/redo.
+		endRectangleSelect();
 		clearSelection();
 		// These also reference lines that undo/redo replaced. Drawing removes any control points of the restored lines that can't stay.
 		linesAwaitingControlPointRemoval.clear();

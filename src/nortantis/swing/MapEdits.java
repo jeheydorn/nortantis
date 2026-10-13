@@ -12,6 +12,8 @@ import nortantis.editor.River;
 import nortantis.editor.RiverPathNode;
 import nortantis.editor.Road;
 import nortantis.geom.Point;
+import nortantis.geom.Rectangle;
+import nortantis.geom.RotatedRectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Corner;
 import nortantis.graph.voronoi.Edge;
@@ -191,6 +193,56 @@ public class MapEdits implements Serializable
 			if (mp.value.length() > 0)
 			{
 				if (mp.line1Bounds != null && mp.line1Bounds.contains(point) || mp.line2Bounds != null && mp.line2Bounds.contains(point))
+				{
+					result.add(mp);
+				}
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * The text a click at the given point selects: the one {@link #findTextPicked(Point)} finds if the point is inside a text's bounds, and
+	 * otherwise the text whose bounds are closest to the point, if they are within maxDistance of it. Null if there is none.
+	 */
+	public MapText findTextClicked(Point point, double maxDistance)
+	{
+		MapText picked = findTextPicked(point);
+		if (picked != null)
+		{
+			return picked;
+		}
+
+		MapText closest = null;
+		double closestDistance = maxDistance;
+		for (MapText mp : text)
+		{
+			if (mp.value.length() > 0)
+			{
+				double distance = Math.min(mp.line1Bounds == null ? Double.POSITIVE_INFINITY : mp.line1Bounds.distanceTo(point),
+						mp.line2Bounds == null ? Double.POSITIVE_INFINITY : mp.line2Bounds.distanceTo(point));
+				if (distance <= closestDistance)
+				{
+					closest = mp;
+					closestDistance = distance;
+				}
+			}
+		}
+		return closest;
+	}
+
+	/**
+	 * The texts whose bounds touch the given rectangle.
+	 */
+	public List<MapText> findTextTouchingRectangle(Rectangle rectangle)
+	{
+		List<MapText> result = new ArrayList<>();
+		RotatedRectangle rotatedRectangle = new RotatedRectangle(rectangle);
+		for (MapText mp : text)
+		{
+			if (mp.value.length() > 0)
+			{
+				if (mp.line1Bounds != null && mp.line1Bounds.overlaps(rotatedRectangle) || mp.line2Bounds != null && mp.line2Bounds.overlaps(rotatedRectangle))
 				{
 					result.add(mp);
 				}
