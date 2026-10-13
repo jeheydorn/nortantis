@@ -3237,25 +3237,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	public void updateImageQualityScale(DisplayQuality quality)
 	{
-		if (quality == DisplayQuality.Very_Low)
+		if (quality != null)
 		{
-			displayQualityScale = 0.5;
-		}
-		else if (quality == DisplayQuality.Low)
-		{
-			displayQualityScale = 0.75;
-		}
-		else if (quality == DisplayQuality.Medium)
-		{
-			displayQualityScale = 1.0;
-		}
-		else if (quality == DisplayQuality.High)
-		{
-			displayQualityScale = 1.25;
-		}
-		else if (quality == DisplayQuality.Ultra)
-		{
-			displayQualityScale = 1.5;
+			displayQualityScale = quality.getScale();
 		}
 		// The hover-highlight suppression state (areHoverHighlightsSuppressed) is derived from displayQualityScale, so repaint to reflect the
 		// change; the actual redraw that follows will keep it suppressed until the new image is shown.

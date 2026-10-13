@@ -189,7 +189,16 @@ public class SwingHelper
 	 */
 	public static void bindButtonShortcut(JButton button, String actionName, KeyStroke... keyStrokes)
 	{
-		Action action = new AbstractAction(actionName)
+		bindShortcut(button, actionName, button::doClick, keyStrokes);
+	}
+
+	/**
+	 * Binds one or more keystrokes to an action while the given component is showing in the focused window. An editable text component
+	 * that has the focus keeps the shortcut for itself.
+	 */
+	public static void bindShortcut(JComponent component, String actionName, Runnable action, KeyStroke... keyStrokes)
+	{
+		Action swingAction = new AbstractAction(actionName)
 		{
 			@Override
 			public void actionPerformed(ActionEvent e)
@@ -201,14 +210,14 @@ public class SwingHelper
 					// field deletes a character, not a selected map object).
 					return;
 				}
-				button.doClick();
+				action.run();
 			}
 		};
 		for (KeyStroke keyStroke : keyStrokes)
 		{
-			button.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(keyStroke, actionName);
+			component.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(keyStroke, actionName);
 		}
-		button.getActionMap().put(actionName, action);
+		component.getActionMap().put(actionName, swingAction);
 	}
 
 

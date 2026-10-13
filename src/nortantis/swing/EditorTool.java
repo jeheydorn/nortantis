@@ -151,7 +151,7 @@ public abstract class EditorTool
 	 */
 	protected double getHighlightOutlineReachInGraphPixels()
 	{
-		return Math.max(MapEditingPanel.highlightOutlineWidth / 2.0, panelDistanceToGraphPixels(1));
+		return Math.max(mapEditingPanel.getHighlightOutlineWidth() / 2.0, panelDistanceToGraphPixels(1));
 	}
 
 	protected Set<Center> getSelectedCenters(java.awt.Point pointFromMouse, int brushDiameter)

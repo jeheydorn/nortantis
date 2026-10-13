@@ -411,7 +411,7 @@ public class IconsTool extends EditorTool
 			clearScaleButton.addActionListener(ev -> clearScaleOnSelectedIcons());
 
 			EditClipboardButtonsWidget editButtons = new EditClipboardButtonsWidget(this::copySelectedIcons, this::pasteSelectedIcons, this::deleteSelectedIcons,
-					Translation.get("iconsTool.delete.tooltip"));
+					this::selectAllIcons, Translation.get("iconsTool.delete.tooltip"));
 			deleteCopyPasteIconButtonsHider = editButtons.addToOrganizer(organizer, Arrays.asList(clearScaleButton));
 		}
 
@@ -564,6 +564,32 @@ public class IconsTool extends EditorTool
 		updater.createAndShowMapIncrementalUsingIcons(pasted);
 		iconsToEdit.clear();
 		iconsToEdit.addAll(pasted);
+		handleIconSelectionChange(true);
+		mapEditingPanel.repaint();
+	}
+
+	/**
+	 * Selects every icon of the types the Types filter allows.
+	 */
+	private void selectAllIcons()
+	{
+		if (!modeWidget.isEditMode() || !updater.isMapReadyForInteractions() || isMoving || isScaling)
+		{
+			return;
+		}
+
+		endRectangleSelect();
+		iconsToEdit.clear();
+		mainWindow.edits.freeIcons.doWithLock(() ->
+		{
+			for (FreeIcon icon : mainWindow.edits.freeIcons)
+			{
+				if (isSelectedType(icon) && updater.mapParts.iconDrawer.toIconDrawTask(icon) != null)
+				{
+					iconsToEdit.add(icon);
+				}
+			}
+		});
 		handleIconSelectionChange(true);
 		mapEditingPanel.repaint();
 	}

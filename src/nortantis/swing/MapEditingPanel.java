@@ -1,6 +1,7 @@
 package nortantis.swing;
 
 import nortantis.*;
+import nortantis.editor.DisplayQuality;
 import nortantis.editor.EdgeType;
 import nortantis.editor.FreeIcon;
 import nortantis.geom.IntRectangle;
@@ -105,8 +106,6 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private Area moveToolArea;
 	private Set<Area> highlightedAreas;
 	private Set<Area> redHighlightedAreas;
-	/** The width, in graph pixels, of the outline drawn around highlighted texts and icons. */
-	static final float highlightOutlineWidth = 1f;
 	private Set<RotatedRectangle> processingAreas;
 	private Set<String> artPacksToHighlight;
 	private FreeIconCollection freeIcons;
@@ -919,6 +918,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		transform.scale(zoom, zoom);
 		transform.translate(borderPadding, borderPadding);
 		((Graphics2D) g).transform(transform);
+		g2.setStroke(new BasicStroke(getHighlightOutlineWidth()));
 
 		// Handle drawing/highlighting
 
@@ -1268,10 +1268,17 @@ public class MapEditingPanel extends UnscaledImagePanel
 		g.setClip(originalClip);
 	}
 
+	/**
+	 * The width, in graph pixels, of the outlines drawn over the map for highlights, selections, and edit boxes. Above Low display quality,
+	 * it grows with the resolution so that the outlines look about as thick on screen as they do at Low, where they are 1 pixel wide.
+	 */
+	float getHighlightOutlineWidth()
+	{
+		return (float) Math.max(1.0, resolution / DisplayQuality.Low.getScale());
+	}
+
 	private void drawAreas(Graphics g)
 	{
-		Stroke originalStroke = ((Graphics2D) g).getStroke();
-		((Graphics2D) g).setStroke(new BasicStroke(highlightOutlineWidth));
 		if (!highlightedAreas.isEmpty())
 		{
 			g.setColor(getHighlightColor());
@@ -1299,7 +1306,6 @@ public class MapEditingPanel extends UnscaledImagePanel
 				((Graphics2D) g).draw(area);
 			}
 		}
-		((Graphics2D) g).setStroke(originalStroke);
 	}
 
 	/**

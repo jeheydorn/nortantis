@@ -393,7 +393,7 @@ public class LandWaterTool extends EditorTool
 		controlClickBehaviorHider = controlClickBehavior.addToOrganizer(organizer);
 		editButtonsSeparatorHider = organizer.addSeparator();
 		EditClipboardButtonsWidget editButtons = new EditClipboardButtonsWidget(this::copySelectedCPs, this::pasteCopiedCPs, this::deleteSelectedCPs,
-				Translation.get("landWaterTool.edit.deleteSelection.tooltip"));
+				this::selectAllControlPoints, Translation.get("landWaterTool.edit.deleteSelection.tooltip"));
 		editButtonsHider = editButtons.addToOrganizer(organizer);
 
 		// Create new region button
@@ -2967,6 +2967,30 @@ public class LandWaterTool extends EditorTool
 		mapEditingPanel.hideBrush();
 		// No hover preview while the rectangle is being dragged, since a click isn't what the drag will do.
 		refreshSelectionVisuals(null, activeType, isCommandKeyDownDuringRectangleSelect);
+	}
+
+	/**
+	 * Selects every control point of the rivers, or of the roads, whichever is being edited.
+	 */
+	private void selectAllControlPoints()
+	{
+		if (!modeWidget.isEditMode() || !(riversButton.isSelected() || roadsButton.isSelected()) || dragMovingCPs != null)
+		{
+			return;
+		}
+
+		LineType activeType = riversButton.isSelected() ? LineType.RIVER : LineType.ROAD;
+		endRectangleSelect();
+		clearSelection();
+		List<? extends Object> lines = activeType == LineType.RIVER ? mainWindow.edits.rivers : mainWindow.edits.roads;
+		for (Object line : lines)
+		{
+			for (int i = 0; i < nodesOf(line).size(); i++)
+			{
+				addToSelection(line, i);
+			}
+		}
+		refreshSelectionVisuals(mapEditingPanel.getMousePosition(), activeType);
 	}
 
 	private void endRectangleSelect()

@@ -458,8 +458,33 @@ public class TextTool extends EditorTool
 		// Bind Backspace as well as Delete: the key labeled "delete" sends Backspace on most Mac keyboards.
 		SwingHelper.bindButtonShortcut(deleteButton, "textDeleteAction", KeyStroke.getKeyStroke("DELETE"), KeyStroke.getKeyStroke("BACK_SPACE"));
 		deleteButton.addActionListener(ev -> deleteSelectedText());
+		// Bound to the Delete button so that, like the clipboard shortcuts, it only works while Edit mode's buttons are showing.
+		SwingHelper.bindShortcut(deleteButton, "textSelectAllAction", this::selectAllTexts, KeyStroke.getKeyStroke(KeyEvent.VK_A, SwingHelper.getMenuShortcutKeyMask()));
 
 		copyPasteDeleteButtonsHider = organizer.addLeftAlignedComponents(Arrays.asList(copyButton, pasteButton, deleteButton));
+	}
+
+	/**
+	 * Selects every text on the map that can be clicked.
+	 */
+	private void selectAllTexts()
+	{
+		if (!modeWidget.isEditMode() || drawTextDisabledLabel.isVisible() || isMoving || isRotating || mainWindow.edits == null)
+		{
+			return;
+		}
+
+		endRectangleSelect();
+		List<MapText> all = new ArrayList<>();
+		for (MapText text : mainWindow.edits.text)
+		{
+			if (text.value.length() > 0 && text.line1Bounds != null)
+			{
+				all.add(text);
+			}
+		}
+		setSelection(all, SelectionFocus.Leave);
+		mapEditingPanel.repaint();
 	}
 
 	private List<String> getFontFamiliesUsedByThisMap()
