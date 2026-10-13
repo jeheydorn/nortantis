@@ -144,6 +144,16 @@ public abstract class EditorTool
 		return panelDistance / mainWindow.getDisplayedZoom() * mapEditingPanel.osScale;
 	}
 
+	/**
+	 * How far, in graph pixels, the outline drawn around a highlighted text or icon reaches outside its box: half the outline's width, but
+	 * at least one panel pixel, since an outline thinner than a pixel on screen is still drawn a pixel wide. Hit tests include this so that
+	 * pointing at the outline hits what it outlines.
+	 */
+	protected double getHighlightOutlineReachInGraphPixels()
+	{
+		return Math.max(MapEditingPanel.highlightOutlineWidth / 2.0, panelDistanceToGraphPixels(1));
+	}
+
 	protected Set<Center> getSelectedCenters(java.awt.Point pointFromMouse, int brushDiameter)
 	{
 		Set<Center> selected = new HashSet<Center>();

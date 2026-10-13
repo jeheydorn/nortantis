@@ -1902,47 +1902,6 @@ public class IconsTool extends EditorTool
 		return result;
 	}
 
-	/**
-	 * The icon a click at the given point selects with rectangle selection: the lowest one whose bounds contain the point, and otherwise
-	 * the one whose bounds are closest to the point, if they are close enough. Null if there is none.
-	 */
-	private FreeIcon getIconClicked(java.awt.Point mouseLocation, Collection<FreeIcon> allowList)
-	{
-		FreeIcon lowest = getLowestSelectedIcon(mouseLocation, allowList);
-		if (lowest != null)
-		{
-			return lowest;
-		}
-
-		Point graphPoint = getPointOnGraph(mouseLocation);
-		double maxDistance = panelDistanceToGraphPixels(RectangleSelectDrag.clickToleranceInPanelPixels);
-		List<FreeIcon> closest = new ArrayList<>();
-		double[] closestDistance = { maxDistance };
-		mainWindow.edits.freeIcons.doWithLock(() ->
-		{
-			Iterable<FreeIcon> iterable = allowList == null ? mainWindow.edits.freeIcons : allowList;
-			for (FreeIcon icon : iterable)
-			{
-				if (!isSelectedType(icon))
-				{
-					continue;
-				}
-				IconDrawTask task = updater.mapParts.iconDrawer.toIconDrawTask(icon);
-				if (task == null)
-				{
-					continue;
-				}
-				double distance = new RotatedRectangle(task.getOrCreateContentBoundsPadded()).distanceTo(graphPoint);
-				if (distance <= closestDistance[0])
-				{
-					closestDistance[0] = distance;
-					closest.clear();
-					closest.add(icon);
-				}
-			}
-		});
-		return closest.isEmpty() ? null : closest.get(0);
-	}
 
 	/**
 	 * Recomputes the in-progress move/scale preview (the highlighted icons and the edit box) from the current mouse location and the
@@ -2467,12 +2426,6 @@ public class IconsTool extends EditorTool
 
 	private List<FreeIcon> getSelectedIcons(java.awt.Point mouseLocation, Collection<FreeIcon> allowList)
 	{
-		if (modeWidget.isEditMode() && brushSelector.isRectangleSelect())
-		{
-			FreeIcon clicked = getIconClicked(mouseLocation, allowList);
-			return clicked == null ? Collections.emptyList() : Arrays.asList(clicked);
-		}
-
 		int brushDiameter = getBrushDiameter();
 
 		if (brushDiameter <= 1)
@@ -2527,8 +2480,7 @@ public class IconsTool extends EditorTool
 				return false;
 			}
 
-			Rectangle rect = task.getOrCreateContentBoundsPadded();
-			return rect.contains(graphPoint);
+			return isWithinHighlightOutline(task.getOrCreateContentBoundsPadded(), graphPoint);
 		}
 		else
 		{
@@ -2573,7 +2525,7 @@ public class IconsTool extends EditorTool
 					continue;
 				}
 				Rectangle bounds = task.getOrCreateContentBoundsPadded();
-				if (bounds.contains(graphPoint))
+				if (isWithinHighlightOutline(bounds, graphPoint))
 				{
 					iconsAndTops.add(new Tuple2<>(icon, bounds.getTop()));
 				}
@@ -2603,6 +2555,14 @@ public class IconsTool extends EditorTool
 			}
 		}
 		mapEditingPanel.setSelectionCycleCandidateAreas(areas);
+	}
+
+	/**
+	 * Whether the given point is inside an icon's bounds or on the outline drawn around them when the icon is highlighted.
+	 */
+	private boolean isWithinHighlightOutline(Rectangle iconBounds, Point graphPoint)
+	{
+		return new RotatedRectangle(iconBounds).overlapsCircle(graphPoint, getHighlightOutlineReachInGraphPixels());
 	}
 
 	protected FreeIcon getLowestSelectedIcon(java.awt.Point mouseLocation, Collection<FreeIcon> allowList)

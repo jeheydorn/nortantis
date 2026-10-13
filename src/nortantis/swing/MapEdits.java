@@ -170,11 +170,15 @@ public class MapEdits implements Serializable
 	}
 
 	/**
-	 * If the given point lands within the bounding box of a piece of text, this returns one with the lowest top. Else null is returned.
+	 * If the given point lands within reach of the bounding box of a piece of text, this returns one with the lowest top. Else null is
+	 * returned.
+	 *
+	 * @param reach
+	 *            How far outside a text's bounding box, in graph pixels, the point can be and still count.
 	 */
-	public MapText findTextPicked(Point point)
+	public MapText findTextPicked(Point point, double reach)
 	{
-		List<MapText> textAtPoint = findAllTextAtPoint(point);
+		List<MapText> textAtPoint = findAllTextAtPoint(point, reach);
 		if (textAtPoint.isEmpty())
 		{
 			return null;
@@ -184,7 +188,13 @@ public class MapEdits implements Serializable
 				.max((t1, t2) -> Double.compare(t1.line1Bounds == null ? Double.POSITIVE_INFINITY : t1.line1Bounds.y, t2.line1Bounds == null ? Double.POSITIVE_INFINITY : t2.line1Bounds.y)).get();
 	}
 
-	public List<MapText> findAllTextAtPoint(Point point)
+	/**
+	 * The texts whose bounding box, the box around both of their lines, is within reach of the given point.
+	 *
+	 * @param reach
+	 *            How far outside a text's bounding box, in graph pixels, the point can be and still count.
+	 */
+	public List<MapText> findAllTextAtPoint(Point point, double reach)
 	{
 		List<MapText> result = new ArrayList<>();
 
@@ -192,43 +202,13 @@ public class MapEdits implements Serializable
 		{
 			if (mp.value.length() > 0)
 			{
-				if (mp.line1Bounds != null && mp.line1Bounds.contains(point) || mp.line2Bounds != null && mp.line2Bounds.contains(point))
+				if (mp.line1Bounds != null && mp.line1Bounds.addRotatedRectangleThatHasTheSameAngleAndPivot(mp.line2Bounds).overlapsCircle(point, reach))
 				{
 					result.add(mp);
 				}
 			}
 		}
 		return result;
-	}
-
-	/**
-	 * The text a click at the given point selects: the one {@link #findTextPicked(Point)} finds if the point is inside a text's bounds, and
-	 * otherwise the text whose bounds are closest to the point, if they are within maxDistance of it. Null if there is none.
-	 */
-	public MapText findTextClicked(Point point, double maxDistance)
-	{
-		MapText picked = findTextPicked(point);
-		if (picked != null)
-		{
-			return picked;
-		}
-
-		MapText closest = null;
-		double closestDistance = maxDistance;
-		for (MapText mp : text)
-		{
-			if (mp.value.length() > 0)
-			{
-				double distance = Math.min(mp.line1Bounds == null ? Double.POSITIVE_INFINITY : mp.line1Bounds.distanceTo(point),
-						mp.line2Bounds == null ? Double.POSITIVE_INFINITY : mp.line2Bounds.distanceTo(point));
-				if (distance <= closestDistance)
-				{
-					closest = mp;
-					closestDistance = distance;
-				}
-			}
-		}
-		return closest;
 	}
 
 	/**

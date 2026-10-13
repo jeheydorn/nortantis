@@ -14,10 +14,6 @@ class RectangleSelectDrag
 	 * click. Keeps a slightly shaky click from selecting with a tiny rectangle.
 	 */
 	private static final int dragThresholdInPanelPixels = 4;
-	/**
-	 * How far, in panel pixels, a click can be from something and still select it, when nothing is directly under the click.
-	 */
-	static final int clickToleranceInPanelPixels = 6;
 
 	private final java.awt.Point pressPointInPanel;
 	/** The press point in resolution-invariant coordinates, so the rectangle stays anchored to the map if the zoom or display quality changes. */

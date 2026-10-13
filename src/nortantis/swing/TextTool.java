@@ -123,7 +123,6 @@ public class TextTool extends EditorTool
 	/**
 	 * True while the mouse is held after pressing it to select text, so that dragging adds the texts the brush passes over.
 	 */
-	private boolean isSelectingWithBrush;
 	/**
 	 * The press being held with rectangle selection, or null if there is none.
 	 */
@@ -525,8 +524,7 @@ public class TextTool extends EditorTool
 		addTextTypeHider.setVisible(isAddMode);
 		addNameHider.setVisible(isAddMode);
 		booksHider.setVisible(isAddMode);
-		brushSelector.setOffersRectangleSelect(isEditMode);
-		brushSelector.setVisible(modeWidget.isEraseMode() || isEditMode);
+		brushSelector.setVisible(modeWidget.isEraseMode());
 		endRectangleSelect();
 		controlClickBehaviorHider.setVisible(isEditMode);
 		copyPasteDeleteButtonsHider.setVisible(isEditMode);
@@ -1324,7 +1322,6 @@ public class TextTool extends EditorTool
 
 		isRotating = false;
 		isMoving = false;
-		isSelectingWithBrush = false;
 		endRectangleSelect();
 
 		if (modeWidget.isEraseMode())
@@ -1359,35 +1356,21 @@ public class TextTool extends EditorTool
 				setSelection(next == null ? new ArrayList<>() : Arrays.asList(next), SelectionFocus.ModeWidget);
 				updateSelectionCycleCandidates(e.getPoint());
 			}
-			else if (brushSelector.isRectangleSelect())
+			else
 			{
 				rectangleSelectDrag = new RectangleSelectDrag(e.getPoint(), getPointRI(e.getPoint()));
 				selectionBeforeRectangleSelect = new ArrayList<>(selectedTexts);
 				isCommandKeyDownDuringRectangleSelect = SwingHelper.isCommandKeyDown(e);
-				applySelection(getTextClicked(e.getPoint()), e, true);
-			}
-			else
-			{
-				isSelectingWithBrush = true;
-				selectWithBrush(e, true);
+				selectClicked(getTextClicked(e.getPoint()), e);
 			}
 		}
 	}
 
 	/**
-	 * Selects the texts under the brush. With the command key held, adds them to or removes them from the selection, depending on the
-	 * Ctrl+click setting. Without it, a press replaces the selection and a drag adds to it.
-	 */
-	private void selectWithBrush(MouseEvent e, boolean isPress)
-	{
-		applySelection(getMapTextsSelectedByCurrentBrushSizeAndShowBrush(e.getPoint()), e, isPress);
-	}
-
-	/**
 	 * Selects the given texts. With the command key held, adds them to or removes them from the selection, depending on the Ctrl+click
-	 * setting. Without it, a press replaces the selection and a drag adds to it.
+	 * setting. Without it, they replace the selection.
 	 */
-	private void applySelection(List<MapText> underBrush, MouseEvent e, boolean isPress)
+	private void selectClicked(List<MapText> clicked, MouseEvent e)
 	{
 		List<MapText> newSelection;
 		if (SwingHelper.isCommandKeyDown(e))
@@ -1395,21 +1378,16 @@ public class TextTool extends EditorTool
 			newSelection = new ArrayList<>(selectedTexts);
 			if (controlClickBehavior.isSelectMode())
 			{
-				newSelection.addAll(underBrush);
+				newSelection.addAll(clicked);
 			}
 			else
 			{
-				newSelection.removeIf(text -> containsByIdentity(underBrush, text));
+				newSelection.removeIf(text -> containsByIdentity(clicked, text));
 			}
-		}
-		else if (isPress)
-		{
-			newSelection = underBrush;
 		}
 		else
 		{
-			newSelection = new ArrayList<>(selectedTexts);
-			newSelection.addAll(underBrush);
+			newSelection = clicked;
 		}
 
 		if (!isSameSelection(newSelection))
@@ -1417,7 +1395,7 @@ public class TextTool extends EditorTool
 			// Don't grab focus on selection — selecting a text is a visual selection (like clicking an icon), not the same as starting to
 			// edit it. This keeps ctrl+C / ctrl+V / DELETE shortcuts targeting the selected MapText objects instead of being swallowed by the
 			// text-edit field. Users click into the text field to start typing.
-			setSelection(newSelection, isPress ? SelectionFocus.ModeWidget : SelectionFocus.Leave);
+			setSelection(newSelection, SelectionFocus.ModeWidget);
 		}
 	}
 
@@ -1477,7 +1455,7 @@ public class TextTool extends EditorTool
 	private List<MapText> getTextClicked(java.awt.Point mouseLocation)
 	{
 		List<MapText> result = new ArrayList<>();
-		MapText clicked = mainWindow.edits.findTextClicked(getPointOnGraph(mouseLocation), panelDistanceToGraphPixels(RectangleSelectDrag.clickToleranceInPanelPixels));
+		MapText clicked = mainWindow.edits.findTextPicked(getPointOnGraph(mouseLocation), getHighlightOutlineReachInGraphPixels());
 		if (clicked != null)
 		{
 			result.add(clicked);
@@ -1518,7 +1496,7 @@ public class TextTool extends EditorTool
 		{
 			return new ArrayList<>();
 		}
-		List<MapText> candidates = new ArrayList<>(mainWindow.edits.findAllTextAtPoint(getPointOnGraph(mouseLocation)));
+		List<MapText> candidates = new ArrayList<>(mainWindow.edits.findAllTextAtPoint(getPointOnGraph(mouseLocation), getHighlightOutlineReachInGraphPixels()));
 		// Lowest top first, matching MapEdits.findTextPicked. The sort is stable, so ties keep their draw order.
 		candidates.sort((t1, t2) -> -Double.compare(t1.line1Bounds == null ? Double.POSITIVE_INFINITY : t1.line1Bounds.y,
 				t2.line1Bounds == null ? Double.POSITIVE_INFINITY : t2.line1Bounds.y));
@@ -1697,9 +1675,7 @@ public class TextTool extends EditorTool
 		}
 		if (!insideSelectionBox)
 		{
-			MapText underCursor = brushSelector.isRectangleSelect()
-					? mainWindow.edits.findTextClicked(graphPoint, panelDistanceToGraphPixels(RectangleSelectDrag.clickToleranceInPanelPixels))
-					: mainWindow.edits.findTextPicked(graphPoint);
+			MapText underCursor = mainWindow.edits.findTextPicked(graphPoint, getHighlightOutlineReachInGraphPixels());
 			if (underCursor != null && !containsByIdentity(selectedTexts, underCursor))
 			{
 				List<MapText> newSelection = SwingHelper.isCommandKeyDown(e) ? new ArrayList<>(selectedTexts) : new ArrayList<>();
@@ -1751,10 +1727,6 @@ public class TextTool extends EditorTool
 		if (modeWidget.isEditMode() && (isMoving || isRotating))
 		{
 			updateMoveOrRotatePreview(e.getPoint());
-		}
-		else if (modeWidget.isEditMode() && isSelectingWithBrush)
-		{
-			selectWithBrush(e, false);
 		}
 		else if (modeWidget.isEditMode() && rectangleSelectDrag != null)
 		{
@@ -1897,7 +1869,6 @@ public class TextTool extends EditorTool
 			return;
 		}
 
-		isSelectingWithBrush = false;
 		if (rectangleSelectDrag != null)
 		{
 			endRectangleSelect();
@@ -2039,14 +2010,10 @@ public class TextTool extends EditorTool
 				mapEditingPanel.hideBrush();
 				mapEditingPanel.clearHighlightedAreas();
 			}
-			else if (brushSelector.isRectangleSelect())
+			else
 			{
 				mapEditingPanel.hideBrush();
 				showEditModeHoverPreview(getTextClicked(mouseLocation));
-			}
-			else
-			{
-				showEditModeHoverPreview(getMapTextsSelectedByCurrentBrushSizeAndShowBrush(mouseLocation));
 			}
 			updateSelectionCycleCandidates(mouseLocation);
 		}
@@ -2102,7 +2069,7 @@ public class TextTool extends EditorTool
 		else
 		{
 			mapEditingPanel.hideBrush();
-			MapText selected = mainWindow.edits.findTextPicked(getPointOnGraph(mouseLocation));
+			MapText selected = mainWindow.edits.findTextPicked(getPointOnGraph(mouseLocation), getHighlightOutlineReachInGraphPixels());
 			if (selected != null)
 			{
 				mapTextsSelected = Collections.singletonList(selected);

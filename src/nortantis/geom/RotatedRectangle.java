@@ -139,21 +139,6 @@ public class RotatedRectangle
 		return (cornerDistanceSquared <= (radius * radius));
 	}
 
-	/**
-	 * The distance from the given point to the nearest point of this rectangle, or 0 if the point is inside it.
-	 */
-	public double distanceTo(Point point)
-	{
-		double cos = Math.cos(-angle);
-		double sin = Math.sin(-angle);
-		// Rotate the point to match this rectangle
-		double xLocRotated = (point.x - pivotX) * cos - (point.y - pivotY) * sin + pivotX;
-		double yLocRotated = (point.x - pivotX) * sin + (point.y - pivotY) * cos + pivotY;
-		double dx = Math.max(0, Math.abs((x + width / 2) - xLocRotated) - width / 2);
-		double dy = Math.max(0, Math.abs((y + height / 2) - yLocRotated) - height / 2);
-		return Math.sqrt(dx * dx + dy * dy);
-	}
-
 	public boolean overlaps(RotatedRectangle rect)
 	{
 		Polygon thisPolygon = new Polygon(Arrays.asList(upperLeftCorner(), upperRightCorner(), lowerRightCorner(), lowerLeftCorner()));
