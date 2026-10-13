@@ -873,14 +873,26 @@ public class MapEditingPanel extends UnscaledImagePanel
 	{
 		Graphics2D g2 = ((Graphics2D) g);
 
+		// Fill the whole region being repainted, before the origin is snapped below. Under fractional display scaling, the panel's own
+		// background fill can miss the region's last row or column, and snapping can uncover its first or last one, which would otherwise
+		// show whatever was left in the paint buffer. It also fills around the map when a zoom-out preview shrinks it.
+		java.awt.Rectangle clip = g2.getClipBounds();
+		if (clip != null)
+		{
+			g2.setColor(getBackground());
+			g2.fillRect(clip.x, clip.y, clip.width, clip.height);
+		}
+
 		// Under fractional display scaling the panel's origin can land between device pixels. Java2D rounds an unscaled image to whole
 		// pixels, but a stretched one, as during a zoom preview, is placed at the exact fraction, so the map would shift by up to half a pixel
 		// when the rescaled image replaces the preview. Snapping the origin to a whole pixel puts the map in the same place in both.
 		AffineTransform deviceTransform = g2.getTransform();
 		if (deviceTransform.getScaleX() > 0 && deviceTransform.getScaleY() > 0)
 		{
-			double snapX = Math.round(deviceTransform.getTranslateX()) - deviceTransform.getTranslateX();
-			double snapY = Math.round(deviceTransform.getTranslateY()) - deviceTransform.getTranslateY();
+			// Rounds halves down, as Swing does for the edges of the region being repainted, so that the panel's top and left edges stay
+			// on the first row and column of the region rather than being pushed half a pixel past them.
+			double snapX = Math.ceil(deviceTransform.getTranslateX() - 0.5) - deviceTransform.getTranslateX();
+			double snapY = Math.ceil(deviceTransform.getTranslateY() - 0.5) - deviceTransform.getTranslateY();
 			g2.translate(snapX / deviceTransform.getScaleX(), snapY / deviceTransform.getScaleY());
 		}
 
@@ -892,14 +904,6 @@ public class MapEditingPanel extends UnscaledImagePanel
 		}
 		if (zoomPreviewTransform != null && getImage() != null)
 		{
-			// The background is filled before applying the preview transform because a zoom-out preview shrinks the image and would
-			// otherwise leave the area around it unpainted.
-			java.awt.Rectangle clip = g2.getClipBounds();
-			if (clip != null)
-			{
-				g2.setColor(getBackground());
-				g2.fillRect(clip.x, clip.y, clip.width, clip.height);
-			}
 			g2.transform(zoomPreviewTransform);
 			g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 		}
