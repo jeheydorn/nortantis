@@ -141,6 +141,11 @@ public class TextTool extends EditorTool
 	 */
 	private boolean isCommandKeyHeld;
 	/**
+	 * Whether the command key has stayed down since it was used for a select-all. While it has, the selection keeps the box with the move
+	 * and rotate handles rather than switching to the outlines the command key normally shows, so that Ctrl+A doesn't flash them.
+	 */
+	private boolean isCommandKeyHeldSinceSelectAll;
+	/**
 	 * Draws the picture of text about to be added that follows the mouse, at the resolution it was made for.
 	 */
 	private TextDrawer hoverPreviewTextDrawer;
@@ -483,6 +488,7 @@ public class TextTool extends EditorTool
 				all.add(text);
 			}
 		}
+		isCommandKeyHeldSinceSelectAll = isCommandKeyHeld;
 		setSelection(all, SelectionFocus.Leave);
 		mapEditingPanel.repaint();
 	}
@@ -727,10 +733,13 @@ public class TextTool extends EditorTool
 	}
 
 	/**
-	 * Shows the box with the move and rotate handles around the given text boxes, and, when there are several, a box around each of them.
-	 * Boxes entirely off the map are drawn in red, since their texts will be deleted if unselected there.
+	 * Shows the box with the move and rotate handles around the given text boxes. Each box entirely off the map is also outlined in red,
+	 * since its text will be deleted if unselected there. Without a box with handles, every box is outlined.
+	 *
+	 * @param outlineEachBox
+	 *            Whether to outline every box even with the box with handles, as while the texts are being moved or rotated.
 	 */
-	private void showTextBoxes(RotatedRectangle groupBox, List<RotatedRectangle> boxes)
+	private void showTextBoxes(RotatedRectangle groupBox, List<RotatedRectangle> boxes, boolean outlineEachBox)
 	{
 		List<RotatedRectangle> boxesOnMap = new ArrayList<>();
 		List<RotatedRectangle> boxesOffMap = new ArrayList<>();
@@ -746,13 +755,17 @@ public class TextTool extends EditorTool
 			}
 		}
 		boolean isGroupBoxInAValidPosition = !boxesOnMap.isEmpty() || boxes.isEmpty();
-		if (boxes.size() == 1 && groupBox != null)
+		if (groupBox == null || (outlineEachBox && boxes.size() > 1))
+		{
+			mapEditingPanel.setTextBoxesToDraw(groupBox, isGroupBoxInAValidPosition, boxesOnMap, boxesOffMap);
+		}
+		else if (boxes.size() == 1)
 		{
 			mapEditingPanel.setTextBoxesToDraw(groupBox, isGroupBoxInAValidPosition, new ArrayList<>(), new ArrayList<>());
 		}
 		else
 		{
-			mapEditingPanel.setTextBoxesToDraw(groupBox, isGroupBoxInAValidPosition, boxesOnMap, boxesOffMap);
+			mapEditingPanel.setTextBoxesToDraw(groupBox, isGroupBoxInAValidPosition, new ArrayList<>(), boxesOffMap);
 		}
 	}
 
@@ -991,17 +1004,18 @@ public class TextTool extends EditorTool
 				boxes.add(box);
 			}
 		}
-		if (isCommandKeyHeld || (rectangleSelectDrag != null && rectangleSelectDrag.isDragging()) || texts != selectedTexts)
+		boolean isCommandKeyShowingOutlines = isCommandKeyHeld && !isCommandKeyHeldSinceSelectAll;
+		if (isCommandKeyShowingOutlines || (rectangleSelectDrag != null && rectangleSelectDrag.isDragging()) || texts != selectedTexts)
 		{
-			showTextBoxes(null, boxes);
+			showTextBoxes(null, boxes, false);
 			return;
 		}
 		if (selectedTexts.size() == 1)
 		{
-			showTextBoxes(boxes.isEmpty() ? null : boxes.get(0), boxes);
+			showTextBoxes(boxes.isEmpty() ? null : boxes.get(0), boxes, false);
 			return;
 		}
-		showTextBoxes(getGroupBox(), boxes);
+		showTextBoxes(getGroupBox(), boxes, false);
 	}
 
 	/**
@@ -1009,6 +1023,10 @@ public class TextTool extends EditorTool
 	 */
 	private void setCommandKeyHeld(boolean isHeld)
 	{
+		if (!isHeld)
+		{
+			isCommandKeyHeldSinceSelectAll = false;
+		}
 		if (isHeld == isCommandKeyHeld)
 		{
 			return;
@@ -1368,11 +1386,13 @@ public class TextTool extends EditorTool
 				mousePressedLocation = getPointOnGraph(e.getPoint());
 				RotatedRectangle groupBox = getGroupBox();
 				groupRotationCenter = groupBox == null ? null : groupBox.getPivot();
+				updateMoveOrRotatePreview(e.getPoint());
 			}
 			else if (!selectedTexts.isEmpty() && mapEditingPanel.isInMoveTool(e.getPoint()))
 			{
 				isMoving = true;
 				mousePressedLocation = getPointOnGraph(e.getPoint());
+				updateMoveOrRotatePreview(e.getPoint());
 			}
 			else if (e.isAltDown())
 			{
@@ -1827,11 +1847,11 @@ public class TextTool extends EditorTool
 		}
 		if (previewBoxes.size() == 1)
 		{
-			showTextBoxes(previewBoxes.get(0), previewBoxes);
+			showTextBoxes(previewBoxes.get(0), previewBoxes, true);
 		}
 		else
 		{
-			showTextBoxes(previewGroupBox, previewBoxes);
+			showTextBoxes(previewGroupBox, previewBoxes, true);
 		}
 		mapEditingPanel.repaint();
 	}
@@ -2063,7 +2083,7 @@ public class TextTool extends EditorTool
 	 */
 	private void showEditModeHoverPreview(List<MapText> textsUnderMouse)
 	{
-		if (isCommandKeyHeld && controlClickBehavior.isUnselectMode())
+		if (isCommandKeyHeld && !isCommandKeyHeldSinceSelectAll && controlClickBehavior.isUnselectMode())
 		{
 			mapEditingPanel.clearHighlightedAreas();
 			List<MapText> remaining = new ArrayList<>(selectedTexts);

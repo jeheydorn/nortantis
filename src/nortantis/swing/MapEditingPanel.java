@@ -410,8 +410,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 	}
 
 	/**
-	 * Shows the box with the move and rotate handles around the selected texts, and, when there are several, a box without handles around
-	 * each of them.
+	 * Shows the box with the move and rotate handles around the selected texts, and boxes without handles around individual texts.
 	 *
 	 * @param groupBox
 	 *            The box with the handles, or null to show only the boxes around each text.

@@ -44,6 +44,11 @@ public class IconsTool extends EditorTool
 	 * Whether the command key was held during the latest press or drag of the current rectangle selection.
 	 */
 	private boolean isCommandKeyDownDuringRectangleSelect;
+	/**
+	 * Whether the command key has stayed down since it was used for a select-all. While it has, the selection keeps its box rather than
+	 * switching to the individual outlines the command key normally shows, so that Ctrl+A doesn't flash them.
+	 */
+	private boolean isCommandKeyHeldSinceSelectAll;
 	private JToggleButton hillsButton;
 	private JToggleButton dunesButton;
 	private IconTypeButtons mountainTypes;
@@ -464,7 +469,11 @@ public class IconsTool extends EditorTool
 			@Override
 			public boolean dispatchKeyEvent(KeyEvent e)
 			{
-				if (isSelected() && modeWidget.isEditMode() && !isMoving && !isScaling && rectangleSelectDrag == null
+				if (e.getID() == KeyEvent.KEY_RELEASED && SwingHelper.isCommandModifierKeyCode(e.getKeyCode()))
+				{
+					isCommandKeyHeldSinceSelectAll = false;
+				}
+				if (isSelected() && modeWidget.isEditMode() && !isMoving && !isScaling && rectangleSelectDrag == null && !isCommandKeyHeldSinceSelectAll
 						&& SwingHelper.isCommandModifierKeyCode(e.getKeyCode()))
 				{
 					updater.doIfMapIsReadyForInteractions(() ->
@@ -590,6 +599,7 @@ public class IconsTool extends EditorTool
 				}
 			}
 		});
+		isCommandKeyHeldSinceSelectAll = true;
 		handleIconSelectionChange(true);
 		mapEditingPanel.repaint();
 	}
@@ -2239,7 +2249,7 @@ public class IconsTool extends EditorTool
 	private void addOrRemoveIconHoverHighlightSelection(boolean isControlDown)
 	{
 		Set<FreeIcon> toHighlight = new HashSet<>();
-		if (isControlDown)
+		if (isControlDown && !isCommandKeyHeldSinceSelectAll)
 		{
 			toHighlight.addAll(iconsToEdit);
 
