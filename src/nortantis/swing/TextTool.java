@@ -141,7 +141,7 @@ public class TextTool extends EditorTool
 	 * A press with the command key held on a text, which toggles or removes it when released, or null if there is none.
 	 */
 	private CommandClick<MapText> commandClick;
-	private final ToggledItemUnderMouse<MapText> toggledTextUnderMouse = new ToggledItemUnderMouse<>();
+	private final ToggledItemsUnderMouse<MapText> toggledTextsUnderMouse = new ToggledItemsUnderMouse<>();
 	private SelectionDisplay selectionDisplay;
 	/**
 	 * Draws the picture of text about to be added that follows the mouse, at the resolution it was made for.
@@ -1385,13 +1385,13 @@ public class TextTool extends EditorTool
 				selectionBeforeRectangleSelect = new ArrayList<>(selectedTexts);
 				isCommandKeyDownDuringRectangleSelect = SwingHelper.isCommandKeyDown(e);
 				isAltDownDuringRectangleSelect = e.isAltDown();
-				MapText clicked = getTextClicked(e.getPoint());
 				if (SwingHelper.isCommandKeyDown(e))
 				{
 					if (e.isAltDown())
 					{
 						SelectionCycling.recordAltClick();
 					}
+					MapText clicked = MapEdits.pickText(toggledTextsUnderMouse.getItemsToClick(getAllTextAtPoint(e.getPoint())));
 					if (clicked != null)
 					{
 						commandClick = new CommandClick<>(e.getPoint(), clicked, e.isAltDown());
@@ -1399,7 +1399,7 @@ public class TextTool extends EditorTool
 				}
 				else
 				{
-					selectClicked(clicked, false, false);
+					selectClicked(getTextClicked(e.getPoint()), false, false);
 				}
 			}
 		}
@@ -1461,7 +1461,15 @@ public class TextTool extends EditorTool
 	 */
 	private MapText getTextClicked(java.awt.Point mouseLocation)
 	{
-		return mainWindow.edits.findTextPicked(getPointOnGraph(mouseLocation), getHighlightOutlineReachInGraphPixels());
+		return MapEdits.pickText(getAllTextAtPoint(mouseLocation));
+	}
+
+	/**
+	 * The texts a click at the given point can pick from.
+	 */
+	private List<MapText> getAllTextAtPoint(java.awt.Point mouseLocation)
+	{
+		return mainWindow.edits.findAllTextAtPoint(getPointOnGraph(mouseLocation), getHighlightOutlineReachInGraphPixels());
 	}
 
 	private boolean isSameSelection(List<MapText> texts)
@@ -1884,7 +1892,7 @@ public class TextTool extends EditorTool
 			endRectangleSelect();
 			if (click != null)
 			{
-				toggledTextUnderMouse.set(click.getItem());
+				toggledTextsUnderMouse.add(click.getItem());
 				selectClicked(click.getItem(), true, click.isAltDown());
 			}
 			updateSelectionBoxes();
@@ -2022,14 +2030,14 @@ public class TextTool extends EditorTool
 					|| (rectangleSelectDrag != null && rectangleSelectDrag.isDragging()))
 			{
 				// A click here would grab a handle or end the rectangle rather than toggle a text, so the mouse counts as off the text.
-				toggledTextUnderMouse.clear();
+				toggledTextsUnderMouse.clear();
 				mapEditingPanel.hideBrush();
 				mapEditingPanel.clearHighlightedAreas();
 			}
 			else
 			{
 				mapEditingPanel.hideBrush();
-				showEditModeHoverPreview(getTextClicked(mouseLocation));
+				showEditModeHoverPreview(mouseLocation);
 			}
 			updateSelectionCycleCandidates(mouseLocation);
 		}
@@ -2049,14 +2057,17 @@ public class TextTool extends EditorTool
 	}
 
 	/**
-	 * Previews what a click on the given text would do. With the command key held, the selection is outlined, a text the click would add
-	 * is highlighted, and a text it would remove is outlined in the color that previews removal. Otherwise the text is highlighted.
+	 * Previews what a click at the given point would do. With the command key held, the selection is outlined, a text the click would add
+	 * is highlighted, and a text it would remove is outlined in the color that previews removal. Otherwise the text the click would select
+	 * is highlighted.
 	 */
-	private void showEditModeHoverPreview(MapText textUnderMouse)
+	private void showEditModeHoverPreview(java.awt.Point mouseLocation)
 	{
-		MapText textToPreview = toggledTextUnderMouse.getItemToPreview(textUnderMouse);
+		List<MapText> textUnderMouse = getAllTextAtPoint(mouseLocation);
+		List<MapText> textToPreviewFrom = toggledTextsUnderMouse.getItemsToPreview(textUnderMouse);
 		if (selectionDisplay.isCommandKeyShowingOutlines())
 		{
+			MapText textToPreview = MapEdits.pickText(textToPreviewFrom);
 			List<MapText> after = SelectionEdits.clicked(selectedTexts, textToPreview, true, SelectionCycling.isAltDown(), SelectionEdits::newIdentitySet);
 			SelectionEdits.Change<MapText> change = SelectionEdits.change(selectedTexts, after, SelectionEdits::newIdentitySet);
 			mapEditingPanel.setHighlightedAreasFromTexts(change.added());
@@ -2065,7 +2076,8 @@ public class TextTool extends EditorTool
 		}
 		else
 		{
-			mapEditingPanel.setHighlightedAreasFromTexts(textUnderMouse == null ? new ArrayList<>() : Arrays.asList(textUnderMouse));
+			MapText picked = MapEdits.pickText(textUnderMouse);
+			mapEditingPanel.setHighlightedAreasFromTexts(picked == null ? new ArrayList<>() : Arrays.asList(picked));
 			updateSelectionBoxes();
 		}
 	}
@@ -2101,7 +2113,7 @@ public class TextTool extends EditorTool
 	@Override
 	protected void handleMouseExitedMap(MouseEvent e)
 	{
-		toggledTextUnderMouse.clear();
+		toggledTextsUnderMouse.clear();
 		mapEditingPanel.hideBrush();
 		mapEditingPanel.clearHighlightedAreas();
 		mapEditingPanel.clearSelectionCycleCandidateAreas();

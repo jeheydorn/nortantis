@@ -52,7 +52,7 @@ public class IconsTool extends EditorTool
 	 * A press with the command key held on an icon, which toggles or removes it when released, or null if there is none.
 	 */
 	private CommandClick<FreeIcon> commandClick;
-	private final ToggledItemUnderMouse<FreeIcon> toggledIconUnderMouse = new ToggledItemUnderMouse<>();
+	private final ToggledItemsUnderMouse<FreeIcon> toggledIconsUnderMouse = new ToggledItemsUnderMouse<>();
 	/**
 	 * Whether a press in Edit mode with a brush rather than rectangle selection is being held, so that dragging changes the selection by
 	 * what the brush passes over.
@@ -543,7 +543,7 @@ public class IconsTool extends EditorTool
 			List<FreeIcon> after;
 			if (getBrushDiameter() <= 1)
 			{
-				FreeIcon underMouse = toggledIconUnderMouse.getItemToPreview(getLowestSelectedIcon(mouseLocation, null));
+				FreeIcon underMouse = getLowestIcon(toggledIconsUnderMouse.getItemsToPreview(getMultipleSelectedIcons(mouseLocation, null)));
 				after = SelectionEdits.clicked(iconsToEdit, underMouse, true, isAltDown, HashSet::new);
 			}
 			else
@@ -1910,7 +1910,8 @@ public class IconsTool extends EditorTool
 				isCommandKeyDownDuringRectangleSelect = isCommandKeyDown;
 				isAltDownDuringRectangleSelect = isAltDown;
 			}
-			FreeIcon clicked = getLowestSelectedIcon(e.getPoint(), null);
+			FreeIcon clicked = isCommandKeyDown ? getLowestIcon(toggledIconsUnderMouse.getItemsToClick(getMultipleSelectedIcons(e.getPoint(), null)))
+					: getLowestSelectedIcon(e.getPoint(), null);
 			if (isCommandKeyDown && clicked != null)
 			{
 				commandClick = new CommandClick<>(e.getPoint(), clicked, isAltDown);
@@ -2226,7 +2227,7 @@ public class IconsTool extends EditorTool
 			endRectangleSelect();
 			if (click != null)
 			{
-				toggledIconUnderMouse.set(click.getItem());
+				toggledIconsUnderMouse.add(click.getItem());
 				setSelection(SelectionEdits.clicked(iconsToEdit, click.getItem(), true, click.isAltDown(), HashSet::new));
 			}
 			mapEditingPanel.repaint();
@@ -2289,9 +2290,9 @@ public class IconsTool extends EditorTool
 
 		if (modeWidget.isEditMode())
 		{
-			if (toggledIconUnderMouse.isSet())
+			if (!toggledIconsUnderMouse.isEmpty())
 			{
-				toggledIconUnderMouse.update(getLowestSelectedIcon(mouseLocation, null));
+				toggledIconsUnderMouse.update(getMultipleSelectedIcons(mouseLocation, null));
 			}
 			if (!iconsToEdit.isEmpty() || selectionDisplay.isCommandKeyShowingOutlines())
 			{
@@ -2419,7 +2420,7 @@ public class IconsTool extends EditorTool
 	@Override
 	protected void handleMouseExitedMap(MouseEvent e)
 	{
-		toggledIconUnderMouse.clear();
+		toggledIconsUnderMouse.clear();
 		mapEditingPanel.clearHighlightedCenters();
 		mapEditingPanel.clearSelectionCycleCandidateAreas();
 		if (iconsToEdit != null && !iconsToEdit.isEmpty())
@@ -2649,16 +2650,18 @@ public class IconsTool extends EditorTool
 
 	protected FreeIcon getLowestSelectedIcon(java.awt.Point mouseLocation, Collection<FreeIcon> allowList)
 	{
-		List<FreeIcon> underMouse = getMultipleSelectedIcons(mouseLocation, allowList);
-		if (underMouse.isEmpty())
-		{
-			return null;
-		}
+		return getLowestIcon(getMultipleSelectedIcons(mouseLocation, allowList));
+	}
 
+	/**
+	 * The icon whose top is lowest on the map, or null if there are none.
+	 */
+	private FreeIcon getLowestIcon(List<FreeIcon> icons)
+	{
 		FreeIcon lowest = null;
 		double lowestTop = Double.NEGATIVE_INFINITY;
 
-		for (FreeIcon icon : underMouse)
+		for (FreeIcon icon : icons)
 		{
 			IconDrawTask task = updater.mapParts.iconDrawer.toIconDrawTask(icon);
 			if (task != null)

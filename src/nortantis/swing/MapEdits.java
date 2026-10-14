@@ -178,7 +178,14 @@ public class MapEdits implements Serializable
 	 */
 	public MapText findTextPicked(Point point, double reach)
 	{
-		List<MapText> textAtPoint = findAllTextAtPoint(point, reach);
+		return pickText(findAllTextAtPoint(point, reach));
+	}
+
+	/**
+	 * Of texts at the same point, the one a click there picks: the lowest on the map. Null if there are none.
+	 */
+	public static MapText pickText(List<MapText> textAtPoint)
+	{
 		if (textAtPoint.isEmpty())
 		{
 			return null;
