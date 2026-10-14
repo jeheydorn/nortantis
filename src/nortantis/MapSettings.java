@@ -475,6 +475,15 @@ public class MapSettings implements Serializable
 	}
 
 	/**
+	 * Whether regions are drawn in their own colors: the land coloring method colors regions ({@link #drawRegionColors}), and the land
+	 * background can be colored, which a background generated from a texture can only be when it colorizes the land.
+	 */
+	public boolean drawsRegionColors()
+	{
+		return drawRegionColors && (!generateBackgroundFromTexture || colorizeLand);
+	}
+
+	/**
 	 * Returns the width of the map as it is laid out and drawn, in resolution-invariant units, which is {@link #generatedHeight} rather than
 	 * {@link #generatedWidth} when {@link #rightRotationCount} is a quarter turn.
 	 */

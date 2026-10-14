@@ -235,6 +235,33 @@ public class MapCreatorTest
 		}
 	}
 
+	/**
+	 * Political region coloring with a background generated from a texture that doesn't colorize the land draws the land as the texture,
+	 * since the land can't take the regions' colors.
+	 */
+	@Test
+	public void regionColorsWithATextureThatDoesNotColorizeTheLandDraw()
+	{
+		MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", "simpleSmallWorld.nort").toString());
+		settings.resolution = 0.25;
+		settings.drawRegionColors = true;
+		settings.generateBackground = false;
+		settings.solidColorBackground = false;
+		settings.generateBackgroundFromTexture = true;
+		settings.colorizeLand = false;
+		settings.backgroundTextureSource = TextureSource.Assets;
+		settings.backgroundTextureResource = Assets.listBackgroundTexturesForArtPack(Assets.installedArtPack, null).get(0);
+		assertFalse(settings.drawsRegionColors());
+
+		MapParts mapParts = new MapParts();
+		try (Image fullMap = assertDoesNotThrow(() -> new MapCreator().createMap(settings, null, mapParts)))
+		{
+			Set<Integer> centersToChange = findCoastalCenters(mapParts.graph, false, 0);
+			assertFalse(centersToChange.isEmpty());
+			assertDoesNotThrow(() -> new MapCreator().incrementalUpdateForCentersAndEdges(settings, mapParts, fullMap, centersToChange, new HashSet<>(), false));
+		}
+	}
+
 	@Test
 	public void incrementalRiverStampingLeavesOtherRiversUnchanged()
 	{

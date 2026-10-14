@@ -884,7 +884,7 @@ public class MapCreator implements WarningLogger
 				}
 				mapSnippet = ImageHelper.getInstance().maskWithColor(landBackgroundWithLandInOcean, Color.black, landMask, false);
 
-				if (settings.drawRegionColors)
+				if (settings.drawsRegionColors())
 				{
 					landColoredBeforeAddingIconColors = mapParts.background.landColoredBeforeAddingIconColors.copySubImage(drawBounds.toIntRectangle());
 					landBackground = darkenLandNearCoastlinesAndRegionBorders(settings, mapParts.graph, settings.resolution, landColoredBeforeAddingIconColors, coastShading,
@@ -1011,7 +1011,7 @@ public class MapCreator implements WarningLogger
 
 			checkForCancel();
 
-			textBackground = updateLandMaskAndCreateTextBackground(settings, mapParts.graph, landMask, iconsToDraw, settings.drawRegionColors ? landColoredBeforeAddingIconColors : landTextureSnippet,
+			textBackground = updateLandMaskAndCreateTextBackground(settings, mapParts.graph, landMask, iconsToDraw, settings.drawsRegionColors() ? landColoredBeforeAddingIconColors : landTextureSnippet,
 					oceanTextureSnippet, mapParts.background, oceanWaves, oceanShading, coastShading, mapParts.iconDrawer, centersToDraw, drawBounds);
 
 			checkForCancel();
@@ -1881,7 +1881,7 @@ public class MapCreator implements WarningLogger
 			}
 			map = ImageHelper.getInstance().maskWithColor(landBackgroundWithLandAndOcean, Color.black, landMask, false);
 
-			if (settings.drawRegionColors)
+			if (settings.drawsRegionColors())
 			{
 				landBackground = darkenLandNearCoastlinesAndRegionBorders(settings, graph, settings.resolution, background.landColoredBeforeAddingIconColors, coastShading, null, null,
 						true).getFirst();
@@ -2004,7 +2004,7 @@ public class MapCreator implements WarningLogger
 		reportProgressAndCheckForCancel();
 
 		// Needed for drawing text
-		Image textBackground = updateLandMaskAndCreateTextBackground(settings, graph, landMask, iconsToDraw, settings.drawRegionColors ? background.landColoredBeforeAddingIconColors : background.land,
+		Image textBackground = updateLandMaskAndCreateTextBackground(settings, graph, landMask, iconsToDraw, settings.drawsRegionColors() ? background.landColoredBeforeAddingIconColors : background.land,
 				background.ocean, background, oceanWaves, oceanShading, coastShading, iconDrawer, null, null);
 
 		if (mapParts != null)

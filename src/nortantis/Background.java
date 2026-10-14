@@ -60,7 +60,7 @@ public class Background
 	public Background(MapSettings settings, Dimension mapBounds, WarningLogger warningLogger)
 	{
 		customImagesPath = settings.customImagesPath;
-		shouldDrawRegionColors = settings.drawRegionColors && (!settings.generateBackgroundFromTexture || settings.colorizeLand);
+		shouldDrawRegionColors = settings.drawsRegionColors();
 
 		Image landGeneratedBackground;
 		landColorizeAlgorithm = ColorizeAlgorithm.none;

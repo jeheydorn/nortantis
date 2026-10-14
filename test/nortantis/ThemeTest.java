@@ -480,6 +480,28 @@ public class ThemeTest
 	}
 
 	@Test
+	public void aTextureThatDoesNotColorizeTheLandDrawsASingleLandColor()
+	{
+		MapSettings base = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
+		base.drawRegionColors = true;
+		base.colorizeLand = false;
+		base.themeGeneration = ThemeCatalog.getDefaultThemeRules();
+		base.themeGeneration.landHueVariation = 90;
+
+		base.themeGeneration.allowedBackgroundTypes = new LinkedHashSet<>(List.of(ThemeGenerationSettings.BackgroundType.GeneratedFromTexture));
+		MapSettings fromTexture = base.deepCopy();
+		SettingsGenerator.applyThemeRandomness(fromTexture, base, base.themeGeneration, Assets.installedArtPack, Assets.installedArtPack, 3L);
+		assertTrue(fromTexture.generateBackgroundFromTexture);
+		assertFalse(fromTexture.drawRegionColors, "The theme doesn't colorize the land, so regions can't be colored.");
+		assertNotEquals(base.landColor, fromTexture.landColor, "The land color is varied, since the land is drawn in a single color.");
+
+		base.themeGeneration.allowedBackgroundTypes = new LinkedHashSet<>(List.of(ThemeGenerationSettings.BackgroundType.Fractal));
+		MapSettings fractal = base.deepCopy();
+		SettingsGenerator.applyThemeRandomness(fractal, base, base.themeGeneration, Assets.installedArtPack, Assets.installedArtPack, 3L);
+		assertTrue(fractal.drawRegionColors, "Colorizing the land only matters for textures.");
+	}
+
+	@Test
 	public void anArtPackWithoutBordersOrTexturesGetsTheInstalledArtPacksLook()
 	{
 		MapSettings base = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");

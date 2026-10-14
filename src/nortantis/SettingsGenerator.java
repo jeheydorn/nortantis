@@ -436,6 +436,38 @@ public class SettingsGenerator
 		List<LineStyle> lineStyles = gen.allowedLineStyles.isEmpty() ? Arrays.asList(LineStyle.values()) : new ArrayList<>(gen.allowedLineStyles);
 		settings.lineStyle = ProbabilityHelper.sampleUniform(rand, lineStyles);
 
+		// Background. Each texture is a choice of its own, and a fractal or solid color background is as likely as each texture.
+		rand = getThemeAspectRandom(themeSeed, ThemeAspect.Background);
+		List<NamedResource> textures = listBackgroundTextureChoices(textureArtPack, settings.customImagesPath);
+		Set<BackgroundType> allowedBackgroundTypes = gen.allowedBackgroundTypes.isEmpty() ? EnumSet.allOf(BackgroundType.class) : gen.allowedBackgroundTypes;
+		List<BackgroundType> backgroundChoices = new ArrayList<>();
+		for (BackgroundType type : allowedBackgroundTypes)
+		{
+			if (type == BackgroundType.GeneratedFromTexture)
+			{
+				backgroundChoices.addAll(Collections.nCopies(textures.size(), type));
+			}
+			else
+			{
+				backgroundChoices.add(type);
+			}
+		}
+		BackgroundType backgroundType = backgroundChoices.isEmpty() ? BackgroundType.Fractal : ProbabilityHelper.sampleUniform(rand, backgroundChoices);
+		settings.generateBackground = backgroundType == BackgroundType.Fractal;
+		settings.generateBackgroundFromTexture = backgroundType == BackgroundType.GeneratedFromTexture;
+		settings.solidColorBackground = backgroundType == BackgroundType.SolidColor;
+		// Always set a background texture even if it is not used so that the editor doesn't give an error when switching to the background
+		// texture file path field.
+		if (!textures.isEmpty())
+		{
+			settings.backgroundTextureResource = ProbabilityHelper.sampleUniform(rand, textures);
+			settings.backgroundTextureSource = TextureSource.Assets;
+		}
+
+		// A theme that doesn't colorize the land of a background generated from a texture draws all of the land alike, so it can't color
+		// regions. The colors below are varied for the land coloring that's drawn.
+		settings.drawRegionColors = settings.drawsRegionColors();
+
 		// Colors that belong together move together, so that colors chosen to work together keep working together. Only the ocean color and
 		// either the land color or the region base color are varied, and the others either follow one of them or are the base's. When regions
 		// are colored, they get new colors around the varied region base color, and the land and border colors are the base's.
@@ -510,34 +542,6 @@ public class SettingsGenerator
 		List<StrokeType> roadTypesDifferentFromBoundaries = chooseAllowed(roadTypes, type -> isRoadStyleDifferentEnoughFromBoundaries(type, settings.regionBoundaryStyle.type));
 		settings.roadStyle = new Stroke(ProbabilityHelper.sampleUniform(rand, roadTypesDifferentFromBoundaries.isEmpty() ? roadTypes : roadTypesDifferentFromBoundaries),
 				settings.roadStyle.width);
-
-		// Background. Each texture is a choice of its own, and a fractal or solid color background is as likely as each texture.
-		rand = getThemeAspectRandom(themeSeed, ThemeAspect.Background);
-		List<NamedResource> textures = listBackgroundTextureChoices(textureArtPack, settings.customImagesPath);
-		Set<BackgroundType> allowedBackgroundTypes = gen.allowedBackgroundTypes.isEmpty() ? EnumSet.allOf(BackgroundType.class) : gen.allowedBackgroundTypes;
-		List<BackgroundType> backgroundChoices = new ArrayList<>();
-		for (BackgroundType type : allowedBackgroundTypes)
-		{
-			if (type == BackgroundType.GeneratedFromTexture)
-			{
-				backgroundChoices.addAll(Collections.nCopies(textures.size(), type));
-			}
-			else
-			{
-				backgroundChoices.add(type);
-			}
-		}
-		BackgroundType backgroundType = backgroundChoices.isEmpty() ? BackgroundType.Fractal : ProbabilityHelper.sampleUniform(rand, backgroundChoices);
-		settings.generateBackground = backgroundType == BackgroundType.Fractal;
-		settings.generateBackgroundFromTexture = backgroundType == BackgroundType.GeneratedFromTexture;
-		settings.solidColorBackground = backgroundType == BackgroundType.SolidColor;
-		// Always set a background texture even if it is not used so that the editor doesn't give an error when switching to the background
-		// texture file path field.
-		if (!textures.isEmpty())
-		{
-			settings.backgroundTextureResource = ProbabilityHelper.sampleUniform(rand, textures);
-			settings.backgroundTextureSource = TextureSource.Assets;
-		}
 	}
 
 	/**

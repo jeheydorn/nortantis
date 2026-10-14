@@ -592,7 +592,6 @@ public class NewSettingsDialog extends JDialog
 		{
 			landColoringMethodComboBox.addItem(method);
 		}
-
 		createMapChangeListener(landColoringMethodComboBox);
 		organizer.addLabelAndComponent(Translation.get("theme.landColoringMethod.label"), Translation.get("theme.landColoringMethod.help"), landColoringMethodComboBox);
 
@@ -1012,8 +1011,9 @@ public class NewSettingsDialog extends JDialog
 		{
 			newSettings.cityIconTypeName = preferredCityIconType;
 		}
-		// The land coloring method is the user's choice rather than the theme's. The colors are varied for the chosen method, from the same
-		// theme seed, so they are what the theme gives with that method.
+		// The land coloring method is the user's choice rather than the theme's. The colors are varied for the method drawn, from the same
+		// theme seed, so they are what the theme gives with that method. A theme that can't color regions draws a single land color, which
+		// doesn't change the user's choice.
 		if (newSettings.drawRegionColors != current.drawRegionColors)
 		{
 			newSettings.drawRegionColors = current.drawRegionColors;
@@ -1031,6 +1031,7 @@ public class NewSettingsDialog extends JDialog
 				}
 			}
 		}
+		newSettings.drawRegionColors = current.drawRegionColors;
 		// A theme is a look, so the world the user set up is kept.
 		newSettings.customImagesPath = current.customImagesPath;
 		newSettings.randomSeed = current.randomSeed;
@@ -1202,6 +1203,10 @@ public class NewSettingsDialog extends JDialog
 			return;
 		}
 		settings.artPack = (String) artPackComboBox.getSelectedItem();
+		// The controls at the top of the dialog are the user's, so the theme is varied for them, and they keep their values.
+		boolean drawRegionColors = landColoringMethodComboBox.getSelectedItem() == LandColoringMethod.ColorPoliticalRegions;
+		settings.drawRegionColors = drawRegionColors;
+		settings.cityIconTypeName = (String) cityIconsTypeComboBox.getSelectedItem();
 		long newThemeSeed = new Random().nextLong();
 		try
 		{
@@ -1212,22 +1217,12 @@ public class NewSettingsDialog extends JDialog
 			SwingHelper.handleException(e, this, false);
 			return;
 		}
+		// A theme that can't color regions draws a single land color, which doesn't change the user's choice.
+		settings.drawRegionColors = drawRegionColors;
 		themeSeed = newThemeSeed;
 		if (sameThemeChoice != null && sameThemeChoice.equals(themeComboBox.getSelectedItem()))
 		{
 			isSameThemeRandomized = true;
-		}
-		updater.setEnabled(false);
-		isApplyingTheme = true;
-		try
-		{
-			landColoringMethodComboBox.setSelectedItem(settings.drawRegionColors ? LandColoringMethod.ColorPoliticalRegions : LandColoringMethod.SingleColor);
-			cityIconsTypeComboBox.setSelectedItem(settings.cityIconTypeName);
-		}
-		finally
-		{
-			isApplyingTheme = false;
-			updater.setEnabled(true);
 		}
 		handleMapChange();
 	}
