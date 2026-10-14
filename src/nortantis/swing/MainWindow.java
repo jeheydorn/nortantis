@@ -3007,7 +3007,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	/**
 	 * Returns the view position (the viewport's upper-left corner, in panel coordinates after the zoom change) that keeps the point under the
-	 * mouse fixed when zooming in from oldZoom to newZoom with the mouse over the panel, and otherwise keeps the center of the view fixed. The
+	 * mouse fixed when zooming from oldZoom to newZoom with the mouse over the panel, and otherwise keeps the center of the view fixed. The
 	 * result isn't clamped to the panel. Computed from the panel's current layout, so it must be called before the rescaled image is set.
 	 * While a zoom preview is showing, the point kept fixed is the part of the map the preview shows there.
 	 */
@@ -3019,9 +3019,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		// Positions are scaled relative to the image rather than the panel, since the image is centered in the panel when it is smaller
 		// than the viewport. Along any dimension that scrolls after the zoom, the image fills the panel, so it lands at 0 there.
 		nortantis.geom.Point imageLocation = mapEditingPanel.getImageLocation();
-		if (mousePosition != null && (newZoom > oldZoom))
+		if (mousePosition != null)
 		{
-			// Zoom toward the mouse's position, keeping the point
+			// Zoom toward or away from the mouse's position, keeping the point
 			// currently under the mouse the same if possible.
 			java.awt.geom.Point2D mapPointUnderMouse = mapEditingPanel.toCommittedPanelPoint(mousePosition);
 			return new java.awt.Point((int) ((mapPointUnderMouse.getX() - imageLocation.x) * scale) - mousePosition.x + visible.x,
