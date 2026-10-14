@@ -227,8 +227,7 @@ public class ThemeTest
 		{
 			SettingsGenerator.applyThemeRandomness(settings, settings, settings.themeGeneration, Assets.installedArtPack, "An art pack with no textures", rand);
 			assertTrue(settings.generateBackgroundFromTexture);
-			assertTrue(Assets.listArtPacksForNewRandomMaps(null).contains(settings.backgroundTextureResource.artPack),
-					"An art pack with no textures uses those of the art packs new random maps use.");
+			assertEquals(Assets.installedArtPack, settings.backgroundTextureResource.artPack, "An art pack with no textures uses the installed art pack's.");
 		}
 	}
 
@@ -454,6 +453,45 @@ public class ThemeTest
 
 		theme.themeGeneration = null;
 		assertThrows(IllegalStateException.class, () -> SettingsGenerator.generateFromTheme(new Random(1), Assets.installedArtPack, theme, false, null));
+	}
+
+	@Test
+	public void theSameThemeSeedGivesTheSameLookWhateverTheWorld()
+	{
+		MapSettings theme = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
+		theme.themeGeneration = ThemeCatalog.getDefaultThemeRules();
+		MapSettings first = SettingsGenerator.generateFromTheme(new Random(1), 42, Assets.installedArtPack, theme, false, null);
+		MapSettings second = SettingsGenerator.generateFromTheme(new Random(2), 42, Assets.installedArtPack, theme, false, null);
+		assertNotEquals(first.randomSeed, second.randomSeed, "The worlds differ.");
+
+		second.randomSeed = first.randomSeed;
+		second.textRandomSeed = first.textRandomSeed;
+		second.worldSize = first.worldSize;
+		second.landShape = first.landShape;
+		second.regionCount = first.regionCount;
+		second.generatedWidth = first.generatedWidth;
+		second.generatedHeight = first.generatedHeight;
+		second.books = first.books;
+		assertTrue(first.equalsIgnoringEdits(second), "Apart from the world, the maps are the same.");
+
+		MapSettings randomized = first.deepCopy();
+		SettingsGenerator.randomizeTheme(randomized, theme, Assets.installedArtPack, Assets.installedArtPack, 42);
+		assertTrue(first.equalsIgnoringEdits(randomized), "Randomizing the theme with the seed a map was made from gives the same look.");
+	}
+
+	@Test
+	public void anArtPackWithoutBordersOrTexturesGetsTheInstalledArtPacksLook()
+	{
+		MapSettings base = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
+		base.themeGeneration = ThemeCatalog.getDefaultThemeRules();
+		for (long themeSeed = 0; themeSeed < 20; themeSeed++)
+		{
+			MapSettings installed = base.deepCopyExceptEdits();
+			SettingsGenerator.applyThemeRandomness(installed, base, base.themeGeneration, Assets.installedArtPack, Assets.installedArtPack, themeSeed);
+			MapSettings withoutArt = base.deepCopyExceptEdits();
+			SettingsGenerator.applyThemeRandomness(withoutArt, base, base.themeGeneration, "An art pack with no borders", "An art pack with no textures", themeSeed);
+			assertTrue(installed.equalsIgnoringEdits(withoutArt), "Theme seed " + themeSeed);
+		}
 	}
 
 	@Test
