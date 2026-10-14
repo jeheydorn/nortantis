@@ -130,6 +130,13 @@ public class LandWaterTool extends EditorTool
 	private Map<Road, Set<Integer>> roadCPsBeforeRectangleSelect = null;
 	// Whether the command key was held during the latest press or drag of the current rectangle selection.
 	private boolean isCommandKeyDownDuringRectangleSelect = false;
+	/** Whether Alt was held during the latest press or drag of the current rectangle selection. */
+	private boolean isAltDownDuringRectangleSelect = false;
+	/**
+	 * A press with the command key held on a control point or segment, which toggles or removes it when released, or null if there is
+	 * none.
+	 */
+	private CommandClick<PendingLineClick> commandClick;
 
 	/** A control point participating in a move-drag — line + index, plus its position at drag-start so we can apply the cursor delta. */
 	private record MovingCP(Object line, int nodeIndex, Point startLocRI)
@@ -147,9 +154,6 @@ public class LandWaterTool extends EditorTool
 	static final int maxSaturationRange = 100;
 	static final int maxBrightnessRange = 100;
 
-	// UI widget that exposes "Select" vs "Unselect" behavior for Ctrl-click. Shared pattern with IconsTool.
-	private ControlClickBehaviorWidget controlClickBehavior;
-	private RowHider controlClickBehaviorHider;
 	private RowHider editButtonsSeparatorHider;
 	private RowHider editButtonsHider;
 
@@ -387,10 +391,8 @@ public class LandWaterTool extends EditorTool
 
 		brushSelector = organizer.addBrushSelector(brushSizes, Translation.get("gridBagOrganizer.brush.label"));
 
-		// Edit-mode multi-select UI: Ctrl-click behavior toggle, then a separator, then Copy/Paste/Delete buttons. All visible only in
-		// edit mode for rivers/roads (toggled together in showOrHideRoadAndRiverOptions).
-		controlClickBehavior = new ControlClickBehaviorWidget();
-		controlClickBehaviorHider = controlClickBehavior.addToOrganizer(organizer);
+		// Edit-mode multi-select UI: a separator, then Copy/Paste/Delete buttons. All visible only in edit mode for rivers/roads (toggled
+		// together in showOrHideRoadAndRiverOptions).
 		editButtonsSeparatorHider = organizer.addSeparator();
 		EditClipboardButtonsWidget editButtons = new EditClipboardButtonsWidget(this::copySelectedCPs, this::pasteCopiedCPs, this::deleteSelectedCPs,
 				this::selectAllControlPoints, Translation.get("landWaterTool.edit.deleteSelection.tooltip"));
@@ -451,22 +453,22 @@ public class LandWaterTool extends EditorTool
 
 		showOrHideBrushOptions();
 
-		// Refresh the edit-mode hover preview when Ctrl is pressed or released without moving the mouse, so the highlighted CPs match what
-		// a click would do at the moment the modifier changes (e.g. in Unselect mode, pressing Ctrl over a CP drops the add-highlight
+		// Refresh the edit-mode hover preview when Ctrl or Alt is pressed or released without moving the mouse, so the highlighted CPs match
+		// what a click would do at the moment the modifier changes (e.g. pressing Ctrl over a selected CP drops the add-highlight
 		// immediately instead of waiting for the next mouse move). A KeyEventDispatcher catches the modifier even when focus is elsewhere.
 		KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(new KeyEventDispatcher()
 		{
 			@Override
 			public boolean dispatchKeyEvent(KeyEvent e)
 			{
-				if (isSelected() && modeWidget.isEditMode() && (riversButton.isSelected() || roadsButton.isSelected()) && !dragInProgress
-						&& SwingHelper.isCommandModifierKeyCode(e.getKeyCode()) && (e.getID() == KeyEvent.KEY_PRESSED || e.getID() == KeyEvent.KEY_RELEASED))
+				boolean isModifier = SwingHelper.isCommandModifierKeyCode(e.getKeyCode()) || e.getKeyCode() == KeyEvent.VK_ALT;
+				if (isSelected() && modeWidget.isEditMode() && (riversButton.isSelected() || roadsButton.isSelected()) && !dragInProgress && isModifier
+						&& (e.getID() == KeyEvent.KEY_PRESSED || e.getID() == KeyEvent.KEY_RELEASED))
 				{
 					updater.doIfMapIsReadyForInteractions(() ->
 					{
-						boolean ctrlDown = e.getID() == KeyEvent.KEY_PRESSED;
 						LineType activeType = riversButton.isSelected() ? LineType.RIVER : LineType.ROAD;
-						updateEditModeHoverDisplay(mapEditingPanel.getMousePosition(), activeType, ctrlDown);
+						updateEditModeHoverDisplay(mapEditingPanel.getMousePosition(), activeType, SwingHelper.isCommandKeyDown(e), e.isAltDown());
 						applySelectedSegmentsHighlight();
 						mapEditingPanel.repaint();
 					});
@@ -493,7 +495,7 @@ public class LandWaterTool extends EditorTool
 		boolean hasSelectedRivers = selectedRiverCPs != null && !selectedRiverCPs.isEmpty();
 		boolean hasSelectedRoads = selectedRoadCPs != null && !selectedRoadCPs.isEmpty();
 		boolean selectionTypeMismatch = (hasSelectedRivers && !riversButton.isSelected()) || (hasSelectedRoads && !roadsButton.isSelected());
-		if ((leftEditMode || selectionTypeMismatch) && rectangleSelectDrag != null)
+		if ((leftEditMode || selectionTypeMismatch) && (rectangleSelectDrag != null || commandClick != null))
 		{
 			endRectangleSelect();
 			mapEditingPanel.repaint();
@@ -520,10 +522,6 @@ public class LandWaterTool extends EditorTool
 		riverOptionHider.setVisible(showSliderInDraw || showSliderInEdit);
 		drawStyleHider.setVisible((riversButton.isSelected() || roadsButton.isSelected()) && modeWidget.isDrawMode());
 		boolean inLineEditMode = modeWidget.isEditMode() && (riversButton.isSelected() || roadsButton.isSelected());
-		if (controlClickBehaviorHider != null)
-		{
-			controlClickBehaviorHider.setVisible(inLineEditMode);
-		}
 		if (editButtonsSeparatorHider != null)
 		{
 			editButtonsSeparatorHider.setVisible(inLineEditMode);
@@ -794,6 +792,7 @@ public class LandWaterTool extends EditorTool
 		{
 			return;
 		}
+		endRectangleSelect();
 		// Snapshot pre-edit node lists so we can compute redraw scope from where the deleted segments USED to be (the lines themselves
 		// no longer hold those positions after the cut). Identity-keyed so a mutation to line.nodes mid-operation can't lose entries.
 		Map<River, List<Point>> riverBeforePaths = new java.util.IdentityHashMap<>();
@@ -1061,6 +1060,7 @@ public class LandWaterTool extends EditorTool
 		{
 			return;
 		}
+		endRectangleSelect();
 		LineType activeType = riversButton.isSelected() ? LineType.RIVER : LineType.ROAD;
 		if (activeType != copiedLineType)
 		{
@@ -1600,7 +1600,7 @@ public class LandWaterTool extends EditorTool
 	 * Refreshes the edit-mode hover preview. The highlighted CPs and segments are exactly what a press at the current cursor position would
 	 * select, so the preview is never out-of-sync with the press behavior (both call {@link #computePressOutcome}).
 	 */
-	private void updateEditModeHoverDisplay(java.awt.Point mouseLocation, LineType type, boolean ctrlDown)
+	private void updateEditModeHoverDisplay(java.awt.Point mouseLocation, LineType type, boolean ctrlDown, boolean altDown)
 	{
 		if (updater.mapParts == null || updater.mapParts.graph == null)
 		{
@@ -1619,8 +1619,7 @@ public class LandWaterTool extends EditorTool
 
 		if (mouseLocation != null)
 		{
-			boolean deselectMode = controlClickBehavior != null && controlClickBehavior.isUnselectMode();
-			PressOutcome preview = computePressOutcome(mouseLocation, ctrlDown, deselectMode, brushDiameter, type, true);
+			PressOutcome preview = computePressOutcome(mouseLocation, ctrlDown, altDown, brushDiameter, type, true);
 			List<Point> previewLocations = collectCPGraphLocations(preview.riverCPsAfter(), preview.roadCPsAfter(), type, scale);
 			Set<Point> selectedLocations = new HashSet<>(selectedCirclesGraphPixels);
 			// CPs that the press would ADD to the selection get the orange outline AND the yellow hover ring — they're the
@@ -2872,13 +2871,19 @@ public class LandWaterTool extends EditorTool
 	 * this then arms a paint-drag (highlight, extends the selection with the brush) or a move-drag (first drag translates the selection)
 	 * is controlled by {@link #moveLineOnFreshPress}.</li>
 	 * <li><b>Paint-drag (from empty)</b> — press in empty space — clears the selection (unless Ctrl is held), then arms a paint-drag.</li>
+	 * <li><b>Ctrl press on a CP or segment</b> with a single-point brush — changes the selection on release, as a {@link CommandClick},
+	 * unless the press first becomes a paint-drag or a selection rectangle.</li>
 	 * </ul>
 	 */
 	private void handleEditModeMousePressed(MouseEvent e)
 	{
 		LineType activeType = riversButton.isSelected() ? LineType.RIVER : LineType.ROAD;
 		boolean ctrlDown = SwingHelper.isCommandKeyDown(e);
-		boolean deselectMode = controlClickBehavior != null && controlClickBehavior.isUnselectMode();
+		boolean altDown = e.isAltDown();
+		if (altDown)
+		{
+			SelectionCycling.recordAltClick();
+		}
 		int brushDiameter = getEditBrushDiameter();
 
 		// Reset transient drag state. We'll re-arm below if the press starts a drag.
@@ -2889,18 +2894,29 @@ public class LandWaterTool extends EditorTool
 		dragBeforeSnapshots = null;
 		dragStartLocRI = getPointOnGraph(e.getPoint()).mult(1.0 / mainWindow.displayQualityScale);
 
-		PressOutcome outcome = computePressOutcome(e.getPoint(), ctrlDown, deselectMode, brushDiameter, activeType, true);
-		applyPressOutcome(outcome);
+		PressOutcome outcome = computePressOutcome(e.getPoint(), ctrlDown, altDown, brushDiameter, activeType, true);
 		endRectangleSelect();
+		if (outcome.isCommandClick())
+		{
+			// Applied on release, unless the press becomes a drag first.
+			commandClick = new CommandClick<>(e.getPoint(), new PendingLineClick(outcome, multiBrushHitTest(e.getPoint(), activeType, brushDiameter)), altDown);
+			dragInProgress = true;
+			dragIsPaint = true;
+		}
+		else
+		{
+			applyPressOutcome(outcome);
+		}
 		if (!outcome.isMoveDrag() && brushSelector.isRectangleSelect())
 		{
-			// Taken after the press is applied, since applying it can remove control points, which renumbers the ones after them.
+			// Taken after any press is applied, since applying it can remove control points, which renumbers the ones after them.
 			rectangleSelectDrag = new RectangleSelectDrag(e.getPoint(), dragStartLocRI);
 			riverCPsBeforeRectangleSelect = copySelection(selectedRiverCPs);
 			roadCPsBeforeRectangleSelect = copySelection(selectedRoadCPs);
 			isCommandKeyDownDuringRectangleSelect = ctrlDown;
+			isAltDownDuringRectangleSelect = altDown;
 		}
-		refreshSelectionVisuals(e.getPoint(), activeType, ctrlDown);
+		refreshSelectionVisuals(e.getPoint(), activeType, ctrlDown, altDown);
 	}
 
 	/** Returns a copy of a selection map whose sets can be changed without changing the original. */
@@ -2916,8 +2932,8 @@ public class LandWaterTool extends EditorTool
 
 	/**
 	 * Selects the control points inside the selection rectangle and both ends of the segments it touches, once the mouse has moved far
-	 * enough from the press for it to be a rectangle rather than a click. With the command key held, adds them to or removes them from the
-	 * selection the rectangle began with, depending on the Ctrl+click setting. Without it, they replace the selection.
+	 * enough from the press for it to be a rectangle rather than a click. With the command key held, adds them to the selection the
+	 * rectangle began with, or with Alt also held, removes them from it. Without it, they replace the selection.
 	 */
 	private void updateRectangleSelect(java.awt.Point mouseLocation, LineType activeType)
 	{
@@ -2925,6 +2941,7 @@ public class LandWaterTool extends EditorTool
 		{
 			return;
 		}
+		commandClick = null;
 
 		nortantis.geom.Rectangle rectangleRI = rectangleSelectDrag.getRectangleRI(getPointRI(mouseLocation));
 		mapEditingPanel.setRectangleSelection(rectangleRI);
@@ -2935,7 +2952,7 @@ public class LandWaterTool extends EditorTool
 		{
 			selectedRiverCPs.putAll(copySelection(riverCPsBeforeRectangleSelect));
 			selectedRoadCPs.putAll(copySelection(roadCPsBeforeRectangleSelect));
-			removing = controlClickBehavior != null && controlClickBehavior.isUnselectMode();
+			removing = SelectionEdits.isRemoving(isCommandKeyDownDuringRectangleSelect, isAltDownDuringRectangleSelect);
 		}
 
 		// Control points are stored in resolution-invariant coordinates, so test against the rectangle in those coordinates.
@@ -2966,7 +2983,7 @@ public class LandWaterTool extends EditorTool
 
 		mapEditingPanel.hideBrush();
 		// No hover preview while the rectangle is being dragged, since a click isn't what the drag will do.
-		refreshSelectionVisuals(null, activeType, isCommandKeyDownDuringRectangleSelect);
+		refreshSelectionVisuals(null, activeType, isCommandKeyDownDuringRectangleSelect, isAltDownDuringRectangleSelect);
 	}
 
 	/**
@@ -2998,30 +3015,22 @@ public class LandWaterTool extends EditorTool
 		rectangleSelectDrag = null;
 		riverCPsBeforeRectangleSelect = null;
 		roadCPsBeforeRectangleSelect = null;
+		commandClick = null;
 		mapEditingPanel.clearRectangleSelection();
 	}
 
 	private void selectWhatWasClicked(MouseEvent e)
 	{
 		LineType activeType = riversButton.isSelected() ? LineType.RIVER : LineType.ROAD;
-		boolean deselectMode = controlClickBehavior != null && controlClickBehavior.isUnselectMode();
-		PressOutcome outcome = computePressOutcome(e.getPoint(), false, deselectMode, getEditBrushDiameter(), activeType, false);
-		selectedRiverCPs.clear();
-		selectedRiverCPs.putAll(outcome.riverCPsAfter());
-		selectedRoadCPs.clear();
-		selectedRoadCPs.putAll(outcome.roadCPsAfter());
-		removeUnselectedControlPointsThatCannotStay();
+		PressOutcome outcome = computePressOutcome(e.getPoint(), false, false, getEditBrushDiameter(), activeType, false);
+		applyPressOutcomeSelection(outcome);
 		refreshSelectionVisuals(e.getPoint(), activeType);
 	}
 
 	/** Applies a press outcome to the live state: swaps the selection maps and arms either move-drag or paint-drag. */
 	private void applyPressOutcome(PressOutcome outcome)
 	{
-		selectedRiverCPs.clear();
-		selectedRiverCPs.putAll(outcome.riverCPsAfter());
-		selectedRoadCPs.clear();
-		selectedRoadCPs.putAll(outcome.roadCPsAfter());
-		removeUnselectedControlPointsThatCannotStay();
+		applyPressOutcomeSelection(outcome);
 
 		if (outcome.isMoveDrag())
 		{
@@ -3034,7 +3043,25 @@ public class LandWaterTool extends EditorTool
 		}
 	}
 
+	/** Swaps the selection maps for the ones in a press outcome. */
+	private void applyPressOutcomeSelection(PressOutcome outcome)
+	{
+		selectedRiverCPs.clear();
+		selectedRiverCPs.putAll(outcome.riverCPsAfter());
+		selectedRoadCPs.clear();
+		selectedRoadCPs.putAll(outcome.roadCPsAfter());
+		removeUnselectedControlPointsThatCannotStay();
+	}
+
 	private record SelectedCPRef(Object line, int index, double distance)
+	{
+	}
+
+	/**
+	 * A press with the command key on a CP or segment: the outcome to apply if it is released as a click, and what was under the brush at
+	 * the press, which begins the paint-drag if it becomes one.
+	 */
+	private record PendingLineClick(PressOutcome outcome, List<LineHit> hitsAtPress)
 	{
 	}
 
@@ -3046,10 +3073,16 @@ public class LandWaterTool extends EditorTool
 	 * <p>
 	 * {@code riverCPsAfter} / {@code roadCPsAfter} are independent copies — applying the outcome means clearing the field maps and putting
 	 * these in. {@code isMoveDrag} distinguishes the move-drag arm path from the paint-drag arm path. {@code moveAnchorLine} +
-	 * {@code moveAnchorIdx} are the CP to drag from (one of the selected CPs); they are unset for non-move outcomes.
+	 * {@code moveAnchorIdx} are the CP to drag from (one of the selected CPs); they are unset for non-move outcomes. {@code isCommandClick}
+	 * marks a press with the command key on a single CP or segment, which the press handler applies on release, as a {@link CommandClick}.
 	 */
-	private record PressOutcome(Map<River, Set<Integer>> riverCPsAfter, Map<Road, Set<Integer>> roadCPsAfter, boolean isMoveDrag, Object moveAnchorLine, int moveAnchorIdx)
+	private record PressOutcome(Map<River, Set<Integer>> riverCPsAfter, Map<Road, Set<Integer>> roadCPsAfter, boolean isMoveDrag, Object moveAnchorLine, int moveAnchorIdx,
+			boolean isCommandClick)
 	{
+		PressOutcome(Map<River, Set<Integer>> riverCPsAfter, Map<Road, Set<Integer>> roadCPsAfter, boolean isMoveDrag, Object moveAnchorLine, int moveAnchorIdx)
+		{
+			this(riverCPsAfter, roadCPsAfter, isMoveDrag, moveAnchorLine, moveAnchorIdx, false);
+		}
 	}
 
 	/**
@@ -3058,11 +3091,15 @@ public class LandWaterTool extends EditorTool
 	 * truth here is the whole point — otherwise the preview and the press can diverge (which previously led to "I see the segment
 	 * highlighted but the click selects the CP instead").
 	 *
+	 * <p>
+	 * The modifiers follow {@link SelectionEdits}: with the command key, a single-point press on a CP or segment toggles it, and a brush adds
+	 * what it covers. With Alt also held, either removes.
+	 *
 	 * @param canGrabSelection
 	 *            Whether a plain press on the existing selection keeps it and arms a move-drag. When false, such a press selects what it
 	 *            lands on as if it were not selected.
 	 */
-	private PressOutcome computePressOutcome(java.awt.Point point, boolean ctrlDown, boolean deselectMode, int brushDiameter, LineType activeType,
+	private PressOutcome computePressOutcome(java.awt.Point point, boolean ctrlDown, boolean altDown, int brushDiameter, LineType activeType,
 			boolean canGrabSelection)
 	{
 		// Identity-keyed to match selectedRiverCPs/selectedRoadCPs (Road/River hashCode is mutable; see field declarations).
@@ -3164,7 +3201,7 @@ public class LandWaterTool extends EditorTool
 			int idx = hit.controlPointIndex();
 			if (ctrlDown)
 			{
-				if (deselectMode)
+				if (altDown || isCPSelected(line, idx))
 				{
 					removeExpanded.accept(line, idx);
 				}
@@ -3172,7 +3209,7 @@ public class LandWaterTool extends EditorTool
 				{
 					addExpanded.accept(line, idx);
 				}
-				return new PressOutcome(riverAfter, roadAfter, false, null, -1);
+				return new PressOutcome(riverAfter, roadAfter, false, null, -1, true);
 			}
 			// Replace selection with the clicked CP. With moveLineOnFreshPress the press immediately arms a move-drag on that CP;
 			// otherwise it arms a paint-drag (highlight), consistent with segment clicks and larger brush sizes, and moving takes a
@@ -3189,23 +3226,28 @@ public class LandWaterTool extends EditorTool
 		{
 			Object line = hit.river() != null ? hit.river() : hit.road();
 			int segIdx = hit.segmentIndex();
-			if (!ctrlDown)
+			if (ctrlDown)
 			{
-				clear.run();
+				// The segment counts as selected only when both its ends are, so a half-selected segment is added.
+				boolean isSegmentSelected = isCPSelected(line, segIdx) && isCPSelected(line, segIdx + 1);
+				if (altDown || isSegmentSelected)
+				{
+					removeExpanded.accept(line, segIdx);
+					removeExpanded.accept(line, segIdx + 1);
+				}
+				else
+				{
+					addExpanded.accept(line, segIdx);
+					addExpanded.accept(line, segIdx + 1);
+				}
+				return new PressOutcome(riverAfter, roadAfter, false, null, -1, true);
 			}
-			if (deselectMode && ctrlDown)
-			{
-				removeExpanded.accept(line, segIdx);
-				removeExpanded.accept(line, segIdx + 1);
-			}
-			else
-			{
-				addExpanded.accept(line, segIdx);
-				addExpanded.accept(line, segIdx + 1);
-			}
+			clear.run();
+			addExpanded.accept(line, segIdx);
+			addExpanded.accept(line, segIdx + 1);
 			// With moveLineOnFreshPress a plain press on a segment immediately arms a move-drag on its two endpoint CPs, so the first
-			// drag translates the segment. Ctrl-presses stay in select/deselect (paint) mode.
-			if (!ctrlDown && moveLineOnFreshPress)
+			// drag translates the segment.
+			if (moveLineOnFreshPress)
 			{
 				return new PressOutcome(riverAfter, roadAfter, true, line, segIdx);
 			}
@@ -3224,7 +3266,7 @@ public class LandWaterTool extends EditorTool
 		for (LineHit bh : brushHits)
 		{
 			Object line = bh.river() != null ? bh.river() : bh.road();
-			boolean removing = ctrlDown && deselectMode;
+			boolean removing = SelectionEdits.isRemoving(ctrlDown, altDown);
 			if (bh.isControlPoint())
 			{
 				if (removing)
@@ -3579,20 +3621,20 @@ public class LandWaterTool extends EditorTool
 	/** Refreshes the selection-related visuals: highlighted segments, control-point circles, and the slider value+visibility. */
 	private void refreshSelectionVisuals(java.awt.Point mouseLocation, LineType activeType)
 	{
-		refreshSelectionVisuals(mouseLocation, activeType, false);
+		refreshSelectionVisuals(mouseLocation, activeType, false, false);
 	}
 
 	/**
 	 * Refreshes the selection-related visuals: highlighted segments, control-point circles, and the slider value+visibility.
-	 * {@code ctrlDown} is the live modifier state so the hover preview reflects what a press would actually do (e.g. in Unselect mode a
-	 * held Ctrl over a CP shows no add-highlight, since the click would remove rather than select).
+	 * {@code ctrlDown} and {@code altDown} are the live modifier state so the hover preview reflects what a press would actually do (e.g. a
+	 * held Ctrl over a selected CP shows no add-highlight, since the click would remove rather than select).
 	 */
-	private void refreshSelectionVisuals(java.awt.Point mouseLocation, LineType activeType, boolean ctrlDown)
+	private void refreshSelectionVisuals(java.awt.Point mouseLocation, LineType activeType, boolean ctrlDown, boolean altDown)
 	{
 		mapEditingPanel.clearHighlightedPolylines();
 		applySelectedSegmentsHighlight();
 		showControlPointsAndSegmentsToBeRemoved();
-		updateEditModeHoverDisplay(mouseLocation, activeType, ctrlDown);
+		updateEditModeHoverDisplay(mouseLocation, activeType, ctrlDown, altDown);
 		refreshRiverWidthSliderVisibility();
 		syncSliderToSelectedSegment();
 		mapEditingPanel.repaint();
@@ -3621,6 +3663,7 @@ public class LandWaterTool extends EditorTool
 		if (dragIsPaint && rectangleSelectDrag != null)
 		{
 			isCommandKeyDownDuringRectangleSelect = SwingHelper.isCommandKeyDown(e);
+			isAltDownDuringRectangleSelect = e.isAltDown();
 			updateRectangleSelect(e.getPoint(), activeType);
 			return;
 		}
@@ -3921,16 +3964,37 @@ public class LandWaterTool extends EditorTool
 	}
 
 	/**
-	 * Paint-drag tick. Accumulates CPs/segments under the brush into (or out of) the selection. Geometry is not modified.
+	 * Paint-drag tick. Accumulates CPs/segments under the brush into (or out of) the selection. Geometry is not modified. A press with the
+	 * command key on a single CP or segment becomes a paint-drag, starting at the press, once the mouse moves far enough from it.
 	 */
 	private void handleEditModePaintDragTick(MouseEvent e, LineType activeType)
 	{
 		boolean ctrlDown = SwingHelper.isCommandKeyDown(e);
-		boolean deselectMode = controlClickBehavior != null && controlClickBehavior.isUnselectMode();
-		int brushDiameter = getEditBrushDiameter();
-		List<LineHit> brushHits = multiBrushHitTest(e.getPoint(), activeType, brushDiameter);
-		boolean removing = ctrlDown && deselectMode;
-		for (LineHit bh : brushHits)
+		boolean altDown = e.isAltDown();
+		boolean removing = SelectionEdits.isRemoving(ctrlDown, altDown);
+		if (commandClick != null)
+		{
+			if (!commandClick.isDragAt(e.getPoint()))
+			{
+				refreshSelectionVisuals(e.getPoint(), activeType, ctrlDown, altDown);
+				return;
+			}
+			List<LineHit> hitsAtPress = commandClick.getItem().hitsAtPress();
+			commandClick = null;
+			applyLineHitsToSelection(hitsAtPress, removing);
+		}
+		applyLineHitsToSelection(multiBrushHitTest(e.getPoint(), activeType, getEditBrushDiameter()), removing);
+		// Always refresh, even when the brush is over empty space (no hits). The selection is unchanged in that case, but the brush
+		// circle's position was updated via showBrush in the caller and needs a repaint to keep following the cursor. Erase mode gets
+		// this for free because its drag path always runs highlightHoverCentersOrEdgesAndBrush, which repaints unconditionally; bailing
+		// out here without repainting was what froze the brush the moment it left a river/road.
+		refreshSelectionVisuals(e.getPoint(), activeType, ctrlDown, altDown);
+	}
+
+	/** Adds the hit CPs, and both ends of the hit segments, to the selection, or removes them. */
+	private void applyLineHitsToSelection(List<LineHit> hits, boolean removing)
+	{
+		for (LineHit bh : hits)
 		{
 			Object line = bh.river() != null ? bh.river() : bh.road();
 			if (bh.isControlPoint())
@@ -3943,11 +4007,6 @@ public class LandWaterTool extends EditorTool
 				applySelectionDelta(line, bh.segmentIndex() + 1, removing);
 			}
 		}
-		// Always refresh, even when the brush is over empty space (no hits). The selection is unchanged in that case, but the brush
-		// circle's position was updated via showBrush in the caller and needs a repaint to keep following the cursor. Erase mode gets
-		// this for free because its drag path always runs highlightHoverCentersOrEdgesAndBrush, which repaints unconditionally; bailing
-		// out here without repainting was what froze the brush the moment it left a river/road.
-		refreshSelectionVisuals(e.getPoint(), activeType, ctrlDown);
 	}
 
 	/**
@@ -4592,10 +4651,17 @@ public class LandWaterTool extends EditorTool
 			boolean wasDrag = dragOccurred;
 			dragInProgress = false;
 			dragOccurred = false;
+			CommandClick<PendingLineClick> click = commandClick;
+			commandClick = null;
 			if (rectangleSelectDrag != null)
 			{
 				endRectangleSelect();
 				mapEditingPanel.repaint();
+			}
+			if (click != null)
+			{
+				applyPressOutcomeSelection(click.getItem().outcome());
+				refreshSelectionVisuals(e.getPoint(), riversButton.isSelected() ? LineType.RIVER : LineType.ROAD, SwingHelper.isCommandKeyDown(e), e.isAltDown());
 			}
 			// Only commit when the user actually moved the cursor; a click-without-drag is just a select and shouldn't push an undo point.
 			// Paint-drags don't modify geometry, so they have no commit step either way.
@@ -4971,15 +5037,15 @@ public class LandWaterTool extends EditorTool
 	@Override
 	protected void handleMouseMovedOnMap(MouseEvent e)
 	{
-		highlightHoverCentersOrEdgesAndBrush(e.getPoint(), SwingHelper.isCommandKeyDown(e));
+		highlightHoverCentersOrEdgesAndBrush(e.getPoint(), SwingHelper.isCommandKeyDown(e), e.isAltDown());
 	}
 
 	protected void highlightHoverCentersOrEdgesAndBrush(java.awt.Point mouseLocation)
 	{
-		highlightHoverCentersOrEdgesAndBrush(mouseLocation, false);
+		highlightHoverCentersOrEdgesAndBrush(mouseLocation, false, false);
 	}
 
-	protected void highlightHoverCentersOrEdgesAndBrush(java.awt.Point mouseLocation, boolean ctrlDown)
+	protected void highlightHoverCentersOrEdgesAndBrush(java.awt.Point mouseLocation, boolean ctrlDown, boolean altDown)
 	{
 		if (mouseLocation == null)
 		{
@@ -5051,7 +5117,7 @@ public class LandWaterTool extends EditorTool
 			{
 				mapEditingPanel.showBrush(mouseLocation, brushDiameter);
 			}
-			updateEditModeHoverDisplay(mouseLocation, activeType, ctrlDown);
+			updateEditModeHoverDisplay(mouseLocation, activeType, ctrlDown, altDown);
 			// Re-apply the selected-segments polyline highlight after the polyline clear above so it persists across mouse moves.
 			applySelectedSegmentsHighlight();
 		}

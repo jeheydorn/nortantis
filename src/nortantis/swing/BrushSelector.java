@@ -1,5 +1,7 @@
 package nortantis.swing;
 
+import nortantis.swing.translation.Translation;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.Ellipse2D;
@@ -17,6 +19,7 @@ public class BrushSelector
 
 	private final JComboBox<Icon> comboBox;
 	private RowHider hider;
+	private JLabel label;
 	private final List<Integer> brushSizes;
 	private final DefaultComboBoxModel<Icon> brushSizesModel;
 	private final DefaultComboBoxModel<Icon> rectangleAndBrushSizesModel;
@@ -49,6 +52,11 @@ public class BrushSelector
 		this.hider = hider;
 	}
 
+	void setLabel(JLabel label)
+	{
+		this.label = label;
+	}
+
 	public void setVisible(boolean visible)
 	{
 		hider.setVisible(visible);
@@ -60,8 +68,9 @@ public class BrushSelector
 	}
 
 	/**
-	 * Sets whether rectangle selection is one of the options. Each setting keeps its own selected option, so switching back restores the
-	 * option that was chosen the last time it was in effect.
+	 * Sets whether rectangle selection is one of the options, which it is in Edit modes. Each setting keeps its own selected option, so
+	 * switching back restores the option that was chosen the last time it was in effect. While it is offered, the label's tooltip explains
+	 * the modifier keys for selecting.
 	 */
 	public void setOffersRectangleSelect(boolean offersRectangleSelect)
 	{
@@ -69,6 +78,11 @@ public class BrushSelector
 		if (comboBox.getModel() != model)
 		{
 			comboBox.setModel(model);
+		}
+		if (label != null)
+		{
+			label.setToolTipText(
+					offersRectangleSelect ? Translation.get("gridBagOrganizer.brush.editModeTooltip", SwingHelper.getCommandKeyName(), SwingHelper.getAltKeyName()) : null);
 		}
 	}
 

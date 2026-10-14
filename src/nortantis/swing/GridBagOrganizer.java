@@ -539,8 +539,10 @@ public class GridBagOrganizer
 		JPanel brushContainer = new JPanel();
 		brushContainer.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
 		brushContainer.add(brushComboBox);
-		RowHider brushHider = addLabelAndComponent(labelText, "", brushContainer);
+		JLabel brushLabel = createWrappingLabel(labelText, "");
+		RowHider brushHider = addLabelAndComponent(brushLabel, brushContainer, rowVerticalInset);
 		brushSelector.setHider(brushHider);
+		brushSelector.setLabel(brushLabel);
 		return brushSelector;
 	}
 

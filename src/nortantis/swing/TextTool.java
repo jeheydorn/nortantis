@@ -63,8 +63,6 @@ public class TextTool extends EditorTool
 	 * Edit and Erase modes.
 	 */
 	private BrushSelector brushSelector;
-	private ControlClickBehaviorWidget controlClickBehavior;
-	private RowHider controlClickBehaviorHider;
 	private JTextField editTextField;
 	private RowHider editTextFieldHider;
 	private JTextArea fontCoverageWarningArea;
@@ -136,15 +134,14 @@ public class TextTool extends EditorTool
 	 */
 	private boolean isCommandKeyDownDuringRectangleSelect;
 	/**
-	 * Whether the command key is held. While it is, and while a selection rectangle is being dragged, the selected texts are outlined one
-	 * by one without the box that has the move and rotate handles, since a click or rectangle then adds to or changes the selection.
+	 * Whether Alt was held during the latest press or drag of the current rectangle selection.
 	 */
-	private boolean isCommandKeyHeld;
+	private boolean isAltDownDuringRectangleSelect;
 	/**
-	 * Whether the command key has stayed down since it was used for a select-all. While it has, the selection keeps the box with the move
-	 * and rotate handles rather than switching to the outlines the command key normally shows, so that Ctrl+A doesn't flash them.
+	 * A press with the command key held on a text, which toggles or removes it when released, or null if there is none.
 	 */
-	private boolean isCommandKeyHeldSinceSelectAll;
+	private CommandClick<MapText> commandClick;
+	private SelectionDisplay selectionDisplay;
 	/**
 	 * Draws the picture of text about to be added that follows the mouse, at the resolution it was made for.
 	 */
@@ -182,9 +179,6 @@ public class TextTool extends EditorTool
 
 		brushSelector = organizer.addBrushSelector(brushSizes, Translation.get("gridBagOrganizer.brush.label"));
 
-		controlClickBehavior = new ControlClickBehaviorWidget();
-		controlClickBehaviorHider = controlClickBehavior.addToOrganizer(organizer, "textTool.ctrlClickBehavior.help");
-
 		actionsSeparatorHider = organizer.addSeparator();
 
 		createAddModeControls(organizer);
@@ -199,25 +193,9 @@ public class TextTool extends EditorTool
 		booksHider = organizer.addSeparator();
 		booksHider.add(organizer.addLeftAlignedComponent(booksPanel, GridBagOrganizer.rowVerticalInset, GridBagOrganizer.rowVerticalInset, false));
 
-		SelectionCycling.addAltChangeListener(() ->
-		{
-			if (isSelected())
-			{
-				updateSelectionCycleCandidates(mapEditingPanel.getMousePosition());
-				mapEditingPanel.repaint();
-			}
-		});
-
-		// A KeyEventDispatcher sees the command key even when the focus is outside the main window's components, such as in a text field.
-		KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(e ->
-		{
-			if (SwingHelper.isCommandModifierKeyCode(e.getKeyCode()) && (e.getID() == KeyEvent.KEY_PRESSED || e.getID() == KeyEvent.KEY_RELEASED))
-			{
-				setCommandKeyHeld(e.getID() == KeyEvent.KEY_PRESSED);
-			}
-			// Let other dispatchers and the focused component handle the event too.
-			return false;
-		});
+		SelectionCycling.addAltChangeListener(this::handleModifierKeyChange);
+		selectionDisplay = new SelectionDisplay(() -> rectangleSelectDrag != null && rectangleSelectDrag.isDragging(), () -> isMoving || isRotating,
+				this::handleModifierKeyChange);
 
 		modeWidget.selectEditMode();
 
@@ -488,7 +466,7 @@ public class TextTool extends EditorTool
 				all.add(text);
 			}
 		}
-		isCommandKeyHeldSinceSelectAll = isCommandKeyHeld;
+		selectionDisplay.onSelectionChangedByShortcut();
 		setSelection(all, SelectionFocus.Leave);
 		mapEditingPanel.repaint();
 	}
@@ -557,7 +535,6 @@ public class TextTool extends EditorTool
 		booksHider.setVisible(isAddMode);
 		brushSelector.setVisible(modeWidget.isEraseMode());
 		endRectangleSelect();
-		controlClickBehaviorHider.setVisible(isEditMode);
 		copyPasteDeleteButtonsHider.setVisible(isEditMode);
 		copyPasteDeleteButtonsSeparatorHider.setVisible(isEditMode);
 		if (!isEditMode || selectedTexts.isEmpty())
@@ -976,7 +953,8 @@ public class TextTool extends EditorTool
 	}
 
 	/**
-	 * Shows the box with the move and rotate handles around the selection, and a box around each selected text when there are several.
+	 * Shows the selection the way {@link SelectionDisplay} says to: the box with the move and rotate handles, an outline around each
+	 * selected text, or both.
 	 */
 	private void updateSelectionBoxes()
 	{
@@ -984,8 +962,8 @@ public class TextTool extends EditorTool
 	}
 
 	/**
-	 * Shows the boxes for the given texts as if they were the selection. The box with the move and rotate handles is only shown when they
-	 * are the selection.
+	 * Shows the boxes for the given texts as if they were the selection. When they aren't the selection, each is outlined, without the box
+	 * with the move and rotate handles.
 	 */
 	private void updateSelectionBoxes(List<MapText> texts)
 	{
@@ -1004,41 +982,33 @@ public class TextTool extends EditorTool
 				boxes.add(box);
 			}
 		}
-		boolean isCommandKeyShowingOutlines = isCommandKeyHeld && !isCommandKeyHeldSinceSelectAll;
-		if (isCommandKeyShowingOutlines || (rectangleSelectDrag != null && rectangleSelectDrag.isDragging()) || texts != selectedTexts)
+		SelectionDisplay.Shown shown = texts == selectedTexts ? selectionDisplay.getShown(selectedTexts.size()) : SelectionDisplay.Shown.EachOutline;
+		if (!shown.showsBox())
 		{
 			showTextBoxes(null, boxes, false);
 			return;
 		}
 		if (selectedTexts.size() == 1)
 		{
-			showTextBoxes(boxes.isEmpty() ? null : boxes.get(0), boxes, false);
+			showTextBoxes(boxes.isEmpty() ? null : boxes.get(0), boxes, shown.showsEachOutline());
 			return;
 		}
-		showTextBoxes(getGroupBox(), boxes, false);
+		showTextBoxes(getGroupBox(), boxes, shown.showsEachOutline());
 	}
 
 	/**
-	 * Records whether the command key is held, and updates the selection's boxes and any selection rectangle being dragged to match.
+	 * Updates the selection's boxes, the hover preview, and any selection rectangle being dragged to match the command key and Alt.
 	 */
-	private void setCommandKeyHeld(boolean isHeld)
+	private void handleModifierKeyChange()
 	{
-		if (!isHeld)
-		{
-			isCommandKeyHeldSinceSelectAll = false;
-		}
-		if (isHeld == isCommandKeyHeld)
-		{
-			return;
-		}
-		isCommandKeyHeld = isHeld;
 		if (!isSelected() || !modeWidget.isEditMode() || isMoving || isRotating)
 		{
 			return;
 		}
 		if (rectangleSelectDrag != null && rectangleSelectDrag.isDragging())
 		{
-			isCommandKeyDownDuringRectangleSelect = isHeld;
+			isCommandKeyDownDuringRectangleSelect = selectionDisplay.isCommandKeyHeld();
+			isAltDownDuringRectangleSelect = SelectionCycling.isAltDown();
 			updateRectangleSelect(mapEditingPanel.getMousePosition());
 		}
 		updateSelectionBoxes();
@@ -1358,6 +1328,7 @@ public class TextTool extends EditorTool
 	@Override
 	protected void handleMousePressedOnMap(MouseEvent e)
 	{
+		selectionDisplay.update(e);
 		if (drawTextDisabledLabel.isVisible())
 		{
 			return;
@@ -1394,7 +1365,7 @@ public class TextTool extends EditorTool
 				mousePressedLocation = getPointOnGraph(e.getPoint());
 				updateMoveOrRotatePreview(e.getPoint());
 			}
-			else if (e.isAltDown())
+			else if (e.isAltDown() && !SwingHelper.isCommandKeyDown(e))
 			{
 				SelectionCycling.recordAltClick();
 				MapText next = SelectionCycling.chooseNext(getSelectionCycleCandidates(e.getPoint()), selectedTexts);
@@ -1406,35 +1377,33 @@ public class TextTool extends EditorTool
 				rectangleSelectDrag = new RectangleSelectDrag(e.getPoint(), getPointRI(e.getPoint()));
 				selectionBeforeRectangleSelect = new ArrayList<>(selectedTexts);
 				isCommandKeyDownDuringRectangleSelect = SwingHelper.isCommandKeyDown(e);
-				selectClicked(getTextClicked(e.getPoint()), e);
+				isAltDownDuringRectangleSelect = e.isAltDown();
+				MapText clicked = getTextClicked(e.getPoint());
+				if (SwingHelper.isCommandKeyDown(e))
+				{
+					if (e.isAltDown())
+					{
+						SelectionCycling.recordAltClick();
+					}
+					if (clicked != null)
+					{
+						commandClick = new CommandClick<>(e.getPoint(), clicked, e.isAltDown());
+					}
+				}
+				else
+				{
+					selectClicked(clicked, false, false);
+				}
 			}
 		}
 	}
 
 	/**
-	 * Selects the given texts. With the command key held, adds them to or removes them from the selection, depending on the Ctrl+click
-	 * setting. Without it, they replace the selection.
+	 * Changes the selection for a click on the given text, or on nothing if it is null, following {@link SelectionEdits#clicked}.
 	 */
-	private void selectClicked(List<MapText> clicked, MouseEvent e)
+	private void selectClicked(MapText clicked, boolean isCommandKeyDown, boolean isAltDown)
 	{
-		List<MapText> newSelection;
-		if (SwingHelper.isCommandKeyDown(e))
-		{
-			newSelection = new ArrayList<>(selectedTexts);
-			if (controlClickBehavior.isSelectMode())
-			{
-				newSelection.addAll(clicked);
-			}
-			else
-			{
-				newSelection.removeIf(text -> containsByIdentity(clicked, text));
-			}
-		}
-		else
-		{
-			newSelection = clicked;
-		}
-
+		List<MapText> newSelection = SelectionEdits.clicked(selectedTexts, clicked, isCommandKeyDown, isAltDown, SelectionEdits::newIdentitySet);
 		if (!isSameSelection(newSelection))
 		{
 			// Don't grab focus on selection — selecting a text is a visual selection (like clicking an icon), not the same as starting to
@@ -1446,8 +1415,7 @@ public class TextTool extends EditorTool
 
 	/**
 	 * Selects the texts the selection rectangle touches, once the mouse has moved far enough from the press for it to be a rectangle rather
-	 * than a click. With the command key held, adds them to or removes them from the selection the rectangle began with, depending on the
-	 * Ctrl+click setting. Without it, they replace the selection.
+	 * than a click, following {@link SelectionEdits#area}.
 	 */
 	private void updateRectangleSelect(java.awt.Point mouseLocation)
 	{
@@ -1455,27 +1423,13 @@ public class TextTool extends EditorTool
 		{
 			return;
 		}
+		commandClick = null;
 
 		Rectangle rectangleRI = rectangleSelectDrag.getRectangleRI(getPointRI(mouseLocation));
 		mapEditingPanel.setRectangleSelection(rectangleRI);
 		List<MapText> touched = mainWindow.edits.findTextTouchingRectangle(rectangleRI.scaleAboutOrigin(mainWindow.displayQualityScale));
-		List<MapText> newSelection;
-		if (isCommandKeyDownDuringRectangleSelect)
-		{
-			newSelection = new ArrayList<>(selectionBeforeRectangleSelect);
-			if (controlClickBehavior.isSelectMode())
-			{
-				newSelection.addAll(touched);
-			}
-			else
-			{
-				newSelection.removeIf(text -> containsByIdentity(touched, text));
-			}
-		}
-		else
-		{
-			newSelection = touched;
-		}
+		List<MapText> newSelection = SelectionEdits.area(selectionBeforeRectangleSelect, touched, isCommandKeyDownDuringRectangleSelect, isAltDownDuringRectangleSelect,
+				SelectionEdits::newIdentitySet);
 
 		if (!isSameSelection(newSelection))
 		{
@@ -1491,21 +1445,16 @@ public class TextTool extends EditorTool
 	{
 		rectangleSelectDrag = null;
 		selectionBeforeRectangleSelect = null;
+		commandClick = null;
 		mapEditingPanel.clearRectangleSelection();
 	}
 
 	/**
-	 * The text a click at the given point selects with rectangle selection, as a list holding it, or an empty list if there is none.
+	 * The text a click at the given point selects, or null if there is none.
 	 */
-	private List<MapText> getTextClicked(java.awt.Point mouseLocation)
+	private MapText getTextClicked(java.awt.Point mouseLocation)
 	{
-		List<MapText> result = new ArrayList<>();
-		MapText clicked = mainWindow.edits.findTextPicked(getPointOnGraph(mouseLocation), getHighlightOutlineReachInGraphPixels());
-		if (clicked != null)
-		{
-			result.add(clicked);
-		}
-		return result;
+		return mainWindow.edits.findTextPicked(getPointOnGraph(mouseLocation), getHighlightOutlineReachInGraphPixels());
 	}
 
 	private boolean isSameSelection(List<MapText> texts)
@@ -1553,7 +1502,8 @@ public class TextTool extends EditorTool
 	 */
 	private void updateSelectionCycleCandidates(java.awt.Point mouseLocation)
 	{
-		if (!SelectionCycling.isAltDown() || !modeWidget.isEditMode() || mouseLocation == null || drawTextDisabledLabel.isVisible())
+		if (!SelectionCycling.isAltDown() || selectionDisplay.isCommandKeyHeld() || !modeWidget.isEditMode() || mouseLocation == null
+				|| drawTextDisabledLabel.isVisible())
 		{
 			mapEditingPanel.clearSelectionCycleCandidateAreas();
 			return;
@@ -1645,6 +1595,8 @@ public class TextTool extends EditorTool
 
 		undoer.setUndoPoint(UpdateType.Incremental, this);
 		updater.createAndShowMapIncrementalUsingText(pasted);
+		endRectangleSelect();
+		selectionDisplay.onSelectionChangedByShortcut();
 		setSelection(pasted, SelectionFocus.ModeWidget);
 	}
 
@@ -1666,6 +1618,7 @@ public class TextTool extends EditorTool
 		{
 			return;
 		}
+		endRectangleSelect();
 		List<MapText> textsToRedraw = new ArrayList<>();
 		for (MapText text : selectedTexts)
 		{
@@ -1764,6 +1717,7 @@ public class TextTool extends EditorTool
 	@Override
 	protected void handleMouseDraggedOnMap(MouseEvent e)
 	{
+		selectionDisplay.update(e);
 		if (drawTextDisabledLabel.isVisible())
 		{
 			return;
@@ -1776,6 +1730,7 @@ public class TextTool extends EditorTool
 		else if (modeWidget.isEditMode() && rectangleSelectDrag != null)
 		{
 			isCommandKeyDownDuringRectangleSelect = SwingHelper.isCommandKeyDown(e);
+			isAltDownDuringRectangleSelect = e.isAltDown();
 			updateRectangleSelect(e.getPoint());
 		}
 		else if (modeWidget.isEraseMode())
@@ -1845,13 +1800,14 @@ public class TextTool extends EditorTool
 		{
 			return;
 		}
+		boolean outlineEachBox = selectionDisplay.getShown(selectedTexts.size()).showsEachOutline();
 		if (previewBoxes.size() == 1)
 		{
-			showTextBoxes(previewBoxes.get(0), previewBoxes, true);
+			showTextBoxes(previewBoxes.get(0), previewBoxes, outlineEachBox);
 		}
 		else
 		{
-			showTextBoxes(previewGroupBox, previewBoxes, true);
+			showTextBoxes(previewGroupBox, previewBoxes, outlineEachBox);
 		}
 		mapEditingPanel.repaint();
 	}
@@ -1909,6 +1865,7 @@ public class TextTool extends EditorTool
 	@Override
 	protected void handleMouseReleasedOnMap(MouseEvent e)
 	{
+		selectionDisplay.update(e);
 		if (drawTextDisabledLabel.isVisible())
 		{
 			return;
@@ -1916,7 +1873,12 @@ public class TextTool extends EditorTool
 
 		if (rectangleSelectDrag != null)
 		{
+			CommandClick<MapText> click = commandClick;
 			endRectangleSelect();
+			if (click != null)
+			{
+				selectClicked(click.getItem(), true, click.isAltDown());
+			}
 			updateSelectionBoxes();
 			innerHandleMouseMovedOnMap(e.getPoint());
 		}
@@ -2024,8 +1986,7 @@ public class TextTool extends EditorTool
 	@Override
 	protected void handleMouseMovedOnMap(MouseEvent e)
 	{
-		// Catches a command key released while another window had the focus.
-		setCommandKeyHeld(SwingHelper.isCommandKeyDown(e));
+		selectionDisplay.update(e);
 		isAddModeHoverPreviewHidden = false;
 		innerHandleMouseMovedOnMap(e.getPoint());
 	}
@@ -2078,21 +2039,23 @@ public class TextTool extends EditorTool
 	}
 
 	/**
-	 * Previews what a click on the given texts would do. With the command key held and the Ctrl+click setting on Unselect, the click would
-	 * remove them from the selection, so the selection is outlined without them. Otherwise they are highlighted.
+	 * Previews what a click on the given text would do. With the command key held, a click on a selected text, or with Alt also held on any
+	 * text, would remove it from the selection, so the selection is outlined without it. Otherwise it is highlighted.
 	 */
-	private void showEditModeHoverPreview(List<MapText> textsUnderMouse)
+	private void showEditModeHoverPreview(MapText textUnderMouse)
 	{
-		if (isCommandKeyHeld && !isCommandKeyHeldSinceSelectAll && controlClickBehavior.isUnselectMode())
+		boolean wouldRemove = textUnderMouse != null && selectionDisplay.isCommandKeyShowingOutlines()
+				&& (SelectionCycling.isAltDown() || containsByIdentity(selectedTexts, textUnderMouse));
+		if (wouldRemove)
 		{
 			mapEditingPanel.clearHighlightedAreas();
 			List<MapText> remaining = new ArrayList<>(selectedTexts);
-			remaining.removeIf(text -> containsByIdentity(textsUnderMouse, text));
+			remaining.removeIf(text -> text == textUnderMouse);
 			updateSelectionBoxes(remaining);
 		}
 		else
 		{
-			mapEditingPanel.setHighlightedAreasFromTexts(textsUnderMouse);
+			mapEditingPanel.setHighlightedAreasFromTexts(textUnderMouse == null ? new ArrayList<>() : Arrays.asList(textUnderMouse));
 			updateSelectionBoxes();
 		}
 	}

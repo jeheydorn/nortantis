@@ -32,11 +32,19 @@ class RectangleSelectDrag
 	 */
 	boolean update(java.awt.Point mouseLocationInPanel)
 	{
-		if (!isDragging && mouseLocationInPanel != null && mouseLocationInPanel.distance(pressPointInPanel) >= dragThresholdInPanelPixels)
+		if (!isDragging && isPastDragThreshold(pressPointInPanel, mouseLocationInPanel))
 		{
 			isDragging = true;
 		}
 		return isDragging;
+	}
+
+	/**
+	 * Whether the mouse has moved far enough from where it was pressed for the press to be a drag rather than a click.
+	 */
+	static boolean isPastDragThreshold(java.awt.Point pressPointInPanel, java.awt.Point mouseLocationInPanel)
+	{
+		return mouseLocationInPanel != null && mouseLocationInPanel.distance(pressPointInPanel) >= dragThresholdInPanelPixels;
 	}
 
 	boolean isDragging()

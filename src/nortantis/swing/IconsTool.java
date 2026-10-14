@@ -45,10 +45,19 @@ public class IconsTool extends EditorTool
 	 */
 	private boolean isCommandKeyDownDuringRectangleSelect;
 	/**
-	 * Whether the command key has stayed down since it was used for a select-all. While it has, the selection keeps its box rather than
-	 * switching to the individual outlines the command key normally shows, so that Ctrl+A doesn't flash them.
+	 * Whether Alt was held during the latest press or drag of the current rectangle selection.
 	 */
-	private boolean isCommandKeyHeldSinceSelectAll;
+	private boolean isAltDownDuringRectangleSelect;
+	/**
+	 * A press with the command key held on an icon, which toggles or removes it when released, or null if there is none.
+	 */
+	private CommandClick<FreeIcon> commandClick;
+	/**
+	 * Whether a press in Edit mode with a brush rather than rectangle selection is being held, so that dragging changes the selection by
+	 * what the brush passes over.
+	 */
+	private boolean isSelectingByBrush;
+	private SelectionDisplay selectionDisplay;
 	private JToggleButton hillsButton;
 	private JToggleButton dunesButton;
 	private IconTypeButtons mountainTypes;
@@ -112,8 +121,6 @@ public class IconsTool extends EditorTool
 	private RowHider iconMetadataHider;
 	private JLabel artPackLabel;
 	private JLabel typeLabel;
-	private ControlClickBehaviorWidget controlClickBehavior;
-	private RowHider controlClickBehaviorHider;
 	private Set<FreeIcon> copied;
 	private JCheckBox maximizeOpacityCheckbox;
 	private JSlider hueSlider;
@@ -245,11 +252,6 @@ public class IconsTool extends EditorTool
 		}
 
 		brushSelector = organizer.addBrushSelector(brushSizes, Translation.get("gridBagOrganizer.brush.label"));
-
-		{
-			controlClickBehavior = new ControlClickBehaviorWidget();
-			controlClickBehaviorHider = controlClickBehavior.addToOrganizer(organizer);
-		}
 
 		modeOptionsAndBrushSeparatorHider = organizer.addSeparator();
 
@@ -451,55 +453,109 @@ public class IconsTool extends EditorTool
 		organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.666);
 		organizer.addVerticalFillerRow();
 
-		SelectionCycling.addAltChangeListener(() ->
-		{
-			if (isSelected())
-			{
-				updateSelectionCycleCandidates(mapEditingPanel.getMousePosition());
-				mapEditingPanel.repaint();
-			}
-		});
-
-		// I'm using a KeyEventDispatcher instead of toolsPanel's input map because I need to capture control release events when the focus
-		// on is not on the main window. For example, when pressing ctrl+f to search text, the control release action happens when the focus
-		// is on the text search box.
-		KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(new KeyEventDispatcher()
-		{
-
-			@Override
-			public boolean dispatchKeyEvent(KeyEvent e)
-			{
-				if (e.getID() == KeyEvent.KEY_RELEASED && SwingHelper.isCommandModifierKeyCode(e.getKeyCode()))
-				{
-					isCommandKeyHeldSinceSelectAll = false;
-				}
-				if (isSelected() && modeWidget.isEditMode() && !isMoving && !isScaling && rectangleSelectDrag == null && !isCommandKeyHeldSinceSelectAll
-						&& SwingHelper.isCommandModifierKeyCode(e.getKeyCode()))
-				{
-					updater.doIfMapIsReadyForInteractions(() ->
-					{
-						if (e.getID() == KeyEvent.KEY_PRESSED)
-						{
-							addOrRemoveIconHoverHighlightSelection(true);
-							mapEditingPanel.hideIconEditTools();
-							mapEditingPanel.repaint();
-						}
-						else if (e.getID() == KeyEvent.KEY_RELEASED)
-						{
-							addOrRemoveIconHoverHighlightSelection(false);
-							boolean isValidPosition = iconsToEdit.stream().anyMatch(updater.mapParts.iconDrawer::isValidPosition);
-							mapEditingPanel.showIconEditToolsAt(iconsToEdit, isValidPosition);
-							mapEditingPanel.repaint();
-						}
-					});
-				}
-
-				// Return false to allow other KeyEventDispatchers to process the event
-				return false;
-			}
-		});
+		SelectionCycling.addAltChangeListener(this::handleModifierKeyChange);
+		selectionDisplay = new SelectionDisplay(this::isSelectingByDrag, () -> isMoving || isScaling, this::handleModifierKeyChange);
 
 		return toolOptionsPanel;
+	}
+
+	/**
+	 * Updates the selection's display, the hover preview, and any selection rectangle being dragged to match the command key and Alt.
+	 */
+	private void handleModifierKeyChange()
+	{
+		if (!isSelected())
+		{
+			return;
+		}
+		updateSelectionCycleCandidates(mapEditingPanel.getMousePosition());
+		if (modeWidget.isEditMode() && !isMoving && !isScaling)
+		{
+			updater.doIfMapIsReadyForInteractions(() ->
+			{
+				if (rectangleSelectDrag != null && rectangleSelectDrag.isDragging())
+				{
+					isCommandKeyDownDuringRectangleSelect = selectionDisplay.isCommandKeyHeld();
+					isAltDownDuringRectangleSelect = SelectionCycling.isAltDown();
+					updateRectangleSelect(mapEditingPanel.getMousePosition());
+				}
+				else
+				{
+					showSelection();
+					innerHandleMouseMovedOnMap(mapEditingPanel.getMousePosition());
+				}
+			});
+		}
+		mapEditingPanel.repaint();
+	}
+
+	/**
+	 * Whether a selection rectangle is being dragged or a selecting brush stroke is in progress.
+	 */
+	private boolean isSelectingByDrag()
+	{
+		return isSelectingByBrush || (rectangleSelectDrag != null && rectangleSelectDrag.isDragging());
+	}
+
+	/**
+	 * Shows the selection the way {@link SelectionDisplay} says to: the edit box with the move and scale handles, an outline around each
+	 * selected icon, or both.
+	 */
+	private void showSelection()
+	{
+		SelectionDisplay.Shown shown = selectionDisplay.getShown(iconsToEdit.size());
+		if (shown.showsBox())
+		{
+			boolean isValidPosition = iconsToEdit.stream().anyMatch(updater.mapParts.iconDrawer::isValidPosition);
+			mapEditingPanel.showIconEditToolsAt(iconsToEdit, isValidPosition);
+		}
+		else
+		{
+			mapEditingPanel.hideIconEditTools();
+		}
+		showSelectionOutlines(shown);
+		mapEditingPanel.repaint();
+	}
+
+	/**
+	 * Outlines each selected icon if the selection shows outlines. While the command key shows them, they preview what a click or the brush
+	 * under the mouse would do.
+	 */
+	private void showSelectionOutlines(SelectionDisplay.Shown shown)
+	{
+		if (!shown.showsEachOutline())
+		{
+			mapEditingPanel.clearHighlightedAreas();
+			return;
+		}
+
+		Collection<FreeIcon> outlined = iconsToEdit;
+		java.awt.Point mouseLocation = mapEditingPanel.getMousePosition();
+		if (selectionDisplay.isCommandKeyShowingOutlines() && !isSelectingByDrag() && mouseLocation != null)
+		{
+			boolean isAltDown = SelectionCycling.isAltDown();
+			if (getBrushDiameter() <= 1)
+			{
+				FreeIcon underMouse = getLowestSelectedIcon(mouseLocation, null);
+				outlined = SelectionEdits.clicked(iconsToEdit, underMouse, true, isAltDown, HashSet::new);
+			}
+			else
+			{
+				outlined = SelectionEdits.area(iconsToEdit, getSelectedIcons(mouseLocation), true, isAltDown, HashSet::new);
+			}
+		}
+		mapEditingPanel.setHighlightedAreasFromIcons(new ArrayList<>(outlined), updater.mapParts.iconDrawer, false);
+	}
+
+	/**
+	 * Replaces the selection, and shows it.
+	 */
+	private void setSelection(Collection<FreeIcon> icons)
+	{
+		Set<FreeIcon> newSelection = new HashSet<>(icons);
+		iconsToEdit.clear();
+		iconsToEdit.addAll(newSelection);
+		handleIconSelectionChange();
 	}
 
 	private enum WhatHSBColorFieldChanged
@@ -571,9 +627,11 @@ public class IconsTool extends EditorTool
 
 		undoer.setUndoPoint(UpdateType.Incremental, this);
 		updater.createAndShowMapIncrementalUsingIcons(pasted);
+		endRectangleSelect();
 		iconsToEdit.clear();
 		iconsToEdit.addAll(pasted);
-		handleIconSelectionChange(true);
+		selectionDisplay.onSelectionChangedByShortcut();
+		handleIconSelectionChange();
 		mapEditingPanel.repaint();
 	}
 
@@ -599,8 +657,8 @@ public class IconsTool extends EditorTool
 				}
 			}
 		});
-		isCommandKeyHeldSinceSelectAll = true;
-		handleIconSelectionChange(true);
+		selectionDisplay.onSelectionChangedByShortcut();
+		handleIconSelectionChange();
 		mapEditingPanel.repaint();
 	}
 
@@ -625,25 +683,16 @@ public class IconsTool extends EditorTool
 		iconsToEdit.addAll(unscaled);
 		undoer.setUndoPoint(UpdateType.Incremental, this);
 		updater.createAndShowMapIncrementalUsingIcons(updated);
-		handleIconSelectionChange(true);
+		handleIconSelectionChange();
 	}
 
-	private void handleIconSelectionChange(boolean showEditTools)
+	private void handleIconSelectionChange()
 	{
-		mapEditingPanel.clearHighlightedAreas();
-
 		if (!iconsToEdit.isEmpty())
 		{
 			if (iconsToEdit.size() == 1)
 			{
 				FreeIcon iconToEdit = iconsToEdit.iterator().next();
-				if (showEditTools)
-				{
-					boolean isValidPosition;
-					isValidPosition = iconsToEdit.stream().anyMatch(updater.mapParts.iconDrawer::isValidPosition);
-					mapEditingPanel.showIconEditToolsAt(iconsToEdit, isValidPosition);
-				}
-
 				typeLabel.setText(iconToEdit.type.getSingularNameForGUILowerCase());
 				artPackLabel.setText(iconToEdit.artPack);
 				groupLabel.setText(iconToEdit.groupId);
@@ -662,12 +711,6 @@ public class IconsTool extends EditorTool
 			}
 			else
 			{
-				if (showEditTools)
-				{
-					boolean isValidPosition;
-					isValidPosition = iconsToEdit.stream().anyMatch(updater.mapParts.iconDrawer::isValidPosition);
-					mapEditingPanel.showIconEditToolsAt(iconsToEdit, isValidPosition);
-				}
 				typeLabel.setText(null);
 				artPackLabel.setText(null);
 				groupLabel.setText(null);
@@ -724,13 +767,6 @@ public class IconsTool extends EditorTool
 			}
 			fillColorDisplay.repaint();
 			getToolOptionsPane().repaint();
-
-			if (!showEditTools)
-			{
-				mapEditingPanel.setHighlightedAreasFromIcons(new ArrayList<>(iconsToEdit), updater.mapParts.iconDrawer, false);
-			}
-
-			mapEditingPanel.repaint();
 		}
 		else
 		{
@@ -741,13 +777,12 @@ public class IconsTool extends EditorTool
 			groupLabel.setText(null);
 			nameLabel.setText(null);
 
-			mapEditingPanel.hideIconEditTools();
 			isMoving = false;
 			isScaling = false;
 			setColorFieldsWithoutRunningListeners(null, null, false, false);
-			mapEditingPanel.repaint();
 		}
 
+		showSelection();
 		showOrHideEditComponents();
 	}
 
@@ -903,7 +938,7 @@ public class IconsTool extends EditorTool
 		unselectAnyIconsBeingEdited();
 		// Update the panels first, since they choose the brush the hover highlight below uses.
 		updateTypePanels();
-		innerHandleMouseMovedOnMap(mapEditingPanel.getMousePosition(), false);
+		innerHandleMouseMovedOnMap(mapEditingPanel.getMousePosition());
 		mapEditingPanel.repaint();
 	}
 
@@ -948,7 +983,6 @@ public class IconsTool extends EditorTool
 		artPackComboBoxHider.setVisible(modeWidget.isDrawMode() || modeWidget.isReplaceMode());
 		iconTypeButtonsHider.setVisible(modeWidget.isDrawMode() || modeWidget.isReplaceMode());
 		iconTypeCheckboxesHider.setVisible(modeWidget.isEditMode() || modeWidget.isEraseMode());
-		controlClickBehaviorHider.setVisible(modeWidget.isEditMode());
 		showOrHideEditComponents();
 
 		toolsPanel.revalidate();
@@ -1792,75 +1826,99 @@ public class IconsTool extends EditorTool
 		{
 			updateMoveOrScalePreview(e.getPoint());
 		}
-		else if (e.isAltDown())
+		else if (isPress)
 		{
-			if (isPress)
-			{
-				SelectionCycling.recordAltClick();
-				FreeIcon next = SelectionCycling.chooseNext(getSelectionCycleCandidates(e.getPoint()), iconsToEdit);
-				mapEditingPanel.clearHighlightedAreas();
-				iconsToEdit.clear();
-				mapEditingPanel.hideIconEditTools();
-				if (next != null)
-				{
-					iconsToEdit.add(next);
-				}
-				handleIconSelectionChange(false);
-				updateSelectionCycleCandidates(e.getPoint());
-			}
+			handleEditModeSelectingPress(e);
 		}
-		else if (!isPress && rectangleSelectDrag != null)
+		else if (rectangleSelectDrag != null)
 		{
 			isCommandKeyDownDuringRectangleSelect = SwingHelper.isCommandKeyDown(e);
+			isAltDownDuringRectangleSelect = e.isAltDown();
 			updateRectangleSelect(e.getPoint());
 		}
-		else
+		else if (commandClick != null)
 		{
-			// Not moving or scaling.
-
-			if (isPress && brushSelector.isRectangleSelect())
+			if (commandClick.isDragAt(e.getPoint()))
 			{
-				rectangleSelectDrag = new RectangleSelectDrag(e.getPoint(), getPointRI(e.getPoint()));
-				selectionBeforeRectangleSelect = new HashSet<>(iconsToEdit);
-				isCommandKeyDownDuringRectangleSelect = SwingHelper.isCommandKeyDown(e);
+				// The press became a brush stroke, which begins with the icon pressed on.
+				FreeIcon pressed = commandClick.getItem();
+				commandClick = null;
+				isSelectingByBrush = true;
+				boolean isRemoving = SelectionEdits.isRemoving(SwingHelper.isCommandKeyDown(e), e.isAltDown());
+				setSelection(SelectionEdits.area(iconsToEdit, Arrays.asList(pressed), true, isRemoving, HashSet::new));
+				selectUnderBrushDuringStroke(e.getPoint(), e);
 			}
-
-			if (!SwingHelper.isCommandKeyDown(e) && isPress)
-			{
-				mapEditingPanel.clearHighlightedAreas();
-				iconsToEdit.clear();
-				mapEditingPanel.hideIconEditTools();
-			}
-
-			if (SwingHelper.isCommandKeyDown(e))
-			{
-				List<FreeIcon> selectedIcons = getSelectedIcons(e.getPoint(), controlClickBehavior.isSelectMode() ? null : iconsToEdit);
-				Set<FreeIcon> intersection = new HashSet<>();
-				intersection.addAll(iconsToEdit);
-				intersection.removeAll(selectedIcons);
-				iconsToEdit.clear();
-				iconsToEdit.addAll(intersection);
-				if (controlClickBehavior.isSelectMode())
-				{
-					iconsToEdit.addAll(selectedIcons);
-				}
-			}
-			else
-			{
-				List<FreeIcon> selectedIcons = getSelectedIcons(e.getPoint());
-				iconsToEdit.addAll(selectedIcons);
-			}
-
-			handleIconSelectionChange(false);
+		}
+		else if (isSelectingByBrush)
+		{
+			selectUnderBrushDuringStroke(e.getPoint(), e);
 		}
 
 		mapEditingPanel.repaint();
 	}
 
 	/**
+	 * Changes the selection for a press in Edit mode that isn't on one of the edit box's handles, following {@link SelectionEdits}. Alt
+	 * without the command key selects the next of the icons under the mouse. A press with the command key on a single icon changes the
+	 * selection only when released, in case the press becomes a drag.
+	 */
+	private void handleEditModeSelectingPress(MouseEvent e)
+	{
+		boolean isCommandKeyDown = SwingHelper.isCommandKeyDown(e);
+		boolean isAltDown = e.isAltDown();
+		if (isAltDown)
+		{
+			SelectionCycling.recordAltClick();
+		}
+
+		if (isAltDown && !isCommandKeyDown)
+		{
+			FreeIcon next = SelectionCycling.chooseNext(getSelectionCycleCandidates(e.getPoint()), iconsToEdit);
+			setSelection(next == null ? new ArrayList<>() : Arrays.asList(next));
+			updateSelectionCycleCandidates(e.getPoint());
+			return;
+		}
+
+		if (getBrushDiameter() <= 1)
+		{
+			boolean isRectangleSelect = brushSelector.isRectangleSelect();
+			if (isRectangleSelect)
+			{
+				rectangleSelectDrag = new RectangleSelectDrag(e.getPoint(), getPointRI(e.getPoint()));
+				selectionBeforeRectangleSelect = new HashSet<>(iconsToEdit);
+				isCommandKeyDownDuringRectangleSelect = isCommandKeyDown;
+				isAltDownDuringRectangleSelect = isAltDown;
+			}
+			FreeIcon clicked = getLowestSelectedIcon(e.getPoint(), null);
+			if (isCommandKeyDown && clicked != null)
+			{
+				commandClick = new CommandClick<>(e.getPoint(), clicked, isAltDown);
+				showSelection();
+				return;
+			}
+			// A press with the one-point brush starts a brush stroke, which adds what it passes over.
+			isSelectingByBrush = !isRectangleSelect;
+			setSelection(SelectionEdits.clicked(iconsToEdit, clicked, isCommandKeyDown, isAltDown, HashSet::new));
+			return;
+		}
+
+		isSelectingByBrush = true;
+		setSelection(SelectionEdits.area(iconsToEdit, getSelectedIcons(e.getPoint()), isCommandKeyDown, isAltDown, HashSet::new));
+	}
+
+	/**
+	 * Adds the icons under the brush at the given point to the selection during a brush stroke, or with the command key and Alt held,
+	 * removes them.
+	 */
+	private void selectUnderBrushDuringStroke(java.awt.Point brushLocation, MouseEvent e)
+	{
+		boolean isRemoving = SelectionEdits.isRemoving(SwingHelper.isCommandKeyDown(e), e.isAltDown());
+		setSelection(SelectionEdits.area(iconsToEdit, getSelectedIcons(brushLocation), true, isRemoving, HashSet::new));
+	}
+
+	/**
 	 * Selects the icons the selection rectangle touches, once the mouse has moved far enough from the press for it to be a rectangle rather
-	 * than a click. With the command key held, adds them to or removes them from the selection the rectangle began with, depending on the
-	 * Ctrl+click setting. Without it, they replace the selection.
+	 * than a click, following {@link SelectionEdits#area}.
 	 */
 	private void updateRectangleSelect(java.awt.Point mouseLocation)
 	{
@@ -1870,40 +1928,28 @@ public class IconsTool extends EditorTool
 		}
 		if (!rectangleSelectDrag.update(mouseLocation))
 		{
-			// Still a click. Restore the selection's highlight, which the hover highlight clears on each drag event.
-			handleIconSelectionChange(false);
+			// Still a click.
+			showSelection();
 			return;
 		}
+		commandClick = null;
 
 		Rectangle rectangleRI = rectangleSelectDrag.getRectangleRI(getPointRI(mouseLocation));
 		mapEditingPanel.setRectangleSelection(rectangleRI);
 		List<FreeIcon> touched = getIconsTouchingRectangle(rectangleRI.scaleAboutOrigin(mainWindow.displayQualityScale));
-		mapEditingPanel.hideIconEditTools();
-		iconsToEdit.clear();
-		if (isCommandKeyDownDuringRectangleSelect)
-		{
-			iconsToEdit.addAll(selectionBeforeRectangleSelect);
-			if (controlClickBehavior.isSelectMode())
-			{
-				iconsToEdit.addAll(touched);
-			}
-			else
-			{
-				touched.forEach(iconsToEdit::remove);
-			}
-		}
-		else
-		{
-			iconsToEdit.addAll(touched);
-		}
-		handleIconSelectionChange(false);
+		setSelection(SelectionEdits.area(selectionBeforeRectangleSelect, touched, isCommandKeyDownDuringRectangleSelect, isAltDownDuringRectangleSelect, HashSet::new));
 		mapEditingPanel.repaint();
 	}
 
+	/**
+	 * Ends any selection rectangle, brush stroke, or press with the command key that is changing the selection.
+	 */
 	private void endRectangleSelect()
 	{
 		rectangleSelectDrag = null;
 		selectionBeforeRectangleSelect = null;
+		commandClick = null;
+		isSelectingByBrush = false;
 		mapEditingPanel.clearRectangleSelection();
 	}
 
@@ -1982,7 +2028,14 @@ public class IconsTool extends EditorTool
 
 		if (!updated.isEmpty())
 		{
-			mapEditingPanel.setHighlightedAreasFromIcons(updated, updater.mapParts.iconDrawer, false);
+			if (selectionDisplay.getShown(updated.size()).showsEachOutline())
+			{
+				mapEditingPanel.setHighlightedAreasFromIcons(updated, updater.mapParts.iconDrawer, false);
+			}
+			else
+			{
+				mapEditingPanel.clearHighlightedAreas();
+			}
 			boolean isValidPosition = updated.stream().anyMatch(updater.mapParts.iconDrawer::isValidPosition);
 			mapEditingPanel.showIconEditToolsAt(updated, isValidPosition);
 		}
@@ -2064,30 +2117,15 @@ public class IconsTool extends EditorTool
 					iconsToEdit.clear();
 					iconsToEdit.addAll(updated);
 
-					boolean isValidPosition = updated.stream().anyMatch(updater.mapParts.iconDrawer::isValidPosition);
-					mapEditingPanel.showIconEditToolsAt(updated, isValidPosition);
-					if (SwingHelper.isCommandKeyDown(e))
-					{
-						mapEditingPanel.setHighlightedAreasFromIcons(updated, updater.mapParts.iconDrawer, false);
-					}
-					else
-					{
-						mapEditingPanel.clearHighlightedAreas();
-					}
 					isMoving = false;
 					isScaling = false;
+					showSelection();
 				}
 				mapEditingPanel.repaint();
 			}
 			else
 			{
-				if (!SwingHelper.isCommandKeyDown(e))
-				{
-					boolean isValidPosition = iconsToEdit.stream().anyMatch(updater.mapParts.iconDrawer::isValidPosition);
-					mapEditingPanel.showIconEditToolsAt(iconsToEdit, isValidPosition);
-					mapEditingPanel.clearHighlightedAreas();
-					mapEditingPanel.repaint();
-				}
+				showSelection();
 				showOrHideEditComponents();
 			}
 		}
@@ -2095,6 +2133,7 @@ public class IconsTool extends EditorTool
 
 	public void unselectAnyIconsBeingEdited()
 	{
+		endRectangleSelect();
 		iconsToEdit.clear();
 		isMoving = false;
 		isScaling = false;
@@ -2148,6 +2187,7 @@ public class IconsTool extends EditorTool
 	@Override
 	protected void handleMousePressedOnMap(MouseEvent e)
 	{
+		selectionDisplay.update(e);
 		endRectangleSelect();
 		// A new press starts a new stroke with no previous-event selection, so the pressed polygons/icons are drawn or replaced (reshuffled).
 		centerIndicesUnderBrushInPreviousDragEvent.clear();
@@ -2158,13 +2198,16 @@ public class IconsTool extends EditorTool
 	@Override
 	protected void handleMouseReleasedOnMap(MouseEvent e)
 	{
+		selectionDisplay.update(e);
 		if (modeWidget.isEditMode())
 		{
-			if (rectangleSelectDrag != null)
+			CommandClick<FreeIcon> click = commandClick;
+			endRectangleSelect();
+			if (click != null)
 			{
-				endRectangleSelect();
-				mapEditingPanel.repaint();
+				setSelection(SelectionEdits.clicked(iconsToEdit, click.getItem(), true, click.isAltDown(), HashSet::new));
 			}
+			mapEditingPanel.repaint();
 			handleFinishSelectingOrEditingIconsIfNeeded(e);
 		}
 		else
@@ -2176,10 +2219,11 @@ public class IconsTool extends EditorTool
 	@Override
 	protected void handleMouseMovedOnMap(MouseEvent e)
 	{
-		innerHandleMouseMovedOnMap(e.getPoint(), SwingHelper.isCommandKeyDown(e));
+		selectionDisplay.update(e);
+		innerHandleMouseMovedOnMap(e.getPoint());
 	}
 
-	private void innerHandleMouseMovedOnMap(java.awt.Point mouseLocation, boolean isControlDown)
+	private void innerHandleMouseMovedOnMap(java.awt.Point mouseLocation)
 	{
 		if (mouseLocation == null)
 		{
@@ -2198,7 +2242,7 @@ public class IconsTool extends EditorTool
 		}
 		else
 		{
-			highlightHoverIconsAndShowBrush(mouseLocation, isControlDown);
+			highlightHoverIconsAndShowBrush(mouseLocation);
 		}
 		updateSelectionCycleCandidates(mouseLocation);
 		mapEditingPanel.repaint();
@@ -2215,7 +2259,7 @@ public class IconsTool extends EditorTool
 		mapEditingPanel.repaint();
 	}
 
-	private void highlightHoverIconsAndShowBrush(java.awt.Point mouseLocation, boolean isControlDown)
+	private void highlightHoverIconsAndShowBrush(java.awt.Point mouseLocation)
 	{
 		mapEditingPanel.clearHighlightedCenters();
 
@@ -2225,13 +2269,15 @@ public class IconsTool extends EditorTool
 		{
 			if (iconsToEdit != null && !iconsToEdit.isEmpty())
 			{
-				addOrRemoveIconHoverHighlightSelection(isControlDown);
+				showSelectionOutlines(selectionDisplay.getShown(iconsToEdit.size()));
 			}
 			else
 			{
 				mapEditingPanel.clearHighlightedAreas();
 				List<FreeIcon> selected = getSelectedIcons(mouseLocation);
-				if (selected != null && selected.size() > 0)
+				// With the command key and Alt held, a click removes rather than selects, so there is nothing to preview.
+				boolean isRemoving = SelectionEdits.isRemoving(selectionDisplay.isCommandKeyHeld(), SelectionCycling.isAltDown());
+				if (selected != null && selected.size() > 0 && !isRemoving)
 				{
 					mapEditingPanel.setHighlightedAreasFromIcons(selected, updater.mapParts.iconDrawer, false);
 				}
@@ -2246,48 +2292,17 @@ public class IconsTool extends EditorTool
 		mapEditingPanel.repaint();
 	}
 
-	private void addOrRemoveIconHoverHighlightSelection(boolean isControlDown)
-	{
-		Set<FreeIcon> toHighlight = new HashSet<>();
-		if (isControlDown && !isCommandKeyHeldSinceSelectAll)
-		{
-			toHighlight.addAll(iconsToEdit);
-
-			java.awt.Point pointOnMap = mapEditingPanel.getMousePosition();
-			if (pointOnMap != null)
-			{
-				if (controlClickBehavior.isSelectMode())
-				{
-					List<FreeIcon> selected = getSelectedIcons(pointOnMap);
-					if (selected != null && selected.size() > 0)
-					{
-						toHighlight.addAll(selected);
-					}
-				}
-				else
-				{
-					List<FreeIcon> selected = getSelectedIcons(pointOnMap, iconsToEdit);
-					if (selected != null && selected.size() > 0)
-					{
-						toHighlight.removeAll(selected);
-					}
-				}
-			}
-		}
-		mapEditingPanel.setHighlightedAreasFromIcons(new ArrayList<>(toHighlight), updater.mapParts.iconDrawer, false);
-		mapEditingPanel.repaint();
-	}
-
 	@Override
 	protected void handleMouseDraggedOnMap(MouseEvent e)
 	{
+		selectionDisplay.update(e);
 		if (modeWidget.isDrawMode() && !decorationsButton.isSelected())
 		{
 			highlightHoverCenters(e.getPoint());
 		}
 		else
 		{
-			highlightHoverIconsAndShowBrush(e.getPoint(), SwingHelper.isCommandKeyDown(e));
+			highlightHoverIconsAndShowBrush(e.getPoint());
 		}
 		handleMousePressOrDrag(e, false);
 	}
@@ -2332,7 +2347,7 @@ public class IconsTool extends EditorTool
 						iconsToEdit.clear();
 					}
 					iconsToEdit.addAll(underCursor);
-					handleIconSelectionChange(true);
+					handleIconSelectionChange();
 					mapEditingPanel.repaint();
 				}
 			}
@@ -2432,11 +2447,11 @@ public class IconsTool extends EditorTool
 
 	private void updateHighlightsForMousePosition()
 	{
-		innerHandleMouseMovedOnMap(mapEditingPanel.getMousePosition(), false);
+		innerHandleMouseMovedOnMap(mapEditingPanel.getMousePosition());
 
 		if (modeWidget.isEditMode() && iconsToEdit != null && !iconsToEdit.isEmpty())
 		{
-			handleIconSelectionChange(true);
+			handleIconSelectionChange();
 		}
 		mapEditingPanel.repaint();
 	}
@@ -2576,7 +2591,8 @@ public class IconsTool extends EditorTool
 	 */
 	private void updateSelectionCycleCandidates(java.awt.Point mouseLocation)
 	{
-		if (!SelectionCycling.isAltDown() || !modeWidget.isEditMode() || mouseLocation == null || !updater.isMapReadyForInteractions())
+		if (!SelectionCycling.isAltDown() || selectionDisplay.isCommandKeyHeld() || !modeWidget.isEditMode() || mouseLocation == null
+				|| !updater.isMapReadyForInteractions())
 		{
 			mapEditingPanel.clearSelectionCycleCandidateAreas();
 			return;
