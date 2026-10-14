@@ -1012,6 +1012,25 @@ public class NewSettingsDialog extends JDialog
 		{
 			newSettings.cityIconTypeName = preferredCityIconType;
 		}
+		// The land coloring method is the user's choice rather than the theme's. The colors are varied for the chosen method, from the same
+		// theme seed, so they are what the theme gives with that method.
+		if (newSettings.drawRegionColors != current.drawRegionColors)
+		{
+			newSettings.drawRegionColors = current.drawRegionColors;
+			boolean isVaried = !choice.equals(sameThemeChoice) || isSameThemeRandomized;
+			if (isVaried)
+			{
+				try
+				{
+					SettingsGenerator.randomizeTheme(newSettings, newThemeBase, artPack, artPack, themeSeed);
+				}
+				catch (RuntimeException e)
+				{
+					SwingHelper.handleException(e, this, false);
+					return;
+				}
+			}
+		}
 		// A theme is a look, so the world the user set up is kept.
 		newSettings.customImagesPath = current.customImagesPath;
 		newSettings.randomSeed = current.randomSeed;
