@@ -52,6 +52,7 @@ public class IconsTool extends EditorTool
 	 * A press with the command key held on an icon, which toggles or removes it when released, or null if there is none.
 	 */
 	private CommandClick<FreeIcon> commandClick;
+	private final ToggledItemUnderMouse<FreeIcon> toggledIconUnderMouse = new ToggledItemUnderMouse<>();
 	/**
 	 * Whether a press in Edit mode with a brush rather than rectangle selection is being held, so that dragging changes the selection by
 	 * what the brush passes over.
@@ -531,32 +532,35 @@ public class IconsTool extends EditorTool
 
 	/**
 	 * Outlines each selected icon if the selection shows outlines. While the command key shows them, they preview what a click or the brush
-	 * under the mouse would do.
+	 * under the mouse would do, with the icons it would remove outlined in the color that previews removal.
 	 */
 	private void showSelectionOutlines(SelectionDisplay.Shown shown)
 	{
+		java.awt.Point mouseLocation = mapEditingPanel.getMousePosition();
+		if (modeWidget.isEditMode() && selectionDisplay.isCommandKeyShowingOutlines() && !shown.showsBox() && !isSelectingByDrag() && mouseLocation != null)
+		{
+			boolean isAltDown = SelectionCycling.isAltDown();
+			List<FreeIcon> after;
+			if (getBrushDiameter() <= 1)
+			{
+				FreeIcon underMouse = toggledIconUnderMouse.getItemToPreview(getLowestSelectedIcon(mouseLocation, null));
+				after = SelectionEdits.clicked(iconsToEdit, underMouse, true, isAltDown, HashSet::new);
+			}
+			else
+			{
+				after = SelectionEdits.area(iconsToEdit, getSelectedIcons(mouseLocation), true, isAltDown, HashSet::new);
+			}
+			mapEditingPanel.setHighlightedAreasFromIcons(after, this::isValidPosition);
+			mapEditingPanel.setSelectionRemovePreviewFromIcons(SelectionEdits.change(iconsToEdit, after, HashSet::new).removed());
+			return;
+		}
+
 		if (!shown.showsEachOutline())
 		{
 			mapEditingPanel.clearHighlightedAreas();
 			return;
 		}
-
-		Collection<FreeIcon> outlined = iconsToEdit;
-		java.awt.Point mouseLocation = mapEditingPanel.getMousePosition();
-		if (selectionDisplay.isCommandKeyShowingOutlines() && !isSelectingByDrag() && mouseLocation != null)
-		{
-			boolean isAltDown = SelectionCycling.isAltDown();
-			if (getBrushDiameter() <= 1)
-			{
-				FreeIcon underMouse = getLowestSelectedIcon(mouseLocation, null);
-				outlined = SelectionEdits.clicked(iconsToEdit, underMouse, true, isAltDown, HashSet::new);
-			}
-			else
-			{
-				outlined = SelectionEdits.area(iconsToEdit, getSelectedIcons(mouseLocation), true, isAltDown, HashSet::new);
-			}
-		}
-		mapEditingPanel.setHighlightedAreasFromIcons(outlined, this::isValidPosition);
+		mapEditingPanel.setHighlightedAreasFromIcons(iconsToEdit, this::isValidPosition);
 	}
 
 	private boolean isValidPosition(FreeIcon icon)
@@ -2222,6 +2226,7 @@ public class IconsTool extends EditorTool
 			endRectangleSelect();
 			if (click != null)
 			{
+				toggledIconUnderMouse.set(click.getItem());
 				setSelection(SelectionEdits.clicked(iconsToEdit, click.getItem(), true, click.isAltDown(), HashSet::new));
 			}
 			mapEditingPanel.repaint();
@@ -2284,7 +2289,11 @@ public class IconsTool extends EditorTool
 
 		if (modeWidget.isEditMode())
 		{
-			if (iconsToEdit != null && !iconsToEdit.isEmpty())
+			if (toggledIconUnderMouse.isSet())
+			{
+				toggledIconUnderMouse.update(getLowestSelectedIcon(mouseLocation, null));
+			}
+			if (!iconsToEdit.isEmpty() || selectionDisplay.isCommandKeyShowingOutlines())
 			{
 				showSelectionOutlines(selectionDisplay.getShown(iconsToEdit.size()));
 			}
@@ -2410,6 +2419,7 @@ public class IconsTool extends EditorTool
 	@Override
 	protected void handleMouseExitedMap(MouseEvent e)
 	{
+		toggledIconUnderMouse.clear();
 		mapEditingPanel.clearHighlightedCenters();
 		mapEditingPanel.clearSelectionCycleCandidateAreas();
 		if (iconsToEdit != null && !iconsToEdit.isEmpty())

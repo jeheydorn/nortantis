@@ -79,6 +79,41 @@ final class SelectionEdits
 	}
 
 	/**
+	 * How a selection would change: the items it keeps, the items added to it, and the items removed from it, each in the order of the
+	 * selection it comes from.
+	 */
+	record Change<T>(List<T> kept, List<T> added, List<T> removed)
+	{
+	}
+
+	/**
+	 * The change from the selection before to the selection after.
+	 */
+	static <T> Change<T> change(Collection<T> before, Collection<T> after, Supplier<Set<T>> newSet)
+	{
+		Set<T> beforeSet = newSet.get();
+		beforeSet.addAll(before);
+		Set<T> afterSet = newSet.get();
+		afterSet.addAll(after);
+
+		List<T> kept = new ArrayList<>();
+		List<T> removed = new ArrayList<>();
+		for (T item : before)
+		{
+			(afterSet.contains(item) ? kept : removed).add(item);
+		}
+		List<T> added = new ArrayList<>();
+		for (T item : after)
+		{
+			if (!beforeSet.contains(item))
+			{
+				added.add(item);
+			}
+		}
+		return new Change<>(kept, added, removed);
+	}
+
+	/**
 	 * The selection after an area covers the given items.
 	 *
 	 * @param selectionAtStart

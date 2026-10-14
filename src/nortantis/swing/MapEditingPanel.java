@@ -42,6 +42,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private final Color ownTextStyleHighlightColor = new Color(232, 85, 232);
 	private final Color processingColor = Color.orange;
 	private final Color selectColor = Color.orange;
+	private final Color selectionRemovePreviewColor = Color.orange;
 	private Set<Center> highlightedCenters;
 	private Set<Center> selectedCenters;
 	private WorldGraph graph;
@@ -136,6 +137,10 @@ public class MapEditingPanel extends UnscaledImagePanel
 	 * Outlines of the texts or icons Alt+click could select under the cursor, drawn below the selection's highlight.
 	 */
 	private List<Area> selectionCycleCandidateAreas = new ArrayList<>();
+	/**
+	 * Outlines of the items a click or the brush under the mouse would remove from the selection.
+	 */
+	private List<Area> selectionRemovePreviewAreas = new ArrayList<>();
 	/**
 	 * A partly transparent picture of text about to be added, drawn in graph space with its upper left corner at textHoverPreviewLocation.
 	 */
@@ -602,8 +607,32 @@ public class MapEditingPanel extends UnscaledImagePanel
 		return (toolImageSize * smallIconScale * 2 + 20) * resolution;
 	}
 
+	/**
+	 * Outlines, in the color that previews removal, the icons a click or the brush under the mouse would remove from the selection. Setting
+	 * or clearing the highlighted areas clears these too.
+	 */
+	public void setSelectionRemovePreviewFromIcons(Collection<FreeIcon> removed)
+	{
+		selectionRemovePreviewAreas = getIconHighlightAreas(removed);
+	}
+
+	/**
+	 * Outlines, in the color that previews removal, the boxes of the items a click under the mouse would remove from the selection. Setting
+	 * or clearing the highlighted areas clears these too.
+	 */
+	public void setSelectionRemovePreviewFromBoxes(List<RotatedRectangle> removed)
+	{
+		selectionRemovePreviewAreas = removed.stream().map(AwtFactory::toAwtArea).toList();
+	}
+
+	private void clearSelectionRemovePreview()
+	{
+		selectionRemovePreviewAreas = new ArrayList<>();
+	}
+
 	public void setHighlightedAreasFromTexts(List<MapText> texts)
 	{
+		clearSelectionRemovePreview();
 		highlightedAreas.clear();
 		for (MapText text : texts)
 		{
@@ -649,39 +678,44 @@ public class MapEditingPanel extends UnscaledImagePanel
 			return;
 		}
 
+		clearSelectionRemovePreview();
 		highlightedAreas.clear();
 		if (validIcons != null)
 		{
-			for (FreeIcon icon : validIcons)
-			{
-				IconDrawTask task = iconDrawer.toIconDrawTask(icon);
-				if (task != null)
-				{
-					nortantis.geom.Rectangle bounds = task.getOrCreateContentBoundsPadded();
-					highlightedAreas.add(AwtFactory.toAwtArea(bounds));
-				}
-			}
+			highlightedAreas.addAll(getIconHighlightAreas(validIcons));
 		}
 
 		redHighlightedAreas.clear();
 		if (invalidIcons != null)
 		{
-			for (FreeIcon icon : invalidIcons)
+			redHighlightedAreas.addAll(getIconHighlightAreas(invalidIcons));
+		}
+	}
+
+	private List<Area> getIconHighlightAreas(Collection<FreeIcon> icons)
+	{
+		List<Area> result = new ArrayList<>();
+		if (iconDrawer == null)
+		{
+			return result;
+		}
+		for (FreeIcon icon : icons)
+		{
+			IconDrawTask task = iconDrawer.toIconDrawTask(icon);
+			if (task != null)
 			{
-				IconDrawTask task = iconDrawer.toIconDrawTask(icon);
-				if (task != null)
-				{
-					nortantis.geom.Rectangle bounds = task.getOrCreateContentBoundsPadded();
-					redHighlightedAreas.add(AwtFactory.toAwtArea(bounds));
-				}
+				nortantis.geom.Rectangle bounds = task.getOrCreateContentBoundsPadded();
+				result.add(AwtFactory.toAwtArea(bounds));
 			}
 		}
+		return result;
 	}
 
 	public void clearHighlightedAreas()
 	{
 		highlightedAreas.clear();
 		redHighlightedAreas.clear();
+		clearSelectionRemovePreview();
 	}
 
 	public void addProcessingAreasFromTexts(List<MapText> texts)
@@ -1004,6 +1038,10 @@ public class MapEditingPanel extends UnscaledImagePanel
 		}
 
 		drawAreas(g);
+		if (showHoverHighlights)
+		{
+			drawSelectionRemovePreview(g2);
+		}
 
 		if (graph != null)
 		{
@@ -1328,6 +1366,19 @@ public class MapEditingPanel extends UnscaledImagePanel
 				Area area = AwtFactory.toAwtArea(rect);
 				((Graphics2D) g).draw(area);
 			}
+		}
+	}
+
+	/**
+	 * Draws the outlines of the items a click or the brush under the mouse would remove from the selection. Expects g to be in graph
+	 * coordinates.
+	 */
+	private void drawSelectionRemovePreview(Graphics2D g)
+	{
+		g.setColor(selectionRemovePreviewColor);
+		for (Area area : selectionRemovePreviewAreas)
+		{
+			g.draw(area);
 		}
 	}
 

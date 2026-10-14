@@ -141,6 +141,7 @@ public class TextTool extends EditorTool
 	 * A press with the command key held on a text, which toggles or removes it when released, or null if there is none.
 	 */
 	private CommandClick<MapText> commandClick;
+	private final ToggledItemUnderMouse<MapText> toggledTextUnderMouse = new ToggledItemUnderMouse<>();
 	private SelectionDisplay selectionDisplay;
 	/**
 	 * Draws the picture of text about to be added that follows the mouse, at the resolution it was made for.
@@ -973,15 +974,7 @@ public class TextTool extends EditorTool
 			return;
 		}
 
-		List<RotatedRectangle> boxes = new ArrayList<>();
-		for (MapText text : texts)
-		{
-			RotatedRectangle box = getTextBox(text);
-			if (box != null)
-			{
-				boxes.add(box);
-			}
-		}
+		List<RotatedRectangle> boxes = getTextBoxes(texts);
 		SelectionDisplay.Shown shown = texts == selectedTexts ? selectionDisplay.getShown(selectedTexts.size()) : SelectionDisplay.Shown.EachOutline;
 		if (!shown.showsBox())
 		{
@@ -994,6 +987,20 @@ public class TextTool extends EditorTool
 			return;
 		}
 		showTextBoxes(getGroupBox(), boxes, shown.showsEachOutline());
+	}
+
+	private List<RotatedRectangle> getTextBoxes(List<MapText> texts)
+	{
+		List<RotatedRectangle> boxes = new ArrayList<>();
+		for (MapText text : texts)
+		{
+			RotatedRectangle box = getTextBox(text);
+			if (box != null)
+			{
+				boxes.add(box);
+			}
+		}
+		return boxes;
 	}
 
 	/**
@@ -1877,6 +1884,7 @@ public class TextTool extends EditorTool
 			endRectangleSelect();
 			if (click != null)
 			{
+				toggledTextUnderMouse.set(click.getItem());
 				selectClicked(click.getItem(), true, click.isAltDown());
 			}
 			updateSelectionBoxes();
@@ -2013,6 +2021,8 @@ public class TextTool extends EditorTool
 			if (mapEditingPanel.isInMoveTool(mouseLocation) || mapEditingPanel.isInRotateTool(mouseLocation)
 					|| (rectangleSelectDrag != null && rectangleSelectDrag.isDragging()))
 			{
+				// A click here would grab a handle or end the rectangle rather than toggle a text, so the mouse counts as off the text.
+				toggledTextUnderMouse.clear();
 				mapEditingPanel.hideBrush();
 				mapEditingPanel.clearHighlightedAreas();
 			}
@@ -2039,19 +2049,19 @@ public class TextTool extends EditorTool
 	}
 
 	/**
-	 * Previews what a click on the given text would do. With the command key held, a click on a selected text, or with Alt also held on any
-	 * text, would remove it from the selection, so the selection is outlined without it. Otherwise it is highlighted.
+	 * Previews what a click on the given text would do. With the command key held, the selection is outlined, a text the click would add
+	 * is highlighted, and a text it would remove is outlined in the color that previews removal. Otherwise the text is highlighted.
 	 */
 	private void showEditModeHoverPreview(MapText textUnderMouse)
 	{
-		boolean wouldRemove = textUnderMouse != null && selectionDisplay.isCommandKeyShowingOutlines()
-				&& (SelectionCycling.isAltDown() || containsByIdentity(selectedTexts, textUnderMouse));
-		if (wouldRemove)
+		MapText textToPreview = toggledTextUnderMouse.getItemToPreview(textUnderMouse);
+		if (selectionDisplay.isCommandKeyShowingOutlines())
 		{
-			mapEditingPanel.clearHighlightedAreas();
-			List<MapText> remaining = new ArrayList<>(selectedTexts);
-			remaining.removeIf(text -> text == textUnderMouse);
-			updateSelectionBoxes(remaining);
+			List<MapText> after = SelectionEdits.clicked(selectedTexts, textToPreview, true, SelectionCycling.isAltDown(), SelectionEdits::newIdentitySet);
+			SelectionEdits.Change<MapText> change = SelectionEdits.change(selectedTexts, after, SelectionEdits::newIdentitySet);
+			mapEditingPanel.setHighlightedAreasFromTexts(change.added());
+			mapEditingPanel.setSelectionRemovePreviewFromBoxes(getTextBoxes(change.removed()));
+			updateSelectionBoxes(change.kept());
 		}
 		else
 		{
@@ -2091,6 +2101,7 @@ public class TextTool extends EditorTool
 	@Override
 	protected void handleMouseExitedMap(MouseEvent e)
 	{
+		toggledTextUnderMouse.clear();
 		mapEditingPanel.hideBrush();
 		mapEditingPanel.clearHighlightedAreas();
 		mapEditingPanel.clearSelectionCycleCandidateAreas();
