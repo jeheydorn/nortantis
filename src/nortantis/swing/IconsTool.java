@@ -58,6 +58,18 @@ public class IconsTool extends EditorTool
 	 */
 	private boolean isSelectingByBrush;
 	private SelectionDisplay selectionDisplay;
+	/**
+	 * Whether each icon checked since the map was last shown is in a valid position. That depends only on the icon and the map, and checking
+	 * it is slow enough that redoing it for a large selection on every mouse event lags, so it is cached until the map is shown again.
+	 *
+	 * <p>
+	 * It is cleared in {@link #onAfterShowMap()}, which runs after every draw while this tool is selected, and in {@link #onSwitchingTo()},
+	 * for draws made while another tool was. This relies on every change to the map that can move an icon onto or off water or the map
+	 * going through a draw. {@code MainWindow} skips {@code onAfterShowMap} while the sub-map selection box is showing. The only draw
+	 * possible then is a display quality change, which doesn't change whether an icon is valid (see {@link IconDrawer#isValidPosition}).
+	 * Only what is shown uses this cache. Anything that changes the map or its edits calls {@link IconDrawer#isValidPosition} directly.
+	 */
+	private final Map<FreeIcon, Boolean> isValidPositionCache = new HashMap<>();
 	private JToggleButton hillsButton;
 	private JToggleButton dunesButton;
 	private IconTypeButtons mountainTypes;
@@ -506,7 +518,7 @@ public class IconsTool extends EditorTool
 		SelectionDisplay.Shown shown = selectionDisplay.getShown(iconsToEdit.size());
 		if (shown.showsBox())
 		{
-			boolean isValidPosition = iconsToEdit.stream().anyMatch(updater.mapParts.iconDrawer::isValidPosition);
+			boolean isValidPosition = iconsToEdit.stream().anyMatch(this::isValidPosition);
 			mapEditingPanel.showIconEditToolsAt(iconsToEdit, isValidPosition);
 		}
 		else
@@ -544,7 +556,12 @@ public class IconsTool extends EditorTool
 				outlined = SelectionEdits.area(iconsToEdit, getSelectedIcons(mouseLocation), true, isAltDown, HashSet::new);
 			}
 		}
-		mapEditingPanel.setHighlightedAreasFromIcons(new ArrayList<>(outlined), updater.mapParts.iconDrawer, false);
+		mapEditingPanel.setHighlightedAreasFromIcons(outlined, this::isValidPosition);
+	}
+
+	private boolean isValidPosition(FreeIcon icon)
+	{
+		return isValidPositionCache.computeIfAbsent(icon, updater.mapParts.iconDrawer::isValidPosition);
 	}
 
 	/**
@@ -2399,7 +2416,7 @@ public class IconsTool extends EditorTool
 		{
 			if (SwingHelper.isCommandKeyDown(e) || e.getButton() == MouseEvent.BUTTON1)
 			{
-				mapEditingPanel.setHighlightedAreasFromIcons(new ArrayList<>(iconsToEdit), updater.mapParts.iconDrawer, false);
+				mapEditingPanel.setHighlightedAreasFromIcons(iconsToEdit, this::isValidPosition);
 			}
 		}
 		else
@@ -2413,6 +2430,7 @@ public class IconsTool extends EditorTool
 	@Override
 	protected void onAfterShowMap()
 	{
+		isValidPositionCache.clear();
 		if ((isMoving || isScaling) && editStart != null)
 		{
 			// A move or scale is in progress. Reposition the preview from the current mouse location so it follows a zoom change made
@@ -2436,6 +2454,8 @@ public class IconsTool extends EditorTool
 	public void onSwitchingTo()
 	{
 		super.onSwitchingTo();
+		// The map may have changed while another tool was selected.
+		isValidPositionCache.clear();
 		updater.doWhenMapIsReadyForInteractions(() ->
 		{
 			if (isSelected())

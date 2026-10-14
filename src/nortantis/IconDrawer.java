@@ -2520,6 +2520,10 @@ public class IconDrawer
 	/**
 	 * Whether an icon placed in the editor at its current location and scale is kept when the map is drawn. It is removed if its content
 	 * is entirely off the map or, unless it is a decoration, if the bottom of its content touches water.
+	 *
+	 * <p>
+	 * The result depends only on the icon and the map, and not on the display quality. {@code IconsTool.isValidPositionCache} relies on
+	 * this. If the result comes to depend on anything else, that cache needs to be cleared when it changes.
 	 */
 	public boolean isValidPosition(FreeIcon icon)
 	{

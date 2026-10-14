@@ -616,25 +616,25 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 	public void setHighlightedAreasFromIcons(Collection<FreeIcon> icons, IconDrawer iconDrawer, boolean assumeValid)
 	{
+		setHighlightedAreasFromIcons(icons, assumeValid ? icon -> true : iconDrawer::isValidPosition);
+	}
+
+	/**
+	 * Outlines the given icons, in red where they are not in a valid position.
+	 */
+	public void setHighlightedAreasFromIcons(Collection<FreeIcon> icons, java.util.function.Predicate<FreeIcon> isValidPosition)
+	{
 		List<FreeIcon> valid = new ArrayList<>();
 		List<FreeIcon> invalid = new ArrayList<>();
-		if (assumeValid)
+		for (FreeIcon icon : icons)
 		{
-			valid.addAll(icons);
-		}
-		else
-		{
-			for (FreeIcon icon : icons)
+			if (isValidPosition.test(icon))
 			{
-				boolean isValidPosition = iconDrawer.isValidPosition(icon);
-				if (isValidPosition)
-				{
-					valid.add(icon);
-				}
-				else
-				{
-					invalid.add(icon);
-				}
+				valid.add(icon);
+			}
+			else
+			{
+				invalid.add(icon);
 			}
 		}
 
