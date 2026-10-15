@@ -57,6 +57,8 @@ public class CustomArtPackDialog extends JDialog
 				spaceBetweenPaths, spaceBetweenPaths, false);
 		organizer.addLeftAlignedComponent(new JLabel(cif + File.separator + "decorations" + File.separator + Translation.get("customArtPack.placeholder.decorationType") + File.separator
 				+ Translation.get("customArtPack.placeholder.decorationImages")), spaceBetweenPaths, spaceBetweenPaths, false);
+		organizer.addLeftAlignedComponent(new JLabel(cif + File.separator + "fonts" + File.separator + Translation.get("customArtPack.placeholder.fontFamily") + File.separator
+				+ Translation.get("customArtPack.placeholder.fontFiles")), spaceBetweenPaths, spaceBetweenPaths, false);
 		organizer.addLeftAlignedComponent(new JLabel(
 				cif + File.separator + "hills" + File.separator + Translation.get("customArtPack.placeholder.hillType") + File.separator + Translation.get("customArtPack.placeholder.hillImages")),
 				spaceBetweenPaths, spaceBetweenPaths, false);
@@ -65,12 +67,10 @@ public class CustomArtPackDialog extends JDialog
 		organizer.addLeftAlignedComponent(new JLabel(
 				cif + File.separator + "sand" + File.separator + Translation.get("customArtPack.placeholder.duneType") + File.separator + Translation.get("customArtPack.placeholder.sandDuneImages")),
 				spaceBetweenPaths, spaceBetweenPaths, false);
+		organizer.addLeftAlignedComponent(new JLabel(cif + File.separator + Assets.themesFolderName + File.separator + Translation.get("customArtPack.placeholder.themeFiles")),
+				spaceBetweenPaths, spaceBetweenPaths, false);
 		organizer.addLeftAlignedComponent(new JLabel(
 				cif + File.separator + "trees" + File.separator + Translation.get("customArtPack.placeholder.treeType") + File.separator + Translation.get("customArtPack.placeholder.treeImages")),
-				spaceBetweenPaths, spaceBetweenPaths, false);
-		organizer.addLeftAlignedComponent(new JLabel(cif + File.separator + "fonts" + File.separator + Translation.get("customArtPack.placeholder.fontFamily") + File.separator
-				+ Translation.get("customArtPack.placeholder.fontFiles")), spaceBetweenPaths, spaceBetweenPaths, false);
-		organizer.addLeftAlignedComponent(new JLabel(cif + File.separator + Assets.themesFolderName + File.separator + Translation.get("customArtPack.placeholder.themeFiles")),
 				spaceBetweenPaths, spaceBetweenPaths, false);
 
 		organizer.addLeftAlignedComponent(new JLabel("<html>" + Translation.get("customArtPack.folderStructureNote") + "</html>"), space, space, false);
