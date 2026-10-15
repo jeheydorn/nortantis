@@ -2643,7 +2643,8 @@ public class MapSettings implements Serializable
 	 * Gives the alpha of black coast shading that looks like the colored coast shading of a map saved before 3.25. That shading blended
 	 * toward a darkened copy of the color under it, which black at a lower alpha matches wherever the pixel under it is that color: the
 	 * alpha is scaled by one minus how much the color was darkened. With region colors, each region's color was scaled by a fixed amount.
-	 * Otherwise the shading color was chosen on its own, so how much it darkens the land color is measured from the two colors.
+	 * Otherwise the shading color was chosen on its own, so how much it darkens the land is measured from the two colors. Where the land
+	 * color is transparent, the land shows what is behind the map, taken to be white, so the shading color is measured against that.
 	 */
 	static int convertCoastShadingColorToAlpha(Color coastShadingColor, Color landColor, boolean usedRegionColors, String version)
 	{
@@ -2665,7 +2666,12 @@ public class MapSettings implements Serializable
 		}
 		else
 		{
-			int landSum = landColor == null ? 0 : landColor.getRed() + landColor.getGreen() + landColor.getBlue();
+			double landSum = 0;
+			if (landColor != null)
+			{
+				double landOpacity = landColor.getAlpha() / 255.0;
+				landSum = landOpacity * (landColor.getRed() + landColor.getGreen() + landColor.getBlue()) + (1 - landOpacity) * 3 * 255;
+			}
 			int shadingSum = coastShadingColor.getRed() + coastShadingColor.getGreen() + coastShadingColor.getBlue();
 			colorScale = landSum == 0 ? 0 : Math.max(0, Math.min(1, shadingSum / (double) landSum));
 		}

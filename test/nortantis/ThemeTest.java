@@ -380,6 +380,8 @@ public class ThemeTest
 		assertEquals(44, MapSettings.convertCoastShadingColorToAlpha(halfLand, land, false, "3.24"));
 		assertEquals(39, MapSettings.convertCoastShadingColorToAlpha(halfLand, land, true, "3.24"), "Region colors were scaled by 0.55.");
 		assertEquals(87, MapSettings.convertCoastShadingColorToAlpha(Color.create(0, 0, 0, 87), land, false, "3.24"), "Black needs no change.");
+		assertEquals(61, MapSettings.convertCoastShadingColorToAlpha(halfLand, Color.create(200, 160, 100, 0), false, "3.24"),
+				"Transparent land shows white behind the map.");
 	}
 
 	@Test
