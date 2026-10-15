@@ -51,9 +51,9 @@ public class BorderArt
 	private final int cornerOriginalWidth;
 	private final double insetDepthFraction;
 
-	BorderArt(ImageCache imageCache, NamedResource borderResource, String customImagesPath)
+	BorderArt(ImageCache imageCache, NamedResource borderResource, String customArtPackPath)
 	{
-		Path borderPath = findBorderPath(borderResource, customImagesPath);
+		Path borderPath = findBorderPath(borderResource, customArtPackPath);
 
 		loadedEdges.put(BorderEdgeType.Top, loadImageWithStringInFileName(imageCache, borderPath, "top_edge."));
 		loadedEdges.put(BorderEdgeType.Bottom, loadImageWithStringInFileName(imageCache, borderPath, "bottom_edge."));
@@ -80,9 +80,9 @@ public class BorderArt
 		insetDepthFraction = createEdgeRevealMasks();
 	}
 
-	private static Path findBorderPath(NamedResource borderResource, String customImagesPath)
+	private static Path findBorderPath(NamedResource borderResource, String customArtPackPath)
 	{
-		Path artPackPath = Assets.getArtPackPath(borderResource.artPack, customImagesPath);
+		Path artPackPath = Assets.getArtPackPath(borderResource.artPack, customArtPackPath);
 		if (artPackPath == null)
 		{
 			throw new RuntimeException(

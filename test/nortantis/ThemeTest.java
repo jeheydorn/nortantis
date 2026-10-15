@@ -205,7 +205,7 @@ public class ThemeTest
 		settings.themeGeneration = ThemeCatalog.getDefaultThemeRules();
 		settings.themeGeneration.allowedBackgroundTypes.clear();
 
-		int textureCount = Assets.listBackgroundTexturesForArtPack(settings.artPack, settings.customImagesPath).size();
+		int textureCount = Assets.listBackgroundTexturesForArtPack(settings.artPack, settings.customArtPackPath).size();
 		assertTrue(textureCount > 1);
 		int[] counts = new int[3];
 		final int tries = 600;

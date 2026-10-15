@@ -242,10 +242,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private JMenu helpMenu;
 	private JMenuItem mapInfoMenuItem;
 	private JMenuItem refreshMenuItem;
-	private JMenuItem customImagesMenuItem;
+	private JMenuItem customArtPackMenuItem;
 	private JMenu toolsMenu;
 	private JMenuItem nameGeneratorMenuItem;
-	protected String customImagesPath;
+	protected String customArtPackPath;
 	private JMenu fileMenu;
 	private JMenuItem newRandomMapMenuItem;
 	private JMenuItem loadSettingsMenuItem;
@@ -494,7 +494,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			undoer.updateUndoRedoEnabled();
 		}
 		clearEntireMapButton.setEnabled(enable && hasDrawnCurrentMapAtLeastOnce);
-		customImagesMenuItem.setEnabled(enable);
+		customArtPackMenuItem.setEnabled(enable);
 
 		nameGeneratorMenuItem.setEnabled(enable);
 		searchTextMenuItem.setEnabled(enable);
@@ -1795,14 +1795,14 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		editMenu.addSeparator();
 
-		customImagesMenuItem = new JMenuItem(Translation.get("menu.edit.customImagesFolder"));
-		editMenu.add(customImagesMenuItem);
-		customImagesMenuItem.addActionListener(new ActionListener()
+		customArtPackMenuItem = new JMenuItem(Translation.get("menu.edit.customArtPackFolder"));
+		editMenu.add(customArtPackMenuItem);
+		customArtPackMenuItem.addActionListener(new ActionListener()
 		{
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				handleCustomImagesPressed();
+				handleCustomArtPackPressed();
 			}
 		});
 
@@ -2134,7 +2134,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		Set<String> highlightedArtPacks = getSelectedArtPacksToHighlight();
 		highlightIconsInArtPackMenu.removeAll();
 		artPacksToHighlight.clear();
-		List<String> artPacks = Assets.listArtPacks(!StringUtils.isEmpty(customImagesPath));
+		List<String> artPacks = Assets.listArtPacks(!StringUtils.isEmpty(customArtPackPath));
 		ActionListener listener = new ActionListener()
 		{
 			@Override
@@ -2375,8 +2375,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			ImageCache.clear();
 			ThemePanel.clearBackgroundImageCache();
 			MapSettings settings = getSettingsFromGUI(false);
-			// An art pack the user just added, or a custom images folder they just chose, may supply fonts as well as images.
-			FontFinder.registerFontsFromArtPacks(settings.customImagesPath);
+			// An art pack the user just added, or a custom art pack folder they just chose, may supply fonts as well as images.
+			FontFinder.registerFontsFromArtPacks(settings.customArtPackPath);
 			themePanel.handleImagesRefresh(settings);
 			// Tell Icons tool to refresh image previews
 			toolsPanel.handleImagesRefresh(settings);
@@ -2548,7 +2548,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			if (!missingArtPacks.isEmpty())
 			{
 				String mapName = FilenameUtils.getBaseName(absolutePath);
-				MissingArtPackDialog.Result response = MissingArtPackDialog.show(this, mapName, missingArtPacks, settings.customImagesPath);
+				MissingArtPackDialog.Result response = MissingArtPackDialog.show(this, mapName, missingArtPacks, settings.customArtPackPath);
 				if (response.cancelled)
 				{
 					return false;
@@ -2558,8 +2558,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 
 			// Likewise for the fonts the map names, so that a map isn't drawn with silent font substitutions the user is never told about.
-			// The map's custom images folder may itself supply some of those fonts, so it has to be registered before they are looked for.
-			FontFinder.registerFontsFromArtPacks(settings.customImagesPath);
+			// The map's custom art pack folder may itself supply some of those fonts, so it has to be registered before they are looked for.
+			FontFinder.registerFontsFromArtPacks(settings.customArtPackPath);
 			MapFonts.MissingFontInfo fontProblems = MapFonts.findProblems(settings);
 			if (!fontProblems.isEmpty())
 			{
@@ -2583,7 +2583,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				UserPreferences.getInstance().addRecentMapFilePath(absolutePath);
 				createOrUpdateRecentMapMenuButtons();
 			}
-			convertCustomImagesFolderIfNeeded(settings);
+			convertCustomArtPackFolderIfNeeded(settings);
 
 			// Loading the new map's settings waits for any draw in progress to stop, and until then the window still holds the previous map's
 			// settings. Lock the fields that act on the map in the meantime, so that exporting or saving can't use the previous map's settings
@@ -2657,19 +2657,19 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		}
 	}
 
-	private void convertCustomImagesFolderIfNeeded(MapSettings settings)
+	private void convertCustomArtPackFolderIfNeeded(MapSettings settings)
 	{
-		if (settings.hasOldCustomImagesFolderStructure())
+		if (settings.hasOldCustomArtPackFolderStructure())
 		{
 			try
 			{
-				MapSettings.convertOldCustomImagesFolder(settings.customImagesPath);
+				MapSettings.convertOldCustomArtPackFolder(settings.customArtPackPath);
 
-				SwingHelper.showMessageDialog(null, Translation.get("customImages.folderConvertedMessage"), Translation.get("customImages.folderConverted"), JOptionPane.INFORMATION_MESSAGE);
+				SwingHelper.showMessageDialog(null, Translation.get("customArtPack.folderConvertedMessage"), Translation.get("customArtPack.folderConverted"), JOptionPane.INFORMATION_MESSAGE);
 			}
 			catch (IOException ex)
 			{
-				String errorMessage = "Error while restructuring custom images folder for " + settings.customImagesPath + ": " + ex.getMessage();
+				String errorMessage = "Error while restructuring custom art pack folder for " + settings.customArtPackPath + ": " + ex.getMessage();
 				Logger.printError(errorMessage, ex);
 				SwingHelper.showMessageDialog(null, errorMessage, "Error", JOptionPane.ERROR_MESSAGE);
 			}
@@ -3314,13 +3314,13 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		dialog.setVisible(true);
 	}
 
-	private void handleCustomImagesPressed()
+	private void handleCustomArtPackPressed()
 	{
-		CustomImagesDialog dialog = new CustomImagesDialog(this, customImagesPath, (value) ->
+		CustomArtPackDialog dialog = new CustomArtPackDialog(this, customArtPackPath, (value) ->
 		{
-			customImagesPath = value;
+			customArtPackPath = value;
 			loadSettingsAndEditsIntoThemeAndToolsPanels(getSettingsFromGUI(false), false, false);
-			toolsPanel.handleCustomImagesPathChanged(customImagesPath);
+			toolsPanel.handleCustomArtPackPathChanged(customArtPackPath);
 			undoer.setUndoPoint(UpdateType.Full, null, () -> handleImagesRefresh());
 			updater.createAndShowMapFull(() -> handleImagesRefresh());
 		});
@@ -3656,23 +3656,23 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			return;
 		}
 
-		// Images from the custom art pack come from a map's custom images folder. A map without one takes the source's along with the theme.
-		String customImagesFolder = customImagesPath;
-		if (usesCustomImages(source) && !StringUtils.isEmpty(source.customImagesPath))
+		// Images from the custom art pack come from a map's custom art pack folder. A map without one takes the source's along with the theme.
+		String customArtPackFolder = customArtPackPath;
+		if (usesCustomArtPack(source) && !StringUtils.isEmpty(source.customArtPackPath))
 		{
-			if (StringUtils.isEmpty(customImagesPath))
+			if (StringUtils.isEmpty(customArtPackPath))
 			{
-				customImagesFolder = source.customImagesPath;
+				customArtPackFolder = source.customArtPackPath;
 			}
-			else if (!isSameFolder(customImagesPath, source.customImagesPath))
+			else if (!isSameFolder(customArtPackPath, source.customArtPackPath))
 			{
-				SwingHelper.showMessageDialog(this, Translation.get("copyTheme.differentCustomImagesFolder", mapName, FileHelper.replaceHomeFolderPlaceholder(source.customImagesPath),
-						FileHelper.replaceHomeFolderPlaceholder(customImagesPath)), Translation.get("copyTheme.title"), JOptionPane.ERROR_MESSAGE);
+				SwingHelper.showMessageDialog(this, Translation.get("copyTheme.differentCustomArtPackFolder", mapName, FileHelper.replaceHomeFolderPlaceholder(source.customArtPackPath),
+						FileHelper.replaceHomeFolderPlaceholder(customArtPackPath)), Translation.get("copyTheme.title"), JOptionPane.ERROR_MESSAGE);
 				return;
 			}
 		}
 
-		List<String> missing = findMissingThemeDependencies(source, customImagesFolder);
+		List<String> missing = findMissingThemeDependencies(source, customArtPackFolder);
 		if (!missing.isEmpty())
 		{
 			SwingHelper.showMessageDialog(this, Translation.get("copyTheme.missingDependencies", mapName) + "\n\n" + String.join("\n", missing), Translation.get("copyTheme.title"),
@@ -3680,13 +3680,13 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			return;
 		}
 
-		final String newCustomImagesFolder = customImagesFolder;
+		final String newCustomArtPackFolder = customArtPackFolder;
 		applyThemeChange(settings ->
 		{
-			if (!Objects.equals(newCustomImagesFolder, settings.customImagesPath))
+			if (!Objects.equals(newCustomArtPackFolder, settings.customArtPackPath))
 			{
-				settings.customImagesPath = newCustomImagesFolder;
-				toolsPanel.handleCustomImagesPathChanged(newCustomImagesFolder);
+				settings.customArtPackPath = newCustomArtPackFolder;
+				toolsPanel.handleCustomArtPackPathChanged(newCustomArtPackFolder);
 			}
 			EnumMap<TextType, TextStyle> previousTextStyleDefaults = settings.copyTextStyleDefaults();
 			settings.copyThemeFrom(source);
@@ -3711,9 +3711,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	}
 
 	/**
-	 * Whether the given map's theme uses images or fonts from the custom art pack, which come from the map's custom images folder.
+	 * Whether the given map's theme uses images or fonts from the custom art pack, which come from the map's custom art pack folder.
 	 */
-	private static boolean usesCustomImages(MapSettings source)
+	private static boolean usesCustomArtPack(MapSettings source)
 	{
 		if (source.drawBorder && source.borderResource != null && Assets.customArtPack.equals(source.borderResource.artPack))
 		{
@@ -3740,22 +3740,22 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	 * Describes each thing the given map's theme uses that the open map can't: borders and background textures that aren't in the open map's
 	 * art packs, a background texture file that doesn't exist, and fonts this machine doesn't have.
 	 *
-	 * @param customImagesFolder
-	 *            The custom images folder the open map will have.
+	 * @param customArtPackFolder
+	 *            The custom art pack folder the open map will have.
 	 */
-	private List<String> findMissingThemeDependencies(MapSettings source, String customImagesFolder)
+	private List<String> findMissingThemeDependencies(MapSettings source, String customArtPackFolder)
 	{
 		List<String> result = new ArrayList<>();
-		if (source.drawBorder && source.borderResource != null && (!Assets.artPackExists(source.borderResource.artPack, customImagesFolder)
-				|| Assets.listBorderTypesForArtPack(source.borderResource.artPack, customImagesFolder).stream().noneMatch(border -> border.name.equals(source.borderResource.name))))
+		if (source.drawBorder && source.borderResource != null && (!Assets.artPackExists(source.borderResource.artPack, customArtPackFolder)
+				|| Assets.listBorderTypesForArtPack(source.borderResource.artPack, customArtPackFolder).stream().noneMatch(border -> border.name.equals(source.borderResource.name))))
 		{
 			result.add(Translation.get("copyTheme.missing.border", source.borderResource.name, source.borderResource.artPack));
 		}
 		if (source.generateBackgroundFromTexture)
 		{
 			if (source.backgroundTextureSource == TextureSource.Assets && source.backgroundTextureResource != null
-					&& (!Assets.artPackExists(source.backgroundTextureResource.artPack, customImagesFolder)
-							|| Assets.listBackgroundTexturesForArtPack(source.backgroundTextureResource.artPack, customImagesFolder).stream()
+					&& (!Assets.artPackExists(source.backgroundTextureResource.artPack, customArtPackFolder)
+							|| Assets.listBackgroundTexturesForArtPack(source.backgroundTextureResource.artPack, customArtPackFolder).stream()
 									.noneMatch(texture -> texture.name.equals(source.backgroundTextureResource.name))))
 			{
 				result.add(Translation.get("copyTheme.missing.backgroundTexture", FilenameUtils.getBaseName(source.backgroundTextureResource.name),
@@ -4060,7 +4060,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		// rest of the session.
 		try
 		{
-			customImagesPath = settings.customImagesPath;
+			customArtPackPath = settings.customArtPackPath;
 			edits = settings.edits;
 			themeGeneration = settings.themeGeneration == null ? null : settings.themeGeneration.copy();
 			themePanel.loadSettingsIntoGUI(settings, refreshImagePreviews);
@@ -4104,7 +4104,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		settings.imageExportPath = imageExportPath;
 		settings.heightmapResolution = heightmapExportResolution;
 		settings.heightmapExportPath = heightmapExportPath;
-		settings.customImagesPath = customImagesPath;
+		settings.customArtPackPath = customArtPackPath;
 		settings.themeGeneration = themeGeneration == null ? null : themeGeneration.copy();
 
 		themePanel.getSettingsFromGUI(settings);

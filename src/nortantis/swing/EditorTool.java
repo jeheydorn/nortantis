@@ -237,7 +237,7 @@ public abstract class EditorTool
 	{
 	}
 
-	public void handleCustomImagesPathChanged(String customImagesPath)
+	public void handleCustomArtPackPathChanged(String customArtPackPath)
 	{
 
 	}

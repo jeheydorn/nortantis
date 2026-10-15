@@ -27,18 +27,18 @@ public class NamedIconSelector
 		container.setLayout(new BoxLayout(container, BoxLayout.Y_AXIS));
 	}
 
-	public void updateButtonList(String artPack, String customImagesPath)
+	public void updateButtonList(String artPack, String customArtPackPath)
 	{
 		this.artPack = artPack;
 		Tuple2<String, String> selectedButton = getSelectedButton();
 		clearButtons();
 
 		boolean hasAtLeastOneImage = false;
-		for (String groupId : ImageCache.getInstance(artPack, customImagesPath).getIconGroupNames(type))
+		for (String groupId : ImageCache.getInstance(artPack, customArtPackPath).getIconGroupNames(type))
 		{
 			JPanel buttonsPanel = new JPanel();
 			buttonsPanel.setLayout(new WrapLayout());
-			for (String fileNameWithoutWidthOrExtension : ImageCache.getInstance(artPack, customImagesPath).getIconGroupFileNamesWithoutWidthOrExtensionAsSet(type, groupId))
+			for (String fileNameWithoutWidthOrExtension : ImageCache.getInstance(artPack, customArtPackPath).getIconGroupFileNamesWithoutWidthOrExtensionAsSet(type, groupId))
 			{
 				UnscaledImageToggleButton toggleButton = new UnscaledImageToggleButton();
 				toggleButton.setToolTipText(fileNameWithoutWidthOrExtension);

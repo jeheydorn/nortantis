@@ -1318,7 +1318,7 @@ public class ThemePanel extends JTabbedPane
 		{
 			for (FreeIcon icon : freeIcons.iterateAnchoredNonTreeIcons())
 			{
-				ListMap<String, ImageAndMasks> iconsByGroup = ImageCache.getInstance(icon.artPack, mainWindow.customImagesPath).getIconGroupsAsListsForType(IconType.mountains);
+				ListMap<String, ImageAndMasks> iconsByGroup = ImageCache.getInstance(icon.artPack, mainWindow.customArtPackPath).getIconGroupsAsListsForType(IconType.mountains);
 				if (icon.type == IconType.mountains)
 				{
 					if (!iconsByGroup.containsKey(icon.groupId))
@@ -1344,7 +1344,7 @@ public class ThemePanel extends JTabbedPane
 			{
 				if (icon.type == IconType.mountains)
 				{
-					ImageAndMasks imageAndMasks = ImageCache.getInstance(icon.artPack, mainWindow.customImagesPath).getImageAndMasks(icon);
+					ImageAndMasks imageAndMasks = ImageCache.getInstance(icon.artPack, mainWindow.customArtPackPath).getImageAndMasks(icon);
 					double yChange = mainWindow.updater.mapParts.iconDrawer.getUnanchoredMountainYChangeFromMountainScaleChange(icon, mountainScale, imageAndMasks);
 					Point scaledLocation = icon.getScaledLocation(resolution);
 					FreeIcon updated = icon.copyWithLocation(resolution, new Point(scaledLocation.x, scaledLocation.y + yChange));
@@ -1830,9 +1830,9 @@ public class ThemePanel extends JTabbedPane
 
 	private void initializeComboBoxItems(MapSettings settings)
 	{
-		SwingHelper.initializeComboBoxItems(borderTypeComboBox, Assets.listAllBorderTypes(settings == null ? null : settings.customImagesPath), settings == null ? null : settings.borderResource,
+		SwingHelper.initializeComboBoxItems(borderTypeComboBox, Assets.listAllBorderTypes(settings == null ? null : settings.customArtPackPath), settings == null ? null : settings.borderResource,
 				true);
-		SwingHelper.initializeComboBoxItems(textureImageComboBox, Assets.listBackgroundTexturesForAllArtPacks(settings == null ? null : settings.customImagesPath),
+		SwingHelper.initializeComboBoxItems(textureImageComboBox, Assets.listBackgroundTexturesForAllArtPacks(settings == null ? null : settings.customArtPackPath),
 				settings == null ? null : settings.backgroundTextureResource, true);
 	}
 
@@ -2532,7 +2532,7 @@ public class ThemePanel extends JTabbedPane
 	{
 		initializeComboBoxItems(settings);
 		// Regenerate the land/ocean background previews. This is the theme-panel counterpart to the Icons tool refreshing its icon previews:
-		// the callers of this method (opening a map, "Refresh Images and Redraw", changing the custom images folder, adding an art pack) can
+		// the callers of this method (opening a map, "Refresh Images and Redraw", changing the custom art pack folder, adding an art pack) can
 		// change the background image or its coloring without firing any of the listeners that would otherwise refresh the previews.
 		updateBackgroundImageDisplays();
 	}

@@ -360,7 +360,7 @@ public class MapSettings implements Serializable
 	 * I set this to the default here just to be safe, even though I believe all code paths override it.
 	 */
 	public double heightmapResolution = defaultHeightmapResolution;
-	public String customImagesPath;
+	public String customArtPackPath;
 	/**
 	 * When generating a new map, this is the art pack to use. When editing a map, this is the art pack displayed in the UI.
 	 */
@@ -509,9 +509,9 @@ public class MapSettings implements Serializable
 		return rightRotationCount == 1 || rightRotationCount == 3;
 	}
 
-	public boolean hasOldCustomImagesFolderStructure()
+	public boolean hasOldCustomArtPackFolderStructure()
 	{
-		if (customImagesPath == null || customImagesPath.isEmpty())
+		if (customArtPackPath == null || customArtPackPath.isEmpty())
 		{
 			return false;
 		}
@@ -521,13 +521,13 @@ public class MapSettings implements Serializable
 			return false;
 		}
 
-		return isOldCustomImagesFolderStructure(customImagesPath);
+		return isOldCustomArtPackFolderStructure(customArtPackPath);
 	}
 
-	public static boolean isOldCustomImagesFolderStructure(String customImagesPath)
+	public static boolean isOldCustomArtPackFolderStructure(String customArtPackPath)
 	{
-		String customImagesFolder = FileHelper.replaceHomeFolderPlaceholder(customImagesPath);
-		File file = new File(customImagesFolder);
+		String customArtPackFolder = FileHelper.replaceHomeFolderPlaceholder(customArtPackPath);
+		File file = new File(customArtPackFolder);
 		if (!file.exists())
 		{
 			return false;
@@ -538,13 +538,13 @@ public class MapSettings implements Serializable
 			return false;
 		}
 
-		File iconsFolder = Paths.get(customImagesFolder, "icons").toFile();
+		File iconsFolder = Paths.get(customArtPackFolder, "icons").toFile();
 		if (!iconsFolder.exists() || !iconsFolder.isDirectory())
 		{
 			return false;
 		}
 
-		boolean topFolderHasConvertedTypeFolder = Arrays.stream(IconType.values()).anyMatch(type -> Paths.get(customImagesFolder, type.toString()).toFile().isDirectory());
+		boolean topFolderHasConvertedTypeFolder = Arrays.stream(IconType.values()).anyMatch(type -> Paths.get(customArtPackFolder, type.toString()).toFile().isDirectory());
 		if (topFolderHasConvertedTypeFolder)
 		{
 			return false;
@@ -553,25 +553,25 @@ public class MapSettings implements Serializable
 		return true;
 	}
 
-	public static void convertOldCustomImagesFolder(String customImagesPath) throws IOException
+	public static void convertOldCustomArtPackFolder(String customArtPackPath) throws IOException
 	{
-		if (!isOldCustomImagesFolderStructure(customImagesPath))
+		if (!isOldCustomArtPackFolderStructure(customArtPackPath))
 		{
 			return;
 		}
 
-		String customImagesFolder = FileHelper.replaceHomeFolderPlaceholder(customImagesPath);
+		String customArtPackFolder = FileHelper.replaceHomeFolderPlaceholder(customArtPackPath);
 
 		for (IconType type : IconType.values())
 		{
-			File oldTypeFile = Paths.get(customImagesFolder, "icons", type.toString()).toFile();
+			File oldTypeFile = Paths.get(customArtPackFolder, "icons", type.toString()).toFile();
 			if (oldTypeFile.exists() && oldTypeFile.isDirectory())
 			{
-				FileUtils.moveDirectoryToDirectory(Paths.get(customImagesFolder, "icons", type.toString()).toFile(), Paths.get(customImagesFolder).toFile(), false);
+				FileUtils.moveDirectoryToDirectory(Paths.get(customArtPackFolder, "icons", type.toString()).toFile(), Paths.get(customArtPackFolder).toFile(), false);
 			}
 		}
 
-		File iconsFolder = Paths.get(customImagesFolder, "icons").toFile();
+		File iconsFolder = Paths.get(customArtPackFolder, "icons").toFile();
 		if (iconsFolder.list().length == 0)
 		{
 			FileUtils.deleteDirectory(iconsFolder);
@@ -852,7 +852,7 @@ public class MapSettings implements Serializable
 		}
 		root.put("heightmapExportPath", heightmapExportPath);
 		root.put("heightmapResolution", heightmapResolution);
-		root.put("customImagesPath", customImagesPath);
+		root.put("customImagesPath", customArtPackPath);
 		root.put("artPack", artPack);
 
 		root.put("treeHeightScale", treeHeightScale);
@@ -1878,7 +1878,7 @@ public class MapSettings implements Serializable
 
 		if (root.containsKey("customImagesPath"))
 		{
-			customImagesPath = (String) root.get("customImagesPath");
+			customArtPackPath = (String) root.get("customImagesPath");
 		}
 
 		if (root.containsKey("artPack"))
@@ -1887,7 +1887,7 @@ public class MapSettings implements Serializable
 		}
 		else
 		{
-			artPack = StringUtils.isEmpty(customImagesPath) ? Assets.installedArtPack : Assets.customArtPack;
+			artPack = StringUtils.isEmpty(customArtPackPath) ? Assets.installedArtPack : Assets.customArtPack;
 		}
 
 		if (root.containsKey("treeHeightScale"))
@@ -2089,14 +2089,14 @@ public class MapSettings implements Serializable
 		edits = new MapEdits();
 		// hiddenTextIds is a comma-delimited list.
 
-		boolean hasCustomImagesPath = !StringUtils.isEmpty(customImagesPath);
+		boolean hasCustomArtPackPath = !StringUtils.isEmpty(customArtPackPath);
 		JSONObject editsJson = (JSONObject) root.get("edits");
 		// Theme files have no edits.
 		if (editsJson != null)
 		{
 			edits.text = parseMapTexts(editsJson, legacyTextSettings != null);
-			edits.freeIcons = parseIconEdits(editsJson, hasCustomImagesPath);
-			edits.centerEdits = parseCenterEdits(editsJson, hasCustomImagesPath);
+			edits.freeIcons = parseIconEdits(editsJson, hasCustomArtPackPath);
+			edits.centerEdits = parseCenterEdits(editsJson, hasCustomArtPackPath);
 			edits.regionEdits = parseRegionEdits(editsJson);
 			edits.edgeEdits = parseEdgeEdits(editsJson);
 			edits.hasIconEdits = (boolean) editsJson.get("hasIconEdits");
@@ -2284,7 +2284,7 @@ public class MapSettings implements Serializable
 			return;
 		}
 
-		Map<String, ImageAndMasks> imagesInGroup = ImageCache.getInstance(Assets.installedArtPack, customImagesPath).getIconsByNameForGroup(IconType.decorations, "compass roses");
+		Map<String, ImageAndMasks> imagesInGroup = ImageCache.getInstance(Assets.installedArtPack, customArtPackPath).getIconsByNameForGroup(IconType.decorations, "compass roses");
 		if (imagesInGroup == null || imagesInGroup.isEmpty())
 		{
 			return;
@@ -2434,7 +2434,7 @@ public class MapSettings implements Serializable
 
 		if (!StringUtils.isEmpty(borderType))
 		{
-			borderResource = new NamedResource(StringUtils.isEmpty(customImagesPath) ? Assets.installedArtPack : Assets.customArtPack, borderType);
+			borderResource = new NamedResource(StringUtils.isEmpty(customArtPackPath) ? Assets.installedArtPack : Assets.customArtPack, borderType);
 			borderType = null;
 		}
 	}
@@ -2721,7 +2721,7 @@ public class MapSettings implements Serializable
 		return result;
 	}
 
-	private ConcurrentHashMap<Integer, CenterEdit> parseCenterEdits(JSONObject editsJson, boolean hasCustomImagesPath)
+	private ConcurrentHashMap<Integer, CenterEdit> parseCenterEdits(JSONObject editsJson, boolean hasCustomArtPackPath)
 	{
 		if (editsJson == null)
 		{
@@ -2754,8 +2754,8 @@ public class MapSettings implements Serializable
 					}
 					else
 					{
-						// Map versions before art packs either use the installed images or accustom images folder.
-						artPack = hasCustomImagesPath ? Assets.customArtPack : Assets.installedArtPack;
+						// Map versions before art packs either use the installed images or a custom art pack folder.
+						artPack = hasCustomArtPackPath ? Assets.customArtPack : Assets.installedArtPack;
 					}
 					String iconGroupId = (String) iconObj.get("iconGroupId");
 					int iconIndex = (int) (long) iconObj.get("iconIndex");
@@ -2784,8 +2784,8 @@ public class MapSettings implements Serializable
 					}
 					else
 					{
-						// Map versions before art packs either use the installed images or accustom images folder.
-						artPack = hasCustomImagesPath ? Assets.customArtPack : Assets.installedArtPack;
+						// Map versions before art packs either use the installed images or a custom art pack folder.
+						artPack = hasCustomArtPackPath ? Assets.customArtPack : Assets.installedArtPack;
 					}
 					String treeType = (String) treesObj.get("treeType");
 					double density = (Double) treesObj.get("density");
@@ -2803,7 +2803,7 @@ public class MapSettings implements Serializable
 		return result;
 	}
 
-	private FreeIconCollection parseIconEdits(JSONObject editsJson, boolean hasCustomImagesPath)
+	private FreeIconCollection parseIconEdits(JSONObject editsJson, boolean hasCustomArtPackPath)
 	{
 		if (editsJson == null)
 		{
@@ -2831,8 +2831,8 @@ public class MapSettings implements Serializable
 			}
 			else
 			{
-				// Map versions before art packs either use the installed images or accustom images folder.
-				artPack = hasCustomImagesPath ? Assets.customArtPack : Assets.installedArtPack;
+				// Map versions before art packs either use the installed images or a custom art pack folder.
+				artPack = hasCustomArtPackPath ? Assets.customArtPack : Assets.installedArtPack;
 			}
 			String groupId = (String) iconObj.get("groupId");
 			int iconIndex = (int) (long) iconObj.get("iconIndex");
@@ -3482,12 +3482,12 @@ public class MapSettings implements Serializable
 	{
 		if (backgroundTextureSource == TextureSource.File && StringUtils.isEmpty(backgroundTextureImage))
 		{
-			return new Tuple2<>(Assets.getBackgroundTextureResourcePath(backgroundTextureResource, customImagesPath),
+			return new Tuple2<>(Assets.getBackgroundTextureResourcePath(backgroundTextureResource, customArtPackPath),
 					nortantis.swing.translation.Translation.get("warning.backgroundTextureFallback", backgroundTextureSource));
 		}
 		if (backgroundTextureSource == TextureSource.Assets)
 		{
-			return new Tuple2<>(Assets.getBackgroundTextureResourcePath(backgroundTextureResource, customImagesPath), null);
+			return new Tuple2<>(Assets.getBackgroundTextureResourcePath(backgroundTextureResource, customArtPackPath), null);
 		}
 		else
 		{
@@ -3542,7 +3542,7 @@ public class MapSettings implements Serializable
 	 */
 	public MissingArtPackInfo findMissingArtPacks()
 	{
-		Set<String> installedArtPacks = new HashSet<>(Assets.listArtPacks(!StringUtils.isEmpty(customImagesPath)));
+		Set<String> installedArtPacks = new HashSet<>(Assets.listArtPacks(!StringUtils.isEmpty(customArtPackPath)));
 
 		Set<String> missing = new TreeSet<>();
 		boolean affectsBorder = false;
@@ -3642,7 +3642,7 @@ public class MapSettings implements Serializable
 	{
 		Set<String> missing = new HashSet<>(missingArtPacks);
 
-		if (!StringUtils.isEmpty(artPack) && !Assets.artPackExists(artPack, customImagesPath))
+		if (!StringUtils.isEmpty(artPack) && !Assets.artPackExists(artPack, customArtPackPath))
 		{
 			artPack = chosenArtPack;
 		}
@@ -3651,8 +3651,8 @@ public class MapSettings implements Serializable
 
 		if (drawBorder && borderResource != null && missing.contains(borderResource.artPack))
 		{
-			NamedResource replacement = chooseSubstituteResource(Assets.listBorderTypesForArtPack(chosenArtPack, customImagesPath),
-					Assets.listBorderTypesForArtPack(Assets.installedArtPack, customImagesPath), borderResource.name);
+			NamedResource replacement = chooseSubstituteResource(Assets.listBorderTypesForArtPack(chosenArtPack, customArtPackPath),
+					Assets.listBorderTypesForArtPack(Assets.installedArtPack, customArtPackPath), borderResource.name);
 			if (replacement != null)
 			{
 				borderResource = replacement;
@@ -3661,8 +3661,8 @@ public class MapSettings implements Serializable
 
 		if (isBackgroundTextureFromArtPack() && missing.contains(backgroundTextureResource.artPack))
 		{
-			NamedResource replacement = chooseSubstituteResource(Assets.listBackgroundTexturesForArtPack(chosenArtPack, customImagesPath),
-					Assets.listBackgroundTexturesForArtPack(Assets.installedArtPack, customImagesPath), backgroundTextureResource.name);
+			NamedResource replacement = chooseSubstituteResource(Assets.listBackgroundTexturesForArtPack(chosenArtPack, customArtPackPath),
+					Assets.listBackgroundTexturesForArtPack(Assets.installedArtPack, customArtPackPath), backgroundTextureResource.name);
 			if (replacement != null)
 			{
 				backgroundTextureResource = replacement;
@@ -4068,8 +4068,8 @@ public class MapSettings implements Serializable
 			differences.add("colorizeOcean: " + colorizeOcean + " vs " + other.colorizeOcean);
 		if (concentricWaveCount != other.concentricWaveCount)
 			differences.add("concentricWaveCount: " + concentricWaveCount + " vs " + other.concentricWaveCount);
-		if (!Objects.equals(customImagesPath, other.customImagesPath))
-			differences.add("customImagesPath: " + customImagesPath + " vs " + other.customImagesPath);
+		if (!Objects.equals(customArtPackPath, other.customArtPackPath))
+			differences.add("customArtPackPath: " + customArtPackPath + " vs " + other.customArtPackPath);
 		if (defaultDefaultExportAction != other.defaultDefaultExportAction)
 			differences.add("defaultDefaultExportAction: " + defaultDefaultExportAction + " vs " + other.defaultDefaultExportAction);
 		if (defaultHeightmapExportAction != other.defaultHeightmapExportAction)
@@ -4343,7 +4343,7 @@ public class MapSettings implements Serializable
 	{
 		return Objects.hash(artPack, backgroundRandomSeed, backgroundTextureImage, backgroundTextureResource, backgroundTextureSource, books, borderColor, borderColorOption,
 				borderPosition, borderResource, borderType, borderWidth, brightnessRange, brokenLinesForConcentricWaves, cityIconTypeName, cityProbability,
-				cityScale, coastShadingAlpha, coastShadingLevel, drawCoastShading, drawOceanShading, drawOceanWaves, grungeColor, coastlineColor, coastlineWidth, colorizeLand, colorizeOcean, concentricWaveCount, customImagesPath, defaultDefaultExportAction,
+				cityScale, coastShadingAlpha, coastShadingLevel, drawCoastShading, drawOceanShading, drawOceanWaves, grungeColor, coastlineColor, coastlineWidth, colorizeLand, colorizeOcean, concentricWaveCount, customArtPackPath, defaultDefaultExportAction,
 				defaultHeightmapExportAction, defaultMapExportAction, defaultRoadColor, defaultRoadStyle, defaultRoadWidth, defaultTreeHeightScaleForOldMaps, drawBorder,
 				drawGridOverlay, drawGrunge, drawOceanEffectsInLakes, drawOverlayImage, drawRegionBoundaries, drawRegionColors, drawRoads, drawText, drawVoronoiGridOverlayOnlyOnLand, duneScale,
 				edits, fadeConcentricWaves, fillWithColorByType, flipHorizontally, flipVertically, frayedBorder, frayedBorderBlurLevel, frayedBorderColor, frayedBorderSeed,
@@ -4389,7 +4389,7 @@ public class MapSettings implements Serializable
 				&& coastShadingLevel == other.coastShadingLevel && drawCoastShading == other.drawCoastShading && drawOceanShading == other.drawOceanShading
 				&& drawOceanWaves == other.drawOceanWaves && Objects.equals(grungeColor, other.grungeColor) && Objects.equals(coastlineColor, other.coastlineColor)
 				&& Double.doubleToLongBits(coastlineWidth) == Double.doubleToLongBits(other.coastlineWidth) && colorizeLand == other.colorizeLand && colorizeOcean == other.colorizeOcean
-				&& concentricWaveCount == other.concentricWaveCount && Objects.equals(customImagesPath, other.customImagesPath) && defaultDefaultExportAction == other.defaultDefaultExportAction
+				&& concentricWaveCount == other.concentricWaveCount && Objects.equals(customArtPackPath, other.customArtPackPath) && defaultDefaultExportAction == other.defaultDefaultExportAction
 				&& defaultHeightmapExportAction == other.defaultHeightmapExportAction && defaultMapExportAction == other.defaultMapExportAction
 				&& Objects.equals(defaultRoadColor, other.defaultRoadColor) && Objects.equals(defaultRoadStyle, other.defaultRoadStyle)
 				&& Double.doubleToLongBits(defaultRoadWidth) == Double.doubleToLongBits(other.defaultRoadWidth)

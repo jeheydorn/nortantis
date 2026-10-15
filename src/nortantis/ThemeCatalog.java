@@ -90,10 +90,10 @@ public class ThemeCatalog
 		return entry != null && Assets.installedArtPack.equals(entry.artPack);
 	}
 
-	public static List<Entry> listThemesForArtPack(String artPack, String customImagesFolder)
+	public static List<Entry> listThemesForArtPack(String artPack, String customArtPackFolder)
 	{
 		List<Entry> result = new ArrayList<>();
-		Path folder = Assets.getThemesFolderForArtPack(artPack, customImagesFolder);
+		Path folder = Assets.getThemesFolderForArtPack(artPack, customArtPackFolder);
 		if (folder == null)
 		{
 			return result;
@@ -112,12 +112,12 @@ public class ThemeCatalog
 	/**
 	 * The themes new maps with the given art pack can use: the art pack's own, or the installed art pack's if it has none.
 	 */
-	public static List<Entry> listThemesToChooseFrom(String artPack, String customImagesFolder)
+	public static List<Entry> listThemesToChooseFrom(String artPack, String customArtPackFolder)
 	{
-		List<Entry> themes = artPack == null ? new ArrayList<>() : listThemesForArtPack(artPack, customImagesFolder);
+		List<Entry> themes = artPack == null ? new ArrayList<>() : listThemesForArtPack(artPack, customArtPackFolder);
 		if (themes.isEmpty())
 		{
-			themes = listThemesForArtPack(Assets.installedArtPack, customImagesFolder);
+			themes = listThemesForArtPack(Assets.installedArtPack, customArtPackFolder);
 		}
 		return themes;
 	}
@@ -228,9 +228,9 @@ public class ThemeCatalog
 	 * @throws IllegalStateException
 	 *             If neither art pack has a theme.
 	 */
-	public static Entry chooseRandomTheme(Random rand, String artPack, String customImagesFolder)
+	public static Entry chooseRandomTheme(Random rand, String artPack, String customArtPackFolder)
 	{
-		List<Entry> themes = listThemesToChooseFrom(artPack, customImagesFolder);
+		List<Entry> themes = listThemesToChooseFrom(artPack, customArtPackFolder);
 		if (themes.isEmpty())
 		{
 			throw new IllegalStateException("The installed art pack has no themes, so there is no theme to generate a map from.");

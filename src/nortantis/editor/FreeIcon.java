@@ -196,8 +196,8 @@ public class FreeIcon
 	/**
 	 * Converts a free icon to an icon draw task.
 	 *
-	 * @param customImagesFolder
-	 *            Either empty or the custom images folder
+	 * @param customArtPackFolder
+	 *            Either empty or the custom art pack folder
 	 * @param resolutionScale
 	 *            MapSettings.resolution that we're currently drawing at.
 	 * @param typeLevelScale
@@ -206,11 +206,11 @@ public class FreeIcon
 	 *            The width of the icon before type-level scaling. Should already be adjusted for resolution.
 	 * @return a new IconDrawTask.
 	 */
-	public IconDrawTask toIconDrawTask(String customImagesFolder, double resolutionScale, double typeLevelScale, double baseWidth)
+	public IconDrawTask toIconDrawTask(String customArtPackFolder, double resolutionScale, double typeLevelScale, double baseWidth)
 	{
 		if (iconName != null && !iconName.isEmpty())
 		{
-			Map<String, ImageAndMasks> iconsWithWidths = ImageCache.getInstance(artPack, customImagesFolder).getIconsByNameForGroup(type, groupId);
+			Map<String, ImageAndMasks> iconsWithWidths = ImageCache.getInstance(artPack, customArtPackFolder).getIconsByNameForGroup(type, groupId);
 			if (iconsWithWidths == null || iconsWithWidths.isEmpty())
 			{
 				return null;
@@ -228,7 +228,7 @@ public class FreeIcon
 		}
 		else
 		{
-			List<ImageAndMasks> groupImages = ImageCache.getInstance(artPack, customImagesFolder).getIconsInGroup(type, groupId);
+			List<ImageAndMasks> groupImages = ImageCache.getInstance(artPack, customArtPackFolder).getIconsInGroup(type, groupId);
 			if (groupImages == null || groupImages.isEmpty())
 			{
 				return null;

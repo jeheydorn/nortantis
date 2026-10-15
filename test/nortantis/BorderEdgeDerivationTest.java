@@ -167,7 +167,7 @@ public class BorderEdgeDerivationTest
 		settings.borderWidth = borderWidth;
 		settings.borderPosition = BorderPosition.Outside_map;
 		settings.borderResource = new NamedResource(Assets.customArtPack, borderName);
-		settings.customImagesPath = artPackFolder.toString();
+		settings.customArtPackPath = artPackFolder.toString();
 
 		Background background = new Background(settings, mapBounds, new WarningLogger()
 		{

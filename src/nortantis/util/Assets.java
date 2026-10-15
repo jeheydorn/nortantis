@@ -124,7 +124,7 @@ public class Assets
 			result.addAll(ArtPacksFromArtPacksFolderCache.getArtPacksFromArtPackFolder());
 		}
 
-		// Add custom images folder if the map has one.
+		// Add custom art pack folder if the map has one.
 		if (includeCustomArtPack)
 		{
 			result.add(customArtPack);
@@ -149,16 +149,16 @@ public class Assets
 	 * Lists the art packs that File -> New Random Map may pick from on its own. An art pack opts out by putting
 	 * {@code includeInNewRandomMaps=false} in its settings file. Art packs that opt out can still be chosen by the user.
 	 */
-	public static List<String> listArtPacksForNewRandomMaps(String customImagesFolder)
+	public static List<String> listArtPacksForNewRandomMaps(String customArtPackFolder)
 	{
-		List<String> allArtPacks = listArtPacks(!StringUtils.isEmpty(customImagesFolder));
-		List<String> result = allArtPacks.stream().filter(artPack -> isArtPackIncludedInNewRandomMaps(artPack, customImagesFolder)).toList();
+		List<String> allArtPacks = listArtPacks(!StringUtils.isEmpty(customArtPackFolder));
+		List<String> result = allArtPacks.stream().filter(artPack -> isArtPackIncludedInNewRandomMaps(artPack, customArtPackFolder)).toList();
 		return result.isEmpty() ? allArtPacks : result;
 	}
 
-	private static boolean isArtPackIncludedInNewRandomMaps(String artPack, String customImagesFolder)
+	private static boolean isArtPackIncludedInNewRandomMaps(String artPack, String customArtPackFolder)
 	{
-		Properties settings = loadArtPackSettings(artPack, customImagesFolder);
+		Properties settings = loadArtPackSettings(artPack, customArtPackFolder);
 		String value = settings.getProperty(includeInNewRandomMapsKey);
 		return StringUtils.isBlank(value) || !value.trim().equalsIgnoreCase("false");
 	}
@@ -191,9 +191,9 @@ public class Assets
 	/**
 	 * Loads an art pack's optional settings file. Returns empty properties if the art pack doesn't have one or it can't be read.
 	 */
-	private static Properties loadArtPackSettings(String artPack, String customImagesFolder)
+	private static Properties loadArtPackSettings(String artPack, String customArtPackFolder)
 	{
-		Path artPackPath = getArtPackPath(artPack, customImagesFolder);
+		Path artPackPath = getArtPackPath(artPack, customArtPackFolder);
 		if (artPackPath == null)
 		{
 			return new Properties();
@@ -213,9 +213,9 @@ public class Assets
 		return new Properties();
 	}
 
-	public static boolean artPackExists(String artPack, String customImagesFolder)
+	public static boolean artPackExists(String artPack, String customArtPackFolder)
 	{
-		return listArtPacks(!StringUtils.isEmpty(customImagesFolder)).contains(artPack);
+		return listArtPacks(!StringUtils.isEmpty(customArtPackFolder)).contains(artPack);
 	}
 
 	private static class ArtPacksFromArtPacksFolderCache
@@ -260,17 +260,17 @@ public class Assets
 		// Don't clear cachedEntries because it's values never change while the program is running.
 	}
 
-	public static List<NamedResource> listBackgroundTexturesForAllArtPacks(String customImagesFolder)
+	public static List<NamedResource> listBackgroundTexturesForAllArtPacks(String customArtPackFolder)
 	{
-		return listBackgroundTexturesForArtPacks(listArtPacks(StringUtils.isNotEmpty(customImagesFolder)), customImagesFolder);
+		return listBackgroundTexturesForArtPacks(listArtPacks(StringUtils.isNotEmpty(customArtPackFolder)), customArtPackFolder);
 	}
 
-	public static List<NamedResource> listBackgroundTexturesForArtPacks(List<String> artPacks, String customImagesFolder)
+	public static List<NamedResource> listBackgroundTexturesForArtPacks(List<String> artPacks, String customArtPackFolder)
 	{
 		List<NamedResource> result = new ArrayList<>();
 		for (String artPack : artPacks)
 		{
-			for (NamedResource textureResource : listBackgroundTexturesForArtPack(artPack, FileHelper.replaceHomeFolderPlaceholder(customImagesFolder)))
+			for (NamedResource textureResource : listBackgroundTexturesForArtPack(artPack, FileHelper.replaceHomeFolderPlaceholder(customArtPackFolder)))
 			{
 				result.add(textureResource);
 			}
@@ -279,9 +279,9 @@ public class Assets
 		return result;
 	}
 
-	public static List<NamedResource> listBackgroundTexturesForArtPack(String artPack, String customImagesFolder)
+	public static List<NamedResource> listBackgroundTexturesForArtPack(String artPack, String customArtPackFolder)
 	{
-		Path artPackPath = getArtPackPath(artPack, customImagesFolder);
+		Path artPackPath = getArtPackPath(artPack, customArtPackFolder);
 		if (artPackPath == null)
 		{
 			// The custom art pack has no folder chosen yet.
@@ -298,20 +298,20 @@ public class Assets
 	 * 
 	 * @param artPack
 	 *            Art pack name
-	 * @param customImagesFolder
-	 *            The map's custom images folder. Only required if art pack is "custom".
+	 * @param customArtPackFolder
+	 *            The map's custom art pack folder. Only required if art pack is "custom".
 	 * @return A path to the art pack assets, which may be in the jar file the program is running from.
 	 */
-	public static Path getArtPackPath(String artPack, String customImagesFolder)
+	public static Path getArtPackPath(String artPack, String customArtPackFolder)
 	{
-		Pair<String> key = new Pair<>(artPack, customImagesFolder);
+		Pair<String> key = new Pair<>(artPack, customArtPackFolder);
 		Path inMap = artPackPathCache.get(key);
 		if (inMap != null)
 		{
 			return inMap;
 		}
 
-		Path result = getArtPackPathNoCache(artPack, customImagesFolder);
+		Path result = getArtPackPathNoCache(artPack, customArtPackFolder);
 		if (result != null)
 		{
 			// A null result is a valid answer, meaning the custom art pack has no images folder set, but ConcurrentHashMap rejects null
@@ -321,15 +321,15 @@ public class Assets
 		return result;
 	}
 
-	private static Path getArtPackPathNoCache(String artPack, String customImagesFolder)
+	private static Path getArtPackPathNoCache(String artPack, String customArtPackFolder)
 	{
 		if (artPack.equals(customArtPack))
 		{
-			if (StringUtils.isEmpty(customImagesFolder))
+			if (StringUtils.isEmpty(customArtPackFolder))
 			{
 				return null;
 			}
-			return Paths.get(FileHelper.replaceHomeFolderPlaceholder(customImagesFolder));
+			return Paths.get(FileHelper.replaceHomeFolderPlaceholder(customArtPackFolder));
 		}
 
 		if (artPack.equals(installedArtPack))
@@ -345,7 +345,7 @@ public class Assets
 		return Paths.get(OSHelper.getAppDataPath().toString(), artPacksFolder);
 	}
 
-	public static Path getBackgroundTextureResourcePath(NamedResource resource, String customImagesFolder)
+	public static Path getBackgroundTextureResourcePath(NamedResource resource, String customArtPackFolder)
 	{
 		if (resource == null)
 		{
@@ -356,7 +356,7 @@ public class Assets
 			// I don't know how, but in a stack trace of a crash I found that resource.name was null, so I'm adding this to be safe.
 			return null;
 		}
-		Path artPackPath = getArtPackPath(resource.artPack, customImagesFolder);
+		Path artPackPath = getArtPackPath(resource.artPack, customArtPackFolder);
 		if (artPackPath == null)
 		{
 			return null;
@@ -364,25 +364,25 @@ public class Assets
 		return Paths.get(artPackPath.toString(), "background textures", resource.name);
 	}
 
-	public static List<NamedResource> listAllBorderTypes(String customImagesFolder)
+	public static List<NamedResource> listAllBorderTypes(String customArtPackFolder)
 	{
-		return listBorderTypesForArtPacks(listArtPacks(StringUtils.isNotEmpty(customImagesFolder)), customImagesFolder);
+		return listBorderTypesForArtPacks(listArtPacks(StringUtils.isNotEmpty(customArtPackFolder)), customArtPackFolder);
 	}
 
-	public static List<NamedResource> listBorderTypesForArtPacks(List<String> artPacks, String customImagesFolder)
+	public static List<NamedResource> listBorderTypesForArtPacks(List<String> artPacks, String customArtPackFolder)
 	{
 		List<NamedResource> result = new ArrayList<>();
 		for (String artPack : artPacks)
 		{
-			result.addAll(listBorderTypesForArtPack(artPack, customImagesFolder));
+			result.addAll(listBorderTypesForArtPack(artPack, customArtPackFolder));
 		}
 
 		return result;
 	}
 
-	public static List<NamedResource> listBorderTypesForArtPack(String artPack, String customImagesFolder)
+	public static List<NamedResource> listBorderTypesForArtPack(String artPack, String customArtPackFolder)
 	{
-		Path artPackPath = getArtPackPath(artPack, customImagesFolder);
+		Path artPackPath = getArtPackPath(artPack, customArtPackFolder);
 		if (artPackPath == null)
 		{
 			// The custom art pack has no folder chosen yet.
@@ -417,13 +417,13 @@ public class Assets
 	/**
 	 * Reads a border's border_settings.txt file. The file sets a width range only when it has both minWidth and maxWidth.
 	 */
-	public static BorderMetadata readBorderMetadata(NamedResource borderResource, String customImagesFolder)
+	public static BorderMetadata readBorderMetadata(NamedResource borderResource, String customArtPackFolder)
 	{
 		if (borderResource == null)
 		{
 			return defaultBorderMetadata;
 		}
-		Path artPackPath = getArtPackPath(borderResource.artPack, customImagesFolder);
+		Path artPackPath = getArtPackPath(borderResource.artPack, customArtPackFolder);
 		if (artPackPath == null)
 		{
 			return defaultBorderMetadata;
@@ -458,9 +458,9 @@ public class Assets
 	/**
 	 * The folder an art pack's themes are in.
 	 */
-	public static Path getThemesFolderForArtPack(String artPack, String customImagesFolder)
+	public static Path getThemesFolderForArtPack(String artPack, String customArtPackFolder)
 	{
-		Path artPackPath = getArtPackPath(artPack, customImagesFolder);
+		Path artPackPath = getArtPackPath(artPack, customArtPackFolder);
 		return artPackPath == null ? null : Paths.get(artPackPath.toString(), themesFolderName);
 	}
 

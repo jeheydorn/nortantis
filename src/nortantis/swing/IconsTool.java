@@ -723,7 +723,7 @@ public class IconsTool extends EditorTool
 				}
 				else
 				{
-					List<String> fileNames = ImageCache.getInstance(iconToEdit.artPack, mainWindow.customImagesPath).getIconGroupFileNamesWithoutWidthOrExtensionAsList(iconToEdit.type,
+					List<String> fileNames = ImageCache.getInstance(iconToEdit.artPack, mainWindow.customArtPackPath).getIconGroupFileNamesWithoutWidthOrExtensionAsList(iconToEdit.type,
 							iconToEdit.groupId);
 					String iconName = fileNames.get(iconToEdit.iconIndex % fileNames.size());
 					nameLabel.setText(iconName);
@@ -833,7 +833,7 @@ public class IconsTool extends EditorTool
 			// updateIconTypeButtonPreviewImages doesn't crash when it can't find the buttons for the preview images.
 			if (!settings.artPack.equals(decorationButtons.artPack))
 			{
-				updateIconPreviewButtons(settings.artPack, settings.customImagesPath);
+				updateIconPreviewButtons(settings.artPack, settings.customArtPackPath);
 			}
 			updateIconTypeButtonPreviewImages(settings);
 
@@ -1010,13 +1010,13 @@ public class IconsTool extends EditorTool
 		toolsPanel.repaint();
 	}
 
-	private IconTypeButtons createOrUpdateRadioButtonsForIconType(GridBagOrganizer organizer, IconType iconType, IconTypeButtons existing, String artPack, String customImagesPath)
+	private IconTypeButtons createOrUpdateRadioButtonsForIconType(GridBagOrganizer organizer, IconType iconType, IconTypeButtons existing, String artPack, String customArtPackPath)
 	{
 		String prevSelection = existing != null ? existing.getSelectedOption() : null;
 
 		ButtonGroup group = new ButtonGroup();
 		List<RadioButtonWithImage> radioButtons = new ArrayList<>();
-		List<String> groupNames = new ArrayList<>(ImageCache.getInstance(artPack, customImagesPath).getIconGroupNames(iconType));
+		List<String> groupNames = new ArrayList<>(ImageCache.getInstance(artPack, customArtPackPath).getIconGroupNames(iconType));
 		for (String groupName : groupNames)
 		{
 			RadioButtonWithImage button = new RadioButtonWithImage(groupName, null);
@@ -1066,8 +1066,8 @@ public class IconsTool extends EditorTool
 		}
 
 		String artPack = settings == null ? Assets.installedArtPack : settings.artPack;
-		String customImagesPath = settings == null ? null : settings.customImagesPath;
-		updateIconPreviewButtons(artPack, customImagesPath);
+		String customArtPackPath = settings == null ? null : settings.customArtPackPath;
+		updateIconPreviewButtons(artPack, customArtPackPath);
 
 		// When no map is open (e.g. a look-and-feel change on the startup screen) there are no settings to load into the GUI, and
 		// loadSettingsIntoGUI dereferences settings unconditionally. Guarding here keeps the refresh from throwing and aborting the rest
@@ -1080,15 +1080,15 @@ public class IconsTool extends EditorTool
 		unselectAnyIconsBeingEdited();
 	}
 
-	private void updateIconPreviewButtons(String artPack, String customImagesPath)
+	private void updateIconPreviewButtons(String artPack, String customArtPackPath)
 	{
-		mountainTypes = createOrUpdateRadioButtonsForIconType(null, IconType.mountains, mountainTypes, artPack, customImagesPath);
-		hillTypes = createOrUpdateRadioButtonsForIconType(null, IconType.hills, hillTypes, artPack, customImagesPath);
-		duneTypes = createOrUpdateRadioButtonsForIconType(null, IconType.sand, duneTypes, artPack, customImagesPath);
-		treeTypes = createOrUpdateRadioButtonsForIconType(null, IconType.trees, treeTypes, artPack, customImagesPath);
+		mountainTypes = createOrUpdateRadioButtonsForIconType(null, IconType.mountains, mountainTypes, artPack, customArtPackPath);
+		hillTypes = createOrUpdateRadioButtonsForIconType(null, IconType.hills, hillTypes, artPack, customArtPackPath);
+		duneTypes = createOrUpdateRadioButtonsForIconType(null, IconType.sand, duneTypes, artPack, customArtPackPath);
+		treeTypes = createOrUpdateRadioButtonsForIconType(null, IconType.trees, treeTypes, artPack, customArtPackPath);
 
-		createOrUpdateButtonsForCities(null, artPack, customImagesPath);
-		createOrUpdateDecorationButtons(null, artPack, customImagesPath);
+		createOrUpdateButtonsForCities(null, artPack, customArtPackPath);
+		createOrUpdateDecorationButtons(null, artPack, customArtPackPath);
 	}
 
 	private synchronized void updateIconTypeButtonPreviewImages(MapSettings settings)
@@ -1099,16 +1099,16 @@ public class IconsTool extends EditorTool
 		}
 		previewUpdateGeneration++;
 		long generation = previewUpdateGeneration;
-		updateOneIconTypeButtonPreviewImages(settings, IconType.mountains, mountainTypes, settings.customImagesPath, generation);
-		updateOneIconTypeButtonPreviewImages(settings, IconType.hills, hillTypes, settings.customImagesPath, generation);
-		updateOneIconTypeButtonPreviewImages(settings, IconType.sand, duneTypes, settings.customImagesPath, generation);
-		updateOneIconTypeButtonPreviewImages(settings, IconType.trees, treeTypes, settings.customImagesPath, generation);
+		updateOneIconTypeButtonPreviewImages(settings, IconType.mountains, mountainTypes, settings.customArtPackPath, generation);
+		updateOneIconTypeButtonPreviewImages(settings, IconType.hills, hillTypes, settings.customArtPackPath, generation);
+		updateOneIconTypeButtonPreviewImages(settings, IconType.sand, duneTypes, settings.customArtPackPath, generation);
+		updateOneIconTypeButtonPreviewImages(settings, IconType.trees, treeTypes, settings.customArtPackPath, generation);
 
 		updateNamedIconButtonPreviewImages(settings, cityButtons, generation);
 		updateNamedIconButtonPreviewImages(settings, decorationButtons, generation);
 	}
 
-	private void updateOneIconTypeButtonPreviewImages(MapSettings settings, IconType iconType, IconTypeButtons buttons, String customImagesPath, long generation)
+	private void updateOneIconTypeButtonPreviewImages(MapSettings settings, IconType iconType, IconTypeButtons buttons, String customArtPackPath, long generation)
 	{
 		for (RadioButtonWithImage button : buttons.buttons)
 		{
@@ -1127,7 +1127,7 @@ public class IconsTool extends EditorTool
 					{
 						return null;
 					}
-					return createIconPreviewForGroup(settings, iconType, buttonText, customImagesPath, iconColor, filterColor, maximizeOpacity, fillWithColor);
+					return createIconPreviewForGroup(settings, iconType, buttonText, customArtPackPath, iconColor, filterColor, maximizeOpacity, fillWithColor);
 				}
 
 				@Override
@@ -1178,7 +1178,7 @@ public class IconsTool extends EditorTool
 							+ selector.artPack + "'");
 		}
 
-		for (String groupId : ImageCache.getInstance(settings.artPack, settings.customImagesPath).getIconGroupNames(selector.type))
+		for (String groupId : ImageCache.getInstance(settings.artPack, settings.customArtPackPath).getIconGroupNames(selector.type))
 		{
 			final List<Tuple2<String, UnscaledImageToggleButton>> namesAndButtons = selector.getIconNamesAndButtons(groupId);
 			Color iconColor = fillColorsByType.get(selector.type);
@@ -1199,7 +1199,7 @@ public class IconsTool extends EditorTool
 						}
 
 						List<Image> previewImages = new ArrayList<>();
-						Map<String, ImageAndMasks> iconsInGroup = ImageCache.getInstance(settings.artPack, settings.customImagesPath).getIconsByNameForGroup(selector.type, groupId);
+						Map<String, ImageAndMasks> iconsInGroup = ImageCache.getInstance(settings.artPack, settings.customArtPackPath).getIconsByNameForGroup(selector.type, groupId);
 
 						for (Tuple2<String, UnscaledImageToggleButton> nameAndButton : namesAndButtons)
 						{
@@ -1269,12 +1269,12 @@ public class IconsTool extends EditorTool
 		}
 	}
 
-	private void updateArtPackOptions(String selectedArtPack, String customImagesPath)
+	private void updateArtPackOptions(String selectedArtPack, String customArtPackPath)
 	{
-		SwingHelper.initializeComboBoxItems(artPackComboBox, Assets.listArtPacks(!StringUtils.isEmpty(customImagesPath)), selectedArtPack, false);
+		SwingHelper.initializeComboBoxItems(artPackComboBox, Assets.listArtPacks(!StringUtils.isEmpty(customArtPackPath)), selectedArtPack, false);
 	}
 
-	private void createOrUpdateButtonsForCities(GridBagOrganizer organizer, String artPack, String customImagesPath)
+	private void createOrUpdateButtonsForCities(GridBagOrganizer organizer, String artPack, String customArtPackPath)
 	{
 		if (cityButtons == null)
 		{
@@ -1283,10 +1283,10 @@ public class IconsTool extends EditorTool
 			cityButtons.addToOrganizer(organizer, Translation.get("iconsTool.cities.label"));
 		}
 
-		cityButtons.updateButtonList(artPack, customImagesPath);
+		cityButtons.updateButtonList(artPack, customArtPackPath);
 	}
 
-	private void createOrUpdateDecorationButtons(GridBagOrganizer organizer, String artPack, String customImagesPath)
+	private void createOrUpdateDecorationButtons(GridBagOrganizer organizer, String artPack, String customArtPackPath)
 	{
 		if (decorationButtons == null)
 		{
@@ -1295,13 +1295,13 @@ public class IconsTool extends EditorTool
 			decorationButtons.addToOrganizer(organizer, Translation.get("iconsTool.decorations.label"));
 		}
 
-		decorationButtons.updateButtonList(artPack, customImagesPath);
+		decorationButtons.updateButtonList(artPack, customArtPackPath);
 	}
 
-	private Image createIconPreviewForGroup(MapSettings settings, IconType iconType, String groupName, String customImagesPath, Color iconColor, HSBColor filterColor, boolean maximizeOpacity,
+	private Image createIconPreviewForGroup(MapSettings settings, IconType iconType, String groupName, String customArtPackPath, Color iconColor, HSBColor filterColor, boolean maximizeOpacity,
 			boolean fillWithColor)
 	{
-		List<ImageAndMasks> images = ImageCache.getInstance(settings.artPack, customImagesPath).getIconsInGroup(iconType, groupName);
+		List<ImageAndMasks> images = ImageCache.getInstance(settings.artPack, customArtPackPath).getIconsInGroup(iconType, groupName);
 		int scaledHeight;
 		switch (iconType)
 		{
@@ -1393,7 +1393,7 @@ public class IconsTool extends EditorTool
 			for (int i : new Range(imagesAndMasks.size()))
 			{
 				ImageAndMasks imageAndMasks = imagesAndMasks.get(i);
-				Image coloredImage = ImageCache.getInstance(settings.artPack, settings.customImagesPath).getColoredIcon(imageAndMasks, iconColor, filterColor, maximizeOpacity, fillWithColor);
+				Image coloredImage = ImageCache.getInstance(settings.artPack, settings.customArtPackPath).getColoredIcon(imageAndMasks, iconColor, filterColor, maximizeOpacity, fillWithColor);
 				try (Image croppedImage = imageAndMasks.cropToContent(coloredImage))
 				{
 					int scaledWidth = scaledWidths[i];
@@ -2760,7 +2760,7 @@ public class IconsTool extends EditorTool
 	@Override
 	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean refreshImagePreviews)
 	{
-		String customImagesPath = settings.customImagesPath;
+		String customArtPackPath = settings.customArtPackPath;
 		String artPack = settings.artPack;
 		// The art pack field has special handling for undo/redo to avoid undo/redo changing the selected value, while still storing the
 		// value in MapSettings.
@@ -2768,7 +2768,7 @@ public class IconsTool extends EditorTool
 		try
 		{
 			disableImageRefreshes = !refreshImagePreviews;
-			updateArtPackOptions(artPackToSelect, customImagesPath);
+			updateArtPackOptions(artPackToSelect, customArtPackPath);
 		}
 		finally
 		{
@@ -2785,7 +2785,7 @@ public class IconsTool extends EditorTool
 			}
 			else
 			{
-				if (Assets.artPackExists(artPack, customImagesPath))
+				if (Assets.artPackExists(artPack, customArtPackPath))
 				{
 					artPackComboBox.setSelectedItem(artPack);
 				}
@@ -2875,9 +2875,9 @@ public class IconsTool extends EditorTool
 	}
 
 	@Override
-	public void handleCustomImagesPathChanged(String customImagesPath)
+	public void handleCustomArtPackPathChanged(String customArtPackPath)
 	{
-		if (!StringUtils.isEmpty(customImagesPath))
+		if (!StringUtils.isEmpty(customArtPackPath))
 		{
 			artPackComboBox.setSelectedItem(Assets.customArtPack);
 		}

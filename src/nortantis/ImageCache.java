@@ -21,7 +21,7 @@ public class ImageCache
 {
 	private static ConcurrentHashMapF<String, ImageCache> instances = new ConcurrentHashMapF<>();
 	/**
-	 * The folder each art pack's images live in, keyed by art pack and custom images folder. Cleared alongside instances, since a change
+	 * The folder each art pack's images live in, keyed by art pack and custom art pack folder. Cleared alongside instances, since a change
 	 * to the art packs available can change where an art pack resolves to.
 	 */
 	private static ConcurrentHashMapF<String, String> artPackPaths = new ConcurrentHashMapF<>();
@@ -71,15 +71,15 @@ public class ImageCache
 
 	private final String artPack;
 
-	private final String customImagesFolder;
+	private final String customArtPackFolder;
 
 	/**
 	 * Singleton
 	 */
-	private ImageCache(String imagesPath, String artPack, String customImagesFolder)
+	private ImageCache(String imagesPath, String artPack, String customArtPackFolder)
 	{
 		this.imagesPath = imagesPath;
-		this.customImagesFolder = customImagesFolder;
+		this.customArtPackFolder = customArtPackFolder;
 		scaledCache = new ConcurrentHashMapF<>();
 		coloredCache = new ConcurrentHashMapF<>();
 		fileCache = new ConcurrentHashMapF<>();
@@ -97,20 +97,20 @@ public class ImageCache
 	 * Gets the image cache instance associated with the given imagesPath. When imagesPath is null or empty, then the imageCache for the
 	 * installed images is given.
 	 */
-	public static synchronized ImageCache getInstance(String artPack, String customImagesFolder)
+	public static synchronized ImageCache getInstance(String artPack, String customArtPackFolder)
 	{
 		// The separator cannot appear in an art pack name or a folder, so it keeps the two parts of the key from running together.
-		String key = StringUtils.defaultString(artPack) + "\u0000" + StringUtils.defaultString(customImagesFolder);
-		String normalizedPath = artPackPaths.getOrCreate(key, () -> findArtPackPath(artPack, customImagesFolder));
+		String key = StringUtils.defaultString(artPack) + "\u0000" + StringUtils.defaultString(customArtPackFolder);
+		String normalizedPath = artPackPaths.getOrCreate(key, () -> findArtPackPath(artPack, customArtPackFolder));
 
-		return instances.getOrCreate(normalizedPath, () -> new ImageCache(normalizedPath, artPack, customImagesFolder));
+		return instances.getOrCreate(normalizedPath, () -> new ImageCache(normalizedPath, artPack, customArtPackFolder));
 	}
 
 	/**
 	 * Resolves the folder an art pack's images live in. Callers should go through artPackPaths rather than calling this every time,
 	 * because resolving and normalizing the path costs enough to matter when icons are looked up one at a time.
 	 */
-	private static String findArtPackPath(String artPack, String customImagesFolder)
+	private static String findArtPackPath(String artPack, String customArtPackFolder)
 	{
 		Path artPackPath;
 		String pathWithHomeReplaced;
@@ -121,7 +121,7 @@ public class ImageCache
 		}
 		else
 		{
-			artPackPath = Assets.getArtPackPath(artPack, customImagesFolder);
+			artPackPath = Assets.getArtPackPath(artPack, customArtPackFolder);
 			pathWithHomeReplaced = FileHelper.replaceHomeFolderPlaceholder(artPackPath.toString());
 		}
 
@@ -206,7 +206,7 @@ public class ImageCache
 	{
 		// computeIfAbsent rather than getOrCreate because deriving a border's missing images and reveal masks is expensive enough that
 		// running it more than once matters.
-		return borderArtCache.computeIfAbsent(borderResource.name, unused -> new BorderArt(this, borderResource, customImagesFolder));
+		return borderArtCache.computeIfAbsent(borderResource.name, unused -> new BorderArt(this, borderResource, customArtPackFolder));
 	}
 
 	public ImageAndMasks getImageAndMasks(FreeIcon icon)

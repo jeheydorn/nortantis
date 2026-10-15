@@ -225,7 +225,7 @@ public class FontFinder
 	}
 
 	/**
-	 * Registers the fonts in every art pack, including any pack installed since the last call and the given custom images folder, which is
+	 * Registers the fonts in every art pack, including any pack installed since the last call and the given custom art pack folder, which is
 	 * chosen per map rather than known when the app starts. Safe to call repeatedly and from any thread.
 	 *
 	 * <p>
@@ -233,19 +233,19 @@ public class FontFinder
 	 * grows while the app runs. Nothing may assume a registered family can stop being available. Families the device supplies itself carry
 	 * no such promise, since they are re-read from the platform on each call.
 	 *
-	 * @param customImagesFolder
-	 *            The custom images folder to look in as well, or null to look only in the installed art packs.
+	 * @param customArtPackFolder
+	 *            The custom art pack folder to look in as well, or null to look only in the installed art packs.
 	 */
-	public static void registerFontsFromArtPacks(String customImagesFolder)
+	public static void registerFontsFromArtPacks(String customArtPackFolder)
 	{
 		ensureInitialized();
 		synchronized (initializationLock)
 		{
-			registerArtPackFonts(customImagesFolder);
+			registerArtPackFonts(customArtPackFolder);
 		}
 	}
 
-	private static void registerArtPackFonts(String customImagesFolder)
+	private static void registerArtPackFonts(String customArtPackFolder)
 	{
 		Map<String, AvailableFont> registered = new LinkedHashMap<>(registeredFontsByLowerCaseFamily);
 		int countBefore = registered.size();
@@ -264,7 +264,7 @@ public class FontFinder
 			}
 		}
 
-		Path customPath = Assets.getArtPackPath(Assets.customArtPack, customImagesFolder);
+		Path customPath = Assets.getArtPackPath(Assets.customArtPack, customArtPackFolder);
 		if (customPath != null)
 		{
 			registerFontsInArtPack(Assets.customArtPack, customPath.toString(), FontSource.ArtPack, registered);

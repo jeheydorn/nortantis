@@ -55,8 +55,8 @@ public class NewSettingsDialog extends JDialog
 	MainWindow mainWindow;
 	private JTextField pathDisplay;
 	private JComboBox<String> artPackComboBox;
-	/** The custom images folder row, shown only when the custom art pack is chosen. */
-	private RowHider customImagesFolderHider;
+	/** The custom art pack folder row, shown only when the custom art pack is chosen. */
+	private RowHider customArtPackFolderHider;
 	private JLabel rotationWarningLabel;
 	private RowHider rotationWarningHider;
 	/**
@@ -198,12 +198,12 @@ public class NewSettingsDialog extends JDialog
 
 		if (settingsToKeepThemeFrom == null)
 		{
-			// New random maps don't use a custom images folder unless the custom art pack is chosen.
-			String customImagesPath = null;
+			// New random maps don't use a custom art pack folder unless the custom art pack is chosen.
+			String customArtPackPath = null;
 			Random rand = new Random();
-			String artPack = ProbabilityHelper.sampleUniform(rand, Assets.listArtPacksForNewRandomMaps(customImagesPath));
+			String artPack = ProbabilityHelper.sampleUniform(rand, Assets.listArtPacksForNewRandomMaps(customArtPackPath));
 			themeSeed = rand.nextLong();
-			List<ThemeCatalog.Entry> entries = ThemeCatalog.listThemesToChooseFrom(artPack, customImagesPath);
+			List<ThemeCatalog.Entry> entries = ThemeCatalog.listThemesToChooseFrom(artPack, customArtPackPath);
 			initializeThemeOptions(entries);
 			ThemeChoice choice = chooseThemeFromSeed(entries);
 			preferredThemeChoice = choice;
@@ -214,14 +214,14 @@ public class NewSettingsDialog extends JDialog
 				showThemeLoadError();
 				// The controls still need settings to show, so they get the installed art pack's first theme. The map can't be created
 				// until a theme that loads is chosen.
-				ThemeCatalog.Entry installedTheme = ThemeCatalog.listThemesForArtPack(Assets.installedArtPack, customImagesPath).get(0);
-				settings = SettingsGenerator.generateFromTheme(rand, themeSeed, artPack, ThemeCatalog.load(installedTheme), true, customImagesPath);
+				ThemeCatalog.Entry installedTheme = ThemeCatalog.listThemesForArtPack(Assets.installedArtPack, customArtPackPath).get(0);
+				settings = SettingsGenerator.generateFromTheme(rand, themeSeed, artPack, ThemeCatalog.load(installedTheme), true, customArtPackPath);
 				themeBase = null;
 			}
 			else
 			{
 				themeBase = theme;
-				settings = SettingsGenerator.generateFromTheme(rand, themeSeed, artPack, theme, ThemeCatalog.isFromInstalledArtPack(choice.entry), customImagesPath);
+				settings = SettingsGenerator.generateFromTheme(rand, themeSeed, artPack, theme, ThemeCatalog.isFromInstalledArtPack(choice.entry), customArtPackPath);
 			}
 		}
 		else
@@ -231,7 +231,7 @@ public class NewSettingsDialog extends JDialog
 			themeBase = settingsToKeepThemeFrom;
 			sameThemeChoice = new ThemeChoice(null, Translation.get("newSettingsDialog.theme.sameAsMap"));
 			preferredThemeChoice = sameThemeChoice;
-			initializeThemeOptions(ThemeCatalog.listThemesToChooseFrom(settings.artPack, settings.customImagesPath));
+			initializeThemeOptions(ThemeCatalog.listThemesToChooseFrom(settings.artPack, settings.customArtPackPath));
 			selectThemeChoice(sameThemeChoice);
 		}
 		loadSettingsIntoGUI(settings);
@@ -461,7 +461,7 @@ public class NewSettingsDialog extends JDialog
 		}
 		if (isCustomArtPackWithoutFolder())
 		{
-			SwingHelper.showMessageDialog(this, Translation.get("newSettingsDialog.chooseCustomImagesFolder"), Translation.get("newSettingsDialog.title"),
+			SwingHelper.showMessageDialog(this, Translation.get("newSettingsDialog.chooseCustomArtPackFolder"), Translation.get("newSettingsDialog.title"),
 					JOptionPane.INFORMATION_MESSAGE);
 			return;
 		}
@@ -613,16 +613,16 @@ public class NewSettingsDialog extends JDialog
 	 */
 	private boolean isCustomArtPackWithoutFolder()
 	{
-		return artPackComboBox != null && Assets.customArtPack.equals(artPackComboBox.getSelectedItem()) && (settings == null || StringUtils.isEmpty(settings.customImagesPath));
+		return artPackComboBox != null && Assets.customArtPack.equals(artPackComboBox.getSelectedItem()) && (settings == null || StringUtils.isEmpty(settings.customArtPackPath));
 	}
 
 	/**
-	 * Shows the custom images folder row only when the custom art pack is chosen. A folder the map has keeps its value while the row is
+	 * Shows the custom art pack folder row only when the custom art pack is chosen. A folder the map has keeps its value while the row is
 	 * hidden, so that a map whose theme uses custom images keeps them.
 	 */
-	private void updateCustomImagesFolderVisibility()
+	private void updateCustomArtPackFolderVisibility()
 	{
-		customImagesFolderHider.setVisible(Assets.customArtPack.equals(artPackComboBox.getSelectedItem()));
+		customArtPackFolderHider.setVisible(Assets.customArtPack.equals(artPackComboBox.getSelectedItem()));
 	}
 
 	private void initializeCityTypeOptions()
@@ -646,23 +646,23 @@ public class NewSettingsDialog extends JDialog
 	private List<String> getCityIconTypesForArtPack()
 	{
 		return isCustomArtPackWithoutFolder() ? new ArrayList<>()
-				: new ArrayList<>(ImageCache.getInstance((String) artPackComboBox.getSelectedItem(), (String) settings.customImagesPath).getIconGroupNames(IconType.cities));
+				: new ArrayList<>(ImageCache.getInstance((String) artPackComboBox.getSelectedItem(), (String) settings.customArtPackPath).getIconGroupNames(IconType.cities));
 	}
 
 	private void initializeArtPackOptionsAndCityTypeOptions()
 	{
 		// The custom art pack is always listed, and choosing it shows the row for choosing its folder.
 		SwingHelper.initializeComboBoxItems(artPackComboBox, Assets.listArtPacks(true), settings.artPack, false);
-		updateCustomImagesFolderVisibility();
+		updateCustomArtPackFolderVisibility();
 		initializeCityTypeOptions();
 	}
 
 	private void updatePathDisplay()
 	{
 		String newText;
-		if (settings != null && settings.customImagesPath != null && !settings.customImagesPath.isEmpty())
+		if (settings != null && settings.customArtPackPath != null && !settings.customArtPackPath.isEmpty())
 		{
-			newText = FileHelper.replaceHomeFolderPlaceholder(settings.customImagesPath);
+			newText = FileHelper.replaceHomeFolderPlaceholder(settings.customArtPackPath);
 		}
 		else
 		{
@@ -691,7 +691,7 @@ public class NewSettingsDialog extends JDialog
 				{
 					return;
 				}
-				updateCustomImagesFolderVisibility();
+				updateCustomArtPackFolderVisibility();
 				if (Objects.equals(artPackComboBox.getSelectedItem(), settings.artPack))
 				{
 					return;
@@ -706,17 +706,17 @@ public class NewSettingsDialog extends JDialog
 		pathDisplay.setEditable(false);
 		pathDisplay.setMinimumSize(new Dimension(0, pathDisplay.getMinimumSize().height));
 		pathDisplay.setPreferredSize(new Dimension(0, pathDisplay.getPreferredSize().height));
-		customImagesFolderHider = organizer.addLabelAndComponentsHorizontal(Translation.get("newSettingsDialog.customImagesFolder.label"),
-				Translation.get("newSettingsDialog.customImagesFolder.help"), Arrays.asList(pathDisplay, changeButton));
+		customArtPackFolderHider = organizer.addLabelAndComponentsHorizontal(Translation.get("newSettingsDialog.customArtPackFolder.label"),
+				Translation.get("newSettingsDialog.customArtPackFolder.help"), Arrays.asList(pathDisplay, changeButton));
 
 		changeButton.addActionListener(new ActionListener()
 		{
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				CustomImagesDialog dialog = new CustomImagesDialog(mainWindow, settings.customImagesPath, (value) ->
+				CustomArtPackDialog dialog = new CustomArtPackDialog(mainWindow, settings.customArtPackPath, (value) ->
 				{
-					settings.customImagesPath = value;
+					settings.customArtPackPath = value;
 					updatePathDisplay();
 					// The custom art pack's themes and images come from the new folder.
 					useThemeForArtPack();
@@ -878,7 +878,7 @@ public class NewSettingsDialog extends JDialog
 		}
 		if (isCustomArtPackWithoutFolder())
 		{
-			return Translation.get("newSettingsDialog.chooseCustomImagesFolder");
+			return Translation.get("newSettingsDialog.chooseCustomArtPackFolder");
 		}
 		return null;
 	}
@@ -913,7 +913,7 @@ public class NewSettingsDialog extends JDialog
 		}
 		settings.artPack = artPack;
 		initializeCityTypeOptions();
-		List<ThemeCatalog.Entry> entries = ThemeCatalog.listThemesToChooseFrom(artPack, settings.customImagesPath);
+		List<ThemeCatalog.Entry> entries = ThemeCatalog.listThemesToChooseFrom(artPack, settings.customArtPackPath);
 		initializeThemeOptions(entries);
 		if (sameThemeChoice != null && sameThemeChoice.equals(preferredThemeChoice))
 		{
@@ -997,7 +997,7 @@ public class NewSettingsDialog extends JDialog
 			{
 				// The world comes from the current settings below, so the random numbers it's generated from don't matter.
 				newSettings = SettingsGenerator.generateFromTheme(new Random(), themeSeed, artPack, theme, ThemeCatalog.isFromInstalledArtPack(choice.entry),
-						settings.customImagesPath);
+						settings.customArtPackPath);
 				newThemeBase = theme;
 			}
 		}
@@ -1033,7 +1033,7 @@ public class NewSettingsDialog extends JDialog
 		}
 		newSettings.drawRegionColors = current.drawRegionColors;
 		// A theme is a look, so the world the user set up is kept.
-		newSettings.customImagesPath = current.customImagesPath;
+		newSettings.customArtPackPath = current.customArtPackPath;
 		newSettings.randomSeed = current.randomSeed;
 		newSettings.textRandomSeed = current.textRandomSeed;
 		newSettings.worldSize = current.worldSize;
@@ -1143,7 +1143,7 @@ public class NewSettingsDialog extends JDialog
 		boolean dimensionsChanged = committedState.settings.generatedWidth != state.settings.generatedWidth
 				|| committedState.settings.generatedHeight != state.settings.generatedHeight;
 		committedState = state;
-		boolean customImagesPathChanged = !Objects.equals(settings.customImagesPath, state.settings.customImagesPath);
+		boolean customArtPackPathChanged = !Objects.equals(settings.customArtPackPath, state.settings.customArtPackPath);
 		MapSettings restored = state.settings.deepCopy();
 		restored.edits = settings.edits;
 		settings = restored;
@@ -1154,7 +1154,7 @@ public class NewSettingsDialog extends JDialog
 		preferredCityIconType = state.preferredCityIconType;
 
 		themeLoadError = state.themeLoadError;
-		initializeThemeOptions(ThemeCatalog.listThemesToChooseFrom(state.settings.artPack, state.settings.customImagesPath));
+		initializeThemeOptions(ThemeCatalog.listThemesToChooseFrom(state.settings.artPack, state.settings.customArtPackPath));
 		selectThemeChoice(state.themeChoice);
 		loadSettingsIntoGUIWithoutApplyingTheme();
 		updateUndoRedoButtons();
@@ -1163,7 +1163,7 @@ public class NewSettingsDialog extends JDialog
 		{
 			clearMapPreview();
 		}
-		if (customImagesPathChanged)
+		if (customArtPackPathChanged)
 		{
 			redrawWithClearedImageCache();
 		}

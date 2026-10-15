@@ -1258,14 +1258,14 @@ public class MapCreator implements WarningLogger
 		boolean isLowMemoryMode = memoryModeOverride != null ? memoryModeOverride : settings.resolution >= calcMaxResolutionScale() - resolutionBuffer;
 		Logger.println("Using " + (isLowMemoryMode ? "low" : "high") + " memory mode.");
 
-		if (StringUtils.isNotEmpty(settings.customImagesPath))
+		if (StringUtils.isNotEmpty(settings.customArtPackPath))
 		{
-			String pathWithHomeReplaced = FileHelper.replaceHomeFolderPlaceholder(settings.customImagesPath);
+			String pathWithHomeReplaced = FileHelper.replaceHomeFolderPlaceholder(settings.customArtPackPath);
 			if (!new File(pathWithHomeReplaced).exists())
 			{
-				throw new RuntimeException("The custom images folder '" + pathWithHomeReplaced + "' does not exist.");
+				throw new RuntimeException("The custom art pack folder '" + pathWithHomeReplaced + "' does not exist.");
 			}
-			Logger.println("Using custom images folder: " + settings.customImagesPath);
+			Logger.println("Using custom art pack folder: " + settings.customArtPackPath);
 		}
 
 		if ((double) settings.generatedWidth / settings.generatedHeight > GeneratedDimension.MAX_ASPECT_RATIO

@@ -107,7 +107,7 @@ public class MapFonts
 			}
 
 			String artPack = settings.getFontArtPack(family);
-			if (artPack != null && Assets.artPackExists(artPack, settings.customImagesPath))
+			if (artPack != null && Assets.artPackExists(artPack, settings.customArtPackPath))
 			{
 				artPack = null;
 			}

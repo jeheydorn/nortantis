@@ -50,11 +50,11 @@ public class MissingArtPackDialog
 	 *            The name of the map being opened (without file extension), shown in the message.
 	 * @param info
 	 *            Which art packs are missing and what assets they affect.
-	 * @param customImagesPath
-	 *            The map's custom images folder, used to decide whether the "custom" art pack is offered as an alternative.
+	 * @param customArtPackPath
+	 *            The map's custom art pack folder, used to decide whether the "custom" art pack is offered as an alternative.
 	 * @return The user's choice.
 	 */
-	public static Result show(Component parent, String mapName, MissingArtPackInfo info, String customImagesPath)
+	public static Result show(Component parent, String mapName, MissingArtPackInfo info, String customArtPackPath)
 	{
 		JPanel panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
@@ -70,7 +70,7 @@ public class MissingArtPackDialog
 		panel.add(Box.createVerticalStrut(15));
 
 		JComboBox<String> artPackComboBox = new JComboBox<>();
-		SwingHelper.initializeComboBoxItems(artPackComboBox, Assets.listArtPacks(!StringUtils.isEmpty(customImagesPath)), Assets.installedArtPack, false);
+		SwingHelper.initializeComboBoxItems(artPackComboBox, Assets.listArtPacks(!StringUtils.isEmpty(customArtPackPath)), Assets.installedArtPack, false);
 
 		JPanel artPackRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
 		artPackRow.setAlignmentX(Component.LEFT_ALIGNMENT);

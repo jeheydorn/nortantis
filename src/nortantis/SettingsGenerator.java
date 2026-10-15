@@ -49,9 +49,9 @@ public class SettingsGenerator
 	/**
 	 * Generates settings for a new random map with the given art pack and one of the themes it can use, chosen at random.
 	 */
-	public static MapSettings generate(Random rand, String artPack, String customImagesFolder)
+	public static MapSettings generate(Random rand, String artPack, String customArtPackFolder)
 	{
-		return generate(rand, artPack, null, customImagesFolder);
+		return generate(rand, artPack, null, customArtPackFolder);
 	}
 
 	/**
@@ -60,9 +60,9 @@ public class SettingsGenerator
 	 * @param theme
 	 *            The theme to use, or null to choose one of those the art pack can use at random.
 	 */
-	public static MapSettings generate(Random rand, String artPack, ThemeCatalog.Entry theme, String customImagesFolder)
+	public static MapSettings generate(Random rand, String artPack, ThemeCatalog.Entry theme, String customArtPackFolder)
 	{
-		return generateWithTheme(rand, artPack, theme, customImagesFolder).getFirst();
+		return generateWithTheme(rand, artPack, theme, customArtPackFolder).getFirst();
 	}
 
 	/**
@@ -72,7 +72,7 @@ public class SettingsGenerator
 	 *            The theme to use, or null to choose one of those the art pack can use at random.
 	 * @return The settings, and the theme they were generated from, before it was varied.
 	 */
-	public static Tuple2<MapSettings, MapSettings> generateWithTheme(Random rand, String artPack, ThemeCatalog.Entry theme, String customImagesFolder)
+	public static Tuple2<MapSettings, MapSettings> generateWithTheme(Random rand, String artPack, ThemeCatalog.Entry theme, String customArtPackFolder)
 	{
 		if (artPack == null)
 		{
@@ -85,7 +85,7 @@ public class SettingsGenerator
 			rand.nextInt();
 		}
 
-		ThemeCatalog.Entry themeToUse = theme != null ? theme : ThemeCatalog.chooseRandomTheme(rand, artPack, customImagesFolder);
+		ThemeCatalog.Entry themeToUse = theme != null ? theme : ThemeCatalog.chooseRandomTheme(rand, artPack, customArtPackFolder);
 		MapSettings themeSettings;
 		try
 		{
@@ -103,10 +103,10 @@ public class SettingsGenerator
 			}
 			// A broken theme file never stops a map from being generated.
 			Logger.printError("Unable to load the theme '" + themeToUse.path + "'. Using one from the installed art pack instead.", e);
-			themeToUse = ThemeCatalog.chooseRandomTheme(rand, Assets.installedArtPack, customImagesFolder);
+			themeToUse = ThemeCatalog.chooseRandomTheme(rand, Assets.installedArtPack, customArtPackFolder);
 			themeSettings = ThemeCatalog.load(themeToUse);
 		}
-		return new Tuple2<>(generateFromTheme(rand, artPack, themeSettings, ThemeCatalog.isFromInstalledArtPack(themeToUse), customImagesFolder), themeSettings);
+		return new Tuple2<>(generateFromTheme(rand, artPack, themeSettings, ThemeCatalog.isFromInstalledArtPack(themeToUse), customArtPackFolder), themeSettings);
 	}
 
 	/**
@@ -122,7 +122,7 @@ public class SettingsGenerator
 			{
 				for (FreeIcon icon : settings.edits.freeIcons)
 				{
-					if (icon.artPack != null && Assets.artPackExists(icon.artPack, settings.customImagesPath))
+					if (icon.artPack != null && Assets.artPackExists(icon.artPack, settings.customArtPackPath))
 					{
 						counts.merge(icon.artPack, 1, Integer::sum);
 					}
@@ -134,7 +134,7 @@ public class SettingsGenerator
 		{
 			return mostCommon.get().getKey();
 		}
-		return isInstalledArtPackOf(settings.borderResource, settings.customImagesPath) ? settings.borderResource.artPack : Assets.installedArtPack;
+		return isInstalledArtPackOf(settings.borderResource, settings.customArtPackPath) ? settings.borderResource.artPack : Assets.installedArtPack;
 	}
 
 	/**
@@ -143,7 +143,7 @@ public class SettingsGenerator
 	 */
 	public static String getArtPackOfBorder(MapSettings settings)
 	{
-		return isInstalledArtPackOf(settings.borderResource, settings.customImagesPath) ? settings.borderResource.artPack : chooseArtPackOfMapsIcons(settings);
+		return isInstalledArtPackOf(settings.borderResource, settings.customArtPackPath) ? settings.borderResource.artPack : chooseArtPackOfMapsIcons(settings);
 	}
 
 	/**
@@ -152,16 +152,16 @@ public class SettingsGenerator
 	 */
 	public static String getArtPackOfBackgroundTexture(MapSettings settings)
 	{
-		if (settings.backgroundTextureSource == TextureSource.Assets && isInstalledArtPackOf(settings.backgroundTextureResource, settings.customImagesPath))
+		if (settings.backgroundTextureSource == TextureSource.Assets && isInstalledArtPackOf(settings.backgroundTextureResource, settings.customArtPackPath))
 		{
 			return settings.backgroundTextureResource.artPack;
 		}
 		return getArtPackOfBorder(settings);
 	}
 
-	private static boolean isInstalledArtPackOf(NamedResource resource, String customImagesFolder)
+	private static boolean isInstalledArtPackOf(NamedResource resource, String customArtPackFolder)
 	{
-		return resource != null && resource.artPack != null && Assets.artPackExists(resource.artPack, customImagesFolder);
+		return resource != null && resource.artPack != null && Assets.artPackExists(resource.artPack, customArtPackFolder);
 	}
 
 	/**
@@ -189,9 +189,9 @@ public class SettingsGenerator
 	 *            Whether the theme is one that comes with Nortantis, whose fonts are changed to ones that can draw the user's language. A theme someone
 	 *            chose fonts for keeps them.
 	 */
-	public static MapSettings generateFromTheme(Random rand, String artPack, MapSettings theme, boolean isThemeFromInstalledArtPack, String customImagesFolder)
+	public static MapSettings generateFromTheme(Random rand, String artPack, MapSettings theme, boolean isThemeFromInstalledArtPack, String customArtPackFolder)
 	{
-		return generateFromTheme(rand, rand.nextLong(), artPack, theme, isThemeFromInstalledArtPack, customImagesFolder);
+		return generateFromTheme(rand, rand.nextLong(), artPack, theme, isThemeFromInstalledArtPack, customArtPackFolder);
 	}
 
 	/**
@@ -210,7 +210,7 @@ public class SettingsGenerator
 	 *            someone chose fonts for keeps them.
 	 */
 	public static MapSettings generateFromTheme(Random rand, long themeSeed, String artPack, MapSettings theme, boolean isThemeFromInstalledArtPack,
-			String customImagesFolder)
+			String customArtPackFolder)
 	{
 		MapSettings settings = theme.deepCopyExceptEdits();
 		settings.edits = new MapEdits();
@@ -219,7 +219,7 @@ public class SettingsGenerator
 		settings.pointPrecision = MapSettings.defaultPointPrecision;
 		settings.lloydRelaxationsScale = MapSettings.defaultLloydRelaxationsScale;
 		settings.artPack = artPack;
-		settings.customImagesPath = customImagesFolder;
+		settings.customArtPackPath = customArtPackFolder;
 		clearSettingsThatBelongToAnotherMap(settings);
 		settings.drawText = true;
 		if (isThemeFromInstalledArtPack)
@@ -315,11 +315,11 @@ public class SettingsGenerator
 	 */
 	public static void chooseCityIconType(MapSettings settings, Random rand)
 	{
-		if (!Assets.artPackExists(settings.artPack, settings.customImagesPath))
+		if (!Assets.artPackExists(settings.artPack, settings.customArtPackPath))
 		{
 			return;
 		}
-		List<String> cityIconTypes = new ArrayList<>(ImageCache.getInstance(settings.artPack, settings.customImagesPath).getIconGroupNames(IconType.cities));
+		List<String> cityIconTypes = new ArrayList<>(ImageCache.getInstance(settings.artPack, settings.customArtPackPath).getIconGroupNames(IconType.cities));
 		if (!cityIconTypes.isEmpty())
 		{
 			settings.cityIconTypeName = ProbabilityHelper.sampleUniform(rand, cityIconTypes);
@@ -438,7 +438,7 @@ public class SettingsGenerator
 
 		// Background. Each texture is a choice of its own, and a fractal or solid color background is as likely as each texture.
 		rand = getThemeAspectRandom(themeSeed, ThemeAspect.Background);
-		List<NamedResource> textures = listBackgroundTextureChoices(textureArtPack, settings.customImagesPath);
+		List<NamedResource> textures = listBackgroundTextureChoices(textureArtPack, settings.customArtPackPath);
 		Set<BackgroundType> allowedBackgroundTypes = gen.allowedBackgroundTypes.isEmpty() ? EnumSet.allOf(BackgroundType.class) : gen.allowedBackgroundTypes;
 		List<BackgroundType> backgroundChoices = new ArrayList<>();
 		for (BackgroundType type : allowedBackgroundTypes)
@@ -500,14 +500,14 @@ public class SettingsGenerator
 		settings.grungeWidth = vary(rand, base.grungeWidth, gen.grungeWidthVariation, 0, maxGrungeWidthToGenerate);
 		rand = getThemeAspectRandom(themeSeed, ThemeAspect.Border);
 		settings.drawBorder = rand.nextDouble() < gen.drawBorderProbability;
-		List<NamedResource> borderTypes = listBorderChoices(borderArtPack, settings.customImagesPath);
+		List<NamedResource> borderTypes = listBorderChoices(borderArtPack, settings.customArtPackPath);
 		// borderTypes shouldn't be empty since that would mean there are no border types, including installed ones.
 		if (!borderTypes.isEmpty())
 		{
 			settings.borderResource = ProbabilityHelper.sampleUniform(rand, borderTypes);
 		}
 		// A border's own width range, from its art pack, overrides the theme's border width.
-		Assets.BorderMetadata borderMetadata = Assets.readBorderMetadata(settings.borderResource, settings.customImagesPath);
+		Assets.BorderMetadata borderMetadata = Assets.readBorderMetadata(settings.borderResource, settings.customArtPackPath);
 		if (borderMetadata.hasWidthRange())
 		{
 			settings.borderWidth = borderMetadata.minWidth() + rand.nextInt(borderMetadata.maxWidth() - borderMetadata.minWidth());
@@ -583,20 +583,20 @@ public class SettingsGenerator
 	 * The borders a theme chooses among for the given art pack: the art pack's own, or when it has none, the installed art pack's, as with
 	 * its themes.
 	 */
-	public static List<NamedResource> listBorderChoices(String artPack, String customImagesFolder)
+	public static List<NamedResource> listBorderChoices(String artPack, String customArtPackFolder)
 	{
-		List<NamedResource> result = Assets.listBorderTypesForArtPack(artPack, customImagesFolder);
-		return result.isEmpty() ? Assets.listBorderTypesForArtPack(Assets.installedArtPack, customImagesFolder) : result;
+		List<NamedResource> result = Assets.listBorderTypesForArtPack(artPack, customArtPackFolder);
+		return result.isEmpty() ? Assets.listBorderTypesForArtPack(Assets.installedArtPack, customArtPackFolder) : result;
 	}
 
 	/**
 	 * The background textures a theme chooses among for the given art pack: the art pack's own, or when it has none, the installed art
 	 * pack's, as with its themes.
 	 */
-	private static List<NamedResource> listBackgroundTextureChoices(String artPack, String customImagesFolder)
+	private static List<NamedResource> listBackgroundTextureChoices(String artPack, String customArtPackFolder)
 	{
-		List<NamedResource> result = Assets.listBackgroundTexturesForArtPack(artPack, customImagesFolder);
-		return result.isEmpty() ? Assets.listBackgroundTexturesForArtPack(Assets.installedArtPack, customImagesFolder) : result;
+		List<NamedResource> result = Assets.listBackgroundTexturesForArtPack(artPack, customArtPackFolder);
+		return result.isEmpty() ? Assets.listBackgroundTexturesForArtPack(Assets.installedArtPack, customArtPackFolder) : result;
 	}
 
 	private static boolean isRoadStyleDifferentEnoughFromBoundaries(StrokeType roadType, StrokeType boundaryType)
@@ -755,7 +755,7 @@ public class SettingsGenerator
 		// Randomize city icon type
 		try
 		{
-			List<String> cityIconTypes = ImageCache.getInstance(settings.artPack, currentSettings.customImagesPath).getIconGroupNames(IconType.cities);
+			List<String> cityIconTypes = ImageCache.getInstance(settings.artPack, currentSettings.customArtPackPath).getIconGroupNames(IconType.cities);
 			if (cityIconTypes != null && !cityIconTypes.isEmpty())
 			{
 				settings.cityIconTypeName = ProbabilityHelper.sampleUniform(getThemeAspectRandom(themeSeed, ThemeAspect.CityIcons), new ArrayList<>(cityIconTypes));

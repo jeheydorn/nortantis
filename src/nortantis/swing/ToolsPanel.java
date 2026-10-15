@@ -297,11 +297,11 @@ public class ToolsPanel extends JPanel
 		}
 	}
 
-	public void handleCustomImagesPathChanged(String customImagesPath)
+	public void handleCustomArtPackPathChanged(String customArtPackPath)
 	{
 		for (EditorTool tool : tools)
 		{
-			tool.handleCustomImagesPathChanged(customImagesPath);
+			tool.handleCustomArtPackPathChanged(customArtPackPath);
 		}
 	}
 

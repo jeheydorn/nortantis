@@ -38,7 +38,7 @@ public class Background
 	private Image lowerRightCorner;
 	private int cornerWidth;
 	private boolean hasInsetCorners;
-	private String customImagesPath;
+	private String customArtPackPath;
 	private boolean isBorderOutsideMap;
 	private Image topEdge;
 	private Image bottomEdge;
@@ -59,7 +59,7 @@ public class Background
 
 	public Background(MapSettings settings, Dimension mapBounds, WarningLogger warningLogger)
 	{
-		customImagesPath = settings.customImagesPath;
+		customArtPackPath = settings.customArtPackPath;
 		shouldDrawRegionColors = settings.drawsRegionColors();
 
 		Image landGeneratedBackground;
@@ -80,7 +80,7 @@ public class Background
 
 		if (settings.drawBorder)
 		{
-			borderArt = ImageCache.getInstance(borderResource.artPack, customImagesPath).getBorderArt(borderResource);
+			borderArt = ImageCache.getInstance(borderResource.artPack, customArtPackPath).getBorderArt(borderResource);
 		}
 		borderPaddingScaled = isBorderOutsideMap ? calcBorderPaddingScaledByResolution(borderArt == null ? 0.0 : borderArt.getInsetDepthFraction(), borderWidthScaled) : 0;
 
@@ -144,7 +144,7 @@ public class Background
 			}
 			try
 			{
-				texture = ImageCache.getInstance(settings.backgroundTextureResource.artPack, settings.customImagesPath).getImageFromFile(texturePath);
+				texture = ImageCache.getInstance(settings.backgroundTextureResource.artPack, settings.customArtPackPath).getImageFromFile(texturePath);
 			}
 			catch (RuntimeException e)
 			{
@@ -978,7 +978,7 @@ public class Background
 
 		try
 		{
-			return ImageCache.getInstance(settings.borderResource.artPack, settings.customImagesPath).getBorderArt(settings.borderResource).getInsetDepthFraction();
+			return ImageCache.getInstance(settings.borderResource.artPack, settings.customArtPackPath).getBorderArt(settings.borderResource).getInsetDepthFraction();
 		}
 		catch (RuntimeException e)
 		{

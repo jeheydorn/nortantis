@@ -1297,7 +1297,7 @@ public class MapCreatorTest
 				"Skipping warning text verification in non-English locale");
 
 		// Clear the custom images path to force icons to be replaced with images from the installed art pack.
-		List<String> warnings = MapTestUtil.generateAndCompare("iconReplacements.nort", (settings -> settings.customImagesPath = null), expectedMapsFolderName, failedMapsFolderName, 0)
+		List<String> warnings = MapTestUtil.generateAndCompare("iconReplacements.nort", (settings -> settings.customArtPackPath = null), expectedMapsFolderName, failedMapsFolderName, 0)
 				.getWarningMessages();
 
 		Set<String> expectedWarnings = new TreeSet<>();
@@ -1366,7 +1366,7 @@ public class MapCreatorTest
 
 		List<String> warnings = MapTestUtil.generateAndCompare("iconReplacementsWithMissingIconTypes.nort", (settings) ->
 		{
-			settings.customImagesPath = Paths.get("unit test files", "map settings", "empty custom images").toAbsolutePath().toString();
+			settings.customArtPackPath = Paths.get("unit test files", "map settings", "empty custom images").toAbsolutePath().toString();
 		}, expectedMapsFolderName, failedMapsFolderName, 0).getWarningMessages();
 
 		Set<String> expectedWarnings = new TreeSet<>();

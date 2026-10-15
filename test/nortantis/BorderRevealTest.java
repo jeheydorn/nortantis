@@ -95,7 +95,7 @@ public class BorderRevealTest
 		settings.borderWidth = borderWidth;
 		settings.borderPosition = position;
 		settings.borderResource = new NamedResource(Assets.customArtPack, "soft");
-		settings.customImagesPath = artPackFolder.toString();
+		settings.customArtPackPath = artPackFolder.toString();
 		return settings;
 	}
 
@@ -137,21 +137,21 @@ public class BorderRevealTest
 		return new NamedResource(Assets.customArtPack, realArtBorderName);
 	}
 
-	private static String realArtCustomImagesPath()
+	private static String realArtCustomArtPackPath()
 	{
 		return Paths.get("unit test files", "map settings", "custom images").toString();
 	}
 
-	private static BorderArt loadBorderArt(NamedResource borderResource, String customImagesPath)
+	private static BorderArt loadBorderArt(NamedResource borderResource, String customArtPackPath)
 	{
-		return ImageCache.getInstance(borderResource.artPack, customImagesPath).getBorderArt(borderResource);
+		return ImageCache.getInstance(borderResource.artPack, customArtPackPath).getBorderArt(borderResource);
 	}
 
 	private MapSettings createSettingsForRealArt(BorderPosition position, int borderWidth)
 	{
 		MapSettings settings = createSettings(position, borderWidth);
 		settings.borderResource = realArtBorderResource();
-		settings.customImagesPath = realArtCustomImagesPath();
+		settings.customArtPackPath = realArtCustomArtPackPath();
 		return settings;
 	}
 
@@ -167,7 +167,7 @@ public class BorderRevealTest
 		assertTrue(art.createCornerRevealMasks(art.getEdgeOriginalWidth()).isEmpty());
 
 		// The same measurements against the real art. It ships only a top edge, so the other three are derived from it and must agree.
-		BorderArt realArt = loadBorderArt(realArtBorderResource(), realArtCustomImagesPath());
+		BorderArt realArt = loadBorderArt(realArtBorderResource(), realArtCustomArtPackPath());
 		assertEquals(realArtInsetDepthFraction, realArt.getInsetDepthFraction(), 0.001);
 		for (BorderArt.BorderEdgeType type : BorderArt.BorderEdgeType.values())
 		{
