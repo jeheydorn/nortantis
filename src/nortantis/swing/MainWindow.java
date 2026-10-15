@@ -1795,7 +1795,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		editMenu.addSeparator();
 
-		customArtPackMenuItem = new JMenuItem(Translation.get("menu.edit.customArtPackFolder"));
+		customArtPackMenuItem = new JMenuItem(Translation.get("menu.edit.customArtPack"));
 		editMenu.add(customArtPackMenuItem);
 		customArtPackMenuItem.addActionListener(new ActionListener()
 		{

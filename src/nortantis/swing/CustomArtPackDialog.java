@@ -1,6 +1,5 @@
 package nortantis.swing;
 
-import nortantis.IconType;
 import nortantis.MapSettings;
 import nortantis.util.Assets;
 import nortantis.util.FileHelper;
@@ -20,10 +19,6 @@ import java.awt.event.FocusEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Objects;
 import java.util.function.Consumer;
 
@@ -35,7 +30,7 @@ public class CustomArtPackDialog extends JDialog
 	public CustomArtPackDialog(MainWindow mainWindow, String currentCustomArtPackPath, Consumer<String> storeResult)
 	{
 		super(mainWindow, Translation.get("customArtPack.title"), Dialog.ModalityType.APPLICATION_MODAL);
-		setSize(OSHelper.isWindows() ? new Dimension(860, 750) : new Dimension(1110, 840));
+		setSize(OSHelper.isWindows() ? new Dimension(860, 770) : new Dimension(1110, 840));
 		JPanel content = new JPanel();
 		add(content);
 		content.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -44,7 +39,10 @@ public class CustomArtPackDialog extends JDialog
 		int space = 6;
 
 		GridBagOrganizer organizer = new GridBagOrganizer();
-		content.add(organizer.panel, BorderLayout.CENTER);
+		JScrollPane helpScrollPane = new JScrollPane(organizer.panel);
+		helpScrollPane.setBorder(BorderFactory.createEmptyBorder());
+		helpScrollPane.getVerticalScrollBar().setUnitIncrement(SwingHelper.sidePanelScrollSpeed);
+		content.add(helpScrollPane, BorderLayout.CENTER);
 		organizer.addLeftAlignedComponent(new JLabel("<html>" + Translation.get("customArtPack.description") + "</html>"), space, space, false);
 
 		int spaceBetweenPaths = 2;
@@ -70,6 +68,10 @@ public class CustomArtPackDialog extends JDialog
 		organizer.addLeftAlignedComponent(new JLabel(
 				cif + File.separator + "trees" + File.separator + Translation.get("customArtPack.placeholder.treeType") + File.separator + Translation.get("customArtPack.placeholder.treeImages")),
 				spaceBetweenPaths, spaceBetweenPaths, false);
+		organizer.addLeftAlignedComponent(new JLabel(cif + File.separator + "fonts" + File.separator + Translation.get("customArtPack.placeholder.fontFamily") + File.separator
+				+ Translation.get("customArtPack.placeholder.fontFiles")), spaceBetweenPaths, spaceBetweenPaths, false);
+		organizer.addLeftAlignedComponent(new JLabel(cif + File.separator + Assets.themesFolderName + File.separator + Translation.get("customArtPack.placeholder.themeFiles")),
+				spaceBetweenPaths, spaceBetweenPaths, false);
 
 		organizer.addLeftAlignedComponent(new JLabel("<html>" + Translation.get("customArtPack.folderStructureNote") + "</html>"), space, space, false);
 		organizer.addLeftAlignedComponent(new JLabel("<html>" + Translation.get("customArtPack.iconSizing") + "</html>"), space, space, false);
@@ -81,6 +83,7 @@ public class CustomArtPackDialog extends JDialog
 				new JLabel("<html>" + Translation.get("customArtPack.treeTypes", SwingHelper.escapeHtml(Translation.get("customArtPack.placeholder.treeType"))) + "</html>"), space, space, false);
 
 		organizer.addLeftAlignedComponent(new JLabel("<html>" + Translation.get("customArtPack.hillMountainPairing") + "</html>"), space, space, false);
+		organizer.addLeftAlignedComponent(new JLabel("<html>" + Translation.get("customArtPack.fontsAndThemes") + "</html>"), space, space, false);
 
 		organizer.addLeftAlignedComponent(new JLabel("<html>" + Translation.get("customArtPack.refreshInstructions", mainWindow.getFileMenuName(), mainWindow.getRefreshImagesMenuName()) + "</html>"),
 				space, space, false);
@@ -176,13 +179,16 @@ public class CustomArtPackDialog extends JDialog
 		panel.add(browseButton);
 		panel.add(Box.createHorizontalStrut(5));
 		panel.add(openButton);
-
-		organizer.addLeftAlignedComponent(panel, false);
+		panel.setBorder(BorderFactory.createEmptyBorder(space, space, 0, space));
 
 		organizer.addVerticalFillerRow();
 
+		// The folder field and buttons stay below the scrolling help text, so they are visible however long the text is.
+		JPanel southPanel = new JPanel(new BorderLayout());
+		content.add(southPanel, BorderLayout.SOUTH);
+		southPanel.add(panel, BorderLayout.NORTH);
 		JPanel bottomPanel = new JPanel();
-		content.add(bottomPanel, BorderLayout.SOUTH);
+		southPanel.add(bottomPanel, BorderLayout.SOUTH);
 		bottomPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
 		JButton okayButton = new JButton(Translation.get("customArtPack.ok"));
 		SwingHelper.bindAltMnemonic(okayButton, KeyEvent.VK_O);
@@ -193,13 +199,7 @@ public class CustomArtPackDialog extends JDialog
 			{
 				boolean pathChanged = !Objects.equals(customArtPackFolderField.getText(), FileHelper.replaceHomeFolderPlaceholder(currentCustomArtPackPath));
 				boolean folderContentsChanged = false;
-				if (mergeInstalledImagesIntoCustomFolderIfEmpty(customArtPackFolderField.getText()))
-				{
-					folderContentsChanged = true;
-					SwingHelper.showMessageDialog(null, Translation.get("customArtPack.imagesCopied", Paths.get(customArtPackFolderField.getText()).toAbsolutePath()), Translation.get("common.success"),
-							JOptionPane.INFORMATION_MESSAGE);
-				}
-				else if (MapSettings.isOldCustomArtPackFolderStructure(customArtPackFolderField.getText()))
+				if (MapSettings.isOldCustomArtPackFolderStructure(customArtPackFolderField.getText()))
 				{
 					try
 					{
@@ -217,8 +217,8 @@ public class CustomArtPackDialog extends JDialog
 				}
 
 				// Store the value, refresh images, and redraw the map when either the folder selected changed or the images inside it moved.
-				// Copying in the installed images or converting an old folder structure changes what is on disk without changing the path,
-				// and the map would otherwise keep drawing from what was cached before the move.
+				// Converting an old folder structure changes what is on disk without changing the path, and the map would otherwise keep
+				// drawing from what was cached before the move.
 				if (pathChanged || folderContentsChanged)
 				{
 					storeResult.accept(FileHelper.replaceHomeFolderWithPlaceholder(customArtPackFolderField.getText()));
@@ -240,61 +240,5 @@ public class CustomArtPackDialog extends JDialog
 			}
 		});
 		bottomPanel.add(cancelButton);
-	}
-
-	private boolean mergeInstalledImagesIntoCustomFolderIfEmpty(String customArtPackFolder)
-	{
-		if (customArtPackFolder == null || customArtPackFolder.isEmpty())
-		{
-			return false;
-		}
-
-		File folder = new File(customArtPackFolder);
-		if (!folder.exists())
-		{
-			SwingHelper.showMessageDialog(null, Translation.get("customArtPack.copyFolderDoesNotExist", folder.getAbsolutePath()), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
-			return false;
-		}
-		else if (!folder.isDirectory())
-		{
-			SwingHelper.showMessageDialog(null, Translation.get("customArtPack.copyPathIsFile", folder.getAbsolutePath()), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
-			return false;
-		}
-
-		boolean isFolderEmpty;
-		// The stream holds an open directory handle, which on Windows can keep the folder locked against renaming or deleting until it is
-		// closed, so it must not be left to the garbage collector.
-		try (DirectoryStream<Path> folderContents = Files.newDirectoryStream(folder.toPath()))
-		{
-			isFolderEmpty = !folderContents.iterator().hasNext();
-		}
-		catch (IOException ex)
-		{
-			SwingHelper.showMessageDialog(null, Translation.get("customArtPack.errorCheckingEmpty", folder.getAbsolutePath(), ex.getMessage()), Translation.get("common.error"),
-					JOptionPane.ERROR_MESSAGE);
-			return false;
-		}
-
-		try
-		{
-			if (isFolderEmpty)
-			{
-				Assets.copyDirectoryToDirectory(Paths.get(Assets.getInstalledArtPackPath(), "background textures"), folder.toPath());
-				Assets.copyDirectoryToDirectory(Paths.get(Assets.getInstalledArtPackPath(), "borders"), folder.toPath());
-				for (IconType type : IconType.values())
-				{
-					Assets.copyDirectoryToDirectory(Paths.get(Assets.getInstalledArtPackPath(), type.toString()), folder.toPath());
-				}
-				return true;
-			}
-		}
-		catch (IOException ex)
-		{
-			String message = Translation.get("customArtPack.errorCopyingImages", folder.getAbsolutePath(), ex.getMessage());
-			SwingHelper.showMessageDialog(this, message, Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
-			Logger.printError(message, ex);
-		}
-
-		return false;
 	}
 }
