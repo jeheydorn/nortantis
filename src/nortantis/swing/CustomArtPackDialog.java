@@ -51,7 +51,7 @@ public class CustomArtPackDialog extends JDialog
 				spaceBetweenPaths, false);
 		organizer.addLeftAlignedComponent(new JLabel(
 				cif + File.separator + "borders" + File.separator + Translation.get("customArtPack.placeholder.borderType") + File.separator + Translation.get("customArtPack.placeholder.borderImages")),
-				space, spaceBetweenPaths, false);
+				spaceBetweenPaths, spaceBetweenPaths, false);
 		organizer.addLeftAlignedComponent(new JLabel(
 				cif + File.separator + "cities" + File.separator + Translation.get("customArtPack.placeholder.cityType") + File.separator + Translation.get("customArtPack.placeholder.cityImages")),
 				spaceBetweenPaths, spaceBetweenPaths, false);
