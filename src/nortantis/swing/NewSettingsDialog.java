@@ -64,6 +64,8 @@ public class NewSettingsDialog extends JDialog
 	 * a redraw when the size has not actually changed, so the preview is not drawn twice while the dialog is first shown and laid out.
 	 */
 	private nortantis.geom.Dimension lastDrawnMapAreaSize;
+	/** True while the preview shows a message in place of the map. */
+	private boolean isPreviewShowingMessage;
 	private JComboBox<ThemeChoice> themeComboBox;
 	/**
 	 * True while a theme is being applied or the dialog's controls are being loaded, when the art pack and theme combo boxes changing must
@@ -897,6 +899,19 @@ public class NewSettingsDialog extends JDialog
 	{
 		mapEditingPanel.setImage(AwtBridge.toBufferedImage(ImageHelper.getInstance().createPlaceholderImage(new String[] { message },
 				AwtBridge.fromAwtColor(SwingHelper.getTextColorForPlaceholderImages()))));
+		isPreviewShowingMessage = true;
+	}
+
+	/**
+	 * Clears a message the preview shows in place of the map, so that it isn't shown while a map that can be drawn is drawing.
+	 */
+	private void clearMessageFromPreview()
+	{
+		if (isPreviewShowingMessage)
+		{
+			mapEditingPanel.setImage(null);
+			isPreviewShowingMessage = false;
+		}
 	}
 
 	/**
@@ -1188,6 +1203,7 @@ public class NewSettingsDialog extends JDialog
 			showPreviewCannotBeDrawn(reasonPreviewCannotBeDrawn);
 			return;
 		}
+		clearMessageFromPreview();
 		enableOrDisableProgressBar(true);
 		updater.createAndShowMapFull(() ->
 		{
@@ -1295,6 +1311,7 @@ public class NewSettingsDialog extends JDialog
 				else
 				{
 					mapEditingPanel.setImage(AwtBridge.toBufferedImage(mapEditingPanel.mapFromMapCreator));
+					isPreviewShowingMessage = false;
 				}
 
 				if (!anotherDrawIsQueued)
@@ -1428,6 +1445,7 @@ public class NewSettingsDialog extends JDialog
 		}
 		updater.cancel();
 		mapEditingPanel.setImage(null);
+		isPreviewShowingMessage = false;
 	}
 
 	private static Dimension normalizeCustomDimensions(int w, int h)
@@ -1494,6 +1512,7 @@ public class NewSettingsDialog extends JDialog
 			showPreviewCannotBeDrawn(reasonPreviewCannotBeDrawn);
 			return;
 		}
+		clearMessageFromPreview();
 		// Defer to the next EDT cycle so that any row visibility changes (e.g. custom dimension
 		// spinners, rotation warning) have been laid out before we read the container size.
 		// Without this, getMapDrawingAreaSize() returns the stale pre-layout dimensions, causing
