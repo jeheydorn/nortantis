@@ -749,11 +749,11 @@ public class NewSettingsDialog extends JDialog
 		JPanel themeAndCityIconTypeRow = new JPanel();
 		themeAndCityIconTypeRow.setLayout(new BoxLayout(themeAndCityIconTypeRow, BoxLayout.X_AXIS));
 		themeAndCityIconTypeRow.add(themeLabel);
-		themeAndCityIconTypeRow.add(Box.createHorizontalStrut(5));
+		themeAndCityIconTypeRow.add(Box.createHorizontalStrut(GridBagOrganizer.defaultHorizontalSpaceBetweenComponentsAddAsList));
 		themeAndCityIconTypeRow.add(themeComboBox);
 		themeAndCityIconTypeRow.add(Box.createHorizontalStrut(15));
 		themeAndCityIconTypeRow.add(cityIconTypeLabel);
-		themeAndCityIconTypeRow.add(Box.createHorizontalStrut(5));
+		themeAndCityIconTypeRow.add(Box.createHorizontalStrut(GridBagOrganizer.defaultHorizontalSpaceBetweenComponentsAddAsList));
 		themeAndCityIconTypeRow.add(cityIconsTypeComboBox);
 		organizer.addLeftAlignedComponent(themeAndCityIconTypeRow, false);
 
