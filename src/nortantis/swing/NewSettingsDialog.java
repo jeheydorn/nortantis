@@ -12,7 +12,6 @@ import nortantis.geom.IntRectangle;
 import nortantis.platform.Image;
 import nortantis.platform.ImageHelper;
 import nortantis.platform.awt.AwtBridge;
-import nortantis.LandColoringMethod;
 import nortantis.swing.translation.Translation;
 import nortantis.util.*;
 import org.apache.commons.lang3.StringUtils;
@@ -51,7 +50,6 @@ public class NewSettingsDialog extends JDialog
 	private JSlider cityFrequencySlider;
 	private JComboBox<String> cityIconsTypeComboBox;
 	private JPanel mapEditingPanelContainer;
-	private JComboBox<LandColoringMethod> landColoringMethodComboBox;
 	MainWindow mainWindow;
 	private JTextField pathDisplay;
 	private JComboBox<String> artPackComboBox;
@@ -589,14 +587,6 @@ public class NewSettingsDialog extends JDialog
 		regionCountSliderWithDisplay = new SliderWithDisplayedValue(regionCountSlider);
 		regionCountSliderWithDisplay.addToOrganizer(organizer, Translation.get("newSettingsDialog.regionCount.label"), Translation.get("newSettingsDialog.regionCount.help"));
 
-		landColoringMethodComboBox = new JComboBox<LandColoringMethod>();
-		for (LandColoringMethod method : LandColoringMethod.values())
-		{
-			landColoringMethodComboBox.addItem(method);
-		}
-		createMapChangeListener(landColoringMethodComboBox);
-		organizer.addLabelAndComponent(Translation.get("theme.landColoringMethod.label"), Translation.get("theme.landColoringMethod.help"), landColoringMethodComboBox);
-
 		cityFrequencySlider = new JSlider(0, 100);
 		cityFrequencySlider.setPaintLabels(false);
 		createMapChangeListener(cityFrequencySlider);
@@ -1026,27 +1016,6 @@ public class NewSettingsDialog extends JDialog
 		{
 			newSettings.cityIconTypeName = preferredCityIconType;
 		}
-		// The land coloring method is the user's choice rather than the theme's. The colors are varied for the method drawn, from the same
-		// theme seed, so they are what the theme gives with that method. A theme that can't color regions draws a single land color, which
-		// doesn't change the user's choice.
-		if (newSettings.drawRegionColors != current.drawRegionColors)
-		{
-			newSettings.drawRegionColors = current.drawRegionColors;
-			boolean isVaried = !choice.equals(sameThemeChoice) || isSameThemeRandomized;
-			if (isVaried)
-			{
-				try
-				{
-					SettingsGenerator.randomizeTheme(newSettings, newThemeBase, artPack, artPack, themeSeed);
-				}
-				catch (RuntimeException e)
-				{
-					SwingHelper.handleException(e, this, false);
-					return;
-				}
-			}
-		}
-		newSettings.drawRegionColors = current.drawRegionColors;
 		// A theme is a look, so the world the user set up is kept.
 		newSettings.customArtPackPath = current.customArtPackPath;
 		newSettings.randomSeed = current.randomSeed;
@@ -1220,8 +1189,6 @@ public class NewSettingsDialog extends JDialog
 		}
 		settings.artPack = (String) artPackComboBox.getSelectedItem();
 		// The controls at the top of the dialog are the user's, so the theme is varied for them, and they keep their values.
-		boolean drawRegionColors = landColoringMethodComboBox.getSelectedItem() == LandColoringMethod.ColorPoliticalRegions;
-		settings.drawRegionColors = drawRegionColors;
 		settings.cityIconTypeName = (String) cityIconsTypeComboBox.getSelectedItem();
 		long newThemeSeed = new Random().nextLong();
 		try
@@ -1233,8 +1200,6 @@ public class NewSettingsDialog extends JDialog
 			SwingHelper.handleException(e, this, false);
 			return;
 		}
-		// A theme that can't color regions draws a single land color, which doesn't change the user's choice.
-		settings.drawRegionColors = drawRegionColors;
 		themeSeed = newThemeSeed;
 		if (sameThemeChoice != null && sameThemeChoice.equals(themeComboBox.getSelectedItem()))
 		{
@@ -1385,15 +1350,6 @@ public class NewSettingsDialog extends JDialog
 			landShapeComboBox.setSelectedItem(LandShape.Continents);
 		}
 		regionCountSlider.setValue(settings.regionCount > 0 ? settings.regionCount : 3);
-		if (settings.drawRegionColors)
-		{
-			landColoringMethodComboBox.setSelectedItem(LandColoringMethod.ColorPoliticalRegions);
-		}
-		else
-		{
-			landColoringMethodComboBox.setSelectedItem(LandColoringMethod.SingleColor);
-		}
-
 		cityFrequencySlider.setValue((int) (settings.cityProbability * cityFrequencySliderScale));
 		initializeArtPackOptionsAndCityTypeOptions();
 		cityIconsTypeComboBox.setSelectedItem(settings.cityIconTypeName);
@@ -1414,8 +1370,6 @@ public class NewSettingsDialog extends JDialog
 		Dimension generatedDimensions = getGeneratedBackgroundDimensionsFromGUI();
 		resultSettings.generatedWidth = (int) generatedDimensions.getWidth();
 		resultSettings.generatedHeight = (int) generatedDimensions.getHeight();
-
-		resultSettings.drawRegionColors = landColoringMethodComboBox.getSelectedItem().equals(LandColoringMethod.ColorPoliticalRegions);
 
 		resultSettings.books = booksWidget.getSelectedBooks();
 

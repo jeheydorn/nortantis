@@ -16,8 +16,8 @@ import java.util.function.Function;
  * pack's themes folder, vary the same way.
  *
  * <p>
- * An empty allowed set allows every choice. There are no built-in rules: the default rules are the installed Parchment theme's (see
- * {@link ThemeCatalog#getDefaultThemeRules()}).
+ * An allowed set names the choices a theme opted into. An empty set allows every choice, including ones added in later versions. There
+ * are no built-in rules: the default rules are the installed Parchment theme's (see {@link ThemeCatalog#getDefaultThemeRules()}).
  */
 @SuppressWarnings("serial")
 public class ThemeGenerationSettings implements Serializable
@@ -39,6 +39,17 @@ public class ThemeGenerationSettings implements Serializable
 	public int regionBaseHueVariation;
 	public int regionBaseSaturationVariation;
 	public int regionBaseBrightnessVariation;
+
+	/**
+	 * The ways of coloring the land the theme chooses among. An empty set allows all of them.
+	 */
+	public Set<LandColoringMethod> allowedLandColoringMethods;
+	/**
+	 * The methods allowed by themes from before themes chose their land coloring method, which are the methods that existed then, since the
+	 * user could choose either for any theme.
+	 */
+	private static final Set<LandColoringMethod> landColoringMethodsBeforeThemesChoseThem = EnumSet.of(LandColoringMethod.SingleColor,
+			LandColoringMethod.ColorPoliticalRegions);
 
 	/*
 	 * Ocean.
@@ -121,6 +132,7 @@ public class ThemeGenerationSettings implements Serializable
 		obj.put("regionBaseHueVariation", regionBaseHueVariation);
 		obj.put("regionBaseSaturationVariation", regionBaseSaturationVariation);
 		obj.put("regionBaseBrightnessVariation", regionBaseBrightnessVariation);
+		obj.put("allowedLandColoringMethods", toJsonArray(allowedLandColoringMethods, Enum::name));
 
 		obj.put("allowedOceanWaveTypes", toJsonArray(allowedOceanWaveTypes, Enum::name));
 		obj.put("drawOceanWavesProbability", drawOceanWavesProbability);
@@ -170,6 +182,10 @@ public class ThemeGenerationSettings implements Serializable
 		result.regionBaseHueVariation = getInt(obj, "regionBaseHueVariation");
 		result.regionBaseSaturationVariation = getInt(obj, "regionBaseSaturationVariation");
 		result.regionBaseBrightnessVariation = getInt(obj, "regionBaseBrightnessVariation");
+		// Added after the other rules, so maps and themes saved before it existed don't have it.
+		result.allowedLandColoringMethods = obj.containsKey("allowedLandColoringMethods")
+				? getEnumSet(obj, "allowedLandColoringMethods", LandColoringMethod.class)
+				: new LinkedHashSet<>(landColoringMethodsBeforeThemesChoseThem);
 
 		result.allowedOceanWaveTypes = getEnumSet(obj, "allowedOceanWaveTypes", OceanWaves.class);
 		result.drawOceanWavesProbability = getDouble(obj, "drawOceanWavesProbability");

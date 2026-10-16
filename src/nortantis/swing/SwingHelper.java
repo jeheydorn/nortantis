@@ -1221,6 +1221,20 @@ public class SwingHelper
 		}
 	}
 
+	/**
+	 * A short description of what went wrong, for showing in place of something that couldn't be drawn.
+	 */
+	public static String getBriefErrorMessage(Throwable ex)
+	{
+		if (isCausedByOutOfMemoryError(ex))
+		{
+			return Translation.get("common.outOfMemory");
+		}
+		Throwable cause = ex instanceof ExecutionException && ex.getCause() != null ? ex.getCause() : ex;
+		String message = cause.getMessage();
+		return message == null || message.isBlank() ? cause.getClass().getSimpleName() : message;
+	}
+
 	private static boolean isCausedByOutOfMemoryError(Throwable ex)
 	{
 		if (ex == null)
