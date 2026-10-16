@@ -729,7 +729,6 @@ public class NewSettingsDialog extends JDialog
 				applyThemeChoice();
 			}
 		});
-		organizer.addLabelAndComponent(Translation.get("newSettingsDialog.theme.label"), Translation.get("newSettingsDialog.theme.help"), themeComboBox);
 
 		cityIconsTypeComboBox = new ShrinkableComboBox<String>();
 		cityIconsTypeComboBox.addActionListener(e ->
@@ -741,8 +740,22 @@ public class NewSettingsDialog extends JDialog
 			}
 		});
 		createMapChangeListener(cityIconsTypeComboBox);
-		organizer.addLabelAndComponent(Translation.get("newSettingsDialog.cityIconType.label"), Translation.get("newSettingsDialog.cityIconType.help"),
-				cityIconsTypeComboBox);
+		// The theme and the city icon type share a row, which leaves more room for the map preview. The row has its own labels rather than
+		// using the label column, so that each label is beside its combo box and the combo boxes get the rest of the width.
+		JLabel themeLabel = new JLabel(Translation.get("newSettingsDialog.theme.label"));
+		themeLabel.setToolTipText(Translation.get("newSettingsDialog.theme.help"));
+		JLabel cityIconTypeLabel = new JLabel(Translation.get("newSettingsDialog.cityIconType.label"));
+		cityIconTypeLabel.setToolTipText(Translation.get("newSettingsDialog.cityIconType.help"));
+		JPanel themeAndCityIconTypeRow = new JPanel();
+		themeAndCityIconTypeRow.setLayout(new BoxLayout(themeAndCityIconTypeRow, BoxLayout.X_AXIS));
+		themeAndCityIconTypeRow.add(themeLabel);
+		themeAndCityIconTypeRow.add(Box.createHorizontalStrut(5));
+		themeAndCityIconTypeRow.add(themeComboBox);
+		themeAndCityIconTypeRow.add(Box.createHorizontalStrut(15));
+		themeAndCityIconTypeRow.add(cityIconTypeLabel);
+		themeAndCityIconTypeRow.add(Box.createHorizontalStrut(5));
+		themeAndCityIconTypeRow.add(cityIconsTypeComboBox);
+		organizer.addLeftAlignedComponent(themeAndCityIconTypeRow, false);
 
 		// The Check All and Uncheck All buttons go beside the label rather than below the books, which saves a row.
 		booksWidget = new BooksWidget(true, false, () -> handleMapChange());
@@ -762,8 +775,8 @@ public class NewSettingsDialog extends JDialog
 
 		organizer.addLeftAlignedComponent(Box.createRigidArea(new Dimension((defaultSize.width / 2) - amountToSubtractFromLeftAndRightPanels, 0)));
 
+		// No vertical filler row, so that the books list takes all of the height the left column leaves spare.
 		organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.66);
-		organizer.addVerticalFillerRow();
 	}
 
 	/**
