@@ -1,6 +1,8 @@
 package nortantis;
 
+import nortantis.editor.FreeIcon;
 import nortantis.editor.RegionEdit;
+import nortantis.geom.Point;
 import nortantis.platform.Color;
 import nortantis.platform.PlatformFactory;
 import nortantis.platform.awt.AwtFactory;
@@ -302,18 +304,46 @@ public class ThemeTest
 	}
 
 	@Test
-	public void aNewMapWithTheSameThemeShufflesTextBackgroundsOnlyWhenTheThemeDoes()
+	public void aNewMapWithTheSameThemeKeepsTextBackgroundsEvenWhenTheThemeShufflesThem()
 	{
 		MapSettings settings = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
 		settings.themeGeneration = ThemeCatalog.getDefaultThemeRules();
 		settings.themeGeneration.allowedTitleBackgroundEffects = new LinkedHashSet<>(List.of(TextBackgroundEffect.Scroll));
-		settings.themeGeneration.shuffleTextBackgrounds = false;
+		settings.themeGeneration.shuffleTextBackgrounds = true;
 		settings.getDefaultTextStyle(TextType.Title).background.effect = TextBackgroundEffect.Glow;
 
-		assertEquals(TextBackgroundEffect.Glow, SettingsGenerator.newMapWithSameTheme(settings).getDefaultTextStyle(TextType.Title).background.effect,
-				"Without shuffling, the title style keeps the theme's background.");
-		settings.themeGeneration.shuffleTextBackgrounds = true;
-		assertEquals(TextBackgroundEffect.Scroll, SettingsGenerator.newMapWithSameTheme(settings).getDefaultTextStyle(TextType.Title).background.effect);
+		assertEquals(TextBackgroundEffect.Glow, SettingsGenerator.newMapWithSameTheme(settings).getDefaultTextStyle(TextType.Title).background.effect);
+	}
+
+	@Test
+	public void aNewMapWithTheSameThemeKeepsTheCityIconTypeWhenItsArtPackHasIt()
+	{
+		MapSettings settings = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
+		settings.edits.freeIcons.clear();
+		List<String> cityIconTypes = ImageCache.getInstance(settings.artPack, settings.customArtPackPath).getIconGroupNames(IconType.cities);
+		assertTrue(cityIconTypes.size() > 1);
+		for (String cityIconType : cityIconTypes)
+		{
+			settings.cityIconTypeName = cityIconType;
+			assertEquals(cityIconType, SettingsGenerator.newMapWithSameTheme(settings).cityIconTypeName);
+		}
+		settings.cityIconTypeName = "not a city icon type";
+		assertTrue(cityIconTypes.contains(SettingsGenerator.newMapWithSameTheme(settings).cityIconTypeName));
+	}
+
+	@Test
+	public void aNewMapWithTheSameThemeUsesTheCityIconTypeOfMostOfTheMapsCities()
+	{
+		MapSettings settings = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
+		settings.edits.freeIcons.clear();
+		settings.cityIconTypeName = "flat";
+		String[] groupIds = { "middle ages", "middle ages", "flat" };
+		for (int i = 0; i < groupIds.length; i++)
+		{
+			settings.edits.freeIcons.addOrReplace(new FreeIcon(settings.resolution, new Point(10 * i, 10 * i), 1.0, IconType.cities, Assets.installedArtPack, groupIds[i], "town", i,
+					Color.create(0, 0, 0), new HSBColor(0, 0, 100, 0), false, false));
+		}
+		assertEquals("middle ages", SettingsGenerator.newMapWithSameTheme(settings).cityIconTypeName);
 	}
 
 	@Test
@@ -332,9 +362,10 @@ public class ThemeTest
 		assertEquals(1, newMap.rightRotationCount);
 		assertFalse(newMap.flipHorizontally);
 		assertFalse(newMap.flipVertically);
-		assertNotEquals(settings.backgroundRandomSeed, newMap.backgroundRandomSeed);
-		assertNotEquals(settings.regionsRandomSeed, newMap.regionsRandomSeed);
-		assertNotEquals(settings.frayedBorderSeed, newMap.frayedBorderSeed);
+		assertEquals(settings.backgroundRandomSeed, newMap.backgroundRandomSeed);
+		assertEquals(settings.regionsRandomSeed, newMap.regionsRandomSeed);
+		assertEquals(settings.frayedBorderSeed, newMap.frayedBorderSeed);
+		assertNotEquals(settings.randomSeed, newMap.randomSeed);
 		assertEquals(settings.landColor, newMap.landColor);
 	}
 

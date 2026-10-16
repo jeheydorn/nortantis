@@ -709,8 +709,8 @@ public class SettingsGenerator
 	}
 
 	/**
-	 * Creates new map settings that keep the theme (colors, fonts, border, background, etc.) from the given settings but generate a new world
-	 * layout and text names.
+	 * Creates new map settings that keep the theme (colors, fonts, border, background, etc.) from the given settings unchanged but generate a
+	 * new world layout and text names. The art pack and city icon type are the ones the map's icons use, when it has any.
 	 */
 	public static MapSettings newMapWithSameTheme(MapSettings currentSettings)
 	{
@@ -718,12 +718,13 @@ public class SettingsGenerator
 	}
 
 	/**
-	 * Like {@link #newMapWithSameTheme(MapSettings)}, with the choices that depend on chance in the look, such as the city icon type, made
-	 * from the given theme seed, as {@link #generateFromTheme(Random, long, String, MapSettings, boolean, String)} makes them.
+	 * Like {@link #newMapWithSameTheme(MapSettings)}, with the city icon type, when neither the map's city icons nor its city icon type are
+	 * in the new map's art pack, chosen from the given theme seed as {@link #generateFromTheme(Random, long, String, MapSettings, boolean, String)}
+	 * chooses it.
 	 */
 	public static MapSettings newMapWithSameTheme(MapSettings currentSettings, long themeSeed)
 	{
-		MapSettings settings = currentSettings.deepCopy();
+		MapSettings settings = currentSettings.deepCopyExceptEdits();
 		settings.edits = new MapEdits();
 		settings.imageExportPath = null;
 		settings.heightmapExportPath = null;
@@ -747,18 +748,23 @@ public class SettingsGenerator
 		requireThemeRules(settings);
 		// The art pack the map's art comes from, rather than whichever art pack the Icons tool was last left on.
 		settings.artPack = chooseArtPackOfMapsIcons(currentSettings);
-		shuffleTextBackgrounds(settings, settings.themeGeneration, getThemeAspectRandom(themeSeed, ThemeAspect.TextBackgrounds));
 		Random seedRandom = new Random();
 		settings.randomSeed = Helper.safeAbs(seedRandom.nextInt());
 		settings.textRandomSeed = Helper.safeAbs(seedRandom.nextInt());
-		setLookRandomSeeds(settings, themeSeed);
-		// Randomize city icon type
 		try
 		{
 			List<String> cityIconTypes = ImageCache.getInstance(settings.artPack, currentSettings.customArtPackPath).getIconGroupNames(IconType.cities);
 			if (cityIconTypes != null && !cityIconTypes.isEmpty())
 			{
-				settings.cityIconTypeName = ProbabilityHelper.sampleUniform(getThemeAspectRandom(themeSeed, ThemeAspect.CityIcons), new ArrayList<>(cityIconTypes));
+				String typeOfMapsCities = chooseCityIconTypeOfMapsIcons(currentSettings, settings.artPack);
+				if (typeOfMapsCities != null && cityIconTypes.contains(typeOfMapsCities))
+				{
+					settings.cityIconTypeName = typeOfMapsCities;
+				}
+				else if (!cityIconTypes.contains(settings.cityIconTypeName))
+				{
+					settings.cityIconTypeName = ProbabilityHelper.sampleUniform(getThemeAspectRandom(themeSeed, ThemeAspect.CityIcons), new ArrayList<>(cityIconTypes));
+				}
 			}
 		}
 		catch (Exception e)
@@ -766,6 +772,28 @@ public class SettingsGenerator
 			// ignore
 		}
 		return settings;
+	}
+
+	/**
+	 * The city icon type most of the map's city icons from the given art pack use, or null if it has none from that art pack.
+	 */
+	private static String chooseCityIconTypeOfMapsIcons(MapSettings settings, String artPack)
+	{
+		Map<String, Integer> counts = new HashMap<>();
+		if (settings.edits != null && settings.edits.freeIcons != null)
+		{
+			settings.edits.freeIcons.doWithLock(() ->
+			{
+				for (FreeIcon icon : settings.edits.freeIcons)
+				{
+					if (icon.type == IconType.cities && Objects.equals(icon.artPack, artPack) && icon.groupId != null)
+					{
+						counts.merge(icon.groupId, 1, Integer::sum);
+					}
+				}
+			});
+		}
+		return counts.entrySet().stream().max(Map.Entry.comparingByValue()).map(Map.Entry::getKey).orElse(null);
 	}
 
 	/**

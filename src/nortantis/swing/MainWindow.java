@@ -1541,7 +1541,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				if (!cancelPressed)
 				{
 					MapSettings settingsToKeepThemeFrom = getSettingsFromGUI(false);
-					settingsToKeepThemeFrom.edits = new MapEdits();
 
 					if (settingsToKeepThemeFrom.drawRegionColors && !UserPreferences.getInstance().hideNewMapWithSameThemeRegionColorsMessage)
 					{
