@@ -39,6 +39,8 @@ class RandomizeThemeDialog extends JDialog
 		BufferedImage preview;
 		/** The size the preview was last drawn to fit, or null if it hasn't been drawn. */
 		Dimension previewSize;
+		/** Why the preview couldn't be drawn, or null if it was. */
+		String previewError;
 
 		Variation(MapSettings settings)
 		{
@@ -71,6 +73,10 @@ class RandomizeThemeDialog extends JDialog
 	private JButton previousButton;
 	private JButton nextButton;
 	private boolean isPreviewBeingDrawn;
+	private RowHider landColorRows;
+	private RowHider regionColorRows;
+	private JTextArea landColoringWarningArea;
+	private RowHider landColoringWarningHider;
 
 	/**
 	 * @param mapSettings
@@ -111,32 +117,34 @@ class RandomizeThemeDialog extends JDialog
 	{
 		GridBagOrganizer organizer = new GridBagOrganizer();
 
+		organizer.addSectionHeading(Translation.get("randomizeTheme.section.landColoring"));
+		addEnumCheckboxes(organizer, "randomizeTheme.allowedLandColoringMethods", Arrays.asList(LandColoringMethod.values()), gen.allowedLandColoringMethods,
+				LandColoringMethod::toString, this::updateLandColoringRows);
+		addLandColoringWarning(organizer);
+
 		organizer.addSectionHeading(Translation.get("randomizeTheme.section.oceanColorVariation"));
 		String oceanHelp = "randomizeTheme.oceanColorVariation.help";
 		addColorVariationSliders(organizer, oceanHelp, gen.oceanHueVariation, value -> gen.oceanHueVariation = value, gen.oceanSaturationVariation,
 				value -> gen.oceanSaturationVariation = value, gen.oceanBrightnessVariation, value -> gen.oceanBrightnessVariation = value);
 
-		if (base.drawRegionColors)
-		{
-			// Region colors are generated around the region base color with the map's own region color ranges, which the Land and Water
-			// tool also edits.
-			organizer.addSectionHeading(Translation.get("randomizeTheme.section.regionBaseColorVariation"));
-			addRegionBaseColorChooser(organizer);
-			addColorVariationSliders(organizer, "randomizeTheme.regionBaseColorVariation.help", gen.regionBaseHueVariation, value -> gen.regionBaseHueVariation = value,
-					gen.regionBaseSaturationVariation, value -> gen.regionBaseSaturationVariation = value, gen.regionBaseBrightnessVariation,
-					value -> gen.regionBaseBrightnessVariation = value);
+		// Only the colors of the land coloring methods variations can have are shown.
+		landColorRows = organizer.addSectionHeading(Translation.get("randomizeTheme.section.landColorVariation"));
+		landColorRows.add(addColorVariationSliders(organizer, "randomizeTheme.landColorVariation.help", gen.landHueVariation, value -> gen.landHueVariation = value,
+				gen.landSaturationVariation, value -> gen.landSaturationVariation = value, gen.landBrightnessVariation, value -> gen.landBrightnessVariation = value));
 
-			organizer.addSectionHeading(Translation.get("randomizeTheme.section.regionColorVariation"));
-			addRangeSlider(organizer, "landWaterTool.hueRange", LandWaterTool.maxHueRange, base.hueRange, value -> base.hueRange = value);
-			addRangeSlider(organizer, "landWaterTool.saturationRange", LandWaterTool.maxSaturationRange, base.saturationRange, value -> base.saturationRange = value);
-			addRangeSlider(organizer, "landWaterTool.brightnessRange", LandWaterTool.maxBrightnessRange, base.brightnessRange, value -> base.brightnessRange = value);
-		}
-		else
-		{
-			organizer.addSectionHeading(Translation.get("randomizeTheme.section.landColorVariation"));
-			addColorVariationSliders(organizer, "randomizeTheme.landColorVariation.help", gen.landHueVariation, value -> gen.landHueVariation = value,
-					gen.landSaturationVariation, value -> gen.landSaturationVariation = value, gen.landBrightnessVariation, value -> gen.landBrightnessVariation = value);
-		}
+		// Region colors are generated around the region base color with the map's own region color ranges, which the Land and Water tool
+		// also edits.
+		regionColorRows = organizer.addSectionHeading(Translation.get("randomizeTheme.section.regionBaseColorVariation"));
+		regionColorRows.add(addRegionBaseColorChooser(organizer));
+		regionColorRows.add(addColorVariationSliders(organizer, "randomizeTheme.regionBaseColorVariation.help", gen.regionBaseHueVariation,
+				value -> gen.regionBaseHueVariation = value, gen.regionBaseSaturationVariation, value -> gen.regionBaseSaturationVariation = value,
+				gen.regionBaseBrightnessVariation, value -> gen.regionBaseBrightnessVariation = value));
+		regionColorRows.add(organizer.addSectionHeading(Translation.get("randomizeTheme.section.regionColorVariation")));
+		regionColorRows.add(addRangeSlider(organizer, "landWaterTool.hueRange", LandWaterTool.maxHueRange, base.hueRange, value -> base.hueRange = value));
+		regionColorRows.add(addRangeSlider(organizer, "landWaterTool.saturationRange", LandWaterTool.maxSaturationRange, base.saturationRange,
+				value -> base.saturationRange = value));
+		regionColorRows.add(addRangeSlider(organizer, "landWaterTool.brightnessRange", LandWaterTool.maxBrightnessRange, base.brightnessRange,
+				value -> base.brightnessRange = value));
 
 		organizer.addSectionHeading(Translation.get("randomizeTheme.section.ocean"));
 		addProbabilitySlider(organizer, "randomizeTheme.drawOceanWavesProbability", gen.drawOceanWavesProbability, value -> gen.drawOceanWavesProbability = value);
@@ -162,7 +170,7 @@ class RandomizeThemeDialog extends JDialog
 		addEnumCheckboxes(organizer, "randomizeTheme.allowedRoadStrokeTypes", Arrays.asList(StrokeType.values()), gen.allowedRoadStrokeTypes, Object::toString);
 		addEnumCheckboxes(organizer, "randomizeTheme.allowedLineStyles", Arrays.asList(LineStyle.values()), gen.allowedLineStyles, RandomizeThemeDialog::getLineStyleName);
 		addEnumCheckboxes(organizer, "randomizeTheme.allowedBackgroundTypes", Arrays.asList(BackgroundType.values()), gen.allowedBackgroundTypes,
-				RandomizeThemeDialog::getBackgroundTypeName);
+				RandomizeThemeDialog::getBackgroundTypeName, this::updateLandColoringRows);
 
 		organizer.addSectionHeading(Translation.get("randomizeTheme.section.text"));
 		JCheckBox shuffleTextBackgroundsCheckBox = new JCheckBox(Translation.get("randomizeTheme.shuffleTextBackgrounds"));
@@ -180,6 +188,8 @@ class RandomizeThemeDialog extends JDialog
 			textBackgroundRows.setEnabled(gen.shuffleTextBackgrounds);
 		});
 
+		updateLandColoringRows();
+
 		organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.55);
 		organizer.addVerticalFillerRow();
 		JScrollPane scrollPane = organizer.createScrollPane();
@@ -196,59 +206,64 @@ class RandomizeThemeDialog extends JDialog
 		return "<html>" + Translation.get(helpKey) + "<br>" + Translation.get("randomizeTheme.zeroNeverChanges") + "</html>";
 	}
 
-	private void addVariationSlider(GridBagOrganizer organizer, String key, int min, int max, int value, IntConsumer setValue)
+	private RowHider addVariationSlider(GridBagOrganizer organizer, String key, int min, int max, int value, IntConsumer setValue)
 	{
-		addVariationSlider(organizer, key + ".label", null, key + ".help", min, max, value, setValue);
+		return addVariationSlider(organizer, key + ".label", null, key + ".help", min, max, value, setValue);
 	}
 
 	/**
 	 * Adds a variation slider whose label has the tip from the key's ".tip" translation under it.
 	 */
-	private void addVariationSliderWithTip(GridBagOrganizer organizer, String key, int min, int max, int value, IntConsumer setValue)
+	private RowHider addVariationSliderWithTip(GridBagOrganizer organizer, String key, int min, int max, int value, IntConsumer setValue)
 	{
-		addVariationSlider(organizer, key + ".label", key + ".tip", key + ".help", min, max, value, setValue);
+		return addVariationSlider(organizer, key + ".label", key + ".tip", key + ".help", min, max, value, setValue);
 	}
 
-	private void addVariationSlider(GridBagOrganizer organizer, String labelKey, String helpKey, int min, int max, int value, IntConsumer setValue)
+	private RowHider addVariationSlider(GridBagOrganizer organizer, String labelKey, String helpKey, int min, int max, int value, IntConsumer setValue)
 	{
-		addVariationSlider(organizer, labelKey, null, helpKey, min, max, value, setValue);
+		return addVariationSlider(organizer, labelKey, null, helpKey, min, max, value, setValue);
 	}
 
-	private void addVariationSlider(GridBagOrganizer organizer, String labelKey, String tipKey, String helpKey, int min, int max, int value, IntConsumer setValue)
+	private RowHider addVariationSlider(GridBagOrganizer organizer, String labelKey, String tipKey, String helpKey, int min, int max, int value,
+			IntConsumer setValue)
 	{
 		JSlider slider = new JSlider(min, max, Math.max(min, Math.min(max, value)));
 		slider.setPaintLabels(false);
 		SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(slider, null, () -> setValue.accept(slider.getValue()), 44);
-		addSliderToOrganizer(organizer, sliderWithDisplay, labelKey, tipKey, createTooltipFromHelpKey(helpKey));
+		return addSliderToOrganizer(organizer, sliderWithDisplay, labelKey, tipKey, createTooltipFromHelpKey(helpKey));
 	}
 
-	private static void addSliderToOrganizer(GridBagOrganizer organizer, SliderWithDisplayedValue sliderWithDisplay, String labelKey, String tipKey, String tooltip)
+	private static RowHider addSliderToOrganizer(GridBagOrganizer organizer, SliderWithDisplayedValue sliderWithDisplay, String labelKey, String tipKey,
+			String tooltip)
 	{
 		if (tipKey == null)
 		{
-			sliderWithDisplay.addToOrganizer(organizer, Translation.get(labelKey), tooltip);
+			return sliderWithDisplay.addToOrganizer(organizer, Translation.get(labelKey), tooltip);
 		}
 		else
 		{
-			sliderWithDisplay.addToOrganizer(organizer, SwingHelper.createLabelWithTip(Translation.get(labelKey), Translation.get(tipKey), tooltip));
+			return sliderWithDisplay.addToOrganizer(organizer, SwingHelper.createLabelWithTip(Translation.get(labelKey), Translation.get(tipKey), tooltip));
 		}
 	}
 
 	/**
 	 * Adds hue, saturation, and brightness variation sliders, which go as high as the Land and Water tool's color generator ranges.
 	 */
-	private void addColorVariationSliders(GridBagOrganizer organizer, String helpKey, int hueVariation, IntConsumer setHueVariation, int saturationVariation,
+	private RowHider addColorVariationSliders(GridBagOrganizer organizer, String helpKey, int hueVariation, IntConsumer setHueVariation, int saturationVariation,
 			IntConsumer setSaturationVariation, int brightnessVariation, IntConsumer setBrightnessVariation)
 	{
-		addVariationSlider(organizer, "landWaterTool.hueRange.label", helpKey, 0, LandWaterTool.maxHueRange, hueVariation, setHueVariation);
-		addVariationSlider(organizer, "landWaterTool.saturationRange.label", helpKey, 0, LandWaterTool.maxSaturationRange, saturationVariation, setSaturationVariation);
-		addVariationSlider(organizer, "landWaterTool.brightnessRange.label", helpKey, 0, LandWaterTool.maxBrightnessRange, brightnessVariation, setBrightnessVariation);
+		RowHider rows = addVariationSlider(organizer, "landWaterTool.hueRange.label", helpKey, 0, LandWaterTool.maxHueRange, hueVariation, setHueVariation);
+		rows.add(addVariationSlider(organizer, "landWaterTool.saturationRange.label", helpKey, 0, LandWaterTool.maxSaturationRange, saturationVariation,
+				setSaturationVariation));
+		rows.add(addVariationSlider(organizer, "landWaterTool.brightnessRange.label", helpKey, 0, LandWaterTool.maxBrightnessRange, brightnessVariation,
+				setBrightnessVariation));
+		return rows;
 	}
 
 	/**
 	 * Adds a chooser for the map's region base color, which is a setting of the map rather than a rule for varying it.
 	 */
-	private void addRegionBaseColorChooser(GridBagOrganizer organizer)
+	private RowHider addRegionBaseColorChooser(GridBagOrganizer organizer)
 	{
 		JPanel colorDisplay = SwingHelper.createColorPickerPreviewPanel();
 		colorDisplay.setBackground(AwtBridge.toAwtColor(base.regionBaseColor));
@@ -260,19 +275,19 @@ class RandomizeThemeDialog extends JDialog
 			colorDisplay.setBackground(color);
 			base.regionBaseColor = AwtBridge.fromAwtColor(color);
 		});
-		organizer.addLabelAndComponentsHorizontal(Translation.get("landWaterTool.baseColor.label"), Translation.get("landWaterTool.baseColor.help"),
+		return organizer.addLabelAndComponentsHorizontal(Translation.get("landWaterTool.baseColor.label"), Translation.get("landWaterTool.baseColor.help"),
 				Arrays.asList(colorDisplay, chooseButton), SwingHelper.borderWidthBetweenComponents);
 	}
 
 	/**
 	 * Adds a slider for one of the map's region color ranges, which are settings of the map rather than rules for varying it.
 	 */
-	private void addRangeSlider(GridBagOrganizer organizer, String key, int max, int value, IntConsumer setValue)
+	private RowHider addRangeSlider(GridBagOrganizer organizer, String key, int max, int value, IntConsumer setValue)
 	{
 		JSlider slider = new JSlider(0, max, Math.max(0, Math.min(max, value)));
 		slider.setPaintLabels(false);
 		SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(slider, null, () -> setValue.accept(slider.getValue()), 44);
-		sliderWithDisplay.addToOrganizer(organizer, Translation.get(key + ".label"), Translation.get(key + ".help"));
+		return sliderWithDisplay.addToOrganizer(organizer, Translation.get(key + ".label"), Translation.get(key + ".help"));
 	}
 
 	private void addProbabilitySlider(GridBagOrganizer organizer, String key, double value, Consumer<Double> setValue)
@@ -296,6 +311,51 @@ class RandomizeThemeDialog extends JDialog
 		addSliderToOrganizer(organizer, sliderWithDisplay, key + ".label", tipKey, "<html>" + Translation.get(key + ".help") + "</html>");
 	}
 
+	/**
+	 * Adds the warning, shown by {@link #updateLandColoringRows()}, that political regions can't be colored on a background generated from a
+	 * texture when the map doesn't colorize land.
+	 */
+	private void addLandColoringWarning(GridBagOrganizer organizer)
+	{
+		landColoringWarningArea = new JTextArea();
+		landColoringWarningArea.setEditable(false);
+		landColoringWarningArea.setFocusable(false);
+		landColoringWarningArea.setLineWrap(true);
+		landColoringWarningArea.setWrapStyleWord(true);
+		landColoringWarningArea.setOpaque(false);
+		landColoringWarningArea.setForeground(SwingHelper.warningMessageColor);
+		landColoringWarningArea.setFont(UIManager.getFont("Label.font"));
+
+		JPanel warningPanel = new JPanel(new BorderLayout());
+		warningPanel.add(SwingHelper.createWarningIconLabel(), BorderLayout.WEST);
+		warningPanel.add(landColoringWarningArea, BorderLayout.CENTER);
+		landColoringWarningHider = organizer.addLeftAlignedComponent(warningPanel);
+	}
+
+	/**
+	 * Shows the colors of the land coloring methods variations can have, and the warning when political regions can't always be colored.
+	 */
+	private void updateLandColoringRows()
+	{
+		boolean allowsRegionColors = isLandColoringMethodAllowed(LandColoringMethod.ColorPoliticalRegions);
+		boolean allowsTextures = gen.allowedBackgroundTypes.isEmpty() || gen.allowedBackgroundTypes.contains(BackgroundType.GeneratedFromTexture);
+		// A background generated from a texture can only be given region colors when the land is colorized, which isn't varied.
+		boolean regionColorsCanBeDropped = allowsRegionColors && allowsTextures && !base.colorizeLand;
+		boolean onlyTextures = gen.allowedBackgroundTypes.equals(EnumSet.of(BackgroundType.GeneratedFromTexture));
+		String methodName = LandColoringMethod.ColorPoliticalRegions.toString();
+		landColoringWarningArea.setText(onlyTextures ? Translation.get("randomizeTheme.regionColorsNeverDrawn", methodName, Translation.get("theme.colorLand"))
+				: Translation.get("randomizeTheme.regionColorsNotDrawnOnTextures", methodName, Translation.get("theme.colorLand"),
+						Translation.get("theme.background.generatedFromTexture")));
+		landColoringWarningHider.setVisible(regionColorsCanBeDropped);
+		regionColorRows.setVisible(allowsRegionColors && !(regionColorsCanBeDropped && onlyTextures));
+		landColorRows.setVisible(isLandColoringMethodAllowed(LandColoringMethod.SingleColor) || regionColorsCanBeDropped);
+	}
+
+	private boolean isLandColoringMethodAllowed(LandColoringMethod method)
+	{
+		return gen.allowedLandColoringMethods.isEmpty() || gen.allowedLandColoringMethods.contains(method);
+	}
+
 	private static String getLineStyleName(LineStyle lineStyle)
 	{
 		return switch (lineStyle)
@@ -317,37 +377,45 @@ class RandomizeThemeDialog extends JDialog
 	}
 
 	/**
-	 * Adds a checkbox for each choice. Checking every choice is stored as an empty set, which means every choice, including ones added in
-	 * later versions.
+	 * Adds a checkbox for each choice. The checked choices are stored by name, so that checking every choice doesn't opt into choices added
+	 * in later versions. Checking none is stored as an empty set, which means every choice, including ones added in later versions.
 	 */
 	private <E> RowHider addEnumCheckboxes(GridBagOrganizer organizer, String key, List<E> choices, Set<E> allowed, Function<E, String> getName)
+	{
+		return addEnumCheckboxes(organizer, key, choices, allowed, getName, () ->
+		{
+		});
+	}
+
+	/**
+	 * Like {@link #addEnumCheckboxes(GridBagOrganizer, String, List, Set, Function)}, calling onChange after the allowed choices change.
+	 */
+	private <E> RowHider addEnumCheckboxes(GridBagOrganizer organizer, String key, List<E> choices, Set<E> allowed, Function<E, String> getName, Runnable onChange)
 	{
 		JPanel panel = new JPanel(new WrapLayout(WrapLayout.LEFT, 4, 0));
 		Map<E, JCheckBox> checkboxes = new LinkedHashMap<>();
 		Runnable update = () ->
 		{
 			allowed.clear();
-			boolean allChecked = checkboxes.values().stream().allMatch(JCheckBox::isSelected);
-			if (!allChecked)
+			checkboxes.forEach((choice, checkbox) ->
 			{
-				checkboxes.forEach((choice, checkbox) ->
+				if (checkbox.isSelected())
 				{
-					if (checkbox.isSelected())
-					{
-						allowed.add(choice);
-					}
-				});
-			}
+					allowed.add(choice);
+				}
+			});
+			onChange.run();
 		};
 		for (E choice : choices)
 		{
 			JCheckBox checkbox = new JCheckBox(getName.apply(choice));
-			checkbox.setSelected(allowed.isEmpty() || allowed.contains(choice));
+			checkbox.setSelected(allowed.contains(choice));
 			checkbox.addActionListener(e -> update.run());
 			checkboxes.put(choice, checkbox);
 			panel.add(checkbox);
 		}
-		return organizer.addLeftAlignedComponentWithStackedLabel(Translation.get(key + ".label"), "<html>" + Translation.get(key + ".help") + "</html>", panel);
+		return organizer.addLeftAlignedComponentWithStackedLabel(Translation.get(key + ".label"),
+				"<html>" + Translation.get(key + ".help") + "<br>" + Translation.get("randomizeTheme.noneCheckedAllowsAll") + "</html>", panel);
 	}
 
 	private JComponent createPreviewPanel()
@@ -506,6 +574,8 @@ class RandomizeThemeDialog extends JDialog
 		if (size.equals(variation.previewSize))
 		{
 			previewPanel.setImage(variation.preview);
+			previewStatusLabel.setText(variation.previewError == null ? Translation.get("randomizeTheme.previewFailed")
+					: Translation.get("randomizeTheme.previewFailed") + " " + variation.previewError);
 			previewStatusLabel.setVisible(variation.preview == null && !isPreviewBeingDrawn);
 			return;
 		}
@@ -542,11 +612,13 @@ class RandomizeThemeDialog extends JDialog
 				try
 				{
 					variation.preview = AwtBridge.toBufferedImage(get());
+					variation.previewError = null;
 				}
 				catch (Exception e)
 				{
 					Logger.printError("Unable to draw the preview of the theme's variation.", e);
 					variation.preview = null;
+					variation.previewError = SwingHelper.getBriefErrorMessage(e);
 				}
 				keepPreview(variation);
 				showPreview();

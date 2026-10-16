@@ -7,14 +7,12 @@ import nortantis.platform.Color;
 import nortantis.platform.PlatformFactory;
 import nortantis.platform.awt.AwtFactory;
 import nortantis.util.Assets;
+import org.json.simple.JSONObject;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -42,6 +40,7 @@ public class ThemeTest
 		gen.allowedTitleBackgroundEffects = new LinkedHashSet<>(List.of(TextBackgroundEffect.Scroll, TextBackgroundEffect.Glow));
 		gen.allowedRegionBackgroundEffects = new LinkedHashSet<>(List.of(TextBackgroundEffect.None));
 		gen.shuffleTextBackgrounds = true;
+		gen.allowedLandColoringMethods = new LinkedHashSet<>(List.of(LandColoringMethod.ColorPoliticalRegions));
 
 		ThemeGenerationSettings reloaded = ThemeGenerationSettings.fromJson(gen.toJson());
 		assertEquals(gen, reloaded);
@@ -90,6 +89,7 @@ public class ThemeTest
 		settings.edits.regionEdits.put(1, new RegionEdit(1, Color.create(10, 10, 200)));
 		settings.edits.regionEdits.put(2, new RegionEdit(2, Color.create(10, 200, 10)));
 		settings.themeGeneration = ThemeCatalog.getDefaultThemeRules();
+		settings.themeGeneration.allowedLandColoringMethods = EnumSet.of(LandColoringMethod.ColorPoliticalRegions);
 		MapSettings base = settings.deepCopy();
 
 		SettingsGenerator.randomizeTheme(settings, base, settings.artPack, settings.artPack, new Random(5));
@@ -114,6 +114,8 @@ public class ThemeTest
 			MapSettings settings = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
 			settings.drawRegionColors = drawRegionColors;
 			settings.themeGeneration = ThemeCatalog.getDefaultThemeRules();
+			settings.themeGeneration.allowedLandColoringMethods = EnumSet
+					.of(drawRegionColors ? LandColoringMethod.ColorPoliticalRegions : LandColoringMethod.SingleColor);
 			settings.themeGeneration.oceanHueVariation = 90;
 			settings.themeGeneration.landHueVariation = 90;
 			settings.themeGeneration.regionBaseHueVariation = 90;
@@ -136,7 +138,7 @@ public class ThemeTest
 				assertNotEquals(before.landColor, settings.landColor);
 				assertNotEquals(before.borderColor, settings.borderColor, "The border moves with the land.");
 			}
-			assertEquals(drawRegionColors, settings.drawRegionColors, "The land coloring method is the theme's.");
+			assertEquals(drawRegionColors, settings.drawRegionColors, "The land coloring method is the one the theme allows.");
 			assertEquals(before.riverColor, settings.riverColor);
 			assertEquals(before.frayedBorderColor, settings.frayedBorderColor);
 			assertEquals(before.grungeColor, settings.grungeColor);
@@ -513,12 +515,59 @@ public class ThemeTest
 	}
 
 	@Test
+	public void theLandColoringMethodIsChosenFromThoseTheThemeAllows()
+	{
+		MapSettings base = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
+		base.themeGeneration = ThemeCatalog.getDefaultThemeRules();
+		base.themeGeneration.allowedBackgroundTypes = new LinkedHashSet<>(List.of(ThemeGenerationSettings.BackgroundType.Fractal));
+		for (boolean baseDrawsRegionColors : new boolean[] { true, false })
+		{
+			base.drawRegionColors = baseDrawsRegionColors;
+			for (LandColoringMethod method : LandColoringMethod.values())
+			{
+				base.themeGeneration.allowedLandColoringMethods = EnumSet.of(method);
+				for (long seed = 0; seed < 5; seed++)
+				{
+					MapSettings settings = base.deepCopy();
+					SettingsGenerator.applyThemeRandomness(settings, base, base.themeGeneration, Assets.installedArtPack, Assets.installedArtPack, seed);
+					assertEquals(method == LandColoringMethod.ColorPoliticalRegions, settings.drawRegionColors);
+				}
+			}
+		}
+
+		// An empty set allows every method, like the theme's other allowed sets.
+		for (Set<LandColoringMethod> allowed : List.of(EnumSet.of(LandColoringMethod.SingleColor, LandColoringMethod.ColorPoliticalRegions),
+				new LinkedHashSet<LandColoringMethod>()))
+		{
+			base.themeGeneration.allowedLandColoringMethods = allowed;
+			Set<Boolean> chosen = new HashSet<>();
+			for (long seed = 0; seed < 40; seed++)
+			{
+				MapSettings settings = base.deepCopy();
+				SettingsGenerator.applyThemeRandomness(settings, base, base.themeGeneration, Assets.installedArtPack, Assets.installedArtPack, seed);
+				chosen.add(settings.drawRegionColors);
+			}
+			assertEquals(Set.of(true, false), chosen, "Either allowed method can be chosen: " + allowed);
+		}
+	}
+
+	@Test
+	public void rulesFromBeforeThemesChoseTheirLandColoringMethodAllowTheMethodsThatExistedThen()
+	{
+		JSONObject json = ThemeCatalog.getDefaultThemeRules().toJson();
+		json.remove("allowedLandColoringMethods");
+		assertEquals(EnumSet.of(LandColoringMethod.SingleColor, LandColoringMethod.ColorPoliticalRegions),
+				ThemeGenerationSettings.fromJson(json).allowedLandColoringMethods);
+	}
+
+	@Test
 	public void aTextureThatDoesNotColorizeTheLandDrawsASingleLandColor()
 	{
 		MapSettings base = new MapSettings("unit test files/map settings/simpleSmallWorld.nort");
 		base.drawRegionColors = true;
 		base.colorizeLand = false;
 		base.themeGeneration = ThemeCatalog.getDefaultThemeRules();
+		base.themeGeneration.allowedLandColoringMethods = EnumSet.of(LandColoringMethod.ColorPoliticalRegions);
 		base.themeGeneration.landHueVariation = 90;
 
 		base.themeGeneration.allowedBackgroundTypes = new LinkedHashSet<>(List.of(ThemeGenerationSettings.BackgroundType.GeneratedFromTexture));

@@ -19,7 +19,7 @@ public class GridBagOrganizer
 	 * The space between rows and the sides of the panel.
 	 */
 	private static final int rowSideInset = 5;
-	private final int defaultHorizontalSpaceBetweenComponentsAddAsList = 10;
+	public static final int defaultHorizontalSpaceBetweenComponentsAddAsList = 10;
 
 	public GridBagOrganizer()
 	{

@@ -242,7 +242,7 @@ public class SettingsGenerator
 	 */
 	private enum ThemeAspect
 	{
-		Ocean, LandEdges, Colors, Grunge, Border, FrayedEdges, Regions, Roads, Background, TextBackgrounds, LookSeeds, CityIcons
+		Ocean, LandEdges, Colors, Grunge, Border, FrayedEdges, Regions, Roads, Background, TextBackgrounds, LookSeeds, CityIcons, LandColoring
 	}
 
 	private static Random getThemeAspectRandom(long themeSeed, ThemeAspect aspect)
@@ -412,9 +412,8 @@ public class SettingsGenerator
 
 	/**
 	 * Like {@link #applyThemeRandomness(MapSettings, MapSettings, ThemeGenerationSettings, String, String, Random)}, with a look that depends
-	 * only on the base, the rules, the art packs, the given theme seed, and the settings' choice of whether to color regions and their
-	 * region boundary and road widths. A choice from art packs that offer different borders or background textures changes only the border
-	 * or the background.
+	 * only on the base, the rules, the art packs, the given theme seed, and the settings' region boundary and road widths. A choice from art
+	 * packs that offer different borders or background textures changes only the border or the background.
 	 */
 	public static void applyThemeRandomness(MapSettings settings, MapSettings base, ThemeGenerationSettings gen, String borderArtPack, String textureArtPack,
 			long themeSeed)
@@ -464,8 +463,10 @@ public class SettingsGenerator
 			settings.backgroundTextureSource = TextureSource.Assets;
 		}
 
-		// A theme that doesn't colorize the land of a background generated from a texture draws all of the land alike, so it can't color
-		// regions. The colors below are varied for the land coloring that's drawn.
+		// The land coloring method, from those the theme allows. A theme that doesn't colorize the land of a background generated from a
+		// texture draws all of the land alike, so it can't color regions. The colors below are varied for the land coloring that's drawn.
+		LandColoringMethod landColoringMethod = chooseLandColoringMethod(gen, getThemeAspectRandom(themeSeed, ThemeAspect.LandColoring));
+		settings.drawRegionColors = landColoringMethod == LandColoringMethod.ColorPoliticalRegions;
 		settings.drawRegionColors = settings.drawsRegionColors();
 
 		// Colors that belong together move together, so that colors chosen to work together keep working together. Only the ocean color and
@@ -542,6 +543,17 @@ public class SettingsGenerator
 		List<StrokeType> roadTypesDifferentFromBoundaries = chooseAllowed(roadTypes, type -> isRoadStyleDifferentEnoughFromBoundaries(type, settings.regionBoundaryStyle.type));
 		settings.roadStyle = new Stroke(ProbabilityHelper.sampleUniform(rand, roadTypesDifferentFromBoundaries.isEmpty() ? roadTypes : roadTypesDifferentFromBoundaries),
 				settings.roadStyle.width);
+	}
+
+	/**
+	 * Chooses one of the land coloring methods the theme allows.
+	 */
+	private static LandColoringMethod chooseLandColoringMethod(ThemeGenerationSettings gen, Random rand)
+	{
+		// In the enum's order, so that the choice doesn't depend on the order the theme lists them in.
+		List<LandColoringMethod> methods = gen.allowedLandColoringMethods.isEmpty() ? Arrays.asList(LandColoringMethod.values())
+				: new ArrayList<>(EnumSet.copyOf(gen.allowedLandColoringMethods));
+		return ProbabilityHelper.sampleUniform(rand, methods);
 	}
 
 	/**
@@ -824,9 +836,9 @@ public class SettingsGenerator
 
 	/**
 	 * Like {@link #randomizeTheme(MapSettings, MapSettings, String, String, Random)}, with a look that depends only on the base, the rules,
-	 * the art packs, the given theme seed, and the settings' choice of whether to color regions and their region boundary and road widths.
-	 * When those settings are the base's, it's the look {@link #generateFromTheme(Random, long, String, MapSettings, boolean, String)} gives
-	 * with the same seed, apart from the city icon type, which this doesn't change.
+	 * the art packs, the given theme seed, and the settings' region boundary and road widths. When those widths are the base's, it's the
+	 * look {@link #generateFromTheme(Random, long, String, MapSettings, boolean, String)} gives with the same seed, apart from the city icon
+	 * type, which this doesn't change.
 	 */
 	public static void randomizeTheme(MapSettings settings, MapSettings base, String borderArtPack, String textureArtPack, long themeSeed)
 	{
