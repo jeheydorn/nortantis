@@ -25,6 +25,7 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class IconsTool extends EditorTool
@@ -403,11 +404,7 @@ public class IconsTool extends EditorTool
 			{
 				public void actionPerformed(ActionEvent e)
 				{
-					SwingHelper.showColorPicker(organizer.panel, fillColorDisplay, Translation.get("iconsTool.fillColor.title"), () ->
-					{
-						SwingHelper.clearMixedColorsInColorPickerPreview(fillColorDisplay);
-						handleColorChange(WhatHSBColorFieldChanged.FillColor);
-					});
+					showFillColorPicker();
 				}
 			});
 			SwingHelper.addColorCopyAndPasteMenu(fillColorDisplay, fillColorDisplay::getBackground, color ->
@@ -810,6 +807,61 @@ public class IconsTool extends EditorTool
 	private HSBColor getFilterColor()
 	{
 		return new HSBColor(hueSlider.getValue(), saturationSlider.getValue(), brightnessSlider.getValue(), transparencySlider.getValue());
+	}
+
+	/**
+	 * Shows the fill color picker. In Edit mode with icons selected, the selected icons are redrawn with the color as it changes, and
+	 * canceling restores each icon's original colors.
+	 */
+	private void showFillColorPicker()
+	{
+		if (!(modeWidget.isEditMode() && iconsToEdit != null && !iconsToEdit.isEmpty()))
+		{
+			SwingHelper.showColorPicker(getToolOptionsPane(), fillColorDisplay, Translation.get("iconsTool.fillColor.title"), () ->
+			{
+				SwingHelper.clearMixedColorsInColorPickerPreview(fillColorDisplay);
+				handleColorChange(WhatHSBColorFieldChanged.FillColor);
+			});
+			return;
+		}
+
+		// An undo or edit that is waiting for the current draw to finish could otherwise run while the picker is open and change the
+		// selected icons.
+		updater.doAfterActionsWaitingForDrawing(() -> SwingUtilities.invokeLater(() ->
+		{
+			if (!(modeWidget.isEditMode() && iconsToEdit != null && !iconsToEdit.isEmpty()))
+			{
+				return;
+			}
+			List<FreeIcon> originalIcons = new ArrayList<>(iconsToEdit);
+			// The version of each original icon that the map currently holds, in the same order as originalIcons.
+			List<FreeIcon> shownIcons = new ArrayList<>(originalIcons);
+			Consumer<List<FreeIcon>> showIcons = iconsToShow ->
+			{
+				for (int i = 0; i < shownIcons.size(); i++)
+				{
+					mainWindow.edits.freeIcons.replace(shownIcons.get(i), iconsToShow.get(i));
+				}
+				shownIcons.clear();
+				shownIcons.addAll(iconsToShow);
+				iconsToEdit.clear();
+				iconsToEdit.addAll(iconsToShow);
+				updater.createAndShowMapIncrementalUsingIcons(new ArrayList<>(iconsToShow), () -> ImageCache.clearColoredAndScaledImageCaches());
+			};
+
+			Runnable redrawAction = () ->
+			{
+				Color fillColor = AwtBridge.fromAwtColor(fillColorDisplay.getBackground());
+				List<FreeIcon> recolored = new ArrayList<>();
+				for (FreeIcon icon : originalIcons)
+				{
+					recolored.add(icon.copyWithColors(fillColor, icon.filterColor, icon.maximizeOpacity, fillWithColorCheckbox.isSelected()));
+				}
+				showIcons.accept(recolored);
+			};
+			SwingHelper.showColorPickerWithLiveMapPreview(fillColorDisplay, Translation.get("iconsTool.fillColor.title"), redrawAction,
+					() -> undoer.setUndoPoint(UpdateType.Incremental, this), () -> showIcons.accept(originalIcons));
+		}));
 	}
 
 	private void handleColorChange(WhatHSBColorFieldChanged whatChanged)

@@ -363,6 +363,33 @@ public class SwingHelper
 		colorDisplay.repaint();
 	}
 
+	private static int getMixedColorStripeLeft(int stripeIndex, int stripeCount, int swatchWidth)
+	{
+		return stripeIndex * swatchWidth / stripeCount;
+	}
+
+	/**
+	 * Returns the color of the stripe at x in a swatch that stands for several colors, or null if the swatch shows only one color.
+	 */
+	private static Color getMixedColorStripeAt(JComponent swatch, int x)
+	{
+		@SuppressWarnings("unchecked")
+		List<Color> mixedColors = (List<Color>) swatch.getClientProperty(mixedColorsProperty);
+		if (mixedColors == null)
+		{
+			return null;
+		}
+		int stripeCount = Math.min(mixedColors.size(), maxMixedColorStripes);
+		for (int i = 0; i < stripeCount - 1; i++)
+		{
+			if (x < getMixedColorStripeLeft(i + 1, stripeCount, swatch.getWidth()))
+			{
+				return mixedColors.get(i);
+			}
+		}
+		return mixedColors.get(stripeCount - 1);
+	}
+
 	public static JPanel createColorPickerPreviewPanel()
 	{
 		JPanel panel = new JPanel()
@@ -381,8 +408,8 @@ public class SwingHelper
 					Color dividerColor = UIManager.getColor(colorPickerPreviewBorderColorKey) != null ? UIManager.getColor(colorPickerPreviewBorderColorKey) : Color.black;
 					for (int i = 0; i < stripeCount; i++)
 					{
-						int left = i * getWidth() / stripeCount;
-						int right = (i + 1) * getWidth() / stripeCount;
+						int left = getMixedColorStripeLeft(i, stripeCount, getWidth());
+						int right = getMixedColorStripeLeft(i + 1, stripeCount, getWidth());
 						g.setColor(isEnabled() ? mixedColors.get(i) : fadeTowardBackground(mixedColors.get(i)));
 						g.fillRect(left, 0, right - left, getHeight());
 						if (i > 0)
@@ -447,10 +474,11 @@ public class SwingHelper
 	/**
 	 * Gives a color swatch a right-click menu that copies its color to the clipboard, and pastes a color from the clipboard into it. The
 	 * color is put on the clipboard as hex text, such as #8C6B4A, or #8C6B4A80 when it is partly transparent, so colors can be pasted
-	 * between maps and from other programs. Pasting is unavailable while the swatch is disabled.
+	 * between maps and from other programs. Pasting is unavailable while the swatch is disabled. On a swatch that shows several colors, Copy
+	 * copies the one that was right-clicked.
 	 *
 	 * @param getColor
-	 *            The color to copy.
+	 *            The color to copy when the swatch shows only one color.
 	 * @param pasteColor
 	 *            Applies a pasted color, the same way choosing it in the swatch's color picker does.
 	 */
@@ -482,7 +510,8 @@ public class SwingHelper
 				}
 				JPopupMenu menu = new JPopupMenu();
 				JMenuItem copyItem = new JMenuItem(Translation.get("colorSwatch.copy"));
-				copyItem.addActionListener(event -> copyColorToClipboard(getColor.get()));
+				Color stripeColor = getMixedColorStripeAt(swatch, e.getX());
+				copyItem.addActionListener(event -> copyColorToClipboard(stripeColor != null ? stripeColor : getColor.get()));
 				menu.add(copyItem);
 				Color clipboardColor = readColorFromClipboard();
 				JMenuItem pasteItem = new JMenuItem(Translation.get("colorSwatch.paste"));
@@ -675,17 +704,49 @@ public class SwingHelper
 	 */
 	public static void showColorPickerWithLiveMapPreview(JPanel colorDisplay, String title, Runnable redrawAction, Runnable setUndoPointAction)
 	{
+		showColorPickerWithLiveMapPreview(colorDisplay, title, redrawAction, setUndoPointAction, redrawAction, false);
+	}
+
+	/**
+	 * Like {@link #showColorPickerWithLiveMapPreview(JPanel, String, Runnable, Runnable)}, except that canceling runs restoreAction instead of
+	 * redrawAction, to put back what the map showed before the picker opened. This is for swatches whose original state isn't a single
+	 * color, such as one made by {@link #createColorPickerPreviewPanel()} that stands for several colors, which redrawing with the swatch's
+	 * color wouldn't restore. While the color changes, such a swatch shows only the chosen color, and canceling restores its stripes. OK
+	 * always applies the chosen color with redrawAction, even if it wasn't changed, unless the last redraw already used it.
+	 */
+	public static void showColorPickerWithLiveMapPreview(JPanel colorDisplay, String title, Runnable redrawAction, Runnable setUndoPointAction, Runnable restoreAction)
+	{
+		showColorPickerWithLiveMapPreview(colorDisplay, title, redrawAction, setUndoPointAction, restoreAction, true);
+	}
+
+	/**
+	 * @param okAlwaysApplies
+	 *            Whether OK runs redrawAction when no redraw has happened yet, even if the color is unchanged. That matters when redrawAction
+	 *            does more than redraw, such as giving every selected object the swatch's color.
+	 */
+	private static void showColorPickerWithLiveMapPreview(JPanel colorDisplay, String title, Runnable redrawAction, Runnable setUndoPointAction, Runnable restoreAction,
+			boolean okAlwaysApplies)
+	{
 		Color originalColor = colorDisplay.getBackground();
+		Object originalMixedColors = colorDisplay.getClientProperty(mixedColorsProperty);
 		JColorChooser colorChooser = createColorChooserWithOnlyGoodPanels(originalColor);
 		Consumer<Color> setColor = color ->
 		{
 			colorDisplay.setBackground(color);
+			if (colorDisplay.getClientProperty(mixedColorsProperty) != null)
+			{
+				clearMixedColorsInColorPickerPreview(colorDisplay);
+			}
 		};
 
-		Color[] lastColorDrawn = { originalColor };
+		// Null while the map shows several colors.
+		Color originalColorDrawn = originalMixedColors == null ? originalColor : null;
+		Color[] lastColorDrawn = { originalColorDrawn };
+		boolean[] hasRedrawn = { false };
 		Runnable redrawWithCurrentColor = () ->
 		{
 			lastColorDrawn[0] = colorDisplay.getBackground();
+			hasRedrawn[0] = true;
 			redrawAction.run();
 		};
 		// A throttle rather than a debounce: it is only started when it isn't running, so the map keeps redrawing while the user drags.
@@ -704,7 +765,7 @@ public class SwingHelper
 		{
 			redrawTimer.stop();
 			setColor.accept(colorChooser.getColor());
-			if (!Objects.equals(lastColorDrawn[0], colorDisplay.getBackground()))
+			if (!Objects.equals(lastColorDrawn[0], colorDisplay.getBackground()) || (okAlwaysApplies && !hasRedrawn[0]))
 			{
 				redrawWithCurrentColor.run();
 			}
@@ -714,9 +775,12 @@ public class SwingHelper
 		{
 			redrawTimer.stop();
 			setColor.accept(originalColor);
-			if (!Objects.equals(lastColorDrawn[0], originalColor))
+			colorDisplay.putClientProperty(mixedColorsProperty, originalMixedColors);
+			colorDisplay.repaint();
+			if (!Objects.equals(lastColorDrawn[0], originalColorDrawn))
 			{
-				redrawWithCurrentColor.run();
+				lastColorDrawn[0] = originalColorDrawn;
+				restoreAction.run();
 			}
 		};
 		showModalColorPicker(colorDisplay, title, colorChooser, okHandler, cancelHandler);

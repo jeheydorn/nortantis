@@ -26,6 +26,7 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -88,8 +89,27 @@ class TextStylesPanel
 		for (TextType type : TextType.values())
 		{
 			GridBagOrganizer cardOrganizer = new GridBagOrganizer();
-			TextStyleControls controls = new TextStyleControls(cardOrganizer, edit -> handleEdit(type, edit), this::getFontFamiliesUsedByThisMap,
-					() -> getTextThatFollowsTypeFont(type));
+			TextStyleControls controls = new TextStyleControls(cardOrganizer, new TextStyleControls.StyleEditHandler()
+			{
+				@Override
+				public void applyEdit(TextStyleControls.StyleEdit edit, boolean setUndoPoint)
+				{
+					handleEdit(type, edit, setUndoPoint);
+				}
+
+				@Override
+				public void setUndoPoint()
+				{
+					mainWindow.undoer.setUndoPoint(UpdateType.Text, null);
+				}
+
+				@Override
+				public Runnable saveStylesForRestore()
+				{
+					TextStyle saved = styles.get(type) == null ? null : styles.get(type).copy();
+					return () -> restoreStyle(type, saved);
+				}
+			}, () -> mainWindow.updater, this::getFontFamiliesUsedByThisMap, () -> getTextThatFollowsTypeFont(type));
 			controls.setVisible(true);
 			controlsByType.put(type, controls);
 
@@ -176,7 +196,7 @@ class TextStylesPanel
 		return result.toString();
 	}
 
-	private void handleEdit(TextType type, TextStyleControls.StyleEdit edit)
+	private void handleEdit(TextType type, TextStyleControls.StyleEdit edit, boolean setUndoPoint)
 	{
 		TextStyle style = styles.get(type);
 		if (style == null)
@@ -186,12 +206,43 @@ class TextStylesPanel
 		edit.apply(style);
 		controlsByType.get(type).showStyles(Arrays.asList(style));
 		updateSample(type);
-		handleStylesChange();
+		if (setUndoPoint)
+		{
+			handleStylesChange();
+		}
+		else
+		{
+			redrawForStylesChange();
+		}
+	}
+
+	/**
+	 * Puts back a style saved by copying it, and redraws the map without setting an undo point.
+	 */
+	private void restoreStyle(TextType type, TextStyle saved)
+	{
+		TextStyle style = styles.get(type);
+		if (style == null || saved == null)
+		{
+			return;
+		}
+		style.copyPartsFrom(saved, EnumSet.allOf(TextStylePart.class));
+		controlsByType.get(type).showStyles(Arrays.asList(style));
+		updateSample(type);
+		redrawForStylesChange();
 	}
 
 	private void handleStylesChange()
 	{
 		mainWindow.undoer.setUndoPoint(UpdateType.Text, null);
+		redrawForStylesChange();
+	}
+
+	/**
+	 * Redraws the text for a style change without setting an undo point.
+	 */
+	private void redrawForStylesChange()
+	{
 		mainWindow.handleThemeChange(false);
 		mainWindow.updater.createAndShowMapTextChange();
 	}

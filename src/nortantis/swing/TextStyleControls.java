@@ -4,6 +4,7 @@ import nortantis.TextBackground;
 import nortantis.TextBackgroundEffect;
 import nortantis.TextStyle;
 import nortantis.TextStylePart;
+import nortantis.editor.MapUpdater;
 import nortantis.platform.Color;
 import nortantis.platform.Font;
 import nortantis.platform.awt.AwtBridge;
@@ -40,10 +41,29 @@ class TextStyleControls
 		}
 	}
 
+	/**
+	 * Applies the changes the user makes to the styles the controls show.
+	 */
+	interface StyleEditHandler
+	{
+		/**
+		 * Applies the edit to the styles shown and redraws the map, setting an undo point only if setUndoPoint is true.
+		 */
+		void applyEdit(StyleEdit edit, boolean setUndoPoint);
+
+		void setUndoPoint();
+
+		/**
+		 * Returns an action that puts back the styles shown as they are now, and redraws the map without setting an undo point.
+		 */
+		Runnable saveStylesForRestore();
+	}
+
 	static final Integer[] fontSizes = { 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72, 96, 120, 144, 168, 192, 216, 240 };
 	private static final int fadeSliderDivider = 10;
 
-	private final Consumer<StyleEdit> onEdit;
+	private final StyleEditHandler editHandler;
+	private final Supplier<MapUpdater> getUpdater;
 	private final FontChooser fontChooser;
 	private final JComboBox<Integer> sizeComboBox;
 	private final JPanel colorDisplay;
@@ -79,16 +99,18 @@ class TextStyleControls
 	/**
 	 * Adds the controls to the organizer.
 	 *
-	 * @param onEdit
-	 *            Called with each change the user makes.
+	 * @param editHandler
+	 *            Applies each change the user makes.
 	 * @param familiesUsedByThisMap
 	 *            The font families the map draws with, which the font picker lists first.
 	 * @param textThatMustBeDrawable
 	 *            The text the chosen font has to be able to draw.
 	 */
-	TextStyleControls(GridBagOrganizer organizer, Consumer<StyleEdit> onEdit, Supplier<List<String>> familiesUsedByThisMap, Supplier<String> textThatMustBeDrawable)
+	TextStyleControls(GridBagOrganizer organizer, StyleEditHandler editHandler, Supplier<MapUpdater> getUpdater, Supplier<List<String>> familiesUsedByThisMap,
+			Supplier<String> textThatMustBeDrawable)
 	{
-		this.onEdit = onEdit;
+		this.editHandler = editHandler;
+		this.getUpdater = getUpdater;
 		final int maxFontPreviewHeight = 90;
 		fontChooser = new FontChooser(Translation.get("textTool.font.label"), 30, maxFontPreviewHeight, 40, this::handleFontChosen);
 		fontChooser.setFamiliesUsedByThisMap(familiesUsedByThisMap);
@@ -236,13 +258,29 @@ class TextStyleControls
 			reportEdit(part, createChange.apply(AwtBridge.fromAwtColor(display.getBackground())));
 		};
 		JButton chooseButton = new JButton(Translation.get("common.choose"));
-		chooseButton.addActionListener(e -> SwingHelper.showColorPicker(organizer.panel, display, pickerTitle, applyDisplayedColor));
+		chooseButton.addActionListener(e -> showColorPickerWithLiveMapPreview(display, pickerTitle, part, createChange));
 		SwingHelper.addColorCopyAndPasteMenu(display, display::getBackground, color ->
 		{
 			display.setBackground(color);
 			applyDisplayedColor.run();
 		});
 		return organizer.addLabelAndComponentsHorizontal(label, help, Arrays.asList(display, chooseButton), SwingHelper.colorPickerLeftPadding);
+	}
+
+	/**
+	 * Shows a color picker that redraws the map with the color as it changes, sets an undo point if OK is pressed, and puts back the styles
+	 * shown if it is canceled.
+	 */
+	private void showColorPickerWithLiveMapPreview(JPanel display, String pickerTitle, TextStylePart part, Function<Color, Consumer<TextStyle>> createChange)
+	{
+		// An undo or edit that is waiting for the current draw to finish could otherwise run while the picker is open and change the styles
+		// shown.
+		getUpdater.get().doAfterActionsWaitingForDrawing(() -> SwingUtilities.invokeLater(() ->
+		{
+			Runnable restoreStyles = editHandler.saveStylesForRestore();
+			SwingHelper.showColorPickerWithLiveMapPreview(display, pickerTitle,
+					() -> reportEdit(part, createChange.apply(AwtBridge.fromAwtColor(display.getBackground())), false), editHandler::setUndoPoint, restoreStyles);
+		}));
 	}
 
 	private static Integer parseSize(Object item)
@@ -268,11 +306,16 @@ class TextStyleControls
 
 	private void reportEdit(TextStylePart part, Consumer<TextStyle> change)
 	{
+		reportEdit(part, change, true);
+	}
+
+	private void reportEdit(TextStylePart part, Consumer<TextStyle> change, boolean setUndoPoint)
+	{
 		if (isLoading)
 		{
 			return;
 		}
-		onEdit.accept(new StyleEdit(part, change));
+		editHandler.applyEdit(new StyleEdit(part, change), setUndoPoint);
 	}
 
 	private void addPartLabel(TextStylePart part, RowHider row)

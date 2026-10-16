@@ -7,6 +7,7 @@ import nortantis.MapSettings;
 import nortantis.MapText;
 import nortantis.TextDrawer;
 import nortantis.TextStyle;
+import nortantis.TextStyleOverrides;
 import nortantis.TextStylePart;
 import nortantis.TextType;
 import nortantis.editor.MapUpdater;
@@ -374,12 +375,44 @@ public class TextTool extends EditorTool
 		editTextTypeHider = organizer.addLabelAndComponent(Translation.get("textTool.textType.label"), "", editTextTypeComboBox);
 
 		editStyleHeadingHider = organizer.addSectionHeading(Translation.get("textTool.section.style"));
-		editStyleControls = new TextStyleControls(organizer, edit -> applyToSelectedTexts(text ->
+		editStyleControls = new TextStyleControls(organizer, new TextStyleControls.StyleEditHandler()
 		{
-			TextStyle style = resolveStyle(text).copy();
-			edit.apply(style);
-			text.styleOverrides.set(edit.part(), style);
-		}), this::getFontFamiliesUsedByThisMap, () -> selectedTexts.size() == 1 ? editTextField.getText() : "");
+			@Override
+			public void applyEdit(TextStyleControls.StyleEdit edit, boolean setUndoPoint)
+			{
+				applyToSelectedTexts(text ->
+				{
+					TextStyle style = resolveStyle(text).copy();
+					edit.apply(style);
+					text.styleOverrides.set(edit.part(), style);
+				}, true, setUndoPoint);
+			}
+
+			@Override
+			public void setUndoPoint()
+			{
+				undoer.setUndoPoint(UpdateType.Incremental, TextTool.this);
+			}
+
+			@Override
+			public Runnable saveStylesForRestore()
+			{
+				// Keyed by identity because a text's hash code depends on its style overrides.
+				Map<MapText, TextStyleOverrides> overridesByText = new IdentityHashMap<>();
+				for (MapText text : selectedTexts)
+				{
+					overridesByText.put(text, text.styleOverrides.copy());
+				}
+				return () -> applyToSelectedTexts(text ->
+				{
+					TextStyleOverrides overrides = overridesByText.get(text);
+					if (overrides != null)
+					{
+						text.styleOverrides = overrides.copy();
+					}
+				}, true, false);
+			}
+		}, () -> updater, this::getFontFamiliesUsedByThisMap, () -> selectedTexts.size() == 1 ? editTextField.getText() : "");
 
 		copyStyleToButton = new JButton(Translation.get("textTool.copyStyleTo"));
 		copyStyleToButton.setToolTipText(Translation.get("textTool.copyStyleTo.tooltip"));
@@ -1106,6 +1139,11 @@ public class TextTool extends EditorTool
 	 */
 	private void applyToSelectedTexts(Consumer<MapText> change, boolean updateSelectionBoxesNow)
 	{
+		applyToSelectedTexts(change, updateSelectionBoxesNow, true);
+	}
+
+	private void applyToSelectedTexts(Consumer<MapText> change, boolean updateSelectionBoxesNow, boolean setUndoPoint)
+	{
 		if (selectedTexts.isEmpty())
 		{
 			return;
@@ -1120,7 +1158,10 @@ public class TextTool extends EditorTool
 			change.accept(text);
 			textsToRedraw.add(text);
 		}
-		undoer.setUndoPoint(UpdateType.Incremental, this);
+		if (setUndoPoint)
+		{
+			undoer.setUndoPoint(UpdateType.Incremental, this);
+		}
 		updater.createAndShowMapIncrementalUsingText(textsToRedraw);
 		showEditComponentsForSelection(SelectionFocus.Leave);
 		if (updateSelectionBoxesNow)
