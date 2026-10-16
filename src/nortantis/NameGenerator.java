@@ -38,13 +38,20 @@ public class NameGenerator
 		nGram = new CharacterNGram(r, 3);
 		rand = r;
 
-		// Find the average word length.
+		// Find the average word length, counting each word of a multi-word name separately, since generateName compares this
+		// against single words.
 		int sum = 0;
 		int count = 0;
 		for (String name : corporaNames)
 		{
-			sum += name.length();
-			count++;
+			for (String word : name.split(" "))
+			{
+				if (!word.isEmpty())
+				{
+					sum += word.length();
+					count++;
+				}
+			}
 		}
 		averageWordLength = ((double) sum) / count;
 
