@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -373,8 +374,13 @@ class TextStyleControls
 		{
 			TextStyle first = styles.get(0);
 
-			fontChooser.setFont(AwtBridge.toAwtFont(first.font));
-			if (!allSame(styles, style -> style.font.getName().toLowerCase() + "/" + style.font.getStyle()))
+			// The most common font, at the most common size.
+			Function<TextStyle, String> getFontKey = style -> style.font.getName().toLowerCase() + "/" + style.font.getStyle();
+			String mostCommonFontKey = mostCommon(styles, getFontKey);
+			TextStyle withMostCommonFont = styles.stream().filter(style -> getFontKey.apply(style).equals(mostCommonFontKey)).findFirst().get();
+			float mostCommonSize = mostCommon(styles, style -> style.font.getSize());
+			fontChooser.setFont(AwtBridge.toAwtFont(withMostCommonFont.font.deriveFont(withMostCommonFont.font.getStyle(), mostCommonSize)));
+			if (!allSame(styles, getFontKey))
 			{
 				fontChooser.setMixed();
 			}
@@ -447,6 +453,29 @@ class TextStyleControls
 			}
 		}
 		return true;
+	}
+
+	/**
+	 * The value the most styles have, or the first of those values to appear when several are tied.
+	 */
+	private static <T> T mostCommon(List<TextStyle> styles, Function<TextStyle, T> getValue)
+	{
+		Map<T, Integer> counts = new LinkedHashMap<>();
+		for (TextStyle style : styles)
+		{
+			counts.merge(getValue.apply(style), 1, Integer::sum);
+		}
+		T result = null;
+		int highestCount = 0;
+		for (Map.Entry<T, Integer> entry : counts.entrySet())
+		{
+			if (entry.getValue() > highestCount)
+			{
+				result = entry.getKey();
+				highestCount = entry.getValue();
+			}
+		}
+		return result;
 	}
 
 	private static void showColor(JPanel display, List<TextStyle> styles, Function<TextStyle, Color> getColor)

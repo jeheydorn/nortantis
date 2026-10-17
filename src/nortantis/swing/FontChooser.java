@@ -31,7 +31,18 @@ public class FontChooser
 	 */
 	private static final double previewDescenderShareOfPointSize = 0.3;
 
-	private final JLabel fontDisplay = new JLabel("");
+	/**
+	 * True while the preview stands for several fonts that differ. The preview then says so in dimmed text.
+	 */
+	private boolean isMixed;
+	private final JLabel fontDisplay = new JLabel("")
+	{
+		@Override
+		public Color getForeground()
+		{
+			return isMixed ? UIManager.getColor("Label.disabledForeground") : super.getForeground();
+		}
+	};
 	private final JPanel displayHolder = new JPanel();
 	private Supplier<String> textThatMustBeDrawable = () -> "";
 	private String nameOfTextThatMustBeDrawable;
@@ -150,12 +161,17 @@ public class FontChooser
 	}
 
 	/**
-	 * Shows that the chooser stands for several fonts that differ, by leaving the preview blank. The chooser opens on the font last set with
-	 * {@link #setFont}.
+	 * Shows that the chooser stands for several fonts that differ, by saying so in the preview in the interface's font rather than in any of
+	 * them. The chooser opens on the font last set with {@link #setFont}.
 	 */
 	public void setMixed()
 	{
-		fontDisplay.setText("");
+		isMixed = true;
+		fontDisplay.setFont(UIManager.getFont("Label.font").deriveFont(Font.ITALIC));
+		fontDisplay.setText(Translation.get("fontChooser.mixed"));
+		fontDisplay.setBorder(BorderFactory.createEmptyBorder());
+		displayHolder.revalidate();
+		fontDisplay.repaint();
 	}
 
 	private void updatePreview()
@@ -164,6 +180,7 @@ public class FontChooser
 		{
 			return;
 		}
+		isMixed = false;
 
 		Font displayFont = font.deriveFont(font.getStyle(), (float) (Math.min(font.getSize(), maxFontDisplaySize)));
 		fontDisplay.setFont(displayFont);
