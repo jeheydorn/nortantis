@@ -40,9 +40,11 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private final Color waterHighlightColor = new Color(0, 193, 245);
 	private final Color artPackHighlightColor = Color.CYAN;
 	private final Color ownTextStyleHighlightColor = new Color(232, 85, 232);
-	private final Color processingColor = Color.orange;
-	private final Color selectColor = Color.orange;
-	private final Color selectionRemovePreviewColor = Color.orange;
+	/**
+	 * The color of every secondary highlight: what hovering, Alt+click, or Ctrl+Alt+click would select or remove, what is being processed,
+	 * and selected areas. Its hue is far enough from {@link #highlightEditColor} to tell the two apart on a map's warm colors.
+	 */
+	private final Color secondaryHighlightColor = new Color(255, 190, 0);
 	private Set<Center> highlightedCenters;
 	private Set<Center> selectedCenters;
 	private WorldGraph graph;
@@ -993,7 +995,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 		if (!selectionCycleCandidateAreas.isEmpty() && showHoverHighlights)
 		{
-			g.setColor(processingColor);
+			g.setColor(secondaryHighlightColor);
 			for (Area area : selectionCycleCandidateAreas)
 			{
 				g2.draw(area);
@@ -1064,7 +1066,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 				drawCenterOutlines(g, highlightedCenters);
 				// Hover polylines (orange) go below selected polylines (yellow) so a selected segment that also happens to be near the
 				// cursor shows the brighter selected color.
-				g.setColor(processingColor);
+				g.setColor(secondaryHighlightColor);
 				drawHoverPolylines(g);
 				g.setColor(getHighlightColor());
 				drawEdges(g, highlightedEdges);
@@ -1072,7 +1074,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 			g.setColor(getHighlightColor());
 			drawPolylines(g);
-			g.setColor(processingColor);
+			g.setColor(secondaryHighlightColor);
 			drawProcessingPolylines(g);
 			if (segmentsToBeRemoved != null)
 			{
@@ -1084,7 +1086,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 			}
 			drawRoadControlPoints((Graphics2D) g);
 
-			g.setColor(selectColor);
+			g.setColor(secondaryHighlightColor);
 			drawCenterOutlines(g, selectedCenters);
 		}
 
@@ -1360,7 +1362,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 		if (!processingAreas.isEmpty())
 		{
-			g.setColor(processingColor);
+			g.setColor(secondaryHighlightColor);
 			for (RotatedRectangle rect : processingAreas)
 			{
 				Area area = AwtFactory.toAwtArea(rect);
@@ -1375,7 +1377,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 	 */
 	private void drawSelectionRemovePreview(Graphics2D g)
 	{
-		g.setColor(selectionRemovePreviewColor);
+		g.setColor(secondaryHighlightColor);
 		for (Area area : selectionRemovePreviewAreas)
 		{
 			g.draw(area);
@@ -1549,7 +1551,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		// Drawn in that order so a hovered or selected CP's glyph covers the underlying orange ring.
 		if (roadControlPointCircles != null)
 		{
-			g2.setColor(processingColor);
+			g2.setColor(secondaryHighlightColor);
 			for (Point p : roadControlPointCircles)
 			{
 				g2.drawOval((int) p.x - r, (int) p.y - r, r * 2, r * 2);
@@ -1564,7 +1566,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 			}
 			else
 			{
-				g2.setColor(processingColor);
+				g2.setColor(secondaryHighlightColor);
 				for (Point p : hoveredRoadControlPoints)
 				{
 					g2.drawOval((int) p.x - r, (int) p.y - r, r * 2, r * 2);
@@ -2299,7 +2301,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		int height = selectionBoxScaled.height;
 
 		// Draw corner/edge handles.
-		g2.setColor(processingColor);
+		g2.setColor(secondaryHighlightColor);
 		// Save the entry stroke so none of the strokes set below leak out to later draws (this method shares the panel's Graphics2D).
 		Stroke originalStroke = g2.getStroke();
 		g2.setStroke(new BasicStroke(1.5f));
