@@ -58,7 +58,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 	 * The widest that the highlights of river and road segments are drawn, as a multiple of the width of the line of their control points'
 	 * rings. Control points shrink with the polygons as the world size grows, so this keeps the highlight from covering them on large worlds.
 	 */
-	private static final float maxRiverAndRoadHighlightWidthToControlPointStrokeWidth = 1f;
+	private static final float maxRiverAndRoadHighlightWidthToControlPointStrokeWidth = 0.8f;
 	/**
 	 * The dashes of the outlines of what Alt+click or Ctrl+Alt+click would select or remove, and of the rectangle dragged out to select, in
 	 * device pixels so they look the same at every zoom level.
@@ -414,15 +414,6 @@ public class MapEditingPanel extends UnscaledImagePanel
 		this.freeHandPreviewPath = null;
 	}
 
-	public void setTextBoxToDraw(nortantis.geom.RotatedRectangle line1Bounds, nortantis.geom.RotatedRectangle line2Bounds)
-	{
-		if (line1Bounds != null)
-		{
-			this.textBoxBounds = line1Bounds.addRotatedRectangleThatHasTheSameAngleAndPivot(line2Bounds);
-			this.isTextBoxInAValidPosition = true;
-		}
-	}
-
 	public void clearTextBox()
 	{
 		this.textBoxBounds = null;
@@ -743,22 +734,6 @@ public class MapEditingPanel extends UnscaledImagePanel
 		highlightedAreas.clear();
 		redHighlightedAreas.clear();
 		clearSelectionRemovePreview();
-	}
-
-	public void addProcessingAreasFromTexts(List<MapText> texts)
-	{
-		for (MapText text : texts)
-		{
-			if (text.line1Bounds != null)
-			{
-				processingAreas.add(text.line1Bounds);
-			}
-
-			if (text.line2Bounds != null)
-			{
-				processingAreas.add(text.line2Bounds);
-			}
-		}
 	}
 
 	public void addProcessingAreas(Set<RotatedRectangle> areas)
