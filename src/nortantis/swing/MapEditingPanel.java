@@ -55,6 +55,11 @@ public class MapEditingPanel extends UnscaledImagePanel
 	 */
 	private static final float minHighlightWidthInDevicePixels = 1f;
 	/**
+	 * The widest that the highlights of river and road segments are drawn, as a multiple of the width of the line of their control points'
+	 * rings. Control points shrink with the polygons as the world size grows, so this keeps the highlight from covering them on large worlds.
+	 */
+	private static final float maxRiverAndRoadHighlightWidthToControlPointStrokeWidth = 1f;
+	/**
 	 * The dashes of the outlines of what Alt+click or Ctrl+Alt+click would select or remove, and of the rectangle dragged out to select, in
 	 * device pixels so they look the same at every zoom level.
 	 */
@@ -1096,8 +1101,9 @@ public class MapEditingPanel extends UnscaledImagePanel
 				drawCenterOutlines(g, highlightedCenters);
 			}
 
-			// Highlights drawn along a line, rather than around something, are thinner than outlines.
-			g2.setStroke(new BasicStroke(getDrawnLineHighlightWidth(g2)));
+			// Highlights drawn along a line, rather than around something.
+			Stroke riverAndRoadStroke = new BasicStroke(getDrawnRiverAndRoadHighlightWidth(g2));
+			g2.setStroke(riverAndRoadStroke);
 			if (showHoverHighlights)
 			{
 				// Hover polylines (orange) go below selected polylines (yellow) so a selected segment that also happens to be near the
@@ -1105,7 +1111,9 @@ public class MapEditingPanel extends UnscaledImagePanel
 				g.setColor(secondaryHighlightColor);
 				drawHoverPolylines(g);
 				g.setColor(getHighlightColor());
+				g2.setStroke(new BasicStroke(getDrawnLineHighlightWidth(g2)));
 				drawEdges(g, highlightedEdges);
+				g2.setStroke(riverAndRoadStroke);
 			}
 
 			g.setColor(getHighlightColor());
@@ -1467,6 +1475,17 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private float getDrawnOutlineWidth(Graphics2D g)
 	{
 		return Math.max(getOutlineWidth(), minHighlightWidthInDevicePixels * getDevicePixelSize(g));
+	}
+
+	/**
+	 * The width, in g's coordinates, that the highlights of river and road segments are drawn at: {@link #getLineHighlightWidth()}, but no
+	 * wider than {@link #maxRiverAndRoadHighlightWidthToControlPointStrokeWidth} allows and no thinner on screen than
+	 * {@link #minHighlightWidthInDevicePixels}.
+	 */
+	private float getDrawnRiverAndRoadHighlightWidth(Graphics2D g)
+	{
+		float width = Math.min(getLineHighlightWidth(), maxRiverAndRoadHighlightWidthToControlPointStrokeWidth * getRoadControlPointStrokeWidth());
+		return Math.max(width, minHighlightWidthInDevicePixels * getDevicePixelSize(g));
 	}
 
 	/**
