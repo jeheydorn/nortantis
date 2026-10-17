@@ -119,7 +119,7 @@ class TextStylesPanel
 			cardOrganizer.addLeftAlignedComponents(Arrays.asList(copyButton));
 			cardOrganizer.addHorizontalSpacerRowToHelpComponentAlignment(0.64);
 
-			CollapsiblePanel card = new CollapsiblePanel("text_styles", type.name(), type.toString(), cardOrganizer.panel, true);
+			CollapsiblePanel card = new CollapsiblePanel(type.toString(), cardOrganizer.panel);
 			SamplePanel sample = new SamplePanel();
 			card.setTitleAccessory(sample);
 			samplesByType.put(type, sample);

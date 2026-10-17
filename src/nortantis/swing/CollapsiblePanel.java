@@ -96,6 +96,16 @@ public class CollapsiblePanel extends JPanel
 	}
 
 	/**
+	 * Creates a card that starts collapsed each time the app opens, because its collapsed state isn't stored in user preferences.
+	 */
+	public CollapsiblePanel(String name, JPanel contentPanel)
+	{
+		this(null, null, name, contentPanel, true);
+	}
+
+	/**
+	 * @param namespace
+	 *            Null to not store the collapsed state in user preferences.
 	 * @param defaultCollapsed
 	 *            Whether the panel starts collapsed when the user hasn't collapsed or expanded it.
 	 */
@@ -104,7 +114,8 @@ public class CollapsiblePanel extends JPanel
 		this.namespace = namespace;
 		this.untranslatedName = untranslatedName;
 		this.contentPanel = contentPanel;
-		isCollapsed = UserPreferences.getInstance().panelCollapsedStates.getOrDefault(getNameKey(), defaultCollapsed);
+		isCollapsed = namespace == null ? defaultCollapsed
+				: UserPreferences.getInstance().panelCollapsedStates.getOrDefault(getNameKey(namespace, untranslatedName), defaultCollapsed);
 
 		setLayout(new BorderLayout());
 		setOpaque(false);
@@ -247,10 +258,13 @@ public class CollapsiblePanel extends JPanel
 
 	private void storeCollapsedState()
 	{
-		UserPreferences.getInstance().panelCollapsedStates.put(getNameKey(), isCollapsed);
+		if (namespace != null)
+		{
+			UserPreferences.getInstance().panelCollapsedStates.put(getNameKey(namespace, untranslatedName), isCollapsed);
+		}
 	}
 
-	private String getNameKey()
+	private static String getNameKey(String namespace, String untranslatedName)
 	{
 		return namespace + "~" + untranslatedName;
 	}
