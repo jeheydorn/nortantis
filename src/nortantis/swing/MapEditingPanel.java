@@ -48,12 +48,16 @@ public class MapEditingPanel extends UnscaledImagePanel
 	/**
 	 * The width of highlights drawn along a line - river and road segments and edges - as a multiple of {@link #getBaseHighlightWidth()}.
 	 */
-	private static final float lineHighlightWidthScale = 1.4f;
+	private static final float lineHighlightWidthScale = 1.2f;
 	/**
 	 * The thinnest that highlights drawn around something and highlights drawn along a line are drawn on screen, in device pixels. Below
 	 * this, an antialiased line covers too little of any pixel to be seen well, so zooming out further stops thinning them.
 	 */
 	private static final float minHighlightWidthInDevicePixels = 1f;
+	/**
+	 * The width of the brush circle, in panel pixels. The brush stays the same size on screen at every zoom level, so its line does too.
+	 */
+	private static final float brushCircleWidthInPanelPixels = 1.0f;
 	/**
 	 * The widest that the highlights of river and road segments are drawn, as a multiple of the width of the line of their control points'
 	 * rings. Control points shrink with the polygons as the world size grows, so this keeps the highlight from covering them on large worlds.
@@ -1355,7 +1359,14 @@ public class MapEditingPanel extends UnscaledImagePanel
 		AffineTransform panelTransform = new AffineTransform(transformWithOsScaling);
 		panelTransform.concatenate(getInverseZoomPreviewTransform());
 		g.setTransform(panelTransform);
+		Stroke originalStroke = g.getStroke();
+		Object originalAntialiasing = g.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
+		// Antialiased so that the circle is drawn at its fractional width rather than a whole number of pixels.
+		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		g.setStroke(new BasicStroke(brushCircleWidthInPanelPixels));
 		g.drawOval(brushLocation.x - brushDiameter / 2, brushLocation.y - brushDiameter / 2, brushDiameter, brushDiameter);
+		g.setStroke(originalStroke);
+		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, originalAntialiasing);
 		g.setTransform(t);
 		g.setClip(originalClip);
 	}
