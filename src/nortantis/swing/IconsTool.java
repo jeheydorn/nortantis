@@ -148,6 +148,7 @@ public class IconsTool extends EditorTool
 	private boolean disableColorChangeHandlers;
 	private RowHider brushAndEditOptionsSeparatorHider;
 	private JCheckBox fillWithColorCheckbox;
+	private JButton resetScaleButton;
 	private RowHider fillColorHider;
 	private volatile long previewUpdateGeneration;
 
@@ -417,13 +418,13 @@ public class IconsTool extends EditorTool
 		brushAndEditOptionsSeparatorHider = organizer.addSeparator();
 
 		{
-			JButton clearScaleButton = new JButton(Translation.get("iconsTool.resetScale"));
-			clearScaleButton.setToolTipText(Translation.get("iconsTool.resetScale.tooltip"));
-			clearScaleButton.addActionListener(ev -> clearScaleOnSelectedIcons());
+			resetScaleButton = new JButton(Translation.get("iconsTool.resetScale"));
+			resetScaleButton.setToolTipText(Translation.get("iconsTool.resetScale.tooltip"));
+			resetScaleButton.addActionListener(ev -> clearScaleOnSelectedIcons());
 
 			EditClipboardButtonsWidget editButtons = new EditClipboardButtonsWidget(this::copySelectedIcons, this::pasteSelectedIcons, this::deleteSelectedIcons,
 					this::selectAllIcons, Translation.get("iconsTool.delete.tooltip"));
-			deleteCopyPasteIconButtonsHider = editButtons.addToOrganizer(organizer, Arrays.asList(clearScaleButton));
+			deleteCopyPasteIconButtonsHider = editButtons.addToOrganizer(organizer, Arrays.asList(resetScaleButton));
 		}
 
 		{
@@ -797,6 +798,15 @@ public class IconsTool extends EditorTool
 
 		showSelection();
 		showOrHideEditComponents();
+		updateResetScaleButtonEnabled();
+	}
+
+	/**
+	 * Enables the Reset Scale button only when it would change one of the icons being edited.
+	 */
+	private void updateResetScaleButtonEnabled()
+	{
+		resetScaleButton.setEnabled(iconsToEdit != null && iconsToEdit.stream().anyMatch(icon -> icon.scale != icon.originalScale));
 	}
 
 	/**
@@ -2247,6 +2257,7 @@ public class IconsTool extends EditorTool
 					isMoving = false;
 					isScaling = false;
 					showSelection();
+					updateResetScaleButtonEnabled();
 				}
 				mapEditingPanel.repaint();
 			}

@@ -74,6 +74,7 @@ public class TextTool extends EditorTool
 	private JButton resetStyleButton;
 	private TextStyleControls editStyleControls;
 	private JButton copyStyleToButton;
+	private JButton rotateToHorizontalButton;
 	private RowHider styleButtonsHider;
 	private RowHider editLayoutRows;
 	private static final int curvatureSliderDivider = 100;
@@ -453,10 +454,10 @@ public class TextTool extends EditorTool
 		lineBreakComboBox = lineBreak.getFirst();
 		editLayoutRows.add(lineBreak.getSecond());
 
-		JButton clearRotationButton = new JButton(Translation.get("textTool.rotateToHorizontal"));
-		clearRotationButton.setToolTipText(Translation.get("textTool.rotateToHorizontal.tooltip"));
-		clearRotationButton.addActionListener(ev -> rotateSelectedTextToHorizontal());
-		editLayoutRows.add(organizer.addLeftAlignedComponents(Arrays.asList(clearRotationButton)));
+		rotateToHorizontalButton = new JButton(Translation.get("textTool.rotateToHorizontal"));
+		rotateToHorizontalButton.setToolTipText(Translation.get("textTool.rotateToHorizontal.tooltip"));
+		rotateToHorizontalButton.addActionListener(ev -> rotateSelectedTextToHorizontal());
+		editLayoutRows.add(organizer.addLeftAlignedComponents(Arrays.asList(rotateToHorizontalButton)));
 
 		copyPasteDeleteButtonsSeparatorHider = organizer.addSeparator();
 
@@ -839,6 +840,7 @@ public class TextTool extends EditorTool
 			curvatureSliderWithDisplay.showValues(getValuesOfSelectedTexts(text -> (int) Math.round(text.curvature * curvatureSliderDivider)));
 			spacingSliderWithDisplay.showValues(getValuesOfSelectedTexts(text -> text.spacing));
 			lineBreakComboBox.setSelectedItem(allTextsShare(text -> text.lineBreak) ? first.lineBreak : null);
+			rotateToHorizontalButton.setEnabled(selectedTexts.stream().anyMatch(text -> text.angle != 0));
 
 			actionsSeparatorHider.setVisible(true);
 		}
