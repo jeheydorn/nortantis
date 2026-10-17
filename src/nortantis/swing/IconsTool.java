@@ -302,6 +302,7 @@ public class IconsTool extends EditorTool
 				@Override
 				public void actionPerformed(ActionEvent e)
 				{
+					SwingHelper.setCheckBoxMixed(maximizeOpacityCheckbox, false);
 					handleColorChange(WhatHSBColorFieldChanged.maximizeOpacity);
 				}
 			});
@@ -384,6 +385,7 @@ public class IconsTool extends EditorTool
 			fillWithColorCheckbox = new JCheckBox(Translation.get("iconsTool.fillWithColor"));
 			fillWithColorCheckbox.addActionListener(e ->
 			{
+				SwingHelper.setCheckBoxMixed(fillWithColorCheckbox, false);
 				fillColorHider.setVisible(fillWithColorCheckbox.isSelected());
 				handleColorChange(WhatHSBColorFieldChanged.FillWithColorCheckbox);
 			});
@@ -756,7 +758,7 @@ public class IconsTool extends EditorTool
 
 
 				setColorFieldsWithoutRunningListeners(iconColorMode, filterColorMode, maximizeOpacityMode, fillWithColorMode);
-				showWhichFilterColorPartsAreMixed();
+				showWhichColorOptionsAreMixed();
 
 				// The most common fill color comes first, so that it is the one the color picker starts on.
 				List<java.awt.Color> fillColors = new ArrayList<>();
@@ -798,15 +800,31 @@ public class IconsTool extends EditorTool
 	}
 
 	/**
-	 * Shows a dash on the filter color slider of each part that the icons being edited don't all share. The sliders keep the values they
-	 * were given.
+	 * Shows which color options the icons being edited don't all share: a dash on the slider of each such part of the filter color, which
+	 * keeps the value it was given, and a mixed state on each such checkbox.
 	 */
-	private void showWhichFilterColorPartsAreMixed()
+	private void showWhichColorOptionsAreMixed()
 	{
+		SwingHelper.setCheckBoxMixed(maximizeOpacityCheckbox, iconsToEdit.stream().map(icon -> icon.maximizeOpacity).distinct().count() > 1);
+		boolean isFillWithColorMixed = iconsToEdit.stream().map(icon -> icon.fillWithColor).distinct().count() > 1;
+		SwingHelper.setCheckBoxMixed(fillWithColorCheckbox, isFillWithColorMixed);
+		if (isFillWithColorMixed)
+		{
+			fillColorHider.setVisible(true);
+		}
 		hueSliderWithDisplay.setMixed(iconsToEdit.stream().map(icon -> getFilterColorOrDefault(icon).hue).distinct().count() > 1);
 		saturationSliderWithDisplay.setMixed(iconsToEdit.stream().map(icon -> getFilterColorOrDefault(icon).saturation).distinct().count() > 1);
 		brightnessSliderWithDisplay.setMixed(iconsToEdit.stream().map(icon -> getFilterColorOrDefault(icon).brightness).distinct().count() > 1);
 		transparencySliderWithDisplay.setMixed(iconsToEdit.stream().map(icon -> getFilterColorOrDefault(icon).transparency).distinct().count() > 1);
+	}
+
+	/**
+	 * Whether the given icon being edited is to be filled with color: as the checkbox says, or as the icon already is while the checkbox
+	 * stands for icons that differ.
+	 */
+	private boolean getFillWithColorToUse(FreeIcon icon)
+	{
+		return SwingHelper.isCheckBoxMixed(fillWithColorCheckbox) ? icon.fillWithColor : fillWithColorCheckbox.isSelected();
 	}
 
 	private static HSBColor getFilterColorOrDefault(FreeIcon icon)
@@ -882,7 +900,7 @@ public class IconsTool extends EditorTool
 				List<FreeIcon> recolored = new ArrayList<>();
 				for (FreeIcon icon : originalIcons)
 				{
-					recolored.add(icon.copyWithColors(fillColor, icon.filterColor, icon.maximizeOpacity, fillWithColorCheckbox.isSelected()));
+					recolored.add(icon.copyWithColors(fillColor, icon.filterColor, icon.maximizeOpacity, getFillWithColorToUse(icon)));
 				}
 				showIcons.accept(recolored);
 			};
@@ -953,7 +971,8 @@ public class IconsTool extends EditorTool
 						throw new UnsupportedOperationException("Unimplemented filter value change case " + whatChanged);
 				}
 				boolean maximizeOpacityToUse = whatChanged == WhatHSBColorFieldChanged.maximizeOpacity ? maximizeOpacityCheckbox.isSelected() : iconToEdit.maximizeOpacity;
-				boolean fillWithColorToUse = (whatChanged == WhatHSBColorFieldChanged.FillColor || whatChanged == WhatHSBColorFieldChanged.FillWithColorCheckbox) ? fillWithColorCheckbox.isSelected()
+				boolean fillWithColorToUse = (whatChanged == WhatHSBColorFieldChanged.FillColor || whatChanged == WhatHSBColorFieldChanged.FillWithColorCheckbox)
+						? getFillWithColorToUse(iconToEdit)
 						: iconToEdit.fillWithColor;
 				Color fillColorToUse = whatChanged == WhatHSBColorFieldChanged.FillColor ? AwtBridge.fromAwtColor(fillColorDisplay.getBackground()) : iconToEdit.fillColor;
 				FreeIcon updatedIcon = iconToEdit.copyWithColors(fillColorToUse, filterColorToUse, maximizeOpacityToUse, fillWithColorToUse);
@@ -1012,6 +1031,8 @@ public class IconsTool extends EditorTool
 			brightnessSliderWithDisplay.setMixed(false);
 			transparencySliderWithDisplay.setMixed(false);
 
+			SwingHelper.setCheckBoxMixed(maximizeOpacityCheckbox, false);
+			SwingHelper.setCheckBoxMixed(fillWithColorCheckbox, false);
 			maximizeOpacityCheckbox.setSelected(maximizeOpacity);
 			fillWithColorCheckbox.setSelected(fillWithColor);
 			fillColorHider.setVisible(fillWithColor);

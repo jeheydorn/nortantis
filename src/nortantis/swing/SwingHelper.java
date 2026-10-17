@@ -7,6 +7,9 @@ import nortantis.util.Logger;
 import nortantis.util.OSHelper;
 import org.apache.commons.io.FilenameUtils;
 
+import com.formdev.flatlaf.FlatClientProperties;
+import com.formdev.flatlaf.FlatLaf;
+
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.plaf.basic.BasicHTML;
@@ -823,6 +826,55 @@ public class SwingHelper
 			y = Math.max(windowBounds.y, Math.min(y, windowBounds.y + windowBounds.height - dialogBounds.height));
 		}
 		dialog.setLocation(x, y);
+	}
+
+	private static final String textOfMixedCheckBoxProperty = "nortantis.textOfMixedCheckBox";
+
+	/**
+	 * Sets whether a checkbox stands for several values that differ. A mixed checkbox is unchecked, so clicking it checks it, and the
+	 * checkbox's action listener should clear the mixed state. Where the look and feel draws the indeterminate state of a checkbox, the box
+	 * shows it. Elsewhere the label says the values are mixed.
+	 */
+	public static void setCheckBoxMixed(JCheckBox checkBox, boolean isMixed)
+	{
+		if (isMixed == isCheckBoxMixed(checkBox))
+		{
+			return;
+		}
+		if (isMixed)
+		{
+			checkBox.setSelected(false);
+			checkBox.putClientProperty(FlatClientProperties.SELECTED_STATE, FlatClientProperties.SELECTED_STATE_INDETERMINATE);
+			if (!doesLookAndFeelDrawIndeterminateCheckBoxes())
+			{
+				checkBox.putClientProperty(textOfMixedCheckBoxProperty, checkBox.getText());
+				checkBox.setText(Translation.get("common.mixedCheckBox", checkBox.getText()));
+			}
+		}
+		else
+		{
+			checkBox.putClientProperty(FlatClientProperties.SELECTED_STATE, null);
+			String text = (String) checkBox.getClientProperty(textOfMixedCheckBoxProperty);
+			if (text != null)
+			{
+				checkBox.setText(text);
+				checkBox.putClientProperty(textOfMixedCheckBoxProperty, null);
+			}
+		}
+	}
+
+	public static boolean isCheckBoxMixed(JCheckBox checkBox)
+	{
+		return FlatClientProperties.SELECTED_STATE_INDETERMINATE.equals(checkBox.getClientProperty(FlatClientProperties.SELECTED_STATE));
+	}
+
+	/**
+	 * Whether the look and feel draws a checkbox's {@link FlatClientProperties#SELECTED_STATE_INDETERMINATE} state. FlatLaf and Aqua do;
+	 * the Windows, GTK, and Metal look and feels draw it as unchecked.
+	 */
+	private static boolean doesLookAndFeelDrawIndeterminateCheckBoxes()
+	{
+		return UIManager.getLookAndFeel() instanceof FlatLaf || isMacSystemLookAndFeel();
 	}
 
 	/**
