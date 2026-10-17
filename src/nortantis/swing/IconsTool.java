@@ -1994,8 +1994,8 @@ public class IconsTool extends EditorTool
 	}
 
 	/**
-	 * Changes the selection for a press in Edit mode that isn't on one of the edit box's handles, following {@link SelectionEdits}. Alt
-	 * without the command key selects the next of the icons under the mouse. A press with the command key on a single icon changes the
+	 * Changes the selection for a press in Edit mode that isn't on one of the edit box's handles, following {@link SelectionEdits}. With the
+	 * one-point brush, Alt without the command key selects the next of the icons under the mouse. A press with the command key on a single icon changes the
 	 * selection only when released, in case the press becomes a drag.
 	 */
 	private void handleEditModeSelectingPress(MouseEvent e)
@@ -2007,7 +2007,7 @@ public class IconsTool extends EditorTool
 			SelectionCycling.recordAltClick();
 		}
 
-		if (isAltDown && !isCommandKeyDown)
+		if (isAltDown && !isCommandKeyDown && getBrushDiameter() <= 1)
 		{
 			FreeIcon next = SelectionCycling.chooseNext(getSelectionCycleCandidates(e.getPoint()), iconsToEdit);
 			setSelection(next == null ? new ArrayList<>() : Arrays.asList(next));
@@ -2738,8 +2738,8 @@ public class IconsTool extends EditorTool
 	 */
 	private void updateSelectionCycleCandidates(java.awt.Point mouseLocation)
 	{
-		if (!SelectionCycling.isAltDown() || selectionDisplay.isCommandKeyHeld() || !modeWidget.isEditMode() || mouseLocation == null
-				|| !updater.isMapReadyForInteractions())
+		if (!SelectionCycling.isAltDown() || selectionDisplay.isCommandKeyHeld() || !modeWidget.isEditMode() || getBrushDiameter() > 1
+				|| mouseLocation == null || !updater.isMapReadyForInteractions())
 		{
 			mapEditingPanel.clearSelectionCycleCandidateAreas();
 			return;
