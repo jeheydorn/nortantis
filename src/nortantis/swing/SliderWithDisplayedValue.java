@@ -82,6 +82,11 @@ public class SliderWithDisplayedValue
 		valueDisplay.setText(getDisplayValue(valueFormatter));
 	}
 
+	public boolean isMixed()
+	{
+		return isMixed;
+	}
+
 	/**
 	 * Shows values that the slider stands for together. When they differ, the slider sits on the most common one, or the first of the most
 	 * common ones, and the value display shows a dash.

@@ -141,6 +141,10 @@ public class IconsTool extends EditorTool
 	private JSlider saturationSlider;
 	private JSlider brightnessSlider;
 	private JSlider transparencySlider;
+	private SliderWithDisplayedValue hueSliderWithDisplay;
+	private SliderWithDisplayedValue saturationSliderWithDisplay;
+	private SliderWithDisplayedValue brightnessSliderWithDisplay;
+	private SliderWithDisplayedValue transparencySliderWithDisplay;
 	private boolean disableColorChangeHandlers;
 	private RowHider brushAndEditOptionsSeparatorHider;
 	private JCheckBox fillWithColorCheckbox;
@@ -312,19 +316,16 @@ public class IconsTool extends EditorTool
 				hueSlider.setPaintLabels(false);
 				hueSlider.setMinimum(0);
 				hueSlider.setMaximum(360);
-				SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(hueSlider, null, () ->
+				hueSliderWithDisplay = new SliderWithDisplayedValue(hueSlider, null, () ->
 				{
 					handleColorChange(WhatHSBColorFieldChanged.Hue);
 				}, labelWidth);
 
 				JButton clearButton = new JButton("x");
 				clearButton.setToolTipText(Translation.get("iconsTool.clearHue.tooltip"));
-				SwingHelper.addListener(clearButton, () ->
-				{
-					hueSlider.setValue(0);
-				});
+				SwingHelper.addListener(clearButton, () -> clearFilterColorField(hueSliderWithDisplay, WhatHSBColorFieldChanged.Hue));
 
-				sliderWithDisplay.addToOrganizer(colorOrganizer, Translation.get("iconsTool.hue.label"), Translation.get("iconsTool.hue.help"), clearButton, 0, 0);
+				hueSliderWithDisplay.addToOrganizer(colorOrganizer, Translation.get("iconsTool.hue.label"), Translation.get("iconsTool.hue.help"), clearButton, 0, 0);
 			}
 
 			{
@@ -332,19 +333,16 @@ public class IconsTool extends EditorTool
 				saturationSlider.setPaintLabels(false);
 				saturationSlider.setMinimum(-100);
 				saturationSlider.setMaximum(100);
-				SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(saturationSlider, null, () ->
+				saturationSliderWithDisplay = new SliderWithDisplayedValue(saturationSlider, null, () ->
 				{
 					handleColorChange(WhatHSBColorFieldChanged.Saturation);
 				}, labelWidth);
 
 				JButton clearButton = new JButton("x");
 				clearButton.setToolTipText(Translation.get("iconsTool.clearSaturation.tooltip"));
-				SwingHelper.addListener(clearButton, () ->
-				{
-					saturationSlider.setValue(0);
-				});
+				SwingHelper.addListener(clearButton, () -> clearFilterColorField(saturationSliderWithDisplay, WhatHSBColorFieldChanged.Saturation));
 
-				sliderWithDisplay.addToOrganizer(colorOrganizer, Translation.get("iconsTool.saturation.label"), Translation.get("iconsTool.saturation.help"), clearButton, 0, 0);
+				saturationSliderWithDisplay.addToOrganizer(colorOrganizer, Translation.get("iconsTool.saturation.label"), Translation.get("iconsTool.saturation.help"), clearButton, 0, 0);
 			}
 
 			{
@@ -352,19 +350,16 @@ public class IconsTool extends EditorTool
 				brightnessSlider.setPaintLabels(false);
 				brightnessSlider.setMinimum(-100);
 				brightnessSlider.setMaximum(100);
-				SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(brightnessSlider, null, () ->
+				brightnessSliderWithDisplay = new SliderWithDisplayedValue(brightnessSlider, null, () ->
 				{
 					handleColorChange(WhatHSBColorFieldChanged.Brightness);
 				}, labelWidth);
 
 				JButton clearButton = new JButton("x");
 				clearButton.setToolTipText(Translation.get("iconsTool.clearBrightness.tooltip"));
-				SwingHelper.addListener(clearButton, () ->
-				{
-					brightnessSlider.setValue(0);
-				});
+				SwingHelper.addListener(clearButton, () -> clearFilterColorField(brightnessSliderWithDisplay, WhatHSBColorFieldChanged.Brightness));
 
-				sliderWithDisplay.addToOrganizer(colorOrganizer, Translation.get("iconsTool.brightness.label"), Translation.get("iconsTool.brightness.help"), clearButton, 0, 0);
+				brightnessSliderWithDisplay.addToOrganizer(colorOrganizer, Translation.get("iconsTool.brightness.label"), Translation.get("iconsTool.brightness.help"), clearButton, 0, 0);
 			}
 
 			{
@@ -372,19 +367,16 @@ public class IconsTool extends EditorTool
 				transparencySlider.setPaintLabels(false);
 				transparencySlider.setMinimum(0);
 				transparencySlider.setMaximum(100);
-				SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(transparencySlider, null, () ->
+				transparencySliderWithDisplay = new SliderWithDisplayedValue(transparencySlider, null, () ->
 				{
 					handleColorChange(WhatHSBColorFieldChanged.Transparency);
 				}, labelWidth);
 
 				JButton clearButton = new JButton("x");
 				clearButton.setToolTipText(Translation.get("iconsTool.clearTransparency.tooltip"));
-				SwingHelper.addListener(clearButton, () ->
-				{
-					transparencySlider.setValue(0);
-				});
+				SwingHelper.addListener(clearButton, () -> clearFilterColorField(transparencySliderWithDisplay, WhatHSBColorFieldChanged.Transparency));
 
-				sliderWithDisplay.addToOrganizer(colorOrganizer, Translation.get("iconsTool.transparency.label"), Translation.get("iconsTool.transparency.help"), clearButton, 0, 0);
+				transparencySliderWithDisplay.addToOrganizer(colorOrganizer, Translation.get("iconsTool.transparency.label"), Translation.get("iconsTool.transparency.help"), clearButton, 0, 0);
 			}
 		}
 
@@ -764,6 +756,7 @@ public class IconsTool extends EditorTool
 
 
 				setColorFieldsWithoutRunningListeners(iconColorMode, filterColorMode, maximizeOpacityMode, fillWithColorMode);
+				showWhichFilterColorPartsAreMixed();
 
 				// The most common fill color comes first, so that it is the one the color picker starts on.
 				List<java.awt.Color> fillColors = new ArrayList<>();
@@ -802,6 +795,40 @@ public class IconsTool extends EditorTool
 
 		showSelection();
 		showOrHideEditComponents();
+	}
+
+	/**
+	 * Shows a dash on the filter color slider of each part that the icons being edited don't all share. The sliders keep the values they
+	 * were given.
+	 */
+	private void showWhichFilterColorPartsAreMixed()
+	{
+		hueSliderWithDisplay.setMixed(iconsToEdit.stream().map(icon -> getFilterColorOrDefault(icon).hue).distinct().count() > 1);
+		saturationSliderWithDisplay.setMixed(iconsToEdit.stream().map(icon -> getFilterColorOrDefault(icon).saturation).distinct().count() > 1);
+		brightnessSliderWithDisplay.setMixed(iconsToEdit.stream().map(icon -> getFilterColorOrDefault(icon).brightness).distinct().count() > 1);
+		transparencySliderWithDisplay.setMixed(iconsToEdit.stream().map(icon -> getFilterColorOrDefault(icon).transparency).distinct().count() > 1);
+	}
+
+	private static HSBColor getFilterColorOrDefault(FreeIcon icon)
+	{
+		return icon.filterColor == null ? MapSettings.defaultIconFilterColor : icon.filterColor;
+	}
+
+	/**
+	 * Sets a part of the filter color to 0. A slider already at 0 while showing several values doesn't report a change, so the change is
+	 * applied directly.
+	 */
+	private void clearFilterColorField(SliderWithDisplayedValue sliderWithDisplay, WhatHSBColorFieldChanged whatChanged)
+	{
+		if (sliderWithDisplay.slider.getValue() == 0 && sliderWithDisplay.isMixed())
+		{
+			sliderWithDisplay.setMixed(false);
+			handleColorChange(whatChanged);
+		}
+		else
+		{
+			sliderWithDisplay.slider.setValue(0);
+		}
 	}
 
 	private HSBColor getFilterColor()
@@ -979,6 +1006,11 @@ public class IconsTool extends EditorTool
 			saturationSlider.setValue(filterColor.saturation);
 			brightnessSlider.setValue(filterColor.brightness);
 			transparencySlider.setValue(filterColor.transparency);
+			// Setting a slider to the value it already has doesn't clear its mixed state.
+			hueSliderWithDisplay.setMixed(false);
+			saturationSliderWithDisplay.setMixed(false);
+			brightnessSliderWithDisplay.setMixed(false);
+			transparencySliderWithDisplay.setMixed(false);
 
 			maximizeOpacityCheckbox.setSelected(maximizeOpacity);
 			fillWithColorCheckbox.setSelected(fillWithColor);
