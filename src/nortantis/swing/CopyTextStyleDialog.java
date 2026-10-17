@@ -31,7 +31,7 @@ class CopyTextStyleDialog extends JDialog
 	/**
 	 * The parts checked when the dialog opens, unless it's given others.
 	 */
-	static final Set<TextStylePart> defaultParts = EnumSet.of(TextStylePart.Font, TextStylePart.Color);
+	static final Set<TextStylePart> defaultParts = EnumSet.of(TextStylePart.Font);
 
 	private final Map<TextStylePart, JCheckBox> partCheckboxes = new EnumMap<>(TextStylePart.class);
 	private final Map<TextType, JCheckBox> typeCheckboxes = new EnumMap<>(TextType.class);
