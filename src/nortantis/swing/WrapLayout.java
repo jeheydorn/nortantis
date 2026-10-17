@@ -11,6 +11,7 @@ public class WrapLayout extends FlowLayout
 {
 	private int lastRevalidationWidth = -1;
 	private int widthAtPreviousLayout = -1;
+	private int lastPreferredHeight = -1;
 
 	/**
 	 * Constructs a new <code>WrapLayout</code> with a left alignment and a default 5-unit horizontal and vertical gap.
@@ -139,6 +140,10 @@ public class WrapLayout extends FlowLayout
 			dim.width += horizontalInsetsAndGap;
 			dim.height += insets.top + insets.bottom + vgap * 2;
 
+			if (preferred)
+			{
+				lastPreferredHeight = dim.height;
+			}
 			return dim;
 		}
 	}
@@ -203,8 +208,11 @@ public class WrapLayout extends FlowLayout
 			moveComponents(target, insets.left + hgap, y, maxWidth - x, rowHeight, rowStart, nmembers, ltr, align);
 
 			// If the actual layout needs more height than the container was allocated, preferredLayoutSize() must have
-			// underestimated (e.g. due to the parent walk using a wider width than we actually got). Schedule a
-			// revalidation so the preferred size is recalculated with the now-known correct width.
+			// underestimated (e.g. due to the parent walk using a wider width than we actually got). If it needs less height
+			// than the preferred size last reported, that size was computed at a narrower width than the container now has,
+			// such as before the container got its final width or before it was widened, and the container is left with
+			// empty rows at its bottom. Either way, schedule a revalidation so the preferred size is recalculated with the
+			// now-known correct width.
 			// Guard: don't schedule twice in a row at an unchanged width, or a revalidation that cannot help (because the
 			// container is constrained by something like a split pane) would ask for another layout at the same width,
 			// which would ask again, without end.
@@ -221,7 +229,8 @@ public class WrapLayout extends FlowLayout
 				lastRevalidationWidth = -1;
 			}
 
-			if (neededHeight > target.getHeight() + 1 && currentWidth != lastRevalidationWidth)
+			boolean isPreferredHeightStale = neededHeight > target.getHeight() + 1 || neededHeight < lastPreferredHeight - 1;
+			if (isPreferredHeightStale && currentWidth != lastRevalidationWidth)
 			{
 				lastRevalidationWidth = currentWidth;
 				SwingUtilities.invokeLater(() ->
