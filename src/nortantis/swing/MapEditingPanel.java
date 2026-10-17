@@ -41,6 +41,26 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private final Color artPackHighlightColor = Color.CYAN;
 	private final Color ownTextStyleHighlightColor = new Color(232, 85, 232);
 	/**
+	 * The width of highlights drawn around something - polygons, regions, lakes, selected texts and icons, and what Alt+click or
+	 * Ctrl+Alt+click would select or remove - as a multiple of {@link #getBaseHighlightWidth()}.
+	 */
+	private static final float outlineHighlightWidthScale = 1.4f;
+	/**
+	 * The width of highlights drawn along a line - river and road segments and edges - as a multiple of {@link #getBaseHighlightWidth()}.
+	 */
+	private static final float lineHighlightWidthScale = 1.4f;
+	/**
+	 * The thinnest that highlights drawn around something and highlights drawn along a line are drawn on screen, in device pixels. Below
+	 * this, an antialiased line covers too little of any pixel to be seen well, so zooming out further stops thinning them.
+	 */
+	private static final float minHighlightWidthInDevicePixels = 1f;
+	/**
+	 * The dashes of the outlines of what Alt+click or Ctrl+Alt+click would select or remove, and of the rectangle dragged out to select, in
+	 * device pixels so they look the same at every zoom level.
+	 */
+	private static final float dashLengthInDevicePixels = 10f;
+	private static final float dashGapLengthInDevicePixels = 4f;
+	/**
 	 * The color of every secondary highlight: what hovering, Alt+click, or Ctrl+Alt+click would select or remove, what is being processed,
 	 * and selected areas. Its hue is far enough from {@link #highlightEditColor} to tell the two apart on a map's warm colors.
 	 */
@@ -977,7 +997,14 @@ public class MapEditingPanel extends UnscaledImagePanel
 		transform.scale(zoom, zoom);
 		transform.translate(borderPadding, borderPadding);
 		((Graphics2D) g).transform(transform);
-		g2.setStroke(new BasicStroke(getHighlightOutlineWidth()));
+		Stroke outlineStroke = new BasicStroke(getDrawnOutlineWidth(g2));
+		g2.setStroke(outlineStroke);
+		// Antialiased strokes draw the highlights at their fractional widths. Otherwise each is filled to a whole number of pixels that
+		// depends on where it sits, so their thickness jumps as the zoom changes. Strokes are normalized, which keeps a thin line on the
+		// pixel grid rather than spread at half strength over two pixels, so it looks the same wherever it falls.
+		RenderingHints originalHints = g2.getRenderingHints();
+		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_NORMALIZE);
 
 		// Handle drawing/highlighting
 
@@ -996,10 +1023,13 @@ public class MapEditingPanel extends UnscaledImagePanel
 		if (!selectionCycleCandidateAreas.isEmpty() && showHoverHighlights)
 		{
 			g.setColor(secondaryHighlightColor);
+			Stroke originalStroke = g2.getStroke();
+			g2.setStroke(createDashedStroke(g2, getDrawnOutlineWidth(g2)));
 			for (Area area : selectionCycleCandidateAreas)
 			{
 				g2.draw(area);
 			}
+			g2.setStroke(originalStroke);
 		}
 
 		if (!selectedTextBoxes.isEmpty())
@@ -1064,6 +1094,12 @@ public class MapEditingPanel extends UnscaledImagePanel
 			{
 				g.setColor(highlightEditColor);
 				drawCenterOutlines(g, highlightedCenters);
+			}
+
+			// Highlights drawn along a line, rather than around something, are thinner than outlines.
+			g2.setStroke(new BasicStroke(getDrawnLineHighlightWidth(g2)));
+			if (showHoverHighlights)
+			{
 				// Hover polylines (orange) go below selected polylines (yellow) so a selected segment that also happens to be near the
 				// cursor shows the brighter selected color.
 				g.setColor(secondaryHighlightColor);
@@ -1084,6 +1120,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 					drawPolyline(g, segment);
 				}
 			}
+			g2.setStroke(outlineStroke);
 			drawRoadControlPoints((Graphics2D) g);
 
 			g.setColor(secondaryHighlightColor);
@@ -1092,6 +1129,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 		drawRectangleSelection(g2);
 		drawSelectionBox((Graphics2D) g);
+		g2.setRenderingHints(originalHints);
 	}
 
 	private void highlightArtPacksIfNeeded(Graphics2D g)
@@ -1128,9 +1166,17 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 		if (showEditBox && !isEditingSingleHighlightedIcon())
 		{
+			// A box that isn't in map space surrounds an image laid over the map rather than something on it, so it isn't an outline and
+			// keeps the base highlight width.
+			Stroke originalStroke = g.getStroke();
+			if (!editBoxIsInMapSpace)
+			{
+				g.setStroke(new BasicStroke(Math.max(getBaseHighlightWidth(), minHighlightWidthInDevicePixels * getDevicePixelSize(g))));
+			}
 			// Drawn as an Area, like icon highlights, because under the zoom transform drawRect can land a pixel away from an Area of the
 			// same rectangle, which would make the box visibly change shape when a highlight replaces it.
 			g.draw(new Area(editBounds));
+			g.setStroke(originalStroke);
 		}
 
 		if (!isIconToEditInAValidPosition)
@@ -1332,10 +1378,10 @@ public class MapEditingPanel extends UnscaledImagePanel
 	}
 
 	/**
-	 * The width, in graph pixels, of the outlines drawn over the map for highlights, selections, and edit boxes. Above Low display quality,
-	 * it grows with the resolution so that the outlines look about as thick on screen as they do at Low, where they are 1 pixel wide.
+	 * The width, in graph pixels, that the widths of the highlights drawn over the map are multiples of. Above Low display quality, it grows
+	 * with the resolution so that the highlights look about as thick on screen as they do at Low, where it is 1 pixel.
 	 */
-	float getHighlightOutlineWidth()
+	private float getBaseHighlightWidth()
 	{
 		return (float) Math.max(1.0, resolution / DisplayQuality.Low.getScale());
 	}
@@ -1378,10 +1424,67 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private void drawSelectionRemovePreview(Graphics2D g)
 	{
 		g.setColor(secondaryHighlightColor);
+		Stroke originalStroke = g.getStroke();
+		g.setStroke(createDashedStroke(g, getDrawnOutlineWidth(g)));
 		for (Area area : selectionRemovePreviewAreas)
 		{
 			g.draw(area);
 		}
+		g.setStroke(originalStroke);
+	}
+
+	/**
+	 * A dashed stroke of the given width, in g's coordinates, for outlines of what a click or drag would select or remove. The dashes are
+	 * sized in device pixels so they look the same at every zoom level.
+	 */
+	private static Stroke createDashedStroke(Graphics2D g, float width)
+	{
+		float devicePixel = getDevicePixelSize(g);
+		return new BasicStroke(width, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10f,
+				new float[] { dashLengthInDevicePixels * devicePixel, dashGapLengthInDevicePixels * devicePixel }, 0f);
+	}
+
+	/**
+	 * The width, in graph pixels, of the highlights drawn around something, such as polygons, regions, texts, and icons.
+	 */
+	float getOutlineWidth()
+	{
+		return outlineHighlightWidthScale * getBaseHighlightWidth();
+	}
+
+	/**
+	 * The width, in graph pixels, of the highlights drawn along a line, such as river and road segments.
+	 */
+	private float getLineHighlightWidth()
+	{
+		return lineHighlightWidthScale * getBaseHighlightWidth();
+	}
+
+	/**
+	 * The width, in g's coordinates, that highlights drawn around something are drawn at: {@link #getOutlineWidth()}, but no thinner on
+	 * screen than {@link #minHighlightWidthInDevicePixels}.
+	 */
+	private float getDrawnOutlineWidth(Graphics2D g)
+	{
+		return Math.max(getOutlineWidth(), minHighlightWidthInDevicePixels * getDevicePixelSize(g));
+	}
+
+	/**
+	 * The width, in g's coordinates, that highlights drawn along a line are drawn at: {@link #getLineHighlightWidth()}, but no thinner on
+	 * screen than {@link #minHighlightWidthInDevicePixels}.
+	 */
+	private float getDrawnLineHighlightWidth(Graphics2D g)
+	{
+		return Math.max(getLineHighlightWidth(), minHighlightWidthInDevicePixels * getDevicePixelSize(g));
+	}
+
+	/**
+	 * The size of one device pixel in g's coordinates.
+	 */
+	private static float getDevicePixelSize(Graphics2D g)
+	{
+		double graphToDeviceScale = g.getTransform().getScaleX();
+		return graphToDeviceScale > 0 ? (float) (1.0 / graphToDeviceScale) : 1f;
 	}
 
 	/**
@@ -1397,14 +1500,12 @@ public class MapEditingPanel extends UnscaledImagePanel
 		nortantis.geom.Rectangle scaled = rectangleSelectionRI.scaleAboutOrigin(resolution);
 		Rectangle2D rectangle = new Rectangle2D.Double(scaled.x, scaled.y, scaled.width, scaled.height);
 		// Size the outline in device pixels so it looks the same at every zoom level.
-		double graphToDeviceScale = g.getTransform().getScaleX();
-		float devicePixel = graphToDeviceScale > 0 ? (float) (1.0 / graphToDeviceScale) : 1f;
 		Stroke originalStroke = g.getStroke();
 		Color highlightColor = getHighlightColor();
 		g.setColor(new Color(highlightColor.getRed(), highlightColor.getGreen(), highlightColor.getBlue(), 40));
 		g.fill(rectangle);
 		g.setColor(highlightColor);
-		g.setStroke(new BasicStroke(1.5f * devicePixel, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10f, new float[] { 6f * devicePixel, 4f * devicePixel }, 0f));
+		g.setStroke(createDashedStroke(g, 1.5f * getDevicePixelSize(g)));
 		g.draw(rectangle);
 		g.setStroke(originalStroke);
 	}

@@ -2120,7 +2120,9 @@ public class TextTool extends EditorTool
 		else
 		{
 			MapText picked = MapEdits.pickText(textUnderMouse);
-			mapEditingPanel.setHighlightedAreasFromTexts(picked == null ? new ArrayList<>() : Arrays.asList(picked));
+			// A selected text is already outlined by its selection box. Outlining it again would draw it bolder than the others.
+			boolean isPickedSelected = picked != null && selectedTexts.stream().anyMatch(text -> text == picked);
+			mapEditingPanel.setHighlightedAreasFromTexts(picked == null || isPickedSelected ? new ArrayList<>() : Arrays.asList(picked));
 			updateSelectionBoxes();
 		}
 	}
