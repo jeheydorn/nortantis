@@ -5,6 +5,7 @@ import java.util.List;
 
 import nortantis.IconDrawTask;
 import nortantis.geom.Rectangle;
+import nortantis.util.Assets;
 
 /**
  * Abstracts the library used for drawing.
@@ -120,6 +121,24 @@ public abstract class PlatformFactory
 	public abstract Color createColorFromHSB(float hue, float saturation, float brightness);
 
 	public abstract <T> void doInBackgroundThread(BackgroundTask<T> task);
+
+	/**
+	 * The most memory, in bytes, this program can use.
+	 */
+	public long getMaxMemory()
+	{
+		return Runtime.getRuntime().maxMemory();
+	}
+
+	/**
+	 * Whether Nortantis is running from its packaged jar file rather than from compiled source.
+	 */
+	public boolean isRunningFromJar()
+	{
+		String className = Assets.class.getName().replace('.', '/');
+		java.net.URL classUrl = Assets.class.getResource("/" + className + ".class");
+		return classUrl != null && classUrl.toString().startsWith("jar:");
+	}
 
 	public abstract void doInMainUIThreadAsynchronous(Runnable toRun);
 

@@ -6,17 +6,16 @@ import nortantis.platform.PlatformFactory;
 import nortantis.swing.translation.Translation;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.*;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class Assets
@@ -40,6 +39,7 @@ public class Assets
 	}
 
 	private static final String assetsPath = "assets";
+	private static final Pattern tab = Pattern.compile("\t");
 	public static final String customArtPack = "custom";
 	private static final String artPacksFolder = "art packs";
 	/**
@@ -711,16 +711,13 @@ public class Assets
 	{
 		if (isRunningFromJarCached == null)
 		{
-			String className = Assets.class.getName().replace('.', '/');
-			java.net.URL classUrl = Assets.class.getResource("/" + className + ".class");
-			if (classUrl == null)
+			if (PlatformFactory.getInstance() == null)
 			{
-				isRunningFromJarCached = false;
+				// Without a platform to ask, such as in a tool or test that reads assets before setting one, the program is taken to be
+				// running from source. That answer isn't remembered, so the platform is asked once one is set.
+				return false;
 			}
-			else
-			{
-				isRunningFromJarCached = (boolean) classUrl.toString().startsWith("jar:");
-			}
+			isRunningFromJarCached = PlatformFactory.getInstance().isRunningFromJar();
 		}
 		return isRunningFromJarCached;
 	}
@@ -753,7 +750,7 @@ public class Assets
 	{
 		try (InputStream inputStream = createInputStream(filePath))
 		{
-			return IOUtils.toString(inputStream, StandardCharsets.UTF_8);
+			return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
 		}
 		catch (IOException e)
 		{
@@ -959,7 +956,7 @@ public class Assets
 				// Remove white space lines.
 				if (!line.trim().isEmpty())
 				{
-					String[] parts = line.split("\t");
+					String[] parts = tab.split(line);
 					if (parts.length != 2)
 					{
 						Logger.println("Warning: No string pair found in " + filePath + " at line " + lineNum + ".");

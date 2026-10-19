@@ -9,12 +9,12 @@ import nortantis.graph.voronoi.Corner;
 import nortantis.graph.voronoi.Edge;
 import nortantis.graph.voronoi.EdgeDrawType;
 import nortantis.platform.*;
-import nortantis.editor.MapEdits;
 import nortantis.swing.translation.Translation;
 import nortantis.util.*;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
@@ -3011,7 +3011,7 @@ public class MapCreator implements WarningLogger
 		// Reserve some space for the editor.
 		int bytesReservedForEditor = 900 * 1024 * 1024;
 
-		long maxBytes = Runtime.getRuntime().maxMemory() - bytesReservedForEditor;
+		long maxBytes = PlatformFactory.getInstance().getMaxMemory() - bytesReservedForEditor;
 		// The required memory is quadratic in the resolution used.
 		// To generate a map at resolution 225 takes 7GB, so 7×1024^3÷(225^2)
 		// = 148468.
@@ -3142,7 +3142,7 @@ public class MapCreator implements WarningLogger
 			throw new RuntimeException("The overlay image '" + overlayPath + "' is a folder. It should be a JPG or PNG image file.");
 		}
 
-		Image overlayImage = ImageCache.getInstance(Assets.installedArtPack, null).getImageFromFile(file.toPath());
+		Image overlayImage = ImageCache.getInstance(Assets.installedArtPack, null).getImageFromFile(Paths.get(overlayPath));
 
 		// Calculate the maximum size the overlay can be while still fitting within the map
 		double widthRatio = (double) mapSize.width / overlayImage.getWidth();

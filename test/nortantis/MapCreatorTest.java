@@ -17,7 +17,6 @@ import nortantis.platform.Painter;
 import nortantis.platform.PixelReader;
 import nortantis.platform.PlatformFactory;
 import nortantis.platform.awt.AwtFactory;
-import nortantis.editor.MapEdits;
 import nortantis.swing.SubMapDialog;
 import nortantis.util.*;
 import org.apache.commons.io.FileUtils;

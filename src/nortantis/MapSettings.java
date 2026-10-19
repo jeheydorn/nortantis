@@ -5,7 +5,6 @@ import nortantis.geom.Point;
 import nortantis.platform.Color;
 import nortantis.platform.Font;
 import nortantis.platform.FontStyle;
-import nortantis.editor.MapEdits;
 import nortantis.swing.translation.Translation;
 import nortantis.util.*;
 import org.apache.commons.io.FileUtils;

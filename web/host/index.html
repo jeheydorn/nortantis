@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Nortantis Web Test</title>
+	<style>
+		body { margin: 16px; font: 16px/1.5 system-ui, sans-serif; background: #15171c; color: #e8e4da; }
+		h1 { font-size: 1.4em; margin: 0 0 8px; }
+		p { margin: 0 0 12px; color: #c9c3b5; max-width: 60em; }
+		.controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 16px 0; }
+		button { font: inherit; padding: 10px 20px; border: 0; border-radius: 6px; background: #3557a0; color: #f4f0e6; cursor: pointer; }
+		button:disabled { background: #4a4e58; cursor: default; }
+		select { font: inherit; padding: 6px; }
+		#status { font-weight: 600; min-height: 1.5em; }
+		canvas { display: block; max-width: 100%; height: auto; margin-top: 12px; }
+		pre { white-space: pre-wrap; font-size: 12px; color: #b9b3a5; }
+	</style>
+</head>
+<body>
+	<h1>Nortantis in the browser (test)</h1>
+	<p>This page generates a random fantasy map in your browser, using the same code as the Nortantis desktop app.</p>
+	<p>The first time, it downloads about 35 MB of art and name files. While a map is being made, the page freezes and can't scroll or
+		respond. That takes 15 to 20 seconds on a fast computer and longer on a phone. If the browser says the page isn't responding,
+		choose to wait.</p>
+	<div class="controls">
+		<button id="generate" type="button">Generate map</button>
+		<label>Resolution
+			<select id="resolution">
+				<option value="0.5" selected>0.5</option>
+				<option value="0.75">0.75 (slower)</option>
+			</select>
+		</label>
+	</div>
+	<div id="status"></div>
+	<canvas id="map" width="1" height="1"></canvas>
+	<pre id="log"></pre>
+	<script src="host.js"></script>
+</body>
+</html>

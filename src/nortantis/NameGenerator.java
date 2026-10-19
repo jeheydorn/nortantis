@@ -44,12 +44,21 @@ public class NameGenerator
 		int count = 0;
 		for (String name : corporaNames)
 		{
-			for (String word : name.split(" "))
+			int wordLength = 0;
+			for (int i = 0; i <= name.length(); i++)
 			{
-				if (!word.isEmpty())
+				if (i == name.length() || name.charAt(i) == ' ')
 				{
-					sum += word.length();
-					count++;
+					if (wordLength > 0)
+					{
+						sum += wordLength;
+						count++;
+					}
+					wordLength = 0;
+				}
+				else
+				{
+					wordLength++;
 				}
 			}
 		}

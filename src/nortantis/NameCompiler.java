@@ -5,6 +5,7 @@ import nortantis.util.*;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * Creates names for rivers and mountains by putting nouns, verbs, and adjectives together.
@@ -14,6 +15,8 @@ import java.util.*;
  */
 public class NameCompiler
 {
+	private static final Pattern dictionaryLineSeparator = Pattern.compile("[\\s0-9/]");
+
 	// The first part of each pair is the noun.
 	List<Pair<String>> nounAdjectivePairs;
 	List<Pair<String>> nounVerbPairs;
@@ -43,7 +46,7 @@ public class NameCompiler
 		dict = new TreeSet<>();
 		for (String line : lines)
 		{
-			String[] parts = line.split("[\\s0-9/]");
+			String[] parts = dictionaryLineSeparator.split(line);
 			if (parts.length == 0)
 				continue;
 			String word = parts[0];

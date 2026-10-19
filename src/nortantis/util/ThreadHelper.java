@@ -8,7 +8,6 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
-import java.util.stream.IntStream;
 
 public class ThreadHelper
 {
@@ -214,13 +213,16 @@ public class ThreadHelper
 				firstFailure.compareAndSet(null, e);
 			}
 		};
+		// Split into a few more pieces than there are threads, for load balancing.
+		int maxPerTask = Math.max(1, (end - start + parallelLoopPool.getParallelism() * 4 - 1) / (parallelLoopPool.getParallelism() * 4));
+		IndexRangeTask task = new IndexRangeTask(start, end, maxPerTask, guardedAction);
 		if (ForkJoinTask.inForkJoinPool() && ForkJoinTask.getPool() == parallelLoopPool)
 		{
-			IntStream.range(start, end).parallel().forEach(guardedAction);
+			task.invoke();
 		}
 		else
 		{
-			parallelLoopPool.submit(() -> IntStream.range(start, end).parallel().forEach(guardedAction)).join();
+			parallelLoopPool.invoke(task);
 		}
 
 		Throwable failure = firstFailure.get();
@@ -235,6 +237,43 @@ public class ThreadHelper
 		if (failure != null)
 		{
 			throw new RuntimeException(failure);
+		}
+	}
+
+	/**
+	 * Runs an action for each number in a range, splitting the range in half until the pieces are small enough to run directly.
+	 */
+	private static class IndexRangeTask extends RecursiveAction
+	{
+		private static final long serialVersionUID = 1L;
+
+		private final int start;
+		private final int end;
+		private final int maxPerTask;
+		private final transient IntConsumer action;
+
+		IndexRangeTask(int start, int end, int maxPerTask, IntConsumer action)
+		{
+			this.start = start;
+			this.end = end;
+			this.maxPerTask = maxPerTask;
+			this.action = action;
+		}
+
+		@Override
+		protected void compute()
+		{
+			int count = end - start;
+			if (count <= maxPerTask)
+			{
+				for (int i = start; i < end; i++)
+				{
+					action.accept(i);
+				}
+				return;
+			}
+			int middle = start + count / 2;
+			invokeAll(new IndexRangeTask(start, middle, maxPerTask, action), new IndexRangeTask(middle, end, maxPerTask, action));
 		}
 	}
 }

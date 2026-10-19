@@ -74,6 +74,14 @@ The platform abstraction layer allows different rendering backends.
 
 Code outside `nortantis.swing` and `nortantis.platform.awt` must not use AWT, Swing, or libraries built on them, such as imgscalr: no `java.awt.*`, `javax.swing.*`, or `org.imgscalr.*`, not even for an enum or a small helper. That code has to run on platforms that don't have them, such as a browser or a phone. Draw through `nortantis.platform` (`Image`, `Painter`, `ImageHelper`, `PlatformFactory`). When a platform-neutral API needs a concept that an AWT library provides, define a Nortantis type for it and map it inside the AWT implementation (e.g. `ScalingMethod`, which `AwtImage` maps to imgscalr's `Method`). Desktop-only operations, such as opening a file in the system's file viewer, belong in the Swing code (`SwingHelper`).
 
+### Web module (`web/`)
+
+The `web` Gradle module compiles map generation to JavaScript with TeaVM (`./gradlew :web:generateJavaScript`), using the platform in `nortantis.platform.web`, which keeps images in Java arrays and draws text through the browser. `web/host/index.html` runs it; serve the repository root over HTTP to open it. Things to know when changing core code:
+
+- TeaVM compiles everything reachable from `nortantis.web.WebMain` and fails the build on any JDK class or method it lacks, so a missing API shows up as a build error naming the call site. Classes TeaVM lacks entirely can get stand-ins in `web/src/main/java/org/teavm/classlib` (named with a `T` prefix, like `TForkJoinPool`); a method missing from a class TeaVM does have can't, so core code must avoid it. Known ones: `IntStream.parallel()`, `ConcurrentHashMap.keySet()` and `newKeySet()` (call `keySet` through a `Map`), `Collections.unmodifiableSortedMap` (which commons-io's `IOUtils` reaches), `ResourceBundle.Control`, `Class.getResource`, `Runtime.maxMemory`, and `File.toPath`.
+- Everything runs on one thread there. `String.split` compiles a regular expression on every call (even for one character), so avoid it in loops over large data; precompile a `Pattern` or scan the characters.
+- The web module's `TRandom` replaces TeaVM's `java.util.Random` so a seed gives the same numbers as on the JVM. `Math` functions (sin, pow, exp, ...) can still differ in the last bit between the browser and the JVM, so generation from a seed is only guaranteed to match up to the Voronoi graph; a map saved with initialized edits draws the same everywhere.
+
 ### Resource Management
 `Image` and `Painter` implement `AutoCloseable`. Always use try-with-resources for Painters:
 ```java

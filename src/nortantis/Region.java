@@ -32,7 +32,7 @@ public class Region
 		// The set of centers is mutated by the background drawing thread (MapCreator.applyCenterEdits)
 		// while the EDT reads it (e.g. hover highlighting in LandWaterTool). A concurrent set lets
 		// readers iterate the unmodifiable view from getCenters() without a ConcurrentModificationException.
-		this.centers = ConcurrentHashMap.newKeySet();
+		this.centers = Collections.newSetFromMap(new ConcurrentHashMap<>());
 	}
 
 	public void addAll(Collection<Center> toAdd)

@@ -42,30 +42,27 @@ public class CharacterNGram
 		{
 			for (int i = 0; i < phrase.length(); i++)
 			{
-				String lastChars = "";
-				for (int j = i - n + 1; j < i; j++)
-				{
-					if (j < 0)
-						lastChars += startToken;
-					else
-						lastChars += phrase.charAt(j);
-				}
-
-				scMap.incrementCount(lastChars, phrase.charAt(i));
+				scMap.incrementCount(precedingChars(phrase, i), phrase.charAt(i));
 			}
 			// Add the end token.
-			String lastChars = "";
-			for (int j = phrase.length() - n + 1; j < phrase.length(); j++)
-			{
-				if (j < 0)
-					lastChars += startToken;
-				else
-					lastChars += phrase.charAt(j);
-			}
-			scMap.incrementCount(lastChars, endToken);
+			scMap.incrementCount(precedingChars(phrase, phrase.length()), endToken);
 		}
 
 		namesFromCorpora = new HashSet<>(phrases);
+	}
+
+	/**
+	 * The n - 1 characters before the given position in the phrase, with a start token standing in for each one that would come before the
+	 * phrase's beginning.
+	 */
+	private String precedingChars(String phrase, int position)
+	{
+		int start = position - n + 1;
+		if (start >= 0)
+		{
+			return phrase.substring(start, position);
+		}
+		return String.valueOf(startToken).repeat(-start) + phrase.substring(0, position);
 	}
 
 	public String generateNameNotInCorpora(String requiredPrefix) throws NotEnoughNamesException

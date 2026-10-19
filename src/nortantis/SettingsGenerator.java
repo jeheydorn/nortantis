@@ -649,7 +649,9 @@ public class SettingsGenerator
 		{
 			return;
 		}
-		List<Integer> regionIds = new ArrayList<>(settings.edits.regionEdits.keySet());
+		// Read through Map, since the type ConcurrentHashMap.keySet returns isn't available on every platform.
+		Map<Integer, RegionEdit> regionEdits = settings.edits.regionEdits;
+		List<Integer> regionIds = new ArrayList<>(regionEdits.keySet());
 		Collections.sort(regionIds);
 		for (int regionId : regionIds)
 		{
