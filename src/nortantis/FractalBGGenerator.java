@@ -58,8 +58,9 @@ public class FractalBGGenerator
 		{
 			float rF = Math.min(r, rowsFinal - r);
 			// The distance from the center column, min(c, cols - c), takes most values twice along a row, so each one's scale is computed
-			// once.
-			float[] scaleForColumnDistance = new float[colsFinal / 2 + 1];
+			// once. The scales are kept as doubles because JavaScript computes floats with extra precision, and storing them in a float
+			// array would round them to 32 bits there, which changes the result.
+			double[] scaleForColumnDistance = new double[colsFinal / 2 + 1];
 			for (int distance = 0; distance < scaleForColumnDistance.length; distance++)
 			{
 				float cF = distance;
@@ -81,7 +82,7 @@ public class FractalBGGenerator
 				}
 				else
 				{
-					float scale = scaleForColumnDistance[Math.min(c, colsFinal - c)];
+					float scale = (float) scaleForColumnDistance[Math.min(c, colsFinal - c)];
 					real = dataR * scale;
 					imaginary = dataI * scale;
 				}

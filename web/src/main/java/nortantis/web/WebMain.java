@@ -5,6 +5,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Random;
 
+import org.teavm.interop.Async;
+import org.teavm.interop.AsyncCallback;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSByRef;
 import org.teavm.jso.JSFunctor;
@@ -24,9 +26,13 @@ import nortantis.swing.translation.Translation;
 import nortantis.util.Assets;
 
 /**
- * Generates a random map in a web browser and shows it on the page. The page passes the random seed and the resolution as the first two
+ * Generates a random map in a web worker and sends it to the page. The worker passes the random seed and the resolution as the first two
  * arguments. A third argument, if given and not empty, is the asset path of a map settings file to draw instead of a random map. A fourth,
- * if given, is the number of random maps to make one after another, for timing.
+ * if it is "trace", prints values that show whether generation matches the JVM's instead. A fifth, if given, is the number of random maps
+ * to make one after another, with the following seeds, for timing.
+ * <p>
+ * A helper worker instead starts it with "job", a job number, the kind of job, and the job's arguments, to do part of another worker's map
+ * (see {@link WorkerJobs}).
  */
 public class WebMain
 {
@@ -38,6 +44,12 @@ public class WebMain
 
 	public static void main(String[] args)
 	{
+		if (args.length > 0 && args[0].equals("job"))
+		{
+			runJob(Integer.parseInt(args[1]), args[2], args[3]);
+			return;
+		}
+
 		long seed = args.length > 0 ? Long.parseLong(args[0]) : 1;
 		double resolution = args.length > 1 ? Double.parseDouble(args[1]) : 0.75;
 
@@ -46,13 +58,12 @@ public class WebMain
 		// system, which starts out empty, so every preference starts at its default.
 		System.setProperty("user.home", "/home");
 		System.setProperty("os.name", "Linux");
-		PlatformFactory.setInstance(new WebFactory(new BrowserTextRasterizer(), (long) getMemoryLimit()));
+		PlatformFactory.setInstance(new WebFactory(new BrowserTextRasterizer(), (long) getMemoryLimit(), new WorkerJobs()));
 		Assets.setAssetInputStreamProvider(new BrowserAssets());
 		Translation.initialize();
 		FontFinder.ensureInitialized();
 		System.out.println("STARTUP " + (System.currentTimeMillis() - start) + " ms");
 
-		// The browser loads registered fonts in the background, so wait for them before drawing any text.
 		String settingsPath = args.length > 2 && !args[2].isEmpty() ? args[2] : null;
 		int runs = args.length > 4 ? Integer.parseInt(args[4]) : 1;
 		if (args.length > 3 && args[3].equals("trace"))
@@ -66,20 +77,17 @@ public class WebMain
 			System.out.println("DONE");
 			return;
 		}
-		whenFontsReady(() -> generate(seed, resolution, settingsPath, runs));
+		// The browser loads registered fonts in the background, so wait for them before drawing any text.
+		waitForFonts();
+		for (int i = 0; i < runs; i++)
+		{
+			generate(seed + i, resolution, settingsPath);
+		}
+		System.out.println("DONE");
 	}
 
-	/**
-	 * Generates and shows a map, saves its settings, and then generates the given number of runs minus one more maps, with the following
-	 * seeds.
-	 */
-	private static void generate(long seed, double resolution, String settingsPath, int runs)
+	private static void generate(long seed, double resolution, String settingsPath)
 	{
-		if (runs <= 0)
-		{
-			System.out.println("DONE");
-			return;
-		}
 		long start = System.currentTimeMillis();
 		MapSettings settings = settingsPath != null ? new MapSettings(settingsPath) : SettingsGenerator.generate(new Random(seed), Assets.installedArtPack, null);
 		settings.resolution = resolution;
@@ -92,13 +100,29 @@ public class WebMain
 		System.out.println("MAP " + map.getWidth() + "x" + map.getHeight() + " in " + elapsed + " ms");
 
 		showMap(map.getWidth(), map.getHeight(), ((WebImage) map).toPackedARGB(), map.getType() != ImageType.ARGB);
+		save(settings, mapParts);
+	}
 
-		// Saving takes a moment, so it waits until the browser has put the map on the screen.
-		afterNextPaint(() ->
+	private static void runJob(int jobId, String kind, String arguments)
+	{
+		try
 		{
-			save(settings, mapParts);
-			generate(seed + 1, resolution, settingsPath, runs - 1);
-		});
+			PlatformFactory.setInstance(new WebFactory(new BrowserTextRasterizer(), (long) getMemoryLimit(), null));
+			Assets.setAssetInputStreamProvider(new BrowserAssets());
+			if (!kind.equals(WorkerJobs.grungeJob))
+			{
+				throw new IllegalArgumentException("Unrecognized job: " + kind);
+			}
+			Image grunge = WorkerJobs.parseGrungeParameters(arguments).createGrunge(() ->
+			{
+			});
+			WorkerJobs.sendResult(jobId, grunge);
+		}
+		catch (Throwable e)
+		{
+			e.printStackTrace();
+			WorkerJobs.sendFailure(jobId, e.toString());
+		}
 	}
 
 	private static void save(MapSettings settings, MapParts mapParts)
@@ -132,16 +156,22 @@ public class WebMain
 	}
 
 	/**
-	 * The most memory the page's JavaScript can use, where the browser says, or a cautious guess where it doesn't.
+	 * The most memory the page's JavaScript can use, where the browser says, or a cautious guess where it doesn't. Only a page can ask the
+	 * browser, so a worker uses the limit the page sent it in {@code self.nortantisMemoryLimit}.
 	 */
-	@JSBody(script = "return (performance.memory && performance.memory.jsHeapSizeLimit) || 2147483648;")
+	@JSBody(script = "return self.nortantisMemoryLimit || (performance.memory && performance.memory.jsHeapSizeLimit) || 2147483648;")
 	private static native double getMemoryLimit();
+
+	@Async
+	private static native void waitForFonts();
+
+	private static void waitForFonts(AsyncCallback<Void> callback)
+	{
+		whenFontsReady(() -> callback.complete(null));
+	}
 
 	@JSBody(params = { "callback" }, script = "nortantisText.whenReady(callback);")
 	private static native void whenFontsReady(Callback callback);
-
-	@JSBody(params = { "callback" }, script = "requestAnimationFrame(() => setTimeout(callback, 0));")
-	private static native void afterNextPaint(Callback callback);
 
 	@JSBody(params = { "data" }, script = "nortantisHost.saveSettings(data);")
 	private static native void saveSettings(@JSByRef byte[] data);

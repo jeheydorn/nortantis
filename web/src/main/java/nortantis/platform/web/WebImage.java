@@ -147,6 +147,19 @@ public class WebImage extends Image
 	}
 
 	/**
+	 * The array that holds the pixels: an int[] of ARGB values for color images, a short[] for 16-bit grayscale, and a byte[] otherwise.
+	 * Pixel (x, y) is at x + y * width, except in a sub-image.
+	 */
+	public Object getPixelArray()
+	{
+		if (ints != null)
+		{
+			return ints;
+		}
+		return shorts != null ? shorts : bytes;
+	}
+
+	/**
 	 * Every pixel as an ARGB int, row after row with no gaps between rows.
 	 */
 	public int[] toPackedARGB()

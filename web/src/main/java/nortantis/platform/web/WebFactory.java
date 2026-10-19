@@ -6,7 +6,9 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Future;
 
+import nortantis.GrungeParameters;
 import nortantis.platform.BackgroundTask;
 import nortantis.platform.Color;
 import nortantis.platform.Font;
@@ -21,23 +23,43 @@ import nortantis.util.Logger;
 /**
  * A platform that keeps images in Java arrays and draws them in Java, leaving only text to a {@link TextRasterizer}. It needs nothing from
  * AWT, so it can run in a web browser. Everything runs on the calling thread: background tasks run before this returns, and work meant for
- * the UI thread runs immediately.
+ * the UI thread runs immediately. The exception is grunge, which a {@link SeparateMemoryJobs}, if given, creates elsewhere.
  */
 public class WebFactory extends PlatformFactory
 {
 	private final TextRasterizer textRasterizer;
 	private final long maxMemory;
+	private final SeparateMemoryJobs separateMemoryJobs;
 	private final Set<String> registeredFamilies = new LinkedHashSet<>();
 
 	/**
 	 * @param maxMemory
 	 *            The most memory, in bytes, the program can use.
+	 * @param separateMemoryJobs
+	 *            Where to create grunge, or null to create it on the calling thread.
 	 */
-	public WebFactory(TextRasterizer textRasterizer, long maxMemory)
+	public WebFactory(TextRasterizer textRasterizer, long maxMemory, SeparateMemoryJobs separateMemoryJobs)
 	{
 		this.textRasterizer = textRasterizer;
 		this.maxMemory = maxMemory;
+		this.separateMemoryJobs = separateMemoryJobs;
 		WebPainter.setTextRasterizer(textRasterizer);
+	}
+
+	@Override
+	public Future<Image> startGrungeCreation(GrungeParameters parameters, Runnable checkForCancel)
+	{
+		if (separateMemoryJobs == null)
+		{
+			return super.startGrungeCreation(parameters, checkForCancel);
+		}
+		return separateMemoryJobs.startGrungeCreation(parameters);
+	}
+
+	@Override
+	public boolean createsGrungeInSeparateMemory()
+	{
+		return separateMemoryJobs != null;
 	}
 
 	@Override

@@ -2,10 +2,13 @@ package nortantis.platform;
 
 import java.io.InputStream;
 import java.util.List;
+import java.util.concurrent.Future;
 
 import nortantis.IconDrawTask;
+import nortantis.GrungeParameters;
 import nortantis.geom.Rectangle;
 import nortantis.util.Assets;
+import nortantis.util.ThreadHelper;
 
 /**
  * Abstracts the library used for drawing.
@@ -138,6 +141,27 @@ public abstract class PlatformFactory
 		String className = Assets.class.getName().replace('.', '/');
 		java.net.URL classUrl = Assets.class.getResource("/" + className + ".class");
 		return classUrl != null && classUrl.toString().startsWith("jar:");
+	}
+
+	/**
+	 * Starts creating a map's grunge in the background. A platform can create it somewhere that shares no memory with the map, such as
+	 * another process, since the parameters are everything the work needs.
+	 *
+	 * @param checkForCancel
+	 *            Throws if the map's creation was cancelled. Work in this process calls it between steps.
+	 */
+	public Future<Image> startGrungeCreation(GrungeParameters parameters, Runnable checkForCancel)
+	{
+		return ThreadHelper.getInstance().submit(() -> parameters.createGrunge(checkForCancel));
+	}
+
+	/**
+	 * Whether {@link #startGrungeCreation} creates the grunge in memory separate from the map's, so that starting it early doesn't add to
+	 * the memory needed while the map is drawn.
+	 */
+	public boolean createsGrungeInSeparateMemory()
+	{
+		return false;
 	}
 
 	public abstract void doInMainUIThreadAsynchronous(Runnable toRun);

@@ -1331,6 +1331,13 @@ public class MapCreator implements WarningLogger
 			frayedBorderTask = startFrayedBorderCreation(settings, mapDimensions, sizeMultiplier, mapParts);
 		}
 
+		Future<Image> grungeTask = null;
+		if (PlatformFactory.getInstance().createsGrungeInSeparateMemory())
+		{
+			// It doesn't take from the map's memory, so it can start as soon as the map's size is known.
+			grungeTask = startGrungeCreation(settings, mapParts, mapDimensions);
+		}
+
 		// Create the NameCreator regardless of whether we're going to use it here because the text tools needs it to be in mapParts.
 		Future<NameCreator> nameCreatorTask = null;
 		if (mapParts == null || mapParts.nameCreator == null)
@@ -1370,8 +1377,7 @@ public class MapCreator implements WarningLogger
 
 		reportProgressAndCheckForCancel();
 
-		Future<Image> grungeTask = null;
-		if (!isLowMemoryMode)
+		if (!isLowMemoryMode && grungeTask == null)
 		{
 			// Run the job now so it can run in parallel with other stuff.
 			grungeTask = startGrungeCreation(settings, mapParts, mapDimensions);
@@ -1770,24 +1776,9 @@ public class MapCreator implements WarningLogger
 			}
 
 			Logger.println("Starting job to create grunge.");
-			return ThreadHelper.getInstance().submit(() ->
-			{
-				Image grunge;
-
-				// 104567 is an arbitrary number added so that the grunge is not
-				// the
-				// same pattern as
-				// the background.
-				final float fractalPower = 1.3f;
-				grunge = FractalBGGenerator.generate(new Random(settings.backgroundRandomSeed + 104567), fractalPower, ((int) mapDimensions.width), ((int) mapDimensions.height), 0.75f);
-
-				checkForCancel();
-
-				// Whiten the middle of clouds.
-				ImageHelper.getInstance().darkenMiddleOfImage(grunge, settings.grungeWidth, settings.resolution, false);
-
-				return grunge;
-			});
+			GrungeParameters parameters = new GrungeParameters(settings.backgroundRandomSeed, (int) mapDimensions.width, (int) mapDimensions.height, settings.grungeWidth,
+					settings.resolution);
+			return PlatformFactory.getInstance().startGrungeCreation(parameters, this::checkForCancel);
 		}
 		else
 		{
