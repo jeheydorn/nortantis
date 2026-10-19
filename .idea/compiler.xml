@@ -1,9 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile name="Gradle Imported" enabled="true">
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="false">
+          <entry name="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.teavm/teavm-extension-annotation-processor/0.16.0/1fffcff5477865ac5ff11451a1e7f52755c5e27b/teavm-extension-annotation-processor-0.16.0.jar" />
+        </processorPath>
+        <module name="nortantis.web.main" />
+      </profile>
+    </annotationProcessing>
     <bytecodeTargetLevel target="21" />
   </component>
   <component name="JavacSettings">
-    <option name="ADDITIONAL_OPTIONS_STRING" value="-Xlint:deprecation -Xlint:unchecked" />
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="nortantis" options="-Xlint:deprecation -Xlint:unchecked" />
+      <module name="nortantis.main" options="-Xlint:deprecation -Xlint:unchecked" />
+      <module name="nortantis.test" options="-Xlint:deprecation -Xlint:unchecked" />
+    </option>
   </component>
 </project>

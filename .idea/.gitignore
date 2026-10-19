@@ -8,3 +8,10 @@
 /dataSources.local.xml
 # Editor-based HTTP Client requests
 /httpRequests/
+# Generated from the Gradle build when IntelliJ imports the project
+/modules.xml
+/modules/
+/libraries/
+/*.iml
+# Per-user plugin state
+/copilot.data.migration.*.xml
