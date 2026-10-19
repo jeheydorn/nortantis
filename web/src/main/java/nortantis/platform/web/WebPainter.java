@@ -291,10 +291,7 @@ public class WebPainter extends Painter
 			int maxY = Math.min(clipMaxY, y + (int) m12 + height);
 			for (int py = minY; py < maxY; py++)
 			{
-				for (int px = minX; px < maxX; px++)
-				{
-					plot(px, py, 1f);
-				}
+				plotSpan(py, minX, maxX - 1);
 			}
 			return;
 		}
@@ -397,15 +394,13 @@ public class WebPainter extends Painter
 					// A pixel is drawn when its center is at or right of the left crossing and left of the right one.
 					int start = Math.max(minX, (int) Math.ceil(crossings[k] - 0.5));
 					int end = Math.min(maxX, (int) Math.ceil(crossings[k + 1] - 0.5) - 1);
-					for (int x = start; x <= end; x++)
-					{
-						plot(x, y, 1f);
-					}
+					plotSpan(y, start, end);
 				}
 			}
 			return;
 		}
 
+		boolean isSolid = isSolidPaint();
 		float[] rowCoverage = new float[maxX - minX + 1];
 		float sampleWeight = 1f / fillSubsamples;
 		for (int y = minY; y <= maxY; y++)
@@ -428,7 +423,11 @@ public class WebPainter extends Painter
 			for (int i = 0; i < rowCoverage.length; i++)
 			{
 				float coverage = rowCoverage[i];
-				if (coverage > 0f)
+				if (coverage >= 1f && isSolid)
+				{
+					writeSolidSpan(y, minX + i, minX + i);
+				}
+				else if (coverage > 0f)
 				{
 					plot(minX + i, y, Math.min(1f, coverage));
 				}
@@ -694,9 +693,12 @@ public class WebPainter extends Painter
 			int j = (i + 1) % n;
 			boolean isFirst = !closed && i == 0;
 			boolean isLast = !closed && i == segments - 1;
+			// The segment before this one already covered this one's starting joint with its round end, everywhere this segment's round
+			// start would reach, unless that segment has a flat start, which a disc at its end can poke out behind.
+			boolean isStartCovered = closed || i > 1 || (i == 1 && roundCaps);
 			// Butt caps cut each end of a segment flat. The open ends of the run get no more than that, and every joint between segments
 			// is filled in by the round disc each segment adds at its end, which makes the join round.
-			buffer.addSegment(xs[i], ys[i], xs[j], ys[j], halfWidth, roundCaps || !isFirst, roundCaps || !isLast);
+			buffer.addSegment(xs[i], ys[i], xs[j], ys[j], halfWidth, roundCaps || !isFirst, roundCaps || !isLast, isStartCovered);
 		}
 		buffer.draw(this);
 	}
@@ -881,8 +883,12 @@ public class WebPainter extends Painter
 		/**
 		 * Adds a straight segment of the given half width. Each end that has a cap gets a round one; an end without a cap is cut off
 		 * square at the end point.
+		 *
+		 * @param isStartCovered
+		 *            Whether the buffer already has at least the coverage of the segment's start cap, so that the pixels behind the start
+		 *            can be skipped.
 		 */
-		void addSegment(double x1, double y1, double x2, double y2, double halfWidth, boolean roundStart, boolean roundEnd)
+		void addSegment(double x1, double y1, double x2, double y2, double halfWidth, boolean roundStart, boolean roundEnd, boolean isStartCovered)
 		{
 			double dx = x2 - x1;
 			double dy = y2 - y1;
@@ -923,20 +929,28 @@ public class WebPainter extends Painter
 					double cx = px + 0.5 - x1;
 					double along = cx * unitX + cy * unitY;
 					double across = Math.abs(cx * unitY - cy * unitX);
-					double value;
+					// How far the pixel's center is inside the stroke. Coverage only grows with it, so the smaller of two distances gives
+					// the smaller coverage.
+					double distanceInside;
 					if (along < 0)
 					{
-						value = roundStart ? edgeCoverage(halfWidth - Math.hypot(cx, cy)) : Math.min(edgeCoverage(halfWidth - across), edgeCoverage(along));
+						if (isStartCovered)
+						{
+							continue;
+						}
+						distanceInside = roundStart ? halfWidth - Math.sqrt(cx * cx + cy * cy) : Math.min(halfWidth - across, along);
 					}
 					else if (along > length)
 					{
-						value = roundEnd ? edgeCoverage(halfWidth - Math.hypot(px + 0.5 - x2, py + 0.5 - y2))
-								: Math.min(edgeCoverage(halfWidth - across), edgeCoverage(length - along));
+						double endX = px + 0.5 - x2;
+						double endY = py + 0.5 - y2;
+						distanceInside = roundEnd ? halfWidth - Math.sqrt(endX * endX + endY * endY) : Math.min(halfWidth - across, length - along);
 					}
 					else
 					{
-						value = edgeCoverage(halfWidth - across);
+						distanceInside = halfWidth - across;
 					}
+					double value = edgeCoverage(distanceInside);
 					if (value > 0)
 					{
 						int index = row + px;
@@ -1012,6 +1026,7 @@ public class WebPainter extends Painter
 		 */
 		void draw(WebPainter painter)
 		{
+			boolean isSolid = painter.isSolidPaint();
 			for (int y = 0; y < bufferHeight; y++)
 			{
 				int row = y * bufferWidth;
@@ -1022,7 +1037,14 @@ public class WebPainter extends Painter
 					if (value > 0f)
 					{
 						coverage[row + x] = 0f;
-						painter.plot(minX + x, minY + y, value);
+						if (value >= 1f && isSolid)
+						{
+							painter.writeSolidSpan(minY + y, minX + x, minX + x);
+						}
+						else
+						{
+							painter.plot(minX + x, minY + y, value);
+						}
 					}
 				}
 			}
@@ -1289,6 +1311,63 @@ public class WebPainter extends Painter
 	/**
 	 * Draws the current paint at a device pixel, covering the given fraction of it.
 	 */
+	/**
+	 * Draws the device pixels from fromX to toX, inclusive, in row y, fully covered. The span must be inside the clip.
+	 */
+	private void plotSpan(int y, int fromX, int toX)
+	{
+		if (isSolidPaint())
+		{
+			writeSolidSpan(y, fromX, toX);
+			return;
+		}
+		for (int x = fromX; x <= toX; x++)
+		{
+			plot(x, y, 1f);
+		}
+	}
+
+	/**
+	 * Whether a fully covered pixel comes out as the paint color whatever was there before, so that {@link #writeSolidSpan} gives the same
+	 * pixels as compositing each one.
+	 */
+	private boolean isSolidPaint()
+	{
+		return !hasGradient && extraAlpha >= 1f && (colorArgb >>> 24) == 255 && (composite == AlphaComposite.SrcOver || composite == AlphaComposite.Src);
+	}
+
+	/**
+	 * Sets the device pixels from fromX to toX, inclusive, in row y, to the paint color, as {@link #composite} does for a fully covered
+	 * pixel with a solid paint. The span must be inside the clip.
+	 */
+	private void writeSolidSpan(int y, int fromX, int toX)
+	{
+		if (fromX > toX)
+		{
+			return;
+		}
+		int start = target.offset + y * target.stride + fromX;
+		int end = start + (toX - fromX) + 1;
+		if (target.ints != null)
+		{
+			Arrays.fill(target.ints, start, end, colorArgb | 0xFF000000);
+			return;
+		}
+		int sourceGray = (77 * ((colorArgb >> 16) & 0xFF) + 150 * ((colorArgb >> 8) & 0xFF) + 29 * (colorArgb & 0xFF) + 128) >> 8;
+		if (target.shorts != null)
+		{
+			Arrays.fill(target.shorts, start, end, (short) (sourceGray * 257));
+		}
+		else if (targetType == ImageType.Binary)
+		{
+			Arrays.fill(target.bytes, start, end, (byte) (sourceGray >= 128 ? 1 : 0));
+		}
+		else
+		{
+			Arrays.fill(target.bytes, start, end, (byte) sourceGray);
+		}
+	}
+
 	private void plot(int x, int y, float coverage)
 	{
 		int argb = hasGradient ? gradientColorAt(x + 0.5, y + 0.5) : colorArgb;

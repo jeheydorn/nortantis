@@ -146,6 +146,30 @@ public class WebImage extends Image
 		return 0xFF000000 | (gray << 16) | (gray << 8) | gray;
 	}
 
+	/**
+	 * Every pixel as an ARGB int, row after row with no gaps between rows.
+	 */
+	public int[] toPackedARGB()
+	{
+		int[] result = new int[width * height];
+		if (ints != null)
+		{
+			for (int y = 0; y < height; y++)
+			{
+				System.arraycopy(ints, offset + y * stride, result, y * width, width);
+			}
+			return result;
+		}
+		for (int y = 0; y < height; y++)
+		{
+			for (int x = 0; x < width; x++)
+			{
+				result[y * width + x] = getARGB(x, y);
+			}
+		}
+		return result;
+	}
+
 	@Override
 	public Image scale(ScalingMethod method, int width, int height)
 	{

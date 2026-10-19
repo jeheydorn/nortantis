@@ -26,6 +26,29 @@ dependencies {
     implementation(files(compileUnsafeStub.flatMap { it.destinationDirectory }))
 }
 
+// The asset manifest for the browser, which lists the files the page downloads and the generator can see. It leaves out the files a demo
+// that can't edit text doesn't need: every font but the default one for new maps, and the large SSA name books.
+val webAssetManifestFolder = layout.buildDirectory.dir("generated-resources")
+val generateWebAssetManifest by tasks.registering {
+    val fullManifest = rootProject.layout.buildDirectory.file("generated-resources/assets/manifest.txt")
+    val webManifest = webAssetManifestFolder.map { it.file("assets/manifest.txt") }
+    dependsOn(":generateAssetManifest")
+    inputs.file(fullManifest)
+    outputs.file(webManifest)
+    doLast {
+        val fontsFolder = "assets/installed art pack/fonts/"
+        val keptFontFolder = fontsFolder + "Z003/"
+        val lines = fullManifest.get().asFile.readLines().filter { line ->
+            val path = line.substringBefore('\t')
+            val isOtherFont = path.startsWith(fontsFolder) && path != fontsFolder && !path.startsWith(keptFontFolder)
+            line.isNotEmpty() && !isOtherFont && !path.startsWith("assets/books/SSA ")
+        }
+        webManifest.get().asFile.writeText(lines.joinToString("\n") + "\n")
+    }
+}
+sourceSets.main.get().resources.srcDir(webAssetManifestFolder)
+tasks.processResources { dependsOn(generateWebAssetManifest) }
+
 tasks.withType<JavaCompile>().matching { it.name != "compileUnsafeStub" }.configureEach {
     options.encoding = "UTF-8"
     options.release.set(17)

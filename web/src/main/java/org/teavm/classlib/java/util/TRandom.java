@@ -11,11 +11,17 @@ public class TRandom implements TRandomGenerator, java.io.Serializable
 {
 	private static final long serialVersionUID = 3905348978240129619L;
 	private static final long multiplier = 0x5DEECE66DL;
-	private static final long addend = 0xBL;
+	private static final int multiplierHigh = (int) (multiplier >>> 24);
+	private static final int multiplierLow = (int) (multiplier & 0xFFFFFF);
+	private static final int addend = 0xB;
 	private static final long mask = (1L << 48) - 1;
+	private static final double twoTo24 = 0x1.0p24;
 	private static final double doubleUnit = 0x1.0p-53;
 
-	private long seed;
+	// The 48-bit seed, as its high and low 24 bits. Browsers have no 64-bit integers, so TeaVM emulates long arithmetic slowly. Products of
+	// 24-bit halves fit exactly in a double, so the seed advances with doubles instead, giving the same numbers as the JDK's long arithmetic.
+	private int seedHigh;
+	private int seedLow;
 	private double nextNextGaussian;
 	private boolean haveNextNextGaussian;
 
@@ -31,14 +37,28 @@ public class TRandom implements TRandomGenerator, java.io.Serializable
 
 	public void setSeed(long seed)
 	{
-		this.seed = (seed ^ multiplier) & mask;
+		long scrambled = (seed ^ multiplier) & mask;
+		seedHigh = (int) (scrambled >>> 24);
+		seedLow = (int) (scrambled & 0xFFFFFF);
 		haveNextNextGaussian = false;
 	}
 
 	protected int next(int bits)
 	{
-		seed = (seed * multiplier + addend) & mask;
-		return (int) (seed >>> (48 - bits));
+		double lowProduct = (double) seedLow * multiplierLow + addend;
+		int carry = (int) (lowProduct / twoTo24);
+		int newLow = (int) (lowProduct - carry * twoTo24);
+		double highProduct = (double) seedHigh * multiplierLow + (double) seedLow * multiplierHigh + carry;
+		int newHigh = (int) (highProduct - (int) (highProduct / twoTo24) * twoTo24);
+		seedHigh = newHigh;
+		seedLow = newLow;
+
+		int shift = 48 - bits;
+		if (shift >= 24)
+		{
+			return newHigh >>> (shift - 24);
+		}
+		return (newHigh << (24 - shift)) | (newLow >>> shift);
 	}
 
 	public void nextBytes(byte[] bytes)
@@ -160,7 +180,7 @@ public class TRandom implements TRandomGenerator, java.io.Serializable
 	@Override
 	public double nextDouble()
 	{
-		return (((long) (next(26)) << 27) + next(27)) * doubleUnit;
+		return (next(26) * 0x1.0p27 + next(27)) * doubleUnit;
 	}
 
 	@Override

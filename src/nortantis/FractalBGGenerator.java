@@ -56,24 +56,32 @@ public class FractalBGGenerator
 		// Multiply by 1/(f^p) in the frequency domain.
 		ThreadHelper.getInstance().processRowsInParallel(0, rows, (r) ->
 		{
+			float rF = Math.min(r, rowsFinal - r);
+			// The distance from the center column, min(c, cols - c), takes most values twice along a row, so each one's scale is computed
+			// once.
+			float[] scaleForColumnDistance = new float[colsFinal / 2 + 1];
+			for (int distance = 0; distance < scaleForColumnDistance.length; distance++)
+			{
+				float cF = distance;
+				float f = (float) Math.sqrt(rF * rF + cF * cF);
+				scaleForColumnDistance[distance] = f == 0f ? 0f : (float) (1.0 / (Math.pow(f, p)));
+			}
+
 			for (int c = 0; c < colsFinal; c++)
 			{
 				float dataR = data.getReal(c, r);
 				float dataI = data.getImaginary(c, r);
 
-				float rF = Math.min(r, rowsFinal - r);
-				float cF = Math.min(c, colsFinal - c);
-				float f = (float) Math.sqrt(rF * rF + cF * cF);
 				float real;
 				float imaginary;
-				if (f == 0f)
+				if (rF == 0f && c == 0)
 				{
 					real = 0f;
 					imaginary = 0f;
 				}
 				else
 				{
-					float scale = (float) (1.0 / (Math.pow(f, p)));
+					float scale = scaleForColumnDistance[Math.min(c, colsFinal - c)];
 					real = dataR * scale;
 					imaginary = dataI * scale;
 				}

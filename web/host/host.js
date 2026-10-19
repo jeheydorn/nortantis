@@ -5,7 +5,7 @@
 'use strict';
 
 const scriptPath = '../build/generated/teavm/js/nortantis.js';
-const manifestPath = '../../build/generated-resources/assets/manifest.txt';
+const manifestPath = '../build/generated-resources/assets/manifest.txt';
 const assetsRoot = '../../';
 
 const params = new URLSearchParams(location.search);
@@ -156,13 +156,13 @@ window.nortantisHost = {
 		canvas.height = height;
 		const context = canvas.getContext('2d');
 		const image = context.createImageData(width, height);
-		const data = image.data;
+		// Canvas pixels are bytes in the order red, green, blue, alpha, which as little-endian 32-bit words is ABGR, so swapping red and blue
+		// turns each ARGB pixel into one.
+		const words = new Uint32Array(image.data.buffer);
+		const alpha = isOpaque ? 0xFF000000 : 0;
 		for (let i = 0, n = width * height; i < n; i++) {
 			const p = pixels[i];
-			data[i * 4] = (p >> 16) & 255;
-			data[i * 4 + 1] = (p >> 8) & 255;
-			data[i * 4 + 2] = p & 255;
-			data[i * 4 + 3] = isOpaque ? 255 : (p >>> 24);
+			words[i] = (p & 0xFF00FF00) | ((p >>> 16) & 0xFF) | ((p & 0xFF) << 16) | alpha;
 		}
 		context.putImageData(image, 0, 0);
 		setStatus('Finished in ' + ((performance.now() - generationStart) / 1000).toFixed(1) + ' seconds. Press Generate map for another.');

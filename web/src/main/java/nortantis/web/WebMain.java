@@ -17,9 +17,9 @@ import nortantis.SettingsGenerator;
 import nortantis.editor.MapParts;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
-import nortantis.platform.PixelReader;
 import nortantis.platform.PlatformFactory;
 import nortantis.platform.web.WebFactory;
+import nortantis.platform.web.WebImage;
 import nortantis.swing.translation.Translation;
 import nortantis.util.Assets;
 
@@ -66,18 +66,20 @@ public class WebMain
 			System.out.println("DONE");
 			return;
 		}
-		whenFontsReady(() ->
-		{
-			for (int i = 0; i < runs; i++)
-			{
-				generate(seed + i, resolution, settingsPath);
-			}
-			System.out.println("DONE");
-		});
+		whenFontsReady(() -> generate(seed, resolution, settingsPath, runs));
 	}
 
-	private static void generate(long seed, double resolution, String settingsPath)
+	/**
+	 * Generates and shows a map, saves its settings, and then generates the given number of runs minus one more maps, with the following
+	 * seeds.
+	 */
+	private static void generate(long seed, double resolution, String settingsPath, int runs)
 	{
+		if (runs <= 0)
+		{
+			System.out.println("DONE");
+			return;
+		}
 		long start = System.currentTimeMillis();
 		MapSettings settings = settingsPath != null ? new MapSettings(settingsPath) : SettingsGenerator.generate(new Random(seed), Assets.installedArtPack, null);
 		settings.resolution = resolution;
@@ -89,6 +91,18 @@ public class WebMain
 		long elapsed = System.currentTimeMillis() - start;
 		System.out.println("MAP " + map.getWidth() + "x" + map.getHeight() + " in " + elapsed + " ms");
 
+		showMap(map.getWidth(), map.getHeight(), ((WebImage) map).toPackedARGB(), map.getType() != ImageType.ARGB);
+
+		// Saving takes a moment, so it waits until the browser has put the map on the screen.
+		afterNextPaint(() ->
+		{
+			save(settings, mapParts);
+			generate(seed + 1, resolution, settingsPath, runs - 1);
+		});
+	}
+
+	private static void save(MapSettings settings, MapParts mapParts)
+	{
 		// Record the generated land, water, and regions in the edits, as the editor does after its first draw, so that the saved settings
 		// draw the same map anywhere, rather than depending on regenerating it.
 		if (settings.edits.centerEdits.isEmpty())
@@ -115,19 +129,6 @@ public class WebMain
 		{
 			throw new RuntimeException(e);
 		}
-
-		int[] pixels = new int[map.getWidth() * map.getHeight()];
-		try (PixelReader reader = map.createPixelReader())
-		{
-			for (int y = 0; y < map.getHeight(); y++)
-			{
-				for (int x = 0; x < map.getWidth(); x++)
-				{
-					pixels[y * map.getWidth() + x] = reader.getRGB(x, y);
-				}
-			}
-		}
-		showMap(map.getWidth(), map.getHeight(), pixels, map.getType() != ImageType.ARGB);
 	}
 
 	/**
@@ -138,6 +139,9 @@ public class WebMain
 
 	@JSBody(params = { "callback" }, script = "nortantisText.whenReady(callback);")
 	private static native void whenFontsReady(Callback callback);
+
+	@JSBody(params = { "callback" }, script = "requestAnimationFrame(() => setTimeout(callback, 0));")
+	private static native void afterNextPaint(Callback callback);
 
 	@JSBody(params = { "data" }, script = "nortantisHost.saveSettings(data);")
 	private static native void saveSettings(@JSByRef byte[] data);
