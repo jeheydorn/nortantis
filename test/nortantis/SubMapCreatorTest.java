@@ -8,7 +8,7 @@ import nortantis.platform.Image;
 import nortantis.platform.ImageHelper;
 import nortantis.platform.PlatformFactory;
 import nortantis.platform.awt.AwtFactory;
-import nortantis.swing.MapEdits;
+import nortantis.editor.MapEdits;
 import nortantis.swing.SubMapDialog;
 import nortantis.util.OrderlessPair;
 import org.apache.commons.io.FileUtils;

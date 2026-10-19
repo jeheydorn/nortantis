@@ -22,6 +22,7 @@ import nortantis.platform.BackgroundTask;
 import nortantis.platform.Image;
 import nortantis.platform.ImageHelper;
 import nortantis.platform.PlatformFactory;
+import nortantis.platform.ScalingMethod;
 import nortantis.platform.awt.AwtBridge;
 import nortantis.platform.awt.AwtFactory;
 import nortantis.swing.translation.Translation;
@@ -30,7 +31,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.imgscalr.Scalr.Method;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
@@ -2226,7 +2226,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		}
 
-		OSHelper.openFileExplorerTo(folder.toFile());
+		SwingHelper.openFileExplorerTo(folder.toFile());
 	}
 
 	private void handleAddArtPack()
@@ -2765,8 +2765,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		// A draw just finished. When a zoom change is still pending, this draw's rescale supersedes the zoom's own rescale and commits the new
 		// zoom in its place, into the layout the zoom preview already gave the panel.
-		Method method = getScalingMethodForZoom(targetZoom);
-		if (method == Method.BALANCED && incrementalChangeArea != null && targetZoom == zoom && mapEditingPanel.getImage() != null)
+		ScalingMethod method = getScalingMethodForZoom(targetZoom);
+		if (method == ScalingMethod.Balanced && incrementalChangeArea != null && targetZoom == zoom && mapEditingPanel.getImage() != null)
 		{
 			// Fast path: the displayed image is already at this zoom, so patch just the changed region directly into it, synchronously
 			// on the EDT (a small-region scale is only a couple ms).
@@ -2849,9 +2849,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	/**
 	 * The method for scaling the displayed map by the given zoom.
 	 */
-	private static Method getScalingMethodForZoom(double zoom)
+	private static ScalingMethod getScalingMethodForZoom(double zoom)
 	{
-		return zoom < 0.34 ? Method.QUALITY : Method.BALANCED;
+		return zoom < 0.34 ? ScalingMethod.Quality : ScalingMethod.Balanced;
 	}
 
 	private void runScaleMapFull(long generation, Image sourceMap, double committedResolution, double targetZoom, int borderPadding, boolean synchronous,
@@ -2863,7 +2863,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			return;
 		}
 
-		Method method = getScalingMethodForZoom(targetZoom);
+		ScalingMethod method = getScalingMethodForZoom(targetZoom);
 		int zoomedWidth = getZoomedMapWidth(sourceMap, targetZoom);
 
 		BufferedImage scaledImage;
@@ -2915,7 +2915,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	 * incremental patch path (ImageHelper.scaleInto, used above in updateDisplayedMapFromGeneratedMap), or at least close enough that
 	 * people can't tell the difference, because that path updates pieces of an image created here.
 	 */
-	private BufferedImage scaleFullMap(Image sourceMap, int zoomedWidth, Method method)
+	private BufferedImage scaleFullMap(Image sourceMap, int zoomedWidth, ScalingMethod method)
 	{
 		if (zoomedWidth > sourceMap.getWidth())
 		{

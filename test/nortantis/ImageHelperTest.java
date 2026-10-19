@@ -11,7 +11,6 @@ import nortantis.platform.ImageHelper;
 import nortantis.platform.ImageHelper.ColorizeAlgorithm;
 import nortantis.util.Range;
 import org.apache.commons.io.FileUtils;
-import org.imgscalr.Scalr.Method;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -120,7 +119,7 @@ public class ImageHelperTest
 	public void testScale()
 	{
 		Image original = createColorTestImage();
-		Image scaled = ImageHelper.getInstance().scale(original, 75, 50, Method.QUALITY);
+		Image scaled = ImageHelper.getInstance().scale(original, 75, 50, ScalingMethod.Quality);
 
 		assertEquals(75, scaled.getWidth(), "Width should be 75");
 		assertEquals(50, scaled.getHeight(), "Height should be 50");
@@ -773,7 +772,7 @@ public class ImageHelperTest
 		Image image1 = createColorTestImage();
 		Image image2 = createSolidColorImage(testImageWidth, testImageHeight, Color.cyan);
 		Image mask = createGradientMask();
-		mask = ImageHelper.getInstance().scale(mask, 40, 40, Method.QUALITY);
+		mask = ImageHelper.getInstance().scale(mask, 40, 40, ScalingMethod.Quality);
 
 		Point pivot = new Point(50, 50);
 		ImageHelper.getInstance().combineImagesWithMaskInRegion(image1, image2, mask, 30, 30, Math.PI / 6, pivot);

@@ -2,6 +2,7 @@ package nortantis.swing;
 
 import nortantis.*;
 import nortantis.editor.MapUpdater;
+import nortantis.editor.MapEdits;
 import nortantis.geom.IntRectangle;
 import nortantis.geom.Rectangle;
 import nortantis.platform.Image;

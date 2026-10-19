@@ -165,7 +165,7 @@ public class CustomArtPackDialog extends JDialog
 					return;
 				}
 
-				OSHelper.openFileExplorerTo(folder);
+				SwingHelper.openFileExplorerTo(folder);
 			}
 		});
 		openButton.setEnabled(!customArtPackFolderField.getText().isEmpty());

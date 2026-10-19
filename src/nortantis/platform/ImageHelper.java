@@ -14,12 +14,8 @@ import nortantis.geom.Rectangle;
 import nortantis.util.*;
 import org.apache.commons.math3.analysis.function.Sinc;
 import org.apache.commons.math3.distribution.NormalDistribution;
-import org.imgscalr.Scalr.Method;
 import org.jtransforms.fft.FloatFFT_2D;
 
-import java.awt.Desktop;
-import java.io.File;
-import java.io.IOException;
 import java.util.*;
 import java.util.List;
 
@@ -699,16 +695,16 @@ public abstract class ImageHelper
 
 	public Image scaleByWidth(Image inImage, int xSize)
 	{
-		return scaleByWidth(inImage, xSize, Method.QUALITY);
+		return scaleByWidth(inImage, xSize, ScalingMethod.Quality);
 	}
 
-	public Image scaleByWidth(Image inImage, int xSize, Method method)
+	public Image scaleByWidth(Image inImage, int xSize, ScalingMethod method)
 	{
 		int ySize = getHeightWhenScaledByWidth(inImage, xSize);
 		return scale(inImage, xSize, ySize, method);
 	}
 
-	public Image scale(Image inImage, int width, int height, Method method)
+	public Image scale(Image inImage, int width, int height, ScalingMethod method)
 	{
 		return inImage.scale(method, width, height);
 	}
@@ -730,7 +726,7 @@ public abstract class ImageHelper
 		}
 
 		Image result = Image.create(width, height, ImageType.Binary);
-		try (Image grayscale = convertImageToType(mask, ImageType.Grayscale8Bit); Image scaled = scale(grayscale, width, height, Method.QUALITY))
+		try (Image grayscale = convertImageToType(mask, ImageType.Grayscale8Bit); Image scaled = scale(grayscale, width, height, ScalingMethod.Quality))
 		{
 			final int halfLevel = scaled.getMaxPixelLevel() / 2;
 			try (PixelReader scaledPixels = scaled.createPixelReader(); PixelWriter resultPixels = result.createPixelWriter())
@@ -767,10 +763,10 @@ public abstract class ImageHelper
 
 	public Image scaleByHeight(Image inImage, int ySize)
 	{
-		return scaleByHeight(inImage, ySize, Method.QUALITY);
+		return scaleByHeight(inImage, ySize, ScalingMethod.Quality);
 	}
 
-	public Image scaleByHeight(Image inImage, int ySize, Method method)
+	public Image scaleByHeight(Image inImage, int ySize, ScalingMethod method)
 	{
 		int xSize = getWidthWhenScaledByHeight(inImage, ySize);
 		return inImage.scale(method, xSize, ySize);
@@ -1602,39 +1598,6 @@ public abstract class ImageHelper
 		image.write(fileName);
 	}
 
-	public String openImageInSystemDefaultEditor(Image map, String filenameWithoutExtension) throws IOException
-	{
-		String format = "png";
-		File tempFile = File.createTempFile(filenameWithoutExtension, "." + format);
-		map.write(tempFile.getAbsolutePath());
-
-		openImageInSystemDefaultEditor(tempFile.getAbsolutePath());
-		return tempFile.getAbsolutePath();
-	}
-
-	public void openImageInSystemDefaultEditor(String imageFilePath)
-	{
-		if (Desktop.isDesktopSupported())
-		{
-			Desktop desktop = Desktop.getDesktop();
-			if (desktop.isSupported(Desktop.Action.OPEN))
-			{
-				try
-				{
-					desktop.open(new File(imageFilePath));
-				}
-				catch (IOException e)
-				{
-					throw new RuntimeException(e);
-				}
-			}
-		}
-		else
-		{
-			throw new RuntimeException("Unable to open the map because Java's Desktop is not supported");
-		}
-	}
-
 	public int bound(int value)
 	{
 		return Math.min(255, Math.max(0, value));
@@ -1959,7 +1922,7 @@ public abstract class ImageHelper
 				}
 			}
 
-			return scaleByWidth(placeHolder, placeHolder.getWidth(), Method.QUALITY);
+			return scaleByWidth(placeHolder, placeHolder.getWidth(), ScalingMethod.Quality);
 		}
 	}
 }

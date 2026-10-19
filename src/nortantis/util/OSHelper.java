@@ -1,12 +1,5 @@
 package nortantis.util;
 
-import nortantis.swing.SwingHelper;
-import nortantis.swing.translation.Translation;
-
-import javax.swing.*;
-import java.awt.*;
-import java.io.File;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -70,25 +63,5 @@ public class OSHelper
 			return Paths.get(System.getProperty("user.home"), ".Nortantis");
 		}
 		return Paths.get(System.getProperty("user.home"), ".Nortantis");
-	}
-
-	public static void openFileExplorerTo(File folder)
-	{
-		Desktop desktop = Desktop.getDesktop();
-		if (desktop.isSupported(Desktop.Action.OPEN))
-		{
-			try
-			{
-				desktop.open(folder);
-			}
-			catch (IOException ex)
-			{
-				Logger.printError("Error while trying to open folder '" + folder + " in your system's file explorer.", ex);
-			}
-		}
-		else
-		{
-			SwingHelper.showMessageDialog(null, Translation.get("osHelper.unableToOpenFolder", folder), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
-		}
 	}
 }

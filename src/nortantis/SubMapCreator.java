@@ -8,7 +8,7 @@ import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Corner;
 import nortantis.graph.voronoi.Edge;
 import nortantis.platform.Font;
-import nortantis.swing.MapEdits;
+import nortantis.editor.MapEdits;
 import nortantis.util.Helper;
 import nortantis.util.OrderlessPair;
 import nortantis.util.Tuple2;

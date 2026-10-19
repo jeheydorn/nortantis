@@ -15,7 +15,6 @@ import nortantis.platform.awt.AwtBridge;
 import nortantis.swing.translation.Translation;
 import nortantis.util.*;
 import org.apache.commons.lang3.StringUtils;
-import org.imgscalr.Scalr.Method;
 
 import javax.swing.*;
 import java.awt.*;
@@ -1517,7 +1516,7 @@ public class IconsTool extends EditorTool
 					{
 						yExtraForCentering = (scaledHeight - ImageHelper.getInstance().getHeightWhenScaledByWidth(croppedImage, scaledWidth)) / 2;
 					}
-					try (Image scaled = ImageHelper.getInstance().scaleByWidth(croppedImage, scaledWidth, Method.ULTRA_QUALITY))
+					try (Image scaled = ImageHelper.getInstance().scaleByWidth(croppedImage, scaledWidth, ScalingMethod.UltraQuality))
 					{
 						p.drawImage(scaled, xPositions[i], yPositions[i] + yExtraForCentering);
 					}

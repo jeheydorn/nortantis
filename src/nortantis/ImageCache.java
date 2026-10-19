@@ -6,7 +6,6 @@ import nortantis.platform.*;
 import nortantis.util.*;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.imgscalr.Scalr.Method;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -145,7 +144,7 @@ public class ImageCache
 		// but if that did happen it would only result in a little bit of
 		// duplicated work, not a functional
 		// problem.
-		return scaledCache.getOrCreate(icon, () -> new ConcurrentHashMapF<>()).getOrCreate(size, () -> ImageHelper.getInstance().scale(icon, size.width, size.height, Method.QUALITY));
+		return scaledCache.getOrCreate(icon, () -> new ConcurrentHashMapF<>()).getOrCreate(size, () -> ImageHelper.getInstance().scale(icon, size.width, size.height, ScalingMethod.Quality));
 	}
 
 	/**

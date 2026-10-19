@@ -2,7 +2,6 @@ package nortantis.platform;
 
 import nortantis.geom.IntDimension;
 import nortantis.geom.IntRectangle;
-import org.imgscalr.Scalr.Method;
 
 import java.io.InputStream;
 import java.util.function.Consumer;
@@ -91,7 +90,7 @@ public abstract class Image implements AutoCloseable
 		PlatformFactory.getInstance().writeImage(this, filePath);
 	}
 
-	public abstract Image scale(Method method, int width, int height);
+	public abstract Image scale(ScalingMethod method, int width, int height);
 
 	public boolean hasAlpha()
 	{

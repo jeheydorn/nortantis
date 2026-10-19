@@ -8,6 +8,7 @@ import nortantis.MapSettings;
 import nortantis.SettingsGenerator;
 import nortantis.ThemeCatalog;
 import nortantis.editor.MapUpdater;
+import nortantis.editor.MapEdits;
 import nortantis.geom.IntRectangle;
 import nortantis.platform.Image;
 import nortantis.platform.ImageHelper;

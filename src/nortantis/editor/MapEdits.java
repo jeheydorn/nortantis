@@ -1,16 +1,11 @@
-package nortantis.swing;
+package nortantis.editor;
 
 import nortantis.FreeIconCollection;
+import nortantis.editor.MapEdits;
 import nortantis.GraphRiver;
 import nortantis.MapText;
 import nortantis.Region;
 import nortantis.WorldGraph;
-import nortantis.editor.CenterEdit;
-import nortantis.editor.EdgeEdit;
-import nortantis.editor.RegionEdit;
-import nortantis.editor.River;
-import nortantis.editor.RiverPathNode;
-import nortantis.editor.Road;
 import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
 import nortantis.geom.RotatedRectangle;

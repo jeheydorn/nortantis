@@ -7,7 +7,7 @@ import nortantis.editor.FreeIcon;
 import nortantis.editor.RegionEdit;
 import nortantis.platform.Color;
 import nortantis.platform.Font;
-import nortantis.swing.MapEdits;
+import nortantis.editor.MapEdits;
 import nortantis.swing.translation.Translation;
 import nortantis.util.*;
 

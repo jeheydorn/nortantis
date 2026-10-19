@@ -9,7 +9,7 @@ import nortantis.editor.RoadPathNode;
 import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
-import nortantis.swing.MapEdits;
+import nortantis.editor.MapEdits;
 
 import java.util.ArrayList;
 import java.util.Collections;

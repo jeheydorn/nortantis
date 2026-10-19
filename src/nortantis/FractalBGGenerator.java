@@ -4,6 +4,7 @@ import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.PlatformFactory;
 import nortantis.platform.awt.AwtFactory;
+import nortantis.swing.SwingHelper;
 import nortantis.platform.ImageHelper;
 import nortantis.util.Stopwatch;
 import nortantis.util.ThreadHelper;
@@ -106,7 +107,7 @@ public class FractalBGGenerator
 
 		sw.printElapsedTime();
 
-		ImageHelper.getInstance().openImageInSystemDefaultEditor(background, "cloud");
+		SwingHelper.openImageInSystemDefaultEditor(background, "cloud");
 		System.out.println("Done.");
 	}
 

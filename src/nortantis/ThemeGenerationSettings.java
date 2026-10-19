@@ -2,7 +2,6 @@ package nortantis;
 
 import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanWaves;
-import nortantis.util.Helper;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -20,7 +19,7 @@ import java.util.function.Function;
  * are no built-in rules: the default rules are the installed Parchment theme's (see {@link ThemeCatalog#getDefaultThemeRules()}).
  */
 @SuppressWarnings("serial")
-public class ThemeGenerationSettings implements Serializable
+public class ThemeGenerationSettings implements Serializable, Cloneable
 {
 	/*
 	 * How far colors vary between generated maps. Hue is in degrees, and saturation and brightness in percent. Each is the width of the
@@ -116,7 +115,31 @@ public class ThemeGenerationSettings implements Serializable
 
 	public ThemeGenerationSettings copy()
 	{
-		return Helper.deepCopy(this);
+		ThemeGenerationSettings copy;
+		try
+		{
+			copy = (ThemeGenerationSettings) clone();
+		}
+		catch (CloneNotSupportedException e)
+		{
+			throw new RuntimeException(e);
+		}
+
+		// clone() gives the copy the same sets as this, so each set is replaced with a copy of its own. The other fields are primitives.
+		copy.allowedLandColoringMethods = copySet(allowedLandColoringMethods);
+		copy.allowedOceanWaveTypes = copySet(allowedOceanWaveTypes);
+		copy.allowedRegionBoundaryStrokeTypes = copySet(allowedRegionBoundaryStrokeTypes);
+		copy.allowedRoadStrokeTypes = copySet(allowedRoadStrokeTypes);
+		copy.allowedBackgroundTypes = copySet(allowedBackgroundTypes);
+		copy.allowedLineStyles = copySet(allowedLineStyles);
+		copy.allowedTitleBackgroundEffects = copySet(allowedTitleBackgroundEffects);
+		copy.allowedRegionBackgroundEffects = copySet(allowedRegionBackgroundEffects);
+		return copy;
+	}
+
+	private static <E> Set<E> copySet(Set<E> set)
+	{
+		return set == null ? null : new LinkedHashSet<>(set);
 	}
 
 	@SuppressWarnings("unchecked")

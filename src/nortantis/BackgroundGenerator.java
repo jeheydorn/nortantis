@@ -3,10 +3,10 @@ package nortantis;
 import nortantis.geom.IntRectangle;
 import nortantis.platform.*;
 import nortantis.platform.awt.AwtFactory;
+import nortantis.swing.SwingHelper;
 import nortantis.platform.ImageHelper;
 import nortantis.util.Range;
 import nortantis.util.Stopwatch;
-import org.imgscalr.Scalr.Method;
 
 import java.io.IOException;
 import java.util.Random;
@@ -150,7 +150,7 @@ public class BackgroundGenerator
 		Image colorsForHistogramMatching;
 		if (texture.getWidth() < targetCols || texture.getHeight() < targetRows)
 		{
-			colorsForHistogramMatching = ImageHelper.getInstance().scale(texture, Math.max(texture.getWidth(), targetCols), Math.max(texture.getHeight(), targetRows), Method.BALANCED);
+			colorsForHistogramMatching = ImageHelper.getInstance().scale(texture, Math.max(texture.getWidth(), targetCols), Math.max(texture.getHeight(), targetRows), ScalingMethod.Balanced);
 		}
 		else
 		{
@@ -230,7 +230,7 @@ public class BackgroundGenerator
 			out.print("Unable to load image.");
 		}
 		Image result = generateUsingWhiteNoiseConvolution(new Random(), image, 3072, 3072, false);
-		ImageHelper.getInstance().openImageInSystemDefaultEditor(result, "result");
+		SwingHelper.openImageInSystemDefaultEditor(result, "result");
 
 		sw.printElapsedTime();
 		System.out.println("Done.");

@@ -9,7 +9,6 @@ import nortantis.graph.voronoi.Edge;
 import nortantis.platform.BackgroundTask;
 import nortantis.platform.Image;
 import nortantis.platform.PlatformFactory;
-import nortantis.swing.MapEdits;
 import nortantis.swing.SwingHelper;
 import nortantis.swing.UpdateType;
 import nortantis.util.Helper;

@@ -11,6 +11,7 @@ import nortantis.TextStyleOverrides;
 import nortantis.TextStylePart;
 import nortantis.TextType;
 import nortantis.editor.MapUpdater;
+import nortantis.editor.MapEdits;
 import nortantis.geom.IntPoint;
 import nortantis.geom.Rectangle;
 import nortantis.geom.RotatedRectangle;

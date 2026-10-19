@@ -5,7 +5,7 @@ import nortantis.geom.Point;
 import nortantis.platform.Color;
 import nortantis.platform.Font;
 import nortantis.platform.FontStyle;
-import nortantis.swing.MapEdits;
+import nortantis.editor.MapEdits;
 import nortantis.swing.translation.Translation;
 import nortantis.util.*;
 import org.apache.commons.io.FileUtils;
@@ -33,7 +33,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  *
  */
 @SuppressWarnings("serial")
-public class MapSettings implements Serializable
+public class MapSettings implements Serializable, Cloneable
 {
 	/**
 	 * When updating this, also update installers/version.txt with the same value.
@@ -3834,11 +3834,10 @@ public class MapSettings implements Serializable
 
 
 	/**
-	 * Creates a deep copy of this. Note - This is not thread safe because it temporarily changes the edits pointer in this.
+	 * Creates a deep copy of this.
 	 */
 	public MapSettings deepCopy()
 	{
-		// I'm copying edits without using Helper.deepCopy because my hand-written deep copy method is 10x faster.
 		MapSettings copy = deepCopyExceptEdits();
 		if (edits != null)
 		{
@@ -3849,15 +3848,34 @@ public class MapSettings implements Serializable
 	}
 
 	/**
-	 * Creates a deep copy of this, except for the edits object, which will be the same pointer in the copy. Note - This is not thread safe
-	 * because it temporarily changes the edits pointer in this.
+	 * Creates a deep copy of this, except that the copy's edits are null.
 	 */
 	public MapSettings deepCopyExceptEdits()
 	{
-		MapEdits editsTemp = edits;
-		edits = null;
-		MapSettings copy = Helper.deepCopy(this);
-		edits = editsTemp;
+		MapSettings copy;
+		try
+		{
+			copy = (MapSettings) clone();
+		}
+		catch (CloneNotSupportedException e)
+		{
+			throw new RuntimeException(e);
+		}
+
+		// clone() gives the copy the same field values as this, so each field holding a mutable object gets a copy of its own. The other
+		// fields hold primitives or immutable objects (String, enums, Color, Stroke, NamedResource, HSBColor), which can be shared.
+		copy.edits = null;
+		copy.books = books == null ? null : new TreeSet<>(books);
+		copy.textStyleDefaults = textStyleDefaults == null ? null : copyTextStyleDefaults();
+		copy.fontArtPacks = fontArtPacks == null ? null : new TreeMap<>(fontArtPacks);
+		copy.overlayOffsetResolutionInvariant = overlayOffsetResolutionInvariant == null ? null
+				: new Point(overlayOffsetResolutionInvariant.x, overlayOffsetResolutionInvariant.y);
+		copy.iconFillColorsByType = new ConcurrentHashMap<>(iconFillColorsByType);
+		copy.iconFilterColorsByType = new ConcurrentHashMap<>(iconFilterColorsByType);
+		copy.maximizeOpacityByType = new ConcurrentHashMap<>(maximizeOpacityByType);
+		copy.fillWithColorByType = new ConcurrentHashMap<>(fillWithColorByType);
+		copy.subMapInfo = subMapInfo == null ? null : subMapInfo.copy();
+		copy.themeGeneration = themeGeneration == null ? null : themeGeneration.copy();
 		return copy;
 	}
 
@@ -3880,6 +3898,20 @@ public class MapSettings implements Serializable
 		public long randomSeed;
 		/** True if icons and rivers were redistributed for the sub-map's detail; false if they were matched to the source detail. */
 		public boolean redistributeIconsAndRivers;
+
+		public SubMapInfo copy()
+		{
+			SubMapInfo copy = new SubMapInfo();
+			copy.originalFileName = originalFileName;
+			copy.selectionX = selectionX;
+			copy.selectionY = selectionY;
+			copy.selectionWidth = selectionWidth;
+			copy.selectionHeight = selectionHeight;
+			copy.worldSize = worldSize;
+			copy.randomSeed = randomSeed;
+			copy.redistributeIconsAndRivers = redistributeIconsAndRivers;
+			return copy;
+		}
 
 		@SuppressWarnings("unchecked")
 		public JSONObject toJson()

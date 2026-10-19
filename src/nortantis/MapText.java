@@ -20,7 +20,7 @@ public class MapText implements Serializable
 	 * The (possibly rotated) bounding boxes of the text, including what its background draws around it. These are a rendering cache
 	 * populated by {@link nortantis.TextDrawer} during draws and depend on the current displayQualityScale — not part of the persistent edit
 	 * state. {@link #deepCopy()} preserves the references so that a restored undo snapshot stays clickable during the brief window before
-	 * the next draw fixes up bounds at the current resolution; {@link nortantis.swing.MapEdits#textBoundsNeedRefresh} tracks whether those
+	 * the next draw fixes up bounds at the current resolution; {@link nortantis.editor.MapEdits#textBoundsNeedRefresh} tracks whether those
 	 * preserved bounds can still be trusted.
 	 *
 	 * {@code volatile} because the background draw thread writes these while the EDT may be reading them in hit-testing. {@code transient}

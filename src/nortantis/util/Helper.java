@@ -1,6 +1,5 @@
 package nortantis.util;
 
-import java.io.*;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.function.Function;
@@ -161,53 +160,6 @@ public class Helper
 			}
 		}
 		return maxItem;
-	}
-
-	/**
-	 * Creates a deep copy of an object using serialization.
-	 */
-	@SuppressWarnings("unchecked")
-	public static <T extends Serializable> T deepCopy(T toCopy)
-	{
-		if (toCopy == null)
-		{
-			return null;
-		}
-
-		byte[] storedObjectArray = serializableToByteArray(toCopy);
-
-		Object toReturn = null;
-		try (ByteArrayInputStream istream = new ByteArrayInputStream(storedObjectArray))
-		{
-			ObjectInputStream p;
-			p = new ObjectInputStream(new BufferedInputStream(istream));
-			toReturn = p.readObject();
-			p.close();
-		}
-		catch (IOException | ClassNotFoundException e)
-		{
-			throw new RuntimeException(e);
-		}
-		return (T) toReturn;
-	}
-
-	private static <T extends Serializable> byte[] serializableToByteArray(T object)
-	{
-		ByteArrayOutputStream ostream = new ByteArrayOutputStream();
-		byte[] storedObjectArray;
-		{
-			try (ObjectOutputStream p = new ObjectOutputStream(new BufferedOutputStream(ostream)))
-			{
-				p.writeObject(object);
-				p.flush();
-			}
-			catch (IOException e)
-			{
-				throw new RuntimeException(e);
-			}
-			storedObjectArray = ostream.toByteArray();
-		}
-		return storedObjectArray;
 	}
 
 	public static float[] array2DTo1D(float[][] input)

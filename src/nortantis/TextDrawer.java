@@ -12,7 +12,7 @@ import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Corner;
 import nortantis.graph.voronoi.Edge;
 import nortantis.platform.*;
-import nortantis.swing.MapEdits;
+import nortantis.editor.MapEdits;
 import nortantis.util.*;
 import org.apache.commons.math3.exception.NoDataException;
 import org.apache.commons.math3.stat.regression.SimpleRegression;

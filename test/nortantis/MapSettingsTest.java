@@ -2,26 +2,31 @@ package nortantis;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import nortantis.geom.Point;
+import nortantis.platform.Color;
 import nortantis.platform.Font;
 import nortantis.platform.FontStyle;
 import nortantis.platform.PlatformFactory;
 import nortantis.platform.awt.AwtFactory;
-import nortantis.swing.MapEdits;
+import nortantis.editor.MapEdits;
 import nortantis.util.Assets;
 
 public class MapSettingsTest
@@ -498,6 +503,65 @@ public class MapSettingsTest
 		for (TextType type : TextType.values())
 		{
 			assertEquals(10f + type.ordinal(), settings.getThemeFonts().get(type).getSize(), "Wrong font for " + type);
+		}
+	}
+
+	@Test
+	public void deepCopyEqualsTheOriginal()
+	{
+		for (String fileName : List.of("allTypesOfEdits.nort", "simpleSmallWorld.nort", "frayedEdge_regionColors_textureImageBackground.nort"))
+		{
+			MapSettings settings = new MapSettings("unit test files/map settings/" + fileName);
+			assertEquals(settings, settings.deepCopy(), fileName);
+		}
+	}
+
+	@Test
+	public void deepCopyExceptEditsHasNoEdits()
+	{
+		MapSettings settings = new MapSettings("unit test files/map settings/allTypesOfEdits.nort");
+		MapSettings copy = settings.deepCopyExceptEdits();
+
+		assertNull(copy.edits);
+		assertNotNull(settings.edits);
+		MapSettings expected = settings.deepCopy();
+		expected.edits = null;
+		assertEquals(expected, copy);
+	}
+
+	/**
+	 * Fails when MapSettings gains a field holding a mutable object that deepCopy shares with the original instead of copying.
+	 */
+	@Test
+	public void deepCopySharesNoMutableObjects() throws Exception
+	{
+		MapSettings settings = new MapSettings("unit test files/map settings/allTypesOfEdits.nort");
+		settings.subMapInfo = new MapSettings.SubMapInfo();
+		assertNotNull(settings.themeGeneration);
+		MapSettings copy = settings.deepCopy();
+
+		assertNoSharedMutableFields(settings, copy);
+		assertNoSharedMutableFields(settings.themeGeneration, copy.themeGeneration);
+		assertNoSharedMutableFields(settings.subMapInfo, copy.subMapInfo);
+	}
+
+	private static void assertNoSharedMutableFields(Object original, Object copy) throws IllegalAccessException
+	{
+		Set<Class<?>> immutableTypes = Set.of(String.class, Boolean.class, Integer.class, Long.class, Float.class, Double.class, Color.class, Font.class,
+				Stroke.class, NamedResource.class, HSBColor.class);
+		for (Field field : original.getClass().getDeclaredFields())
+		{
+			if (Modifier.isStatic(field.getModifiers()) || field.getType().isPrimitive())
+			{
+				continue;
+			}
+			field.setAccessible(true);
+			Object value = field.get(original);
+			if (value == null || value instanceof Enum || immutableTypes.stream().anyMatch(type -> type.isInstance(value)))
+			{
+				continue;
+			}
+			assertNotSame(value, field.get(copy), original.getClass().getSimpleName() + "." + field.getName() + " is shared by the copy");
 		}
 	}
 }

@@ -1534,4 +1534,59 @@ public class SwingHelper
 		panel.add(componentRow);
 		return panel;
 	}
+
+	/**
+	 * Writes the image to a temporary PNG file and opens it in the system's default image viewer. Returns the file's path.
+	 */
+	public static String openImageInSystemDefaultEditor(nortantis.platform.Image image, String filenameWithoutExtension) throws IOException
+	{
+		File tempFile = File.createTempFile(filenameWithoutExtension, ".png");
+		image.write(tempFile.getAbsolutePath());
+
+		openImageInSystemDefaultEditor(tempFile.getAbsolutePath());
+		return tempFile.getAbsolutePath();
+	}
+
+	public static void openImageInSystemDefaultEditor(String imageFilePath)
+	{
+		if (Desktop.isDesktopSupported())
+		{
+			Desktop desktop = Desktop.getDesktop();
+			if (desktop.isSupported(Desktop.Action.OPEN))
+			{
+				try
+				{
+					desktop.open(new File(imageFilePath));
+				}
+				catch (IOException e)
+				{
+					throw new RuntimeException(e);
+				}
+			}
+		}
+		else
+		{
+			throw new RuntimeException("Unable to open the map because Java's Desktop is not supported");
+		}
+	}
+
+	public static void openFileExplorerTo(File folder)
+	{
+		Desktop desktop = Desktop.getDesktop();
+		if (desktop.isSupported(Desktop.Action.OPEN))
+		{
+			try
+			{
+				desktop.open(folder);
+			}
+			catch (IOException ex)
+			{
+				Logger.printError("Error while trying to open folder '" + folder + " in your system's file explorer.", ex);
+			}
+		}
+		else
+		{
+			showMessageDialog(null, Translation.get("osHelper.unableToOpenFolder", folder), Translation.get("common.error"), JOptionPane.ERROR_MESSAGE);
+		}
+	}
 }
