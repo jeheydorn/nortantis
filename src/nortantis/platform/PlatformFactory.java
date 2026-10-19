@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.concurrent.Future;
 
 import nortantis.IconDrawTask;
+import nortantis.BackgroundImageParameters;
 import nortantis.GrungeParameters;
 import nortantis.geom.Rectangle;
 import nortantis.util.Assets;
@@ -156,10 +157,19 @@ public abstract class PlatformFactory
 	}
 
 	/**
-	 * Whether {@link #startGrungeCreation} creates the grunge in memory separate from the map's, so that starting it early doesn't add to
-	 * the memory needed while the map is drawn.
+U	 * Starts creating one of the images a background generates from random noise, in the background. A platform can create it somewhere
+	 * that shares no memory with the map, as with {@link #startGrungeCreation}.
 	 */
-	public boolean createsGrungeInSeparateMemory()
+	public Future<Image> startBackgroundImageCreation(BackgroundImageParameters parameters)
+	{
+		return ThreadHelper.getInstance().submit(parameters::create);
+	}
+
+	/**
+	 * Whether {@link #startGrungeCreation} and {@link #startBackgroundImageCreation} create their images in memory separate from the map's,
+	 * so that starting them early doesn't add to the memory needed while the map is drawn.
+	 */
+	public boolean createsImagesInSeparateMemory()
 	{
 		return false;
 	}

@@ -1277,6 +1277,14 @@ public class MapCreator implements WarningLogger
 		r = new Random(settings.randomSeed);
 		Dimension mapBounds = Background.calcMapBoundsAndAdjustResolutionIfNeeded(settings, maxDimensions);
 		double sizeMultiplier = calcSizeMultiplierFromResolutionScale(settings.resolution);
+
+		Background.GeneratedImages backgroundImages = null;
+		if ((mapParts == null || mapParts.background == null) && PlatformFactory.getInstance().createsImagesInSeparateMemory())
+		{
+			// They don't take from the map's memory, so they can be created at the same time as the graph.
+			backgroundImages = Background.startCreatingGeneratedImages(settings, mapBounds, this);
+		}
+
 		// Kick of a job to create the graph while the background is being created.
 		Future<WorldGraph> graphTask = ThreadHelper.getInstance().submit(() ->
 		{
@@ -1305,7 +1313,7 @@ public class MapCreator implements WarningLogger
 		else
 		{
 			Logger.println("Generating the background image.");
-			background = new Background(settings, mapBounds, this);
+			background = new Background(settings, mapBounds, this, backgroundImages);
 		}
 
 		if (mapParts != null)
@@ -1332,7 +1340,7 @@ public class MapCreator implements WarningLogger
 		}
 
 		Future<Image> grungeTask = null;
-		if (PlatformFactory.getInstance().createsGrungeInSeparateMemory())
+		if (PlatformFactory.getInstance().createsImagesInSeparateMemory())
 		{
 			// It doesn't take from the map's memory, so it can start as soon as the map's size is known.
 			grungeTask = startGrungeCreation(settings, mapParts, mapDimensions);

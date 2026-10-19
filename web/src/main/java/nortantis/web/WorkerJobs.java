@@ -1,5 +1,7 @@
 package nortantis.web;
 
+import java.nio.file.Paths;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -12,6 +14,7 @@ import org.teavm.jso.JSByRef;
 import org.teavm.jso.JSFunctor;
 import org.teavm.jso.JSObject;
 
+import nortantis.BackgroundImageParameters;
 import nortantis.GrungeParameters;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
@@ -25,13 +28,18 @@ import nortantis.platform.web.WebImage;
 class WorkerJobs implements SeparateMemoryJobs
 {
 	static final String grungeJob = "grunge";
+	static final String backgroundImageJob = "backgroundImage";
+	/**
+	 * Separates a job's arguments, which can contain spaces, as file paths do.
+	 */
+	private static final String argumentSeparator = "\n";
 
 	@Override
 	public Future<Image> startGrungeCreation(GrungeParameters parameters)
 	{
-		String arguments = parameters.backgroundRandomSeed() + " " + parameters.width() + " " + parameters.height() + " " + parameters.grungeWidth() + " "
-				+ parameters.resolution();
-		return new JobFuture(startJob(grungeJob, arguments), () -> parameters.createGrunge(() ->
+		String arguments = String.join(argumentSeparator, Long.toString(parameters.backgroundRandomSeed()), Integer.toString(parameters.width()), Integer.toString(parameters.height()),
+				Integer.toString(parameters.grungeWidth()), Double.toString(parameters.resolution()));
+		return new JobFuture(startJob(grungeJob, arguments, ""), () -> parameters.createGrunge(() ->
 		{
 		}));
 	}
@@ -41,9 +49,36 @@ class WorkerJobs implements SeparateMemoryJobs
 	 */
 	static GrungeParameters parseGrungeParameters(String arguments)
 	{
-		String[] parts = arguments.split(" ");
+		String[] parts = arguments.split(argumentSeparator);
 		return new GrungeParameters(Long.parseLong(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]), Integer.parseInt(parts[3]),
 				Double.parseDouble(parts[4]));
+	}
+
+	@Override
+	public Future<Image> startBackgroundImageCreation(BackgroundImageParameters parameters)
+	{
+		String texturePath = parameters.texturePath() == null ? "" : parameters.texturePath().toString();
+		String arguments = String.join(argumentSeparator, Long.toString(parameters.backgroundRandomSeed()), Integer.toString(parameters.width()),
+				Integer.toString(parameters.height()), Objects.toString(parameters.textureArtPack(), ""), Objects.toString(parameters.customArtPackPath(), ""),
+				texturePath, Boolean.toString(parameters.convertTextureToGrayscale()));
+		// The helper has none of the asset files, so the texture goes with the job.
+		String assets = texturePath.isEmpty() ? "" : BrowserAssets.toManifestPath(texturePath);
+		return new JobFuture(startJob(backgroundImageJob, arguments, assets), parameters::create);
+	}
+
+	/**
+	 * Parses the arguments {@link #startBackgroundImageCreation} sends to the helper.
+	 */
+	static BackgroundImageParameters parseBackgroundImageParameters(String arguments)
+	{
+		String[] parts = arguments.split(argumentSeparator, -1);
+		return new BackgroundImageParameters(Long.parseLong(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]), emptyToNull(parts[3]),
+				emptyToNull(parts[4]), parts[5].isEmpty() ? null : Paths.get(parts[5]), Boolean.parseBoolean(parts[6]));
+	}
+
+	private static String emptyToNull(String value)
+	{
+		return value.isEmpty() ? null : value;
 	}
 
 	/**
@@ -185,8 +220,12 @@ class WorkerJobs implements SeparateMemoryJobs
 		});
 	}
 
-	@JSBody(params = { "kind", "arguments" }, script = "return nortantisJobs.start(kind, arguments);")
-	private static native int startJob(String kind, String arguments);
+	/**
+	 * @param assets
+	 *            The manifest paths of the asset files the job reads, one per line, which go to the helper with the job.
+	 */
+	@JSBody(params = { "kind", "arguments", "assets" }, script = "return nortantisJobs.start(kind, arguments, assets);")
+	private static native int startJob(String kind, String arguments, String assets);
 
 	@JSBody(params = { "jobId", "callback" }, script = "nortantisJobs.whenDone(jobId, callback);")
 	private static native void whenJobDone(int jobId, JobDoneCallback callback);

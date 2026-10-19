@@ -208,10 +208,13 @@ function callJobCallback(job) {
 }
 
 self.nortantisJobs = {
-	start(kind, args) {
+	// assets lists the manifest paths of the asset files the job reads, one per line. The helper has no asset files of its own, so they
+	// go with the job.
+	start(kind, args, assets) {
 		const id = nextJobId++;
 		jobs.set(id, {});
-		getHelper().postMessage({ type: 'job', id: id, kind: kind, args: args });
+		const files = assets ? assets.split('\n').map((path) => [path, nortantisAssets.files.get(path)]) : [];
+		getHelper().postMessage({ type: 'job', id: id, kind: kind, args: args, files: files });
 		return id;
 	},
 
@@ -323,6 +326,11 @@ self.onmessage = (event) => {
 		loadScript();
 	} else if (message.type === 'job') {
 		loadScript();
+		for (const [path, bytes] of message.files) {
+			if (bytes) {
+				nortantisAssets.files.set(path, bytes);
+			}
+		}
 		main(['job', String(message.id), message.kind, message.args]);
 	}
 };

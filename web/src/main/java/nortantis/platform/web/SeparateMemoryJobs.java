@@ -2,6 +2,7 @@ package nortantis.platform.web;
 
 import java.util.concurrent.Future;
 
+import nortantis.BackgroundImageParameters;
 import nortantis.GrungeParameters;
 import nortantis.platform.Image;
 
@@ -12,4 +13,6 @@ import nortantis.platform.Image;
 public interface SeparateMemoryJobs
 {
 	Future<Image> startGrungeCreation(GrungeParameters parameters);
+
+	Future<Image> startBackgroundImageCreation(BackgroundImageParameters parameters);
 }

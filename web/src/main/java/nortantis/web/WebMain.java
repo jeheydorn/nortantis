@@ -20,6 +20,7 @@ import nortantis.editor.MapParts;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.PlatformFactory;
+import nortantis.platform.web.SeparateMemoryJobs;
 import nortantis.platform.web.WebFactory;
 import nortantis.platform.web.WebImage;
 import nortantis.swing.translation.Translation;
@@ -54,13 +55,7 @@ public class WebMain
 		double resolution = args.length > 1 ? Double.parseDouble(args[1]) : 0.75;
 
 		long start = System.currentTimeMillis();
-		// The browser has no user folder or operating system name. These give Nortantis a preferences folder in TeaVM's in-memory file
-		// system, which starts out empty, so every preference starts at its default.
-		System.setProperty("user.home", "/home");
-		System.setProperty("os.name", "Linux");
-		PlatformFactory.setInstance(new WebFactory(new BrowserTextRasterizer(), (long) getMemoryLimit(), new WorkerJobs()));
-		Assets.setAssetInputStreamProvider(new BrowserAssets());
-		Translation.initialize();
+		setUp(new WorkerJobs());
 		FontFinder.ensureInitialized();
 		System.out.println("STARTUP " + (System.currentTimeMillis() - start) + " ms");
 
@@ -103,20 +98,44 @@ public class WebMain
 		save(settings, mapParts);
 	}
 
+	/**
+	 * Sets up Nortantis to run in this worker.
+	 *
+	 * @param separateMemoryJobs
+	 *            Where to create grunge and the images a background generates, or null to create them in this worker.
+	 */
+	private static void setUp(SeparateMemoryJobs separateMemoryJobs)
+	{
+		// The browser has no user folder or operating system name. These give Nortantis a preferences folder in TeaVM's in-memory file
+		// system, which starts out empty, so every preference starts at its default.
+		System.setProperty("user.home", "/home");
+		System.setProperty("os.name", "Linux");
+		PlatformFactory.setInstance(new WebFactory(new BrowserTextRasterizer(), (long) getMemoryLimit(), separateMemoryJobs));
+		Assets.setAssetInputStreamProvider(new BrowserAssets());
+		Translation.initialize();
+	}
+
 	private static void runJob(int jobId, String kind, String arguments)
 	{
 		try
 		{
-			PlatformFactory.setInstance(new WebFactory(new BrowserTextRasterizer(), (long) getMemoryLimit(), null));
-			Assets.setAssetInputStreamProvider(new BrowserAssets());
-			if (!kind.equals(WorkerJobs.grungeJob))
+			setUp(null);
+			Image result;
+			if (kind.equals(WorkerJobs.grungeJob))
+			{
+				result = WorkerJobs.parseGrungeParameters(arguments).createGrunge(() ->
+				{
+				});
+			}
+			else if (kind.equals(WorkerJobs.backgroundImageJob))
+			{
+				result = WorkerJobs.parseBackgroundImageParameters(arguments).create();
+			}
+			else
 			{
 				throw new IllegalArgumentException("Unrecognized job: " + kind);
 			}
-			Image grunge = WorkerJobs.parseGrungeParameters(arguments).createGrunge(() ->
-			{
-			});
-			WorkerJobs.sendResult(jobId, grunge);
+			WorkerJobs.sendResult(jobId, result);
 		}
 		catch (Throwable e)
 		{

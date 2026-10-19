@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Future;
 
+import nortantis.BackgroundImageParameters;
 import nortantis.GrungeParameters;
 import nortantis.platform.BackgroundTask;
 import nortantis.platform.Color;
@@ -23,7 +24,8 @@ import nortantis.util.Logger;
 /**
  * A platform that keeps images in Java arrays and draws them in Java, leaving only text to a {@link TextRasterizer}. It needs nothing from
  * AWT, so it can run in a web browser. Everything runs on the calling thread: background tasks run before this returns, and work meant for
- * the UI thread runs immediately. The exception is grunge, which a {@link SeparateMemoryJobs}, if given, creates elsewhere.
+ * the UI thread runs immediately. The exceptions are grunge and the images a background generates, which a {@link SeparateMemoryJobs}, if
+ * given, creates elsewhere.
  */
 public class WebFactory extends PlatformFactory
 {
@@ -36,7 +38,7 @@ public class WebFactory extends PlatformFactory
 	 * @param maxMemory
 	 *            The most memory, in bytes, the program can use.
 	 * @param separateMemoryJobs
-	 *            Where to create grunge, or null to create it on the calling thread.
+	 *            Where to create grunge and the images a background generates, or null to create them on the calling thread.
 	 */
 	public WebFactory(TextRasterizer textRasterizer, long maxMemory, SeparateMemoryJobs separateMemoryJobs)
 	{
@@ -57,7 +59,17 @@ public class WebFactory extends PlatformFactory
 	}
 
 	@Override
-	public boolean createsGrungeInSeparateMemory()
+	public Future<Image> startBackgroundImageCreation(BackgroundImageParameters parameters)
+	{
+		if (separateMemoryJobs == null)
+		{
+			return super.startBackgroundImageCreation(parameters);
+		}
+		return separateMemoryJobs.startBackgroundImageCreation(parameters);
+	}
+
+	@Override
+	public boolean createsImagesInSeparateMemory()
 	{
 		return separateMemoryJobs != null;
 	}

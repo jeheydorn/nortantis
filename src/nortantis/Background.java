@@ -7,11 +7,13 @@ import nortantis.graph.voronoi.Center;
 import nortantis.platform.*;
 import nortantis.platform.ImageHelper;
 import nortantis.platform.ImageHelper.ColorizeAlgorithm;
+import nortantis.util.ThreadHelper;
 import nortantis.util.Tuple2;
 import org.apache.commons.lang3.StringUtils;
 
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.Future;
 
 /**
  * An assortment of things needed to draw the background.
@@ -59,6 +61,15 @@ public class Background
 
 	public Background(MapSettings settings, Dimension mapBounds, WarningLogger warningLogger)
 	{
+		this(settings, mapBounds, warningLogger, null);
+	}
+
+	/**
+	 * @param startedImages
+	 *            The images {@link #startCreatingGeneratedImages} started for the same settings and bounds, or null to create them here.
+	 */
+	public Background(MapSettings settings, Dimension mapBounds, WarningLogger warningLogger, GeneratedImages startedImages)
+	{
 		customArtPackPath = settings.customArtPackPath;
 		shouldDrawRegionColors = settings.drawsRegionColors();
 
@@ -84,13 +95,26 @@ public class Background
 		}
 		borderPaddingScaled = isBorderOutsideMap ? calcBorderPaddingScaledByResolution(borderArt == null ? 0.0 : borderArt.getInsetDepthFraction(), borderWidthScaled) : 0;
 
+		GeneratedImages images;
+		if (startedImages != null)
+		{
+			if (startedImages.borderPadding != borderPaddingScaled)
+			{
+				throw new IllegalArgumentException("The background's generated images were started with a border padding of " + startedImages.borderPadding
+						+ " pixels, but the background needs " + borderPaddingScaled + ".");
+			}
+			images = startedImages;
+		}
+		else
+		{
+			images = new GeneratedImages(settings, mapBounds, borderPaddingScaled, warningLogger, false);
+		}
+
 		if (settings.generateBackground)
 		{
 			// Fractal generated background images
 
-			final float fractalPower = 1.3f;
-			Image oceanGeneratedBackground = FractalBGGenerator.generate(new Random(settings.backgroundRandomSeed), fractalPower,
-					((int) mapBounds.width) + (borderPaddingScaled * 2), ((int) mapBounds.height) + (borderPaddingScaled * 2), 0.75f);
+			Image oceanGeneratedBackground = images.getOcean();
 			landGeneratedBackground = oceanGeneratedBackground;
 			landColorizeAlgorithm = ColorizeAlgorithm.algorithm2;
 			oceanColorizeAlgorithm = ColorizeAlgorithm.algorithm2;
@@ -134,31 +158,11 @@ public class Background
 		{
 			// Generate the background images from a texture
 
-			Image texture;
-			Tuple2<Path, String> tuple = settings.getBackgroundImagePath();
-			Path texturePath = tuple.getFirst();
-			String warning = tuple.getSecond();
-			if (!StringUtils.isEmpty(warning))
-			{
-				warningLogger.addWarningMessage(warning);
-			}
-			try
-			{
-				texture = ImageCache.getInstance(settings.backgroundTextureResource.artPack, settings.customArtPackPath).getImageFromFile(texturePath);
-			}
-			catch (RuntimeException e)
-			{
-				throw new RuntimeException("Unable to read the texture image file name \"" + texturePath + "\"", e);
-			}
-
 			oceanColorizeAlgorithm = ColorizeAlgorithm.algorithm3;
 
-			Image oceanGeneratedBackground;
+			Image oceanGeneratedBackground = images.getOcean();
 			if (settings.colorizeOcean)
 			{
-				oceanGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(settings.backgroundRandomSeed), ImageHelper.getInstance().convertToGrayscale(texture),
-						((int) mapBounds.height) + (borderPaddingScaled * 2), ((int) mapBounds.width) + (borderPaddingScaled * 2));
-
 				if (settings.borderColorOption == BorderColorOption.Ocean_color)
 				{
 					borderBackground = ImageHelper.getInstance().colorize(oceanGeneratedBackground, settings.oceanColor, oceanColorizeAlgorithm);
@@ -184,8 +188,6 @@ public class Background
 			}
 			else
 			{
-				oceanGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(settings.backgroundRandomSeed), texture,
-						((int) mapBounds.height) + (borderPaddingScaled * 2), ((int) mapBounds.width) + (borderPaddingScaled * 2));
 				if (settings.drawBorder)
 				{
 					ocean = removeBorderPadding(oceanGeneratedBackground);
@@ -240,8 +242,7 @@ public class Background
 					// otherwise the random texture of the land won't match the
 					// texture of the ocean.
 
-					landGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(settings.backgroundRandomSeed), ImageHelper.getInstance().convertToGrayscale(texture),
-							((int) mapBounds.height) + (borderPaddingScaled * 2), ((int) mapBounds.width) + (borderPaddingScaled * 2));
+					landGeneratedBackground = images.getLand();
 					if (shouldDrawRegionColors)
 					{
 						// Drawing region colors must be done later because it
@@ -256,8 +257,7 @@ public class Background
 				}
 				else
 				{
-					landGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(settings.backgroundRandomSeed), texture,
-							((int) mapBounds.height) + (borderPaddingScaled * 2), ((int) mapBounds.width) + (borderPaddingScaled * 2));
+					landGeneratedBackground = images.getLand();
 					land = removeBorderPadding(landGeneratedBackground);
 					landColorizeAlgorithm = ColorizeAlgorithm.none;
 				}
@@ -321,6 +321,85 @@ public class Background
 		else
 		{
 			borderBounds = new Dimension(mapBounds.width, mapBounds.height);
+		}
+	}
+
+	/**
+	 * Starts creating the images a background with the given settings and bounds generates from random noise, with
+	 * {@link PlatformFactory#startBackgroundImageCreation}, so that they can be created at the same time as other work. Pass the result to
+	 * the constructor.
+	 */
+	public static GeneratedImages startCreatingGeneratedImages(MapSettings settings, Dimension mapBounds, WarningLogger warningLogger)
+	{
+		int borderPadding = calcBorderPaddingScaledByResolution(settings, calcBorderWidthScaledByResolution(settings));
+		return new GeneratedImages(settings, mapBounds, borderPadding, warningLogger, true);
+	}
+
+	/**
+	 * The images a background generates from random noise, which take most of the time it takes to create one: the ocean's, and the land's
+	 * when it differs from the ocean's.
+	 */
+	public static class GeneratedImages
+	{
+		private final int borderPadding;
+		private final BackgroundImageParameters oceanParameters;
+		/**
+		 * Null when the land uses the ocean's image.
+		 */
+		private final BackgroundImageParameters landParameters;
+		private final Future<Image> ocean;
+		private final Future<Image> land;
+
+		/**
+		 * @param start
+		 *            Whether to start creating the images now with the platform, rather than when they are asked for.
+		 */
+		private GeneratedImages(MapSettings settings, Dimension mapBounds, int borderPadding, WarningLogger warningLogger, boolean start)
+		{
+			this.borderPadding = borderPadding;
+			int width = ((int) mapBounds.width) + (borderPadding * 2);
+			int height = ((int) mapBounds.height) + (borderPadding * 2);
+			if (settings.generateBackground)
+			{
+				oceanParameters = new BackgroundImageParameters(settings.backgroundRandomSeed, width, height, null, null, null, false);
+				landParameters = null;
+			}
+			else if (settings.generateBackgroundFromTexture)
+			{
+				Tuple2<Path, String> tuple = settings.getBackgroundImagePath();
+				String warning = tuple.getSecond();
+				if (!StringUtils.isEmpty(warning))
+				{
+					warningLogger.addWarningMessage(warning);
+				}
+				String artPack = settings.backgroundTextureResource.artPack;
+				oceanParameters = new BackgroundImageParameters(settings.backgroundRandomSeed, width, height, artPack, settings.customArtPackPath, tuple.getFirst(),
+						settings.colorizeOcean);
+				landParameters = settings.colorizeLand == settings.colorizeOcean ? null
+						: new BackgroundImageParameters(settings.backgroundRandomSeed, width, height, artPack, settings.customArtPackPath, tuple.getFirst(), settings.colorizeLand);
+			}
+			else
+			{
+				oceanParameters = null;
+				landParameters = null;
+			}
+			ocean = start && oceanParameters != null ? PlatformFactory.getInstance().startBackgroundImageCreation(oceanParameters) : null;
+			land = start && landParameters != null ? PlatformFactory.getInstance().startBackgroundImageCreation(landParameters) : null;
+		}
+
+		private Image getOcean()
+		{
+			return get(ocean, oceanParameters);
+		}
+
+		private Image getLand()
+		{
+			return get(land, landParameters);
+		}
+
+		private static Image get(Future<Image> started, BackgroundImageParameters parameters)
+		{
+			return started != null ? ThreadHelper.getInstance().getResult(started) : parameters.create();
 		}
 	}
 
