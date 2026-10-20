@@ -1,5 +1,7 @@
 // Compiles Nortantis to JavaScript with TeaVM, so maps can be generated in a web browser.
 //   ./gradlew :web:generateJavaScript   writes build/generated/teavm/js/nortantis.js
+//   ./gradlew :web:assembleWebGenerator writes build/web-generator/: the generator, the script that runs it, its asset files, and a test
+//                                        page, ready to serve over HTTP
 plugins {
     java
     id("org.teavm") version "0.16.0"
@@ -69,4 +71,24 @@ teavm {
 tasks.withType<org.teavm.gradle.tasks.TeaVMTask>().configureEach {
     val original = classpath.from.toList()
     classpath.setFrom(sourceSets.main.get().output, original)
+}
+
+// Everything a web page needs to run the generator, in one folder: nortantis.js, generator.js, which runs it, the asset manifest, the asset
+// files the manifest lists, and a test page (index.html).
+val assembleWebGenerator by tasks.registering(Sync::class) {
+    val webManifest = webAssetManifestFolder.map { it.file("assets/manifest.txt") }
+    // Read when the files are copied, after the manifest is written.
+    val keptAssetPaths by lazy {
+        webManifest.get().asFile.readLines().filter { it.endsWith("\tF") }.map { it.substringBefore('\t') }.toSet()
+    }
+    dependsOn("generateJavaScript", generateWebAssetManifest)
+    into(layout.buildDirectory.dir("web-generator"))
+    includeEmptyDirs = false
+    from(layout.buildDirectory.dir("generated/teavm/js")) { include("nortantis.js") }
+    from("host")
+    from(webManifest)
+    from(rootProject.file("assets")) {
+        into("assets")
+        include { element -> element.isDirectory || "assets/" + element.relativePath.pathString in keptAssetPaths }
+    }
 }

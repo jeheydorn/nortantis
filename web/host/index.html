@@ -10,7 +10,6 @@
 		p { margin: 0 0 12px; color: #c9c3b5; max-width: 60em; }
 		.controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 16px 0; }
 		button { font: inherit; padding: 10px 20px; border: 0; border-radius: 6px; background: #3557a0; color: #f4f0e6; cursor: pointer; }
-		button:disabled { background: #4a4e58; cursor: default; }
 		select { font: inherit; padding: 6px; }
 		#status { font-weight: 600; min-height: 1.5em; }
 		canvas { display: block; max-width: 100%; height: auto; margin-top: 12px; }
@@ -19,15 +18,17 @@
 </head>
 <body>
 	<h1>Nortantis in the browser (test)</h1>
-	<p>This page generates a random fantasy map in your browser, using the same code as the Nortantis desktop app.</p>
-	<p>The first time, it downloads about 12 MB of art and name files. Making a map takes 10 to 15 seconds on a fast computer and longer
-		on a phone.</p>
+	<p>Generates random maps in the browser with the web module. The first map downloads about 20 MB.</p>
 	<div class="controls">
-		<button id="generate" type="button">Generate map</button>
+		<button id="new" type="button">New random map</button>
+		<button id="randomize-land" type="button">Randomize land</button>
+		<button id="randomize-theme" type="button">Randomize theme</button>
+		<button id="back" type="button">Back</button>
+		<button id="next" type="button">Next</button>
 		<label>Resolution
 			<select id="resolution">
 				<option value="0.5" selected>0.5</option>
-				<option value="0.75">0.75 (slower)</option>
+				<option value="0.75">0.75</option>
 			</select>
 		</label>
 	</div>

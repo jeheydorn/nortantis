@@ -374,10 +374,10 @@ public class WebPainter extends Painter
 			minimumY = Math.min(minimumY, ys[i]);
 			maximumY = Math.max(maximumY, ys[i]);
 		}
-		int minY = Math.max(clipMinY, (int) Math.floor(minimumY));
-		int maxY = Math.min(clipMaxY - 1, (int) Math.ceil(maximumY));
-		int minX = Math.max(clipMinX, (int) Math.floor(minimumX));
-		int maxX = Math.min(clipMaxX - 1, (int) Math.ceil(maximumX));
+		int minY = Math.max(clipMinY, saturatedInt(Math.floor(minimumY)));
+		int maxY = Math.min(clipMaxY - 1, saturatedInt(Math.ceil(maximumY)));
+		int minX = Math.max(clipMinX, saturatedInt(Math.floor(minimumX)));
+		int maxX = Math.min(clipMaxX - 1, saturatedInt(Math.ceil(maximumX)));
 		if (minX > maxX || minY > maxY)
 		{
 			return;
@@ -392,8 +392,8 @@ public class WebPainter extends Painter
 				for (int k = 0; k + 1 < count; k += 2)
 				{
 					// A pixel is drawn when its center is at or right of the left crossing and left of the right one.
-					int start = Math.max(minX, (int) Math.ceil(crossings[k] - 0.5));
-					int end = Math.min(maxX, (int) Math.ceil(crossings[k + 1] - 0.5) - 1);
+					int start = Math.max(minX, saturatedInt(Math.ceil(crossings[k] - 0.5)));
+					int end = Math.min(maxX, saturatedInt(Math.ceil(crossings[k + 1] - 0.5) - 1));
 					plotSpan(y, start, end);
 				}
 			}
@@ -461,6 +461,23 @@ public class WebPainter extends Painter
 	}
 
 	/**
+	 * Converts a whole number to an int as Java does, giving the nearest int to one outside the int range, and 0 for NaN. In the browser a
+	 * plain cast wraps a value outside the int range around instead, which can turn a far-off bound into a nearby one.
+	 */
+	private static int saturatedInt(double value)
+	{
+		if (value >= Integer.MAX_VALUE)
+		{
+			return Integer.MAX_VALUE;
+		}
+		if (value <= Integer.MIN_VALUE)
+		{
+			return Integer.MIN_VALUE;
+		}
+		return value == value ? (int) value : 0;
+	}
+
+	/**
 	 * Adds the given weight times the fraction of each pixel in [minX, maxX] that the span [x0, x1) covers.
 	 */
 	private static void addSpanCoverage(float[] rowCoverage, int minX, int maxX, double x0, double x1, float weight)
@@ -469,8 +486,8 @@ public class WebPainter extends Painter
 		{
 			return;
 		}
-		int first = (int) Math.floor(x0);
-		int last = (int) Math.ceil(x1) - 1;
+		int first = saturatedInt(Math.floor(x0));
+		int last = saturatedInt(Math.ceil(x1) - 1);
 		if (last < minX || first > maxX)
 		{
 			return;
@@ -851,10 +868,10 @@ public class WebPainter extends Painter
 		 */
 		static CoverageBuffer begin(WebPainter painter, double minimumX, double minimumY, double maximumX, double maximumY)
 		{
-			int minX = Math.max(painter.clipMinX, (int) Math.floor(minimumX));
-			int minY = Math.max(painter.clipMinY, (int) Math.floor(minimumY));
-			int maxX = Math.min(painter.clipMaxX - 1, (int) Math.ceil(maximumX));
-			int maxY = Math.min(painter.clipMaxY - 1, (int) Math.ceil(maximumY));
+			int minX = Math.max(painter.clipMinX, saturatedInt(Math.floor(minimumX)));
+			int minY = Math.max(painter.clipMinY, saturatedInt(Math.floor(minimumY)));
+			int maxX = Math.min(painter.clipMaxX - 1, saturatedInt(Math.ceil(maximumX)));
+			int maxY = Math.min(painter.clipMaxY - 1, saturatedInt(Math.ceil(maximumY)));
 			if (minX > maxX || minY > maxY)
 			{
 				return null;
@@ -903,10 +920,10 @@ public class WebPainter extends Painter
 			}
 			double length = Math.sqrt(lengthSquared);
 			double reach = halfWidth + 1;
-			int fromX = Math.max(minX, (int) Math.floor(Math.min(x1, x2) - reach));
-			int toX = Math.min(minX + bufferWidth - 1, (int) Math.ceil(Math.max(x1, x2) + reach));
-			int fromY = Math.max(minY, (int) Math.floor(Math.min(y1, y2) - reach));
-			int toY = Math.min(minY + bufferHeight - 1, (int) Math.ceil(Math.max(y1, y2) + reach));
+			int fromX = Math.max(minX, saturatedInt(Math.floor(Math.min(x1, x2) - reach)));
+			int toX = Math.min(minX + bufferWidth - 1, saturatedInt(Math.ceil(Math.max(x1, x2) + reach)));
+			int fromY = Math.max(minY, saturatedInt(Math.floor(Math.min(y1, y2) - reach)));
+			int toY = Math.min(minY + bufferHeight - 1, saturatedInt(Math.ceil(Math.max(y1, y2) + reach)));
 			double unitX = dx / length;
 			double unitY = dy / length;
 			for (int py = fromY; py <= toY; py++)
@@ -920,8 +937,8 @@ public class WebPainter extends Painter
 				{
 					double centerX = x1 + cy * unitX / unitY - 0.5;
 					double halfSpan = reach / Math.abs(unitY);
-					rowFromX = Math.max(fromX, (int) Math.floor(centerX - halfSpan));
-					rowToX = Math.min(toX, (int) Math.ceil(centerX + halfSpan));
+					rowFromX = Math.max(fromX, saturatedInt(Math.floor(centerX - halfSpan)));
+					rowToX = Math.min(toX, saturatedInt(Math.ceil(centerX + halfSpan)));
 				}
 				markRow(py, rowFromX, rowToX);
 				for (int px = rowFromX; px <= rowToX; px++)
@@ -966,10 +983,10 @@ public class WebPainter extends Painter
 		void addDisc(double centerX, double centerY, double radius)
 		{
 			double reach = radius + 1;
-			int fromX = Math.max(minX, (int) Math.floor(centerX - reach));
-			int toX = Math.min(minX + bufferWidth - 1, (int) Math.ceil(centerX + reach));
-			int fromY = Math.max(minY, (int) Math.floor(centerY - reach));
-			int toY = Math.min(minY + bufferHeight - 1, (int) Math.ceil(centerY + reach));
+			int fromX = Math.max(minX, saturatedInt(Math.floor(centerX - reach)));
+			int toX = Math.min(minX + bufferWidth - 1, saturatedInt(Math.ceil(centerX + reach)));
+			int fromY = Math.max(minY, saturatedInt(Math.floor(centerY - reach)));
+			int toY = Math.min(minY + bufferHeight - 1, saturatedInt(Math.ceil(centerY + reach)));
 			for (int py = fromY; py <= toY; py++)
 			{
 				int row = (py - minY) * bufferWidth - minX;
@@ -1029,6 +1046,10 @@ public class WebPainter extends Painter
 			boolean isSolid = painter.isSolidPaint();
 			for (int y = 0; y < bufferHeight; y++)
 			{
+				if (rowFirstX[y] > rowLastX[y])
+				{
+					continue;
+				}
 				int row = y * bufferWidth;
 				int lastX = rowLastX[y] - minX;
 				for (int x = Math.max(0, rowFirstX[y] - minX); x <= lastX; x++)
@@ -1171,10 +1192,10 @@ public class WebPainter extends Painter
 		double[] ys = { y, y, y + height, y + height };
 		transformInPlace(xs, ys);
 		int minX = clipMinX, maxX = clipMaxX - 1, minY = clipMinY, maxY = clipMaxY - 1;
-		minX = Math.max(minX, (int) Math.floor(Math.min(Math.min(xs[0], xs[1]), Math.min(xs[2], xs[3]))));
-		maxX = Math.min(maxX, (int) Math.ceil(Math.max(Math.max(xs[0], xs[1]), Math.max(xs[2], xs[3]))));
-		minY = Math.max(minY, (int) Math.floor(Math.min(Math.min(ys[0], ys[1]), Math.min(ys[2], ys[3]))));
-		maxY = Math.min(maxY, (int) Math.ceil(Math.max(Math.max(ys[0], ys[1]), Math.max(ys[2], ys[3]))));
+		minX = Math.max(minX, saturatedInt(Math.floor(Math.min(Math.min(xs[0], xs[1]), Math.min(xs[2], xs[3])))));
+		maxX = Math.min(maxX, saturatedInt(Math.ceil(Math.max(Math.max(xs[0], xs[1]), Math.max(xs[2], xs[3])))));
+		minY = Math.max(minY, saturatedInt(Math.floor(Math.min(Math.min(ys[0], ys[1]), Math.min(ys[2], ys[3])))));
+		maxY = Math.min(maxY, saturatedInt(Math.ceil(Math.max(Math.max(ys[0], ys[1]), Math.max(ys[2], ys[3])))));
 		if (minX > maxX || minY > maxY)
 		{
 			return;

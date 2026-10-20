@@ -22,7 +22,7 @@ public class Undoer
 	/**
 	 * The most undo steps kept, here and in dialogs with their own undo history, to keep their memory use bounded.
 	 */
-	static final int maxUndoLevels = 200;
+	public static final int maxUndoLevels = 200;
 	boolean enabled;
 
 	public Undoer(MainWindow mainWindow)

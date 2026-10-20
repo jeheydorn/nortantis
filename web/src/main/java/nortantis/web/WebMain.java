@@ -3,8 +3,10 @@ package nortantis.web;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Random;
 
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
 import org.teavm.interop.Async;
 import org.teavm.interop.AsyncCallback;
 import org.teavm.jso.JSBody;
@@ -15,7 +17,6 @@ import org.teavm.jso.JSObject;
 import nortantis.FontFinder;
 import nortantis.MapCreator;
 import nortantis.MapSettings;
-import nortantis.SettingsGenerator;
 import nortantis.editor.MapParts;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
@@ -27,10 +28,9 @@ import nortantis.swing.translation.Translation;
 import nortantis.util.Assets;
 
 /**
- * Generates a random map in a web worker and sends it to the page. The worker passes the random seed and the resolution as the first two
- * arguments. A third argument, if given and not empty, is the asset path of a map settings file to draw instead of a random map. A fourth,
- * if it is "trace", prints values that show whether generation matches the JVM's instead. A fifth, if given, is the number of random maps
- * to make one after another, with the following seeds, for timing.
+ * Makes maps in a web page or web worker and sends them to the page. The page starts it with "commands", a JSON array of commands, and the
+ * resolution to draw at. Each command is an object with a name and, for some, a value (see {@link DemoSession#apply}). It applies the
+ * commands to the map's settings, sends the settings to the page, then draws the map and sends it, followed by its saved settings.
  * <p>
  * A helper worker instead starts it with "job", a job number, the kind of job, and the job's arguments, to do part of another worker's map
  * (see {@link WorkerJobs}).
@@ -43,66 +43,81 @@ public class WebMain
 		void run();
 	}
 
+	private static boolean isSetUp;
+	private static final DemoSession session = new DemoSession();
+
 	public static void main(String[] args)
 	{
-		if (args.length > 0 && args[0].equals("job"))
+		if (args[0].equals("job"))
 		{
 			runJob(Integer.parseInt(args[1]), args[2], args[3]);
 			return;
 		}
-
-		long seed = args.length > 0 ? Long.parseLong(args[0]) : 1;
-		double resolution = args.length > 1 ? Double.parseDouble(args[1]) : 0.75;
-
-		long start = System.currentTimeMillis();
-		setUp(new WorkerJobs());
-		FontFinder.ensureInitialized();
-		System.out.println("STARTUP " + (System.currentTimeMillis() - start) + " ms");
-
-		String settingsPath = args.length > 2 && !args[2].isEmpty() ? args[2] : null;
-		int runs = args.length > 4 ? Integer.parseInt(args[4]) : 1;
-		if (args.length > 3 && args[3].equals("trace"))
+		if (!args[0].equals("commands"))
 		{
-			MapSettings settings = new MapSettings(settingsPath);
-			settings.resolution = resolution;
-			for (String line : DeterminismTrace.run(settings))
+			throw new IllegalArgumentException("Unrecognized mode: " + args[0]);
+		}
+
+		if (!isSetUp)
+		{
+			setUp(canUseHelper() ? new WorkerJobs() : null);
+			FontFinder.ensureInitialized();
+			// The browser loads registered fonts in the background, so wait for them before drawing any text.
+			waitForFonts();
+			isSetUp = true;
+		}
+
+		// A command that fails doesn't stop the others, and the map is still drawn, so that the page shows the settings the map has.
+		RuntimeException failure = null;
+		for (Object item : (JSONArray) JSONValue.parse(args[1]))
+		{
+			JSONObject command = (JSONObject) item;
+			String name = (String) command.get("name");
+			try
 			{
-				System.out.println("TRACE " + line);
+				if (!session.hasMap() && !name.equals("new"))
+				{
+					session.newRandomMap(null);
+				}
+				session.apply(name, command.get("value"));
 			}
-			System.out.println("DONE");
-			return;
+			catch (RuntimeException e)
+			{
+				e.printStackTrace();
+				if (failure == null)
+				{
+					failure = e;
+				}
+			}
 		}
-		// The browser loads registered fonts in the background, so wait for them before drawing any text.
-		waitForFonts();
-		for (int i = 0; i < runs; i++)
+		if (!session.hasMap())
 		{
-			generate(seed + i, resolution, settingsPath);
+			session.newRandomMap(null);
 		}
-		System.out.println("DONE");
+		showSettings(session.describe());
+		drawMap(Double.parseDouble(args[2]));
+		if (failure != null)
+		{
+			throw failure;
+		}
 	}
 
-	private static void generate(long seed, double resolution, String settingsPath)
+	private static void drawMap(double resolution)
 	{
-		long start = System.currentTimeMillis();
-		MapSettings settings = settingsPath != null ? new MapSettings(settingsPath) : SettingsGenerator.generate(new Random(seed), Assets.installedArtPack, null);
+		MapSettings settings = session.copySettingsForDrawing();
 		settings.resolution = resolution;
-		System.out.println("SETTINGS " + (System.currentTimeMillis() - start) + " ms");
-
-		start = System.currentTimeMillis();
+		startedDrawing();
 		MapParts mapParts = new MapParts();
 		Image map = new MapCreator().createMap(settings, null, mapParts);
-		long elapsed = System.currentTimeMillis() - start;
-		System.out.println("MAP " + map.getWidth() + "x" + map.getHeight() + " in " + elapsed + " ms");
-
 		showMap(map.getWidth(), map.getHeight(), ((WebImage) map).toPackedARGB(), map.getType() != ImageType.ARGB);
 		save(settings, mapParts);
 	}
 
 	/**
-	 * Sets up Nortantis to run in this worker.
+	 * Sets up Nortantis to run in this worker or page.
 	 *
 	 * @param separateMemoryJobs
-	 *            Where to create grunge and the images a background generates, or null to create them in this worker.
+	 *            Where to create grunge and the images a background generates, or null to create them here.
 	 */
 	private static void setUp(SeparateMemoryJobs separateMemoryJobs)
 	{
@@ -119,7 +134,11 @@ public class WebMain
 	{
 		try
 		{
-			setUp(null);
+			if (!isSetUp)
+			{
+				setUp(null);
+				isSetUp = true;
+			}
 			Image result;
 			if (kind.equals(WorkerJobs.grungeJob))
 			{
@@ -144,6 +163,9 @@ public class WebMain
 		}
 	}
 
+	/**
+	 * Sends the settings of the map that was just drawn to the page, as a .nort file.
+	 */
 	private static void save(MapSettings settings, MapParts mapParts)
 	{
 		// Record the generated land, water, and regions in the edits, as the editor does after its first draw, so that the saved settings
@@ -156,6 +178,8 @@ public class WebMain
 		{
 			settings.edits.initializeRegionEdits(mapParts.graph.regions.values());
 		}
+		// A saved map's resolution is the resolution it exports at.
+		settings.resolution = MapSettings.defaultResolution;
 		try
 		{
 			String savedPath = "/home/map.nort";
@@ -178,8 +202,14 @@ public class WebMain
 	 * The most memory the page's JavaScript can use, where the browser says, or a cautious guess where it doesn't. Only a page can ask the
 	 * browser, so a worker uses the limit the page sent it in {@code self.nortantisMemoryLimit}.
 	 */
-	@JSBody(script = "return self.nortantisMemoryLimit || (performance.memory && performance.memory.jsHeapSizeLimit) || 2147483648;")
+	@JSBody(script = "return self.nortantisMemoryLimit || (self.performance && performance.memory && performance.memory.jsHeapSizeLimit) || 2147483648;")
 	private static native double getMemoryLimit();
+
+	/**
+	 * Whether a helper worker can do part of each map, which it can only when this runs in a worker.
+	 */
+	@JSBody(script = "return nortantisJobs.canUseHelper;")
+	private static native boolean canUseHelper();
 
 	@Async
 	private static native void waitForFonts();
@@ -191,6 +221,12 @@ public class WebMain
 
 	@JSBody(params = { "callback" }, script = "nortantisText.whenReady(callback);")
 	private static native void whenFontsReady(Callback callback);
+
+	@JSBody(params = { "json" }, script = "nortantisHost.showSettings(json);")
+	private static native void showSettings(String json);
+
+	@JSBody(script = "nortantisHost.startedDrawing();")
+	private static native void startedDrawing();
 
 	@JSBody(params = { "data" }, script = "nortantisHost.saveSettings(data);")
 	private static native void saveSettings(@JSByRef byte[] data);
