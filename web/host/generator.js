@@ -15,7 +15,9 @@
 //   {type: 'settings', settings, sequence}    The map's choices, before the map is drawn, with the sequence of the last command
 //                                             they include.
 //   {type: 'drawing'}                         When it starts drawing the map.
-//   {type: 'map', width, height, pixels}      The map, as canvas pixels: bytes in the order red, green, blue, alpha.
+//   {type: 'map', width, height, pixels, seconds}
+//                                             The map, as canvas pixels: bytes in the order red, green, blue, alpha, and how long the
+//                                             commands and the map took, not counting the download.
 //   {type: 'saved', bytes}                    The map's .nort file.
 //   {type: 'failed', text}
 //   {type: 'idle'}                            When it has done every command it was sent.
@@ -236,7 +238,8 @@
 				const p = pixels[i];
 				words[i] = (p & 0xFF00FF00) | ((p >>> 16) & 0xFF) | ((p & 0xFF) << 16) | alpha;
 			}
-			post({ type: 'map', width: width, height: height, pixels: words.buffer }, [words.buffer]);
+			const seconds = (performance.now() - commandsStartTime) / 1000;
+			post({ type: 'map', width: width, height: height, pixels: words.buffer, seconds: seconds }, [words.buffer]);
 		},
 	};
 
@@ -389,6 +392,7 @@
 	// The sequence of the last command in the commands being done.
 	let runningSequence = 0;
 	let isRunning = false;
+	let commandsStartTime = 0;
 
 	async function runPendingCommands() {
 		if (isRunning || pendingCommands.length === 0) {
@@ -411,6 +415,7 @@
 		const commands = pendingCommands;
 		pendingCommands = [];
 		runningSequence = latestSequence;
+		commandsStartTime = performance.now();
 		main(['commands', JSON.stringify(commands), resolution], (result) => {
 			isRunning = false;
 			// A job the map never collected, because the map failed first, would otherwise keep its image.
