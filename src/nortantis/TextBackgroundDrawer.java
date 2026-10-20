@@ -1,14 +1,18 @@
 package nortantis;
 
 import nortantis.geom.FloatPoint;
+import nortantis.geom.IntRectangle;
 import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
 import nortantis.geom.RotatedRectangle;
 import nortantis.platform.*;
+import nortantis.platform.ImageHelper.ColorizeAlgorithm;
 import nortantis.util.Helper;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Lays out the letters of a line of text, and draws the Glow, Outline, Box, Scroll, and Banner backgrounds behind text. Background fade and
@@ -518,24 +522,128 @@ class TextBackgroundDrawer
 		{
 			for (ShapePiece piece : pieces)
 			{
-				List<FloatPoint> points = toFloatPoints(piece.points);
 				if (piece.fillColor != null && piece.isClosed)
 				{
 					p.setColor(piece.fillColor);
-					p.fillPolygonFloat(points);
+					p.fillPolygonFloat(toFloatPoints(piece.points));
 				}
-				if (piece.isStroked && lineWidth > 0)
+				drawStroke(p, piece);
+			}
+		}
+
+		/**
+		 * Draws the shape with each fill made of the paper texture colored with the fill's color, as the ocean is colored from the same
+		 * texture.
+		 *
+		 * @param p
+		 *            The painter of the map, with the transform the text is drawn with.
+		 * @param unrotatedTransform
+		 *            The painter's transform before the text's rotation and the draw offset were applied.
+		 * @param drawArea
+		 *            The part of the map the image being drawn on covers.
+		 * @param paperTexture
+		 *            The grayscale paper texture of the whole map.
+		 */
+		void drawWithPaperTexture(Painter p, Transform unrotatedTransform, double angle, Point pivot, IntRectangle drawArea, Image paperTexture,
+				ColorizeAlgorithm colorizeAlgorithm)
+		{
+			IntRectangle fillArea = null;
+			if (bounds != null)
+			{
+				final int marginPerSide = 2;
+				IntRectangle shapeArea = new RotatedRectangle(bounds, angle, pivot).getBounds().toEnclosingIntRectangle().pad(marginPerSide * 2, marginPerSide * 2);
+				IntRectangle textureArea = new IntRectangle(0, 0, paperTexture.getWidth(), paperTexture.getHeight());
+				IntRectangle visibleArea = textureArea.findIntersection(drawArea);
+				fillArea = visibleArea == null ? null : shapeArea.findIntersection(visibleArea);
+			}
+
+			Map<Color, Image> coloredTextures = new HashMap<>();
+			try (Image texture = fillArea == null ? null : paperTexture.copySubImage(fillArea))
+			{
+				for (ShapePiece piece : pieces)
 				{
-					p.setColor(lineColor);
-					p.setBasicStroke((float) lineWidth);
-					if (piece.isClosed)
+					if (piece.fillColor != null && piece.isClosed && texture != null)
 					{
-						p.drawPolygonFloat(points);
+						Image coloredTexture = coloredTextures.computeIfAbsent(piece.fillColor,
+								color -> ImageHelper.getInstance().colorize(texture, color, colorizeAlgorithm));
+						drawFillThroughMask(p, unrotatedTransform, piece, angle, pivot, fillArea, drawArea, coloredTexture);
 					}
-					else
+					drawStroke(p, piece);
+				}
+			}
+			finally
+			{
+				for (Image coloredTexture : coloredTextures.values())
+				{
+					coloredTexture.close();
+				}
+			}
+		}
+
+		private static void drawFillThroughMask(Painter p, Transform unrotatedTransform, ShapePiece piece, double angle, Point pivot, IntRectangle fillArea,
+				IntRectangle drawArea, Image coloredTexture)
+		{
+			try (Image mask = Image.create(fillArea.width, fillArea.height, ImageType.Grayscale8Bit))
+			{
+				try (Painter maskPainter = mask.createPainter(DrawQuality.High))
+				{
+					maskPainter.setColor(Color.white);
+					maskPainter.translate(-fillArea.x, -fillArea.y);
+					maskPainter.rotate(angle, pivot.x, pivot.y);
+					maskPainter.fillPolygonFloat(toFloatPoints(piece.points));
+				}
+
+				try (Image overlay = Image.create(fillArea.width, fillArea.height, ImageType.ARGB))
+				{
+					int maxLevel = mask.getMaxPixelLevel();
+					int fillAlpha = piece.fillColor.getAlpha();
+					try (PixelReader maskPixels = mask.createPixelReader(); PixelReader texturePixels = coloredTexture.createPixelReader();
+							PixelWriter overlayPixels = overlay.createPixelWriter())
 					{
-						p.drawPolylineFloat(points);
+						for (int y = 0; y < fillArea.height; y++)
+						{
+							for (int x = 0; x < fillArea.width; x++)
+							{
+								int level = maskPixels.getGrayLevel(x, y);
+								if (level == 0)
+								{
+									continue;
+								}
+								int rgb = texturePixels.getRGB(x, y);
+								int alpha = (int) Math.round((double) fillAlpha * level / maxLevel);
+								overlayPixels.setRGB(x, y, (rgb >> 16) & 0xff, (rgb >> 8) & 0xff, rgb & 0xff, alpha);
+							}
+						}
 					}
+
+					Transform transform = p.getTransform();
+					try
+					{
+						p.setTransform(unrotatedTransform);
+						p.drawImage(overlay, fillArea.x - drawArea.x, fillArea.y - drawArea.y);
+					}
+					finally
+					{
+						p.setTransform(transform);
+					}
+				}
+			}
+		}
+
+		private void drawStroke(Painter p, ShapePiece piece)
+		{
+			if (piece.isStroked && lineWidth > 0)
+			{
+				List<FloatPoint> points = toFloatPoints(piece.points);
+				p.setColor(lineColor);
+				p.setBasicStroke((float) lineWidth);
+				if (piece.isClosed)
+				{
+					p.drawPolygonFloat(points);
+				}
+				else
+				{
+					p.drawPolylineFloat(points);
 				}
 			}
 		}

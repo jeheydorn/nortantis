@@ -29,6 +29,11 @@ public class Background
 	private boolean shouldDrawRegionColors;
 	private ColorizeAlgorithm landColorizeAlgorithm;
 	private ColorizeAlgorithm oceanColorizeAlgorithm;
+	/**
+	 * The grayscale paper texture the ocean is colored from, the size of the map without the border's padding. Null for a solid color
+	 * background.
+	 */
+	private Image paperTexture;
 	// regionIndexes is a gray scale image where the level of each pixel is the
 	// index of the region it is in.
 	Image regionIndexes;
@@ -118,6 +123,7 @@ public class Background
 			landGeneratedBackground = oceanGeneratedBackground;
 			landColorizeAlgorithm = ColorizeAlgorithm.algorithm2;
 			oceanColorizeAlgorithm = ColorizeAlgorithm.algorithm2;
+			paperTexture = createPaperTexture(oceanGeneratedBackground);
 
 			if (settings.borderColorOption == BorderColorOption.Ocean_color)
 			{
@@ -161,6 +167,7 @@ public class Background
 			oceanColorizeAlgorithm = ColorizeAlgorithm.algorithm3;
 
 			Image oceanGeneratedBackground = images.getOcean();
+			paperTexture = createPaperTexture(oceanGeneratedBackground);
 			if (settings.colorizeOcean)
 			{
 				if (settings.borderColorOption == BorderColorOption.Ocean_color)
@@ -322,6 +329,39 @@ public class Background
 		{
 			borderBounds = new Dimension(mapBounds.width, mapBounds.height);
 		}
+	}
+
+	/**
+	 * A grayscale copy of the generated ocean background without the border's padding. It is a copy so that closing the land or ocean
+	 * images, which can be the generated background itself, doesn't close it.
+	 */
+	private Image createPaperTexture(Image oceanGeneratedBackground)
+	{
+		Image grayscale = oceanGeneratedBackground.getType() == ImageType.Grayscale8Bit ? oceanGeneratedBackground
+				: ImageHelper.getInstance().convertToGrayscale(oceanGeneratedBackground);
+		Image result = removeBorderPadding(grayscale);
+		if (grayscale != oceanGeneratedBackground && grayscale != result)
+		{
+			grayscale.close();
+		}
+		return result == oceanGeneratedBackground ? result.deepCopy() : result;
+	}
+
+	/**
+	 * The grayscale paper texture the ocean is colored from, the size of the map without the border's padding, or null if the background
+	 * is a solid color.
+	 */
+	public Image getPaperTexture()
+	{
+		return paperTexture;
+	}
+
+	/**
+	 * How {@link #getPaperTexture()} is colored to make the ocean.
+	 */
+	public ColorizeAlgorithm getPaperTextureColorizeAlgorithm()
+	{
+		return oceanColorizeAlgorithm;
 	}
 
 	/**
@@ -1093,6 +1133,10 @@ public class Background
 		if (regionIndexes != null)
 		{
 			regionIndexes.close();
+		}
+		if (paperTexture != null)
+		{
+			paperTexture.close();
 		}
 		if (landColoredBeforeAddingIconColors != null)
 		{

@@ -1033,7 +1033,7 @@ public class MapCreator implements WarningLogger
 
 		if (settings.drawText)
 		{
-			textDrawer.drawTextFromEdits(mapSnippet, textBackground, mapParts.graph, drawBounds);
+			textDrawer.drawTextFromEdits(mapSnippet, textBackground, mapParts.background, mapParts.graph, drawBounds);
 		}
 		textDrawer.updateTextBoundsIfNeeded(mapParts.graph);
 
@@ -1406,7 +1406,7 @@ public class MapCreator implements WarningLogger
 
 		if (settings.edits.isInitialized())
 		{
-			textDrawer.drawTextFromEdits(map, textBackground, graph, null);
+			textDrawer.drawTextFromEdits(map, textBackground, background, graph, null);
 		}
 		else
 		{
@@ -1439,7 +1439,7 @@ public class MapCreator implements WarningLogger
 			// the editor might be generating the map without text
 			// now, but want to show the text later, so in that case we would
 			// want to generate the text but not show it.
-			textDrawer.generateText(graph, map, nameCreator, textBackground, mountainGroups, cities, graph.getGeneratedLakes(), rivers);
+			textDrawer.generateText(graph, map, nameCreator, textBackground, background, mountainGroups, cities, graph.getGeneratedLakes(), rivers);
 		}
 
 		if (mapParts == null && textBackground != null)

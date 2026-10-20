@@ -5,6 +5,7 @@ import nortantis.editor.River;
 import nortantis.editor.RiverPathNode;
 import nortantis.geom.Dimension;
 import nortantis.geom.IntPoint;
+import nortantis.geom.IntRectangle;
 import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
 import nortantis.geom.RotatedRectangle;
@@ -12,6 +13,7 @@ import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Corner;
 import nortantis.graph.voronoi.Edge;
 import nortantis.platform.*;
+import nortantis.platform.ImageHelper.ColorizeAlgorithm;
 import nortantis.editor.MapEdits;
 import nortantis.util.*;
 import org.apache.commons.math3.exception.NoDataException;
@@ -43,6 +45,12 @@ public class TextDrawer
 	private final double thresholdForPuttingTitleOnLand = 0.3;
 
 	private Image landAndOceanBackground;
+	/**
+	 * The grayscale paper texture that Box, Scroll, and Banner fills that show texture are colored from, or null to fill them with their
+	 * fill color alone.
+	 */
+	private Image paperTexture;
+	private ColorizeAlgorithm paperTextureColorizeAlgorithm;
 	private CopyOnWriteArrayList<MapText> mapTexts;
 	private List<RotatedRectangle> cityAreas;
 	private Rectangle graphBounds;
@@ -109,19 +117,30 @@ public class TextDrawer
 		return FontFinder.resolveForDrawing(scaled);
 	}
 
-	public synchronized void drawTextFromEdits(Image map, Image landAndOceanBackground, WorldGraph graph, Rectangle drawBounds)
+	/**
+	 * @param mapBackground
+	 *            Supplies the paper texture that text background fills can show.
+	 */
+	public synchronized void drawTextFromEdits(Image map, Image landAndOceanBackground, Background mapBackground, WorldGraph graph, Rectangle drawBounds)
 	{
 		this.landAndOceanBackground = landAndOceanBackground;
+		setPaperTexture(mapBackground);
 
 		drawText(map, graph, settings.edits.text, drawBounds);
 
 		this.landAndOceanBackground = null;
+		setPaperTexture(null);
 	}
 
-	public void generateText(WorldGraph graph, Image map, NameCreator nameCreator, Image landAndOceanBackground, List<Set<Center>> mountainGroups, List<IconDrawTask> cityDrawTasks,
-			List<Set<Center>> lakes, List<River> rivers)
+	/**
+	 * @param mapBackground
+	 *            Supplies the paper texture that text background fills can show.
+	 */
+	public void generateText(WorldGraph graph, Image map, NameCreator nameCreator, Image landAndOceanBackground, Background mapBackground, List<Set<Center>> mountainGroups,
+			List<IconDrawTask> cityDrawTasks, List<Set<Center>> lakes, List<River> rivers)
 	{
 		this.landAndOceanBackground = landAndOceanBackground;
+		setPaperTexture(mapBackground);
 
 		if (cityDrawTasks == null)
 		{
@@ -138,6 +157,13 @@ public class TextDrawer
 		generateText(map, graph, nameCreator, mountainGroups, cityDrawTasks, lakes, rivers);
 
 		this.landAndOceanBackground = null;
+		setPaperTexture(null);
+	}
+
+	private void setPaperTexture(Background mapBackground)
+	{
+		paperTexture = mapBackground == null ? null : mapBackground.getPaperTexture();
+		paperTextureColorizeAlgorithm = mapBackground == null ? null : mapBackground.getPaperTextureColorizeAlgorithm();
 	}
 
 	private void generateText(Image map, WorldGraph graph, NameCreator nameCreator, List<Set<Center>> mountainGroups, List<IconDrawTask> cityDrawTasks, List<Set<Center>> lakes, List<River> rivers)
@@ -1255,7 +1281,15 @@ public class TextDrawer
 			}
 			else if (geometry.shape != null)
 			{
-				geometry.shape.draw(p);
+				if (background.shapeFillShowsTexture && paperTexture != null)
+				{
+					IntRectangle drawArea = new IntRectangle((int) Math.floor(drawOffset.x), (int) Math.floor(drawOffset.y), map.getWidth(), map.getHeight());
+					geometry.shape.drawWithPaperTexture(p, orig, text.angle, geometry.pivot, drawArea, paperTexture, paperTextureColorizeAlgorithm);
+				}
+				else
+				{
+					geometry.shape.draw(p);
+				}
 			}
 
 			p.setColor(style.color);

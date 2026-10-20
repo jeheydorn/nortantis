@@ -75,6 +75,7 @@ class TextStyleControls
 	private final JSlider outlineWidthSlider;
 	private final SliderWithDisplayedValue outlineWidthSliderWithDisplay;
 	private final JPanel shapeFillColorDisplay;
+	private final JCheckBox shapeFillShowsTextureCheckBox;
 	private final JPanel shapeLineColorDisplay;
 	private final JSlider shapeLineWidthSlider;
 	private final SliderWithDisplayedValue shapeLineWidthSliderWithDisplay;
@@ -191,6 +192,15 @@ class TextStyleControls
 		shapeRows = addColorRow(organizer, Translation.get("textTool.fillColor.label"), Translation.get("textTool.fillColor.help"), shapeFillColorDisplay,
 				Translation.get("textTool.fillColor.title"), TextStylePart.Background, color -> style -> style.background.shapeFillColor = color);
 		addPartLabel(TextStylePart.Background, shapeRows);
+		shapeFillShowsTextureCheckBox = new JCheckBox(Translation.get("textTool.fillShowsTexture"));
+		shapeFillShowsTextureCheckBox.setToolTipText(Translation.get("textTool.fillShowsTexture.help"));
+		shapeFillShowsTextureCheckBox.addActionListener(e ->
+		{
+			SwingHelper.setCheckBoxMixed(shapeFillShowsTextureCheckBox, false);
+			boolean value = shapeFillShowsTextureCheckBox.isSelected();
+			reportEdit(TextStylePart.Background, style -> style.background.shapeFillShowsTexture = value);
+		});
+		shapeRows.add(organizer.addLabelAndComponent("", "", shapeFillShowsTextureCheckBox));
 		shapeLineColorDisplay = SwingHelper.createColorPickerPreviewPanel();
 		RowHider lineColorRow = addColorRow(organizer, Translation.get("textTool.lineColor.label"), Translation.get("textTool.lineColor.help"), shapeLineColorDisplay,
 				Translation.get("textTool.lineColor.title"), TextStylePart.Background, color -> style -> style.background.shapeLineColor = color);
@@ -403,6 +413,12 @@ class TextStyleControls
 			showSlider(glowSizeSliderWithDisplay, styles, style -> style.background.glowSize);
 			showSlider(outlineWidthSliderWithDisplay, styles, style -> style.background.outlineWidth);
 			showColor(shapeFillColorDisplay, styles, style -> style.background.shapeFillColor);
+			boolean isShowsTextureSame = allSame(styles, style -> style.background.shapeFillShowsTexture);
+			SwingHelper.setCheckBoxMixed(shapeFillShowsTextureCheckBox, !isShowsTextureSame);
+			if (isShowsTextureSame)
+			{
+				shapeFillShowsTextureCheckBox.setSelected(first.background.shapeFillShowsTexture);
+			}
 			showColor(shapeLineColorDisplay, styles, style -> style.background.shapeLineColor);
 			showSlider(shapeLineWidthSliderWithDisplay, styles, style -> style.background.shapeLineWidth);
 			showSlider(shapeJitterSliderWithDisplay, styles, style -> style.background.shapeJitter);
