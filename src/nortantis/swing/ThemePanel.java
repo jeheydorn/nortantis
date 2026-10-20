@@ -650,14 +650,10 @@ public class ThemePanel extends JTabbedPane
 			borderWidthSlider = new JSlider();
 			borderWidthSlider.setToolTipText("");
 			borderWidthSlider.setValue(100);
-			borderWidthSlider.setSnapToTicks(false);
-			borderWidthSlider.setPaintTicks(true);
-			borderWidthSlider.setPaintLabels(true);
-			borderWidthSlider.setMinorTickSpacing(50);
 			borderWidthSlider.setMaximum(SettingsGenerator.maxBorderWidthInEditor);
-			borderWidthSlider.setMajorTickSpacing(200);
 			createMapChangeListenerForFullRedraw(borderWidthSlider);
-			borderRows.add(organizer.addLabelAndComponent(Translation.get("theme.borderWidth.label"), Translation.get("theme.borderWidth.help"), borderWidthSlider));
+			borderRows.add(new SliderWithDisplayedValue(borderWidthSlider).addToOrganizer(organizer, Translation.get("theme.borderWidth.label"),
+					Translation.get("theme.borderWidth.help")));
 		}
 
 		{
@@ -721,13 +717,10 @@ public class ThemePanel extends JTabbedPane
 
 		frayedEdgeShadingSlider = new JSlider();
 		frayedEdgeShadingSlider.setValue(30);
-		frayedEdgeShadingSlider.setPaintTicks(true);
-		frayedEdgeShadingSlider.setPaintLabels(true);
-		frayedEdgeShadingSlider.setMinorTickSpacing(50);
 		frayedEdgeShadingSlider.setMaximum(500);
-		frayedEdgeShadingSlider.setMajorTickSpacing(100);
 		createMapChangeListenerForFrayedEdgeOrGrungeChange(frayedEdgeShadingSlider);
-		frayedEdgeRows = organizer.addLabelAndComponent(Translation.get("theme.shadingWidth.label"), Translation.get("theme.shadingWidth.help"), frayedEdgeShadingSlider);
+		frayedEdgeRows = new SliderWithDisplayedValue(frayedEdgeShadingSlider).addToOrganizer(organizer, Translation.get("theme.shadingWidth.label"),
+				Translation.get("theme.shadingWidth.help"));
 
 		frayedEdgeShadingColorDisplay = SwingHelper.createColorPickerPreviewPanel();
 		addColorCopyAndPasteMenuForFrayedEdgeOrGrungeChange(frayedEdgeShadingColorDisplay);
@@ -743,14 +736,11 @@ public class ThemePanel extends JTabbedPane
 				Arrays.asList(frayedEdgeShadingColorDisplay, frayedEdgeShadingColorChooseButton), SwingHelper.colorPickerLeftPadding));
 
 		frayedEdgeSizeSlider = new JSlider();
-		frayedEdgeSizeSlider.setPaintTicks(true);
-		frayedEdgeSizeSlider.setPaintLabels(true);
-		frayedEdgeSizeSlider.setMinorTickSpacing(1);
 		frayedEdgeSizeSlider.setMaximum(SettingsGenerator.maxFrayedEdgeSizeForUI);
 		frayedEdgeSizeSlider.setMinimum(1);
-		frayedEdgeSizeSlider.setMajorTickSpacing(2);
 		createMapChangeListenerForFrayedEdgeOrGrungeChange(frayedEdgeSizeSlider);
-		frayedEdgeRows.add(organizer.addLabelAndComponent(Translation.get("theme.fraySize.label"), Translation.get("theme.fraySize.help"), frayedEdgeSizeSlider));
+		frayedEdgeRows.add(new SliderWithDisplayedValue(frayedEdgeSizeSlider).addToOrganizer(organizer, Translation.get("theme.fraySize.label"),
+				Translation.get("theme.fraySize.help")));
 
 		frayedEdgesSeedTextField = new JTextField();
 		frayedEdgesSeedTextField.setText(String.valueOf(Helper.safeAbs(new Random().nextInt())));
@@ -803,15 +793,11 @@ public class ThemePanel extends JTabbedPane
 
 		grungeSlider = new JSlider();
 		grungeSlider.setValue(0);
-		grungeSlider.setPaintTicks(true);
-		grungeSlider.setPaintLabels(true);
-		grungeSlider.setMinorTickSpacing(250);
 		grungeSlider.setMaximum(2000);
-		grungeSlider.setMajorTickSpacing(1000);
-		// The last tick label draws about a pixel wider than the slider measures it, which would clip its right edge.
-		grungeSlider.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 2));
 		createMapChangeListenerForFrayedEdgeOrGrungeChange(grungeSlider);
-		grungeRows = organizer.addLabelAndComponent(Translation.get("theme.width.label"), Translation.get("theme.grungeWidth.help"), grungeSlider);
+		// Wide enough for the largest grunge width.
+		grungeRows = new SliderWithDisplayedValue(grungeSlider, null, null, 34).addToOrganizer(organizer, Translation.get("theme.width.label"),
+				Translation.get("theme.grungeWidth.help"));
 
 		grungeColorDisplay = SwingHelper.createColorPickerPreviewPanel();
 		addColorCopyAndPasteMenuForFrayedEdgeOrGrungeChange(grungeColorDisplay);
@@ -877,13 +863,10 @@ public class ThemePanel extends JTabbedPane
 
 		coastShadingSlider = new JSlider();
 		coastShadingSlider.setValue(30);
-		coastShadingSlider.setPaintTicks(true);
-		coastShadingSlider.setPaintLabels(true);
-		coastShadingSlider.setMinorTickSpacing(5);
 		coastShadingSlider.setMaximum(100);
-		coastShadingSlider.setMajorTickSpacing(20);
 		createMapChangeListenerForTerrainChange(coastShadingSlider);
-		coastShadingRows = organizer.addLabelAndComponent(Translation.get("theme.width.label"), Translation.get("theme.coastShadingWidth.help"), coastShadingSlider);
+		coastShadingRows = new SliderWithDisplayedValue(coastShadingSlider).addToOrganizer(organizer, Translation.get("theme.width.label"),
+				Translation.get("theme.coastShadingWidth.help"));
 
 		{
 			coastShadingTransparencySlider = new JSlider(0, 100);
@@ -906,13 +889,10 @@ public class ThemePanel extends JTabbedPane
 		organizer.addSectionHeading(drawOceanShadingCheckbox);
 
 		oceanShadingSlider = new JSlider();
-		oceanShadingSlider.setPaintTicks(true);
-		oceanShadingSlider.setPaintLabels(true);
-		oceanShadingSlider.setMinorTickSpacing(5);
 		oceanShadingSlider.setMaximum(100);
-		oceanShadingSlider.setMajorTickSpacing(20);
 		createMapChangeListenerForTerrainChange(oceanShadingSlider);
-		oceanShadingRows = organizer.addLabelAndComponent(Translation.get("theme.width.label"), Translation.get("theme.oceanShadingWidth.help"), oceanShadingSlider);
+		oceanShadingRows = new SliderWithDisplayedValue(oceanShadingSlider).addToOrganizer(organizer, Translation.get("theme.width.label"),
+				Translation.get("theme.oceanShadingWidth.help"));
 
 		{
 			oceanShadingColorDisplay = SwingHelper.createColorPickerPreviewPanel();
@@ -974,14 +954,10 @@ public class ThemePanel extends JTabbedPane
 
 		concentricWavesLevelSlider = new JSlider();
 		concentricWavesLevelSlider.setMinimum(1);
-		concentricWavesLevelSlider.setPaintTicks(true);
-		concentricWavesLevelSlider.setPaintLabels(true);
-		concentricWavesLevelSlider.setMinorTickSpacing(1);
 		concentricWavesLevelSlider.setMaximum(SettingsGenerator.maxConcentricWaveCountInEditor);
-		concentricWavesLevelSlider.setMajorTickSpacing(1);
 		createMapChangeListenerForTerrainChange(concentricWavesLevelSlider);
-		concentricStyleHider.add(styleOrganizer.addLabelAndComponent(Translation.get("theme.waveCount.label"), Translation.get("theme.waveCount.help"),
-				concentricWavesLevelSlider));
+		concentricStyleHider.add(new SliderWithDisplayedValue(concentricWavesLevelSlider).addToOrganizer(styleOrganizer, Translation.get("theme.waveCount.label"),
+				Translation.get("theme.waveCount.help")));
 
 		fadeWavesCheckbox = new JCheckBox(Translation.get("theme.fadeOuterWaves"));
 		createMapChangeListenerForTerrainChange(fadeWavesCheckbox);
@@ -1173,10 +1149,6 @@ public class ThemePanel extends JTabbedPane
 
 		organizer.addSectionHeading(Translation.get("theme.section.iconSizes"));
 		mountainScaleSlider = new JSlider(minScaleSliderValue, maxScaleSliderValue);
-		mountainScaleSlider.setMajorTickSpacing(2);
-		mountainScaleSlider.setMinorTickSpacing(1);
-		mountainScaleSlider.setPaintTicks(true);
-		mountainScaleSlider.setPaintLabels(true);
 		SwingHelper.addListener(mountainScaleSlider, () ->
 		{
 			if (enableSizeSliderListeners)
@@ -1186,13 +1158,9 @@ public class ThemePanel extends JTabbedPane
 			}
 		});
 		enableSizeSliderListeners = true;
-		organizer.addLabelAndComponent(Translation.get("theme.iconSizes.mountains"), Translation.get("theme.mountainSize.help"), mountainScaleSlider);
+		new SliderWithDisplayedValue(mountainScaleSlider).addToOrganizer(organizer, Translation.get("theme.iconSizes.mountains"), Translation.get("theme.mountainSize.help"));
 
 		hillScaleSlider = new JSlider(minScaleSliderValue, maxScaleSliderValue);
-		hillScaleSlider.setMajorTickSpacing(2);
-		hillScaleSlider.setMinorTickSpacing(1);
-		hillScaleSlider.setPaintTicks(true);
-		hillScaleSlider.setPaintLabels(true);
 		SwingHelper.addListener(hillScaleSlider, () ->
 		{
 			if (enableSizeSliderListeners)
@@ -1201,13 +1169,9 @@ public class ThemePanel extends JTabbedPane
 				handleTerrainChange();
 			}
 		});
-		organizer.addLabelAndComponent(Translation.get("theme.iconSizes.hills"), Translation.get("theme.hillSize.help"), hillScaleSlider);
+		new SliderWithDisplayedValue(hillScaleSlider).addToOrganizer(organizer, Translation.get("theme.iconSizes.hills"), Translation.get("theme.hillSize.help"));
 
 		duneScaleSlider = new JSlider(minScaleSliderValue, maxScaleSliderValue);
-		duneScaleSlider.setMajorTickSpacing(2);
-		duneScaleSlider.setMinorTickSpacing(1);
-		duneScaleSlider.setPaintTicks(true);
-		duneScaleSlider.setPaintLabels(true);
 		SwingHelper.addListener(duneScaleSlider, () ->
 		{
 			if (enableSizeSliderListeners)
@@ -1216,14 +1180,10 @@ public class ThemePanel extends JTabbedPane
 				handleTerrainChange();
 			}
 		});
-		organizer.addLabelAndComponent(Translation.get("theme.iconSizes.dunes"), Translation.get("theme.duneSize.help"), duneScaleSlider);
+		new SliderWithDisplayedValue(duneScaleSlider).addToOrganizer(organizer, Translation.get("theme.iconSizes.dunes"), Translation.get("theme.duneSize.help"));
 
 		// If I change the maximum here, also update densityScale in IconDrawer.drawTreesForCenters.
 		treeHeightSlider = new JSlider(minScaleSliderValue, maxScaleSliderValue);
-		treeHeightSlider.setMajorTickSpacing(2);
-		treeHeightSlider.setMinorTickSpacing(1);
-		treeHeightSlider.setPaintTicks(true);
-		treeHeightSlider.setPaintLabels(true);
 		SwingHelper.addListener(treeHeightSlider, () ->
 		{
 			if (enableSizeSliderListeners)
@@ -1234,13 +1194,9 @@ public class ThemePanel extends JTabbedPane
 			}
 		});
 		enableSizeSliderListeners = true;
-		organizer.addLabelAndComponent(Translation.get("theme.iconSizes.trees"), Translation.get("theme.treeHeight.help"), treeHeightSlider);
+		new SliderWithDisplayedValue(treeHeightSlider).addToOrganizer(organizer, Translation.get("theme.iconSizes.trees"), Translation.get("theme.treeHeight.help"));
 
 		cityScaleSlider = new JSlider(minScaleSliderValue, maxScaleSliderValue);
-		cityScaleSlider.setMajorTickSpacing(2);
-		cityScaleSlider.setMinorTickSpacing(1);
-		cityScaleSlider.setPaintTicks(true);
-		cityScaleSlider.setPaintLabels(true);
 		SwingHelper.addListener(cityScaleSlider, () ->
 		{
 			if (enableSizeSliderListeners)
@@ -1249,7 +1205,7 @@ public class ThemePanel extends JTabbedPane
 				handleTerrainChange();
 			}
 		});
-		organizer.addLabelAndComponent(Translation.get("theme.iconSizes.cities"), Translation.get("theme.citySize.help"), cityScaleSlider);
+		new SliderWithDisplayedValue(cityScaleSlider).addToOrganizer(organizer, Translation.get("theme.iconSizes.cities"), Translation.get("theme.citySize.help"));
 
 		organizer.addVerticalFillerRow();
 		organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.6);
