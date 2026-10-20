@@ -733,8 +733,10 @@ public class SubMapDialog
 
 		// Slider row (shown only in Choose mode).
 		JSlider rawSlider = new JSlider(minPolygonsInSubMap, SettingsGenerator.maxWorldSize, clampedOneXWorldSize);
-		// The slider snaps to its tick spacing even though the ticks aren't drawn.
+		rawSlider.setMajorTickSpacing(8000);
 		rawSlider.setMinorTickSpacing(1000);
+		rawSlider.setPaintTicks(true);
+		rawSlider.setPaintLabels(true);
 		rawSlider.setSnapToTicks(true);
 
 		detailSliderWithValue = new SliderWithDisplayedValue(rawSlider, value ->

@@ -30,8 +30,8 @@ public class Background
 	private ColorizeAlgorithm landColorizeAlgorithm;
 	private ColorizeAlgorithm oceanColorizeAlgorithm;
 	/**
-	 * The grayscale paper texture the ocean is colored from, the size of the map without the border's padding. Null for a solid color
-	 * background.
+	 * The grayscale paper texture the background is colored from, the size of the map without the border's padding. Null for a solid color
+	 * background or when it isn't kept. When the land's colors come from political regions, this is {@link #landBeforeRegionColoring}.
 	 */
 	private Image paperTexture;
 	// regionIndexes is a gray scale image where the level of each pixel is the
@@ -66,19 +66,23 @@ public class Background
 
 	public Background(MapSettings settings, Dimension mapBounds, WarningLogger warningLogger)
 	{
-		this(settings, mapBounds, warningLogger, null);
+		this(settings, mapBounds, warningLogger, null, false);
 	}
 
 	/**
 	 * @param startedImages
 	 *            The images {@link #startCreatingGeneratedImages} started for the same settings and bounds, or null to create them here.
+	 * @param keepPaperTexture
+	 *            Whether to keep the grayscale paper texture for {@link #getPaperTexture()}.
 	 */
-	public Background(MapSettings settings, Dimension mapBounds, WarningLogger warningLogger, GeneratedImages startedImages)
+	public Background(MapSettings settings, Dimension mapBounds, WarningLogger warningLogger, GeneratedImages startedImages, boolean keepPaperTexture)
 	{
 		customArtPackPath = settings.customArtPackPath;
 		shouldDrawRegionColors = settings.drawsRegionColors();
 
 		Image landGeneratedBackground;
+		// The generated image the paper texture comes from, which stays null for a solid color background.
+		Image paperTextureSource = null;
 		landColorizeAlgorithm = ColorizeAlgorithm.none;
 		this.mapBounds = mapBounds;
 
@@ -123,7 +127,7 @@ public class Background
 			landGeneratedBackground = oceanGeneratedBackground;
 			landColorizeAlgorithm = ColorizeAlgorithm.algorithm2;
 			oceanColorizeAlgorithm = ColorizeAlgorithm.algorithm2;
-			paperTexture = createPaperTexture(oceanGeneratedBackground);
+			paperTextureSource = oceanGeneratedBackground;
 
 			if (settings.borderColorOption == BorderColorOption.Ocean_color)
 			{
@@ -167,7 +171,7 @@ public class Background
 			oceanColorizeAlgorithm = ColorizeAlgorithm.algorithm3;
 
 			Image oceanGeneratedBackground = images.getOcean();
-			paperTexture = createPaperTexture(oceanGeneratedBackground);
+			paperTextureSource = oceanGeneratedBackground;
 			if (settings.colorizeOcean)
 			{
 				if (settings.borderColorOption == BorderColorOption.Ocean_color)
@@ -321,6 +325,13 @@ public class Background
 			landBeforeRegionColoring = land;
 		}
 
+		if (keepPaperTexture && paperTextureSource != null)
+		{
+			// The land before region coloring is the grayscale texture, without the border's padding, when the land is colored from it.
+			boolean isLandTheTexture = landBeforeRegionColoring != null && landBeforeRegionColoring.getType() == ImageType.Grayscale8Bit;
+			paperTexture = isLandTheTexture ? landBeforeRegionColoring : createPaperTexture(paperTextureSource);
+		}
+
 		if (borderBackground != null)
 		{
 			borderBounds = new Dimension(borderBackground.getWidth(), borderBackground.getHeight());
@@ -348,8 +359,8 @@ public class Background
 	}
 
 	/**
-	 * The grayscale paper texture the ocean is colored from, the size of the map without the border's padding, or null if the background
-	 * is a solid color.
+	 * The grayscale paper texture the background is colored from, the size of the map without the border's padding, or null if the
+	 * background is a solid color or the texture wasn't kept.
 	 */
 	public Image getPaperTexture()
 	{
@@ -1134,7 +1145,7 @@ public class Background
 		{
 			regionIndexes.close();
 		}
-		if (paperTexture != null)
+		if (paperTexture != null && paperTexture != landBeforeRegionColoring && paperTexture != land)
 		{
 			paperTexture.close();
 		}

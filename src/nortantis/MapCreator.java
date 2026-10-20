@@ -1313,7 +1313,9 @@ public class MapCreator implements WarningLogger
 		else
 		{
 			Logger.println("Generating the background image.");
-			background = new Background(settings, mapBounds, this, backgroundImages);
+			// A background kept in map parts keeps the texture, since a later incremental draw can draw text whose style has changed to a shape.
+			boolean keepPaperTexture = mapParts != null || drawsTextShapeBackgrounds(settings);
+			background = new Background(settings, mapBounds, this, backgroundImages, keepPaperTexture);
 		}
 
 		if (mapParts != null)
@@ -1846,7 +1848,9 @@ public class MapCreator implements WarningLogger
 		background.doSetupThatNeedsGraphAndIcons(graph, iconsToDraw, null, null, null);
 		if (mapParts == null)
 		{
-			if (background.landBeforeRegionColoring != null && background.landBeforeRegionColoring != background.land)
+			// The paper texture can be the land before region coloring, and text, which is drawn later, needs it.
+			if (background.landBeforeRegionColoring != null && background.landBeforeRegionColoring != background.land
+					&& background.landBeforeRegionColoring != background.getPaperTexture())
 			{
 				background.landBeforeRegionColoring.close();
 			}
@@ -2596,6 +2600,32 @@ public class MapCreator implements WarningLogger
 	{
 		float[] hsb = base.getHSB();
 		return generateRegionColor(rand, hsb, hueRange, saturationRange, brightnessRange);
+	}
+
+	/**
+	 * Whether any text the map draws, or would generate, has a Box, Scroll, or Banner background, whose fill is colored from the paper
+	 * texture.
+	 */
+	private static boolean drawsTextShapeBackgrounds(MapSettings settings)
+	{
+		for (TextStyle style : settings.textStyleDefaults.values())
+		{
+			if (style.background.effect.isShape())
+			{
+				return true;
+			}
+		}
+		if (settings.edits != null && settings.edits.text != null)
+		{
+			for (MapText text : settings.edits.text)
+			{
+				if (settings.resolveTextStyle(text).background.effect.isShape())
+				{
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	public static WorldGraph createGraph(MapSettings settings, boolean createElevationBiomesLakesAndRegions)

@@ -23,8 +23,8 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Hashtable;
 import java.util.List;
-import java.util.function.Function;
 
 @SuppressWarnings("serial")
 public class ImageExportDialog extends JDialog
@@ -69,12 +69,26 @@ public class ImageExportDialog extends JDialog
 		}
 
 		resolutionSlider = new JSlider();
+		resolutionSlider.setPaintLabels(true);
 		resolutionSlider.setValue(100);
-		// The slider snaps to its tick spacing even though the ticks aren't drawn.
 		resolutionSlider.setSnapToTicks(true);
+		resolutionSlider.setPaintTicks(true);
 		resolutionSlider.setMinorTickSpacing(25);
+		resolutionSlider.setMajorTickSpacing(25);
 		resolutionSlider.setMinimum(25);
 		resolutionSlider.setMaximum(MapCreator.calcMaximumResolution());
+		int labelFrequency = resolutionSlider.getMaximum() < 300 ? 50 : 100;
+		{
+			Hashtable<Integer, JLabel> labelTable = new Hashtable<Integer, JLabel>();
+			for (int i = resolutionSlider.getMinimum(); i < resolutionSlider.getMaximum() + 1; i += resolutionSlider.getMinorTickSpacing())
+			{
+				if (i % labelFrequency == 0)
+				{
+					labelTable.put(i, new JLabel(i + "%"));
+				}
+			}
+			resolutionSlider.setLabelTable(labelTable);
+		}
 		String tooltip = Translation.get("imageExport.resolution.help");
 		resolutionSlider.setValue((int) ((type == ImageExportType.Map ? mainWindow.exportResolution : mainWindow.heightmapExportResolution) * 100));
 
@@ -85,17 +99,14 @@ public class ImageExportDialog extends JDialog
 		// The border art cannot change while this dialog is open, and how far the border sits over the map does not depend on the
 		// resolution, so look it up once rather than on every move of the slider.
 		final double borderInsetDepthFraction = Background.calcBorderInsetDepthFraction(exportSettings);
-		Function<Integer, String> resolutionFormatter = value ->
+		SliderWithDisplayedValue resolutionSliderWithDisplay = new SliderWithDisplayedValue(resolutionSlider, value ->
 		{
 			double resolution = value / 100.0;
 			int borderPaddingPerSide = Background.calcBorderPaddingScaledByResolution(borderInsetDepthFraction, (int) (exportSettings.borderWidth * resolution));
 			int w = (int) (exportBaseWidth * resolution) + 2 * borderPaddingPerSide;
 			int h = (int) (exportBaseHeight * resolution) + 2 * borderPaddingPerSide;
-			return value + "% (" + w + " \u00d7 " + h + ")";
-		};
-		// Sized for the largest resolution so that the slider doesn't change width as it moves.
-		int resolutionDisplayWidth = new JLabel(resolutionFormatter.apply(resolutionSlider.getMaximum())).getPreferredSize().width + 4;
-		SliderWithDisplayedValue resolutionSliderWithDisplay = new SliderWithDisplayedValue(resolutionSlider, resolutionFormatter, null, resolutionDisplayWidth);
+			return w + " \u00d7 " + h;
+		}, null, null);
 		resolutionSliderWithDisplay.addToOrganizer(organizer, Translation.get("imageExport.resolution.label"), tooltip);
 
 		ActionListener radioButtonListener = new ActionListener()
