@@ -5,7 +5,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import org.teavm.interop.Async;
 import org.teavm.interop.AsyncCallback;
@@ -29,7 +28,7 @@ import nortantis.util.Assets;
 
 /**
  * Makes maps in a web page or web worker and sends them to the page. The page starts it with "commands", a JSON array of commands, and the
- * resolution to draw at. Each command is an object with a name and, for some, a value (see {@link DemoSession#apply}). It applies the
+ * resolution to draw at. Each command is an object with a name and, for some, a value (see {@link DemoSession#applyAll}). It applies the
  * commands to the map's settings, sends the settings to the page, then draws the map and sends it, followed by its saved settings.
  * <p>
  * A helper worker instead starts it with "job", a job number, the kind of job, and the job's arguments, to do part of another worker's map
@@ -67,32 +66,15 @@ public class WebMain
 			isSetUp = true;
 		}
 
-		// A command that fails doesn't stop the others, and the map is still drawn, so that the page shows the settings the map has.
+		// A failed command still leaves a map to draw, so the page shows the settings the map has.
 		RuntimeException failure = null;
-		for (Object item : (JSONArray) JSONValue.parse(args[1]))
+		try
 		{
-			JSONObject command = (JSONObject) item;
-			String name = (String) command.get("name");
-			try
-			{
-				if (!session.hasMap() && !name.equals("new"))
-				{
-					session.newRandomMap(null);
-				}
-				session.apply(name, command.get("value"));
-			}
-			catch (RuntimeException e)
-			{
-				e.printStackTrace();
-				if (failure == null)
-				{
-					failure = e;
-				}
-			}
+			session.applyAll((JSONArray) JSONValue.parse(args[1]));
 		}
-		if (!session.hasMap())
+		catch (RuntimeException e)
 		{
-			session.newRandomMap(null);
+			failure = e;
 		}
 		showSettings(session.describe());
 		drawMap(Double.parseDouble(args[2]));

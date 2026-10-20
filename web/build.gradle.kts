@@ -1,7 +1,7 @@
 // Compiles Nortantis to JavaScript with TeaVM, so maps can be generated in a web browser.
 //   ./gradlew :web:generateJavaScript   writes build/generated/teavm/js/nortantis.js
-//   ./gradlew :web:assembleWebGenerator writes build/web-generator/: the generator, the script that runs it, its asset files, and a test
-//                                        page, ready to serve over HTTP
+//   ./gradlew :web:assembleWebGenerator writes build/web-generator/: the generator, the script that runs it, its asset files, the options
+//                                        a page starts with, and a test page, ready to serve over HTTP
 plugins {
     java
     id("org.teavm") version "0.16.0"
@@ -73,8 +73,20 @@ tasks.withType<org.teavm.gradle.tasks.TeaVMTask>().configureEach {
     classpath.setFrom(sourceSets.main.get().output, original)
 }
 
+// The options a web page starts with, and what each can be set to, so the page can show them before it downloads the generator.
+val writeDefaultOptions by tasks.registering(JavaExec::class) {
+    val output = layout.buildDirectory.file("default-options/options.json")
+    dependsOn(tasks.processResources)
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass = "nortantis.web.DefaultOptionsWriter"
+    inputs.files(sourceSets.main.get().runtimeClasspath)
+    inputs.dir(rootProject.file("assets"))
+    outputs.file(output)
+    args(output.get().asFile.path, rootProject.projectDir.path)
+}
+
 // Everything a web page needs to run the generator, in one folder: nortantis.js, generator.js, which runs it, the asset manifest, the asset
-// files the manifest lists, and a test page (index.html).
+// files the manifest lists, the options the page starts with (options.json), and a test page (index.html).
 val assembleWebGenerator by tasks.registering(Sync::class) {
     val webManifest = webAssetManifestFolder.map { it.file("assets/manifest.txt") }
     // Read when the files are copied, after the manifest is written.
@@ -85,6 +97,7 @@ val assembleWebGenerator by tasks.registering(Sync::class) {
     into(layout.buildDirectory.dir("web-generator"))
     includeEmptyDirs = false
     from(layout.buildDirectory.dir("generated/teavm/js")) { include("nortantis.js") }
+    from(writeDefaultOptions)
     from("host")
     from(webManifest)
     from(rootProject.file("assets")) {

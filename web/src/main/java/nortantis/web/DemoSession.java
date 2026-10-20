@@ -47,6 +47,14 @@ class DemoSession
 	 */
 	private static final int maxCustomDimension = 32768;
 
+	// The options the page starts with, before the first map.
+	private static final GeneratedDimension defaultDimension = GeneratedDimension.Sixteen_by_9;
+	private static final int defaultWorldSize = 12000;
+	private static final LandShape defaultLandShape = LandShape.Continents;
+	private static final int defaultRegionCount = 6;
+	private static final int defaultCityFrequency = 25;
+	private static final String defaultCityIconType = "middle ages";
+
 	private MapSettings settings;
 	private ThemeCatalog.Entry theme;
 	/**
@@ -60,7 +68,7 @@ class DemoSession
 	private final Deque<State> backStack = new ArrayDeque<>();
 	private final Deque<State> nextStack = new ArrayDeque<>();
 
-	boolean hasMap()
+	private boolean hasMap()
 	{
 		return settings != null;
 	}
@@ -71,7 +79,7 @@ class DemoSession
 	 * @param seed
 	 *            The random seed to make them from, or null for a random one.
 	 */
-	void newRandomMap(Long seed)
+	private void newRandomMap(Long seed)
 	{
 		Random rand = seed == null ? new Random() : new Random(seed);
 		themeSeed = rand.nextLong();
@@ -82,32 +90,71 @@ class DemoSession
 	}
 
 	/**
-	 * Applies one of the page's commands. Commands that change the map record the map before them in the history.
+	 * Applies the page's commands in order: changes to the map's options, and moves through the history. The map before a change goes into
+	 * the history once for all the changes that come together, since they make one map. A command that fails doesn't stop the others; the
+	 * first failure is thrown once they are done.
 	 *
-	 * @param value
-	 *            The command's value, such as the new world size, or null for commands without one.
+	 * @param commands
+	 *            Objects with a name and, for some commands, a value, such as the new world size.
 	 */
-	void apply(String command, Object value)
+	void applyAll(JSONArray commands)
 	{
-		if (command.equals("back"))
-		{
-			moveThroughHistory(backStack, nextStack);
-			return;
-		}
-		if (command.equals("next"))
-		{
-			moveThroughHistory(nextStack, backStack);
-			return;
-		}
-		if (command.equals("redraw"))
-		{
-			return;
-		}
-
+		RuntimeException failure = null;
 		State before = hasMap() ? captureState() : null;
+		for (Object item : commands)
+		{
+			JSONObject command = (JSONObject) item;
+			String name = (String) command.get("name");
+			try
+			{
+				if (name.equals("back") || name.equals("next"))
+				{
+					recordChange(before);
+					if (name.equals("back"))
+					{
+						moveThroughHistory(backStack, nextStack);
+					}
+					else
+					{
+						moveThroughHistory(nextStack, backStack);
+					}
+					before = hasMap() ? captureState() : null;
+					continue;
+				}
+				if (!hasMap() && !name.equals("new"))
+				{
+					newRandomMap(null);
+				}
+				apply(name, command.get("value"));
+			}
+			catch (RuntimeException e)
+			{
+				e.printStackTrace();
+				if (failure == null)
+				{
+					failure = e;
+				}
+			}
+		}
+		if (!hasMap())
+		{
+			newRandomMap(null);
+		}
+		recordChange(before);
+		if (failure != null)
+		{
+			throw failure;
+		}
+	}
+
+	private void apply(String command, Object value)
+	{
 		switch (command)
 		{
 			case "new" -> newRandomMap(value == null ? null : Long.parseLong(value.toString()));
+			case "redraw" ->
+			{
+			}
 			case "randomizeTheme" -> randomizeTheme();
 			case "randomizeLand" -> SettingsGenerator.randomizeLand(settings);
 			case "flipHorizontally" -> flip(true);
@@ -125,15 +172,23 @@ class DemoSession
 			case "theme" -> chooseTheme(value.toString());
 			default -> throw new IllegalArgumentException("Unrecognized command: " + command);
 		}
-		if (before != null && !captureState().matches(before))
+	}
+
+	/**
+	 * Puts the given state, from before the settings changed, into the history, unless nothing changed.
+	 */
+	private void recordChange(State before)
+	{
+		if (before == null || captureState().matches(before))
 		{
-			backStack.push(before);
-			while (backStack.size() > Undoer.maxUndoLevels)
-			{
-				backStack.removeLast();
-			}
-			nextStack.clear();
+			return;
 		}
+		backStack.push(before);
+		while (backStack.size() > Undoer.maxUndoLevels)
+		{
+			backStack.removeLast();
+		}
+		nextStack.clear();
 	}
 
 	/**
@@ -242,7 +297,7 @@ class DemoSession
 		MapSettings newThemeBase = ThemeCatalog.load(chosen);
 		MapSettings newSettings = SettingsGenerator.generateFromTheme(new Random(), themeSeed, settings.artPack, newThemeBase,
 				ThemeCatalog.isFromInstalledArtPack(chosen), null);
-		if (getCityIconTypes().contains(settings.cityIconTypeName))
+		if (getCityIconTypes(settings.artPack).contains(settings.cityIconTypeName))
 		{
 			newSettings.cityIconTypeName = settings.cityIconTypeName;
 		}
@@ -267,9 +322,9 @@ class DemoSession
 		return ThemeCatalog.listThemesToChooseFrom(Assets.installedArtPack, null);
 	}
 
-	private List<String> getCityIconTypes()
+	private static List<String> getCityIconTypes(String artPack)
 	{
-		return new ArrayList<>(ImageCache.getInstance(settings.artPack, null).getIconGroupNames(IconType.cities));
+		return new ArrayList<>(ImageCache.getInstance(artPack, null).getIconGroupNames(IconType.cities));
 	}
 
 	/**
@@ -295,7 +350,41 @@ class DemoSession
 		result.put("rotationDegrees", settings.rightRotationCount * 90);
 		result.put("canGoBack", !backStack.isEmpty());
 		result.put("canGoNext", !nextStack.isEmpty());
+		addChoices(result, settings.artPack);
+		return result.toJSONString();
+	}
 
+	/**
+	 * Describes the options the page starts with, before there is a map, and what each control can be set to, in the same form as
+	 * {@link #describe()}.
+	 */
+	@SuppressWarnings("unchecked")
+	static String describeDefaults()
+	{
+		JSONObject result = new JSONObject();
+		result.put("dimensions", defaultDimension.name());
+		result.put("width", defaultDimension.width);
+		result.put("height", defaultDimension.height);
+		result.put("worldSize", defaultWorldSize);
+		result.put("landShape", defaultLandShape.name());
+		result.put("regionCount", defaultRegionCount);
+		result.put("cityFrequency", defaultCityFrequency);
+		List<String> cityIconTypes = getCityIconTypes(Assets.installedArtPack);
+		result.put("cityIconType", cityIconTypes.contains(defaultCityIconType) ? defaultCityIconType : cityIconTypes.get(0));
+		JSONArray books = new JSONArray();
+		books.addAll(SettingsGenerator.getAllBooks());
+		result.put("books", books);
+		result.put("theme", listThemes().get(0).name);
+		result.put("rotationDegrees", 0);
+		result.put("canGoBack", false);
+		result.put("canGoNext", false);
+		addChoices(result, Assets.installedArtPack);
+		return result.toJSONString();
+	}
+
+	@SuppressWarnings("unchecked")
+	private static void addChoices(JSONObject result, String artPack)
+	{
 		JSONArray dimensionChoices = new JSONArray();
 		for (GeneratedDimension choice : GeneratedDimension.values())
 		{
@@ -314,7 +403,7 @@ class DemoSession
 		result.put("landShapeChoices", shapeChoices);
 
 		JSONArray cityIconTypeChoices = new JSONArray();
-		cityIconTypeChoices.addAll(getCityIconTypes());
+		cityIconTypeChoices.addAll(getCityIconTypes(artPack));
 		result.put("cityIconTypeChoices", cityIconTypeChoices);
 		JSONArray bookChoices = new JSONArray();
 		bookChoices.addAll(SettingsGenerator.getAllBooks());
@@ -331,7 +420,6 @@ class DemoSession
 		result.put("worldSizeStep", SettingsGenerator.worldSizePrecision);
 		result.put("minRegionCount", SettingsGenerator.minRegionCount);
 		result.put("maxRegionCount", SettingsGenerator.maxRegionCount);
-		return result.toJSONString();
 	}
 
 	@SuppressWarnings("unchecked")
