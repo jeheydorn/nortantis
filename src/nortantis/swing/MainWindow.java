@@ -3591,6 +3591,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		{
 			copy.writeToFile(savePath.toString());
 			Logger.println("Saved a copy without edits to " + savePath);
+			UserPreferences.getInstance().addRecentMapFilePath(savePath.toString());
+			createOrUpdateRecentMapMenuButtons();
 		}
 		catch (Exception e)
 		{
