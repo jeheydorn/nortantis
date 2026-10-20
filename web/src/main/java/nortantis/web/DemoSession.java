@@ -11,6 +11,7 @@ import java.util.TreeSet;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+import nortantis.Background;
 import nortantis.GeneratedDimension;
 import nortantis.IconType;
 import nortantis.ImageCache;
@@ -348,6 +349,9 @@ class DemoSession
 		result.put("books", books);
 		result.put("theme", theme.name);
 		result.put("rotationDegrees", settings.rightRotationCount * 90);
+		// What the page needs to work out the size of the map's image, border included, at each resolution.
+		result.put("borderWidth", settings.drawBorder ? settings.borderWidth : 0);
+		result.put("borderInsetDepthFraction", Background.calcBorderInsetDepthFraction(settings));
 		result.put("canGoBack", !backStack.isEmpty());
 		result.put("canGoNext", !nextStack.isEmpty());
 		addChoices(result, settings.artPack);
@@ -388,9 +392,14 @@ class DemoSession
 		JSONArray dimensionChoices = new JSONArray();
 		for (GeneratedDimension choice : GeneratedDimension.values())
 		{
-			dimensionChoices.add(createChoice(choice.name(), choice.toString(), null));
+			JSONObject dimensionChoice = createChoice(choice.name(), choice.toString(), null);
+			dimensionChoice.put("width", choice.width);
+			dimensionChoice.put("height", choice.height);
+			dimensionChoices.add(dimensionChoice);
 		}
 		result.put("dimensionChoices", dimensionChoices);
+		result.put("presetLongSide", GeneratedDimension.PRESET_LONG_SIDE);
+		result.put("maxAspectRatio", GeneratedDimension.MAX_ASPECT_RATIO);
 
 		// Alphabetical by displayed name, as in the New Map dialog.
 		List<LandShape> shapes = new ArrayList<>(Arrays.asList(LandShape.values()));
