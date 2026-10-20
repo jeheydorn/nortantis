@@ -53,13 +53,9 @@ public class TextBackground implements Serializable
 	public int shapeLineWidth;
 	/** How far the outline of a shape wanders, from 0 to {@link #maxShapeJitter}. */
 	public int shapeJitter;
-	/**
-	 * Whether the fill of Box, Scroll, and Banner is the map's paper texture colored with the fill color, rather than the fill color alone.
-	 */
-	public boolean shapeFillShowsTexture;
 
 	public TextBackground(TextBackgroundEffect effect, double fadeBehind, Color color, int glowSize, int outlineWidth, Color shapeFillColor, Color shapeLineColor, int shapeLineWidth,
-			int shapeJitter, boolean shapeFillShowsTexture)
+			int shapeJitter)
 	{
 		this.effect = effect;
 		this.fadeBehind = fadeBehind;
@@ -70,7 +66,6 @@ public class TextBackground implements Serializable
 		this.shapeLineColor = shapeLineColor;
 		this.shapeLineWidth = shapeLineWidth;
 		this.shapeJitter = shapeJitter;
-		this.shapeFillShowsTexture = shapeFillShowsTexture;
 	}
 
 	/**
@@ -79,13 +74,12 @@ public class TextBackground implements Serializable
 	public static TextBackground createDefault()
 	{
 		return new TextBackground(TextBackgroundEffect.None, defaultFadeBehind, defaultColor, defaultGlowSize, defaultOutlineWidth, defaultShapeFillColor, defaultShapeLineColor,
-				defaultShapeLineWidth, defaultShapeJitter, false);
+				defaultShapeLineWidth, defaultShapeJitter);
 	}
 
 	public TextBackground copy()
 	{
-		return new TextBackground(effect, fadeBehind, color, glowSize, outlineWidth, shapeFillColor, shapeLineColor, shapeLineWidth, shapeJitter,
-				shapeFillShowsTexture);
+		return new TextBackground(effect, fadeBehind, color, glowSize, outlineWidth, shapeFillColor, shapeLineColor, shapeLineWidth, shapeJitter);
 	}
 
 	/**
@@ -100,7 +94,6 @@ public class TextBackground implements Serializable
 		shapeLineColor = other.shapeLineColor;
 		shapeLineWidth = other.shapeLineWidth;
 		shapeJitter = other.shapeJitter;
-		shapeFillShowsTexture = other.shapeFillShowsTexture;
 	}
 
 	/**
@@ -125,7 +118,6 @@ public class TextBackground implements Serializable
 		obj.put("shapeLineColor", MapSettings.colorToString(shapeLineColor));
 		obj.put("shapeLineWidth", shapeLineWidth);
 		obj.put("shapeJitter", shapeJitter);
-		obj.put("shapeFillShowsTexture", shapeFillShowsTexture);
 		return obj;
 	}
 
@@ -164,10 +156,6 @@ public class TextBackground implements Serializable
 		{
 			result.shapeJitter = ((Number) obj.get("shapeJitter")).intValue();
 		}
-		if (obj.containsKey("shapeFillShowsTexture"))
-		{
-			result.shapeFillShowsTexture = (Boolean) obj.get("shapeFillShowsTexture");
-		}
 		return result;
 	}
 
@@ -180,7 +168,7 @@ public class TextBackground implements Serializable
 	@Override
 	public int hashCode()
 	{
-		return Objects.hash(effect, fadeBehind, color, glowSize, outlineWidth, shapeFillColor, shapeLineColor, shapeLineWidth, shapeJitter, shapeFillShowsTexture);
+		return Objects.hash(effect, fadeBehind, color, glowSize, outlineWidth, shapeFillColor, shapeLineColor, shapeLineWidth, shapeJitter);
 	}
 
 	@Override
@@ -197,8 +185,7 @@ public class TextBackground implements Serializable
 		TextBackground other = (TextBackground) obj;
 		return effect == other.effect && Double.doubleToLongBits(fadeBehind) == Double.doubleToLongBits(other.fadeBehind) && Objects.equals(color, other.color)
 				&& glowSize == other.glowSize && outlineWidth == other.outlineWidth && Objects.equals(shapeFillColor, other.shapeFillColor)
-				&& Objects.equals(shapeLineColor, other.shapeLineColor) && shapeLineWidth == other.shapeLineWidth && shapeJitter == other.shapeJitter
-				&& shapeFillShowsTexture == other.shapeFillShowsTexture;
+				&& Objects.equals(shapeLineColor, other.shapeLineColor) && shapeLineWidth == other.shapeLineWidth && shapeJitter == other.shapeJitter;
 	}
 
 	@Override

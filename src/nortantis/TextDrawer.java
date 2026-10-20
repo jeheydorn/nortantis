@@ -46,8 +46,7 @@ public class TextDrawer
 
 	private Image landAndOceanBackground;
 	/**
-	 * The grayscale paper texture that Box, Scroll, and Banner fills that show texture are colored from, or null to fill them with their
-	 * fill color alone.
+	 * The grayscale paper texture that Box, Scroll, and Banner fills are colored from, or null to fill them with their fill color alone.
 	 */
 	private Image paperTexture;
 	private ColorizeAlgorithm paperTextureColorizeAlgorithm;
@@ -119,7 +118,7 @@ public class TextDrawer
 
 	/**
 	 * @param mapBackground
-	 *            Supplies the paper texture that text background fills can show.
+	 *            Supplies the paper texture that text background fills are colored from.
 	 */
 	public synchronized void drawTextFromEdits(Image map, Image landAndOceanBackground, Background mapBackground, WorldGraph graph, Rectangle drawBounds)
 	{
@@ -134,7 +133,7 @@ public class TextDrawer
 
 	/**
 	 * @param mapBackground
-	 *            Supplies the paper texture that text background fills can show.
+	 *            Supplies the paper texture that text background fills are colored from.
 	 */
 	public void generateText(WorldGraph graph, Image map, NameCreator nameCreator, Image landAndOceanBackground, Background mapBackground, List<Set<Center>> mountainGroups,
 			List<IconDrawTask> cityDrawTasks, List<Set<Center>> lakes, List<River> rivers)
@@ -1281,7 +1280,7 @@ public class TextDrawer
 			}
 			else if (geometry.shape != null)
 			{
-				if (background.shapeFillShowsTexture && paperTexture != null)
+				if (paperTexture != null)
 				{
 					IntRectangle drawArea = new IntRectangle((int) Math.floor(drawOffset.x), (int) Math.floor(drawOffset.y), map.getWidth(), map.getHeight());
 					geometry.shape.drawWithPaperTexture(p, orig, text.angle, geometry.pivot, drawArea, paperTexture, paperTextureColorizeAlgorithm);
