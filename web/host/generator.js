@@ -15,9 +15,9 @@
 //   {type: 'settings', settings, sequence}    The map's choices, before the map is drawn, with the sequence of the last command
 //                                             they include.
 //   {type: 'drawing'}                         When it starts drawing the map.
-//   {type: 'map', width, height, pixels, seconds}
-//                                             The map, as canvas pixels: bytes in the order red, green, blue, alpha, and how long the
-//                                             commands and the map took, not counting the download.
+//   {type: 'map', width, height, pixels, seconds, title}
+//                                             The map, as canvas pixels: bytes in the order red, green, blue, alpha, how long the
+//                                             commands and the map took, not counting the download, and the map's title, or null.
 //   {type: 'saved', bytes}                    The map's .nort file.
 //   {type: 'failed', text}
 //   {type: 'idle'}                            When it has done every command it was sent.
@@ -231,7 +231,7 @@
 
 		// Sends the map to the page as canvas pixels: bytes in the order red, green, blue, alpha. As little-endian 32-bit words those are ABGR,
 		// so swapping red and blue turns each ARGB pixel into one.
-		showMap(width, height, pixels, isOpaque) {
+		showMap(width, height, pixels, isOpaque, title) {
 			const words = new Uint32Array(width * height);
 			const alpha = isOpaque ? 0xFF000000 : 0;
 			for (let i = 0, n = width * height; i < n; i++) {
@@ -239,7 +239,7 @@
 				words[i] = (p & 0xFF00FF00) | ((p >>> 16) & 0xFF) | ((p & 0xFF) << 16) | alpha;
 			}
 			const seconds = (performance.now() - commandsStartTime) / 1000;
-			post({ type: 'map', width: width, height: height, pixels: words.buffer, seconds: seconds }, [words.buffer]);
+			post({ type: 'map', width: width, height: height, pixels: words.buffer, seconds: seconds, title: title }, [words.buffer]);
 		},
 	};
 

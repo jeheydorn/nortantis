@@ -16,6 +16,8 @@ import org.teavm.jso.JSObject;
 import nortantis.FontFinder;
 import nortantis.MapCreator;
 import nortantis.MapSettings;
+import nortantis.MapText;
+import nortantis.TextType;
 import nortantis.editor.MapParts;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
@@ -91,8 +93,23 @@ public class WebMain
 		startedDrawing();
 		MapParts mapParts = new MapParts();
 		Image map = new MapCreator().createMap(settings, null, mapParts);
-		showMap(map.getWidth(), map.getHeight(), ((WebImage) map).toPackedARGB(), map.getType() != ImageType.ARGB);
+		showMap(map.getWidth(), map.getHeight(), ((WebImage) map).toPackedARGB(), map.getType() != ImageType.ARGB, findTitle(settings));
 		save(settings, mapParts);
+	}
+
+	/**
+	 * The map's title, which drawing it adds to its text, or null if it has none.
+	 */
+	private static String findTitle(MapSettings settings)
+	{
+		for (MapText text : settings.edits.text)
+		{
+			if (text.type == TextType.Title && text.value != null && !text.value.trim().isEmpty())
+			{
+				return text.value.trim();
+			}
+		}
+		return null;
 	}
 
 	/**
@@ -213,6 +230,6 @@ public class WebMain
 	@JSBody(params = { "data" }, script = "nortantisHost.saveSettings(data);")
 	private static native void saveSettings(@JSByRef byte[] data);
 
-	@JSBody(params = { "width", "height", "pixels", "isOpaque" }, script = "nortantisHost.showMap(width, height, pixels, isOpaque);")
-	private static native void showMap(int width, int height, @JSByRef int[] pixels, boolean isOpaque);
+	@JSBody(params = { "width", "height", "pixels", "isOpaque", "title" }, script = "nortantisHost.showMap(width, height, pixels, isOpaque, title);")
+	private static native void showMap(int width, int height, @JSByRef int[] pixels, boolean isOpaque, String title);
 }

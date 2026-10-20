@@ -349,6 +349,9 @@ class DemoSession
 		result.put("books", books);
 		result.put("theme", theme.name);
 		result.put("rotationDegrees", settings.rightRotationCount * 90);
+		// Flips of the generated map, which come before the rotation.
+		result.put("flipHorizontally", settings.flipHorizontally);
+		result.put("flipVertically", settings.flipVertically);
 		// What the page needs to work out the size of the map's image, border included, at each resolution.
 		result.put("borderWidth", settings.drawBorder ? settings.borderWidth : 0);
 		result.put("borderInsetDepthFraction", Background.calcBorderInsetDepthFraction(settings));
@@ -380,6 +383,8 @@ class DemoSession
 		result.put("books", books);
 		result.put("theme", listThemes().get(0).name);
 		result.put("rotationDegrees", 0);
+		result.put("flipHorizontally", false);
+		result.put("flipVertically", false);
 		result.put("canGoBack", false);
 		result.put("canGoNext", false);
 		addChoices(result, Assets.installedArtPack);
