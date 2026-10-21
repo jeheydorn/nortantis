@@ -356,25 +356,6 @@ public abstract class ImageHelper
 							alpha = originalColor.getAlpha();
 						}
 
-						double fillColorAlpha = (fillWithColor ? fillColor.getAlpha() : 0) / 255.0;
-						double fillColorScale;
-						if (fillColorAlpha == 1.0)
-						{
-							// Save some time since this is a simple and common case.
-							fillColorScale = 1.0;
-						}
-						else
-						{
-							// Use a curve that is 0 when fillColorAlpha is 0, 1 when fillColorAlpha is 1, and is mostly equal
-							// to 1
-							// but dies off
-							// quickly as fillColorAlpha reaches 0. That way when the fill color is transparent, it doesn't mix
-							// with
-							// icon pixels
-							// that are partially transparent.
-							fillColorScale = 1.0 - Math.pow(1.0 - fillColorAlpha, 50);
-						}
-
 						Color filteredImageColor;
 						int filteredAlpha;
 						// Use filter color
@@ -383,10 +364,25 @@ public abstract class ImageHelper
 								Helper.clamp(hsb[2] + filterHSB[2], 0f, 1f));
 						filteredAlpha = Math.min(255, (int) (alpha * filterAlphaScale));
 
-						int r = Helper.linearComboBase255(filteredAlpha, filteredImageColor.getRed(), (int) (fillColor.getRed() * fillColorScale));
-						int g = Helper.linearComboBase255(filteredAlpha, filteredImageColor.getGreen(), (int) (fillColor.getGreen() * fillColorScale));
-						int b = Helper.linearComboBase255(filteredAlpha, filteredImageColor.getBlue(), (int) (fillColor.getBlue() * fillColorScale));
-						int a = Math.max(filteredAlpha, Math.min(fillWithColor ? fillColor.getAlpha() : 0, colorMaskPixels.getGrayLevel(x, y)));
+						// Draws the filtered icon pixel over the fill, which is only as opaque as both the fill color and the color mask.
+						double iconAlpha = filteredAlpha / 255.0;
+						double fillAlpha = (fillWithColor ? Math.min(fillColor.getAlpha(), colorMaskPixels.getGrayLevel(x, y)) : 0) / 255.0;
+						double fillWeight = fillAlpha * (1.0 - iconAlpha);
+						double resultAlpha = iconAlpha + fillWeight;
+						int r, g, b;
+						if (resultAlpha == 0.0)
+						{
+							r = filteredImageColor.getRed();
+							g = filteredImageColor.getGreen();
+							b = filteredImageColor.getBlue();
+						}
+						else
+						{
+							r = (int) Math.round((filteredImageColor.getRed() * iconAlpha + fillColor.getRed() * fillWeight) / resultAlpha);
+							g = (int) Math.round((filteredImageColor.getGreen() * iconAlpha + fillColor.getGreen() * fillWeight) / resultAlpha);
+							b = (int) Math.round((filteredImageColor.getBlue() * iconAlpha + fillColor.getBlue() * fillWeight) / resultAlpha);
+						}
+						int a = (int) Math.round(resultAlpha * 255.0);
 
 						resultPixels.setRGB(x, y, r, g, b, a);
 					}
