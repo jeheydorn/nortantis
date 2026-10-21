@@ -37,6 +37,11 @@ public class MapEditingPanel extends UnscaledImagePanel
 {
 
 	private final Color highlightEditColor = new Color(255, 227, 74);
+	/**
+	 * The color of every secondary highlight: what hovering, Alt+click, or Ctrl+Alt+click would select or remove, what is being processed,
+	 * and selected areas. Its hue is far enough from {@link #highlightEditColor} to tell the two apart on a map's warm colors.
+	 */
+	private final Color secondaryHighlightColor = new Color(255, 195, 0);
 	private final Color waterHighlightColor = new Color(0, 193, 245);
 	private final Color artPackHighlightColor = Color.CYAN;
 	private final Color ownTextStyleHighlightColor = new Color(232, 85, 232);
@@ -69,11 +74,6 @@ public class MapEditingPanel extends UnscaledImagePanel
 	 */
 	private static final float dashLengthInDevicePixels = 10f;
 	private static final float dashGapLengthInDevicePixels = 4f;
-	/**
-	 * The color of every secondary highlight: what hovering, Alt+click, or Ctrl+Alt+click would select or remove, what is being processed,
-	 * and selected areas. Its hue is far enough from {@link #highlightEditColor} to tell the two apart on a map's warm colors.
-	 */
-	private final Color secondaryHighlightColor = new Color(255, 190, 0);
 	private Set<Center> highlightedCenters;
 	private Set<Center> selectedCenters;
 	private WorldGraph graph;
