@@ -162,6 +162,22 @@ public class Translation
 	}
 
 	/**
+	 * The keys that start with the given prefix, in this language's messages file or the English one.
+	 */
+	public static Set<String> getKeysStartingWith(String prefix)
+	{
+		Set<String> result = new TreeSet<>();
+		for (String key : bundle.keySet())
+		{
+			if (key.startsWith(prefix))
+			{
+				result.add(key);
+			}
+		}
+		return result;
+	}
+
+	/**
 	 * The English text for a key, whatever language the app is running in. For text whose value has to be the same everywhere Nortantis
 	 * runs, such as a name that is reserved on disk and so must stay reserved no matter who is looking at it.
 	 */

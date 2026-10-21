@@ -66,6 +66,7 @@ public class IconDrawer
 	// Implemented as a map instead of a set for concurrency.
 	private Map<IconType, Boolean> maximizeOpacityByType;
 	private Map<IconType, Boolean> fillWithColorByType;
+	private Map<IconType, Boolean> fillShowsTextureByType;
 	private boolean isLowMemoryMode;
 
 	public void setLowMemoryMode(boolean isLowMemoryMode)
@@ -84,7 +85,13 @@ public class IconDrawer
 		{
 			return override;
 		}
-		return new IconColors(fillColorsByType.get(type), iconFilterColorsByType.get(type), Boolean.TRUE.equals(maximizeOpacityByType.get(type)), Boolean.TRUE.equals(fillWithColorByType.get(type)));
+		return new IconColors(fillColorsByType.get(type), iconFilterColorsByType.get(type), Boolean.TRUE.equals(maximizeOpacityByType.get(type)), Boolean.TRUE.equals(fillWithColorByType.get(type)),
+				getFillShowsTextureForType(type));
+	}
+
+	private boolean getFillShowsTextureForType(IconType type)
+	{
+		return fillShowsTextureByType.getOrDefault(type, MapSettings.defaultFillShowsTexture);
 	}
 
 	public IconDrawer(WorldGraph graph, Random rand, MapSettings settings)
@@ -127,6 +134,7 @@ public class IconDrawer
 		iconFilterColorsByType = settings.copyIconFilterColorsByType();
 		maximizeOpacityByType = settings.copymaximizeOpacityByType();
 		fillWithColorByType = settings.copyFillWithColorByType();
+		fillShowsTextureByType = settings.copyFillShowsTextureByType();
 	}
 
 	public void markMountains()
@@ -268,7 +276,7 @@ public class IconDrawer
 						IconType type = centerIconTypeToIconType(cEdit.icon.iconType);
 						IconColors colors = resolveIconColors(cEdit.icon.colors, type);
 						FreeIcon icon = new FreeIcon(resolutionScale, center.loc, 1.0, type, artPack, groupId, name, cEdit.index, colors.fillColor, colors.filterColor, colors.maximizeOpacity,
-								colors.fillWithColor);
+								colors.fillWithColor, colors.fillShowsTexture);
 						IconDrawTask drawTask = toIconDrawTask(icon);
 
 						if (!isContentBottomTouchingWater(drawTask))
@@ -356,7 +364,7 @@ public class IconDrawer
 		double scale = getWidthScaleForNewShuffledIcon(center, type);
 		IconColors colors = resolveIconColors(cEdit.icon.colors, type);
 		FreeIcon icon = new FreeIcon(resolutionScale, loc, scale, type, cEdit.icon.artPack, groupId, cEdit.icon.iconIndex, cEdit.index, colors.fillColor, colors.filterColor, colors.maximizeOpacity,
-				colors.fillWithColor);
+				colors.fillWithColor, colors.fillShowsTexture);
 		Rectangle changeBounds = null;
 		IconDrawTask drawTask = toIconDrawTask(icon);
 		if (!isContentBottomTouchingWater(drawTask))
@@ -870,7 +878,7 @@ public class IconDrawer
 				}
 
 				FreeIcon updated = icon.copyWith(artPackAndGroupAndName.getFirst(), artPackAndGroupAndName.getSecond(), artPackAndGroupAndName.getThird(), icon.fillColor, icon.filterColor,
-						icon.maximizeOpacity, icon.fillWithColor);
+						icon.maximizeOpacity, icon.fillWithColor, icon.fillShowsTexture);
 				return updated;
 			}
 			else
@@ -1700,8 +1708,11 @@ public class IconDrawer
 	 * I draw all the icons at once this way so that I can draw them sorted by the y-coordinate of the base of each icon. This way icons
 	 * lower on the map are drawn in front of those that are higher.
 	 *
+	 * @param mapBackground
+	 *            Supplies the paper texture that icon fills can show.
 	 */
-	public void drawIcons(List<IconDrawTask> tasksToDrawSorted, Image mapOrSnippet, Image landBackground, Image landTexture, Image oceanWithWavesAndShading, Image landMask, Rectangle drawBounds)
+	public void drawIcons(List<IconDrawTask> tasksToDrawSorted, Image mapOrSnippet, Image landBackground, Image landTexture, Image oceanWithWavesAndShading, Image landMask, Rectangle drawBounds,
+			Background mapBackground)
 	{
 		if (tasksToDrawSorted.isEmpty())
 		{
@@ -1712,11 +1723,20 @@ public class IconDrawer
 		int yToSubtract = drawBounds == null ? 0 : (int) drawBounds.y;
 
 		// GPU fast path: handle non-decoration icons via shader (no CPU pixel loops, no GPU readbacks).
-		// Returns the remaining icons (decorations) that still need the CPU path, or null if unsupported.
-		List<IconDrawTask> tasksForCpu = PlatformFactory.getInstance().drawNonDecorationIconsGpu(tasksToDrawSorted, mapOrSnippet, landBackground, landTexture, drawBounds);
-		if (tasksForCpu == null)
+		// Returns the remaining icons (decorations) that still need the CPU path, or null if unsupported. Icons whose fill comes from the
+		// texture always take the CPU path, which draws that fill.
+		List<IconDrawTask> tasksWithoutTextureFills = tasksToDrawSorted.stream().filter(task -> !drawsFillFromTexture(task)).collect(Collectors.toList());
+		List<IconDrawTask> tasksNotDrawnByGpu = PlatformFactory.getInstance().drawNonDecorationIconsGpu(tasksWithoutTextureFills, mapOrSnippet, landBackground, landTexture, drawBounds);
+		List<IconDrawTask> tasksForCpu;
+		if (tasksNotDrawnByGpu == null)
 		{
 			tasksForCpu = tasksToDrawSorted;
+		}
+		else
+		{
+			Set<IconDrawTask> notDrawnByGpu = Collections.newSetFromMap(new IdentityHashMap<>());
+			notDrawnByGpu.addAll(tasksNotDrawnByGpu);
+			tasksForCpu = tasksToDrawSorted.stream().filter(task -> drawsFillFromTexture(task) || notDrawnByGpu.contains(task)).collect(Collectors.toList());
 		}
 
 		if (tasksForCpu.isEmpty())
@@ -1724,13 +1744,15 @@ public class IconDrawer
 			return;
 		}
 
+		Image paperTexture = mapBackground == null ? null : mapBackground.getPaperTexture();
+		ImageHelper.ColorizeAlgorithm paperTextureColorizeAlgorithm = mapBackground == null ? null : mapBackground.getPaperTextureColorizeAlgorithm();
+
 		// CPU path: hoist background-texture readers once across all icons to avoid repeated GPU readbacks.
 		// For non-AWT backends use the snippet path (mapPixels=null): each icon reads a small map snippet and
 		// composites the icon via GPU Painter, which is faster than the full-map readback+CPU-compositing the
 		// hoisted writer would force.
 		if (!isLowMemoryMode)
 		{
-			boolean useAwtDirect = PlatformFactory.getInstance() instanceof AwtFactory;
 			try (PixelReader landTexturePixels = landTexture.createPixelReader();
 					PixelReader oceanTexturePixels = oceanWithWavesAndShading.createPixelReader();
 					PixelReader landBackgroundPixels = landBackground.createPixelReader();
@@ -1738,9 +1760,13 @@ public class IconDrawer
 			{
 				for (final IconDrawTask task : tasksForCpu)
 				{
-					drawIconWithBackgroundAndMasks(mapOrSnippet, task.scaledImageAndMasks, landBackground, landTexture, oceanWithWavesAndShading, landMask, task.type,
-							((int) task.centerLoc.x) - xToSubtract, ((int) task.centerLoc.y) - yToSubtract, (int) task.centerLoc.x, (int) task.centerLoc.y, landTexturePixels, oceanTexturePixels,
-							landBackgroundPixels, landMaskPixels, useAwtDirect ? null : null);
+					try (Image iconWithTextureFill = drawsFillFromTexture(task) ? createIconWithTextureFill(task, paperTexture, paperTextureColorizeAlgorithm) : null)
+					{
+						ImageAndMasks imageAndMasks = iconWithTextureFill == null ? task.scaledImageAndMasks : task.scaledImageAndMasks.copyWithImageSharingMasks(iconWithTextureFill);
+						drawIconWithBackgroundAndMasks(mapOrSnippet, imageAndMasks, landBackground, landTexture, oceanWithWavesAndShading, landMask, task.type,
+								((int) task.centerLoc.x) - xToSubtract, ((int) task.centerLoc.y) - yToSubtract, (int) task.centerLoc.x, (int) task.centerLoc.y, landTexturePixels,
+								oceanTexturePixels, landBackgroundPixels, landMaskPixels, null);
+					}
 				}
 			}
 		}
@@ -1748,10 +1774,37 @@ public class IconDrawer
 		{
 			for (final IconDrawTask task : tasksForCpu)
 			{
-				drawIconWithBackgroundAndMasks(mapOrSnippet, task.scaledImageAndMasks, landBackground, landTexture, oceanWithWavesAndShading, landMask, task.type,
-						((int) task.centerLoc.x) - xToSubtract, ((int) task.centerLoc.y) - yToSubtract, (int) task.centerLoc.x, (int) task.centerLoc.y, null, null, null, null, null);
+				try (Image iconWithTextureFill = drawsFillFromTexture(task) ? createIconWithTextureFill(task, paperTexture, paperTextureColorizeAlgorithm) : null)
+				{
+					ImageAndMasks imageAndMasks = iconWithTextureFill == null ? task.scaledImageAndMasks : task.scaledImageAndMasks.copyWithImageSharingMasks(iconWithTextureFill);
+					drawIconWithBackgroundAndMasks(mapOrSnippet, imageAndMasks, landBackground, landTexture, oceanWithWavesAndShading, landMask, task.type,
+							((int) task.centerLoc.x) - xToSubtract, ((int) task.centerLoc.y) - yToSubtract, (int) task.centerLoc.x, (int) task.centerLoc.y, null, null, null, null, null);
+				}
 			}
 		}
+	}
+
+	private static boolean drawsFillFromTexture(IconDrawTask task)
+	{
+		return task.drawsFillFromTexture() && task.scaledFillMask != null;
+	}
+
+	/**
+	 * The task's scaled icon drawn over its fill, which is the paper texture under the icon colored with the fill color. Without a paper
+	 * texture, the fill is the fill color alone.
+	 */
+	private static Image createIconWithTextureFill(IconDrawTask task, Image paperTexture, ImageHelper.ColorizeAlgorithm colorizeAlgorithm)
+	{
+		Image icon = task.scaledImageAndMasks.image;
+		// The paper texture covers the same area as the graph, so this is also where the icon's top left corner falls on it.
+		int xLeft = (int) task.centerLoc.x - icon.getWidth() / 2;
+		int yTop = (int) task.centerLoc.y - icon.getHeight() / 2;
+		Image result = ImageHelper.getInstance().createTextureFill(task.scaledFillMask, paperTexture, xLeft, yTop, task.fillColor, colorizeAlgorithm);
+		try (Painter p = result.createPainter())
+		{
+			p.drawImage(icon, 0, 0);
+		}
+		return result;
 	}
 
 	/**
@@ -1865,7 +1918,8 @@ public class IconDrawer
 			{
 				String cityName = cityNames.get(rand.nextInt(cityNames.size()));
 				FreeIcon icon = new FreeIcon(resolutionScale, c.loc, 1.0, IconType.cities, artPackForCities, cityTypeToUse, cityName, c.index, fillColorsByType.get(IconType.cities),
-						iconFilterColorsByType.get(IconType.cities), maximizeOpacityByType.get(IconType.cities), fillWithColorByType.get(IconType.cities));
+						iconFilterColorsByType.get(IconType.cities), maximizeOpacityByType.get(IconType.cities), fillWithColorByType.get(IconType.cities),
+						getFillShowsTextureForType(IconType.cities));
 				IconDrawTask task = toIconDrawTask(icon);
 				if (!isContentBottomTouchingWater(icon) && !isNeighborACity(c))
 				{
@@ -1981,7 +2035,8 @@ public class IconDrawer
 						Point loc = getAnchoredMountainDrawPoint(c, fileNameRangeId, i, mountainScale, mountainImagesById);
 
 						FreeIcon icon = new FreeIcon(resolutionScale, loc, scale, IconType.mountains, artPackForMountains, fileNameRangeId, i, c.index, fillColorsByType.get(IconType.mountains),
-								iconFilterColorsByType.get(IconType.mountains), maximizeOpacityByType.get(IconType.mountains), fillWithColorByType.get(IconType.mountains));
+								iconFilterColorsByType.get(IconType.mountains), maximizeOpacityByType.get(IconType.mountains), fillWithColorByType.get(IconType.mountains),
+								getFillShowsTextureForType(IconType.mountains));
 
 						IconDrawTask task = toIconDrawTask(icon);
 
@@ -2016,7 +2071,8 @@ public class IconDrawer
 
 							double scale = getWidthScaleForNewShuffledIcon(c, IconType.hills);
 							FreeIcon icon = new FreeIcon(resolutionScale, c.loc, scale, IconType.hills, artPackForHills, fileNameRangeId, i, c.index, fillColorsByType.get(IconType.hills),
-									iconFilterColorsByType.get(IconType.hills), maximizeOpacityByType.get(IconType.hills), fillWithColorByType.get(IconType.hills));
+									iconFilterColorsByType.get(IconType.hills), maximizeOpacityByType.get(IconType.hills), fillWithColorByType.get(IconType.hills),
+									getFillShowsTextureForType(IconType.hills));
 
 							IconDrawTask task = toIconDrawTask(icon);
 
@@ -2082,7 +2138,8 @@ public class IconDrawer
 					{
 						int i = Helper.safeAbs(rand.nextInt());
 						FreeIcon icon = new FreeIcon(resolutionScale, c.loc, 1.0, IconType.sand, artPackForDunes, groupId, i, c.index, fillColorsByType.get(IconType.sand),
-								iconFilterColorsByType.get(IconType.sand), maximizeOpacityByType.get(IconType.sand), fillWithColorByType.get(IconType.sand));
+								iconFilterColorsByType.get(IconType.sand), maximizeOpacityByType.get(IconType.sand), fillWithColorByType.get(IconType.sand),
+								getFillShowsTextureForType(IconType.sand));
 						if (!isContentBottomTouchingWater(icon))
 						{
 							freeIcons.addOrReplace(icon);
@@ -2362,7 +2419,7 @@ public class IconDrawer
 				{
 					int index = Helper.safeAbs(rand.nextInt());
 					FreeIcon icon = new FreeIcon(resolutionScale, loc, 1.0, IconType.trees, cTrees.artPack, cTrees.treeType, index, center.index, cTrees.density, colors.fillColor, colors.filterColor,
-							colors.maximizeOpacity, colors.fillWithColor);
+							colors.maximizeOpacity, colors.fillWithColor, colors.fillShowsTexture);
 
 					// TODO - decide what to do about trees that go into the ocean. They should count as added for the sake of the density, but nothing stores that they were attempted to be added, so the center will look like it isn't full, so another brush stroke later might add more trees. This goes against idempotence of the Draw brush.
 
@@ -2502,7 +2559,7 @@ public class IconDrawer
 			y += rand.nextGaussian() * scale;
 
 			FreeIcon icon = new FreeIcon(resolutionScale, new Point(x, y), 1.0, IconType.trees, artPack, groupId, index, center.index, forestDensity, colors.fillColor, colors.filterColor,
-					colors.maximizeOpacity, colors.fillWithColor);
+					colors.maximizeOpacity, colors.fillWithColor, colors.fillShowsTexture);
 
 			if (!isContentBottomTouchingWater(icon))
 			{

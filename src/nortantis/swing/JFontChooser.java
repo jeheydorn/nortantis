@@ -90,6 +90,8 @@ public class JFontChooser extends JComponent
 	private static final int minimumFamilyRowWidth = 120;
 	/** The height of the panels holding the family and style lists. */
 	private static final int listPanelHeight = 180;
+	/** How many rows the font lists scroll for each notch of the mouse wheel. */
+	private static final int rowsPerWheelNotch = 2;
 	/** Space between the name of the chosen family and the sample drawn in it. */
 	private static final int spaceUnderSelectedFamilyName = 5;
 
@@ -761,6 +763,7 @@ public class JFontChooser extends JComponent
 
 			JScrollPane scrollPane = new JScrollPane(getFontFamilyList());
 			scrollPane.getVerticalScrollBar().setFocusable(false);
+			scrollByRowsPerWheelNotch(scrollPane, getFontFamilyList());
 			scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 
 			JPanel p = new JPanel();
@@ -791,6 +794,7 @@ public class JFontChooser extends JComponent
 
 			JScrollPane scrollPane = new JScrollPane(getFontStyleList());
 			scrollPane.getVerticalScrollBar().setFocusable(false);
+			scrollByRowsPerWheelNotch(scrollPane, getFontStyleList());
 			scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 
 			JPanel p = new JPanel();
@@ -950,6 +954,31 @@ public class JFontChooser extends JComponent
 		{
 			getFontFamilyList().setSelectedIndex(index);
 		}
+	}
+
+	/**
+	 * Makes the mouse wheel scroll a list by {@link #rowsPerWheelNotch} rows per notch, rather than by the system's lines per notch, which
+	 * moves too far through rows as tall as the lists'.
+	 */
+	private static void scrollByRowsPerWheelNotch(JScrollPane scrollPane, JList<?> list)
+	{
+		scrollPane.setWheelScrollingEnabled(false);
+		// Touchpads send fractions of a notch, so the fraction of a pixel left over from each event carries into the next.
+		double[] leftoverPixels = { 0.0 };
+		scrollPane.addMouseWheelListener(e ->
+		{
+			Rectangle firstRowBounds = list.getModel().getSize() > 0 ? list.getCellBounds(0, 0) : null;
+			if (firstRowBounds == null)
+			{
+				return;
+			}
+			double pixels = e.getPreciseWheelRotation() * rowsPerWheelNotch * firstRowBounds.height + leftoverPixels[0];
+			int wholePixels = (int) pixels;
+			leftoverPixels[0] = pixels - wholePixels;
+			JScrollBar scrollBar = scrollPane.getVerticalScrollBar();
+			scrollBar.setValue(scrollBar.getValue() + wholePixels);
+			e.consume();
+		});
 	}
 
 	private void scrollSelectedFamilyIntoView()

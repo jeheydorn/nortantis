@@ -31,22 +31,30 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 	final HSBColor filterColor;
 	boolean maximizeOpacity;
 	final boolean fillWithColor;
+	final boolean fillShowsTexture;
 	final double resolutionScale;
+	/**
+	 * Where the scaled icon is filled, from 0 to 255, when {@link #drawsFillFromTexture()}. The fill is then left out of the scaled image
+	 * and drawn from the background texture under the icon instead.
+	 */
+	Image scaledFillMask;
 
 	public IconDrawTask(ImageAndMasks unScaledImageAndMasks, IconType type, Point centerLoc, IntDimension scaledSize, Dimension unroundedScaledSize, Color fillColor, HSBColor filterColor,
-			boolean maximizeOpacity, boolean fillWithColor, double resolutionScale)
+			boolean maximizeOpacity, boolean fillWithColor, boolean fillShowsTexture, double resolutionScale)
 	{
-		this(unScaledImageAndMasks, null, type, centerLoc, scaledSize, unroundedScaledSize, null, fillColor, filterColor, maximizeOpacity, fillWithColor, resolutionScale);
+		this(unScaledImageAndMasks, null, type, centerLoc, scaledSize, unroundedScaledSize, null, fillColor, filterColor, maximizeOpacity, fillWithColor, fillShowsTexture,
+				resolutionScale);
 	}
 
 	public IconDrawTask(ImageAndMasks unScaledImageAndMasks, IconType type, Point centerLoc, IntDimension scaledSize, Dimension unroundedScaledSize, String fileName, Color fillColor,
-			HSBColor filterColor, boolean maximizeOpacity, boolean fillWithColor, double resolutionScale)
+			HSBColor filterColor, boolean maximizeOpacity, boolean fillWithColor, boolean fillShowsTexture, double resolutionScale)
 	{
-		this(unScaledImageAndMasks, null, type, centerLoc, scaledSize, unroundedScaledSize, fileName, fillColor, filterColor, maximizeOpacity, fillWithColor, resolutionScale);
+		this(unScaledImageAndMasks, null, type, centerLoc, scaledSize, unroundedScaledSize, fileName, fillColor, filterColor, maximizeOpacity, fillWithColor, fillShowsTexture,
+				resolutionScale);
 	}
 
 	private IconDrawTask(ImageAndMasks unScaledImageAndMasks, ImageAndMasks scaledImageAndMasks, IconType type, Point centerLoc, IntDimension scaledSize, Dimension unroundedScaledSize, String fileName,
-			Color fillColor, HSBColor filterColor, boolean maximizeOpacity, boolean fillWithColor, double resolutionScale)
+			Color fillColor, HSBColor filterColor, boolean maximizeOpacity, boolean fillWithColor, boolean fillShowsTexture, double resolutionScale)
 	{
 		this.unScaledImageAndMasks = unScaledImageAndMasks;
 		this.scaledImageAndMasks = scaledImageAndMasks;
@@ -60,7 +68,16 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 		this.filterColor = filterColor;
 		this.maximizeOpacity = maximizeOpacity;
 		this.fillWithColor = fillWithColor;
+		this.fillShowsTexture = fillShowsTexture;
 		this.resolutionScale = resolutionScale;
+	}
+
+	/**
+	 * Whether the icon's fill is drawn from the background texture under it, rather than being part of its colored image.
+	 */
+	boolean drawsFillFromTexture()
+	{
+		return fillWithColor && fillShowsTexture && fillColor.getAlpha() > 0;
 	}
 
 	public void colorAndScaleIcon()
@@ -68,14 +85,15 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 		if (scaledImageAndMasks == null)
 		{
 			Image coloredIcon;
-			if ((!fillWithColor || Color.transparentBlack.equals(fillColor)) && filterColor.equals(MapSettings.defaultIconFilterColor) && !maximizeOpacity)
+			boolean isFillInImage = fillWithColor && !fillShowsTexture;
+			if ((!isFillInImage || Color.transparentBlack.equals(fillColor)) && filterColor.equals(MapSettings.defaultIconFilterColor) && !maximizeOpacity)
 			{
 				// Do nothing since the color is transparent.
 				coloredIcon = unScaledImageAndMasks.image;
 			}
 			else
 			{
-				coloredIcon = ImageCache.getInstance(Assets.installedArtPack, null).getColoredIcon(unScaledImageAndMasks, fillColor, filterColor, maximizeOpacity, fillWithColor);
+				coloredIcon = ImageCache.getInstance(Assets.installedArtPack, null).getColoredIcon(unScaledImageAndMasks, fillColor, filterColor, maximizeOpacity, isFillInImage);
 			}
 
 			// The path passed to ImageCache.getInstance isn't important so long as other calls to getScaledImageByWidth
@@ -86,6 +104,11 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 
 			Image scaledShadingMask = null;
 			scaledShadingMask = ImageCache.getInstance(Assets.installedArtPack, null).getScaledImage(unScaledImageAndMasks.getOrCreateShadingMask(), scaledSize);
+
+			if (drawsFillFromTexture())
+			{
+				scaledFillMask = ImageCache.getInstance(Assets.installedArtPack, null).getScaledImage(unScaledImageAndMasks.getOrCreateColorMask(), scaledSize);
+			}
 
 			IntRectangle scaledContentBounds = ImageAndMasks.calcScaledContentBounds(unScaledImageAndMasks.getOrCreateContentMask(), unScaledImageAndMasks.getOrCreateContentBounds(), scaledSize.width,
 					scaledSize.height);

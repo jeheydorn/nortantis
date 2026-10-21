@@ -128,6 +128,11 @@ public class MapSettings implements Serializable, Cloneable
 	public static final Color defaultIconFillColorBeforeV3_20 = Color.create(155, 105, 49, (int) (255 * 0.7));
 	public static final HSBColor defaultIconFilterColor = new HSBColor(0, 0, 0, 0);
 	/**
+	 * Whether an icon type's fill shows the background texture when nothing says otherwise. Maps saved before the option existed load with
+	 * it off for every type, so they keep their look.
+	 */
+	public static final boolean defaultFillShowsTexture = true;
+	/**
 	 * The alpha of the black coast shading new maps without a theme get.
 	 */
 	public static final int defaultCoastShadingAlpha = 44;
@@ -398,6 +403,7 @@ public class MapSettings implements Serializable, Cloneable
 	// Implemented as a map instead of a set for concurrency.
 	private ConcurrentHashMap<IconType, Boolean> maximizeOpacityByType;
 	private ConcurrentHashMap<IconType, Boolean> fillWithColorByType;
+	private ConcurrentHashMap<IconType, Boolean> fillShowsTextureByType;
 
 	public boolean drawGridOverlay;
 	public GridOverlayShape gridOverlayShape = GridOverlayShape.Horizontal_hexes;
@@ -428,6 +434,7 @@ public class MapSettings implements Serializable, Cloneable
 		iconFilterColorsByType = new ConcurrentHashMap<>();
 		maximizeOpacityByType = new ConcurrentHashMap<>();
 		fillWithColorByType = new ConcurrentHashMap<>();
+		fillShowsTextureByType = new ConcurrentHashMap<>();
 		textStyleDefaults = new EnumMap<>(TextType.class);
 		edits = new MapEdits();
 	}
@@ -677,6 +684,7 @@ public class MapSettings implements Serializable, Cloneable
 		iconFilterColorsByType = new ConcurrentHashMap<>(source.iconFilterColorsByType);
 		maximizeOpacityByType = new ConcurrentHashMap<>(source.maximizeOpacityByType);
 		fillWithColorByType = new ConcurrentHashMap<>(source.fillWithColorByType);
+		fillShowsTextureByType = new ConcurrentHashMap<>(source.fillShowsTextureByType);
 
 		gridOverlayShape = source.gridOverlayShape;
 		gridOverlayColor = source.gridOverlayColor;
@@ -928,6 +936,15 @@ public class MapSettings implements Serializable, Cloneable
 			root.put("fillWithColorByType", fillWithColorByTypeObj);
 		}
 
+		{
+			JSONObject fillShowsTextureByTypeObj = new JSONObject();
+			for (Map.Entry<IconType, Boolean> entry : fillShowsTextureByType.entrySet())
+			{
+				fillShowsTextureByTypeObj.put(entry.getKey(), entry.getValue());
+			}
+			root.put("fillShowsTextureByType", fillShowsTextureByTypeObj);
+		}
+
 
 		root.put("drawGridOverlay", drawGridOverlay);
 		root.put("gridOverlayShape", enumToJson(gridOverlayShape));
@@ -1054,7 +1071,7 @@ public class MapSettings implements Serializable, Cloneable
 	}
 
 	/**
-	 * Writes the four icon color properties of {@code colors} into {@code obj}, leaving out the ones that equal their default so that files
+	 * Writes the icon color properties of {@code colors} into {@code obj}, leaving out the ones that equal their default so that files
 	 * stay small. Mirrors {@link #parseIconColors}.
 	 *
 	 * @param fillColorKey The key to store the fill color under, since icons and trees use different names for it.
@@ -1081,6 +1098,11 @@ public class MapSettings implements Serializable, Cloneable
 		{
 			obj.put("fillWithColor", colors.fillWithColor);
 		}
+		// Left out when the icon isn't filled, since then it changes nothing, and most icons aren't filled.
+		if (colors.fillWithColor && colors.fillShowsTexture)
+		{
+			obj.put("fillShowsTexture", colors.fillShowsTexture);
+		}
 	}
 
 	/**
@@ -1097,7 +1119,8 @@ public class MapSettings implements Serializable, Cloneable
 		HSBColor filterColor = obj.containsKey("filterColor") ? HSBColor.fromJson((JSONObject) obj.get("filterColor")) : defaultIconFilterColor;
 		boolean maximizeOpacity = obj.containsKey("maximizeOpacity") ? (Boolean) obj.get("maximizeOpacity") : false;
 		boolean fillWithColor = obj.containsKey("fillWithColor") ? (Boolean) obj.get("fillWithColor") : false;
-		return new IconColors(fillColor, filterColor, maximizeOpacity, fillWithColor);
+		boolean fillShowsTexture = obj.containsKey("fillShowsTexture") ? (Boolean) obj.get("fillShowsTexture") : false;
+		return new IconColors(fillColor, filterColor, maximizeOpacity, fillWithColor, fillShowsTexture);
 	}
 
 	/**
@@ -1115,7 +1138,7 @@ public class MapSettings implements Serializable, Cloneable
 		HSBColor filterColor = treesObj.containsKey("filterColor") ? HSBColor.fromJson((JSONObject) treesObj.get("filterColor")) : null;
 		boolean maximizeOpacity = treesObj.containsKey("maximizeOpacity") ? (Boolean) treesObj.get("maximizeOpacity") : false;
 		boolean fillWithColor = treesObj.containsKey("fillWithColor") ? (Boolean) treesObj.get("fillWithColor") : false;
-		return new IconColors(fillColor, filterColor, maximizeOpacity, fillWithColor);
+		return new IconColors(fillColor, filterColor, maximizeOpacity, fillWithColor, false);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -1143,7 +1166,7 @@ public class MapSettings implements Serializable, Cloneable
 			{
 				iconObj.put("density", icon.density);
 			}
-			putIconColors(iconObj, "color", new IconColors(icon.fillColor, icon.filterColor, icon.maximizeOpacity, icon.fillWithColor));
+			putIconColors(iconObj, "color", IconColors.fromIcon(icon));
 			if (icon.originalScale != 1.0)
 			{
 				iconObj.put("originalScale", icon.originalScale);
@@ -2063,6 +2086,24 @@ public class MapSettings implements Serializable, Cloneable
 			}
 		}
 
+		fillShowsTextureByType.clear();
+		if (root.containsKey("fillShowsTextureByType"))
+		{
+			JSONObject mapObj = (JSONObject) root.get("fillShowsTextureByType");
+			for (Object key : mapObj.keySet())
+			{
+				fillShowsTextureByType.put(IconType.valueOf((String) key), (Boolean) mapObj.get(key));
+			}
+		}
+		else
+		{
+			// Maps from before this option filled icons with their fill color alone.
+			for (IconType iconType : IconType.values())
+			{
+				fillShowsTextureByType.put(iconType, false);
+			}
+		}
+
 
 		if (root.containsKey("drawGridOverlay"))
 		{
@@ -2881,6 +2922,7 @@ public class MapSettings implements Serializable, Cloneable
 
 			HSBColor filterColor = iconObj.containsKey("filterColor") ? HSBColor.fromJson((JSONObject) iconObj.get("filterColor")) : defaultIconFilterColor;
 			boolean maximizeOpacity = iconObj.containsKey("maximizeOpacity") ? (Boolean) iconObj.get("maximizeOpacity") : false;
+			boolean fillShowsTexture = iconObj.containsKey("fillShowsTexture") ? (Boolean) iconObj.get("fillShowsTexture") : false;
 
 			double originalScale;
 			if (iconObj.containsKey("originalScale") && iconObj.get("originalScale") != null)
@@ -2908,7 +2950,7 @@ public class MapSettings implements Serializable, Cloneable
 			}
 
 			result.addOrReplace(new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, fillColor, filterColor, maximizeOpacity,
-					fillWithColor, originalScale));
+					fillWithColor, fillShowsTexture, originalScale));
 		}
 
 		return result;
@@ -3831,6 +3873,49 @@ public class MapSettings implements Serializable, Cloneable
 		fillWithColorByType.put(iconType, value);
 	}
 
+	/**
+	 * Whether the fill of the given type's icons is the background texture colored with the fill color, rather than the fill color alone.
+	 */
+	public boolean getFillShowsTextureForType(IconType iconType)
+	{
+		return fillShowsTextureByType.getOrDefault(iconType, defaultFillShowsTexture);
+	}
+
+	public Map<IconType, Boolean> copyFillShowsTextureByType()
+	{
+		return Collections.unmodifiableMap(fillShowsTextureByType);
+	}
+
+	public void setFillShowsTextureForType(IconType iconType, boolean value)
+	{
+		fillShowsTextureByType.put(iconType, value);
+	}
+
+	/**
+	 * Whether any icon the map draws, or would generate, fills with the background texture.
+	 */
+	public boolean drawsIconFillsWithTexture()
+	{
+		for (IconType iconType : IconType.values())
+		{
+			if (getFillWithColorForType(iconType) && getFillShowsTextureForType(iconType))
+			{
+				return true;
+			}
+		}
+		if (edits != null && edits.freeIcons != null)
+		{
+			for (FreeIcon icon : edits.freeIcons)
+			{
+				if (icon.fillWithColor && icon.fillShowsTexture)
+				{
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
 
 	/**
 	 * Creates a deep copy of this.
@@ -3873,6 +3958,7 @@ public class MapSettings implements Serializable, Cloneable
 		copy.iconFilterColorsByType = new ConcurrentHashMap<>(iconFilterColorsByType);
 		copy.maximizeOpacityByType = new ConcurrentHashMap<>(maximizeOpacityByType);
 		copy.fillWithColorByType = new ConcurrentHashMap<>(fillWithColorByType);
+		copy.fillShowsTextureByType = new ConcurrentHashMap<>(fillShowsTextureByType);
 		copy.subMapInfo = subMapInfo == null ? null : subMapInfo.copy();
 		copy.themeGeneration = themeGeneration == null ? null : themeGeneration.copy();
 		return copy;
@@ -4149,6 +4235,8 @@ public class MapSettings implements Serializable, Cloneable
 			differences.add("fadeConcentricWaves: " + fadeConcentricWaves + " vs " + other.fadeConcentricWaves);
 		if (!Objects.equals(fillWithColorByType, other.fillWithColorByType))
 			differences.add("fillWithColorByType: " + fillWithColorByType + " vs " + other.fillWithColorByType);
+		if (!Objects.equals(fillShowsTextureByType, other.fillShowsTextureByType))
+			differences.add("fillShowsTextureByType: " + fillShowsTextureByType + " vs " + other.fillShowsTextureByType);
 		if (flipHorizontally != other.flipHorizontally)
 			differences.add("flipHorizontally: " + flipHorizontally + " vs " + other.flipHorizontally);
 		if (flipVertically != other.flipVertically)
@@ -4383,7 +4471,7 @@ public class MapSettings implements Serializable, Cloneable
 				cityScale, coastShadingAlpha, coastShadingLevel, drawCoastShading, drawOceanShading, drawOceanWaves, grungeColor, coastlineColor, coastlineWidth, colorizeLand, colorizeOcean, concentricWaveCount, customArtPackPath, defaultDefaultExportAction,
 				defaultHeightmapExportAction, defaultMapExportAction, defaultRoadColor, defaultRoadStyle, defaultRoadWidth, defaultTreeHeightScaleForOldMaps, drawBorder,
 				drawGridOverlay, drawGrunge, drawOceanEffectsInLakes, drawOverlayImage, drawRegionBoundaries, drawRegionColors, drawRoads, drawText, drawVoronoiGridOverlayOnlyOnLand, duneScale,
-				edits, fadeConcentricWaves, fillWithColorByType, flipHorizontally, flipVertically, frayedBorder, frayedBorderBlurLevel, frayedBorderColor, frayedBorderSeed,
+				edits, fadeConcentricWaves, fillWithColorByType, fillShowsTextureByType, flipHorizontally, flipVertically, frayedBorder, frayedBorderBlurLevel, frayedBorderColor, frayedBorderSeed,
 				frayedBorderSize, generateBackground, generateBackgroundFromTexture, generatedHeight, generatedWidth, gridOverlayColor, gridOverlayLayer, gridOverlayLineWidth,
 				gridOverlayRowOrColCount, gridOverlayShape, gridOverlayXOffset, gridOverlayYOffset, grungeWidth, heightmapExportPath, heightmapResolution, hillScale, hueRange, iconFillColorsByType,
 				iconFilterColorsByType, imageExportPath, jitterLevel, jitterToConcentricWaves, jitterToWavyLines, wavyLineJitterLevel, wavyLineBreakLevel,
@@ -4436,7 +4524,8 @@ public class MapSettings implements Serializable, Cloneable
 				&& drawText == other.drawText && drawVoronoiGridOverlayOnlyOnLand == other.drawVoronoiGridOverlayOnlyOnLand
 				&& Double.doubleToLongBits(duneScale) == Double.doubleToLongBits(other.duneScale)
 				&& Objects.equals(edits, other.edits)
-				&& fadeConcentricWaves == other.fadeConcentricWaves && Objects.equals(fillWithColorByType, other.fillWithColorByType) && flipHorizontally == other.flipHorizontally
+				&& fadeConcentricWaves == other.fadeConcentricWaves && Objects.equals(fillWithColorByType, other.fillWithColorByType)
+				&& Objects.equals(fillShowsTextureByType, other.fillShowsTextureByType) && flipHorizontally == other.flipHorizontally
 				&& flipVertically == other.flipVertically && frayedBorder == other.frayedBorder && frayedBorderBlurLevel == other.frayedBorderBlurLevel
 				&& Objects.equals(frayedBorderColor, other.frayedBorderColor) && frayedBorderSeed == other.frayedBorderSeed && frayedBorderSize == other.frayedBorderSize
 				&& generateBackground == other.generateBackground && generateBackgroundFromTexture == other.generateBackgroundFromTexture && generatedHeight == other.generatedHeight

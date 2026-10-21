@@ -6,8 +6,8 @@ import nortantis.HSBColor;
 import nortantis.platform.Color;
 
 /**
- * An immutable bundle of the four color-related properties that determine how an icon is tinted when it is drawn: the fill color, the
- * filter color, and the maximize-opacity / fill-with-color flags. These mirror the same four values stored on {@link FreeIcon}.
+ * An immutable bundle of the color-related properties that determine how an icon is tinted when it is drawn: the fill color, the filter
+ * color, and the maximize-opacity / fill-with-color / fill-shows-texture flags. These mirror the same values stored on {@link FreeIcon}.
  * <p>
  * It is attached (optionally) to {@link CenterIcon} and {@link CenterTrees} so that an icon can remember the specific colors it should be
  * drawn with, instead of falling back to the map's per-type icon colors. This is used by sub-map redistribution (so redistributed icons
@@ -22,13 +22,15 @@ public class IconColors
 	public final HSBColor filterColor;
 	public final boolean maximizeOpacity;
 	public final boolean fillWithColor;
+	public final boolean fillShowsTexture;
 
-	public IconColors(Color fillColor, HSBColor filterColor, boolean maximizeOpacity, boolean fillWithColor)
+	public IconColors(Color fillColor, HSBColor filterColor, boolean maximizeOpacity, boolean fillWithColor, boolean fillShowsTexture)
 	{
 		this.fillColor = fillColor;
 		this.filterColor = filterColor;
 		this.maximizeOpacity = maximizeOpacity;
 		this.fillWithColor = fillWithColor;
+		this.fillShowsTexture = fillShowsTexture;
 	}
 
 	/**
@@ -37,13 +39,13 @@ public class IconColors
 	 */
 	public static IconColors fromIcon(FreeIcon icon)
 	{
-		return new IconColors(icon.fillColor, icon.filterColor, icon.maximizeOpacity, icon.fillWithColor);
+		return new IconColors(icon.fillColor, icon.filterColor, icon.maximizeOpacity, icon.fillWithColor, icon.fillShowsTexture);
 	}
 
 	@Override
 	public int hashCode()
 	{
-		return Objects.hash(fillColor, filterColor, maximizeOpacity, fillWithColor);
+		return Objects.hash(fillColor, filterColor, maximizeOpacity, fillWithColor, fillShowsTexture);
 	}
 
 	@Override
@@ -58,6 +60,7 @@ public class IconColors
 			return false;
 		}
 		IconColors other = (IconColors) obj;
-		return Objects.equals(fillColor, other.fillColor) && Objects.equals(filterColor, other.filterColor) && maximizeOpacity == other.maximizeOpacity && fillWithColor == other.fillWithColor;
+		return Objects.equals(fillColor, other.fillColor) && Objects.equals(filterColor, other.filterColor) && maximizeOpacity == other.maximizeOpacity && fillWithColor == other.fillWithColor
+				&& fillShowsTexture == other.fillShowsTexture;
 	}
 }

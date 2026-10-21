@@ -6,8 +6,10 @@ import nortantis.swing.translation.Translation;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -64,15 +66,14 @@ class CopyTextStyleDialog extends JDialog
 		content.add(Box.createVerticalStrut(10));
 
 		content.add(createLeftAlignedLabel(Translation.get("copyTextStyle.copyTo")));
-		JPanel typesPanel = new JPanel(new GridLayout(0, 2));
-		typesPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 		for (TextType type : TextType.values())
 		{
 			JCheckBox checkbox = new JCheckBox(type.toString());
 			checkbox.setSelected(type == initialType);
 			typeCheckboxes.put(type, checkbox);
-			typesPanel.add(checkbox);
 		}
+		JPanel typesPanel = createColumnMajorGrid(new ArrayList<>(typeCheckboxes.values()), 2);
+		typesPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 		content.add(typesPanel);
 
 		content.add(Box.createVerticalStrut(10));
@@ -120,6 +121,27 @@ class CopyTextStyleDialog extends JDialog
 		getRootPane().registerKeyboardAction(e -> dispose(), KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
 		pack();
 		setLocationRelativeTo(owner);
+	}
+
+	/**
+	 * Lays out components in columns of equal width, filling each column from top to bottom before starting the next, so that they read
+	 * and tab down each column in order.
+	 */
+	static JPanel createColumnMajorGrid(List<? extends Component> components, int columnCount)
+	{
+		int rowCount = (components.size() + columnCount - 1) / columnCount;
+		JPanel grid = new JPanel(new GridLayout(1, columnCount));
+		for (int col = 0; col < columnCount; col++)
+		{
+			// A fixed row count keeps a shorter last column's rows the same height as the others'.
+			JPanel column = new JPanel(new GridLayout(rowCount, 1));
+			for (int row = 0; row < rowCount && col * rowCount + row < components.size(); row++)
+			{
+				column.add(components.get(col * rowCount + row));
+			}
+			grid.add(column);
+		}
+		return grid;
 	}
 
 	static JLabel createLeftAlignedLabel(String text)

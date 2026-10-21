@@ -400,6 +400,72 @@ public abstract class ImageHelper
 		}
 	}
 
+	/**
+	 * Creates the fill of an icon whose fill shows the background texture: the texture under the icon colored with the fill color, wherever
+	 * the fill mask isn't black. Where the texture doesn't reach, or when there is no texture, the fill is the fill color alone. The fill is
+	 * no more opaque than the fill color.
+	 *
+	 * @param fillMask
+	 *            Where the icon is filled. The result is the same size.
+	 * @param texture
+	 *            The grayscale texture to color, or null.
+	 * @param xOnTexture
+	 *            Where the left edge of the fill mask falls on the texture.
+	 * @param yOnTexture
+	 *            Where the top edge of the fill mask falls on the texture.
+	 * @param colorizeAlgorithm
+	 *            How to color the texture.
+	 */
+	public Image createTextureFill(Image fillMask, Image texture, int xOnTexture, int yOnTexture, Color fillColor, ColorizeAlgorithm colorizeAlgorithm)
+	{
+		IntRectangle maskArea = new IntRectangle(xOnTexture, yOnTexture, fillMask.getWidth(), fillMask.getHeight());
+		IntRectangle textureArea = texture == null ? null : maskArea.findIntersection(new IntRectangle(0, 0, texture.getWidth(), texture.getHeight()));
+
+		Image result = Image.create(fillMask.getWidth(), fillMask.getHeight(), ImageType.ARGB);
+		Image textureUnderMask = textureArea == null ? null : texture.copySubImage(textureArea);
+		Image coloredTexture = textureUnderMask == null ? null : colorize(textureUnderMask, fillColor, colorizeAlgorithm);
+		try (PixelReader fillMaskPixels = fillMask.createPixelReader();
+				PixelReader coloredTexturePixels = coloredTexture == null ? null : coloredTexture.createPixelReader();
+				PixelWriter resultPixels = result.createPixelWriter())
+		{
+			int maxLevel = fillMask.getMaxPixelLevel();
+			int fillAlpha = fillColor.getAlpha();
+			for (int y = 0; y < fillMask.getHeight(); y++)
+			{
+				for (int x = 0; x < fillMask.getWidth(); x++)
+				{
+					int level = fillMaskPixels.getGrayLevel(x, y);
+					if (level == 0)
+					{
+						continue;
+					}
+					int alpha = Math.min(fillAlpha, level * 255 / maxLevel);
+					if (coloredTexture != null && textureArea.contains(xOnTexture + x, yOnTexture + y))
+					{
+						int rgb = coloredTexturePixels.getRGB(xOnTexture + x - textureArea.x, yOnTexture + y - textureArea.y);
+						resultPixels.setRGB(x, y, (rgb >> 16) & 0xff, (rgb >> 8) & 0xff, rgb & 0xff, alpha);
+					}
+					else
+					{
+						resultPixels.setRGB(x, y, fillColor.getRed(), fillColor.getGreen(), fillColor.getBlue(), alpha);
+					}
+				}
+			}
+		}
+		finally
+		{
+			if (coloredTexture != null && coloredTexture != textureUnderMask)
+			{
+				coloredTexture.close();
+			}
+			if (textureUnderMask != null)
+			{
+				textureUnderMask.close();
+			}
+		}
+		return result;
+	}
+
 	public Image setAlphaFromMask(Image image, Image alphaMask, boolean invertMask)
 	{
 		if (image.getWidth() != alphaMask.getWidth())

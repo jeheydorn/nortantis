@@ -2,7 +2,6 @@ package nortantis.swing;
 
 import com.formdev.flatlaf.FlatDarkLaf;
 import com.formdev.flatlaf.FlatLightLaf;
-import nortantis.CancelledException;
 import nortantis.DebugFlags;
 import nortantis.FontFinder;
 import nortantis.GeneratedDimension;
@@ -18,7 +17,6 @@ import nortantis.editor.*;
 import nortantis.geom.IntDimension;
 import nortantis.geom.IntRectangle;
 import nortantis.graph.voronoi.Center;
-import nortantis.platform.BackgroundTask;
 import nortantis.platform.Image;
 import nortantis.platform.ImageHelper;
 import nortantis.platform.PlatformFactory;
@@ -31,8 +29,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
@@ -45,15 +41,9 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.locks.Lock;
@@ -308,98 +298,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			SwingHelper.showMessageDialog(this, preferencesLoadError, "Error", JOptionPane.ERROR_MESSAGE);
 		}
 
-		launchNewVersionCheck();
-	}
-
-	private void launchNewVersionCheck()
-	{
-		LocalDateTime lastVersionCheckTime = UserPreferences.getInstance().lastVersionCheckTime;
-		LocalDateTime currentTime = LocalDateTime.now();
-		if (lastVersionCheckTime == null || ChronoUnit.HOURS.between(lastVersionCheckTime, currentTime) >= 24)
-		{
-			PlatformFactory.getInstance().doInBackgroundThread(new BackgroundTask<String>()
-			{
-
-				@Override
-				public String doInBackground() throws IOException, CancelledException
-				{
-					return getLatestVersion();
-				}
-
-				@Override
-				public void done(String latestVersion)
-				{
-					try
-					{
-						if (StringUtils.isEmpty(latestVersion))
-						{
-							return;
-						}
-
-						String lastCheckedVersion = UserPreferences.getInstance().lastVersionFromCheck;
-
-						if (MapSettings.isVersionGreaterThanCurrent(latestVersion) && (StringUtils.isEmpty(lastCheckedVersion) || MapSettings.isVersionGreaterThan(latestVersion, lastCheckedVersion)))
-						{
-							UserPreferences.getInstance().lastVersionFromCheck = latestVersion;
-							UserPreferences.getInstance().lastVersionCheckTime = currentTime;
-
-							String message = Translation.get("mainWindow.updateAvailableMessage", latestVersion);
-							String url = "https://jandjheydorn.com/nortantis";
-
-							JPanel messagePanel = new JPanel();
-							messagePanel.setLayout(new FlowLayout());
-
-							JLabel messageLabel = new JLabel(message);
-							messagePanel.add(messageLabel);
-
-							JLabel hyperlink = SwingHelper.createHyperlink(url, url);
-							messagePanel.add(hyperlink);
-
-							SwingHelper.showMessageDialog(MainWindow.this, messagePanel, Translation.get("mainWindow.updateAvailable"), JOptionPane.INFORMATION_MESSAGE);
-						}
-					}
-					catch (Exception e)
-					{
-						Logger.printError("Unexpected error while checking if version " + latestVersion + " is a new release.", e);
-					}
-				}
-			});
-		}
-	}
-
-	private String getLatestVersion()
-	{
-		try
-		{
-			// URL of the JSON file with the latest released version.
-			String urlString = "https://jandjheydorn.com/s/current-version.json";
-			URL url = new URI(urlString).toURL();
-			HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-			connection.setRequestMethod("GET");
-
-			// Set timeouts
-			connection.setConnectTimeout(30000);
-			connection.setReadTimeout(30000);
-
-			// Parse the JSON response
-			JSONParser parser = new JSONParser();
-			try (InputStreamReader reader = new InputStreamReader(connection.getInputStream()))
-			{
-				JSONObject jsonObject = (JSONObject) parser.parse(reader);
-
-				String version = (String) jsonObject.get("version");
-				return version;
-			}
-
-		}
-		catch (Exception e)
-		{
-			// I intentionally do not log this error to Logger because doing so causes the I causes the theme panel to we created extra
-			// wide when a map is being immediately opened, and I don't want network errors when checking the latest version to cause any
-			// noticeable issue.
-			e.printStackTrace();
-			return null;
-		}
+		// Shown after the window and anything opened above is up, so the message appears over the window.
+		SwingUtilities.invokeLater(() -> ReleaseNotes.showIfFirstRunOfNewVersion(this));
 	}
 
 	/**

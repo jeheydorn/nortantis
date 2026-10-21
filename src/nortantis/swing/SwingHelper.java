@@ -1041,7 +1041,7 @@ public class SwingHelper
 	/** The color of text that warns the user about something that is wrong but not an error. */
 	public static final Color warningMessageColor = new Color(160, 90, 0);
 
-	private static final Color linkColor = new Color(26, 113, 228);
+	static final Color linkColor = new Color(26, 113, 228);
 
 	private static final int dialogWrapWidthPixels = 400;
 
@@ -1412,19 +1412,24 @@ public class SwingHelper
 
 	public static JLabel createHyperlink(String text, String URL)
 	{
-		JLabel link = createActionLink(text, () ->
-		{
-			try
-			{
-				Desktop.getDesktop().browse(new URI(URL));
-			}
-			catch (IOException | URISyntaxException ex)
-			{
-				Logger.printError("Error while trying to open URL: " + URL, ex);
-			}
-		});
+		JLabel link = createActionLink(text, () -> openWebPage(URL));
 		link.setToolTipText(URL);
 		return link;
+	}
+
+	/**
+	 * Opens the given URL in the user's browser.
+	 */
+	public static void openWebPage(String URL)
+	{
+		try
+		{
+			Desktop.getDesktop().browse(new URI(URL));
+		}
+		catch (IOException | URISyntaxException ex)
+		{
+			Logger.printError("Error while trying to open URL: " + URL, ex);
+		}
 	}
 
 	/**

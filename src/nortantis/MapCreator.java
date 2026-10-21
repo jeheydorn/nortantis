@@ -1000,7 +1000,7 @@ public class MapCreator implements WarningLogger
 			checkForCancel();
 
 			// Draw icons
-			mapParts.iconDrawer.drawIcons(iconsToDraw, mapSnippet, landBackground, landTextureSnippet, oceanWithWavesAndShading, landMask, drawBounds);
+			mapParts.iconDrawer.drawIcons(iconsToDraw, mapSnippet, landBackground, landTextureSnippet, oceanWithWavesAndShading, landMask, drawBounds, mapParts.background);
 
 			checkForCancel();
 
@@ -1314,7 +1314,7 @@ public class MapCreator implements WarningLogger
 		{
 			Logger.println("Generating the background image.");
 			// A background kept in map parts keeps the texture, since a later incremental draw can draw text whose style has changed to a shape.
-			boolean keepPaperTexture = mapParts != null || drawsTextShapeBackgrounds(settings);
+			boolean keepPaperTexture = mapParts != null || drawsTextShapeBackgrounds(settings) || settings.drawsIconFillsWithTexture();
 			background = new Background(settings, mapBounds, this, backgroundImages, keepPaperTexture);
 		}
 
@@ -1994,7 +1994,7 @@ public class MapCreator implements WarningLogger
 		reportProgressAndCheckForCancel();
 
 		Logger.println("Drawing all icons.");
-		iconDrawer.drawIcons(iconsToDraw, map, landBackground, background.land, oceanWithWavesAndShading, landMask, null);
+		iconDrawer.drawIcons(iconsToDraw, map, landBackground, background.land, oceanWithWavesAndShading, landMask, null, background);
 		landBackground = null;
 
 		reportProgressAndCheckForCancel();

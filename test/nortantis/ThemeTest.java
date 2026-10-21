@@ -343,7 +343,7 @@ public class ThemeTest
 		for (int i = 0; i < groupIds.length; i++)
 		{
 			settings.edits.freeIcons.addOrReplace(new FreeIcon(settings.resolution, new Point(10 * i, 10 * i), 1.0, IconType.cities, Assets.installedArtPack, groupIds[i], "town", i,
-					Color.create(0, 0, 0), new HSBColor(0, 0, 100, 0), false, false));
+					Color.create(0, 0, 0), new HSBColor(0, 0, 100, 0), false, false, false));
 		}
 		assertEquals("middle ages", SettingsGenerator.newMapWithSameTheme(settings).cityIconTypeName);
 	}

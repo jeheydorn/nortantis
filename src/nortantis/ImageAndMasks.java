@@ -73,6 +73,18 @@ public class ImageAndMasks implements AutoCloseable
 	}
 
 	/**
+	 * A copy that draws the given image, with the same masks and content bounds as this one. The masks are shared rather than copied, so the
+	 * copy must not be closed.
+	 */
+	public synchronized ImageAndMasks copyWithImageSharingMasks(Image image)
+	{
+		ImageAndMasks copy = new ImageAndMasks(image, contentMask, contentBounds, shadingMask, iconType, widthFromFileName, artPack, groupId, fileNameWithoutParametersOrExtension);
+		copy.colorMask = colorMask;
+		copy.contentYStarts = contentYStarts;
+		return copy;
+	}
+
+	/**
 	 * Releases all image resources held by this object.
 	 */
 	@Override

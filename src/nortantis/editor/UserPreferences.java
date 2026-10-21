@@ -15,8 +15,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class UserPreferences
@@ -34,8 +32,11 @@ public class UserPreferences
 	 * Whether each collapsible panel the user has collapsed or expanded is collapsed. A panel missing from this uses its default.
 	 */
 	public Map<String, Boolean> panelCollapsedStates = new TreeMap<>();
-	public String lastVersionFromCheck;
-	public LocalDateTime lastVersionCheckTime;
+	/**
+	 * The version of Nortantis that last ran on this machine, empty if it was a version from before this was recorded, or null if Nortantis
+	 * hasn't run here before.
+	 */
+	public String lastVersionRun;
 	public LookAndFeel lookAndFeel = LookAndFeel.Dark;
 	public int toolsPanelWidth;
 	public int themePanelWidth;
@@ -161,14 +162,7 @@ public class UserPreferences
 			});
 		}
 
-		if (props.containsKey("lastVersionFromCheck"))
-		{
-			tryLoad(props, "lastVersionFromCheck", () -> lastVersionFromCheck = props.getProperty("lastVersionFromCheck"));
-		}
-		if (props.containsKey("lastVersionCheckTime"))
-		{
-			tryLoad(props, "lastVersionCheckTime", () -> lastVersionCheckTime = LocalDateTime.parse(props.getProperty("lastVersionCheckTime"), DateTimeFormatter.ISO_LOCAL_DATE_TIME));
-		}
+		lastVersionRun = props.getProperty("lastVersionRun", "");
 
 		if (props.containsKey("lookAndFeel") && !StringUtils.isEmpty(props.getProperty("lookAndFeel")))
 		{
@@ -343,8 +337,7 @@ public class UserPreferences
 			panelCollapsedStateParts.add(entry.getValue().toString());
 		}
 		props.setProperty("panelCollapsedStates", String.join("\t", panelCollapsedStateParts));
-		props.setProperty("lastVersionFromCheck", lastVersionFromCheck == null ? "" : lastVersionFromCheck);
-		props.setProperty("lastVersionCheckTime", (lastVersionCheckTime == null ? LocalDateTime.MIN : lastVersionCheckTime).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+		props.setProperty("lastVersionRun", lastVersionRun == null ? "" : lastVersionRun);
 		props.setProperty("lookAndFeel", lookAndFeel.name());
 		props.setProperty("toolsPanelWidth", toolsPanelWidth + "");
 		props.setProperty("themePanelWidth", themePanelWidth + "");

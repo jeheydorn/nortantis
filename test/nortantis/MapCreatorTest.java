@@ -1604,7 +1604,7 @@ public class MapCreatorTest
 				}
 
 				List<IconDrawTask> tasks = mapParts.iconDrawer.getTasksInDrawBoundsSortedAndScaled(null);
-				mapParts.iconDrawer.drawIcons(tasks, map, landBackground, landBackground, ocean, landMask, null);
+				mapParts.iconDrawer.drawIcons(tasks, map, landBackground, landBackground, ocean, landMask, null, null);
 
 				try (PixelReader landMaskPixels = landMask.createPixelReader(); PixelReader mapPixels = map.createPixelReader())
 				{
@@ -1683,17 +1683,17 @@ public class MapCreatorTest
 			if (i % 3 == 0)
 			{
 				icon = new FreeIcon(settings.resolution, loc, 1.0, IconType.mountains, Assets.installedArtPack, "round", rand.nextInt(100), center.index, nortantis.platform.Color.create(0, 0, 0),
-						new HSBColor(0, 0, 100, 0), false, false);
+						new HSBColor(0, 0, 100, 0), false, false, false);
 			}
 			else if (i % 3 == 1)
 			{
 				icon = new FreeIcon(settings.resolution, loc, 1.0, IconType.hills, Assets.installedArtPack, "round", rand.nextInt(100), center.index, nortantis.platform.Color.create(0, 0, 0),
-						new HSBColor(0, 0, 100, 0), false, false);
+						new HSBColor(0, 0, 100, 0), false, false, false);
 			}
 			else
 			{
 				icon = new FreeIcon(settings.resolution, loc, 1.0, IconType.cities, Assets.installedArtPack, "flat", "town", center.index, nortantis.platform.Color.create(0, 0, 0),
-						new HSBColor(0, 0, 100, 0), false, false);
+						new HSBColor(0, 0, 100, 0), false, false, false);
 			}
 
 			settings.edits.freeIcons.addOrReplace(icon);
