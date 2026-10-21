@@ -53,15 +53,14 @@ class CopyTextStyleDialog extends JDialog
 		content.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
 		content.add(createLeftAlignedLabel(Translation.get("copyTextStyle.whatToCopy")));
-		JPanel partsPanel = new JPanel(new GridLayout(0, 2));
-		partsPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 		for (TextStylePart part : TextStylePart.values())
 		{
 			JCheckBox checkbox = new JCheckBox(Translation.get("textStylePart." + part.name()));
 			checkbox.setSelected((initialParts.isEmpty() ? defaultParts : initialParts).contains(part));
 			partCheckboxes.put(part, checkbox);
-			partsPanel.add(checkbox);
 		}
+		JPanel partsPanel = createRowMajorGridTabbingDownColumns(new ArrayList<>(partCheckboxes.values()), 2);
+		partsPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 		content.add(partsPanel);
 		content.add(Box.createVerticalStrut(10));
 
@@ -130,14 +129,52 @@ class CopyTextStyleDialog extends JDialog
 	static JPanel createColumnMajorGrid(List<? extends Component> components, int columnCount)
 	{
 		int rowCount = (components.size() + columnCount - 1) / columnCount;
-		JPanel grid = new JPanel(new GridLayout(1, columnCount));
+		List<List<Component>> columns = new ArrayList<>();
 		for (int col = 0; col < columnCount; col++)
 		{
-			// A fixed row count keeps a shorter last column's rows the same height as the others'.
-			JPanel column = new JPanel(new GridLayout(rowCount, 1));
+			List<Component> column = new ArrayList<>();
 			for (int row = 0; row < rowCount && col * rowCount + row < components.size(); row++)
 			{
 				column.add(components.get(col * rowCount + row));
+			}
+			columns.add(column);
+		}
+		return createGridFromColumns(columns, rowCount);
+	}
+
+	/**
+	 * Lays out components in columns of equal width, filling each row from left to right before starting the next, but tabbing down each
+	 * column in order.
+	 */
+	static JPanel createRowMajorGridTabbingDownColumns(List<? extends Component> components, int columnCount)
+	{
+		int rowCount = (components.size() + columnCount - 1) / columnCount;
+		List<List<Component>> columns = new ArrayList<>();
+		for (int col = 0; col < columnCount; col++)
+		{
+			List<Component> column = new ArrayList<>();
+			for (int i = col; i < components.size(); i += columnCount)
+			{
+				column.add(components.get(i));
+			}
+			columns.add(column);
+		}
+		return createGridFromColumns(columns, rowCount);
+	}
+
+	/**
+	 * Tab order follows the columns because each column is its own panel.
+	 */
+	private static JPanel createGridFromColumns(List<List<Component>> columns, int rowCount)
+	{
+		JPanel grid = new JPanel(new GridLayout(1, columns.size()));
+		for (List<Component> components : columns)
+		{
+			// A fixed row count keeps a shorter column's rows the same height as the others'.
+			JPanel column = new JPanel(new GridLayout(rowCount, 1));
+			for (Component component : components)
+			{
+				column.add(component);
 			}
 			grid.add(column);
 		}

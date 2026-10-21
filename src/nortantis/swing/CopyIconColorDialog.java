@@ -51,16 +51,15 @@ class CopyIconColorDialog extends JDialog
 		content.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
 		content.add(CopyTextStyleDialog.createLeftAlignedLabel(Translation.get("copyIconColor.whatToCopy")));
-		JPanel partsPanel = new JPanel(new GridLayout(0, 2));
-		partsPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 		for (Part part : Part.values())
 		{
 			JCheckBox checkbox = new JCheckBox(Translation.get("copyIconColor.part." + part.name()));
 			checkbox.setToolTipText(Translation.get("copyIconColor.part." + part.name() + ".tooltip"));
 			checkbox.setSelected(true);
 			partCheckboxes.put(part, checkbox);
-			partsPanel.add(checkbox);
 		}
+		JPanel partsPanel = CopyTextStyleDialog.createRowMajorGridTabbingDownColumns(new ArrayList<>(partCheckboxes.values()), 2);
+		partsPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 		content.add(partsPanel);
 		content.add(Box.createVerticalStrut(10));
 

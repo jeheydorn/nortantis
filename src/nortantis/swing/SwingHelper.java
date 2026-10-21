@@ -753,7 +753,13 @@ public class SwingHelper
 			redrawAction.run();
 		};
 		// A throttle rather than a debounce: it is only started when it isn't running, so the map keeps redrawing while the user drags.
-		Timer redrawTimer = new Timer(colorPickerPreviewIntervalMillis, e -> redrawWithCurrentColor.run());
+		// The swatch is set from the chooser again because whatever the swatch belongs to may have rewritten it since the last change, such as
+		// a tool refreshing its controls from the objects it just drew.
+		Timer redrawTimer = new Timer(colorPickerPreviewIntervalMillis, e ->
+		{
+			setColor.accept(colorChooser.getColor());
+			redrawWithCurrentColor.run();
+		});
 		redrawTimer.setRepeats(false);
 		colorChooser.getSelectionModel().addChangeListener(e ->
 		{
