@@ -82,6 +82,11 @@ public class DebugFlags
 	 * pack's themes folder without carrying its edits, and how a map can be regenerated from its settings.
 	 */
 	private static boolean showSaveCopyWithoutEdits = false;
+	/**
+	 * Lets the message that Nortantis was updated, and the release notes, show when running from source. Without this, running from source
+	 * never shows them or records the version that last ran.
+	 */
+	private static boolean showReleaseNotesWhenRunningFromSource = false;
 
 	/**
 	 * New-graph corner indexes of the waypoints used by the most recent sub-map river re-routing, populated by {@link SubMapCreator} when
@@ -144,6 +149,11 @@ public class DebugFlags
 	public static boolean showSaveCopyWithoutEdits()
 	{
 		return !Assets.isRunningFromJar() && showSaveCopyWithoutEdits;
+	}
+
+	public static boolean showReleaseNotesWhenRunningFromSource()
+	{
+		return !Assets.isRunningFromJar() && showReleaseNotesWhenRunningFromSource;
 	}
 
 	public static boolean printIconsBeingEdited()

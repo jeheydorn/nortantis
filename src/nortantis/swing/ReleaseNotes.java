@@ -1,8 +1,10 @@
 package nortantis.swing;
 
+import nortantis.DebugFlags;
 import nortantis.MapSettings;
 import nortantis.editor.UserPreferences;
 import nortantis.swing.translation.Translation;
+import nortantis.util.Assets;
 import nortantis.util.Logger;
 
 import javax.swing.*;
@@ -26,10 +28,16 @@ public class ReleaseNotes
 
 	/**
 	 * If this is the first run of a newer version than the one that ran before, tells the user Nortantis was updated, showing the notes of
-	 * every release after that version up to this one when any of them have notes. Records this version as the one that last ran.
+	 * every release after that version up to this one when any of them have notes. Records this version as the one that last ran. Does
+	 * nothing when running from source unless {@link DebugFlags#showReleaseNotesWhenRunningFromSource()} is on.
 	 */
 	public static void showIfFirstRunOfNewVersion(Window owner)
 	{
+		if (!Assets.isRunningFromJar() && !DebugFlags.showReleaseNotesWhenRunningFromSource())
+		{
+			return;
+		}
+
 		String lastVersionRun = UserPreferences.getInstance().lastVersionRun;
 		UserPreferences.getInstance().lastVersionRun = MapSettings.currentVersion;
 		// No preferences file means Nortantis hasn't run on this machine before, so it is a new install rather than an update.
