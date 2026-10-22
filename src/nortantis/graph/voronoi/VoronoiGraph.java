@@ -13,6 +13,7 @@ import nortantis.graph.voronoi.nodename.as3delaunay.Voronoi;
 import nortantis.platform.Color;
 import nortantis.platform.Painter;
 import nortantis.platform.Transform;
+import nortantis.util.GeometryHelper;
 import nortantis.util.Range;
 import nortantis.util.VisibleForTesting;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
@@ -710,13 +711,12 @@ public abstract class VoronoiGraph
 		return centers;
 	}
 
+	/**
+	 * Draws the edges that shouldDraw accepts and that touch centersToDraw, each connected run of them as one line, so that separate lines'
+	 * round ends don't overlap where edges meet. Edges without noisy edges, which are at the edge of the map, aren't drawn.
+	 */
 	protected void drawSpecifiedEdges(Painter g, double strokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds, Predicate<Edge> shouldDraw)
 	{
-		if (centersToDraw == null)
-		{
-			centersToDraw = centers;
-		}
-
 		Transform orig = null;
 		if (drawBounds != null)
 		{
@@ -724,21 +724,25 @@ public abstract class VoronoiGraph
 			g.translate(-drawBounds.x, -drawBounds.y);
 		}
 
-		Set<Edge> drawn = new HashSet<>();
-
 		g.setBasicStroke((float) strokeWidth);
 
-		for (final Center p : centersToDraw)
+		Predicate<Edge> isDrawn = edge -> shouldDraw.test(edge) && noisyEdges.getNoisyEdge(edge.index) != null;
+		// A run is followed only until it leaves the area being drawn by more than the line's width, so that its round end can't reach back
+		// into the area.
+		Rectangle area = drawBounds == null ? null : drawBounds.pad(4 * strokeWidth + 4);
+		Set<Edge> found = new HashSet<>();
+		for (Center center : centersToDraw == null ? centers : centersToDraw)
 		{
-			for (final Edge edge : p.borders)
+			for (Edge edge : center.borders)
 			{
-				if (!shouldDraw.test(edge))
-					continue;
-
-				if (!drawn.contains(edge))
+				if (found.contains(edge) || !isDrawn.test(edge))
 				{
-					drawn.add(edge);
-					drawEdge(g, edge);
+					continue;
+				}
+				List<Point> points = edgeListToDrawPoints(findRun(edge, isDrawn, area, found));
+				if (points.size() > 1)
+				{
+					drawPolyline(g, points);
 				}
 			}
 		}
@@ -747,6 +751,71 @@ public abstract class VoronoiGraph
 		{
 			g.setTransform(orig);
 		}
+	}
+
+	/**
+	 * Finds the run of edges through start that isDrawn accepts, in order. A run ends at a corner where isDrawn accepts other than two edges,
+	 * so that the same edges form the same run whichever of them the search starts from. If area isn't null, a run stops at its first edge
+	 * that's entirely outside area. Adds the run's edges to found, and stops where it reaches an edge already in found, which closes a
+	 * loop.
+	 */
+	private List<Edge> findRun(Edge start, Predicate<Edge> isDrawn, Rectangle area, Set<Edge> found)
+	{
+		ArrayDeque<Edge> run = new ArrayDeque<>();
+		run.add(start);
+		found.add(start);
+		extendRun(run, true, start.v0, isDrawn, area, found);
+		extendRun(run, false, start.v1, isDrawn, area, found);
+		return new ArrayList<>(run);
+	}
+
+	private void extendRun(ArrayDeque<Edge> run, boolean atFront, Corner corner, Predicate<Edge> isDrawn, Rectangle area, Set<Edge> found)
+	{
+		Edge edge = atFront ? run.getFirst() : run.getLast();
+		while (corner != null && (area == null || isNoisyEdgeInArea(edge, area)))
+		{
+			Edge next = findOnlyOtherEdge(corner, edge, isDrawn);
+			if (next == null || found.contains(next))
+			{
+				return;
+			}
+			found.add(next);
+			if (atFront)
+			{
+				run.addFirst(next);
+			}
+			else
+			{
+				run.addLast(next);
+			}
+			corner = next.v0 == corner ? next.v1 : next.v0;
+			edge = next;
+		}
+	}
+
+	/**
+	 * The edge other than the given one at the corner that isDrawn accepts, if it accepts exactly two edges there, or else null.
+	 */
+	private static Edge findOnlyOtherEdge(Corner corner, Edge edge, Predicate<Edge> isDrawn)
+	{
+		Edge other = null;
+		for (Edge candidate : corner.protrudes)
+		{
+			if (candidate != edge && isDrawn.test(candidate))
+			{
+				if (other != null)
+				{
+					return null;
+				}
+				other = candidate;
+			}
+		}
+		return other;
+	}
+
+	private boolean isNoisyEdgeInArea(Edge edge, Rectangle area)
+	{
+		return GeometryHelper.calcBounds(noisyEdges.getNoisyEdge(edge.index)).overlaps(area);
 	}
 
 	public void drawEdge(Painter p, Edge edge)
