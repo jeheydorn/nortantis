@@ -21,7 +21,7 @@ class CopyIconColorDialog extends JDialog
 	{
 		/** The hue, saturation, brightness, and transparency sliders, and Maximize opacity. */
 		FilterColor,
-		/** Fill with color, the fill color, and whether the fill shows the background texture. */
+		/** Fill with color, and the fill color. */
 		FillColor
 	}
 

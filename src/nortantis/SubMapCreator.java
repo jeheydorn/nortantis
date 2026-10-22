@@ -499,7 +499,7 @@ public class SubMapCreator
 					}
 				}
 				newEdits.freeIcons.addOrReplace(new FreeIcon(newLoc, icon.scale, icon.type, icon.artPack, icon.groupId, icon.iconIndex, icon.iconName, newCenterIndex, icon.density,
-						icon.fillColor, icon.filterColor, icon.maximizeOpacity, icon.fillWithColor, icon.fillShowsTexture, icon.originalScale));
+						icon.fillColor, icon.filterColor, icon.maximizeOpacity, icon.fillWithColor, icon.originalScale));
 			}
 		}
 
@@ -522,7 +522,7 @@ public class SubMapCreator
 					Point newLoc = transformRIPoint(icon.locationResolutionInvariant, selectionBoundsRI, newGenWidth, newGenHeight);
 					// These icons have no anchor, so there is nothing on a Center for them to replace.
 					newEdits.freeIcons.add(new FreeIcon(newLoc, icon.scale, icon.type, icon.artPack, icon.groupId, icon.iconIndex, icon.iconName, null, icon.density, icon.fillColor,
-							icon.filterColor, icon.maximizeOpacity, icon.fillWithColor, icon.fillShowsTexture, icon.originalScale));
+							icon.filterColor, icon.maximizeOpacity, icon.fillWithColor, icon.originalScale));
 				}
 			}
 		}
@@ -757,12 +757,12 @@ public class SubMapCreator
 	}
 
 	/**
-	 * Captures the color properties of a source {@link FreeIcon} so a redistributed {@link CenterIcon}/{@link CenterTrees} can be
+	 * Captures the four color properties of a source {@link FreeIcon} so a redistributed {@link CenterIcon}/{@link CenterTrees} can be
 	 * drawn with the colors of the icon it came from rather than the sub-map's per-type icon colors.
 	 */
 	private static IconColors iconColorsOf(FreeIcon icon)
 	{
-		return IconColors.fromIcon(icon);
+		return new IconColors(icon.fillColor, icon.filterColor, icon.maximizeOpacity, icon.fillWithColor);
 	}
 
 	/**

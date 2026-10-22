@@ -1314,7 +1314,7 @@ public class MapCreator implements WarningLogger
 		{
 			Logger.println("Generating the background image.");
 			// A background kept in map parts keeps the texture, since a later incremental draw can draw text whose style has changed to a shape.
-			boolean keepPaperTexture = mapParts != null || drawsTextShapeBackgrounds(settings) || settings.drawsIconFillsWithTexture();
+			boolean keepPaperTexture = mapParts != null || drawsTextShapeBackgrounds(settings) || settings.drawsIconFills();
 			background = new Background(settings, mapBounds, this, backgroundImages, keepPaperTexture);
 		}
 

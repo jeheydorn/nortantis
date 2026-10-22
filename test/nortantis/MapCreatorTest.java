@@ -1683,17 +1683,17 @@ public class MapCreatorTest
 			if (i % 3 == 0)
 			{
 				icon = new FreeIcon(settings.resolution, loc, 1.0, IconType.mountains, Assets.installedArtPack, "round", rand.nextInt(100), center.index, nortantis.platform.Color.create(0, 0, 0),
-						new HSBColor(0, 0, 100, 0), false, false, false);
+						new HSBColor(0, 0, 100, 0), false, false);
 			}
 			else if (i % 3 == 1)
 			{
 				icon = new FreeIcon(settings.resolution, loc, 1.0, IconType.hills, Assets.installedArtPack, "round", rand.nextInt(100), center.index, nortantis.platform.Color.create(0, 0, 0),
-						new HSBColor(0, 0, 100, 0), false, false, false);
+						new HSBColor(0, 0, 100, 0), false, false);
 			}
 			else
 			{
 				icon = new FreeIcon(settings.resolution, loc, 1.0, IconType.cities, Assets.installedArtPack, "flat", "town", center.index, nortantis.platform.Color.create(0, 0, 0),
-						new HSBColor(0, 0, 100, 0), false, false, false);
+						new HSBColor(0, 0, 100, 0), false, false);
 			}
 
 			settings.edits.freeIcons.addOrReplace(icon);

@@ -295,12 +295,12 @@ public abstract class ImageHelper
 	}
 
 	/**
-	 * Produces a recolored version of {@code imageAndMasks.image}: an HSB filter shift ({@code filterColor}) applied per pixel, optionally
-	 * blended toward a flat {@code fillColor}, with alpha optionally maximized. This is the per-pixel CPU implementation extracted from
-	 * {@link nortantis.ImageCache#getColoredIcon} so the GPU backend can override it with a fragment shader. When neither a fill nor a
-	 * non-default filter (nor maximizeOpacity) applies, the original image is returned unchanged (the cheap common case).
+	 * Produces a recolored version of {@code imageAndMasks.image}: an HSB filter shift ({@code filterColor}) applied per pixel, with alpha
+	 * optionally maximized. This is the per-pixel CPU implementation extracted from {@link nortantis.ImageCache#getColoredIcon} so the GPU
+	 * backend can override it with a fragment shader. When neither a non-default filter nor maximizeOpacity applies, the original image is
+	 * returned unchanged (the cheap common case).
 	 */
-	public Image coloredIcon(ImageAndMasks imageAndMasks, Color fillColor, HSBColor filterColor, boolean maximizeOpacity, boolean fillWithColor)
+	public Image coloredIcon(ImageAndMasks imageAndMasks, HSBColor filterColor, boolean maximizeOpacity)
 	{
 		float alphaScale = 0;
 		{
@@ -329,14 +329,11 @@ public abstract class ImageHelper
 		float[] filterHSB = filterColor.toArray();
 		float filterAlphaScale = filterColor.getAlpha() / 255f;
 
-		if ((fillWithColor && !fillColor.equals(Color.transparentBlack)) || !filterColor.equals(MapSettings.defaultIconFilterColor) || maximizeOpacity)
+		if (!filterColor.equals(MapSettings.defaultIconFilterColor) || maximizeOpacity)
 		{
 			Image result = Image.create(imageAndMasks.image.getWidth(), imageAndMasks.image.getHeight(), ImageType.ARGB);
 
-			Image colorMask = imageAndMasks.getOrCreateColorMask();
-			try (PixelReader imagePixels = imageAndMasks.image.createPixelReader();
-					PixelReader colorMaskPixels = colorMask.createPixelReader();
-					PixelWriter resultPixels = result.createPixelWriter())
+			try (PixelReader imagePixels = imageAndMasks.image.createPixelReader(); PixelWriter resultPixels = result.createPixelWriter())
 			{
 				for (int y = 0; y < result.getHeight(); y++)
 				{
@@ -364,27 +361,7 @@ public abstract class ImageHelper
 								Helper.clamp(hsb[2] + filterHSB[2], 0f, 1f));
 						filteredAlpha = Math.min(255, (int) (alpha * filterAlphaScale));
 
-						// Draws the filtered icon pixel over the fill, which is only as opaque as both the fill color and the color mask.
-						double iconAlpha = filteredAlpha / 255.0;
-						double fillAlpha = (fillWithColor ? Math.min(fillColor.getAlpha(), colorMaskPixels.getGrayLevel(x, y)) : 0) / 255.0;
-						double fillWeight = fillAlpha * (1.0 - iconAlpha);
-						double resultAlpha = iconAlpha + fillWeight;
-						int r, g, b;
-						if (resultAlpha == 0.0)
-						{
-							r = filteredImageColor.getRed();
-							g = filteredImageColor.getGreen();
-							b = filteredImageColor.getBlue();
-						}
-						else
-						{
-							r = (int) Math.round((filteredImageColor.getRed() * iconAlpha + fillColor.getRed() * fillWeight) / resultAlpha);
-							g = (int) Math.round((filteredImageColor.getGreen() * iconAlpha + fillColor.getGreen() * fillWeight) / resultAlpha);
-							b = (int) Math.round((filteredImageColor.getBlue() * iconAlpha + fillColor.getBlue() * fillWeight) / resultAlpha);
-						}
-						int a = (int) Math.round(resultAlpha * 255.0);
-
-						resultPixels.setRGB(x, y, r, g, b, a);
+						resultPixels.setRGB(x, y, filteredImageColor.getRed(), filteredImageColor.getGreen(), filteredImageColor.getBlue(), filteredAlpha);
 					}
 				}
 			}
@@ -397,7 +374,7 @@ public abstract class ImageHelper
 	}
 
 	/**
-	 * Creates the fill of an icon whose fill shows the background texture: the texture under the icon colored with the fill color, wherever
+	 * Creates the fill of a filled icon: the background texture under the icon colored with the fill color, wherever
 	 * the fill mask isn't black. Where the texture doesn't reach, or when there is no texture, the fill is the fill color alone. The fill is
 	 * no more opaque than the fill color.
 	 *

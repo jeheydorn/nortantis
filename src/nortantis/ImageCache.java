@@ -31,9 +31,9 @@ public class ImageCache
 	private ConcurrentHashMapF<Image, ConcurrentHashMapF<IntDimension, Image>> scaledCache;
 
 	/**
-	 * Maps original images, to maps from (color, filterColor, maximizeOpacity, fillWithColor) to colored images.
+	 * Maps original images, to maps from (filterColor, maximizeOpacity) to colored images.
 	 */
-	private ConcurrentHashMapF<String, ConcurrentHashMapF<Tuple4<Color, HSBColor, Boolean, Boolean>, Image>> coloredCache;
+	private ConcurrentHashMapF<String, ConcurrentHashMapF<Tuple2<HSBColor, Boolean>, Image>> coloredCache;
 
 	private ConcurrentHashMapF<Image, ConcurrentHashMapF<Integer, Image>> alphaCache;
 
@@ -148,19 +148,17 @@ public class ImageCache
 	}
 
 	/**
-	 * Either looks up in the cache, or creates, a version of the given icon colored the given color.
+	 * Either looks up in the cache, or creates, a version of the given icon colored with the given filter color.
 	 */
-	public Image getColoredIcon(ImageAndMasks imageAndMasks, Color fillColor, HSBColor filterColor, boolean maximizeOpacity, boolean fillWithColor)
+	public Image getColoredIcon(ImageAndMasks imageAndMasks, HSBColor filterColor, boolean maximizeOpacity)
 	{
 		assert imageAndMasks != null;
-		assert fillColor != null;
 		assert filterColor != null;
 
 		// computeIfAbsent runs the coloring at most once per image and color combination, so threads coloring icons in parallel don't
 		// repeat each other's work. Icons from different image files use separate inner maps, so they never wait on each other.
 		return coloredCache.computeIfAbsent(imageAndMasks.createFileIdentifier(), unused -> new ConcurrentHashMapF<>())
-				.computeIfAbsent(new Tuple4<>(fillColor, filterColor, maximizeOpacity, fillWithColor),
-						unused -> ImageHelper.getInstance().coloredIcon(imageAndMasks, fillColor, filterColor, maximizeOpacity, fillWithColor));
+				.computeIfAbsent(new Tuple2<>(filterColor, maximizeOpacity), unused -> ImageHelper.getInstance().coloredIcon(imageAndMasks, filterColor, maximizeOpacity));
 	}
 
 	/**
