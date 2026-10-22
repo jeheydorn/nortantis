@@ -4,10 +4,8 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.concurrent.Future;
 
-import nortantis.IconDrawTask;
 import nortantis.BackgroundImageParameters;
 import nortantis.GrungeParameters;
-import nortantis.geom.Rectangle;
 import nortantis.util.Assets;
 import nortantis.util.ThreadHelper;
 
@@ -157,7 +155,7 @@ public abstract class PlatformFactory
 	}
 
 	/**
-U	 * Starts creating one of the images a background generates from random noise, in the background. A platform can create it somewhere
+	 * Starts creating one of the images a background generates from random noise, in the background. A platform can create it somewhere
 	 * that shares no memory with the map, as with {@link #startGrungeCreation}.
 	 */
 	public Future<Image> startBackgroundImageCreation(BackgroundImageParameters parameters)
@@ -175,17 +173,4 @@ U	 * Starts creating one of the images a background generates from random noise,
 	}
 
 	public abstract void doInMainUIThreadAsynchronous(Runnable toRun);
-
-	/**
-	 * GPU-accelerated drawing of non-decoration icons using shader-based blending. Called from {@link nortantis.IconDrawer#drawIcons} before
-	 * the CPU pixel-loop path. Override in GPU backends to avoid expensive CPU↔GPU round-trips.
-	 *
-	 * @return The subset of {@code tasks} that were NOT handled (typically decoration icons, which need per-pixel water detection). Returns
-	 *         {@code null} if the GPU path is not supported (causes the caller to use the CPU path for all tasks).
-	 */
-	public List<IconDrawTask> drawNonDecorationIconsGpu(List<IconDrawTask> tasks, Image mapImage, Image landBackground, Image landTexture,
-			Rectangle drawBounds)
-	{
-		return null; // not supported; caller uses CPU path for all icons
-	}
 }

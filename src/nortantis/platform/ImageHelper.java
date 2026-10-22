@@ -296,9 +296,9 @@ public abstract class ImageHelper
 
 	/**
 	 * Produces a recolored version of {@code imageAndMasks.image}: an HSB filter shift ({@code filterColor}) applied per pixel, with alpha
-	 * optionally maximized. This is the per-pixel CPU implementation extracted from {@link nortantis.ImageCache#getColoredIcon} so the GPU
-	 * backend can override it with a fragment shader. When neither a non-default filter nor maximizeOpacity applies, the original image is
-	 * returned unchanged (the cheap common case).
+	 * optionally maximized. {@link nortantis.ImageCache#getColoredIcon} caches the result, and a platform can override this to color icons
+	 * its own way. When neither a non-default filter nor maximizeOpacity applies, the original image is returned unchanged (the cheap common
+	 * case).
 	 */
 	public Image coloredIcon(ImageAndMasks imageAndMasks, HSBColor filterColor, boolean maximizeOpacity)
 	{

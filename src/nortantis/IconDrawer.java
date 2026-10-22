@@ -1279,8 +1279,7 @@ public class IconDrawer
 
 		IntDimension mapOrSnippetSize = mapOrSnippet.size();
 
-		// Use different code paths for AWT vs Skia because transparent land doesn't work yet with Skia. (And there may also be performance
-		// disadvantages to having AWT go through the Skia code path, but I haven't checked that yet).
+		// AWT has its own path that blends straight into the map image. Other platforms, such as the web, use one of the other two paths.
 		if (PlatformFactory.getInstance() instanceof AwtFactory)
 		{
 			drawIconWithBackgroundAndMasksDirect(mapOrSnippet, imageAndMasks, landBackground, landTexture, oceanTexture, landMask, type, xLeft, yTop, graphXLeft, graphYTop, mapOrSnippetSize, icon,
@@ -1289,7 +1288,7 @@ public class IconDrawer
 		else if (hoistedMapPixels != null)
 		{
 			// High-memory non-AWT path: write straight through a map-wide PixelReaderWriter opened once for the whole drawIcons call, instead
-			// of copying a snippet out and pasting it back per icon (which is a GPU readback + upload each time).
+			// of copying a snippet out of the map and pasting it back for each icon.
 			drawIconWithBackgroundAndMasksHoisted(mapOrSnippet, landBackground, landTexture, oceanTexture, type, xLeft, yTop, graphXLeft, graphYTop, mapOrSnippetSize, icon, contentMask,
 					shadingMask, hoistedLandTexturePixels, hoistedOceanTexturePixels, hoistedLandBackgroundPixels, hoistedLandMaskPixels, hoistedMapPixels);
 		}
@@ -1421,9 +1420,7 @@ public class IconDrawer
 
 		IntRectangle visibleBounds = new IntRectangle(visibleXStart, visibleYStart, visibleXEnd - visibleXStart, visibleYEnd - visibleYStart);
 
-		// Extract a small snippet from mapOrSnippet for the visible region.
-		// This avoids expensive GPU<->CPU sync on the entire large map image.
-		// Instead, we only sync the small icon-sized region.
+		// Copies out only the icon-sized visible region, so that reading and writing pixels doesn't touch the whole map image.
 		Image mapSnippetForIcon = mapOrSnippet.copySubImage(visibleBounds, false);
 
 		boolean useHoisted = hoistedLandTexturePixels != null;
@@ -1527,14 +1524,12 @@ public class IconDrawer
 	/**
 	 * High-memory, non-AWT variant of the icon blend. Writes directly through a map-wide {@link PixelReaderWriter} ({@code hoistedMapPixels})
 	 * that {@link #drawIcons} opened ONCE for the whole call, rather than copying a snippet out of the map, blending, and pasting it back per
-	 * icon. On a GPU backend that turns the per-icon glReadPixels/glTexSubImage2D round-trips into one readback + one upload for the entire
-	 * call (all per-icon writes accumulate in the reader/writer's CPU buffer until it closes).
+	 * icon. All per-icon writes accumulate in the reader/writer's buffer until it closes.
 	 *
 	 * <p>
 	 * The background blend is identical to the snippet/direct paths. The icon image itself is composited manually with
-	 * {@link #compositeSourceOver} instead of via a {@link Painter}: a Painter would draw straight to the backing image (e.g. the GPU texture),
-	 * which the hoisted reader/writer's buffered flush would then clobber. {@link #compositeSourceOver} mirrors the platform painter's
-	 * non-premultiplied source-over exactly, so this path is byte-identical to the snippet path (verified by the high-vs-low-memory test).
+	 * {@link #compositeSourceOver} instead of via a {@link Painter}: a Painter would draw straight to the backing image, which the hoisted
+	 * reader/writer's buffered flush would then clobber.
 	 */
 	private void drawIconWithBackgroundAndMasksHoisted(Image mapOrSnippet, Image landBackground, Image landTexture, Image oceanTexture, IconType type, int xLeft, int yTop,
 			int graphXLeft, int graphYTop, IntDimension mapOrSnippetSize, Image icon, Image contentMask, Image shadingMask, PixelReader hoistedLandTexturePixels, PixelReader hoistedOceanTexturePixels,
@@ -1613,12 +1608,9 @@ public class IconDrawer
 	}
 
 	/**
-	 * Non-premultiplied source-over of {@code src} over the current destination pixel, written through {@code dst}. This deliberately mirrors
-	 * gdx2d's integer blend (the formula {@code pixmap.drawPixmap} uses for a SourceOver blit), NOT the painter's float {@code storeColorAt}:
-	 * the snippet path draws the icon via {@code pixmap.drawPixmap} (the icon and map share the RGBA8888 backing, so the painter's fast blit
-	 * path is taken), so matching gdx2d's exact integer rounding is what keeps the hoisted high-memory output byte-identical to the snippet
-	 * (low-memory) path. gdx2d: if src alpha is 0 keep dst; if 255 (or dst fully transparent) copy src; else
-	 * {@code da' = da*(255-sa)/255; a = sa + da'; c = (sc*sa + dc*da')/a} (all integer division).
+	 * Non-premultiplied source-over of {@code src} over the current destination pixel, written through {@code dst}, in integer arithmetic: if
+	 * src alpha is 0 keep dst; if 255 (or dst fully transparent) copy src; else {@code da' = da*(255-sa)/255; a = sa + da'; c = (sc*sa +
+	 * dc*da')/a} (all integer division).
 	 */
 	private static void compositeSourceOver(PixelReaderWriter dst, int x, int y, Color src, boolean dstHasAlpha, boolean targetOpaque)
 	{
@@ -1714,35 +1706,11 @@ public class IconDrawer
 		int xToSubtract = drawBounds == null ? 0 : (int) drawBounds.x;
 		int yToSubtract = drawBounds == null ? 0 : (int) drawBounds.y;
 
-		// GPU fast path: handle non-decoration icons via shader (no CPU pixel loops, no GPU readbacks).
-		// Returns the remaining icons (decorations) that still need the CPU path, or null if unsupported. Filled icons always take the CPU
-		// path, which draws their fill from the texture.
-		List<IconDrawTask> tasksWithoutFills = tasksToDrawSorted.stream().filter(task -> !drawsFill(task)).collect(Collectors.toList());
-		List<IconDrawTask> tasksNotDrawnByGpu = PlatformFactory.getInstance().drawNonDecorationIconsGpu(tasksWithoutFills, mapOrSnippet, landBackground, landTexture, drawBounds);
-		List<IconDrawTask> tasksForCpu;
-		if (tasksNotDrawnByGpu == null)
-		{
-			tasksForCpu = tasksToDrawSorted;
-		}
-		else
-		{
-			Set<IconDrawTask> notDrawnByGpu = Collections.newSetFromMap(new IdentityHashMap<>());
-			notDrawnByGpu.addAll(tasksNotDrawnByGpu);
-			tasksForCpu = tasksToDrawSorted.stream().filter(task -> drawsFill(task) || notDrawnByGpu.contains(task)).collect(Collectors.toList());
-		}
-
-		if (tasksForCpu.isEmpty())
-		{
-			return;
-		}
-
 		Image paperTexture = mapBackground == null ? null : mapBackground.getPaperTexture();
 		ImageHelper.ColorizeAlgorithm paperTextureColorizeAlgorithm = mapBackground == null ? null : mapBackground.getPaperTextureColorizeAlgorithm();
 
-		// CPU path: hoist background-texture readers once across all icons to avoid repeated GPU readbacks.
-		// For non-AWT backends use the snippet path (mapPixels=null): each icon reads a small map snippet and
-		// composites the icon via GPU Painter, which is faster than the full-map readback+CPU-compositing the
-		// hoisted writer would force.
+		// Opens the background readers once for all icons rather than once per icon. No map-wide writer is passed, so on platforms other than
+		// AWT each icon is drawn through a small snippet of the map, composited with a Painter.
 		if (!isLowMemoryMode)
 		{
 			try (PixelReader landTexturePixels = landTexture.createPixelReader();
@@ -1750,7 +1718,7 @@ public class IconDrawer
 					PixelReader landBackgroundPixels = landBackground.createPixelReader();
 					PixelReader landMaskPixels = landMask.createPixelReader())
 			{
-				for (final IconDrawTask task : tasksForCpu)
+				for (final IconDrawTask task : tasksToDrawSorted)
 				{
 					try (Image iconWithTextureFill = drawsFill(task) ? createIconWithTextureFill(task, paperTexture, paperTextureColorizeAlgorithm) : null)
 					{
@@ -1764,7 +1732,7 @@ public class IconDrawer
 		}
 		else
 		{
-			for (final IconDrawTask task : tasksForCpu)
+			for (final IconDrawTask task : tasksToDrawSorted)
 			{
 				try (Image iconWithTextureFill = drawsFill(task) ? createIconWithTextureFill(task, paperTexture, paperTextureColorizeAlgorithm) : null)
 				{
