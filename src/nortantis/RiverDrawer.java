@@ -2,6 +2,7 @@ package nortantis;
 
 import nortantis.editor.River;
 import nortantis.editor.RiverPathNode;
+import nortantis.geom.FloatPoint;
 import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
@@ -12,7 +13,6 @@ import nortantis.platform.DrawQuality;
 import nortantis.platform.Image;
 import nortantis.platform.Painter;
 import nortantis.util.OrderlessPair;
-import nortantis.util.Range;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -493,14 +493,8 @@ public class RiverDrawer
 
 	private void drawPolyline(Painter p, List<Point> line)
 	{
-		int[] xPoints = new int[line.size()];
-		int[] yPoints = new int[line.size()];
-		for (int i : new Range(line.size()))
-		{
-			xPoints[i] = (int) line.get(i).x;
-			yPoints[i] = (int) line.get(i).y;
-		}
-		p.drawPolyline(xPoints, yPoints);
+		// Rounding the points to whole pixels would bend a curve through closely spaced points wherever the rounding changes.
+		p.drawPolylineFloat(FloatPoint.fromPoints(line));
 	}
 
 	/**

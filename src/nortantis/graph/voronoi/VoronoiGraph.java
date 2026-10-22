@@ -4,6 +4,7 @@ import nortantis.Biome;
 import nortantis.MapSettings.LineStyle;
 import nortantis.GraphRiver;
 import nortantis.IconDrawer;
+import nortantis.geom.FloatPoint;
 import nortantis.geom.IntPoint;
 import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
@@ -763,14 +764,8 @@ public abstract class VoronoiGraph
 
 	protected void drawPolyline(Painter p, List<Point> line)
 	{
-		int[] xPoints = new int[line.size()];
-		int[] yPoints = new int[line.size()];
-		for (int i : new Range(line.size()))
-		{
-			xPoints[i] = (int) line.get(i).x;
-			yPoints[i] = (int) line.get(i).y;
-		}
-		p.drawPolyline(xPoints, yPoints);
+		// Rounding the points to whole pixels would bend a curve through closely spaced points wherever the rounding changes.
+		p.drawPolylineFloat(FloatPoint.fromPoints(line));
 	}
 
 	/**

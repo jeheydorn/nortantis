@@ -525,7 +525,7 @@ class TextBackgroundDrawer
 				if (piece.fillColor != null && piece.isClosed)
 				{
 					p.setColor(piece.fillColor);
-					p.fillPolygonFloat(toFloatPoints(piece.points));
+					p.fillPolygonFloat(FloatPoint.fromPoints(piece.points));
 				}
 				drawStroke(p, piece);
 			}
@@ -590,7 +590,7 @@ class TextBackgroundDrawer
 					maskPainter.setColor(Color.white);
 					maskPainter.translate(-fillArea.x, -fillArea.y);
 					maskPainter.rotate(angle, pivot.x, pivot.y);
-					maskPainter.fillPolygonFloat(toFloatPoints(piece.points));
+					maskPainter.fillPolygonFloat(FloatPoint.fromPoints(piece.points));
 				}
 
 				try (Image overlay = Image.create(fillArea.width, fillArea.height, ImageType.ARGB))
@@ -634,7 +634,7 @@ class TextBackgroundDrawer
 		{
 			if (piece.isStroked && lineWidth > 0)
 			{
-				List<FloatPoint> points = toFloatPoints(piece.points);
+				List<FloatPoint> points = FloatPoint.fromPoints(piece.points);
 				p.setColor(lineColor);
 				p.setBasicStroke((float) lineWidth);
 				if (piece.isClosed)
@@ -646,16 +646,6 @@ class TextBackgroundDrawer
 					p.drawPolylineFloat(points);
 				}
 			}
-		}
-
-		private static List<FloatPoint> toFloatPoints(List<Point> points)
-		{
-			List<FloatPoint> result = new ArrayList<>(points.size());
-			for (Point point : points)
-			{
-				result.add(new FloatPoint((float) point.x, (float) point.y));
-			}
-			return result;
 		}
 	}
 

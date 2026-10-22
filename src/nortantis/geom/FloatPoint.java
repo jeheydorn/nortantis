@@ -1,5 +1,7 @@
 package nortantis.geom;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 public class FloatPoint implements Comparable<FloatPoint>
@@ -10,6 +12,16 @@ public class FloatPoint implements Comparable<FloatPoint>
 	}
 
 	public float x, y;
+
+	public static List<FloatPoint> fromPoints(List<Point> points)
+	{
+		List<FloatPoint> result = new ArrayList<>(points.size());
+		for (Point point : points)
+		{
+			result.add(new FloatPoint((float) point.x, (float) point.y));
+		}
+		return result;
+	}
 
 	public FloatPoint(float x, float y)
 	{
