@@ -20,6 +20,13 @@ val compileUnsafeStub by tasks.registering(JavaCompile::class) {
     options.compilerArgs.addAll(listOf("--patch-module", "jdk.unsupported=${file("stubs")}"))
 }
 
+sourceSets {
+    main {
+        java.setSrcDirs(listOf("src"))
+        resources.setSrcDirs(listOf("resources"))
+    }
+}
+
 dependencies {
     implementation(project(":"))
     implementation(teavm.libs.jso)
@@ -66,7 +73,7 @@ teavm {
     }
 }
 
-// This module replaces some of the Java classes in TeaVM's class library (see src/main/java/org/teavm/classlib), so its classes must come
+// This module replaces some of the Java classes in TeaVM's class library (see src/org/teavm/classlib), so its classes must come
 // before TeaVM's on the class path TeaVM compiles from.
 tasks.withType<org.teavm.gradle.tasks.TeaVMTask>().configureEach {
     val original = classpath.from.toList()
