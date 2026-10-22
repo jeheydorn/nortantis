@@ -28,8 +28,9 @@ import nortantis.platform.Transform;
  * <li>Drawing onto a grayscale image draws the color's luminance, and drawing onto a binary image rounds each result to black or white.</li>
  * </ul>
  * Antialiasing works from each pixel's coverage, never by drawing at a higher resolution. A stroke's coverage at a pixel comes from the
- * pixel's distance to the stroke's center line, and the coverage of a whole stroke is gathered before any of it is drawn, so the pieces of
- * a translucent stroke don't darken where they overlap.
+ * pixel's distance to the stroke's center line, except where the edge of a round cap or join crosses the pixel, where points spread over
+ * the pixel are tested instead. The coverage of a whole stroke is gathered before any of it is drawn, so the pieces of a translucent
+ * stroke don't darken where they overlap.
  */
 public class WebPainter extends Painter
 {
@@ -855,6 +856,9 @@ public class WebPainter extends Painter
 	private static class CoverageBuffer
 	{
 		private static final ThreadLocal<CoverageBuffer> buffers = ThreadLocal.withInitial(CoverageBuffer::new);
+		/** The number of points across a pixel, in each direction, that {@link #sampleCoverage} tests. */
+		private static final int samplesAcrossPixel = 4;
+		private static final double maxDistanceFromPixelCenterToCorner = Math.sqrt(0.5);
 
 		private float[] coverage = new float[0];
 		/** For each row of the buffer, the first and last device x the stroke may have covered, or an empty range if it covered none. */
@@ -967,14 +971,20 @@ public class WebPainter extends Painter
 					{
 						distanceInside = halfWidth - across;
 					}
+					int index = row + px;
 					double value = edgeCoverage(distanceInside);
-					if (value > 0)
+					if (value <= coverage[index])
 					{
-						int index = row + px;
-						if (value > coverage[index])
-						{
-							coverage[index] = (float) value;
-						}
+						continue;
+					}
+					boolean isOnRoundCap = (along < 0 && roundStart) || (along > length && roundEnd);
+					if (isOnRoundCap && isOnCurvedEdge(distanceInside))
+					{
+						value = sampleCoverage(px, py, (sampleX, sampleY) -> isInsideSegment(sampleX - x1, sampleY - y1, unitX, unitY, length, halfWidth, roundStart, roundEnd));
+					}
+					if (value > coverage[index])
+					{
+						coverage[index] = (float) value;
 					}
 				}
 			}
@@ -993,14 +1003,20 @@ public class WebPainter extends Painter
 				markRow(py, fromX, toX);
 				for (int px = fromX; px <= toX; px++)
 				{
-					double value = edgeCoverage(radius - Math.hypot(px + 0.5 - centerX, py + 0.5 - centerY));
-					if (value > 0)
+					int index = row + px;
+					double distanceInside = radius - Math.hypot(px + 0.5 - centerX, py + 0.5 - centerY);
+					double value = edgeCoverage(distanceInside);
+					if (value <= coverage[index])
 					{
-						int index = row + px;
-						if (value > coverage[index])
-						{
-							coverage[index] = (float) value;
-						}
+						continue;
+					}
+					if (isOnCurvedEdge(distanceInside))
+					{
+						value = sampleCoverage(px, py, (sampleX, sampleY) -> isInsideCircle(sampleX - centerX, sampleY - centerY, radius));
+					}
+					if (value > coverage[index])
+					{
+						coverage[index] = (float) value;
 					}
 				}
 			}
@@ -1017,6 +1033,64 @@ public class WebPainter extends Painter
 			{
 				rowLastX[row] = lastX;
 			}
+		}
+
+		/**
+		 * Whether a pixel whose center is the given distance inside a round edge has the edge passing through it, so that its coverage
+		 * needs {@link #sampleCoverage}. A round cap or a disc is usually only a few pixels across, so its edge curves too much within a
+		 * pixel for {@link #edgeCoverage} to treat as straight, which would make the pixels around it too dark, and round joins stick out
+		 * at corners.
+		 */
+		private boolean isOnCurvedEdge(double distanceInside)
+		{
+			return antialias && Math.abs(distanceInside) < maxDistanceFromPixelCenterToCorner;
+		}
+
+		/**
+		 * The fraction of a grid of points spread over the pixel that are inside a shape.
+		 */
+		private static double sampleCoverage(int px, int py, PointTest isInside)
+		{
+			int inside = 0;
+			for (int row = 0; row < samplesAcrossPixel; row++)
+			{
+				double sampleY = py + (row + 0.5) / samplesAcrossPixel;
+				for (int col = 0; col < samplesAcrossPixel; col++)
+				{
+					if (isInside.test(px + (col + 0.5) / samplesAcrossPixel, sampleY))
+					{
+						inside++;
+					}
+				}
+			}
+			return inside / (double) (samplesAcrossPixel * samplesAcrossPixel);
+		}
+
+		/**
+		 * Whether a point, given relative to a segment's start, is inside the segment stroked with the given half width and caps.
+		 */
+		private static boolean isInsideSegment(double x, double y, double unitX, double unitY, double length, double halfWidth, boolean roundStart, boolean roundEnd)
+		{
+			double along = x * unitX + y * unitY;
+			if (along < 0)
+			{
+				return roundStart && isInsideCircle(x, y, halfWidth);
+			}
+			if (along > length)
+			{
+				return roundEnd && isInsideCircle(x - unitX * length, y - unitY * length, halfWidth);
+			}
+			return Math.abs(x * unitY - y * unitX) <= halfWidth;
+		}
+
+		private static boolean isInsideCircle(double x, double y, double radius)
+		{
+			return x * x + y * y <= radius * radius;
+		}
+
+		private interface PointTest
+		{
+			boolean test(double x, double y);
 		}
 
 		/**
