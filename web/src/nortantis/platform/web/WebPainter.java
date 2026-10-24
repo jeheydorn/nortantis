@@ -673,6 +673,7 @@ public class WebPainter extends Painter
 	 */
 	private void strokeRun(double[] xs, double[] ys, int n, boolean closed, double halfWidth)
 	{
+		n = removeRepeatedPoints(xs, ys, n, closed);
 		double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE, maxX = -Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
 		for (int i = 0; i < n; i++)
 		{
@@ -716,9 +717,38 @@ public class WebPainter extends Painter
 			boolean isStartCovered = closed || i > 1 || (i == 1 && roundCaps);
 			// Butt caps cut each end of a segment flat. The open ends of the run get no more than that, and every joint between segments
 			// is filled in by the round disc each segment adds at its end, which makes the join round.
-			buffer.addSegment(xs[i], ys[i], xs[j], ys[j], halfWidth, roundCaps || !isFirst, roundCaps || !isLast, isStartCovered);
+			int next = isLast ? -1 : (j + 1) % n;
+			buffer.addSegment(xs[i], ys[i], xs[j], ys[j], halfWidth, roundCaps || !isFirst, roundCaps || !isLast, isStartCovered, next < 0 ? Double.NaN : xs[next],
+					next < 0 ? Double.NaN : ys[next]);
 		}
 		buffer.draw(this);
+	}
+
+	/**
+	 * Removes each point that is the same as the one before it, and for a closed run, a last point that is the same as the first, unless that
+	 * would leave fewer than one point. Returns the number of points left, which are moved to the front of the arrays.
+	 */
+	private static int removeRepeatedPoints(double[] xs, double[] ys, int n, boolean closed)
+	{
+		if (n == 0)
+		{
+			return 0;
+		}
+		int kept = 1;
+		for (int i = 1; i < n; i++)
+		{
+			if (xs[i] != xs[kept - 1] || ys[i] != ys[kept - 1])
+			{
+				xs[kept] = xs[i];
+				ys[kept] = ys[i];
+				kept++;
+			}
+		}
+		if (closed && kept > 1 && xs[kept - 1] == xs[0] && ys[kept - 1] == ys[0])
+		{
+			kept--;
+		}
+		return kept;
 	}
 
 	/**
@@ -905,11 +935,21 @@ public class WebPainter extends Painter
 		 * Adds a straight segment of the given half width. Each end that has a cap gets a round one; an end without a cap is cut off
 		 * square at the end point.
 		 *
+		 * A round end that joins the next segment only adds the pixels for which the joint is the closest point of the two segments: those
+		 * past this segment's end and behind the next one's start. Every other pixel the round end reaches is at least as close to a
+		 * segment's straight part or to another joint, which gives it at least as much coverage. This keeps a wide stroke through closely
+		 * spaced points from going over a whole disc at each point.
+		 *
 		 * @param isStartCovered
 		 *            Whether the buffer already has at least the coverage of the segment's start cap, so that the pixels behind the start
 		 *            can be skipped.
+		 * @param nextX
+		 *            The x coordinate of the next segment's end, if a round end joins this segment to it, or NaN.
+		 * @param nextY
+		 *            The y coordinate of the next segment's end, or NaN.
 		 */
-		void addSegment(double x1, double y1, double x2, double y2, double halfWidth, boolean roundStart, boolean roundEnd, boolean isStartCovered)
+		void addSegment(double x1, double y1, double x2, double y2, double halfWidth, boolean roundStart, boolean roundEnd, boolean isStartCovered, double nextX,
+				double nextY)
 		{
 			double dx = x2 - x1;
 			double dy = y2 - y1;
@@ -930,62 +970,147 @@ public class WebPainter extends Painter
 			int toY = Math.min(minY + bufferHeight - 1, saturatedInt(Math.ceil(Math.max(y1, y2) + reach)));
 			double unitX = dx / length;
 			double unitY = dy / length;
+			double nextLength = Math.hypot(nextX - x2, nextY - y2);
+			// NaN when there is no next segment, which makes this false.
+			boolean isEndAJoint = roundEnd && nextLength > 0;
+			double nextUnitX = isEndAJoint ? (nextX - x2) / nextLength : 0;
+			double nextUnitY = isEndAJoint ? (nextY - y2) / nextLength : 0;
 			for (int py = fromY; py <= toY; py++)
 			{
 				double cy = py + 0.5 - y1;
-				int row = (py - minY) * bufferWidth - minX;
-				// On this row, only the pixels whose centers are within reach of the segment's line can be covered.
-				int rowFromX = fromX;
-				int rowToX = toX;
-				if (Math.abs(unitY) > 1e-9)
+				// A pixel's center's distance along the segment from its start, and across it from its line, are each a linear function
+				// of the pixel's x: slope * px + intercept.
+				double alongIntercept = (0.5 - x1) * unitX + cy * unitY;
+				double acrossIntercept = (0.5 - x1) * unitY - cy * unitX;
+
+				// The straight part: within reach of the segment's line, from a pixel before its start to a pixel past its end.
+				resetRange(fromX, toX);
+				narrowToAtMost(unitY, acrossIntercept, reach);
+				narrowToAtMost(-unitY, -acrossIntercept, reach);
+				narrowToAtMost(-unitX, -alongIntercept, 1);
+				narrowToAtMost(unitX, alongIntercept, length + 1);
+				addSegmentPixels(py, x1, y1, x2, y2, unitX, unitY, length, halfWidth, roundStart, roundEnd, isStartCovered);
+
+				if (roundStart && !isStartCovered && setRangeToDiscRow(x1, y1, reach, py, fromX, toX))
 				{
-					double centerX = x1 + cy * unitX / unitY - 0.5;
-					double halfSpan = reach / Math.abs(unitY);
-					rowFromX = Math.max(fromX, saturatedInt(Math.floor(centerX - halfSpan)));
-					rowToX = Math.min(toX, saturatedInt(Math.ceil(centerX + halfSpan)));
+					narrowToAtMost(unitX, alongIntercept, 0);
+					addSegmentPixels(py, x1, y1, x2, y2, unitX, unitY, length, halfWidth, roundStart, roundEnd, isStartCovered);
 				}
-				markRow(py, rowFromX, rowToX);
-				for (int px = rowFromX; px <= rowToX; px++)
+
+				if (roundEnd && setRangeToDiscRow(x2, y2, reach, py, fromX, toX))
 				{
-					double cx = px + 0.5 - x1;
-					double along = cx * unitX + cy * unitY;
-					double across = Math.abs(cx * unitY - cy * unitX);
-					// How far the pixel's center is inside the stroke. Coverage only grows with it, so the smaller of two distances gives
-					// the smaller coverage.
-					double distanceInside;
-					if (along < 0)
+					narrowToAtMost(-unitX, -alongIntercept, -length);
+					if (isEndAJoint)
 					{
-						if (isStartCovered)
-						{
-							continue;
-						}
-						distanceInside = roundStart ? halfWidth - Math.sqrt(cx * cx + cy * cy) : Math.min(halfWidth - across, along);
+						// Behind the next segment's start, give or take a pixel.
+						narrowToAtMost(nextUnitX, (0.5 - x2) * nextUnitX + (py + 0.5 - y2) * nextUnitY, 1);
 					}
-					else if (along > length)
-					{
-						double endX = px + 0.5 - x2;
-						double endY = py + 0.5 - y2;
-						distanceInside = roundEnd ? halfWidth - Math.sqrt(endX * endX + endY * endY) : Math.min(halfWidth - across, length - along);
-					}
-					else
-					{
-						distanceInside = halfWidth - across;
-					}
-					int index = row + px;
-					double value = edgeCoverage(distanceInside);
-					if (value <= coverage[index])
+					addSegmentPixels(py, x1, y1, x2, y2, unitX, unitY, length, halfWidth, roundStart, roundEnd, isStartCovered);
+				}
+			}
+		}
+
+		/** The range of pixel x coordinates on a row that {@link #addSegmentPixels} goes over. Empty when rangeFromX > rangeToX. */
+		private double rangeFromX, rangeToX;
+
+		private void resetRange(int fromX, int toX)
+		{
+			rangeFromX = fromX;
+			rangeToX = toX;
+		}
+
+		/**
+		 * Narrows the range to the pixels px for which slope * px + intercept is at most limit.
+		 */
+		private void narrowToAtMost(double slope, double intercept, double limit)
+		{
+			double bound = limit - intercept;
+			if (slope > 1e-9)
+			{
+				rangeToX = Math.min(rangeToX, Math.ceil(bound / slope));
+			}
+			else if (slope < -1e-9)
+			{
+				rangeFromX = Math.max(rangeFromX, Math.floor(bound / slope));
+			}
+			else if (bound < 0)
+			{
+				rangeFromX = rangeToX + 1;
+			}
+		}
+
+		/**
+		 * Sets the range to the pixels on row py, between fromX and toX, whose centers are within radius of a point. Returns false if there
+		 * are none.
+		 */
+		private boolean setRangeToDiscRow(double centerX, double centerY, double radius, int py, int fromX, int toX)
+		{
+			double dy = py + 0.5 - centerY;
+			if (Math.abs(dy) > radius)
+			{
+				return false;
+			}
+			double halfSpan = Math.sqrt(radius * radius - dy * dy);
+			rangeFromX = Math.max(fromX, Math.floor(centerX - 0.5 - halfSpan));
+			rangeToX = Math.min(toX, Math.ceil(centerX - 0.5 + halfSpan));
+			return rangeFromX <= rangeToX;
+		}
+
+		/**
+		 * Adds the coverage a segment gives the pixels of row py in the range.
+		 */
+		private void addSegmentPixels(int py, double x1, double y1, double x2, double y2, double unitX, double unitY, double length, double halfWidth,
+				boolean roundStart, boolean roundEnd, boolean isStartCovered)
+		{
+			if (rangeFromX > rangeToX)
+			{
+				return;
+			}
+			int rowFromX = (int) rangeFromX;
+			int rowToX = (int) rangeToX;
+			double cy = py + 0.5 - y1;
+			int row = (py - minY) * bufferWidth - minX;
+			markRow(py, rowFromX, rowToX);
+			for (int px = rowFromX; px <= rowToX; px++)
+			{
+				double cx = px + 0.5 - x1;
+				double along = cx * unitX + cy * unitY;
+				double across = Math.abs(cx * unitY - cy * unitX);
+				// How far the pixel's center is inside the stroke. Coverage only grows with it, so the smaller of two distances gives
+				// the smaller coverage.
+				double distanceInside;
+				if (along < 0)
+				{
+					if (isStartCovered)
 					{
 						continue;
 					}
-					boolean isOnRoundCap = (along < 0 && roundStart) || (along > length && roundEnd);
-					if (isOnRoundCap && isOnCurvedEdge(distanceInside))
-					{
-						value = sampleCoverage(px, py, (sampleX, sampleY) -> isInsideSegment(sampleX - x1, sampleY - y1, unitX, unitY, length, halfWidth, roundStart, roundEnd));
-					}
-					if (value > coverage[index])
-					{
-						coverage[index] = (float) value;
-					}
+					distanceInside = roundStart ? halfWidth - Math.sqrt(cx * cx + cy * cy) : Math.min(halfWidth - across, along);
+				}
+				else if (along > length)
+				{
+					double endX = px + 0.5 - x2;
+					double endY = py + 0.5 - y2;
+					distanceInside = roundEnd ? halfWidth - Math.sqrt(endX * endX + endY * endY) : Math.min(halfWidth - across, length - along);
+				}
+				else
+				{
+					distanceInside = halfWidth - across;
+				}
+				int index = row + px;
+				double value = edgeCoverage(distanceInside);
+				if (value <= coverage[index])
+				{
+					continue;
+				}
+				boolean isOnRoundCap = (along < 0 && roundStart) || (along > length && roundEnd);
+				if (isOnRoundCap && isOnCurvedEdge(distanceInside))
+				{
+					value = sampleCoverage(px, py, (sampleX, sampleY) -> isInsideSegment(sampleX - x1, sampleY - y1, unitX, unitY, length, halfWidth, roundStart, roundEnd));
+				}
+				if (value > coverage[index])
+				{
+					coverage[index] = (float) value;
 				}
 			}
 		}
