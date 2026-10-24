@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 import java.util.TreeSet;
 
@@ -27,7 +28,8 @@ import nortantis.util.ProbabilityHelper;
 
 /**
  * The settings of the map the web demo shows, with the choices the New Map dialog offers apart from art packs, and a history of earlier
- * maps to go back and forward through. The settings never hold edits, so the history stays small.
+ * maps to go back and forward through. The settings hold edits only for a map loaded from a file, until one of its options changes, so the
+ * history stays small.
  */
 class DemoSession
 {
@@ -38,7 +40,8 @@ class DemoSession
 	{
 		boolean matches(State other)
 		{
-			return theme.equals(other.theme) && themeBase == other.themeBase && themeSeed == other.themeSeed && settings.equalsIgnoringEdits(other.settings);
+			return Objects.equals(theme, other.theme) && themeBase == other.themeBase && themeSeed == other.themeSeed
+					&& settings.equalsIgnoringEdits(other.settings);
 		}
 	}
 
@@ -57,6 +60,9 @@ class DemoSession
 	private static final String defaultCityIconType = "middle ages";
 
 	private MapSettings settings;
+	/**
+	 * The theme the map was made from, or null for a map loaded from a file.
+	 */
 	private ThemeCatalog.Entry theme;
 	/**
 	 * The chosen theme, before it was varied, which Randomize Theme varies around so that randomizing repeatedly doesn't drift away from it.
@@ -122,9 +128,15 @@ class DemoSession
 					before = hasMap() ? captureState() : null;
 					continue;
 				}
-				if (!hasMap() && !name.equals("new"))
+				if (!hasMap() && !name.equals("new") && !name.equals("load"))
 				{
 					newRandomMap(null);
+				}
+				if (hasMap() && !name.equals("redraw") && !name.equals("load"))
+				{
+					// Edits only fit the map they were made on, so a changed map is drawn from its settings. A load replaces the map, and one
+					// that fails leaves the map as it was.
+					settings.edits = new MapEdits();
 				}
 				apply(name, command.get("value"));
 			}
@@ -153,6 +165,7 @@ class DemoSession
 		switch (command)
 		{
 			case "new" -> newRandomMap(value == null ? null : Long.parseLong(value.toString()));
+			case "load" -> load(value.toString());
 			case "redraw" ->
 			{
 			}
@@ -193,27 +206,56 @@ class DemoSession
 	}
 
 	/**
-	 * A copy of the settings, with empty edits, for drawing the map.
+	 * Makes the map the one a map settings file describes, with its edits. Its look becomes the one Randomize Theme varies around.
+	 *
+	 * @param fileContents
+	 *            The contents of a .nort file.
+	 */
+	private void load(String fileContents)
+	{
+		MapSettings loaded = MapSettings.fromJson(fileContents);
+		if (!Assets.installedArtPack.equals(loaded.artPack))
+		{
+			throw new IllegalArgumentException("The map uses the art pack '" + loaded.artPack + "', which the online generator doesn't have.");
+		}
+		if (loaded.edits == null)
+		{
+			loaded.edits = new MapEdits();
+		}
+		settings = loaded;
+		theme = null;
+		themeBase = loaded.deepCopyExceptEdits();
+	}
+
+	/**
+	 * A copy of the settings, with their edits, for drawing the map.
 	 */
 	MapSettings copySettingsForDrawing()
 	{
-		MapSettings copy = settings.deepCopyExceptEdits();
-		copy.edits = new MapEdits();
-		return copy;
+		return copyWithEdits(settings);
 	}
 
 	private State captureState()
 	{
-		return new State(settings.deepCopyExceptEdits(), theme, themeBase, themeSeed);
+		return new State(copyWithEdits(settings), theme, themeBase, themeSeed);
 	}
 
 	private void restoreState(State state)
 	{
-		settings = state.settings.deepCopyExceptEdits();
-		settings.edits = new MapEdits();
+		settings = copyWithEdits(state.settings);
 		theme = state.theme;
 		themeBase = state.themeBase;
 		themeSeed = state.themeSeed;
+	}
+
+	private static MapSettings copyWithEdits(MapSettings source)
+	{
+		MapSettings copy = source.deepCopy();
+		if (copy.edits == null)
+		{
+			copy.edits = new MapEdits();
+		}
+		return copy;
 	}
 
 	private void moveThroughHistory(Deque<State> from, Deque<State> to)
@@ -345,9 +387,13 @@ class DemoSession
 		result.put("cityFrequency", (int) Math.round(settings.cityProbability * cityFrequencyScale));
 		result.put("cityIconType", settings.cityIconTypeName);
 		JSONArray books = new JSONArray();
-		books.addAll(settings.books);
+		if (settings.books != null)
+		{
+			books.addAll(settings.books);
+		}
 		result.put("books", books);
-		result.put("theme", theme.name);
+		// A loaded map's look is its own, so no theme is chosen.
+		result.put("theme", theme == null ? "" : theme.name);
 		result.put("rotationDegrees", settings.rightRotationCount * 90);
 		// Flips of the generated map, which come before the rotation.
 		result.put("flipHorizontally", settings.flipHorizontally);

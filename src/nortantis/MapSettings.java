@@ -458,6 +458,16 @@ public class MapSettings implements Serializable, Cloneable
 		}
 	}
 
+	/**
+	 * Loads map settings from the contents of a map settings file in the JSON format.
+	 */
+	public static MapSettings fromJson(String fileContents)
+	{
+		MapSettings settings = new MapSettings();
+		settings.parseFromJson(fileContents);
+		return settings;
+	}
+
 	public static boolean isOldPropertiesFile(String filePath)
 	{
 		return FilenameUtils.getExtension(filePath).toLowerCase().equals("properties");
