@@ -35,7 +35,7 @@ public record BackgroundImageParameters(long backgroundRandomSeed, int width, in
 		}
 		catch (RuntimeException e)
 		{
-			throw new RuntimeException("Unable to read the texture image file name \"" + texturePath + "\"", e);
+			throw new RuntimeException("The map's background texture image, \"" + texturePath + "\", could not be read. The file may be missing.", e);
 		}
 		return BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(backgroundRandomSeed),
 				convertTextureToGrayscale ? ImageHelper.getInstance().convertToGrayscale(texture) : texture, height, width);

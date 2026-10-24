@@ -2448,39 +2448,20 @@ public class MapSettings implements Serializable, Cloneable
 			return;
 		}
 
-		if (!OSHelper.isLinux() && !OSHelper.isWindows())
-		{
-			return;
-		}
-
 		if (backgroundTextureImage != null && !backgroundTextureImage.isEmpty())
 		{
-			// It should be absolute.
-			if (new File(backgroundTextureImage).isAbsolute())
+			// The path is from the system that saved the map, which may not be this one, so the example textures' old installed folder on
+			// each system is checked. The folder of the source code only needs checked for maps that were created when running from source,
+			// such as my unit test maps.
+			String oldExampleTexturesWindowsPath = "C:\\Program Files\\Nortantis\\app\\assets\\example textures";
+			String oldExampleTexturesLinuxPath = "/opt/nortantis/lib/app/assets/example textures";
+			String oldExampleTexturesRunningFromSourcePath = Paths.get("assets", "example textures").toAbsolutePath().toString();
+
+			if (backgroundTextureImage.startsWith(oldExampleTexturesWindowsPath) || backgroundTextureImage.startsWith(oldExampleTexturesLinuxPath)
+					|| backgroundTextureImage.startsWith(oldExampleTexturesRunningFromSourcePath))
 			{
-				String oldExampleTexturesInstalledPath;
-				if (OSHelper.isLinux())
-				{
-					oldExampleTexturesInstalledPath = "/opt/nortantis/lib/app/assets/example textures";
-				}
-				else
-				{
-					// Windows
-					oldExampleTexturesInstalledPath = "C:\\Program Files\\Nortantis\\app\\assets\\example textures";
-				}
-
-				// This path only needs checked for maps that were created when running from source, such as my unit test maps.
-				String oldExampleTexturesRunningFromSourcePath = Paths.get("assets", "example textures").toAbsolutePath().toString();
-
-				if (backgroundTextureImage.startsWith(oldExampleTexturesInstalledPath) || backgroundTextureImage.startsWith(oldExampleTexturesRunningFromSourcePath))
-				{
-					backgroundTextureResource = new NamedResource(Assets.installedArtPack, FilenameUtils.getName(backgroundTextureImage));
-					backgroundTextureSource = TextureSource.Assets;
-				}
-				else
-				{
-					backgroundTextureSource = TextureSource.File;
-				}
+				backgroundTextureResource = new NamedResource(Assets.installedArtPack, FilenameUtils.getName(backgroundTextureImage));
+				backgroundTextureSource = TextureSource.Assets;
 			}
 			else
 			{

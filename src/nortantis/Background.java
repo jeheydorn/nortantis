@@ -423,7 +423,8 @@ public class Background
 				{
 					warningLogger.addWarningMessage(warning);
 				}
-				String artPack = settings.backgroundTextureResource.artPack;
+				// A texture from a file has no resource, and any art pack's image cache can read it.
+				String artPack = settings.backgroundTextureResource != null ? settings.backgroundTextureResource.artPack : settings.artPack;
 				oceanParameters = new BackgroundImageParameters(settings.backgroundRandomSeed, width, height, artPack, settings.customArtPackPath, tuple.getFirst(),
 						settings.colorizeOcean);
 				landParameters = settings.colorizeLand == settings.colorizeOcean ? null
