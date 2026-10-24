@@ -12,4 +12,4 @@ If you wish to build Nortantis from source rather than use the installers, do th
 
 <br>
 
-Privacy policy: This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it. (I had to add this for digital signing. Nortantis doesn't transfer any personal information.)
+Privacy policy: This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it. (I had to add this for digital signing. Nortantis doesn't transfer any personal information.) Links you click in the app open in your web browser.
